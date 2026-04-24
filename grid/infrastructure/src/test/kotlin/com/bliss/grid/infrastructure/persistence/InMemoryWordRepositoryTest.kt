@@ -1,4 +1,4 @@
-package com.bliss.grid.domain.generation
+package com.bliss.grid.infrastructure.persistence
 
 import assertk.assertThat
 import assertk.assertions.containsExactlyInAnyOrder
@@ -32,7 +32,6 @@ class InMemoryWordRepositoryTest {
 
     @Test
     fun `findByLengthAndPattern returns words matching all positions`() {
-        // 4 letters with C at index 0 and A at index 2 → CHAT
         assertThat(repo.findByLengthAndPattern(4, mapOf(0 to 'C', 2 to 'A')).map { it.text })
             .containsExactlyInAnyOrder("CHAT")
     }
