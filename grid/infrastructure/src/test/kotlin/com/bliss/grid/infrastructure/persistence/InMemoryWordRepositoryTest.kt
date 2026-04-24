@@ -7,17 +7,17 @@ import com.bliss.grid.domain.model.Word
 import org.junit.jupiter.api.Test
 
 class InMemoryWordRepositoryTest {
-
-    private val repo = InMemoryWordRepository(
-        listOf(
-            Word("OR", "metal precieux"),
-            Word("OS", "anatomie"),
-            Word("AS", "carte a jouer"),
-            Word("CHAT", "felin"),
-            Word("CHIEN", "canide"),
-            Word("CHOSE", "objet"),
+    private val repo =
+        InMemoryWordRepository(
+            listOf(
+                Word("OR", "metal precieux"),
+                Word("OS", "anatomie"),
+                Word("AS", "carte a jouer"),
+                Word("CHAT", "felin"),
+                Word("CHIEN", "canide"),
+                Word("CHOSE", "objet"),
+            ),
         )
-    )
 
     @Test
     fun `findByLength returns words of the requested length`() {

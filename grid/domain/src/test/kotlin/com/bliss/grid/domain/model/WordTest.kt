@@ -6,7 +6,6 @@ import assertk.assertions.isEqualTo
 import org.junit.jupiter.api.Test
 
 class WordTest {
-
     @Test
     fun `Word holds uppercase text and definition`() {
         val w = Word("CHAT", "felin domestique")

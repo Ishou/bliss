@@ -7,7 +7,11 @@ class Grid internal constructor(
     val placements: List<WordPlacement>,
 ) {
     companion object {
-        fun fromPlacements(width: Int, height: Int, placements: List<WordPlacement>): Grid {
+        fun fromPlacements(
+            width: Int,
+            height: Int,
+            placements: List<WordPlacement>,
+        ): Grid {
             require(width > 0 && height > 0) { "Grid dimensions must be positive (got ${width}x$height)" }
             requireNoDuplicateWords(placements)
 
@@ -16,7 +20,8 @@ class Grid internal constructor(
 
             for (placement in placements) {
                 requireInBounds(placement.cluePosition, width, height)
-                clues.getOrPut(placement.cluePosition) { mutableListOf() }
+                clues
+                    .getOrPut(placement.cluePosition) { mutableListOf() }
                     .add(Clue(placement.word.definition, placement.direction))
 
                 for ((pos, ch) in placement.letterPositions()) {
@@ -34,10 +39,11 @@ class Grid internal constructor(
                 "Letter and clue cells overlap at ${overlap.first()}"
             }
 
-            val cells: Map<Position, Cell> = buildMap {
-                clues.forEach { (pos, list) -> put(pos, ClueCell(list.toList())) }
-                letters.forEach { (pos, ch) -> put(pos, LetterCell(ch)) }
-            }
+            val cells: Map<Position, Cell> =
+                buildMap {
+                    clues.forEach { (pos, list) -> put(pos, ClueCell(list.toList())) }
+                    letters.forEach { (pos, ch) -> put(pos, LetterCell(ch)) }
+                }
 
             return Grid(width, height, cells, placements.toList())
         }
@@ -49,7 +55,11 @@ class Grid internal constructor(
             }
         }
 
-        private fun requireInBounds(p: Position, width: Int, height: Int) {
+        private fun requireInBounds(
+            p: Position,
+            width: Int,
+            height: Int,
+        ) {
             require(p.row.value in 0 until height && p.column.value in 0 until width) {
                 "Position $p is out of bounds for ${width}x$height grid"
             }

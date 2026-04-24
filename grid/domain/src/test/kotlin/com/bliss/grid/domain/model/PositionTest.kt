@@ -7,7 +7,6 @@ import assertk.assertions.messageContains
 import org.junit.jupiter.api.Test
 
 class PositionTest {
-
     @Test
     fun `Row holds an int value`() {
         assertThat(Row(3).value).isEqualTo(3)

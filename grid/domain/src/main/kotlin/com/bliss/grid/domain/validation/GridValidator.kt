@@ -6,7 +6,6 @@ import com.bliss.grid.domain.model.LetterCell
 import com.bliss.grid.domain.model.Position
 
 class GridValidator {
-
     fun validate(grid: Grid): List<GridViolation> {
         val violations = mutableListOf<GridViolation>()
         violations += outOfBoundsCells(grid)
@@ -46,7 +45,8 @@ class GridValidator {
     }
 
     private fun outOfBoundsCells(grid: Grid): List<GridViolation> =
-        grid.cells.keys.filter { it.row.value !in 0 until grid.height || it.column.value !in 0 until grid.width }
+        grid.cells.keys
+            .filter { it.row.value !in 0 until grid.height || it.column.value !in 0 until grid.width }
             .map { GridViolation.OutOfBounds(it, grid.width, grid.height) }
 
     private fun duplicateWords(grid: Grid): List<GridViolation> {
