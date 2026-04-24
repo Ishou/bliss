@@ -104,6 +104,32 @@ Agents work in parallel. Merges are serialized:
   CI. No merge queue is needed at this scale; serial human review is the
   queue.
 
+### 6a. One review-and-fix cycle before human merge
+
+After CI passes on a workstream PR, exactly one automated review-and-fix
+round runs before the human maintainer reviews and merges:
+
+1. A *different* agent than the implementer performs the review. Same-agent
+   self-review is forbidden — it has near-zero value.
+2. **In scope** for the reviewer: contract adherence (does the implementation
+   match the merged schema?), manifesto adherence (domain purity, layer
+   boundaries, mocks only at boundaries, test behavior not structure, no
+   vendor SDK in domain), test coverage of behavior, obvious bugs.
+3. **Out of scope:** formatting (the formatter is the authority), style
+   preference, unrelated improvements, scope creep.
+4. The implementer addresses each comment with exactly one of: a fix, a
+   justified rebuttal in-thread, or `out of scope, see follow-up workstream
+   <id>`.
+5. The cycle stops there. Further iteration is the human maintainer's job at
+   merge time. No agent ping-pong, no second review pass, no second fix pass.
+6. If a fix would push the PR over the 400-line cap (generated code
+   excluded), the PR is **split**, not padded.
+7. Schema PRs receive the same one-pass review, focused on contract design
+   rather than implementation correctness.
+8. The review-and-fix cycle is required, not best-effort: if no reviewer
+   agent is available, the PR waits. The human maintainer reviews and
+   squash-merges only after this cycle has run.
+
 ### 7. ADRs precede non-trivial implementation
 
 Any decision that is not a pure local refactor — a new dependency, a new
@@ -154,6 +180,9 @@ queryable.
 - The 400-line cap and one-context rule make every PR reviewable in one
   sitting, which is what makes a single human maintainer a viable bottleneck
   even at 10 concurrent agents.
+- The one review-and-fix cycle (§6a) catches most surface-level issues before
+  the human maintainer opens the PR, shifting the human role from "first
+  reviewer" to "final reviewer." Time spent per PR drops accordingly.
 
 ### Harder
 
@@ -169,6 +198,9 @@ queryable.
   implementation PR). This feels heavy for a one-line field addition. It is
   intentional: in a parallel fleet, the second step is what unlocks
   concurrency on either side of the contract.
+- Doubled agent cost per workstream: every PR is implemented by one agent and
+  reviewed by another. Acceptable in a sandbox; revisit if budget pressure
+  appears.
 
 ### Different
 
@@ -179,6 +211,9 @@ queryable.
 - Branch hygiene becomes a first-class deliverable. Stale `claude/...`
   branches are deleted aggressively after merge or abandonment. The branch
   list is the queue of in-flight workstreams.
+- Review threads on PRs become a recorded audit trail of "what almost went
+  wrong" — useful for refining agent prompts and for spotting recurring
+  failure modes across the fleet.
 
 ## Notes
 
