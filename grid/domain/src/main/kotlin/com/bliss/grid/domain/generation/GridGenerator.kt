@@ -3,8 +3,9 @@ package com.bliss.grid.domain.generation
 import com.bliss.grid.domain.model.Grid
 import com.bliss.grid.domain.model.WordPlacement
 
-class GridGenerator(private val repository: WordRepository) {
-
+class GridGenerator(
+    private val repository: WordRepository,
+) {
     fun generate(constraints: GridConstraints): Grid? {
         val working = WorkingGrid(constraints.width, constraints.height)
         val maxLength = maxOf(constraints.width, constraints.height) - 1
@@ -22,14 +23,17 @@ class GridGenerator(private val repository: WordRepository) {
         if (working.density() >= constraints.targetDensity) return true
         if (attempts[0]++ >= constraints.maxAttempts) return false
 
-        val ranked = working.candidatePlacements(constraints.minWordLength, maxLength)
-            .mapNotNull { candidate ->
-                val pattern = working.patternAt(candidate.cluePosition, candidate.direction, candidate.length)
-                val matches = repository.findByLengthAndPattern(candidate.length, pattern)
-                    .filter { it.text !in usedWords }
-                if (matches.isEmpty()) null else candidate to matches
-            }
-            .sortedBy { it.second.size }
+        val ranked =
+            working
+                .candidatePlacements(constraints.minWordLength, maxLength)
+                .mapNotNull { candidate ->
+                    val pattern = working.patternAt(candidate.cluePosition, candidate.direction, candidate.length)
+                    val matches =
+                        repository
+                            .findByLengthAndPattern(candidate.length, pattern)
+                            .filter { it.text !in usedWords }
+                    if (matches.isEmpty()) null else candidate to matches
+                }.sortedBy { it.second.size }
 
         for ((candidate, matches) in ranked) {
             for (word in matches) {

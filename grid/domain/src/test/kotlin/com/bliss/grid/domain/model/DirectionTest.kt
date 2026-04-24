@@ -5,7 +5,6 @@ import assertk.assertions.isEqualTo
 import org.junit.jupiter.api.Test
 
 class DirectionTest {
-
     @Test
     fun `RIGHT offset moves one column to the right`() {
         assertThat(Direction.RIGHT.offset).isEqualTo(Position(Row(0), Column(1)))

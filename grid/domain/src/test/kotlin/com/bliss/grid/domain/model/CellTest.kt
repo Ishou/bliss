@@ -7,7 +7,6 @@ import assertk.assertions.messageContains
 import org.junit.jupiter.api.Test
 
 class CellTest {
-
     @Test
     fun `LetterCell holds an uppercase letter`() {
         assertThat(LetterCell('A').letter).isEqualTo('A')

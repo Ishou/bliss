@@ -12,8 +12,10 @@ import com.bliss.grid.domain.model.Position
 import com.bliss.grid.domain.model.Row
 import com.bliss.grid.domain.model.WordPlacement
 
-internal class WorkingGrid(val width: Int, val height: Int) {
-
+internal class WorkingGrid(
+    val width: Int,
+    val height: Int,
+) {
     private val cells: Array<Array<Cell>> = Array(height) { Array(width) { EmptyCell as Cell } }
     private val _placements: MutableList<WordPlacement> = mutableListOf()
 
@@ -26,11 +28,12 @@ internal class WorkingGrid(val width: Int, val height: Int) {
 
         val cluePos = placement.cluePosition
         val newClue = Clue(placement.word.definition, placement.direction)
-        cells[cluePos.row.value][cluePos.column.value] = when (val existing = cells[cluePos.row.value][cluePos.column.value]) {
-            EmptyCell -> ClueCell(listOf(newClue))
-            is ClueCell -> ClueCell(existing.clues + newClue)
-            is LetterCell -> error("unreachable: fits() should have rejected this")
-        }
+        cells[cluePos.row.value][cluePos.column.value] =
+            when (val existing = cells[cluePos.row.value][cluePos.column.value]) {
+                EmptyCell -> ClueCell(listOf(newClue))
+                is ClueCell -> ClueCell(existing.clues + newClue)
+                is LetterCell -> error("unreachable: fits() should have rejected this")
+            }
         for ((pos, ch) in placement.letterPositions()) {
             cells[pos.row.value][pos.column.value] = LetterCell(ch)
         }
@@ -46,7 +49,10 @@ internal class WorkingGrid(val width: Int, val height: Int) {
         rebuildCells()
     }
 
-    fun candidatePlacements(minLength: Int, maxLength: Int): List<CandidatePlacement> {
+    fun candidatePlacements(
+        minLength: Int,
+        maxLength: Int,
+    ): List<CandidatePlacement> {
         val candidates = mutableListOf<CandidatePlacement>()
         for (r in 0 until height) {
             for (c in 0 until width) {
@@ -74,7 +80,11 @@ internal class WorkingGrid(val width: Int, val height: Int) {
         return candidates
     }
 
-    fun patternAt(cluePosition: Position, direction: Direction, length: Int): Map<Int, Char> {
+    fun patternAt(
+        cluePosition: Position,
+        direction: Direction,
+        length: Int,
+    ): Map<Int, Char> {
         val pattern = mutableMapOf<Int, Char>()
         val dr = direction.offset.row.value
         val dc = direction.offset.column.value
@@ -112,20 +122,24 @@ internal class WorkingGrid(val width: Int, val height: Int) {
         return true
     }
 
-    private fun cluePositionAvailable(cell: Cell, dir: Direction): Boolean = when (cell) {
-        EmptyCell -> true
-        is ClueCell -> cell.clues.none { it.direction == dir }
-        is LetterCell -> false
-    }
+    private fun cluePositionAvailable(
+        cell: Cell,
+        dir: Direction,
+    ): Boolean =
+        when (cell) {
+            EmptyCell -> true
+            is ClueCell -> cell.clues.none { it.direction == dir }
+            is LetterCell -> false
+        }
 
-    private fun inBounds(p: Position): Boolean =
-        p.row.value in 0 until height && p.column.value in 0 until width
+    private fun inBounds(p: Position): Boolean = p.row.value in 0 until height && p.column.value in 0 until width
 
     private fun rebuildCells() {
         for (r in 0 until height) for (c in 0 until width) cells[r][c] = EmptyCell
         val cluesByPosition = mutableMapOf<Position, MutableList<Clue>>()
         for (placement in _placements) {
-            cluesByPosition.getOrPut(placement.cluePosition) { mutableListOf() }
+            cluesByPosition
+                .getOrPut(placement.cluePosition) { mutableListOf() }
                 .add(Clue(placement.word.definition, placement.direction))
             for ((pos, ch) in placement.letterPositions()) {
                 cells[pos.row.value][pos.column.value] = LetterCell(ch)

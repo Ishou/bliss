@@ -13,7 +13,6 @@ import org.junit.jupiter.api.Test
 
 @OptIn(ExperimentalKotest::class)
 class GridGeneratorPropertyTest {
-
     private val validator = GridValidator()
     private val generator = GridGenerator(ListWordRepository(SMALL_FRENCH_WORDS))
 
@@ -46,13 +45,15 @@ class GridGeneratorPropertyTest {
             ) { width, height, density ->
                 val grid = generator.generate(GridConstraints(width, height, targetDensity = density))
                 if (grid != null) {
-                    val coveredPositions = grid.placements
-                        .flatMap { it.letterPositions().map { (pos, _) -> pos } }
-                        .toSet()
-                    val orphans = grid.cells
-                        .filter { (_, cell) -> cell is LetterCell }
-                        .map { it.key }
-                        .filterNot { it in coveredPositions }
+                    val coveredPositions =
+                        grid.placements
+                            .flatMap { it.letterPositions().map { (pos, _) -> pos } }
+                            .toSet()
+                    val orphans =
+                        grid.cells
+                            .filter { (_, cell) -> cell is LetterCell }
+                            .map { it.key }
+                            .filterNot { it in coveredPositions }
                     check(orphans.isEmpty()) { "orphans=$orphans for ${width}x$height density=$density" }
                 }
             }

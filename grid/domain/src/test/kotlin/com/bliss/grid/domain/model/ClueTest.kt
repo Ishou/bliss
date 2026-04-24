@@ -5,7 +5,6 @@ import assertk.assertions.isEqualTo
 import org.junit.jupiter.api.Test
 
 class ClueTest {
-
     @Test
     fun `Clue exposes definition and direction`() {
         val c = Clue("animal", Direction.RIGHT)

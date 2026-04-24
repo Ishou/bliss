@@ -9,14 +9,14 @@ import assertk.assertions.messageContains
 import org.junit.jupiter.api.Test
 
 class GridTest {
-
     @Test
     fun `single horizontal placement produces clue cell and letter cells`() {
-        val placement = WordPlacement(
-            word = Word("OR", "metal precieux"),
-            cluePosition = Position(Row(0), Column(0)),
-            direction = Direction.RIGHT,
-        )
+        val placement =
+            WordPlacement(
+                word = Word("OR", "metal precieux"),
+                cluePosition = Position(Row(0), Column(0)),
+                direction = Direction.RIGHT,
+            )
 
         val grid = Grid.fromPlacements(width = 4, height = 1, placements = listOf(placement))
 
@@ -34,16 +34,18 @@ class GridTest {
         // CHAT horizontal at (1,0): letters at (1,1)=C (1,2)=H (1,3)=A (1,4)=T
         // HIBOU vertical clue at (0,2): letters at (1,2)=H (2,2)=I (3,2)=B (4,2)=O (5,2)=U
         // (1,2) is the crossing 'H'.
-        val horizontal = WordPlacement(
-            Word("CHAT", "felin"),
-            Position(Row(1), Column(0)),
-            Direction.RIGHT,
-        )
-        val vertical = WordPlacement(
-            Word("HIBOU", "rapace"),
-            Position(Row(0), Column(2)),
-            Direction.DOWN,
-        )
+        val horizontal =
+            WordPlacement(
+                Word("CHAT", "felin"),
+                Position(Row(1), Column(0)),
+                Direction.RIGHT,
+            )
+        val vertical =
+            WordPlacement(
+                Word("HIBOU", "rapace"),
+                Position(Row(0), Column(2)),
+                Direction.DOWN,
+            )
 
         val grid = Grid.fromPlacements(width = 6, height = 6, placements = listOf(horizontal, vertical))
 
@@ -67,11 +69,12 @@ class GridTest {
 
     @Test
     fun `clue position out of bounds throws`() {
-        val placement = WordPlacement(
-            Word("OR", "x"),
-            Position(Row(5), Column(0)),
-            Direction.RIGHT,
-        )
+        val placement =
+            WordPlacement(
+                Word("OR", "x"),
+                Position(Row(5), Column(0)),
+                Direction.RIGHT,
+            )
         assertFailure {
             Grid.fromPlacements(width = 3, height = 3, placements = listOf(placement))
         }.messageContains("bounds")
@@ -79,11 +82,12 @@ class GridTest {
 
     @Test
     fun `letter position out of bounds throws`() {
-        val placement = WordPlacement(
-            Word("CHAT", "x"),
-            Position(Row(0), Column(0)),
-            Direction.RIGHT,
-        )
+        val placement =
+            WordPlacement(
+                Word("CHAT", "x"),
+                Position(Row(0), Column(0)),
+                Direction.RIGHT,
+            )
         assertFailure {
             Grid.fromPlacements(width = 3, height = 3, placements = listOf(placement))
         }.messageContains("bounds")

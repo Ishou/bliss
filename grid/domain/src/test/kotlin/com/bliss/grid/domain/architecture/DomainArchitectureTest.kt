@@ -9,7 +9,6 @@ import com.lemonappdev.konsist.api.verify.assertTrue
 import org.junit.jupiter.api.Test
 
 class DomainArchitectureTest {
-
     private val domainScope = Konsist.scopeFromModule("grid/domain")
 
     @Test
@@ -21,15 +20,16 @@ class DomainArchitectureTest {
 
     @Test
     fun `domain has no framework imports`() {
-        val forbiddenPrefixes = listOf(
-            "org.springframework",
-            "jakarta.",
-            "javax.",
-            "io.ktor",
-            "org.http4k",
-            "org.jetbrains.exposed",
-            "io.micronaut",
-        )
+        val forbiddenPrefixes =
+            listOf(
+                "org.springframework",
+                "jakarta.",
+                "javax.",
+                "io.ktor",
+                "org.http4k",
+                "org.jetbrains.exposed",
+                "io.micronaut",
+            )
         domainScope.files.assertFalse {
             it.hasImport { import ->
                 forbiddenPrefixes.any { prefix -> import.name.startsWith(prefix) }
@@ -66,7 +66,8 @@ class DomainArchitectureTest {
 
     @Test
     fun `domain model value objects are data classes`() {
-        domainScope.classes()
+        domainScope
+            .classes()
             .withPackage("com.bliss.grid.domain.model..")
             .withNameEndingWith("Cell", "Clue", "Position", "WordPlacement")
             .assertTrue {
