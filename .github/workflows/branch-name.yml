@@ -1,0 +1,26 @@
+name: Branch Name
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+
+permissions:
+  contents: read
+
+jobs:
+  branch-name:
+    if: ${{ !startsWith(github.head_ref, 'dependabot/') && !startsWith(github.head_ref, 'renovate/') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate branch name
+        env:
+          BRANCH: ${{ github.head_ref }}
+          PATTERN: '^(feat|fix|chore|refactor|test|docs)/[A-Za-z0-9._-]+$'
+        run: |
+          echo "Branch:  $BRANCH"
+          echo "Pattern: $PATTERN"
+          if [[ ! "$BRANCH" =~ $PATTERN ]]; then
+            echo "::error::Branch name '$BRANCH' does not match required pattern '$PATTERN'."
+            echo "::error::Use one of: feat/<desc>, fix/<desc>, chore/<desc>, refactor/<desc>, test/<desc>, docs/<desc>."
+            exit 1
+          fi

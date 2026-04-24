@@ -36,6 +36,10 @@ jobs:
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
 
+          # Branches Claude creates must satisfy .github/workflows/branch-name.yml.
+          # Pinning to `chore/claude-` keeps automation branches conventional-commit-shaped.
+          branch_prefix: chore/claude-
+
           # This is an optional setting that allows Claude to read CI results on PRs
           additional_permissions: |
             actions: read
