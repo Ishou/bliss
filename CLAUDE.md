@@ -30,7 +30,8 @@
 - Architecture tests (ArchUnit or equivalent) enforce dependency rules. These are not optional.
 - Each module builds and tests independently.
 - Small PRs (under 400 lines). Never bundle unrelated changes.
-- Conventional commits: `feat:`, `fix:`, `chore:`, `refactor:`, `test:`, `docs:`.
+- Conventional commits: `feat:`, `fix:`, `chore:`, `refactor:`, `test:`, `docs:`. Enforced in CI (commitlint).
+- Branch names: `<type>/<short-description>` where `<type>` is one of the conventional types above. Enforced in CI. Bot-managed prefixes `dependabot/` and `renovate/` are exempt; the Claude bot uses `chore/claude-` so its branches satisfy the rule.
 
 ## CI/CD
 
