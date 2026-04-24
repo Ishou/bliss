@@ -1,2 +1,7 @@
 .idea/
 bliss.iml
+
+# Gradle
+build/
+.gradle/
+!gradle/wrapper/gradle-wrapper.jar
