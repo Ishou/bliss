@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test
 class GridGeneratorPropertyTest {
 
     private val validator = GridValidator()
-    private val generator = GridGenerator(InMemoryWordRepository.defaultFrench())
+    private val generator = GridGenerator(ListWordRepository(SMALL_FRENCH_WORDS))
 
     @Test
     fun `every generated grid passes validation`() {

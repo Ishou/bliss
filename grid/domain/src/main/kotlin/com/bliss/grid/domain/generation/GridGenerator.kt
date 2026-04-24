@@ -8,13 +8,20 @@ class GridGenerator(private val repository: WordRepository) {
     fun generate(constraints: GridConstraints): Grid? {
         val working = WorkingGrid(constraints.width, constraints.height)
         val maxLength = maxOf(constraints.width, constraints.height) - 1
-        return if (search(working, constraints, maxLength)) working.toGrid() else null
+        val attempts = intArrayOf(0)
+        return if (search(working, constraints, maxLength, mutableSetOf(), attempts)) working.toGrid() else null
     }
 
-    private fun search(working: WorkingGrid, constraints: GridConstraints, maxLength: Int): Boolean {
+    private fun search(
+        working: WorkingGrid,
+        constraints: GridConstraints,
+        maxLength: Int,
+        usedWords: MutableSet<String>,
+        attempts: IntArray,
+    ): Boolean {
         if (working.density() >= constraints.targetDensity) return true
+        if (attempts[0]++ >= constraints.maxAttempts) return false
 
-        val usedWords = working.placements.map { it.word.text }.toHashSet()
         val ranked = working.candidatePlacements(constraints.minWordLength, maxLength)
             .mapNotNull { candidate ->
                 val pattern = working.patternAt(candidate.cluePosition, candidate.direction, candidate.length)
@@ -24,14 +31,15 @@ class GridGenerator(private val repository: WordRepository) {
             }
             .sortedBy { it.second.size }
 
-        if (ranked.isEmpty()) return false
-
-        val (candidate, matches) = ranked.first()
-        for (word in matches) {
-            val placement = WordPlacement(word, candidate.cluePosition, candidate.direction)
-            if (working.place(placement)) {
-                if (search(working, constraints, maxLength)) return true
-                working.undo(placement)
+        for ((candidate, matches) in ranked) {
+            for (word in matches) {
+                val placement = WordPlacement(word, candidate.cluePosition, candidate.direction)
+                if (working.place(placement)) {
+                    usedWords += word.text
+                    if (search(working, constraints, maxLength, usedWords, attempts)) return true
+                    usedWords -= word.text
+                    working.undo(placement)
+                }
             }
         }
         return false

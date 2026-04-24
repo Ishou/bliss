@@ -1,5 +1,6 @@
-package com.bliss.grid.domain.generation
+package com.bliss.grid.infrastructure.persistence
 
+import com.bliss.grid.domain.generation.WordRepository
 import com.bliss.grid.domain.model.Word
 
 class InMemoryWordRepository(private val words: List<Word>) : WordRepository {
