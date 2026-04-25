@@ -78,6 +78,26 @@ By signing off, you certify that you have the right to submit your
 contribution under the project's license (FSL-1.1-MIT — see
 [`LICENSE`](./LICENSE)). Bot-authored commits (`*[bot]`) are exempt.
 
+## OpenAPI
+
+Each bounded context with an HTTP surface owns its spec at
+`<context>/api/openapi.yaml` (ADR-0003 §1). The committed TypeScript types
+under `frontend/src/infrastructure/api/<context>/types.ts` are generated from
+that spec and must stay in sync.
+
+After any change to a `<context>/api/openapi.yaml`, regenerate the client and
+commit the diff:
+
+```sh
+pnpm --filter frontend api:generate
+# or
+frontend/scripts/generate-api-client.sh
+```
+
+Two CI workflows back this up: `openapi-lint.yml` runs Spectral against every
+spec (warnings fail the build), and `openapi-typescript-drift.yml`
+regenerates the types and fails if the committed file differs.
+
 ## Where to read more
 
 - [`CLAUDE.md`](./CLAUDE.md) — the engineering rules. Authoritative.
