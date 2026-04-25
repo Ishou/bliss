@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { css } from 'styled-system/css';
 import type { Cell, Position, Puzzle } from '@/domain';
 import { BlockCellView, DefinitionCellView, LetterCellView } from './Cell';
-import { useGridNavigation } from './useGridNavigation';
+import { useGridNavigation } from '@/application/grid/useGridNavigation';
 
 const gridContainer = css({
   display: 'grid',

@@ -23,13 +23,6 @@ export interface GridNavigation {
   readonly handleKeyDown: (event: React.KeyboardEvent<HTMLInputElement>) => void;
 }
 
-// Divergences from NYT-app behavior:
-// - Typing past the last cell of a word stays put (no auto-advance to
-//   the next clue). Backspace at the start of a word same — no surprise
-//   clue jumps.
-// - Tab / Shift+Tab clue-cycling is deferred to a follow-up PR to keep
-//   this diff under the ADR-0001 §4 line cap.
-
 const key = (p: Position) => `${p.row},${p.col}`;
 const same = (a: Position | null, b: Position | null) =>
   a !== null && b !== null && a.row === b.row && a.col === b.col;

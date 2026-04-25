@@ -7,13 +7,6 @@ import { Grid } from '@/ui/components/grid';
 // shared SAMPLE_PUZZLE — the parallel sample-coverage workstream is
 // rewriting it). 5×4 grid laid out so cell (1,2) is the intersection
 // of an across clue (def at (1,0)) and a down clue (def at (0,2)).
-//
-// Layout — D = definition, B = block, X = letter:
-//   D→  X   D↓  X   X     across-1: (0,1)
-//                          down-1:   (1,2),(2,2),(3,2)
-//   D→  X   X   X   X     across-2: (1,1)..(1,4)
-//   X   X   X   X   X
-//   X   B   X   X   X
 const L = (row: number, col: number, answer: string): Cell =>
   ({ kind: 'letter', position: { row, col }, answer, entry: '' });
 
