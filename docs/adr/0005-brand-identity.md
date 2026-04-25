@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted
+Proposed
 
 ## Context
 
@@ -128,7 +128,13 @@ from this palette. For text *colored* with the brand (`leaf` or
 `blossom` foreground on `cream`/`breath`), use the darker ramp shades
 (`leaf.700` or `blossom.700`) per the implementation workstream's Panda
 ramp generation. The implementation workstream must verify contrast at
-each brand-color usage site before shipping.
+each brand-color usage site before shipping. As a mandatory deliverable
+of the `feat/frontend-rebrand-wordsparrow` workstream, an automated
+contrast-ratio check must be added to CI (e.g., a Panda post-build
+validation step) that fails the build on any token combination producing
+less than 3:1 for UI components or less than 4.5:1 for text; without
+this gate, the WCAG AA obligation is a prose promise, not an
+enforceable constraint.
 
 A small `signal` palette is reserved (added later, not in v1):
 - `signal.error` — distinct from `blossom` so error states don't conflict
