@@ -9,15 +9,15 @@
     {
       "id": "0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6c",
       "direction": "across",
-      "start": { "row": 0, "column": 1 },
-      "length": 4,
+      "start": { "row": 0, "column": 2 },
+      "length": 3,
       "text": "Capitale de la France"
     },
     {
       "id": "0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6d",
       "direction": "down",
-      "start": { "row": 1, "column": 0 },
-      "length": 4,
+      "start": { "row": 2, "column": 0 },
+      "length": 3,
       "text": "Couleur du ciel"
     }
   ],
@@ -40,10 +40,10 @@
       "text": "Couleur du ciel",
       "arrow": "down"
     },
-    { "kind": "letter", "position": { "row": 1, "column": 1 }, "letter": "P" },
-    { "kind": "letter", "position": { "row": 1, "column": 2 }, "letter": "A" },
-    { "kind": "letter", "position": { "row": 1, "column": 3 }, "letter": "R" },
-    { "kind": "letter", "position": { "row": 1, "column": 4 }, "letter": "I" },
+    { "kind": "block", "position": { "row": 1, "column": 1 } },
+    { "kind": "block", "position": { "row": 1, "column": 2 } },
+    { "kind": "block", "position": { "row": 1, "column": 3 } },
+    { "kind": "block", "position": { "row": 1, "column": 4 } },
     { "kind": "letter", "position": { "row": 2, "column": 0 }, "letter": "B" },
     { "kind": "block", "position": { "row": 2, "column": 1 } },
     { "kind": "block", "position": { "row": 2, "column": 2 } },
