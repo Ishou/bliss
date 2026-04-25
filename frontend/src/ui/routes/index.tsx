@@ -34,4 +34,7 @@ export const Route = createRoute({
   getParentRoute: () => RootRoute,
   path: '/',
   component: HomePage,
+  head: () => ({
+    meta: [{ title: 'Bliss' }],
+  }),
 });
