@@ -43,6 +43,14 @@ export default defineConfig({
         bg: { value: '{colors.bliss.background}' },
         fg: { value: '{colors.bliss.text}' },
         accent: { value: '{colors.bliss.accent}' },
+        // Grid surfaces. `surface` is the letter cell background;
+        // `definition` is the clue-cell background; `block` is the
+        // inert-square background; `border` separates cells.
+        surface: { value: '{colors.bliss.surface}' },
+        definition: { value: '{colors.bliss.surface}' },
+        block: { value: '{colors.bliss.background}' },
+        border: { value: '{colors.bliss.muted}' },
+        muted: { value: '{colors.bliss.muted}' },
       },
     },
   },
