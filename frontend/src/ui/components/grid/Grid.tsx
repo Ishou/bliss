@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { css } from 'styled-system/css';
 import type { Cell, Position, Puzzle } from '@/domain';
 import { BlockCellView, DefinitionCellView, LetterCellView } from './Cell';
+import { useGridNavigation } from './useGridNavigation';
 
 const gridContainer = css({
   display: 'grid',
@@ -21,11 +22,9 @@ const rowStyles = css({ display: 'contents' });
 
 const positionKey = (p: Position) => `${p.row},${p.col}`;
 
-// v1 visual grid. Renders one DOM node per cell with the appropriate
-// variant; letter inputs are uncontrolled (defaultValue) so the DOM owns
-// keystrokes per ADR-0002 §4. Keyboard navigation, focus management, and
-// direction tracking are deliberately deferred to a follow-up workstream
-// to keep this PR within the 400-line cap (ADR-0001 §4).
+// v1 interactive grid. Letter inputs are uncontrolled (ADR-0002 §4).
+// `useGridNavigation` orchestrates focus, direction, and highlighting
+// via stable handlers that read row/col from data attributes.
 export function Grid({ puzzle }: { puzzle: Puzzle }) {
   const cellByPosition = useMemo(() => {
     const m = new Map<string, Cell>();
@@ -40,6 +39,8 @@ export function Grid({ puzzle }: { puzzle: Puzzle }) {
     }),
     [puzzle.height, puzzle.width],
   );
+
+  const nav = useGridNavigation(puzzle);
 
   const rows: { row: number; cells: (Cell | null)[] }[] = [];
   for (let row = 0; row < puzzle.height; row++) {
@@ -71,16 +72,31 @@ export function Grid({ puzzle }: { puzzle: Puzzle }) {
             }
             const key = positionKey(cell.position);
             switch (cell.kind) {
-              case 'letter':
+              case 'letter': {
+                const highlight = nav.highlightFor(cell.position);
                 return (
                   <LetterCellView
                     key={key}
                     cell={cell}
                     ariaLabel={`Case ligne ${cell.position.row + 1}, colonne ${cell.position.col + 1}`}
+                    inWord={highlight.currentWord}
+                    inputRef={nav.registerCellRef}
+                    onPointerDown={nav.handlePointerDown}
+                    onFocus={nav.handleFocus}
+                    onKeyDown={nav.handleKeyDown}
                   />
                 );
-              case 'definition':
-                return <DefinitionCellView key={key} cell={cell} />;
+              }
+              case 'definition': {
+                const highlight = nav.highlightFor(cell.position);
+                return (
+                  <DefinitionCellView
+                    key={key}
+                    cell={cell}
+                    isCurrent={highlight.currentDefinition}
+                  />
+                );
+              }
               case 'block':
                 return <BlockCellView key={key} cell={cell} />;
             }
