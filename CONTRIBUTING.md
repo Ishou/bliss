@@ -27,9 +27,11 @@ secrets off your local machine's history in the first place.
 
 Branch names must match `<type>/<short-description>` where `<type>` is
 one of `feat`, `fix`, `chore`, `refactor`, `test`, `docs` (enforced in
-CI by `.github/workflows/branch-name.yml`). For agent workstreams,
-ADR-0001 §2 prescribes `<type>/<context>-<slug>` — e.g.
-`feat/frontend-grid-canvas`, `chore/ci-secret-scanning`.
+CI by `.github/workflows/branch-name.yml`). Examples:
+`feat/frontend-grid-canvas`, `chore/ci-secret-scanning`. The
+authoritative convention is [`CLAUDE.md`](./CLAUDE.md), which
+supersedes ADR-0001 §2 on branch naming — the CI-enforced
+`<type>/<short-description>` form is what matters.
 
 The `dependabot/` and `renovate/` prefixes are exempt; the Claude bot
 uses `chore/claude-` to satisfy the rule.
