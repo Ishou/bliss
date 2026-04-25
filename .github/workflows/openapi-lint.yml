@@ -1,0 +1,47 @@
+name: OpenAPI Lint
+
+# Implements ADR-0003 §8.1: every `<context>/api/openapi.yaml` is linted by
+# Spectral on every PR and on every push to `main`. Warnings fail the build —
+# same posture as Spotless and ESLint elsewhere in the repo.
+#
+# The ruleset lives at `.spectral.yaml` (extends `spectral:oas` with all rules
+# enabled). Per ADR-0003 §1, the spec is the source of truth; failing the
+# build on warnings is what keeps the spec authoritative instead of
+# aspirational.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  push:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  spectral:
+    name: spectral
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Lint grid/api/openapi.yaml
+        # stoplightio/spectral-action v0.8.13. Pinned to the commit SHA per
+        # the manifesto's "Container images pinned to digest. Builds are
+        # deterministic." rule applied to actions: a moving tag would let
+        # upstream change what runs in CI without a repo change. Bump the
+        # SHA (and the version comment) in a dedicated chore PR when
+        # upgrading.
+        uses: stoplightio/spectral-action@6416fd018ae38e60136775066eb3e98172143141 # v0.8.13
+        with:
+          file_glob: grid/api/openapi.yaml
+          spectral_ruleset: .spectral.yaml
+          # Fail the build on warnings — see header.
+          fail_severity: warn
