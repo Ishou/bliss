@@ -1,4 +1,4 @@
-# ADR-0007: Font FOUT Mitigation (Preload + Metrics-Matched Fallback)
+# ADR-0008: Font FOUT Mitigation (Preload + Metrics-Matched Fallback)
 
 ## Status
 
