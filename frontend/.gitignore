@@ -1,0 +1,29 @@
+# Build output
+dist/
+dist-ssr/
+
+# Generated Panda CSS output
+styled-system/
+
+# Dependencies
+node_modules/
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Editor
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.swp
+
+# OS
+.DS_Store
+
+# Vite
+.vite/
+
+# Test coverage
+coverage/

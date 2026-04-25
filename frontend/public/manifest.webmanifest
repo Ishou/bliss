@@ -1,0 +1,17 @@
+{
+  "name": "Bliss",
+  "short_name": "Bliss",
+  "description": "Bliss — mots fléchés, the puzzle game.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0b0d12",
+  "theme_color": "#0b0d12",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
