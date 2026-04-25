@@ -42,7 +42,12 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
 
       - name: Build for analysis
-        run: ./gradlew assemble --parallel --build-cache --stacktrace -x test
+        # --no-daemon is required: gradle/actions/setup-gradle starts a
+        # daemon that lives outside CodeQL's tracer process tree, so when
+        # ./gradlew reuses the daemon the kotlinc/javac invocations happen
+        # un-traced and CodeQL reports "this run didn't build any of it".
+        # Forcing daemon-less mode keeps the compilers in-process.
+        run: ./gradlew assemble --no-daemon --parallel --build-cache --stacktrace -x test
 
       - name: Perform CodeQL analysis
         uses: github/codeql-action/analyze@v3
