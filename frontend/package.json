@@ -43,6 +43,7 @@
     "eslint-plugin-import": "^2.31.0",
     "eslint-plugin-react": "^7.37.0",
     "eslint-plugin-react-hooks": "^5.1.0",
+    "fontaine": "^0.8.0",
     "globals": "^15.14.0",
     "jsdom": "^25.0.0",
     "openapi-typescript": "^7.13.0",

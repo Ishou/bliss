@@ -59,10 +59,16 @@ export default defineConfig({
       },
       fonts: {
         // Self-hosted Nunito Variable (ADR-0005 §5). The variable axis
-        // covers 200–1000; the system-ui fallback shows immediately
-        // while the woff2 streams in.
-        body: { value: '"Nunito Variable", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif' },
-        heading: { value: '"Nunito Variable", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif' },
+        // covers 200–1000. `"Nunito Variable fallback"` is a metrics-
+        // matched face emitted at build time by `FontaineTransform`
+        // (see `vite.config.ts`); it remaps system-ui to Nunito's
+        // ascent / descent / line-gap / size-adjust, so the fallback
+        // text occupies the same pixels as Nunito and there is no
+        // reflow when the woff2 swaps in. The remaining system-ui
+        // chain stays as a hard fallback if the build-time face is
+        // ever absent (e.g., during dev or in a stale-cache PWA).
+        body: { value: '"Nunito Variable", "Nunito Variable fallback", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif' },
+        heading: { value: '"Nunito Variable", "Nunito Variable fallback", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif' },
       },
       // Type scale — ADR-0005 §5. Mobile-first sizes; the `md` breakpoint
       // bumps each by 1.125× via the `md` conditional in route styles.
