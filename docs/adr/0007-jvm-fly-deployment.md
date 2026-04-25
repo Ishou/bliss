@@ -103,8 +103,8 @@ The deployment is driven entirely by GitHub Actions, mirroring the
 frontend pattern:
 
 - **`.github/workflows/deploy-api.yml`** (introduced by the implementation
-  workstream — not this ADR) runs on push to `main` (production) and
-  on `pull_request` (preview).
+  workstream — not this ADR) runs on push to `main` (production deploy) and
+  on `pull_request` (CI build + test only — no `flyctl deploy` on PRs; see §5).
 - Steps: `actions/checkout`, `actions/setup-java` for JDK 21,
   `gradle/actions/setup-gradle`, `./gradlew :grid:api:shadowJar`,
   `superfly/flyctl-actions/setup-flyctl`, `flyctl deploy --remote-only`.
@@ -320,9 +320,10 @@ possibly Redis, and an ADR amendment.
   CNAME is the joining point of the two-platform architecture; if
   that record disappears, the frontend's API calls fail even though
   Cloudflare Pages and Fly are both healthy.
-- **PR previews must spin up both sides** to be useful — frontend
-  preview pointing at production API is not a meaningful preview for
-  an API-touching PR.
+- **PR previews are frontend-only (MSW-mocked API)** — API-touching
+  PRs cannot be reviewed against a live backend in preview; reviewers
+  rely on spec-conformant contract tests instead (accepted trade-off,
+  §5).
 
 ### Different
 
