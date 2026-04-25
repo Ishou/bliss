@@ -1,11 +1,25 @@
 name: Claude Code Review
 
 # Implements ADR-0001 §6a: exactly one automated review-and-fix cycle per PR.
-# - Triggers only on `opened` and `ready_for_review` (no synchronize, no reopened)
-#   so the reviewer makes a single pass; subsequent fix-pushes do not re-trigger.
-# - Skips drafts; review starts when the PR is ready for human merge consideration.
-# - Bootstrap exception: this workflow file itself was wired without a §6a review
-#   pass (chicken-and-egg). All future PRs are subject to the cycle.
+#
+# Triggers fire only on `opened` and `ready_for_review` (no synchronize, no
+# reopened) so the cycle is exactly one pass; the fixer's commit-and-push fires
+# `synchronize`, which is *not* in this list, so neither the reviewer nor the
+# fixer re-fires.
+#
+# Job sequence:
+#   1. Reviewer agent reads CLAUDE.md/MANIFESTO.md/ADRs and the PR diff, then
+#      submits exactly one review via `gh pr review --comment`. Body begins
+#      with `LGTM, no findings.` or `Findings — see comments below.`.
+#   2. Detect step queries the just-posted review and sets `has_findings`.
+#   3. Fixer agent (only when findings exist) reads the review, applies fixes
+#      or writes rebuttals, runs the relevant verification, commits, pushes
+#      to the PR branch, and posts one reply comment mapping findings → fixes.
+#
+# Permissions: `contents: write` is required only for the fixer to push to
+# PR branches. The reviewer's allowlist confines it to read + post-review;
+# the fixer's allowlist is broader (Edit/Write/Bash) but capped at one push
+# per PR by the trigger configuration.
 
 on:
   pull_request:
@@ -16,31 +30,39 @@ jobs:
     if: ${{ !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       pull-requests: write
       issues: read
       id-token: write
       actions: read
 
+    env:
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+      PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
     steps:
-      - name: Checkout repository
+      - name: Checkout PR head
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.ref }}
+          token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Run Claude Code Review
-        id: claude-review
-        env:
-          PR_NUMBER: ${{ github.event.pull_request.number }}
+      - name: Configure git identity for fixer commits
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Run reviewer agent
+        id: reviewer
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           additional_permissions: |
             actions: read
-          # Restrict the agent to read-only access to the repo plus the one
-          # gh subcommand it needs to post the review. Without this, the agent
-          # could in principle run arbitrary git/gh actions; with it, the worst
-          # case is an extra review comment.
+          # Reviewer is read-only on the repo; the only state it changes is
+          # the PR review it posts via `gh pr review`.
           claude_args: '--allowed-tools "Read,Glob,Grep,Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh pr review:*),Bash(cat:*)"'
           prompt: |
             You are the §6a reviewer agent for PR #${{ github.event.pull_request.number }}
@@ -51,104 +73,222 @@ jobs:
             Before reviewing, read these files in the checked-out repo:
             - `CLAUDE.md` (engineering rules; the authoritative ruleset)
             - `MANIFESTO.md` (rationale)
-            - `docs/adr/0001-parallel-agent-development-workflow.md`
-              (especially §6a — the rule defining your role)
-            - `docs/adr/0002-frontend-stack.md`
-            - `docs/adr/0003-cross-language-api-contract.md`
-            - Any `<context>/api/openapi.yaml` or `asyncapi.yaml` relevant to the
-              files changed in this PR.
+            - All merged ADRs under `docs/adr/` (especially ADR-0001 §6a,
+              which defines your role).
+            - Any `<context>/api/openapi.yaml` or `asyncapi.yaml` relevant to
+              the files changed in this PR.
 
             ## Your role
 
             You perform exactly **one** review pass on this PR. There is no
-            second pass. Your output is the only automated review the human
-            maintainer sees before merging. The implementer addresses each
-            finding with a fix, an in-thread rebuttal, or
-            `out of scope, see follow-up workstream <id>`. The cycle stops
-            there — the human maintainer arbitrates at merge time.
+            second pass. Your output is the input to the §6a fixer agent
+            that runs immediately after you in this same workflow; the fixer
+            applies your findings (or writes rebuttals), pushes once, and
+            stops. The human maintainer arbitrates at merge time.
 
             ## In scope (you must check)
 
-            1. **Contract adherence.** If the PR touches a bounded context with
-               an `api/openapi.yaml` or `api/asyncapi.yaml`, verify the
-               implementation matches the merged spec. If this *is* a schema PR,
-               verify ADR-0003 wire conventions: OpenAPI 3.1, UUID v7
-               identifiers, ISO-8601 dates, RFC 7807 errors, cursor pagination,
-               camelCase, explicit `required` and `nullable`, no numeric enums.
+            1. **Contract adherence.** If the PR touches a bounded context
+               with an `api/openapi.yaml` or `api/asyncapi.yaml`, verify the
+               implementation matches the merged spec. If this *is* a schema
+               PR, verify ADR-0003 wire conventions: OpenAPI 3.1, UUID v7,
+               ISO-8601, RFC 7807, cursor pagination, camelCase, explicit
+               `required` and `nullable`, no numeric enums.
 
             2. **Manifesto adherence.** Verify:
-               - Domain layer has no infrastructure, application, or api imports.
+               - Domain layer has no infrastructure, application, or api
+                 imports.
                - No vendor SDK imports in `domain/` or `application/`.
                - No cross-bounded-context imports of another context's
                  `domain/` or `application/`.
-               - Tests test behavior, not structure (no asserting on getters,
-                 setters, private state, internal call counts).
-               - Mocks only at external boundaries (no mocking classes the
-                 author wrote — use real instances or in-memory implementations).
-               - Conventional-commit message scoping is correct
-                 (`<type>(<context>-<layer>): …`).
-               - Branch name matches `^(feat|fix|chore|refactor|test|docs)/[A-Za-z0-9._-]+$`.
+               - Tests test behavior, not structure.
+               - Mocks only at external boundaries.
+               - Conventional-commit message scoping is correct.
+               - Branch name matches
+                 `^(feat|fix|chore|refactor|test|docs)/[A-Za-z0-9._-]+$`.
                - PR diff stays under 400 lines (generated code excluded).
                - Single bounded context, single workstream.
 
-            3. **Test coverage of behavior.** New domain logic should have tests
-               that exercise behavior, including failure modes. Trivial code
-               (getters, setters, simple delegation) should *not* have tests
-               per the manifesto.
+            3. **Test coverage of behavior.** New domain logic has tests for
+               behavior including failure modes. Trivial code (getters,
+               setters, simple delegation) should *not* have tests.
 
-            4. **Obvious bugs.** Off-by-one errors, null dereferences, leaked
-               secrets, race conditions visible at the surface, hard-coded
-               credentials, missing validation at system boundaries (user input,
-               external APIs).
+            4. **Obvious bugs.** Off-by-one, null deref, leaked secrets,
+               race conditions visible at the surface, hard-coded
+               credentials, missing validation at system boundaries.
 
             ## Out of scope (you must NOT comment on)
 
-            - Formatting. Spotless / Prettier / the formatter is the authority.
-            - Style preferences (variable names, function length, etc.) unless
-              they cross into the manifesto's clarity rules.
-            - Unrelated improvements ("you could also refactor X").
-            - Scope creep ("you could also add Y").
-            - Subjective architecture preferences not grounded in
-              `CLAUDE.md` / `MANIFESTO.md` / a merged ADR.
-            - Disagreements with the manifesto itself. If you think a rule is
-              wrong, that is a separate workstream proposing an ADR amendment,
-              not a comment on this PR.
+            - Formatting (the formatter is the authority).
+            - Style preferences not grounded in the manifesto.
+            - Unrelated improvements / scope creep.
+            - Disagreements with the manifesto itself — those are separate
+              ADR-amendment workstreams, not review comments.
 
             ## Output (you must actually post this — not just write it)
 
             Drafting the review is not enough. You must call the GitHub CLI
-            to submit it; if you only write the text and exit, nothing reaches
-            the PR.
+            to submit it; if you only write the text and exit, nothing
+            reaches the PR.
 
             Steps, in order:
 
-            1. Use `gh pr view "$PR_NUMBER" --json title,body,files,additions,deletions`
-               and `gh pr diff "$PR_NUMBER"` to see the diff. (Already in your
-               allowed-tools list.)
-            2. Read the relevant rule files in the checked-out repo (see "Read
-               first" above) using the `Read` tool.
-            3. Compose the review body in markdown. Begin with one of:
+            1. `gh pr view "$PR_NUMBER" --json title,body,files,additions,deletions`
+               and `gh pr diff "$PR_NUMBER"` to see the change.
+            2. Read the rule files (Read tool).
+            3. Compose the review body in markdown. **Begin with one of:**
                - `LGTM, no findings.`
                - `Findings — see comments below.`
-               For each finding, cite the rule (e.g. `CLAUDE.md` "no SDK in
-               domain", `ADR-0001 §6`, `ADR-0003 §6 wire conventions`),
-               quote the offending file/line briefly, and propose a fix.
-            4. Write the body to `/tmp/review.md` using `cat <<'BODY' > /tmp/review.md`.
-            5. Submit the review with:
-               `gh pr review "$PR_NUMBER" --comment --body-file /tmp/review.md`
-               Use the `--comment` event (not `--approve`, not
-               `--request-changes`) — approval/rejection is the human
-               maintainer's call.
-            6. Do not call `gh pr review` more than once in this run.
+               For each finding: cite the rule (`CLAUDE.md` "no SDK in
+               domain", `ADR-0001 §6`, etc.), quote the file/line briefly,
+               and propose a fix.
+            4. `cat <<'BODY' > /tmp/review.md` ... `BODY`.
+            5. `gh pr review "$PR_NUMBER" --comment --body-file /tmp/review.md`.
+               Use `--comment` only — approval/rejection is the human's call.
+            6. Do not call `gh pr review` more than once.
 
             ## Tone
 
-            Per `CLAUDE.md`: direct, no sycophancy, no "great work!" filler.
-            State facts. Cite rules. Be brief.
+            Direct, no sycophancy. State facts, cite rules, be brief.
 
             ## Cap
 
-            This is your only pass. Do not re-review when the implementer pushes
-            fixes. Subsequent runs of this workflow will not be triggered by
-            `synchronize` events; if you see this prompt running on a `synchronize`
-            event, stop and exit without posting.
+            This is your only pass. The fixer will run after you and push
+            once; subsequent `synchronize` events do not re-trigger this
+            workflow.
+
+      - name: Detect findings
+        id: detect
+        run: |
+          set -euo pipefail
+          # The reviewer just posted via `gh pr review --comment`. Pull the
+          # latest review body and check whether it begins with the LGTM
+          # sentinel from the prompt. Anything else (or empty) is treated
+          # as findings to fix.
+          body=$(gh pr view "$PR_NUMBER" \
+            --json reviews \
+            --jq 'last(.reviews[] | select(.author.login | endswith("[bot]") or . == "claude")).body // ""' \
+            || true)
+          if [ -z "$body" ]; then
+            echo "Reviewer left no review body — skipping fixer."
+            echo "has_findings=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          first_line=$(echo "$body" | head -n 1)
+          echo "First line of review: $first_line"
+          # Match `LGTM` at the start, case-sensitive (per the prompt).
+          if echo "$first_line" | grep -q '^LGTM'; then
+            echo "Reviewer posted LGTM — skipping fixer."
+            echo "has_findings=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Reviewer posted findings — running fixer."
+            echo "has_findings=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Run fixer agent
+        if: steps.detect.outputs.has_findings == 'true'
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          additional_permissions: |
+            actions: read
+          # The fixer needs Edit/Write to apply fixes, plus shell access to
+          # run pnpm/gradle, commit, push, and post the reply comment. The
+          # one-push cap is enforced by the trigger config (synchronize is
+          # not a trigger), not by this allowlist.
+          claude_args: >-
+            --allowed-tools "Read,Glob,Grep,Edit,Write,Bash(git:*),Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh pr comment:*),Bash(pnpm:*),Bash(npm:*),Bash(npx:*),Bash(node:*),Bash(./gradlew:*),Bash(gradle:*),Bash(cat:*),Bash(ls:*),Bash(test:*),Bash(true)"
+          prompt: |
+            You are the §6a fixer agent for PR #${{ github.event.pull_request.number }}
+            on the bliss repository (${{ github.repository }}).
+
+            The §6a reviewer just posted a review with findings on this PR.
+            Your job is to apply the fixes (or post rebuttals) and push the
+            result, exactly once.
+
+            ## Read first
+
+            - `CLAUDE.md` (rules) and `MANIFESTO.md` (rationale).
+            - All merged ADRs under `docs/adr/`.
+            - The reviewer's most recent review on this PR. Get the body
+              with:
+              `gh pr view "$PR_NUMBER" --json reviews --jq 'last(.reviews[] | select(.author.login | endswith("[bot]") or . == "claude")).body'`
+
+            ## Your role
+
+            You perform exactly **one** fix pass on this PR. After you push,
+            the workflow does not re-trigger; the human maintainer reviews
+            and merges. No second review, no second fix, no agent
+            ping-pong.
+
+            ## Procedure
+
+            1. Identify each finding from the review. The reviewer was
+               instructed to format findings with rule citations and
+               file/line refs. Treat each as a separate item.
+
+            2. For each finding, do exactly one of:
+               - **Apply the fix** with Edit/Write tools.
+               - **Note as rebuttal** in your reply comment, with a brief
+                 reason grounded in the manifesto / ADRs.
+               - **Defer** with `out of scope, see follow-up workstream <id>`
+                 (only when the fix would push the PR over the 400-line cap
+                 or would require a separate context).
+
+               Use judgment when the reviewer's literal instruction is
+               technically wrong: fix the underlying issue, not the literal
+               text. Explain non-trivial decisions in your reply comment.
+
+            3. **Verify** based on what you changed:
+               - If you touched `frontend/`:
+                 `cd frontend && pnpm install --frozen-lockfile && pnpm typecheck && pnpm lint && pnpm test && pnpm build`
+               - If you touched JVM (anything under `grid/`, `build.gradle.kts`,
+                 `settings.gradle.kts`, etc.): `./gradlew build`
+               - If you only touched docs/ADRs: read the diff with `git diff`
+                 for coherence; no executable verification needed.
+               - Run only what is relevant to the changed files.
+               - If verification fails, fix the cause; do not work around.
+
+            4. Read your diff: `git diff`. Sanity-check before committing.
+
+            5. Commit with focused conventional-commit messages. One commit
+               if changes are coupled; split when independent. Use
+               `<type>(<scope>): ...` form, scope = bounded-context-layer
+               or `adr-NNNN`. Examples:
+               - `fix(frontend-ui): set document title for WCAG 2.4.2 compliance`
+               - `docs(adr-0004): require IaC for Cloudflare Pages project`
+               - `fix(grid-domain): handle zero-length word edge case`
+
+               Do **not** modify `CLAUDE.md`, `MANIFESTO.md`, or any merged
+               ADR.
+
+            6. Push to the PR branch:
+               `git push origin "$PR_HEAD_REF"`
+               Do **not** force-push. Do **not** push to main. The branch
+               is already checked out at HEAD.
+
+            7. Post **one** comment on the PR mapping findings → fixes:
+               ```
+               cat <<'REPLY' > /tmp/reply.md
+               ... your bullet list ...
+               REPLY
+               gh pr comment "$PR_NUMBER" --body-file /tmp/reply.md
+               ```
+               Format: short bullet list, each finding marked
+               `fixed in <short-sha>` or with a brief rebuttal. Cite the
+               rule and the lines you changed. Tight, no filler.
+
+            ## Constraints
+
+            - Do not force-push.
+            - Do not modify CLAUDE.md, MANIFESTO.md, or any merged ADR.
+            - Do not skip CI hooks (no `--no-verify`, no `--no-gpg-sign`).
+            - Do not fix things not in the review (no scope creep).
+            - Do not call `gh pr comment` more than once.
+            - Do not open a new PR.
+            - Do not push to any branch other than `$PR_HEAD_REF`.
+
+            ## Cap
+
+            This is your only pass. After your push, the workflow does not
+            re-trigger.
