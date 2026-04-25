@@ -1,11 +1,10 @@
-import type { Cell } from './Cell';
+import type { ArrowDirection, Cell } from './Cell';
 import type { Puzzle } from './Puzzle';
 
-// Hand-crafted 5×5 fixture used while the puzzle API is in flight. The
-// content is not meant to be a fully-valid mots fléchés (interlocking
-// answers), only to exercise every cell variant the renderer must handle:
-// definition cells with both arrow directions, multiple letter cells, and
-// at least one block. Will be replaced when the API workstream lands.
+// Hand-crafted 5×5 fixture used while the puzzle API is in flight. Only
+// exists to exercise every cell variant the renderer handles: definition
+// cells with both arrow directions, several letter cells, and at least one
+// block. Replaced when the API workstream lands.
 //
 // Visual layout (D = definition, B = block, letters shown as themselves):
 //
@@ -14,39 +13,21 @@ import type { Puzzle } from './Puzzle';
 //   M   A  R  I  S
 //   E   B  L  E  U
 //   R   A  R  E  S
-//
-// The two definitions cue "LUNE" (across, row 0) and "MER" (down,
-// column 0, rows 2-4). Other letters are filler.
+const L = (row: number, col: number, answer: string): Cell =>
+  ({ kind: 'letter', position: { row, col }, answer, entry: '' });
+const D = (row: number, col: number, text: string, arrow: ArrowDirection): Cell =>
+  ({ kind: 'definition', position: { row, col }, text, arrow });
+const B = (row: number, col: number): Cell =>
+  ({ kind: 'block', position: { row, col } });
+
 const cells: readonly Cell[] = [
-  { kind: 'definition', position: { row: 0, col: 0 }, text: 'Astre nocturne', arrow: 'right' },
-  { kind: 'letter', position: { row: 0, col: 1 }, answer: 'L', entry: '' },
-  { kind: 'letter', position: { row: 0, col: 2 }, answer: 'U', entry: '' },
-  { kind: 'letter', position: { row: 0, col: 3 }, answer: 'N', entry: '' },
-  { kind: 'letter', position: { row: 0, col: 4 }, answer: 'E', entry: '' },
-
-  { kind: 'definition', position: { row: 1, col: 0 }, text: 'Eau salée', arrow: 'down' },
-  { kind: 'block', position: { row: 1, col: 1 } },
-  { kind: 'letter', position: { row: 1, col: 2 }, answer: 'A', entry: '' },
-  { kind: 'letter', position: { row: 1, col: 3 }, answer: 'R', entry: '' },
-  { kind: 'letter', position: { row: 1, col: 4 }, answer: 'T', entry: '' },
-
-  { kind: 'letter', position: { row: 2, col: 0 }, answer: 'M', entry: '' },
-  { kind: 'letter', position: { row: 2, col: 1 }, answer: 'A', entry: '' },
-  { kind: 'letter', position: { row: 2, col: 2 }, answer: 'R', entry: '' },
-  { kind: 'letter', position: { row: 2, col: 3 }, answer: 'I', entry: '' },
-  { kind: 'letter', position: { row: 2, col: 4 }, answer: 'S', entry: '' },
-
-  { kind: 'letter', position: { row: 3, col: 0 }, answer: 'E', entry: '' },
-  { kind: 'letter', position: { row: 3, col: 1 }, answer: 'B', entry: '' },
-  { kind: 'letter', position: { row: 3, col: 2 }, answer: 'L', entry: '' },
-  { kind: 'letter', position: { row: 3, col: 3 }, answer: 'E', entry: '' },
-  { kind: 'letter', position: { row: 3, col: 4 }, answer: 'U', entry: '' },
-
-  { kind: 'letter', position: { row: 4, col: 0 }, answer: 'R', entry: '' },
-  { kind: 'letter', position: { row: 4, col: 1 }, answer: 'A', entry: '' },
-  { kind: 'letter', position: { row: 4, col: 2 }, answer: 'R', entry: '' },
-  { kind: 'letter', position: { row: 4, col: 3 }, answer: 'E', entry: '' },
-  { kind: 'letter', position: { row: 4, col: 4 }, answer: 'S', entry: '' },
+  D(0, 0, 'Astre nocturne', 'right'),
+  L(0, 1, 'L'), L(0, 2, 'U'), L(0, 3, 'N'), L(0, 4, 'E'),
+  D(1, 0, 'Eau salée', 'down'), B(1, 1),
+  L(1, 2, 'A'), L(1, 3, 'R'), L(1, 4, 'T'),
+  L(2, 0, 'M'), L(2, 1, 'A'), L(2, 2, 'R'), L(2, 3, 'I'), L(2, 4, 'S'),
+  L(3, 0, 'E'), L(3, 1, 'B'), L(3, 2, 'L'), L(3, 3, 'E'), L(3, 4, 'U'),
+  L(4, 0, 'R'), L(4, 1, 'A'), L(4, 2, 'R'), L(4, 3, 'E'), L(4, 4, 'S'),
 ];
 
 export const SAMPLE_PUZZLE: Puzzle = {
