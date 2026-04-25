@@ -93,26 +93,48 @@ workstream extends each into a 50–900 ramp.
 
 | Token | Hex | Role |
 |---|---|---|
-| `sparrow` (primary) | `#FF6B5B` | Brand primary; CTAs, focused-cell ring, brand wordmark |
-| `sun` (accent) | `#FFC857` | Win states, badges, highlights |
+| `leaf` (primary) | `#10B981` | Brand primary; CTAs, focused-cell ring, brand wordmark |
+| `blossom` (accent) | `#E8A5B0` | Win states, badges, highlights |
 | `cream` (surface) | `#FFFAF3` | Page background; the paper-like canvas |
 | `sand` (subtle) | `#E5DCC6` | Cell dividers, blocked-cell fill, secondary borders |
 | `ink` (foreground) | `#1B2845` | Body text, grid letters, primary headings |
 | `breath` (white) | `#FFFFFF` | Letter-cell input background, floating-card surfaces |
 
-**Accessibility constraint (WCAG AA):** `sparrow` (#FF6B5B) does not meet
-WCAG AA contrast against `breath` or `cream` (~2.6:1; minimums are 3:1
-for UI components and 4.5:1 for text). Any element placing foreground
-content on a `sparrow` background **must** use `ink` (#1B2845) as the
-foreground color (~5.4:1, passes AA). White-text-on-coral is excluded from
-this palette. The implementation workstream must verify contrast at each
-`sparrow` usage site before shipping.
+Why these specific values:
+
+- **`leaf #10B981`** is Tailwind's emerald-500 — vibrant and playful but
+  in a different hue and saturation from Duolingo's `#58CC02`. Reads as
+  "modern fresh" rather than "kindergarten green," and the slight
+  teal-lean keeps it distinct from every generic SaaS green. Ramped to
+  `leaf.700` for text-on-light contrast (≥ AA at body sizes).
+- **`blossom #E8A5B0`** is a dusty rose, mid-saturation, warm-leaning.
+  "Discret" was the brief: this is a small splash for win states and
+  badges, not a co-primary that competes with `leaf`. Complementary
+  enough to `leaf` to feel intentional, muted enough to recede.
+- **`cream + sand`** stay warm and paper-like so the green + pink
+  combination sits on a botanical / fresh-spring base rather than a
+  cold corporate white.
+- **`ink #1B2845`** (deep navy) gives text a softer landing than pure
+  black on cream and works against both `leaf` and `blossom` without
+  visual chord clashes.
+
+**Accessibility constraint (WCAG AA):** `leaf` (#10B981) and `blossom`
+(#E8A5B0) do not meet WCAG AA contrast against `breath` or `cream`
+(~2.9:1 and ~1.8:1 respectively; minimums are 3:1 for UI components and
+4.5:1 for text). Any element placing foreground content on a `leaf` or
+`blossom` background **must** use `ink` (#1B2845) as the foreground
+(~5.4:1, passes AA); white-on-leaf and white-on-blossom are excluded
+from this palette. For text *colored* with the brand (`leaf` or
+`blossom` foreground on `cream`/`breath`), use the darker ramp shades
+(`leaf.700` or `blossom.700`) per the implementation workstream's Panda
+ramp generation. The implementation workstream must verify contrast at
+each brand-color usage site before shipping.
 
 A small `signal` palette is reserved (added later, not in v1):
-- `signal.error` — distinct from `sparrow` so error states don't conflict
-  with the brand.
-- `signal.success` — distinct from `sun` so success states pop separately
-  from in-grid highlights.
+- `signal.error` — distinct from `blossom` so error states don't conflict
+  with the accent.
+- `signal.success` — distinct from `leaf` so success states pop
+  separately from the primary brand.
 
 Dark mode is **not** in scope for v1. Reasoning: the playful + warm
 direction is harder to translate to dark surfaces without losing
