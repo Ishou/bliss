@@ -1,0 +1,24 @@
+# Local Terraform working dir (provider plugins, modules, lock cache).
+.terraform/
+.terraform.lock.hcl.bak
+
+# Local state — v1 keeps state local until a second Cloudflare resource
+# justifies moving to a remote backend (separate ADR). Never commit state:
+# it contains resource IDs and may contain sensitive attributes.
+terraform.tfstate
+terraform.tfstate.*
+*.tfstate
+*.tfstate.backup
+
+# Variable files. The repo defaults are sufficient; any tfvars a maintainer
+# creates locally would carry the account ID (non-secret but not committed
+# either, to keep tenancy out of git history) or a dev token (secret).
+*.tfvars
+*.tfvars.json
+
+# Crash logs.
+crash.log
+crash.*.log
+
+# Plan output files (may contain plaintext sensitive values).
+*.tfplan
