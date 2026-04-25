@@ -25,6 +25,7 @@ val logbackVersion = "1.5.32"
 val logstashEncoderVersion = "9.0"
 val junitVersion = "5.11.4"
 val assertkVersion = "0.28.1"
+val konsistVersion = "0.17.3"
 
 application {
     mainClass.set("com.bliss.grid.api.MainKt")
@@ -54,6 +55,7 @@ dependencies {
     testImplementation("com.willowtreeapps.assertk:assertk-jvm:$assertkVersion")
     testImplementation("io.ktor:ktor-server-test-host:$ktorVersion")
     testImplementation("io.ktor:ktor-client-content-negotiation:$ktorVersion")
+    testImplementation("com.lemonappdev:konsist:$konsistVersion")
 }
 
 tasks.test {
