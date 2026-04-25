@@ -1,0 +1,63 @@
+# Fly.io runtime config for the WordSparrow JVM API (ADR-0007 §3, §9).
+#
+# Division of responsibility (mirrors `terraform/fly-app.tf` header):
+#   - Terraform owns: app existence, dedicated IPv4/IPv6, TLS cert, DNS.
+#   - This file + `flyctl deploy` own: build source, services, ports,
+#     healthchecks, auto-start/auto-stop, scaling.
+#
+# Values here align with the merged Terraform variables (`fly_app_name`,
+# `fly_region`, `fly_machine_cpus`, `fly_machine_memory_mb`). Drift between
+# this file and `terraform/variables.tf` is a bug.
+
+app = "wordsparrow-api"
+primary_region = "cdg"
+
+[build]
+  # Multi-stage Dockerfile defined alongside this file. `flyctl deploy`
+  # builds remotely (--remote-only in the workflow) so the GitHub runner
+  # never needs to host the build context.
+  dockerfile = "Dockerfile"
+
+[env]
+  PORT = "8080"
+  # JVM container tuning for a 512 MB shared-CPU box (ADR-0007 §2 sizing).
+  #   - UseContainerSupport: reads cgroup limits instead of host /proc memory.
+  #     On by default on JDK 21 but stated explicitly so the intent survives
+  #     a base-image swap that disables it.
+  #   - MaxRAMPercentage=75.0: max heap = 75% of cgroup limit (~384 MB of 512).
+  #     Leaves ~128 MB for non-heap (metaspace, code cache, native, threads),
+  #     which empirically is just enough for a Ktor + Netty + logback stack.
+  #     Bump if startup or RSS pressure grows; revisit when machine memory
+  #     does (`var.fly_machine_memory_mb`).
+  JAVA_TOOL_OPTIONS = "-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
+
+[[services]]
+  internal_port = 8080
+  protocol = "tcp"
+  # Always-on per ADR-0007 §2: JVM cold-start (~1-3s) breaks live-HTTP UX
+  # every wake. Cost trade-off accepted in the ADR.
+  auto_stop_machines = false
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [[services.ports]]
+    port = 80
+    handlers = ["http"]
+    force_https = true
+
+  [[services.ports]]
+    port = 443
+    handlers = ["tls", "http"]
+
+  # HTTP health probe Fly uses to decide if a machine is in-rotation.
+  # Endpoint surface is owned by `grid/api/src/.../Main.kt` (`GET /v1/health`
+  # returns `{"status": "ok", ...}`). The Dockerfile carries its own
+  # HEALTHCHECK for `docker run` hygiene; this is the production-side probe.
+  [[services.http_checks]]
+    interval = "15s"
+    timeout = "5s"
+    grace_period = "10s"
+    method = "get"
+    path = "/v1/health"
+    protocol = "http"
+    tls_skip_verify = false
