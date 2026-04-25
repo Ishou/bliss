@@ -3,12 +3,14 @@ import type { Puzzle } from './Puzzle';
 
 // Hand-crafted 5×5 fixture used while the puzzle API is in flight. The
 // design is *fully interlocking*: every contiguous run of letter cells
-// of length ≥ 2, in any direction, spells a real French word. PR #26's
-// earlier 5×5 satisfied "no orphan letter cells" but its columns read
-// LEMAR / UTEMU / NERIE — a real product gap that this puzzle closes.
-//
-// Two definition cells stack a horizontal and a vertical clue (S₁, S₂),
-// exercising the multi-clue capability ADR-0005 §3a now allows.
+// of length ≥ 2, in any direction, spells a real, common French word —
+// a word a French speaker without puzzle hobbies will recognise without
+// reaching for a dictionary. The earlier 5×5 (PR #31) was structurally
+// fully-interlocking but leaned on RER (a Parisian acronym, not a noun)
+// and URE (auroch — pure dictionary obscurity); both have been swapped
+// out for everyday words. Two definition cells stack a horizontal and a
+// vertical clue (S₁, S₂), exercising the multi-clue capability ADR-0005
+// §3a allows.
 //
 // Visual layout (S = stacked def cell, D = single-arrow def cell):
 //
@@ -18,11 +20,11 @@ import type { Puzzle } from './Puzzle';
 //   ├─────────────┼────────┼──────┼──────┼──────┤
 // 1 │  A          │  ▓     │ D₅↓  │ D₆↓  │ D₇↓  │
 //   ├─────────────┼────────┼──────┼──────┼──────┤
-// 2 │  S          │ S₂ →↓ │  M   │  U   │  R   │
+// 2 │  S          │ S₂ →↓ │  P   │  U   │  S   │
 //   ├─────────────┼────────┼──────┼──────┼──────┤
-// 3 │ D₃ →       │  A     │  I   │  R   │  E   │
+// 3 │ D₃ →       │  D     │  O   │  S   │  E   │
 //   ├─────────────┼────────┼──────┼──────┼──────┤
-// 4 │ D₄ →       │  U     │  S   │  E   │  R   │
+// 4 │ D₄ →       │  E     │  T   │  E   │  S   │
 //   └─────────────┴────────┴──────┴──────┴──────┘
 //
 // Clues — each with answer cells listed as (row, col):
@@ -30,25 +32,27 @@ import type { Puzzle } from './Puzzle';
 //   S₁ at (0,0):
 //     →  "Conjonction d'opposition" MAIS  (0,1) (0,2) (0,3) (0,4)
 //     ↓  "Verbe avoir, 2ᵉ personne" AS    (1,0) (2,0)
-//   D₃ at (3,0)  →  "Surface, zone"      AIRE  (3,1) (3,2) (3,3) (3,4)
-//   D₄ at (4,0)  →  "Se servir de"       USER  (4,1) (4,2) (4,3) (4,4)
-//   D₅ at (1,2)  ↓  "Placé, déposé"      MIS   (2,2) (3,2) (4,2)
-//   D₆ at (1,3)  ↓  "Auroch, bovin éteint" URE (2,3) (3,3) (4,3)
-//   D₇ at (1,4)  ↓  "Train régional francilien" RER (2,4) (3,4) (4,4)
+//   D₃ at (3,0)  →  "Quantité de médicament"  DOSE  (3,1) (3,2) (3,3) (3,4)
+//   D₄ at (4,0)  →  "Verbe être, 2ᵉ pers. pl." ETES  (4,1) (4,2) (4,3) (4,4)
+//   D₅ at (1,2)  ↓  "Récipient en terre cuite" POT   (2,2) (3,2) (4,2)
+//   D₆ at (1,3)  ↓  "Se sert de, emploie"      USE   (2,3) (3,3) (4,3)
+//   D₇ at (1,4)  ↓  "Pluriel de « son »"       SES   (2,4) (3,4) (4,4)
 //   S₂ at (2,1):
-//     →  "Cloison verticale"     MUR   (2,2) (2,3) (2,4)
-//     ↓  "Contraction « à le »"  AU    (3,1) (4,1)
+//     →  "Liquide d'une plaie infectée" PUS  (2,2) (2,3) (2,4)
+//     ↓  "Préposition d'appartenance"   DE   (3,1) (4,1)
 //
-// Letter-run audit — every contiguous run of length ≥ 2:
-//   row 0 cols 1-4: M-A-I-S = MAIS  (S₁ →)
-//   row 2 cols 2-4: M-U-R    = MUR   (S₂ →)
-//   row 3 cols 1-4: A-I-R-E  = AIRE  (D₃ →)
-//   row 4 cols 1-4: U-S-E-R  = USER  (D₄ →)
-//   col 0 rows 1-2: A-S      = AS    (S₁ ↓)
-//   col 1 rows 3-4: A-U      = AU    (S₂ ↓)
-//   col 2 rows 2-4: M-I-S    = MIS   (D₅ ↓)
-//   col 3 rows 2-4: U-R-E    = URE   (D₆ ↓)
-//   col 4 rows 2-4: R-E-R    = RER   (D₇ ↓)
+// Letter-run audit — every contiguous run of length ≥ 2 with a one-line
+// "common French" justification (a French speaker not into puzzles
+// recognises each without a dictionary):
+//   row 0 cols 1-4: M-A-I-S = MAIS  — conjunction "but", daily speech
+//   row 2 cols 2-4: P-U-S    = PUS   — pus (médical, universel)
+//   row 3 cols 1-4: D-O-S-E  = DOSE  — dose, posologie
+//   row 4 cols 1-4: E-T-E-S  = ETES  — « vous êtes », auxiliaire être
+//   col 0 rows 1-2: A-S      = AS    — « tu as », auxiliaire avoir
+//   col 1 rows 3-4: D-E      = DE    — préposition la plus fréquente
+//   col 2 rows 2-4: P-O-T    = POT   — pot, récipient
+//   col 3 rows 2-4: U-S-E    = USE   — « il use », forme de « user »
+//   col 4 rows 2-4: S-E-S    = SES   — pluriel de « son », possessif
 //
 //   17 letter cells. 7 definition cells (2 stacked, 5 single). 1 block
 //   at (1,1) — the dead corner left by stacking S₂ inside the grid.
@@ -74,19 +78,19 @@ const cells: readonly Cell[] = [
   // Row 1 — col-0 letter (A) + a block at (1,1) + three vertical clues
   L(1, 0, 'A'),
   B(1, 1),
-  D1(1, 2, 'Placé, déposé', 'down'),
-  D1(1, 3, 'Auroch, bovin éteint', 'down'),
-  D1(1, 4, 'Train régional francilien', 'down'),
-  // Row 2 — col-0 letter (S), interior stacked clue, MUR letters
+  D1(1, 2, 'Récipient en terre cuite', 'down'),
+  D1(1, 3, 'Se sert de, emploie', 'down'),
+  D1(1, 4, 'Pluriel de « son »', 'down'),
+  // Row 2 — col-0 letter (S), interior stacked clue, PUS letters
   L(2, 0, 'S'),
-  D2(2, 1, 'Cloison verticale', 'Contraction « à le »'),
-  L(2, 2, 'M'), L(2, 3, 'U'), L(2, 4, 'R'),
-  // Row 3 — single right clue + AIRE letters
-  D1(3, 0, 'Surface, zone', 'right'),
-  L(3, 1, 'A'), L(3, 2, 'I'), L(3, 3, 'R'), L(3, 4, 'E'),
-  // Row 4 — single right clue + USER letters
-  D1(4, 0, 'Se servir de', 'right'),
-  L(4, 1, 'U'), L(4, 2, 'S'), L(4, 3, 'E'), L(4, 4, 'R'),
+  D2(2, 1, 'Liquide d’une plaie infectée', 'Préposition d’appartenance'),
+  L(2, 2, 'P'), L(2, 3, 'U'), L(2, 4, 'S'),
+  // Row 3 — single right clue + DOSE letters
+  D1(3, 0, 'Quantité de médicament', 'right'),
+  L(3, 1, 'D'), L(3, 2, 'O'), L(3, 3, 'S'), L(3, 4, 'E'),
+  // Row 4 — single right clue + ETES letters
+  D1(4, 0, 'Verbe être, 2ᵉ pers. pl.', 'right'),
+  L(4, 1, 'E'), L(4, 2, 'T'), L(4, 3, 'E'), L(4, 4, 'S'),
 ];
 
 export const SAMPLE_PUZZLE: Puzzle = {
