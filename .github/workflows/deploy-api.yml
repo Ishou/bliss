@@ -83,13 +83,11 @@ jobs:
       - name: Deploy to Fly
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         # `flyctl` reads `FLY_API_TOKEN` from env (its documented variable
-        # name). The maintainer's GitHub-secret name is `FLY_IO_TOKEN`
-        # (one-off naming choice — see `docs/deploy.md`); we re-export it
-        # under flyctl's expected name here. Drift between the two names
-        # is intentional, not a bug.
+        # name). The GitHub-secret is named `FLY_API_TOKEN` to match —
+        # secret-name and env-var-name align.
         run: flyctl deploy --remote-only --config grid/api/fly.toml --dockerfile grid/api/Dockerfile --app wordsparrow-api
         env:
-          FLY_API_TOKEN: ${{ secrets.FLY_IO_TOKEN }}
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
 
       - name: Skip deploy on PR (informational)
         if: github.event_name == 'pull_request'

@@ -193,9 +193,9 @@ only the *values* are injected at runtime via GitHub Actions Secrets.
 
 | Secret | Bound at | What it is | Secret? |
 |---|---|---|---|
-| `FLY_IO_TOKEN` | `flyctl deploy` step env `FLY_API_TOKEN` | Fly.io organisation access token. Stored under the GitHub-secret name `FLY_IO_TOKEN` (maintainer's chosen convention); re-exported as `FLY_API_TOKEN` because that is the variable `flyctl` itself reads. The two-name dance is intentional. | Yes |
-| `FLY_API_TOKEN` (local env, not a GitHub secret) | `tofu apply` provider auth | Same Fly token, exported under the name `andrewbaxter/fly` Terraform provider expects when the maintainer runs `tofu apply` from their machine. | Yes |
-| `GITHUB_TOKEN` | (auto, runtime) | Auto-issued by GitHub Actions; lets the workflow comment build status on a PR. | Managed |
+| `FLY_API_TOKEN` (GitHub Actions secret) | `flyctl deploy` step env `FLY_API_TOKEN` | Fly.io organisation access token. The GitHub-secret name and the env-var name `flyctl` reads are both `FLY_API_TOKEN` — they align by convention. | Yes |
+| `FLY_API_TOKEN` (local env, not a GitHub secret) | `tofu apply` provider auth | Same Fly token, same env-var name, exported by the maintainer when running `tofu apply` locally. The `andrewbaxter/fly` Terraform provider also reads `FLY_API_TOKEN`. | Yes |
+| `GITHUB_TOKEN` | (auto, runtime) | Auto-issued by GitHub Actions. The deploy-api workflow itself doesn't make GitHub API calls; this token is unused in the deploy path. | Managed |
 
 ## Required Fly token scopes
 
@@ -261,10 +261,10 @@ checklist are noted; skip those if already done.
      -var="cloudflare_zone_id=..."
    ```
 
-6. **Confirm the GitHub Actions secret** `FLY_IO_TOKEN` is set on the
+6. **Confirm the GitHub Actions secret** `FLY_API_TOKEN` is set on the
    `Ishou/bliss` repo (Repo Settings → Secrets and variables → Actions).
-   The maintainer set this up in advance per the workstream notes; this
-   step is verification only.
+   The secret-name and the env-var name `flyctl` reads align — both are
+   `FLY_API_TOKEN`.
 
 7. **Trigger the first deploy** by pushing any commit that touches a
    `paths:` filter entry to `main` — for an immediate deploy without
