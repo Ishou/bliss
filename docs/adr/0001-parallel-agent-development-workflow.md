@@ -133,7 +133,7 @@ round runs before the human maintainer reviews and merges:
    rather than implementation correctness.
 8. The review-and-fix cycle is required, not best-effort: if no reviewer
    agent is available, the PR waits. The human maintainer reviews and
-   squash-merges only after this cycle has run.
+   merges (per section 6) only after this cycle has run.
 
 ### 7. ADRs precede non-trivial implementation
 
@@ -180,8 +180,10 @@ queryable.
   other's code.
 - Onboarding (human or agent) is reduced to "read `MANIFESTO.md`, read the
   ADRs, pick a workstream." No tribal knowledge.
-- Rollback is per-workstream by design: each merge is a single squashed
-  commit owning a single context's change.
+- Rollback is per-workstream by design: squash-merge (when chosen)
+  collapses a PR to one revert target; rebase-merge keeps commits
+  individual, so rollback requires `git revert A..B`. Both keep rollback
+  scoped to a single workstream.
 - The 400-line cap and one-context rule make every PR reviewable in one
   sitting, which is what makes a single human maintainer a viable bottleneck
   even at 10 concurrent agents.
