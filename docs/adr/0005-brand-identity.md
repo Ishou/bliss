@@ -100,6 +100,14 @@ workstream extends each into a 50–900 ramp.
 | `ink` (foreground) | `#1B2845` | Body text, grid letters, primary headings |
 | `breath` (white) | `#FFFFFF` | Letter-cell input background, floating-card surfaces |
 
+**Accessibility constraint (WCAG AA):** `sparrow` (#FF6B5B) does not meet
+WCAG AA contrast against `breath` or `cream` (~2.6:1; minimums are 3:1
+for UI components and 4.5:1 for text). Any element placing foreground
+content on a `sparrow` background **must** use `ink` (#1B2845) as the
+foreground color (~5.4:1, passes AA). White-text-on-coral is excluded from
+this palette. The implementation workstream must verify contrast at each
+`sparrow` usage site before shipping.
+
 A small `signal` palette is reserved (added later, not in v1):
 - `signal.error` — distinct from `sparrow` so error states don't conflict
   with the brand.
