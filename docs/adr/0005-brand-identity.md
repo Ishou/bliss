@@ -177,7 +177,13 @@ covers the playful brief, ships in one self-hosted file, and avoids the
 
 - **v1 logo:** the word `WordSparrow` set in Nunito Variable at the
   `display` token (2.5 rem mobile / 2.8125 rem desktop), weight 800,
-  letter-spacing slightly tightened, color `ink`.
+  letter-spacing slightly tightened, color `leaf.700`. The original
+  draft used `ink`; in production review the ink wordmark dominated
+  the page and made the brand read as "navy", not "green/pink", so
+  this amendment moves the wordmark to the brand-primary ramp's
+  text-safe shade. `leaf.700` on `cream` is 6.6:1 (passes AA at
+  display sizes) and is the same shade §4 already specifies for
+  brand-text-on-light-surfaces.
 - **Wordmark variants:** none in v1. No icon-only mark, no monochrome
   variant, no animated form.
 - **Designer commission:** queued for after first 100 paying users (or

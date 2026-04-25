@@ -18,17 +18,16 @@ const pageStyles = css({
   textAlign: 'center',
 });
 
-// Wordmark — ADR-0005 §6. Nunito Variable at the `display` size, weight
-// 800, color `ink`, letter-spacing slightly tightened. Mobile-first
-// 2.5rem; desktop scales 1.125× per ADR-0005 §5. The `lang="en"` on the
-// element is required by ADR-0005 §7 so screen readers pronounce the
-// English brand name correctly when the surrounding page is French.
+// Wordmark — ADR-0005 §6 (amended). Nunito Variable at the `display`
+// size, weight 800, color `leaf.700`, letter-spacing slightly tightened.
+// `leaf.700` on `cream` is 6.6:1 (passes AA at display sizes); see the
+// ADR's amendment note for why this changed from `ink`.
 const wordmarkStyles = css({
   fontFamily: 'heading',
   fontSize: { base: 'display', md: '2.8125rem' },
   fontWeight: 'black',
   letterSpacing: '-0.02em',
-  color: 'fg',
+  color: 'leaf.700',
   margin: 0,
 });
 
@@ -39,12 +38,32 @@ const subtitleStyles = css({
   color: 'accent',
 });
 
+// "DÉMO" pill — ADR-0005 §4: the only place `blossom` shows up in v1
+// (until win states / badges accumulate). `blossom.700` foreground on a
+// soft `blossom.50` background gives ≥ 4.5:1 contrast and signals
+// "this is a placeholder build" without competing with the wordmark.
+const demoBadgeStyles = css({
+  fontSize: 'xs',
+  fontWeight: 'bold',
+  letterSpacing: '0.08em',
+  textTransform: 'uppercase',
+  color: 'blossom.700',
+  bg: 'blossom.50',
+  paddingInline: 'sm',
+  paddingBlock: 'xs',
+  borderRadius: '9999px',
+  margin: 0,
+});
+
 function HomePage() {
   return (
     <main className={pageStyles}>
       <h1 lang="en" className={wordmarkStyles}>
         WordSparrow
       </h1>
+      <span className={demoBadgeStyles} aria-label="version démo">
+        Démo
+      </span>
       <p className={subtitleStyles}>{SAMPLE_PUZZLE.title}</p>
       <Grid puzzle={SAMPLE_PUZZLE} />
     </main>
