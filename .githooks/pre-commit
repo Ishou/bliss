@@ -1,0 +1,46 @@
+#!/usr/bin/env sh
+# Bliss pre-commit hook: secret scanning via gitleaks.
+#
+# Enforces the manifesto rule "Git hooks prevent accidental commits"
+# (CLAUDE.md, "Security") and ADR-0004 §7 ("git-side secret-scanning gate").
+#
+# This hook runs `gitleaks protect --staged` on the staged diff. Any
+# finding aborts the commit. The CI workflow at
+# .github/workflows/secret-scan.yml runs the same tool against PRs and
+# pushes to main as a server-side backstop in case the hook is bypassed.
+#
+# Activation: run `scripts/setup-hooks.sh` once after cloning to point
+# git at .githooks/. See CONTRIBUTING.md.
+
+set -e
+set -u
+
+# If there are no staged changes (e.g. `git commit --allow-empty`), we
+# have nothing to scan. Exit cleanly so the commit can proceed.
+if git diff --cached --quiet; then
+    exit 0
+fi
+
+if ! command -v gitleaks >/dev/null 2>&1; then
+    cat >&2 <<'EOF'
+error: gitleaks is required by the Bliss pre-commit hook but was not
+found on PATH.
+
+Install it:
+  macOS (Homebrew):    brew install gitleaks
+  Linux (Homebrew):    brew install gitleaks
+  Linux (manual):      see https://github.com/gitleaks/gitleaks/releases
+                       (download the archive for your arch, extract the
+                       gitleaks binary into a directory on your PATH)
+
+After installing, re-run your commit. The hook will run automatically.
+EOF
+    exit 1
+fi
+
+# --staged    : scan only what is about to be committed.
+# --no-banner : keep the hook output focused on findings.
+# --redact    : redact secret values in any error output, so a secret
+#               that *would* have been committed is not echoed to the
+#               terminal in cleartext during the failure.
+exec gitleaks protect --staged --no-banner --redact
