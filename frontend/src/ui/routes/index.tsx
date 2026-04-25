@@ -14,27 +14,37 @@ const pageStyles = css({
   padding: 'lg',
   bg: 'bg',
   color: 'fg',
-  fontFamily: 'sans',
+  fontFamily: 'body',
   textAlign: 'center',
 });
 
-const titleStyles = css({
-  fontSize: { base: 'xl', md: '2xl' },
-  fontWeight: 'bold',
+// Wordmark — ADR-0005 §6. Nunito Variable at the `display` size, weight
+// 800, color `ink`, letter-spacing slightly tightened. Mobile-first
+// 2.5rem; desktop scales 1.125× per ADR-0005 §5. The `lang="en"` on the
+// element is required by ADR-0005 §7 so screen readers pronounce the
+// English brand name correctly when the surrounding page is French.
+const wordmarkStyles = css({
+  fontFamily: 'heading',
+  fontSize: { base: 'display', md: '2.8125rem' },
+  fontWeight: 'black',
   letterSpacing: '-0.02em',
+  color: 'fg',
   margin: 0,
 });
 
 const subtitleStyles = css({
-  fontSize: 'md',
+  fontSize: 'body',
+  fontWeight: 'regular',
   margin: 0,
-  color: 'muted',
+  color: 'accent',
 });
 
 function HomePage() {
   return (
     <main className={pageStyles}>
-      <h1 className={titleStyles}>Bliss</h1>
+      <h1 lang="en" className={wordmarkStyles}>
+        WordSparrow
+      </h1>
       <p className={subtitleStyles}>{SAMPLE_PUZZLE.title}</p>
       <Grid puzzle={SAMPLE_PUZZLE} />
     </main>
@@ -46,6 +56,6 @@ export const Route = createRoute({
   path: '/',
   component: HomePage,
   head: () => ({
-    meta: [{ title: 'Bliss' }],
+    meta: [{ title: 'WordSparrow' }],
   }),
 });

@@ -4,11 +4,11 @@ import { describe, it, expect } from 'vitest';
 import { Route as RootRoute } from '@/ui/routes/__root';
 import { Route as IndexRoute } from '@/ui/routes/index';
 
-// Smoke test: the root route renders the "Bliss" heading as a top-level
-// landmark and sets the document title (WCAG 2.4.2). These are the minimum
-// behaviors the v1 scaffold must preserve.
+// Smoke test: the root route renders the "WordSparrow" wordmark as a
+// top-level landmark and sets the document title (WCAG 2.4.2). These
+// are the minimum behaviors the v1 scaffold must preserve.
 describe('App smoke test', () => {
-  it('renders the Bliss heading on the root route', async () => {
+  it('renders the WordSparrow heading on the root route', async () => {
     const routeTree = RootRoute.addChildren([IndexRoute]);
     const router = createRouter({
       routeTree,
@@ -17,11 +17,14 @@ describe('App smoke test', () => {
 
     render(<RouterProvider router={router} />);
 
-    const heading = await screen.findByRole('heading', { level: 1, name: /bliss/i });
+    const heading = await screen.findByRole('heading', { level: 1, name: /wordsparrow/i });
     expect(heading).toBeInTheDocument();
+    // ADR-0005 §7: the wordmark carries lang="en" so screen readers
+    // pronounce the English brand name correctly under a fr-FR root.
+    expect(heading).toHaveAttribute('lang', 'en');
   });
 
-  it('sets the document title to "Bliss" on the root route', async () => {
+  it('sets the document title to "WordSparrow" on the root route', async () => {
     const routeTree = RootRoute.addChildren([IndexRoute]);
     const router = createRouter({
       routeTree,
@@ -31,7 +34,7 @@ describe('App smoke test', () => {
     render(<RouterProvider router={router} />);
 
     await waitFor(() => {
-      expect(document.title).toBe('Bliss');
+      expect(document.title).toBe('WordSparrow');
     });
   });
 

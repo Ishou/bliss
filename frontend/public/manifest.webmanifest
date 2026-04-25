@@ -1,11 +1,11 @@
 {
-  "name": "Bliss",
-  "short_name": "Bliss",
-  "description": "Bliss — mots fléchés, the puzzle game.",
+  "name": "WordSparrow",
+  "short_name": "WordSparrow",
+  "description": "WordSparrow — mots fléchés, the puzzle game.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0b0d12",
-  "theme_color": "#0b0d12",
+  "background_color": "#FFFAF3",
+  "theme_color": "#10B981",
   "icons": [
     {
       "src": "/favicon.svg",

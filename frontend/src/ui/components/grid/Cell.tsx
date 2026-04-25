@@ -15,19 +15,23 @@ const cellBase = css({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  fontFamily: 'sans',
+  fontFamily: 'body',
 });
 const letterCell = css({ bg: 'surface' });
 const blockCell = css({ bg: 'block' });
 const defCell = css({
   bg: 'definition',
-  color: 'muted',
+  color: 'fg',
   fontSize: 'xs',
   lineHeight: '1.1',
   padding: 'xs',
   textAlign: 'left',
   overflow: 'hidden',
 });
+// Letter input: cream/breath surface with ink foreground in the resting
+// state, leaf-on-ink on focus. Per ADR-0005 §4, the focused background
+// is `leaf` and the foreground is `ink` (never white) — the only
+// WCAG-AA-compliant pairing for brand-color backgrounds.
 const letterInput = css({
   width: '100%',
   height: '100%',
@@ -37,12 +41,12 @@ const letterInput = css({
   color: 'fg',
   textAlign: 'center',
   textTransform: 'uppercase',
-  fontFamily: 'sans',
+  fontFamily: 'body',
   fontWeight: 'bold',
-  fontSize: 'lg',
+  fontSize: 'cell',
   caretColor: 'accent',
   padding: 0,
-  _focus: { bg: 'accent', color: 'bg' },
+  _focus: { bg: 'leaf.500', color: 'ink' },
 });
 const defText = css({ flex: 1, alignSelf: 'flex-start', paddingRight: 'xs', wordBreak: 'break-word' });
 const defArrow = css({ position: 'absolute', bottom: '2px', right: '4px', fontSize: 'md', color: 'accent', lineHeight: 1 });
