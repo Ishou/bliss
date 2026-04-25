@@ -193,8 +193,8 @@ only the *values* are injected at runtime via GitHub Actions Secrets.
 
 | Secret | Bound at | What it is | Secret? |
 |---|---|---|---|
-| `FLY_IO_TOKEN` | `flyctl deploy` step env `FLY_API_TOKEN` | Fly.io organisation access token. Stored under the GitHub-secret name `FLY_IO_TOKEN` (maintainer's chosen convention); re-exported as `FLY_API_TOKEN` because that is the variable `flyctl` itself reads. The two-name dance is intentional. | Yes |
-| `FLY_API_TOKEN` (local env, not a GitHub secret) | `tofu apply` provider auth | Same Fly token, exported under the name `andrewbaxter/fly` Terraform provider expects when the maintainer runs `tofu apply` from their machine. | Yes |
+| `FLY_API_TOKEN` | `flyctl deploy` step env `FLY_API_TOKEN` | Fly.io deploy token scoped to the `wordsparrow-api` app. Created via `flyctl tokens create deploy --app wordsparrow-api`. Name matches ADR-0007 §8. | Yes |
+| `FLY_API_TOKEN` (local env, not a GitHub secret) | `tofu apply` provider auth | Same Fly token, exported locally under the name the `andrewbaxter/fly` Terraform provider expects when the maintainer runs `tofu apply`. | Yes |
 | `GITHUB_TOKEN` | (auto, runtime) | Auto-issued by GitHub Actions; lets the workflow comment build status on a PR. | Managed |
 
 ## Required Fly token scopes
@@ -261,7 +261,7 @@ checklist are noted; skip those if already done.
      -var="cloudflare_zone_id=..."
    ```
 
-6. **Confirm the GitHub Actions secret** `FLY_IO_TOKEN` is set on the
+6. **Confirm the GitHub Actions secret** `FLY_API_TOKEN` is set on the
    `Ishou/bliss` repo (Repo Settings → Secrets and variables → Actions).
    The maintainer set this up in advance per the workstream notes; this
    step is verification only.
