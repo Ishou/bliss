@@ -1,0 +1,8 @@
+# Spectral ruleset for Bliss API specs.
+#
+# Per ADR-0003 §8.1, every `<context>/api/openapi.yaml` is linted in CI; the
+# build fails on warnings. The default `oas` ruleset (with all rules enabled)
+# is the v1 baseline — fine until a specific rule causes friction, at which
+# point the deviation lands in this file with a justifying comment.
+extends:
+  - [spectral:oas, all]
