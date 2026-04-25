@@ -1,0 +1,93 @@
+name: Deploy Frontend
+
+# Implements ADR-0004 §3 (GitHub Actions → Cloudflare Pages, Direct Upload).
+#
+# - push to main      -> production deploy (bliss.pages.dev)
+# - pull_request      -> preview deploy at <branch>.<project>.pages.dev,
+#                        commented on the PR by cloudflare/pages-action.
+#
+# Drafts are skipped to match the ADR-0001 §6a workflow's behavior and
+# avoid burning Pages build slots on work-in-progress branches.
+#
+# Path filter: only run when something this workflow can actually affect
+# changed (frontend source, IaC, or the workflow itself). Keeps docs-only
+# PRs off the deploy critical path. CLAUDE.md "CI target: under 5 minutes"
+# is met today by avoiding work, not by parallelizing it harder.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'frontend/**'
+      - 'terraform/**'
+      - '.github/workflows/deploy-frontend.yml'
+  pull_request:
+    paths:
+      - 'frontend/**'
+      - 'terraform/**'
+      - '.github/workflows/deploy-frontend.yml'
+
+# A second push to the same branch cancels the in-flight deploy of that
+# branch — the newer commit wins. `cancel-in-progress` is safe here
+# because Cloudflare's deploy is idempotent on the directory contents.
+concurrency:
+  group: deploy-frontend-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  # pages-action posts the preview URL as a PR comment.
+  pull-requests: write
+  # Required by cloudflare/pages-action when GitHub OIDC is enabled on
+  # the runner; harmless when it is not.
+  deployments: write
+
+jobs:
+  deploy:
+    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Set up pnpm
+        # pnpm/action-setup v4.0.0
+        uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2
+        with:
+          version: '10.33.0'
+          run_install: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: frontend/.nvmrc
+          cache: 'pnpm'
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: pnpm install --frozen-lockfile
+
+      - name: Build frontend
+        run: pnpm --filter frontend build
+
+      - name: Publish to Cloudflare Pages
+        # cloudflare/pages-action v1.5.0 (deprecated upstream in favor of
+        # wrangler-action, but still functional; migration tracked as a
+        # follow-up workstream once wrangler-action exposes equivalent
+        # outputs — see ADR-0004 Notes for the revisit triggers).
+        uses: cloudflare/pages-action@f0a1cd58cd66095dee69bfa18fa5efd1dde93bca
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: bliss
+          directory: frontend/dist
+          # head_ref is set on PR triggers, ref_name on push. Pages routes
+          # production by matching against its configured production
+          # branch (main); any other branch becomes a preview.
+          branch: ${{ github.head_ref || github.ref_name }}
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
