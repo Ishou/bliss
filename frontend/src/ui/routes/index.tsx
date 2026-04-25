@@ -61,7 +61,7 @@ function HomePage() {
       <h1 lang="en" className={wordmarkStyles}>
         WordSparrow
       </h1>
-      <span className={demoBadgeStyles} aria-label="version démo">
+      <span role="img" className={demoBadgeStyles} aria-label="version démo">
         Démo
       </span>
       <p className={subtitleStyles}>{SAMPLE_PUZZLE.title}</p>
