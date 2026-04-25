@@ -1,7 +1,9 @@
-# Bliss
+# WordSparrow
 
 A *mots fléchés* (French crossword variant) puzzle game, designed for web,
-tablet, and mobile, with future Discord-Activity support.
+tablet, and mobile, with future Discord-Activity support. Brand identity is
+recorded in [ADR-0005](./docs/adr/0005-brand-identity.md); "Bliss" was the
+working codename.
 
 Live: <https://bliss-cb4.pages.dev>
 
@@ -42,7 +44,7 @@ In plain English:
   educational, research, professional services around the Software.
 - **Commercial competition is restricted** — you may not host or sell a
   product or service that substitutes for, or substantially duplicates,
-  Bliss.
+  WordSparrow.
 - **Becomes MIT after two years** — every release auto-converts to a
   full MIT license on the second anniversary of its publication. The
   Software is genuinely open in the long run; the restriction applies
