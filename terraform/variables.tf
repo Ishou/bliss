@@ -35,3 +35,20 @@ variable "production_branch" {
   type        = string
   default     = "main"
 }
+
+variable "custom_domain" {
+  description = "Apex domain attached to the Pages project (e.g. `wordsparrow.io`). Empty disables custom-domain attachment so a fresh bootstrap apply works without a domain registered."
+  type        = string
+  default     = "wordsparrow.io"
+
+  validation {
+    condition     = var.custom_domain == "" || can(regex("^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)+$", var.custom_domain))
+    error_message = "custom_domain must be empty or a valid lowercase apex (no scheme, no path, no leading `www.`)."
+  }
+}
+
+variable "include_www_alias" {
+  description = "Also attach `www.<custom_domain>` to the Pages project. Cloudflare Pages serves both; pair with a `_redirects` rule to canonicalize on the apex."
+  type        = bool
+  default     = true
+}
