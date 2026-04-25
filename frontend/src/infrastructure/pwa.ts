@@ -8,9 +8,12 @@ export function registerServiceWorker(): void {
   if (import.meta.env.DEV) return;
 
   window.addEventListener('load', () => {
-    void navigator.serviceWorker.register('/sw.js').catch(() => {
-      // Registration failures are non-fatal for v1. Telemetry adapter
-      // will report these once the observability ADR lands.
+    void navigator.serviceWorker.register('/sw.js').catch((err: unknown) => {
+      // Registration failures are non-fatal for v1. We warn pending the
+      // telemetry adapter (manifesto's "no console" rule targets production
+      // logging; SW registration warnings are dev-friendly diagnostics
+      // until the observability ADR ships).
+      console.warn('SW registration failed', err);
     });
   });
 }
