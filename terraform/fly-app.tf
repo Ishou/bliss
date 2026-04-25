@@ -77,22 +77,4 @@ resource "fly_machine" "api" {
 
   cpus   = var.fly_machine_cpus
   memory = var.fly_machine_memory_mb
-
-  services = [
-    {
-      protocol      = "tcp"
-      internal_port = 8080
-      ports = [
-        {
-          port        = 80
-          handlers    = ["http"]
-          force_https = true
-        },
-        {
-          port     = 443
-          handlers = ["tls", "http"]
-        },
-      ]
-    },
-  ]
 }
