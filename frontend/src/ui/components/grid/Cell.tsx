@@ -31,9 +31,14 @@ const defCell = css({
   textAlign: 'left',
   overflow: 'hidden',
 });
-// Current-clue definition: leaf.700 left border + leaf.700 text on the
+// Current-clue definition: leaf.700 anchor border + leaf.700 text on the
 // sand bg. Border + color = two cues per WCAG. leaf.700-on-sand ≈ 5.4:1.
-const defCellCurrent = css({ borderLeft: '3px solid token(colors.leaf.700)', color: 'leaf.700' });
+// The border sits on the side opposite the arrow (top for `down`, left
+// for `right`), anchoring the definition where the answer is *not* —
+// the arrow itself shows the direction the answer flows; the border
+// shows where the clue starts. Style applied per arrow direction.
+const defCellCurrentRight = css({ borderLeft: '3px solid token(colors.leaf.700)', color: 'leaf.700' });
+const defCellCurrentDown = css({ borderTop: '3px solid token(colors.leaf.700)', color: 'leaf.700' });
 // Letter input: cream/breath surface with ink foreground in the resting
 // state, leaf-on-ink on focus. Per ADR-0005 §4, the focused background
 // is `leaf` and the foreground is `ink` (never white) — the only
@@ -105,10 +110,13 @@ export const LetterCellView = memo(function LetterCellView({
 export const DefinitionCellView = memo(function DefinitionCellView({
   cell, isCurrent,
 }: { cell: DefinitionCell; isCurrent: boolean }) {
+  const currentClass = isCurrent
+    ? cell.arrow === 'down' ? defCellCurrentDown : defCellCurrentRight
+    : '';
   return (
     <div
       role="gridcell"
-      className={`${cellBase} ${defCell}${isCurrent ? ` ${defCellCurrent}` : ''}`}
+      className={`${cellBase} ${defCell}${currentClass ? ` ${currentClass}` : ''}`}
       data-row={cell.position.row}
       data-col={cell.position.col}
       data-cell-kind="definition"
