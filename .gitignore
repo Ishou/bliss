@@ -5,3 +5,6 @@ bliss.iml
 build/
 .gradle/
 !gradle/wrapper/gradle-wrapper.jar
+
+# Claude Code agent worktrees (created by `isolation: "worktree"` dispatches)
+.claude/
