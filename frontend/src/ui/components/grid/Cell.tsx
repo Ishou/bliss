@@ -44,12 +44,13 @@ const letterInput = css({
   fontFamily: 'body',
   fontWeight: 'bold',
   fontSize: 'cell',
+  fontVariantNumeric: 'tabular-nums',
   caretColor: 'accent',
   padding: 0,
   _focus: { bg: 'leaf.500', color: 'ink' },
 });
 const defText = css({ flex: 1, alignSelf: 'flex-start', paddingRight: 'xs', wordBreak: 'break-word' });
-const defArrow = css({ position: 'absolute', bottom: '2px', right: '4px', fontSize: 'md', color: 'accent', lineHeight: 1 });
+const defArrow = css({ position: 'absolute', bottom: '2px', right: '4px', fontSize: 'sm', color: 'fg', lineHeight: 1 });
 
 const arrowGlyph: Record<ArrowDirection, string> = { right: '→', down: '↓' };
 const arrowLabel: Record<ArrowDirection, string> = { right: 'horizontal', down: 'vertical' };
