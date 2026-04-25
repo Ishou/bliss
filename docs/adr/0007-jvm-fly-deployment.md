@@ -68,8 +68,8 @@ considered:
   (1× shared-CPU 256–512 MB machine + smallest-tier Fly Postgres),
   expect $5–15/month all-in. Acceptable cost for a real product
   beyond hello-world.
-- **IaC native.** `fly-apps/fly` Terraform provider for app, machine,
-  Postgres, IP allocation, certs. `fly.toml` checked into the repo
+- **IaC native.** `andrewbaxter/fly` Terraform provider (fork of archived `fly-apps/fly`, 2024-03-01) for app, machine,
+  IP allocation, certs (`fly_postgres` absent — bootstrapped in `terraform/fly-postgres.tf`). `fly.toml` checked into the repo
   for build / service / healthcheck config. `flyctl deploy` from
   GitHub Actions, parallel to the existing Cloudflare deploy workflow.
   Same operational model as the frontend; nothing new to learn.
