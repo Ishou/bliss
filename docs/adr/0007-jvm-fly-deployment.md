@@ -237,9 +237,23 @@ Per the manifesto's "Rollback is always one click" rule:
 
 ### 8. Secret management
 
-- **`FLY_API_TOKEN`** in GitHub Actions Secrets — the deploy token,
-  scoped to the Fly app (not org-wide). Created once via `flyctl
-  tokens create deploy --app wordsparrow-api`.
+- **`FLY_IO_TOKEN`** in GitHub Actions Secrets — the deploy token. The
+  GitHub-secret name is `FLY_IO_TOKEN` (the maintainer's choice; an
+  organisation-level Fly token usable across any future bliss-related
+  repo). The deploy workflow exports it into the `FLY_API_TOKEN`
+  environment variable inside the `flyctl deploy` step, since that's
+  the env-var name `flyctl` reads by convention. So:
+  - **GitHub-secret name** in repo settings: `FLY_IO_TOKEN`.
+  - **Env var inside the workflow step**: `FLY_API_TOKEN` (mapped from
+    the secret).
+  - **Local maintainer terminal** for `tofu apply`: also exports
+    `FLY_API_TOKEN` (the Fly Terraform provider reads the same env-var
+    name as flyctl).
+  Earlier drafts of this ADR named the secret `FLY_API_TOKEN` to match
+  the env var; that proved confusing because Fly's web UI lets the
+  maintainer create *organisation* tokens with arbitrary names, and the
+  organisation context made `FLY_IO_TOKEN` more legible. Either name
+  works mechanically; the binding is what matters.
 - **App-level secrets** (Postgres password, future Anthropic API key,
   Stripe key, OAuth client secret) injected via `flyctl secrets set`
   and consumed in Ktor as environment variables. Their *names and
@@ -312,7 +326,7 @@ possibly Redis, and an ADR amendment.
 ### Harder
 
 - **Two-platform deploy.** Two sets of secrets to rotate
-  (`CLOUDFLARE_API_TOKEN` + `FLY_API_TOKEN`), two dashboards to check
+  (`CLOUDFLARE_API_TOKEN` + `FLY_IO_TOKEN`), two dashboards to check
   during incidents, two Terraform providers to keep current.
 - **Cost stops being free.** ~$5–15/month from day one; budget
   monitoring becomes relevant at v1 + 1.
