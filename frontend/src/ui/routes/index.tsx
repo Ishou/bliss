@@ -1,5 +1,7 @@
 import { createRoute } from '@tanstack/react-router';
 import { css } from 'styled-system/css';
+import { SAMPLE_PUZZLE } from '@/domain';
+import { Grid } from '@/ui/components/grid';
 import { Route as RootRoute } from './__root';
 
 const pageStyles = css({
@@ -7,7 +9,8 @@ const pageStyles = css({
   display: 'flex',
   flexDirection: 'column',
   alignItems: 'center',
-  justifyContent: 'center',
+  justifyContent: 'flex-start',
+  gap: 'md',
   padding: 'lg',
   bg: 'bg',
   color: 'fg',
@@ -22,10 +25,18 @@ const titleStyles = css({
   margin: 0,
 });
 
+const subtitleStyles = css({
+  fontSize: 'md',
+  margin: 0,
+  color: 'muted',
+});
+
 function HomePage() {
   return (
     <main className={pageStyles}>
       <h1 className={titleStyles}>Bliss</h1>
+      <p className={subtitleStyles}>{SAMPLE_PUZZLE.title}</p>
+      <Grid puzzle={SAMPLE_PUZZLE} />
     </main>
   );
 }

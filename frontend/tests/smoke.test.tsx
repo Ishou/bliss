@@ -34,4 +34,20 @@ describe('App smoke test', () => {
       expect(document.title).toBe('Bliss');
     });
   });
+
+  it('renders the mots fléchés grid with at least one letter cell', async () => {
+    const routeTree = RootRoute.addChildren([IndexRoute]);
+    const router = createRouter({
+      routeTree,
+      history: createMemoryHistory({ initialEntries: ['/'] }),
+    });
+
+    const { container } = render(<RouterProvider router={router} />);
+
+    const grid = await screen.findByRole('grid');
+    expect(grid).toBeInTheDocument();
+    expect(
+      container.querySelectorAll('[data-cell-kind="letter"]').length,
+    ).toBeGreaterThan(0);
+  });
 });
