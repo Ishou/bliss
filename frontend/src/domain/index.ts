@@ -6,6 +6,7 @@ export type {
   BlockCell,
   Cell,
   DefinitionCell,
+  DefinitionClue,
   LetterCell,
   Position,
   Puzzle,
