@@ -1,3 +1,9 @@
-@import './fonts.css';
+/* `fonts.css` is intentionally imported from `main.tsx`, not via
+ * `@import` here. The `fontaine` Vite plugin's `transform` hook only
+ * sees CSS files that reach Vite's module graph as their own entry;
+ * a CSS-side `@import` is inlined later in the pipeline, after the
+ * hook runs, so fontaine would never see the `@font-face` rules and
+ * no metrics-matched fallback face would be emitted. See
+ * `vite.config.ts` for the plugin wiring. */
 
 @layer reset, base, tokens, recipes, utilities;

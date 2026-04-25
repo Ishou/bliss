@@ -5,6 +5,13 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from '@/ui/App';
 import { registerServiceWorker } from '@/infrastructure/pwa';
+// `fonts.css` is imported separately (rather than via `@import` from
+// `index.css`) so the `@font-face` rules reach the `fontaine` Vite
+// plugin's `transform` hook directly. CSS-side `@import` is resolved
+// after that hook runs, which would hide the rules from fontaine and
+// no metrics-matched fallback face would be generated. See
+// `vite.config.ts` and `src/ui/styles/fonts.css` for the rationale.
+import '@/ui/styles/fonts.css';
 import '@/ui/styles/index.css';
 
 const container = document.getElementById('root');
