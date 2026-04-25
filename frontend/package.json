@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "@ark-ui/react": "^4.9.0",
+    "@fontsource-variable/nunito": "^5.2.7",
     "@tanstack/react-router": "^1.95.0",
     "openapi-fetch": "^0.17.0",
     "react": "^19.0.0",

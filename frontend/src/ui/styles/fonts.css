@@ -1,0 +1,7 @@
+/* Self-hosted Nunito Variable per ADR-0005 §5.
+ *
+ * Importing the package's CSS pulls the woff2 files through Vite's asset
+ * pipeline (no Google Fonts CDN call — privacy + offline-PWA friendly).
+ * The variable axis covers weights 200–1000, so a single file backs the
+ * full type scale (`body` 400 through `display` 800). */
+@import '@fontsource-variable/nunito/index.css';
