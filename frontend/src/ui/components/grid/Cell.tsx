@@ -96,7 +96,7 @@ export function DefinitionCellView({ cell }: { cell: DefinitionCell }) {
 export function BlockCellView({ cell }: { cell: BlockCell }) {
   return (
     <div
-      role="gridcell"
+      role="presentation"
       aria-hidden="true"
       className={`${cellBase} ${blockCell}`}
       data-row={cell.position.row}
