@@ -6,6 +6,7 @@ export type {
   BlockCell,
   Cell,
   DefinitionCell,
+  DefinitionClue,
   LetterCell,
 } from './Cell';
 export type { Puzzle } from './Puzzle';

@@ -3,7 +3,8 @@ import type { Position } from './Position';
 // Direction in which a definition's answer flows. `right` means the answer
 // occupies the cells immediately to the right of the definition cell;
 // `down` means it occupies the cells immediately below. v1 deliberately
-// excludes diagonal-split cells (one definition per cell).
+// excludes diagonal-split cells; the stacked variant below is the only
+// way to fit two clues into a single cell.
 export type ArrowDirection = 'right' | 'down';
 
 // A cell where the player types one letter. `answer` is the canonical
@@ -18,13 +19,25 @@ export interface LetterCell {
   readonly entry: string;
 }
 
-// A clue cell. Renders the definition text and an arrow pointing at the
-// first letter of the answer.
+// A single clue inside a definition cell: the prose text the player reads
+// and the arrow that anchors its answer path on the grid.
+export interface DefinitionClue {
+  readonly text: string;
+  readonly arrow: ArrowDirection;
+}
+
+// A clue cell. Carries one or two clues per ADR-0005 §3a. When two are
+// present, the invariant is `clues[0].arrow === 'right'` and
+// `clues[1].arrow === 'down'`: real *mots fléchés* always render the
+// horizontal clue above the vertical one, and pinning the order in the
+// type means the renderer never has to re-sort. Any other shape is a
+// domain bug; the architecture tests guard against it.
 export interface DefinitionCell {
   readonly kind: 'definition';
   readonly position: Position;
-  readonly text: string;
-  readonly arrow: ArrowDirection;
+  readonly clues:
+    | readonly [DefinitionClue]
+    | readonly [DefinitionClue & { arrow: 'right' }, DefinitionClue & { arrow: 'down' }];
 }
 
 // An inert solid square — neither a clue nor an input.

@@ -93,7 +93,7 @@ export function Grid({ puzzle }: { puzzle: Puzzle }) {
                   <DefinitionCellView
                     key={key}
                     cell={cell}
-                    isCurrent={highlight.currentDefinition}
+                    currentArrow={highlight.currentArrow}
                   />
                 );
               }

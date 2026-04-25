@@ -1,18 +1,23 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
-import type { Cell, DefinitionCell, LetterCell, Position, Puzzle } from '@/domain';
+import type { ArrowDirection, Cell, DefinitionCell, DefinitionClue, LetterCell, Position, Puzzle } from '@/domain';
 
 // 'across' === ArrowDirection 'right'; 'down' === 'down'.
 export type Direction = 'across' | 'down';
 
 interface Clue {
   readonly definition: DefinitionCell;
+  readonly clue: DefinitionClue;
   readonly direction: Direction;
   readonly cells: readonly LetterCell[];
 }
 
 export interface CellHighlight {
   readonly currentWord: boolean;
-  readonly currentDefinition: boolean;
+  // Arrow direction of the active clue when the focused cell sits on a
+  // path that originates at this definition cell; `null` otherwise. The
+  // renderer uses this to highlight the matching sub-clue inside a
+  // stacked definition cell (ADR-0005 §3a).
+  readonly currentArrow: ArrowDirection | null;
 }
 
 export interface GridNavigation {
@@ -57,22 +62,31 @@ function buildLookup(puzzle: Puzzle): ClueLookup {
     .slice()
     .sort((a, b) => a.position.row - b.position.row || a.position.col - b.position.col);
   for (const def of defs) {
-    const dr = def.arrow === 'down' ? 1 : 0, dc = def.arrow === 'right' ? 1 : 0;
-    const cells: LetterCell[] = [];
-    let row = def.position.row + dr, col = def.position.col + dc;
-    while (row >= 0 && row < puzzle.height && col >= 0 && col < puzzle.width) {
-      const next = byPos.get(key({ row, col }));
-      if (!next || next.kind !== 'letter') break;
-      cells.push(next);
-      row += dr; col += dc;
-    }
-    if (cells.length === 0) continue;
-    const clue: Clue = { definition: def, direction: def.arrow === 'right' ? 'across' : 'down', cells };
-    for (const cell of cells) {
-      const k = key(cell.position);
-      const list = byCell.get(k) ?? [];
-      list.push(clue);
-      byCell.set(k, list);
+    // A definition cell carries one or two clues per ADR-0005 §3a.
+    // Each clue gets its own answer-path walk and own index entry.
+    for (const subClue of def.clues) {
+      const dr = subClue.arrow === 'down' ? 1 : 0, dc = subClue.arrow === 'right' ? 1 : 0;
+      const cells: LetterCell[] = [];
+      let row = def.position.row + dr, col = def.position.col + dc;
+      while (row >= 0 && row < puzzle.height && col >= 0 && col < puzzle.width) {
+        const next = byPos.get(key({ row, col }));
+        if (!next || next.kind !== 'letter') break;
+        cells.push(next);
+        row += dr; col += dc;
+      }
+      if (cells.length === 0) continue;
+      const clue: Clue = {
+        definition: def,
+        clue: subClue,
+        direction: subClue.arrow === 'right' ? 'across' : 'down',
+        cells,
+      };
+      for (const cell of cells) {
+        const k = key(cell.position);
+        const list = byCell.get(k) ?? [];
+        list.push(clue);
+        byCell.set(k, list);
+      }
     }
   }
   return {
@@ -194,12 +208,15 @@ export function useGridNavigation(puzzle: Puzzle): GridNavigation {
 
   const highlightFor = useCallback(
     (p: Position): CellHighlight => {
-      if (!currentClue) return { currentWord: false, currentDefinition: false };
+      if (!currentClue) return { currentWord: false, currentArrow: null };
       const isFocused = same(focused, p);
       const inWord = currentClue.cells.some((c) => same(c.position, p));
       const def = currentClue.definition.position;
       const isDef = def.row === p.row && def.col === p.col;
-      return { currentWord: inWord && !isFocused, currentDefinition: isDef };
+      return {
+        currentWord: inWord && !isFocused,
+        currentArrow: isDef ? currentClue.clue.arrow : null,
+      };
     },
     [currentClue, focused],
   );

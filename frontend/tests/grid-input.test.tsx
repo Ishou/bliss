@@ -20,11 +20,11 @@ const L = (row: number, col: number, answer: string): Cell =>
 const TEST_PUZZLE: Puzzle = {
   id: 'test', title: 'test', language: 'fr', width: 5, height: 4,
   cells: [
-    { kind: 'definition', position: { row: 0, col: 0 }, text: 'across-1', arrow: 'right' },
+    { kind: 'definition', position: { row: 0, col: 0 }, clues: [{ text: 'across-1', arrow: 'right' }] },
     L(0, 1, 'A'),
-    { kind: 'definition', position: { row: 0, col: 2 }, text: 'down-1', arrow: 'down' },
+    { kind: 'definition', position: { row: 0, col: 2 }, clues: [{ text: 'down-1', arrow: 'down' }] },
     L(0, 3, 'B'), L(0, 4, 'C'),
-    { kind: 'definition', position: { row: 1, col: 0 }, text: 'across-2', arrow: 'right' },
+    { kind: 'definition', position: { row: 1, col: 0 }, clues: [{ text: 'across-2', arrow: 'right' }] },
     L(1, 1, 'D'), L(1, 2, 'E'), L(1, 3, 'F'), L(1, 4, 'G'),
     L(2, 0, 'H'), L(2, 1, 'I'), L(2, 2, 'J'), L(2, 3, 'K'), L(2, 4, 'L'),
     L(3, 0, 'M'),
