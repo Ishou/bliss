@@ -39,11 +39,11 @@ concurrency:
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 permissions:
+  # Least-privilege per CLAUDE.md "Security": no step in this workflow
+  # makes a GitHub API call (the PR-build path is `echo`-only; the
+  # production-deploy path talks only to Fly via FLY_API_TOKEN). No
+  # `pull-requests: write`, no `id-token: write`.
   contents: read
-  # Allow the optional PR-build diagnostic step to surface status; matches
-  # `deploy-frontend.yml`'s posture. No `id-token: write` — flyctl uses a
-  # static token, not OIDC.
-  pull-requests: write
 
 jobs:
   deploy:
