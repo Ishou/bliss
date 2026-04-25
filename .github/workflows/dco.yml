@@ -1,0 +1,54 @@
+name: DCO
+
+# Enforces the Developer Certificate of Origin 1.1 on every commit in a PR.
+# Each commit must end with `Signed-off-by: Name <email>`. Bot-authored
+# commits (author name ending in `[bot]`) are exempt — they were not
+# written by a human and have no certification to make.
+#
+# Use `git commit -s` to add the sign-off automatically, or
+# `git rebase --signoff <base>` to fix existing commits.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  dco:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Verify sign-off on human-authored commits
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          missing=0
+          checked=0
+          while IFS=$'\t' read -r sha author_name subject; do
+            case "$author_name" in
+              *"[bot]")
+                continue
+                ;;
+            esac
+            checked=$((checked + 1))
+            body=$(git log -1 --format='%B' "$sha")
+            if ! printf '%s\n' "$body" | grep -qE '^Signed-off-by: .+ <.+@.+>'; then
+              echo "::error::Commit $sha (\"$subject\", by $author_name) is missing 'Signed-off-by:'."
+              missing=$((missing + 1))
+            fi
+          done < <(git log --format='%h%x09%an%x09%s' "$BASE_SHA..$HEAD_SHA")
+          if [ "$missing" -gt 0 ]; then
+            echo "::error::$missing commit(s) missing DCO sign-off."
+            echo "::error::Fix: 'git commit -s' going forward, or 'git rebase --signoff $BASE_SHA' to retroactively sign existing commits, then force-push to your PR branch."
+            exit 1
+          fi
+          echo "DCO sign-off verified on $checked human-authored commit(s)."
