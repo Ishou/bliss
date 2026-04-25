@@ -11,7 +11,6 @@ interface Clue {
 }
 
 export interface CellHighlight {
-  readonly focused: boolean;
   readonly currentWord: boolean;
   readonly currentDefinition: boolean;
 }
@@ -195,12 +194,12 @@ export function useGridNavigation(puzzle: Puzzle): GridNavigation {
 
   const highlightFor = useCallback(
     (p: Position): CellHighlight => {
+      if (!currentClue) return { currentWord: false, currentDefinition: false };
       const isFocused = same(focused, p);
-      if (!currentClue) return { focused: isFocused, currentWord: false, currentDefinition: false };
       const inWord = currentClue.cells.some((c) => same(c.position, p));
       const def = currentClue.definition.position;
       const isDef = def.row === p.row && def.col === p.col;
-      return { focused: isFocused, currentWord: inWord && !isFocused, currentDefinition: isDef };
+      return { currentWord: inWord && !isFocused, currentDefinition: isDef };
     },
     [currentClue, focused],
   );

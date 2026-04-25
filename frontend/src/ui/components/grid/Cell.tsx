@@ -102,7 +102,7 @@ export const LetterCellView = memo(function LetterCellView({
   );
 });
 
-export function DefinitionCellView({
+export const DefinitionCellView = memo(function DefinitionCellView({
   cell, isCurrent,
 }: { cell: DefinitionCell; isCurrent: boolean }) {
   return (
@@ -120,7 +120,7 @@ export function DefinitionCellView({
       </span>
     </div>
   );
-}
+});
 
 export function BlockCellView({ cell }: { cell: BlockCell }) {
   return (
