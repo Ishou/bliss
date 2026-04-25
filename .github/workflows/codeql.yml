@@ -26,23 +26,23 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
-        with:
-          languages: java-kotlin
-          build-mode: manual
-
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '21'
 
-      - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
-
-      - name: Build for analysis
-        run: ./gradlew assemble --parallel --build-cache --stacktrace -x test
+      # CodeQL's autobuild knows how to invoke Gradle for Kotlin projects
+      # without a setup-gradle action restoring caches that make `assemble`
+      # a no-op (which is what defeated the previous manual-mode attempt:
+      # cached classes meant zero compiler invocations for the tracer to
+      # capture). Autobuild is GitHub's recommended path for Java/Kotlin
+      # and runs the build under CodeQL's tracer end-to-end.
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: java-kotlin
+          build-mode: autobuild
 
       - name: Perform CodeQL analysis
         uses: github/codeql-action/analyze@v3
