@@ -105,9 +105,14 @@ Rejected alternatives:
 
 ### 3. How it deploys: GitHub Actions → Cloudflare Pages, schema in repo
 
-The deployment is driven entirely by GitHub Actions. No manual platform
-clicks beyond the one-time Cloudflare project creation and API-token
-issuance.
+The deployment is driven entirely by GitHub Actions. The Cloudflare Pages
+project itself is declared as IaC in the repo (see Notes for the choice
+between Terraform and a scripted bootstrap), so no manual platform clicks
+are required to create it. The only one-time human steps are the
+manifesto-permitted ones: a Cloudflare account exists (the platform
+boundary above any per-project IaC), and the API-token *material* is
+injected into GitHub Actions Secrets (per §7, secret values stay out of
+the repo by design).
 
 Concretely (the *implementation* of which lives in a follow-up workstream;
 this ADR commits to the *shape*):
@@ -175,19 +180,28 @@ slot for telemetry exists; it is wired the day there is something to
 trace. The blameless-post-mortem rule kicks in if this stretch causes a
 real incident.
 
-### 7. Secret management: GitHub Actions secrets only
+### 7. Secret management: GitHub Actions secrets, with a git-side gate
 
 - The single secret needed for v1 is the Cloudflare API token (scoped to
   the Pages project, no broader Cloudflare access).
-- It lives in GitHub Actions Secrets (`CLOUDFLARE_API_TOKEN`,
-  `CLOUDFLARE_ACCOUNT_ID`).
-- It is referenced in the deploy workflow only; never in repo code.
-- Per the manifesto ("Secrets never in code. Injected at runtime. Git hooks
-  prevent accidental commits"), this is sufficient until a service-side
-  secret (database URL, third-party API key) appears.
-- Pre-commit secret-scanning is **not** introduced in this ADR; it is added
-  in the security ADR for the project, alongside the dependency-scanning
-  decision.
+- The *binding* — i.e. which secret names the deploy workflow consumes
+  (`CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`), what they are scoped
+  to, and which workflow step reads them — is documented in repo code
+  (the workflow file itself plus this ADR). Only the secret *material* is
+  injected at runtime via GitHub Actions Secrets, never committed.
+- Secret values are referenced in the deploy workflow only; never in repo
+  code.
+- **Git-side secret-scanning gate (non-deferrable).** The manifesto rule
+  "Git hooks prevent accidental commits" is binding from the moment any
+  real secret enters the project's CI. The follow-up implementation
+  workstream is the first to introduce such a secret (the Cloudflare
+  token), so it must ship a `gitleaks` (or `detect-secrets`) pre-commit
+  hook committed to the repo *and* a GitHub Actions check that runs the
+  same tool on every PR. Both ship together in the deploy-implementation
+  workstream, or as a prerequisite workstream that merges first —
+  whichever the implementer finds cleaner. A broader security ADR (SAST,
+  dependency review, etc.) may follow later, but the git-hook backstop
+  is not deferrable to it.
 
 ### 8. What this ADR explicitly does not decide
 
@@ -265,16 +279,45 @@ This ADR is revisited if any of the following occur:
   prevented or shortened. The "deferred" rule retires.
 - Cloudflare materially changes the Pages product, pricing, or terms in a
   way that affects the project.
+- The pre-commit secret-scanning gate proves insufficient (a leak slips
+  through, or the tool is too noisy to keep enabled). Trigger to revisit
+  scanner choice or add a server-side push-protection layer.
 
 Implementation does not begin in this PR. The follow-up workstream
 (`feat/deploy-frontend-cloudflare-pages` or similar) introduces:
 - `.github/workflows/deploy-frontend.yml`.
 - `frontend/.nvmrc`.
 - `frontend/wrangler.toml` (or the equivalent Pages config).
-- `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` set in repo
-  Actions secrets (manual step by the maintainer).
-- The Cloudflare Pages project itself, created once via the Pages
-  dashboard or `wrangler pages project create` (manual step).
+- **The Cloudflare Pages project declared as IaC in the repo.** Two
+  defensible options; the implementer picks one, neither is "manual":
+  - *Preferred:* a Cloudflare Terraform provider configuration
+    (`cloudflare_pages_project` resource, plus matching state backend)
+    committed to the repo, applied from CI. Clearer audit trail, same
+    pattern reusable when a second Cloudflare resource appears.
+  - *Acceptable:* a scripted bootstrap target (e.g. a `Makefile` target,
+    or a `scripts/bootstrap-pages-project.sh`) that invokes
+    `wrangler pages project create` with all flags pinned, committed to
+    the repo and idempotent. Lighter weight; fine while there is exactly
+    one Cloudflare resource.
+- **A `gitleaks` (or `detect-secrets`) pre-commit hook + matching
+  GitHub Actions check**, both committed to the repo. Non-deferrable per
+  §7 — this workstream is the first to introduce a real CI secret, so
+  the git-side backstop ships with it (or as a prerequisite workstream
+  that merges first).
+- **Binding documentation for the deploy secrets.** The names
+  `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`, what they are
+  scoped to, and where the workflow consumes them, are recorded in repo
+  code (the workflow file plus a short note in `docs/`). The secret
+  *values* are injected at runtime into GitHub Actions Secrets — that
+  injection is the manifesto-permitted "secrets never in code, injected
+  at runtime" path, not a manual *infrastructure* step.
+
+A single bootstrap exception is called out explicitly per the manifesto's
+"exceptions require explicit justification" rule: the Cloudflare *account*
+itself (the entity that owns API tokens and Pages projects) exists above
+any per-project IaC and is created once when the project signs up for
+Cloudflare. This is a platform-tenancy boundary, not project
+infrastructure, and is sunset the day the project moves off Cloudflare.
 
 That follow-up is itself bounded by ADR-0001 §4 — single workstream,
 single context, under 400 lines of hand-written code, conventional commits.
