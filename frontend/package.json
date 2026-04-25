@@ -10,6 +10,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
+    "typecheck": "pnpm panda:codegen && tsc -b",
     "lint": "eslint .",
     "panda:codegen": "panda codegen --silent",
     "prepare": "pnpm panda:codegen"
