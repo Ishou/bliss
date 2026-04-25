@@ -45,7 +45,7 @@ class HealthRouteTest {
             // Version defaults to "unknown" in tests; production injects a real one.
             val version = json["version"]?.jsonPrimitive?.content
             assertThat(version).isNotNull()
-            assertThat(version!!).contains("")
+            assertThat(version!!).isEqualTo("unknown")
 
             val uptime = json["uptime"]?.jsonPrimitive?.content
             assertThat(uptime).isNotNull()
