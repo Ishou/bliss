@@ -85,6 +85,29 @@ Reference points: Duolingo, NYT Games (the warmer recent direction),
 Wordscapes — adapted to a French *mots fléchés* sensibility (less
 cartoon, no mascot animations in v1).
 
+### 3a. Definition cells: one or two clues per cell (amendment)
+
+The first interactive grid (PR #21) simplified definition cells to **one
+arrow each**, deferring the diagonal-split case as out-of-scope for v1.
+Production review of the demo grid (PR #26) showed this simplification
+makes a 5×5 *fully-interlocking* puzzle impossible without unrealistic
+density: requiring one definition cell per clue forces every column to
+be a single uninterrupted run, and 4–5-letter French words rarely
+intersect cleanly enough for that to yield real words in both axes.
+
+**Amendment.** A definition cell carries **one or two clues**. When two,
+they are stacked vertically inside the cell — the right-arrow clue on
+top, the down-arrow clue below — each with its own clue text and arrow
+indicator. The order is fixed (right above down) so the renderer never
+re-sorts and screen readers walk the clues in a stable order. The
+diagonal-split visual variant remains deferred; stacked is sufficient
+to support clean fully-interlocking grids.
+
+WCAG: stacked clues drop one font step (~10 px) to fit two short French
+clues per cell. The `sand` background against `ink` foreground is
+13.6:1, well above the 4.5:1 AA bar at the smaller size; no extra
+contrast work is required by this amendment.
+
 ### 4. Color palette
 
 Six tokens, committed to specific hex values. These are *named tokens*,
