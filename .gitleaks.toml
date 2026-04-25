@@ -1,0 +1,21 @@
+# Gitleaks configuration for the Bliss repository.
+#
+# Rationale: per ADR-0004 §7 ("Secret management") and the manifesto's
+# "Git hooks prevent accidental commits" rule, every contributor's machine
+# and every CI run must scan staged changes for accidentally-committed
+# secrets. Gitleaks is the chosen scanner. This file is read by both:
+#   - the local pre-commit hook  (.githooks/pre-commit)
+#   - the CI workflow            (.github/workflows/secret-scan.yml)
+#
+# Policy:
+#   - Use the upstream default ruleset as-is. We add no project-specific
+#     rules until a real false-negative justifies one.
+#   - No allowlist entries. A `gitleaks detect` against the entire repo
+#     history reports zero findings as of this commit, so there is nothing
+#     legitimate to exempt. If a future false-positive appears, add the
+#     narrowest possible allowlist entry here and document why in a
+#     comment on the entry itself — never silence whole rules wholesale.
+title = "Bliss gitleaks config"
+
+[extend]
+useDefault = true
