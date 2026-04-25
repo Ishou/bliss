@@ -1,0 +1,102 @@
+name: Deploy API
+
+# Implements ADR-0007 §3 (GitHub Actions → flyctl deploy).
+#
+# - push to main      -> production deploy of grid/api to wordsparrow-api.fly.dev
+# - pull_request      -> build-only (`shadowJar`); no Fly deploy.
+#                        ADR-0007 §5 forbids per-PR Fly apps; previews are
+#                        frontend-only with MSW-mocked API responses.
+#
+# Path filter mirrors `deploy-frontend.yml`: only run when something this
+# workflow can actually affect changed (API source, shared Gradle config,
+# Dockerfile, fly.toml, or this workflow itself). Keeps frontend-only PRs
+# off the JVM build critical path. CLAUDE.md "CI target: under 5 minutes"
+# is met today by avoiding work, not by parallelizing harder.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'grid/api/**'
+      - 'grid/domain/**'
+      - 'build.gradle.kts'
+      - 'settings.gradle.kts'
+      - '.github/workflows/deploy-api.yml'
+  pull_request:
+    paths:
+      - 'grid/api/**'
+      - 'grid/domain/**'
+      - 'build.gradle.kts'
+      - 'settings.gradle.kts'
+      - '.github/workflows/deploy-api.yml'
+
+# A second push to the same branch cancels the in-flight build of that
+# branch — except on `main`, where a cancel-mid-deploy could leave Fly in
+# a half-applied state. Production pushes serialize; everything else
+# cancels.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+permissions:
+  # Least-privilege per CLAUDE.md "Security": no step in this workflow
+  # makes a GitHub API call (the PR-build path is `echo`-only; the
+  # production-deploy path talks only to Fly via FLY_API_TOKEN). No
+  # `pull-requests: write`, no `id-token: write`.
+  contents: read
+
+jobs:
+  deploy:
+    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        # actions/checkout v4.3.1
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          fetch-depth: 1
+
+      - name: Set up JDK 21
+        # actions/setup-java v4.8.0
+        uses: actions/setup-java@c1e323688fd81a25caa38c78aa6df2d33d3e20d9
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Gradle
+        # gradle/actions/setup-gradle v4.4.4 (auto-detects ./gradlew)
+        uses: gradle/actions/setup-gradle@748248ddd2a24f49513d8f472f81c3a07d4d50e1
+
+      # `--no-daemon` mirrors the codeql-fix pattern: in CI a daemon adds
+      # startup cost without paying for it across multiple invocations,
+      # and a stale daemon between cached runs has been a reproducibility
+      # papercut historically. Single-shot daemonless build is cleaner.
+      - name: Build shadowJar
+        run: ./gradlew :grid:api:shadowJar --no-daemon --stacktrace
+
+      - name: Set up flyctl
+        # superfly/flyctl-actions/setup-flyctl 1.6
+        uses: superfly/flyctl-actions/setup-flyctl@ed8efb33836e8b2096c7fd3ba1c8afe303ebbff1
+
+      - name: Deploy to Fly
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        # `flyctl` reads `FLY_API_TOKEN` from env (its documented variable
+        # name). The maintainer's GitHub-secret name is `FLY_IO_TOKEN`
+        # (one-off naming choice — see `docs/deploy.md`); we re-export it
+        # under flyctl's expected name here. Drift between the two names
+        # is intentional, not a bug.
+        run: flyctl deploy --remote-only --config grid/api/fly.toml --dockerfile grid/api/Dockerfile --app wordsparrow-api
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_IO_TOKEN }}
+
+      - name: Skip deploy on PR (informational)
+        if: github.event_name == 'pull_request'
+        # Visible in the PR's checks tab so contributors aren't left
+        # wondering why no preview URL appears. ADR-0007 §5 is the
+        # authoritative reason; this step is just signage.
+        run: |
+          echo "PR build: shadowJar built and verified."
+          echo "No Fly deploy: ADR-0007 §5 forbids per-PR Fly apps."
+          echo "Frontend previews use MSW-mocked API responses instead."
