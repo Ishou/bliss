@@ -6,5 +6,7 @@ build/
 .gradle/
 !gradle/wrapper/gradle-wrapper.jar
 
-# Claude Code agent worktrees (created by `isolation: "worktree"` dispatches)
-.claude/
+# Claude Code: project-level skills, subagents, slash commands, and hooks under
+# .claude/ are versioned. Ignore only the ephemeral and per-developer entries.
+.claude/worktrees/
+.claude/settings.local.json
