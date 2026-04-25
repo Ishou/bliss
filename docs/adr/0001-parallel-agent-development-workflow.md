@@ -97,7 +97,12 @@ Agents work in parallel. Merges are serialized:
 
 - `main` is the only long-lived branch.
 - PRs rebase on `main` immediately before merge. Merge commits are forbidden
-  on `main`; squash-merge only. This keeps the history linear and reviewable.
+  on `main`; **rebase-merge is the default, squash-merge is acceptable**
+  for PRs whose commit history would be noise (WIP, fixup, tooling churn).
+  Both keep the history linear; rebase preserves the per-commit
+  conventional-commit scoping (especially the §6a fix-cycle commits)
+  which is more useful for `git log` archaeology than a single squashed
+  message.
 - The maintainer (human) is the sole arbiter of merge order. Agents do not
   self-merge, even when CI is green.
 - If two PRs touch the same schema file, the second one rebases and re-runs
