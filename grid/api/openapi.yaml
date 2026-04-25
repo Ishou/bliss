@@ -1,0 +1,319 @@
+# Grid bounded-context HTTP contract.
+#
+# Hand-written OpenAPI 3.1 per ADR-0003 §1 (source of truth, not generated
+# from controller annotations). Wire conventions per ADR-0003 §6: UUID v7 ids,
+# ISO-8601 instants with offset, camelCase, RFC 7807 errors, string enums.
+#
+# v1 surface: a single read endpoint. List, search, create, and update land
+# in subsequent workstreams.
+openapi: 3.1.0
+info:
+  title: Bliss Grid API
+  version: 1.0.0
+  summary: Read access to mots-fléchés puzzles.
+  description: |
+    The Grid bounded context owns puzzle storage and retrieval for the Bliss
+    mots-fléchés game. v1 exposes a single endpoint to fetch a puzzle by id.
+    See `docs/adr/0003-cross-language-api-contract.md` for wire conventions.
+  contact:
+    name: Bliss maintainers
+    url: https://github.com/Ishou/bliss
+    email: noreply@bliss.example
+  license:
+    name: FSL-1.1-MIT
+    url: https://github.com/Ishou/bliss/blob/main/LICENSE
+
+servers:
+  - url: https://api.bliss.example/grid
+    description: Placeholder; the URL stabilizes when the first JVM endpoint
+      workstream lands (hosting decision deferred per ADR-0003 §Notes).
+
+tags:
+  - name: puzzles
+    description: Read access to mots-fléchés puzzles.
+
+paths:
+  /v1/puzzles/{puzzleId}:
+    get:
+      operationId: getPuzzle
+      summary: Fetch a puzzle by id.
+      description: |
+        Returns the full puzzle document — every cell and clue. The response
+        is self-contained: a client with the document can render the grid and
+        the clue list without further round-trips.
+      tags: [puzzles]
+      parameters:
+        - $ref: '#/components/parameters/PuzzleId'
+      responses:
+        '200':
+          description: |
+            Puzzle found. Canonical sample at
+            `grid/api/examples/get-puzzle-200.json` is the contract-test
+            fixture for both sides of the wire.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Puzzle'
+        '404':
+          description: |
+            No puzzle exists with the given id. RFC 7807 body; canonical
+            sample at `grid/api/examples/get-puzzle-404.json`.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+
+components:
+  parameters:
+    PuzzleId:
+      name: puzzleId
+      in: path
+      required: true
+      description: UUID v7 identifier of the puzzle.
+      schema:
+        $ref: '#/components/schemas/PuzzleId'
+
+  schemas:
+    PuzzleId:
+      type: string
+      format: uuid
+      description: UUID v7 string. Per ADR-0003 §6, ids are never integers.
+      example: 0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6b
+
+    Puzzle:
+      type: object
+      description: A complete mots-fléchés puzzle ready to render and play.
+      required: [id, title, language, width, height, cells, clues, createdAt]
+      properties:
+        id:
+          $ref: '#/components/schemas/PuzzleId'
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+          description: Human-facing puzzle title.
+          example: Petite grille du mardi
+        language:
+          type: string
+          description: |
+            BCP-47 tag (e.g. `fr`, `fr-CA`). Drives clue language and casing
+            rules. v1 targets French mots-fléchés; the wire shape is
+            language-neutral.
+          example: fr
+          pattern: '^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$'
+        width:
+          type: integer
+          minimum: 1
+          maximum: 50
+          description: Number of columns.
+          example: 5
+        height:
+          type: integer
+          minimum: 1
+          maximum: 50
+          description: Number of rows.
+          example: 5
+        cells:
+          type: array
+          description: |
+            Flat row-major array of length `width * height`. Cell at
+            (row, column) lives at index `row * width + column`. Flat over
+            nested matches the Kotlin domain's `Map<Position, Cell>` and the
+            TS renderer's indexing — no transformation either side.
+          items:
+            $ref: '#/components/schemas/Cell'
+        clues:
+          type: array
+          description: |
+            All clues, listed once. Mots-fléchés renders clue text inside a
+            `definition` cell, but `Clue` stays separate so consumers can
+            build a side panel, search, or tally completion without walking
+            the cell array.
+          items:
+            $ref: '#/components/schemas/Clue'
+        createdAt:
+          type: string
+          format: date-time
+          description: ISO-8601 instant with timezone offset.
+          example: '2026-04-24T15:30:00Z'
+
+    Cell:
+      type: object
+      description: |
+        Grid cell variant. `kind` discriminates: `letter` (answer cell,
+        optionally pre-filled), `definition` (clue cell with arrow direction),
+        `block` (unfillable decorative cell).
+      required: [kind, position]
+      properties:
+        kind:
+          $ref: '#/components/schemas/CellKind'
+        position:
+          $ref: '#/components/schemas/Position'
+      discriminator:
+        propertyName: kind
+        mapping:
+          letter: '#/components/schemas/LetterCell'
+          definition: '#/components/schemas/DefinitionCell'
+          block: '#/components/schemas/BlockCell'
+      oneOf:
+        - $ref: '#/components/schemas/LetterCell'
+        - $ref: '#/components/schemas/DefinitionCell'
+        - $ref: '#/components/schemas/BlockCell'
+
+    CellKind:
+      type: string
+      description: Discriminator for the `Cell` variants.
+      enum: [letter, definition, block]
+      x-enum-varnames: [LETTER, DEFINITION, BLOCK]
+
+    LetterCell:
+      type: object
+      description: Answer cell, optionally pre-filled.
+      required: [kind, position]
+      properties:
+        kind:
+          type: string
+          enum: [letter]
+        position:
+          $ref: '#/components/schemas/Position'
+        letter:
+          type: string
+          minLength: 1
+          maxLength: 1
+          pattern: '^[A-Z]$'
+          nullable: true
+          description: |
+            Uppercase A-Z if pre-filled; absent or `null` for a blank cell.
+            `null` and absence are distinct: `null` = explicitly empty in the
+            canonical solution; absence = no constraint declared.
+
+    DefinitionCell:
+      type: object
+      description: |
+        Mots-fléchés definition cell. Holds the clue text and an arrow
+        showing where the answer flows.
+      required: [kind, position, clueId, text, arrow]
+      properties:
+        kind:
+          type: string
+          enum: [definition]
+        position:
+          $ref: '#/components/schemas/Position'
+        clueId:
+          $ref: '#/components/schemas/ClueId'
+        text:
+          type: string
+          minLength: 1
+          maxLength: 500
+          description: Clue text rendered inside the cell.
+          example: Capitale de la France
+        arrow:
+          $ref: '#/components/schemas/Arrow'
+
+    BlockCell:
+      type: object
+      description: Unfillable decorative cell.
+      required: [kind, position]
+      properties:
+        kind:
+          type: string
+          enum: [block]
+        position:
+          $ref: '#/components/schemas/Position'
+
+    Arrow:
+      type: string
+      description: |
+        Arrow direction on a definition cell. `right` and `down` are the only
+        mots-fléchés conventions today; new shapes (e.g. `right-then-down`)
+        land in a future schema version if needed.
+      enum: [right, down]
+      x-enum-varnames: [RIGHT, DOWN]
+
+    Direction:
+      type: string
+      description: Direction a clue's answer is written.
+      enum: [across, down]
+      x-enum-varnames: [ACROSS, DOWN]
+
+    Position:
+      type: object
+      description: Zero-indexed grid coordinate.
+      required: [row, column]
+      properties:
+        row:
+          type: integer
+          minimum: 0
+          description: Zero-indexed row, top to bottom.
+        column:
+          type: integer
+          minimum: 0
+          description: Zero-indexed column, left to right.
+
+    ClueId:
+      type: string
+      format: uuid
+      description: UUID v7 identifier of a clue.
+      example: 0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6c
+
+    Clue:
+      type: object
+      description: |
+        A single clue. Mots-fléchés shows the text inside a `DefinitionCell`,
+        but the wire keeps `Clue` separate so consumers can list, search,
+        and tally without walking the cell array.
+      required: [id, direction, start, length, text]
+      properties:
+        id:
+          $ref: '#/components/schemas/ClueId'
+        direction:
+          $ref: '#/components/schemas/Direction'
+        start:
+          $ref: '#/components/schemas/Position'
+          description: |
+            First answer cell (not the definition cell). The definition cell
+            sits adjacent to `start` opposite `direction`.
+        length:
+          type: integer
+          minimum: 1
+          maximum: 50
+          description: Number of letter cells in the answer.
+        text:
+          type: string
+          minLength: 1
+          maxLength: 500
+          description: |
+            Clue text. Duplicated from `DefinitionCell.text` on purpose —
+            cheap on a 225-cell grid and spares clients a join.
+
+    Problem:
+      type: object
+      description: |
+        RFC 7807 error envelope (ADR-0003 §6). Additional members per
+        RFC 7807 §3.2 may appear; clients tolerate them.
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+          format: uri
+          description: |
+            Stable URI for the error class. Clients route on `type`, never on
+            `title` or `detail`.
+          example: https://bliss.example/errors/puzzle-not-found
+        title:
+          type: string
+          description: Short, human-readable summary of the error class.
+          example: Puzzle not found
+        status:
+          type: integer
+          minimum: 100
+          maximum: 599
+          description: HTTP status code, repeated for clients that lose it.
+          example: 404
+        detail:
+          type: string
+          description: Human-readable explanation specific to this occurrence.
+        instance:
+          type: string
+          format: uri-reference
+          description: URI reference identifying the specific occurrence.
