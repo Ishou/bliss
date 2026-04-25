@@ -30,11 +30,18 @@ jobs:
 
       - name: Run Claude Code Review
         id: claude-review
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           additional_permissions: |
             actions: read
+          # Restrict the agent to read-only access to the repo plus the one
+          # gh subcommand it needs to post the review. Without this, the agent
+          # could in principle run arbitrary git/gh actions; with it, the worst
+          # case is an extra review comment.
+          claude_args: '--allowed-tools "Read,Glob,Grep,Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh pr review:*),Bash(cat:*)"'
           prompt: |
             You are the §6a reviewer agent for PR #${{ github.event.pull_request.number }}
             on the bliss repository (${{ github.repository }}).
@@ -107,20 +114,32 @@ jobs:
               wrong, that is a separate workstream proposing an ADR amendment,
               not a comment on this PR.
 
-            ## Output
+            ## Output (you must actually post this — not just write it)
 
-            Submit **one** GitHub PR review (not multiple). The review may
-            contain line-level comments for specific findings, plus a top-level
-            summary that:
-            - Begins with one of:
-              - `LGTM, no findings.`
-              - `Findings — see comments below.`
-            - For each finding, cites the rule (e.g. `CLAUDE.md` "no SDK in
-              domain", `ADR-0001 §6`, `ADR-0003 §6 wire conventions`) and the
-              suggested fix.
+            Drafting the review is not enough. You must call the GitHub CLI
+            to submit it; if you only write the text and exit, nothing reaches
+            the PR.
 
-            Do not approve or request changes formally — leave that to the
-            human maintainer. Submit as a `COMMENT` review.
+            Steps, in order:
+
+            1. Use `gh pr view "$PR_NUMBER" --json title,body,files,additions,deletions`
+               and `gh pr diff "$PR_NUMBER"` to see the diff. (Already in your
+               allowed-tools list.)
+            2. Read the relevant rule files in the checked-out repo (see "Read
+               first" above) using the `Read` tool.
+            3. Compose the review body in markdown. Begin with one of:
+               - `LGTM, no findings.`
+               - `Findings — see comments below.`
+               For each finding, cite the rule (e.g. `CLAUDE.md` "no SDK in
+               domain", `ADR-0001 §6`, `ADR-0003 §6 wire conventions`),
+               quote the offending file/line briefly, and propose a fix.
+            4. Write the body to `/tmp/review.md` using `cat <<'BODY' > /tmp/review.md`.
+            5. Submit the review with:
+               `gh pr review "$PR_NUMBER" --comment --body-file /tmp/review.md`
+               Use the `--comment` event (not `--approve`, not
+               `--request-changes`) — approval/rejection is the human
+               maintainer's call.
+            6. Do not call `gh pr review` more than once in this run.
 
             ## Tone
 
