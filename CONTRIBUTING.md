@@ -53,11 +53,30 @@ Keep subjects under 72 characters; describe the *why* in the body.
 
 - One workstream per PR. Hard cap: 400 lines of hand-written diff
   (generated code excluded). See ADR-0001 §4.
-- Squash-merge only into `main`. No merge commits.
+- Rebase-merge into `main` (default; squash for noisy histories). No
+  merge commits. See ADR-0001 §6.
 - The PR description names the workstream, the bounded context and
   layer touched, and any schemas shipped first (ADR-0001 §3).
-- Architecture tests, CI, and the secret-scan workflow must be green
-  before merge.
+- Architecture tests, CI, the secret-scan workflow, and the DCO check
+  must be green before merge.
+
+## Sign-off (DCO)
+
+Every commit must be signed off under the
+[Developer Certificate of Origin 1.1](https://developercertificate.org/).
+Sign-off is a single line at the end of the commit message:
+
+```
+Signed-off-by: Your Name <you@example.com>
+```
+
+Use `git commit -s` to add it automatically; `git commit -s --amend` or
+`git rebase --signoff <base>` to fix existing commits. The CI workflow
+`.github/workflows/dco.yml` enforces this on every PR.
+
+By signing off, you certify that you have the right to submit your
+contribution under the project's license (FSL-1.1-MIT — see
+[`LICENSE`](./LICENSE)). Bot-authored commits (`*[bot]`) are exempt.
 
 ## Where to read more
 
