@@ -10,12 +10,12 @@ const errorPageStyles = css({
   padding: 'lg',
   bg: 'bg',
   color: 'fg',
-  fontFamily: 'sans',
+  fontFamily: 'body',
   textAlign: 'center',
 });
 
 const errorTitleStyles = css({
-  fontSize: { base: 'xl', md: '2xl' },
+  fontSize: { base: 'xl', md: 'display' },
   fontWeight: 'bold',
   letterSpacing: '-0.02em',
   margin: 0,
@@ -23,7 +23,7 @@ const errorTitleStyles = css({
 
 const errorMessageStyles = css({
   marginTop: 'sm',
-  fontSize: 'md',
+  fontSize: 'body',
   opacity: 0.8,
 });
 
