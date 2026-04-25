@@ -10,3 +10,10 @@ build/
 # .claude/ are versioned. Ignore only the ephemeral and per-developer entries.
 .claude/worktrees/
 .claude/settings.local.json
+
+# wrangler files
+.wrangler
+.dev.vars*
+!.dev.vars.example
+.env*
+!.env.example
