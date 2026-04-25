@@ -151,18 +151,46 @@ frontend pattern:
   introducing a Worker just to remove CORS headers is overhead the v1
   doesn't need.
 
-### 5. Promotion strategy: previews on PR, production on `main`
+### 5. Promotion strategy: frontend-only previews, production-only API
 
-- **Preview**: each PR runs `flyctl deploy` against a per-PR app
-  (`wordsparrow-api-pr-${PR_NUMBER}`); a workflow step on
-  `pull_request: closed` tears it down. Reviewers get a
-  `https://wordsparrow-api-pr-N.fly.dev` URL paired with the
-  Cloudflare Pages preview URL on the same PR.
+- **Preview**: the frontend deploys via Cloudflare Pages as before
+  (ADR-0004 unchanged). **The API is not deployed per-PR.** Preview
+  frontends use Mock Service Worker (MSW) handlers generated from the
+  OpenAPI spec to simulate API responses. The real API runs only on
+  `main`.
+
+  Why this works without losing review value:
+  - Previews exist for **visual review**; the spec-driven MSW mocks
+    are spec-conformant by construction, so visual reviewers see the
+    same shapes the real API will return.
+  - Schema-first contract gates (ADR-0003 §7 runtime validation,
+    ADR-0003 §9 contract tests) catch integration mismatches *before*
+    a PR can merge. Previews don't add information those gates don't
+    already provide.
+  - Eliminates per-PR Fly cost (~$2-5/PR) and per-PR cleanup
+    automation (Fly apps don't auto-tear-down).
+  - Preview frontend gets `VITE_USE_MOCK_API=true` injected at build
+    time; production gets `false`. MSW is tree-shaken out of the
+    production bundle.
+
+  Trade-offs accepted:
+  - Real-API errors that the spec doesn't model (e.g., a 500 the
+    spec didn't anticipate) won't surface in previews. Mitigation:
+    spec the error shapes (RFC 7807, already done).
+  - Real-API latency isn't simulated. Mitigation: synthetic delay
+    in MSW for visual review of loading states; real load testing
+    happens in production for v1, in staging when staging exists.
+
 - **Production**: push to `main` deploys to the `wordsparrow-api` app
   at `api.wordsparrow.io`.
-- Same workflow, different `--app` flag — manifesto-conformant
-  ("Same IaC for ephemeral, staging, and production").
+- **Same IaC** for the production app and (eventually) the staging
+  app — manifesto-conformant. The "same IaC" rule applies to the
+  *real* API tier; preview is mocked, so it's outside that scope.
 - **Staging tier**: not introduced in v1, same posture as ADR-0004 §4.
+  This design pushes a real staging environment slightly higher in
+  the eventual ADR queue (since previews stop being a full
+  end-to-end check), but not urgently — staging matters when real
+  users / real data exist.
 
 ### 6. Rollback strategy
 
@@ -255,6 +283,13 @@ possibly Redis, and an ADR amendment.
 - Cost monitoring / budget alerts.
 - Custom-domain decisions beyond the apex `wordsparrow.io` already
   attached and the new `api.` subdomain introduced here.
+- **Per-PR API previews.** Out of scope per §5: previews are
+  frontend-only with spec-driven MSW mocks. Revisit when end-to-end
+  testing on real data becomes a development bottleneck — likely the
+  same trigger that introduces a staging tier.
+- The MSW handler implementation itself ships in a follow-up
+  `feat/frontend-msw-preview-mocks` workstream; this ADR commits to
+  the *strategy*, not the code.
 
 ## Consequences
 
@@ -331,10 +366,17 @@ each under the 400-line cap):
    the random-puzzle endpoint (per ADR-0001 §3 schema-first), then
    the Ktor handler that wires the existing `grid/domain/` generator
    to HTTP.
-4. **`feat/frontend-grid-fetch-from-api`** — frontend wires to the
+4. **`feat/frontend-msw-preview-mocks`** — MSW handlers generated from
+   the OpenAPI spec, gated by `VITE_USE_MOCK_API`. Independent of
+   workstreams 1–3; can land any time after the spec amendment in
+   workstream 3 (or against the existing spec for already-defined
+   endpoints).
+5. **`feat/frontend-grid-fetch-from-api`** — frontend wires to the
    new endpoint via the `openapi-fetch` client already scaffolded in
-   PR #18, replacing `SAMPLE_PUZZLE`.
+   PR #18, replacing `SAMPLE_PUZZLE`. Production hits the real Fly
+   API; preview hits MSW from workstream 4.
 
-The order matters: 1 → 2 → 3 → 4. Workstreams 1 and 2 can interleave
-but the deploy fails until both are in place; mark workstream 1 as
-"deploy-ready but not yet deployed" in its PR body.
+The order matters: 1 → 2 → 3 → 5 for the production path. Workstream
+4 (MSW) can interleave with 1-3; it doesn't depend on the API
+existing. Workstream 5 depends on both 3 (real endpoint exists) and
+4 (preview mock exists for the same endpoint).
