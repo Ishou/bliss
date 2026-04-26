@@ -144,3 +144,27 @@ jobs:
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
           echo "**Image:** \`ghcr.io/${{ github.repository_owner }}/bliss/wordsparrow-api@${{ steps.build.outputs.digest }}\`" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Stage digest for downstream CD workflow
+        # The k8s CD workflow (deploy-api-k8s.yml) is chained via a
+        # `workflow_run` trigger. Job-level `outputs:` are NOT readable
+        # across workflows from a `workflow_run` consumer (GitHub only
+        # exposes them to dependent jobs in the same run via `needs`).
+        # Uploading the digest as an artifact here is the supported
+        # cross-workflow handoff: the consumer downloads it with
+        # actions/download-artifact's `run-id` + `github-token` form.
+        # See ADR-0009 §8 step 5.
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          mkdir -p artifact
+          printf '%s' "${{ steps.build.outputs.digest }}" > artifact/digest.txt
+
+      - name: Upload digest artifact
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        # actions/upload-artifact v4.6.2
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: image-digest
+          path: artifact/digest.txt
+          if-no-files-found: error
+          retention-days: 7

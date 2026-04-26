@@ -1,0 +1,196 @@
+name: Deploy API (k8s)
+
+# Implements ADR-0009 §8 step 5: continuous delivery of the WordSparrow
+# API to the Hetzner k3s cluster (FSN1, 1 CP + 1 worker, ADR-0009 §2).
+#
+# Triggered by `Build and Push Image` (build-and-push-image.yml) on every
+# successful main push: the build workflow publishes a digest-pinned
+# image to GHCR and uploads the resolved sha256 as an `image-digest`
+# artifact; this workflow downloads the digest and runs `helm upgrade`
+# against the cluster with `--set image.digest=<sha256>` so the chart's
+# `image.requireDigest` guard (grid/api/deploy/chart/templates/_helpers.tpl)
+# is satisfied. `workflow_dispatch` is wired for manual rollback /
+# redeploy: pass the desired digest as the `digest` input.
+#
+# Runs ALONGSIDE the existing Fly deploy at .github/workflows/deploy-api.yml
+# until ADR-0009 §8 step 7 cutover removes Fly. Both workflows shipping
+# the same image to two production targets is intentional during the
+# migration window — the cutover PR removes Fly, not this file.
+#
+# Images are immutable per the MANIFESTO ("Container images pinned to
+# digest. Builds are deterministic."): no `:latest`, no floating tags
+# reach the cluster. The chart fails fast (helm `fail`) when no digest
+# is supplied, so a degraded artifact path here surfaces as a build
+# failure, not a silent untagged deploy.
+#
+# `--atomic --wait` wires the manifesto's "Rollback is always one click"
+# rule into the failure path: if the new ReplicaSet doesn't reach Ready
+# within the timeout, Helm rolls back to the prior revision automatically.
+# Manual rollback uses the `workflow_dispatch` input with the previous
+# good digest.
+#
+# PREREQUISITES (one-time human bootstrap, see docs/deploy.md):
+#   - The Hetzner k8s cluster + platform operators (cert-manager,
+#     ingress-nginx, external-dns, CNPG, hcloud-csi) are bootstrapped
+#     via `infra/platform/` per ADR-0009 §3 (PR56).
+#   - The `KUBECONFIG_PROD` repository secret holds the cluster's
+#     kubeconfig with the rewritten public IP.
+#   - The `wordsparrow-api-env` secret is created in the `wordsparrow`
+#     namespace per ADR-0009 §10.
+#   - The GHCR package `bliss/wordsparrow-api` is set to public (the
+#     one-time package-visibility flip from build-and-push-image.yml's
+#     header), so the cluster pulls anonymously without an
+#     imagePullSecret.
+
+on:
+  workflow_run:
+    # Must match the upstream workflow's `name:` field exactly. If that
+    # workflow is renamed, update the string here — there is no symbol
+    # link, GitHub matches on display name.
+    workflows: ["Build and Push Image"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      digest:
+        description: 'Image digest to deploy, format "sha256:..." (manual rollback / redeploy).'
+        required: true
+        type: string
+
+concurrency:
+  # Serialize prod deploys: a second push mid-deploy queues rather than
+  # cancels (cancel-in-progress: false). Mid-flight `helm upgrade`
+  # cancellation can leave the release in a `pending-upgrade` state
+  # that requires manual `helm rollback`, which violates the one-click
+  # rollback rule.
+  group: deploy-api-k8s-prod
+  cancel-in-progress: false
+
+permissions:
+  # Least-privilege per CLAUDE.md "Security". `actions: read` is
+  # required for actions/download-artifact's cross-workflow form
+  # (downloading from another workflow run via `run-id`).
+  contents: read
+  actions: read
+
+jobs:
+  deploy:
+    # Skip when the upstream build failed or was cancelled. On
+    # `workflow_dispatch` there is no upstream run to consult, so the
+    # event-name guard short-circuits the conclusion check.
+    # Skip when upstream build was workflow_dispatch — that path doesn't upload the digest artifact (see build-and-push-image.yml).
+    if: >-
+      ${{ github.event_name == 'workflow_dispatch' ||
+          (github.event.workflow_run.conclusion == 'success' &&
+           github.event.workflow_run.event == 'push') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      # Surfaces this deploy in the GitHub "Environments" UI and lets
+      # the maintainer attach manual-approval / required-reviewer
+      # protection rules later without changing this file.
+      name: prod
+      url: https://api.wordsparrow.io/v1/health
+
+    steps:
+      - name: Checkout repository
+        # actions/checkout v4.3.1 — same SHA as helm-lint.yml.
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          fetch-depth: 1
+
+      - name: Set up Helm
+        # azure/setup-helm v4.3.1 — same SHA as helm-lint.yml.
+        uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4 # v4.3.1
+        with:
+          version: v3.16.3
+
+      - name: Download digest artifact (workflow_run)
+        # Cross-workflow artifact download: the build workflow uploaded
+        # `image-digest` in the run identified by `workflow_run.id`.
+        # `actions/download-artifact@v4` supports this via `run-id` +
+        # `github-token` (the token needs `actions: read`, granted at
+        # job scope above). Skipped on `workflow_dispatch` — that path
+        # uses the `inputs.digest` value below instead.
+        if: github.event_name == 'workflow_run'
+        # actions/download-artifact v4.3.0
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: image-digest
+          path: artifact
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Resolve image digest
+        id: digest
+        env:
+          DISPATCH_DIGEST: ${{ inputs.digest }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            digest="$DISPATCH_DIGEST"
+          else
+            digest="$(cat artifact/digest.txt)"
+          fi
+          if [ -z "$digest" ]; then
+            echo "::error::resolved digest is empty"
+            exit 1
+          fi
+          case "$digest" in
+            sha256:*) ;;
+            *)
+              echo "::error::digest must start with 'sha256:'; got '$digest'"
+              exit 1
+              ;;
+          esac
+          echo "digest=$digest" >> "$GITHUB_OUTPUT"
+          echo "Resolved digest: $digest"
+
+      - name: Configure kubeconfig
+        env:
+          KUBECONFIG_DATA: ${{ secrets.KUBECONFIG_PROD }}
+        run: |
+          set -euo pipefail
+          if [ -z "${KUBECONFIG_DATA:-}" ]; then
+            echo "::error::KUBECONFIG_PROD secret is not set; see docs/deploy.md"
+            exit 1
+          fi
+          mkdir -p ~/.kube
+          printf '%s' "$KUBECONFIG_DATA" > ~/.kube/config
+          chmod 600 ~/.kube/config
+
+      - name: Helm upgrade --install
+        env:
+          DIGEST: ${{ steps.digest.outputs.digest }}
+        run: |
+          set -euo pipefail
+          helm upgrade --install wordsparrow-api grid/api/deploy/chart/ \
+            -n wordsparrow --create-namespace \
+            -f grid/api/deploy/chart/values-prod.yaml \
+            --set image.digest="$DIGEST" \
+            --atomic --wait --timeout 5m
+
+      - name: Verify rollout
+        run: |
+          set -euo pipefail
+          kubectl -n wordsparrow rollout status deployment/wordsparrow-api --timeout=2m
+          kubectl -n wordsparrow get pods -o wide
+
+      - name: Smoke test /v1/health
+        # External smoke test against the public ingress. cert-manager
+        # + external-dns must already have the cert + DNS in place
+        # (covered by the platform bootstrap). Five attempts at 10s
+        # apart absorbs DNS / cache propagation jitter without masking
+        # a real outage — total budget 50s.
+        run: |
+          set -euo pipefail
+          for i in 1 2 3 4 5; do
+            if curl -sf -m 5 https://api.wordsparrow.io/v1/health; then
+              echo "healthy"
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "::error::api.wordsparrow.io did not return 200 after 50s"
+          exit 1
