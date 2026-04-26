@@ -17,7 +17,7 @@ write_files:
         - "bliss.io/role=worker"
         - "bliss.io/cluster=${cluster_name}"
 
-  - path: /var/lib/cloud/scripts/per-instance/00-install-k3s.sh
+  - path: /usr/local/bin/install-k3s.sh
     permissions: "0755"
     owner: root:root
     content: |
@@ -34,4 +34,4 @@ write_files:
       curl -sfL https://get.k3s.io | sh -s - agent
 
 runcmd:
-  - /var/lib/cloud/scripts/per-instance/00-install-k3s.sh
+  - /usr/local/bin/install-k3s.sh

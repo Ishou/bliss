@@ -22,7 +22,7 @@ write_files:
         - traefik
         - servicelb
 
-  - path: /var/lib/cloud/scripts/per-instance/00-install-k3s.sh
+  - path: /usr/local/bin/install-k3s.sh
     permissions: "0755"
     owner: root:root
     content: |
@@ -38,4 +38,4 @@ write_files:
       done
 
 runcmd:
-  - /var/lib/cloud/scripts/per-instance/00-install-k3s.sh
+  - /usr/local/bin/install-k3s.sh
