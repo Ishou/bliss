@@ -84,10 +84,10 @@ const defText = css({
 });
 // Smaller font for clues longer than the heuristic 14-character cutoff
 // (matches typical short French clues like "Astre nocturne" = 14 chars).
-// The xs token is 0.75rem; this drops to 0.625rem to fit ~2 lines of
-// 18-22 character prose into a single grid cell without further
-// truncation. Below 14 chars we keep the `xs` size set on the parent.
-const defTextSmall = css({ fontSize: '0.625rem', lineHeight: '1.05' });
+// The xxs token (0.625rem) fits ~2 lines of 18-22 character prose into a
+// single grid cell without further truncation. Below 14 chars we keep
+// the `xs` size set on the parent.
+const defTextSmall = css({ fontSize: 'xxs', lineHeight: '1.05' });
 // Arrow lives in its own span at the end of the cell — never inside
 // the clamped text node. Right-aligned for `right` arrows, left-
 // aligned for `down` arrows mirrors the visual direction. `flexShrink:
@@ -113,7 +113,7 @@ const defStack = css({
   height: '100%',
   padding: '2px',
   gap: '1px',
-  fontSize: '0.625rem',
+  fontSize: 'xxs',
   lineHeight: '1.05',
 });
 const defStackClue = css({
