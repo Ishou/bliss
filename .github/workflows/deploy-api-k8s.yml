@@ -78,7 +78,11 @@ jobs:
     # Skip when the upstream build failed or was cancelled. On
     # `workflow_dispatch` there is no upstream run to consult, so the
     # event-name guard short-circuits the conclusion check.
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    # Skip when upstream build was workflow_dispatch — that path doesn't upload the digest artifact (see build-and-push-image.yml).
+    if: >-
+      ${{ github.event_name == 'workflow_dispatch' ||
+          (github.event.workflow_run.conclusion == 'success' &&
+           github.event.workflow_run.event == 'push') }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     environment:
