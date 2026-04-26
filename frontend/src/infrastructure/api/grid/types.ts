@@ -267,21 +267,6 @@ export interface operations {
                 };
             };
             /**
-             * @description No puzzle exists with the given id. RFC 7807 body.
-             *     **Deferred — not returned in v1.** v1 is stateless: every valid
-             *     UUID path parameter yields a freshly generated puzzle. This
-             *     response activates in the persistence workstream, when puzzles
-             *     are stored and can genuinely be absent.
-             */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Problem"];
-                };
-            };
-            /**
              * @description Puzzle generation failed. The generator could not satisfy the
              *     requested constraints within its attempt budget. RFC 7807 body;
              *     `type` is `https://bliss.example/errors/puzzle-generation-failed`.
