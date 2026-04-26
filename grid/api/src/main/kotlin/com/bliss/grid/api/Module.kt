@@ -1,7 +1,9 @@
 package com.bliss.grid.api
 
 import com.bliss.grid.api.dto.ProblemDetails
+import com.bliss.grid.api.infrastructure.words.ResourceWordRepository
 import com.bliss.grid.api.routes.health
+import com.bliss.grid.api.routes.puzzles
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.json.json
@@ -57,7 +59,10 @@ fun Application.module() {
             ?: System.getProperty("grid.api.version")
             ?: "unknown"
 
+    val wordRepository = ResourceWordRepository.frenchFromClasspath()
+
     routing {
         health(version)
+        puzzles(wordRepository)
     }
 }

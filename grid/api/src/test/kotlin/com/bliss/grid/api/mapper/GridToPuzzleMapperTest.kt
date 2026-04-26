@@ -32,11 +32,11 @@ class GridToPuzzleMapperTest {
     ): Position = Position(Row(r), Column(c))
 
     @Test
-    fun `maps a 5x5 grid to a row-major cell array of 25 cells`() {
+    fun `maps a 6x6 grid to a row-major cell array of 36 cells`() {
         val grid =
             Grid.fromPlacements(
-                width = 5,
-                height = 5,
+                width = 6,
+                height = 6,
                 placements =
                     listOf(
                         WordPlacement(
@@ -52,14 +52,14 @@ class GridToPuzzleMapperTest {
         val response = mapper.toApi(grid = grid, puzzleId = puzzleId, createdAt = createdAt)
 
         assertThat(response.id).isEqualTo(puzzleId.toString())
-        assertThat(response.width).isEqualTo(5)
-        assertThat(response.height).isEqualTo(5)
+        assertThat(response.width).isEqualTo(6)
+        assertThat(response.height).isEqualTo(6)
         assertThat(response.language).isEqualTo("fr")
-        assertThat(response.cells).hasSize(25)
-        // Row-major: index 0 is (0,0), index 6 is (1,1), etc.
+        assertThat(response.cells).hasSize(36)
+        // Row-major: index 0 is (0,0), index 7 is (1,1), etc.
         response.cells.forEachIndexed { i, cell ->
-            val expectedRow = i / 5
-            val expectedCol = i % 5
+            val expectedRow = i / 6
+            val expectedCol = i % 6
             assertThat(cell.position.row).isEqualTo(expectedRow)
             assertThat(cell.position.column).isEqualTo(expectedCol)
         }
@@ -124,8 +124,8 @@ class GridToPuzzleMapperTest {
                 height = 5,
                 placements =
                     listOf(
-                        WordPlacement(Word("PARIS", "capitale"), pos(0, 0), Direction.RIGHT),
-                        WordPlacement(Word("ROUTE", "voie"), pos(0, 0), Direction.DOWN),
+                        WordPlacement(Word("ROSE", "fleur"), pos(0, 0), Direction.RIGHT),
+                        WordPlacement(Word("CHAT", "felin"), pos(0, 0), Direction.DOWN),
                     ),
             )
 
@@ -149,8 +149,8 @@ class GridToPuzzleMapperTest {
                 height = 5,
                 placements =
                     listOf(
-                        WordPlacement(Word("PARIS", "capitale"), pos(0, 0), Direction.RIGHT),
-                        WordPlacement(Word("ROUTE", "voie"), pos(0, 0), Direction.DOWN),
+                        WordPlacement(Word("ROSE", "fleur"), pos(0, 0), Direction.RIGHT),
+                        WordPlacement(Word("CHAT", "felin"), pos(0, 0), Direction.DOWN),
                     ),
             )
 
@@ -191,8 +191,8 @@ class GridToPuzzleMapperTest {
                 height = 5,
                 placements =
                     listOf(
-                        WordPlacement(Word("PARIS", "capitale"), pos(0, 0), Direction.RIGHT),
-                        WordPlacement(Word("ROUTE", "voie"), pos(0, 0), Direction.DOWN),
+                        WordPlacement(Word("ROSE", "fleur"), pos(0, 0), Direction.RIGHT),
+                        WordPlacement(Word("CHAT", "felin"), pos(0, 0), Direction.DOWN),
                     ),
             )
 
@@ -200,7 +200,7 @@ class GridToPuzzleMapperTest {
 
         assertThat(response.clues).hasSize(2)
         response.clues.forEach { clue ->
-            assertThat(clue.length).isIn(5)
+            assertThat(clue.length).isEqualTo(4)
             assertThat(clue.direction).isIn("across", "down")
             assertThat(clue.text).isNotNull()
         }
@@ -229,8 +229,8 @@ class GridToPuzzleMapperTest {
     fun `cells are emitted in strict row-major order with no skipped indices`() {
         val grid =
             Grid.fromPlacements(
-                width = 4,
-                height = 4,
+                width = 5,
+                height = 5,
                 placements =
                     listOf(
                         WordPlacement(Word("PAIN", "aliment"), pos(0, 0), Direction.RIGHT),
@@ -240,8 +240,8 @@ class GridToPuzzleMapperTest {
         val response = mapper.toApi(grid, UUID.randomUUID(), Instant.now())
 
         val expectedPositions =
-            (0 until 16).map { i ->
-                CellDto.PositionDto(row = i / 4, column = i % 4)
+            (0 until 25).map { i ->
+                CellDto.PositionDto(row = i / 5, column = i % 5)
             }
         assertThat(response.cells.map { it.position }).isEqualTo(expectedPositions)
     }
