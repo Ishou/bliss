@@ -35,3 +35,8 @@ output "node_ips" {
     [for s in hcloud_server.worker : s.ipv4_address],
   )
 }
+
+output "ingress_floating_ip" {
+  description = "Stable public IPv4 attached to the ingress node. Survives node replacement; used as the kubeconfig server URL, the k3s API tls-san entry, and ingress-nginx publish-status-address. Consume via `tofu output -raw ingress_floating_ip`."
+  value       = hcloud_floating_ip.ingress.ip_address
+}

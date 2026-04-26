@@ -26,6 +26,12 @@ locals {
       tls_san       = "${var.cluster_name}-cp-${i}"
       private_ip    = local.cp_private_ips[i]
       private_iface = var.private_iface
+      # Floating IP must be in tls-san so the kubeconfig — whose
+      # server URL is the floating IP, not the CP's ephemeral public
+      # IP — passes TLS verification. See floating-ip.tf for the
+      # circular-reference analysis (none: ip_address is allocated
+      # before any server exists).
+      floating_ip = hcloud_floating_ip.ingress.ip_address
     })
   ]
 }

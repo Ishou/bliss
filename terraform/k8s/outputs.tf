@@ -37,3 +37,8 @@ output "node_ips" {
   description = "List of public IPv4 addresses for every node (control plane + workers). Used by smoke tests, ssh access, and any external monitoring that pings nodes directly. Order is not guaranteed stable across applies — treat as a set."
   value       = module.cluster.node_ips
 }
+
+output "ingress_floating_ip" {
+  description = "Stable public IPv4 attached to the cluster's ingress node. This is the address the kubeconfig server URL, the k3s API server's tls-san list, and ingress-nginx's publish-status-address all point at — it survives node replacement so DNS records and kubeconfigs do not need to be re-issued every time a node is replaced. Provider implementations that cannot offer a floating IP equivalent should return one of the node IPs and document the trade-off."
+  value       = module.cluster.ingress_floating_ip
+}

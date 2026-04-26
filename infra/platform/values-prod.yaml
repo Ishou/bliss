@@ -25,6 +25,17 @@ ingress-nginx:
     hostNetwork: true
     service:
       type: ClusterIP
+    # `publish-status-address` is the IP ingress-nginx writes back into
+    # every Ingress's `.status.loadBalancer.ingress[0].ip`. external-dns
+    # reads that field to decide which record to create, so pinning it
+    # to the Hetzner Floating IP (terraform/k8s/ output
+    # `ingress_floating_ip`) makes external-dns auto-publish the right
+    # A record without per-Ingress `external-dns.alpha.kubernetes.io/target`
+    # annotations. Value is provisioner-specific and not known until
+    # `tofu apply` reserves the floating IP, so it is supplied at
+    # `helm install/upgrade` time — see docs/deploy.md:
+    #   --set ingress-nginx.controller.extraArgs.publish-status-address=$(tofu output -raw ingress_floating_ip)
+    extraArgs: {}
 
 external-dns:
   enabled: true

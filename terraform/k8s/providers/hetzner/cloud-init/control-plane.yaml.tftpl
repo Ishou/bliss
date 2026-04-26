@@ -27,6 +27,7 @@ write_files:
       tls-san:
         - ${tls_san}
         - ${private_ip}
+        - ${floating_ip}
       node-label:
         - "bliss.io/role=control-plane"
         - "bliss.io/cluster=${cluster_name}"
