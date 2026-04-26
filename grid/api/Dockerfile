@@ -34,8 +34,9 @@ COPY --from=build /workspace/grid/api/build/libs/grid-api-*-all.jar /app/grid-ap
 
 EXPOSE 8080
 
-# Container-level liveness probe. Fly performs its own HTTP probe via
-# fly.toml (workstream 2); this is good hygiene for `docker run`.
+# Container-level liveness probe. Kubernetes performs its own HTTP
+# probe via the Helm chart's readinessProbe / livenessProbe (ADR-0009);
+# this is good hygiene for `docker run` outside the cluster.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
     CMD wget -q -O - http://localhost:8080/v1/health || exit 1
 

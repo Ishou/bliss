@@ -20,20 +20,5 @@ terraform {
       source  = "cloudflare/cloudflare"
       version = "~> 5.19"
     }
-
-    # andrewbaxter/fly is the active community fork of the now-archived
-    # fly-apps/fly provider (fly-apps was archived 2024-03-01, last release
-    # v0.0.23). ADR-0007 §2 names "fly-apps/fly" by intent — the fork is the
-    # operational successor. v0.1.18 (2024-10-28) is the latest release as of
-    # 2026-04. Pinning ~> 0.1 keeps any 0.1.x patch flowing in; an eventual
-    # 0.2 bump is a deliberate decision (small breaking surface — only `app`,
-    # `machine`, `volume`, `ip`, `cert` resources, no `postgres`).
-    #
-    # Verify the latest at apply time: `tofu init` will pick the highest
-    # 0.1.x available and pin it in `.terraform.lock.hcl`.
-    fly = {
-      source  = "andrewbaxter/fly"
-      version = "~> 0.1"
-    }
   }
 }

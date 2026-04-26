@@ -2,10 +2,10 @@
 
 ## Status
 
-Proposed. Partially supersedes ADR-0007 (the API and Postgres move off
-Fly.io; the frontend stays on Cloudflare Pages, ADR-0004 unchanged).
-ADR-0007 will be amended in the cutover PR after migration is validated;
-this ADR documents the decision, not the rollout.
+Accepted. Supersedes ADR-0007 (the API and Postgres move off Fly.io;
+the frontend stays on Cloudflare Pages, ADR-0004 unchanged). ADR-0007
+was amended in PR #65 (Fly teardown); DNS cutover (§8 step 6) and
+remaining cluster bring-up steps are tracked in their own PRs.
 
 ## Context
 

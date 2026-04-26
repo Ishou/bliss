@@ -1,17 +1,25 @@
-# Cloudflare DNS records for the Fly-backed API (ADR-0007 §4).
+# Cloudflare DNS records for the API subdomain.
 #
-# `api.wordsparrow.io` is a CNAME pointing at the Fly app's *.fly.dev
-# hostname in **DNS-only mode** (`proxied = false`, gray-cloud). Two
-# reasons:
+# Originally defined for the Fly-backed API (ADR-0007 §4). ADR-0007 was
+# superseded by ADR-0009 (Hetzner k3s) and the Fly deployment never
+# reached production; the Fly teardown PR removed the Fly app, but this
+# resource is intentionally retained until ADR-0009 §8 step 6 cuts DNS
+# ownership over to in-cluster `external-dns` (which reconciles records
+# from `Ingress` host annotations). Until step 6 lands the CNAME below
+# resolves to a non-existent Fly app (NXDOMAIN); acceptable because no
+# live traffic was ever served via this hostname.
 #
-#   1. SSE / WebSocket. ADR-0007 §9 commits to SSE for v1 and reserves
-#      WebSocket for the multiplayer feature. Cloudflare's free-tier
-#      proxy has had SSE buffering quirks and a 100s WebSocket
-#      idle-timeout; bypassing the proxy avoids surprise cuts.
-#   2. TLS at Fly. Fly issues the Let's Encrypt cert for the custom
-#      hostname (`fly_cert.api_hostname`); DNS-only mode lets the cert
-#      validate against the real origin without a Cloudflare-Universal-
-#      SSL detour.
+# `api.wordsparrow.io` is a CNAME in **DNS-only mode** (`proxied =
+# false`, gray-cloud). Two reasons that survive the platform change:
+#
+#   1. SSE / WebSocket. ADR-0007 §9 (carried into ADR-0009) commits to
+#      SSE for v1 and reserves WebSocket for the multiplayer feature.
+#      Cloudflare's free-tier proxy has had SSE buffering quirks and a
+#      100s WebSocket idle-timeout; bypassing the proxy avoids surprise
+#      cuts.
+#   2. TLS at the origin. Fly issued the cert under ADR-0007;
+#      cert-manager (ADR-0009 §3) will issue it under the new platform.
+#      DNS-only mode keeps that path clean either way.
 #
 # Cloudflare provider v5 schema requires the zone ID directly (the
 # singular `data "cloudflare_zone"` source needs `zone_id`, not `name`).
@@ -20,7 +28,6 @@
 #
 # Required Cloudflare API token scope (extends the ADR-0004 token):
 # `Zone -> DNS -> Edit` and `Zone -> Zone -> Read` on wordsparrow.io.
-# See `docs/deploy.md` for the token-update step.
 #
 # Gated on var.custom_domain *and* var.cloudflare_zone_id so a
 # bootstrap apply before either exists still works.
@@ -31,12 +38,14 @@ resource "cloudflare_dns_record" "api_subdomain" {
   zone_id = var.cloudflare_zone_id
   name    = "api.${var.custom_domain}"
   type    = "CNAME"
-  # Fly's per-app *.fly.dev hostname is the canonical CNAME target.
-  # Using the variable rather than a Fly provider attribute keeps the
-  # record creatable even if the Fly provider is temporarily
-  # unreachable — the convention `<app>.fly.dev` is stable.
-  content = "${var.fly_app_name}.fly.dev"
+  # Historical CNAME target from ADR-0007 (the Fly app `wordsparrow-api`
+  # at `*.fly.dev`). The Fly app no longer exists, so this CNAME
+  # resolves to NXDOMAIN until ADR-0009 §8 step 6 hands ownership of
+  # the record to in-cluster `external-dns`. Inlined (not a variable)
+  # because the value is a historical artifact, not a configuration
+  # input — step 6 will replace this resource entirely.
+  content = "wordsparrow-api.fly.dev"
   ttl     = 300
   proxied = false
-  comment = "ADR-0007 §4 — DNS-only CNAME to Fly. Managed by terraform/cloudflare-dns-records.tf."
+  comment = "Historical Fly target (ADR-0007, superseded by ADR-0009). Slated for external-dns takeover in ADR-0009 §8 step 6."
 }

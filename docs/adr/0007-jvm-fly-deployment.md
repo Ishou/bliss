@@ -2,9 +2,17 @@
 
 ## Status
 
-Accepted
+Superseded by ADR-0009 (Hetzner k3s migration; Fly never reached production)
 
 ## Context
+
+> **Update (2026-04-26): This ADR is superseded by ADR-0009. The Fly
+> deployment described below was specced and the workflow committed,
+> but `flyctl deploy` was never successfully run against the Fly
+> account — `FLY_API_TOKEN` was never provisioned. The migration to
+> self-managed k3s on Hetzner (ADR-0009) skipped the step-by-step
+> verification of ADR-0009 §8 step 7 because there was no live Fly
+> traffic to migrate. Original text preserved for historical context.**
 
 ADR-0004 deployed the frontend static bundle to Cloudflare Pages and
 explicitly deferred the JVM hello-world deployment: *"separate ADR when
