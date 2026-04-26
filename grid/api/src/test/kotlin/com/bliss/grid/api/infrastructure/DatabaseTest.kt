@@ -5,10 +5,18 @@ import assertk.assertThat
 import assertk.assertions.contains
 import assertk.assertions.containsAtLeast
 import assertk.assertions.isEqualTo
+import assertk.assertions.isFalse
 import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotNull
 import assertk.assertions.isNull
 import assertk.assertions.isTrue
+import io.kotest.property.Arb
+import io.kotest.property.arbitrary.Codepoint
+import io.kotest.property.arbitrary.alphanumeric
+import io.kotest.property.arbitrary.int
+import io.kotest.property.arbitrary.string
+import io.kotest.property.checkAll
+import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -83,6 +91,43 @@ class DatabaseTest {
         assertThat(user).isNull()
         assertThat(pw).isNull()
     }
+
+    @Test
+    fun `toJdbcUrl wraps IPv6 host in brackets`() {
+        val converted = Database.toJdbcUrl("postgres://app:secret@[::1]:5432/wordsparrow")
+        assertThat(converted).isEqualTo("jdbc:postgresql://[::1]:5432/wordsparrow")
+    }
+
+    @Test
+    fun `toJdbcUrl always strips userinfo and prefixes jdbc for valid postgres URIs`() =
+        runBlocking {
+            checkAll(
+                Arb.string(1..20, Codepoint.alphanumeric()),
+                Arb.string(1..20, Codepoint.alphanumeric()),
+                Arb.string(1..20, Codepoint.alphanumeric()),
+                Arb.int(1024..65535),
+            ) { user, pass, dbName, port ->
+                val raw = "postgres://$user:$pass@db.example:$port/$dbName"
+                val jdbc = Database.toJdbcUrl(raw)
+                assertThat(jdbc.startsWith("jdbc:postgresql://")).isTrue()
+                // userinfo must be stripped — check the literal "user:pass@" segment is gone
+                assertThat(jdbc.contains("$user:$pass@")).isFalse()
+            }
+        }
+
+    @Test
+    fun `extractCredentials round-trips alphanumeric user and password`() =
+        runBlocking {
+            checkAll(
+                Arb.string(1..20, Codepoint.alphanumeric()),
+                Arb.string(1..20, Codepoint.alphanumeric()),
+            ) { user, pass ->
+                val raw = "postgres://$user:$pass@db.example:5432/db"
+                val (extractedUser, extractedPass) = Database.extractCredentials(raw)
+                assertThat(extractedUser).isEqualTo(user)
+                assertThat(extractedPass).isEqualTo(pass)
+            }
+        }
 
     /**
      * Spins a real Postgres, points [Database.start] at it, then asserts:

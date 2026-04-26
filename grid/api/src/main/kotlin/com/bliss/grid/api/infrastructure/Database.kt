@@ -96,7 +96,16 @@ object Database {
         require(scheme == "postgres" || scheme == "postgresql") {
             "DATABASE_URL must use postgres:// or postgresql:// scheme, got: $scheme"
         }
-        val host = requireNotNull(uri.host) { "DATABASE_URL is missing host" }
+        val rawHost = requireNotNull(uri.host) { "DATABASE_URL is missing host" }
+        // java.net.URI preserves brackets in getHost() on Java 9+ (e.g. "[::1]").
+        // Guard both cases: add brackets only when the host is an unbracketed IPv6
+        // literal (contains ':' but doesn't start with '[').
+        val host =
+            when {
+                rawHost.startsWith("[") -> rawHost
+                rawHost.contains(':') -> "[$rawHost]"
+                else -> rawHost
+            }
         val port = if (uri.port == -1) DEFAULT_POSTGRES_PORT else uri.port
         val path = uri.rawPath.orEmpty().ifEmpty { "/" }
         val query = uri.rawQuery?.let { "?$it" }.orEmpty()

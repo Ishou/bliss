@@ -31,6 +31,7 @@ val postgresqlJdbcVersion = "42.7.10"
 val hikariVersion = "7.0.2"
 val flywayVersion = "12.4.0"
 val testcontainersVersion = "1.21.4"
+val kotestPropertyVersion = "5.9.1"
 
 application {
     mainClass.set("com.bliss.grid.api.MainKt")
@@ -88,6 +89,9 @@ dependencies {
     testImplementation("org.testcontainers:testcontainers:$testcontainersVersion")
     testImplementation("org.testcontainers:junit-jupiter:$testcontainersVersion")
     testImplementation("org.testcontainers:postgresql:$testcontainersVersion")
+
+    // Property-based tests for parsers and serialization (CLAUDE.md).
+    testImplementation("io.kotest:kotest-property-jvm:$kotestPropertyVersion")
 }
 
 tasks.test {
