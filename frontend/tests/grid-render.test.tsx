@@ -219,12 +219,12 @@ describe('Grid render', () => {
     const arrowNode = root?.querySelector('[data-clue-arrow]') as HTMLElement | null;
     expect(arrowNode).not.toBeNull();
     expect(arrowNode?.textContent).toBe('→');
-    // DOM order: text precedes arrow.
-    const children = Array.from(root?.children ?? []);
-    const textIdx = children.indexOf(textNode as Element);
-    const arrowIdx = children.indexOf(arrowNode as Element);
-    expect(textIdx).toBeGreaterThanOrEqual(0);
-    expect(arrowIdx).toBeGreaterThan(textIdx);
+    // DOM order: text precedes arrow. Both nodes are inside the same
+    // wrapper, so compareDocumentPosition reports FOLLOWING (4) for
+    // the arrow relative to the text.
+    expect(textNode!.compareDocumentPosition(arrowNode!)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
   });
 
   it('keeps both clues visible in stacked cells, each with its own title and arrow', () => {

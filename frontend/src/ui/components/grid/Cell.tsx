@@ -32,6 +32,21 @@ const defCell = css({
   textAlign: 'left',
   overflow: 'hidden',
 });
+// Single-clue layout root. Flex column so the (clamped) text occupies
+// the top of the cell while the arrow span anchors a separate row at
+// the bottom — keeping the directional cue visible even when CSS
+// clips the prose. See the 2026-04-26 prod regression: long French
+// definitions ("Volatile à long cou", "Tracer des mots") wrapped
+// mid-word and the arrow ended up swallowed inside the truncated
+// text node. Splitting text and arrow into sibling spans prevents
+// that whole class of overflow bug.
+const defSingle = css({
+  display: 'flex',
+  flexDirection: 'column',
+  width: '100%',
+  height: '100%',
+  gap: '2px',
+});
 // Current-clue definition: leaf.700 anchor border + leaf.700 text on the
 // sand bg. Border + color = two cues per WCAG. leaf.700-on-sand ≈ 5.4:1.
 // The border sits on the side opposite the arrow (top for `down`, left
@@ -60,9 +75,39 @@ const letterInput = css({
   padding: 0,
   _focus: { bg: 'leaf.500', color: 'ink' },
 });
-// Single-clue layout: text fills the cell, arrow anchors at the corner.
-const defText = css({ flex: 1, alignSelf: 'flex-start', paddingRight: 'xs', wordBreak: 'break-word' });
-const defArrow = css({ position: 'absolute', bottom: '2px', right: '4px', fontSize: 'md', color: 'accent', lineHeight: 1 });
+// Single-clue text. `lineClamp: 2` is panda's shortcut for the
+// `display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient:
+// vertical; overflow: hidden` quartet that clips at two lines and
+// inserts the browser's native ellipsis. The full clue text is also
+// exposed via `title` on the element, so users get the native tooltip
+// on hover/long-press without us reinventing tooltip plumbing.
+// `wordBreak: normal` + `overflowWrap: break-word` lets long French
+// words break at sane boundaries instead of mid-word.
+const defText = css({
+  flex: 1,
+  alignSelf: 'stretch',
+  lineClamp: 2,
+  overflowWrap: 'break-word',
+  wordBreak: 'normal',
+});
+// Smaller font for clues longer than the heuristic 14-character cutoff
+// (matches typical short French clues like "Astre nocturne" = 14 chars).
+// The xs token is 0.75rem; this drops to 0.625rem to fit ~2 lines of
+// 18-22 character prose into a single grid cell without further
+// truncation. Below 14 chars we keep the `xs` size set on the parent.
+const defTextSmall = css({ fontSize: '0.625rem', lineHeight: '1.05' });
+// Arrow lives in its own span at the end of the cell — never inside
+// the clamped text node. Right-aligned for `right` arrows, left-
+// aligned for `down` arrows mirrors the visual direction. `flexShrink:
+// 0` guarantees the glyph never collapses, even when the text node
+// is overflowing.
+const defArrow = css({
+  alignSelf: 'flex-end',
+  fontSize: 'md',
+  color: 'accent',
+  lineHeight: 1,
+  flexShrink: 0,
+});
 
 // Stacked layout: two clues share the cell vertically, each with its own
 // arrow inline at the end of the text. The font shrinks one step so two
@@ -91,8 +136,25 @@ const defStackClue = css({
 });
 // Highlighted stacked clue when the cursor is on its answer.
 const defStackClueCurrent = css({ color: 'leaf.700' });
-const defStackText = css({ flex: 1, paddingRight: '2px' });
+// Stacked clue text uses the same two-line clamp as single-clue text,
+// but with smaller dimensions because the cell now hosts two clues. The
+// `title` attribute on this node carries the full prose for the native
+// tooltip when the visible portion is clipped.
+const defStackText = css({
+  flex: 1,
+  paddingRight: '2px',
+  lineClamp: 2,
+  overflowWrap: 'break-word',
+  wordBreak: 'normal',
+});
 const defStackArrow = css({ color: 'accent', fontSize: 'xs', lineHeight: 1, flexShrink: 0 });
+
+// Length heuristic: above 14 characters we drop to a smaller type
+// step so the clamp has room for two readable lines. Picked to match
+// the most common short-French-clue length (e.g. "Astre nocturne" =
+// 14 chars). Tweak if the typography scale shifts.
+const LONG_CLUE_THRESHOLD = 14;
+const isLongClue = (text: string): boolean => text.length > LONG_CLUE_THRESHOLD;
 
 const arrowGlyph: Record<ArrowDirection, string> = { right: '→', down: '↓' };
 const arrowLabel: Record<ArrowDirection, string> = { right: 'horizontale', down: 'verticale' };
@@ -143,6 +205,7 @@ export const LetterCellView = memo(function LetterCellView({
 // `isCurrent` tints the clue text with `leaf.700` when its answer is the
 // focused word — same anchor logic as single-clue cells, scoped per clue.
 function StackedClue({ clue, isCurrent }: { clue: DefinitionClue; isCurrent: boolean }) {
+  const longText = isLongClue(clue.text);
   return (
     <div
       className={`${defStackClue}${isCurrent ? ` ${defStackClueCurrent}` : ''}`}
@@ -151,8 +214,14 @@ function StackedClue({ clue, isCurrent }: { clue: DefinitionClue; isCurrent: boo
       data-arrow={clue.arrow}
       data-current-clue={isCurrent ? 'true' : 'false'}
     >
-      <span className={defStackText}>{clue.text}</span>
-      <span className={defStackArrow} aria-hidden="true">
+      <span
+        className={`${defStackText}${longText ? ` ${defTextSmall}` : ''}`}
+        data-clue-text=""
+        title={clue.text}
+      >
+        {clue.text}
+      </span>
+      <span className={defStackArrow} data-clue-arrow="" aria-hidden="true">
         {arrowGlyph[clue.arrow]}
       </span>
     </div>
@@ -174,6 +243,7 @@ export const DefinitionCellView = memo(function DefinitionCellView({
     const currentClass = isCurrent
       ? clue.arrow === 'down' ? defCellCurrentDown : defCellCurrentRight
       : '';
+    const longText = isLongClue(clue.text);
     return (
       <div
         role="gridcell"
@@ -184,10 +254,22 @@ export const DefinitionCellView = memo(function DefinitionCellView({
         data-clue-count="1"
         data-current-clue={isCurrent ? 'true' : 'false'}
       >
-        <span className={defText}>{clue.text}</span>
-        <span aria-label={`définition ${arrowLabel[clue.arrow]}`} className={defArrow}>
-          {arrowGlyph[clue.arrow]}
-        </span>
+        <div className={defSingle}>
+          <span
+            className={`${defText}${longText ? ` ${defTextSmall}` : ''}`}
+            data-clue-text=""
+            title={clue.text}
+          >
+            {clue.text}
+          </span>
+          <span
+            aria-label={`définition ${arrowLabel[clue.arrow]}`}
+            className={defArrow}
+            data-clue-arrow=""
+          >
+            {arrowGlyph[clue.arrow]}
+          </span>
+        </div>
       </div>
     );
   }
