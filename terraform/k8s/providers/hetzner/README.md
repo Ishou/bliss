@@ -12,7 +12,7 @@ declared at `terraform/k8s/`. See
   dual-attached (public IPv4 + private IP).
 - One firewall (SSH, k3s API, HTTP/HTTPS public; intra-network open).
 - One `hcloud_ssh_key` per `var.ssh_public_keys` entry.
-- A Terraform-generated `random_password` is the cluster join token,
+- An OpenTofu-generated `random_password` is the cluster join token,
   shared by both cloud-init templates — no post-apply SSH dance.
 
 ## Wiring

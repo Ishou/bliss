@@ -328,7 +328,7 @@ and §6 (credentials).
 ## Terraform k8s state backend — first-time bootstrap (one-time)
 
 These are one-time, human steps run **once** before any maintainer ever
-runs `terraform init` against `terraform/k8s/`. Skip if the bucket
+runs `tofu init` against `terraform/k8s/`. Skip if the bucket
 already exists.
 
 ### 1. Create the state bucket
@@ -371,8 +371,8 @@ Store both as GitHub Actions secrets for CI:
 - `HCLOUD_OS_ACCESS_KEY`
 - `HCLOUD_OS_SECRET_KEY`
 
-For local `terraform init`, export them under their AWS-SDK names (the
-Terraform S3 backend reads `AWS_*` env vars even against non-AWS
+For local `tofu init`, export them under their AWS-SDK names (the
+OpenTofu S3 backend reads `AWS_*` env vars even against non-AWS
 endpoints):
 
 ```sh
@@ -385,7 +385,7 @@ export AWS_SECRET_ACCESS_KEY=<hetzner-os-secret>
 From `terraform/k8s/`:
 
 ```sh
-terraform init
+tofu init
 ```
 
 There is no state to migrate yet — `terraform/k8s/` declares no
@@ -395,13 +395,13 @@ append `-migrate-state` so the existing local `terraform.tfstate` is
 uploaded into the bucket:
 
 ```sh
-terraform init -migrate-state
+tofu init -migrate-state
 ```
 
 ### 4. Verify locking
 
 ```sh
-terraform plan
+tofu plan
 ```
 
 The plan should succeed (it has no resources to read; expect a "No
@@ -427,7 +427,7 @@ cloud-init.
 - The `bliss-tf-state` Object Storage bucket from the previous
   section.
 - An ed25519 SSH key on the maintainer's machine — public half goes
-  to `terraform apply`, private half fetches the kubeconfig.
+  to `tofu apply`, private half fetches the kubeconfig.
 
 ```sh
 export HCLOUD_TOKEN=<hetzner-cloud-api-token>
@@ -440,8 +440,8 @@ export AWS_SECRET_ACCESS_KEY=<hetzner-os-secret>
 From `terraform/k8s/`:
 
 ```sh
-terraform init
-terraform apply \
+tofu init
+tofu apply \
   -var "ssh_public_keys=[\"$(cat ~/.ssh/id_ed25519.pub)\"]"
 ```
 
@@ -455,7 +455,7 @@ ADR-0009 §10 accepts the documented-one-time-human-step pattern for
 things that don't cleanly automate at v1.
 
 ```sh
-CP_IP=$(terraform output -raw cluster_endpoint | sed 's|https://||;s|:6443||')
+CP_IP=$(tofu output -raw cluster_endpoint | sed 's|https://||;s|:6443||')
 mkdir -p ~/.kube
 scp -o StrictHostKeyChecking=accept-new \
   root@"$CP_IP":/etc/rancher/k3s/k3s.yaml ~/.kube/wordsparrow-prod
