@@ -26,6 +26,12 @@ test against.
 one is missing if you skip a step. It will not install anything for
 you — installation is your platform's job.
 
+> Safety note on the `curl … | bash` install hints above: this is the
+> upstream-recommended pattern for these tools, but you should verify
+> the script's checksum (or read it) before piping to a shell, especially
+> over an untrusted network. Package-manager installs (`brew`, distro
+> packages) avoid the question entirely.
+
 ## 2. Cluster lifecycle
 
 All commands are wrappers around `scripts/local-cluster.sh`:
@@ -81,17 +87,23 @@ After `make cluster-bootstrap` you have:
 | --------------- | ------------------------------------- | ---------------------------------- | --------------------------------------------------- |
 | DNS             | `external-dns` writes Cloudflare records | none — use `/etc/hosts`         | no DNS provider locally; not worth a token round-trip |
 | TLS issuance    | cert-manager + LetsEncrypt (DNS-01)   | cert-manager + self-signed issuer  | LE rate-limits + needs public DNS                   |
-| Postgres storage| CNPG cluster on local-path PVCs       | CNPG cluster on `emptyDir`         | container teardown shouldn't leak host volumes      |
+| Postgres storage| CNPG cluster on local-path PVCs       | CNPG cluster on `emptyDir`         | data is ephemeral during local dev; no PVC lifecycle to manage |
 | Replicas        | 3 (Postgres), 2 (ingress)             | 1 each                             | laptop budget                                       |
 
-To reach an Ingress locally, add a hosts entry once:
+To reach an Ingress locally, add a hosts entry once. The guard makes
+this safe to re-run without appending duplicates:
 
 ```sh
-echo "127.0.0.1 wordsparrow.local" | sudo tee -a /etc/hosts
+grep -qF 'wordsparrow.local' /etc/hosts \
+  || echo "127.0.0.1 wordsparrow.local" | sudo tee -a /etc/hosts
 ```
 
 then `https://wordsparrow.local/` resolves through k3d's load balancer
 to ingress-nginx. The cert will be self-signed; your browser will warn.
+
+Note: TLS becomes functional only after the WordSparrow chart is
+installed (later PR) — `cluster-bootstrap` installs the cert-manager
+operator but not the self-signed `ClusterIssuer`.
 
 ## 4. Parity guarantee
 
