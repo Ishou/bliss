@@ -106,7 +106,13 @@ object Database {
     /** Pulls `user:password` out of the URI's userinfo for Hikari's auth fields. */
     internal fun extractCredentials(raw: String): Pair<String?, String?> {
         if (raw.startsWith("jdbc:")) return null to null
-        val userInfo = URI(raw).userInfo ?: return null to null
+        val uri =
+            try {
+                URI(raw)
+            } catch (e: Exception) {
+                throw IllegalStateException("DATABASE_URL is not a valid URI", e)
+            }
+        val userInfo = uri.userInfo ?: return null to null
         val parts = userInfo.split(":", limit = 2)
         val user = parts.getOrNull(0)?.takeIf { it.isNotEmpty() }
         val password = parts.getOrNull(1)
