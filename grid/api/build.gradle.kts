@@ -23,6 +23,7 @@ val ktorVersion = "3.4.3"
 val kotlinxSerializationVersion = "1.11.0"
 val logbackVersion = "1.5.32"
 val logstashEncoderVersion = "9.0"
+val javaUuidGeneratorVersion = "4.3.0"
 val junitVersion = "5.11.4"
 val assertkVersion = "0.28.1"
 val konsistVersion = "0.17.3"
@@ -32,6 +33,12 @@ application {
 }
 
 dependencies {
+    // Grid bounded-context inner layers (ADR-0001 §1, MANIFESTO Architecture).
+    // The api layer composes domain generation with infrastructure adapters
+    // and maps domain types to wire DTOs (ADR-0003 §4).
+    implementation(project(":grid:domain"))
+    implementation(project(":grid:infrastructure"))
+
     // Ktor server core + Netty engine (ADR-0006 §1).
     implementation("io.ktor:ktor-server-core:$ktorVersion")
     implementation("io.ktor:ktor-server-netty:$ktorVersion")
@@ -44,6 +51,9 @@ dependencies {
     // Status pages (RFC 7807) + call logging — ADR-0003 §6, MANIFESTO Observability.
     implementation("io.ktor:ktor-server-status-pages:$ktorVersion")
     implementation("io.ktor:ktor-server-call-logging:$ktorVersion")
+
+    // UUID v7 generation (ADR-0003 §6 — wire convention: UUID v7 ids).
+    implementation("com.fasterxml.uuid:java-uuid-generator:$javaUuidGeneratorVersion")
 
     // Structured JSON logging stack (ADR-0007 §7).
     implementation("ch.qos.logback:logback-classic:$logbackVersion")

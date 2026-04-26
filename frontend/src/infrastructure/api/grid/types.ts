@@ -62,10 +62,15 @@ export interface components {
              */
             height: number;
             /**
-             * @description Flat row-major array of length `width * height`. Cell at
-             *     (row, column) lives at index `row * width + column`. Flat over
-             *     nested matches the Kotlin domain's `Map<Position, Cell>` and the
-             *     TS renderer's indexing — no transformation either side.
+             * @description Row-major array of grid cells. Cells are ordered top-to-bottom,
+             *     left-to-right. Array length is **at least** `width * height` but
+             *     may exceed it: when a single grid position carries two clues
+             *     (one `right`, one `down`), the mapper emits two `DefinitionCell`
+             *     entries at the same `(row, column)`.
+             *
+             *     **Lookup by position:** filter on `position.row` and
+             *     `position.column` — do not use flat-index arithmetic
+             *     (`row * width + column`). A position may return 1 or 2 entries.
              */
             cells: components["schemas"]["Cell"][];
             /**
@@ -253,10 +258,39 @@ export interface operations {
                 };
             };
             /**
-             * @description No puzzle exists with the given id. RFC 7807 body; canonical
-             *     sample at `grid/api/examples/get-puzzle-404.json`.
+             * @description Path parameter `puzzleId` is not a valid UUID. RFC 7807 body;
+             *     `type` is `https://bliss.example/errors/invalid-puzzle-id`.
+             */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /**
+             * @description No puzzle exists with the given id. RFC 7807 body.
+             *     **Deferred — not returned in v1.** v1 is stateless: every valid
+             *     UUID path parameter yields a freshly generated puzzle. This
+             *     response activates in the persistence workstream, when puzzles
+             *     are stored and can genuinely be absent.
              */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /**
+             * @description Puzzle generation failed. The generator could not satisfy the
+             *     requested constraints within its attempt budget. RFC 7807 body;
+             *     `type` is `https://bliss.example/errors/puzzle-generation-failed`.
+             *     Clients should retry with exponential back-off.
+             */
+            503: {
                 headers: {
                     [name: string]: unknown;
                 };
