@@ -3,11 +3,13 @@ package com.bliss.grid.domain.generation
 import assertk.assertThat
 import assertk.assertions.isEmpty
 import assertk.assertions.isGreaterThanOrEqualTo
+import assertk.assertions.isNotEqualTo
 import assertk.assertions.isNotNull
 import assertk.assertions.isNull
 import com.bliss.grid.domain.model.LetterCell
 import com.bliss.grid.domain.model.Word
 import com.bliss.grid.domain.validation.GridValidator
+import kotlin.random.Random
 import org.junit.jupiter.api.Test
 
 class GridGeneratorTest {
@@ -61,6 +63,41 @@ class GridGeneratorTest {
         val grid =
             generator.generate(
                 GridConstraints(width = 5, height = 5, targetDensity = 0.9, maxAttempts = 5),
+            )
+
+        assertThat(grid).isNull()
+    }
+
+    @Test
+    fun `different random seeds produce different grids for the same constraints`() {
+        val generator = GridGenerator(ListWordRepository(SMALL_FRENCH_WORDS))
+        val constraints = GridConstraints(width = 5, height = 5, targetDensity = 0.4)
+
+        val grid1 = generator.generate(constraints, Random(1L))
+        val grid2 = generator.generate(constraints, Random(2L))
+
+        assertThat(grid1).isNotNull()
+        assertThat(grid2).isNotNull()
+        assertThat(grid1!!.cells).isNotEqualTo(grid2!!.cells)
+    }
+
+    @Test
+    fun `returns null when wordlist is too small to satisfy density`() {
+        // 5 short two-letter words can't densely fill a 10x10 at density 0.5.
+        val tinyList =
+            listOf(
+                Word("OR", "metal"),
+                Word("OS", "anatomie"),
+                Word("AS", "carte"),
+                Word("DU", "article"),
+                Word("ET", "conjonction"),
+            )
+        val generator = GridGenerator(ListWordRepository(tinyList))
+
+        val grid =
+            generator.generate(
+                GridConstraints(width = 10, height = 10, targetDensity = 0.5, maxAttempts = 2_000),
+                Random(42L),
             )
 
         assertThat(grid).isNull()

@@ -5,6 +5,7 @@ import assertk.assertions.contains
 import assertk.assertions.isEqualTo
 import assertk.assertions.isGreaterThan
 import assertk.assertions.isGreaterThanOrEqualTo
+import assertk.assertions.isNotEqualTo
 import assertk.assertions.isTrue
 import assertk.assertions.startsWith
 import com.bliss.grid.api.dto.PuzzleResponse
@@ -105,6 +106,23 @@ class PuzzleRouteTest {
             assertThat(response.status).isEqualTo(HttpStatusCode.BadRequest)
             assertThat(response.headers["Content-Type"]!!).startsWith("application/problem+json")
             assertThat(response.bodyAsText()).contains("\"status\":400")
+        }
+
+    @Test
+    fun `consecutive GETs produce different cell layouts — randomness end-to-end`() =
+        testApplication {
+            application { module() }
+
+            val secondId = "0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6c"
+            val first = client.get("/v1/puzzles/$validId").bodyAsText()
+            val second = client.get("/v1/puzzles/$secondId").bodyAsText()
+
+            val firstCells =
+                Json.parseToJsonElement(first).jsonObject["cells"]!!.jsonArray.toString()
+            val secondCells =
+                Json.parseToJsonElement(second).jsonObject["cells"]!!.jsonArray.toString()
+
+            assertThat(firstCells).isNotEqualTo(secondCells)
         }
 
     @Test
