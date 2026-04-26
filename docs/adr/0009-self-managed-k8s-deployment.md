@@ -115,6 +115,12 @@ values committed to the repo:
   to Scaleway Object Storage. The durable choice (and migration off
   the interim) is owned by the operator-config workstream.
 
+  > **Update (ADR-0010, 2026-04-26): Hetzner Object Storage went GA in
+  > October 2024 and is now the chosen destination for both TF remote
+  > state and CNPG backups. The Scaleway / Backblaze B2 interim above
+  > is superseded — see ADR-0010 §5. The original text is preserved
+  > for historical context.**
+
 All four are upstream, vendor-neutral, and run identically on any
 conformant Kubernetes cluster.
 
