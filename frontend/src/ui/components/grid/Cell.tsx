@@ -197,7 +197,6 @@ export const LetterCellView = memo(function LetterCellView({
 // `isCurrent` tints the clue text with `leaf.700` when its answer is the
 // focused word — same anchor logic as single-clue cells, scoped per clue.
 function StackedClue({ clue, isCurrent }: { clue: DefinitionClue; isCurrent: boolean }) {
-  const longText = isLongClue(clue.text);
   return (
     <div
       className={`${defStackClue}${isCurrent ? ` ${defStackClueCurrent}` : ''}`}
@@ -207,7 +206,7 @@ function StackedClue({ clue, isCurrent }: { clue: DefinitionClue; isCurrent: boo
       data-current-clue={isCurrent ? 'true' : 'false'}
     >
       <span
-        className={`${defStackText}${longText ? ` ${defTextSmall}` : ''}`}
+        className={defStackText}
         data-clue-text=""
         title={clue.text}
       >
