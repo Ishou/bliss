@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "pnpm panda:codegen && vite",
     "build": "pnpm panda:codegen && tsc -b && vite build",
+    "build:preview": "pnpm panda:codegen && tsc -b && vite build --mode preview",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -21,6 +22,7 @@
     "@ark-ui/react": "^4.9.0",
     "@fontsource-variable/nunito": "^5.2.7",
     "@tanstack/react-router": "^1.95.0",
+    "msw": "^2.13.6",
     "openapi-fetch": "^0.17.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
@@ -63,5 +65,10 @@
       "esbuild": "^0.25.0",
       "postcss": "^8.5.10"
     }
+  },
+  "msw": {
+    "workerDirectory": [
+      "public"
+    ]
   }
 }

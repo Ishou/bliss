@@ -1,6 +1,7 @@
 import { defineConfig, type Plugin } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import path from 'node:path';
+import { readFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import { FontaineTransform } from 'fontaine';
 
@@ -66,6 +67,35 @@ function preloadLatinNunito(): Plugin {
   };
 }
 
+// MSW preview handlers (see ADR-0007 §5) replay the spec's
+// `examples/` payloads so the preview SPA stays contract-conformant
+// without a live API. The fixtures live in `grid/api/examples/` —
+// outside Vite's `root` and outside `frontend/`'s tsconfig include.
+// Rather than copy the file or relax `resolveJsonModule`, this
+// plugin exposes each example as a virtual ESM module:
+//
+//   import puzzle from 'virtual:grid-api-examples/get-puzzle-200';
+//
+// The JSON is read from disk at resolve time, so the spec is the
+// single source of truth — no committed copy to drift.
+function gridApiExamplesAsVirtualModule(): Plugin {
+  const prefix = 'virtual:grid-api-examples/';
+  const examplesDir = path.resolve(__dirname, '../grid/api/examples');
+  return {
+    name: 'grid-api-examples-virtual',
+    resolveId(id) {
+      if (id.startsWith(prefix)) return '\0' + id;
+    },
+    load(resolved) {
+      if (!resolved.startsWith('\0' + prefix)) return;
+      const name = resolved.slice(('\0' + prefix).length);
+      const file = path.join(examplesDir, `${name}.json`);
+      const json = readFileSync(file, 'utf8');
+      return `export default ${json};`;
+    },
+  };
+}
+
 export default defineConfig({
   plugins: [
     react(),
@@ -96,6 +126,7 @@ export default defineConfig({
         pathToFileURL(path.resolve(__dirname, 'node_modules', id)),
     }),
     preloadLatinNunito(),
+    gridApiExamplesAsVirtualModule(),
   ],
   resolve: {
     alias: {
