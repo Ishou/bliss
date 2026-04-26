@@ -1,38 +1,43 @@
 name: Claude Code Review
 
-# Implements ADR-0001 §6a: exactly one automated review-and-fix cycle per PR.
+# Implements ADR-0001 §6a (2026-04-26 amendment): cycle review/fix on each
+# PR until the latest bot review converges on `LGTM`, capped at 5 total
+# bot reviews to prevent infinite loops from reviewer/fixer disagreement.
 #
 # Triggers fire on opened, ready_for_review, synchronize, and reopened so
 # every PR head receives a definitive `claude-review` check status. The
-# one-pass cap is enforced by the "Check for prior §6a review" step: it
-# queries `gh pr view` for an existing review by claude[bot]; if one exists,
-# all subsequent steps are skipped via `if:` and the job exits success
-# without rerunning the reviewer or fixer.
+# fixer's commit-and-push naturally produces a synchronize event, which
+# re-runs this workflow and drives the next cycle. The cap is enforced by
+# the "Check for convergence" step:
+#   - If the latest [bot] review's first line is `LGTM`, skip (converged).
+#   - If total [bot] reviews >= 5, skip with a warning so a human can
+#     intervene (max-iteration cap).
+#   - Otherwise (first cycle, or non-LGTM with count < 5), continue.
 #
-# Why this matters: previously the workflow only fired on opened, so the
-# fixer's commit-and-push (a synchronize event) left the original
-# `claude-review` check pinned to a stale commit SHA — manifested as a
-# perpetually "in_progress" status on the PR after force-pushes. Now every
-# PR head has its own check that either runs the cycle (first time) or
-# short-circuits to success (every time after).
+# Why this matters: the previous "exactly one pass" rule produced a single
+# review and a single fix attempt, with no mechanism to confirm the fix
+# actually addressed the findings. Cycling lets the reviewer verify the
+# fixer's work and lets the fixer iterate on residual findings; the
+# 5-iteration cap bounds the worst case (reviewer/fixer disagreement
+# requiring human arbitration).
 #
 # Concurrency keys on the PR number with cancel-in-progress=false (default):
-# arrivals while the first cycle is running queue rather than restart, so
-# by the time the second arrival runs the prior review exists and the cap
-# fires deterministically.
+# arrivals while a cycle is running queue rather than restart, so each
+# iteration sees the prior reviews and the cap evaluates deterministically.
 #
-# Job sequence (first run only):
+# Job sequence (each cycle):
 #   1. Reviewer agent reads CLAUDE.md/MANIFESTO.md/ADRs and the PR diff,
-#      then submits exactly one review via `gh pr review --comment`.
+#      then submits one review via `gh pr review --comment`.
 #   2. Detect step queries the just-posted review and sets `has_findings`.
 #   3. Fixer agent (only when findings exist) reads the review, applies
 #      fixes or writes rebuttals, runs the relevant verification, commits,
-#      pushes to the PR branch, and posts one reply comment.
+#      pushes to the PR branch, and posts one reply comment. The push fires
+#      a synchronize event that starts the next cycle.
 #
 # Permissions: `contents: write` is required only for the fixer to push to
 # PR branches. The reviewer's allowlist confines it to read + post-review;
-# the fixer's allowlist is broader (Edit/Write/Bash) but capped at one push
-# per PR by the prior-review check.
+# the fixer's allowlist is broader (Edit/Write/Bash). The 5-iteration cap
+# bounds total work per PR.
 
 on:
   pull_request:
@@ -85,23 +90,47 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-      - name: Check for prior §6a review (one-pass cap)
+      - name: Check for convergence (cycle-until-LGTM, max 5 iterations)
         id: cap
-        # Enforces ADR-0001 §6a's "exactly one pass" rule across multiple
-        # workflow triggers (synchronize, reopened) on the same PR. If the
-        # bot has already reviewed, every subsequent step is skipped via
-        # `if: steps.cap.outputs.skip != 'true'` and the job exits success
-        # — keeping the GitHub PR UI honest without re-running the agents.
+        # Cycle behavior (per ADR-0001 §6a 2026-04-26 amendment):
+        # - If the latest [bot] review's first line is `LGTM`, skip
+        #   (convergence reached; no further cycles).
+        # - If total [bot] reviews >= 5, skip with a warning so a human
+        #   can intervene (max-iteration cap, prevents infinite loops
+        #   from reviewer/fixer disagreement).
+        # - Otherwise (first cycle, or non-LGTM review with count < 5),
+        #   continue: run reviewer + fixer.
+        #
+        # Synchronize fires after the fixer's push, naturally driving the
+        # next cycle. Cap step gates: convergence (LGTM in latest bot
+        # review) OR 5-iteration max.
         run: |
           set -euo pipefail
-          existing=$(gh pr view "$PR_NUMBER" --json reviews \
-            --jq '[.reviews[] | select(.author.login | endswith("[bot]"))] | length' \
-            || echo 0)
-          if [ "${existing:-0}" -gt 0 ]; then
-            echo "::notice::Prior §6a review by claude[bot] exists; skipping (ADR-0001 §6a one-pass cap)."
+          reviews=$(gh pr view "$PR_NUMBER" --json reviews \
+            --jq '[.reviews[] | select(.author.login | endswith("[bot]"))]' \
+            || echo '[]')
+          count=$(echo "$reviews" | jq 'length')
+
+          if [ "${count:-0}" -eq 0 ]; then
+            echo "::notice::No prior §6a review; first cycle."
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [ "${count:-0}" -ge 5 ]; then
+            echo "::warning::Hit 5-iteration cap on PR $PR_NUMBER; skipping further §6a cycles. Human intervention required."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Read latest bot review's first line; convergence on `LGTM`.
+          first_line=$(echo "$reviews" | jq -r '.[-1].body // ""' | head -n 1)
+          echo "Latest bot-review first line: $first_line"
+          if echo "$first_line" | grep -q '^LGTM'; then
+            echo "::notice::Latest §6a review is LGTM; convergence reached, skipping."
             echo "skip=true" >> "$GITHUB_OUTPUT"
           else
-            echo "::notice::No prior §6a review found; proceeding with reviewer + fixer."
+            echo "::notice::Latest §6a review has findings ($count prior cycles); continuing."
             echo "skip=false" >> "$GITHUB_OUTPUT"
           fi
 
