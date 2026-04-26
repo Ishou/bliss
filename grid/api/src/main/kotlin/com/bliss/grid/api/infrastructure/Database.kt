@@ -20,10 +20,9 @@ import java.net.URI
 import javax.sql.DataSource
 
 /**
- * Singleton holder that owns the application's [DataSource] and runs Flyway
- * once at startup. PR1 of ADR-0013 only writes the schema — read paths
- * (DatabaseWordRepository) land in PR4. Exposed here so subsequent PRs can
- * obtain the [DataSource] without re-parsing `DATABASE_URL`.
+ * Singleton that owns the application's [DataSource] and runs Flyway once at
+ * startup. Exposed so infrastructure adapters can obtain the pool without
+ * re-parsing `DATABASE_URL`.
  */
 object Database {
     private val log = LoggerFactory.getLogger(Database::class.java)
@@ -107,7 +106,7 @@ object Database {
     /** Pulls `user:password` out of the URI's userinfo for Hikari's auth fields. */
     internal fun extractCredentials(raw: String): Pair<String?, String?> {
         if (raw.startsWith("jdbc:")) return null to null
-        val userInfo = URI(raw).rawUserInfo ?: return null to null
+        val userInfo = URI(raw).userInfo ?: return null to null
         val parts = userInfo.split(":", limit = 2)
         val user = parts.getOrNull(0)?.takeIf { it.isNotEmpty() }
         val password = parts.getOrNull(1)
