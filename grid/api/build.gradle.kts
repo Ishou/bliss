@@ -52,6 +52,11 @@ dependencies {
     implementation("io.ktor:ktor-server-status-pages:$ktorVersion")
     implementation("io.ktor:ktor-server-call-logging:$ktorVersion")
 
+    // CORS — browsers block wordsparrow.io → api.wordsparrow.io without it.
+    // Previews are frontend-only via MSW (ADR-0007 §5), so the allowlist is
+    // narrow: prod apex + www + local Vite dev.
+    implementation("io.ktor:ktor-server-cors:$ktorVersion")
+
     // UUID v7 generation (ADR-0003 §6 — wire convention: UUID v7 ids).
     implementation("com.fasterxml.uuid:java-uuid-generator:$javaUuidGeneratorVersion")
 
