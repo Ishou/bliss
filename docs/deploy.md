@@ -348,8 +348,8 @@ Pick one path:
 **Path B — AWS CLI against the Hetzner endpoint** (if installed):
 
 ```sh
-export AWS_ACCESS_KEY_ID=
-export AWS_SECRET_ACCESS_KEY=
+export AWS_ACCESS_KEY_ID=<hetzner-os-access-key>
+export AWS_SECRET_ACCESS_KEY=<hetzner-os-secret>
 aws s3api create-bucket \
   --bucket bliss-tf-state \
   --endpoint-url https://fsn1.your-objectstorage.com
@@ -376,8 +376,8 @@ Terraform S3 backend reads `AWS_*` env vars even against non-AWS
 endpoints):
 
 ```sh
-export AWS_ACCESS_KEY_ID=
-export AWS_SECRET_ACCESS_KEY=
+export AWS_ACCESS_KEY_ID=<hetzner-os-access-key>
+export AWS_SECRET_ACCESS_KEY=<hetzner-os-secret>
 ```
 
 ### 3. Initialize the backend
