@@ -28,7 +28,7 @@ A clean per-provider module keeps each implementation legible.
 
 ```
 terraform/k8s/
-  versions.tf        ← Terraform CLI pin only; no required_providers (yet)
+  versions.tf        ← OpenTofu CLI pin only; no required_providers (yet)
   variables.tf       ← contract inputs
   outputs.tf         ← contract outputs
   main.tf            ← contract documentation, no resources
@@ -41,13 +41,13 @@ terraform/k8s/
 
 The `providers/` subdirectories are intentionally absent at this stage —
 adding empty placeholder dirs would either churn `git` (`.gitkeep`) or
-mislead `terraform init` into discovering nothing. The first one lands
+mislead `tofu init` into discovering nothing. The first one lands
 with its full implementation in PR3.
 
 ## Why no `required_providers` block here
 
-`versions.tf` pins the Terraform CLI but deliberately omits a
-`required_providers` block. Terraform resolves provider requirements by
+`versions.tf` pins the OpenTofu CLI but deliberately omits a
+`required_providers` block. OpenTofu resolves provider requirements by
 walking the module graph; declaring `hetznercloud/hcloud` (or any other)
 at this layer would force every consumer of the contract to install that
 provider even when they're swapping in a different one. Provider
@@ -87,9 +87,9 @@ for the rationale (jurisdiction, locking semantics, and the
 time-limited `skip_s3_checksum` workaround for OpenTofu issue #2605).
 
 **First-time bootstrap**: the state bucket itself is provisioned
-out-of-band as a one-time human step before the first `terraform init`
+out-of-band as a one-time human step before the first `tofu init`
 against this root. The recipe (Console UI / AWS-CLI bucket create,
-credential provisioning, `terraform init`, locking verification) lives
+credential provisioning, `tofu init`, locking verification) lives
 in
 [`docs/deploy.md`](../../docs/deploy.md#terraform-k8s-state-backend--first-time-bootstrap-one-time).
 

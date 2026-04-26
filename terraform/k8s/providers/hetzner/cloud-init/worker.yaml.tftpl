@@ -1,0 +1,25 @@
+#cloud-config
+# k3s worker bootstrap. Joins the control plane via its public IP using
+# the shared K3S_TOKEN. Pre-install loop avoids the "control-plane not
+# ready" race that would otherwise show up as a flaky tofu apply.
+
+write_files:
+  - path: /etc/rancher/k3s/config.yaml
+    permissions: "0600"
+    content: |
+      node-label:
+        - "bliss.io/role=worker"
+        - "bliss.io/cluster=${cluster_name}"
+
+runcmd:
+  - |
+    set -euo pipefail
+    until curl -sk "https://${cp_ip}:6443/healthz" | grep -qx "ok"; do
+      sleep 5
+    done
+  - |
+    set -euo pipefail
+    export INSTALL_K3S_VERSION="${k3s_version}"
+    export K3S_TOKEN="${k3s_token}"
+    export K3S_URL="https://${cp_ip}:6443"
+    curl -sfL https://get.k3s.io | sh -s - agent

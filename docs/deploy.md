@@ -328,7 +328,7 @@ and §6 (credentials).
 ## Terraform k8s state backend — first-time bootstrap (one-time)
 
 These are one-time, human steps run **once** before any maintainer ever
-runs `terraform init` against `terraform/k8s/`. Skip if the bucket
+runs `tofu init` against `terraform/k8s/`. Skip if the bucket
 already exists.
 
 ### 1. Create the state bucket
@@ -348,8 +348,8 @@ Pick one path:
 **Path B — AWS CLI against the Hetzner endpoint** (if installed):
 
 ```sh
-export AWS_ACCESS_KEY_ID=<hetzner-os-access-key>
-export AWS_SECRET_ACCESS_KEY=<hetzner-os-secret>
+export AWS_ACCESS_KEY_ID=<s3-access-key>
+export AWS_SECRET_ACCESS_KEY=<s3-secret>
 aws s3api create-bucket \
   --bucket bliss-tf-state \
   --endpoint-url https://fsn1.your-objectstorage.com
@@ -368,16 +368,16 @@ the CNPG-wiring PR).
 
 Store both as GitHub Actions secrets for CI:
 
-- `HCLOUD_OS_ACCESS_KEY`
-- `HCLOUD_OS_SECRET_KEY`
+- `S3_ACCESS_KEY`
+- `S3_SECRET_KEY`
 
-For local `terraform init`, export them under their AWS-SDK names (the
-Terraform S3 backend reads `AWS_*` env vars even against non-AWS
+For local `tofu init`, export them under their AWS-SDK names (the
+OpenTofu S3 backend reads `AWS_*` env vars even against non-AWS
 endpoints):
 
 ```sh
-export AWS_ACCESS_KEY_ID=<hetzner-os-access-key>
-export AWS_SECRET_ACCESS_KEY=<hetzner-os-secret>
+export AWS_ACCESS_KEY_ID=<s3-access-key>
+export AWS_SECRET_ACCESS_KEY=<s3-secret>
 ```
 
 ### 3. Initialize the backend
@@ -385,7 +385,7 @@ export AWS_SECRET_ACCESS_KEY=<hetzner-os-secret>
 From `terraform/k8s/`:
 
 ```sh
-terraform init
+tofu init
 ```
 
 There is no state to migrate yet — `terraform/k8s/` declares no
@@ -395,13 +395,13 @@ append `-migrate-state` so the existing local `terraform.tfstate` is
 uploaded into the bucket:
 
 ```sh
-terraform init -migrate-state
+tofu init -migrate-state
 ```
 
 ### 4. Verify locking
 
 ```sh
-terraform plan
+tofu plan
 ```
 
 The plan should succeed (it has no resources to read; expect a "No
@@ -411,4 +411,70 @@ changes" plan), and the bucket should briefly show a
 If the run 400s with `XAmzContentSHA256Mismatch`, the
 `skip_s3_checksum = true` flag is missing from the backend block —
 re-check `terraform/k8s/versions.tf` against ADR-0010 §2.
+
+## Hetzner cluster bring-up (one-time)
+
+First concrete cluster-provisioning module:
+`terraform/k8s/providers/hetzner/`, wired from `terraform/k8s/main.tf`.
+Spec is [ADR-0009](./adr/0009-self-managed-k8s-deployment.md). v1
+footprint: 1 control plane + 1 worker, `cx22` in `fsn1`, k3s via
+cloud-init.
+
+### Prerequisites
+
+- Hetzner Cloud project + read/write API token
+  (Project → Security → API Tokens).
+- The `bliss-tf-state` Object Storage bucket from the previous
+  section.
+- An ed25519 SSH key on the maintainer's machine — public half goes
+  to `tofu apply`, private half fetches the kubeconfig.
+
+```sh
+export HCLOUD_TOKEN=<hetzner-cloud-api-token>
+export AWS_ACCESS_KEY_ID=<s3-access-key>
+export AWS_SECRET_ACCESS_KEY=<s3-secret>
+```
+
+### 1. Provision
+
+From `terraform/k8s/`:
+
+```sh
+tofu init
+tofu apply \
+  -var "cluster_name=wordsparrow" \
+  -var "region=fsn1" \
+  -var "node_size=cx22" \
+  -var "ssh_public_keys=[\"$(cat ~/.ssh/id_ed25519.pub)\"]"
+```
+
+Apply takes ~3–5 min. The worker's cloud-init waits on the
+control-plane's `:6443/healthz` before joining, so the apply returns
+only once both nodes are up.
+
+### 2. Fetch the kubeconfig (one-time human step)
+
+ADR-0009 §10 accepts the documented-one-time-human-step pattern for
+things that don't cleanly automate at v1.
+
+```sh
+CP_IP=$(tofu output -raw cluster_endpoint | sed 's|https://||;s|:6443||')
+mkdir -p ~/.kube
+scp -o StrictHostKeyChecking=accept-new \
+  root@"$CP_IP":/etc/rancher/k3s/k3s.yaml ~/.kube/wordsparrow-prod
+sed -i "s|127.0.0.1|$CP_IP|" ~/.kube/wordsparrow-prod
+chmod 600 ~/.kube/wordsparrow-prod
+export KUBECONFIG=~/.kube/wordsparrow-prod
+kubectl get nodes  # both Ready
+```
+
+The kubeconfig is **not** committed and **not** stored in Terraform
+state. CI's copy goes into a GitHub Actions secret (`KUBECONFIG`),
+populated by the maintainer once after step 2.
+
+### 3. Next
+
+Operator install (cert-manager, ingress-nginx, external-dns, CNPG)
+and the secrets-bootstrap (`kubectl create secret`) ship in the next
+PR (step 3 of the ADR-0009 §8 migration).
 
