@@ -70,6 +70,14 @@ schema.
 - One workstream = one PR. No bundling.
 - Hard cap: 400 lines of diff, generated code excluded. Above the cap, the PR
   is split. Schema regeneration is excluded; logic is not.
+
+  > **Update (2026-04-26): The cap excludes blank lines in addition to
+  > generated code. The diff metric GitHub displays is line-by-line
+  > including blanks, but the cap's intent is reviewability — blank
+  > lines structure readability without adding review burden. Motivating
+  > case: PR #50 (Helm chart skeleton) shipped 13 well-organized files
+  > totaling 409 GitHub-counted additions, 394 of which were non-blank.
+  > The original text is preserved for historical context.**
 - Conventional commits with the bounded-context as scope:
   `feat(grid-application): …`, `fix(frontend-grid): …`,
   `chore(api-grid): regenerate openapi types`.
@@ -129,6 +137,9 @@ round runs before the human maintainer reviews and merges:
    merge time. No agent ping-pong, no second review pass, no second fix pass.
 6. If a fix would push the PR over the 400-line cap (generated code
    excluded), the PR is **split**, not padded.
+
+   > **Update (2026-04-26): Blank lines are also excluded from this
+   > cap, consistent with the §4 addendum of the same date.**
 7. Schema PRs receive the same one-pass review, focused on contract design
    rather than implementation correctness.
 8. The review-and-fix cycle is required, not best-effort: if no reviewer
