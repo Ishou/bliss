@@ -92,9 +92,11 @@ cloudnative-pg:
 hcloud-csi:
   enabled: true
   # Hetzner Cloud API token, bootstrapped one-time per ADR-0009 §10:
-  #   kubectl -n kube-system create secret generic hcloud-csi-token \
-  #     --from-literal=token="$HCLOUD_TOKEN"
-  # Same HCLOUD_TOKEN value the terraform/k8s/ Hetzner module already uses.
+  #   kubectl -n platform create secret generic hcloud-csi-token \
+  #     --from-literal=token="$HCLOUD_TOKEN_CSI"
+  # HCLOUD_TOKEN_CSI is a SEPARATE token from the HCLOUD_TOKEN value the
+  # terraform/k8s/ Hetzner module uses for provisioning — blast-radius
+  # separation keeps a CSI driver leak from compromising node provisioning.
   controller:
     # hcloud-csi 2.10.1 values.yaml line 159 expects existingSecret as an
     # object {name, key}, not a string; the chart's controller deployment

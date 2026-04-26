@@ -15,9 +15,15 @@ Must exist before `helm install` — never committed:
 kubectl create namespace platform
 kubectl -n platform create secret generic cloudflare-api-token \
   --from-literal=cloudflare_api_token="$CLOUDFLARE_API_TOKEN_DNS"
-kubectl -n kube-system create secret generic hcloud-csi-token \
-  --from-literal=token="$HCLOUD_TOKEN"
+kubectl -n platform create secret generic hcloud-csi-token \
+  --from-literal=token="$HCLOUD_TOKEN_CSI"
 ```
+
+`HCLOUD_TOKEN_CSI` is a **separate** Hetzner Cloud API token from the
+`HCLOUD_TOKEN` the Terraform `terraform/k8s/` module uses to provision
+nodes — blast-radius separation: a leak from a CSI driver pod must not
+also compromise the credential that provisions cluster nodes. Both
+secrets live in the `platform` namespace alongside the chart release.
 
 App-level secrets (`wordsparrow-api-env`) ship with the WordSparrow
 chart in step 4 of the ADR-0009 §8 migration — not here.
