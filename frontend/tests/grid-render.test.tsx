@@ -182,4 +182,76 @@ describe('Grid render', () => {
     expect(root?.textContent).toContain('→');
     expect(root?.textContent).toContain('↓');
   });
+
+  // 2026-04-26 prod regression: long French clues like "Volatile à long
+  // cou" or "Tracer des mots" wrapped mid-word and the arrow glyph ended
+  // up swallowed inside the truncated text. The fix line-clamps the clue
+  // to two lines, exposes the full text via a native `title` tooltip, and
+  // anchors the arrow in its own span so it is always visible after the
+  // (possibly truncated) prose.
+  it('clamps long single-clue text and exposes the full text in title', () => {
+    const longClue: DefinitionCell = {
+      kind: 'definition',
+      position: { row: 0, col: 0 },
+      clues: [
+        {
+          text: "Mammifère carnivore aquatique d'Amérique du Sud",
+          arrow: 'right',
+        },
+      ],
+    };
+    const { container } = render(
+      <DefinitionCellView cell={longClue} currentArrow={null} />,
+    );
+    const root = container.querySelector('[data-cell-kind="definition"]');
+    expect(root).not.toBeNull();
+    // The clue text is rendered with its full content available via the
+    // native browser tooltip — even when CSS clamps the visible portion.
+    const textNode = root?.querySelector('[data-clue-text]') as HTMLElement | null;
+    expect(textNode).not.toBeNull();
+    expect(textNode).toHaveAttribute(
+      'title',
+      "Mammifère carnivore aquatique d'Amérique du Sud",
+    );
+    // The arrow glyph lives in its own dedicated span, rendered AFTER
+    // the text node in DOM order so CSS clamping of the text never hides
+    // the directional cue.
+    const arrowNode = root?.querySelector('[data-clue-arrow]') as HTMLElement | null;
+    expect(arrowNode).not.toBeNull();
+    expect(arrowNode?.textContent).toBe('→');
+    // DOM order: text precedes arrow.
+    const children = Array.from(root?.children ?? []);
+    const textIdx = children.indexOf(textNode as Element);
+    const arrowIdx = children.indexOf(arrowNode as Element);
+    expect(textIdx).toBeGreaterThanOrEqual(0);
+    expect(arrowIdx).toBeGreaterThan(textIdx);
+  });
+
+  it('keeps both clues visible in stacked cells, each with its own title and arrow', () => {
+    const stacked: DefinitionCell = {
+      kind: 'definition',
+      position: { row: 0, col: 0 },
+      clues: [
+        { text: 'Volatile à long cou', arrow: 'right' },
+        { text: 'Tracer des mots', arrow: 'down' },
+      ],
+    };
+    const { container } = render(
+      <DefinitionCellView cell={stacked} currentArrow={null} />,
+    );
+    const root = container.querySelector('[data-cell-kind="definition"]');
+    expect(root).not.toBeNull();
+    // Both clue texts must be in the DOM (not just the first one).
+    expect(screen.getByText('Volatile à long cou')).toBeInTheDocument();
+    expect(screen.getByText('Tracer des mots')).toBeInTheDocument();
+    // Each stacked clue exposes its full text via title + has its own arrow.
+    const textNodes = root?.querySelectorAll('[data-clue-text]');
+    expect(textNodes?.length).toBe(2);
+    expect(textNodes?.[0]).toHaveAttribute('title', 'Volatile à long cou');
+    expect(textNodes?.[1]).toHaveAttribute('title', 'Tracer des mots');
+    const arrowNodes = root?.querySelectorAll('[data-clue-arrow]');
+    expect(arrowNodes?.length).toBe(2);
+    expect(arrowNodes?.[0]?.textContent).toBe('→');
+    expect(arrowNodes?.[1]?.textContent).toBe('↓');
+  });
 });
