@@ -1,0 +1,41 @@
+apiVersion: v2
+name: platform
+description: |
+  WordSparrow platform operators umbrella chart (ADR-0009 §3).
+  Bootstraps cert-manager, ingress-nginx, external-dns, CloudNativePG,
+  and the Hetzner Cloud CSI driver into a fresh k3s cluster.
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+# Subchart pins. Rationale per dependency:
+# - cert-manager v1.16.1: matches scripts/local-cluster.sh, K8s 1.30 compatible.
+# - ingress-nginx 4.11.3: matches scripts/local-cluster.sh, K8s 1.30 compatible.
+# - external-dns 1.15.0: stable 1.15.x line, app v0.15.x, Cloudflare provider mature.
+# - cloudnative-pg 0.22.1: matches scripts/local-cluster.sh.
+# - hcloud-csi 2.10.1: stable hetznercloud/hcloud-csi-driver v2.x line.
+# Bumps are deliberate, in a follow-up PR; no floating versions.
+dependencies:
+  - name: cert-manager
+    version: "v1.16.1"
+    repository: "https://charts.jetstack.io"
+    condition: cert-manager.enabled
+
+  - name: ingress-nginx
+    version: "4.11.3"
+    repository: "https://kubernetes.github.io/ingress-nginx"
+    condition: ingress-nginx.enabled
+
+  - name: external-dns
+    version: "1.15.0"
+    repository: "https://kubernetes-sigs.github.io/external-dns/"
+    condition: external-dns.enabled
+
+  - name: cloudnative-pg
+    version: "0.22.1"
+    repository: "https://cloudnative-pg.github.io/charts"
+    condition: cloudnative-pg.enabled
+
+  - name: hcloud-csi
+    version: "2.10.1"
+    repository: "https://charts.hetzner.cloud"
+    condition: hcloud-csi.enabled

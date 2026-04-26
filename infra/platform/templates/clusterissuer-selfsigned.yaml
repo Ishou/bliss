@@ -1,0 +1,18 @@
+{{/*
+Self-signed ClusterIssuer for k3d local development only.
+
+The WordSparrow chart's values-local.yaml references issuer "selfsigned"
+(grid/api/deploy/chart/values-local.yaml). The name MUST match.
+
+Gated on a flag so values-prod.yaml never accidentally renders this.
+*/}}
+{{- if .Values.clusterIssuer.selfsigned.enabled }}
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: selfsigned
+  labels:
+    {{- include "platform.labels" . | nindent 4 }}
+spec:
+  selfSigned: {}
+{{- end }}

@@ -1,0 +1,96 @@
+# Shared defaults for the platform operators umbrella chart.
+# Per-env files override what differs (values-prod.yaml, values-local.yaml).
+# Each subchart's values are nested under its dependency name (Helm convention).
+
+# ClusterIssuer toggles — rendered by templates/, not by subcharts.
+# Names ("letsencrypt-prod", "selfsigned") match what the WordSparrow chart
+# expects via cert-manager.io/cluster-issuer annotations
+# (grid/api/deploy/chart/values-prod.yaml, values-local.yaml).
+clusterIssuer:
+  letsencrypt:
+    enabled: false
+    # ACME requires a contact email. Provide via --set or env-specific values file.
+    email: ""
+  selfsigned:
+    enabled: false
+
+cert-manager:
+  enabled: true
+  # CRDs are part of the same release — no separate kubectl apply step.
+  crds:
+    enabled: true
+    keep: true
+
+ingress-nginx:
+  enabled: true
+  controller:
+    # Hetzner Cloud Controller Manager (hccm) is NOT installed at v1
+    # (single-cloud, single-LB-tier kept out of scope per ADR-0009 §10).
+    # Without hccm, a Service of type LoadBalancer never gets an external
+    # IP. The simplest working path on a 2-node Hetzner cluster is
+    # hostNetwork=true: the controller binds directly to the node's
+    # :80/:443 and Cloudflare/external-dns points the Ingress hostname at
+    # the node's public IP. Service stays ClusterIP. README.md documents
+    # the trade-off vs. paying for a Hetzner load balancer later.
+    hostNetwork: true
+    service:
+      type: ClusterIP
+    # Match the ingressClassName the WordSparrow chart hard-codes
+    # (grid/api/deploy/chart/values.yaml: ingress.className: nginx).
+    ingressClassResource:
+      name: nginx
+      enabled: true
+      default: true
+    ingressClass: nginx
+    # Surface the real client IP through hostNetwork (no proxy in front).
+    config:
+      use-forwarded-headers: "true"
+
+external-dns:
+  enabled: true
+  provider: cloudflare
+  # ADR-0007 §2 / terraform/cloudflare-dns-records.tf §1: DNS-only mode
+  # (gray cloud) so SSE/WebSocket bypass Cloudflare's free-tier proxy.
+  cloudflare:
+    proxied: false
+  # Reconcile both Ingress hosts (the WordSparrow chart) and any
+  # Service-of-type-LoadBalancer hosts the cluster grows into later.
+  sources:
+    - ingress
+    - service
+  # TXT-record owner ID prevents external-dns instances from stomping
+  # each other's records. Production cluster identity per ADR-0009 §2.
+  txtOwnerId: "wordsparrow-prod"
+  policy: sync
+  # Cloudflare API token, bootstrapped one-time per ADR-0009 §10:
+  #   kubectl -n platform create secret generic cloudflare-api-token \
+  #     --from-literal=cloudflare_api_token="$CLOUDFLARE_API_TOKEN_DNS"
+  env:
+    - name: CF_API_TOKEN
+      valueFrom:
+        secretKeyRef:
+          name: cloudflare-api-token
+          key: cloudflare_api_token
+
+cloudnative-pg:
+  enabled: true
+  # Cluster-wide so the WordSparrow chart can create a CNPG Cluster CR
+  # in its own namespace (grid/api/deploy/chart/templates/postgres-*).
+  config:
+    clusterWideAccess: true
+
+hcloud-csi:
+  enabled: true
+  # Hetzner Cloud API token, bootstrapped one-time per ADR-0009 §10:
+  #   kubectl -n kube-system create secret generic hcloud-csi-token \
+  #     --from-literal=token="$HCLOUD_TOKEN"
+  # Same HCLOUD_TOKEN value the terraform/k8s/ Hetzner module already uses.
+  controller:
+    hcloudToken:
+      existingSecret: "hcloud-csi-token"
+  # Driver creates the "hcloud-volumes" StorageClass referenced by
+  # grid/api/deploy/chart/values-prod.yaml:postgres.cluster.storage.storageClass.
+  storageClasses:
+    - name: hcloud-volumes
+      defaultStorageClass: true
+      reclaimPolicy: Retain

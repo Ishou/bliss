@@ -1,0 +1,41 @@
+# Production overrides — Hetzner FSN1 k3s cluster (ADR-0009 §2, PR52).
+# Used by `helm install platform infra/platform/ -n platform \
+#   --create-namespace -f infra/platform/values-prod.yaml`.
+
+clusterIssuer:
+  letsencrypt:
+    enabled: true
+    # Override at install time:
+    #   --set clusterIssuer.letsencrypt.email="<your-email>"
+    # The template uses `required` to fail-fast if missing.
+    email: ""
+  selfsigned:
+    enabled: false
+
+cert-manager:
+  enabled: true
+  # HTTP01 solver runs through ingress-nginx, so no DNS01 nameservers needed.
+  # The ClusterIssuer in templates/clusterissuer-letsencrypt.yaml hard-wires
+  # the http01 solver.
+
+ingress-nginx:
+  enabled: true
+  controller:
+    # See values.yaml rationale — hostNetwork on Hetzner without hccm.
+    hostNetwork: true
+    service:
+      type: ClusterIP
+
+external-dns:
+  enabled: true
+  # Restrict to the WordSparrow zone — guards against accidentally
+  # touching other Cloudflare zones the same API token might cover.
+  domainFilters:
+    - "wordsparrow.io"
+  txtOwnerId: "wordsparrow-prod"
+
+cloudnative-pg:
+  enabled: true
+
+hcloud-csi:
+  enabled: true

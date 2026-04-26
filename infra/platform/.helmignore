@@ -1,0 +1,14 @@
+# Patterns to ignore when building chart packages.
+# Standard `helm create` shape, plus a few we know we'll never want shipped.
+.DS_Store
+.git/
+.gitignore
+.github/
+.idea/
+.vscode/
+*.swp
+*.tmp
+*.bak
+*.orig
+*~
+README.md.bak

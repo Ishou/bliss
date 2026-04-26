@@ -483,7 +483,77 @@ populated by the maintainer once after step 2.
 
 ### 3. Next
 
-Operator install (cert-manager, ingress-nginx, external-dns, CNPG)
-and the secrets-bootstrap (`kubectl create secret`) ship in the next
-PR (step 3 of the ADR-0009 §8 migration).
+Operator install (cert-manager, ingress-nginx, external-dns, CNPG,
+hcloud-csi) and the secrets-bootstrap (`kubectl create secret`) are
+covered by the next section. Step 4 of the ADR-0009 §8 migration
+(WordSparrow chart install from `grid/api/deploy/chart/`) follows.
+
+## Platform operators bootstrap (one-time)
+
+Step 3 of the ADR-0009 §8 migration. Installs the five in-cluster
+operators (ADR-0009 §3 + ADR-0010 §5) — **cert-manager**,
+**ingress-nginx**, **external-dns**, **CloudNativePG**, **hcloud-csi**
+— into the cluster from the previous section. Chart lives at
+`infra/platform/`; subchart pins in `infra/platform/Chart.yaml`.
+
+### 1. Prerequisite secrets
+
+Per ADR-0009 §10, two secrets are bootstrapped one-time before
+`helm install`. Values come from `CLOUDFLARE_API_TOKEN_DNS` (DNS-scoped
+Cloudflare token, distinct from ADR-0004's Pages-scoped one) and
+`HCLOUD_TOKEN` (same value `terraform/k8s/` already uses):
+
+```sh
+export KUBECONFIG=~/.kube/wordsparrow-prod
+kubectl create namespace platform
+kubectl -n platform create secret generic cloudflare-api-token \
+  --from-literal=cloudflare_api_token="$CLOUDFLARE_API_TOKEN_DNS"
+kubectl -n kube-system create secret generic hcloud-csi-token \
+  --from-literal=token="$HCLOUD_TOKEN"
+```
+
+Required Cloudflare token scopes: **Zone -> DNS -> Edit** + **Zone ->
+Zone -> Read** on `wordsparrow.io`. external-dns runs in DNS-only /
+gray-cloud mode (ADR-0007 §2 / `terraform/cloudflare-dns-records.tf`).
+
+### 2. Install
+
+```sh
+helm dep update infra/platform/
+helm install platform infra/platform/ \
+  -n platform --create-namespace \
+  -f infra/platform/values-prod.yaml \
+  --set clusterIssuer.letsencrypt.email="<your-email>"
+```
+
+The `--set` is required — the Let's Encrypt ClusterIssuer template
+fails-fast (`required`) if the ACME contact email is missing.
+
+### 3. Verify
+
+```sh
+kubectl get pods -A                              # all 5 operators Running
+kubectl get clusterissuer letsencrypt-prod       # READY True
+kubectl get crd | grep cnpg.io                   # CNPG CRDs present
+kubectl get sc hcloud-volumes                    # default StorageClass
+```
+
+### 4. Next
+
+Install the WordSparrow chart from `grid/api/deploy/chart/` per its
+README — step 4 of the ADR-0009 §8 migration. Its `values-prod.yaml`
+already references `letsencrypt-prod`, ingressClass `nginx`, and
+StorageClass `hcloud-volumes` — all rendered by the platform chart.
+
+### Local (k3d) variant
+
+```sh
+helm install platform infra/platform/ -n platform --create-namespace \
+  -f infra/platform/values-local.yaml
+```
+
+Skips external-dns and hcloud-csi; renders a `selfsigned` ClusterIssuer
+matching `grid/api/deploy/chart/values-local.yaml`. Converging
+`scripts/local-cluster.sh bootstrap` onto this umbrella chart is a
+follow-up.
 

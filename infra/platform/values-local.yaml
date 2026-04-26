@@ -1,0 +1,36 @@
+# Local overrides — k3d cluster (ADR-0009 §5, scripts/local-cluster.sh).
+# Used by `helm install platform infra/platform/ -n platform \
+#   --create-namespace -f infra/platform/values-local.yaml`.
+# Documented divergences from prod live in docs/local-development.md.
+
+clusterIssuer:
+  # Local k3d has no public DNS / ACME path; the WordSparrow chart's
+  # values-local.yaml references issuer name "selfsigned" — match it.
+  letsencrypt:
+    enabled: false
+  selfsigned:
+    enabled: true
+
+cert-manager:
+  enabled: true
+
+ingress-nginx:
+  enabled: true
+  controller:
+    # k3d publishes 80/443 through its loadbalancer container; hostNetwork
+    # is unnecessary (and conflicts with k3d's port mapping). Keep the
+    # default LoadBalancer-shaped Service and let k3d front it.
+    hostNetwork: false
+    service:
+      type: LoadBalancer
+
+# No public DNS zone locally — external-dns has nothing to reconcile.
+external-dns:
+  enabled: false
+
+cloudnative-pg:
+  enabled: true
+
+# No Hetzner volumes locally; k3d ships local-path-provisioner by default.
+hcloud-csi:
+  enabled: false
