@@ -4,20 +4,16 @@ This directory declares the platform-side resources Bliss owns:
 
 - **Cloudflare Pages** project + custom domain attachments for the
   frontend static bundle (ADR-0004).
-- **Fly.io** app, dedicated IPv4/IPv6, TLS cert, and machine envelope
-  for the JVM API (ADR-0007).
-- **Cloudflare DNS** CNAME pointing `api.wordsparrow.io` at the Fly app
-  (ADR-0007 §4).
+- **Cloudflare DNS** CNAME for `api.wordsparrow.io`. Originally pointed
+  at the Fly.io app (ADR-0007); ADR-0007 was superseded by ADR-0009 and
+  the Fly app was torn down. The CNAME resource is retained until
+  ADR-0009 §8 step 6 cuts ownership over to in-cluster `external-dns`.
 
-Both platforms are Terraform-managed (rather than manually clicked
+Cloudflare resources are Terraform-managed (rather than manually clicked
 through dashboards) so existence is auditable from `git log`, not from
 screenshots.
 
-Two providers are pinned in `versions.tf`: `cloudflare/cloudflare ~> 5.19`
-and `andrewbaxter/fly ~> 0.1`. The Fly provider is the active community
-fork of the now-archived `fly-apps/fly`; see the `versions.tf` comment
-for the deviation rationale and `fly-postgres.tf` for the absent-resource
-workaround.
+One provider is pinned in `versions.tf`: `cloudflare/cloudflare ~> 5.19`.
 
 ## One-time bootstrap
 
@@ -26,7 +22,8 @@ Prerequisites:
 - A Cloudflare account (created manually; this is the platform-tenancy
   boundary called out in ADR-0004 Notes).
 - A Cloudflare API token scoped per `docs/deploy.md` (Account → Cloudflare
-  Pages → Edit; User → Memberships → Read).
+  Pages → Edit; User → Memberships → Read; plus Zone → DNS → Edit and
+  Zone → Zone → Read on `wordsparrow.io` for the API CNAME).
 - The Cloudflare account ID (visible in the Cloudflare dashboard URL or
   account home page).
 
@@ -34,35 +31,21 @@ Then, from the repo root:
 
 ```sh
 export CLOUDFLARE_API_TOKEN=...                 # never commit
-export FLY_API_TOKEN=...                        # never commit; ADR-0007
 tofu -chdir=terraform/ init
 tofu -chdir=terraform/ apply \
   -var="cloudflare_account_id=..." \
   -var="cloudflare_zone_id=..."                 # required for the API CNAME
 ```
 
-The apply creates the Pages project, the Fly app + IPs + cert, and the
-`api.wordsparrow.io` CNAME. After it succeeds:
+The apply creates the Pages project plus the `api.wordsparrow.io`
+CNAME. After it succeeds:
 
 - `pages_subdomain` output names the live `*.pages.dev` URL.
-- `fly_app_hostname` output names the live `*.fly.dev` URL.
-- `api_url` output is the canonical `https://api.wordsparrow.io`.
+- `production_url` output is the canonical frontend URL.
 
 Commit the generated `.terraform.lock.hcl` (it pins provider digests
 and is the Terraform-equivalent of a lockfile, per CLAUDE.md
 determinism rule).
-
-The Fly Postgres cluster is **not** managed by this Terraform — the
-`andrewbaxter/fly` provider has no `fly_postgres` resource. See
-`fly-postgres.tf` for the bootstrap commands. The end-to-end API
-maintainer checklist (Postgres bootstrap, GitHub Actions secrets,
-first deploy) lands in `docs/deploy.md` with the follow-up workstream
-that ships `.github/workflows/deploy-api.yml` and `grid/api/fly.toml`.
-
-The Cloudflare API token requires extra scopes for the new DNS
-record: `Zone -> DNS -> Edit` and `Zone -> Zone -> Read` on the
-`wordsparrow.io` zone, in addition to the existing Pages scopes from
-ADR-0004 §7.
 
 ## State
 
@@ -90,25 +73,19 @@ of truth for system state").
 ## What is *not* here
 
 Frontend build/deploy lives in `.github/workflows/deploy-frontend.yml`.
-API build/deploy (the workflow `.github/workflows/deploy-api.yml` plus
-`grid/api/fly.toml`) ships in the follow-up workstream
-`feat/infra-fly-deploy-workflow` per ADR-0007 §3. Terraform owns each
-platform's existence (project / app / DNS / cert); the workflows upload
-artifacts and `flyctl deploy` images.
-
-Fly Postgres lives outside Terraform — see `fly-postgres.tf` for the
-bootstrap path. Application secrets are set via `flyctl secrets set`,
-not via Terraform.
+API build/deploy moved to the self-managed k3s cluster per ADR-0009 —
+see `terraform/k8s/` and `docs/deploy.md`. Terraform here owns the
+Cloudflare-side existence (Pages project + DNS); the application
+deploy workflow is owned by the k8s subtree.
 
 ## Self-managed k8s (in progress)
 
 `terraform/k8s/` holds the **provider-agnostic skeleton** for a
-self-managed k3s cluster — the planned successor to the Fly.io tier per
-ADR-0009. The skeleton currently declares only the variable/output
-contract; no cloud resources are provisioned yet. The first concrete
-implementation (Hetzner) lands in a follow-up PR; Fly resources here
-stay in place until the cutover PR flips DNS. See
-[`terraform/k8s/README.md`](k8s/README.md) for the provider-swap design.
+self-managed k3s cluster — the successor to the Fly.io tier per
+ADR-0009 (which supersedes ADR-0007). The skeleton currently declares
+only the variable/output contract; the Hetzner implementation lands
+in a follow-up PR. See [`terraform/k8s/README.md`](k8s/README.md) for
+the provider-swap design.
 
 The k8s module has its own remote backend — Hetzner Object Storage,
 FSN1, per ADR-0010 — see
