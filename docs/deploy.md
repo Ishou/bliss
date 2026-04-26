@@ -481,9 +481,115 @@ The kubeconfig is **not** committed and **not** stored in Terraform
 state. CI's copy goes into a GitHub Actions secret (`KUBECONFIG`),
 populated by the maintainer once after step 2.
 
-### 3. Next
+# Platform operators bootstrap (Hetzner k8s)
 
-Operator install (cert-manager, ingress-nginx, external-dns, CNPG)
-and the secrets-bootstrap (`kubectl create secret`) ship in the next
-PR (step 3 of the ADR-0009 §8 migration).
+Step 3 of the ADR-0009 §8 migration. Installs the four in-cluster
+operators ADR-0009 §3 specifies — **cert-manager**, **ingress-nginx**,
+**external-dns**, **CloudNativePG** — plus the Hetzner Cloud CSI
+driver (**hcloud-csi**), the storage layer for CNPG PVCs on the
+Hetzner cluster (ADR-0009 §2). Chart lives at `infra/platform/`;
+subchart pins in `infra/platform/Chart.yaml`.
+
+## One-time install
+
+### Prereqs
+
+- Hetzner cluster from `terraform/k8s/` already applied; the
+  `~/.kube/wordsparrow-prod` kubeconfig has been retrieved per the
+  previous section's step 2.
+- `helm` ≥ 3.16 on PATH locally.
+- `infra/platform/Chart.lock` committed. If it is absent on `main`,
+  run `helm dep update infra/platform/` once and commit the lockfile
+  in a sibling chore PR before continuing — `helm dep build` is the
+  reproducible install step in CI.
+- Local env vars exported in this shell:
+  ```sh
+  export CLOUDFLARE_API_TOKEN_DNS=<dns-scoped cloudflare token>
+  export HCLOUD_TOKEN=<hetzner token used by terraform/k8s/ provisioning>
+  export HCLOUD_TOKEN_CSI=<separate hetzner token for hcloud-csi — provision a fresh one in the Hetzner Console>
+  export KUBECONFIG=~/.kube/wordsparrow-prod
+  ```
+  The Cloudflare token here is **distinct** from ADR-0004's
+  Pages-scoped token. Required scopes: **Zone -> DNS -> Edit** +
+  **Zone -> Zone -> Read** on `wordsparrow.io`.
+
+### 1. Bootstrap secrets
+
+Per ADR-0009 §10, two secrets are created one-time before
+`helm install` (the chart never ships secret material itself):
+
+```sh
+export KUBECONFIG=~/.kube/wordsparrow-prod
+
+kubectl create namespace platform || true
+
+kubectl -n platform create secret generic cloudflare-api-token \
+  --from-literal=cloudflare_api_token="$CLOUDFLARE_API_TOKEN_DNS"
+
+kubectl -n platform create secret generic hcloud-csi-token \
+  --from-literal=token="$HCLOUD_TOKEN_CSI"
+```
+
+Both secrets live in the `platform` namespace because `helm install
+platform … -n platform` deploys all subcharts there; pods can only read
+secrets from their own namespace. Stand-alone installs of these charts
+typically use `kube-system` or `external-dns` — that does not apply
+here because they are subcharts of the `platform` umbrella.
+
+Each Hetzner API token is project-scoped read/write; the manifesto's
+least-privilege rule applies through *blast-radius separation*, not
+permission scope. A leak from a CSI driver pod must not also
+compromise the credential that provisions cluster nodes. Generate the
+CSI token in the Hetzner Console as a sibling of the Terraform one —
+independent rotation, independent revocation.
+
+The CNPG backups bucket (`bliss-cnpg-backups`, ADR-0010 §5) and its
+S3 credential pair are wired by the WordSparrow chart in step 4, not
+here.
+
+### 2. Install the platform chart
+
+```sh
+helm dep update infra/platform/   # or `helm dep build` once Chart.lock is on main
+
+helm install platform infra/platform/ \
+  -n platform --create-namespace \
+  -f infra/platform/values-prod.yaml \
+  --set clusterIssuer.letsencrypt.email="<your-email>"
+```
+
+The `--set` is required — the Let's Encrypt ClusterIssuer template
+fails-fast (`required`) if the ACME contact email is missing.
+
+### 3. Verify
+
+```sh
+kubectl get pods -A                        # cert-manager, ingress-nginx, external-dns, cnpg controller, hcloud-csi nodes all Running
+kubectl get clusterissuer letsencrypt-prod # Ready=True after a few seconds (ACME registration)
+kubectl get crd | grep cnpg.io
+kubectl get sc hcloud-volumes              # default StorageClass for CNPG PVCs
+```
+
+### 4. Next
+
+Install the WordSparrow API Helm chart from `grid/api/deploy/chart/`
+per its README — step 4 of the ADR-0009 §8 migration. Once that
+lands, `https://api.wordsparrow.io/v1/health` returns 200 once
+external-dns has written the CNAME and cert-manager has issued the
+production cert against `letsencrypt-prod`.
+
+### Troubleshooting
+
+- **`letsencrypt-prod` stuck `Ready=False`:** ACME order may be
+  rate-limited if you've installed the chart multiple times within
+  the hour. Wait ~1h or temporarily switch to the staging issuer
+  (out of scope here).
+- **CNPG cluster won't bind its PVC:** confirm the
+  `hcloud-csi-token` secret exists in `platform` and that the
+  Hetzner project quota allows new volume creation in `fsn1`.
+- **external-dns not writing records:** check
+  `kubectl -n platform logs deploy/external-dns` for Cloudflare
+  auth errors. Most common cause: the token is missing the
+  **Zone:DNS:Edit** scope, or `wordsparrow.io` is not in the token's
+  zone-resources allow-list.
 
