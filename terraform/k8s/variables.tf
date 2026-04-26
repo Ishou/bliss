@@ -69,7 +69,7 @@ variable "node_size" {
 }
 
 variable "ssh_public_keys" {
-  description = "List of SSH public keys (full openssh format, one entry per key) installed on every node for admin access. At least one key is required so the maintainer can reach a node when the k8s API path is broken."
+  description = "List of SSH public keys (full openssh format, one entry per key) installed on every node for admin access. At least one key is required so the maintainer can reach a node when the k8s API path is broken. ed25519 is preferred; ssh-rsa is accepted for legacy keys but discouraged (OpenSSH 8.8+ disabled it by default due to SHA-1 collision risk)."
   type        = list(string)
 
   validation {

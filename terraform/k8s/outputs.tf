@@ -18,7 +18,7 @@ output "kubeconfig" {
 }
 
 output "kubeconfig_path" {
-  description = "Local filesystem path where Terraform wrote the kubeconfig (typically under the module's working directory). Downstream Helm/kubectl invocations read this via `KUBECONFIG=$(terraform output -raw kubeconfig_path)`. Path is host-local and not portable across machines."
+  description = "Local filesystem path where Terraform wrote the kubeconfig (typically under the module's working directory). Intended for local operator workflows only — CI/CD pipelines should consume the `kubeconfig` content output instead, since runners are ephemeral and the file at this path will not exist there. Path is host-local and not portable across machines."
   value       = null
 }
 

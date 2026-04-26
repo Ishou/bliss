@@ -70,6 +70,30 @@ deliberate: this module stops the moment it produces a kubeconfig-ready
 cluster. Mixing infra provisioning and workload bootstrap inside one
 Terraform run conflates failure domains and stretches `apply` cycles.
 
+A direct consequence: the Cloudflare API token used by the in-cluster
+operators (external-dns, cert-manager DNS-01) is **not** an input to
+this module. That credential is owned by the Helm/Flux bootstrap layer
+and injected there, so the cluster-provisioning contract stays decoupled
+from any specific in-cluster operator's credential requirements.
+
+## State management
+
+State is local for v1, mirroring the root
+[`terraform/README.md`](../README.md#state) stance — `terraform.tfstate`
+sits under this directory and is gitignored. No `backend {}` block is
+declared; the same future remote-state ADR called out in the root README
+will resolve this for both modules together.
+
+A k3s cluster is a more consequential resource than a Cloudflare Pages
+project — losing the state file or running `apply` from two machines
+risks orphaning real VMs and credentials. **PR3 (which lands the first
+provider implementation and the first real cloud resources) MUST revisit
+this before resources land**: either by gating PR3 on the remote-state
+ADR, or by adding a remote backend in PR3 itself.
+
+Until then, the maintainer keeps the local statefile alongside the
+provider API tokens and backs both up out-of-band.
+
 ## Cross-references
 
 - [ADR-0009](../../docs/adr/0009-self-managed-k8s-deployment.md) — Self-managed k8s,
