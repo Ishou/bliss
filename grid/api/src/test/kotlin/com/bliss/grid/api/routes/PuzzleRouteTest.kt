@@ -7,11 +7,13 @@ import assertk.assertions.isGreaterThan
 import assertk.assertions.isGreaterThanOrEqualTo
 import assertk.assertions.isTrue
 import assertk.assertions.startsWith
+import com.bliss.grid.api.dto.PuzzleResponse
 import com.bliss.grid.api.module
 import io.ktor.client.request.get
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.testing.testApplication
+import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonArray
@@ -103,5 +105,15 @@ class PuzzleRouteTest {
             assertThat(response.status).isEqualTo(HttpStatusCode.BadRequest)
             assertThat(response.headers["Content-Type"]!!).startsWith("application/problem+json")
             assertThat(response.bodyAsText()).contains("\"status\":400")
+        }
+
+    @Test
+    fun `response body deserializes as PuzzleResponse — schema drift guard`() =
+        testApplication {
+            application { module() }
+            val body = client.get("/v1/puzzles/$validId").bodyAsText()
+            // Throws SerializationException if wire shape diverges from the DTO (ADR-0003 §9).
+            val puzzle = Json { ignoreUnknownKeys = true }.decodeFromString<PuzzleResponse>(body)
+            assertThat(puzzle.id).isEqualTo(validId)
         }
 }
