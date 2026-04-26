@@ -4,6 +4,7 @@ import assertk.assertThat
 import assertk.assertions.contains
 import assertk.assertions.isEqualTo
 import assertk.assertions.isGreaterThan
+import assertk.assertions.isGreaterThanOrEqualTo
 import assertk.assertions.isNotNull
 import assertk.assertions.isTrue
 import assertk.assertions.startsWith
@@ -38,7 +39,7 @@ class PuzzleRouteTest {
         }
 
     @Test
-    fun `body has 10x10 dimensions and 100 cells`() =
+    fun `body has 10x10 dimensions and at least 100 cells`() =
         testApplication {
             application { module() }
 
@@ -49,7 +50,9 @@ class PuzzleRouteTest {
             assertThat(json["height"]?.jsonPrimitive?.content?.toInt()).isEqualTo(10)
             val cells = json["cells"]?.jsonArray
             assertThat(cells).isNotNull()
-            assertThat(cells!!.size).isEqualTo(100)
+            // ClueCells with two stacked clues emit two DefinitionCellDtos at
+            // the same position, so count is >= width*height (per task spec).
+            assertThat(cells!!.size).isGreaterThanOrEqualTo(100)
         }
 
     @Test
@@ -123,7 +126,7 @@ class PuzzleRouteTest {
         }
 
     @Test
-    fun `cells form a valid row-major array of width times height`() =
+    fun `cells positions are emitted in non-decreasing row-major order`() =
         testApplication {
             application { module() }
 
@@ -133,13 +136,20 @@ class PuzzleRouteTest {
             val width = json["width"]!!.jsonPrimitive.content.toInt()
             val height = json["height"]!!.jsonPrimitive.content.toInt()
 
-            assertThat(cells.size).isEqualTo(width * height)
-            cells.forEachIndexed { i, cell ->
+            assertThat(cells.size).isGreaterThanOrEqualTo(width * height)
+            // Row-major: position(i+1) >= position(i) by row*width+column ordering.
+            // Equality is allowed: ClueCells with two stacked clues emit two
+            // adjacent DefinitionCellDtos at the same position.
+            var lastIndex = -1
+            cells.forEach { cell ->
                 val pos = (cell as JsonObject)["position"]!!.jsonObject
                 val row = pos["row"]!!.jsonPrimitive.content.toInt()
                 val col = pos["column"]!!.jsonPrimitive.content.toInt()
-                assertThat(row).isEqualTo(i / width)
-                assertThat(col).isEqualTo(i % width)
+                assertThat(row in 0 until height).isTrue()
+                assertThat(col in 0 until width).isTrue()
+                val flatIndex = row * width + col
+                assertThat(flatIndex).isGreaterThanOrEqualTo(lastIndex)
+                lastIndex = flatIndex
             }
         }
 }
