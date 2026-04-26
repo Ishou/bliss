@@ -296,20 +296,33 @@ for each replaced node to clear the old host-key entries.
 ADR-0009 §10 accepts the documented-one-time-human-step pattern for
 things that don't cleanly automate at v1.
 
+The kubeconfig server URL is rewritten to the **Floating IP** (output
+`ingress_floating_ip`), not the control-plane's ephemeral public IP.
+The floating IP survives node replacement; the kubeconfig stays valid
+across `tofu taint` cycles, k3s upgrades, and node hardware swaps. The
+floating IP is in the k3s API server's `tls-san` (cloud-init wires it
+in at first boot) so TLS verification passes.
+
+`scp` still needs the control-plane's ephemeral public IP to fetch the
+file — that's a transient SSH operation, not a long-lived endpoint.
+
 ```sh
 CP_IP=$(tofu output -raw cluster_endpoint | sed 's|https://||;s|:6443||')
+FLOATING_IP=$(tofu output -raw ingress_floating_ip)
 mkdir -p ~/.kube
 scp -o StrictHostKeyChecking=accept-new \
   root@"$CP_IP":/etc/rancher/k3s/k3s.yaml ~/.kube/wordsparrow-prod
-sed -i "s|127.0.0.1|$CP_IP|" ~/.kube/wordsparrow-prod
+sed -i "s|127.0.0.1|$FLOATING_IP|" ~/.kube/wordsparrow-prod
 chmod 600 ~/.kube/wordsparrow-prod
 export KUBECONFIG=~/.kube/wordsparrow-prod
 kubectl get nodes  # both Ready
 ```
 
 The kubeconfig is **not** committed and **not** stored in Terraform
-state. CI's copy goes into a GitHub Actions secret (`KUBECONFIG`),
-populated by the maintainer once after step 2.
+state. CI's copy goes into a GitHub Actions secret (`KUBECONFIG_PROD`),
+populated by the maintainer once after step 2. Re-issue the kubeconfig
+secret only if the floating IP itself changes (rare — it survives
+typical node lifecycle events).
 
 # Platform operators bootstrap (Hetzner k8s)
 
@@ -385,11 +398,26 @@ helm dep update infra/platform/   # or `helm dep build` once Chart.lock is on ma
 helm install platform infra/platform/ \
   -n platform --create-namespace \
   -f infra/platform/values-prod.yaml \
-  --set clusterIssuer.letsencrypt.email="<your-email>"
+  --set clusterIssuer.letsencrypt.email="<your-email>" \
+  --set ingress-nginx.controller.extraArgs.publish-status-address="$(tofu -chdir=terraform/k8s/ output -raw ingress_floating_ip)"
 ```
 
-The `--set` is required — the Let's Encrypt ClusterIssuer template
-fails-fast (`required`) if the ACME contact email is missing.
+Both `--set` flags are required:
+
+- `clusterIssuer.letsencrypt.email` — the Let's Encrypt ClusterIssuer
+  template fails-fast (`required`) if the ACME contact email is
+  missing.
+- `ingress-nginx.controller.extraArgs.publish-status-address` — the
+  Hetzner Floating IP that ingress-nginx writes back into each
+  Ingress's `.status.loadBalancer.ingress[0].ip`. external-dns reads
+  that field to decide which DNS A record to publish, so pinning the
+  status address to the floating IP is what makes external-dns
+  auto-target it without per-Ingress
+  `external-dns.alpha.kubernetes.io/target` annotations. The value
+  isn't known until `tofu apply` reserves the IP, so the chart cannot
+  carry it as a static default; passing it at install time keeps the
+  values file generic. Re-run the same `helm upgrade` whenever the
+  floating IP rotates.
 
 ### 3. Verify
 
