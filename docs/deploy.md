@@ -521,13 +521,20 @@ Per ADR-0009 §10, two secrets are created one-time before
 ```sh
 export KUBECONFIG=~/.kube/wordsparrow-prod
 
-kubectl create namespace external-dns
-kubectl -n external-dns create secret generic cloudflare-api-token \
+kubectl create namespace platform || true
+
+kubectl -n platform create secret generic cloudflare-api-token \
   --from-literal=cloudflare_api_token="$CLOUDFLARE_API_TOKEN_DNS"
 
-kubectl -n kube-system create secret generic hcloud-csi-token \
+kubectl -n platform create secret generic hcloud-csi-token \
   --from-literal=token="$HCLOUD_TOKEN_CSI"
 ```
+
+Both secrets live in the `platform` namespace because `helm install
+platform … -n platform` deploys all subcharts there; pods can only read
+secrets from their own namespace. Stand-alone installs of these charts
+typically use `kube-system` or `external-dns` — that does not apply
+here because they are subcharts of the `platform` umbrella.
 
 Each Hetzner API token is project-scoped read/write; the manifesto's
 least-privilege rule applies through *blast-radius separation*, not
