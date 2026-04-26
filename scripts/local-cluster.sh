@@ -61,8 +61,12 @@ preflight() {
 }
 
 cluster_exists() {
-  k3d cluster list -o json 2>/dev/null \
-    | grep -q "\"name\":\"${CLUSTER_NAME}\""
+  # Parse the plain-text table (NAME is the first column) rather than JSON.
+  # The JSON form is whitespace-sensitive — `grep "\"name\":\"x\""` silently
+  # misses if k3d ever emits `"name": "x"` with a space after the colon.
+  k3d cluster list 2>/dev/null \
+    | awk 'NR>1 {print $1}' \
+    | grep -qx "${CLUSTER_NAME}"
 }
 
 cmd_up() {
@@ -90,7 +94,10 @@ cmd_up() {
 }
 
 cmd_down() {
-  require_cmd k3d "https://k3d.io/#installation (>= v5)"
+  # Run the full preflight so a stopped Docker daemon yields a clear
+  # error rather than the misleading "cluster does not exist; nothing
+  # to do" path (cluster_exists swallows stderr).
+  preflight
   if cluster_exists; then
     log "deleting cluster '${CLUSTER_NAME}'"
     k3d cluster delete "${CLUSTER_NAME}"
@@ -106,7 +113,10 @@ cmd_reset() {
 
 helm_repo_add_idempotent() {
   local name="$1" url="$2"
-  if ! helm repo list -o json 2>/dev/null | grep -q "\"name\":\"${name}\""; then
+  # Plain-text table parsing (NAME is the first column). Same rationale as
+  # cluster_exists: avoid whitespace-fragile JSON grepping, and avoid taking
+  # a hard `jq` dependency that isn't in the preflight require_cmd list.
+  if ! helm repo list 2>/dev/null | awk 'NR>1 {print $1}' | grep -qx "${name}"; then
     helm repo add "${name}" "${url}" >/dev/null
   fi
 }
