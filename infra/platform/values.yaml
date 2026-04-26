@@ -42,9 +42,10 @@ ingress-nginx:
       enabled: true
       default: true
     ingressClass: nginx
-    # Surface the real client IP through hostNetwork (no proxy in front).
-    config:
-      use-forwarded-headers: "true"
+    # Real client IP comes from the TCP source — hostNetwork=true means
+    # no proxy translates it; no need to trust X-Forwarded-* headers
+    # (ingress-nginx default is use-forwarded-headers=false, which is
+    # the safe posture when nothing in front terminates TLS for us).
 
 external-dns:
   enabled: true
