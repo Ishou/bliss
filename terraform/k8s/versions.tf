@@ -15,9 +15,8 @@ terraform {
   required_version = "~> 1.10"
 
   # Remote state on Hetzner Object Storage (FSN1), per ADR-0010 §2.
-  # Bucket is bootstrapped out-of-band (one-time human step — see the
-  # PR body that wires this backend, and the durable home in
-  # `docs/deploy.md` once the cluster bring-up PR adds it).
+  # Bucket is bootstrapped out-of-band (one-time human step) —
+  # see docs/deploy.md §"Terraform k8s state backend — first-time bootstrap (one-time)".
   backend "s3" {
     bucket = "bliss-tf-state"
     key    = "k8s/terraform.tfstate"
