@@ -1,7 +1,21 @@
 #cloud-config
-# k3s worker bootstrap. Joins the control plane via its public IP using
-# the shared K3S_TOKEN. Pre-install loop avoids the "control-plane not
-# ready" race that would otherwise show up as a flaky tofu apply.
+# k3s worker bootstrap. Joins the control plane via its PRIVATE IP
+# (cp_ip) so the agent registers over the cluster's 10.0.0.0/16
+# subnet — public 6443 traffic is allowed by the firewall too, but
+# routing the join through the private network keeps the kubelet's
+# advertised endpoint consistent with `node-ip` below.
+#
+# `node-ip` and `flannel-iface` pin k3s and flannel's vxlan to the
+# Hetzner private interface (enp7s0 on Ubuntu 24.04). Without them
+# k3s advertises the public IP and flannel's UDP/8472 vxlan traffic
+# is dropped by the cluster firewall (intra-cluster TCP/UDP is scoped
+# to 10.0.0.0/16). The values MUST be present at first boot — k3s
+# only reads /etc/rancher/k3s/config.yaml at install time, so cloud-
+# init's `write_files` (which runs before `runcmd`) is the only place
+# this can land. Tweaking the file after install requires re-bootstrap.
+#
+# Pre-install loop avoids the "control-plane not ready" race that
+# would otherwise show up as a flaky tofu apply.
 #
 # The install commands run from a write_files-materialized bash script
 # rather than inline `runcmd` blocks because cloud-init executes inline
@@ -12,7 +26,10 @@
 write_files:
   - path: /etc/rancher/k3s/config.yaml
     permissions: "0600"
+    owner: root:root
     content: |
+      node-ip: ${private_ip}
+      flannel-iface: ${private_iface}
       node-label:
         - "bliss.io/role=worker"
         - "bliss.io/cluster=${cluster_name}"
