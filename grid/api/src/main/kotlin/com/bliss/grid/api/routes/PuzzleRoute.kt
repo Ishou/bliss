@@ -140,7 +140,7 @@ private fun generateWithRetry(
  * normal grids — empirically every sample at density 0.5 against the
  * bundled 122-word fr.json clears 30%.
  */
-private fun hasSparseHalf(grid: Grid): Boolean {
+internal fun hasSparseHalf(grid: Grid): Boolean {
     val midRow = grid.height / 2
     val midCol = grid.width / 2
     val halves =
