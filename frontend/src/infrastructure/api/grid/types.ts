@@ -62,15 +62,12 @@ export interface components {
              */
             height: number;
             /**
-             * @description Row-major array of grid cells. Cells are ordered top-to-bottom,
-             *     left-to-right. Array length is **at least** `width * height` but
-             *     may exceed it: when a single grid position carries two clues
-             *     (one `right`, one `down`), the mapper emits two `DefinitionCell`
-             *     entries at the same `(row, column)`.
-             *
-             *     **Lookup by position:** filter on `position.row` and
-             *     `position.column` — do not use flat-index arithmetic
-             *     (`row * width + column`). A position may return 1 or 2 entries.
+             * @description Cells in row-major order. Length is **at least** `width * height`;
+             *     may exceed it when a cell position holds two stacked
+             *     `DefinitionCell` entries (an across clue and a down clue at the
+             *     same position). Clients should look up a cell by `position.row` /
+             *     `position.column`, NOT by flat index `row * width + column` —
+             *     that index is correct only when there are no stacked clue cells.
              */
             cells: components["schemas"]["Cell"][];
             /**
@@ -262,21 +259,6 @@ export interface operations {
              *     `type` is `https://bliss.example/errors/invalid-puzzle-id`.
              */
             400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Problem"];
-                };
-            };
-            /**
-             * @description No puzzle exists with the given id. RFC 7807 body.
-             *     **Deferred — not returned in v1.** v1 is stateless: every valid
-             *     UUID path parameter yields a freshly generated puzzle. This
-             *     response activates in the persistence workstream, when puzzles
-             *     are stored and can genuinely be absent.
-             */
-            404: {
                 headers: {
                     [name: string]: unknown;
                 };
