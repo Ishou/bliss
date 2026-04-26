@@ -27,12 +27,27 @@ name: Build and Push Image
 on:
   push:
     branches: [main]
+    # Mirror the Dockerfile build context: any input the COPY layers
+    # consume must trigger a rebuild, otherwise the published image
+    # silently drifts from main.
     paths:
       - 'grid/api/**'
+      - 'grid/domain/**'
+      - 'grid/infrastructure/**'
+      - 'gradle/**'
+      - 'gradlew'
+      - 'settings.gradle.kts'
+      - 'build.gradle.kts'
       - '.github/workflows/build-and-push-image.yml'
   pull_request:
     paths:
       - 'grid/api/**'
+      - 'grid/domain/**'
+      - 'grid/infrastructure/**'
+      - 'gradle/**'
+      - 'gradlew'
+      - 'settings.gradle.kts'
+      - 'build.gradle.kts'
       - '.github/workflows/build-and-push-image.yml'
   workflow_dispatch:
 
