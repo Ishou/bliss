@@ -40,3 +40,9 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
     CMD wget -q -O - http://localhost:8080/v1/health || exit 1
 
 CMD ["java", "-jar", "/app/grid-api.jar"]
+
+# OCI Image Annotations: link the GHCR package back to source and surface
+# basic metadata (description, license) on the package page.
+LABEL org.opencontainers.image.source="https://github.com/Ishou/bliss"
+LABEL org.opencontainers.image.description="WordSparrow JVM API (Ktor)"
+LABEL org.opencontainers.image.licenses="FSL-1.1-MIT"
