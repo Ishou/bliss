@@ -62,9 +62,14 @@ jobs:
     permissions:
       contents: read
       packages: write
-      # Required for future cosign/SLSA provenance attestations once
-      # build-push-action emits them via the OIDC token exchange.
+      # `actions: write` is required for the GHA build cache exporter
+      # (`cache-to: type=gha,mode=max`) to upload cache blobs; `read`
+      # alone fails the cache-write step. `id-token`+`attestations`
+      # are needed by build-push-action when it emits SLSA provenance
+      # and SBOM attestations on the main-branch push path below.
+      actions: write
       id-token: write
+      attestations: write
 
     outputs:
       # Future deploy workflow consumes via `needs: build.outputs.digest`
@@ -125,8 +130,15 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          provenance: true
-          sbom: true
+          # Provenance/SBOM attestations turn the build output into a
+          # manifest list. The `docker` exporter used by `load: true`
+          # (PR builds) does NOT support manifest lists and fails with
+          # "docker exporter does not currently support exporting
+          # manifest lists" — see run 24953819809. Restrict attestations
+          # to the main-branch push path, which uses the registry
+          # exporter and is the only artifact we actually consume.
+          provenance: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+          sbom: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
 
       - name: Record image digest in summary
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
