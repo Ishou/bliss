@@ -5,8 +5,10 @@ import assertk.assertions.contains
 import assertk.assertions.isEqualTo
 import assertk.assertions.isGreaterThan
 import assertk.assertions.isGreaterThanOrEqualTo
+import assertk.assertions.isNotEmpty
 import assertk.assertions.isTrue
 import assertk.assertions.startsWith
+import com.bliss.grid.api.dto.PuzzleResponse
 import com.bliss.grid.api.module
 import io.ktor.client.request.get
 import io.ktor.client.statement.bodyAsText
@@ -22,6 +24,14 @@ import org.junit.jupiter.api.Test
 /** Wire-path tests for `GET /v1/puzzles/{puzzleId}` via Ktor [testApplication]. */
 class PuzzleRouteTest {
     private val validId = "0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6b"
+
+    // Strict Json — refuses unknown JSON fields so the typed-DTO round-trip
+    // catches schema drift in either direction (ADR-0003 §9 contract test).
+    private val strictJson =
+        Json {
+            ignoreUnknownKeys = false
+            explicitNulls = false
+        }
 
     @Test
     fun `responds 200 with a 10x10 puzzle whose body matches the OpenAPI shape`() =
@@ -91,6 +101,26 @@ class PuzzleRouteTest {
                 assertThat(flat).isGreaterThanOrEqualTo(lastIndex)
                 lastIndex = flat
             }
+        }
+
+    @Test
+    fun `response deserializes as a valid PuzzleResponse against the OpenAPI-derived DTO`() =
+        testApplication {
+            application { module() }
+
+            val body = client.get("/v1/puzzles/$validId").bodyAsText()
+            // Round-trip through the @Serializable DTO with ignoreUnknownKeys=false:
+            // any field present in the wire payload but absent from the DTO (or
+            // vice versa for required fields) raises a SerializationException.
+            // Cheap drift detector — `openapi.yaml` adds a required field, this
+            // test fails until the DTO is regenerated.
+            val puzzle: PuzzleResponse = strictJson.decodeFromString(body)
+
+            assertThat(puzzle.id).isEqualTo(validId)
+            assertThat(puzzle.width).isEqualTo(10)
+            assertThat(puzzle.height).isEqualTo(10)
+            assertThat(puzzle.cells).isNotEmpty()
+            assertThat(puzzle.clues).isNotEmpty()
         }
 
     @Test
