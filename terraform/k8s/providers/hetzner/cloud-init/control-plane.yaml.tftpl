@@ -42,6 +42,15 @@ write_files:
       #!/bin/bash
       set -euo pipefail
 
+      # Wait for Hetzner to attach the private network interface — hcloud_server_network
+      # is applied after hcloud_server, so cloud-init can start before the NIC has its IP.
+      # k3s reads node-ip from /etc/rancher/k3s/config.yaml at install time and refuses
+      # to bind to an unassigned address; this loop closes the race.
+      until ip -4 addr show "${private_iface}" 2>/dev/null | grep -q "inet "; do
+        echo "Waiting for ${private_iface} to come up with an IPv4 address..."
+        sleep 5
+      done
+
       export INSTALL_K3S_VERSION="${k3s_version}"
       export K3S_TOKEN="${k3s_token}"
       curl -sfL https://get.k3s.io | sh -s - server
