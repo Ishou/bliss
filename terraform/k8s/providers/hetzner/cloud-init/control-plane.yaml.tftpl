@@ -33,7 +33,11 @@ write_files:
       export K3S_TOKEN="${k3s_token}"
       curl -sfL https://get.k3s.io | sh -s - server
 
-      until curl -sk https://127.0.0.1:6443/healthz | grep -qx "ok"; do
+      # Wait until the local k3s API is listening on :6443. We don't grep
+      # the body — k3s 1.30+ returns 401 (not "ok") for unauthenticated
+      # /healthz requests. A successful TCP+TLS handshake is enough.
+      until curl -sk --connect-timeout 5 -m 10 -o /dev/null \
+          "https://127.0.0.1:6443/"; do
         sleep 5
       done
 

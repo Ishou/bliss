@@ -24,7 +24,12 @@ write_files:
       #!/bin/bash
       set -euo pipefail
 
-      until curl -sk "https://${cp_ip}:6443/healthz" | grep -qx "ok"; do
+      # Wait until the control-plane k3s API is listening on :6443.
+      # We don't validate the body — k3s 1.30+ returns 401 (not "ok") for
+      # unauthenticated /healthz requests; the agent install carries its
+      # own auth via K3S_TOKEN. A successful TCP+TLS handshake is enough.
+      until curl -sk --connect-timeout 5 -m 10 -o /dev/null \
+          "https://${cp_ip}:6443/"; do
         sleep 5
       done
 
