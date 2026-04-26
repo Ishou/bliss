@@ -403,8 +403,11 @@ kubectl get sc hcloud-volumes              # default StorageClass for CNPG PVCs
 ### 4. Next
 
 Install the WordSparrow API Helm chart from `grid/api/deploy/chart/`
-per its README — step 4 of the ADR-0009 §8 migration. Once that
-lands, `https://api.wordsparrow.io/v1/health` returns 200 once
+per its README — step 4 of the ADR-0009 §8 migration. Before that
+install, create the app-level secrets per
+`# Application secrets bootstrap (one-time)` below; the API pod's
+`envFrom` resolves at pod-create and will fail otherwise. Once the
+chart lands, `https://api.wordsparrow.io/v1/health` returns 200 once
 external-dns has written the A + TXT records and cert-manager has
 issued the production cert against `letsencrypt-prod`.
 
@@ -429,11 +432,16 @@ TF-managed CNAME pointing at Fly is gone.
 
 # Application secrets bootstrap (one-time)
 
-Step 4 of the ADR-0009 §8 migration. The WordSparrow API chart
-(`grid/api/deploy/chart/`) consumes two app-level secrets that the
-chart never ships itself, per the ADR-0009 §10 interim
-secrets-bootstrap pattern (`kubectl create secret`, values never
-committed):
+> **Run this section BEFORE the step-4 Helm chart install.** Both secrets
+> must exist in the `wordsparrow` namespace before `helm install` (or
+> the CD workflow's first deploy), or the API pod will fail
+> `CreateContainerConfigError` at pod-create time. The chart's
+> `envFrom: secretRef` resolves at pod-create, not at runtime.
+
+The WordSparrow API chart (`grid/api/deploy/chart/`) consumes two
+app-level secrets that the chart never ships itself, per the
+ADR-0009 §10 interim secrets-bootstrap pattern (`kubectl create
+secret`, values never committed):
 
 - `wordsparrow-api-env` — `envFrom` source for the API pod
   (`values.yaml` `envFromSecret: "wordsparrow-api-env"`); must contain
