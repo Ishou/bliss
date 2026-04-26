@@ -1,34 +1,21 @@
 name: Deploy API
 
-# Implements ADR-0007 §3 (GitHub Actions → flyctl deploy).
+# Fly.io deploy workflow for the WordSparrow API (ADR-0007).
 #
-# - push to main      -> production deploy of grid/api to wordsparrow-api.fly.dev
-# - pull_request      -> build-only (`shadowJar`); no Fly deploy.
-#                        ADR-0007 §5 forbids per-PR Fly apps; previews are
-#                        frontend-only with MSW-mocked API responses.
-#
-# Path filter mirrors `deploy-frontend.yml`: only run when something this
-# workflow can actually affect changed (API source, shared Gradle config,
-# Dockerfile, fly.toml, or this workflow itself). Keeps frontend-only PRs
-# off the JVM build critical path. CLAUDE.md "CI target: under 5 minutes"
-# is met today by avoiding work, not by parallelizing harder.
+# Auto-triggers were disabled while ADR-0009 §8 migrates the API to
+# Hetzner k3s. Triggering this workflow now requires manual
+# `workflow_dispatch` with a `reason` input — typically used for
+# emergency rollback if the k8s deploy is broken and traffic must
+# fall back to Fly. This workflow will be deleted entirely at step 7
+# of the ADR-0009 §8 migration (cutover + teardown).
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'grid/api/**'
-      - 'grid/domain/**'
-      - 'build.gradle.kts'
-      - 'settings.gradle.kts'
-      - '.github/workflows/deploy-api.yml'
-  pull_request:
-    paths:
-      - 'grid/api/**'
-      - 'grid/domain/**'
-      - 'build.gradle.kts'
-      - 'settings.gradle.kts'
-      - '.github/workflows/deploy-api.yml'
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: "Why are you manually deploying to Fly? (rollback / k8s outage / etc.)"
+        required: true
+        type: string
 
 # A second push to the same branch cancels the in-flight build of that
 # branch — except on `main`, where a cancel-mid-deploy could leave Fly in
