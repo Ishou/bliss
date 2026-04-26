@@ -9,10 +9,9 @@
 --   - `length` is a STORED generated column; the §2 query window
 --     `length BETWEEN 2 AND 9` is enforced at SELECT time, not at insert.
 --   - `word_id` is the wire-facing identifier per ADR-0003 §6 (UUID, not
---     integer). It defaults to v4 via pgcrypto until ADR-0013 §3's UUID v7
+--     integer). It defaults to v4 via pg_catalog.gen_random_uuid() (built-in
+--     since PG 13; no extension required) until ADR-0013 §3's UUID v7
 --     question is resolved in the worker PR.
-
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 CREATE TABLE words (
     id              BIGSERIAL PRIMARY KEY,
