@@ -83,8 +83,6 @@ forms) is the input to the importer.
 
 The importer keeps only entries where:
 
-- `length(word) ∈ [3, 9]` — matches the grid sizes the puzzle
-  generator targets today.
 - `language = 'fr'` — single-language scope; multi-language is
   out of scope (see Notes).
 - The surface form is purely alphabetic (Unicode letter category),
@@ -93,6 +91,15 @@ The importer keeps only entries where:
   ingest, not split.
 - The form is lower-cased before insertion. Proper nouns from the
   dictionary's capitalized entries are dropped at ingest.
+
+**No length filter at import.** The importer ingests every length
+the dictionary ships. The grid generator and `DatabaseWordRepository`
+restrict their queries to `length ∈ [2, 9]` — that is the range the
+puzzle generator targets today. Pulling outside that range later
+(longer words for themed puzzles, 2-letter glue words for tighter
+grids) is a query-side change, not a re-import. The `words_lang_len`
+index in §3 keeps the bounded query cheap regardless of how much
+long-tail data sits in the table.
 
 ### 3. Schema
 
@@ -186,9 +193,11 @@ separate dependency graph (per the bounded-context rule in
   difficulty per §4, inserts into `words` with `source =
   'hunspell-fr'` and `source_license = 'MPL-2.0'`. Idempotent on
   `(word, language)`.
-- **`generate-clues`** — selects rows where `clue IS NULL`,
-  batches them through the Claude API with the §5 prompt,
-  writes the results back. Resumable on interruption.
+- **`generate-clues`** — selects rows where `clue IS NULL AND
+  length BETWEEN 2 AND 9` (the in-app query window from §2),
+  batches them through the Claude API with the §5 prompt, writes
+  the results back. Resumable on interruption. `--all-lengths`
+  drops the length predicate when we want to clue the long tail.
 
 The sub-command name `import-lexique` is kept as historical
 shorthand even though the source is Hunspell-fr; renaming it to
@@ -198,11 +207,13 @@ defer.
 ### 8. Future API switch
 
 The `grid-api` puzzle endpoint reads from a
-`DatabaseWordRepository` backed by the `words` table. The
-existing `fr.json`-backed repository stays in the codebase as a
-fallback for local development and tests until the
-`DatabaseWordRepository` is feature-complete; deletion of
-`fr.json` is its own follow-up PR (see below).
+`DatabaseWordRepository` backed by the `words` table, with every
+read scoped to `language = 'fr' AND length BETWEEN 2 AND 9`
+(matching §2's query window). The existing `fr.json`-backed
+repository stays in the codebase as a fallback for local
+development and tests until the `DatabaseWordRepository` is
+feature-complete; deletion of `fr.json` is its own follow-up PR
+(see below).
 
 ## Consequences
 
@@ -227,11 +238,13 @@ fallback for local development and tests until the
   its own scheduled run (initially manual; a CronJob is a
   follow-up). The k8s manifest for it lands with the seed-run
   PR.
-- **Clue-generation cost is real.** A first ingest of Hunspell-fr
-  filtered to 3–9 letters is on the order of tens of thousands of
-  rows; clue generation against Claude is a one-time spend in the
-  low tens of dollars, but it is a non-zero spend that has to be
-  accounted for. Re-runs are gated behind `--force`.
+- **Clue-generation cost is real.** A full ingest of Hunspell-fr
+  is on the order of hundreds of thousands of surface forms; clue
+  generation against Claude is gated to the 2–9 query window via a
+  `WHERE length BETWEEN 2 AND 9` filter on the `generate-clues`
+  selector, keeping the first-pass spend in the low tens of dollars.
+  Generating clues for the long tail outside that window is opt-in
+  via `--all-lengths`. Re-runs are gated behind `--force`.
 - **Frequency signal is coarse.** Hunspell-fr is a spell-checker
   dictionary, not a frequency corpus. The §4 fallback to
   alphabetical rank is honest but crude; difficulty quality
