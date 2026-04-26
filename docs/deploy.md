@@ -481,19 +481,14 @@ The kubeconfig is **not** committed and **not** stored in Terraform
 state. CI's copy goes into a GitHub Actions secret (`KUBECONFIG`),
 populated by the maintainer once after step 2.
 
-### 3. Next
-
-Operator install (cert-manager, ingress-nginx, external-dns, CNPG)
-and the secrets-bootstrap (`kubectl create secret`) ship in the next
-PR (step 3 of the ADR-0009 §8 migration).
-
 # Platform operators bootstrap (Hetzner k8s)
 
-Step 3 of the ADR-0009 §8 migration. Installs the five in-cluster
-operators (ADR-0009 §3 + ADR-0010 §5) — **cert-manager**,
-**ingress-nginx**, **external-dns**, **CloudNativePG**, **hcloud-csi**
-— into the cluster from the previous section. Chart lives at
-`infra/platform/`; subchart pins in `infra/platform/Chart.yaml`.
+Step 3 of the ADR-0009 §8 migration. Installs the four in-cluster
+operators ADR-0009 §3 specifies — **cert-manager**, **ingress-nginx**,
+**external-dns**, **CloudNativePG** — plus the Hetzner Cloud CSI
+driver (**hcloud-csi**), the storage layer for CNPG PVCs on the
+Hetzner cluster (ADR-0009 §2). Chart lives at `infra/platform/`;
+subchart pins in `infra/platform/Chart.yaml`.
 
 ## One-time install
 
