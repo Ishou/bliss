@@ -60,11 +60,25 @@ jobs:
 
     steps:
       - name: Checkout PR head
+        # GitHub's `GITHUB_TOKEN` cannot carry the `workflows` permission —
+        # that scope is only available to fine-grained PATs and GitHub Apps.
+        # When the §6a fixer's diff includes any `.github/workflows/*.yml`
+        # change, a push authenticated by `GITHUB_TOKEN` is rejected with
+        # "refusing to allow a GitHub App to create or update workflow ...
+        # without `workflows` permission" (observed on PR #18, #35).
+        #
+        # Fix: thread `CLAUDE_BOT_PAT` through the checkout step. The token
+        # configured here is persisted into the local git config's
+        # `extraheader` and inherited by every subsequent `git push` in the
+        # job — including the fixer's. Fall back to `GITHUB_TOKEN` when the
+        # secret isn't set so this workflow keeps working on PRs opened
+        # before the secret has been provisioned. See the PR that introduced
+        # this comment for PAT setup instructions.
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.ref }}
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.CLAUDE_BOT_PAT || secrets.GITHUB_TOKEN }}
 
       - name: Configure git identity for fixer commits
         run: |
