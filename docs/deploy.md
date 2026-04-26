@@ -588,7 +588,7 @@ production cert against `letsencrypt-prod`.
   `hcloud-csi-token` secret exists in `platform` and that the
   Hetzner project quota allows new volume creation in `fsn1`.
 - **external-dns not writing records:** check
-  `kubectl -n external-dns logs deploy/external-dns` for Cloudflare
+  `kubectl -n platform logs deploy/external-dns` for Cloudflare
   auth errors. Most common cause: the token is missing the
   **Zone:DNS:Edit** scope, or `wordsparrow.io` is not in the token's
   zone-resources allow-list.
