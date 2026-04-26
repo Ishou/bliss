@@ -108,10 +108,12 @@ values committed to the repo:
 - **CloudNativePG (CNPG)** — Postgres operator. **Replaces Fly
   Postgres**, runs in the same cluster, exposes a `Cluster` CRD that
   is a regular Kubernetes object — fully Terraform/GitOps-managed,
-  closing the §1.1 gap. Backups go to S3-compatible object storage
-  (Hetzner Object Storage is in beta; until it is GA, backups go to
-  a Scaleway or Backblaze B2 bucket — orthogonal to the compute
-  cloud, decided in the operator-config workstream).
+  closing the §1.1 gap. Backups go to S3-compatible object storage.
+  **Interim v1 destination: Backblaze B2** (cheapest sensible default,
+  S3-compatible, orthogonal to the compute cloud). If EU-jurisdiction
+  becomes a hard constraint before Hetzner Object Storage GAs, swap
+  to Scaleway Object Storage. The durable choice (and migration off
+  the interim) is owned by the operator-config workstream.
 
 All four are upstream, vendor-neutral, and run identically on any
 conformant Kubernetes cluster.
@@ -119,14 +121,32 @@ conformant Kubernetes cluster.
 ### 4. App deployment: Helm chart + GitHub Actions
 
 The WordSparrow API ships as a **Helm chart** in the repo (likely under
-`grid/api/deploy/chart/` — exact path is an implementation detail). CD
-is GitHub Actions running `helm upgrade --install` against the
-cluster's kubeconfig, which is injected as a GitHub Actions secret
-(scoped to the deploy service account, not cluster-admin).
+`grid/api/deploy/chart/` — exact path is an implementation detail).
+The first implementation PR pins this path so subsequent ADRs and
+runbooks can reference it unambiguously. CD is GitHub Actions running
+`helm upgrade --install` against the cluster's kubeconfig, which is
+injected as a GitHub Actions secret (scoped to the deploy service
+account, not cluster-admin).
 
 No `flyctl`. No `fly.toml`. The deploy workflow's only platform
 dependency is `kubectl` + `helm` against a kubeconfig — identical
 locally and in CI.
+
+**Push-based CD: accepted exception to the GitOps reconciliation-loop
+rule.** The manifesto's Infrastructure section requires a reconciliation
+loop that detects and alerts on drift between declared and actual state.
+`helm upgrade --install` from GitHub Actions converges state at deploy
+time but does not continuously reconcile; if a resource is hand-edited
+on the cluster after a deploy, nothing detects it. This is a real gap,
+not a wording quibble. We accept it at v1 because the cost of running
+ArgoCD or Flux on a single CX22 node (extra controller, extra Helm
+release to operate, ~150–300 MB RAM) outweighs its value at our v1
+scale (one app, one cluster, single operator). **Revisit trigger**: when
+the cluster grows beyond two nodes, when a second app joins the cluster,
+or after the first observed drift incident — whichever comes first —
+open an ADR to introduce Flux or ArgoCD as the reconciliation
+controller. Until then, the discipline is "no kubectl edits in prod;
+all changes go through the repo."
 
 ### 5. Local↔prod parity via k3d
 
@@ -167,20 +187,59 @@ Fly teardown (and ADR-0007 amendment). Each step is its own
 under-400-line PR; the dispatch plan with PR numbers lives in the
 working session, not in this ADR.
 
-### 9. What this ADR does not decide
+### 9. Rollback strategy
+
+Per the manifesto's "Rollback is always one click" rule, carrying
+forward ADR-0007 §6 adapted to Helm:
+
+- **Primary mechanism**: revert the offending commit on `main` via PR.
+  CD re-runs `helm upgrade --install` and pushes the prior chart
+  revision and image. GitOps-pure; repo state matches cluster state.
+- **Escape hatch**: `helm rollback <release> <revision>` (e.g.
+  `helm rollback wordsparrow-api 42`) from the maintainer's machine
+  against the cluster kubeconfig. **This introduces drift between repo
+  state and cluster state — exactly the same shape as ADR-0007 §6's
+  `flyctl releases rollback` escape hatch — and a follow-up PR is
+  required to reconcile.** This is also the failure mode the §4
+  push-based-CD exception makes harder to detect: a `helm rollback`
+  leaves no automated alarm. Use only when a commit-revert is blocked
+  (e.g., CD itself is broken).
+- **Database migrations** are **backward-compatible per the manifesto**
+  (expand-and-contract). A failed deploy can roll back the chart and
+  image without rolling back the schema; the prior image must still
+  understand the newer schema. This rule is binding from the first
+  migration. Migration tooling is unchanged from ADR-0007 §6 — its
+  own ADR with the persistence workstream.
+
+### 10. What this ADR does not decide
 
 - Specific operator versions and Helm values (operator-config
   workstream).
-- Backup destination once Hetzner Object Storage GAs (operator-config
-  workstream).
+- Backup destination once Hetzner Object Storage GAs — the §3 interim
+  (Backblaze B2) is the v1 starting point; the durable choice and any
+  migration off it belong to the operator-config workstream.
 - Multi-node HA, control-plane HA, multi-region, or DR posture —
   v1 runs single control-plane on one node with the workload on a
   second. HA is a future ADR if uptime targets demand it.
 - Cluster-internal observability stack (Prometheus / Grafana / Loki
   vs. hosted) — own ADR with the broader observability work
-  ADR-0007 §7 already opened.
+  ADR-0007 §7 already opened. **App-level OTel (ADR-0007 §7) is
+  unchanged by this migration**: spans, RED metrics, and structured
+  JSON logs still ship with the API implementation workstream; only
+  the host platform changes.
 - Secrets-in-cluster mechanism (sealed-secrets vs. SOPS vs.
   external-secrets) — own ADR with the operator-config workstream.
+  **Interim bootstrap**: at cluster bring-up, secrets (CNPG Postgres
+  superuser password, future Anthropic / Stripe / OAuth keys) are
+  created by `kubectl create secret` against the freshly-provisioned
+  cluster, with the exact commands and required values documented in
+  `docs/deploy.md` (added by the cluster bring-up PR). Values are
+  never committed; the file documents *what* and *why*, not the
+  values themselves. This is explicitly the same shape as ADR-0007's
+  `flyctl secrets set` — a one-time human step, but documented in the
+  repo so it does not become the next `flyctl postgres create`-style
+  tribal-knowledge gap. The interim retires when the secrets ADR
+  lands.
 - Cost monitoring / budget alerts.
 
 ## Consequences
