@@ -54,6 +54,14 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Puzzle'
+        '400':
+          description: |
+            Path parameter `puzzleId` is not a valid UUID. RFC 7807 body;
+            `type` is `https://bliss.example/errors/invalid-puzzle-id`.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
         '404':
           description: |
             No puzzle exists with the given id. RFC 7807 body.
