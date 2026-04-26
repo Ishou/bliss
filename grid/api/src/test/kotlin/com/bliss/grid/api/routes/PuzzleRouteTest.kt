@@ -5,7 +5,6 @@ import assertk.assertions.contains
 import assertk.assertions.isEqualTo
 import assertk.assertions.isGreaterThan
 import assertk.assertions.isGreaterThanOrEqualTo
-import assertk.assertions.isNotNull
 import assertk.assertions.isTrue
 import assertk.assertions.startsWith
 import com.bliss.grid.api.module

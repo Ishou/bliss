@@ -15,6 +15,7 @@ import com.bliss.grid.domain.model.LetterCell
 import com.bliss.grid.domain.model.Position
 import com.bliss.grid.domain.model.Row
 import com.bliss.grid.domain.model.WordPlacement
+import com.fasterxml.uuid.Generators
 import java.time.Instant
 import java.time.format.DateTimeFormatter
 import java.util.UUID
@@ -31,6 +32,8 @@ import java.util.UUID
  * zero-indexed.
  */
 class GridToPuzzleMapper {
+    private val uuidGenerator = Generators.timeBasedEpochGenerator()
+
     fun toApi(
         grid: Grid,
         puzzleId: UUID,
@@ -39,7 +42,7 @@ class GridToPuzzleMapper {
         language: String = "fr",
     ): PuzzleResponse {
         val clueIdByPlacement: Map<WordPlacement, String> =
-            grid.placements.associateWith { UUID.randomUUID().toString() }
+            grid.placements.associateWith { uuidGenerator.generate().toString() }
 
         val clues =
             grid.placements.map { placement ->
