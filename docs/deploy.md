@@ -505,7 +505,8 @@ subchart pins in `infra/platform/Chart.yaml`.
 - Local env vars exported in this shell:
   ```sh
   export CLOUDFLARE_API_TOKEN_DNS=<dns-scoped cloudflare token>
-  export HCLOUD_TOKEN=<same hetzner token used by terraform/k8s/>
+  export HCLOUD_TOKEN=<hetzner token used by terraform/k8s/ provisioning>
+  export HCLOUD_TOKEN_CSI=<separate hetzner token for hcloud-csi — provision a fresh one in the Hetzner Console>
   export KUBECONFIG=~/.kube/wordsparrow-prod
   ```
   The Cloudflare token here is **distinct** from ADR-0004's
@@ -525,8 +526,15 @@ kubectl -n external-dns create secret generic cloudflare-api-token \
   --from-literal=cloudflare_api_token="$CLOUDFLARE_API_TOKEN_DNS"
 
 kubectl -n kube-system create secret generic hcloud-csi-token \
-  --from-literal=token="$HCLOUD_TOKEN"
+  --from-literal=token="$HCLOUD_TOKEN_CSI"
 ```
+
+Each Hetzner API token is project-scoped read/write; the manifesto's
+least-privilege rule applies through *blast-radius separation*, not
+permission scope. A leak from a CSI driver pod must not also
+compromise the credential that provisions cluster nodes. Generate the
+CSI token in the Hetzner Console as a sibling of the Terraform one —
+independent rotation, independent revocation.
 
 The CNPG backups bucket (`bliss-cnpg-backups`, ADR-0010 §5) and its
 S3 credential pair are wired by the WordSparrow chart in step 4, not
