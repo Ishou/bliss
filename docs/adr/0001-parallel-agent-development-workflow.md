@@ -146,6 +146,18 @@ round runs before the human maintainer reviews and merges:
    agent is available, the PR waits. The human maintainer reviews and
    merges (per section 6) only after this cycle has run.
 
+> **Update (2026-04-26): The "exactly one pass" rule is replaced by
+> "cycle until LGTM, max 5 iterations." When the reviewer's first
+> line is `LGTM`, the workflow short-circuits subsequent cycles.
+> Otherwise the fixer pushes; the resulting `synchronize` event
+> kicks off the next reviewer pass. After 5 total bot reviews on a
+> single PR, the workflow short-circuits with a `::warning::` so a
+> human can intervene. Rationale: real PRs sometimes need 2–3 cycles
+> to converge (a fix introduces a finding the next pass catches);
+> capping at one cycle leaves those PRs in an inconsistent state.
+> The N=5 cap is empirical — generous enough for convergence,
+> cheap enough to bound LLM cost.**
+
 ### 7. ADRs precede non-trivial implementation
 
 Any decision that is not a pure local refactor — a new dependency, a new
