@@ -16,7 +16,7 @@
 // pattern is honored verbatim.
 //
 // This module is reached only from `main.tsx` and only when
-// `import.meta.env.VITE_USE_MSW === 'true'` (preview builds). Vite
+// `import.meta.env.VITE_USE_MOCK_API === 'true'` (preview builds). Vite
 // tree-shakes the dynamic-import branch — and therefore `msw` and
 // these handlers — out of production bundles. Verify with:
 //

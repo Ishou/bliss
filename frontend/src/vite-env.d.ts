@@ -3,7 +3,7 @@
 // Build-time env injected by Vite. The composition root resolves
 // `VITE_GRID_API_URL` once and threads it through router context, so
 // `ui/` and `application/` never read `import.meta.env`. ADR-0007 §5
-// adds `VITE_USE_MSW` so preview deploys swap the real API for
+// adds `VITE_USE_MOCK_API` so preview deploys swap the real API for
 // spec-driven Mock Service Worker handlers.
 interface ImportMetaEnv {
   /** Absolute base URL of the Grid API (production target). */
@@ -13,7 +13,7 @@ interface ImportMetaEnv {
    * SPA never reaches the real API. `'false'` (default) for prod.
    * String, not boolean — Vite injects env vars verbatim.
    */
-  readonly VITE_USE_MSW: 'true' | 'false';
+  readonly VITE_USE_MOCK_API: 'true' | 'false';
 }
 interface ImportMeta {
   readonly env: ImportMetaEnv;
