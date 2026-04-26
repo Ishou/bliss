@@ -1,9 +1,9 @@
 -- ADR-0013 §3 — Initial schema for the words corpus.
 --
 -- Owned by grid-api's Postgres database (CNPG cluster from ADR-0009). The
--- worker module (PR2/PR3 of ADR-0013) writes into this table; the API
--- (PR4) reads from it via DatabaseWordRepository. Both apply Flyway from
--- the same migration set.
+-- worker module (ADR-0013 §7) writes into this table; the API reads from
+-- it via DatabaseWordRepository (ADR-0013 §8). Both apply Flyway on
+-- startup against the same CNPG cluster.
 --
 -- Notes:
 --   - `length` is a STORED generated column; the §2 query window

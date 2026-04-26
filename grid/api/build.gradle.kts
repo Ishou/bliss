@@ -70,7 +70,7 @@ dependencies {
 
     // Postgres JDBC + connection pool + Flyway (ADR-0013 §6).
     // The API runs Flyway on startup against the CNPG cluster (ADR-0009),
-    // sharing the schema with the worker module that lands in PR2.
+    // sharing the schema with the worker module (ADR-0013 §7).
     implementation("org.postgresql:postgresql:$postgresqlJdbcVersion")
     implementation("com.zaxxer:HikariCP:$hikariVersion")
     implementation("org.flywaydb:flyway-core:$flywayVersion")
@@ -84,8 +84,7 @@ dependencies {
     testImplementation("io.ktor:ktor-client-content-negotiation:$ktorVersion")
     testImplementation("com.lemonappdev:konsist:$konsistVersion")
 
-    // Testcontainers — real Postgres for migration/contract tests (ADR-0013 §6,
-    // CLAUDE.md Testing rule: integration tests use real adapters).
+    // Testcontainers — real Postgres for migration/contract tests (ADR-0013 §6).
     testImplementation("org.testcontainers:testcontainers:$testcontainersVersion")
     testImplementation("org.testcontainers:junit-jupiter:$testcontainersVersion")
     testImplementation("org.testcontainers:postgresql:$testcontainersVersion")
