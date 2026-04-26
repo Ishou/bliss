@@ -1,9 +1,11 @@
 package com.bliss.grid.api.infrastructure
 
+import assertk.assertFailure
 import assertk.assertThat
 import assertk.assertions.contains
 import assertk.assertions.containsAtLeast
 import assertk.assertions.isEqualTo
+import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotNull
 import assertk.assertions.isNull
 import assertk.assertions.isTrue
@@ -61,6 +63,25 @@ class DatabaseTest {
         val (user, pw) = Database.extractCredentials("postgres://app:secret@db.example:5432/wordsparrow")
         assertThat(user).isEqualTo("app")
         assertThat(pw).isEqualTo("secret")
+    }
+
+    @Test
+    fun `toJdbcUrl rejects unsupported scheme`() {
+        assertFailure { Database.toJdbcUrl("mysql://host/db") }
+            .isInstanceOf(IllegalArgumentException::class)
+    }
+
+    @Test
+    fun `toJdbcUrl wraps malformed URI as IllegalStateException`() {
+        assertFailure { Database.toJdbcUrl("not a uri [with brackets]") }
+            .isInstanceOf(IllegalStateException::class)
+    }
+
+    @Test
+    fun `extractCredentials returns nulls for a jdbc URL`() {
+        val (user, pw) = Database.extractCredentials("jdbc:postgresql://localhost/db")
+        assertThat(user).isNull()
+        assertThat(pw).isNull()
     }
 
     /**

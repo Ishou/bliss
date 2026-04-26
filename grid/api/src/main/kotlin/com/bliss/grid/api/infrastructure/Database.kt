@@ -89,7 +89,7 @@ object Database {
         val uri =
             try {
                 URI(raw)
-            } catch (e: IllegalArgumentException) {
+            } catch (e: Exception) {
                 throw IllegalStateException("DATABASE_URL is not a valid URI", e)
             }
         val scheme = uri.scheme?.lowercase()
