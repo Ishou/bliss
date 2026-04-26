@@ -48,11 +48,19 @@ ingress-nginx:
 
 external-dns:
   enabled: true
-  provider: cloudflare
+  # external-dns 1.15.0 values.yaml line 228 ships `provider:` as an object
+  # (`provider.name: aws`); the chart helper accepts a string too but the
+  # object shape matches upstream and stays forward-compatible with
+  # provider.webhook config.
+  provider:
+    name: cloudflare
   # ADR-0007 §2 / terraform/cloudflare-dns-records.tf §1: DNS-only mode
   # (gray cloud) so SSE/WebSocket bypass Cloudflare's free-tier proxy.
-  cloudflare:
-    proxied: false
+  # The chart has no top-level `cloudflare:` key (see upstream
+  # values.yaml — no such property); cloudflare-proxied is a CLI flag
+  # passed through extraArgs (chart values.yaml line 287).
+  extraArgs:
+    - --cloudflare-proxied=false
   # Reconcile both Ingress hosts (the WordSparrow chart) and any
   # Service-of-type-LoadBalancer hosts the cluster grows into later.
   sources:
@@ -74,10 +82,11 @@ external-dns:
 
 cloudnative-pg:
   enabled: true
-  # Cluster-wide so the WordSparrow chart can create a CNPG Cluster CR
-  # in its own namespace (grid/api/deploy/chart/templates/postgres-*).
-  config:
-    clusterWideAccess: true
+  # The operator already watches all namespaces by default (chart 0.22.1
+  # values.yaml line 54: `config:` ConfigMap-data has no WATCH_NAMESPACE
+  # set, which the operator interprets as cluster-wide). No override
+  # needed for the WordSparrow chart to create a CNPG Cluster CR in its
+  # own namespace (grid/api/deploy/chart/templates/postgres-*).
 
 hcloud-csi:
   enabled: true
@@ -86,8 +95,13 @@ hcloud-csi:
   #     --from-literal=token="$HCLOUD_TOKEN"
   # Same HCLOUD_TOKEN value the terraform/k8s/ Hetzner module already uses.
   controller:
+    # hcloud-csi 2.10.1 values.yaml line 159 expects existingSecret as an
+    # object {name, key}, not a string; the chart's controller deployment
+    # template reads .existingSecret.name and .existingSecret.key.
     hcloudToken:
-      existingSecret: "hcloud-csi-token"
+      existingSecret:
+        name: hcloud-csi-token
+        key: token
   # Driver creates the "hcloud-volumes" StorageClass referenced by
   # grid/api/deploy/chart/values-prod.yaml:postgres.cluster.storage.storageClass.
   storageClasses:
