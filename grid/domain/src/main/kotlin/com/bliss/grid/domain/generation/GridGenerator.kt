@@ -75,9 +75,7 @@ class GridGenerator(
      * that keeps backtracking efficient. A plain [List.shuffled] would
      * destroy that ordering and explode the search.
      */
-    private fun List<Pair<CandidatePlacement, List<Word>>>.shuffledStable(
-        random: Random,
-    ): List<Pair<CandidatePlacement, List<Word>>> =
+    private fun List<Pair<CandidatePlacement, List<Word>>>.shuffledStable(random: Random): List<Pair<CandidatePlacement, List<Word>>> =
         groupBy { it.second.size }
             .toSortedMap()
             .values

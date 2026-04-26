@@ -118,9 +118,17 @@ class PuzzleRouteTest {
             val second = client.get("/v1/puzzles/$secondId").bodyAsText()
 
             val firstCells =
-                Json.parseToJsonElement(first).jsonObject["cells"]!!.jsonArray.toString()
+                Json
+                    .parseToJsonElement(first)
+                    .jsonObject["cells"]!!
+                    .jsonArray
+                    .toString()
             val secondCells =
-                Json.parseToJsonElement(second).jsonObject["cells"]!!.jsonArray.toString()
+                Json
+                    .parseToJsonElement(second)
+                    .jsonObject["cells"]!!
+                    .jsonArray
+                    .toString()
 
             assertThat(firstCells).isNotEqualTo(secondCells)
         }

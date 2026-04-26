@@ -9,8 +9,8 @@ import assertk.assertions.isNull
 import com.bliss.grid.domain.model.LetterCell
 import com.bliss.grid.domain.model.Word
 import com.bliss.grid.domain.validation.GridValidator
-import kotlin.random.Random
 import org.junit.jupiter.api.Test
+import kotlin.random.Random
 
 class GridGeneratorTest {
     private val validator = GridValidator()
