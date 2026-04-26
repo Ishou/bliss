@@ -96,7 +96,7 @@ hcloud-csi:
   #     --from-literal=token="$HCLOUD_TOKEN_CSI"
   # HCLOUD_TOKEN_CSI is a SEPARATE token from the HCLOUD_TOKEN value the
   # terraform/k8s/ Hetzner module uses for provisioning — blast-radius
-  # separation, see docs/deploy.md "Platform operators bootstrap".
+  # separation keeps a CSI driver leak from compromising node provisioning.
   controller:
     # hcloud-csi 2.10.1 values.yaml line 159 expects existingSecret as an
     # object {name, key}, not a string; the chart's controller deployment

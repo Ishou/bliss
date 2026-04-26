@@ -21,9 +21,9 @@ kubectl -n platform create secret generic hcloud-csi-token \
 
 `HCLOUD_TOKEN_CSI` is a **separate** Hetzner Cloud API token from the
 `HCLOUD_TOKEN` the Terraform `terraform/k8s/` module uses to provision
-nodes — blast-radius separation per `docs/deploy.md`'s platform
-operators bootstrap section. Both secrets live in the `platform`
-namespace alongside the chart release.
+nodes — blast-radius separation: a leak from a CSI driver pod must not
+also compromise the credential that provisions cluster nodes. Both
+secrets live in the `platform` namespace alongside the chart release.
 
 App-level secrets (`wordsparrow-api-env`) ship with the WordSparrow
 chart in step 4 of the ADR-0009 §8 migration — not here.
