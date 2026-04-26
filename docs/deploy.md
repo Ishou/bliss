@@ -442,6 +442,9 @@ From `terraform/k8s/`:
 ```sh
 tofu init
 tofu apply \
+  -var "cluster_name=wordsparrow" \
+  -var "region=fsn1" \
+  -var "node_size=cx22" \
   -var "ssh_public_keys=[\"$(cat ~/.ssh/id_ed25519.pub)\"]"
 ```
 
