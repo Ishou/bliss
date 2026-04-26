@@ -405,8 +405,12 @@ kubectl get sc hcloud-volumes              # default StorageClass for CNPG PVCs
 Install the WordSparrow API Helm chart from `grid/api/deploy/chart/`
 per its README — step 4 of the ADR-0009 §8 migration. Once that
 lands, `https://api.wordsparrow.io/v1/health` returns 200 once
-external-dns has written the CNAME and cert-manager has issued the
-production cert against `letsencrypt-prod`.
+external-dns has written the A + TXT records and cert-manager has
+issued the production cert against `letsencrypt-prod`.
+
+DNS cutover (ADR-0009 §8 step 6) has landed: `api.wordsparrow.io` is
+owned by in-cluster `external-dns`, not Terraform. The historical
+TF-managed CNAME pointing at Fly is gone.
 
 ### Troubleshooting
 
