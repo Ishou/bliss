@@ -101,20 +101,31 @@ CNPG cluster from ADR-0009):
 
 ```sql
 CREATE TABLE words (
-  id              BIGSERIAL PRIMARY KEY,
-  word            TEXT NOT NULL,
-  language        TEXT NOT NULL DEFAULT 'fr',
+  id              BIGSERIAL PRIMARY KEY,          -- physical PK, internal only
+  word_id         UUID        NOT NULL DEFAULT gen_random_uuid(),
+  word            TEXT        NOT NULL,
+  language        TEXT        NOT NULL DEFAULT 'fr',
   length          INT GENERATED ALWAYS AS (length(word)) STORED,
   difficulty      REAL,
   clue            TEXT,
-  source          TEXT NOT NULL,
-  source_license  TEXT NOT NULL,
+  source          TEXT        NOT NULL,
+  source_license  TEXT        NOT NULL,
   frequency       REAL,
   created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
-  UNIQUE (word, language)
+  UNIQUE (word, language),
+  UNIQUE (word_id)
 );
 CREATE INDEX words_lang_len ON words (language, length) INCLUDE (difficulty);
 ```
+
+`word_id` is the identifier to be surfaced on the wire (per
+ADR-0003 §6, which forbids integer IDs on the API). `id`
+(BIGSERIAL) remains internal — never returned by the API, never
+referenced in external contracts. Postgres 16 does not ship UUID v7
+generation natively; the schema-migration PR will resolve the exact
+mechanism (generate UUID v7 in the worker before insert, or adopt a
+utility extension). `gen_random_uuid()` (UUID v4) is the default
+until then.
 
 `clue` and `difficulty` are nullable: the `import-lexique`
 sub-command populates everything except those two; `generate-clues`
