@@ -1,7 +1,8 @@
 # Terraform CLI version pin for the k8s cluster module.
 #
-# Matches the root `terraform/versions.tf` pin (~> 1.9) so the same CLI is
-# usable across the platform IaC tree.
+# Diverges from the root `terraform/versions.tf` pin (~> 1.9) because the
+# s3 backend's `use_lockfile` flag below requires TF 1.10+ / OpenTofu 1.10+
+# (ADR-0010 §2). The root tree does not use that flag and stays on ~> 1.9.
 #
 # DELIBERATELY no `required_providers` block: this is the provider-agnostic
 # interface module (ADR-0009). Provider requirements (e.g. `hetznercloud/hcloud`,
@@ -11,7 +12,7 @@
 # half-state that confuses `terraform init`.
 
 terraform {
-  required_version = "~> 1.9"
+  required_version = "~> 1.10"
 
   # Remote state on Hetzner Object Storage (FSN1), per ADR-0010 §2.
   # Bucket is bootstrapped out-of-band (one-time human step — see the
