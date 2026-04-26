@@ -50,9 +50,39 @@ ClusterIssuer matching the WordSparrow chart's `values-local.yaml`.
 - **No Hetzner Cloud Controller Manager at v1.** ingress-nginx runs
   `hostNetwork: true` with a ClusterIP Service — binds directly to the
   node's :80/:443. Paying for a Hetzner LB is a follow-up ADR.
-- **CNPG backup ObjectStore stays commented out.** Backup wiring lives
-  inline on the WordSparrow Cluster CR until CNPG-i lands; see
-  `templates/cnpg-backup-objectstore.yaml`.
+
+## ObjectStore CR — out of scope for v1
+
+CloudNativePG's cluster-scoped `ObjectStore` CRD landed with the
+CNPG-i / Barman Cloud plugin split (CNPG ~v1.26+); the 0.22.1
+operator chart pinned in `Chart.yaml` predates that split, so the
+right shape today is the inline `.spec.backup.barmanObjectStore`
+on the WordSparrow Cluster CR — already wired in
+`grid/api/deploy/chart/templates/postgres-cluster.yaml`. The
+operator-config workstream owns the migration PR once the chart
+picks up the plugin.
+
+<!--
+apiVersion: barmancloud.cnpg.io/v1
+kind: ObjectStore
+metadata:
+  name: bliss-cnpg-backups
+  labels:
+    {{- include "platform.labels" . | nindent 4 }}
+spec:
+  configuration:
+    destinationPath: s3://bliss-cnpg-backups/
+    endpointURL: https://fsn1.your-objectstorage.com
+    s3Credentials:
+      accessKeyId:
+        name: hcloud-os-credentials
+        key: ACCESS_KEY_ID
+      secretAccessKey:
+        name: hcloud-os-credentials
+        key: SECRET_ACCESS_KEY
+    wal:
+      compression: gzip
+-->
 
 See `docs/deploy.md` "Platform operators bootstrap" for the durable
 maintainer recipe.
