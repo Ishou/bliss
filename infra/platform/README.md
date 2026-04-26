@@ -84,5 +84,4 @@ spec:
       compression: gzip
 -->
 
-See `docs/deploy.md` "Platform operators bootstrap" for the durable
-maintainer recipe.
+A maintainer recipe lands in `docs/deploy.md` in a follow-up PR.
