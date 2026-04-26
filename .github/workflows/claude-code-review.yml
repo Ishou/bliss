@@ -140,6 +140,10 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          # Required so cycle-until-LGTM (per ADR-0001 §6a 2026-04-26 amendment) keeps
+          # running on synchronize events fired by the fixer's own push (actor =
+          # claude[bot]). Default action policy refuses bot-initiated runs.
+          allowed_bots: 'claude[bot],github-actions[bot]'
           additional_permissions: |
             actions: read
           # Read-only on the repo. The reviewer's only output is a markdown
@@ -316,6 +320,10 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          # Required so cycle-until-LGTM (per ADR-0001 §6a 2026-04-26 amendment) keeps
+          # running on synchronize events fired by the fixer's own push (actor =
+          # claude[bot]). Default action policy refuses bot-initiated runs.
+          allowed_bots: 'claude[bot],github-actions[bot]'
           additional_permissions: |
             actions: read
           # The fixer needs Edit/Write to apply fixes, plus shell access to
