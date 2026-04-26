@@ -194,25 +194,11 @@ describe('Grid render', () => {
         },
       ],
     };
-    const { container } = render(
-      <DefinitionCellView cell={longClue} currentArrow={null} />,
-    );
-    const root = container.querySelector('[data-cell-kind="definition"]');
-    expect(root).not.toBeNull();
-    // The clue text is rendered with its full content available via the
-    // native browser tooltip — even when CSS clamps the visible portion.
-    const textNode = root?.querySelector('[data-clue-text]') as HTMLElement | null;
-    expect(textNode).not.toBeNull();
-    expect(textNode).toHaveAttribute(
-      'title',
-      "Mammifère carnivore aquatique d'Amérique du Sud",
-    );
-    // The arrow glyph lives in its own dedicated span, rendered AFTER
-    // the text node in DOM order so CSS clamping of the text never hides
-    // the directional cue.
-    const arrowNode = root?.querySelector('[data-clue-arrow]') as HTMLElement | null;
-    expect(arrowNode).not.toBeNull();
-    expect(arrowNode?.textContent).toBe('→');
+    render(<DefinitionCellView cell={longClue} currentArrow={null} />);
+    expect(
+      screen.getByTitle("Mammifère carnivore aquatique d'Amérique du Sud"),
+    ).toBeInTheDocument();
+    expect(screen.getByText('→')).toBeInTheDocument();
   });
 
   it('keeps both clues visible in stacked cells, each with its own title and arrow', () => {

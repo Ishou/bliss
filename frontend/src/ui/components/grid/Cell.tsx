@@ -207,12 +207,11 @@ function StackedClue({ clue, isCurrent }: { clue: DefinitionClue; isCurrent: boo
     >
       <span
         className={defStackText}
-        data-clue-text=""
         title={clue.text}
       >
         {clue.text}
       </span>
-      <span className={defStackArrow} data-clue-arrow="" aria-hidden="true">
+      <span className={defStackArrow} aria-hidden="true">
         {arrowGlyph[clue.arrow]}
       </span>
     </div>
@@ -248,7 +247,6 @@ export const DefinitionCellView = memo(function DefinitionCellView({
         <div className={defSingle}>
           <span
             className={`${defText}${longText ? ` ${defTextSmall}` : ''}`}
-            data-clue-text=""
             title={clue.text}
           >
             {clue.text}
@@ -256,7 +254,6 @@ export const DefinitionCellView = memo(function DefinitionCellView({
           <span
             aria-label={`définition ${arrowLabel[clue.arrow]}`}
             className={defArrow}
-            data-clue-arrow=""
           >
             {arrowGlyph[clue.arrow]}
           </span>
