@@ -16,20 +16,43 @@ import { registerServiceWorker } from '@/infrastructure/pwa';
 import '@/ui/styles/fonts.css';
 import '@/ui/styles/index.css';
 
+// MSW preview-mode bootstrap (ADR-0007 §5). Cloudflare Pages preview
+// builds set `VITE_USE_MSW=true` via `.env.preview`; production
+// builds load `.env` (`VITE_USE_MSW=false`) and the dynamic import
+// below is dead code, so Vite tree-shakes `msw/browser` and every
+// handler out of the prod bundle. Verified with:
+//
+//   pnpm build && grep -r setupWorker dist/   # → empty
+//
+// The promise-chained app bootstrap ensures the service worker is
+// active *before* React renders, so the very first XHR from the
+// router loader is intercepted (avoids a race where the initial
+// fetch slips through to the real API host).
+async function enableMocks(): Promise<void> {
+  if (import.meta.env.VITE_USE_MSW !== 'true') return;
+  const { worker } = await import('@/infrastructure/mocks/browser');
+  await worker.start({
+    serviceWorker: { url: '/mockServiceWorker.js' },
+    onUnhandledRequest: 'bypass',
+  });
+}
+
 const container = document.getElementById('root');
 if (!container) {
   throw new Error('Root container #root not found in index.html');
 }
 
-const puzzleRepository = createHttpPuzzleRepository({
-  baseUrl: import.meta.env.VITE_GRID_API_URL,
+void enableMocks().then(() => {
+  const puzzleRepository = createHttpPuzzleRepository({
+    baseUrl: import.meta.env.VITE_GRID_API_URL,
+  });
+  const router = createAppRouter({ puzzleRepository });
+
+  createRoot(container).render(
+    <StrictMode>
+      <App router={router} />
+    </StrictMode>,
+  );
+
+  registerServiceWorker();
 });
-const router = createAppRouter({ puzzleRepository });
-
-createRoot(container).render(
-  <StrictMode>
-    <App router={router} />
-  </StrictMode>,
-);
-
-registerServiceWorker();
