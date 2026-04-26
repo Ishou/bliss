@@ -444,7 +444,7 @@ ADR-0009 §10 interim secrets-bootstrap pattern (`kubectl create
 secret`, values never committed):
 
 - `wordsparrow-api-env` — `envFrom` source for the API pod
-  (`values.yaml` `envFromSecret: "wordsparrow-api-env"`); must contain
+  (`values-prod.yaml` `envFromSecret: "wordsparrow-api-env"`); must contain
   at minimum `DATABASE_URL`.
 - `cnpg-backup-creds` — S3 credentials referenced by the CNPG
   `Cluster` CR's `barmanObjectStore` block
@@ -470,7 +470,7 @@ the hard way; this section is the binding so it does not happen again.
 ## 1. Bootstrap `wordsparrow-api-env`
 
 This secret is consumed by the WordSparrow API pod via `envFrom`
-(chart `values.yaml`: `envFromSecret: "wordsparrow-api-env"`). It
+(chart `values-prod.yaml`: `envFromSecret: "wordsparrow-api-env"`). It
 must contain at minimum `DATABASE_URL` pointing at the CNPG
 cluster's read-write service.
 
