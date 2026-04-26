@@ -25,5 +25,8 @@ pnpm-debug.log*
 # Vite
 .vite/
 
+# Local env overrides — never commit; may contain real secrets
+.env*.local
+
 # Test coverage
 coverage/
