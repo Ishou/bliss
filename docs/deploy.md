@@ -317,3 +317,98 @@ apps.
   `flyctl logs --app wordsparrow-api-db`. The DB is a separate Fly
   app from the API.
 
+# Terraform k8s state backend (Hetzner Object Storage)
+
+How the `terraform/k8s/` root reaches a working remote backend.
+Authoritative spec is
+[ADR-0010](./adr/0010-terraform-remote-state-hetzner.md); this section
+is the operational binding required by ADR-0010 §4 (bucket bootstrap)
+and §6 (credentials).
+
+## Terraform k8s state backend — first-time bootstrap (one-time)
+
+These are one-time, human steps run **once** before any maintainer ever
+runs `terraform init` against `terraform/k8s/`. Skip if the bucket
+already exists.
+
+### 1. Create the state bucket
+
+Pick one path:
+
+**Path A — Hetzner Console UI (no extra tools required):**
+
+1. Log in to the Hetzner Cloud Console.
+2. Navigate to Object Storage.
+3. Click **Create Bucket**:
+   - Name: `bliss-tf-state`
+   - Region: **FSN1** (Falkenstein)
+   - Enable **Versioning**
+4. Done.
+
+**Path B — AWS CLI against the Hetzner endpoint** (if installed):
+
+```sh
+export AWS_ACCESS_KEY_ID=<hetzner-os-access-key>
+export AWS_SECRET_ACCESS_KEY=<hetzner-os-secret>
+aws s3api create-bucket \
+  --bucket bliss-tf-state \
+  --endpoint-url https://fsn1.your-objectstorage.com
+aws s3api put-bucket-versioning \
+  --bucket bliss-tf-state \
+  --versioning-configuration Status=Enabled \
+  --endpoint-url https://fsn1.your-objectstorage.com
+```
+
+### 2. Provision Hetzner Object Storage credentials
+
+In the Hetzner Console, generate an Object Storage **access-key +
+secret-key** pair scoped to the `bliss-tf-state` bucket (least
+privilege; the second pair for `bliss-cnpg-backups` is provisioned by
+the CNPG-wiring PR).
+
+Store both as GitHub Actions secrets for CI:
+
+- `HCLOUD_OS_ACCESS_KEY`
+- `HCLOUD_OS_SECRET_KEY`
+
+For local `terraform init`, export them under their AWS-SDK names (the
+Terraform S3 backend reads `AWS_*` env vars even against non-AWS
+endpoints):
+
+```sh
+export AWS_ACCESS_KEY_ID=<hetzner-os-access-key>
+export AWS_SECRET_ACCESS_KEY=<hetzner-os-secret>
+```
+
+### 3. Initialize the backend
+
+From `terraform/k8s/`:
+
+```sh
+terraform init
+```
+
+There is no state to migrate yet — `terraform/k8s/` declares no
+resources prior to the first provider implementation PR. If you ever
+run this **after** real resources have already been applied locally,
+append `-migrate-state` so the existing local `terraform.tfstate` is
+uploaded into the bucket:
+
+```sh
+terraform init -migrate-state
+```
+
+### 4. Verify locking
+
+```sh
+terraform plan
+```
+
+The plan should succeed (it has no resources to read; expect a "No
+changes" plan), and the bucket should briefly show a
+`terraform.tfstate.tflock` object during the run.
+
+If the run 400s with `XAmzContentSHA256Mismatch`, the
+`skip_s3_checksum = true` flag is missing from the backend block —
+re-check `terraform/k8s/versions.tf` against ADR-0010 §2.
+

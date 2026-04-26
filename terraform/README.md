@@ -110,11 +110,11 @@ implementation (Hetzner) lands in a follow-up PR; Fly resources here
 stay in place until the cutover PR flips DNS. See
 [`terraform/k8s/README.md`](k8s/README.md) for the provider-swap design.
 
-The k8s module mirrors the local-state stance documented above — see
-[`terraform/k8s/README.md`](k8s/README.md#state-management) for the
-explicit note. The same future remote-state ADR will resolve both
-modules together; the k8s module flags PR3 (which lands the first real
-resources) as the deadline for revisiting that.
+The k8s module has its own remote backend — Hetzner Object Storage,
+FSN1, per ADR-0010 — see
+[`terraform/k8s/README.md`](k8s/README.md#remote-state) for the
+backend block and bootstrap pointer. This root still keeps state local
+pending its own remote-state migration.
 
 The Cloudflare API token used by in-cluster operators (external-dns,
 cert-manager DNS-01) is **not** an input to the k8s module — it belongs

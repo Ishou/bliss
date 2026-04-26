@@ -76,23 +76,22 @@ this module. That credential is owned by the Helm/Flux bootstrap layer
 and injected there, so the cluster-provisioning contract stays decoupled
 from any specific in-cluster operator's credential requirements.
 
-## State management
+## Remote state
 
-State is local for v1, mirroring the root
-[`terraform/README.md`](../README.md#state) stance — `terraform.tfstate`
-sits under this directory and is gitignored. No `backend {}` block is
-declared; the same future remote-state ADR called out in the root README
-will resolve this for both modules together.
+State for this root lives in **Hetzner Object Storage**, region
+**FSN1**, bucket **`bliss-tf-state`**, under the key
+`k8s/terraform.tfstate`. Native S3 locking
+(`use_lockfile = true`) is enabled; no DynamoDB-equivalent is needed.
+See [ADR-0010](../../docs/adr/0010-terraform-remote-state-hetzner.md)
+for the rationale (jurisdiction, locking semantics, and the
+time-limited `skip_s3_checksum` workaround for OpenTofu issue #2605).
 
-A k3s cluster is a more consequential resource than a Cloudflare Pages
-project — losing the state file or running `apply` from two machines
-risks orphaning real VMs and credentials. **PR3 (which lands the first
-provider implementation and the first real cloud resources) MUST revisit
-this before resources land**: either by gating PR3 on the remote-state
-ADR, or by adding a remote backend in PR3 itself.
-
-Until then, the maintainer keeps the local statefile alongside the
-provider API tokens and backs both up out-of-band.
+**First-time bootstrap**: the state bucket itself is provisioned
+out-of-band as a one-time human step before the first `terraform init`
+against this root. The recipe (Console UI / AWS-CLI bucket create,
+credential provisioning, `terraform init`, locking verification) lives
+in
+[`docs/deploy.md`](../../docs/deploy.md#terraform-k8s-state-backend--first-time-bootstrap-one-time).
 
 ## Cross-references
 
