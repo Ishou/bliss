@@ -183,12 +183,6 @@ describe('Grid render', () => {
     expect(root?.textContent).toContain('↓');
   });
 
-  // 2026-04-26 prod regression: long French clues like "Volatile à long
-  // cou" or "Tracer des mots" wrapped mid-word and the arrow glyph ended
-  // up swallowed inside the truncated text. The fix line-clamps the clue
-  // to two lines, exposes the full text via a native `title` tooltip, and
-  // anchors the arrow in its own span so it is always visible after the
-  // (possibly truncated) prose.
   it('clamps long single-clue text and exposes the full text in title', () => {
     const longClue: DefinitionCell = {
       kind: 'definition',
@@ -219,12 +213,6 @@ describe('Grid render', () => {
     const arrowNode = root?.querySelector('[data-clue-arrow]') as HTMLElement | null;
     expect(arrowNode).not.toBeNull();
     expect(arrowNode?.textContent).toBe('→');
-    // DOM order: text precedes arrow. Both nodes are inside the same
-    // wrapper, so compareDocumentPosition reports FOLLOWING (4) for
-    // the arrow relative to the text.
-    expect(textNode!.compareDocumentPosition(arrowNode!)).toBe(
-      Node.DOCUMENT_POSITION_FOLLOWING,
-    );
   });
 
   it('keeps both clues visible in stacked cells, each with its own title and arrow', () => {

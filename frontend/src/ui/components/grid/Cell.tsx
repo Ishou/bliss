@@ -35,11 +35,7 @@ const defCell = css({
 // Single-clue layout root. Flex column so the (clamped) text occupies
 // the top of the cell while the arrow span anchors a separate row at
 // the bottom — keeping the directional cue visible even when CSS
-// clips the prose. See the 2026-04-26 prod regression: long French
-// definitions ("Volatile à long cou", "Tracer des mots") wrapped
-// mid-word and the arrow ended up swallowed inside the truncated
-// text node. Splitting text and arrow into sibling spans prevents
-// that whole class of overflow bug.
+// clips the prose.
 const defSingle = css({
   display: 'flex',
   flexDirection: 'column',
@@ -75,14 +71,10 @@ const letterInput = css({
   padding: 0,
   _focus: { bg: 'leaf.500', color: 'ink' },
 });
-// Single-clue text. `lineClamp: 2` is panda's shortcut for the
-// `display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient:
-// vertical; overflow: hidden` quartet that clips at two lines and
-// inserts the browser's native ellipsis. The full clue text is also
-// exposed via `title` on the element, so users get the native tooltip
-// on hover/long-press without us reinventing tooltip plumbing.
-// `wordBreak: normal` + `overflowWrap: break-word` lets long French
-// words break at sane boundaries instead of mid-word.
+// Single-clue text. The full clue text is exposed via `title` so users
+// get the native tooltip on hover/long-press without reinventing tooltip
+// plumbing. `wordBreak: normal` + `overflowWrap: break-word` lets long
+// French words break at sane boundaries instead of mid-word.
 const defText = css({
   flex: 1,
   alignSelf: 'stretch',
