@@ -1,0 +1,59 @@
+name: Helm Lint
+
+# Lints and renders the infra/platform/ umbrella chart on every PR
+# touching it (and on pushes to main) — same posture as openapi-lint.yml
+# does for grid/api/openapi.yaml. `helm dep update` resolves the five
+# subchart pins from Chart.yaml fresh every run; both prod and local
+# values files are rendered because `helm lint` only checks one shape
+# at a time.
+
+on:
+  pull_request:
+    paths:
+      - 'infra/platform/**'
+      - '.github/workflows/helm-lint.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'infra/platform/**'
+      - '.github/workflows/helm-lint.yml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+permissions:
+  contents: read
+
+jobs:
+  helm-lint:
+    name: helm lint + template
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - uses: azure/setup-helm@v4
+        with:
+          version: v3.16.3
+
+      - name: Resolve subchart dependencies
+        run: helm dep update infra/platform/
+
+      - name: Lint chart (prod values)
+        run: |
+          helm lint infra/platform/ \
+            -f infra/platform/values-prod.yaml \
+            --set clusterIssuer.letsencrypt.email=test@example.com
+
+      - name: Render chart (prod values)
+        run: |
+          helm template platform infra/platform/ \
+            -f infra/platform/values-prod.yaml \
+            --set clusterIssuer.letsencrypt.email=test@example.com > /dev/null
+
+      - name: Render chart (local values)
+        run: |
+          helm template platform infra/platform/ \
+            -f infra/platform/values-local.yaml > /dev/null
