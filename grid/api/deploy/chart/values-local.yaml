@@ -1,0 +1,27 @@
+# Local overrides — k3d cluster (ADR-0009 §5, scripts/local-cluster.sh).
+# Divergences in docs/local-development.md "Divergences from prod".
+replicaCount: 1
+image:
+  # Documented divergence: local pulls by tag, prod by digest.
+  digest: ""
+  tag: "main"
+# No limits locally — k3d node is small; JVM honours UseContainerSupport.
+resources: {}
+ingress:
+  # Matches /etc/hosts step in docs/local-development.md §3.
+  host: "wordsparrow.local"
+  tlsSecretName: "wordsparrow-api-tls"
+  # "selfsigned" issuer installed by cluster bring-up (PR40). No external-dns locally.
+  annotations:
+    cert-manager.io/cluster-issuer: "selfsigned"
+postgres:
+  cluster:
+    instances: 1
+    # Divergence table aspires to "emptyDir"; CNPG storage is PVC-only, so
+    # locally we use k3d default "local-path" — wiped by `make cluster-down`,
+    # so still ephemeral. TODO: revisit if CNPG ships ephemeral storage.
+    storage: {storageClass: "", size: 1Gi}
+  backups:
+    enabled: false
+# Same recipe as prod, against the k3d context (ADR-0009 §10).
+envFromSecret: "wordsparrow-api-env"

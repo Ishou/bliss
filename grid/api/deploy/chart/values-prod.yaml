@@ -1,0 +1,27 @@
+# Production overrides — Hetzner k3s cluster (ADR-0009 §2).
+replicaCount: 2
+image:
+  # Set by the CD workflow per push (ADR-0009 §8 step 5). Format "sha256:...".
+  digest: ""
+resources:
+  requests: {cpu: 250m, memory: 512Mi}
+  limits: {cpu: 1000m, memory: 1Gi}
+ingress:
+  host: "api.wordsparrow.io"
+  tlsSecretName: "wordsparrow-api-tls"
+  # Issuer + external-dns provider installed by cluster bring-up (ADR-0009 §3).
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    external-dns.alpha.kubernetes.io/hostname: "api.wordsparrow.io"
+postgres:
+  cluster:
+    # HA per ADR-0009 §3 + docs/local-development.md divergence table.
+    instances: 3
+    storage: {size: 20Gi, storageClass: "hcloud-volumes"}
+  backups:
+    enabled: true
+    # ADR-0010 §1 (bucket created one-time per ADR-0010 §4); FSN1 endpoint per §2.
+    bucket: "bliss-cnpg-backups"
+    endpoint: "https://fsn1.your-objectstorage.com"
+# Bootstrapped via `kubectl create secret generic wordsparrow-api-env ...` (ADR-0009 §10).
+envFromSecret: "wordsparrow-api-env"

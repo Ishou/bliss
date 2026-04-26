@@ -1,0 +1,64 @@
+# Shared defaults. Per-env files override what differs.
+image:
+  # GHCR image built by the sibling image-build pipeline.
+  repository: ghcr.io/ishou/bliss/wordsparrow-api
+  # Required by manifesto ("pin to digest"). Empty -> tag fallback. Format "sha256:...".
+  digest: ""
+  # Pull reference when digest is empty (local-only divergence).
+  tag: "main"
+  pullPolicy: IfNotPresent
+# Replica count. Override per env (prod=2, local=1).
+replicaCount: 1
+# Pod resources. Empty default — env files set requests/limits.
+resources: {}
+service:
+  type: ClusterIP
+  # API listens on 8080 — grid/api/src/main/kotlin/com/bliss/grid/api/Main.kt:14.
+  port: 8080
+ingress:
+  enabled: true
+  className: nginx
+  # REQUIRED per env (api.wordsparrow.io prod, wordsparrow.local local).
+  host: ""
+  # TLS Secret name created by cert-manager from the ingress annotation.
+  tlsSecretName: ""
+  # Env files set cert-manager and external-dns annotations here.
+  annotations: {}
+postgres:
+  cluster:
+    # CNPG Cluster instances. Prod=3 (HA, ADR-0009 §3); local=1.
+    instances: 1
+    storage:
+      size: 10Gi
+      # Empty = cluster default. Prod "hcloud-volumes"; local "local-path".
+      storageClass: ""
+    bootstrap: {database: wordsparrow, owner: wordsparrow}
+  backups:
+    # Off by default. Prod turns this on; local stays off.
+    enabled: false
+    # S3-compatible bucket. ADR-0010 §1: "<project>-cnpg-backups".
+    bucket: ""
+    # S3 endpoint URL. Hetzner OS FSN1 in prod (ADR-0010 §2).
+    endpoint: ""
+    # Daily 02:00 UTC scheduled backup.
+    schedule: "0 2 * * *"
+    # CNPG retention policy notation (e.g. "30d").
+    retentionPolicy: "30d"
+serviceAccount:
+  create: true
+  # Empty -> templated as <fullname>.
+  name: ""
+podSecurityContext: {runAsNonRoot: true, fsGroup: 1000}
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities: {drop: [ALL]}
+probes:
+  # Health endpoint — grid/api/src/main/kotlin/com/bliss/grid/api/routes/HealthRoute.kt:18.
+  liveness: {path: "/v1/health"}
+  readiness: {path: "/v1/health"}
+# Inline env vars. Prefer envFromSecret for anything sensitive.
+env: []
+# Name of a Kubernetes Secret to envFrom into the pod. ADR-0009 §10:
+# bootstrapped via `kubectl create secret`, never committed.
+envFromSecret: ""

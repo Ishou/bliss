@@ -1,0 +1,12 @@
+apiVersion: v2
+name: wordsparrow-api
+description: WordSparrow JVM API
+type: application
+# Chart version. Bump when chart shape changes.
+version: 0.1.0
+# App version. Overridden per-deploy by the CD workflow (ADR-0009 §4).
+appVersion: "0.1.0"
+# Cluster operators (cert-manager, ingress-nginx, CloudNativePG, external-dns)
+# are cluster-installed once via the bring-up workstream (ADR-0009 §3), not
+# pulled in as subchart dependencies here.
+dependencies: []
