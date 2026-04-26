@@ -5,6 +5,7 @@ image:
   # Documented divergence: local pulls by tag, prod by digest.
   digest: ""
   tag: "main"
+# No limits locally — k3d node is small; JVM honours UseContainerSupport.
 resources: {}
 ingress:
   # Matches /etc/hosts step in docs/local-development.md §3.
@@ -16,7 +17,9 @@ ingress:
 postgres:
   cluster:
     instances: 1
-    # k3d default "local-path"; wiped by `make cluster-down` (ephemeral enough).
+    # Divergence table aspires to "emptyDir"; CNPG storage is PVC-only, so
+    # locally we use k3d default "local-path" — wiped by `make cluster-down`,
+    # so still ephemeral. TODO: revisit if CNPG ships ephemeral storage.
     storage: {storageClass: "", size: 1Gi}
   backups:
     enabled: false
