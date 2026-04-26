@@ -42,6 +42,9 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end -}}
 {{/* Image ref: digest-pinned when set (manifesto), tag fallback otherwise. */}}
 {{- define "wordsparrow-api.image" -}}
+{{- if and (not .Values.image.digest) .Values.image.requireDigest -}}
+{{- fail "image.digest must be set for production — MANIFESTO reproducible builds" -}}
+{{- end -}}
 {{- if .Values.image.digest -}}
 {{- printf "%s@%s" .Values.image.repository .Values.image.digest -}}
 {{- else -}}

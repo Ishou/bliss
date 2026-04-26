@@ -38,3 +38,9 @@ in `docs/deploy.md` alongside the cluster bring-up PR.
 
 Embedding plaintext would violate "secrets never in code", so neither
 secret is templated by this chart.
+
+## `image.requireDigest`
+
+Defaults to `false`; set to `true` in `values-prod.yaml` so `helm` aborts
+if the CD workflow has not injected `image.digest` (manifesto: container
+images pinned to digest, not tag).

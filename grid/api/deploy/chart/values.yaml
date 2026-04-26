@@ -7,6 +7,10 @@ image:
   # Pull reference when digest is empty (local-only divergence).
   tag: "main"
   pullPolicy: IfNotPresent
+  # Manifesto: container images pinned to digest. Local dev tolerates a
+  # mutable tag; prod must not. Overridden to true in values-prod.yaml so
+  # `helm install/upgrade` aborts when CD forgot to inject the digest.
+  requireDigest: false
 # Replica count. Override per env (prod=2, local=1).
 replicaCount: 1
 # Pod resources. Empty default — env files set requests/limits.
