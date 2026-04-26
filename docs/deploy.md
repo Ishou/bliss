@@ -452,6 +452,15 @@ Apply takes ~3–5 min. The worker's cloud-init waits on the
 control-plane's `:6443/healthz` before joining, so the apply returns
 only once both nodes are up.
 
+If `kubectl get nodes` fails after apply with cloud-init reporting
+`set: Illegal option -o pipefail` in
+`/var/lib/cloud/instance/scripts/runcmd`, you've hit the pre-fix-PR
+template (cloud-init ran the install via dash, not bash). Pull `main`,
+then `tofu taint module.cluster.hcloud_server.control_plane[0]` +
+`tofu taint module.cluster.hcloud_server.worker[0]` + `tofu apply` to
+recreate both nodes with the fixed cloud-init. Run `ssh-keygen -R <ip>`
+for each replaced node to clear the old host-key entries.
+
 ### 2. Fetch the kubeconfig (one-time human step)
 
 ADR-0009 §10 accepts the documented-one-time-human-step pattern for

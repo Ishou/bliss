@@ -1,5 +1,11 @@
 #cloud-config
 # k3s control-plane bootstrap. Templated by Terraform — see server.tf.
+#
+# The install commands run from a write_files-materialized bash script
+# rather than inline `runcmd` blocks because cloud-init executes inline
+# `runcmd` entries via /bin/sh (dash on Ubuntu), which does not support
+# `set -o pipefail`. Invoking a script by path lets cloud-init honor the
+# `#!/bin/bash` shebang so `set -euo pipefail` works.
 
 write_files:
   - path: /etc/rancher/k3s/config.yaml
@@ -16,14 +22,20 @@ write_files:
         - traefik
         - servicelb
 
+  - path: /usr/local/bin/install-k3s.sh
+    permissions: "0755"
+    owner: root:root
+    content: |
+      #!/bin/bash
+      set -euo pipefail
+
+      export INSTALL_K3S_VERSION="${k3s_version}"
+      export K3S_TOKEN="${k3s_token}"
+      curl -sfL https://get.k3s.io | sh -s - server
+
+      until curl -sk https://127.0.0.1:6443/healthz | grep -qx "ok"; do
+        sleep 5
+      done
+
 runcmd:
-  - |
-    set -euo pipefail
-    export INSTALL_K3S_VERSION="${k3s_version}"
-    export K3S_TOKEN="${k3s_token}"
-    curl -sfL https://get.k3s.io | sh -s - server
-  - |
-    set -euo pipefail
-    until curl -sk https://127.0.0.1:6443/healthz | grep -qx "ok"; do
-      sleep 5
-    done
+  - /usr/local/bin/install-k3s.sh

@@ -2,6 +2,12 @@
 # k3s worker bootstrap. Joins the control plane via its public IP using
 # the shared K3S_TOKEN. Pre-install loop avoids the "control-plane not
 # ready" race that would otherwise show up as a flaky tofu apply.
+#
+# The install commands run from a write_files-materialized bash script
+# rather than inline `runcmd` blocks because cloud-init executes inline
+# `runcmd` entries via /bin/sh (dash on Ubuntu), which does not support
+# `set -o pipefail`. Invoking a script by path lets cloud-init honor the
+# `#!/bin/bash` shebang so `set -euo pipefail` works.
 
 write_files:
   - path: /etc/rancher/k3s/config.yaml
@@ -11,15 +17,21 @@ write_files:
         - "bliss.io/role=worker"
         - "bliss.io/cluster=${cluster_name}"
 
+  - path: /usr/local/bin/install-k3s.sh
+    permissions: "0755"
+    owner: root:root
+    content: |
+      #!/bin/bash
+      set -euo pipefail
+
+      until curl -sk "https://${cp_ip}:6443/healthz" | grep -qx "ok"; do
+        sleep 5
+      done
+
+      export INSTALL_K3S_VERSION="${k3s_version}"
+      export K3S_TOKEN="${k3s_token}"
+      export K3S_URL="https://${cp_ip}:6443"
+      curl -sfL https://get.k3s.io | sh -s - agent
+
 runcmd:
-  - |
-    set -euo pipefail
-    until curl -sk "https://${cp_ip}:6443/healthz" | grep -qx "ok"; do
-      sleep 5
-    done
-  - |
-    set -euo pipefail
-    export INSTALL_K3S_VERSION="${k3s_version}"
-    export K3S_TOKEN="${k3s_token}"
-    export K3S_URL="https://${cp_ip}:6443"
-    curl -sfL https://get.k3s.io | sh -s - agent
+  - /usr/local/bin/install-k3s.sh
