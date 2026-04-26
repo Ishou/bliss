@@ -22,7 +22,12 @@ image build (sibling PR), and the CD workflow (step 5).
 ```sh
 cd grid/api/deploy/chart
 helm lint . -f values-local.yaml && helm template wordsparrow-api . -f values-local.yaml
-helm lint . -f values-prod.yaml  && helm template wordsparrow-api . -f values-prod.yaml
+# values-prod.yaml sets requireDigest: true, so lint/template need a dummy digest;
+# CD injects the real one (manifesto: pin to digest, not tag).
+helm lint . -f values-prod.yaml \
+  --set image.digest=sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa \
+  && helm template wordsparrow-api . -f values-prod.yaml \
+       --set image.digest=sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 ```
 
 ## One-time bootstrap before `helm install`
