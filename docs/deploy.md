@@ -585,7 +585,7 @@ production cert against `letsencrypt-prod`.
   the hour. Wait ~1h or temporarily switch to the staging issuer
   (out of scope here).
 - **CNPG cluster won't bind its PVC:** confirm the
-  `hcloud-csi-token` secret exists in `kube-system` and that the
+  `hcloud-csi-token` secret exists in `platform` and that the
   Hetzner project quota allows new volume creation in `fsn1`.
 - **external-dns not writing records:** check
   `kubectl -n external-dns logs deploy/external-dns` for Cloudflare
