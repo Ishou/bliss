@@ -256,24 +256,26 @@ jobs:
         id: detect
         run: |
           set -euo pipefail
-          # The reviewer just posted via `gh pr review --comment`. Pull the
-          # latest review body and check whether it begins with the LGTM
-          # sentinel from the prompt. Anything else (or empty) is treated
-          # as findings to fix.
-          body=$(gh pr view "$PR_NUMBER" \
-            --json reviews \
-            --jq 'last(.reviews[] | select(.author.login | endswith("[bot]") or . == "claude")).body // ""' \
-            || true)
-          if [ -z "$body" ]; then
-            echo "Reviewer left no review body — skipping fixer."
+          # Read the review body directly from /tmp/review.md — the same
+          # file the "Submit review" step posted moments earlier. The
+          # previous implementation queried `gh pr view --json reviews`
+          # immediately after the submit, which raced GitHub's API
+          # propagation delay: the just-posted review was frequently
+          # absent from the response, leaving `body` empty, flipping
+          # `has_findings=false`, and silently skipping the fixer. The
+          # 2026-04-26 deploy session hit this on at least 6 consecutive
+          # PRs. The file content is the source of truth — it's what
+          # was posted — and reading it is deterministic and synchronous.
+          if [ ! -s /tmp/review.md ]; then
+            echo "::warning::No /tmp/review.md found; skipping fixer."
             echo "has_findings=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          first_line=$(echo "$body" | head -n 1)
+          first_line=$(head -n 1 /tmp/review.md)
           echo "First line of review: $first_line"
           # Match `LGTM` at the start, case-sensitive (per the prompt).
           if echo "$first_line" | grep -q '^LGTM'; then
-            echo "Reviewer posted LGTM — skipping fixer."
+            echo "Reviewer wrote LGTM — skipping fixer."
             echo "has_findings=false" >> "$GITHUB_OUTPUT"
           else
             echo "Reviewer posted findings — running fixer."
