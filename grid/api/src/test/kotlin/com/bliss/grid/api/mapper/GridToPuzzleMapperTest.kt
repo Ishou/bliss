@@ -1,15 +1,21 @@
 package com.bliss.grid.api.mapper
 
+import assertk.assertFailure
 import assertk.assertThat
 import assertk.assertions.containsExactlyInAnyOrder
 import assertk.assertions.hasSize
 import assertk.assertions.isEqualTo
 import assertk.assertions.isIn
+import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotNull
 import assertk.assertions.isTrue
+import assertk.assertions.messageContains
 import com.bliss.grid.api.dto.BlockCellDto
 import com.bliss.grid.api.dto.DefinitionCellDto
 import com.bliss.grid.api.dto.LetterCellDto
+import com.bliss.grid.domain.model.Cell
+import com.bliss.grid.domain.model.Clue
+import com.bliss.grid.domain.model.ClueCell
 import com.bliss.grid.domain.model.Column
 import com.bliss.grid.domain.model.Direction
 import com.bliss.grid.domain.model.Grid
@@ -113,6 +119,28 @@ class GridToPuzzleMapperTest {
         defsAtOrigin.forEach { def ->
             assertThat(clueIds.contains(def.clueId)).isTrue()
         }
+    }
+
+    @Test
+    fun `mapper throws IllegalStateException when a ClueCell has no matching WordPlacement`() {
+        // A malformed Grid: cells contain a ClueCell whose direction is RIGHT,
+        // but the placements list is empty. Constructed via reflection because
+        // Grid's primary constructor is `internal` to grid/domain — production
+        // builders (Grid.fromPlacements) keep cells and placements in sync.
+        val cluePos = pos(0, 0)
+        val cells: Map<Position, Cell> =
+            mapOf(cluePos to ClueCell(listOf(Clue("orphan", Direction.RIGHT))))
+        val ctor =
+            Grid::class.java.declaredConstructors
+                .single()
+                .apply { isAccessible = true }
+        val malformed =
+            ctor.newInstance(3, 3, cells, emptyList<WordPlacement>()) as Grid
+
+        assertFailure {
+            mapper.toApi(malformed, UUID.randomUUID(), Instant.now())
+        }.isInstanceOf(IllegalStateException::class)
+            .messageContains("Grid invariant violated")
     }
 
     @Test

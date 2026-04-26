@@ -84,7 +84,13 @@ class GridToPuzzleMapper {
                     is ClueCell -> {
                         cell.clues.forEach { clue ->
                             val placement =
-                                grid.placements.first { it.cluePosition == pos && it.direction == clue.direction }
+                                grid.placements.firstOrNull {
+                                    it.cluePosition == pos && it.direction == clue.direction
+                                }
+                                    ?: error(
+                                        "no WordPlacement for $pos / ${clue.direction} " +
+                                            "— Grid invariant violated",
+                                    )
                             cells +=
                                 DefinitionCellDto(
                                     position = dto,
