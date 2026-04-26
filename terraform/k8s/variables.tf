@@ -42,8 +42,8 @@ variable "control_plane_count" {
   default     = 1
 
   validation {
-    condition     = var.control_plane_count >= 1 && var.control_plane_count <= 5
-    error_message = "control_plane_count must be between 1 and 5. HA k3s with embedded etcd requires an odd count >= 3."
+    condition     = var.control_plane_count == 1 || (var.control_plane_count >= 3 && var.control_plane_count % 2 == 1)
+    error_message = "control_plane_count must be 1 (single-node) or an odd number >= 3 (HA with embedded etcd quorum). Even counts are invalid for k3s embedded etcd."
   }
 }
 
