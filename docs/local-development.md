@@ -124,7 +124,7 @@ manifesto violation.
 | `bind: address already in use` on :80 or :443          | another service holds the port        | stop it, or run with `K3D_HOST_PORT_HTTP=8080 …` (edit the script) |
 | `failed to pull image rancher/k3s:…`                   | rate limit or offline                 | `docker login`, or pre-pull the image                              |
 | `Error: no repositories configured` on `helm repo update` | first run, no repos yet              | re-run `make cluster-bootstrap`; the script adds them idempotently |
-| `cert-manager` pods CrashLoopBackOff                   | CRDs not installed                    | the script passes `--set installCRDs=true`; reinstall              |
+| `cert-manager` pods CrashLoopBackOff                   | CRDs not installed                    | the script passes `--set crds.enabled=true`; reinstall             |
 | `make cluster-up` says cluster exists but kubectl can't reach it | stale kubeconfig context     | `make cluster-reset`                                               |
 
 ## 6. Cross-references

@@ -146,7 +146,7 @@ cmd_bootstrap() {
   helm upgrade --install cert-manager jetstack/cert-manager \
     --version "${CERT_MANAGER_VERSION}" \
     --namespace cert-manager --create-namespace \
-    --set installCRDs=true \
+    --set crds.enabled=true \
     --wait
 
   log "installing cloudnative-pg operator ${CNPG_VERSION}"
