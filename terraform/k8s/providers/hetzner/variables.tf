@@ -42,3 +42,14 @@ variable "k3s_version" {
   description = "k3s release tag (vX.Y.Z+k3sN). Forwarded from the parent contract."
   type        = string
 }
+
+variable "private_iface" {
+  type        = string
+  default     = "enp7s0"
+  description = <<-EOT
+    Private NIC name on cluster nodes. Hetzner CX-series Ubuntu 24.04
+    images use enp7s0; CPX/CCX/ARM64 types may differ. Verify with
+    `ip -br addr` on a freshly booted instance before overriding.
+    Cloud-init's wait loop will hang indefinitely if this is wrong.
+  EOT
+}

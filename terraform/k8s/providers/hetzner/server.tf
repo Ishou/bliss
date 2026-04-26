@@ -17,12 +17,6 @@ locals {
   cp_private_ips     = [for i in range(var.control_plane_count) : "10.0.1.${10 + i}"]
   worker_private_ips = [for i in range(var.worker_count) : "10.0.1.${20 + i}"]
 
-  # The hcloud private interface name on Ubuntu 24.04 cloud images.
-  # Verified live on this exact setup; pinned here rather than
-  # auto-detected because cloud-init runs before any kubelet that could
-  # introspect it, and a wrong guess wedges the node.
-  private_iface = "enp7s0"
-
   cp_user_data = [
     for i in range(var.control_plane_count) :
     templatefile("${path.module}/cloud-init/control-plane.yaml.tftpl", {
@@ -31,7 +25,7 @@ locals {
       k3s_token     = random_password.k3s_token.result
       tls_san       = "${var.cluster_name}-cp-${i}"
       private_ip    = local.cp_private_ips[i]
-      private_iface = local.private_iface
+      private_iface = var.private_iface
     })
   ]
 }
@@ -84,7 +78,7 @@ resource "hcloud_server" "worker" {
     k3s_token     = random_password.k3s_token.result
     cp_ip         = local.cp_private_ips[0]
     private_ip    = local.worker_private_ips[count.index]
-    private_iface = local.private_iface
+    private_iface = var.private_iface
   })
 
   labels = {
