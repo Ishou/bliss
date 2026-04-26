@@ -166,9 +166,8 @@ describe('Grid render', () => {
         { text: 'Saison chaude', arrow: 'down' },
       ],
     };
-    const { container } = render(<DefinitionCellView cell={stacked} currentArrow={null} />);
-    const root = container.querySelector('[data-cell-kind="definition"]');
-    expect(root).not.toBeNull();
+    render(<DefinitionCellView cell={stacked} currentArrow={null} />);
+    const root = screen.getByRole('gridcell');
     expect(root).toHaveAttribute('data-clue-count', '2');
     // Both clue texts present, in DOM order matching stack order.
     expect(screen.getByText('Astre nocturne')).toBeInTheDocument();
@@ -179,8 +178,8 @@ describe('Grid render', () => {
     expect(screen.getByRole('group', { name: 'définition horizontale' })).toBeInTheDocument();
     expect(screen.getByRole('group', { name: 'définition verticale' })).toBeInTheDocument();
     // Both arrow glyphs are in the rendered output.
-    expect(root?.textContent).toContain('→');
-    expect(root?.textContent).toContain('↓');
+    expect(root.textContent).toContain('→');
+    expect(root.textContent).toContain('↓');
   });
 
   it('clamps long single-clue text and exposes the full text in title', () => {
@@ -210,11 +209,7 @@ describe('Grid render', () => {
         { text: 'Tracer des mots', arrow: 'down' },
       ],
     };
-    const { container } = render(
-      <DefinitionCellView cell={stacked} currentArrow={null} />,
-    );
-    const root = container.querySelector('[data-cell-kind="definition"]');
-    expect(root).not.toBeNull();
+    render(<DefinitionCellView cell={stacked} currentArrow={null} />);
     // Both clue texts must be in the DOM (not just the first one).
     expect(screen.getByText('Volatile à long cou')).toBeInTheDocument();
     expect(screen.getByText('Tracer des mots')).toBeInTheDocument();
