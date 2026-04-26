@@ -1,0 +1,29 @@
+#cloud-config
+# k3s control-plane bootstrap. Templated by Terraform — see server.tf.
+
+write_files:
+  - path: /etc/rancher/k3s/config.yaml
+    permissions: "0600"
+    content: |
+      cluster-init: true
+      tls-san:
+        - ${tls_san}
+      node-label:
+        - "bliss.io/role=control-plane"
+        - "bliss.io/cluster=${cluster_name}"
+      write-kubeconfig-mode: "0644"
+      disable:
+        - traefik
+        - servicelb
+
+runcmd:
+  - |
+    set -euo pipefail
+    export INSTALL_K3S_VERSION="${k3s_version}"
+    export K3S_TOKEN="${k3s_token}"
+    curl -sfL https://get.k3s.io | sh -s - server
+  - |
+    set -euo pipefail
+    until curl -sk https://127.0.0.1:6443/healthz | grep -qx "ok"; do
+      sleep 5
+    done
