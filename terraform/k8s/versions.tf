@@ -19,7 +19,7 @@ terraform {
   # `docs/deploy.md` once the cluster bring-up PR adds it).
   backend "s3" {
     bucket = "bliss-tf-state"
-    key    = "terraform/k8s/terraform.tfstate"
+    key    = "k8s/terraform.tfstate"
     region = "fsn1"
 
     endpoints = {

@@ -80,7 +80,7 @@ from any specific in-cluster operator's credential requirements.
 
 State for this root lives in **Hetzner Object Storage**, region
 **FSN1**, bucket **`bliss-tf-state`**, under the key
-`terraform/k8s/terraform.tfstate`. Native S3 locking
+`k8s/terraform.tfstate`. Native S3 locking
 (`use_lockfile = true`) is enabled; no DynamoDB-equivalent is needed.
 See [ADR-0010](../../docs/adr/0010-terraform-remote-state-hetzner.md)
 for the rationale (jurisdiction, locking semantics, and the
