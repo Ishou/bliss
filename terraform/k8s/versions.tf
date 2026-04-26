@@ -9,7 +9,7 @@
 # `scaleway/scaleway`) belong in the provider-specific implementation that
 # lives under `providers/<name>/` and ships in a follow-up PR. Declaring
 # providers here without a corresponding implementation would create a
-# half-state that confuses `terraform init`.
+# half-state that confuses `tofu init`.
 
 terraform {
   required_version = "~> 1.10"

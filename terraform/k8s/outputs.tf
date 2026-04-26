@@ -12,7 +12,7 @@
 # reads structured fields).
 
 output "kubeconfig" {
-  description = "Raw kubeconfig YAML for cluster-admin access. Sensitive: contains the embedded client certificate / token. Pipe into KUBECONFIG via `terraform output -raw kubeconfig > ~/.kube/wordsparrow.yaml` rather than echoing. v1 (Hetzner): null — fetched via the documented one-time human step in docs/deploy.md."
+  description = "Raw kubeconfig YAML for cluster-admin access. Sensitive: contains the embedded client certificate / token. Pipe into KUBECONFIG via `tofu output -raw kubeconfig > ~/.kube/wordsparrow.yaml` rather than echoing. v1 (Hetzner): null — fetched via the documented one-time human step in docs/deploy.md."
   value       = module.cluster.kubeconfig
   sensitive   = true
 }

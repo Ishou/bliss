@@ -1,7 +1,7 @@
 #cloud-config
 # k3s worker bootstrap. Joins the control plane via its public IP using
 # the shared K3S_TOKEN. Pre-install loop avoids the "control-plane not
-# ready" race that would otherwise show up as a flaky terraform apply.
+# ready" race that would otherwise show up as a flaky tofu apply.
 
 write_files:
   - path: /etc/rancher/k3s/config.yaml
