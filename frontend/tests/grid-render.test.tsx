@@ -166,9 +166,8 @@ describe('Grid render', () => {
         { text: 'Saison chaude', arrow: 'down' },
       ],
     };
-    const { container } = render(<DefinitionCellView cell={stacked} currentArrow={null} />);
-    const root = container.querySelector('[data-cell-kind="definition"]');
-    expect(root).not.toBeNull();
+    render(<DefinitionCellView cell={stacked} currentArrow={null} />);
+    const root = screen.getByRole('gridcell');
     expect(root).toHaveAttribute('data-clue-count', '2');
     // Both clue texts present, in DOM order matching stack order.
     expect(screen.getByText('Astre nocturne')).toBeInTheDocument();
@@ -179,7 +178,45 @@ describe('Grid render', () => {
     expect(screen.getByRole('group', { name: 'définition horizontale' })).toBeInTheDocument();
     expect(screen.getByRole('group', { name: 'définition verticale' })).toBeInTheDocument();
     // Both arrow glyphs are in the rendered output.
-    expect(root?.textContent).toContain('→');
-    expect(root?.textContent).toContain('↓');
+    expect(root.textContent).toContain('→');
+    expect(root.textContent).toContain('↓');
+  });
+
+  it('clamps long single-clue text and exposes the full text in title', () => {
+    const longClue: DefinitionCell = {
+      kind: 'definition',
+      position: { row: 0, col: 0 },
+      clues: [
+        {
+          text: "Mammifère carnivore aquatique d'Amérique du Sud",
+          arrow: 'right',
+        },
+      ],
+    };
+    render(<DefinitionCellView cell={longClue} currentArrow={null} />);
+    expect(
+      screen.getByTitle("Mammifère carnivore aquatique d'Amérique du Sud"),
+    ).toBeInTheDocument();
+    expect(screen.getByText('→')).toBeInTheDocument();
+  });
+
+  it('keeps both clues visible in stacked cells, each with its own title and arrow', () => {
+    const stacked: DefinitionCell = {
+      kind: 'definition',
+      position: { row: 0, col: 0 },
+      clues: [
+        { text: 'Volatile à long cou', arrow: 'right' },
+        { text: 'Tracer des mots', arrow: 'down' },
+      ],
+    };
+    render(<DefinitionCellView cell={stacked} currentArrow={null} />);
+    // Both clue texts must be in the DOM (not just the first one).
+    expect(screen.getByText('Volatile à long cou')).toBeInTheDocument();
+    expect(screen.getByText('Tracer des mots')).toBeInTheDocument();
+    // Each stacked clue exposes its full text via title + has its own arrow.
+    expect(screen.getByTitle('Volatile à long cou')).toBeInTheDocument();
+    expect(screen.getByTitle('Tracer des mots')).toBeInTheDocument();
+    expect(screen.getByText('→')).toBeInTheDocument();
+    expect(screen.getByText('↓')).toBeInTheDocument();
   });
 });

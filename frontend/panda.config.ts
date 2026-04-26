@@ -80,6 +80,7 @@ export default defineConfig({
         body: { value: '1rem' },
         sm: { value: '0.875rem' },
         xs: { value: '0.75rem' },
+        xxs: { value: '0.625rem' },
         cell: { value: '1.5rem' },
       },
       fontWeights: {
