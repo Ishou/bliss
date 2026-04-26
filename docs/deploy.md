@@ -348,8 +348,8 @@ Pick one path:
 **Path B — AWS CLI against the Hetzner endpoint** (if installed):
 
 ```sh
-export AWS_ACCESS_KEY_ID=<hetzner-os-access-key>
-export AWS_SECRET_ACCESS_KEY=<hetzner-os-secret>
+export AWS_ACCESS_KEY_ID=<s3-access-key>
+export AWS_SECRET_ACCESS_KEY=<s3-secret>
 aws s3api create-bucket \
   --bucket bliss-tf-state \
   --endpoint-url https://fsn1.your-objectstorage.com
@@ -368,16 +368,16 @@ the CNPG-wiring PR).
 
 Store both as GitHub Actions secrets for CI:
 
-- `HCLOUD_OS_ACCESS_KEY`
-- `HCLOUD_OS_SECRET_KEY`
+- `S3_ACCESS_KEY`
+- `S3_SECRET_KEY`
 
 For local `tofu init`, export them under their AWS-SDK names (the
 OpenTofu S3 backend reads `AWS_*` env vars even against non-AWS
 endpoints):
 
 ```sh
-export AWS_ACCESS_KEY_ID=<hetzner-os-access-key>
-export AWS_SECRET_ACCESS_KEY=<hetzner-os-secret>
+export AWS_ACCESS_KEY_ID=<s3-access-key>
+export AWS_SECRET_ACCESS_KEY=<s3-secret>
 ```
 
 ### 3. Initialize the backend
@@ -431,8 +431,8 @@ cloud-init.
 
 ```sh
 export HCLOUD_TOKEN=<hetzner-cloud-api-token>
-export AWS_ACCESS_KEY_ID=<hetzner-os-access-key>
-export AWS_SECRET_ACCESS_KEY=<hetzner-os-secret>
+export AWS_ACCESS_KEY_ID=<s3-access-key>
+export AWS_SECRET_ACCESS_KEY=<s3-secret>
 ```
 
 ### 1. Provision
