@@ -88,9 +88,10 @@ time-limited `skip_s3_checksum` workaround for OpenTofu issue #2605).
 
 **First-time bootstrap**: the state bucket itself is provisioned
 out-of-band as a one-time human step before the first `terraform init`
-against this root. The recipe lives in the PR body that wired the
-backend (see `git log -- versions.tf`); it will be absorbed into
-`docs/deploy.md` by the cluster bring-up PR.
+against this root. The recipe (Console UI / AWS-CLI bucket create,
+credential provisioning, `terraform init`, locking verification) lives
+in
+[`docs/deploy.md`](../../docs/deploy.md#terraform-k8s-state-backend--first-time-bootstrap-one-time).
 
 ## Cross-references
 
