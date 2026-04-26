@@ -1,6 +1,6 @@
 import { createRoute } from '@tanstack/react-router';
 import { css } from 'styled-system/css';
-import { SAMPLE_PUZZLE } from '@/domain';
+import type { Puzzle } from '@/domain';
 import { Grid } from '@/ui/components/grid';
 import { Route as RootRoute } from './__root';
 
@@ -55,7 +55,19 @@ const demoBadgeStyles = css({
   margin: 0,
 });
 
-function HomePage() {
+const statusStyles = css({
+  fontSize: 'body',
+  margin: 0,
+  color: 'accent',
+});
+
+// Hard-coded UUID v7 for v1: the Grid API is stateless (per the §404
+// note in `grid/api/openapi.yaml`) — every well-formed id yields a
+// freshly generated puzzle. Replaced with a route param or a
+// client-minted UUID v7 once persistence lands.
+const DEFAULT_PUZZLE_ID = '0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6b';
+
+function HomeShell({ children }: { children: React.ReactNode }) {
   return (
     <main className={pageStyles}>
       <h1 lang="en" className={wordmarkStyles}>
@@ -64,17 +76,36 @@ function HomePage() {
       <span className={demoBadgeStyles} aria-label="version démo">
         Démo
       </span>
-      <p className={subtitleStyles}>{SAMPLE_PUZZLE.title}</p>
-      <Grid puzzle={SAMPLE_PUZZLE} />
+      {children}
     </main>
   );
 }
 
+function HomePage() {
+  const puzzle = Route.useLoaderData() as Puzzle;
+  return (
+    <HomeShell>
+      <p className={subtitleStyles}>{puzzle.title}</p>
+      <Grid puzzle={puzzle} />
+    </HomeShell>
+  );
+}
+
+const HomeStatus = ({ role, text }: { role: 'status' | 'alert'; text: string }) => (
+  <HomeShell>
+    <p className={statusStyles} role={role}>{text}</p>
+  </HomeShell>
+);
+
 export const Route = createRoute({
   getParentRoute: () => RootRoute,
   path: '/',
+  loader: ({ context }): Promise<Puzzle> =>
+    context.puzzleRepository.fetchById(DEFAULT_PUZZLE_ID),
   component: HomePage,
-  head: () => ({
-    meta: [{ title: 'WordSparrow' }],
-  }),
+  pendingComponent: () => <HomeStatus role="status" text="Chargement de la grille…" />,
+  errorComponent: ({ error }) => (
+    <HomeStatus role="alert" text={`Échec du chargement de la grille : ${error.message}`} />
+  ),
+  head: () => ({ meta: [{ title: 'WordSparrow' }] }),
 });

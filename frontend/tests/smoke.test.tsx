@@ -1,18 +1,31 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import { RouterProvider, createMemoryHistory, createRouter } from '@tanstack/react-router';
 import { describe, it, expect } from 'vitest';
+import type { PuzzleRepository } from '@/application';
+import type { Puzzle } from '@/domain';
 import { Route as RootRoute } from '@/ui/routes/__root';
 import { Route as IndexRoute } from '@/ui/routes/index';
 
 // Smoke test: the root route renders the "WordSparrow" wordmark as a
 // top-level landmark and sets the document title (WCAG 2.4.2). These
-// are the minimum behaviors the v1 scaffold must preserve.
+// are the minimum behaviors the v1 scaffold must preserve. The route
+// loader pulls its puzzle through the application-layer
+// `PuzzleRepository` port; we inject an in-memory implementation so
+// the test exercises the real loader → component path HTTP-free.
+const samplePuzzle: Puzzle = {
+  id: '0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6b',
+  title: 'WordSparrow', language: 'fr', width: 1, height: 1,
+  cells: [{ kind: 'letter', position: { row: 0, col: 0 }, entry: '' }],
+};
+const puzzleRepository: PuzzleRepository = { fetchById: () => Promise.resolve(samplePuzzle) };
+
 describe('App smoke test', () => {
   it('renders the WordSparrow heading on the root route', async () => {
     const routeTree = RootRoute.addChildren([IndexRoute]);
     const router = createRouter({
       routeTree,
       history: createMemoryHistory({ initialEntries: ['/'] }),
+      context: { puzzleRepository },
     });
 
     render(<RouterProvider router={router} />);
@@ -29,6 +42,7 @@ describe('App smoke test', () => {
     const router = createRouter({
       routeTree,
       history: createMemoryHistory({ initialEntries: ['/'] }),
+      context: { puzzleRepository },
     });
 
     render(<RouterProvider router={router} />);
@@ -43,6 +57,7 @@ describe('App smoke test', () => {
     const router = createRouter({
       routeTree,
       history: createMemoryHistory({ initialEntries: ['/'] }),
+      context: { puzzleRepository },
     });
 
     const { container } = render(<RouterProvider router={router} />);

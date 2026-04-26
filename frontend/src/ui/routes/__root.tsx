@@ -1,5 +1,14 @@
-import { HeadContent, Outlet, createRootRoute } from '@tanstack/react-router';
+import { HeadContent, Outlet, createRootRouteWithContext } from '@tanstack/react-router';
 import { css } from 'styled-system/css';
+import type { PuzzleRepository } from '@/application';
+
+// Router context surface — every route loader receives this object as
+// `ctx.context`. The composition root (`main.tsx`) is the only place
+// that wires a concrete `PuzzleRepository`, keeping `ui/` free of
+// `infrastructure/` imports (ADR-0002 §7).
+export interface AppRouterContext {
+  readonly puzzleRepository: PuzzleRepository;
+}
 
 const errorPageStyles = css({
   minHeight: '100dvh',
@@ -36,7 +45,7 @@ function RootErrorBoundary() {
   );
 }
 
-export const Route = createRootRoute({
+export const Route = createRootRouteWithContext<AppRouterContext>()({
   component: () => (
     <>
       <HeadContent />

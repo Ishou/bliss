@@ -4,6 +4,8 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from '@/ui/App';
+import { createAppRouter } from '@/ui/router';
+import { createHttpPuzzleRepository } from '@/infrastructure';
 import { registerServiceWorker } from '@/infrastructure/pwa';
 // `fonts.css` is imported separately (rather than via `@import` from
 // `index.css`) so the `@font-face` rules reach the `fontaine` Vite
@@ -19,9 +21,14 @@ if (!container) {
   throw new Error('Root container #root not found in index.html');
 }
 
+const puzzleRepository = createHttpPuzzleRepository({
+  baseUrl: import.meta.env.VITE_GRID_API_URL,
+});
+const router = createAppRouter({ puzzleRepository });
+
 createRoot(container).render(
   <StrictMode>
-    <App />
+    <App router={router} />
   </StrictMode>,
 );
 
