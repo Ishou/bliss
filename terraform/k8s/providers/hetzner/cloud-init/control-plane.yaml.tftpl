@@ -1,6 +1,15 @@
 #cloud-config
 # k3s control-plane bootstrap. Templated by Terraform — see server.tf.
 #
+# `node-ip` and `flannel-iface` pin k3s and flannel's vxlan to the
+# Hetzner private interface (enp7s0 on Ubuntu 24.04). Without them
+# k3s advertises the public IP and flannel's UDP/8472 vxlan traffic
+# is dropped by the cluster firewall (intra-cluster TCP/UDP is scoped
+# to 10.0.0.0/16). The values MUST be present at first boot — k3s
+# only reads /etc/rancher/k3s/config.yaml at install time, so cloud-
+# init's `write_files` (which runs before `runcmd`) is the only place
+# this can land. Tweaking the file after install requires re-bootstrap.
+#
 # The install commands run from a write_files-materialized bash script
 # rather than inline `runcmd` blocks because cloud-init executes inline
 # `runcmd` entries via /bin/sh (dash on Ubuntu), which does not support
@@ -10,10 +19,14 @@
 write_files:
   - path: /etc/rancher/k3s/config.yaml
     permissions: "0600"
+    owner: root:root
     content: |
       cluster-init: true
+      node-ip: ${private_ip}
+      flannel-iface: ${private_iface}
       tls-san:
         - ${tls_san}
+        - ${private_ip}
       node-label:
         - "bliss.io/role=control-plane"
         - "bliss.io/cluster=${cluster_name}"
@@ -28,6 +41,15 @@ write_files:
     content: |
       #!/bin/bash
       set -euo pipefail
+
+      # Wait for Hetzner to attach the private network interface — hcloud_server_network
+      # is applied after hcloud_server, so cloud-init can start before the NIC has its IP.
+      # k3s reads node-ip from /etc/rancher/k3s/config.yaml at install time and refuses
+      # to bind to an unassigned address; this loop closes the race.
+      until ip -4 addr show "${private_iface}" 2>/dev/null | grep -q "inet "; do
+        echo "Waiting for ${private_iface} to come up with an IPv4 address..."
+        sleep 5
+      done
 
       export INSTALL_K3S_VERSION="${k3s_version}"
       export K3S_TOKEN="${k3s_token}"
