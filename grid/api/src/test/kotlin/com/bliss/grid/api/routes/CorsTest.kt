@@ -90,6 +90,40 @@ class CorsTest {
         }
 
     @Test
+    fun `preflight from www prod origin is allowed`() =
+        testApplication {
+            application { module() }
+
+            val response =
+                client.options("/v1/puzzles/$validId") {
+                    headers {
+                        append(HttpHeaders.Origin, "https://www.wordsparrow.io")
+                        append(HttpHeaders.AccessControlRequestMethod, "GET")
+                    }
+                }
+
+            assertThat(response.headers[HttpHeaders.AccessControlAllowOrigin])
+                .isEqualTo("https://www.wordsparrow.io")
+        }
+
+    @Test
+    fun `preflight from local dev origin is allowed`() =
+        testApplication {
+            application { module() }
+
+            val response =
+                client.options("/v1/puzzles/$validId") {
+                    headers {
+                        append(HttpHeaders.Origin, "http://localhost:5173")
+                        append(HttpHeaders.AccessControlRequestMethod, "GET")
+                    }
+                }
+
+            assertThat(response.headers[HttpHeaders.AccessControlAllowOrigin])
+                .isEqualTo("http://localhost:5173")
+        }
+
+    @Test
     fun `Cloudflare Pages preview origin is NOT in the allowlist`() =
         testApplication {
             application { module() }
