@@ -137,6 +137,9 @@ round runs before the human maintainer reviews and merges:
    merge time. No agent ping-pong, no second review pass, no second fix pass.
 6. If a fix would push the PR over the 400-line cap (generated code
    excluded), the PR is **split**, not padded.
+
+   > **Update (2026-04-26): Blank lines are also excluded from this
+   > cap, consistent with the §4 addendum of the same date.**
 7. Schema PRs receive the same one-pass review, focused on contract design
    rather than implementation correctness.
 8. The review-and-fix cycle is required, not best-effort: if no reviewer
