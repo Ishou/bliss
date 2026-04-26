@@ -362,12 +362,13 @@ jobs:
                Do **not** force-push. Do **not** push to main. The branch
                is already checked out at HEAD.
 
-            7. **Write your reply to `/tmp/reply.md`** using a heredoc:
-               ```
-               cat <<'REPLY' > /tmp/reply.md
-               ... your bullet list ...
-               REPLY
-               ```
+            7. **Write your reply to `/tmp/reply.md`** using the Write
+               tool. Do **not** use a `cat <<'REPLY' > /tmp/reply.md`
+               heredoc: the redirect (`>`) is parsed outside the `cat`
+               argv that `Bash(cat:*)` matches, so the file write
+               silently no-ops under the allowlist. This is the same
+               bug the reviewer step previously had — see the comment
+               on the reviewer's `--allowed-tools` line above.
                That is your only output for this finding-mapping step.
                **Do not** post the comment yourself — you have no
                `gh pr comment` capability. A separate workflow step
