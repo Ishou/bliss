@@ -19,9 +19,7 @@ spec:
     barmanObjectStore:
       destinationPath: {{ printf "s3://%s/%s" .Values.postgres.backups.bucket (include "wordsparrow-api.pgClusterName" .) | quote }}
       endpointURL: {{ .Values.postgres.backups.endpoint | quote }}
-      # Bootstrapped via `kubectl create secret generic cnpg-backup-creds
-      # --from-literal=ACCESS_KEY_ID=... --from-literal=ACCESS_SECRET_KEY=...`
-      # per ADR-0009 §10. Object Lock retention lives with operator-config (ADR-0010 §3).
+      # `cnpg-backup-creds` Secret bootstrapped per ADR-0009 §10 (Object Lock per ADR-0010 §3).
       s3Credentials:
         accessKeyId: {name: cnpg-backup-creds, key: ACCESS_KEY_ID}
         secretAccessKey: {name: cnpg-backup-creds, key: ACCESS_SECRET_KEY}
