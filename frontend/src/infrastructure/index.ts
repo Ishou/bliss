@@ -11,7 +11,6 @@ export {
   type GridApiClient,
   type GridApiClientOptions,
 } from './api/grid/client';
-export { apiPuzzleToDomain } from './api/grid/mapper';
 export {
   createHttpPuzzleRepository,
   type HttpPuzzleRepositoryOptions,

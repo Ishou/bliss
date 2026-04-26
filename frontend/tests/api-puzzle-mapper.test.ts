@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { apiPuzzleToDomain } from '@/infrastructure';
+import { apiPuzzleToDomain } from '@/infrastructure/api/grid/mapper';
 import type { components } from '@/infrastructure/api/grid/types';
 
 type ApiPuzzle = components['schemas']['Puzzle'];
