@@ -9,7 +9,7 @@
 #   1. Every implementation under `providers/<name>/` declares the same
 #      input variables as `variables.tf` here (cluster_name, region,
 #      control_plane_count, worker_count, node_size, ssh_public_keys,
-#      k3s_version, cloudflare_api_token).
+#      k3s_version).
 #
 #   2. Every implementation produces the same outputs as `outputs.tf` here
 #      (kubeconfig, kubeconfig_path, cluster_endpoint, cluster_ca_certificate,

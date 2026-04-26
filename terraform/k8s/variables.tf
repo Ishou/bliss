@@ -93,14 +93,3 @@ variable "k3s_version" {
     error_message = "k3s_version must match the upstream tag format vX.Y.Z+k3sN (e.g. v1.35.3+k3s1)."
   }
 }
-
-variable "cloudflare_api_token" {
-  description = "Cloudflare API token surfaced to in-cluster operators (external-dns, cert-manager DNS-01). Declared at this layer because the cluster module passes it through to the operator-bootstrap layer; the cluster itself does not call Cloudflare. Must be scoped to Zone:DNS:Edit + Zone:Zone:Read on the wordsparrow.io zone — see ADR-0009. Sourced from the TF_VAR_cloudflare_api_token env var; never commit."
-  type        = string
-  sensitive   = true
-
-  validation {
-    condition     = length(var.cloudflare_api_token) >= 40
-    error_message = "cloudflare_api_token looks too short to be a valid Cloudflare token (expected 40+ chars)."
-  }
-}
