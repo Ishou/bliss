@@ -32,6 +32,14 @@ WORKDIR /app
 
 COPY --from=build /workspace/grid/api/build/libs/grid-api-*-all.jar /app/grid-api.jar
 
+# Run as non-root. K8s pod security context requires runAsNonRoot=true (see chart's
+# values.yaml); without an explicit USER here, kubelet refused to start with
+# "container has runAsNonRoot and image will run as root".
+RUN addgroup --system --gid 1000 ktor \
+ && adduser --system --uid 1000 --ingroup ktor --no-create-home --shell /sbin/nologin ktor \
+ && chown -R 1000:1000 /app
+USER 1000:1000
+
 EXPOSE 8080
 
 # Container-level liveness probe. Kubernetes performs its own HTTP
