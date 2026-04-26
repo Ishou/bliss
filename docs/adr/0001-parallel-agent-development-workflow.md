@@ -70,6 +70,14 @@ schema.
 - One workstream = one PR. No bundling.
 - Hard cap: 400 lines of diff, generated code excluded. Above the cap, the PR
   is split. Schema regeneration is excluded; logic is not.
+
+  > **Update (2026-04-26): The cap excludes blank lines in addition to
+  > generated code. The diff metric GitHub displays is line-by-line
+  > including blanks, but the cap's intent is reviewability — blank
+  > lines structure readability without adding review burden. Motivating
+  > case: PR #50 (Helm chart skeleton) shipped 13 well-organized files
+  > totaling 409 GitHub-counted additions, 394 of which were non-blank.
+  > The original text is preserved for historical context.**
 - Conventional commits with the bounded-context as scope:
   `feat(grid-application): …`, `fix(frontend-grid): …`,
   `chore(api-grid): regenerate openapi types`.
