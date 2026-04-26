@@ -61,7 +61,7 @@ external-dns:
   # values.yaml — no such property); cloudflare-proxied is a CLI flag
   # passed through extraArgs (chart values.yaml line 287).
   extraArgs:
-    - --cloudflare-proxied=false
+    - --no-cloudflare-proxied
   # Reconcile both Ingress hosts (the WordSparrow chart) and any
   # Service-of-type-LoadBalancer hosts the cluster grows into later.
   sources:
