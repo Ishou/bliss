@@ -32,6 +32,12 @@ application {
 }
 
 dependencies {
+    // Grid bounded-context inner layers (ADR-0001 §1, MANIFESTO Architecture).
+    // The api layer composes domain generation with infrastructure adapters
+    // and maps domain types to wire DTOs (ADR-0003 §4).
+    implementation(project(":grid:domain"))
+    implementation(project(":grid:infrastructure"))
+
     // Ktor server core + Netty engine (ADR-0006 §1).
     implementation("io.ktor:ktor-server-core:$ktorVersion")
     implementation("io.ktor:ktor-server-netty:$ktorVersion")
