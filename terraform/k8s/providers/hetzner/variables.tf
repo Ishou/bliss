@@ -15,6 +15,11 @@ variable "control_plane_count" {
   description = "Number of control-plane nodes. v1 supports 1 only."
   type        = number
   default     = 1
+
+  validation {
+    condition     = var.control_plane_count == 1
+    error_message = "The Hetzner v1 module supports exactly 1 control-plane node. HA (count >= 3) is a future workstream — see ADR-0009 §10."
+  }
 }
 
 variable "worker_count" {
