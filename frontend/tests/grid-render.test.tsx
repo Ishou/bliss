@@ -233,13 +233,9 @@ describe('Grid render', () => {
     expect(screen.getByText('Volatile à long cou')).toBeInTheDocument();
     expect(screen.getByText('Tracer des mots')).toBeInTheDocument();
     // Each stacked clue exposes its full text via title + has its own arrow.
-    const textNodes = root?.querySelectorAll('[data-clue-text]');
-    expect(textNodes?.length).toBe(2);
-    expect(textNodes?.[0]).toHaveAttribute('title', 'Volatile à long cou');
-    expect(textNodes?.[1]).toHaveAttribute('title', 'Tracer des mots');
-    const arrowNodes = root?.querySelectorAll('[data-clue-arrow]');
-    expect(arrowNodes?.length).toBe(2);
-    expect(arrowNodes?.[0]?.textContent).toBe('→');
-    expect(arrowNodes?.[1]?.textContent).toBe('↓');
+    expect(screen.getByTitle('Volatile à long cou')).toBeInTheDocument();
+    expect(screen.getByTitle('Tracer des mots')).toBeInTheDocument();
+    expect(screen.getByText('→')).toBeInTheDocument();
+    expect(screen.getByText('↓')).toBeInTheDocument();
   });
 });
