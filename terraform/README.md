@@ -99,3 +99,13 @@ artifacts and `flyctl deploy` images.
 Fly Postgres lives outside Terraform — see `fly-postgres.tf` for the
 bootstrap path. Application secrets are set via `flyctl secrets set`,
 not via Terraform.
+
+## Self-managed k8s (in progress)
+
+`terraform/k8s/` holds the **provider-agnostic skeleton** for a
+self-managed k3s cluster — the planned successor to the Fly.io tier per
+ADR-0009. The skeleton currently declares only the variable/output
+contract; no cloud resources are provisioned yet. The first concrete
+implementation (Hetzner) lands in a follow-up PR; Fly resources here
+stay in place until the cutover PR flips DNS. See
+[`terraform/k8s/README.md`](k8s/README.md) for the provider-swap design.
