@@ -118,7 +118,13 @@ jobs:
           # below posts it via `gh pr review`. The agent has NO `gh pr review`
           # capability on its tool allowlist, which mechanically prevents the
           # multi-post behaviour observed on PR #31 (12 spurious reviews).
-          claude_args: '--allowed-tools "Read,Glob,Grep,Bash(gh pr view:*),Bash(gh pr diff:*),Bash(cat:*),Bash(test:*)"'
+          # `Write` is required so the agent can create /tmp/review.md —
+          # without it the agent silently no-ops the file step and the
+          # "Submit review" fallback posts a hollow `LGTM, no findings.`
+          # The earlier `cat <<'BODY' > /tmp/review.md` heredoc form did not
+          # work under `Bash(cat:*)` because the redirect (`>`) is parsed
+          # outside the `cat` argv the allowlist matches against.
+          claude_args: '--allowed-tools "Read,Glob,Grep,Write,Bash(gh pr view:*),Bash(gh pr diff:*),Bash(cat:*),Bash(test:*)"'
           prompt: |
             You are the §6a reviewer agent for PR #${{ github.event.pull_request.number }}
             on the bliss repository (${{ github.repository }}).
@@ -197,13 +203,14 @@ jobs:
                For each finding: cite the rule (`CLAUDE.md` "no SDK in
                domain", `ADR-0001 §6`, etc.), quote the file/line briefly,
                and propose a fix.
-            4. **Write the body to `/tmp/review.md`** using a `cat <<'BODY' > /tmp/review.md` heredoc.
+            4. **Write the body to `/tmp/review.md`** using the Write tool.
                That is your only output. **Do not** attempt to post the
                review yourself — you have no `gh pr review` capability.
                A separate workflow step submits the file. If `/tmp/review.md`
                doesn't exist when this agent step exits, the submit step
                posts a default `LGTM, no findings.` so the PR isn't left
-               in a dangling state.
+               in a dangling state — but that fallback is a failure mode,
+               not the happy path: you must produce the file.
 
             ## Tone
 
@@ -355,12 +362,13 @@ jobs:
                Do **not** force-push. Do **not** push to main. The branch
                is already checked out at HEAD.
 
-            7. **Write your reply to `/tmp/reply.md`** using a heredoc:
-               ```
-               cat <<'REPLY' > /tmp/reply.md
-               ... your bullet list ...
-               REPLY
-               ```
+            7. **Write your reply to `/tmp/reply.md`** using the Write
+               tool. Do **not** use a `cat <<'REPLY' > /tmp/reply.md`
+               heredoc: the redirect (`>`) is parsed outside the `cat`
+               argv that `Bash(cat:*)` matches, so the file write
+               silently no-ops under the allowlist. This is the same
+               bug the reviewer step previously had — see the comment
+               on the reviewer's `--allowed-tools` line above.
                That is your only output for this finding-mapping step.
                **Do not** post the comment yourself — you have no
                `gh pr comment` capability. A separate workflow step
