@@ -93,8 +93,8 @@ internal fun defaultConstraints(): GridConstraints =
         maxAttempts = 20_000,
     )
 
-internal const val PUZZLE_WIDTH: Int = 10
-internal const val PUZZLE_HEIGHT: Int = 10
+internal const val PUZZLE_WIDTH: Int = 8
+internal const val PUZZLE_HEIGHT: Int = 8
 internal const val MAX_OUTER_RETRIES: Int = 5
 
 /**

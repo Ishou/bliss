@@ -27,7 +27,7 @@ class PuzzleRouteTest {
     private val validId = "0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6b"
 
     @Test
-    fun `responds 200 with a 10x10 puzzle whose body matches the OpenAPI shape`() =
+    fun `responds 200 with a puzzle whose body matches the OpenAPI shape`() =
         testApplication {
             application { module() }
 
@@ -38,11 +38,11 @@ class PuzzleRouteTest {
 
             val json = Json.parseToJsonElement(response.bodyAsText()).jsonObject
             assertThat(json["id"]!!.jsonPrimitive.content).isEqualTo(validId)
-            assertThat(json["width"]!!.jsonPrimitive.content.toInt()).isEqualTo(10)
-            assertThat(json["height"]!!.jsonPrimitive.content.toInt()).isEqualTo(10)
+            assertThat(json["width"]!!.jsonPrimitive.content.toInt()).isEqualTo(PUZZLE_WIDTH)
+            assertThat(json["height"]!!.jsonPrimitive.content.toInt()).isEqualTo(PUZZLE_HEIGHT)
             // ClueCells with two stacked clues emit two DefinitionCellDtos at
             // the same position, so cells.length is >= width * height.
-            assertThat(json["cells"]!!.jsonArray.size).isGreaterThanOrEqualTo(100)
+            assertThat(json["cells"]!!.jsonArray.size).isGreaterThanOrEqualTo(PUZZLE_WIDTH * PUZZLE_HEIGHT)
         }
 
     @Test
