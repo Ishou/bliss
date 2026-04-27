@@ -2,7 +2,7 @@ package com.bliss.grid.api
 
 import com.bliss.grid.api.dto.ProblemDetails
 import com.bliss.grid.api.infrastructure.Database
-import com.bliss.grid.api.infrastructure.words.ResourceWordRepository
+import com.bliss.grid.api.infrastructure.words.WordsSource
 import com.bliss.grid.api.routes.health
 import com.bliss.grid.api.routes.puzzles
 import io.ktor.http.ContentType
@@ -91,7 +91,10 @@ fun Application.module() {
             ?: System.getProperty("grid.api.version")
             ?: "unknown"
 
-    val wordRepository = ResourceWordRepository.frenchFromClasspath()
+    // ADR-0013 §8 / CLAUDE.md "Feature flags: deploy dark, release bright" —
+    // WORDS_SOURCE selects the impl. Default `resource` keeps prod on
+    // fr.json until the seed-run PR flips it to `database`.
+    val wordRepository = WordsSource.resolve()
 
     routing {
         health(version)

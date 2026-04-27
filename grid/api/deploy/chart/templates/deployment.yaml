@@ -36,7 +36,12 @@ spec:
           securityContext: {{- toYaml .Values.containerSecurityContext | nindent 12 }}
           ports:
             - {name: http, containerPort: {{ .Values.service.port }}, protocol: TCP}
-          {{- with .Values.env }}
+          {{- $extraEnv := list }}
+          {{- if .Values.wordsSource }}
+          {{- $extraEnv = append $extraEnv (dict "name" "WORDS_SOURCE" "value" .Values.wordsSource) }}
+          {{- end }}
+          {{- $env := concat (.Values.env | default list) $extraEnv }}
+          {{- with $env }}
           env: {{- toYaml . | nindent 12 }}
           {{- end }}
           {{- with .Values.envFromSecret }}

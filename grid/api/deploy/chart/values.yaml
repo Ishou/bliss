@@ -66,3 +66,12 @@ env: []
 # Name of a Kubernetes Secret to envFrom into the pod. ADR-0009 §10:
 # bootstrapped via `kubectl create secret`, never committed.
 envFromSecret: ""
+# WORDS_SOURCE flag (ADR-0013 §8): selects the API's WordRepository impl.
+# Valid: "resource" (default, fr.json) | "database" (DatabaseWordRepository).
+# `database` requires DATABASE_URL on `envFromSecret`. Default stays
+# "resource" until the seed-run PR (ADR-0013 follow-up #5) flips it.
+# Flag expires 2026-07-31; see grid/api/.../WordsSource.kt.
+# Empty value -> the env var is omitted from the rendered ConfigMap, so
+# the API falls back to its compiled-in default ("resource"). This means
+# the deploy default is unchanged until prod overrides set "database".
+wordsSource: ""

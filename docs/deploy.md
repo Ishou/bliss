@@ -473,7 +473,8 @@ secret`, values never committed):
 
 - `wordsparrow-api-env` — `envFrom` source for the API pod
   (`values-prod.yaml` `envFromSecret: "wordsparrow-api-env"`); must contain
-  at minimum `DATABASE_URL`.
+  at minimum `DATABASE_URL`. Optionally carries `WORDS_SOURCE` (see
+  table below).
 - `cnpg-backup-creds` — S3 credentials referenced by the CNPG
   `Cluster` CR's `barmanObjectStore` block
   (`templates/postgres-cluster.yaml`), pointing at the
@@ -571,4 +572,12 @@ The durable fix is to wire the chart's `envFrom` directly to CNPG's
 `<cluster>-app` secret, eliminating both the placeholder and the
 manual pass-2 swap. Tracked as a follow-up PR against
 `grid/api/deploy/chart/`.
+
+## API environment variables
+
+| Variable | Required? | Default | What it does |
+|---|---|---|---|
+| `DATABASE_URL` | Yes (prod); optional (dev) | (unset) | CNPG `<cluster>-app` URI; Flyway runs against it on boot. Unset = local-dev mode (no migrations, no DB-backed reads). |
+| `WORDS_SOURCE` | Optional | `resource` | Selects the `WordRepository` impl (ADR-0013 §8). `resource` reads `fr.json` from the classpath; `database` reads the `words` table (requires `DATABASE_URL`). The Helm chart exposes `wordsSource` to surface this. **Flag expires 2026-07-31** — after that the seed run + `fr.json` retirement PR (ADR-0013 follow-up #5) is overdue and the in-code expiry test fails CI. |
+| `PORT` | Optional | `8080` | HTTP listen port for the embedded Netty server. |
 
