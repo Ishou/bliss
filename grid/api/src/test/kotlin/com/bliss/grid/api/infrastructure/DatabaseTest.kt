@@ -18,9 +18,10 @@ import io.kotest.property.arbitrary.string
 import io.kotest.property.checkAll
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Assumptions.assumeTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable
+import org.testcontainers.DockerClientFactory
 import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.utility.DockerImageName
 import javax.sql.DataSource
@@ -28,10 +29,8 @@ import javax.sql.DataSource
 /**
  * Integration tests for the Flyway-driven schema bootstrap (ADR-0013 §6).
  *
- * The Postgres-backed cases are guarded by `DOCKER_AVAILABLE=true`; when
- * Docker is not present (sandboxed CI runners, ephemeral dev shells), the
- * suite still exercises the unset-`DATABASE_URL` branch — the path that
- * keeps `./gradlew test` and local boots green without a database.
+ * The Postgres-backed case skips automatically when no Docker daemon is
+ * present; the unset-`DATABASE_URL` branch is always exercised.
  */
 class DatabaseTest {
     @BeforeEach
@@ -135,11 +134,11 @@ class DatabaseTest {
      *  - the `words_lang_len` index exists;
      *  - the `length` generated column is computed correctly on insert.
      *
-     * Guarded so it skips on hosts without a Docker daemon.
+     * Skips automatically on hosts without a Docker daemon.
      */
     @Test
-    @EnabledIfEnvironmentVariable(named = "DOCKER_AVAILABLE", matches = "true")
     fun `start applies V1 migration against a real Postgres`() {
+        assumeTrue(DockerClientFactory.instance().isDockerAvailable()) { "Docker daemon not available" }
         PostgreSQLContainer(DockerImageName.parse("postgres:16-alpine")).use { pg ->
             pg.start()
             // Pass the JDBC URL via the same lookup path Database.start uses.
