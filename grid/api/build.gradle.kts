@@ -27,6 +27,11 @@ val javaUuidGeneratorVersion = "4.3.0"
 val junitVersion = "5.11.4"
 val assertkVersion = "0.28.1"
 val konsistVersion = "0.17.3"
+val postgresqlJdbcVersion = "42.7.10"
+val hikariVersion = "7.0.2"
+val flywayVersion = "12.4.0"
+val testcontainersVersion = "1.21.4"
+val kotestPropertyVersion = "5.9.1"
 
 application {
     mainClass.set("com.bliss.grid.api.MainKt")
@@ -64,6 +69,14 @@ dependencies {
     implementation("ch.qos.logback:logback-classic:$logbackVersion")
     implementation("net.logstash.logback:logstash-logback-encoder:$logstashEncoderVersion")
 
+    // Postgres JDBC + connection pool + Flyway (ADR-0013 §6).
+    // The API runs Flyway on startup against the CNPG cluster (ADR-0009),
+    // sharing the schema with the worker module (ADR-0013 §7).
+    implementation("org.postgresql:postgresql:$postgresqlJdbcVersion")
+    implementation("com.zaxxer:HikariCP:$hikariVersion")
+    implementation("org.flywaydb:flyway-core:$flywayVersion")
+    implementation("org.flywaydb:flyway-database-postgresql:$flywayVersion")
+
     testImplementation(platform("org.junit:junit-bom:$junitVersion"))
     testImplementation("org.junit.jupiter:junit-jupiter")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
@@ -71,6 +84,14 @@ dependencies {
     testImplementation("io.ktor:ktor-server-test-host:$ktorVersion")
     testImplementation("io.ktor:ktor-client-content-negotiation:$ktorVersion")
     testImplementation("com.lemonappdev:konsist:$konsistVersion")
+
+    // Testcontainers — real Postgres for migration/contract tests (ADR-0013 §6).
+    testImplementation("org.testcontainers:testcontainers:$testcontainersVersion")
+    testImplementation("org.testcontainers:junit-jupiter:$testcontainersVersion")
+    testImplementation("org.testcontainers:postgresql:$testcontainersVersion")
+
+    // Property-based tests for parsers and serialization (CLAUDE.md).
+    testImplementation("io.kotest:kotest-property-jvm:$kotestPropertyVersion")
 }
 
 tasks.test {

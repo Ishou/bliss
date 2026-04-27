@@ -1,6 +1,7 @@
 package com.bliss.grid.api
 
 import com.bliss.grid.api.dto.ProblemDetails
+import com.bliss.grid.api.infrastructure.Database
 import com.bliss.grid.api.infrastructure.words.ResourceWordRepository
 import com.bliss.grid.api.routes.health
 import com.bliss.grid.api.routes.puzzles
@@ -22,6 +23,10 @@ import org.slf4j.event.Level
 
 /** Wires CORS, content negotiation (JSON), call logging, RFC 7807 errors, and routes. */
 fun Application.module() {
+    // Apply Flyway migrations against the CNPG-backed database (ADR-0013 §6,
+    // ADR-0009). No-op when DATABASE_URL is unset (local dev, CI smoke tests).
+    Database.start()
+
     install(CORS) {
         // Browsers block `https://wordsparrow.io` → `https://api.wordsparrow.io`
         // without these headers. Preview deploys do NOT call this API (per
