@@ -80,7 +80,8 @@ fun Route.puzzles(
 }
 
 /**
- * Tuned for a ~20ms median on a 10×10 grid backed by the bundled fr.json.
+ * Tuned for a ~20ms median on a 10×10 grid backed by the bundled
+ * `words-fr.csv` (ADR-0013 §8).
  *
  * Density of 0.5 (up from 0.4) and a 20_000-attempt budget (up from
  * 10_000) keep the bottom rows from filling with blocks; the previous
@@ -138,7 +139,7 @@ private fun generateWithRetry(
  * [MIN_HALF_LETTER_RATIO] of its area in [LetterCell]s. Catches the
  * "blocks dumped across the bottom half" failure mode without rejecting
  * normal grids — empirically every sample at density 0.5 against the
- * bundled 122-word fr.json clears 30%.
+ * bundled ~120-word `words-fr.csv` (ADR-0013 §8) clears 30%.
  */
 internal fun hasSparseHalf(grid: Grid): Boolean {
     val midRow = grid.height / 2

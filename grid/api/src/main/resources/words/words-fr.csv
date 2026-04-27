@@ -1,0 +1,124 @@
+word,language,length,difficulty,clue,source,source_license
+aide,fr,4,,Soutien apporte,hand-curated,FSL-1.1-MIT
+air,fr,3,,Atmosphere,hand-curated,FSL-1.1-MIT
+amer,fr,4,,Gout apre,hand-curated,FSL-1.1-MIT
+ami,fr,3,,Compagnon proche,hand-curated,FSL-1.1-MIT
+ane,fr,3,,Equide a longues oreilles,hand-curated,FSL-1.1-MIT
+ange,fr,4,,Etre celeste aile,hand-curated,FSL-1.1-MIT
+animal,fr,6,,Etre vivant non humain,hand-curated,FSL-1.1-MIT
+arbre,fr,5,,Vegetal a tronc,hand-curated,FSL-1.1-MIT
+arme,fr,4,,Instrument de combat,hand-curated,FSL-1.1-MIT
+art,fr,3,,Expression creative,hand-curated,FSL-1.1-MIT
+avion,fr,5,,Aeronef motorise,hand-curated,FSL-1.1-MIT
+banc,fr,4,,Siege long,hand-curated,FSL-1.1-MIT
+bas,fr,3,,Le contraire de haut,hand-curated,FSL-1.1-MIT
+blanc,fr,5,,Couleur de la neige,hand-curated,FSL-1.1-MIT
+bleu,fr,4,,Couleur du ciel,hand-curated,FSL-1.1-MIT
+bol,fr,3,,Recipient creux,hand-curated,FSL-1.1-MIT
+bras,fr,4,,Membre superieur,hand-curated,FSL-1.1-MIT
+cafe,fr,4,,Boisson chaude noire,hand-curated,FSL-1.1-MIT
+car,fr,3,,Autocar,hand-curated,FSL-1.1-MIT
+carte,fr,5,,Plan geographique,hand-curated,FSL-1.1-MIT
+chat,fr,4,,Felin domestique,hand-curated,FSL-1.1-MIT
+cheval,fr,6,,Equide monture,hand-curated,FSL-1.1-MIT
+chien,fr,5,,Canide domestique,hand-curated,FSL-1.1-MIT
+chose,fr,5,,Objet quelconque,hand-curated,FSL-1.1-MIT
+ciel,fr,4,,Voute celeste,hand-curated,FSL-1.1-MIT
+danser,fr,6,,Bouger en rythme,hand-curated,FSL-1.1-MIT
+demi,fr,4,,Moitie,hand-curated,FSL-1.1-MIT
+dent,fr,4,,Element de la machoire,hand-curated,FSL-1.1-MIT
+dos,fr,3,,Partie arriere du corps,hand-curated,FSL-1.1-MIT
+doux,fr,4,,Agreable au toucher,hand-curated,FSL-1.1-MIT
+droit,fr,5,,Le contraire de gauche,hand-curated,FSL-1.1-MIT
+eau,fr,3,,Liquide vital,hand-curated,FSL-1.1-MIT
+ecole,fr,5,,Lieu d'apprentissage,hand-curated,FSL-1.1-MIT
+ecouter,fr,7,,Preter l'oreille,hand-curated,FSL-1.1-MIT
+ecrire,fr,6,,Tracer des mots,hand-curated,FSL-1.1-MIT
+ecru,fr,4,,Couleur naturelle,hand-curated,FSL-1.1-MIT
+etoile,fr,6,,Astre nocturne,hand-curated,FSL-1.1-MIT
+famille,fr,7,,Cercle des proches,hand-curated,FSL-1.1-MIT
+fenetre,fr,7,,Ouverture vitree,hand-curated,FSL-1.1-MIT
+ferme,fr,5,,Exploitation agricole,hand-curated,FSL-1.1-MIT
+feu,fr,3,,Combustion,hand-curated,FSL-1.1-MIT
+fil,fr,3,,Ligne fine,hand-curated,FSL-1.1-MIT
+film,fr,4,,Oeuvre cinematographique,hand-curated,FSL-1.1-MIT
+fils,fr,4,,Enfant masculin,hand-curated,FSL-1.1-MIT
+fleur,fr,5,,Partie odorante d'une plante,hand-curated,FSL-1.1-MIT
+foi,fr,3,,Croyance religieuse,hand-curated,FSL-1.1-MIT
+foin,fr,4,,Herbe sechee,hand-curated,FSL-1.1-MIT
+gant,fr,4,,Vetement de la main,hand-curated,FSL-1.1-MIT
+gardien,fr,7,,Celui qui surveille,hand-curated,FSL-1.1-MIT
+gare,fr,4,,Station de train,hand-curated,FSL-1.1-MIT
+gaz,fr,3,,Etat de la matiere,hand-curated,FSL-1.1-MIT
+grand,fr,5,,De forte taille,hand-curated,FSL-1.1-MIT
+gris,fr,4,,Couleur entre noir et blanc,hand-curated,FSL-1.1-MIT
+haut,fr,4,,Le contraire de bas,hand-curated,FSL-1.1-MIT
+ile,fr,3,,Terre entouree d'eau,hand-curated,FSL-1.1-MIT
+iris,fr,4,,Fleur a long iris,hand-curated,FSL-1.1-MIT
+jardin,fr,6,,Espace cultive,hand-curated,FSL-1.1-MIT
+jaune,fr,5,,Couleur du soleil,hand-curated,FSL-1.1-MIT
+jet,fr,3,,Lancer rapide,hand-curated,FSL-1.1-MIT
+jour,fr,4,,Periode de clarte,hand-curated,FSL-1.1-MIT
+lac,fr,3,,Etendue d'eau douce,hand-curated,FSL-1.1-MIT
+lecture,fr,7,,Action de lire,hand-curated,FSL-1.1-MIT
+lion,fr,4,,Roi des animaux,hand-curated,FSL-1.1-MIT
+lire,fr,4,,Dechiffrer un texte,hand-curated,FSL-1.1-MIT
+lit,fr,3,,Meuble pour dormir,hand-curated,FSL-1.1-MIT
+livre,fr,5,,Ouvrage relie,hand-curated,FSL-1.1-MIT
+lune,fr,4,,Satellite naturel,hand-curated,FSL-1.1-MIT
+main,fr,4,,Extremite du bras,hand-curated,FSL-1.1-MIT
+maison,fr,6,,Lieu d'habitation,hand-curated,FSL-1.1-MIT
+mal,fr,3,,Souffrance,hand-curated,FSL-1.1-MIT
+merci,fr,5,,Formule de gratitude,hand-curated,FSL-1.1-MIT
+mois,fr,4,,Periode de l'annee,hand-curated,FSL-1.1-MIT
+monde,fr,5,,Univers,hand-curated,FSL-1.1-MIT
+moto,fr,4,,Deux-roues motorise,hand-curated,FSL-1.1-MIT
+mur,fr,3,,Paroi verticale,hand-curated,FSL-1.1-MIT
+musique,fr,7,,Art des sons,hand-curated,FSL-1.1-MIT
+neuf,fr,4,,Tout nouveau,hand-curated,FSL-1.1-MIT
+nez,fr,3,,Organe olfactif,hand-curated,FSL-1.1-MIT
+nid,fr,3,,Abri d'oiseau,hand-curated,FSL-1.1-MIT
+noir,fr,4,,Sans lumiere,hand-curated,FSL-1.1-MIT
+noire,fr,5,,Sombre au feminin,hand-curated,FSL-1.1-MIT
+nuit,fr,4,,Obscurite nocturne,hand-curated,FSL-1.1-MIT
+oie,fr,3,,Volatile a long cou,hand-curated,FSL-1.1-MIT
+oiseau,fr,6,,Animal a plumes,hand-curated,FSL-1.1-MIT
+oiseaux,fr,7,,Etres a plumes (pl.),hand-curated,FSL-1.1-MIT
+onze,fr,4,,Apres dix,hand-curated,FSL-1.1-MIT
+ours,fr,4,,Plantigrade,hand-curated,FSL-1.1-MIT
+pain,fr,4,,Aliment de farine,hand-curated,FSL-1.1-MIT
+pas,fr,3,,Foulee,hand-curated,FSL-1.1-MIT
+petit,fr,5,,De faible taille,hand-curated,FSL-1.1-MIT
+pie,fr,3,,Oiseau noir et blanc,hand-curated,FSL-1.1-MIT
+pois,fr,4,,Legume vert rond,hand-curated,FSL-1.1-MIT
+porc,fr,4,,Animal de ferme rose,hand-curated,FSL-1.1-MIT
+porte,fr,5,,Ouverture murale,hand-curated,FSL-1.1-MIT
+rat,fr,3,,Petit rongeur,hand-curated,FSL-1.1-MIT
+rein,fr,4,,Organe filtrant,hand-curated,FSL-1.1-MIT
+rien,fr,4,,Aucune chose,hand-curated,FSL-1.1-MIT
+rire,fr,4,,Manifestation de joie,hand-curated,FSL-1.1-MIT
+roi,fr,3,,Souverain,hand-curated,FSL-1.1-MIT
+rose,fr,4,,Fleur a epines,hand-curated,FSL-1.1-MIT
+rouge,fr,5,,Couleur du sang,hand-curated,FSL-1.1-MIT
+route,fr,5,,Voie de circulation,hand-curated,FSL-1.1-MIT
+rue,fr,3,,Voie urbaine,hand-curated,FSL-1.1-MIT
+sac,fr,3,,Contenant souple,hand-curated,FSL-1.1-MIT
+saga,fr,4,,Long recit,hand-curated,FSL-1.1-MIT
+sage,fr,4,,Raisonnable,hand-curated,FSL-1.1-MIT
+seul,fr,4,,Sans compagnie,hand-curated,FSL-1.1-MIT
+sol,fr,3,,Surface au sol,hand-curated,FSL-1.1-MIT
+soleil,fr,6,,Astre du jour,hand-curated,FSL-1.1-MIT
+sourire,fr,7,,Expression de joie,hand-curated,FSL-1.1-MIT
+table,fr,5,,Meuble plat,hand-curated,FSL-1.1-MIT
+tas,fr,3,,Amas,hand-curated,FSL-1.1-MIT
+tige,fr,4,,Pousse vegetale,hand-curated,FSL-1.1-MIT
+toit,fr,4,,Couverture d'un batiment,hand-curated,FSL-1.1-MIT
+vent,fr,4,,Air en mouvement,hand-curated,FSL-1.1-MIT
+verre,fr,5,,Recipient transparent,hand-curated,FSL-1.1-MIT
+vie,fr,3,,Existence,hand-curated,FSL-1.1-MIT
+vin,fr,3,,Boisson de raisin,hand-curated,FSL-1.1-MIT
+voiture,fr,7,,Automobile,hand-curated,FSL-1.1-MIT
+vrai,fr,4,,Conforme a la verite,hand-curated,FSL-1.1-MIT
+yeux,fr,4,,Organes de la vue,hand-curated,FSL-1.1-MIT
+zero,fr,4,,Chiffre nul,hand-curated,FSL-1.1-MIT
+zoo,fr,3,,Parc animalier,hand-curated,FSL-1.1-MIT

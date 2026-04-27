@@ -2,7 +2,7 @@ package com.bliss.grid.api
 
 import com.bliss.grid.api.dto.ProblemDetails
 import com.bliss.grid.api.infrastructure.Database
-import com.bliss.grid.api.infrastructure.words.ResourceWordRepository
+import com.bliss.grid.api.infrastructure.words.CsvWordRepository
 import com.bliss.grid.api.routes.health
 import com.bliss.grid.api.routes.puzzles
 import io.ktor.http.ContentType
@@ -91,7 +91,7 @@ fun Application.module() {
             ?: System.getProperty("grid.api.version")
             ?: "unknown"
 
-    val wordRepository = ResourceWordRepository.frenchFromClasspath()
+    val wordRepository = CsvWordRepository.frenchFromClasspath()
 
     routing {
         health(version)
