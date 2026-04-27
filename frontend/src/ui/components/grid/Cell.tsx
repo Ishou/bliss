@@ -59,9 +59,12 @@ const defText = css({
   wordBreak: 'normal',
 });
 
-// CSS clip-path triangles sitting exactly on the cell border.
-// clip-path eliminates font side-bearings — translate(50%/-50%) lands precisely
-// on the border line. pointerEvents:none so clicks reach the adjacent letter cell.
+// CSS clip-path triangles whose BASE sits exactly on the cell border, tip
+// pointing into the adjacent answer cell (classic mots fléchés convention).
+// translate(100%/-50%) for right arrow: right:0 puts the right edge of the
+// box on the border, then translateX(100%) shifts it so the LEFT edge (base
+// of the triangle) lands on the border line. Mirror logic for the down arrow.
+// pointerEvents:none so clicks reach the adjacent letter cell.
 // zIndex:2 renders above the defCell's z-index:1 stacking context.
 const arrowShared = {
   position: 'absolute' as const,
@@ -71,27 +74,27 @@ const arrowShared = {
   pointerEvents: 'none' as const,
   zIndex: 2,
 };
-// Single-clue: centered on the full right edge.
+// Single-clue: base on the full right edge.
 const defArrowRight = css({
   ...arrowShared,
   right: 0,
   top: '50%',
-  transform: 'translate(50%, -50%)',
+  transform: 'translate(100%, -50%)',
   clipPath: 'polygon(0 0, 100% 50%, 0 100%)',
 });
-// Stacked: centered on the TOP HALF of the right edge.
+// Stacked: base on the TOP HALF of the right edge.
 const defArrowRightStack = css({
   ...arrowShared,
   right: 0,
   top: '25%',
-  transform: 'translate(50%, -50%)',
+  transform: 'translate(100%, -50%)',
   clipPath: 'polygon(0 0, 100% 50%, 0 100%)',
 });
 const defArrowDown = css({
   ...arrowShared,
   bottom: 0,
   left: '50%',
-  transform: 'translate(-50%, 50%)',
+  transform: 'translate(-50%, 100%)',
   clipPath: 'polygon(0 0, 100% 0, 50% 100%)',
 });
 
