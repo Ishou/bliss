@@ -8,6 +8,8 @@ import com.anthropic.client.okhttp.AnthropicOkHttpClient
 import com.anthropic.models.messages.CacheControlEphemeral
 import com.anthropic.models.messages.MessageCreateParams
 import com.anthropic.models.messages.TextBlockParam
+import io.opentelemetry.api.GlobalOpenTelemetry
+import io.opentelemetry.api.trace.StatusCode
 import org.slf4j.LoggerFactory
 
 /** Result of one [ClueClient.generateClue] call. */
@@ -51,6 +53,7 @@ internal class AnthropicClueClient(
     private val client: AnthropicClient,
 ) : ClueClient {
     private val log = LoggerFactory.getLogger(AnthropicClueClient::class.java)
+    private val tracer = GlobalOpenTelemetry.getTracer("com.bliss.grid.worker")
 
     override suspend fun generateClue(
         word: String,
@@ -76,7 +79,12 @@ internal class AnthropicClueClient(
                 ).addUserMessage(userText)
                 .build()
 
-        return try {
+        val span =
+            tracer
+                .spanBuilder("anthropic.messages.create")
+                .setAttribute("model", MODEL)
+                .startSpan()
+        try {
             val response = client.messages().create(params)
             val text =
                 response
@@ -87,7 +95,10 @@ internal class AnthropicClueClient(
                     .findFirst()
                     .orElse(null)
                     ?.trim()
-                    ?: return ClueResult.ApiError(IllegalStateException("Anthropic response had no text block"))
+                    ?: run {
+                        span.setStatus(StatusCode.ERROR)
+                        return ClueResult.ApiError(IllegalStateException("Anthropic response had no text block"))
+                    }
 
             val usage = response.usage()
             log.debug(
@@ -99,9 +110,14 @@ internal class AnthropicClueClient(
                 text.length,
             )
 
-            if (text.length <= MAX_CLUE_CHARS) ClueResult.Accepted(text) else ClueResult.TooLong(text)
+            span.setStatus(StatusCode.OK)
+            return if (text.length <= MAX_CLUE_CHARS) ClueResult.Accepted(text) else ClueResult.TooLong(text)
         } catch (e: Exception) {
-            ClueResult.ApiError(e)
+            span.recordException(e)
+            span.setStatus(StatusCode.ERROR)
+            return ClueResult.ApiError(e)
+        } finally {
+            span.end()
         }
     }
 

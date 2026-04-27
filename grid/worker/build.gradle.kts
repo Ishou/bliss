@@ -30,6 +30,7 @@ val kotestPropertyVersion = "5.9.1"
 val anthropicSdkVersion = "2.17.0"
 val coroutinesVersion = "1.8.0"
 val wiremockVersion = "3.10.0"
+val opentelemetryVersion = "1.40.0"
 
 application {
     mainClass.set("com.bliss.grid.worker.MainKt")
@@ -53,6 +54,10 @@ dependencies {
     // generate-clues fans out per-row Anthropic calls bounded by a Semaphore.
     // PR84 added kotlinx-coroutines as a test-only dep; production code now needs it too.
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
+
+    // OTel API only — SDK/exporter wiring defers to the Dockerfile PR (ADR-0013 §7).
+    // GlobalOpenTelemetry returns a no-op tracer until the SDK is initialised at runtime.
+    implementation("io.opentelemetry:opentelemetry-api:$opentelemetryVersion")
 
     testImplementation(platform("org.junit:junit-bom:$junitVersion"))
     testImplementation("org.junit.jupiter:junit-jupiter")
