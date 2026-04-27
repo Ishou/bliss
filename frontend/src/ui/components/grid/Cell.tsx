@@ -61,38 +61,40 @@ const defText = css({
 
 // Arrow badge positioned ON the border between the definition cell and the first
 // letter cell. translate(50%,-50%) / translate(-50%,50%) centers the glyph on
-// the border line. bg:definition covers the hairline behind it. pointerEvents:none
-// so it never blocks interaction with the adjacent letter cell. zIndex:2 keeps it
-// above the defCell's own z-index:1 stacking context.
+// the border line. bg:surface + border creates a distinct white badge over the
+// hairline. pointerEvents:none so it never blocks interaction with the adjacent
+// letter cell. zIndex:2 keeps it above the defCell's own z-index:1 stacking context.
+const defArrowBase = {
+  position: 'absolute' as const,
+  fontSize: '18cqi' as const,
+  color: 'leaf.700' as const,
+  bg: 'surface' as const,
+  border: '1px solid token(colors.leaf.700)' as const,
+  borderRadius: '4px' as const,
+  lineHeight: 1,
+  padding: '1px 2px' as const,
+  pointerEvents: 'none' as const,
+  zIndex: 2,
+};
+// Single-clue: arrow centered on the full edge.
 const defArrowRight = css({
-  position: 'absolute',
+  ...defArrowBase,
   right: 0,
   top: '50%',
   transform: 'translate(50%, -50%)',
-  fontSize: '18cqi',
-  color: 'leaf.700',
-  bg: 'surface',
-  border: '1px solid token(colors.leaf.700)',
-  borderRadius: '4px',
-  lineHeight: 1,
-  padding: '1px 2px',
-  pointerEvents: 'none',
-  zIndex: 2,
+});
+// Stacked (two-clue): right arrow centered on the TOP HALF of the right edge.
+const defArrowRightStack = css({
+  ...defArrowBase,
+  right: 0,
+  top: '25%',
+  transform: 'translate(50%, -50%)',
 });
 const defArrowDown = css({
-  position: 'absolute',
+  ...defArrowBase,
   bottom: 0,
   left: '50%',
   transform: 'translate(-50%, 50%)',
-  fontSize: '18cqi',
-  color: 'leaf.700',
-  bg: 'surface',
-  border: '1px solid token(colors.leaf.700)',
-  borderRadius: '4px',
-  lineHeight: 1,
-  padding: '1px 2px',
-  pointerEvents: 'none',
-  zIndex: 2,
 });
 
 // Stacked layout: two clues share the cell vertically.
@@ -247,8 +249,8 @@ export const DefinitionCellView = memo(function DefinitionCellView({
         <StackedClue clue={horizontal} isCurrent={currentArrow === 'right'} />
         <StackedClue clue={vertical} isCurrent={currentArrow === 'down'} />
       </div>
-      <span className={defArrowRight} aria-label="définition horizontale">→</span>
-      <span className={defArrowDown} aria-label="définition verticale">↓</span>
+      <span className={defArrowRightStack} aria-label="définition horizontale">{arrowGlyph.right}</span>
+      <span className={defArrowDown} aria-label="définition verticale">{arrowGlyph.down}</span>
     </div>
   );
 });
