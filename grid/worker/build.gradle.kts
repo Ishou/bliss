@@ -27,6 +27,10 @@ val hikariVersion = "7.0.2"
 val flywayVersion = "12.4.0"
 val testcontainersVersion = "1.21.4"
 val kotestPropertyVersion = "5.9.1"
+val anthropicSdkVersion = "2.17.0"
+val coroutinesVersion = "1.8.0"
+val wiremockVersion = "3.10.0"
+val opentelemetryVersion = "1.40.0"
 
 application {
     mainClass.set("com.bliss.grid.worker.MainKt")
@@ -44,6 +48,17 @@ dependencies {
     implementation("ch.qos.logback:logback-classic:$logbackVersion")
     implementation("net.logstash.logback:logstash-logback-encoder:$logstashEncoderVersion")
 
+    // ADR-0013 §5: Claude API client for clue generation. Pinned model + prompt live in
+    // `clues/CluePrompt.kt`; changing either is an ADR-class change.
+    implementation("com.anthropic:anthropic-java:$anthropicSdkVersion")
+    // generate-clues fans out per-row Anthropic calls bounded by a Semaphore.
+    // PR84 added kotlinx-coroutines as a test-only dep; production code now needs it too.
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
+
+    // OTel API only — SDK/exporter wiring defers to the Dockerfile PR (ADR-0013 §7).
+    // GlobalOpenTelemetry returns a no-op tracer until the SDK is initialised at runtime.
+    implementation("io.opentelemetry:opentelemetry-api:$opentelemetryVersion")
+
     testImplementation(platform("org.junit:junit-bom:$junitVersion"))
     testImplementation("org.junit.jupiter:junit-jupiter")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
@@ -56,7 +71,8 @@ dependencies {
 
     // kotest-property's `checkAll` is a `suspend fun`; runBlocking comes from kotlinx-coroutines.
     testImplementation("io.kotest:kotest-property-jvm:$kotestPropertyVersion")
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.0")
+    // generate-clues integration test stubs the Anthropic /v1/messages endpoint.
+    testImplementation("org.wiremock:wiremock-standalone:$wiremockVersion")
 }
 
 tasks.test {
