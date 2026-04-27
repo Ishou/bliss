@@ -10,6 +10,8 @@ import com.anthropic.models.messages.MessageCreateParams
 import com.anthropic.models.messages.TextBlockParam
 import io.opentelemetry.api.GlobalOpenTelemetry
 import io.opentelemetry.api.trace.StatusCode
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.slf4j.LoggerFactory
 
 /** Result of one [ClueClient.generateClue] call. */
@@ -58,68 +60,69 @@ internal class AnthropicClueClient(
     override suspend fun generateClue(
         word: String,
         retry: Boolean,
-    ): ClueResult {
-        val userText = if (retry) retryMessage(word) else userMessage(word)
-        val params =
-            MessageCreateParams
-                .builder()
-                .model(MODEL)
-                .maxTokens(MAX_TOKENS)
-                // System prompt + few-shot are constant across the whole run — cache the
-                // prefix so every call after the first is mostly a cache read. Verify hits
-                // via response.usage().cacheReadInputTokens() (DEBUG-logged below).
-                .systemOfTextBlockParams(
-                    listOf(
-                        TextBlockParam
-                            .builder()
-                            .text(SYSTEM_PROMPT + "\n\n" + fewShotBlock())
-                            .cacheControl(CacheControlEphemeral.builder().build())
-                            .build(),
-                    ),
-                ).addUserMessage(userText)
-                .build()
+    ): ClueResult =
+        withContext(Dispatchers.IO) {
+            val userText = if (retry) retryMessage(word) else userMessage(word)
+            val params =
+                MessageCreateParams
+                    .builder()
+                    .model(MODEL)
+                    .maxTokens(MAX_TOKENS)
+                    // System prompt + few-shot are constant across the whole run — cache the
+                    // prefix so every call after the first is mostly a cache read. Verify hits
+                    // via response.usage().cacheReadInputTokens() (DEBUG-logged below).
+                    .systemOfTextBlockParams(
+                        listOf(
+                            TextBlockParam
+                                .builder()
+                                .text(SYSTEM_PROMPT + "\n\n" + fewShotBlock())
+                                .cacheControl(CacheControlEphemeral.builder().build())
+                                .build(),
+                        ),
+                    ).addUserMessage(userText)
+                    .build()
 
-        val span =
-            tracer
-                .spanBuilder("anthropic.messages.create")
-                .setAttribute("model", MODEL)
-                .startSpan()
-        try {
-            val response = client.messages().create(params)
-            val text =
-                response
-                    .content()
-                    .stream()
-                    .flatMap { it.text().stream() }
-                    .map { it.text() }
-                    .findFirst()
-                    .orElse(null)
-                    ?.trim()
-                    ?: run {
-                        span.setStatus(StatusCode.ERROR)
-                        return ClueResult.ApiError(IllegalStateException("Anthropic response had no text block"))
-                    }
+            val span =
+                tracer
+                    .spanBuilder("anthropic.messages.create")
+                    .setAttribute("model", MODEL)
+                    .startSpan()
+            try {
+                val response = client.messages().create(params)
+                val text =
+                    response
+                        .content()
+                        .stream()
+                        .flatMap { it.text().stream() }
+                        .map { it.text() }
+                        .findFirst()
+                        .orElse(null)
+                        ?.trim()
+                        ?: run {
+                            span.setStatus(StatusCode.ERROR)
+                            return@withContext ClueResult.ApiError(IllegalStateException("Anthropic response had no text block"))
+                        }
 
-            val usage = response.usage()
-            log.debug(
-                "clue_call model={} input_tokens={} cached_tokens={} output_tokens={} clue_chars={}",
-                MODEL,
-                usage.inputTokens(),
-                usage.cacheReadInputTokens().orElse(0L),
-                usage.outputTokens(),
-                text.length,
-            )
+                val usage = response.usage()
+                log.debug(
+                    "clue_call model={} input_tokens={} cached_tokens={} output_tokens={} clue_chars={}",
+                    MODEL,
+                    usage.inputTokens(),
+                    usage.cacheReadInputTokens().orElse(0L),
+                    usage.outputTokens(),
+                    text.length,
+                )
 
-            span.setStatus(StatusCode.OK)
-            return if (text.length <= MAX_CLUE_CHARS) ClueResult.Accepted(text) else ClueResult.TooLong(text)
-        } catch (e: Exception) {
-            span.recordException(e)
-            span.setStatus(StatusCode.ERROR)
-            return ClueResult.ApiError(e)
-        } finally {
-            span.end()
+                span.setStatus(StatusCode.OK)
+                if (text.length <= MAX_CLUE_CHARS) ClueResult.Accepted(text) else ClueResult.TooLong(text)
+            } catch (e: Exception) {
+                span.recordException(e)
+                span.setStatus(StatusCode.ERROR)
+                ClueResult.ApiError(e)
+            } finally {
+                span.end()
+            }
         }
-    }
 
     companion object {
         // Pinned (ADR-0013 §5). Haiku 4.5 dated form; bumping is an ADR-class change.
