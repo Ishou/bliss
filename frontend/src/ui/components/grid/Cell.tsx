@@ -17,43 +17,105 @@ const cellBase = css({
   alignItems: 'center',
   justifyContent: 'center',
   fontFamily: 'body',
+  // Required so border arrows (position:absolute, translate outside) are not clipped.
+  overflow: 'visible',
 });
 const letterCell = css({ bg: 'surface' });
-// Current-word tint. ink-on-leaf.50 is 12.6:1 (passes AA at body
-// sizes); leaf.500 is reserved for the focused cell only.
 const letterCellInWord = css({ bg: 'leaf.50' });
 const blockCell = css({ bg: 'block' });
-// Definition cells: `container-type: inline-size` lets all child `cqi`
-// values resolve against the cell's own width. No fixed font-size here —
-// each text node sets its own `cqi` value so the type scales with the
-// grid density (wide cells → bigger text, dense grids → smaller text).
+
+// Definition cell: container-type so child cqi values resolve against cell width.
+// zIndex:1 ensures the absolutely-positioned border arrows render above adjacent cells.
 const defCell = css({
   bg: 'definition',
   color: 'fg',
   containerType: 'inline-size',
-  lineHeight: '1.05',
-  padding: '2px',
+  lineHeight: '1.1',
+  padding: '3px',
   textAlign: 'left',
+  zIndex: 1,
 });
+
+// Text fills the full cell now that the arrow is outside the flow.
 const defSingle = css({
   display: 'flex',
   flexDirection: 'column',
   width: '100%',
   height: '100%',
-  gap: '2px',
 });
-// Current-clue definition: leaf.700 anchor border + leaf.700 text on the
-// sand bg. Border + color = two cues per WCAG. leaf.700-on-sand ≈ 5.4:1.
-// The border sits on the side opposite the arrow (top for `down`, left
-// for `right`), anchoring the definition where the answer is *not* —
-// the arrow itself shows the direction the answer flows; the border
-// shows where the clue starts. Style applied per arrow direction.
+
+// Current-clue highlight: colored border on the side opposite the arrow so it
+// doesn't compete with the arrow badge. leaf.700-on-sand ≈ 5.4:1 (WCAG AA).
 const defCellCurrentRight = css({ borderLeft: '3px solid token(colors.leaf.700)', color: 'leaf.700' });
 const defCellCurrentDown = css({ borderTop: '3px solid token(colors.leaf.700)', color: 'leaf.700' });
-// Letter input: cream/breath surface with ink foreground in the resting
-// state, leaf-on-ink on focus. Per ADR-0005 §4, the focused background
-// is `leaf` and the foreground is `ink` (never white) — the only
-// WCAG-AA-compliant pairing for brand-color backgrounds.
+
+// Single-clue text: 19cqi scales with cell width.
+//   96px cell (5-col) → ~18px  ·  68px cell (7-col) → ~13px
+const defText = css({
+  flex: 1,
+  alignSelf: 'stretch',
+  fontSize: '19cqi',
+  overflowWrap: 'break-word',
+  wordBreak: 'normal',
+});
+
+// Arrow badge positioned ON the border between the definition cell and the first
+// letter cell. translate(50%,-50%) / translate(-50%,50%) centers the glyph on
+// the border line. bg:definition covers the hairline behind it. pointerEvents:none
+// so it never blocks interaction with the adjacent letter cell. zIndex:2 keeps it
+// above the defCell's own z-index:1 stacking context.
+const defArrowRight = css({
+  position: 'absolute',
+  right: 0,
+  top: '50%',
+  transform: 'translate(50%, -50%)',
+  fontSize: '20cqi',
+  color: 'leaf.700',
+  bg: 'definition',
+  borderRadius: '2px',
+  lineHeight: 1,
+  pointerEvents: 'none',
+  zIndex: 2,
+});
+const defArrowDown = css({
+  position: 'absolute',
+  bottom: 0,
+  left: '50%',
+  transform: 'translate(-50%, 50%)',
+  fontSize: '20cqi',
+  color: 'leaf.700',
+  bg: 'definition',
+  borderRadius: '2px',
+  lineHeight: 1,
+  pointerEvents: 'none',
+  zIndex: 2,
+});
+
+// Stacked layout: two clues share the cell vertically.
+// Arrows are outside the flow (border-positioned), so text gets the full area.
+const defStack = css({
+  display: 'flex',
+  flexDirection: 'column',
+  width: '100%',
+  height: '100%',
+  gap: '1px',
+  lineHeight: '1.1',
+});
+const defStackClue = css({
+  display: 'flex',
+  alignItems: 'flex-start',
+  flex: 1,
+  wordBreak: 'break-word',
+  '&:not(:first-child)': { borderTop: '1px solid token(colors.border)', paddingTop: '1px' },
+});
+const defStackClueCurrent = css({ color: 'leaf.700' });
+const defStackText = css({
+  flex: 1,
+  fontSize: '13cqi',
+  overflowWrap: 'break-word',
+  wordBreak: 'normal',
+});
+
 const letterInput = css({
   width: '100%',
   height: '100%',
@@ -70,67 +132,10 @@ const letterInput = css({
   padding: 0,
   _focus: { bg: 'leaf.500', color: 'ink' },
 });
-// Single-clue text. Wraps freely — no `lineClamp`, no `overflow: hidden`.
-// 15cqi = 15% of the cell's inline (width) size via container query:
-//   96px cell (5-col) → ~14.4px  ·  68px cell (7-col) → ~10.2px
-const defText = css({
-  flex: 1,
-  alignSelf: 'stretch',
-  fontSize: '15cqi',
-  overflowWrap: 'break-word',
-  wordBreak: 'normal',
-});
-// Arrow glyph scales with the cell so it stays proportional to the text.
-const defArrow = css({
-  alignSelf: 'flex-end',
-  fontSize: '14cqi',
-  color: 'accent',
-  lineHeight: 1,
-  flexShrink: 0,
-});
-
-// Stacked layout: two clues share the cell vertically. Each text node
-// uses 11cqi (smaller than the single-clue 15cqi) so two clues fit.
-const defStack = css({
-  display: 'flex',
-  flexDirection: 'column',
-  width: '100%',
-  height: '100%',
-  padding: '2px',
-  gap: '1px',
-  lineHeight: '1.05',
-});
-const defStackClue = css({
-  display: 'flex',
-  alignItems: 'flex-start',
-  justifyContent: 'space-between',
-  flex: 1,
-  wordBreak: 'break-word',
-  // Thin divider between the two stacked clues — inherited border color
-  // gives the same hairline weight as the cell grid lines.
-  '&:not(:first-child)': { borderTop: '1px solid token(colors.border)', paddingTop: '1px' },
-});
-// Highlighted stacked clue when the cursor is on its answer.
-const defStackClueCurrent = css({ color: 'leaf.700' });
-// Stacked clue text uses the same two-line clamp as single-clue text,
-// but with smaller dimensions because the cell now hosts two clues. The
-// `title` attribute on this node carries the full prose for the native
-// tooltip when the visible portion is clipped.
-const defStackText = css({
-  flex: 1,
-  paddingRight: '2px',
-  fontSize: '11cqi',
-  overflowWrap: 'break-word',
-  wordBreak: 'normal',
-});
-const defStackArrow = css({ color: 'accent', fontSize: '10cqi', lineHeight: 1, flexShrink: 0 });
 
 const arrowGlyph: Record<ArrowDirection, string> = { right: '→', down: '↓' };
 const arrowLabel: Record<ArrowDirection, string> = { right: 'horizontale', down: 'verticale' };
 
-// Letter cell. `memo` prevents re-renders when other cells change
-// (ADR-0002 §4). The input is uncontrolled; keyboard/focus/highlight
-// wiring lives in `useGridNavigation`.
 export const LetterCellView = memo(function LetterCellView({
   cell, ariaLabel, inWord, inputRef, onPointerDown, onKeyDown, onFocus,
 }: {
@@ -170,9 +175,7 @@ export const LetterCellView = memo(function LetterCellView({
   );
 });
 
-// Renders one clue in stacked layout: text + inline arrow indicator.
-// `isCurrent` tints the clue text with `leaf.700` when its answer is the
-// focused word — same anchor logic as single-clue cells, scoped per clue.
+// Stacked clue: text only — the arrow badge is rendered at the cell level.
 function StackedClue({ clue, isCurrent }: { clue: DefinitionClue; isCurrent: boolean }) {
   return (
     <div
@@ -182,25 +185,13 @@ function StackedClue({ clue, isCurrent }: { clue: DefinitionClue; isCurrent: boo
       data-arrow={clue.arrow}
       data-current-clue={isCurrent ? 'true' : 'false'}
     >
-      <span
-        className={defStackText}
-        title={clue.text}
-      >
+      <span className={defStackText} title={clue.text}>
         {clue.text}
-      </span>
-      <span className={defStackArrow} aria-hidden="true">
-        {arrowGlyph[clue.arrow]}
       </span>
     </div>
   );
 }
 
-// Definition cell view. `currentArrow` is the arrow direction of the
-// clue currently being solved when the focused cell sits on this def's
-// answer path; `null` when no clue here is current. The single-clue and
-// two-clue branches both apply the leaf.700 anchor border / tint — but
-// stacked cells highlight only the matching sub-clue, since the two
-// sides of a stacked cell may belong to different clue paths.
 export const DefinitionCellView = memo(function DefinitionCellView({
   cell, currentArrow,
 }: { cell: DefinitionCell; currentArrow: ArrowDirection | null }) {
@@ -224,19 +215,19 @@ export const DefinitionCellView = memo(function DefinitionCellView({
           <span className={defText} title={clue.text}>
             {clue.text}
           </span>
-          <span
-            aria-label={`définition ${arrowLabel[clue.arrow]}`}
-            className={defArrow}
-          >
-            {arrowGlyph[clue.arrow]}
-          </span>
         </div>
+        <span
+          className={clue.arrow === 'right' ? defArrowRight : defArrowDown}
+          aria-label={`définition ${arrowLabel[clue.arrow]}`}
+        >
+          {arrowGlyph[clue.arrow]}
+        </span>
       </div>
     );
   }
-  // Two-clue branch — horizontal clue (right arrow) on top, vertical
-  // clue (down arrow) below. The wrapping `role="group"` lets screen
-  // readers announce "deux définitions" before walking each clue.
+
+  // Two-clue branch — horizontal clue (right arrow) on top, vertical below.
+  // Both arrows are placed at their respective cell borders.
   const [horizontal, vertical] = cell.clues;
   return (
     <div
@@ -252,6 +243,8 @@ export const DefinitionCellView = memo(function DefinitionCellView({
         <StackedClue clue={horizontal} isCurrent={currentArrow === 'right'} />
         <StackedClue clue={vertical} isCurrent={currentArrow === 'down'} />
       </div>
+      <span className={defArrowRight} aria-label="définition horizontale">→</span>
+      <span className={defArrowDown} aria-label="définition verticale">↓</span>
     </div>
   );
 });
