@@ -101,7 +101,7 @@ class CsvWordRepository(
             require(clue.isNotBlank()) {
                 "CSV $path row ${record.recordNumber} ('$text'): empty clue (export-words guarantees non-null)"
             }
-            return Word(text = text, definition = clue)
+            return Word(text = text.uppercase(), definition = clue)
         }
     }
 }

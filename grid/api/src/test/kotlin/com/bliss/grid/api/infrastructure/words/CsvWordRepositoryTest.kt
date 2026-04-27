@@ -3,6 +3,7 @@ package com.bliss.grid.api.infrastructure.words
 import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.isGreaterThanOrEqualTo
+import assertk.assertions.isNotEmpty
 import assertk.assertions.isTrue
 import org.junit.jupiter.api.Test
 
@@ -23,7 +24,9 @@ class CsvWordRepositoryTest {
 
     @Test
     fun `findByLengthAndPattern filters on letter constraints`() {
-        repo.findByLengthAndPattern(4, mapOf(0 to 'C')).forEach { word ->
+        val matches = repo.findByLengthAndPattern(4, mapOf(0 to 'C'))
+        assertThat(matches).isNotEmpty()
+        matches.forEach { word ->
             assertThat(word.text.length).isEqualTo(4)
             assertThat(word.text[0]).isEqualTo('C')
         }
