@@ -5,7 +5,7 @@ import type { Position } from './Position';
 // `down` means it occupies the cells immediately below. v1 deliberately
 // excludes diagonal-split cells; the stacked variant below is the only
 // way to fit two clues into a single cell.
-export type ArrowDirection = 'right' | 'down';
+export type ArrowDirection = 'right' | 'down' | 'down-right' | 'right-down';
 
 // A cell where the player types one letter. `answer` is the canonical
 // solution kept for future "check / reveal" features; `entry` is the
@@ -27,17 +27,20 @@ export interface DefinitionClue {
 }
 
 // A clue cell. Carries one or two clues per ADR-0005 §3a. When two are
-// present, the invariant is `clues[0].arrow === 'right'` and
-// `clues[1].arrow === 'down'`: real *mots fléchés* always render the
-// horizontal clue above the vertical one, and pinning the order in the
-// type means the renderer never has to re-sort. Any other shape is a
-// domain bug; the architecture tests guard against it.
+// present, the first clue is horizontal (arrow 'right' or 'down-right')
+// and the second is vertical (arrow 'down' or 'right-down'): mots
+// fléchés always render the horizontal clue above the vertical one,
+// and pinning the order in the type means the renderer never has to
+// re-sort.
+export type HorizontalArrow = 'right' | 'down-right';
+export type VerticalArrow = 'down' | 'right-down';
+
 export interface DefinitionCell {
   readonly kind: 'definition';
   readonly position: Position;
   readonly clues:
     | readonly [DefinitionClue]
-    | readonly [DefinitionClue & { arrow: 'right' }, DefinitionClue & { arrow: 'down' }];
+    | readonly [DefinitionClue & { arrow: HorizontalArrow }, DefinitionClue & { arrow: VerticalArrow }];
 }
 
 // An inert solid square — neither a clue nor an input.

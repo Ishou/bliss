@@ -5,11 +5,7 @@ import com.bliss.grid.api.mapper.GridToPuzzleMapper
 import com.bliss.grid.domain.generation.GridConstraints
 import com.bliss.grid.domain.generation.GridGenerator
 import com.bliss.grid.domain.generation.WordRepository
-import com.bliss.grid.domain.model.Column
 import com.bliss.grid.domain.model.Grid
-import com.bliss.grid.domain.model.LetterCell
-import com.bliss.grid.domain.model.Position
-import com.bliss.grid.domain.model.Row
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.response.respond
@@ -67,7 +63,7 @@ fun Route.puzzles(
                 MAX_OUTER_RETRIES,
             )
             call.respondProblem(
-                status = HttpStatusCode.ServiceUnavailable,
+                status = HttpStatusCode.UnprocessableEntity,
                 title = "Puzzle generation failed",
                 type = "https://bliss.example/errors/puzzle-generation-failed",
                 detail = "The generator could not satisfy the requested constraints.",
@@ -92,25 +88,25 @@ internal fun defaultConstraints(): GridConstraints =
     GridConstraints(
         width = PUZZLE_WIDTH,
         height = PUZZLE_HEIGHT,
-        minWordLength = 3,
+        minWordLength = 2,
         targetDensity = 0.5,
         maxAttempts = 20_000,
     )
 
 internal const val PUZZLE_WIDTH: Int = 10
 internal const val PUZZLE_HEIGHT: Int = 10
-internal const val MAX_OUTER_RETRIES: Int = 3
+internal const val MAX_OUTER_RETRIES: Int = 5
 
 /**
  * Calls the generator up to [MAX_OUTER_RETRIES] times. Each call uses a
- * fresh per-attempt [Random] (so refreshes vary). The result is rejected
- * if any half of the grid (top vs bottom, or left vs right) holds fewer
- * letter cells than [MIN_HALF_LETTER_RATIO] of its area — that's the
- * shape the sparseness regression takes on the wire (bottom four rows
- * >90% blocks).
+ * fresh per-attempt [Random] (so refreshes vary).
  *
- * Returns the first acceptable grid, or `null` if every retry produces
- * a grid that fails the post-condition. The route then surfaces 503.
+ * The generator itself enforces density and interlocking constraints —
+ * it only returns a grid when both are satisfied. A `null` return means
+ * the backtracker exhausted its attempt budget.
+ *
+ * Returns the first generated grid, or `null` if every retry fails.
+ * The route then surfaces 503.
  */
 private fun generateWithRetry(
     generator: GridGenerator,
@@ -119,65 +115,17 @@ private fun generateWithRetry(
 ): Grid? {
     repeat(MAX_OUTER_RETRIES) { attempt ->
         val random = Random(System.nanoTime() + attempt)
-        val grid = generator.generate(constraints, random) ?: return@repeat
-        if (hasSparseHalf(grid)) {
-            log.warn(
-                "puzzle_generation_sparse_retry attempt={} width={} height={}",
-                attempt + 1,
-                grid.width,
-                grid.height,
-            )
-            return@repeat
-        }
-        return grid
+        val grid = generator.generate(constraints, random)
+        if (grid != null) return grid
+        log.warn(
+            "puzzle_generation_retry attempt={} width={} height={}",
+            attempt + 1,
+            constraints.width,
+            constraints.height,
+        )
     }
     return null
 }
-
-/**
- * Each half (top, bottom, left, right) must hold at least
- * [MIN_HALF_LETTER_RATIO] of its area in [LetterCell]s. Catches the
- * "blocks dumped across the bottom half" failure mode without rejecting
- * normal grids — empirically every sample at density 0.5 against the
- * bundled ~120-word `words-fr.csv` (ADR-0013 §8) clears 30%.
- */
-internal fun hasSparseHalf(grid: Grid): Boolean {
-    val midRow = grid.height / 2
-    val midCol = grid.width / 2
-    val halves =
-        listOf(
-            HalfArea(0 until midRow, 0 until grid.width),
-            HalfArea(midRow until grid.height, 0 until grid.width),
-            HalfArea(0 until grid.height, 0 until midCol),
-            HalfArea(0 until grid.height, midCol until grid.width),
-        )
-    return halves.any { half ->
-        val total = (half.rows.last - half.rows.first + 1) * (half.cols.last - half.cols.first + 1)
-        if (total == 0) return@any false
-        val letters = countLetters(grid, half)
-        letters.toDouble() / total.toDouble() < MIN_HALF_LETTER_RATIO
-    }
-}
-
-private fun countLetters(
-    grid: Grid,
-    half: HalfArea,
-): Int {
-    var count = 0
-    for (r in half.rows) {
-        for (c in half.cols) {
-            if (grid.cells[Position(Row(r), Column(c))] is LetterCell) count++
-        }
-    }
-    return count
-}
-
-private data class HalfArea(
-    val rows: IntRange,
-    val cols: IntRange,
-)
-
-private const val MIN_HALF_LETTER_RATIO: Double = 0.3
 
 private fun parseUuid(raw: String): UUID? =
     try {

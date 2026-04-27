@@ -29,17 +29,20 @@ const toClue = (cell: ApiDefinitionCell): DefinitionClue => ({
   text: cell.text, arrow: cell.arrow as ArrowDirection,
 });
 
+const isHorizontalArrow = (arrow: string): boolean => arrow === 'right' || arrow === 'down-right';
+const isVerticalArrow = (arrow: string): boolean => arrow === 'down' || arrow === 'right-down';
+
 const mergeDefinitions = (defs: readonly ApiDefinitionCell[]): DefinitionCell => {
-  const right = defs.find((d) => d.arrow === 'right');
-  const down = defs.find((d) => d.arrow === 'down');
+  const horizontal = defs.find((d) => isHorizontalArrow(d.arrow));
+  const vertical = defs.find((d) => isVerticalArrow(d.arrow));
   const first = defs[0];
   const position = { row: first.position.row, col: first.position.column };
-  if (right && down) {
+  if (horizontal && vertical) {
     return {
       kind: 'definition', position,
       clues: [
-        { ...toClue(right), arrow: 'right' },
-        { ...toClue(down), arrow: 'down' },
+        toClue(horizontal),
+        toClue(vertical),
       ],
     };
   }

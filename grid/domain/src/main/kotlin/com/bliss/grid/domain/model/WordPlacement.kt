@@ -6,9 +6,10 @@ data class WordPlacement(
     val direction: Direction,
 ) {
     fun letterPositions(): List<Pair<Position, Char>> {
-        val (dr, dc) = direction.offset.row.value to direction.offset.column.value
-        val startRow = cluePosition.row.value + dr
-        val startCol = cluePosition.column.value + dc
+        val startRow = cluePosition.row.value + direction.startOffset.row.value
+        val startCol = cluePosition.column.value + direction.startOffset.column.value
+        val dr = direction.step.row.value
+        val dc = direction.step.column.value
         return word.text.mapIndexed { i, ch ->
             Position(Row(startRow + dr * i), Column(startCol + dc * i)) to ch
         }

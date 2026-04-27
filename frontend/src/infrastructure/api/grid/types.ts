@@ -142,12 +142,13 @@ export interface components {
             position: components["schemas"]["Position"];
         };
         /**
-         * @description Arrow direction on a definition cell. `right` and `down` are the only
-         *     mots-fléchés conventions today; new shapes (e.g. `right-then-down`)
-         *     land in a future schema version if needed.
+         * @description Arrow direction on a definition cell. `right` and `down` are the
+         *     standard mots-fléchés conventions. `down-right` (first-column clue,
+         *     word starts below going right) and `right-down` (first-row clue,
+         *     word starts right going down) enable edge-cell interlocking.
          * @enum {string}
          */
-        Arrow: "right" | "down";
+        Arrow: "right" | "down" | "down-right" | "right-down";
         /**
          * @description Direction a clue's answer is written.
          * @enum {string}

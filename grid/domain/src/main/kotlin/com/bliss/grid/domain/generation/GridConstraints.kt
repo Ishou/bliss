@@ -5,6 +5,7 @@ data class GridConstraints(
     val height: Int,
     val minWordLength: Int = 2,
     val targetDensity: Double = 0.6,
+    val enforceInterlocking: Boolean = true,
     val maxAttempts: Int = 10_000,
 ) {
     init {

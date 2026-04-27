@@ -28,7 +28,7 @@ class GridGeneratorTest {
             )
         val generator = GridGenerator(repository)
 
-        val grid = generator.generate(GridConstraints(width = 3, height = 3, targetDensity = 0.4))
+        val grid = generator.generate(GridConstraints(width = 3, height = 3, targetDensity = 0.4, enforceInterlocking = false))
 
         assertThat(grid).isNotNull()
         assertThat(validator.validate(grid!!)).isEmpty()
@@ -38,7 +38,7 @@ class GridGeneratorTest {
     fun `generates a 5x5 grid meeting target density`() {
         val generator = GridGenerator(ListWordRepository(SMALL_FRENCH_WORDS))
 
-        val grid = generator.generate(GridConstraints(width = 5, height = 5, targetDensity = 0.5))
+        val grid = generator.generate(GridConstraints(width = 5, height = 5, targetDensity = 0.5, enforceInterlocking = false))
 
         assertThat(grid).isNotNull()
         val letterCount = grid!!.cells.values.count { it is LetterCell }
@@ -51,7 +51,7 @@ class GridGeneratorTest {
         val repository = ListWordRepository(listOf(Word("ARBRE", "x")))
         val generator = GridGenerator(repository)
 
-        val grid = generator.generate(GridConstraints(width = 3, height = 3, targetDensity = 0.6))
+        val grid = generator.generate(GridConstraints(width = 3, height = 3, targetDensity = 0.6, enforceInterlocking = false))
 
         assertThat(grid).isNull()
     }
@@ -62,7 +62,7 @@ class GridGeneratorTest {
 
         val grid =
             generator.generate(
-                GridConstraints(width = 5, height = 5, targetDensity = 0.9, maxAttempts = 5),
+                GridConstraints(width = 5, height = 5, targetDensity = 0.9, enforceInterlocking = false, maxAttempts = 5),
             )
 
         assertThat(grid).isNull()
@@ -71,7 +71,7 @@ class GridGeneratorTest {
     @Test
     fun `different random seeds produce different grids for the same constraints`() {
         val generator = GridGenerator(ListWordRepository(SMALL_FRENCH_WORDS))
-        val constraints = GridConstraints(width = 5, height = 5, targetDensity = 0.4)
+        val constraints = GridConstraints(width = 5, height = 5, targetDensity = 0.4, enforceInterlocking = false)
 
         val grid1 = generator.generate(constraints, Random(1L))
         val grid2 = generator.generate(constraints, Random(2L))
@@ -83,7 +83,6 @@ class GridGeneratorTest {
 
     @Test
     fun `returns null when wordlist is too small to satisfy density`() {
-        // 5 short two-letter words can't densely fill a 10x10 at density 0.5.
         val tinyList =
             listOf(
                 Word("OR", "metal"),
@@ -96,11 +95,27 @@ class GridGeneratorTest {
 
         val grid =
             generator.generate(
-                GridConstraints(width = 10, height = 10, targetDensity = 0.5, maxAttempts = 2_000),
+                GridConstraints(width = 10, height = 10, targetDensity = 0.5, enforceInterlocking = false, maxAttempts = 2_000),
                 Random(42L),
             )
 
         assertThat(grid).isNull()
+    }
+
+    @Test
+    fun `generated grid passes interlocking validation when enforced`() {
+        val generator = GridGenerator(ListWordRepository(SMALL_FRENCH_WORDS))
+
+        val grid = generator.generate(
+            GridConstraints(width = 5, height = 5, targetDensity = 0.2, enforceInterlocking = true, maxAttempts = 20_000),
+        )
+
+        // With enforceInterlocking=true, generator returns null if interlocking fails.
+        // Either null (couldn't satisfy) or valid (all cells interlocked).
+        if (grid != null) {
+            val uncrossed = GridValidator.uncrossedCells(grid)
+            assertThat(uncrossed).isEmpty()
+        }
     }
 }
 

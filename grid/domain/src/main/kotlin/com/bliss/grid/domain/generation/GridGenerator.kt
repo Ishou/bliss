@@ -10,17 +10,12 @@ class GridGenerator(
 ) {
     /**
      * Generates a grid satisfying [constraints], or returns `null` if the
-     * backtracker exhausts [GridConstraints.maxAttempts] first.
+     * backtracker exhausts [GridConstraints.maxAttempts] first or the
+     * resulting grid fails the interlocking invariant.
      *
-     * [random] makes generation non-deterministic per call: with the same
-     * inputs but different sources, output grids differ. The route handler
-     * passes a fresh [Random] per HTTP request so refreshing the puzzle URL
-     * yields a new layout. Tests pass `Random(seed)` for reproducibility.
-     *
-     * Candidate placements and matching words are shuffled at every search
-     * frame — not sorted-then-shuffled — to preserve the rarest-first
-     * heuristic (`sortedBy { it.second.size }`) that keeps backtracking
-     * tractable on a 10×10 grid against a ~120-word list.
+     * Every letter cell in a returned grid satisfies the interlocking
+     * rule: interior cells belong to both a horizontal and a vertical
+     * word; edge cells (row 0 or column 0) belong to at least one.
      */
     fun generate(
         constraints: GridConstraints,
@@ -29,7 +24,8 @@ class GridGenerator(
         val working = WorkingGrid(constraints.width, constraints.height)
         val maxLength = maxOf(constraints.width, constraints.height) - 1
         val attempts = intArrayOf(0)
-        return if (search(working, constraints, maxLength, mutableSetOf(), attempts, random)) working.toGrid() else null
+        if (!search(working, constraints, maxLength, mutableSetOf(), attempts, random)) return null
+        return working.toGrid()
     }
 
     private fun search(
@@ -40,7 +36,10 @@ class GridGenerator(
         attempts: IntArray,
         random: Random,
     ): Boolean {
-        if (working.density() >= constraints.targetDensity) return true
+        if (working.density() >= constraints.targetDensity) {
+            if (!constraints.enforceInterlocking || working.isFullyInterlocked()) return true
+            // Density met but interlocking not — keep placing words.
+        }
         if (attempts[0]++ >= constraints.maxAttempts) return false
 
         val ranked =
@@ -52,9 +51,16 @@ class GridGenerator(
                         repository
                             .findByLengthAndPattern(candidate.length, pattern)
                             .filter { it.text !in usedWords }
-                    if (matches.isEmpty()) null else candidate to matches
-                }.sortedBy { it.second.size }
-                .shuffledStable(random)
+                    if (matches.isEmpty()) {
+                        null
+                    } else {
+                        RankedCandidate(candidate, matches, pattern.size, working.uncrossedFixCount(candidate))
+                    }
+                }.sortedWith(
+                    compareByDescending<RankedCandidate> { it.uncrossedFixes }
+                        .thenByDescending { it.crossings }
+                        .thenBy { it.matchCount },
+                ).shuffledStable(random)
 
         for ((candidate, matches) in ranked) {
             for (word in matches.shuffled(random)) {
@@ -70,14 +76,26 @@ class GridGenerator(
         return false
     }
 
+    private data class RankedCandidate(
+        val candidate: CandidatePlacement,
+        val matches: List<Word>,
+        val crossings: Int,
+        val uncrossedFixes: Int,
+    ) {
+        val matchCount: Int get() = matches.size
+    }
+
     /**
-     * Shuffles within equal-rank buckets, preserving the rarest-first sort
-     * that keeps backtracking efficient. A plain [List.shuffled] would
-     * destroy that ordering and explode the search.
+     * Shuffles within equal-rank buckets, preserving the composite sort
+     * (most uncrossed fixes, then crossings, then rarest first) that keeps
+     * backtracking efficient. A plain [List.shuffled] would destroy that
+     * ordering and explode the search.
      */
-    private fun List<Pair<CandidatePlacement, List<Word>>>.shuffledStable(random: Random): List<Pair<CandidatePlacement, List<Word>>> =
-        groupBy { it.second.size }
-            .toSortedMap()
+    private fun List<RankedCandidate>.shuffledStable(
+        random: Random,
+    ): List<Pair<CandidatePlacement, List<Word>>> =
+        groupBy { Triple(-it.uncrossedFixes, -it.crossings, it.matchCount) }
+            .toSortedMap(compareBy<Triple<Int, Int, Int>> { it.first }.thenBy { it.second }.thenBy { it.third })
             .values
-            .flatMap { bucket -> bucket.shuffled(random) }
+            .flatMap { bucket -> bucket.shuffled(random).map { it.candidate to it.matches } }
 }

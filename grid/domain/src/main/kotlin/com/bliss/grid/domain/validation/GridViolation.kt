@@ -27,4 +27,16 @@ sealed interface GridViolation {
     data class OrphanedLetterCell(
         val position: Position,
     ) : GridViolation
+
+    /**
+     * A letter cell that does not satisfy the interlocking rule:
+     * - interior cells (row > 0 and col > 0) must be in both a horizontal
+     *   and a vertical word
+     * - edge cells (row == 0 or col == 0) must be in at least one
+     */
+    data class UncrossedCell(
+        val position: Position,
+        val inHorizontal: Boolean,
+        val inVertical: Boolean,
+    ) : GridViolation
 }
