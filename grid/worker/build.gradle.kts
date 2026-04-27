@@ -1,5 +1,5 @@
 // grid/worker — Kotlin CLI module (ADR-0013 §7). Sibling to grid/api;
-// depends on grid/domain only, never on grid/api (CLAUDE.md bounded-context rule).
+// does not depend on grid/api (CLAUDE.md bounded-context rule).
 // Sub-commands: import-words (PR2), generate-clues (PR3).
 // shadowJar: build/libs/grid-worker-<version>-all.jar (Dockerfile lands in PR5).
 
@@ -33,8 +33,6 @@ application {
 }
 
 dependencies {
-    implementation(project(":grid:domain"))
-
     // clikt 5.x is multiplatform; pull the JVM artifact explicitly.
     implementation("com.github.ajalt.clikt:clikt-jvm:$cliktVersion")
 
