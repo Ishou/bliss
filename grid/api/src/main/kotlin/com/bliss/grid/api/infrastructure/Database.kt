@@ -62,7 +62,12 @@ object Database {
         val jdbcUrl = toJdbcUrl(raw)
         val (user, password) = extractCredentials(raw)
         val ds = buildDataSource(jdbcUrl, user, password)
-        runMigrations(ds)
+        try {
+            runMigrations(ds)
+        } catch (e: Exception) {
+            ds.close()
+            throw e
+        }
         dataSource = ds
     }
 
