@@ -30,16 +30,21 @@ describe('HttpPuzzleRepository', () => {
     expect(puzzle.id).toBe(apiFixture.id);
     expect(puzzle.width).toBe(5);
     expect(puzzle.height).toBe(5);
-    // block cell
-    expect(puzzle.cells[0]).toEqual({ kind: 'block', position: { row: 0, col: 0 } });
-    // definition cell — clues are not dropped on the floor
-    expect(puzzle.cells[1]).toEqual({
-      kind: 'definition', position: { row: 0, col: 1 },
-      clues: [{ text: 'Capitale de la France', arrow: 'right' }],
+    // stacked definition cell at (0,0) — both clues must be preserved
+    expect(puzzle.cells[0]).toEqual({
+      kind: 'definition', position: { row: 0, col: 0 },
+      clues: [
+        { text: 'Capitale de la France', arrow: 'right' },
+        { text: 'Couleur du ciel', arrow: 'down' },
+      ],
     });
-    // pre-filled letter cell at (2, 0) with answer 'B'
+    // first letter cell following the stacked def
+    expect(puzzle.cells[1]).toEqual({
+      kind: 'letter', position: { row: 0, col: 1 }, entry: '',
+    });
+    // letter cell at (2,0) — no pre-fill in this fixture
     expect(puzzle.cells[10]).toEqual({
-      kind: 'letter', position: { row: 2, col: 0 }, answer: 'B', entry: '',
+      kind: 'letter', position: { row: 2, col: 0 }, entry: '',
     });
     // the wire's top-level `clues` array is non-empty and every clue
     // text surfaces on a `DefinitionCell` in the domain — proves the
