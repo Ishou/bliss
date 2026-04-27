@@ -220,6 +220,7 @@ export const DefinitionCellView = memo(function DefinitionCellView({
           </span>
         </div>
         <span
+          role="img"
           className={clue.arrow === 'right' ? defArrowRight : defArrowDown}
           aria-label={`définition ${arrowLabel[clue.arrow]}`}
         />
@@ -244,8 +245,8 @@ export const DefinitionCellView = memo(function DefinitionCellView({
         <StackedClue clue={horizontal} isCurrent={currentArrow === 'right'} />
         <StackedClue clue={vertical} isCurrent={currentArrow === 'down'} />
       </div>
-      <span className={defArrowRightStack} aria-label="définition horizontale" />
-      <span className={defArrowDown} aria-label="définition verticale" />
+      <span aria-hidden="true" className={defArrowRightStack} />
+      <span aria-hidden="true" className={defArrowDown} />
     </div>
   );
 });

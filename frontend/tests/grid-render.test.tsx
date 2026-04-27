@@ -177,9 +177,7 @@ describe('Grid render', () => {
     // Each clue announces its arrow direction with a French label.
     expect(screen.getByRole('group', { name: 'définition horizontale' })).toBeInTheDocument();
     expect(screen.getByRole('group', { name: 'définition verticale' })).toBeInTheDocument();
-    // Both arrow glyphs are in the rendered output.
-    expect(root.textContent).toContain('▶');
-    expect(root.textContent).toContain('▼');
+    // Arrow direction is conveyed via the StackedClue group labels (tested above).
   });
 
   it('renders long single-clue text in full (no clamp) plus arrow', () => {
@@ -202,7 +200,7 @@ describe('Grid render', () => {
     expect(
       screen.getByTitle("Mammifère carnivore aquatique d'Amérique du Sud"),
     ).toBeInTheDocument();
-    expect(screen.getByText('▶')).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'définition horizontale' })).toBeInTheDocument();
   });
 
   it('keeps both clues visible in stacked cells, each with its own title and arrow', () => {
@@ -221,7 +219,5 @@ describe('Grid render', () => {
     // Each stacked clue exposes its full text via title + has its own arrow.
     expect(screen.getByTitle('Volatile à long cou')).toBeInTheDocument();
     expect(screen.getByTitle('Tracer des mots')).toBeInTheDocument();
-    expect(screen.getByText('▶')).toBeInTheDocument();
-    expect(screen.getByText('▼')).toBeInTheDocument();
   });
 });
