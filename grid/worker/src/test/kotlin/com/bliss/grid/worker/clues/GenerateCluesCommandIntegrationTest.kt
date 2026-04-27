@@ -53,7 +53,11 @@ class GenerateCluesCommandIntegrationTest {
 
     @Test
     fun `generates clues end-to-end against stubbed Anthropic, enforces length cap, writes`() {
-        seedWords(listOf("chat", "arbre", "pluie", "fer", "oiseau"))
+        // "maison" is chosen as the always-too-long word because it does NOT appear in
+        // the few-shot examples embedded in the system prompt. Words like "oiseau" appear
+        // in every request body via the system prompt, so containing("oiseau") would match
+        // every WireMock call, not just the "oiseau" user-message call.
+        seedWords(listOf("chat", "arbre", "pluie", "fer", "maison"))
 
         // Default stub: every call returns a short clue. WireMock evaluates more-specific
         // stubs (with body matchers) before this catch-all.
@@ -62,10 +66,10 @@ class GenerateCluesCommandIntegrationTest {
                 .willReturn(messagesResponse("Court")),
         )
 
-        // "oiseau" always too long → row stays NULL after MAX_ATTEMPTS exhausts.
+        // "maison" always too long → row stays NULL after MAX_ATTEMPTS exhausts.
         wireMock.stubFor(
             post(urlPathEqualTo("/v1/messages"))
-                .withRequestBody(containing("oiseau"))
+                .withRequestBody(containing("maison"))
                 .willReturn(messagesResponse("Y".repeat(MAX_CLUE_CHARS + 5))),
         )
 
@@ -78,7 +82,7 @@ class GenerateCluesCommandIntegrationTest {
             check(clue != null) { "expected '$word' to be cluefied, got NULL" }
             check(clue.length <= MAX_CLUE_CHARS) { "clue for '$word' exceeds cap: '$clue'" }
         }
-        assertThat(clueByWord["oiseau"]).isEqualTo(null)
+        assertThat(clueByWord["maison"]).isEqualTo(null)
 
         val totalCalls =
             wireMock.findAll(newRequestPattern(RequestMethod.POST, urlPathEqualTo("/v1/messages"))).size
@@ -147,26 +151,28 @@ class GenerateCluesCommandIntegrationTest {
         )
 
     private fun messagesResponse(text: String) =
-        aResponse()
-            .withStatus(200)
-            .withHeader("content-type", "application/json")
-            .withBody(
-                """
-                {
-                  "id": "msg_test",
-                  "type": "message",
-                  "role": "assistant",
-                  "model": "claude-haiku-4-5-20251001",
-                  "content": [{"type": "text", "text": "$text"}],
-                  "stop_reason": "end_turn",
-                  "stop_sequence": null,
-                  "usage": {
-                    "input_tokens": 100,
-                    "output_tokens": 8,
-                    "cache_creation_input_tokens": 0,
-                    "cache_read_input_tokens": 0
-                  }
-                }
-                """.trimIndent(),
-            )
+        text.replace("\\", "\\\\").replace("\"", "\\\"").let { escaped ->
+            aResponse()
+                .withStatus(200)
+                .withHeader("content-type", "application/json")
+                .withBody(
+                    """
+                    {
+                      "id": "msg_test",
+                      "type": "message",
+                      "role": "assistant",
+                      "model": "claude-haiku-4-5-20251001",
+                      "content": [{"type": "text", "text": "$escaped"}],
+                      "stop_reason": "end_turn",
+                      "stop_sequence": null,
+                      "usage": {
+                        "input_tokens": 100,
+                        "output_tokens": 8,
+                        "cache_creation_input_tokens": 0,
+                        "cache_read_input_tokens": 0
+                      }
+                    }
+                    """.trimIndent(),
+                )
+        }
 }
