@@ -23,14 +23,14 @@ const letterCell = css({ bg: 'surface' });
 // sizes); leaf.500 is reserved for the focused cell only.
 const letterCellInWord = css({ bg: 'leaf.50' });
 const blockCell = css({ bg: 'block' });
-// Definition cells use the smallest readable type and do NOT clamp or
-// clip the clue text. The full prose is also surfaced in `CurrentCluePanel`
-// above the grid; cells trade legibility-without-zoom for never cutting
-// the clue. Pinch / browser zoom recovers comfortable reading size.
+// Definition cells: `container-type: inline-size` lets all child `cqi`
+// values resolve against the cell's own width. No fixed font-size here —
+// each text node sets its own `cqi` value so the type scales with the
+// grid density (wide cells → bigger text, dense grids → smaller text).
 const defCell = css({
   bg: 'definition',
   color: 'fg',
-  fontSize: 'xxs',
+  containerType: 'inline-size',
   lineHeight: '1.05',
   padding: '2px',
   textAlign: 'left',
@@ -71,34 +71,26 @@ const letterInput = css({
   _focus: { bg: 'leaf.500', color: 'ink' },
 });
 // Single-clue text. Wraps freely — no `lineClamp`, no `overflow: hidden`.
-// `wordBreak: normal` + `overflowWrap: break-word` lets long French words
-// break at sane boundaries instead of mid-word. The full clue is also
-// rendered in `CurrentCluePanel` above the grid for any clue that doesn't
-// fit comfortably at this size.
+// 15cqi = 15% of the cell's inline (width) size via container query:
+//   96px cell (5-col) → ~14.4px  ·  68px cell (7-col) → ~10.2px
 const defText = css({
   flex: 1,
   alignSelf: 'stretch',
+  fontSize: '15cqi',
   overflowWrap: 'break-word',
   wordBreak: 'normal',
 });
-// Arrow lives in its own span at the end of the cell — never inside
-// the clamped text node. Right-aligned for `right` arrows, left-
-// aligned for `down` arrows mirrors the visual direction. `flexShrink:
-// 0` guarantees the glyph never collapses, even when the text node
-// is overflowing.
+// Arrow glyph scales with the cell so it stays proportional to the text.
 const defArrow = css({
   alignSelf: 'flex-end',
-  fontSize: 'md',
+  fontSize: '14cqi',
   color: 'accent',
   lineHeight: 1,
   flexShrink: 0,
 });
 
-// Stacked layout: two clues share the cell vertically, each with its own
-// arrow inline at the end of the text. The font shrinks one step so two
-// 6-8 character French clues fit without overflow; the sand background
-// against ink foreground keeps contrast at 13.6:1, well above WCAG AA at
-// the smaller size (ADR-0005 §4 / §3a).
+// Stacked layout: two clues share the cell vertically. Each text node
+// uses 11cqi (smaller than the single-clue 15cqi) so two clues fit.
 const defStack = css({
   display: 'flex',
   flexDirection: 'column',
@@ -106,7 +98,6 @@ const defStack = css({
   height: '100%',
   padding: '2px',
   gap: '1px',
-  fontSize: 'xxs',
   lineHeight: '1.05',
 });
 const defStackClue = css({
@@ -128,10 +119,11 @@ const defStackClueCurrent = css({ color: 'leaf.700' });
 const defStackText = css({
   flex: 1,
   paddingRight: '2px',
+  fontSize: '11cqi',
   overflowWrap: 'break-word',
   wordBreak: 'normal',
 });
-const defStackArrow = css({ color: 'accent', fontSize: 'xs', lineHeight: 1, flexShrink: 0 });
+const defStackArrow = css({ color: 'accent', fontSize: '10cqi', lineHeight: 1, flexShrink: 0 });
 
 const arrowGlyph: Record<ArrowDirection, string> = { right: '→', down: '↓' };
 const arrowLabel: Record<ArrowDirection, string> = { right: 'horizontale', down: 'verticale' };
