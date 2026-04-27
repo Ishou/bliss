@@ -59,20 +59,16 @@ const defText = css({
   wordBreak: 'normal',
 });
 
-// Arrow badge positioned ON the border between the definition cell and the first
+// Arrow glyph positioned ON the border between the definition cell and the first
 // letter cell. translate(50%,-50%) / translate(-50%,50%) centers the glyph on
-// the border line. bg:surface + border creates a distinct white badge over the
-// hairline. pointerEvents:none so it never blocks interaction with the adjacent
-// letter cell. zIndex:2 keeps it above the defCell's own z-index:1 stacking context.
+// the border line. No background — bare glyph only. pointerEvents:none so it
+// never blocks interaction with the adjacent letter cell. zIndex:2 keeps it
+// above the defCell's own z-index:1 stacking context.
 const defArrowBase = {
   position: 'absolute' as const,
   fontSize: '18cqi' as const,
   color: 'leaf.700' as const,
-  bg: 'surface' as const,
-  border: '1px solid token(colors.leaf.700)' as const,
-  borderRadius: '4px' as const,
   lineHeight: 1,
-  padding: '1px 2px' as const,
   pointerEvents: 'none' as const,
   zIndex: 2,
 };
