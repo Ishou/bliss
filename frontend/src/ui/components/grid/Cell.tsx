@@ -69,11 +69,13 @@ const defArrowRight = css({
   right: 0,
   top: '50%',
   transform: 'translate(50%, -50%)',
-  fontSize: '20cqi',
+  fontSize: '18cqi',
   color: 'leaf.700',
-  bg: 'definition',
-  borderRadius: '2px',
+  bg: 'surface',
+  border: '1px solid token(colors.leaf.700)',
+  borderRadius: '4px',
   lineHeight: 1,
+  padding: '1px 2px',
   pointerEvents: 'none',
   zIndex: 2,
 });
@@ -82,11 +84,13 @@ const defArrowDown = css({
   bottom: 0,
   left: '50%',
   transform: 'translate(-50%, 50%)',
-  fontSize: '20cqi',
+  fontSize: '18cqi',
   color: 'leaf.700',
-  bg: 'definition',
-  borderRadius: '2px',
+  bg: 'surface',
+  border: '1px solid token(colors.leaf.700)',
+  borderRadius: '4px',
   lineHeight: 1,
+  padding: '1px 2px',
   pointerEvents: 'none',
   zIndex: 2,
 });
@@ -133,7 +137,7 @@ const letterInput = css({
   _focus: { bg: 'leaf.500', color: 'ink' },
 });
 
-const arrowGlyph: Record<ArrowDirection, string> = { right: '→', down: '↓' };
+const arrowGlyph: Record<ArrowDirection, string> = { right: '▶', down: '▼' };
 const arrowLabel: Record<ArrowDirection, string> = { right: 'horizontale', down: 'verticale' };
 
 export const LetterCellView = memo(function LetterCellView({
