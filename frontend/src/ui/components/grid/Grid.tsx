@@ -2,8 +2,15 @@ import { useMemo } from 'react';
 import { css } from 'styled-system/css';
 import type { Cell, Position, Puzzle } from '@/domain';
 import { BlockCellView, DefinitionCellView, LetterCellView } from './Cell';
+import { CurrentCluePanel } from './CurrentCluePanel';
 import { useGridNavigation } from './useGridNavigation';
 
+const layout = css({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 'sm',
+  width: '100%',
+});
 const gridContainer = css({
   display: 'grid',
   gap: '0',
@@ -52,57 +59,60 @@ export function Grid({ puzzle }: { puzzle: Puzzle }) {
   }
 
   return (
-    <div
-      role="grid"
-      aria-label={puzzle.title}
-      lang={puzzle.language}
-      className={gridContainer}
-      style={templateStyle}
-    >
-      {rows.map(({ row, cells }) => (
-        <div key={row} role="row" className={rowStyles}>
-          {cells.map((cell, col) => {
-            if (cell === null) {
-              return (
-                <BlockCellView
-                  key={`empty-${row}-${col}`}
-                  cell={{ kind: 'block', position: { row, col } }}
-                />
-              );
-            }
-            const key = positionKey(cell.position);
-            switch (cell.kind) {
-              case 'letter': {
-                const highlight = nav.highlightFor(cell.position);
+    <div className={layout}>
+      <CurrentCluePanel clue={nav.currentClue} />
+      <div
+        role="grid"
+        aria-label={puzzle.title}
+        lang={puzzle.language}
+        className={gridContainer}
+        style={templateStyle}
+      >
+        {rows.map(({ row, cells }) => (
+          <div key={row} role="row" className={rowStyles}>
+            {cells.map((cell, col) => {
+              if (cell === null) {
                 return (
-                  <LetterCellView
-                    key={key}
-                    cell={cell}
-                    ariaLabel={`Case ligne ${cell.position.row + 1}, colonne ${cell.position.col + 1}`}
-                    inWord={highlight.currentWord}
-                    inputRef={nav.registerCellRef}
-                    onPointerDown={nav.handlePointerDown}
-                    onFocus={nav.handleFocus}
-                    onKeyDown={nav.handleKeyDown}
+                  <BlockCellView
+                    key={`empty-${row}-${col}`}
+                    cell={{ kind: 'block', position: { row, col } }}
                   />
                 );
               }
-              case 'definition': {
-                const highlight = nav.highlightFor(cell.position);
-                return (
-                  <DefinitionCellView
-                    key={key}
-                    cell={cell}
-                    currentArrow={highlight.currentArrow}
-                  />
-                );
+              const key = positionKey(cell.position);
+              switch (cell.kind) {
+                case 'letter': {
+                  const highlight = nav.highlightFor(cell.position);
+                  return (
+                    <LetterCellView
+                      key={key}
+                      cell={cell}
+                      ariaLabel={`Case ligne ${cell.position.row + 1}, colonne ${cell.position.col + 1}`}
+                      inWord={highlight.currentWord}
+                      inputRef={nav.registerCellRef}
+                      onPointerDown={nav.handlePointerDown}
+                      onFocus={nav.handleFocus}
+                      onKeyDown={nav.handleKeyDown}
+                    />
+                  );
+                }
+                case 'definition': {
+                  const highlight = nav.highlightFor(cell.position);
+                  return (
+                    <DefinitionCellView
+                      key={key}
+                      cell={cell}
+                      currentArrow={highlight.currentArrow}
+                    />
+                  );
+                }
+                case 'block':
+                  return <BlockCellView key={key} cell={cell} />;
               }
-              case 'block':
-                return <BlockCellView key={key} cell={cell} />;
-            }
-          })}
-        </div>
-      ))}
+            })}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

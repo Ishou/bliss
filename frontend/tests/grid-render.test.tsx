@@ -182,7 +182,7 @@ describe('Grid render', () => {
     expect(root.textContent).toContain('↓');
   });
 
-  it('clamps long single-clue text and exposes the full text in title', () => {
+  it('renders long single-clue text in full (no clamp) plus arrow', () => {
     const longClue: DefinitionCell = {
       kind: 'definition',
       position: { row: 0, col: 0 },
@@ -194,6 +194,11 @@ describe('Grid render', () => {
       ],
     };
     render(<DefinitionCellView cell={longClue} currentArrow={null} />);
+    // Full clue text is rendered, not truncated. The cell uses a tiny
+    // font (xxs) and wraps freely; CurrentCluePanel handles legibility.
+    expect(
+      screen.getByText("Mammifère carnivore aquatique d'Amérique du Sud"),
+    ).toBeInTheDocument();
     expect(
       screen.getByTitle("Mammifère carnivore aquatique d'Amérique du Sud"),
     ).toBeInTheDocument();
