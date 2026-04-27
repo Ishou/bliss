@@ -155,8 +155,85 @@ cmd_bootstrap() {
     --namespace cnpg-system --create-namespace \
     --wait
 
+  log "creating self-signed ClusterIssuer (local TLS)"
+  kubectl apply --context "${KUBE_CONTEXT}" -f - <<'ISSUER'
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: selfsigned
+spec:
+  selfSigned: {}
+ISSUER
+
   log "bootstrap complete. external-dns is intentionally NOT installed locally;"
   log "see docs/local-development.md for the prod-divergence rationale."
+}
+
+APP_IMAGE="ghcr.io/ishou/bliss/wordsparrow-api"
+APP_TAG="local"
+CHART_DIR="grid/api/deploy/chart"
+APP_NAMESPACE="default"
+APP_RELEASE="wordsparrow-api"
+
+cmd_deploy() {
+  preflight
+  if ! cluster_exists; then
+    err "cluster '${CLUSTER_NAME}' is not running. Run: make cluster-up && make cluster-bootstrap"
+    exit 1
+  fi
+  kubectl config use-context "${KUBE_CONTEXT}" >/dev/null
+
+  # Resolve repo root (script may be called from anywhere).
+  local repo_root
+  repo_root="$(cd "$(dirname "$0")/.." && pwd)"
+  local chart="${repo_root}/${CHART_DIR}"
+
+  log "building Docker image ${APP_IMAGE}:${APP_TAG}"
+  docker build -t "${APP_IMAGE}:${APP_TAG}" -f "${repo_root}/grid/api/Dockerfile" "${repo_root}"
+
+  log "importing image into k3d cluster '${CLUSTER_NAME}'"
+  k3d image import "${APP_IMAGE}:${APP_TAG}" --cluster "${CLUSTER_NAME}"
+
+  log "installing/upgrading Helm release '${APP_RELEASE}'"
+  helm upgrade --install "${APP_RELEASE}" "${chart}" \
+    -n "${APP_NAMESPACE}" \
+    -f "${chart}/values-local.yaml" \
+    --set "image.tag=${APP_TAG}" \
+    --set "image.pullPolicy=Never" \
+    --wait --timeout 120s
+
+  log "deploy complete — https://wordsparrow.local/ (self-signed cert)"
+}
+
+cmd_dev() {
+  require_cmd pnpm "https://pnpm.io/installation (>= v10)"
+
+  local repo_root
+  repo_root="$(cd "$(dirname "$0")/.." && pwd)"
+
+  if [ ! -d "${repo_root}/frontend/node_modules" ]; then
+    log "frontend/node_modules missing — running pnpm install"
+    pnpm --dir "${repo_root}/frontend" install
+  fi
+
+  log "starting full-stack dev (Ctrl+C to stop all)"
+  log "  API:      http://localhost:8080  (Ktor auto-reload)"
+  log "  Frontend: http://localhost:5173  (Vite HMR)"
+
+  # Kill all child processes on exit (Ctrl+C, term, or script error).
+  # shellcheck disable=SC2064
+  trap "trap - EXIT; kill 0 2>/dev/null" EXIT INT TERM
+
+  # 1. Continuous compilation — recompiles on every file save.
+  "${repo_root}/gradlew" -t :grid:api:classes -p "${repo_root}" --no-daemon -q &
+
+  # 2. Ktor server with development=true (auto-reload on class changes).
+  "${repo_root}/gradlew" :grid:api:run -p "${repo_root}" --no-daemon -q &
+
+  # 3. Vite dev server with HMR (.env.development points at localhost:8080).
+  pnpm --dir "${repo_root}/frontend" dev &
+
+  wait
 }
 
 cmd_status() {
@@ -166,12 +243,14 @@ cmd_status() {
 
 usage() {
   cat <<USAGE
-Usage: $(basename "$0") <up|down|reset|bootstrap|status>
+Usage: $(basename "$0") <up|down|reset|bootstrap|deploy|dev|status>
 
   up         create the k3d cluster '${CLUSTER_NAME}' (idempotent)
   down       delete the k3d cluster
   reset      delete then recreate
   bootstrap  helm-install ingress-nginx, cert-manager, cloudnative-pg
+  deploy     build grid-api image, import into k3d, helm install the app
+  dev        start API (hot reload) + frontend (Vite HMR) on the host
   status     kubectl get nodes,pods -A
 USAGE
 }
@@ -186,6 +265,8 @@ main() {
     down)      cmd_down ;;
     reset)     cmd_reset ;;
     bootstrap) cmd_bootstrap ;;
+    deploy)    cmd_deploy ;;
+    dev)       cmd_dev ;;
     status)    cmd_status ;;
     -h|--help|help) usage ;;
     *) usage >&2; exit 2 ;;
