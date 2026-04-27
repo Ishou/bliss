@@ -59,38 +59,40 @@ const defText = css({
   wordBreak: 'normal',
 });
 
-// Arrow glyph positioned ON the border between the definition cell and the first
-// letter cell. translate(50%,-50%) / translate(-50%,50%) centers the glyph on
-// the border line. No background — bare glyph only. pointerEvents:none so it
-// never blocks interaction with the adjacent letter cell. zIndex:2 keeps it
-// above the defCell's own z-index:1 stacking context.
-const defArrowBase = {
+// CSS clip-path triangles sitting exactly on the cell border.
+// clip-path eliminates font side-bearings — translate(50%/-50%) lands precisely
+// on the border line. pointerEvents:none so clicks reach the adjacent letter cell.
+// zIndex:2 renders above the defCell's z-index:1 stacking context.
+const arrowShared = {
   position: 'absolute' as const,
-  fontSize: '18cqi' as const,
-  color: 'leaf.700' as const,
-  lineHeight: 1,
+  width: '10cqi' as const,
+  height: '10cqi' as const,
+  bg: 'leaf.700' as const,
   pointerEvents: 'none' as const,
   zIndex: 2,
 };
-// Single-clue: arrow centered on the full edge.
+// Single-clue: centered on the full right edge.
 const defArrowRight = css({
-  ...defArrowBase,
+  ...arrowShared,
   right: 0,
   top: '50%',
   transform: 'translate(50%, -50%)',
+  clipPath: 'polygon(0 0, 100% 50%, 0 100%)',
 });
-// Stacked (two-clue): right arrow centered on the TOP HALF of the right edge.
+// Stacked: centered on the TOP HALF of the right edge.
 const defArrowRightStack = css({
-  ...defArrowBase,
+  ...arrowShared,
   right: 0,
   top: '25%',
   transform: 'translate(50%, -50%)',
+  clipPath: 'polygon(0 0, 100% 50%, 0 100%)',
 });
 const defArrowDown = css({
-  ...defArrowBase,
+  ...arrowShared,
   bottom: 0,
   left: '50%',
   transform: 'translate(-50%, 50%)',
+  clipPath: 'polygon(0 0, 100% 0, 50% 100%)',
 });
 
 // Stacked layout: two clues share the cell vertically.
@@ -135,7 +137,6 @@ const letterInput = css({
   _focus: { bg: 'leaf.500', color: 'ink' },
 });
 
-const arrowGlyph: Record<ArrowDirection, string> = { right: '▶', down: '▼' };
 const arrowLabel: Record<ArrowDirection, string> = { right: 'horizontale', down: 'verticale' };
 
 export const LetterCellView = memo(function LetterCellView({
@@ -221,9 +222,7 @@ export const DefinitionCellView = memo(function DefinitionCellView({
         <span
           className={clue.arrow === 'right' ? defArrowRight : defArrowDown}
           aria-label={`définition ${arrowLabel[clue.arrow]}`}
-        >
-          {arrowGlyph[clue.arrow]}
-        </span>
+        />
       </div>
     );
   }
@@ -245,8 +244,8 @@ export const DefinitionCellView = memo(function DefinitionCellView({
         <StackedClue clue={horizontal} isCurrent={currentArrow === 'right'} />
         <StackedClue clue={vertical} isCurrent={currentArrow === 'down'} />
       </div>
-      <span className={defArrowRightStack} aria-label="définition horizontale">{arrowGlyph.right}</span>
-      <span className={defArrowDown} aria-label="définition verticale">{arrowGlyph.down}</span>
+      <span className={defArrowRightStack} aria-label="définition horizontale" />
+      <span className={defArrowDown} aria-label="définition verticale" />
     </div>
   );
 });
