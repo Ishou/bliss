@@ -6,6 +6,7 @@ import assertk.assertions.isGreaterThanOrEqualTo
 import assertk.assertions.isNotEmpty
 import assertk.assertions.isTrue
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 
 /** Verifies the bundled words-fr.csv loads and exposes the WordRepository surface. */
 class CsvWordRepositoryTest {
@@ -32,5 +33,26 @@ class CsvWordRepositoryTest {
         }
         // Bundled list is bounded to 3-7 letters; length 50 is empty.
         assertThat(repo.findByLength(50).isEmpty()).isTrue()
+    }
+
+    @Test
+    fun `fromClasspath throws when resource is missing`() {
+        assertThrows<IllegalStateException> {
+            CsvWordRepository.fromClasspath("/words/no-such-file.csv")
+        }
+    }
+
+    @Test
+    fun `fromClasspath throws on header mismatch`() {
+        assertThrows<IllegalArgumentException> {
+            CsvWordRepository.fromClasspath("/words/bad-header-test.csv")
+        }
+    }
+
+    @Test
+    fun `fromClasspath throws when a row has a blank clue`() {
+        assertThrows<IllegalArgumentException> {
+            CsvWordRepository.fromClasspath("/words/blank-clue-test.csv")
+        }
     }
 }
