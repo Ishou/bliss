@@ -42,9 +42,9 @@ describe('HttpPuzzleRepository', () => {
     expect(puzzle.cells[1]).toEqual({
       kind: 'letter', position: { row: 0, col: 1 }, entry: '',
     });
-    // letter cell at (2,0) — no pre-fill in this fixture
+    // letter cell at (2,0) — pre-filled; verifies LetterCell.letter → domain answer mapping
     expect(puzzle.cells[10]).toEqual({
-      kind: 'letter', position: { row: 2, col: 0 }, entry: '',
+      kind: 'letter', position: { row: 2, col: 0 }, answer: 'P', entry: '',
     });
     // the wire's top-level `clues` array is non-empty and every clue
     // text surfaces on a `DefinitionCell` in the domain — proves the

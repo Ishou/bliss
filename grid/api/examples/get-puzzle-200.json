@@ -40,7 +40,7 @@
     { "kind": "block", "position": { "row": 1, "column": 2 } },
     { "kind": "block", "position": { "row": 1, "column": 3 } },
     { "kind": "block", "position": { "row": 1, "column": 4 } },
-    { "kind": "letter", "position": { "row": 2, "column": 0 } },
+    { "kind": "letter", "position": { "row": 2, "column": 0 }, "letter": "P" },
     { "kind": "block", "position": { "row": 2, "column": 1 } },
     { "kind": "block", "position": { "row": 2, "column": 2 } },
     { "kind": "block", "position": { "row": 2, "column": 3 } },
