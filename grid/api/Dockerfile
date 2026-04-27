@@ -14,6 +14,12 @@ COPY gradle ./gradle
 COPY grid/domain/build.gradle.kts grid/domain/
 COPY grid/infrastructure/build.gradle.kts grid/infrastructure/
 COPY grid/api/build.gradle.kts grid/api/
+# settings.gradle.kts include(":grid:worker") forces gradle to evaluate
+# the worker project at configuration time — even though :grid:api:shadowJar
+# does not depend on it. The worker is local-dev only (ADR-0013 §8) and is
+# never built into this image; copying its build script is enough to satisfy
+# the project-directory check.
+COPY grid/worker/build.gradle.kts grid/worker/
 
 COPY grid/domain/src grid/domain/src
 COPY grid/infrastructure/src grid/infrastructure/src

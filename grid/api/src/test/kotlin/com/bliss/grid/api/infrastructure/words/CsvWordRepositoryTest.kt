@@ -6,9 +6,9 @@ import assertk.assertions.isGreaterThanOrEqualTo
 import assertk.assertions.isTrue
 import org.junit.jupiter.api.Test
 
-/** Verifies the bundled fr.json loads and exposes the WordRepository surface. */
-class ResourceWordRepositoryTest {
-    private val repo = ResourceWordRepository.frenchFromClasspath()
+/** Verifies the bundled words-fr.csv loads and exposes the WordRepository surface. */
+class CsvWordRepositoryTest {
+    private val repo = CsvWordRepository.frenchFromClasspath()
 
     @Test
     fun `loads at least 80 words with uppercase A-Z text and non-blank clues`() {

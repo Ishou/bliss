@@ -198,22 +198,49 @@ separate dependency graph (per the bounded-context rule in
   batches them through the Claude API with the §5 prompt, writes
   the results back. Resumable on interruption. `--all-lengths`
   drops the length predicate when we want to clue the long tail.
+- **`export-words`** — selects all rows where `clue IS NOT NULL`
+  for the configured language (default `fr`), writes them to a
+  CSV at `--output <path>` (default
+  `grid/api/src/main/resources/words/words-<lang>.csv`). Sorted by
+  `(language, word)` for stable git diffs. Idempotent — re-running
+  on the same DB state produces a byte-identical file. The CSV is
+  the production source of truth for `grid-api` (see §8).
 
-The sub-command name `import-lexique` is kept as historical
-shorthand even though the source is Hunspell-fr; renaming it to
-`import-words` is a follow-up the implementation PR may take or
-defer.
+### 8. API source of truth: CSV in repo
 
-### 8. Future API switch
+**Amended.** The original §8 had `grid-api` reading from a
+`DatabaseWordRepository` against the in-cluster Postgres. That
+path was rejected in favour of a **CSV committed to the repo**
+for three reasons made explicit during implementation: fine
+control over clue generation (review-then-commit, not autonomous
+in production); auditability (the dataset diffs in git, deploys
+with the image, and is reproducible across environments); and
+zero remote autonomous LLM spend or rate-limit risk on the
+running services.
 
-The `grid-api` puzzle endpoint reads from a
-`DatabaseWordRepository` backed by the `words` table, with every
-read scoped to `language = 'fr' AND length BETWEEN 2 AND 9`
-(matching §2's query window). The existing `fr.json`-backed
-repository stays in the codebase as a fallback for local
-development and tests until the `DatabaseWordRepository` is
-feature-complete; deletion of `fr.json` is its own follow-up PR
-(see below).
+The production grid-api reads from
+`grid/api/src/main/resources/words/words-<lang>.csv` via a
+classpath-backed `CsvWordRepository`. The CSV's columns mirror
+the persisted columns of the `words` table that are relevant to
+the API (no DB-internal `id` / `word_id` / `created_at`):
+`word, language, length, difficulty, clue, source, source_license`.
+Header row required. Sorted by `(language, word)` for stable git
+diffs. Rows without a clue are excluded from the CSV — the API
+requires one clue per word, and `export-words` (§7) guarantees
+the invariant on emit.
+
+The `words` table stays as a **local-dev scratch space** for the
+worker pipeline: `import-words` → `generate-clues` → operator
+review → `export-words` → commit the CSV. The pipeline itself is
+unchanged from §2 / §5 / §7; only the production read path moves
+out of Postgres and into the in-tree CSV. The Flyway migration
+(§6) stays — it's how the local-dev DB gets created in the first
+place.
+
+`fr.json` is removed in the same PR that introduces the CSV.
+There is no `WORDS_SOURCE` flag and no fallback path: keeping two
+sources to drift apart is exactly the failure mode the CSV is
+designed to prevent.
 
 ## Consequences
 
@@ -224,7 +251,7 @@ feature-complete; deletion of `fr.json` is its own follow-up PR
   `source_license` columns and `NOTICE.md`. No more 122-entry
   hand-curated list with murky provenance.
 - **Hot-path latency drops.** No LLM call on puzzle load; the
-  API reads pre-computed clues from an indexed Postgres table.
+  API reads pre-computed clues from the committed in-image CSV.
   RED metrics on `/v1/puzzles` get measurably better.
 - **Reproducible clues.** The same word always shows the same
   clue, which makes E2E tests deterministic and customer-support
@@ -233,11 +260,10 @@ feature-complete; deletion of `fr.json` is its own follow-up PR
 
 ### Harder
 
-- **A new deploy artifact.** `grid/worker/` is a separate Kotlin
-  CLI image, with its own Dockerfile, its own CI pipeline, and
-  its own scheduled run (initially manual; a CronJob is a
-  follow-up). The k8s manifest for it lands with the seed-run
-  PR.
+- **No new deploy artifact.** `grid/worker/` is a local-dev tool,
+  not a deployed service. There is no Dockerfile, no CronJob, no
+  k8s manifest. The only artifact that ships is the CSV committed
+  to the repo alongside `grid-api`.
 - **Clue-generation cost is real.** A full ingest of Hunspell-fr
   is on the order of hundreds of thousands of surface forms; clue
   generation against Claude is gated to the 2–9 query window via a
@@ -253,14 +279,13 @@ feature-complete; deletion of `fr.json` is its own follow-up PR
 ### Different
 
 - **Schema lives in `grid-api`'s database.** Not a separate
-  worker database. The worker writes; the API reads. Both apply
-  Flyway migrations on startup against the same CNPG cluster.
-- **`fr.json` becomes a dev-mode fallback, then dies.** The
-  in-repo word list is no longer the production source of truth
-  the day the `DatabaseWordRepository` ships; it survives only
-  to keep `./gradlew test` and `docker compose up` working
-  without a populated database, and is deleted after the seed
-  run is verified in production.
+  worker database. The worker writes; the API no longer reads from
+  it in production. Flyway still applies the migration on startup
+  so local-dev gets a usable `words` table without manual steps.
+- **`fr.json` is deleted.** `words-fr.csv` is the sole
+  authoritative source from this PR forward. The hand-curated 122
+  entries seed the initial CSV; the Hunspell-fr corpus replaces
+  them when the operator first runs the full import-words pipeline.
 - **Attribution is a product surface, not a footnote.**
   `NOTICE.md` at the repo root and the `source_license` column
   make the MPL-2.0 obligation visible to anyone touching the
@@ -280,35 +305,46 @@ Out of scope:
   becomes an empirical function of "how often did people solve
   this word in this grid", and §4 is superseded. That ADR is
   not this ADR.
-- **API-level caching of clues.** The API reads from Postgres on
-  every request today; an in-process or Redis cache is a
-  performance follow-up, not a correctness one.
+- **API-level caching of clues.** The API reads from an in-memory
+  map (populated at startup from the CSV) on every request; no
+  external cache is needed for the current dataset size.
 - **Attribution on the API response.** The `Clue.source` field
   in §1 is a future API contract change. This ADR commits to
   the column existing; it does not commit to the response shape.
 
 ### Follow-up implementation
 
-This ADR unblocks five sequenced PRs:
+This ADR originally unblocked five sequenced PRs. After the §8
+amendment to a CSV-as-source-of-truth shape, the plan is four
+PRs and a deferred follow-up:
 
-1. **Schema migration PR.** Flyway migration adding the `words`
-   table per §3 to the `grid-api` database. No worker code yet;
-   API code unchanged.
-2. **`import-lexique` sub-command PR.** Adds `grid/worker/`
-   with the Hunspell-fr importer, Dockerfile, and CI build.
-   Pinned upstream version; checksummed input.
-3. **`generate-clues` sub-command PR.** Layers the Claude-backed
-   clue generator on top of the worker. Prompt template,
-   retry/length-cap logic, `--force` flag.
-4. **`DatabaseWordRepository` swap PR.** `grid-api` reads from
-   `words` instead of `fr.json` behind a feature flag (per the
-   `CLAUDE.md` "deploy dark, release bright" rule). `fr.json`
-   stays in-tree as the dev-mode fallback.
-5. **Initial seed run + `fr.json` retirement PR.** Worker run
-   in production, attribution verified end-to-end, feature flag
-   flipped on, `fr.json` deleted. `NOTICE.md` lands no later
-   than this PR.
+1. **Schema migration PR (merged).** Flyway migration adding the
+   `words` table per §3, applied locally by the worker on
+   startup. The API used to apply this on startup too; under §8
+   it stays bundled with `grid-api` for dev-parity but the CNPG
+   cluster is no longer the API's read path.
+2. **`import-words` sub-command PR (merged).** Hunspell-fr
+   importer with §2 filters, §4 difficulty heuristic, idempotent
+   on `(word, language)`.
+3. **`generate-clues` sub-command PR (merged).** Claude-backed
+   clue generator with the §5 prompt, retry/length-cap, `--force`.
+4. **CSV reader + `export-words` PR (this PR).** Adds
+   `export-words` (§7), swaps the API's `ResourceWordRepository`
+   for a `CsvWordRepository` reading
+   `grid/api/src/main/resources/words/words-fr.csv`, deletes
+   `fr.json`. No flag, no fallback — see §8.
 
-PR boundaries follow the `CLAUDE.md` 400-line rule; the
-schema migration and `NOTICE.md` are intentionally cheap to
-review on their own.
+The previously-planned **PR5 (initial seed run + Dockerfile +
+GHA image-push + CronJob)** is **dropped from the plan**. The
+worker is now a local-dev tool, not a deployed service; there is
+no in-cluster seed run, no worker image, no scheduled job.
+Clue review happens on a developer machine, the resulting CSV is
+reviewed in PR, and the deploy is the same one that ships
+`grid-api`.
+
+If/when the player-data difficulty path (Notes) requires
+per-row writes from production, the API DB read path is worth
+revisiting — that is the only known scenario in which the §8
+CSV shape would need to be unwound.
+
+PR boundaries follow the `CLAUDE.md` 400-line rule.

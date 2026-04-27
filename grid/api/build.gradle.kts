@@ -32,6 +32,7 @@ val hikariVersion = "7.0.2"
 val flywayVersion = "12.4.0"
 val testcontainersVersion = "1.21.4"
 val kotestPropertyVersion = "5.9.1"
+val commonsCsvVersion = "1.12.0"
 
 application {
     mainClass.set("com.bliss.grid.api.MainKt")
@@ -76,6 +77,11 @@ dependencies {
     implementation("com.zaxxer:HikariCP:$hikariVersion")
     implementation("org.flywaydb:flyway-core:$flywayVersion")
     implementation("org.flywaydb:flyway-database-postgresql:$flywayVersion")
+
+    // Apache Commons CSV — RFC 4180 reader for words-<lang>.csv (ADR-0013 §8).
+    // Mirrors the worker's `export-words` writer dependency to keep the format
+    // contract enforced by the same library on both sides.
+    implementation("org.apache.commons:commons-csv:$commonsCsvVersion")
 
     testImplementation(platform("org.junit:junit-bom:$junitVersion"))
     testImplementation("org.junit.jupiter:junit-jupiter")

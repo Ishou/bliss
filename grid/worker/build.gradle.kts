@@ -1,7 +1,8 @@
 // grid/worker — Kotlin CLI module (ADR-0013 §7). Sibling to grid/api;
 // does not depend on grid/api (CLAUDE.md bounded-context rule).
-// Sub-commands: import-words (PR2), generate-clues (PR3).
-// shadowJar: build/libs/grid-worker-<version>-all.jar (Dockerfile lands in PR5).
+// Sub-commands: import-words (PR2), generate-clues (PR3), export-words (PR4 — ADR-0013 §7, §8).
+// shadowJar: build/libs/grid-worker-<version>-all.jar.
+// Local-dev tool only — no Dockerfile / image / k8s manifest (ADR-0013 §8).
 
 plugins {
     kotlin("jvm")
@@ -31,6 +32,7 @@ val anthropicSdkVersion = "2.17.0"
 val coroutinesVersion = "1.8.0"
 val wiremockVersion = "3.10.0"
 val opentelemetryVersion = "1.40.0"
+val commonsCsvVersion = "1.12.0"
 
 application {
     mainClass.set("com.bliss.grid.worker.MainKt")
@@ -58,6 +60,11 @@ dependencies {
     // OTel API only — SDK/exporter wiring defers to the Dockerfile PR (ADR-0013 §7).
     // GlobalOpenTelemetry returns a no-op tracer until the SDK is initialised at runtime.
     implementation("io.opentelemetry:opentelemetry-api:$opentelemetryVersion")
+
+    // Apache Commons CSV — RFC 4180 writer for `export-words` (ADR-0013 §7, §8).
+    // Mirrors grid/api's CSV reader dependency to keep the format contract
+    // enforced by the same library on both sides.
+    implementation("org.apache.commons:commons-csv:$commonsCsvVersion")
 
     testImplementation(platform("org.junit:junit-bom:$junitVersion"))
     testImplementation("org.junit.jupiter:junit-jupiter")
