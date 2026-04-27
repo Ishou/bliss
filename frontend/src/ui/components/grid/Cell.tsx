@@ -23,19 +23,18 @@ const letterCell = css({ bg: 'surface' });
 // sizes); leaf.500 is reserved for the focused cell only.
 const letterCellInWord = css({ bg: 'leaf.50' });
 const blockCell = css({ bg: 'block' });
+// Definition cells: `container-type: inline-size` lets all child `cqi`
+// values resolve against the cell's own width. No fixed font-size here —
+// each text node sets its own `cqi` value so the type scales with the
+// grid density (wide cells → bigger text, dense grids → smaller text).
 const defCell = css({
   bg: 'definition',
   color: 'fg',
-  fontSize: 'xs',
-  lineHeight: '1.1',
-  padding: 'xs',
+  containerType: 'inline-size',
+  lineHeight: '1.05',
+  padding: '2px',
   textAlign: 'left',
-  overflow: 'hidden',
 });
-// Single-clue layout root. Flex column so the (clamped) text occupies
-// the top of the cell while the arrow span anchors a separate row at
-// the bottom — keeping the directional cue visible even when CSS
-// clips the prose.
 const defSingle = css({
   display: 'flex',
   flexDirection: 'column',
@@ -71,41 +70,27 @@ const letterInput = css({
   padding: 0,
   _focus: { bg: 'leaf.500', color: 'ink' },
 });
-// Single-clue text. The full clue text is exposed via `title` so users
-// get the native tooltip on hover/long-press without reinventing tooltip
-// plumbing. `wordBreak: normal` + `overflowWrap: break-word` lets long
-// French words break at sane boundaries instead of mid-word.
+// Single-clue text. Wraps freely — no `lineClamp`, no `overflow: hidden`.
+// 15cqi = 15% of the cell's inline (width) size via container query:
+//   96px cell (5-col) → ~14.4px  ·  68px cell (7-col) → ~10.2px
 const defText = css({
   flex: 1,
   alignSelf: 'stretch',
-  lineClamp: 2,
+  fontSize: '15cqi',
   overflowWrap: 'break-word',
   wordBreak: 'normal',
 });
-// Smaller font for clues longer than the heuristic 14-character cutoff
-// (matches typical short French clues like "Astre nocturne" = 14 chars).
-// The xxs token (0.625rem) fits ~2 lines of 18-22 character prose into a
-// single grid cell without further truncation. Below 14 chars we keep
-// the `xs` size set on the parent.
-const defTextSmall = css({ fontSize: 'xxs', lineHeight: '1.05' });
-// Arrow lives in its own span at the end of the cell — never inside
-// the clamped text node. Right-aligned for `right` arrows, left-
-// aligned for `down` arrows mirrors the visual direction. `flexShrink:
-// 0` guarantees the glyph never collapses, even when the text node
-// is overflowing.
+// Arrow glyph scales with the cell so it stays proportional to the text.
 const defArrow = css({
   alignSelf: 'flex-end',
-  fontSize: 'md',
+  fontSize: '14cqi',
   color: 'accent',
   lineHeight: 1,
   flexShrink: 0,
 });
 
-// Stacked layout: two clues share the cell vertically, each with its own
-// arrow inline at the end of the text. The font shrinks one step so two
-// 6-8 character French clues fit without overflow; the sand background
-// against ink foreground keeps contrast at 13.6:1, well above WCAG AA at
-// the smaller size (ADR-0005 §4 / §3a).
+// Stacked layout: two clues share the cell vertically. Each text node
+// uses 11cqi (smaller than the single-clue 15cqi) so two clues fit.
 const defStack = css({
   display: 'flex',
   flexDirection: 'column',
@@ -113,7 +98,6 @@ const defStack = css({
   height: '100%',
   padding: '2px',
   gap: '1px',
-  fontSize: 'xxs',
   lineHeight: '1.05',
 });
 const defStackClue = css({
@@ -135,18 +119,11 @@ const defStackClueCurrent = css({ color: 'leaf.700' });
 const defStackText = css({
   flex: 1,
   paddingRight: '2px',
-  lineClamp: 2,
+  fontSize: '11cqi',
   overflowWrap: 'break-word',
   wordBreak: 'normal',
 });
-const defStackArrow = css({ color: 'accent', fontSize: 'xs', lineHeight: 1, flexShrink: 0 });
-
-// Length heuristic: above 14 characters we drop to a smaller type
-// step so the clamp has room for two readable lines. Picked to match
-// the most common short-French-clue length (e.g. "Astre nocturne" =
-// 14 chars). Tweak if the typography scale shifts.
-const LONG_CLUE_THRESHOLD = 14;
-const isLongClue = (text: string): boolean => text.length > LONG_CLUE_THRESHOLD;
+const defStackArrow = css({ color: 'accent', fontSize: '10cqi', lineHeight: 1, flexShrink: 0 });
 
 const arrowGlyph: Record<ArrowDirection, string> = { right: '→', down: '↓' };
 const arrowLabel: Record<ArrowDirection, string> = { right: 'horizontale', down: 'verticale' };
@@ -233,7 +210,6 @@ export const DefinitionCellView = memo(function DefinitionCellView({
     const currentClass = isCurrent
       ? clue.arrow === 'down' ? defCellCurrentDown : defCellCurrentRight
       : '';
-    const longText = isLongClue(clue.text);
     return (
       <div
         role="gridcell"
@@ -245,10 +221,7 @@ export const DefinitionCellView = memo(function DefinitionCellView({
         data-current-clue={isCurrent ? 'true' : 'false'}
       >
         <div className={defSingle}>
-          <span
-            className={`${defText}${longText ? ` ${defTextSmall}` : ''}`}
-            title={clue.text}
-          >
+          <span className={defText} title={clue.text}>
             {clue.text}
           </span>
           <span

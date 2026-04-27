@@ -4,7 +4,7 @@ import type { ArrowDirection, Cell, DefinitionCell, DefinitionClue, LetterCell, 
 // 'across' === ArrowDirection 'right'; 'down' === 'down'.
 export type Direction = 'across' | 'down';
 
-interface Clue {
+export interface Clue {
   readonly definition: DefinitionCell;
   readonly clue: DefinitionClue;
   readonly direction: Direction;
@@ -26,6 +26,10 @@ export interface GridNavigation {
   readonly handlePointerDown: (event: React.PointerEvent<HTMLInputElement>) => void;
   readonly handleFocus: (event: React.FocusEvent<HTMLInputElement>) => void;
   readonly handleKeyDown: (event: React.KeyboardEvent<HTMLInputElement>) => void;
+  // Active clue under the focused cell, or null when nothing is focused.
+  // Surfaced so the grid container can render the full clue text in a
+  // panel outside the grid (cells truncate the prose at small font sizes).
+  readonly currentClue: Clue | null;
 }
 
 // Divergences from NYT-app behavior:
@@ -221,5 +225,5 @@ export function useGridNavigation(puzzle: Puzzle): GridNavigation {
     [currentClue, focused],
   );
 
-  return { registerCellRef, highlightFor, handlePointerDown, handleFocus, handleKeyDown };
+  return { registerCellRef, highlightFor, handlePointerDown, handleFocus, handleKeyDown, currentClue };
 }
