@@ -11,6 +11,41 @@ import getFixture from '../../grid/api/examples/get-puzzle-200.json';
 type ApiPuzzle = components['schemas']['Puzzle'];
 const apiFixture = getFixture as unknown as ApiPuzzle;
 
+// Inline fixture exercising the stacked-cell (two DefinitionCells at the
+// same position) path in the mapper. Kept here so the canonical fixture in
+// `grid/api/examples/` remains owned by the `grid` bounded context.
+const stackedFixture: ApiPuzzle = {
+  id: '01900000-0000-7000-0000-000000000001',
+  title: 'Stacked test',
+  language: 'fr',
+  width: 2,
+  height: 2,
+  createdAt: '2026-01-01T00:00:00Z',
+  clues: [
+    {
+      id: '01900000-0000-7000-0000-0000000000c1',
+      direction: 'across',
+      start: { row: 0, column: 1 },
+      length: 1,
+      text: 'Capitale de la France',
+    },
+    {
+      id: '01900000-0000-7000-0000-0000000000c2',
+      direction: 'down',
+      start: { row: 1, column: 0 },
+      length: 1,
+      text: 'Couleur du ciel',
+    },
+  ],
+  cells: [
+    { kind: 'definition', position: { row: 0, column: 0 }, clueId: '01900000-0000-7000-0000-0000000000c1', text: 'Capitale de la France', arrow: 'right' },
+    { kind: 'definition', position: { row: 0, column: 0 }, clueId: '01900000-0000-7000-0000-0000000000c2', text: 'Couleur du ciel', arrow: 'down' },
+    { kind: 'letter', position: { row: 0, column: 1 } },
+    { kind: 'letter', position: { row: 1, column: 0 } },
+    { kind: 'letter', position: { row: 1, column: 1 } },
+  ],
+} as unknown as ApiPuzzle;
+
 const json = (body: unknown, status = 200, type = 'application/json') =>
   new Response(JSON.stringify(body), { status, headers: { 'content-type': type } });
 
@@ -30,20 +65,22 @@ describe('HttpPuzzleRepository', () => {
     expect(puzzle.id).toBe(apiFixture.id);
     expect(puzzle.width).toBe(5);
     expect(puzzle.height).toBe(5);
-    // block cell
-    expect(puzzle.cells[0]).toEqual({ kind: 'block', position: { row: 0, col: 0 } });
-    // definition cell — clues are not dropped on the floor
+    // single definition cell at (0,1)
     expect(puzzle.cells[1]).toEqual({
       kind: 'definition', position: { row: 0, col: 1 },
       clues: [{ text: 'Capitale de la France', arrow: 'right' }],
     });
-    // pre-filled letter cell at (2, 0) with answer 'B'
+    // first letter cell following the def
+    expect(puzzle.cells[2]).toEqual({
+      kind: 'letter', position: { row: 0, col: 2 }, entry: '',
+    });
+    // letter cell at (2,0) — pre-filled; verifies LetterCell.letter → domain answer mapping
     expect(puzzle.cells[10]).toEqual({
       kind: 'letter', position: { row: 2, col: 0 }, answer: 'B', entry: '',
     });
     // the wire's top-level `clues` array is non-empty and every clue
     // text surfaces on a `DefinitionCell` in the domain — proves the
-    // stacked-clue mapping is exercised end-to-end.
+    // mapping is exercised end-to-end.
     expect(apiFixture.clues.length).toBeGreaterThan(0);
     const definitionTexts = puzzle.cells
       .filter((c): c is Extract<typeof c, { kind: 'definition' }> => c.kind === 'definition')
@@ -51,6 +88,28 @@ describe('HttpPuzzleRepository', () => {
     for (const wire of apiFixture.clues) {
       expect(definitionTexts).toContain(wire.text);
     }
+  });
+
+  it('maps stacked definition cells (two clues at same position) to a single domain cell', async () => {
+    const fetchSpy = vi.fn().mockResolvedValue(json(stackedFixture));
+    const repo = createHttpPuzzleRepository({
+      baseUrl: 'https://api.example.test', fetch: fetchSpy,
+    });
+
+    const puzzle = await repo.fetchById(stackedFixture.id);
+
+    // stacked definition cell at (0,0) — both clues must be preserved
+    expect(puzzle.cells[0]).toEqual({
+      kind: 'definition', position: { row: 0, col: 0 },
+      clues: [
+        { text: 'Capitale de la France', arrow: 'right' },
+        { text: 'Couleur du ciel', arrow: 'down' },
+      ],
+    });
+    // first letter cell following the stacked def
+    expect(puzzle.cells[1]).toEqual({
+      kind: 'letter', position: { row: 0, col: 1 }, entry: '',
+    });
   });
 
   it('rejects with the RFC 7807 detail when the API returns a problem body', async () => {

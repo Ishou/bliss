@@ -23,6 +23,8 @@ const gridContainer = css({
   width: '100%',
   maxWidth: '480px',
   margin: '0 auto',
+  // Allow border arrows on edge cells to bleed outside the grid border box.
+  overflow: 'visible',
 });
 
 const rowStyles = css({ display: 'contents' });
