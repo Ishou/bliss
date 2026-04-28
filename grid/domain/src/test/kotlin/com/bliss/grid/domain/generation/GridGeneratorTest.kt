@@ -104,21 +104,53 @@ class GridGeneratorTest {
 
     @Test
     fun `generated grid passes interlocking validation when enforced`() {
-        val generator = GridGenerator(ListWordRepository(SMALL_FRENCH_WORDS))
+        // SMALL_FRENCH_WORDS cannot form word squares (too few words per length).
+        // A 7×7 grid with maxWordLen=3 produces [2,3]/[3,2] column partitions — non-full-width
+        // blocks use RIGHT/DOWN directions which avoid the clue/letter overlap that makes the
+        // single-block 5×5 case always return null.
+        val generator = GridGenerator(ListWordRepository(WORD_SQUARE_7X7))
 
         val grid =
             generator.generate(
-                GridConstraints(width = 5, height = 5, targetDensity = 0.2, enforceInterlocking = true, maxAttempts = 20_000),
+                GridConstraints(width = 7, height = 7, enforceInterlocking = true),
             )
 
-        // With enforceInterlocking=true, generator returns null if interlocking fails.
-        // Either null (couldn't satisfy) or valid (all cells interlocked).
-        if (grid != null) {
-            val uncrossed = GridValidator.uncrossedCells(grid)
-            assertThat(uncrossed).isEmpty()
-        }
+        assertThat(grid).isNotNull()
+        val uncrossed = GridValidator.uncrossedCells(grid!!)
+        assertThat(uncrossed).isEmpty()
     }
 }
+
+/**
+ * Minimal word set crafted to produce a solvable 7×7 interlocked grid.
+ * The 7×7 interior (6 cells) partitions as [2,3] or [3,2], giving four non-full-width
+ * blocks (2×2, 2×3, 3×2, 3×3) where RIGHT/DOWN directions avoid clue/letter overlap.
+ * Each block is a provable word square: rows AB+CD→cols AC,BD; EFG+HIJ→EH,FI,GJ;
+ * KL+MN+OP→KMO,LNP; QRS+TUV+WXY→QTW,RUX,SVY.
+ */
+internal val WORD_SQUARE_7X7: List<Word> =
+    listOf(
+        Word("AB", "test"),
+        Word("CD", "test"),
+        Word("AC", "test"),
+        Word("BD", "test"),
+        Word("EH", "test"),
+        Word("FI", "test"),
+        Word("GJ", "test"),
+        Word("KL", "test"),
+        Word("MN", "test"),
+        Word("OP", "test"),
+        Word("EFG", "test"),
+        Word("HIJ", "test"),
+        Word("KMO", "test"),
+        Word("LNP", "test"),
+        Word("QRS", "test"),
+        Word("TUV", "test"),
+        Word("WXY", "test"),
+        Word("QTW", "test"),
+        Word("RUX", "test"),
+        Word("SVY", "test"),
+    )
 
 internal val SMALL_FRENCH_WORDS: List<Word> =
     listOf(

@@ -28,7 +28,7 @@ import kotlin.random.Random
  *
  * Failure modes:
  * - puzzleId is not a UUID → 400 ProblemDetails
- * - generator can't satisfy the constraints → 503 ProblemDetails
+ * - generator can't satisfy the constraints → 422 ProblemDetails
  */
 fun Route.puzzles(
     wordRepository: WordRepository,
@@ -106,7 +106,7 @@ internal const val MAX_OUTER_RETRIES: Int = 5
  * the backtracker exhausted its attempt budget.
  *
  * Returns the first generated grid, or `null` if every retry fails.
- * The route then surfaces 503.
+ * The route then surfaces 422.
  */
 private fun generateWithRetry(
     generator: GridGenerator,
