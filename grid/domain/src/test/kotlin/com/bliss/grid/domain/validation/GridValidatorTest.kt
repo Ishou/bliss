@@ -158,7 +158,7 @@ class GridValidatorTest {
     }
 
     @Test
-    fun `fully interlocked grid has no uncrossed cells`() {
+    fun `partially interlocked grid reports uncrossed interior cells`() {
         // Horizontal CHAT at (1,0)→RIGHT: clue(1,0), C(1,1) H(1,2) A(1,3) T(1,4)
         // Vertical HAS at (0,2)→DOWN: clue(0,2), H(1,2) A(2,2) S(3,2)
         // Vertical ACE at (0,3)→DOWN: clue(0,3), A(1,3) C(2,3) E(3,3)
