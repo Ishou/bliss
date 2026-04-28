@@ -15,7 +15,7 @@ import kotlin.random.Random
  */
 class GenerationInspectionTest {
     @Test
-    fun `no grid produced over 30 seeds should contain block cells inside`() {
+    fun `no grid produced over 100 seeds should contain block cells inside`() {
         val repo = CsvWordRepository.frenchFromClasspath()
         val generator = GridGenerator(repo)
         val mapper = GridToPuzzleMapper()
@@ -23,7 +23,7 @@ class GenerationInspectionTest {
 
         var generated = 0
         var withBlocks = 0
-        for (seed in 0L until 30L) {
+        for (seed in 0L until 100L) {
             val grid = generator.generate(constraints, Random(seed)) ?: continue
             generated++
             val puzzle = mapper.toApi(grid, UUID.randomUUID(), Instant.now())
