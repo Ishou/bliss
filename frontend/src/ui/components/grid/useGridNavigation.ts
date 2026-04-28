@@ -69,14 +69,10 @@ function buildLookup(puzzle: Puzzle): ClueLookup {
     // A definition cell carries one or two clues per ADR-0005 §3a.
     // Each clue gets its own answer-path walk and own index entry.
     for (const subClue of def.clues) {
-      // Start offset: where the first letter sits relative to the clue.
-      // Step: direction letters flow after the first.
-      const startDr = subClue.arrow === 'down' ? 1 : 0;
-      const startDc = subClue.arrow === 'right' ? 1 : 0;
       const dr = subClue.arrow === 'down' ? 1 : 0;
       const dc = subClue.arrow === 'right' ? 1 : 0;
       const cells: LetterCell[] = [];
-      let row = def.position.row + startDr, col = def.position.col + startDc;
+      let row = def.position.row + dr, col = def.position.col + dc;
       while (row >= 0 && row < puzzle.height && col >= 0 && col < puzzle.width) {
         const next = byPos.get(key({ row, col }));
         if (!next || next.kind !== 'letter') break;
