@@ -4,6 +4,7 @@ bliss.iml
 # Gradle
 build/
 .gradle/
+.kotlin/
 !gradle/wrapper/gradle-wrapper.jar
 
 # Claude Code: project-level skills, subagents, slash commands, and hooks under
