@@ -83,14 +83,6 @@ class CsvWordRepository(
             listOf("word", "language", "length", "frequency", "difficulty", "clue", "source", "source_license")
 
         /**
-         * Loads the bundled French CSV corpus from the JVM classpath.
-         *
-         * Fails fast at startup if the file is missing, the header row is
-         * malformed, or any row carries a blank `clue` (the API requires
-         * one clue per word — `export-words` guarantees this invariant
-         * on emit).
-         */
-        /**
          * Frequency cutoff applied at load time. Drops the long tail of rare/technical
          * forms (`attoampère`, `aalénien`, etc.) that bloat the CSP solver's branching
          * factor without contributing crossword-relevant vocabulary. Rationale:
@@ -109,6 +101,14 @@ class CsvWordRepository(
         private val MIN_FREQUENCY: Long =
             System.getProperty("words.minFrequency")?.toLongOrNull() ?: 1_000L
 
+        /**
+         * Loads the bundled French CSV corpus from the JVM classpath.
+         *
+         * Fails fast at startup if the file is missing, the header row is
+         * malformed, or any row carries a blank `clue` (the API requires
+         * one clue per word — `export-words` guarantees this invariant
+         * on emit).
+         */
         fun frenchFromClasspath(): CsvWordRepository = fromClasspath(FRENCH_RESOURCE_PATH)
 
         fun fromClasspath(path: String): CsvWordRepository {

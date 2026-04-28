@@ -2,17 +2,11 @@ package com.bliss.grid.domain.generation
 
 import assertk.assertThat
 import assertk.assertions.isEmpty
-import assertk.assertions.isEqualTo
 import assertk.assertions.isGreaterThanOrEqualTo
 import assertk.assertions.isNotEqualTo
 import assertk.assertions.isNotNull
 import assertk.assertions.isNull
-import assertk.assertions.isTrue
-import com.bliss.grid.domain.model.Column
-import com.bliss.grid.domain.model.Direction
 import com.bliss.grid.domain.model.LetterCell
-import com.bliss.grid.domain.model.Position
-import com.bliss.grid.domain.model.Row
 import com.bliss.grid.domain.model.Word
 import com.bliss.grid.domain.validation.GridValidator
 import org.junit.jupiter.api.Test
@@ -107,7 +101,6 @@ class GridGeneratorTest {
 
         assertThat(grid).isNull()
     }
-
 }
 
 internal val SMALL_FRENCH_WORDS: List<Word> =

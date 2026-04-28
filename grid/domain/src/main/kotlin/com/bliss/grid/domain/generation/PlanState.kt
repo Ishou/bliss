@@ -265,8 +265,7 @@ internal class PlanState(
 
     // ── Helpers ─────────────────────────────────────────────────
 
-    private fun inBounds(pos: Position): Boolean =
-        pos.row.value in 0 until height && pos.column.value in 0 until width
+    private fun inBounds(pos: Position): Boolean = pos.row.value in 0 until height && pos.column.value in 0 until width
 
     internal data class MaterializeResult(
         val slotIndex: Int,

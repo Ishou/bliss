@@ -2,7 +2,6 @@ package com.bliss.grid.domain.generation
 
 import assertk.assertThat
 import assertk.assertions.containsExactlyInAnyOrder
-import assertk.assertions.containsOnly
 import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
 import com.bliss.grid.domain.model.Column

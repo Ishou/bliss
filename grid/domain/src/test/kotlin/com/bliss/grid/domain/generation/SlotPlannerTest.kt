@@ -2,7 +2,6 @@ package com.bliss.grid.domain.generation
 
 import assertk.assertThat
 import assertk.assertions.contains
-import assertk.assertions.containsAll
 import assertk.assertions.isEqualTo
 import assertk.assertions.isTrue
 import com.bliss.grid.domain.model.Column
@@ -90,9 +89,11 @@ class SlotPlannerTest {
         val slots = SlotPlanner.planFullLength(arrows, w, h)
         val letters = SlotPlanner.letterCells(slots)
         val expectedLetters =
-            (0 until h).flatMap { r ->
-                (0 until w).map { c -> Position(Row(r), Column(c)) }
-            }.filter { it !in clueCells }.toSet()
+            (0 until h)
+                .flatMap { r ->
+                    (0 until w).map { c -> Position(Row(r), Column(c)) }
+                }.filter { it !in clueCells }
+                .toSet()
         assertThat(letters).isEqualTo(expectedLetters)
     }
 

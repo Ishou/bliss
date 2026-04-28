@@ -50,7 +50,7 @@ object Skeleton {
         width: Int,
         height: Int,
     ): List<ClueArrow> {
-        require(width >= 2 && height >= 2) { "grid must be at least 2×2, was ${width}×$height" }
+        require(width >= 2 && height >= 2) { "grid must be at least 2×2, was $width×$height" }
         val arrows = mutableListOf<ClueArrow>()
 
         // Corner (0, 0) — dual DOWN_RIGHT + RIGHT_DOWN.

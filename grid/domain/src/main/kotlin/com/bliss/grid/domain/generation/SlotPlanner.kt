@@ -27,7 +27,7 @@ object SlotPlanner {
         width: Int,
         height: Int,
     ): List<WordSlot> {
-        require(width >= 2 && height >= 2) { "grid must be at least 2×2, was ${width}×$height" }
+        require(width >= 2 && height >= 2) { "grid must be at least 2×2, was $width×$height" }
         return arrows.mapNotNull { arrow ->
             val firstRow = arrow.cluePosition.row.value + arrow.direction.startOffset.row.value
             val firstCol = arrow.cluePosition.column.value + arrow.direction.startOffset.column.value
@@ -91,7 +91,7 @@ object SlotPlanner {
         random: kotlin.random.Random,
         deadline: Long,
     ): List<WordSlot>? {
-        require(width >= 2 && height >= 2) { "grid must be at least 2×2, was ${width}×$height" }
+        require(width >= 2 && height >= 2) { "grid must be at least 2×2, was $width×$height" }
         val state = PlanState(width, height)
         for (arrow in arrows) {
             state.addClueCell(arrow.cluePosition)
@@ -162,8 +162,14 @@ object SlotPlanner {
         available: Int,
     ): List<Int> {
         val all = validLengths(available)
-        val isCornerRow1 = arrow.cluePosition.row.value == 0 && arrow.cluePosition.column.value == 0 && arrow.direction == com.bliss.grid.domain.model.Direction.DOWN_RIGHT
-        val isCornerCol1 = arrow.cluePosition.row.value == 0 && arrow.cluePosition.column.value == 0 && arrow.direction == com.bliss.grid.domain.model.Direction.RIGHT_DOWN
+        val isCornerRow1 =
+            arrow.cluePosition.row.value == 0 &&
+                arrow.cluePosition.column.value == 0 &&
+                arrow.direction == com.bliss.grid.domain.model.Direction.DOWN_RIGHT
+        val isCornerCol1 =
+            arrow.cluePosition.row.value == 0 &&
+                arrow.cluePosition.column.value == 0 &&
+                arrow.direction == com.bliss.grid.domain.model.Direction.RIGHT_DOWN
         if (!isCornerRow1 && !isCornerCol1) return all
         // For corner arrows, only L = available (full length, no trail) or even L < available are safe.
         return all.filter { it == available || it % 2 == 0 }

@@ -2,12 +2,10 @@ package com.bliss.grid.domain.generation
 
 import assertk.assertThat
 import assertk.assertions.contains
-import assertk.assertions.containsAll
 import assertk.assertions.containsExactlyInAnyOrder
 import assertk.assertions.isEqualTo
 import assertk.assertions.isGreaterThanOrEqualTo
 import assertk.assertions.isNotNull
-import assertk.assertions.isTrue
 import com.bliss.grid.domain.model.Position
 import org.junit.jupiter.api.Test
 import kotlin.random.Random
@@ -76,8 +74,10 @@ class SlotPlannerVariableTest {
                 for (c in 0 until w) {
                     val pos =
                         Position(
-                            com.bliss.grid.domain.model.Row(r),
-                            com.bliss.grid.domain.model.Column(c),
+                            com.bliss.grid.domain.model
+                                .Row(r),
+                            com.bliss.grid.domain.model
+                                .Column(c),
                         )
                     val claimed = pos in clueCells || pos in letterCells
                     check(claimed) { "orphan cell at $pos for seed=$seed" }

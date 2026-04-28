@@ -3,8 +3,8 @@ package com.bliss.grid.api
 import com.bliss.grid.api.infrastructure.words.CsvWordRepository
 import com.bliss.grid.api.routes.defaultConstraints
 import com.bliss.grid.domain.generation.GridGenerator
-import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Tag
+import org.junit.jupiter.api.Test
 import kotlin.random.Random
 import kotlin.system.measureTimeMillis
 
