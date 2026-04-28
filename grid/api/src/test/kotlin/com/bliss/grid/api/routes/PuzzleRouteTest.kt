@@ -10,9 +10,12 @@ import assertk.assertions.isTrue
 import assertk.assertions.startsWith
 import com.bliss.grid.api.dto.PuzzleResponse
 import com.bliss.grid.api.module
+import com.bliss.grid.domain.generation.WordRepository
+import com.bliss.grid.domain.model.Word
 import io.ktor.client.request.get
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.HttpStatusCode
+import io.ktor.server.routing.routing
 import io.ktor.server.testing.testApplication
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
@@ -141,5 +144,30 @@ class PuzzleRouteTest {
             // Throws SerializationException if wire shape diverges from the DTO (ADR-0003 §9).
             val puzzle = Json { ignoreUnknownKeys = true }.decodeFromString<PuzzleResponse>(body)
             assertThat(puzzle.id).isEqualTo(validId)
+        }
+
+    @Test
+    fun `responds 422 with problem json when generator cannot satisfy constraints`() =
+        testApplication {
+            application {
+                routing {
+                    puzzles(
+                        wordRepository =
+                            object : WordRepository {
+                                override fun findByLength(length: Int): List<Word> = emptyList()
+                                override fun findByLengthAndPattern(
+                                    length: Int,
+                                    pattern: Map<Int, Char>,
+                                ): List<Word> = emptyList()
+                            },
+                    )
+                }
+            }
+
+            val response = client.get("/v1/puzzles/$validId")
+
+            assertThat(response.status).isEqualTo(HttpStatusCode.UnprocessableEntity)
+            assertThat(response.headers["Content-Type"]!!).startsWith("application/problem+json")
+            assertThat(response.bodyAsText()).contains("puzzle-generation-failed")
         }
 }
