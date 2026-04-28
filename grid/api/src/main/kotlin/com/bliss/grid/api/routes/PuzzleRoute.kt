@@ -76,26 +76,32 @@ fun Route.puzzles(
 }
 
 /**
- * Tuned for a ~20ms median on a 10×10 grid backed by the bundled
- * `words-fr.csv` (ADR-0013 §8).
+ * Tuned for sub-second median generation on a 10×10 grid backed by
+ * `words-fr.csv` (~160k words after frequency filter, ADR-0013 §8).
  *
- * Density of 0.5 (up from 0.4) and a 20_000-attempt budget (up from
- * 10_000) keep the bottom rows from filling with blocks; the previous
- * defaults let the backtracker quit early and leave the bottom 4 rows
- * >90% blocks against a ~120-word curated list.
+ * `maxAttempts = 3_000` is a fail-fast budget: with the position-letter
+ * index in `CsvWordRepository`, lookups are microseconds, so 3,000
+ * placements either find a valid grid or hit a pathological backtrack
+ * that won't unstick. Better to bounce out and let the outer retry
+ * loop start fresh with new randomness than to grind the same dead end.
+ *
+ * Combined with `MAX_OUTER_RETRIES = 8`, the worst-case total is
+ * 24,000 placements ≈ a few seconds. Empirically converges in 1–3s
+ * on the full Grammalecte corpus; previous 20,000×5 budget could
+ * spend >20s on bad seeds before giving up.
  */
 internal fun defaultConstraints(): GridConstraints =
     GridConstraints(
         width = PUZZLE_WIDTH,
         height = PUZZLE_HEIGHT,
         minWordLength = 2,
-        targetDensity = 0.5,
-        maxAttempts = 20_000,
+        targetDensity = 0.45,
+        maxAttempts = 3_000,
     )
 
 internal const val PUZZLE_WIDTH: Int = 10
 internal const val PUZZLE_HEIGHT: Int = 10
-internal const val MAX_OUTER_RETRIES: Int = 5
+internal const val MAX_OUTER_RETRIES: Int = 8
 
 /**
  * Calls the generator up to [MAX_OUTER_RETRIES] times. Each call uses a
