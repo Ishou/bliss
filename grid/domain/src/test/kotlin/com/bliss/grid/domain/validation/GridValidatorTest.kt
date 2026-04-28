@@ -132,10 +132,11 @@ class GridValidatorTest {
     @Test
     fun `uncrossed interior cell is reported`() {
         // Only horizontal words, no vertical — interior cells at (1,1+) are uncrossed
-        val placements = listOf(
-            WordPlacement(Word("OR", "x"), Position(Row(0), Column(0)), Direction.RIGHT),
-            WordPlacement(Word("AS", "y"), Position(Row(1), Column(0)), Direction.RIGHT),
-        )
+        val placements =
+            listOf(
+                WordPlacement(Word("OR", "x"), Position(Row(0), Column(0)), Direction.RIGHT),
+                WordPlacement(Word("AS", "y"), Position(Row(1), Column(0)), Direction.RIGHT),
+            )
         val grid = Grid.fromPlacements(width = 4, height = 3, placements = placements)
 
         val uncrossed = GridValidator.uncrossedCells(grid)
@@ -170,19 +171,22 @@ class GridValidatorTest {
         // (2,2) etc are interior and only vertical → uncrossed
         //
         // So this layout is NOT fully interlocked. Add a vertical for col 1:
-        val grid = Grid.fromPlacements(
-            width = 5, height = 5,
-            placements = listOf(
-                WordPlacement(Word("CHAT", "felin"), Position(Row(1), Column(0)), Direction.RIGHT),
-                WordPlacement(Word("COW", "vache"), Position(Row(0), Column(1)), Direction.DOWN),
-                WordPlacement(Word("HAS", "posseder"), Position(Row(0), Column(2)), Direction.DOWN),
-                WordPlacement(Word("ACE", "carte"), Position(Row(0), Column(3)), Direction.DOWN),
-                WordPlacement(Word("TAS", "pile"), Position(Row(0), Column(4)), Direction.DOWN),
-                // Second horizontal crossing the verticals at row 2:
-                // Needs letters matching: col1=O, col2=A, col3=C, col4=A → OACA? Not a word.
-                // Let me just verify partial interlocking instead.
-            ),
-        )
+        val grid =
+            Grid.fromPlacements(
+                width = 5,
+                height = 5,
+                placements =
+                    listOf(
+                        WordPlacement(Word("CHAT", "felin"), Position(Row(1), Column(0)), Direction.RIGHT),
+                        WordPlacement(Word("COW", "vache"), Position(Row(0), Column(1)), Direction.DOWN),
+                        WordPlacement(Word("HAS", "posseder"), Position(Row(0), Column(2)), Direction.DOWN),
+                        WordPlacement(Word("ACE", "carte"), Position(Row(0), Column(3)), Direction.DOWN),
+                        WordPlacement(Word("TAS", "pile"), Position(Row(0), Column(4)), Direction.DOWN),
+                        // Second horizontal crossing the verticals at row 2:
+                        // Needs letters matching: col1=O, col2=A, col3=C, col4=A → OACA? Not a word.
+                        // Let me just verify partial interlocking instead.
+                    ),
+            )
 
         val uncrossed = GridValidator.uncrossedCells(grid)
         // C(1,1) is crossed (CHAT horizontal + COW vertical) — OK

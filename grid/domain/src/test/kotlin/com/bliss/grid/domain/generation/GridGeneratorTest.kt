@@ -106,9 +106,10 @@ class GridGeneratorTest {
     fun `generated grid passes interlocking validation when enforced`() {
         val generator = GridGenerator(ListWordRepository(SMALL_FRENCH_WORDS))
 
-        val grid = generator.generate(
-            GridConstraints(width = 5, height = 5, targetDensity = 0.2, enforceInterlocking = true, maxAttempts = 20_000),
-        )
+        val grid =
+            generator.generate(
+                GridConstraints(width = 5, height = 5, targetDensity = 0.2, enforceInterlocking = true, maxAttempts = 20_000),
+            )
 
         // With enforceInterlocking=true, generator returns null if interlocking fails.
         // Either null (couldn't satisfy) or valid (all cells interlocked).

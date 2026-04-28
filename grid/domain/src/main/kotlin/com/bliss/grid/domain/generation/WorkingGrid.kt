@@ -148,10 +148,11 @@ internal class WorkingGrid(
      * would fix by covering them in its axis. Higher = more urgent to place.
      */
     fun uncrossedFixCount(candidate: CandidatePlacement): Int {
-        val coverageForAxis = when (candidate.direction.axis) {
-            WordAxis.HORIZONTAL -> horizontalCoverage
-            WordAxis.VERTICAL -> verticalCoverage
-        }
+        val coverageForAxis =
+            when (candidate.direction.axis) {
+                WordAxis.HORIZONTAL -> horizontalCoverage
+                WordAxis.VERTICAL -> verticalCoverage
+            }
         val startR = candidate.cluePosition.row.value + candidate.direction.startOffset.row.value
         val startC = candidate.cluePosition.column.value + candidate.direction.startOffset.column.value
         val dr = candidate.direction.step.row.value

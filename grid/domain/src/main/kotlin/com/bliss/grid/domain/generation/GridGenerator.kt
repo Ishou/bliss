@@ -50,8 +50,10 @@ class GridGenerator(
         val maxLen = maxOf(w, h)
 
         // Available word lengths (those with actual dictionary words)
-        val wordsByLength = (minLen..maxLen).associateWith { repository.findByLength(it) }
-            .filterValues { it.isNotEmpty() }
+        val wordsByLength =
+            (minLen..maxLen)
+                .associateWith { repository.findByLength(it) }
+                .filterValues { it.isNotEmpty() }
         if (wordsByLength.isEmpty()) return null
 
         // Partition rows: interior = h-1 cells, split into groups of minLen..maxWordLen
@@ -68,10 +70,19 @@ class GridGenerator(
             val colPartitions = generatePartitions(w - 1, minLen, maxWordLen)
             if (colPartitions.isEmpty()) continue
 
-            val result = tryRowGroups(
-                w, h, rowGroups, 0, colPartitions, wordsByLength,
-                mutableSetOf(), mutableListOf(), random, deadline,
-            )
+            val result =
+                tryRowGroups(
+                    w,
+                    h,
+                    rowGroups,
+                    0,
+                    colPartitions,
+                    wordsByLength,
+                    mutableSetOf(),
+                    mutableListOf(),
+                    random,
+                    deadline,
+                )
             if (result != null) return result
         }
         return null
@@ -108,14 +119,16 @@ class GridGenerator(
             if (System.currentTimeMillis() > deadline) return null
 
             val colSegments = computeSlotRanges(colPartition) // (startCol in interior, width)
-            val blocks = colSegments.map { (startCol, blockWidth) ->
-                RectBlock(interiorStartRow, startCol, groupHeight, blockWidth)
-            }
+            val blocks =
+                colSegments.map { (startCol, blockWidth) ->
+                    RectBlock(interiorStartRow, startCol, groupHeight, blockWidth)
+                }
 
             // Check all blocks have words for both dimensions
-            val allValid = blocks.all { block ->
-                wordsByLength.containsKey(block.width) && wordsByLength.containsKey(block.height)
-            }
+            val allValid =
+                blocks.all { block ->
+                    wordsByLength.containsKey(block.width) && wordsByLength.containsKey(block.height)
+                }
             if (!allValid) continue
 
             // Try solving all blocks in this group
@@ -134,8 +147,19 @@ class GridGenerator(
             }
 
             if (allSolved) {
-                val result = tryRowGroups(gridWidth, gridHeight, rowGroups, groupIdx + 1,
-                    colPartitions, wordsByLength, usedWords, placements, random, deadline)
+                val result =
+                    tryRowGroups(
+                        gridWidth,
+                        gridHeight,
+                        rowGroups,
+                        groupIdx + 1,
+                        colPartitions,
+                        wordsByLength,
+                        usedWords,
+                        placements,
+                        random,
+                        deadline,
+                    )
                 if (result != null) return result
             }
 
@@ -150,8 +174,8 @@ class GridGenerator(
     private data class RectBlock(
         val interiorStartRow: Int, // 0-indexed in interior grid (grid row = this + 1)
         val interiorStartCol: Int, // 0-indexed in interior grid (grid col = this + 1)
-        val height: Int,           // number of letter rows
-        val width: Int,            // number of letter cols
+        val height: Int, // number of letter rows
+        val width: Int, // number of letter cols
     )
 
     /**
@@ -203,9 +227,10 @@ class GridGenerator(
         val vAvailable = vWords.filter { it.text !in usedWords && it.text !in localUsed }
         for (j in 0 until block.width) {
             val text = String(CharArray(block.height) { i -> hAssigned[i]!!.text[j] })
-            val vWord = vAvailable.firstOrNull { it.text == text }
-                ?: vWords.firstOrNull { it.text == text && it.text !in usedWords && it.text !in localUsed }
-                ?: return null
+            val vWord =
+                vAvailable.firstOrNull { it.text == text }
+                    ?: vWords.firstOrNull { it.text == text && it.text !in usedWords && it.text !in localUsed }
+                    ?: return null
             localUsed += vWord.text
 
             val gridCol = block.interiorStartCol + j + 1
@@ -242,9 +267,10 @@ class GridGenerator(
             hAssigned[row] = word
             localUsed += word.text
 
-            val viable = (0 until block.width).all { j ->
-                countVerticalCandidates(vIndex, hAssigned, j, row + 1, localUsed) > 0
-            }
+            val viable =
+                (0 until block.width).all { j ->
+                    countVerticalCandidates(vIndex, hAssigned, j, row + 1, localUsed) > 0
+                }
 
             if (viable && fillBlockRows(block, available, vIndex, hAssigned, localUsed, row + 1, random, deadline)) {
                 return true
@@ -280,7 +306,11 @@ class GridGenerator(
      * Generates all valid partitions of [total] cells into word slots
      * of length [minLen]..[maxLen], separated by single clue cells.
      */
-    private fun generatePartitions(total: Int, minLen: Int, maxLen: Int): List<List<Int>> {
+    private fun generatePartitions(
+        total: Int,
+        minLen: Int,
+        maxLen: Int,
+    ): List<List<Int>> {
         val result = mutableListOf<List<Int>>()
         partitionHelper(total, minLen, maxLen, mutableListOf(), result)
         return result
