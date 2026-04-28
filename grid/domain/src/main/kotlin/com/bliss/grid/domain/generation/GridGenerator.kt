@@ -219,13 +219,7 @@ class GridGenerator(
             vAssigned[j] = vWord
         }
 
-        // Top-left corner extension: when the block sits in the (0,0) corner
-        // and isn't already full-width / full-height (those still go through
-        // the legacy branches below), try to swap the row-1 horizontal and
-        // col-1 vertical for one-letter longer words anchored by a stacked
-        // DOWN_RIGHT + RIGHT_DOWN clue at (0,0). The new edge cells (1,0) and
-        // (0,1) are single-direction edge letters; (1,1) stays as the existing
-        // H/V crossing letter.
+        // Extend row-1/col-1 by one letter, stacking DOWN_RIGHT+RIGHT_DOWN at (0,0); (1,1) is the unmodified crossing cell.
         var hExt: Word? = null
         var vExt: Word? = null
         val isInnerTopLeft =
@@ -293,11 +287,6 @@ class GridGenerator(
         return placements to consumed
     }
 
-    /**
-     * Picks a word of length [pattern].length + 1 whose suffix matches [pattern].
-     * Returns null when no such word exists outside [usedWords] and [localUsed].
-     * Used to grow a block's row-1/col-1 word by one letter at the top-left edge.
-     */
     private fun findExtension(
         candidates: List<Word>?,
         pattern: String,

@@ -143,10 +143,34 @@ class GridGeneratorTest {
 
         assertThat(grid).isNotNull()
         val origin = Position(Row(0), Column(0))
-        val cluesAtOrigin = grid!!.placements.filter { it.cluePosition == origin }.map { it.direction }.toSet()
+        val cluesAtOrigin =
+            grid!!
+                .placements
+                .filter { it.cluePosition == origin }
+                .map { it.direction }
+                .toSet()
         assertThat(cluesAtOrigin.contains(Direction.DOWN_RIGHT)).isTrue()
         assertThat(cluesAtOrigin.contains(Direction.RIGHT_DOWN)).isTrue()
         assertThat(GridValidator.uncrossedCells(grid)).isEmpty()
+    }
+
+    @Test
+    fun `top-left corner rollback when hExt found but vExt missing leaves extension word unused`() {
+        // "ZAB"/"ZCD" match either possible hAssigned[0] but no word ends in "AC" or "BD",
+        // so hExt is found and vExt is always null → rollback (localUsed -= hExt.text) fires.
+        // Verifies the block still solves, no 3-letter word appears in placements, no duplicates.
+        val generator = GridGenerator(ListWordRepository(WORD_SQUARE_6X6_PARTIAL_ROLLBACK))
+
+        val grid =
+            generator.generate(
+                GridConstraints(width = 6, height = 6, enforceInterlocking = true),
+                Random(0L),
+            )
+
+        assertThat(grid).isNotNull()
+        val wordTexts = grid!!.placements.map { it.word.text }
+        assertThat(wordTexts.none { it.length > 2 }).isTrue()
+        assertThat(wordTexts.size).isEqualTo(wordTexts.toSet().size)
     }
 
     @Test
@@ -252,16 +276,68 @@ internal val WORD_SQUARE_6X6_SHARED_POOL: List<Word> =
     listOf(
         // Shared 2-letter word pool — enough for four independent 2×2 word squares.
         // Each block needs 2 row-words and 2 col-words (a 2×2 word square).
-        Word("AB", "test"), Word("CD", "test"), Word("AC", "test"), Word("BD", "test"),
-        Word("EF", "test"), Word("GH", "test"), Word("EG", "test"), Word("FH", "test"),
-        Word("IJ", "test"), Word("KL", "test"), Word("IK", "test"), Word("JL", "test"),
-        Word("MN", "test"), Word("OP", "test"), Word("MO", "test"), Word("NP", "test"),
+        Word("AB", "test"),
+        Word("CD", "test"),
+        Word("AC", "test"),
+        Word("BD", "test"),
+        Word("EF", "test"),
+        Word("GH", "test"),
+        Word("EG", "test"),
+        Word("FH", "test"),
+        Word("IJ", "test"),
+        Word("KL", "test"),
+        Word("IK", "test"),
+        Word("JL", "test"),
+        Word("MN", "test"),
+        Word("OP", "test"),
+        Word("MO", "test"),
+        Word("NP", "test"),
         // 3-letter extensions: every 2-letter word has a "Z??"-prefixed extension,
         // so findExtension always succeeds for the top-left block's hAssigned[0]/vAssigned[0].
-        Word("ZAB", "ext"), Word("ZCD", "ext"), Word("ZAC", "ext"), Word("ZBD", "ext"),
-        Word("ZEF", "ext"), Word("ZGH", "ext"), Word("ZEG", "ext"), Word("ZFH", "ext"),
-        Word("ZIJ", "ext"), Word("ZKL", "ext"), Word("ZIK", "ext"), Word("ZJL", "ext"),
-        Word("ZMN", "ext"), Word("ZOP", "ext"), Word("ZMO", "ext"), Word("ZNP", "ext"),
+        Word("ZAB", "ext"),
+        Word("ZCD", "ext"),
+        Word("ZAC", "ext"),
+        Word("ZBD", "ext"),
+        Word("ZEF", "ext"),
+        Word("ZGH", "ext"),
+        Word("ZEG", "ext"),
+        Word("ZFH", "ext"),
+        Word("ZIJ", "ext"),
+        Word("ZKL", "ext"),
+        Word("ZIK", "ext"),
+        Word("ZJL", "ext"),
+        Word("ZMN", "ext"),
+        Word("ZOP", "ext"),
+        Word("ZMO", "ext"),
+        Word("ZNP", "ext"),
+    )
+
+/**
+ * 6×6 fixture where the only 3-letter words match either candidate hAssigned[0] ("AB" or "CD")
+ * but no 3-letter word ends in "AC" or "BD" (the two possible vAssigned[0] values).
+ * This guarantees hExt is found and vExt is null for the top-left block on every seed,
+ * exercising the partial-rollback branch: localUsed -= hExt.text.
+ */
+internal val WORD_SQUARE_6X6_PARTIAL_ROLLBACK: List<Word> =
+    listOf(
+        Word("AB", "test"),
+        Word("CD", "test"),
+        Word("AC", "test"),
+        Word("BD", "test"),
+        Word("EF", "test"),
+        Word("GH", "test"),
+        Word("EG", "test"),
+        Word("FH", "test"),
+        Word("IJ", "test"),
+        Word("KL", "test"),
+        Word("IK", "test"),
+        Word("JL", "test"),
+        Word("MN", "test"),
+        Word("OP", "test"),
+        Word("MO", "test"),
+        Word("NP", "test"),
+        Word("ZAB", "ext"),
+        Word("ZCD", "ext"),
     )
 
 internal val SMALL_FRENCH_WORDS: List<Word> =
