@@ -68,10 +68,6 @@ internal class WorkingGrid(
                 val p = Position(Row(r), Column(c))
                 val cell = cells[r][c]
                 for (dir in Direction.entries) {
-                    // Edge directions are restricted to the first column/row.
-                    if (dir == Direction.DOWN_RIGHT && c != 0) continue
-                    if (dir == Direction.RIGHT_DOWN && r != 0) continue
-
                     if (!cluePositionAvailable(cell, dir)) continue
 
                     val startR = r + dir.startOffset.row.value

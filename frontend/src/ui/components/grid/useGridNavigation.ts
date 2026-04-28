@@ -71,10 +71,10 @@ function buildLookup(puzzle: Puzzle): ClueLookup {
     for (const subClue of def.clues) {
       // Start offset: where the first letter sits relative to the clue.
       // Step: direction letters flow after the first.
-      const startDr = (subClue.arrow === 'down' || subClue.arrow === 'down-right') ? 1 : 0;
-      const startDc = (subClue.arrow === 'right' || subClue.arrow === 'right-down') ? 1 : 0;
-      const dr = (subClue.arrow === 'down' || subClue.arrow === 'right-down') ? 1 : 0;
-      const dc = (subClue.arrow === 'right' || subClue.arrow === 'down-right') ? 1 : 0;
+      const startDr = subClue.arrow === 'down' ? 1 : 0;
+      const startDc = subClue.arrow === 'right' ? 1 : 0;
+      const dr = subClue.arrow === 'down' ? 1 : 0;
+      const dc = subClue.arrow === 'right' ? 1 : 0;
       const cells: LetterCell[] = [];
       let row = def.position.row + startDr, col = def.position.col + startDc;
       while (row >= 0 && row < puzzle.height && col >= 0 && col < puzzle.width) {
@@ -87,7 +87,7 @@ function buildLookup(puzzle: Puzzle): ClueLookup {
       const clue: Clue = {
         definition: def,
         clue: subClue,
-        direction: (subClue.arrow === 'right' || subClue.arrow === 'down-right') ? 'across' : 'down',
+        direction: subClue.arrow === 'right' ? 'across' : 'down',
         cells,
       };
       for (const cell of cells) {

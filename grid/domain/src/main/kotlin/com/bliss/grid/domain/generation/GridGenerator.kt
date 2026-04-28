@@ -210,17 +210,8 @@ class GridGenerator(
         for (i in 0 until block.height) {
             val gridRow = block.interiorStartRow + i + 1
             val word = hAssigned[i]!!
-
-            if (block.interiorStartCol == 0 && block.width == gridWidth - 1) {
-                // Full-width word: use DOWN_RIGHT from row above
-                val clueRow = if (gridRow > 0) gridRow - 1 else 0
-                placements += WordPlacement(word, Position(Row(clueRow), Column(0)), Direction.DOWN_RIGHT)
-            } else if (block.interiorStartCol == 0) {
-                placements += WordPlacement(word, Position(Row(gridRow), Column(0)), Direction.RIGHT)
-            } else {
-                val clueGridCol = block.interiorStartCol // separator col in grid coords
-                placements += WordPlacement(word, Position(Row(gridRow), Column(clueGridCol)), Direction.RIGHT)
-            }
+            val clueGridCol = if (block.interiorStartCol == 0) 0 else block.interiorStartCol
+            placements += WordPlacement(word, Position(Row(gridRow), Column(clueGridCol)), Direction.RIGHT)
         }
 
         // Derive vertical words
@@ -234,17 +225,8 @@ class GridGenerator(
             localUsed += vWord.text
 
             val gridCol = block.interiorStartCol + j + 1
-
-            if (block.interiorStartRow == 0 && block.height == gridHeight - 1) {
-                // Full-height word: use RIGHT_DOWN from column to the left
-                val clueCol = if (gridCol > 0) gridCol - 1 else 0
-                placements += WordPlacement(vWord, Position(Row(0), Column(clueCol)), Direction.RIGHT_DOWN)
-            } else if (block.interiorStartRow == 0) {
-                placements += WordPlacement(vWord, Position(Row(0), Column(gridCol)), Direction.DOWN)
-            } else {
-                val clueGridRow = block.interiorStartRow // separator row in grid coords
-                placements += WordPlacement(vWord, Position(Row(clueGridRow), Column(gridCol)), Direction.DOWN)
-            }
+            val clueGridRow = if (block.interiorStartRow == 0) 0 else block.interiorStartRow
+            placements += WordPlacement(vWord, Position(Row(clueGridRow), Column(gridCol)), Direction.DOWN)
         }
 
         return placements

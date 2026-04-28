@@ -19,17 +19,4 @@ class DirectionTest {
         assertThat(Direction.DOWN.axis).isEqualTo(WordAxis.VERTICAL)
     }
 
-    @Test
-    fun `DOWN_RIGHT starts one row down, steps right`() {
-        assertThat(Direction.DOWN_RIGHT.startOffset).isEqualTo(Position(Row(1), Column(0)))
-        assertThat(Direction.DOWN_RIGHT.step).isEqualTo(Position(Row(0), Column(1)))
-        assertThat(Direction.DOWN_RIGHT.axis).isEqualTo(WordAxis.HORIZONTAL)
-    }
-
-    @Test
-    fun `RIGHT_DOWN starts one column right, steps down`() {
-        assertThat(Direction.RIGHT_DOWN.startOffset).isEqualTo(Position(Row(0), Column(1)))
-        assertThat(Direction.RIGHT_DOWN.step).isEqualTo(Position(Row(1), Column(0)))
-        assertThat(Direction.RIGHT_DOWN.axis).isEqualTo(WordAxis.VERTICAL)
-    }
 }
