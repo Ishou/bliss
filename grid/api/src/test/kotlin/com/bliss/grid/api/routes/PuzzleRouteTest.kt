@@ -155,6 +155,7 @@ class PuzzleRouteTest {
                         wordRepository =
                             object : WordRepository {
                                 override fun findByLength(length: Int): List<Word> = emptyList()
+
                                 override fun findByLengthAndPattern(
                                     length: Int,
                                     pattern: Map<Int, Char>,
