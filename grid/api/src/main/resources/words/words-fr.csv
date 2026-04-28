@@ -122,3 +122,403 @@ vrai,fr,4,,Conforme a la verite,hand-curated,FSL-1.1-MIT
 yeux,fr,4,,Organes de la vue,hand-curated,FSL-1.1-MIT
 zero,fr,4,,Chiffre nul,hand-curated,FSL-1.1-MIT
 zoo,fr,3,,Parc animalier,hand-curated,FSL-1.1-MIT
+acte,fr,4,,Division d'une piece,hand-curated,FSL-1.1-MIT
+adieu,fr,5,,Salut definitif,hand-curated,FSL-1.1-MIT
+ado,fr,3,,Jeune en abrege,hand-curated,FSL-1.1-MIT
+age,fr,3,,Nombre d'annees,hand-curated,FSL-1.1-MIT
+ai,fr,2,,Intelligence artificielle,hand-curated,FSL-1.1-MIT
+an,fr,2,,Duree de douze mois,hand-curated,FSL-1.1-MIT
+ancre,fr,5,,Piece d'amarrage,hand-curated,FSL-1.1-MIT
+arc,fr,3,,Arme de trait,hand-curated,FSL-1.1-MIT
+as,fr,2,,Carte a jouer,hand-curated,FSL-1.1-MIT
+au,fr,2,,Contraction de a le,hand-curated,FSL-1.1-MIT
+avis,fr,4,,Opinion exprimee,hand-curated,FSL-1.1-MIT
+axe,fr,3,,Ligne centrale,hand-curated,FSL-1.1-MIT
+bague,fr,5,,Anneau orne,hand-curated,FSL-1.1-MIT
+bain,fr,4,,Immersion dans l'eau,hand-curated,FSL-1.1-MIT
+balai,fr,5,,Outil de nettoyage,hand-curated,FSL-1.1-MIT
+balance,fr,7,,Instrument de pesee,hand-curated,FSL-1.1-MIT
+bandage,fr,7,,Pansement enroule,hand-curated,FSL-1.1-MIT
+bec,fr,3,,Bouche d'oiseau,hand-curated,FSL-1.1-MIT
+bel,fr,3,,Beau devant voyelle,hand-curated,FSL-1.1-MIT
+beurre,fr,6,,Matiere grasse laitiere,hand-curated,FSL-1.1-MIT
+bi,fr,2,,Prefixe pour deux,hand-curated,FSL-1.1-MIT
+bic,fr,3,,Stylo a bille,hand-curated,FSL-1.1-MIT
+biche,fr,5,,Femelle du cerf,hand-curated,FSL-1.1-MIT
+bijou,fr,5,,Ornement precieux,hand-curated,FSL-1.1-MIT
+ble,fr,3,,Cereale a pain,hand-curated,FSL-1.1-MIT
+bocal,fr,5,,Recipient en verre,hand-curated,FSL-1.1-MIT
+boeuf,fr,5,,Bovin male,hand-curated,FSL-1.1-MIT
+bois,fr,4,,Matiere des arbres,hand-curated,FSL-1.1-MIT
+botte,fr,5,,Chaussure haute,hand-curated,FSL-1.1-MIT
+boucher,fr,7,,Vendeur de viande,hand-curated,FSL-1.1-MIT
+bougie,fr,6,,Batonnet de cire,hand-curated,FSL-1.1-MIT
+branche,fr,7,,Ramification d'arbre,hand-curated,FSL-1.1-MIT
+brave,fr,5,,Courageux,hand-curated,FSL-1.1-MIT
+brevet,fr,6,,Titre de propriete,hand-curated,FSL-1.1-MIT
+brique,fr,6,,Bloc de construction,hand-curated,FSL-1.1-MIT
+bts,fr,3,,Diplome technique,hand-curated,FSL-1.1-MIT
+bu,fr,2,,Absorbe un liquide,hand-curated,FSL-1.1-MIT
+buee,fr,4,,Vapeur condensee,hand-curated,FSL-1.1-MIT
+ca,fr,2,,Pronom demonstratif,hand-curated,FSL-1.1-MIT
+cabane,fr,6,,Petite construction,hand-curated,FSL-1.1-MIT
+cabinet,fr,7,,Bureau professionnel,hand-curated,FSL-1.1-MIT
+cable,fr,5,,Fil conducteur,hand-curated,FSL-1.1-MIT
+cadre,fr,5,,Bordure d'un tableau,hand-curated,FSL-1.1-MIT
+canne,fr,5,,Baton de marche,hand-curated,FSL-1.1-MIT
+casque,fr,6,,Protection de tete,hand-curated,FSL-1.1-MIT
+cave,fr,4,,Piece souterraine,hand-curated,FSL-1.1-MIT
+ce,fr,2,,Determinant demonstratif,hand-curated,FSL-1.1-MIT
+cerf,fr,4,,Ruminant a bois,hand-curated,FSL-1.1-MIT
+cerise,fr,6,,Petit fruit rouge,hand-curated,FSL-1.1-MIT
+chai,fr,4,,Entrepot a vin,hand-curated,FSL-1.1-MIT
+chair,fr,5,,Tissu musculaire,hand-curated,FSL-1.1-MIT
+chaleur,fr,7,,Sensation de chaud,hand-curated,FSL-1.1-MIT
+chateau,fr,7,,Demeure fortifiee,hand-curated,FSL-1.1-MIT
+chauve,fr,6,,Sans cheveux,hand-curated,FSL-1.1-MIT
+chef,fr,4,,Celui qui dirige,hand-curated,FSL-1.1-MIT
+chemise,fr,7,,Vetement du buste,hand-curated,FSL-1.1-MIT
+chevre,fr,6,,Ruminant a cornes,hand-curated,FSL-1.1-MIT
+ci,fr,2,,Ici en abrege,hand-curated,FSL-1.1-MIT
+cigare,fr,6,,Rouleau de tabac,hand-curated,FSL-1.1-MIT
+cire,fr,4,,Matiere d'abeille,hand-curated,FSL-1.1-MIT
+cirque,fr,6,,Spectacle sous chapiteau,hand-curated,FSL-1.1-MIT
+ciseaux,fr,7,,Outil pour couper,hand-curated,FSL-1.1-MIT
+claie,fr,5,,Treillage d'osier,hand-curated,FSL-1.1-MIT
+cle,fr,3,,Outil pour ouvrir,hand-curated,FSL-1.1-MIT
+cloche,fr,6,,Instrument sonore,hand-curated,FSL-1.1-MIT
+clou,fr,4,,Pointe metallique,hand-curated,FSL-1.1-MIT
+code,fr,4,,Systeme de signes,hand-curated,FSL-1.1-MIT
+coeur,fr,5,,Organe vital,hand-curated,FSL-1.1-MIT
+coffre,fr,6,,Meuble de rangement,hand-curated,FSL-1.1-MIT
+colere,fr,6,,Emotion violente,hand-curated,FSL-1.1-MIT
+colline,fr,7,,Petite elevation,hand-curated,FSL-1.1-MIT
+corde,fr,5,,Lien tresse,hand-curated,FSL-1.1-MIT
+corne,fr,5,,Appendice animal,hand-curated,FSL-1.1-MIT
+costume,fr,7,,Tenue complete,hand-curated,FSL-1.1-MIT
+cou,fr,3,,Partie entre tete et corps,hand-curated,FSL-1.1-MIT
+coup,fr,4,,Choc brutal,hand-curated,FSL-1.1-MIT
+coupe,fr,5,,Trophee sportif,hand-curated,FSL-1.1-MIT
+cour,fr,4,,Espace a ciel ouvert,hand-curated,FSL-1.1-MIT
+course,fr,6,,Epreuve de vitesse,hand-curated,FSL-1.1-MIT
+crane,fr,5,,Boite osseuse de la tete,hand-curated,FSL-1.1-MIT
+cri,fr,3,,Son aigu et fort,hand-curated,FSL-1.1-MIT
+cuisine,fr,7,,Piece pour cuisiner,hand-curated,FSL-1.1-MIT
+da,fr,2,,Oui en russe,hand-curated,FSL-1.1-MIT
+dame,fr,4,,Femme distinguee,hand-curated,FSL-1.1-MIT
+danse,fr,5,,Art du mouvement,hand-curated,FSL-1.1-MIT
+dauphin,fr,7,,Mammifere marin,hand-curated,FSL-1.1-MIT
+de,fr,2,,Preposition d'origine,hand-curated,FSL-1.1-MIT
+defi,fr,4,,Epreuve a relever,hand-curated,FSL-1.1-MIT
+dessin,fr,6,,Trace sur papier,hand-curated,FSL-1.1-MIT
+diable,fr,6,,Demon,hand-curated,FSL-1.1-MIT
+diamant,fr,7,,Pierre precieuse,hand-curated,FSL-1.1-MIT
+disque,fr,6,,Support circulaire,hand-curated,FSL-1.1-MIT
+do,fr,2,,Note de musique,hand-curated,FSL-1.1-MIT
+douane,fr,6,,Controle frontalier,hand-curated,FSL-1.1-MIT
+dragon,fr,6,,Creature legendaire,hand-curated,FSL-1.1-MIT
+du,fr,2,,Article contracte,hand-curated,FSL-1.1-MIT
+duel,fr,4,,Combat singulier,hand-curated,FSL-1.1-MIT
+dur,fr,3,,Resistant au toucher,hand-curated,FSL-1.1-MIT
+eclair,fr,6,,Decharge lumineuse,hand-curated,FSL-1.1-MIT
+elire,fr,5,,Choisir par vote,hand-curated,FSL-1.1-MIT
+elu,fr,3,,Choisi par vote,hand-curated,FSL-1.1-MIT
+en,fr,2,,Preposition de lieu,hand-curated,FSL-1.1-MIT
+encre,fr,5,,Liquide pour ecrire,hand-curated,FSL-1.1-MIT
+energie,fr,7,,Force en action,hand-curated,FSL-1.1-MIT
+enigme,fr,6,,Mystere a resoudre,hand-curated,FSL-1.1-MIT
+envie,fr,5,,Desir intense,hand-curated,FSL-1.1-MIT
+eon,fr,3,,Longue periode,hand-curated,FSL-1.1-MIT
+epee,fr,4,,Arme d'escrime,hand-curated,FSL-1.1-MIT
+epi,fr,3,,Partie du ble,hand-curated,FSL-1.1-MIT
+epice,fr,5,,Condiment parfume,hand-curated,FSL-1.1-MIT
+epine,fr,5,,Piquant vegetal,hand-curated,FSL-1.1-MIT
+es,fr,2,,Verbe etre conjugue,hand-curated,FSL-1.1-MIT
+espion,fr,6,,Agent secret,hand-curated,FSL-1.1-MIT
+estrade,fr,7,,Plateforme sureelevee,hand-curated,FSL-1.1-MIT
+et,fr,2,,Conjonction de coordination,hand-curated,FSL-1.1-MIT
+etage,fr,5,,Niveau d'un batiment,hand-curated,FSL-1.1-MIT
+etape,fr,5,,Phase d'un parcours,hand-curated,FSL-1.1-MIT
+ete,fr,3,,Saison chaude,hand-curated,FSL-1.1-MIT
+etui,fr,4,,Enveloppe protectrice,hand-curated,FSL-1.1-MIT
+eu,fr,2,,Participe passe d'avoir,hand-curated,FSL-1.1-MIT
+fa,fr,2,,Note de musique,hand-curated,FSL-1.1-MIT
+fait,fr,4,,Evenement reel,hand-curated,FSL-1.1-MIT
+faon,fr,4,,Petit du cerf,hand-curated,FSL-1.1-MIT
+faute,fr,5,,Erreur commise,hand-curated,FSL-1.1-MIT
+fi,fr,2,,Exclamation de degout,hand-curated,FSL-1.1-MIT
+ficelle,fr,7,,Corde fine,hand-curated,FSL-1.1-MIT
+fievre,fr,6,,Hausse de temperature,hand-curated,FSL-1.1-MIT
+figue,fr,5,,Fruit mediterraneen,hand-curated,FSL-1.1-MIT
+fin,fr,3,,Terme d'un recit,hand-curated,FSL-1.1-MIT
+flamme,fr,6,,Langue de feu,hand-curated,FSL-1.1-MIT
+fleuve,fr,6,,Grand cours d'eau,hand-curated,FSL-1.1-MIT
+foret,fr,5,,Grande etendue boisee,hand-curated,FSL-1.1-MIT
+foule,fr,5,,Masse de gens,hand-curated,FSL-1.1-MIT
+four,fr,4,,Appareil de cuisson,hand-curated,FSL-1.1-MIT
+frein,fr,5,,Dispositif d'arret,hand-curated,FSL-1.1-MIT
+fumoir,fr,6,,Salle pour fumer,hand-curated,FSL-1.1-MIT
+galere,fr,6,,Navire a rames,hand-curated,FSL-1.1-MIT
+geai,fr,4,,Oiseau des bois,hand-curated,FSL-1.1-MIT
+gel,fr,3,,Eau solidifiee,hand-curated,FSL-1.1-MIT
+geste,fr,5,,Mouvement du corps,hand-curated,FSL-1.1-MIT
+girafe,fr,6,,Animal au long cou,hand-curated,FSL-1.1-MIT
+glace,fr,5,,Eau gelee ou dessert,hand-curated,FSL-1.1-MIT
+glacier,fr,7,,Masse de glace,hand-curated,FSL-1.1-MIT
+globe,fr,5,,Sphere terrestre,hand-curated,FSL-1.1-MIT
+go,fr,2,,Jeu de strategie,hand-curated,FSL-1.1-MIT
+goutte,fr,6,,Perle de liquide,hand-curated,FSL-1.1-MIT
+grain,fr,5,,Petite semence,hand-curated,FSL-1.1-MIT
+grotte,fr,6,,Cavite naturelle,hand-curated,FSL-1.1-MIT
+ha,fr,2,,Exclamation de surprise,hand-curated,FSL-1.1-MIT
+hamster,fr,7,,Petit rongeur domestique,hand-curated,FSL-1.1-MIT
+he,fr,2,,Interjection d'appel,hand-curated,FSL-1.1-MIT
+herbe,fr,5,,Plante des prairies,hand-curated,FSL-1.1-MIT
+hibou,fr,5,,Rapace nocturne,hand-curated,FSL-1.1-MIT
+hier,fr,4,,Jour precedent,hand-curated,FSL-1.1-MIT
+horizon,fr,7,,Ligne terre-ciel,hand-curated,FSL-1.1-MIT
+ice,fr,3,,Glace en anglais,hand-curated,FSL-1.1-MIT
+if,fr,2,,Arbre a baies rouges,hand-curated,FSL-1.1-MIT
+il,fr,2,,Pronom personnel masculin,hand-curated,FSL-1.1-MIT
+image,fr,5,,Representation visuelle,hand-curated,FSL-1.1-MIT
+in,fr,2,,Prefixe de negation,hand-curated,FSL-1.1-MIT
+ire,fr,3,,Colere poetique,hand-curated,FSL-1.1-MIT
+issue,fr,5,,Sortie possible,hand-curated,FSL-1.1-MIT
+ivoire,fr,6,,Matiere blanche des defenses,hand-curated,FSL-1.1-MIT
+je,fr,2,,Pronom premiere personne,hand-curated,FSL-1.1-MIT
+jeton,fr,5,,Piece de jeu,hand-curated,FSL-1.1-MIT
+jeu,fr,3,,Activite ludique,hand-curated,FSL-1.1-MIT
+jouet,fr,5,,Objet pour s'amuser,hand-curated,FSL-1.1-MIT
+journal,fr,7,,Publication quotidienne,hand-curated,FSL-1.1-MIT
+juge,fr,4,,Magistrat,hand-curated,FSL-1.1-MIT
+jungle,fr,6,,Foret tropicale dense,hand-curated,FSL-1.1-MIT
+jupe,fr,4,,Vetement feminin,hand-curated,FSL-1.1-MIT
+la,fr,2,,Note de musique,hand-curated,FSL-1.1-MIT
+lame,fr,4,,Partie tranchante,hand-curated,FSL-1.1-MIT
+lampe,fr,5,,Source de lumiere,hand-curated,FSL-1.1-MIT
+laniere,fr,7,,Bande de cuir,hand-curated,FSL-1.1-MIT
+le,fr,2,,Article defini masculin,hand-curated,FSL-1.1-MIT
+legende,fr,7,,Recit mythique,hand-curated,FSL-1.1-MIT
+li,fr,2,,Unite de mesure chinoise,hand-curated,FSL-1.1-MIT
+liberte,fr,7,,Etat de celui qui est libre,hand-curated,FSL-1.1-MIT
+lien,fr,4,,Ce qui attache,hand-curated,FSL-1.1-MIT
+linge,fr,5,,Tissu a laver,hand-curated,FSL-1.1-MIT
+loup,fr,4,,Canide sauvage,hand-curated,FSL-1.1-MIT
+lu,fr,2,,Participe passe de lire,hand-curated,FSL-1.1-MIT
+lumiere,fr,7,,Rayonnement visible,hand-curated,FSL-1.1-MIT
+luxe,fr,4,,Raffinement couteux,hand-curated,FSL-1.1-MIT
+ma,fr,2,,Determinant possessif feminin,hand-curated,FSL-1.1-MIT
+magie,fr,5,,Art de l'illusion,hand-curated,FSL-1.1-MIT
+manche,fr,6,,Partie d'un vetement,hand-curated,FSL-1.1-MIT
+marche,fr,6,,Lieu de commerce,hand-curated,FSL-1.1-MIT
+marin,fr,5,,Homme de la mer,hand-curated,FSL-1.1-MIT
+me,fr,2,,Pronom personnel reflechi,hand-curated,FSL-1.1-MIT
+melon,fr,5,,Fruit sucre d'ete,hand-curated,FSL-1.1-MIT
+mer,fr,3,,Grande etendue salee,hand-curated,FSL-1.1-MIT
+metal,fr,5,,Materiau conducteur,hand-curated,FSL-1.1-MIT
+mi,fr,2,,Note de musique,hand-curated,FSL-1.1-MIT
+mine,fr,4,,Gisement souterrain,hand-curated,FSL-1.1-MIT
+miroir,fr,6,,Surface reflechissante,hand-curated,FSL-1.1-MIT
+mise,fr,4,,Somme engagee,hand-curated,FSL-1.1-MIT
+mode,fr,4,,Tendance vestimentaire,hand-curated,FSL-1.1-MIT
+mot,fr,3,,Unite du langage,hand-curated,FSL-1.1-MIT
+mouche,fr,6,,Insecte volant,hand-curated,FSL-1.1-MIT
+mouton,fr,6,,Ovin laineux,hand-curated,FSL-1.1-MIT
+mu,fr,2,,Lettre grecque,hand-curated,FSL-1.1-MIT
+muse,fr,4,,Source d'inspiration,hand-curated,FSL-1.1-MIT
+mystere,fr,7,,Chose inexplicable,hand-curated,FSL-1.1-MIT
+na,fr,2,,Interjection moqueuse,hand-curated,FSL-1.1-MIT
+navire,fr,6,,Grand bateau,hand-curated,FSL-1.1-MIT
+ne,fr,2,,Adverbe de negation,hand-curated,FSL-1.1-MIT
+net,fr,3,,Propre et clair,hand-curated,FSL-1.1-MIT
+ni,fr,2,,Conjonction negative,hand-curated,FSL-1.1-MIT
+nier,fr,4,,Contester,hand-curated,FSL-1.1-MIT
+nitrate,fr,7,,Compose chimique,hand-curated,FSL-1.1-MIT
+noeud,fr,5,,Entrelacement de fils,hand-curated,FSL-1.1-MIT
+noix,fr,4,,Fruit a coque,hand-curated,FSL-1.1-MIT
+nom,fr,3,,Designation d'une personne,hand-curated,FSL-1.1-MIT
+note,fr,4,,Son musical,hand-curated,FSL-1.1-MIT
+noyade,fr,6,,Mort par submersion,hand-curated,FSL-1.1-MIT
+nu,fr,2,,Sans vetement,hand-curated,FSL-1.1-MIT
+nuage,fr,5,,Masse de vapeur,hand-curated,FSL-1.1-MIT
+nue,fr,3,,Sans vetement,hand-curated,FSL-1.1-MIT
+oasis,fr,5,,Point d'eau au desert,hand-curated,FSL-1.1-MIT
+oca,fr,3,,Plante tubereuse,hand-curated,FSL-1.1-MIT
+ole,fr,3,,Exclamation espagnole,hand-curated,FSL-1.1-MIT
+olive,fr,5,,Fruit de l'olivier,hand-curated,FSL-1.1-MIT
+on,fr,2,,Pronom indefini,hand-curated,FSL-1.1-MIT
+onde,fr,4,,Vibration propagee,hand-curated,FSL-1.1-MIT
+opa,fr,3,,Offre publique d'achat,hand-curated,FSL-1.1-MIT
+opale,fr,5,,Pierre precieuse,hand-curated,FSL-1.1-MIT
+or,fr,2,,Metal precieux,hand-curated,FSL-1.1-MIT
+orage,fr,5,,Tempete avec eclairs,hand-curated,FSL-1.1-MIT
+orange,fr,6,,Agrume colore,hand-curated,FSL-1.1-MIT
+ore,fr,3,,Minerai en anglais,hand-curated,FSL-1.1-MIT
+oree,fr,4,,Bordure de foret,hand-curated,FSL-1.1-MIT
+orge,fr,4,,Cereale a biere,hand-curated,FSL-1.1-MIT
+orgue,fr,5,,Instrument a tuyaux,hand-curated,FSL-1.1-MIT
+os,fr,2,,Partie du squelette,hand-curated,FSL-1.1-MIT
+ose,fr,3,,Audacieux,hand-curated,FSL-1.1-MIT
+osee,fr,4,,Audacieuse,hand-curated,FSL-1.1-MIT
+oser,fr,4,,Avoir l'audace,hand-curated,FSL-1.1-MIT
+ou,fr,2,,Conjonction alternative,hand-curated,FSL-1.1-MIT
+oui,fr,3,,Affirmation,hand-curated,FSL-1.1-MIT
+ourse,fr,5,,Femelle du plantigrade,hand-curated,FSL-1.1-MIT
+oursin,fr,6,,Animal marin epineux,hand-curated,FSL-1.1-MIT
+ovale,fr,5,,Forme d'oeuf,hand-curated,FSL-1.1-MIT
+paille,fr,6,,Tige de cereale sechee,hand-curated,FSL-1.1-MIT
+paix,fr,4,,Absence de conflit,hand-curated,FSL-1.1-MIT
+palais,fr,6,,Demeure royale,hand-curated,FSL-1.1-MIT
+panache,fr,7,,Bravoure eclatante,hand-curated,FSL-1.1-MIT
+panier,fr,6,,Contenant tresse,hand-curated,FSL-1.1-MIT
+papier,fr,6,,Support pour ecrire,hand-curated,FSL-1.1-MIT
+paradis,fr,7,,Lieu de bonheur,hand-curated,FSL-1.1-MIT
+parfum,fr,6,,Fragrance agreable,hand-curated,FSL-1.1-MIT
+parole,fr,6,,Mot prononce,hand-curated,FSL-1.1-MIT
+peau,fr,4,,Enveloppe du corps,hand-curated,FSL-1.1-MIT
+peigne,fr,6,,Outil de coiffure,hand-curated,FSL-1.1-MIT
+pelican,fr,7,,Oiseau a grand bec,hand-curated,FSL-1.1-MIT
+pelote,fr,6,,Boule de fil,hand-curated,FSL-1.1-MIT
+perle,fr,5,,Joyau d'huitre,hand-curated,FSL-1.1-MIT
+peu,fr,3,,Faible quantite,hand-curated,FSL-1.1-MIT
+phare,fr,5,,Tour lumineuse cotiere,hand-curated,FSL-1.1-MIT
+pi,fr,2,,Lettre grecque,hand-curated,FSL-1.1-MIT
+piano,fr,5,,Instrument a touches,hand-curated,FSL-1.1-MIT
+piece,fr,5,,Salle ou monnaie,hand-curated,FSL-1.1-MIT
+pigeon,fr,6,,Oiseau des villes,hand-curated,FSL-1.1-MIT
+pince,fr,5,,Outil de prehension,hand-curated,FSL-1.1-MIT
+pirate,fr,6,,Bandit des mers,hand-curated,FSL-1.1-MIT
+piste,fr,5,,Chemin trace,hand-curated,FSL-1.1-MIT
+plage,fr,5,,Rivage de sable,hand-curated,FSL-1.1-MIT
+plaine,fr,6,,Terrain plat,hand-curated,FSL-1.1-MIT
+planete,fr,7,,Corps celeste,hand-curated,FSL-1.1-MIT
+plante,fr,6,,Vegetal enracine,hand-curated,FSL-1.1-MIT
+plie,fr,4,,Poisson plat,hand-curated,FSL-1.1-MIT
+plume,fr,5,,Revetement d'oiseau,hand-curated,FSL-1.1-MIT
+poire,fr,5,,Fruit a pepins,hand-curated,FSL-1.1-MIT
+poivre,fr,6,,Epice piquante,hand-curated,FSL-1.1-MIT
+pomme,fr,5,,Fruit du pommier,hand-curated,FSL-1.1-MIT
+pont,fr,4,,Ouvrage enjambant,hand-curated,FSL-1.1-MIT
+pore,fr,4,,Ouverture de la peau,hand-curated,FSL-1.1-MIT
+potion,fr,6,,Breuvage magique,hand-curated,FSL-1.1-MIT
+poussee,fr,7,,Force exercee,hand-curated,FSL-1.1-MIT
+poussin,fr,7,,Petit de la poule,hand-curated,FSL-1.1-MIT
+priere,fr,6,,Invocation sacree,hand-curated,FSL-1.1-MIT
+prince,fr,6,,Fils du roi,hand-curated,FSL-1.1-MIT
+prise,fr,5,,Action de saisir,hand-curated,FSL-1.1-MIT
+prison,fr,6,,Lieu de detention,hand-curated,FSL-1.1-MIT
+proie,fr,5,,Cible d'un predateur,hand-curated,FSL-1.1-MIT
+psi,fr,3,,Lettre grecque,hand-curated,FSL-1.1-MIT
+pu,fr,2,,Participe passe de pouvoir,hand-curated,FSL-1.1-MIT
+puits,fr,5,,Trou pour puiser l'eau,hand-curated,FSL-1.1-MIT
+purin,fr,5,,Engrais liquide,hand-curated,FSL-1.1-MIT
+puzzle,fr,6,,Jeu de patience,hand-curated,FSL-1.1-MIT
+quai,fr,4,,Bord d'un port,hand-curated,FSL-1.1-MIT
+ra,fr,2,,Dieu solaire egyptien,hand-curated,FSL-1.1-MIT
+racine,fr,6,,Base d'un arbre,hand-curated,FSL-1.1-MIT
+raison,fr,6,,Faculte de penser,hand-curated,FSL-1.1-MIT
+rapide,fr,6,,Qui va vite,hand-curated,FSL-1.1-MIT
+rare,fr,4,,Peu frequent,hand-curated,FSL-1.1-MIT
+ratine,fr,6,,Tissu a boucles,hand-curated,FSL-1.1-MIT
+re,fr,2,,Note de musique,hand-curated,FSL-1.1-MIT
+reas,fr,4,,Repondit a l'appel,hand-curated,FSL-1.1-MIT
+rebus,fr,5,,Jeu de devinette,hand-curated,FSL-1.1-MIT
+recette,fr,7,,Instructions culinaires,hand-curated,FSL-1.1-MIT
+regard,fr,6,,Action de voir,hand-curated,FSL-1.1-MIT
+reine,fr,5,,Souveraine,hand-curated,FSL-1.1-MIT
+remise,fr,6,,Rabais accorde,hand-curated,FSL-1.1-MIT
+repit,fr,5,,Pause momentanee,hand-curated,FSL-1.1-MIT
+requin,fr,6,,Poisson predateur,hand-curated,FSL-1.1-MIT
+res,fr,3,,Chose en latin,hand-curated,FSL-1.1-MIT
+ri,fr,2,,Participe passe de rire,hand-curated,FSL-1.1-MIT
+rideau,fr,6,,Tissu de fenetre,hand-curated,FSL-1.1-MIT
+rime,fr,4,,Echo sonore en poesie,hand-curated,FSL-1.1-MIT
+ris,fr,3,,Eclat de rire,hand-curated,FSL-1.1-MIT
+rite,fr,4,,Ceremonie sacree,hand-curated,FSL-1.1-MIT
+rivage,fr,6,,Bord de mer,hand-curated,FSL-1.1-MIT
+riz,fr,3,,Cereale asiatique,hand-curated,FSL-1.1-MIT
+rocher,fr,6,,Grande masse de pierre,hand-curated,FSL-1.1-MIT
+rock,fr,4,,Genre musical,hand-curated,FSL-1.1-MIT
+rond,fr,4,,De forme circulaire,hand-curated,FSL-1.1-MIT
+ru,fr,2,,Petit ruisseau,hand-curated,FSL-1.1-MIT
+ruche,fr,5,,Habitat des abeilles,hand-curated,FSL-1.1-MIT
+ruse,fr,4,,Stratageme,hand-curated,FSL-1.1-MIT
+sa,fr,2,,Determinant possessif,hand-curated,FSL-1.1-MIT
+sable,fr,5,,Grains fins de roche,hand-curated,FSL-1.1-MIT
+saison,fr,6,,Partie de l'annee,hand-curated,FSL-1.1-MIT
+sang,fr,4,,Liquide vital rouge,hand-curated,FSL-1.1-MIT
+sas,fr,3,,Passage etanche,hand-curated,FSL-1.1-MIT
+savon,fr,5,,Produit lavant,hand-curated,FSL-1.1-MIT
+scene,fr,5,,Plateau de theatre,hand-curated,FSL-1.1-MIT
+se,fr,2,,Pronom reflechi,hand-curated,FSL-1.1-MIT
+secret,fr,6,,Information cachee,hand-curated,FSL-1.1-MIT
+sel,fr,3,,Condiment blanc,hand-curated,FSL-1.1-MIT
+sens,fr,4,,Direction ou signification,hand-curated,FSL-1.1-MIT
+sentier,fr,7,,Petit chemin,hand-curated,FSL-1.1-MIT
+set,fr,3,,Manche au tennis,hand-curated,FSL-1.1-MIT
+si,fr,2,,Conjonction de condition,hand-curated,FSL-1.1-MIT
+silence,fr,7,,Absence de bruit,hand-curated,FSL-1.1-MIT
+sirop,fr,5,,Liquide sucre epais,hand-curated,FSL-1.1-MIT
+sis,fr,3,,Situes,hand-curated,FSL-1.1-MIT
+site,fr,4,,Emplacement,hand-curated,FSL-1.1-MIT
+soie,fr,4,,Tissu precieux,hand-curated,FSL-1.1-MIT
+soin,fr,4,,Attention portee,hand-curated,FSL-1.1-MIT
+sorcier,fr,7,,Mage malfaisant,hand-curated,FSL-1.1-MIT
+sort,fr,4,,Destin ou malediction,hand-curated,FSL-1.1-MIT
+soupe,fr,5,,Potage chaud,hand-curated,FSL-1.1-MIT
+spa,fr,3,,Centre de bien-etre,hand-curated,FSL-1.1-MIT
+statue,fr,6,,Sculpture figurative,hand-curated,FSL-1.1-MIT
+su,fr,2,,Participe passe de savoir,hand-curated,FSL-1.1-MIT
+sucre,fr,5,,Substance douce,hand-curated,FSL-1.1-MIT
+suette,fr,6,,Maladie a transpiration,hand-curated,FSL-1.1-MIT
+sur,fr,3,,Preposition de lieu,hand-curated,FSL-1.1-MIT
+ta,fr,2,,Determinant possessif,hand-curated,FSL-1.1-MIT
+taxi,fr,4,,Vehicule avec chauffeur,hand-curated,FSL-1.1-MIT
+te,fr,2,,Pronom personnel,hand-curated,FSL-1.1-MIT
+tee,fr,3,,Support de golf,hand-curated,FSL-1.1-MIT
+tempete,fr,7,,Violente perturbation,hand-curated,FSL-1.1-MIT
+tet,fr,3,,Nouvel an vietnamien,hand-curated,FSL-1.1-MIT
+tete,fr,4,,Sommet du corps,hand-curated,FSL-1.1-MIT
+the,fr,3,,Infusion de feuilles,hand-curated,FSL-1.1-MIT
+tie,fr,3,,Egalite au tennis,hand-curated,FSL-1.1-MIT
+tigre,fr,5,,Grand felin raye,hand-curated,FSL-1.1-MIT
+tir,fr,3,,Action de lancer,hand-curated,FSL-1.1-MIT
+toise,fr,5,,Ancienne mesure,hand-curated,FSL-1.1-MIT
+tomate,fr,6,,Fruit rouge potager,hand-curated,FSL-1.1-MIT
+tonneau,fr,7,,Fut en bois,hand-curated,FSL-1.1-MIT
+tortue,fr,6,,Reptile a carapace,hand-curated,FSL-1.1-MIT
+tour,fr,4,,Construction elevee,hand-curated,FSL-1.1-MIT
+train,fr,5,,Convoi ferroviaire,hand-curated,FSL-1.1-MIT
+tresor,fr,6,,Richesse cachee,hand-curated,FSL-1.1-MIT
+tri,fr,3,,Classement,hand-curated,FSL-1.1-MIT
+tries,fr,5,,Classees par ordre,hand-curated,FSL-1.1-MIT
+trio,fr,4,,Groupe de trois,hand-curated,FSL-1.1-MIT
+trone,fr,5,,Siege royal,hand-curated,FSL-1.1-MIT
+tu,fr,2,,Pronom deuxieme personne,hand-curated,FSL-1.1-MIT
+tuer,fr,4,,Oter la vie,hand-curated,FSL-1.1-MIT
+type,fr,4,,Categorie,hand-curated,FSL-1.1-MIT
+un,fr,2,,Article indefini,hand-curated,FSL-1.1-MIT
+une,fr,3,,Article feminin,hand-curated,FSL-1.1-MIT
+us,fr,2,,Coutumes et usages,hand-curated,FSL-1.1-MIT
+use,fr,3,,Deterioree par l'usage,hand-curated,FSL-1.1-MIT
+usee,fr,4,,Deterioree,hand-curated,FSL-1.1-MIT
+user,fr,4,,Deteriorer,hand-curated,FSL-1.1-MIT
+usine,fr,5,,Lieu de fabrication,hand-curated,FSL-1.1-MIT
+ut,fr,2,,Ancienne note de musique,hand-curated,FSL-1.1-MIT
+va,fr,2,,Verbe aller conjugue,hand-curated,FSL-1.1-MIT
+vague,fr,5,,Ondulation marine,hand-curated,FSL-1.1-MIT
+valise,fr,6,,Bagage de voyage,hand-curated,FSL-1.1-MIT
+vampire,fr,7,,Creature de la nuit,hand-curated,FSL-1.1-MIT
+veau,fr,4,,Jeune bovin,hand-curated,FSL-1.1-MIT
+ventre,fr,6,,Partie du corps,hand-curated,FSL-1.1-MIT
+ver,fr,3,,Animal rampant,hand-curated,FSL-1.1-MIT
+verger,fr,6,,Terrain plante d'arbres fruitiers,hand-curated,FSL-1.1-MIT
+vet,fr,3,,Habille,hand-curated,FSL-1.1-MIT
+viande,fr,6,,Chair animale,hand-curated,FSL-1.1-MIT
+village,fr,7,,Petite agglomeration,hand-curated,FSL-1.1-MIT
+violon,fr,6,,Instrument a cordes,hand-curated,FSL-1.1-MIT
+vis,fr,3,,Piece de fixation,hand-curated,FSL-1.1-MIT
+voeu,fr,4,,Souhait ardent,hand-curated,FSL-1.1-MIT
+vol,fr,3,,Deplacement aerien,hand-curated,FSL-1.1-MIT
+volcan,fr,6,,Montagne de feu,hand-curated,FSL-1.1-MIT
+vu,fr,2,,Participe passe de voir,hand-curated,FSL-1.1-MIT

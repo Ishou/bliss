@@ -25,7 +25,7 @@ class GridGeneratorPropertyTest {
                 Arb.int(3..6),
                 Arb.numericDouble(0.2, 0.6),
             ) { width, height, density ->
-                val grid = generator.generate(GridConstraints(width, height, targetDensity = density))
+                val grid = generator.generate(GridConstraints(width, height, targetDensity = density, enforceInterlocking = false))
                 if (grid != null) {
                     val violations = validator.validate(grid)
                     check(violations.isEmpty()) { "violations=$violations for ${width}x$height density=$density" }
@@ -43,7 +43,7 @@ class GridGeneratorPropertyTest {
                 Arb.int(3..6),
                 Arb.numericDouble(0.2, 0.5),
             ) { width, height, density ->
-                val grid = generator.generate(GridConstraints(width, height, targetDensity = density))
+                val grid = generator.generate(GridConstraints(width, height, targetDensity = density, enforceInterlocking = false))
                 if (grid != null) {
                     val coveredPositions =
                         grid.placements
@@ -55,6 +55,26 @@ class GridGeneratorPropertyTest {
                             .map { it.key }
                             .filterNot { it in coveredPositions }
                     check(orphans.isEmpty()) { "orphans=$orphans for ${width}x$height density=$density" }
+                }
+            }
+        }
+    }
+
+    @Test
+    fun `every generated grid passes interlocking check`() {
+        runBlocking {
+            checkAll(
+                PropTestConfig(iterations = 20),
+                Arb.int(4..6),
+                Arb.int(4..6),
+                Arb.numericDouble(0.3, 0.5),
+            ) { width, height, density ->
+                val grid = generator.generate(GridConstraints(width, height, targetDensity = density))
+                if (grid != null) {
+                    val uncrossed = GridValidator.uncrossedCells(grid)
+                    check(uncrossed.isEmpty()) {
+                        "uncrossed cells $uncrossed for ${width}x$height density=$density"
+                    }
                 }
             }
         }

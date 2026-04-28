@@ -7,8 +7,10 @@ export type {
   Cell,
   DefinitionCell,
   DefinitionClue,
+  HorizontalArrow,
   LetterCell,
   Position,
   Puzzle,
+  VerticalArrow,
 } from './puzzle';
 export { SAMPLE_PUZZLE } from './puzzle';

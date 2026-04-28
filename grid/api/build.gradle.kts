@@ -36,6 +36,10 @@ val commonsCsvVersion = "1.12.0"
 
 application {
     mainClass.set("com.bliss.grid.api.MainKt")
+    // Ktor auto-reload: watches classpath dirs for class changes and reloads
+    // modules without restart. Only affects `./gradlew :grid:api:run` — the
+    // production Docker image runs `java -jar` directly (no application plugin).
+    applicationDefaultJvmArgs = listOf("-Dio.ktor.development=true")
 }
 
 dependencies {

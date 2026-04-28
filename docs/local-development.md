@@ -39,6 +39,8 @@ All commands are wrappers around `scripts/local-cluster.sh`:
 ```sh
 make cluster-up         # create the cluster (idempotent)
 make cluster-bootstrap  # install operators (ingress-nginx, cert-manager, CNPG)
+make deploy-local       # build grid-api, import into k3d, helm install
+make dev                # start API (hot reload) + frontend (Vite HMR)
 make cluster-status     # kubectl get nodes,pods -A
 make cluster-reset      # nuke and recreate
 make cluster-down       # delete the cluster
@@ -101,11 +103,35 @@ grep -qF 'wordsparrow.local' /etc/hosts \
 then `https://wordsparrow.local/` resolves through k3d's load balancer
 to ingress-nginx. The cert will be self-signed; your browser will warn.
 
-Note: TLS becomes functional only after the WordSparrow chart is
-installed (later PR) — `cluster-bootstrap` installs the cert-manager
-operator but not the self-signed `ClusterIssuer`.
+Note: TLS becomes functional after `make deploy-local` — the
+`cluster-bootstrap` step installs cert-manager and the self-signed
+`ClusterIssuer`; `deploy-local` installs the app chart whose Ingress
+triggers certificate issuance.
 
-## 4. Parity guarantee
+## 4. Inner dev loop (hot reload)
+
+For day-to-day coding, run the API and frontend directly on the host
+instead of rebuilding Docker images:
+
+```sh
+make dev
+```
+
+This starts three processes in parallel (Ctrl+C stops all):
+
+| Process                          | Port  | What it does                                       |
+| -------------------------------- | ----- | -------------------------------------------------- |
+| `gradlew -t :grid:api:classes`   | —     | Continuous compilation — recompiles on every save   |
+| `gradlew :grid:api:run`          | 8080  | Ktor server with auto-reload (detects class changes)|
+| `pnpm dev` (frontend)            | 5173  | Vite dev server with HMR                           |
+
+The frontend's `.env.development` points `VITE_GRID_API_URL` at
+`http://localhost:8080`, so everything connects automatically.
+
+Use `make deploy-local` when you need to test inside the full k3d
+cluster (ingress, TLS, Postgres). Use `make dev` for everything else.
+
+## 5. Parity guarantee
 
 The principle (per `MANIFESTO.md` "Dev/prod parity"): the **same
 manifests and the same Helm charts** ship in both environments. Only
@@ -127,7 +153,7 @@ needs a row in the divergence table above and a one-line justification.
 That table is the contract; growing it without justification is a
 manifesto violation.
 
-## 5. Troubleshooting
+## 6. Troubleshooting
 
 | Symptom                                                | Likely cause                          | Fix                                                                |
 | ------------------------------------------------------ | ------------------------------------- | ------------------------------------------------------------------ |
@@ -139,7 +165,7 @@ manifesto violation.
 | `cert-manager` pods CrashLoopBackOff                   | CRDs not installed                    | the script passes `--set crds.enabled=true`; reinstall             |
 | `make cluster-up` says cluster exists but kubectl can't reach it | stale kubeconfig context     | `make cluster-reset`                                               |
 
-## 6. Cross-references
+## 7. Cross-references
 
 - `CLAUDE.md` — the engineering rules this guide follows (dev/prod parity, one-command bootstrap).
 - `MANIFESTO.md` — rationale.

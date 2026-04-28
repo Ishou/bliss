@@ -4,7 +4,7 @@
 // `[right, down]` stack in the domain. Per ADR-0002 §7 only this layer
 // may import the generated types.
 import type { components } from './types';
-import type { ArrowDirection, Cell, DefinitionCell, DefinitionClue, Puzzle } from '@/domain';
+import type { ArrowDirection, Cell, DefinitionCell, DefinitionClue, HorizontalArrow, Puzzle, VerticalArrow } from '@/domain';
 
 type ApiPuzzle = components['schemas']['Puzzle'];
 type ApiLetterCell = components['schemas']['LetterCell'];
@@ -29,17 +29,23 @@ const toClue = (cell: ApiDefinitionCell): DefinitionClue => ({
   text: cell.text, arrow: cell.arrow as ArrowDirection,
 });
 
+const isHorizontalArrow = (arrow: ArrowDirection): arrow is HorizontalArrow =>
+  arrow === 'right' || arrow === 'down-right';
+const isVerticalArrow = (arrow: ArrowDirection): arrow is VerticalArrow =>
+  arrow === 'down' || arrow === 'right-down';
+
 const mergeDefinitions = (defs: readonly ApiDefinitionCell[]): DefinitionCell => {
-  const right = defs.find((d) => d.arrow === 'right');
-  const down = defs.find((d) => d.arrow === 'down');
+  const horizontal = defs.find((d) => isHorizontalArrow(d.arrow as ArrowDirection));
+  const vertical = defs.find((d) => isVerticalArrow(d.arrow as ArrowDirection));
   const first = defs[0];
   const position = { row: first.position.row, col: first.position.column };
-  if (right && down) {
+  if (horizontal && vertical) {
+    // Casts are safe — `find` was filtered by the type-predicate above.
     return {
       kind: 'definition', position,
       clues: [
-        { ...toClue(right), arrow: 'right' },
-        { ...toClue(down), arrow: 'down' },
+        { text: horizontal.text, arrow: horizontal.arrow as HorizontalArrow },
+        { text: vertical.text, arrow: vertical.arrow as VerticalArrow },
       ],
     };
   }

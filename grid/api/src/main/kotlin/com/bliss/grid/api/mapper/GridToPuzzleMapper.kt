@@ -105,8 +105,8 @@ class GridToPuzzleMapper {
 private fun Position.toDto(): CellDto.PositionDto = CellDto.PositionDto(row = row.value, column = column.value)
 
 private fun WordPlacement.startPosition(): Position {
-    val dr = direction.offset.row.value
-    val dc = direction.offset.column.value
+    val dr = direction.startOffset.row.value
+    val dc = direction.startOffset.column.value
     return Position(
         Row(cluePosition.row.value + dr),
         Column(cluePosition.column.value + dc),
@@ -117,10 +117,12 @@ private fun Direction.toApiArrow(): String =
     when (this) {
         Direction.RIGHT -> "right"
         Direction.DOWN -> "down"
+        Direction.DOWN_RIGHT -> "down-right"
+        Direction.RIGHT_DOWN -> "right-down"
     }
 
 private fun Direction.toApiClueDirection(): String =
     when (this) {
-        Direction.RIGHT -> "across"
-        Direction.DOWN -> "down"
+        Direction.RIGHT, Direction.DOWN_RIGHT -> "across"
+        Direction.DOWN, Direction.RIGHT_DOWN -> "down"
     }

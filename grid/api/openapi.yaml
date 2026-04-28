@@ -62,12 +62,12 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
-        '503':
+        '422':
           description: |
-            Puzzle generation failed. The generator could not satisfy the
-            requested constraints within its attempt budget. RFC 7807 body;
+            Puzzle generation failed. The requested constraints (grid size,
+            word list, interlocking rules) are unsatisfiable within the
+            attempt budget. RFC 7807 body;
             `type` is `https://bliss.example/errors/puzzle-generation-failed`.
-            Clients should retry with exponential back-off.
           content:
             application/problem+json:
               schema:
@@ -236,11 +236,12 @@ components:
     Arrow:
       type: string
       description: |
-        Arrow direction on a definition cell. `right` and `down` are the only
-        mots-fléchés conventions today; new shapes (e.g. `right-then-down`)
-        land in a future schema version if needed.
-      enum: [right, down]
-      x-enum-varnames: [RIGHT, DOWN]
+        Arrow direction on a definition cell. `right` and `down` are the
+        standard mots-fléchés conventions. `down-right` (first-column clue,
+        word starts below going right) and `right-down` (first-row clue,
+        word starts right going down) enable edge-cell interlocking.
+      enum: [right, down, down-right, right-down]
+      x-enum-varnames: [RIGHT, DOWN, DOWN_RIGHT, RIGHT_DOWN]
 
     Direction:
       type: string
