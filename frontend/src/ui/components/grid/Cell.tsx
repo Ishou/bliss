@@ -140,7 +140,6 @@ const letterInput = css({
   _focus: { bg: 'leaf.500', color: 'ink' },
 });
 
-const arrowGlyph: Record<ArrowDirection, string> = { right: '→', down: '↓', 'down-right': '↳', 'right-down': '↴' };
 const arrowLabel: Record<ArrowDirection, string> = { right: 'horizontale', down: 'verticale', 'down-right': 'horizontale', 'right-down': 'verticale' };
 
 export const LetterCellView = memo(function LetterCellView({
@@ -226,7 +225,7 @@ export const DefinitionCellView = memo(function DefinitionCellView({
         </div>
         <span
           role="img"
-          className={clue.arrow === 'right' ? defArrowRight : defArrowDown}
+          className={isVertical ? defArrowDown : defArrowRight}
           aria-label={`définition ${arrowLabel[clue.arrow]}`}
         />
       </div>

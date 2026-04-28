@@ -268,12 +268,12 @@ export interface operations {
                 };
             };
             /**
-             * @description Puzzle generation failed. The generator could not satisfy the
-             *     requested constraints within its attempt budget. RFC 7807 body;
+             * @description Puzzle generation failed. The requested constraints (grid size,
+             *     word list, interlocking rules) are unsatisfiable within the
+             *     attempt budget. RFC 7807 body;
              *     `type` is `https://bliss.example/errors/puzzle-generation-failed`.
-             *     Clients should retry with exponential back-off.
              */
-            503: {
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };

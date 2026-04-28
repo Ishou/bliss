@@ -42,10 +42,17 @@ const placeholder = css({
   color: 'accent',
 });
 
-const arrowGlyph: Record<ArrowDirection, string> = { right: '→', down: '↓' };
+const arrowGlyph: Record<ArrowDirection, string> = {
+  right: '→',
+  down: '↓',
+  'down-right': '↳',
+  'right-down': '↴',
+};
 const arrowLabel: Record<ArrowDirection, string> = {
   right: 'horizontale',
   down: 'verticale',
+  'down-right': 'horizontale',
+  'right-down': 'verticale',
 };
 
 export function CurrentCluePanel({ clue }: { clue: Clue | null }) {
