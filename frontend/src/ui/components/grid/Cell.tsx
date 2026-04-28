@@ -140,11 +140,6 @@ const letterInput = css({
   _focus: { bg: 'leaf.500', color: 'ink' },
 });
 
-// Length heuristic: above 14 characters we drop to a smaller type
-// step so the clamp has room for two readable lines.
-const LONG_CLUE_THRESHOLD = 14;
-const isLongClue = (text: string): boolean => text.length > LONG_CLUE_THRESHOLD;
-
 const arrowGlyph: Record<ArrowDirection, string> = { right: '→', down: '↓', 'down-right': '↳', 'right-down': '↴' };
 const arrowLabel: Record<ArrowDirection, string> = { right: 'horizontale', down: 'verticale', 'down-right': 'horizontale', 'right-down': 'verticale' };
 
