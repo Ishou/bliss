@@ -35,21 +35,22 @@ const isVerticalArrow = (arrow: ArrowDirection): arrow is VerticalArrow =>
   arrow === 'down' || arrow === 'right-down';
 
 const mergeDefinitions = (defs: readonly ApiDefinitionCell[]): DefinitionCell => {
-  const horizontal = defs.find((d) => isHorizontalArrow(d.arrow as ArrowDirection));
-  const vertical = defs.find((d) => isVerticalArrow(d.arrow as ArrowDirection));
   const first = defs[0];
   const position = { row: first.position.row, col: first.position.column };
-  if (horizontal && vertical) {
-    // Casts are safe — `find` was filtered by the type-predicate above.
-    return {
-      kind: 'definition', position,
-      clues: [
-        { text: horizontal.text, arrow: horizontal.arrow as HorizontalArrow },
-        { text: vertical.text, arrow: vertical.arrow as VerticalArrow },
-      ],
-    };
+  if (defs.length === 1) {
+    return { kind: 'definition', position, clues: [toClue(first)] };
   }
-  return { kind: 'definition', position, clues: [toClue(first)] };
+  // Two clues at the same cell. When axes mix, render horizontal first then
+  // vertical (mots-fléchés convention). When both share an axis (top-row or
+  // left-col inner skeleton cells), keep API order — the second clue must not
+  // be silently dropped: its word's letter cells would otherwise have no
+  // clue context and become unreachable from `useGridNavigation`'s walk.
+  const horizontal = defs.find((d) => isHorizontalArrow(d.arrow as ArrowDirection));
+  const vertical = defs.find((d) => isVerticalArrow(d.arrow as ArrowDirection));
+  if (horizontal && vertical) {
+    return { kind: 'definition', position, clues: [toClue(horizontal), toClue(vertical)] };
+  }
+  return { kind: 'definition', position, clues: [toClue(defs[0]), toClue(defs[1])] };
 };
 
 /** Translate a Grid API `Puzzle` document into the frontend's domain `Puzzle`. */
