@@ -228,7 +228,7 @@ class GridGenerator(
         for (j in 0 until block.width) {
             val text = String(CharArray(block.height) { i -> hAssigned[i]!!.text[j] })
             val vWord =
-                vAvailable.firstOrNull { it.text == text }
+                vAvailable.firstOrNull { it.text == text && it.text !in localUsed }
                     ?: vWords.firstOrNull { it.text == text && it.text !in usedWords && it.text !in localUsed }
                     ?: return null
             localUsed += vWord.text
