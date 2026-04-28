@@ -29,20 +29,23 @@ const toClue = (cell: ApiDefinitionCell): DefinitionClue => ({
   text: cell.text, arrow: cell.arrow as ArrowDirection,
 });
 
-const isHorizontalArrow = (arrow: string): boolean => arrow === 'right';
-const isVerticalArrow = (arrow: string): boolean => arrow === 'down';
+const isHorizontalArrow = (arrow: ArrowDirection): arrow is HorizontalArrow =>
+  arrow === 'right' || arrow === 'down-right';
+const isVerticalArrow = (arrow: ArrowDirection): arrow is VerticalArrow =>
+  arrow === 'down' || arrow === 'right-down';
 
 const mergeDefinitions = (defs: readonly ApiDefinitionCell[]): DefinitionCell => {
-  const horizontal = defs.find((d) => isHorizontalArrow(d.arrow));
-  const vertical = defs.find((d) => isVerticalArrow(d.arrow));
+  const horizontal = defs.find((d) => isHorizontalArrow(d.arrow as ArrowDirection));
+  const vertical = defs.find((d) => isVerticalArrow(d.arrow as ArrowDirection));
   const first = defs[0];
   const position = { row: first.position.row, col: first.position.column };
   if (horizontal && vertical) {
+    // Casts are safe — `find` was filtered by the type-predicate above.
     return {
       kind: 'definition', position,
       clues: [
-        toClue(horizontal) as DefinitionClue & { arrow: HorizontalArrow },
-        toClue(vertical) as DefinitionClue & { arrow: VerticalArrow },
+        { text: horizontal.text, arrow: horizontal.arrow as HorizontalArrow },
+        { text: vertical.text, arrow: vertical.arrow as VerticalArrow },
       ],
     };
   }

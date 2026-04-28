@@ -117,10 +117,12 @@ private fun Direction.toApiArrow(): String =
     when (this) {
         Direction.RIGHT -> "right"
         Direction.DOWN -> "down"
+        Direction.DOWN_RIGHT -> "down-right"
+        Direction.RIGHT_DOWN -> "right-down"
     }
 
 private fun Direction.toApiClueDirection(): String =
     when (this) {
-        Direction.RIGHT -> "across"
-        Direction.DOWN -> "down"
+        Direction.RIGHT, Direction.DOWN_RIGHT -> "across"
+        Direction.DOWN, Direction.RIGHT_DOWN -> "down"
     }

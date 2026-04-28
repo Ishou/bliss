@@ -140,7 +140,7 @@ const letterInput = css({
   _focus: { bg: 'leaf.500', color: 'ink' },
 });
 
-const arrowLabel: Record<ArrowDirection, string> = { right: 'horizontale', down: 'verticale' };
+const arrowLabel: Record<ArrowDirection, string> = { right: 'horizontale', down: 'verticale', 'down-right': 'horizontale', 'right-down': 'verticale' };
 
 export const LetterCellView = memo(function LetterCellView({
   cell, ariaLabel, inWord, inputRef, onPointerDown, onKeyDown, onFocus,
@@ -204,7 +204,7 @@ export const DefinitionCellView = memo(function DefinitionCellView({
   if (cell.clues.length === 1) {
     const clue = cell.clues[0];
     const isCurrent = currentArrow === clue.arrow;
-    const isVertical = clue.arrow === 'down';
+    const isVertical = clue.arrow === 'down' || clue.arrow === 'right-down';
     const currentClass = isCurrent
       ? isVertical ? defCellCurrentDown : defCellCurrentRight
       : '';
