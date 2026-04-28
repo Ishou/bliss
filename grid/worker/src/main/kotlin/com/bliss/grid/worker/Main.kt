@@ -4,6 +4,8 @@ package com.bliss.grid.worker
 
 import com.bliss.grid.worker.clues.GenerateCluesCommand
 import com.bliss.grid.worker.exporter.ExportWordsCommand
+import com.bliss.grid.worker.importer.ImportFrequenciesCommand
+import com.bliss.grid.worker.importer.ImportGrammalecteCommand
 import com.bliss.grid.worker.importer.ImportWordsCommand
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.main
@@ -15,5 +17,11 @@ class BlissWorker : CliktCommand(name = "bliss-worker") {
 
 fun main(args: Array<String>) =
     BlissWorker()
-        .subcommands(ImportWordsCommand(), GenerateCluesCommand(), ExportWordsCommand())
+        .subcommands(
+            ImportWordsCommand(),
+            ImportGrammalecteCommand(),
+            ImportFrequenciesCommand(),
+            GenerateCluesCommand(),
+            ExportWordsCommand(),
+        )
         .main(args)

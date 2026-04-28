@@ -117,10 +117,12 @@ class GenerateCluesCommandIntegrationTest {
         ds().connection.use { conn ->
             conn
                 .prepareStatement(
-                    "INSERT INTO words (word, language, source, source_license) VALUES (?, 'fr', 'test', 'test')",
+                    // lemma = word so the default lemmas-only selector picks them up.
+                    "INSERT INTO words (word, language, lemma, source, source_license) VALUES (?, 'fr', ?, 'test', 'test')",
                 ).use { stmt ->
                     for (w in words) {
                         stmt.setString(1, w)
+                        stmt.setString(2, w)
                         stmt.addBatch()
                     }
                     stmt.executeBatch()

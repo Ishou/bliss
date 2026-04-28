@@ -60,7 +60,7 @@ class ExportWordsCommandIntegrationTest {
         val lines = Files.readAllLines(output, StandardCharsets.UTF_8)
         // 1 header + 5 fr rows with clues (the 6th fr row has NULL clue and the en row is filtered by language).
         assertThat(lines.size).isEqualTo(6)
-        assertThat(lines[0]).isEqualTo("word,language,length,difficulty,clue,source,source_license")
+        assertThat(lines[0]).isEqualTo("word,language,length,frequency,difficulty,clue,source,source_license")
 
         val records = parseCsv(output)
         // Sorted by word ascending.

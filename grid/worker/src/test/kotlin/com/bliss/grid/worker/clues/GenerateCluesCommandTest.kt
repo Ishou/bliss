@@ -170,11 +170,14 @@ class GenerateCluesCommandTest {
         ds().connection.use { conn ->
             conn
                 .prepareStatement(
-                    "INSERT INTO words (word, language, clue, source, source_license) VALUES (?, 'fr', ?, 'test', 'test')",
+                    // lemma = word so the default `WHERE word = lemma` selector matches; the
+                    // post-Grammalecte default is "clue lemmas only" (ADR-0013 §5 amendment).
+                    "INSERT INTO words (word, language, lemma, clue, source, source_license) VALUES (?, 'fr', ?, ?, 'test', 'test')",
                 ).use { stmt ->
                     for ((word, clue) in rows) {
                         stmt.setString(1, word)
-                        stmt.setString(2, clue)
+                        stmt.setString(2, word)
+                        stmt.setString(3, clue)
                         stmt.addBatch()
                     }
                     stmt.executeBatch()
