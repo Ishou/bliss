@@ -204,6 +204,47 @@ class GridGenerator(
             return null
         }
 
+        // Resolve vertical words from the assigned horizontal letters.
+        val vAssigned = arrayOfNulls<Word>(block.width)
+        val vAvailable = vWords.filter { it.text !in usedWords && it.text !in localUsed }
+        for (j in 0 until block.width) {
+            val text = String(CharArray(block.height) { i -> hAssigned[i]!!.text[j] })
+            val vWord =
+                vAvailable.firstOrNull { it.text == text && it.text !in localUsed }
+                    ?: vWords.firstOrNull { it.text == text && it.text !in usedWords && it.text !in localUsed }
+                    ?: return null
+            localUsed += vWord.text
+            vAssigned[j] = vWord
+        }
+
+        // Top-left corner extension: when the block sits in the (0,0) corner
+        // and isn't already full-width / full-height (those still go through
+        // the legacy branches below), try to swap the row-1 horizontal and
+        // col-1 vertical for one-letter longer words anchored by a stacked
+        // DOWN_RIGHT + RIGHT_DOWN clue at (0,0). The new edge cells (1,0) and
+        // (0,1) are single-direction edge letters; (1,1) stays as the existing
+        // H/V crossing letter.
+        var hExt: Word? = null
+        var vExt: Word? = null
+        val isInnerTopLeft =
+            block.interiorStartRow == 0 &&
+                block.interiorStartCol == 0 &&
+                block.width != gridWidth - 1 &&
+                block.height != gridHeight - 1
+        if (isInnerTopLeft) {
+            hExt = findExtension(wordsByLength[block.width + 1], hAssigned[0]!!.text, usedWords, localUsed)
+            if (hExt != null) {
+                localUsed += hExt.text
+                vExt = findExtension(wordsByLength[block.height + 1], vAssigned[0]!!.text, usedWords, localUsed)
+                if (vExt == null) {
+                    localUsed -= hExt.text
+                    hExt = null
+                } else {
+                    localUsed += vExt.text
+                }
+            }
+        }
+
         // Build placements
         val placements = mutableListOf<WordPlacement>()
 
@@ -211,7 +252,10 @@ class GridGenerator(
             val gridRow = block.interiorStartRow + i + 1
             val word = hAssigned[i]!!
 
-            if (block.interiorStartCol == 0 && block.width == gridWidth - 1) {
+            if (i == 0 && hExt != null) {
+                // Extended word + DOWN_RIGHT clue at (0,0) replaces the row-1 RIGHT clue.
+                placements += WordPlacement(hExt, Position(Row(0), Column(0)), Direction.DOWN_RIGHT)
+            } else if (block.interiorStartCol == 0 && block.width == gridWidth - 1) {
                 // Full-width word: use DOWN_RIGHT from row above
                 val clueRow = if (gridRow > 0) gridRow - 1 else 0
                 placements += WordPlacement(word, Position(Row(clueRow), Column(0)), Direction.DOWN_RIGHT)
@@ -223,19 +267,14 @@ class GridGenerator(
             }
         }
 
-        // Derive vertical words
-        val vAvailable = vWords.filter { it.text !in usedWords && it.text !in localUsed }
         for (j in 0 until block.width) {
-            val text = String(CharArray(block.height) { i -> hAssigned[i]!!.text[j] })
-            val vWord =
-                vAvailable.firstOrNull { it.text == text && it.text !in localUsed }
-                    ?: vWords.firstOrNull { it.text == text && it.text !in usedWords && it.text !in localUsed }
-                    ?: return null
-            localUsed += vWord.text
-
+            val vWord = vAssigned[j]!!
             val gridCol = block.interiorStartCol + j + 1
 
-            if (block.interiorStartRow == 0 && block.height == gridHeight - 1) {
+            if (j == 0 && vExt != null) {
+                // Extended word + RIGHT_DOWN clue at (0,0) replaces the col-1 DOWN clue.
+                placements += WordPlacement(vExt, Position(Row(0), Column(0)), Direction.RIGHT_DOWN)
+            } else if (block.interiorStartRow == 0 && block.height == gridHeight - 1) {
                 // Full-height word: use RIGHT_DOWN from column to the left
                 val clueCol = if (gridCol > 0) gridCol - 1 else 0
                 placements += WordPlacement(vWord, Position(Row(0), Column(clueCol)), Direction.RIGHT_DOWN)
@@ -248,6 +287,26 @@ class GridGenerator(
         }
 
         return placements
+    }
+
+    /**
+     * Picks a word of length [pattern].length + 1 whose suffix matches [pattern].
+     * Returns null when no such word exists outside [usedWords] and [localUsed].
+     * Used to grow a block's row-1/col-1 word by one letter at the top-left edge.
+     */
+    private fun findExtension(
+        candidates: List<Word>?,
+        pattern: String,
+        usedWords: Set<String>,
+        localUsed: Set<String>,
+    ): Word? {
+        if (candidates == null) return null
+        return candidates.firstOrNull { word ->
+            word.text.length == pattern.length + 1 &&
+                word.text.regionMatches(1, pattern, 0, pattern.length) &&
+                word.text !in usedWords &&
+                word.text !in localUsed
+        }
     }
 
     private fun fillBlockRows(

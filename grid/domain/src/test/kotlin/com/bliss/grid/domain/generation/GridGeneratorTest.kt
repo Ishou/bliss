@@ -6,7 +6,12 @@ import assertk.assertions.isGreaterThanOrEqualTo
 import assertk.assertions.isNotEqualTo
 import assertk.assertions.isNotNull
 import assertk.assertions.isNull
+import assertk.assertions.isTrue
+import com.bliss.grid.domain.model.Column
+import com.bliss.grid.domain.model.Direction
 import com.bliss.grid.domain.model.LetterCell
+import com.bliss.grid.domain.model.Position
+import com.bliss.grid.domain.model.Row
 import com.bliss.grid.domain.model.Word
 import com.bliss.grid.domain.validation.GridValidator
 import org.junit.jupiter.api.Test
@@ -119,6 +124,29 @@ class GridGeneratorTest {
         val uncrossed = GridValidator.uncrossedCells(grid!!)
         assertThat(uncrossed).isEmpty()
     }
+
+    @Test
+    fun `top-left corner emits a stacked DOWN_RIGHT + RIGHT_DOWN clue when extensions exist`() {
+        // 6×6 grid with words of length 2 and 3 only. Interior is 5, the only
+        // valid partition is [2, 2] (so the top-left block is always 2×2 and
+        // never full-width/height). The 3-letter "Z?" extensions match every
+        // candidate row-1 / col-1 word, letting the generator grow both by
+        // one letter and emit a stacked clue at (0,0).
+        val generator = GridGenerator(ListWordRepository(WORD_SQUARE_6X6_WITH_CORNER))
+
+        val grid =
+            generator.generate(
+                GridConstraints(width = 6, height = 6, enforceInterlocking = true),
+                Random(7L),
+            )
+
+        assertThat(grid).isNotNull()
+        val origin = Position(Row(0), Column(0))
+        val cluesAtOrigin = grid!!.placements.filter { it.cluePosition == origin }.map { it.direction }.toSet()
+        assertThat(cluesAtOrigin.contains(Direction.DOWN_RIGHT)).isTrue()
+        assertThat(cluesAtOrigin.contains(Direction.RIGHT_DOWN)).isTrue()
+        assertThat(GridValidator.uncrossedCells(grid)).isEmpty()
+    }
 }
 
 /**
@@ -150,6 +178,43 @@ internal val WORD_SQUARE_7X7: List<Word> =
         Word("QTW", "test"),
         Word("RUX", "test"),
         Word("SVY", "test"),
+    )
+
+/**
+ * 6×6 fixture: four 2×2 word squares (one per block) plus a set of 3-letter
+ * "Z?" extensions whose suffix matches every candidate row-1 / col-1 word in
+ * the top-left block. Drives the corner-extension code path: the generator
+ * grows the row-1 horizontal and col-1 vertical by one letter and stacks
+ * DOWN_RIGHT + RIGHT_DOWN at (0,0).
+ */
+internal val WORD_SQUARE_6X6_WITH_CORNER: List<Word> =
+    listOf(
+        // Top-left block (interior 0..1, 0..1): rows AB+CD, cols AC+BD
+        Word("AB", "test"),
+        Word("CD", "test"),
+        Word("AC", "test"),
+        Word("BD", "test"),
+        // Top-right block (interior 0..1, 3..4): rows EF+GH, cols EG+FH
+        Word("EF", "test"),
+        Word("GH", "test"),
+        Word("EG", "test"),
+        Word("FH", "test"),
+        // Bottom-left block (interior 3..4, 0..1): rows IJ+KL, cols IK+JL
+        Word("IJ", "test"),
+        Word("KL", "test"),
+        Word("IK", "test"),
+        Word("JL", "test"),
+        // Bottom-right block (interior 3..4, 3..4): rows MN+OP, cols MO+NP
+        Word("MN", "test"),
+        Word("OP", "test"),
+        Word("MO", "test"),
+        Word("NP", "test"),
+        // 3-letter extensions for the top-left corner — one per candidate
+        // row-1 / col-1 word so the corner-extension lookup always succeeds.
+        Word("ZAB", "ext"),
+        Word("ZCD", "ext"),
+        Word("ZAC", "ext"),
+        Word("ZBD", "ext"),
     )
 
 internal val SMALL_FRENCH_WORDS: List<Word> =
