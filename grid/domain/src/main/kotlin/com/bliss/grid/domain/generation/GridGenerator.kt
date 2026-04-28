@@ -137,13 +137,15 @@ class GridGenerator(
             var allSolved = true
 
             for (block in blocks.shuffled(random)) {
-                val solution = solveRectBlock(block, gridWidth, gridHeight, wordsByLength, usedWords, random, deadline)
-                if (solution == null) {
+                val blockResult = solveRectBlock(block, gridWidth, gridHeight, wordsByLength, usedWords, random, deadline)
+                if (blockResult == null) {
                     allSolved = false
                     break
                 }
+                val (solution, consumed) = blockResult
                 placements += solution
                 for (p in solution) usedWords += p.word.text
+                usedWords += consumed
             }
 
             if (allSolved) {
@@ -190,7 +192,7 @@ class GridGenerator(
         usedWords: Set<String>,
         random: Random,
         deadline: Long,
-    ): List<WordPlacement>? {
+    ): Pair<List<WordPlacement>, Set<String>>? {
         val hWords = wordsByLength[block.width] ?: return null
         val vWords = wordsByLength[block.height] ?: return null
         val available = hWords.filter { it.text !in usedWords }
@@ -286,7 +288,9 @@ class GridGenerator(
             }
         }
 
-        return placements
+        val placedTexts = placements.mapTo(mutableSetOf()) { it.word.text }
+        val consumed = localUsed - placedTexts
+        return placements to consumed
     }
 
     /**

@@ -2,6 +2,7 @@ package com.bliss.grid.domain.generation
 
 import assertk.assertThat
 import assertk.assertions.isEmpty
+import assertk.assertions.isEqualTo
 import assertk.assertions.isGreaterThanOrEqualTo
 import assertk.assertions.isNotEqualTo
 import assertk.assertions.isNotNull
@@ -147,6 +148,26 @@ class GridGeneratorTest {
         assertThat(cluesAtOrigin.contains(Direction.RIGHT_DOWN)).isTrue()
         assertThat(GridValidator.uncrossedCells(grid)).isEmpty()
     }
+
+    @Test
+    fun `words superseded by corner extension are not reused in subsequent blocks`() {
+        // Uses a shared 2-letter pool so the words superseded by the top-left extension
+        // (hAssigned[0] and vAssigned[0]) are also candidates for other blocks.
+        // Without the fix, those words escape usedWords and can appear twice.
+        val generator = GridGenerator(ListWordRepository(WORD_SQUARE_6X6_SHARED_POOL))
+
+        repeat(40) { seed ->
+            val grid =
+                generator.generate(
+                    GridConstraints(width = 6, height = 6, enforceInterlocking = true),
+                    Random(seed.toLong()),
+                )
+            if (grid != null) {
+                val wordTexts = grid.placements.map { it.word.text }
+                assertThat(wordTexts.size).isEqualTo(wordTexts.toSet().size)
+            }
+        }
+    }
 }
 
 /**
@@ -215,6 +236,32 @@ internal val WORD_SQUARE_6X6_WITH_CORNER: List<Word> =
         Word("ZCD", "ext"),
         Word("ZAC", "ext"),
         Word("ZBD", "ext"),
+    )
+
+/**
+ * 6×6 fixture where the 2-letter words are shared across blocks so that words superseded
+ * by the top-left corner extension (hAssigned[0] and vAssigned[0]) are also valid
+ * candidates for the other three blocks. Without the fix those superseded words escape
+ * usedWords and can be placed a second time; the uniqueness test catches the regression.
+ *
+ * The 3-letter "Z??" words extend any 2-letter row/col, guaranteeing the extension fires.
+ * Blocks: top-left (2×2), top-right (2×2), bottom-left (2×2), bottom-right (2×2).
+ * Each block can be solved with any two disjoint 2-letter words from the shared pool.
+ */
+internal val WORD_SQUARE_6X6_SHARED_POOL: List<Word> =
+    listOf(
+        // Shared 2-letter word pool — enough for four independent 2×2 word squares.
+        // Each block needs 2 row-words and 2 col-words (a 2×2 word square).
+        Word("AB", "test"), Word("CD", "test"), Word("AC", "test"), Word("BD", "test"),
+        Word("EF", "test"), Word("GH", "test"), Word("EG", "test"), Word("FH", "test"),
+        Word("IJ", "test"), Word("KL", "test"), Word("IK", "test"), Word("JL", "test"),
+        Word("MN", "test"), Word("OP", "test"), Word("MO", "test"), Word("NP", "test"),
+        // 3-letter extensions: every 2-letter word has a "Z??"-prefixed extension,
+        // so findExtension always succeeds for the top-left block's hAssigned[0]/vAssigned[0].
+        Word("ZAB", "ext"), Word("ZCD", "ext"), Word("ZAC", "ext"), Word("ZBD", "ext"),
+        Word("ZEF", "ext"), Word("ZGH", "ext"), Word("ZEG", "ext"), Word("ZFH", "ext"),
+        Word("ZIJ", "ext"), Word("ZKL", "ext"), Word("ZIK", "ext"), Word("ZJL", "ext"),
+        Word("ZMN", "ext"), Word("ZOP", "ext"), Word("ZMO", "ext"), Word("ZNP", "ext"),
     )
 
 internal val SMALL_FRENCH_WORDS: List<Word> =
