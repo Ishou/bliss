@@ -26,12 +26,13 @@ export interface DefinitionClue {
   readonly arrow: ArrowDirection;
 }
 
-// A clue cell. Carries one or two clues per ADR-0005 §3a. When two are
-// present, the first clue is horizontal (arrow 'right' or 'down-right')
-// and the second is vertical (arrow 'down' or 'right-down'): mots
-// fléchés always render the horizontal clue above the vertical one,
-// and pinning the order in the type means the renderer never has to
-// re-sort.
+// A clue cell. Carries one or two clues per ADR-0005 §3a. Dual cells most
+// commonly mix axes (one horizontal, one vertical) — that's the corner cell —
+// but the boundary skeleton also produces same-axis duals: top-row inner
+// clues are RIGHT_DOWN + DOWN (both vertical, one in the next column, one in
+// this column), and left-col inner clues are DOWN_RIGHT + RIGHT (both
+// horizontal, one in the next row, one in this row). The renderer must
+// handle any pair.
 export type HorizontalArrow = 'right' | 'down-right';
 export type VerticalArrow = 'down' | 'right-down';
 
@@ -40,7 +41,7 @@ export interface DefinitionCell {
   readonly position: Position;
   readonly clues:
     | readonly [DefinitionClue]
-    | readonly [DefinitionClue & { arrow: HorizontalArrow }, DefinitionClue & { arrow: VerticalArrow }];
+    | readonly [DefinitionClue, DefinitionClue];
 }
 
 // An inert solid square — neither a clue nor an input.
