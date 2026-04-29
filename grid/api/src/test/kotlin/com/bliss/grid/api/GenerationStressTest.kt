@@ -40,15 +40,17 @@ class GenerationStressTest {
         val p95 = timings[95]
         val min = timings[0]
         val max = timings[99]
-        println(
-            "stress: 100 puzzles success=$successCount/100 " +
-                "min=${min}ms p50=${p50}ms p95=${p95}ms max=${max}ms",
-        )
         // Single-attempt success rate is loose because the API's outer retry loop
         // (MAX_OUTER_RETRIES = 8 in PuzzleRoute.kt) covers single-attempt failures —
         // an API-level success rate of 99.99%+ is typical even with single-attempt at 60%.
         // Ratchet the threshold down only if these regress.
-        check(p50 < 3_000) { "median latency ${p50}ms exceeds 3s budget" }
-        check(successCount >= 60) { "only $successCount/100 single-attempt generations succeeded" }
+        check(p50 < 3_000) {
+            "median latency ${p50}ms exceeds 3s budget " +
+                "(success=$successCount/100 min=${min}ms p95=${p95}ms max=${max}ms)"
+        }
+        check(successCount >= 60) {
+            "only $successCount/100 single-attempt generations succeeded " +
+                "(min=${min}ms p50=${p50}ms p95=${p95}ms max=${max}ms)"
+        }
     }
 }

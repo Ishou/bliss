@@ -1,5 +1,8 @@
 package com.bliss.grid.api
 
+import com.bliss.grid.api.dto.BlockCellDto
+import com.bliss.grid.api.dto.DefinitionCellDto
+import com.bliss.grid.api.dto.LetterCellDto
 import com.bliss.grid.api.infrastructure.words.CsvWordRepository
 import com.bliss.grid.api.mapper.GridToPuzzleMapper
 import com.bliss.grid.api.routes.defaultConstraints
@@ -10,7 +13,7 @@ import java.util.UUID
 import kotlin.random.Random
 
 /**
- * Generates a real puzzle, prints the grid layout cell-by-cell so we can spot
+ * Generates a real puzzle, inspects the grid layout cell-by-cell to spot
  * structural anomalies (block cells inside the layout, missing clue text, etc.).
  */
 class GenerationInspectionTest {
@@ -23,35 +26,41 @@ class GenerationInspectionTest {
 
         var generated = 0
         var withBlocks = 0
+        var failureDetails = ""
         for (seed in 0L until 100L) {
             val grid = generator.generate(constraints, Random(seed)) ?: continue
             generated++
             val puzzle = mapper.toApi(grid, UUID.randomUUID(), Instant.now())
-            val blocks = puzzle.cells.count { it.javaClass.simpleName == "BlockCellDto" }
+            val blocks = puzzle.cells.count { it is BlockCellDto }
             if (blocks > 0) {
                 withBlocks++
-                println("seed=$seed blocks=$blocks")
-                val byPos = puzzle.cells.groupBy { (it.position.row to it.position.column) }
-                for (r in 0 until puzzle.height) {
-                    val sb = StringBuilder()
-                    for (c in 0 until puzzle.width) {
-                        val cells = byPos[r to c].orEmpty()
-                        val short =
-                            when {
-                                cells.isEmpty() -> "?"
-                                cells.any { it.javaClass.simpleName == "BlockCellDto" } -> "B"
-                                cells.any { it.javaClass.simpleName == "DefinitionCellDto" } -> "C"
-                                else -> "L"
+                if (failureDetails.isEmpty()) {
+                    failureDetails =
+                        buildString {
+                            appendLine("seed=$seed blocks=$blocks")
+                            val byPos = puzzle.cells.groupBy { it.position.row to it.position.column }
+                            for (r in 0 until puzzle.height) {
+                                val sb = StringBuilder()
+                                for (c in 0 until puzzle.width) {
+                                    val cells = byPos[r to c].orEmpty()
+                                    val short =
+                                        when {
+                                            cells.isEmpty() -> "?"
+                                            cells.any { it is BlockCellDto } -> "B"
+                                            cells.any { it is DefinitionCellDto } -> "C"
+                                            else -> "L"
+                                        }
+                                    sb.append(short).append(' ')
+                                }
+                                appendLine(sb.toString())
                             }
-                        sb.append(short).append(' ')
-                    }
-                    println(sb.toString())
+                        }
                 }
-                println("---")
             }
         }
-        println("summary: generated=$generated withBlocks=$withBlocks")
-        check(withBlocks == 0) { "$withBlocks of $generated grids contain block cells — generator bug" }
+        check(withBlocks == 0) {
+            "$withBlocks of $generated grids contain block cells — generator bug\n$failureDetails"
+        }
     }
 
     @Test
@@ -67,25 +76,22 @@ class GenerationInspectionTest {
             val area = puzzle.width * puzzle.height
             val letterPositions =
                 puzzle.cells
-                    .filter { it.javaClass.simpleName == "LetterCellDto" }
+                    .filterIsInstance<LetterCellDto>()
                     .map { it.position.row to it.position.column }
                     .toSet()
             val cluePositions =
                 puzzle.cells
-                    .filter { it.javaClass.simpleName == "DefinitionCellDto" }
+                    .filterIsInstance<DefinitionCellDto>()
                     .map { it.position.row to it.position.column }
                     .toSet()
             val blockPositions =
                 puzzle.cells
-                    .filter { it.javaClass.simpleName == "BlockCellDto" }
+                    .filterIsInstance<BlockCellDto>()
                     .map { it.position.row to it.position.column }
                     .toSet()
-            println(
-                "seed=$seed area=$area letter=${letterPositions.size} clue=${cluePositions.size} block=${blockPositions.size} " +
-                    "sum=${letterPositions.size + cluePositions.size + blockPositions.size} clues=${puzzle.clues.size}",
-            )
             check(letterPositions.size + cluePositions.size + blockPositions.size == area) {
-                "seed=$seed: letter+clue+block = ${letterPositions.size + cluePositions.size + blockPositions.size}, expected $area"
+                "seed=$seed area=$area letter=${letterPositions.size} clue=${cluePositions.size} " +
+                    "block=${blockPositions.size}: sum != area"
             }
             check((letterPositions intersect cluePositions).isEmpty()) {
                 "seed=$seed: positions in both letter and clue sets — invariant violated"
@@ -106,6 +112,7 @@ class GenerationInspectionTest {
 
         var generated = 0
         var withUnreachable = 0
+        val unreachableDetails = mutableListOf<String>()
         for (seed in 0L until 30L) {
             val grid = generator.generate(constraints, Random(seed)) ?: continue
             generated++
@@ -114,16 +121,14 @@ class GenerationInspectionTest {
             val byPos = puzzle.cells.associate { (it.position.row to it.position.column) to it }
             val letterPositions =
                 puzzle.cells
-                    .filter { it.javaClass.simpleName == "LetterCellDto" }
+                    .filterIsInstance<LetterCellDto>()
                     .map { it.position.row to it.position.column }
                     .toSet()
             val coveredByClue = HashSet<Pair<Int, Int>>()
 
             for (cell in puzzle.cells) {
-                if (cell.javaClass.simpleName != "DefinitionCellDto") continue
-                // Reflect the arrow string off the DTO.
-                val arrowField = cell.javaClass.getDeclaredField("arrow").apply { isAccessible = true }
-                val arrow = arrowField.get(cell) as String
+                if (cell !is DefinitionCellDto) continue
+                val arrow = cell.arrow
                 val startDr = if (arrow == "down" || arrow == "down-right") 1 else 0
                 val startDc = if (arrow == "right" || arrow == "right-down") 1 else 0
                 val dr = if (arrow == "down" || arrow == "right-down") 1 else 0
@@ -132,7 +137,7 @@ class GenerationInspectionTest {
                 var c = cell.position.column + startDc
                 while (r in 0 until puzzle.height && c in 0 until puzzle.width) {
                     val target = byPos[r to c]
-                    if (target?.javaClass?.simpleName != "LetterCellDto") break
+                    if (target !is LetterCellDto) break
                     coveredByClue += r to c
                     r += dr
                     c += dc
@@ -142,10 +147,12 @@ class GenerationInspectionTest {
             val unreachable = letterPositions - coveredByClue
             if (unreachable.isNotEmpty()) {
                 withUnreachable++
-                println("seed=$seed unreachable letter cells: $unreachable")
+                unreachableDetails += "seed=$seed unreachable letter cells: $unreachable"
             }
         }
-        println("summary: generated=$generated withUnreachable=$withUnreachable")
-        check(withUnreachable == 0) { "$withUnreachable of $generated grids have letter cells with no clue covering them" }
+        check(withUnreachable == 0) {
+            "$withUnreachable of $generated grids have letter cells with no clue covering them\n" +
+                unreachableDetails.joinToString("\n")
+        }
     }
 }
