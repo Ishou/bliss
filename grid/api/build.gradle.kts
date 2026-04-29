@@ -29,7 +29,19 @@ val assertkVersion = "0.28.1"
 val konsistVersion = "0.17.3"
 val postgresqlJdbcVersion = "42.7.10"
 val hikariVersion = "7.0.2"
-val flywayVersion = "12.4.0"
+// Flyway 12.x auto-loads callbacks from `classpath:db/callback` inside
+// `Flyway.<init>()` — see ClassicConfiguration.loadCallbackLocation. In our
+// shadowJar, that path crashes on startup with
+//   FlywayException: Unknown prefix for location (should be one of ): classpath:db/callback
+// (note the empty `( )` — even `classpath:` isn't recognized). Diagnosed
+// from Deploy API (k8s) run #19. Pinning to the last 11.x release
+// sidesteps the entire callback-autoload codepath; the API surface
+// (`configure().dataSource().locations().load().migrate()`) is identical
+// between 11 and 12, and `flyway-database-postgresql` exists in both.
+// Upgrade revisit: bump back to 12.x once the upstream / shadowJar
+// interaction is fixed (re-run this image, watch for the same crash
+// signature in the new pod's previous-container logs).
+val flywayVersion = "11.10.4"
 val testcontainersVersion = "1.21.4"
 val kotestPropertyVersion = "5.9.1"
 val commonsCsvVersion = "1.12.0"
