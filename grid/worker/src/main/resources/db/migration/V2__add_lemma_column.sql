@@ -5,5 +5,7 @@
 
 ALTER TABLE words ADD COLUMN lemma TEXT;
 
--- Lookup index for the export-time JOIN that propagates a lemma's clue to its inflections.
+-- Supports "find all inflections of a given lemma" queries (WHERE language = ? AND lemma = ?).
+-- The export-time JOIN (ON l.language = w.language AND l.word = w.lemma) is already covered
+-- by the UNIQUE (word, language) constraint index created in V1 and does not use this index.
 CREATE INDEX words_lang_lemma ON words (language, lemma);

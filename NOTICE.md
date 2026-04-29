@@ -20,3 +20,16 @@ The exact upstream commit pinned at ingest time is recorded alongside
 the importer's checksummed input in the `import-words` PR (PR2 of
 ADR-0013). Until that PR lands, the `words` table is empty and no
 Hunspell-fr data is redistributed by this repository.
+
+## Word corpus — fr (Grammalecte)
+
+- **Source:** `grammalecte.net` — `lexique-grammalecte-fr-v7.7.txt`
+  (Grammalecte French grammar checker lexicon, v7.7).
+- **License:** Mozilla Public License 2.0. Confirmed in the `LICENSE`
+  file of the Grammalecte repository (`grammalecte.net`).
+- **Canonical URL:** https://grammalecte.net
+
+The version pinned at ingest time is `v7.7`, recorded in the `source`
+column of the `words` table (`source = 'grammalecte-fr-v7.7'`) for
+every row imported via `import-grammalecte`. See ADR-0014 for the
+ingest rationale.

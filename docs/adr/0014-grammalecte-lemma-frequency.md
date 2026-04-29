@@ -52,8 +52,10 @@ existing Hunspell-fr entry.
 ### 2. Schema amendment: `lemma` column (ADR-0013 §3 extension)
 
 A new nullable `lemma TEXT` column is added to the `words` table via a V2 Flyway migration.
-A `words_lang_lemma` index is created on `(language, lemma)` to keep the export-time JOIN
-cheap.
+A `words_lang_lemma` index is created on `(language, lemma)` to support "find all inflections
+of a given lemma" queries (`WHERE language = ? AND lemma = ?`). The export-time JOIN
+(`ON l.language = w.language AND l.word = w.lemma`) is already covered by the existing
+`UNIQUE (word, language)` constraint index from V1.
 
 For self-lemma rows (`import-grammalecte` populates `lemma = word` when the surface form is
 its own canonical form). `NULL` means "lemma unknown" — used for rows imported by the legacy

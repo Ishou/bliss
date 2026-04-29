@@ -27,7 +27,7 @@ class ImportGrammalecteCommand : CliktCommand(name = "import-grammalecte") {
         .required()
 
     private val language by option("--language").default("fr")
-    private val source by option("--source").default("grammalecte")
+    private val source by option("--source").default("grammalecte-fr-v7.7")
     private val sourceLicense by option("--source-license").default("MPL-2.0")
     private val batchSize by option("--batch-size").int().default(DEFAULT_BATCH_SIZE)
     private val truncate by option("--truncate", help = "DELETE existing rows for the language before import").flag()
