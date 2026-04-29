@@ -83,10 +83,11 @@ checking could propagate the committed letters to reduce candidate lists for
 intersecting slots. Deferred for the same reason as AC-3.
 
 **Keeping the greedy rectangular-block CSP for the non-interlocked path.**
-The old algorithm is preserved behind the `enforceInterlocking = false` flag in
-`GridConstraints` and removed from the interlocked path only. This allows
-A/B comparison and safe rollback without destroying the test history that was
-accumulated against it.
+Rejected. Commit 3571337 removed the test coverage accumulated against the old
+`WorkingGrid`-based path during this same PR. Retaining untested domain code
+would violate the near-100% mutation-coverage rule. Because the safety net was
+gone, the old path was removed outright rather than kept behind a flag. Rollback,
+if ever needed, is by reverting this PR.
 
 ## Consequences
 
@@ -117,6 +118,5 @@ accumulated against it.
 
 - `GridGenerator` is now a thin orchestrator over the three phases. The
   interesting logic lives in `Skeleton`, `SlotPlanner`, and `SkeletonFiller`.
-- The `enforceInterlocking` flag in `GridConstraints` is the seam between the
-  old and new paths. The old path is kept for regression comparison and will be
-  removed in a follow-up once the new path is confirmed stable in production.
+- The old greedy-CSP path (`WorkingGrid`) was removed outright; there is no
+  flag-based fallback. Rollback is by reverting this PR.

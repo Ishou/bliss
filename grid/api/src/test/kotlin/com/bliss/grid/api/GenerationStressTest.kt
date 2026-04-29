@@ -41,7 +41,7 @@ class GenerationStressTest {
         val min = timings[0]
         val max = timings[99]
         // Single-attempt success rate is loose because the API's outer retry loop
-        // (MAX_OUTER_RETRIES = 8 in PuzzleRoute.kt) covers single-attempt failures —
+        // (MAX_OUTER_RETRIES = 5 in PuzzleRoute.kt) covers single-attempt failures —
         // an API-level success rate of 99.99%+ is typical even with single-attempt at 60%.
         // Ratchet the threshold down only if these regress.
         check(p50 < 3_000) {
