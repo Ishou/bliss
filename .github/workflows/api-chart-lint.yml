@@ -1,0 +1,97 @@
+name: API Chart Lint
+
+# Tier-1 pre-merge gate for the grid-api Helm chart at
+# grid/api/deploy/chart/ — counterpart to helm-lint.yml (which lints the
+# infra/platform/ umbrella chart only). Catches:
+#   - chart structure / template syntax bugs (`helm lint`),
+#   - render errors with both prod and local values (`helm template`),
+#   - rendered manifests that violate the Kubernetes API schema
+#     (`kubeconform -strict`) — wrong field type, unknown apiVersion,
+#     missing required field, etc.
+#
+# Does NOT catch runtime failures (pod startup, OOM, probe budget,
+# Flyway migration). Those are caught by the actual deploy in
+# deploy-api-k8s.yml; a future tier-3 PR can add an ephemeral k3d run
+# that exercises them pre-merge.
+#
+# Path filter: only fires when chart files or this workflow itself
+# change, so docs / frontend / non-chart PRs don't pay for it.
+
+on:
+  pull_request:
+    paths:
+      - 'grid/api/deploy/chart/**'
+      - '.github/workflows/api-chart-lint.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'grid/api/deploy/chart/**'
+      - '.github/workflows/api-chart-lint.yml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: helm lint + template + kubeconform
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          fetch-depth: 1
+
+      - uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4 # v4.3.1
+        with:
+          version: v3.16.3
+
+      - name: Install kubeconform
+        # yannh/kubeconform v0.6.7 — tag-pinned matching the posture of
+        # the existing helm install. Static binary, no runtime deps.
+        run: |
+          set -euo pipefail
+          version=v0.6.7
+          curl -fsSL "https://github.com/yannh/kubeconform/releases/download/${version}/kubeconform-linux-amd64.tar.gz" \
+            | sudo tar -xz -C /usr/local/bin kubeconform
+          kubeconform -v
+
+      # values-prod.yaml has `image.requireDigest: true`, so any helm
+      # invocation against it must inject a digest or the chart's
+      # `_helpers.tpl` fails fast (intentionally — the prod CD path
+      # always sets one). The all-zero placeholder satisfies the format
+      # check (`sha256:` prefix + 64 hex chars) without referring to a
+      # real image. The lint never pulls or runs anything; it only
+      # renders manifests, so the placeholder is harmless.
+      - name: helm lint (prod values)
+        run: |
+          helm lint grid/api/deploy/chart/ \
+            -f grid/api/deploy/chart/values-prod.yaml \
+            --set image.digest=sha256:0000000000000000000000000000000000000000000000000000000000000000
+
+      - name: helm lint (local values)
+        run: |
+          helm lint grid/api/deploy/chart/ \
+            -f grid/api/deploy/chart/values-local.yaml
+
+      # `kubeconform -strict` rejects unknown fields (catches typos like
+      # `livenessProb:`). `-ignore-missing-schemas` skips CRD-backed
+      # kinds (`postgresql.cnpg.io/v1` Cluster + ScheduledBackup) — the
+      # CNPG operator's admission webhooks validate those at apply
+      # time, and bundling its CRD schemas here would couple the lint
+      # version to the operator version. Standard kinds (Deployment,
+      # Service, Ingress, ServiceAccount) are still strictly checked.
+      - name: helm template + kubeconform (prod values)
+        run: |
+          helm template wordsparrow-api grid/api/deploy/chart/ \
+            -f grid/api/deploy/chart/values-prod.yaml \
+            --set image.digest=sha256:0000000000000000000000000000000000000000000000000000000000000000 \
+          | kubeconform -strict -ignore-missing-schemas -summary -
+
+      - name: helm template + kubeconform (local values)
+        run: |
+          helm template wordsparrow-api grid/api/deploy/chart/ \
+            -f grid/api/deploy/chart/values-local.yaml \
+          | kubeconform -strict -ignore-missing-schemas -summary -
