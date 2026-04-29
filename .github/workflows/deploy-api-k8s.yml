@@ -161,15 +161,94 @@ jobs:
           chmod 600 ~/.kube/config
 
       - name: Helm upgrade --install
+        id: helm
         env:
           DIGEST: ${{ steps.digest.outputs.digest }}
+        # `--atomic` was dropped on purpose: when a release fails,
+        # `--atomic` rolls back BEFORE the diagnostics step can run, so
+        # the broken pods (and their logs / events) are gone by the time
+        # we'd otherwise capture them. We keep `--wait --timeout 5m` so
+        # the step still surfaces the failure as a non-zero exit, but
+        # leave the pending-upgrade release in place. The
+        # "Capture failure diagnostics" + "Rollback failed release"
+        # steps below replicate `--atomic`'s rollback semantics while
+        # keeping the manifesto's "one-click rollback" promise intact.
         run: |
           set -euo pipefail
           helm upgrade --install wordsparrow-api grid/api/deploy/chart/ \
             -n wordsparrow --create-namespace \
             -f grid/api/deploy/chart/values-prod.yaml \
             --set image.digest="$DIGEST" \
-            --atomic --wait --timeout 5m
+            --wait --timeout 5m
+
+      - name: Capture failure diagnostics
+        # Only runs when the helm step failed. `set +e` so we don't
+        # short-circuit on missing resources (e.g. namespace doesn't
+        # exist when first install fails very early). Output is
+        # grouped so the GHA log UI surfaces collapsible sections.
+        if: failure() && steps.helm.conclusion == 'failure'
+        run: |
+          set +e
+          echo "::group::helm history (last 5 revisions)"
+          helm history wordsparrow-api -n wordsparrow --max 5
+          echo "::endgroup::"
+
+          echo "::group::helm status"
+          helm status wordsparrow-api -n wordsparrow --show-resources
+          echo "::endgroup::"
+
+          echo "::group::pod summary"
+          kubectl get pods -n wordsparrow -o wide
+          echo "::endgroup::"
+
+          echo "::group::pod descriptions (events + probe failures)"
+          kubectl describe pods -n wordsparrow \
+            -l app.kubernetes.io/name=wordsparrow-api
+          echo "::endgroup::"
+
+          # Logs from current AND previous container — CrashLoopBackOff
+          # rotates the active container, leaving its in-process logs
+          # empty; --previous pulls the last-crash output where the
+          # actual exception lives.
+          echo "::group::pod logs (current + previous, last 500 lines)"
+          for pod in $(kubectl get pods -n wordsparrow \
+            -l app.kubernetes.io/name=wordsparrow-api -o name); do
+            echo "=== $pod (current) ==="
+            kubectl logs -n wordsparrow "$pod" --all-containers --tail=500
+            echo "=== $pod (previous) ==="
+            kubectl logs -n wordsparrow "$pod" --all-containers --tail=500 --previous
+          done
+          echo "::endgroup::"
+
+          echo "::group::namespace events (last 50, oldest first)"
+          kubectl get events -n wordsparrow \
+            --sort-by=.lastTimestamp | tail -50
+          echo "::endgroup::"
+
+      - name: Rollback failed release
+        # Replicates `--atomic`'s rollback now that diagnostics are
+        # captured. Picks the prior good revision from `helm history`
+        # and rolls back synchronously. If there is no prior revision
+        # (very first install), we uninstall instead so the namespace
+        # doesn't keep a permanently-failed release lying around.
+        if: failure() && steps.helm.conclusion == 'failure'
+        run: |
+          set -euo pipefail
+          history_json=$(helm history wordsparrow-api \
+            -n wordsparrow -o json 2>/dev/null || echo '[]')
+          # Prior good revision = newest entry whose status is
+          # "deployed" or "superseded" (helm marks all previous good
+          # revisions as superseded once a new one deploys).
+          prev_rev=$(echo "$history_json" | \
+            jq -r '[.[] | select(.status=="deployed" or .status=="superseded")] | sort_by(.revision) | last | .revision // empty')
+          if [ -n "$prev_rev" ]; then
+            echo "Rolling back to revision $prev_rev"
+            helm rollback wordsparrow-api "$prev_rev" \
+              -n wordsparrow --wait --timeout 2m
+          else
+            echo "No prior good revision; uninstalling failed release"
+            helm uninstall wordsparrow-api -n wordsparrow --wait --timeout 2m
+          fi
 
       - name: Verify rollout
         run: |
