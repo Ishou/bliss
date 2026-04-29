@@ -45,6 +45,16 @@ internal class GenerateCluesCommand(
     private val limit by option("--limit", help = "Cap rows processed in this run").int()
     private val dryRun by option("--dry-run", help = "Run selector + Claude calls but skip UPDATEs").flag()
 
+    /**
+     * When true (default), only target rows where `word = lemma` — clueing the lemma is sufficient
+     * because export-words propagates the lemma's clue to every inflected form. Pass
+     * `--all-forms` to clue every form individually (legacy behaviour, ~10× more API calls).
+     */
+    private val allForms by option(
+        "--all-forms",
+        help = "Generate one clue per surface form (default: lemmas only, propagated at export)",
+    ).flag()
+
     override fun run() {
         Database.start()
         val ds = Database.dataSource() ?: error("DATABASE_URL is required for generate-clues")
@@ -65,9 +75,10 @@ internal class GenerateCluesCommand(
             }
             val started = System.currentTimeMillis()
             log.info(
-                "generate_clues_start language={} all_lengths={} force={} concurrency={} limit={} dry_run={}",
+                "generate_clues_start language={} all_lengths={} all_forms={} force={} concurrency={} limit={} dry_run={}",
                 language,
                 allLengths,
+                allForms,
                 force,
                 concurrency,
                 limit,
@@ -76,6 +87,13 @@ internal class GenerateCluesCommand(
 
             val rows = selectRows(ds)
             log.info("generate_clues_selected rows={}", rows.size)
+            if (rows.isEmpty() && !allForms) {
+                log.warn(
+                    "generate_clues_selected_empty language={} — no lemma rows found; " +
+                        "if your corpus was imported via import-words (NULL lemma), pass --all-forms",
+                    language,
+                )
+            }
 
             val processed = AtomicInteger(0)
             val written = AtomicInteger(0)
@@ -119,6 +137,7 @@ internal class GenerateCluesCommand(
         val sb = StringBuilder("SELECT word_id, word, length FROM words WHERE language = ?")
         if (!force) sb.append(" AND clue IS NULL")
         if (!allLengths) sb.append(" AND length BETWEEN 2 AND 9")
+        if (!allForms) sb.append(" AND word = lemma")
         // Stable order keeps re-runs predictable when --limit is in play (smoke testing).
         sb.append(" ORDER BY word_id")
         limit?.let { sb.append(" LIMIT ").append(it) }
@@ -157,11 +176,13 @@ internal class GenerateCluesCommand(
                     val outcome = if (attempt == 1) RowOutcome.ACCEPTED else RowOutcome.RETRIED
                     if (!dryRun) writeClue(ds, row.wordId, result.clue)
                     log.info(
-                        "clue_row word_id={} word_length={} attempt={} clue_chars={} outcome={} dry_run={}",
+                        "clue_row word_id={} word=\"{}\" word_length={} attempt={} clue_chars={} clue=\"{}\" outcome={} dry_run={}",
                         row.wordId,
+                        row.word,
                         row.length,
                         attempt,
                         result.clue.length,
+                        result.clue,
                         outcome.name.lowercase(),
                         dryRun,
                     )
@@ -170,11 +191,13 @@ internal class GenerateCluesCommand(
                 is ClueResult.TooLong -> {
                     lastTooLong = result.rejectedClue
                     log.info(
-                        "clue_row word_id={} word_length={} attempt={} clue_chars={} outcome=too_long",
+                        "clue_row word_id={} word=\"{}\" word_length={} attempt={} clue_chars={} rejected_clue=\"{}\" outcome=too_long",
                         row.wordId,
+                        row.word,
                         row.length,
                         attempt,
                         result.rejectedClue.length,
+                        result.rejectedClue,
                     )
                 }
                 is ClueResult.ApiError -> {

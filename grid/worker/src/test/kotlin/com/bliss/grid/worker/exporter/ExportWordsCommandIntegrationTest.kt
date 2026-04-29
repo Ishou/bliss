@@ -60,7 +60,7 @@ class ExportWordsCommandIntegrationTest {
         val lines = Files.readAllLines(output, StandardCharsets.UTF_8)
         // 1 header + 5 fr rows with clues (the 6th fr row has NULL clue and the en row is filtered by language).
         assertThat(lines.size).isEqualTo(6)
-        assertThat(lines[0]).isEqualTo("word,language,length,difficulty,clue,source,source_license")
+        assertThat(lines[0]).isEqualTo("word,language,length,frequency,difficulty,clue,source,source_license")
 
         val records = parseCsv(output)
         // Sorted by word ascending.
@@ -72,6 +72,8 @@ class ExportWordsCommandIntegrationTest {
         assertThat(chat.clue).isEqualTo("Felin domestique")
         assertThat(chat.source).isEqualTo("hand-curated")
         assertThat(chat.sourceLicense).isEqualTo("FSL-1.1-MIT")
+        // Frequency round-trips as integer string (REAL stored as 5000.0 → exported as "5000").
+        assertThat(chat.frequency).isEqualTo("5000")
         // Difficulty was NULL on insert → empty string in CSV.
         assertThat(chat.difficulty).isEqualTo("")
         // Difficulty was non-null on the "rose" fixture → round-trips to its string form.
@@ -93,6 +95,55 @@ class ExportWordsCommandIntegrationTest {
         assertThat(firstBytes.contentEquals(secondBytes)).isTrue()
     }
 
+    @Test
+    fun `export-words with --include-clueless emits rows with null clue`() {
+        seedFixtures()
+
+        val output = tempDir.resolve("words-clueless.csv")
+        ExportWordsCommand().parse(
+            arrayOf("--language", "fr", "--include-clueless", "--output", output.toString()),
+        )
+
+        val records = parseCsv(output)
+        // 5 fr rows with clues + 1 fr row with NULL clue (zzznoclue).
+        assertThat(records.size).isEqualTo(6)
+        assertThat(records.any { it.word == "zzznoclue" }).isTrue()
+        val noclueLine = records.first { it.word == "zzznoclue" }
+        assertThat(noclueLine.clue).isEqualTo("")
+    }
+
+    @Test
+    fun `export-words with --placeholder-clue-from-word emits word as clue for null-clue rows`() {
+        seedFixtures()
+
+        val output = tempDir.resolve("words-placeholder.csv")
+        ExportWordsCommand().parse(
+            arrayOf("--language", "fr", "--placeholder-clue-from-word", "--output", output.toString()),
+        )
+
+        val records = parseCsv(output)
+        // All 6 fr rows — every row now has a non-blank clue (either real or word-as-placeholder).
+        assertThat(records.size).isEqualTo(6)
+        val noclueLine = records.first { it.word == "zzznoclue" }
+        assertThat(noclueLine.clue).isEqualTo("zzznoclue")
+    }
+
+    @Test
+    fun `export-words propagates lemma clue to inflected forms via COALESCE`() {
+        seedLemmaFixtures()
+
+        val output = tempDir.resolve("words-lemma.csv")
+        ExportWordsCommand().parse(arrayOf("--language", "fr", "--output", output.toString()))
+
+        val records = parseCsv(output)
+        // Both "aimer" (own clue) and "aimera" (inherited via lemma JOIN) appear.
+        assertThat(records.size).isEqualTo(2)
+        val aimer = records.first { it.word == "aimer" }
+        assertThat(aimer.clue).isEqualTo("Eprouver de l'amour")
+        val aimera = records.first { it.word == "aimera" }
+        assertThat(aimera.clue).isEqualTo("Eprouver de l'amour")
+    }
+
     // ---------------------------------------------------------------------------------
     // Helpers
     // ---------------------------------------------------------------------------------
@@ -100,9 +151,10 @@ class ExportWordsCommandIntegrationTest {
     private fun seedFixtures() {
         // 5 fr rows with clues (varied difficulty: 4 NULL, 1 non-null), 1 fr row with NULL clue
         // (filtered out), 1 en row with a clue (filtered by language).
+        // "chat" carries a non-null frequency so the frequency round-trip can be asserted.
         val fixtures =
             listOf(
-                Fixture("chat", "fr", null, "Felin domestique"),
+                Fixture("chat", "fr", null, "Felin domestique", frequency = 5000f),
                 Fixture("ami", "fr", null, "Compagnon proche"),
                 Fixture("aide", "fr", null, "Soutien apporte"),
                 Fixture("soleil", "fr", null, "Astre du jour"),
@@ -114,8 +166,8 @@ class ExportWordsCommandIntegrationTest {
             conn
                 .prepareStatement(
                     """
-                    INSERT INTO words (word, language, difficulty, clue, source, source_license)
-                    VALUES (?, ?, ?, ?, 'hand-curated', 'FSL-1.1-MIT')
+                    INSERT INTO words (word, language, difficulty, clue, frequency, source, source_license)
+                    VALUES (?, ?, ?, ?, ?, 'hand-curated', 'FSL-1.1-MIT')
                     """.trimIndent(),
                 ).use { stmt ->
                     for (f in fixtures) {
@@ -123,8 +175,34 @@ class ExportWordsCommandIntegrationTest {
                         stmt.setString(2, f.language)
                         if (f.difficulty == null) stmt.setNull(3, java.sql.Types.REAL) else stmt.setFloat(3, f.difficulty)
                         if (f.clue == null) stmt.setNull(4, java.sql.Types.VARCHAR) else stmt.setString(4, f.clue)
+                        if (f.frequency == null) stmt.setNull(5, java.sql.Types.REAL) else stmt.setFloat(5, f.frequency)
                         stmt.addBatch()
                     }
+                    stmt.executeBatch()
+                }
+        }
+    }
+
+    private fun seedLemmaFixtures() {
+        // "aimer" is the lemma with its own clue.
+        // "aimera" is an inflected form with no clue; it points to lemma "aimer".
+        // The export LEFT JOIN should propagate "aimer"'s clue to "aimera" via COALESCE.
+        ds().connection.use { conn ->
+            conn
+                .prepareStatement(
+                    """
+                    INSERT INTO words (word, language, lemma, clue, source, source_license)
+                    VALUES (?, 'fr', ?, ?, 'test', 'test')
+                    """.trimIndent(),
+                ).use { stmt ->
+                    stmt.setString(1, "aimer")
+                    stmt.setString(2, "aimer")
+                    stmt.setString(3, "Eprouver de l'amour")
+                    stmt.addBatch()
+                    stmt.setString(1, "aimera")
+                    stmt.setString(2, "aimer")
+                    stmt.setNull(3, java.sql.Types.VARCHAR)
+                    stmt.addBatch()
                     stmt.executeBatch()
                 }
         }
@@ -147,6 +225,7 @@ class ExportWordsCommandIntegrationTest {
                             word = rec.get("word"),
                             language = rec.get("language"),
                             length = rec.get("length").toInt(),
+                            frequency = rec.get("frequency"),
                             difficulty = rec.get("difficulty"),
                             clue = rec.get("clue"),
                             source = rec.get("source"),
@@ -162,12 +241,14 @@ class ExportWordsCommandIntegrationTest {
         val language: String,
         val difficulty: Float?,
         val clue: String?,
+        val frequency: Float? = null,
     )
 
     private data class CsvRow(
         val word: String,
         val language: String,
         val length: Int,
+        val frequency: String,
         val difficulty: String,
         val clue: String,
         val source: String,
