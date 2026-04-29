@@ -55,6 +55,45 @@ class GenerationInspectionTest {
     }
 
     @Test
+    fun `cell counts add up — letter cells plus distinct clue positions equals grid area`() {
+        val repo = CsvWordRepository.frenchFromClasspath()
+        val generator = GridGenerator(repo)
+        val mapper = GridToPuzzleMapper()
+        val constraints = defaultConstraints()
+
+        for (seed in 0L until 5L) {
+            val grid = generator.generate(constraints, Random(seed)) ?: continue
+            val puzzle = mapper.toApi(grid, UUID.randomUUID(), Instant.now())
+            val area = puzzle.width * puzzle.height
+            val letterPositions =
+                puzzle.cells
+                    .filter { it.javaClass.simpleName == "LetterCellDto" }
+                    .map { it.position.row to it.position.column }
+                    .toSet()
+            val cluePositions =
+                puzzle.cells
+                    .filter { it.javaClass.simpleName == "DefinitionCellDto" }
+                    .map { it.position.row to it.position.column }
+                    .toSet()
+            val blockPositions =
+                puzzle.cells
+                    .filter { it.javaClass.simpleName == "BlockCellDto" }
+                    .map { it.position.row to it.position.column }
+                    .toSet()
+            println(
+                "seed=$seed area=$area letter=${letterPositions.size} clue=${cluePositions.size} block=${blockPositions.size} " +
+                    "sum=${letterPositions.size + cluePositions.size + blockPositions.size} clues=${puzzle.clues.size}",
+            )
+            check(letterPositions.size + cluePositions.size + blockPositions.size == area) {
+                "seed=$seed: letter+clue+block = ${letterPositions.size + cluePositions.size + blockPositions.size}, expected $area"
+            }
+            check((letterPositions intersect cluePositions).isEmpty()) {
+                "seed=$seed: positions in both letter and clue sets — invariant violated"
+            }
+        }
+    }
+
+    @Test
     fun `every letter cell is reachable from at least one clue's walk path`() {
         // Mirrors the frontend's path-walking in useGridNavigation: from each definition
         // cell, walk along the arrow until hitting a non-letter or boundary. Every letter
