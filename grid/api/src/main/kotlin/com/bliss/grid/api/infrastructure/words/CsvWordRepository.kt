@@ -21,7 +21,7 @@ import java.nio.charset.StandardCharsets
  * and deploys with the image.
  *
  * CSV columns (header row required, in this order):
- * `word, language, length, difficulty, clue, source, source_license`.
+ * `word, language, length, frequency, difficulty, clue, source, source_license`.
  *
  * Rows are required to carry a non-blank `clue` — `export-words` never emits
  * empty clues, so an empty `clue` here means hand-edited corruption and
@@ -46,7 +46,7 @@ class CsvWordRepository(
         private const val FRENCH_RESOURCE_PATH = "/words/words-fr.csv"
 
         private val REQUIRED_HEADERS =
-            listOf("word", "language", "length", "difficulty", "clue", "source", "source_license")
+            listOf("word", "language", "length", "frequency", "difficulty", "clue", "source", "source_license")
 
         /**
          * Loads the bundled French CSV corpus from the JVM classpath.

@@ -1,3 +1,3 @@
-word,language,length,difficulty,clue,source,source_license
-CHAT,fr,4,,Un animal,hand-curated,FSL-1.1-MIT
-AIR,fr,3,,,hand-curated,FSL-1.1-MIT
+word,language,length,frequency,difficulty,clue,source,source_license
+CHAT,fr,4,,,Un animal,hand-curated,FSL-1.1-MIT
+AIR,fr,3,,,,hand-curated,FSL-1.1-MIT
