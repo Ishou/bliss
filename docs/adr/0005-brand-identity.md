@@ -108,6 +108,33 @@ clues per cell. The `sand` background against `ink` foreground is
 13.6:1, well above the 4.5:1 AA bar at the smaller size; no extra
 contrast work is required by this amendment.
 
+**Amendment 2 (PR #96, 2026-04-29).** The boundary-skeleton pattern
+introduced a second class of dual cell not covered above: *same-axis
+duals*. Two cases arise at skeleton boundaries:
+
+- **Top-row inner cells** (`row=0, col=2k`): `right-down + down` — both
+  vertical.
+- **Left-col inner cells** (`row=2k, col=0`): `down-right + right` — both
+  horizontal.
+
+For these cells the horizontal-first rule is undefined (there is no
+horizontal clue when both are vertical, and no vertical clue when both
+are horizontal). The domain mapping therefore preserves **API order** —
+the order in which the cells appear in the `cells` array emitted by the
+grid service. The "right above down" invariant from the original §3a
+amendment applies exclusively to mixed-axis duals.
+
+The type-level invariant `[DefinitionClue & { arrow: HorizontalArrow },
+DefinitionClue & { arrow: VerticalArrow }]` has been intentionally
+relaxed to `readonly [DefinitionClue, DefinitionClue]` to accommodate
+same-axis pairs. Screen readers walk same-axis duals in API order;
+future schema versions may pin this order explicitly if user-research
+surfaces a concern.
+
+Rendering caveat: `DefinitionCellView`'s two-clue branch still
+hard-codes the right + down arrow icons. Visual polish to derive arrow
+icons from each clue's actual axis is deferred to a follow-up workstream.
+
 ### 4. Color palette
 
 Six tokens, committed to specific hex values. These are *named tokens*,
