@@ -23,5 +23,4 @@ fun main(args: Array<String>) =
             ImportFrequenciesCommand(),
             GenerateCluesCommand(),
             ExportWordsCommand(),
-        )
-        .main(args)
+        ).main(args)

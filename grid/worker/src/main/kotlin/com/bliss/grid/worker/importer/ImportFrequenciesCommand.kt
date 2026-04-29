@@ -56,7 +56,7 @@ class ImportFrequenciesCommand : CliktCommand(name = "import-frequencies") {
         }
     }
 
-    private fun parse(path: Path): List<Pair<String, Long>> =
+    internal fun parse(path: Path): List<Pair<String, Long>> =
         Files.newBufferedReader(path).use { reader ->
             reader
                 .lineSequence()
