@@ -61,27 +61,13 @@ probes:
   # Health endpoint — grid/api/src/main/kotlin/com/bliss/grid/api/routes/HealthRoute.kt:18.
   liveness: {path: "/v1/health"}
   readiness: {path: "/v1/health"}
-  # Startup gate. The API loads ~28MB of CSV corpus (`words-fr.csv`) and
-  # builds an in-memory position-letter index synchronously inside
-  # `Application.module()` before binding the HTTP listener — see
-  # CsvWordRepository.kt + Module.kt. With ~161k post-filter rows the cold
-  # path can run 30-60s on a 250m-CPU pod, well past the default
-  # readiness-probe budget (initialDelaySeconds 5 + periodSeconds 10 ×
-  # failureThreshold 3 ≈ 35s). The startupProbe gives the JVM up to
-  # `failureThreshold × periodSeconds` (default 30 × 5 = 150s) to bind
-  # 8080, and only after it passes do the liveness/readiness probes
-  # take over — no false restarts during cold start.
+  # 30 × 5 s = 150 s startup budget for CSV load + position-letter index build on 250m-CPU pod; default 35 s probe budget triggers false rollback
   startup:
     path: "/v1/health"
     periodSeconds: 5
     failureThreshold: 30
 # Inline env vars. Prefer envFromSecret for anything sensitive.
-# Default sets the JVM heap to 75% of the container memory limit. The
-# OpenJDK default (-XX:MaxRAMPercentage=25.0) was tuned for tiny serverless
-# containers; with a 1Gi limit it caps the heap at ~256MB, which is too
-# tight for the position-letter index + CSV corpus held in memory by
-# CsvWordRepository. 75% = ~768MB heap on a 1Gi pod, leaving headroom for
-# JVM metaspace + thread stacks + native code.
+# OpenJDK default MaxRAMPercentage=25 → ~256 MB on 1Gi; 75% → ~768 MB heap for position-letter index
 env:
   - name: JAVA_TOOL_OPTIONS
     value: "-XX:MaxRAMPercentage=75.0"

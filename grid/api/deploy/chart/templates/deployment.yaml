@@ -43,11 +43,7 @@ spec:
           envFrom:
             - secretRef: {name: {{ . }}}
           {{- end }}
-          # startupProbe gates liveness/readiness during cold start. Once
-          # this succeeds (HTTP listener bound after CSV load + index build),
-          # the kubelet switches to the regular probes. Without this gate,
-          # readiness fails ~35s into a ~30-60s cold start and helm's
-          # `--atomic --wait --timeout 5m` rolls the release back.
+          # startupProbe: gate for CSV cold-start (~30-60 s on 250m CPU); liveness/readiness only fire after this passes
           {{- with .Values.probes.startup }}
           startupProbe:
             httpGet: {path: {{ .path }}, port: http}
