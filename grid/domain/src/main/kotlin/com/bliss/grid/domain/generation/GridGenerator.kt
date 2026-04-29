@@ -28,9 +28,10 @@ class GridGenerator(
      * 1. [Skeleton.arrows] produces the deterministic boundary clue layout
      *    (corner duals, top-row + left-col dual cells, single trailing clue
      *    when w/h is odd).
-     * 2. [SlotPlanner.planFullLength] turns each arrow into a full-length
-     *    [WordSlot] reaching the grid edge. (Variable lengths and trailing
-     *    clue cells will be added in a follow-up.)
+     * 2. [SlotPlanner.planVariable] picks per-slot lengths via backtracking
+     *    over the valid set `{M, M-1} ∪ [2, M-3]`, placing trailing clue
+     *    cells with continuation + perpendicular continuation arrows when
+     *    a slot stops short of the grid edge.
      * 3. [SkeletonFiller] solves the resulting CSP — each slot gets a word
      *    consistent with the letters at intersection cells.
      */
@@ -48,9 +49,14 @@ class GridGenerator(
         if (slots.any { it.length < constraints.minWordLength }) return null
 
         val placements = SkeletonFiller(repository).fill(slots, random, deadline) ?: return null
+        // The planner + filler enforce the invariants `Grid.fromPlacements` checks
+        // (in-bounds, no duplicate words, no clue/letter overlap, consistent crossings).
+        // Catch only `IllegalArgumentException` — what `require(...)` throws — so a real
+        // programming bug (NPE, IndexOutOfBoundsException) propagates with its stack trace
+        // instead of becoming a silent null.
         return try {
             Grid.fromPlacements(w, h, placements)
-        } catch (_: Exception) {
+        } catch (_: IllegalArgumentException) {
             null
         }
     }
@@ -110,13 +116,6 @@ class GridGenerator(
             }
         }
         return false
-    }
-
-    private companion object {
-        // Small enough to keep iteration cheap; large enough that consecutive puzzle
-        // generations don't repeat the same words. ~30 common matches × 4 candidate
-        // slots = manageable variety per request without losing the frequency bias.
-        const val HEAD_SHUFFLE_SIZE: Int = 30
     }
 
     private fun List<Pair<CandidatePlacement, List<Word>>>.shuffledStableGreedy(

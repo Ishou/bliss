@@ -158,15 +158,17 @@ class CsvWordRepository(
             path: String,
         ): Pair<Word, Long>? {
             val text = record.get("word")
-            val clue = record.get("clue")
             require(text.isNotBlank()) { "CSV $path row ${record.recordNumber}: empty word" }
+            // Frequency filter runs before clue validation — a rare-frequency word with a
+            // blank clue would be silently dropped here regardless, so failing the entire
+            // load on its blank clue would be a false alarm. Only enforce the clue invariant
+            // for rows that actually make it past the filter.
+            val frequency = record.get("frequency").toLongOrNull() ?: 0L
+            if (frequency < MIN_FREQUENCY) return null
+            val clue = record.get("clue")
             require(clue.isNotBlank()) {
                 "CSV $path row ${record.recordNumber} ('$text'): empty clue (export-words guarantees non-null)"
             }
-            // Drop the long tail by frequency — keeps common French, removes the rare/technical
-            // forms that bloat CSP backtracking with no crossword value.
-            val frequency = record.get("frequency").toLongOrNull() ?: 0L
-            if (frequency < MIN_FREQUENCY) return null
             // Mots fléchés convention: grid cells are unaccented uppercase ASCII (Word's A-Z
             // invariant in domain). The clue keeps the original accented form for display.
             val folded = foldToAscii(text)

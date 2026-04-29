@@ -5,8 +5,12 @@ import assertk.assertions.contains
 import assertk.assertions.containsExactlyInAnyOrder
 import assertk.assertions.isEqualTo
 import assertk.assertions.isGreaterThanOrEqualTo
+import assertk.assertions.isLessThan
 import assertk.assertions.isNotNull
+import assertk.assertions.isTrue
+import com.bliss.grid.domain.model.Column
 import com.bliss.grid.domain.model.Position
+import com.bliss.grid.domain.model.Row
 import org.junit.jupiter.api.Test
 import kotlin.random.Random
 
@@ -49,9 +53,9 @@ class SlotPlannerVariableTest {
                 val slots = SlotPlanner.planVariable(arrows, 10, 10, Random(seed), System.currentTimeMillis() + 2_000L)
                 slots?.map { it.length }?.average()
             }
-        check(averages.size >= 6) { "fewer than 6 of 10 seeds produced a plan in 2s — too unstable" }
+        assertThat(averages.size).isGreaterThanOrEqualTo(6)
         val medianAvg = averages.sorted()[averages.size / 2]
-        check(medianAvg < 7.5) { "median average slot length $medianAvg too high — bias not effective" }
+        assertThat(medianAvg).isLessThan(7.5)
     }
 
     @Test
@@ -72,15 +76,8 @@ class SlotPlannerVariableTest {
             // Every cell of the w×h grid is either clue or letter — no orphans.
             for (r in 0 until h) {
                 for (c in 0 until w) {
-                    val pos =
-                        Position(
-                            com.bliss.grid.domain.model
-                                .Row(r),
-                            com.bliss.grid.domain.model
-                                .Column(c),
-                        )
-                    val claimed = pos in clueCells || pos in letterCells
-                    check(claimed) { "orphan cell at $pos for seed=$seed" }
+                    val pos = Position(Row(r), Column(c))
+                    assertThat(pos in clueCells || pos in letterCells).isTrue()
                 }
             }
         }

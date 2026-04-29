@@ -1,5 +1,6 @@
 package com.bliss.grid.domain.generation
 
+import com.bliss.grid.domain.model.Direction
 import com.bliss.grid.domain.model.Position
 
 /**
@@ -136,8 +137,7 @@ object SlotPlanner {
         val ordering = orderForBias(candidates, random)
         for (length in ordering) {
             val cp = state.checkpoint()
-            val materialised = state.materialize(next, length)
-            if (materialised != null) {
+            if (state.materialize(next, length)) {
                 val result = solveVariable(state, random, deadline)
                 if (result != null) return result
             }
@@ -165,11 +165,11 @@ object SlotPlanner {
         val isCornerRow1 =
             arrow.cluePosition.row.value == 0 &&
                 arrow.cluePosition.column.value == 0 &&
-                arrow.direction == com.bliss.grid.domain.model.Direction.DOWN_RIGHT
+                arrow.direction == Direction.DOWN_RIGHT
         val isCornerCol1 =
             arrow.cluePosition.row.value == 0 &&
                 arrow.cluePosition.column.value == 0 &&
-                arrow.direction == com.bliss.grid.domain.model.Direction.RIGHT_DOWN
+                arrow.direction == Direction.RIGHT_DOWN
         if (!isCornerRow1 && !isCornerCol1) return all
         // For corner arrows, only L = available (full length, no trail) or even L < available are safe.
         return all.filter { it == available || it % 2 == 0 }

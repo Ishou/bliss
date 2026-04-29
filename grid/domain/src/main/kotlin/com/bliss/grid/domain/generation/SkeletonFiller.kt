@@ -128,8 +128,4 @@ internal class SkeletonFiller(
         if (headSize <= 1) return matches
         return matches.subList(0, headSize).shuffled(random) + matches.subList(headSize, matches.size)
     }
-
-    private companion object {
-        const val HEAD_SHUFFLE_SIZE: Int = 30
-    }
 }

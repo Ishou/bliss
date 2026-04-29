@@ -26,8 +26,15 @@ internal class PlanState(
 
     private val cellType: Array<Array<CellType?>> = Array(height) { arrayOfNulls(width) }
 
-    /** clue position → (direction → state). Both arrows may exist on a dual cell. */
-    private val arrowState: HashMap<Position, HashMap<Direction, ArrowState>> = HashMap()
+    /**
+     * clue position → (direction → state). Both arrows may exist on a dual cell.
+     *
+     * `LinkedHashMap` (insertion-ordered) makes [nextPending] deterministic for a fixed
+     * `random` seed — `Position`'s default `hashCode` would otherwise leak hash-code
+     * differences across JVM instances into the planning order, breaking reproducibility
+     * of stress-test failures.
+     */
+    private val arrowState: LinkedHashMap<Position, LinkedHashMap<Direction, ArrowState>> = LinkedHashMap()
 
     /** letter position → set of slot indices that include this letter. */
     private val letterMembership: HashMap<Position, MutableSet<Int>> = HashMap()
@@ -62,7 +69,7 @@ internal class PlanState(
         require(cellType[pos.row.value][pos.column.value] == CellType.CLUE) {
             "cannot add arrow to non-clue cell $pos"
         }
-        val map = arrowState.getOrPut(pos) { HashMap() }
+        val map = arrowState.getOrPut(pos) { LinkedHashMap() }
         if (direction in map) return // idempotent
         map[direction] = ArrowState.PENDING
         undo.addLast {
@@ -113,16 +120,23 @@ internal class PlanState(
     }
 
     /**
-     * Materialize an arrow with [length] letters. Marks letter cells; if [length] is less than
-     * the current [availableLength], places a trailing clue cell at the position immediately
-     * after the last letter. Returns the slot index assigned, plus any new arrows added on the
-     * trailing clue (for the caller to queue). Returns `null` if a hard structural conflict is
-     * hit (e.g., a letter would land where a clue cell already exists).
+     * Materialize an arrow with [length] letters. Marks letter cells and, when [length] is
+     * less than [availableLength], places a trailing clue cell after the last letter with
+     * a same-axis continuation arrow plus a perpendicular continuation arrow (see ADR-0015
+     * §2). Returns `true` on success, `false` on a hard structural conflict (e.g. a letter
+     * cell would land on an existing clue, or the trailing clue would land on an existing
+     * letter). The caller is responsible for `rollback` on `false` — partial mutations
+     * remain in the undo log.
+     *
+     * Pending arrows whose paths the trailing clue blocks are *not* eagerly invalidated
+     * here; [solveVariable] picks them up via [nextPending] and deactivates them when
+     * their [availableLength] drops below 2. Lazy invalidation keeps this method small
+     * and lets the solver decide deactivate-vs-backtrack uniformly.
      */
     fun materialize(
         arrow: ClueArrow,
         length: Int,
-    ): MaterializeResult? {
+    ): Boolean {
         require(length >= 2) { "length must be ≥ 2, was $length" }
         val first = firstLetter(arrow)
         val dr = arrow.direction.step.row.value
@@ -130,15 +144,14 @@ internal class PlanState(
 
         // Mark each cell as a letter (or no-op if already a letter / fail if a clue cell).
         val slotIdx = _slots.size
-        val newArrows = ArrayList<ClueArrow>(2)
         for (i in 0 until length) {
             val r = first.row.value + dr * i
             val c = first.column.value + dc * i
-            if (r !in 0 until height || c !in 0 until width) return null
+            if (r !in 0 until height || c !in 0 until width) return false
             val pos = Position(Row(r), Column(c))
             val ct = cellType[r][c]
             when (ct) {
-                CellType.CLUE -> return null
+                CellType.CLUE -> return false
                 CellType.LETTER -> Unit // crossing — fine
                 null -> {
                     cellType[r][c] = CellType.LETTER
@@ -168,54 +181,28 @@ internal class PlanState(
             val trailExisting = cellType[trailR][trailC]
             when (trailExisting) {
                 CellType.CLUE -> Unit // already a clue, no-op
-                CellType.LETTER -> return null // trailing-clue would orphan an existing letter — caller's choice was incompatible
+                CellType.LETTER -> return false // trailing-clue would orphan an existing letter
                 null -> {
                     addClueCell(trail)
                     // Continuation arrow in the same axis (extends the original word past the
                     // trailing clue) AND a perpendicular arrow (replaces the perpendicular
-                    // skeleton arrow that this trailing clue invalidates — see ADR-0015 v2).
+                    // skeleton arrow that this trailing clue invalidates — see ADR-0015 §2).
                     // The perpendicular arrow's first letter must be in bounds; otherwise the
                     // arrow would be useless and we skip it.
                     val sameAxisDir = continuationDirection(arrow.direction)
                     addArrow(trail, sameAxisDir)
-                    newArrows += ClueArrow(trail, sameAxisDir)
 
                     val perpDir = perpendicularDirection(arrow.direction)
                     val perpFirstR = trailR + perpDir.startOffset.row.value
                     val perpFirstC = trailC + perpDir.startOffset.column.value
                     if (perpFirstR in 0 until height && perpFirstC in 0 until width) {
                         addArrow(trail, perpDir)
-                        newArrows += ClueArrow(trail, perpDir)
                     }
                 }
             }
         }
 
-        return MaterializeResult(slotIdx, newArrows)
-    }
-
-    /**
-     * After a clue cell has been added (typically a trailing clue), enumerate any pending
-     * arrows whose *first letter* now sits on a clue cell, or whose available length dropped
-     * to <2. Returns them so the caller can decide their fate (deactivate or backtrack).
-     */
-    fun arrowsInvalidatedAt(pos: Position): List<ClueArrow> {
-        val invalid = ArrayList<ClueArrow>()
-        for ((cluePos, dirs) in arrowState) {
-            for ((dir, st) in dirs) {
-                if (st != ArrowState.PENDING) continue
-                val first = firstLetter(ClueArrow(cluePos, dir))
-                if (first == pos) {
-                    invalid += ClueArrow(cluePos, dir)
-                    continue
-                }
-                // Walk and see if pos is on the path within current available length.
-                if (availableLength(ClueArrow(cluePos, dir)) < 2) {
-                    invalid += ClueArrow(cluePos, dir)
-                }
-            }
-        }
-        return invalid
+        return true
     }
 
     /** Returns the next pending arrow, or null if none remain. */
@@ -266,11 +253,6 @@ internal class PlanState(
     // ── Helpers ─────────────────────────────────────────────────
 
     private fun inBounds(pos: Position): Boolean = pos.row.value in 0 until height && pos.column.value in 0 until width
-
-    internal data class MaterializeResult(
-        val slotIndex: Int,
-        val newArrows: List<ClueArrow>,
-    )
 
     internal data class ValidationResult(
         val deadClueCells: List<Position>,

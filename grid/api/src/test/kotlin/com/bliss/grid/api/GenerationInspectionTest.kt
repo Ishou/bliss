@@ -128,11 +128,21 @@ class GenerationInspectionTest {
 
             for (cell in puzzle.cells) {
                 if (cell !is DefinitionCellDto) continue
-                val arrow = cell.arrow
-                val startDr = if (arrow == "down" || arrow == "down-right") 1 else 0
-                val startDc = if (arrow == "right" || arrow == "right-down") 1 else 0
-                val dr = if (arrow == "down" || arrow == "right-down") 1 else 0
-                val dc = if (arrow == "right" || arrow == "down-right") 1 else 0
+                // Translate the wire arrow string back into the domain Direction so we
+                // pull start/step offsets from the same source the generator did.
+                // Avoids encoding arrow semantics in two places.
+                val direction =
+                    when (cell.arrow) {
+                        "right" -> com.bliss.grid.domain.model.Direction.RIGHT
+                        "down" -> com.bliss.grid.domain.model.Direction.DOWN
+                        "down-right" -> com.bliss.grid.domain.model.Direction.DOWN_RIGHT
+                        "right-down" -> com.bliss.grid.domain.model.Direction.RIGHT_DOWN
+                        else -> error("unknown arrow ${cell.arrow}")
+                    }
+                val startDr = direction.startOffset.row.value
+                val startDc = direction.startOffset.column.value
+                val dr = direction.step.row.value
+                val dc = direction.step.column.value
                 var r = cell.position.row + startDr
                 var c = cell.position.column + startDc
                 while (r in 0 until puzzle.height && c in 0 until puzzle.width) {
