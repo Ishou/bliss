@@ -83,4 +83,28 @@ describe('apiPuzzleToDomain', () => {
       { text: 'Couleur', arrow: 'right' },
     ]);
   });
+
+  it('keeps both clues for same-axis dual cells in API order (right-down + down)', () => {
+    // top-row inner skeleton cells produce RIGHT_DOWN + DOWN (both vertical);
+    // ADR-0005 §3a amendment 2: same-axis duals preserve API order.
+    const api: ApiPuzzle = {
+      ...baseHeader, width: 1, height: 3,
+      cells: [
+        { kind: 'definition', position: { row: 0, column: 0 }, clueId: 'c1', text: 'Planète', arrow: 'right-down' },
+        { kind: 'definition', position: { row: 0, column: 0 }, clueId: 'c2', text: 'Fleuve', arrow: 'down' },
+        { kind: 'letter', position: { row: 1, column: 0 } },
+        { kind: 'letter', position: { row: 2, column: 0 } },
+      ],
+    };
+
+    const domain = apiPuzzleToDomain(api);
+    expect(domain.cells).toHaveLength(3);
+    const def = domain.cells[0];
+    expect(def.kind).toBe('definition');
+    if (def.kind !== 'definition') return;
+    expect(def.clues).toEqual([
+      { text: 'Planète', arrow: 'right-down' },
+      { text: 'Fleuve', arrow: 'down' },
+    ]);
+  });
 });
