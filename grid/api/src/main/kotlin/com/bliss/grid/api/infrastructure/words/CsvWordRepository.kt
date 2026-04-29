@@ -7,6 +7,7 @@ import org.apache.commons.csv.CSVParser
 import org.apache.commons.csv.CSVRecord
 import java.io.InputStreamReader
 import java.nio.charset.StandardCharsets
+import java.text.Normalizer
 
 /**
  * Classpath-backed [WordRepository] reading the committed CSV corpus
@@ -32,21 +33,73 @@ class CsvWordRepository(
 ) : WordRepository {
     private val byLength: Map<Int, List<Word>> = words.groupBy { it.text.length }
 
+    /**
+     * Position-letter index: `byLengthPosLetter[length][position][char] = words containing
+     * that char at that position`. Built once at construction; pattern matching becomes a
+     * small-set intersection instead of an O(N) linear scan, which is the difference between
+     * milliseconds and microseconds when the CSP solver issues thousands of pattern lookups
+     * per puzzle generation.
+     *
+     * Storage: for each length L we keep an array of L maps (one per position), each mapping
+     * char → list of words. Total memory ≈ |words| × avg-length pointers ≈ a few MB on the
+     * full corpus — negligible compared to the CSV itself sitting in the heap.
+     */
+    private val byLengthPosLetter: Map<Int, Array<Map<Char, List<Word>>>> =
+        byLength.mapValues { (length, wordsOfLen) ->
+            Array(length) { pos ->
+                wordsOfLen.groupBy { it.text[pos] }
+            }
+        }
+
     override fun findByLength(length: Int): List<Word> = byLength[length].orEmpty()
 
     override fun findByLengthAndPattern(
         length: Int,
         pattern: Map<Int, Char>,
-    ): List<Word> =
-        findByLength(length).filter { word ->
-            pattern.all { (i, ch) -> i in word.text.indices && word.text[i] == ch }
-        }
+    ): List<Word> {
+        if (pattern.isEmpty()) return findByLength(length)
+        val posIndex = byLengthPosLetter[length] ?: return emptyList()
+        // Validate positions and short-circuit on any unsatisfiable constraint.
+        val candidateLists =
+            pattern.map { (i, ch) ->
+                if (i !in 0 until length) return emptyList()
+                posIndex[i][ch] ?: return emptyList()
+            }
+        // Intersect smallest-first — typical patterns have a constraint that pins down
+        // the candidate set to <100 words, so we never iterate the long axis.
+        val sorted = candidateLists.sortedBy { it.size }
+        if (sorted.size == 1) return sorted[0]
+        val seed = sorted[0].toHashSet()
+        for (i in 1 until sorted.size) seed.retainAll(sorted[i].toHashSet())
+        // Preserve the input ordering of `byLength[length]` so frequency-based ordering
+        // (when present) is respected by callers that iterate in order.
+        return sorted[0].filter { it in seed }
+    }
 
     companion object {
         private const val FRENCH_RESOURCE_PATH = "/words/words-fr.csv"
 
         private val REQUIRED_HEADERS =
             listOf("word", "language", "length", "frequency", "difficulty", "clue", "source", "source_license")
+
+        /**
+         * Frequency cutoff applied at load time. Drops the long tail of rare/technical
+         * forms (`attoampère`, `aalénien`, etc.) that bloat the CSP solver's branching
+         * factor without contributing crossword-relevant vocabulary. Rationale:
+         *
+         * | threshold | rows kept |
+         * |-----------|-----------|
+         * | 0         | 454k (full corpus) |
+         * | 1,000     | 161k |
+         * | 10,000    |  89k |
+         * | 100,000   |  36k |
+         *
+         * 1,000 is the sweet spot — keeps every common form including 3-letter staples
+         * (le/de/à have billions, "ire"/"ami"/"art" still rank above 100k), drops the
+         * obscure long tail. Override via `-Dwords.minFrequency=N` for tuning.
+         */
+        private val MIN_FREQUENCY: Long =
+            System.getProperty("words.minFrequency")?.toLongOrNull() ?: 1_000L
 
         /**
          * Loads the bundled French CSV corpus from the JVM classpath.
@@ -75,7 +128,16 @@ class CsvWordRepository(
                             .build()
                     CSVParser.parse(reader, format).use { parser ->
                         validateHeader(parser.headerNames, path)
-                        val words = parser.records.map { record -> toWord(record, path) }
+                        // Skip rows whose word doesn't fully fold to A-Z (script symbols,
+                        // foreign-script entries that snuck through filtering, etc.).
+                        // The grid renders A-Z cells; anything else can't be placed.
+                        // Sort by frequency descending so downstream callers (the CSP solver)
+                        // iterate common words first — fewer backtracks when the head matches.
+                        val words =
+                            parser.records
+                                .mapNotNull { record -> toWordWithFreq(record, path) }
+                                .sortedByDescending { it.second }
+                                .map { it.first }
                         CsvWordRepository(words)
                     }
                 }
@@ -91,17 +153,46 @@ class CsvWordRepository(
             }
         }
 
-        private fun toWord(
+        private fun toWordWithFreq(
             record: CSVRecord,
             path: String,
-        ): Word {
+        ): Pair<Word, Long>? {
             val text = record.get("word")
-            val clue = record.get("clue")
             require(text.isNotBlank()) { "CSV $path row ${record.recordNumber}: empty word" }
+            // Frequency filter runs before clue validation — a rare-frequency word with a
+            // blank clue would be silently dropped here regardless, so failing the entire
+            // load on its blank clue would be a false alarm. Only enforce the clue invariant
+            // for rows that actually make it past the filter.
+            val frequency = record.get("frequency").toLongOrNull() ?: 0L
+            if (frequency < MIN_FREQUENCY) return null
+            val clue = record.get("clue")
             require(clue.isNotBlank()) {
                 "CSV $path row ${record.recordNumber} ('$text'): empty clue (export-words guarantees non-null)"
             }
-            return Word(text = text.uppercase(), definition = clue)
+            // Mots fléchés convention: grid cells are unaccented uppercase ASCII (Word's A-Z
+            // invariant in domain). The clue keeps the original accented form for display.
+            val folded = foldToAscii(text)
+            // Drop entries whose word can't be placed in A-Z cells (rare Unicode that doesn't
+            // fold — e.g. ℓ, ß, Greek letters smuggled in via the corpus). Silent skip is fine
+            // here: the corpus is large enough that a handful of dropped rows is invisible.
+            if (!folded.all { it in 'A'..'Z' }) return null
+            return Word(text = folded, definition = clue) to frequency
         }
+
+        private val DIACRITICS = "\\p{InCombiningDiacriticalMarks}+".toRegex()
+
+        /**
+         * Fold to grid-cell ASCII: NFD-normalize, strip combining marks, expand French
+         * ligatures (œ→oe, æ→ae — these don't decompose under NFD), uppercase.
+         * "Été" → "ETE", "cœur" → "COEUR", "et cætera" → "ET CAETERA".
+         */
+        private fun foldToAscii(text: String): String =
+            DIACRITICS
+                .replace(Normalizer.normalize(text, Normalizer.Form.NFD), "")
+                .replace("œ", "oe")
+                .replace("Œ", "OE")
+                .replace("æ", "ae")
+                .replace("Æ", "AE")
+                .uppercase()
     }
 }

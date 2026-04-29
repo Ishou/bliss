@@ -54,12 +54,10 @@ fun Route.puzzles(
         val grid = generateWithRetry(generator, constraints, log)
         if (grid == null) {
             log.warn(
-                "puzzle_generation_failed puzzle_id={} width={} height={} target_density={} max_attempts={} retries={}",
+                "puzzle_generation_failed puzzle_id={} width={} height={} retries={}",
                 puzzleId,
                 constraints.width,
                 constraints.height,
-                constraints.targetDensity,
-                constraints.maxAttempts,
                 MAX_OUTER_RETRIES,
             )
             call.respondProblem(
@@ -75,22 +73,11 @@ fun Route.puzzles(
     }
 }
 
-/**
- * Tuned for a ~20ms median on a 10×10 grid backed by the bundled
- * `words-fr.csv` (ADR-0013 §8).
- *
- * Density of 0.5 (up from 0.4) and a 20_000-attempt budget (up from
- * 10_000) keep the bottom rows from filling with blocks; the previous
- * defaults let the backtracker quit early and leave the bottom 4 rows
- * >90% blocks against a ~120-word curated list.
- */
 internal fun defaultConstraints(): GridConstraints =
     GridConstraints(
         width = PUZZLE_WIDTH,
         height = PUZZLE_HEIGHT,
         minWordLength = 2,
-        targetDensity = 0.5,
-        maxAttempts = 20_000,
     )
 
 internal const val PUZZLE_WIDTH: Int = 10
