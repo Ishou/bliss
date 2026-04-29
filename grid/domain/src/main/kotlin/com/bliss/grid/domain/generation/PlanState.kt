@@ -173,7 +173,7 @@ internal class PlanState(
                     addClueCell(trail)
                     // Continuation arrow in the same axis (extends the original word past the
                     // trailing clue) AND a perpendicular arrow (replaces the perpendicular
-                    // skeleton arrow that this trailing clue invalidates — see ADR-0014 v2).
+                    // skeleton arrow that this trailing clue invalidates — see ADR-0015 v2).
                     // The perpendicular arrow's first letter must be in bounds; otherwise the
                     // arrow would be useless and we skip it.
                     val sameAxisDir = continuationDirection(arrow.direction)
