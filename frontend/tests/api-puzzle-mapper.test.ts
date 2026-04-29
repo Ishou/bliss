@@ -59,4 +59,28 @@ describe('apiPuzzleToDomain', () => {
       { text: 'Saison', arrow: 'down' },
     ]);
   });
+
+  it('keeps both clues for same-axis dual cells in API order (down-right + right)', () => {
+    // left-col inner skeleton cells produce DOWN_RIGHT + RIGHT (both horizontal);
+    // ADR-0005 §3a amendment 2: same-axis duals preserve API order, not horizontal-first.
+    const api: ApiPuzzle = {
+      ...baseHeader, width: 3, height: 1,
+      cells: [
+        { kind: 'definition', position: { row: 0, column: 0 }, clueId: 'c1', text: 'Animaux', arrow: 'down-right' },
+        { kind: 'definition', position: { row: 0, column: 0 }, clueId: 'c2', text: 'Couleur', arrow: 'right' },
+        { kind: 'letter', position: { row: 0, column: 1 } },
+        { kind: 'letter', position: { row: 0, column: 2 } },
+      ],
+    };
+
+    const domain = apiPuzzleToDomain(api);
+    expect(domain.cells).toHaveLength(3);
+    const def = domain.cells[0];
+    expect(def.kind).toBe('definition');
+    if (def.kind !== 'definition') return;
+    expect(def.clues).toEqual([
+      { text: 'Animaux', arrow: 'down-right' },
+      { text: 'Couleur', arrow: 'right' },
+    ]);
+  });
 });
