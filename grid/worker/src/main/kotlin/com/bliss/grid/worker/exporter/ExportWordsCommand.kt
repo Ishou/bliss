@@ -27,7 +27,7 @@ import javax.sql.DataSource
  *
  * Output columns mirror the persisted columns of the `words` table that are
  * relevant to the API (no DB-internal `id` / `word_id` / `created_at`):
- * `word, language, length, difficulty, clue, source, source_license`.
+ * `word, language, length, frequency, difficulty, clue, source, source_license`.
  *
  * Sorted by `(language, word)` for stable git diffs. Idempotent — re-running
  * on the same DB state produces a byte-identical file.

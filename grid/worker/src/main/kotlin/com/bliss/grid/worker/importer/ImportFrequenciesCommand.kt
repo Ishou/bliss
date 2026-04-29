@@ -11,6 +11,7 @@ import com.github.ajalt.clikt.parameters.types.int
 import com.github.ajalt.clikt.parameters.types.path
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
+import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.UUID
@@ -57,7 +58,7 @@ class ImportFrequenciesCommand : CliktCommand(name = "import-frequencies") {
     }
 
     internal fun parse(path: Path): List<Pair<String, Long>> =
-        Files.newBufferedReader(path).use { reader ->
+        Files.newBufferedReader(path, StandardCharsets.UTF_8).use { reader ->
             reader
                 .lineSequence()
                 .map { it.trim() }

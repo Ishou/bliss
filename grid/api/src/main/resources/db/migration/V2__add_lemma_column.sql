@@ -1,6 +1,6 @@
--- ADR-0013 §3 amendment — add `lemma` column for lemma↔inflection relationship.
+-- ADR-0014 §2 — add `lemma` column for lemma↔inflection relationship.
 -- Mirror of grid/worker/src/main/resources/db/migration/V2__add_lemma_column.sql.
--- Expand step (ADR-0013 §6 expand-and-contract): nullable; backfill happens at import.
+-- Expand step (ADR-0013 §6, ADR-0014 §2): nullable; backfill happens at import.
 -- For self-lemma rows, lemma = word. NULL means "lemma unknown" (legacy/manual rows).
 
 ALTER TABLE words ADD COLUMN lemma TEXT;
