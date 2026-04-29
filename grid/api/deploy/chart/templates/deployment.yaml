@@ -43,6 +43,13 @@ spec:
           envFrom:
             - secretRef: {name: {{ . }}}
           {{- end }}
+          # startupProbe: gate for CSV cold-start (~30-60 s on 250m CPU); liveness/readiness only fire after this passes
+          {{- with .Values.probes.startup }}
+          startupProbe:
+            httpGet: {path: {{ .path }}, port: http}
+            periodSeconds: {{ .periodSeconds | default 5 }}
+            failureThreshold: {{ .failureThreshold | default 30 }}
+          {{- end }}
           livenessProbe:
             httpGet: {path: {{ .Values.probes.liveness.path }}, port: http}
             initialDelaySeconds: 20
