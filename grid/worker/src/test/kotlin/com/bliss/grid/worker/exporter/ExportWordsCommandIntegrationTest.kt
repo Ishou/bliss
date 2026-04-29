@@ -72,6 +72,8 @@ class ExportWordsCommandIntegrationTest {
         assertThat(chat.clue).isEqualTo("Felin domestique")
         assertThat(chat.source).isEqualTo("hand-curated")
         assertThat(chat.sourceLicense).isEqualTo("FSL-1.1-MIT")
+        // Frequency round-trips as integer string (REAL stored as 5000.0 → exported as "5000").
+        assertThat(chat.frequency).isEqualTo("5000")
         // Difficulty was NULL on insert → empty string in CSV.
         assertThat(chat.difficulty).isEqualTo("")
         // Difficulty was non-null on the "rose" fixture → round-trips to its string form.
@@ -149,9 +151,10 @@ class ExportWordsCommandIntegrationTest {
     private fun seedFixtures() {
         // 5 fr rows with clues (varied difficulty: 4 NULL, 1 non-null), 1 fr row with NULL clue
         // (filtered out), 1 en row with a clue (filtered by language).
+        // "chat" carries a non-null frequency so the frequency round-trip can be asserted.
         val fixtures =
             listOf(
-                Fixture("chat", "fr", null, "Felin domestique"),
+                Fixture("chat", "fr", null, "Felin domestique", frequency = 5000f),
                 Fixture("ami", "fr", null, "Compagnon proche"),
                 Fixture("aide", "fr", null, "Soutien apporte"),
                 Fixture("soleil", "fr", null, "Astre du jour"),
@@ -163,8 +166,8 @@ class ExportWordsCommandIntegrationTest {
             conn
                 .prepareStatement(
                     """
-                    INSERT INTO words (word, language, difficulty, clue, source, source_license)
-                    VALUES (?, ?, ?, ?, 'hand-curated', 'FSL-1.1-MIT')
+                    INSERT INTO words (word, language, difficulty, clue, frequency, source, source_license)
+                    VALUES (?, ?, ?, ?, ?, 'hand-curated', 'FSL-1.1-MIT')
                     """.trimIndent(),
                 ).use { stmt ->
                     for (f in fixtures) {
@@ -172,6 +175,7 @@ class ExportWordsCommandIntegrationTest {
                         stmt.setString(2, f.language)
                         if (f.difficulty == null) stmt.setNull(3, java.sql.Types.REAL) else stmt.setFloat(3, f.difficulty)
                         if (f.clue == null) stmt.setNull(4, java.sql.Types.VARCHAR) else stmt.setString(4, f.clue)
+                        if (f.frequency == null) stmt.setNull(5, java.sql.Types.REAL) else stmt.setFloat(5, f.frequency)
                         stmt.addBatch()
                     }
                     stmt.executeBatch()
@@ -221,6 +225,7 @@ class ExportWordsCommandIntegrationTest {
                             word = rec.get("word"),
                             language = rec.get("language"),
                             length = rec.get("length").toInt(),
+                            frequency = rec.get("frequency"),
                             difficulty = rec.get("difficulty"),
                             clue = rec.get("clue"),
                             source = rec.get("source"),
@@ -236,12 +241,14 @@ class ExportWordsCommandIntegrationTest {
         val language: String,
         val difficulty: Float?,
         val clue: String?,
+        val frequency: Float? = null,
     )
 
     private data class CsvRow(
         val word: String,
         val language: String,
         val length: Int,
+        val frequency: String,
         val difficulty: String,
         val clue: String,
         val source: String,

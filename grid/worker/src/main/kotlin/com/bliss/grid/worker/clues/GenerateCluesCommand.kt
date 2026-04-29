@@ -87,6 +87,13 @@ internal class GenerateCluesCommand(
 
             val rows = selectRows(ds)
             log.info("generate_clues_selected rows={}", rows.size)
+            if (rows.isEmpty() && !allForms) {
+                log.warn(
+                    "generate_clues_selected_empty language={} — no lemma rows found; " +
+                        "if your corpus was imported via import-words (NULL lemma), pass --all-forms",
+                    language,
+                )
+            }
 
             val processed = AtomicInteger(0)
             val written = AtomicInteger(0)
