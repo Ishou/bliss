@@ -54,11 +54,10 @@ fun Route.puzzles(
         val grid = generateWithRetry(generator, constraints, log)
         if (grid == null) {
             log.warn(
-                "puzzle_generation_failed puzzle_id={} width={} height={} target_density={} retries={}",
+                "puzzle_generation_failed puzzle_id={} width={} height={} retries={}",
                 puzzleId,
                 constraints.width,
                 constraints.height,
-                constraints.targetDensity,
                 MAX_OUTER_RETRIES,
             )
             call.respondProblem(
@@ -74,18 +73,11 @@ fun Route.puzzles(
     }
 }
 
-/**
- * Tuned for a ~20ms median on a 10×10 grid backed by the bundled
- * `words-fr.csv` (ADR-0013 §8).
- *
- * Target density 0.5 on the skeleton-based interlocked generator.
- */
 internal fun defaultConstraints(): GridConstraints =
     GridConstraints(
         width = PUZZLE_WIDTH,
         height = PUZZLE_HEIGHT,
         minWordLength = 2,
-        targetDensity = 0.5,
     )
 
 internal const val PUZZLE_WIDTH: Int = 10
