@@ -10,9 +10,10 @@ import java.time.Instant
 private val startedAt: Instant = Instant.now()
 
 /**
- * `GET /v1/health` — liveness probe (Fly healthcheck + Dockerfile HEALTHCHECK,
- * ADR-0007 §3). Out-of-OpenAPI by design; ops endpoints live below the
- * contract layer.
+ * `GET /v1/health` — k8s liveness, readiness, and startup probes
+ * (Helm chart `probes.{liveness,readiness,startup}.path`, ADR-0009),
+ * plus the Dockerfile HEALTHCHECK (ADR-0007 §3). Out-of-OpenAPI by
+ * design; ops endpoints live below the contract layer.
  */
 fun Route.health(version: String) {
     get("/v1/health") {
