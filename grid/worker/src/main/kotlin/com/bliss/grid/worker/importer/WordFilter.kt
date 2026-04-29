@@ -35,3 +35,20 @@ internal fun difficulty(
 private const val ALPHA: Double = 0.15
 private const val BETA: Double = 0.20
 private const val LENGTH_PIVOT: Int = 5
+
+// ADR-0013 §4: sigmoid(α·ln(rank) + β·(length − 5)) with α=0.15, β=0.20, pivot=5.
+// Shared by ImportGrammalecteCommand and ImportFrequenciesCommand — tune here, not in callers.
+internal val RECOMPUTE_DIFFICULTY_SQL =
+    """
+    UPDATE words AS w
+    SET difficulty = (
+        1.0 / (1.0 + exp(-(0.15 * ln(r.rank::float) + 0.20 * (w.length - 5))))
+    )::real
+    FROM (
+        SELECT word_id,
+               row_number() OVER (ORDER BY frequency DESC NULLS LAST, word ASC) AS rank
+        FROM words
+        WHERE language = ?
+    ) AS r
+    WHERE w.word_id = r.word_id
+    """.trimIndent()

@@ -159,12 +159,11 @@ class ImportGrammalecteCommand : CliktCommand(name = "import-grammalecte") {
         return inserted
     }
 
-    /** Same SQL as `ImportFrequenciesCommand`: §4 sigmoid keyed by frequency rank. */
     private fun recomputeDifficulty(ds: DataSource): Int =
         ds.connection.use { conn ->
             conn.autoCommit = false
             val n =
-                conn.prepareStatement(RECOMPUTE_SQL).use { stmt ->
+                conn.prepareStatement(RECOMPUTE_DIFFICULTY_SQL).use { stmt ->
                     stmt.setString(1, language)
                     stmt.executeUpdate()
                 }
@@ -185,21 +184,6 @@ class ImportGrammalecteCommand : CliktCommand(name = "import-grammalecte") {
             INSERT INTO words (word, language, lemma, frequency, source, source_license)
             VALUES (?, ?, ?, ?, ?, ?)
             ON CONFLICT (word, language) DO NOTHING
-            """.trimIndent()
-
-        private val RECOMPUTE_SQL =
-            """
-            UPDATE words AS w
-            SET difficulty = (
-                1.0 / (1.0 + exp(-(0.15 * ln(r.rank::float) + 0.20 * (w.length - 5))))
-            )::real
-            FROM (
-                SELECT word_id,
-                       row_number() OVER (ORDER BY frequency DESC NULLS LAST, word ASC) AS rank
-                FROM words
-                WHERE language = ?
-            ) AS r
-            WHERE w.word_id = r.word_id
             """.trimIndent()
     }
 }

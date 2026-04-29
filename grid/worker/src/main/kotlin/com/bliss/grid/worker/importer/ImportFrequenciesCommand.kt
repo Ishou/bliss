@@ -105,7 +105,7 @@ class ImportFrequenciesCommand : CliktCommand(name = "import-frequencies") {
         ds.connection.use { conn ->
             conn.autoCommit = false
             val n =
-                conn.prepareStatement(RECOMPUTE_SQL).use { stmt ->
+                conn.prepareStatement(RECOMPUTE_DIFFICULTY_SQL).use { stmt ->
                     stmt.setString(1, language)
                     stmt.executeUpdate()
                 }
@@ -119,23 +119,6 @@ class ImportFrequenciesCommand : CliktCommand(name = "import-frequencies") {
         private val UPDATE_SQL =
             """
             UPDATE words SET frequency = ? WHERE word = ? AND language = ?
-            """.trimIndent()
-
-        // ADR-0013 §4: sigmoid(α·ln(rank) + β·(length − 5)) with α=0.15, β=0.20.
-        // 1 / (1 + exp(-x)) is the logistic function.
-        private val RECOMPUTE_SQL =
-            """
-            UPDATE words AS w
-            SET difficulty = (
-                1.0 / (1.0 + exp(-(0.15 * ln(r.rank::float) + 0.20 * (w.length - 5))))
-            )::real
-            FROM (
-                SELECT word_id,
-                       row_number() OVER (ORDER BY frequency DESC NULLS LAST, word ASC) AS rank
-                FROM words
-                WHERE language = ?
-            ) AS r
-            WHERE w.word_id = r.word_id
             """.trimIndent()
     }
 }
