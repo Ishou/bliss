@@ -24,7 +24,7 @@ export interface GridNavigation {
   readonly registerCellRef: (el: HTMLInputElement | null) => void;
   readonly highlightFor: (position: Position) => CellHighlight;
   // click (not pointerdown) — pan gestures never produce a click, so focus is suppressed naturally.
-  readonly handleClick: (event: React.MouseEvent<HTMLInputElement>) => void;
+  readonly handleClick: (event: React.MouseEvent<HTMLDivElement>) => void;
   readonly handleFocus: (event: React.FocusEvent<HTMLInputElement>) => void;
   readonly handleKeyDown: (event: React.KeyboardEvent<HTMLInputElement>) => void;
   // Android Gboard fires keydown key==="Unidentified"; the real letter arrives here via InputEvent.data.
@@ -45,7 +45,7 @@ export interface GridNavigation {
 const key = (p: Position) => `${p.row},${p.col}`;
 const same = (a: Position | null, b: Position | null) =>
   a !== null && b !== null && a.row === b.row && a.col === b.col;
-const posOf = (el: HTMLInputElement): Position | null => {
+const posOf = (el: HTMLElement): Position | null => {
   const r = el.dataset.row, c = el.dataset.col;
   return r === undefined || c === undefined ? null : { row: Number(r), col: Number(c) };
 };
@@ -129,7 +129,7 @@ export function useGridNavigation(puzzle: Puzzle): GridNavigation {
   }, []);
 
   const handleClick = useCallback(
-    (event: React.MouseEvent<HTMLInputElement>) => {
+    (event: React.MouseEvent<HTMLDivElement>) => {
       const p = posOf(event.currentTarget);
       if (!p) return;
       const { focused: prev, direction: dir } = stateRef.current;

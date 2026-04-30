@@ -156,11 +156,7 @@ export const LetterCellView = memo(function LetterCellView({
   ariaLabel: string;
   inWord: boolean;
   inputRef: Ref<HTMLInputElement>;
-  // The wrapping <div> is the actual touch target — see comment below.
-  // We keep `MouseEvent<HTMLInputElement>` in the signature for source
-  // compatibility with `useGridNavigation.handleClick`; `posOf()` only
-  // reads `dataset.row` / `dataset.col`, which are mirrored on the div.
-  onClick: (e: MouseEvent<HTMLInputElement>) => void;
+  onClick: (e: MouseEvent<HTMLDivElement>) => void;
   onKeyDown: (e: KeyboardEvent<HTMLInputElement>) => void;
   onFocus: (e: FocusEvent<HTMLInputElement>) => void;
   // onInput covers Android soft keyboards, which emit key==="Unidentified" on keydown.
@@ -192,7 +188,7 @@ export const LetterCellView = memo(function LetterCellView({
   //     inside the click handler (a user-gesture context), so Android
   //     and iOS still pop the soft keyboard.
   const handleClick = (e: MouseEvent<HTMLDivElement>) => {
-    onClick(e as unknown as MouseEvent<HTMLInputElement>);
+    onClick(e);
     localInputRef.current?.focus();
   };
 
