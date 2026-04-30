@@ -16,7 +16,7 @@ const gridContainer = css({
   margin: '0 auto',
   // Allow border arrows on edge cells to bleed outside the grid border box.
   overflow: 'visible',
-  // Omitted: touch-action:manipulation blocked pinch/pan; user-select:none blocked iOS magnifier on clue cells. See ADR-0002 §4.
+  // Omitted: touch-action:manipulation blocked pinch/pan; user-select:none blocked iOS magnifier on clue cells.
 });
 
 const rowStyles = css({ display: 'contents' });
