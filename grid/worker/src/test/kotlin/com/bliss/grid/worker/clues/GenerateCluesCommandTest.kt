@@ -4,6 +4,9 @@ import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.isGreaterThanOrEqualTo
 import assertk.assertions.isNull
+import com.bliss.grid.application.clue.GenerateCluesUseCase
+import com.bliss.grid.domain.clue.ClueClient
+import com.bliss.grid.domain.clue.ClueResult
 import com.bliss.grid.worker.db.Database
 import com.github.ajalt.clikt.core.parse
 import org.junit.jupiter.api.AfterEach
@@ -81,7 +84,7 @@ class GenerateCluesCommandTest {
         run("--concurrency", "1") { fake }
 
         assertThat(clueOf("chat")).isNull()
-        assertThat(fake.attemptsFor("chat")).isEqualTo(MAX_ATTEMPTS)
+        assertThat(fake.attemptsFor("chat")).isEqualTo(GenerateCluesUseCase.MAX_ATTEMPTS)
     }
 
     @Test

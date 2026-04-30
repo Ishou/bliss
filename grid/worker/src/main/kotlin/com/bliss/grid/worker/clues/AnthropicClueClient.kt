@@ -1,6 +1,4 @@
-// Anthropic-backed clue generator (ADR-0013 §5). One method, one trade-off:
-// length check is the client's responsibility, not the caller's, so the caller
-// can branch on Accepted / TooLong / ApiError without re-measuring chars.
+// Anthropic-backed [ClueClient] adapter (ADR-0013 §5).
 package com.bliss.grid.worker.clues
 
 import com.anthropic.client.AnthropicClient
@@ -8,43 +6,13 @@ import com.anthropic.client.okhttp.AnthropicOkHttpClient
 import com.anthropic.models.messages.CacheControlEphemeral
 import com.anthropic.models.messages.MessageCreateParams
 import com.anthropic.models.messages.TextBlockParam
+import com.bliss.grid.domain.clue.ClueClient
+import com.bliss.grid.domain.clue.ClueResult
 import io.opentelemetry.api.GlobalOpenTelemetry
 import io.opentelemetry.api.trace.StatusCode
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.slf4j.LoggerFactory
-
-/** Result of one [ClueClient.generateClue] call. */
-internal sealed class ClueResult {
-    /** Model returned a clue ≤ [MAX_CLUE_CHARS]. */
-    data class Accepted(
-        val clue: String,
-    ) : ClueResult()
-
-    /** Model returned a clue > [MAX_CLUE_CHARS]; caller decides whether to retry. */
-    data class TooLong(
-        val rejectedClue: String,
-    ) : ClueResult()
-
-    /** Anthropic call failed (network, 4xx/5xx, malformed response). */
-    data class ApiError(
-        val cause: Throwable,
-    ) : ClueResult()
-}
-
-/** Production impl wraps the Anthropic SDK; tests provide a fake. */
-internal interface ClueClient {
-    /**
-     * Generate one clue for [word]. If [retry] is true, the user message uses the stricter
-     * re-prompt template (ADR-0013 §5); otherwise the standard "Mot : <word>" message.
-     * The system prompt + few-shot prefix is identical across all calls in a run — that's
-     * the whole point of prompt caching.
-     */
-    suspend fun generateClue(
-        word: String,
-        retry: Boolean = false,
-    ): ClueResult
-}
 
 /**
  * Default [ClueClient]. Pinned to Claude Haiku 4.5 (ADR-0013 §5): plenty of headroom for

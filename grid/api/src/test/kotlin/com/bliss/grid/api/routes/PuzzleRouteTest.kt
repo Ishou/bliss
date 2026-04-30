@@ -10,6 +10,10 @@ import assertk.assertions.isTrue
 import assertk.assertions.startsWith
 import com.bliss.grid.api.dto.PuzzleResponse
 import com.bliss.grid.api.module
+import com.bliss.grid.application.puzzle.GeneratePuzzleUseCase
+import com.bliss.grid.application.puzzle.PUZZLE_HEIGHT
+import com.bliss.grid.application.puzzle.PUZZLE_WIDTH
+import com.bliss.grid.application.puzzle.defaultPuzzleConstraints
 import com.bliss.grid.domain.generation.WordRepository
 import com.bliss.grid.domain.model.Word
 import io.ktor.client.request.get
@@ -150,18 +154,17 @@ class PuzzleRouteTest {
     fun `responds 422 with problem json when generator cannot satisfy constraints`() =
         testApplication {
             application {
-                routing {
-                    puzzles(
-                        wordRepository =
-                            object : WordRepository {
-                                override fun findByLength(length: Int): List<Word> = emptyList()
+                val emptyRepo =
+                    object : WordRepository {
+                        override fun findByLength(length: Int): List<Word> = emptyList()
 
-                                override fun findByLengthAndPattern(
-                                    length: Int,
-                                    pattern: Map<Int, Char>,
-                                ): List<Word> = emptyList()
-                            },
-                    )
+                        override fun findByLengthAndPattern(
+                            length: Int,
+                            pattern: Map<Int, Char>,
+                        ): List<Word> = emptyList()
+                    }
+                routing {
+                    puzzles(GeneratePuzzleUseCase(emptyRepo, defaultPuzzleConstraints()))
                 }
             }
 

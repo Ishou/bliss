@@ -59,6 +59,7 @@ dependencies {
     // The api layer composes domain generation with infrastructure adapters
     // and maps domain types to wire DTOs (ADR-0003 §4).
     implementation(project(":grid:domain"))
+    implementation(project(":grid:application"))
     implementation(project(":grid:infrastructure"))
 
     // Ktor server core + Netty engine (ADR-0006 §1).

@@ -3,6 +3,7 @@ package com.bliss.grid.worker.clues
 import assertk.assertThat
 import assertk.assertions.isEqualTo
 import com.anthropic.client.okhttp.AnthropicOkHttpClient
+import com.bliss.grid.domain.clue.ClueClient
 import com.bliss.grid.worker.db.Database
 import com.github.ajalt.clikt.core.parse
 import com.github.tomakehurst.wiremock.WireMockServer

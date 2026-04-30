@@ -39,6 +39,11 @@ application {
 }
 
 dependencies {
+    implementation(project(":grid:domain"))
+    implementation(project(":grid:application"))
+    // Shared Postgres + Flyway bootstrap (BlissDatabase), JDBC adapters live here.
+    implementation(project(":grid:infrastructure"))
+
     // clikt 5.x is multiplatform; pull the JVM artifact explicitly.
     implementation("com.github.ajalt.clikt:clikt-jvm:$cliktVersion")
 

@@ -4,6 +4,7 @@ import assertk.assertThat
 import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
 import assertk.assertions.isNull
+import com.bliss.grid.domain.lexicon.GrammalecteEntry
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.io.TempDir
@@ -62,7 +63,7 @@ class ImportGrammalecteCommandTest {
             )
         val result = cmd.parse(file)
         assertThat(result.size).isEqualTo(1)
-        assertThat(result["chien"]).isEqualTo(ImportGrammalecteCommand.Row("chien", 4000L))
+        assertThat(result["chien"]).isEqualTo(GrammalecteEntry("chien", "chien", 4000L))
         assertThat(result["chat"]).isNull()
     }
 
@@ -77,7 +78,7 @@ class ImportGrammalecteCommandTest {
         val result = cmd.parse(file)
         assertThat(result.size).isEqualTo(1)
         assertThat(result.containsKey("paris")).isEqualTo(false)
-        assertThat(result["rive"]).isEqualTo(ImportGrammalecteCommand.Row("rive", 1200L))
+        assertThat(result["rive"]).isEqualTo(GrammalecteEntry("rive", "rive", 1200L))
     }
 
     @Test

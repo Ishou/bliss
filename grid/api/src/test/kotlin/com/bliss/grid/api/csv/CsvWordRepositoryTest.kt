@@ -1,10 +1,11 @@
-package com.bliss.grid.api.infrastructure.words
+package com.bliss.grid.api.csv
 
 import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.isGreaterThanOrEqualTo
 import assertk.assertions.isNotEmpty
 import assertk.assertions.isTrue
+import com.bliss.grid.infrastructure.persistence.CsvWordRepository
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 

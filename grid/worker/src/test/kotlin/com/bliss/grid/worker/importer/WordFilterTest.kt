@@ -6,6 +6,9 @@ import assertk.assertions.isCloseTo
 import assertk.assertions.isFalse
 import assertk.assertions.isGreaterThan
 import assertk.assertions.isTrue
+import com.bliss.grid.domain.lexicon.difficulty
+import com.bliss.grid.domain.lexicon.filterAndSort
+import com.bliss.grid.domain.lexicon.isAcceptable
 import io.kotest.common.ExperimentalKotest
 import io.kotest.property.Arb
 import io.kotest.property.PropTestConfig

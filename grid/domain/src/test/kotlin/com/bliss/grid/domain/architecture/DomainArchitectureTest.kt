@@ -38,6 +38,30 @@ class DomainArchitectureTest {
     }
 
     @Test
+    fun `domain has no application imports`() {
+        domainScope.files.assertFalse {
+            it.hasImport { import -> import.name.startsWith("com.bliss.grid.application") }
+        }
+    }
+
+    @Test
+    fun `domain has no vendor sdk imports`() {
+        val forbiddenPrefixes =
+            listOf(
+                "com.anthropic",
+                "software.amazon",
+                "com.amazonaws",
+                "com.google.cloud",
+                "com.azure",
+            )
+        domainScope.files.assertFalse {
+            it.hasImport { import ->
+                forbiddenPrefixes.any { prefix -> import.name.startsWith(prefix) }
+            }
+        }
+    }
+
+    @Test
     fun `model package does not depend on generation`() {
         domainScope.files
             .withPackage("com.bliss.grid.domain.model..")

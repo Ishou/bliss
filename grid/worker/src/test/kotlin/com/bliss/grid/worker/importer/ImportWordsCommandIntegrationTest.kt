@@ -4,6 +4,7 @@ import assertk.assertThat
 import assertk.assertions.containsExactlyInAnyOrder
 import assertk.assertions.isEqualTo
 import assertk.assertions.isTrue
+import com.bliss.grid.domain.lexicon.filterAndSort
 import com.bliss.grid.worker.db.Database
 import com.github.ajalt.clikt.core.parse
 import org.junit.jupiter.api.AfterEach
