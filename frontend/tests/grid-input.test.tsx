@@ -43,8 +43,10 @@ const defAt = (root: HTMLElement, row: number, col: number) =>
 // We avoid userEvent because @testing-library/user-event is not in the
 // dep set (no-new-deps constraint from the workstream brief). The
 // orchestration intercepts every key in onKeyDown, so fireEvent on the
-// synthetic events React listens to is sufficient.
-const click = (el: HTMLElement) => { fireEvent.pointerDown(el); fireEvent.focus(el); };
+// synthetic events React listens to is sufficient. `click` mirrors the
+// production handler — useGridNavigation listens on click (not
+// pointerdown) so taps and pans are distinguishable on touch.
+const click = (el: HTMLElement) => { fireEvent.click(el); fireEvent.focus(el); };
 const typeChar = (el: HTMLInputElement, ch: string) => fireEvent.keyDown(el, { key: ch });
 
 describe('Grid keyboard interactions', () => {
@@ -129,5 +131,22 @@ describe('Grid keyboard interactions', () => {
     expect(wrapAt(container, 1, 3)?.dataset.inWord).toBe('false');
     expect(wrapAt(container, 2, 2)?.dataset.inWord).toBe('true');
     expect(wrapAt(container, 3, 2)?.dataset.inWord).toBe('true');
+  });
+
+  // Android Gboard / Samsung keyboards fire `keydown` with
+  // `key === "Unidentified"` for printable characters, so the desktop
+  // keydown path doesn't help. The real letter only arrives on the
+  // `input` event via `InputEvent.data`. This test simulates that
+  // soft-keyboard shape by setting the input value and dispatching a
+  // native InputEvent (fireEvent.input doesn't expose `inputType` or
+  // `data` on the synthetic event).
+  it('Android soft-keyboard input writes uppercase and advances focus', () => {
+    const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
+    const start = inputAt(container, 1, 1)!;
+    click(start);
+    start.value = 'l';
+    start.dispatchEvent(new InputEvent('input', { inputType: 'insertText', data: 'l', bubbles: true }));
+    expect(start.value).toBe('L');
+    expect(document.activeElement).toBe(inputAt(container, 1, 2));
   });
 });

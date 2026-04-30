@@ -29,7 +29,7 @@ const TEST_PUZZLE: Puzzle = {
 
 const inputAt = (root: HTMLElement, row: number, col: number) =>
   root.querySelector<HTMLInputElement>(`[data-cell-kind="letter"][data-row="${row}"][data-col="${col}"]`);
-const click = (el: HTMLElement) => { fireEvent.pointerDown(el); fireEvent.focus(el); };
+const click = (el: HTMLElement) => { fireEvent.click(el); fireEvent.focus(el); };
 
 describe('CurrentCluePanel (standalone)', () => {
   it('shows a placeholder when no clue is selected', () => {

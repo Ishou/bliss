@@ -92,9 +92,10 @@ export function Grid({ puzzle }: { puzzle: Puzzle }) {
                       ariaLabel={`Case ligne ${cell.position.row + 1}, colonne ${cell.position.col + 1}`}
                       inWord={highlight.currentWord}
                       inputRef={nav.registerCellRef}
-                      onPointerDown={nav.handlePointerDown}
+                      onClick={nav.handleClick}
                       onFocus={nav.handleFocus}
                       onKeyDown={nav.handleKeyDown}
+                      onInput={nav.handleInput}
                     />
                   );
                 }

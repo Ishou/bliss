@@ -1,4 +1,4 @@
-import { memo, type FocusEvent, type KeyboardEvent, type PointerEvent, type Ref } from 'react';
+import { memo, type FocusEvent, type FormEvent, type KeyboardEvent, type MouseEvent, type Ref } from 'react';
 import { css } from 'styled-system/css';
 import type {
   ArrowDirection,
@@ -143,15 +143,21 @@ const letterInput = css({
 const arrowLabel: Record<ArrowDirection, string> = { right: 'horizontale', down: 'verticale', 'down-right': 'horizontale', 'right-down': 'verticale' };
 
 export const LetterCellView = memo(function LetterCellView({
-  cell, ariaLabel, inWord, inputRef, onPointerDown, onKeyDown, onFocus,
+  cell, ariaLabel, inWord, inputRef, onClick, onKeyDown, onFocus, onInput,
 }: {
   cell: LetterCell;
   ariaLabel: string;
   inWord: boolean;
   inputRef: Ref<HTMLInputElement>;
-  onPointerDown: (e: PointerEvent<HTMLInputElement>) => void;
+  // `onClick` (not pointerdown) — browsers only fire `click` on a confirmed
+  // tap, so a pan/scroll gesture that started on the cell never focuses it.
+  onClick: (e: MouseEvent<HTMLInputElement>) => void;
   onKeyDown: (e: KeyboardEvent<HTMLInputElement>) => void;
   onFocus: (e: FocusEvent<HTMLInputElement>) => void;
+  // `onInput` covers Android soft keyboards, which fire `keydown` with
+  // `key === "Unidentified"` for printable characters; the desktop keydown
+  // path handles physical keyboards.
+  onInput: (e: FormEvent<HTMLInputElement>) => void;
 }) {
   return (
     <div
@@ -173,9 +179,10 @@ export const LetterCellView = memo(function LetterCellView({
         data-row={cell.position.row}
         data-col={cell.position.col}
         data-cell-kind="letter"
-        onPointerDown={onPointerDown}
+        onClick={onClick}
         onKeyDown={onKeyDown}
         onFocus={onFocus}
+        onInput={onInput}
       />
     </div>
   );
