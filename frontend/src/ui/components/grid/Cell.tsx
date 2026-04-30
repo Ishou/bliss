@@ -149,14 +149,11 @@ export const LetterCellView = memo(function LetterCellView({
   ariaLabel: string;
   inWord: boolean;
   inputRef: Ref<HTMLInputElement>;
-  // `onClick` (not pointerdown) — browsers only fire `click` on a confirmed
-  // tap, so a pan/scroll gesture that started on the cell never focuses it.
+  // onClick, not pointerdown — browser suppresses `click` after a pan, giving free tap-vs-scroll detection.
   onClick: (e: MouseEvent<HTMLInputElement>) => void;
   onKeyDown: (e: KeyboardEvent<HTMLInputElement>) => void;
   onFocus: (e: FocusEvent<HTMLInputElement>) => void;
-  // `onInput` covers Android soft keyboards, which fire `keydown` with
-  // `key === "Unidentified"` for printable characters; the desktop keydown
-  // path handles physical keyboards.
+  // onInput covers Android soft keyboards, which emit key==="Unidentified" on keydown.
   onInput: (e: FormEvent<HTMLInputElement>) => void;
 }) {
   return (

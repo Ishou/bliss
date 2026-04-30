@@ -23,18 +23,11 @@ export interface CellHighlight {
 export interface GridNavigation {
   readonly registerCellRef: (el: HTMLInputElement | null) => void;
   readonly highlightFor: (position: Position) => CellHighlight;
-  // Click (not pointerdown) so we only focus on a confirmed tap. Browsers
-  // don't fire `click` after a pan/scroll gesture that started inside the
-  // element — switching from onPointerDown removes the "instant focus
-  // hijacks the page-pan" behavior on touch devices.
+  // click (not pointerdown) — pan gestures never produce a click, so focus is suppressed naturally.
   readonly handleClick: (event: React.MouseEvent<HTMLInputElement>) => void;
   readonly handleFocus: (event: React.FocusEvent<HTMLInputElement>) => void;
   readonly handleKeyDown: (event: React.KeyboardEvent<HTMLInputElement>) => void;
-  // Soft-keyboard companion to `handleKeyDown`. Android Gboard / Samsung
-  // keyboards fire `keydown` with `key === "Unidentified"` for printable
-  // characters — the actual letter only arrives on the `input` event. This
-  // handler reads it from `InputEvent.data` and runs the same write +
-  // advance logic as the desktop path.
+  // Android Gboard fires keydown key==="Unidentified"; the real letter arrives here via InputEvent.data.
   readonly handleInput: (event: React.FormEvent<HTMLInputElement>) => void;
   // Active clue under the focused cell, or null when nothing is focused.
   // Surfaced so the grid container can render the full clue text in a
@@ -48,19 +41,6 @@ export interface GridNavigation {
 //   clue jumps.
 // - Tab / Shift+Tab clue-cycling is deferred to a follow-up PR to keep
 //   this diff under the ADR-0001 §4 line cap.
-//
-// Mobile event model:
-// - Tap detection: we listen on `click`, not `pointerdown`. Browsers
-//   don't fire `click` after a pan gesture that started on the element,
-//   so this gives us tap-vs-pan distinction for free without a custom
-//   movement-threshold state machine.
-// - Letter input: desktop handles letters in `keydown` (preventDefault
-//   stops the value mutation, then we set the value + advance manually).
-//   Android soft keyboards fire `keydown` with `key === "Unidentified"`
-//   so the desktop path doesn't help — `handleInput` reads
-//   `InputEvent.data` and runs the same advance logic. The two paths
-//   are mutually exclusive: when keydown handles the letter, it
-//   preventDefaults so `input` never fires.
 
 const key = (p: Position) => `${p.row},${p.col}`;
 const same = (a: Position | null, b: Position | null) =>
@@ -242,14 +222,9 @@ export function useGridNavigation(puzzle: Puzzle): GridNavigation {
     (event: React.FormEvent<HTMLInputElement>) => {
       const inputEvent = event.nativeEvent as InputEvent;
       const target = event.currentTarget;
-      // `inputType` distinguishes a typed character ("insertText") from
-      // backspace ("deleteContentBackward") and other edits. We handle
-      // only the insert path here; backspace on a soft keyboard still
-      // fires `keydown` with `key === "Backspace"` reliably enough that
-      // `handleKeyDown` covers it.
+      // insertText = typed character; backspace arrives on keydown with key==="Backspace" reliably.
       if (inputEvent.inputType !== 'insertText') {
-        // Non-insert mutations (paste, autocorrect) are blanked out so
-        // the cell never carries multi-char or non-letter content.
+        // paste/autocorrect: blank if multi-char or non-letter so cells stay clean.
         if (target.value.length > 1 || (target.value && !LETTER_RE.test(target.value))) {
           target.value = '';
         }
