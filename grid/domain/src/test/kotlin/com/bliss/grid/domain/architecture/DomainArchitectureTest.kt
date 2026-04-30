@@ -38,6 +38,13 @@ class DomainArchitectureTest {
     }
 
     @Test
+    fun `domain has no application imports`() {
+        domainScope.files.assertFalse {
+            it.hasImport { import -> import.name.startsWith("com.bliss.grid.application") }
+        }
+    }
+
+    @Test
     fun `domain has no vendor sdk imports`() {
         val forbiddenPrefixes =
             listOf(
