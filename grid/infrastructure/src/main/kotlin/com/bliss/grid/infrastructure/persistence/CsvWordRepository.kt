@@ -1,4 +1,4 @@
-package com.bliss.grid.api.infrastructure.words
+package com.bliss.grid.infrastructure.persistence
 
 import com.bliss.grid.domain.generation.WordRepository
 import com.bliss.grid.domain.model.Word

@@ -3,9 +3,9 @@ package com.bliss.grid.api
 import com.bliss.grid.api.dto.BlockCellDto
 import com.bliss.grid.api.dto.DefinitionCellDto
 import com.bliss.grid.api.dto.LetterCellDto
-import com.bliss.grid.api.infrastructure.words.CsvWordRepository
+import com.bliss.grid.infrastructure.persistence.CsvWordRepository
 import com.bliss.grid.api.mapper.GridToPuzzleMapper
-import com.bliss.grid.api.routes.defaultConstraints
+import com.bliss.grid.application.puzzle.defaultPuzzleConstraints
 import com.bliss.grid.domain.generation.GridGenerator
 import org.junit.jupiter.api.Test
 import java.time.Instant
@@ -22,7 +22,7 @@ class GenerationInspectionTest {
         val repo = CsvWordRepository.frenchFromClasspath()
         val generator = GridGenerator(repo)
         val mapper = GridToPuzzleMapper()
-        val constraints = defaultConstraints()
+        val constraints = defaultPuzzleConstraints()
 
         var generated = 0
         var withBlocks = 0
@@ -68,7 +68,7 @@ class GenerationInspectionTest {
         val repo = CsvWordRepository.frenchFromClasspath()
         val generator = GridGenerator(repo)
         val mapper = GridToPuzzleMapper()
-        val constraints = defaultConstraints()
+        val constraints = defaultPuzzleConstraints()
 
         for (seed in 0L until 5L) {
             val grid = generator.generate(constraints, Random(seed)) ?: continue
@@ -108,7 +108,7 @@ class GenerationInspectionTest {
         val repo = CsvWordRepository.frenchFromClasspath()
         val generator = GridGenerator(repo)
         val mapper = GridToPuzzleMapper()
-        val constraints = defaultConstraints()
+        val constraints = defaultPuzzleConstraints()
 
         var generated = 0
         var withUnreachable = 0

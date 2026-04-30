@@ -63,6 +63,3 @@ internal fun fewShotBlock(): String = FEW_SHOT_EXAMPLES.joinToString(separator =
 
 /** Hard length cap, in characters, including spaces (ADR-0013 §5). */
 internal const val MAX_CLUE_CHARS: Int = 18
-
-/** Total attempts (1 initial + 2 retries) before the row is left NULL (ADR-0013 §5). */
-internal const val MAX_ATTEMPTS: Int = 3

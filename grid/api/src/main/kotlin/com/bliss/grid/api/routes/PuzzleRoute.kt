@@ -2,10 +2,7 @@ package com.bliss.grid.api.routes
 
 import com.bliss.grid.api.dto.ProblemDetails
 import com.bliss.grid.api.mapper.GridToPuzzleMapper
-import com.bliss.grid.domain.generation.GridConstraints
-import com.bliss.grid.domain.generation.GridGenerator
-import com.bliss.grid.domain.generation.WordRepository
-import com.bliss.grid.domain.model.Grid
+import com.bliss.grid.application.puzzle.GeneratePuzzleUseCase
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.response.respond
@@ -16,27 +13,21 @@ import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
 import java.time.Instant
 import java.util.UUID
-import kotlin.random.Random
 
 /**
- * `GET /v1/puzzles/{puzzleId}` — generates a fresh 10x10 mots-fléchés puzzle
- * on every request.
- *
- * v1 is stateless: the path id is informational and echoes back into
- * `Puzzle.id`. Persistence (so a client can re-fetch the same puzzle by id)
- * lands in a later workstream.
+ * `GET /v1/puzzles/{puzzleId}` — generates a fresh mots-fléchés puzzle on every
+ * request. v1 is stateless: the path id is informational and echoes back into
+ * `Puzzle.id`. Persistence lands in a later workstream.
  *
  * Failure modes:
  * - puzzleId is not a UUID → 400 ProblemDetails
  * - generator can't satisfy the constraints → 422 ProblemDetails
  */
 fun Route.puzzles(
-    wordRepository: WordRepository,
+    generatePuzzle: GeneratePuzzleUseCase,
     mapper: GridToPuzzleMapper = GridToPuzzleMapper(),
-    constraints: GridConstraints = defaultConstraints(),
 ) {
     val log = LoggerFactory.getLogger("com.bliss.grid.api.routes.PuzzleRoute")
-    val generator = GridGenerator(wordRepository)
 
     get("/v1/puzzles/{puzzleId}") {
         val rawId = call.parameters["puzzleId"].orEmpty()
@@ -51,15 +42,9 @@ fun Route.puzzles(
             return@get
         }
 
-        val grid = generateWithRetry(generator, constraints, log)
+        val grid = generatePuzzle.execute()
         if (grid == null) {
-            log.warn(
-                "puzzle_generation_failed puzzle_id={} width={} height={} retries={}",
-                puzzleId,
-                constraints.width,
-                constraints.height,
-                MAX_OUTER_RETRIES,
-            )
+            log.warn("puzzle_generation_failed puzzle_id={}", puzzleId)
             call.respondProblem(
                 status = HttpStatusCode.UnprocessableEntity,
                 title = "Puzzle generation failed",
@@ -71,47 +56,6 @@ fun Route.puzzles(
 
         call.respond(mapper.toApi(grid = grid, puzzleId = puzzleId, createdAt = Instant.now()))
     }
-}
-
-internal fun defaultConstraints(): GridConstraints =
-    GridConstraints(
-        width = PUZZLE_WIDTH,
-        height = PUZZLE_HEIGHT,
-        minWordLength = 2,
-    )
-
-internal const val PUZZLE_WIDTH: Int = 10
-internal const val PUZZLE_HEIGHT: Int = 10
-internal const val MAX_OUTER_RETRIES: Int = 5
-
-/**
- * Calls the generator up to [MAX_OUTER_RETRIES] times. Each call uses a
- * fresh per-attempt [Random] (so refreshes vary).
- *
- * The generator itself enforces density and interlocking constraints —
- * it only returns a grid when both are satisfied. A `null` return means
- * the backtracker exhausted its attempt budget.
- *
- * Returns the first generated grid, or `null` if every retry fails.
- * The route then surfaces 422.
- */
-private fun generateWithRetry(
-    generator: GridGenerator,
-    constraints: GridConstraints,
-    log: org.slf4j.Logger,
-): Grid? {
-    repeat(MAX_OUTER_RETRIES) { attempt ->
-        val random = Random(System.nanoTime() + attempt)
-        val grid = generator.generate(constraints, random)
-        if (grid != null) return grid
-        log.warn(
-            "puzzle_generation_retry attempt={} width={} height={}",
-            attempt + 1,
-            constraints.width,
-            constraints.height,
-        )
-    }
-    return null
 }
 
 private fun parseUuid(raw: String): UUID? =

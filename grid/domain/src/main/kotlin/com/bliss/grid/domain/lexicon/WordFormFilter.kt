@@ -1,10 +1,10 @@
-// Filter + difficulty pipeline for `import-words` (ADR-0013 §2, §4). Pure functions; no IO.
-package com.bliss.grid.worker.importer
+// Pure-domain rules for the surface-form ingest pipeline (ADR-0013 §2, §4). No IO.
+package com.bliss.grid.domain.lexicon
 
 import kotlin.math.ln
 
 /** §2 filter: drop non-letter chars, drop capitalized first letter, lowercase, dedupe, sort. */
-internal fun filterAndSort(rawLines: Sequence<String>): List<String> =
+fun filterAndSort(rawLines: Sequence<String>): List<String> =
     rawLines
         .map { it.trim() }
         .filter { it.isNotEmpty() && isAcceptable(it) }
@@ -13,7 +13,7 @@ internal fun filterAndSort(rawLines: Sequence<String>): List<String> =
         .toList()
 
 /** Pure-letter, non-capitalized — `false` for empties, anything with digits/punct/whitespace, or any uppercase first char. */
-internal fun isAcceptable(surfaceForm: String): Boolean =
+fun isAcceptable(surfaceForm: String): Boolean =
     surfaceForm.isNotEmpty() &&
         !surfaceForm[0].isUpperCase() &&
         surfaceForm.all { it.isLetter() }
@@ -22,7 +22,7 @@ internal fun isAcceptable(surfaceForm: String): Boolean =
  * §4: `sigmoid(α·ln(rank) + β·(length − 5))` with `α = 0.15`, `β = 0.20`.
  * Sigmoid is in (0,1); rank = 1, length = 5 lands at 0.5 (calibration target).
  */
-internal fun difficulty(
+fun difficulty(
     rank: Int,
     length: Int,
 ): Float {
@@ -35,20 +35,3 @@ internal fun difficulty(
 private const val ALPHA: Double = 0.15
 private const val BETA: Double = 0.20
 private const val LENGTH_PIVOT: Int = 5
-
-// ADR-0013 §4: sigmoid(α·ln(rank) + β·(length − 5)) with α=0.15, β=0.20, pivot=5.
-// Shared by ImportGrammalecteCommand and ImportFrequenciesCommand — tune here, not in callers.
-internal val RECOMPUTE_DIFFICULTY_SQL =
-    """
-    UPDATE words AS w
-    SET difficulty = (
-        1.0 / (1.0 + exp(-(0.15 * ln(r.rank::float) + 0.20 * (w.length - 5))))
-    )::real
-    FROM (
-        SELECT word_id,
-               row_number() OVER (ORDER BY frequency DESC NULLS LAST, word ASC) AS rank
-        FROM words
-        WHERE language = ?
-    ) AS r
-    WHERE w.word_id = r.word_id
-    """.trimIndent()

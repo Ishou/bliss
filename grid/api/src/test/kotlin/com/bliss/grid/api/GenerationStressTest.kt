@@ -1,7 +1,7 @@
 package com.bliss.grid.api
 
-import com.bliss.grid.api.infrastructure.words.CsvWordRepository
-import com.bliss.grid.api.routes.defaultConstraints
+import com.bliss.grid.infrastructure.persistence.CsvWordRepository
+import com.bliss.grid.application.puzzle.defaultPuzzleConstraints
 import com.bliss.grid.domain.generation.GridGenerator
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
@@ -20,7 +20,7 @@ class GenerationStressTest {
     fun `100 puzzles end-to-end on the production corpus`() {
         val repo = CsvWordRepository.frenchFromClasspath()
         val generator = GridGenerator(repo)
-        val constraints = defaultConstraints()
+        val constraints = defaultPuzzleConstraints()
 
         // Warm-up the JIT.
         repeat(3) { generator.generate(constraints, Random(it.toLong())) }
@@ -40,8 +40,8 @@ class GenerationStressTest {
         val p95 = timings[95]
         val min = timings[0]
         val max = timings[99]
-        // Single-attempt success rate is loose because the API's outer retry loop
-        // (MAX_OUTER_RETRIES = 5 in PuzzleRoute.kt) covers single-attempt failures —
+        // Single-attempt success rate is loose because GeneratePuzzleUseCase's
+        // outer retry loop (DEFAULT_MAX_ATTEMPTS = 5) covers single-attempt failures —
         // an API-level success rate of 99.99%+ is typical even with single-attempt at 60%.
         // Ratchet the threshold down only if these regress.
         check(p50 < 3_000) {
