@@ -29,7 +29,11 @@ const TEST_PUZZLE: Puzzle = {
 
 const inputAt = (root: HTMLElement, row: number, col: number) =>
   root.querySelector<HTMLInputElement>(`[data-cell-kind="letter"][data-row="${row}"][data-col="${col}"]`);
-const click = (el: HTMLElement) => { fireEvent.click(el); fireEvent.focus(el); };
+// jsdom doesn't auto-focus inputs on click; explicit el.focus() before
+// the click mirrors the browser's default action that production leans
+// on (we no longer call `focusCell` from the click handler — see
+// useGridNavigation.ts).
+const click = (el: HTMLElement) => { el.focus(); fireEvent.click(el); };
 
 describe('CurrentCluePanel (standalone)', () => {
   it('shows a placeholder when no clue is selected', () => {

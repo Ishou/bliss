@@ -43,10 +43,15 @@ const defAt = (root: HTMLElement, row: number, col: number) =>
 // We avoid userEvent because @testing-library/user-event is not in the
 // dep set (no-new-deps constraint from the workstream brief). The
 // orchestration intercepts every key in onKeyDown, so fireEvent on the
-// synthetic events React listens to is sufficient. `click` mirrors the
-// production handler — useGridNavigation listens on click (not
-// pointerdown) so taps and pans are distinguishable on touch.
-const click = (el: HTMLElement) => { fireEvent.click(el); fireEvent.focus(el); };
+// synthetic events React listens to is sufficient. `click` mirrors what
+// a real browser does on tap: focus moves to the input *first* (the
+// browser's click default action), then the click event fires. jsdom
+// doesn't auto-focus on `fireEvent.click`, so the helper does it
+// explicitly. In production we removed the explicit `focusCell` call
+// from the click handler so the soft keyboard isn't suppressed on
+// Android / iOS — the browser's native focus-on-click handles it
+// instead, and `handleFocus` reads the resulting focus event.
+const click = (el: HTMLElement) => { el.focus(); fireEvent.click(el); };
 const typeChar = (el: HTMLInputElement, ch: string) => fireEvent.keyDown(el, { key: ch });
 
 describe('Grid keyboard interactions', () => {

@@ -142,9 +142,14 @@ export function useGridNavigation(puzzle: Puzzle): GridNavigation {
         else if (!onCurrent) next = clues[0].direction;
       }
       setDirection(next);
-      focusCell(p);
+      // Don't call `focusCell` here — the browser focuses the input itself
+      // when the click lands on it. Calling `el.focus()` mid-click handler
+      // suppresses the soft keyboard on Android Chrome / iOS Safari, which
+      // gate the keyboard on the click event reaching its default action
+      // intact. `handleFocus` picks up the resulting native focus event
+      // and syncs React state.
     },
-    [focusCell, lookup],
+    [lookup],
   );
 
   const handleFocus = useCallback((event: React.FocusEvent<HTMLInputElement>) => {
