@@ -155,6 +155,25 @@ describe('Grid keyboard interactions', () => {
     expect(document.activeElement).toBe(inputAt(container, 1, 2));
   });
 
+  // Mobile soft keyboards can't trigger the desktop keydown path (key ===
+  // "Unidentified"). Without `maxLength={1}`, the browser is allowed to insert
+  // the new char even when the cell is full, and `handleInput` truncates
+  // `target.value` to just the new letter. This pins that contract — keep
+  // `maxLength` off the input.
+  it('Android soft-keyboard input replaces an already-filled letter cell', () => {
+    const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
+    const cell = inputAt(container, 1, 1)!;
+    click(cell);
+    // Pre-fill: simulate the user having previously typed "A" here.
+    cell.value = 'A';
+    // Soft keyboard inserts "b" — without our fix the browser would have
+    // blocked the insertion, but the fix lets value transiently become "Ab".
+    cell.value = 'Ab';
+    cell.dispatchEvent(new InputEvent('input', { inputType: 'insertText', data: 'b', bubbles: true }));
+    expect(cell.value).toBe('B');
+    expect(document.activeElement).toBe(inputAt(container, 1, 2));
+  });
+
   it('handleInput blanks the cell when a paste produces multi-char content', () => {
     const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
     const cell = inputAt(container, 1, 1)!;

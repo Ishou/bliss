@@ -162,6 +162,13 @@ export const LetterCellView = memo(function LetterCellView({
       className={`${cellBase} ${inWord ? letterCellInWord : letterCell}`}
       data-in-word={inWord ? 'true' : 'false'}
     >
+      {/*
+        No `maxLength={1}`: when the cell is already full, mobile soft keyboards
+        (Android Gboard, iOS) block the insertion at the browser layer and never
+        fire `InputEvent`, so `handleInput` can't replace the letter. Truncation
+        is enforced in `handleInput` instead, which sets `target.value` to the
+        single new character.
+      */}
       <input
         ref={inputRef}
         type="text"
@@ -169,7 +176,6 @@ export const LetterCellView = memo(function LetterCellView({
         autoComplete="off"
         autoCapitalize="characters"
         spellCheck={false}
-        maxLength={1}
         aria-label={ariaLabel}
         defaultValue={cell.entry}
         className={letterInput}
