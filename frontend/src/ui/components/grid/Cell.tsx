@@ -135,7 +135,14 @@ const letterInput = css({
   fontFamily: 'body',
   fontWeight: 'bold',
   fontSize: 'cell',
-  caretColor: 'accent',
+  // 1-char cell — the caret is visual noise and, on iOS, drags from inside the
+  // input get interpreted as caret-drag-magnifier gestures that swallow the
+  // horizontal page pan. The WebKit-only side of the fix (WebkitTouchCallout,
+  // WebkitUserSelect) is applied via inline `style` on the input element —
+  // Panda's `css()` doesn't surface vendor-prefixed properties.
+  caretColor: 'transparent',
+  userSelect: 'none',
+  touchAction: 'manipulation',
   padding: 0,
   _focus: { bg: 'leaf.500', color: 'ink' },
 });
@@ -173,6 +180,9 @@ export const LetterCellView = memo(function LetterCellView({
         aria-label={ariaLabel}
         defaultValue={cell.entry}
         className={letterInput}
+        // iOS-only: kills the caret-drag magnifier and the long-press callout
+        // menu so horizontal pans through the grid don't get hijacked.
+        style={{ WebkitTouchCallout: 'none', WebkitUserSelect: 'none' }}
         data-row={cell.position.row}
         data-col={cell.position.col}
         data-cell-kind="letter"
