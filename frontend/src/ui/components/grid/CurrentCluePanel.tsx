@@ -2,29 +2,45 @@ import { css } from 'styled-system/css';
 import type { ArrowDirection } from '@/domain';
 import type { Clue } from './useGridNavigation';
 
-// Sticky so the active clue stays visible when Android's soft keyboard scrolls the panel off the top of the viewport.
+// Fixed-positioned, anchored to the visible viewport top. `position: sticky`
+// was tried first but the panel sits inside Grid's flex column, whose height
+// equals its content — sticky needs a containing block taller than the
+// scroll position to actually pin, and unsticks immediately when content
+// fits in the viewport. `position: fixed` works regardless of the layout
+// context. The trade-off is that the panel no longer takes flow space, so
+// `routes/index.tsx`'s `pageStyles` carries an explicit `paddingTop` to
+// reserve room for it at the top of the page.
+//
+// Mobile (`base`): edge-to-edge, status-bar feel — no border-radius, full
+// viewport width, single bottom border separating it from the page bg.
+// Desktop (`md`): capped at 480px, centered above the grid, full pill border
+// with radius — matches the grid container's max-width below.
 const panel = css({
-  position: 'sticky',
+  position: 'fixed',
   top: 0,
+  left: 0,
+  right: 0,
   zIndex: 10,
-  width: '100%',
-  maxWidth: '480px',
-  margin: '0 auto',
-  padding: 'sm',
-  border: '1px solid token(colors.border)',
-  borderRadius: 'sm',
-  // Constant shadow — avoids IntersectionObserver wiring; visible against the cream bg once the panel sticks.
+  maxWidth: { md: '480px' },
+  margin: { md: '0 auto' },
+  borderRadius: { base: 0, md: 'sm' },
+  border: { base: 'none', md: '1px solid token(colors.border)' },
+  borderBottom: '1px solid token(colors.border)',
+  paddingBlock: 'sm',
+  paddingInline: { base: 'md', md: 'sm' },
+  // Constant elevation — visible once it sticks against the cream page bg.
   boxShadow: '0 2px 6px -2px rgba(0, 0, 0, 0.08)',
   bg: 'definition',
   color: 'fg',
   textAlign: 'left',
   fontFamily: 'body',
-  fontSize: 'body',
+  // `md` (1.125rem) on phones gives better thumb-distance readability than
+  // `body` (1rem); desktop reverts to body so the panel doesn't dominate.
+  fontSize: { base: 'md', md: 'body' },
   lineHeight: '1.3',
   display: 'flex',
   alignItems: 'center',
   gap: 'sm',
-  // 2.5rem — tighter than 3rem so the empty placeholder doesn't dominate the top of a small phone screen.
   minHeight: '2.5rem',
 });
 const arrow = css({
