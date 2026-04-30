@@ -48,4 +48,21 @@ class ApplicationArchitectureTest {
             }
         }
     }
+
+    @Test
+    fun `application has no vendor sdk imports`() {
+        val forbiddenPrefixes =
+            listOf(
+                "com.anthropic",
+                "software.amazon",
+                "com.amazonaws",
+                "com.google.cloud",
+                "com.azure",
+            )
+        applicationScope.files.assertFalse {
+            it.hasImport { import ->
+                forbiddenPrefixes.any { prefix -> import.name.startsWith(prefix) }
+            }
+        }
+    }
 }
