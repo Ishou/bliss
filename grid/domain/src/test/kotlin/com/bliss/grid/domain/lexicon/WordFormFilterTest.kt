@@ -1,8 +1,5 @@
-package com.bliss.grid.worker.importer
+package com.bliss.grid.domain.lexicon
 
-import com.bliss.grid.domain.lexicon.difficulty
-import com.bliss.grid.domain.lexicon.filterAndSort
-import com.bliss.grid.domain.lexicon.isAcceptable
 import assertk.assertThat
 import assertk.assertions.containsExactly
 import assertk.assertions.isCloseTo
@@ -21,10 +18,9 @@ import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Test
 
 @OptIn(ExperimentalKotest::class)
-class WordFilterTest {
+class WordFormFilterTest {
     @Test
     fun `drops non-letter chars, drops capitalized, dedupes, sorts, lowercases`() {
-        // One representative of every dropped class + a duplicate + a diacritic + a lowercase mixed-case form.
         val raw = sequenceOf("chat", "Paris", "c'est", "covid19", "hello world", "écharpe", "chat", "éCole")
         assertThat(filterAndSort(raw)).containsExactly("chat", "écharpe", "école")
     }
