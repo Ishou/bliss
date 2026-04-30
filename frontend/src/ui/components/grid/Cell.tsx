@@ -138,13 +138,17 @@ const letterInput = css({
   // 1-char cell — the caret is visual noise and, on Android Chrome, dragging
   // horizontally on or near a focused text input is captured as cursor-handle
   // positioning, which prevents the page from panning horizontally when the
-  // user has zoomed in. `touch-action: pan-y` declares that the input only
-  // handles vertical pans, so horizontal pans bubble to the parent. iOS gets
-  // belt-and-braces from caretColor:transparent + WebkitTouchCallout:none
-  // (applied via inline `style` since Panda doesn't surface vendor prefixes).
+  // user has zoomed in. `caretColor: transparent` + `userSelect: none` +
+  // the WebKit-prefixed equivalents on the `<input>`'s inline style (below)
+  // already neutralise the iOS caret-drag magnifier and Android cursor-
+  // handle, so we don't need `touch-action: pan-y` to fence off horizontal
+  // gestures. `touch-action: manipulation` allows pan in BOTH axes plus
+  // pinch-zoom (and only suppresses double-tap-zoom), so horizontal scroll
+  // when the page is pinch-zoomed in works whether the touch starts on a
+  // letter cell, a definition cell, or a block cell.
   caretColor: 'transparent',
   userSelect: 'none',
-  touchAction: 'pan-y',
+  touchAction: 'manipulation',
   padding: 0,
   _focus: { bg: 'leaf.500', color: 'ink' },
 });
