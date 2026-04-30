@@ -92,6 +92,18 @@ The crossword grid renders as DOM nodes (one element per cell), with:
   re-render on every key.
 - `touch-action: manipulation` on the grid root to eliminate the iOS 300ms
   tap delay.
+
+  > **Update (2026-04-30, PR #109):** Both `touch-action: manipulation` and
+  > `user-select: none` are intentionally omitted from the grid root.
+  > `touch-action: manipulation` is no longer needed: Mobile Safari ≥ 9.3 and
+  > all current Chrome builds suppress the 300ms tap delay automatically when
+  > `<meta name="viewport" content="width=device-width, …">` is present, which
+  > `index.html` already sets. Keeping the rule partially blocked pan and
+  > pinch-zoom gestures that started within the grid element. `user-select:
+  > none` cascaded into `<div>`-based definition cells, blocking the iOS
+  > magnifier and long-press selection on long French clues; `<input>` letter
+  > cells manage their own selection independently and are unaffected.
+
 - No per-cell entry/exit animations; animations occur only on word
   completion, on the affected cells.
 - Accessible by default: each cell is a real input, screen readers and
