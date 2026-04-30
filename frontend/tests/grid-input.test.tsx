@@ -55,6 +55,13 @@ const click = (el: HTMLElement) => { el.focus(); fireEvent.click(el); };
 const typeChar = (el: HTMLInputElement, ch: string) => fireEvent.keyDown(el, { key: ch });
 
 describe('Grid keyboard interactions', () => {
+  it('clicking the wrapper div focuses the inner input', () => {
+    const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
+    const wrapper = wrapAt(container, 1, 1)!;
+    fireEvent.click(wrapper);
+    expect(document.activeElement).toBe(inputAt(container, 1, 1));
+  });
+
   it('clicking a letter cell focuses it and highlights the current word', () => {
     const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
     const target = inputAt(container, 1, 1)!;
