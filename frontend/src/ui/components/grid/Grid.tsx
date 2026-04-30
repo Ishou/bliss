@@ -16,19 +16,7 @@ const gridContainer = css({
   margin: '0 auto',
   // Allow border arrows on edge cells to bleed outside the grid border box.
   overflow: 'visible',
-  // No `touch-action: manipulation` and no `user-select: none` here on
-  // purpose:
-  //   * `touch-action: manipulation` was originally added to suppress
-  //     the iOS 300ms tap delay (ADR-0002 §4); modern Mobile Safari
-  //     and Chrome auto-suppress that delay when the document carries
-  //     `<meta name="viewport" content="width=device-width, …">`
-  //     (which `index.html` does). Keeping the rule was preventing
-  //     two-finger pinch zoom and one-finger horizontal pan on the
-  //     grid area.
-  //   * `user-select: none` cascaded into definition cells, blocking
-  //     iOS's text-selection magnifier and long-press selection on
-  //     long French clues. Letter-cell `<input>`s manage their own
-  //     selection independently of this property.
+  // Omitted: touch-action:manipulation blocked pinch/pan; user-select:none blocked iOS magnifier on clue cells. See ADR-0002 §4.
 });
 
 const rowStyles = css({ display: 'contents' });
