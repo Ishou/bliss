@@ -2,32 +2,27 @@ import { css } from 'styled-system/css';
 import type { ArrowDirection } from '@/domain';
 import type { Clue } from './useGridNavigation';
 
-// Fixed-positioned, anchored to the visible viewport top. `position: sticky`
-// was tried first but the panel sits inside Grid's flex column, whose height
-// equals its content — sticky needs a containing block taller than the
-// scroll position to actually pin, and unsticks immediately when content
-// fits in the viewport. `position: fixed` works regardless of the layout
-// context. The trade-off is that the panel no longer takes flow space, so
-// `routes/index.tsx`'s `pageStyles` carries an explicit `paddingTop` to
-// reserve room for it at the top of the page.
+// Sticky-pinned to the top of the page-level scroll. The panel is rendered
+// as a direct child of `<main>` (Grid returns a fragment, not a wrapping
+// div) so its containing block is the page itself — taller than the
+// viewport, so sticky has room to stick. Width matches the grid below
+// (100% / 480px-cap / centered) so the two align horizontally on every
+// breakpoint, instead of the panel spanning a wider area than the grid.
 //
-// Mobile (`base`): edge-to-edge, status-bar feel — no border-radius, full
-// viewport width, single bottom border separating it from the page bg.
-// Desktop (`md`): capped at 480px, centered above the grid, full pill border
-// with radius — matches the grid container's max-width below.
+// Mobile (`base`): full available width inside `<main>`'s padding, slightly
+// larger font for thumb-distance reading.
+// Desktop (`md`): capped at 480px (same as grid), font reverts to body.
 const panel = css({
-  position: 'fixed',
+  position: 'sticky',
   top: 0,
-  left: 0,
-  right: 0,
   zIndex: 10,
-  maxWidth: { md: '480px' },
-  margin: { md: '0 auto' },
-  borderRadius: { base: 0, md: 'sm' },
-  border: { base: 'none', md: '1px solid token(colors.border)' },
-  borderBottom: '1px solid token(colors.border)',
+  width: '100%',
+  maxWidth: '480px',
+  margin: '0 auto',
   paddingBlock: 'sm',
-  paddingInline: { base: 'md', md: 'sm' },
+  paddingInline: 'sm',
+  border: '1px solid token(colors.border)',
+  borderRadius: 'sm',
   // Constant elevation — visible once it sticks against the cream page bg.
   boxShadow: '0 2px 6px -2px rgba(0, 0, 0, 0.08)',
   bg: 'definition',

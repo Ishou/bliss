@@ -11,14 +11,7 @@ const pageStyles = css({
   alignItems: 'center',
   justifyContent: 'flex-start',
   gap: 'md',
-  // `paddingTop` reserves the vertical space that the fixed-positioned
-  // CurrentCluePanel takes out of normal flow (see CurrentCluePanel.tsx).
-  // Larger than the rest of the page padding because the panel is the
-  // first thing under the viewport top — without this the wordmark
-  // would render behind it on mobile.
-  paddingTop: '4rem',
-  paddingInline: 'lg',
-  paddingBottom: 'lg',
+  padding: 'lg',
   bg: 'bg',
   color: 'fg',
   fontFamily: 'body',

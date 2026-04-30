@@ -5,12 +5,6 @@ import { BlockCellView, DefinitionCellView, LetterCellView } from './Cell';
 import { CurrentCluePanel } from './CurrentCluePanel';
 import { useGridNavigation } from './useGridNavigation';
 
-const layout = css({
-  display: 'flex',
-  flexDirection: 'column',
-  gap: 'sm',
-  width: '100%',
-});
 const gridContainer = css({
   display: 'grid',
   gap: '0',
@@ -34,6 +28,13 @@ const positionKey = (p: Position) => `${p.row},${p.col}`;
 // v1 interactive grid. Letter inputs are uncontrolled (ADR-0002 §4).
 // `useGridNavigation` orchestrates focus, direction, and highlighting
 // via stable handlers that read row/col from data attributes.
+//
+// Returns a fragment so `CurrentCluePanel` lives at the route layer's flex
+// column (not nested inside an extra `<div>`). That matters for sticky:
+// the panel's containing block becomes `<main>`, which is taller than the
+// viewport, so `position: sticky` actually has room to stick. The previous
+// nested-flex revision had the panel inside a `layout` div whose height
+// equaled its content — sticky un-stuck instantly.
 export function Grid({ puzzle }: { puzzle: Puzzle }) {
   const cellByPosition = useMemo(() => {
     const m = new Map<string, Cell>();
@@ -61,7 +62,7 @@ export function Grid({ puzzle }: { puzzle: Puzzle }) {
   }
 
   return (
-    <div className={layout}>
+    <>
       <CurrentCluePanel clue={nav.currentClue} />
       <div
         role="grid"
@@ -115,6 +116,6 @@ export function Grid({ puzzle }: { puzzle: Puzzle }) {
           </div>
         ))}
       </div>
-    </div>
+    </>
   );
 }
