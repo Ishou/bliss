@@ -2,17 +2,7 @@ import { css } from 'styled-system/css';
 import type { ArrowDirection } from '@/domain';
 import type { Clue } from './useGridNavigation';
 
-// Out-of-grid clue panel. Cell-internal text is intentionally tiny so the
-// full clue rarely fits without zoom; this panel guarantees the active
-// clue is always readable at body font size, regardless of grid density.
-//
-// Sticky-pinned to the top of the viewport so the active clue stays
-// visible on mobile when the soft keyboard pushes content up — without
-// it the panel scrolls off the top of the visible area and the player
-// has to dismiss the keyboard to re-read the prompt. Subtle bottom
-// shadow gives a visual separation from the grid below once it sticks
-// (the shadow is constant rather than scroll-state-driven so we don't
-// need IntersectionObserver wiring).
+// Sticky so the active clue stays visible when Android's soft keyboard scrolls the panel off the top of the viewport.
 const panel = css({
   position: 'sticky',
   top: 0,
@@ -23,9 +13,7 @@ const panel = css({
   padding: 'sm',
   border: '1px solid token(colors.border)',
   borderRadius: 'sm',
-  // Soft elevation — kept subtle so it doesn't compete with the grid's
-  // own border. Becomes visible against the cream page bg when the
-  // panel sticks to the top of the viewport on scroll.
+  // Constant shadow — avoids IntersectionObserver wiring; visible against the cream bg once the panel sticks.
   boxShadow: '0 2px 6px -2px rgba(0, 0, 0, 0.08)',
   bg: 'definition',
   color: 'fg',
@@ -36,8 +24,7 @@ const panel = css({
   display: 'flex',
   alignItems: 'center',
   gap: 'sm',
-  // Tighter than 3rem — gives the empty placeholder enough room without
-  // dominating the top of a small phone screen.
+  // 2.5rem — tighter than 3rem so the empty placeholder doesn't dominate the top of a small phone screen.
   minHeight: '2.5rem',
 });
 const arrow = css({
