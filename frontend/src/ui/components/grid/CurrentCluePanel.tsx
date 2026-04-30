@@ -2,26 +2,41 @@ import { css } from 'styled-system/css';
 import type { ArrowDirection } from '@/domain';
 import type { Clue } from './useGridNavigation';
 
-// Out-of-grid clue panel. Cell-internal text is intentionally tiny so the
-// full clue rarely fits without zoom; this panel guarantees the active
-// clue is always readable at body font size, regardless of grid density.
+// Sticky-pinned to the top of the page-level scroll. The panel is rendered
+// as a direct child of `<main>` (Grid returns a fragment, not a wrapping
+// div) so its containing block is the page itself — taller than the
+// viewport, so sticky has room to stick. Width matches the grid below
+// (100% / 480px-cap / centered) so the two align horizontally on every
+// breakpoint, instead of the panel spanning a wider area than the grid.
+//
+// Mobile (`base`): full available width inside `<main>`'s padding, slightly
+// larger font for thumb-distance reading.
+// Desktop (`md`): capped at 480px (same as grid), font reverts to body.
 const panel = css({
+  position: 'sticky',
+  top: 0,
+  zIndex: 10,
   width: '100%',
   maxWidth: '480px',
   margin: '0 auto',
-  padding: 'sm',
+  paddingBlock: 'sm',
+  paddingInline: 'sm',
   border: '1px solid token(colors.border)',
   borderRadius: 'sm',
+  // Constant elevation — visible once it sticks against the cream page bg.
+  boxShadow: '0 2px 6px -2px rgba(0, 0, 0, 0.08)',
   bg: 'definition',
   color: 'fg',
   textAlign: 'left',
   fontFamily: 'body',
-  fontSize: 'body',
-  lineHeight: '1.35',
+  // `md` (1.125rem) on phones gives better thumb-distance readability than
+  // `body` (1rem); desktop reverts to body so the panel doesn't dominate.
+  fontSize: { base: 'md', md: 'body' },
+  lineHeight: '1.3',
   display: 'flex',
   alignItems: 'center',
   gap: 'sm',
-  minHeight: '3rem',
+  minHeight: '2.5rem',
 });
 const arrow = css({
   fontSize: 'lg',
