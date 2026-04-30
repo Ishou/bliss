@@ -11,14 +11,12 @@ const gridContainer = css({
   bg: 'border',
   border: '1px solid',
   borderColor: 'border',
-  // Kills the iOS 300ms tap delay (ADR-0002 §4).
-  touchAction: 'manipulation',
-  userSelect: 'none',
   width: '100%',
   maxWidth: '480px',
   margin: '0 auto',
   // Allow border arrows on edge cells to bleed outside the grid border box.
   overflow: 'visible',
+  // Omitted: touch-action:manipulation blocked pinch/pan; user-select:none blocked iOS magnifier on clue cells.
 });
 
 const rowStyles = css({ display: 'contents' });
