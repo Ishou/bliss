@@ -26,5 +26,8 @@ data class ClueSelectionCriteria(
 interface WordCorpusClueWriter {
     fun selectRows(criteria: ClueSelectionCriteria): List<WordRow>
 
-    fun writeClue(wordId: UUID, clue: String)
+    fun writeClue(
+        wordId: UUID,
+        clue: String,
+    )
 }

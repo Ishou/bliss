@@ -4,13 +4,19 @@ package com.bliss.grid.domain.clue
 /** Result of one [ClueClient.generateClue] call. */
 sealed class ClueResult {
     /** Provider returned an acceptable clue (length-validated upstream). */
-    data class Accepted(val clue: String) : ClueResult()
+    data class Accepted(
+        val clue: String,
+    ) : ClueResult()
 
     /** Provider returned a clue that exceeds the length budget; caller decides whether to retry. */
-    data class TooLong(val rejectedClue: String) : ClueResult()
+    data class TooLong(
+        val rejectedClue: String,
+    ) : ClueResult()
 
     /** Provider call failed (network, 4xx/5xx, malformed response). */
-    data class ApiError(val cause: Throwable) : ClueResult()
+    data class ApiError(
+        val cause: Throwable,
+    ) : ClueResult()
 }
 
 /**

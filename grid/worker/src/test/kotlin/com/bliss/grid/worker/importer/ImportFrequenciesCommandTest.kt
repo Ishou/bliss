@@ -22,7 +22,10 @@ class ImportFrequenciesCommandTest {
         return file
     }
 
-    private fun pair(word: String, count: Long) = WordFrequency(word, count)
+    private fun pair(
+        word: String,
+        count: Long,
+    ) = WordFrequency(word, count)
 
     @Test
     fun `parse returns word-count pairs for normal lines`() {

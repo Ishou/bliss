@@ -9,11 +9,12 @@ import javax.sql.DataSource
  * Policy: the worker has no no-DB mode — `DATABASE_URL` is required (ADR-0013 §6, §7).
  */
 object Database {
-    private val delegate = BlissDatabase(
-        poolName = "grid-worker-hikari",
-        maxPoolSize = 4,
-        requireUrl = true,
-    )
+    private val delegate =
+        BlissDatabase(
+            poolName = "grid-worker-hikari",
+            maxPoolSize = 4,
+            requireUrl = true,
+        )
 
     fun dataSource(): DataSource? = delegate.dataSource()
 

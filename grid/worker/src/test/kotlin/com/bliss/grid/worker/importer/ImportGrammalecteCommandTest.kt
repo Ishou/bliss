@@ -1,10 +1,10 @@
 package com.bliss.grid.worker.importer
 
-import com.bliss.grid.domain.lexicon.GrammalecteEntry
 import assertk.assertThat
 import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
 import assertk.assertions.isNull
+import com.bliss.grid.domain.lexicon.GrammalecteEntry
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.io.TempDir

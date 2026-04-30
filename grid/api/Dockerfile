@@ -12,6 +12,7 @@ WORKDIR /workspace
 COPY gradlew settings.gradle.kts build.gradle.kts ./
 COPY gradle ./gradle
 COPY grid/domain/build.gradle.kts grid/domain/
+COPY grid/application/build.gradle.kts grid/application/
 COPY grid/infrastructure/build.gradle.kts grid/infrastructure/
 COPY grid/api/build.gradle.kts grid/api/
 # settings.gradle.kts include(":grid:worker") forces gradle to evaluate
@@ -22,6 +23,7 @@ COPY grid/api/build.gradle.kts grid/api/
 COPY grid/worker/build.gradle.kts grid/worker/
 
 COPY grid/domain/src grid/domain/src
+COPY grid/application/src grid/application/src
 COPY grid/infrastructure/src grid/infrastructure/src
 COPY grid/api/src grid/api/src
 

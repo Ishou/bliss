@@ -87,7 +87,6 @@ class ExportWordsCommand : CliktCommand(name = "export-words") {
     }
 
     companion object {
-        private fun defaultOutputPath(language: String): Path =
-            Path.of("grid/api/src/main/resources/words/words-$language.csv")
+        private fun defaultOutputPath(language: String): Path = Path.of("grid/api/src/main/resources/words/words-$language.csv")
     }
 }

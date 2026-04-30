@@ -2,11 +2,11 @@ package com.bliss.grid.api
 
 import com.bliss.grid.api.dto.ProblemDetails
 import com.bliss.grid.api.infrastructure.Database
-import com.bliss.grid.infrastructure.persistence.CsvWordRepository
 import com.bliss.grid.api.routes.health
 import com.bliss.grid.api.routes.puzzles
 import com.bliss.grid.application.puzzle.GeneratePuzzleUseCase
 import com.bliss.grid.application.puzzle.defaultPuzzleConstraints
+import com.bliss.grid.infrastructure.persistence.CsvWordRepository
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod

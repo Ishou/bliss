@@ -21,12 +21,13 @@ class GrammalecteLexiqueTest {
 
     @Test
     fun `deduplicates keeping highest occurrence for same surface form`() {
-        val result = parse(
-            "id\tFlexion\tLemme\tTotal occurrences",
-            "1\tchat\tchat nom\t3000",
-            "2\tchat\tchat adj\t5000",
-            "3\tchat\tchat inv\t100",
-        )
+        val result =
+            parse(
+                "id\tFlexion\tLemme\tTotal occurrences",
+                "1\tchat\tchat nom\t3000",
+                "2\tchat\tchat adj\t5000",
+                "3\tchat\tchat inv\t100",
+            )
         assertThat(result.size).isEqualTo(1)
         val row = result["chat"]!!
         assertThat(row.lemma).isEqualTo("chat adj")
@@ -35,11 +36,12 @@ class GrammalecteLexiqueTest {
 
     @Test
     fun `skips malformed rows with too few columns`() {
-        val result = parse(
-            "id\tFlexion\tLemme\tTotal occurrences",
-            "1\tchat\t",
-            "2\tchien\tchien\t4000",
-        )
+        val result =
+            parse(
+                "id\tFlexion\tLemme\tTotal occurrences",
+                "1\tchat\t",
+                "2\tchien\tchien\t4000",
+            )
         assertThat(result.size).isEqualTo(1)
         assertThat(result["chien"]).isEqualTo(GrammalecteEntry("chien", "chien", 4000L))
         assertThat(result["chat"]).isNull()
@@ -47,11 +49,12 @@ class GrammalecteLexiqueTest {
 
     @Test
     fun `skips capitalized surface forms via isAcceptable`() {
-        val result = parse(
-            "id\tFlexion\tLemme\tTotal occurrences",
-            "1\tParis\tparis\t99000",
-            "2\trive\trive\t1200",
-        )
+        val result =
+            parse(
+                "id\tFlexion\tLemme\tTotal occurrences",
+                "1\tParis\tparis\t99000",
+                "2\trive\trive\t1200",
+            )
         assertThat(result.size).isEqualTo(1)
         assertThat(result.containsKey("paris")).isEqualTo(false)
         assertThat(result["rive"]).isEqualTo(GrammalecteEntry("rive", "rive", 1200L))
@@ -59,12 +62,13 @@ class GrammalecteLexiqueTest {
 
     @Test
     fun `skips comment lines and header before column header`() {
-        val result = parse(
-            "# Grammalecte lexique",
-            "# version 7.7",
-            "id\tFlexion\tLemme\tTotal occurrences",
-            "1\tmer\tmer\t8000",
-        )
+        val result =
+            parse(
+                "# Grammalecte lexique",
+                "# version 7.7",
+                "id\tFlexion\tLemme\tTotal occurrences",
+                "1\tmer\tmer\t8000",
+            )
         assertThat(result.size).isEqualTo(1)
         assertThat(result["mer"]!!.occurrences).isEqualTo(8000L)
     }
@@ -77,10 +81,11 @@ class GrammalecteLexiqueTest {
 
     @Test
     fun `lowercases both flexion and lemma`() {
-        val result = parse(
-            "id\tFlexion\tLemme\tTotal occurrences",
-            "1\taimer\tAimer\t2500",
-        )
+        val result =
+            parse(
+                "id\tFlexion\tLemme\tTotal occurrences",
+                "1\taimer\tAimer\t2500",
+            )
         assertThat(result["aimer"]!!.lemma).isEqualTo("aimer")
     }
 

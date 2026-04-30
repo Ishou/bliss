@@ -12,11 +12,12 @@ import javax.sql.DataSource
  * so dev/CI can boot without Postgres.
  */
 object Database {
-    private val delegate = BlissDatabase(
-        poolName = "grid-api-hikari",
-        maxPoolSize = 5,
-        requireUrl = false,
-    )
+    private val delegate =
+        BlissDatabase(
+            poolName = "grid-api-hikari",
+            maxPoolSize = 5,
+            requireUrl = false,
+        )
 
     fun dataSource(): DataSource? = delegate.dataSource()
 
@@ -28,6 +29,5 @@ object Database {
     internal fun toJdbcUrl(raw: String): String = BlissDatabase.toJdbcUrl(raw)
 
     /** Test seam — production callers don't need URL parsing. */
-    internal fun extractCredentials(raw: String): Pair<String?, String?> =
-        BlissDatabase.extractCredentials(raw)
+    internal fun extractCredentials(raw: String): Pair<String?, String?> = BlissDatabase.extractCredentials(raw)
 }

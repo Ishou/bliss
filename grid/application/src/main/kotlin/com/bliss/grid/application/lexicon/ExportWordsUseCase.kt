@@ -20,4 +20,6 @@ class ExportWordsUseCase(
     }
 }
 
-data class ExportWordsReport(val rowsWritten: Int)
+data class ExportWordsReport(
+    val rowsWritten: Int,
+)

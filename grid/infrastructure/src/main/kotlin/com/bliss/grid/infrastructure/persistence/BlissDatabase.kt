@@ -106,8 +106,7 @@ class BlissDatabase(
         private const val LOGGER_BASE = "com.bliss.grid.infrastructure.persistence.BlissDatabase"
         private const val DEFAULT_POSTGRES_PORT: Int = 5432
 
-        internal fun readDatabaseUrl(): String? =
-            System.getenv("DATABASE_URL") ?: System.getProperty("DATABASE_URL")
+        internal fun readDatabaseUrl(): String? = System.getenv("DATABASE_URL") ?: System.getProperty("DATABASE_URL")
 
         /**
          * Converts `postgres://user:pw@host:port/db?...` (CNPG-style) into the
