@@ -1,4 +1,4 @@
-import { memo, type FocusEvent, type FormEvent, type KeyboardEvent, type MouseEvent, type Ref } from 'react';
+import { memo, useRef, type FocusEvent, type FormEvent, type KeyboardEvent, type MouseEvent, type Ref } from 'react';
 import { css } from 'styled-system/css';
 import type {
   ArrowDirection,
@@ -135,16 +135,14 @@ const letterInput = css({
   fontFamily: 'body',
   fontWeight: 'bold',
   fontSize: 'cell',
-  // 1-char cell — the caret is visual noise and, on Android Chrome, dragging
-  // horizontally on or near a focused text input is captured as cursor-handle
-  // positioning, which prevents the page from panning horizontally when the
-  // user has zoomed in. `touch-action: pan-y` declares that the input only
-  // handles vertical pans, so horizontal pans bubble to the parent. iOS gets
-  // belt-and-braces from caretColor:transparent + WebkitTouchCallout:none
-  // (applied via inline `style` since Panda doesn't surface vendor prefixes).
+  // The wrapping <div> is the touch target — see LetterCellView below for
+  // why. The input itself is `pointer-events: none` so taps fall through
+  // to the div, and the `caretColor: transparent` + `userSelect: none`
+  // stay as belt-and-braces in case any browser still routes touch to a
+  // focused input via legacy paths.
+  pointerEvents: 'none',
   caretColor: 'transparent',
   userSelect: 'none',
-  touchAction: 'pan-y',
   padding: 0,
   _focus: { bg: 'leaf.500', color: 'ink' },
 });
@@ -158,18 +156,54 @@ export const LetterCellView = memo(function LetterCellView({
   ariaLabel: string;
   inWord: boolean;
   inputRef: Ref<HTMLInputElement>;
-  // onClick, not pointerdown — browser suppresses `click` after a pan, giving free tap-vs-scroll detection.
+  // The wrapping <div> is the actual touch target — see comment below.
+  // We keep `MouseEvent<HTMLInputElement>` in the signature for source
+  // compatibility with `useGridNavigation.handleClick`; `posOf()` only
+  // reads `dataset.row` / `dataset.col`, which are mirrored on the div.
   onClick: (e: MouseEvent<HTMLInputElement>) => void;
   onKeyDown: (e: KeyboardEvent<HTMLInputElement>) => void;
   onFocus: (e: FocusEvent<HTMLInputElement>) => void;
   // onInput covers Android soft keyboards, which emit key==="Unidentified" on keydown.
   onInput: (e: FormEvent<HTMLInputElement>) => void;
 }) {
+  // We need a local handle to the <input> so the div's onClick can
+  // programmatically focus it (the browser can't do click-to-focus
+  // because the input is `pointer-events: none`). Forward the same
+  // node to `inputRef` (a callback ref from useGridNavigation), so
+  // the existing focus-by-position machinery keeps working.
+  const localInputRef = useRef<HTMLInputElement | null>(null);
+  const setInputRef = (el: HTMLInputElement | null) => {
+    localInputRef.current = el;
+    if (typeof inputRef === 'function') inputRef(el);
+    else if (inputRef) (inputRef as React.MutableRefObject<HTMLInputElement | null>).current = el;
+  };
+
+  // Tap target = the <div>, not the <input>. Why:
+  //   * On Android Chrome, a focused <input> draws a cursor handle (the
+  //     teardrop) that drag-captures one-finger horizontal pans
+  //     regardless of `touch-action`, `caret-color: transparent`, or
+  //     `user-select: none`. Same with the iOS caret-drag magnifier.
+  //   * Routing the touch through the `<div>` (which has none of those
+  //     text-input gestures) lets the browser's native visual-viewport
+  //     panning fire when the page is pinch-zoomed in.
+  //   * We still need the <input> to receive keyboard events
+  //     (`onKeyDown` / `onInput` / `onFocus`), so it stays in the DOM
+  //     and gets focused programmatically here. The focus call lives
+  //     inside the click handler (a user-gesture context), so Android
+  //     and iOS still pop the soft keyboard.
+  const handleClick = (e: MouseEvent<HTMLDivElement>) => {
+    onClick(e as unknown as MouseEvent<HTMLInputElement>);
+    localInputRef.current?.focus();
+  };
+
   return (
     <div
       role="gridcell"
       className={`${cellBase} ${inWord ? letterCellInWord : letterCell}`}
       data-in-word={inWord ? 'true' : 'false'}
+      data-row={cell.position.row}
+      data-col={cell.position.col}
+      onClick={handleClick}
     >
       {/*
         No `maxLength={1}`: when the cell is already full, mobile soft keyboards
@@ -179,7 +213,7 @@ export const LetterCellView = memo(function LetterCellView({
         single new character.
       */}
       <input
-        ref={inputRef}
+        ref={setInputRef}
         type="text"
         inputMode="text"
         autoComplete="off"
@@ -188,13 +222,12 @@ export const LetterCellView = memo(function LetterCellView({
         aria-label={ariaLabel}
         defaultValue={cell.entry}
         className={letterInput}
-        // iOS-only: kills the caret-drag magnifier and the long-press callout
-        // menu so horizontal pans through the grid don't get hijacked.
+        // Belt-and-braces against any browser still routing touch to a
+        // focused input via legacy paths (iOS caret-drag, etc).
         style={{ WebkitTouchCallout: 'none', WebkitUserSelect: 'none' }}
         data-row={cell.position.row}
         data-col={cell.position.col}
         data-cell-kind="letter"
-        onClick={onClick}
         onKeyDown={onKeyDown}
         onFocus={onFocus}
         onInput={onInput}
