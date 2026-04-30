@@ -149,4 +149,22 @@ describe('Grid keyboard interactions', () => {
     expect(start.value).toBe('L');
     expect(document.activeElement).toBe(inputAt(container, 1, 2));
   });
+
+  it('handleInput blanks the cell when a paste produces multi-char content', () => {
+    const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
+    const cell = inputAt(container, 1, 1)!;
+    click(cell);
+    cell.value = 'bonjour';
+    cell.dispatchEvent(new InputEvent('input', { inputType: 'insertFromPaste', data: null, bubbles: true }));
+    expect(cell.value).toBe('');
+  });
+
+  it('handleInput blanks the cell when insertText data is not a single letter', () => {
+    const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
+    const cell = inputAt(container, 1, 1)!;
+    click(cell);
+    cell.value = '12';
+    cell.dispatchEvent(new InputEvent('input', { inputType: 'insertText', data: '12', bubbles: true }));
+    expect(cell.value).toBe('');
+  });
 });
