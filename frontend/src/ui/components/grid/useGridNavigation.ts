@@ -23,9 +23,12 @@ export interface CellHighlight {
 export interface GridNavigation {
   readonly registerCellRef: (el: HTMLInputElement | null) => void;
   readonly highlightFor: (position: Position) => CellHighlight;
-  readonly handlePointerDown: (event: React.PointerEvent<HTMLInputElement>) => void;
+  // click (not pointerdown) — pan gestures never produce a click, so focus is suppressed naturally.
+  readonly handleClick: (event: React.MouseEvent<HTMLInputElement>) => void;
   readonly handleFocus: (event: React.FocusEvent<HTMLInputElement>) => void;
   readonly handleKeyDown: (event: React.KeyboardEvent<HTMLInputElement>) => void;
+  // Android Gboard fires keydown key==="Unidentified"; the real letter arrives here via InputEvent.data.
+  readonly handleInput: (event: React.FormEvent<HTMLInputElement>) => void;
   // Active clue under the focused cell, or null when nothing is focused.
   // Surfaced so the grid container can render the full clue text in a
   // panel outside the grid (cells truncate the prose at small font sizes).
@@ -125,8 +128,8 @@ export function useGridNavigation(puzzle: Puzzle): GridNavigation {
     if (p) refs.current.set(key(p), el);
   }, []);
 
-  const handlePointerDown = useCallback(
-    (event: React.PointerEvent<HTMLInputElement>) => {
+  const handleClick = useCallback(
+    (event: React.MouseEvent<HTMLInputElement>) => {
       const p = posOf(event.currentTarget);
       if (!p) return;
       const { focused: prev, direction: dir } = stateRef.current;
@@ -139,9 +142,14 @@ export function useGridNavigation(puzzle: Puzzle): GridNavigation {
         else if (!onCurrent) next = clues[0].direction;
       }
       setDirection(next);
-      focusCell(p);
+      // Don't call `focusCell` here — the browser focuses the input itself
+      // when the click lands on it. Calling `el.focus()` mid-click handler
+      // suppresses the soft keyboard on Android Chrome / iOS Safari, which
+      // gate the keyboard on the click event reaching its default action
+      // intact. `handleFocus` picks up the resulting native focus event
+      // and syncs React state.
     },
-    [focusCell, lookup],
+    [lookup],
   );
 
   const handleFocus = useCallback((event: React.FocusEvent<HTMLInputElement>) => {
@@ -215,6 +223,34 @@ export function useGridNavigation(puzzle: Puzzle): GridNavigation {
     [focusCell, lookup, moveByVector],
   );
 
+  const handleInput = useCallback(
+    (event: React.FormEvent<HTMLInputElement>) => {
+      const inputEvent = event.nativeEvent as InputEvent;
+      const target = event.currentTarget;
+      // insertText = typed character; backspace arrives on keydown with key==="Backspace" reliably.
+      if (inputEvent.inputType !== 'insertText') {
+        // paste/autocorrect: blank if multi-char or non-letter so cells stay clean.
+        if (target.value.length > 1 || (target.value && !LETTER_RE.test(target.value))) {
+          target.value = '';
+        }
+        return;
+      }
+      const data = inputEvent.data;
+      if (!data || data.length !== 1 || !LETTER_RE.test(data)) {
+        target.value = '';
+        return;
+      }
+      target.value = data.toUpperCase();
+      const { focused: f, direction: dir } = stateRef.current;
+      if (!f) return;
+      const clue = lookup.clueAt(f.row, f.col, dir);
+      if (!clue) return;
+      const idx = clue.cells.findIndex((c) => same(c.position, f));
+      if (idx >= 0 && idx < clue.cells.length - 1) focusCell(clue.cells[idx + 1].position);
+    },
+    [focusCell, lookup],
+  );
+
   const highlightFor = useCallback(
     (p: Position): CellHighlight => {
       if (!currentClue) return { currentWord: false, currentArrow: null };
@@ -230,5 +266,5 @@ export function useGridNavigation(puzzle: Puzzle): GridNavigation {
     [currentClue, focused],
   );
 
-  return { registerCellRef, highlightFor, handlePointerDown, handleFocus, handleKeyDown, currentClue };
+  return { registerCellRef, highlightFor, handleClick, handleFocus, handleKeyDown, handleInput, currentClue };
 }

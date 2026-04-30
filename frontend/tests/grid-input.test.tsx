@@ -43,8 +43,15 @@ const defAt = (root: HTMLElement, row: number, col: number) =>
 // We avoid userEvent because @testing-library/user-event is not in the
 // dep set (no-new-deps constraint from the workstream brief). The
 // orchestration intercepts every key in onKeyDown, so fireEvent on the
-// synthetic events React listens to is sufficient.
-const click = (el: HTMLElement) => { fireEvent.pointerDown(el); fireEvent.focus(el); };
+// synthetic events React listens to is sufficient. `click` mirrors what
+// a real browser does on tap: focus moves to the input *first* (the
+// browser's click default action), then the click event fires. jsdom
+// doesn't auto-focus on `fireEvent.click`, so the helper does it
+// explicitly. In production we removed the explicit `focusCell` call
+// from the click handler so the soft keyboard isn't suppressed on
+// Android / iOS — the browser's native focus-on-click handles it
+// instead, and `handleFocus` reads the resulting focus event.
+const click = (el: HTMLElement) => { el.focus(); fireEvent.click(el); };
 const typeChar = (el: HTMLInputElement, ch: string) => fireEvent.keyDown(el, { key: ch });
 
 describe('Grid keyboard interactions', () => {
@@ -129,5 +136,40 @@ describe('Grid keyboard interactions', () => {
     expect(wrapAt(container, 1, 3)?.dataset.inWord).toBe('false');
     expect(wrapAt(container, 2, 2)?.dataset.inWord).toBe('true');
     expect(wrapAt(container, 3, 2)?.dataset.inWord).toBe('true');
+  });
+
+  // Android Gboard / Samsung keyboards fire `keydown` with
+  // `key === "Unidentified"` for printable characters, so the desktop
+  // keydown path doesn't help. The real letter only arrives on the
+  // `input` event via `InputEvent.data`. This test simulates that
+  // soft-keyboard shape by setting the input value and dispatching a
+  // native InputEvent (fireEvent.input doesn't expose `inputType` or
+  // `data` on the synthetic event).
+  it('Android soft-keyboard input writes uppercase and advances focus', () => {
+    const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
+    const start = inputAt(container, 1, 1)!;
+    click(start);
+    start.value = 'l';
+    start.dispatchEvent(new InputEvent('input', { inputType: 'insertText', data: 'l', bubbles: true }));
+    expect(start.value).toBe('L');
+    expect(document.activeElement).toBe(inputAt(container, 1, 2));
+  });
+
+  it('handleInput blanks the cell when a paste produces multi-char content', () => {
+    const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
+    const cell = inputAt(container, 1, 1)!;
+    click(cell);
+    cell.value = 'bonjour';
+    cell.dispatchEvent(new InputEvent('input', { inputType: 'insertFromPaste', data: null, bubbles: true }));
+    expect(cell.value).toBe('');
+  });
+
+  it('handleInput blanks the cell when insertText data is not a single letter', () => {
+    const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
+    const cell = inputAt(container, 1, 1)!;
+    click(cell);
+    cell.value = '12';
+    cell.dispatchEvent(new InputEvent('input', { inputType: 'insertText', data: '12', bubbles: true }));
+    expect(cell.value).toBe('');
   });
 });
