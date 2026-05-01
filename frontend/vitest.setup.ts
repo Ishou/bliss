@@ -1,10 +1,13 @@
 import '@testing-library/jest-dom/vitest';
 
-// jsdom does not implement window.scrollTo; TanStack Router's scroll
-// restoration calls it on every navigation. Stubbing it keeps test
-// output clean without changing behavior under test.
+// jsdom does not implement window.scrollTo / window.scrollBy. TanStack
+// Router calls scrollTo on every navigation; `useGridNavigation`'s
+// keyboard-avoidance scroll calls scrollBy after a focus event. Both
+// stubs keep test output clean without changing behavior under test
+// (we don't assert on scroll position).
 if (typeof window !== 'undefined') {
   window.scrollTo = (() => {}) as typeof window.scrollTo;
+  window.scrollBy = (() => {}) as typeof window.scrollBy;
 }
 
 // jsdom doesn't ship `ResizeObserver`; `react-zoom-pan-pinch` (used by

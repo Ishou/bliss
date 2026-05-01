@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ArrowDirection, Cell, DefinitionCell, DefinitionClue, LetterCell, Position, Puzzle } from '@/domain';
 
 // 'across' === ArrowDirection 'right'; 'down' === 'down'.
@@ -108,6 +108,23 @@ function buildLookup(puzzle: Puzzle): ClueLookup {
   };
 }
 
+// Scroll-into-visible-viewport timing. We wait for the soft keyboard to
+// finish opening before measuring the cell against `window.visualViewport`;
+// otherwise the keyboard hasn't shrunk the visual viewport yet and our
+// "is the cell visible?" math reads stale dimensions. 250 ms is long
+// enough on Android Gboard / iOS Safari (both ~150–250 ms keyboard
+// animations) and short enough that the user perceives the scroll as a
+// natural reveal rather than a delayed jump. Subsequent focus events
+// (typing → auto-advance) cancel the pending scroll, so only the last
+// focused cell in a typing burst is considered.
+const SCROLL_DELAY_MS = 250;
+// Top margin = sticky panel min-height (~2.5rem) + breathing room so the
+// cell lands clear of the panel and any focus ring it draws.
+const SCROLL_TOP_MARGIN_PX = 64;
+// Bottom margin keeps the cell off the visual-viewport bottom edge,
+// which sometimes overlaps with the keyboard's accessory bar.
+const SCROLL_BOTTOM_MARGIN_PX = 24;
+
 export function useGridNavigation(puzzle: Puzzle): GridNavigation {
   const lookup = useMemo(() => buildLookup(puzzle), [puzzle]);
   const refs = useRef(new Map<string, HTMLInputElement>());
@@ -116,6 +133,51 @@ export function useGridNavigation(puzzle: Puzzle): GridNavigation {
   // State mirror so stable callbacks see the latest values.
   const stateRef = useRef({ focused, direction });
   stateRef.current = { focused, direction };
+  const scrollTimeoutRef = useRef<number | null>(null);
+
+  // Cancel any pending scroll on unmount so we don't fire scrollBy on a
+  // detached input after the puzzle component is gone.
+  useEffect(() => () => {
+    if (scrollTimeoutRef.current !== null) {
+      window.clearTimeout(scrollTimeoutRef.current);
+    }
+  }, []);
+
+  // Mobile keyboard avoidance. Browsers normally auto-scroll a focused
+  // <input> into view when the soft keyboard opens — but that path is
+  // broken inside `TransformComponent`'s `overflow: hidden` wrapper:
+  // the auto-scroll walks up the DOM looking for a scrollable ancestor,
+  // finds the wrapper, "scrolls" it (no-op since it has no overflow),
+  // and never reaches the document. We recover by computing where the
+  // focused cell sits relative to `window.visualViewport` and calling
+  // `window.scrollBy` with the delta needed to bring it inside the
+  // visible region (above the keyboard, below the sticky clue panel).
+  // This runs *after* a delay so the keyboard has had time to shrink
+  // the visual viewport.
+  const scheduleVisibleScroll = useCallback((input: HTMLInputElement) => {
+    if (typeof window === 'undefined') return;
+    if (scrollTimeoutRef.current !== null) {
+      window.clearTimeout(scrollTimeoutRef.current);
+    }
+    scrollTimeoutRef.current = window.setTimeout(() => {
+      scrollTimeoutRef.current = null;
+      if (!input.isConnected) return;
+      const rect = input.getBoundingClientRect();
+      const vv = window.visualViewport;
+      const vvTop = vv?.offsetTop ?? 0;
+      const vvHeight = vv?.height ?? window.innerHeight;
+      const visibleTop = vvTop + SCROLL_TOP_MARGIN_PX;
+      const visibleBottom = vvTop + vvHeight - SCROLL_BOTTOM_MARGIN_PX;
+      let dy = 0;
+      // Bottom-overlap (cell behind keyboard) is the common case. Check
+      // it first so a cell that sits both below the visible-bottom *and*
+      // above the visible-top (a tiny visual viewport) prefers the
+      // bottom-shift, which uncovers the cell from the keyboard.
+      if (rect.bottom > visibleBottom) dy = rect.bottom - visibleBottom;
+      else if (rect.top < visibleTop) dy = rect.top - visibleTop;
+      if (dy !== 0) window.scrollBy({ top: dy, behavior: 'smooth' });
+    }, SCROLL_DELAY_MS);
+  }, []);
 
   const focusCell = useCallback((p: Position) => {
     refs.current.get(key(p))?.focus();
@@ -155,7 +217,8 @@ export function useGridNavigation(puzzle: Puzzle): GridNavigation {
   const handleFocus = useCallback((event: React.FocusEvent<HTMLInputElement>) => {
     const p = posOf(event.currentTarget);
     if (p && !same(stateRef.current.focused, p)) setFocused(p);
-  }, []);
+    scheduleVisibleScroll(event.currentTarget);
+  }, [scheduleVisibleScroll]);
 
   const currentClue = useMemo<Clue | null>(
     () => (focused ? lookup.clueAt(focused.row, focused.col, direction) ?? null : null),
