@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { css } from 'styled-system/css';
 import type { ArrowDirection } from '@/domain';
 import type { Clue } from './useGridNavigation';
@@ -13,6 +13,13 @@ import type { Clue } from './useGridNavigation';
 // Mobile (`base`): full available width inside `<main>`'s padding, slightly
 // larger font for thumb-distance reading.
 // Desktop (`md`): capped at 480px (same as grid), font reverts to body.
+//
+// `willChange: transform` hints the browser to promote the panel onto its
+// own compositor layer. The pinch-zoom handler below mutates `transform`
+// every animation frame; without the layer hint the browser would re-paint
+// the panel on each update, instead of just shifting an already-painted
+// texture on the GPU. The cost is a few KB of GPU memory for a single
+// small element — trivial.
 const panel = css({
   position: 'sticky',
   top: 0,
@@ -38,6 +45,7 @@ const panel = css({
   alignItems: 'center',
   gap: 'sm',
   minHeight: '2.5rem',
+  willChange: 'transform',
 });
 const arrow = css({
   fontSize: 'lg',
@@ -71,10 +79,10 @@ const arrowLabel: Record<ArrowDirection, string> = {
   'right-down': 'verticale',
 };
 
-// Tracks `window.visualViewport`. When the user pinch-zooms (`scale > 1`),
-// returns the inline-style overrides that pin the panel to the top of the
-// VISIBLE visual viewport at a constant on-screen size; otherwise returns
-// `undefined` and the Panda `panel` class's `position: sticky` runs natively.
+// Tracks `window.visualViewport` and pins the panel to the visible viewport
+// when the user pinch-zooms (`scale > 1`). When un-zoomed the panel's
+// inline overrides are cleared and the Panda `panel` class's
+// `position: sticky` runs natively.
 //
 // Why we override `position` to `fixed` when zoomed (not just transform):
 // `position: sticky` keeps the panel at its natural flow position UNTIL the
@@ -100,64 +108,75 @@ const arrowLabel: Record<ArrowDirection, string> = {
 // Trade-off: zooming in causes a small layout shift (sticky panel had a
 // flow box, fixed panel doesn't). Brief and only during the pinch gesture.
 //
-// Co-located here (~30 lines) to match `useGridNavigation.ts`'s
+// Implementation note: we mutate `el.style` directly instead of going
+// through React state. `visualViewport.scroll` fires once per frame during
+// a pinch-pan, and going through `setState → re-render` 60 times a second
+// burns the reconciler for what's just a transform string. Direct DOM
+// mutation inside the rAF callback updates the GPU layer (see
+// `willChange: transform` on the panel class) without touching React.
+// Co-located here (~50 lines) to match `useGridNavigation.ts`'s
 // component-adjacent-hook style; not worth a `hooks/` folder for this.
-type ZoomedStyle = {
-  position: 'fixed';
-  top: 0;
-  left: 0;
-  right: 0;
-  transform: string;
-  transformOrigin: 'top left';
-};
-
-function useVisualViewportZoom(): ZoomedStyle | undefined {
-  const [style, setStyle] = useState<ZoomedStyle | undefined>(undefined);
+function useVisualViewportZoom(elementRef: React.RefObject<HTMLElement | null>) {
   useEffect(() => {
     if (typeof window === 'undefined' || !window.visualViewport) return;
     const vv = window.visualViewport;
+    const el = elementRef.current;
+    if (!el) return;
     let raf = 0;
-    const update = () => {
+    const apply = () => {
       raf = 0;
       // Tolerance — pinch gestures sometimes leave scale at 1.0001 or so.
       // Below that we treat the user as not zoomed and let CSS sticky run.
       if (vv.scale > 1.001) {
-        setStyle({
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          transform: `translate(${vv.offsetLeft}px, ${vv.offsetTop}px) scale(${1 / vv.scale})`,
-          transformOrigin: 'top left',
-        });
+        el.style.position = 'fixed';
+        el.style.top = '0px';
+        el.style.left = '0px';
+        el.style.right = '0px';
+        el.style.transform = `translate(${vv.offsetLeft}px, ${vv.offsetTop}px) scale(${1 / vv.scale})`;
+        el.style.transformOrigin = 'top left';
       } else {
-        setStyle(undefined);
+        // Clear inline overrides so the Panda `panel` class's
+        // `position: sticky` (and natural width/transform defaults) win.
+        el.style.position = '';
+        el.style.top = '';
+        el.style.left = '';
+        el.style.right = '';
+        el.style.transform = '';
+        el.style.transformOrigin = '';
       }
     };
     const schedule = () => {
       // visualViewport.scroll fires every frame during a pinch-pan; rAF
       // coalesces. Listeners are passive by spec, no { passive: true } needed.
-      if (!raf) raf = requestAnimationFrame(update);
+      if (!raf) raf = requestAnimationFrame(apply);
     };
     vv.addEventListener('scroll', schedule);
     vv.addEventListener('resize', schedule);
-    update();
+    apply();
     return () => {
       cancelAnimationFrame(raf);
       vv.removeEventListener('scroll', schedule);
       vv.removeEventListener('resize', schedule);
+      // Reset on unmount — the next mount of this component starts from a
+      // clean Panda-class state, not whatever the last zoom left behind.
+      el.style.position = '';
+      el.style.top = '';
+      el.style.left = '';
+      el.style.right = '';
+      el.style.transform = '';
+      el.style.transformOrigin = '';
     };
-  }, []);
-  return style;
+  }, [elementRef]);
 }
 
 export function CurrentCluePanel({ clue }: { clue: Clue | null }) {
-  const inlineStyle = useVisualViewportZoom();
+  const panelRef = useRef<HTMLDivElement | null>(null);
+  useVisualViewportZoom(panelRef);
   if (!clue) {
     return (
       <div
+        ref={panelRef}
         className={panel}
-        style={inlineStyle}
         role="status"
         aria-live="polite"
         data-testid="current-clue-panel"
@@ -170,8 +189,8 @@ export function CurrentCluePanel({ clue }: { clue: Clue | null }) {
   }
   return (
     <div
+      ref={panelRef}
       className={panel}
-      style={inlineStyle}
       role="status"
       aria-live="polite"
       data-testid="current-clue-panel"
