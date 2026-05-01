@@ -26,6 +26,13 @@ export interface GridNavigation {
   // click (not pointerdown) — pan gestures never produce a click, so focus is suppressed naturally.
   readonly handleClick: (event: React.MouseEvent<HTMLDivElement>) => void;
   readonly handleFocus: (event: React.FocusEvent<HTMLInputElement>) => void;
+  // Clear focused state when an input loses focus (e.g. user taps outside the
+  // grid). Without this the word-highlight stripe stayed lit on the last
+  // focused row even after the input was visibly blurred. During a typing
+  // burst the new cell's focus event fires synchronously after the old
+  // cell's blur, and React 18's automatic batching folds the two state
+  // updates into one render — no flicker.
+  readonly handleBlur: (event: React.FocusEvent<HTMLInputElement>) => void;
   readonly handleKeyDown: (event: React.KeyboardEvent<HTMLInputElement>) => void;
   // Android Gboard fires keydown key==="Unidentified"; the real letter arrives here via InputEvent.data.
   readonly handleInput: (event: React.FormEvent<HTMLInputElement>) => void;
@@ -220,6 +227,17 @@ export function useGridNavigation(puzzle: Puzzle): GridNavigation {
     scheduleVisibleScroll(event.currentTarget);
   }, [scheduleVisibleScroll]);
 
+  const handleBlur = useCallback(() => {
+    // Unconditionally null-out focused. If focus is moving to another
+    // letter cell (typing → auto-advance, or tapping a different cell),
+    // that cell's `handleFocus` fires synchronously after this and
+    // restores `focused` — React batches both updates into one render.
+    // If focus is moving outside the grid (user taps the page chrome,
+    // hits Tab, etc.) there is no follow-up focus event and the word
+    // highlight clears, which is the bug this fixes.
+    setFocused(null);
+  }, []);
+
   const currentClue = useMemo<Clue | null>(
     () => (focused ? lookup.clueAt(focused.row, focused.col, direction) ?? null : null),
     [focused, direction, lookup],
@@ -329,5 +347,5 @@ export function useGridNavigation(puzzle: Puzzle): GridNavigation {
     [currentClue, focused],
   );
 
-  return { registerCellRef, highlightFor, handleClick, handleFocus, handleKeyDown, handleInput, currentClue };
+  return { registerCellRef, highlightFor, handleClick, handleFocus, handleBlur, handleKeyDown, handleInput, currentClue };
 }
