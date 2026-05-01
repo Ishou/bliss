@@ -111,6 +111,34 @@ class SkeletonFillerTest {
         assertThat(filler.fill(emptyList(), random, future)).isEqualTo(emptyList())
     }
 
+    @Test
+    fun `excludes inflected forms of an already-placed lemma`() {
+        // Two independent length-3 slots. The corpus carries two distinct surface
+        // forms ("OUI" and "OUS") that share the same lemma "OUI" — placing one
+        // must forbid the other on the second slot. SLG (a third unrelated word)
+        // is the only legal completion when lemma-dedup kicks in.
+        val filler =
+            SkeletonFiller(
+                ListWordRepository(
+                    listOf(
+                        Word("OUI", "", lemma = "OUI"),
+                        Word("OUS", "", lemma = "OUI"),
+                        Word("SLG", "", lemma = "SLG"),
+                    ),
+                ),
+            )
+        val slots =
+            listOf(
+                WordSlot(pos(0, 0), Direction.RIGHT, length = 3),
+                WordSlot(pos(2, 0), Direction.RIGHT, length = 3),
+            )
+        val result = filler.fill(slots, random, future)
+        assertThat(result).isNotNull()
+        val lemmas = result!!.map { it.word.lemma }.toSet()
+        // Two distinct lemmas across the two placements — never two from "OUI".
+        assertThat(lemmas.size).isEqualTo(2)
+    }
+
     private fun pos(
         row: Int,
         col: Int,

@@ -1,0 +1,4 @@
+word,language,length,frequency,difficulty,clue,source,source_license,lemma
+aimera,fr,6,5000,,Eprouver de l'amour,hand-curated,FSL-1.1-MIT,aimer
+aimer,fr,5,5000,,Eprouver de l'amour,hand-curated,FSL-1.1-MIT,aimer
+chat,fr,4,5000,,Animal domestique,hand-curated,FSL-1.1-MIT,chat

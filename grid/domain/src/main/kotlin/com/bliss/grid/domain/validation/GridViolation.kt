@@ -24,6 +24,17 @@ sealed interface GridViolation {
         val word: Word,
     ) : GridViolation
 
+    /**
+     * Two placements share the same dictionary headword (e.g. "COURT" and
+     * "COURAIT" both lemma="COURIR"). The grid is structurally valid but
+     * stylistically poor — mots-fléchés convention avoids placing multiple
+     * inflections of the same verb / noun in the same puzzle.
+     */
+    data class DuplicateLemma(
+        val lemma: String,
+        val words: List<Word>,
+    ) : GridViolation
+
     data class OrphanedLetterCell(
         val position: Position,
     ) : GridViolation

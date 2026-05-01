@@ -56,4 +56,22 @@ class CsvWordRepositoryTest {
             CsvWordRepository.fromClasspath("/words/blank-clue-test.csv")
         }
     }
+
+    @Test
+    fun `lemma column when present round-trips into Word lemma (folded to ASCII)`() {
+        val repo = CsvWordRepository.fromClasspath("/words/lemma-column-test.csv")
+        // "aimera" — inflected form of "aimer". Lemma is folded to A-Z uppercase
+        // for dedup parity with Word.text.
+        val match = repo.findByLength(6).single { it.text == "AIMERA" }
+        assertThat(match.lemma).isEqualTo("AIMER")
+    }
+
+    @Test
+    fun `lemma column when absent defaults to the word itself (legacy CSV)`() {
+        // The bundled french CSV is currently lemma-less; every row should have
+        // lemma == text. This pins the backward-compatibility contract until a
+        // re-export populates the column.
+        val sample = repo.findByLength(4).take(20)
+        sample.forEach { word -> assertThat(word.lemma).isEqualTo(word.text) }
+    }
 }
