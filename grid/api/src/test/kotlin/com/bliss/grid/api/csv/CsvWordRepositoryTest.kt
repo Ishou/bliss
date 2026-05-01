@@ -67,6 +67,13 @@ class CsvWordRepositoryTest {
     }
 
     @Test
+    fun `lemma column when absent defaults to the word itself (legacy CSV)`() {
+        val legacyRepo = CsvWordRepository.fromClasspath("/words/legacy-8-column-test.csv")
+        val word = legacyRepo.findByLength(4).single { it.text == "CHAT" }
+        assertThat(word.lemma).isEqualTo(word.text)
+    }
+
+    @Test
     fun `bundled french CSV carries real lemma data (non-trivial inflections)`() {
         // The production export populates lemma for every row. Most short words
         // are themselves lemmas (lemma == text), but a meaningful fraction of
