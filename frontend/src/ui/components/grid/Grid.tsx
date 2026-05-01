@@ -157,6 +157,7 @@ export function Grid({ puzzle }: { puzzle: Puzzle }) {
                           inputRef={nav.registerCellRef}
                           onClick={nav.handleClick}
                           onFocus={nav.handleFocus}
+                          onBlur={nav.handleBlur}
                           onKeyDown={nav.handleKeyDown}
                           onInput={nav.handleInput}
                         />

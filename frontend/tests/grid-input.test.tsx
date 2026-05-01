@@ -75,6 +75,26 @@ describe('Grid keyboard interactions', () => {
     expect(defAt(container, 1, 0)?.dataset.currentClue).toBe('true');
   });
 
+  it('clears the word highlight when focus leaves the grid', () => {
+    const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
+    const target = inputAt(container, 1, 1)!;
+    click(target);
+    // Pre-blur sanity: the cells along across-2 are highlighted as in-word.
+    expect(wrapAt(container, 1, 2)?.dataset.inWord).toBe('true');
+    expect(defAt(container, 1, 0)?.dataset.currentClue).toBe('true');
+    // Blur the input — simulates the user tapping outside the grid (the
+    // page chrome, the URL bar, the keyboard's "done" button, etc.).
+    // act() flushes the React state update synchronously so the DOM
+    // assertions below see the post-blur render.
+    act(() => target.blur());
+    // Word highlight + current-clue stripe must clear; otherwise the
+    // grid keeps a stale "this row is selected" appearance after the
+    // user has visibly de-selected it.
+    expect(wrapAt(container, 1, 2)?.dataset.inWord).toBe('false');
+    expect(wrapAt(container, 1, 4)?.dataset.inWord).toBe('false');
+    expect(defAt(container, 1, 0)?.dataset.currentClue).toBe('false');
+  });
+
   it('typing a letter writes it and advances along the current direction', () => {
     const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
     const start = inputAt(container, 1, 1)!;

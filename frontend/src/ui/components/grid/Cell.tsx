@@ -243,7 +243,7 @@ const letterInput = css({
 const arrowLabel: Record<ArrowDirection, string> = { right: 'horizontale', down: 'verticale', 'down-right': 'horizontale', 'right-down': 'verticale' };
 
 export const LetterCellView = memo(function LetterCellView({
-  cell, ariaLabel, inWord, inputRef, onClick, onKeyDown, onFocus, onInput,
+  cell, ariaLabel, inWord, inputRef, onClick, onKeyDown, onFocus, onBlur, onInput,
 }: {
   cell: LetterCell;
   ariaLabel: string;
@@ -252,6 +252,9 @@ export const LetterCellView = memo(function LetterCellView({
   onClick: (e: MouseEvent<HTMLDivElement>) => void;
   onKeyDown: (e: KeyboardEvent<HTMLInputElement>) => void;
   onFocus: (e: FocusEvent<HTMLInputElement>) => void;
+  // onBlur clears the word-highlight when focus leaves the grid; see
+  // `useGridNavigation.handleBlur` for the batching rationale.
+  onBlur: (e: FocusEvent<HTMLInputElement>) => void;
   // onInput covers Android soft keyboards, which emit key==="Unidentified" on keydown.
   onInput: (e: FormEvent<HTMLInputElement>) => void;
 }) {
@@ -319,6 +322,7 @@ export const LetterCellView = memo(function LetterCellView({
         data-cell-kind="letter"
         onKeyDown={onKeyDown}
         onFocus={onFocus}
+        onBlur={onBlur}
         onInput={onInput}
       />
     </div>
