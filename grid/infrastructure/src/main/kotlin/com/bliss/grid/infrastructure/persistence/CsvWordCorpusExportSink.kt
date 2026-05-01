@@ -48,8 +48,15 @@ class CsvWordCorpusExportSink(
     companion object {
         private val HEADER =
             arrayOf(
-                "word", "language", "length", "frequency", "difficulty",
-                "clue", "source", "source_license", "lemma",
+                "word",
+                "language",
+                "length",
+                "frequency",
+                "difficulty",
+                "clue",
+                "source",
+                "source_license",
+                "lemma",
             )
 
         private fun csvFormat(): CSVFormat =
