@@ -196,8 +196,8 @@ describe('Grid keyboard interactions', () => {
 
   // Pins the regression that prompted the lastClickedRef refactor: even if
   // the input blurs between two same-cell clicks (iOS soft-keyboard
-  // re-show, stray pointer events, the `handleBlur` cleanup added in
-  // PR #116), the second click must still toggle direction. Using
+  // re-show, stray pointer events, the `handleBlur` blur-clears-focused
+  // behaviour), the second click must still toggle direction. Using
   // `focused` as the repeat-click signal would fail this test because
   // blur clears it.
   it('toggles direction on second click even if focus was lost between clicks', () => {
@@ -214,6 +214,24 @@ describe('Grid keyboard interactions', () => {
     expect(wrapAt(container, 1, 3)?.dataset.inWord).toBe('true');
     expect(wrapAt(container, 1, 4)?.dataset.inWord).toBe('true');
     expect(wrapAt(container, 2, 2)?.dataset.inWord).toBe('false');
+  });
+
+  // Pins the behavioral gap: keyboard navigation away from a cell and back
+  // must clear lastClickedRef so the next click is treated as a first click
+  // (starting-clue preference), not a repeat-click toggle.
+  // Without the handleFocus reset: isRepeatClick=true and toggle → 'across'. ✗
+  it('first click after keyboard navigation away and back focuses starting clue, not toggle', () => {
+    const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
+    click(inputAt(container, 1, 2)!); // direction = down (down-1 starts here)
+    // Arrow away to (2,2) then back to (1,2) — focus moves through handleFocus twice,
+    // never through handleClick, so lastClickedRef must be cleared.
+    fireEvent.keyDown(inputAt(container, 1, 2)!, { key: 'ArrowDown' });
+    fireEvent.keyDown(inputAt(container, 2, 2)!, { key: 'ArrowUp' });
+    // direction is still 'down'. Without the fix, toggle fires and switches to 'across'.
+    click(inputAt(container, 1, 2)!);
+    expect(wrapAt(container, 2, 2)?.dataset.inWord).toBe('true');
+    expect(wrapAt(container, 3, 2)?.dataset.inWord).toBe('true');
+    expect(wrapAt(container, 1, 3)?.dataset.inWord).toBe('false');
   });
 
   // Android Gboard / Samsung keyboards fire `keydown` with

@@ -145,9 +145,9 @@ export function useGridNavigation(puzzle: Puzzle): GridNavigation {
   // The toggle-on-repeat-click path needs to know whether the *previous
   // click* targeted the same cell — using `focused` would miss the case
   // where the input lost focus between clicks (iOS soft-keyboard quirks,
-  // a stray pointer event, the `handleBlur` cleanup from PR #116, etc.).
-  // Reset to `null` on every reset path; non-null here means "the user's
-  // most recent tap landed on this cell."
+  // a stray pointer event, the `handleBlur` blur-clears-focused behaviour, etc.).
+  // Cleared by `handleFocus` when focus moves to a new cell via keyboard or
+  // programmatic navigation, so the next tap is treated as a first click.
   const lastClickedRef = useRef<Position | null>(null);
 
   // Cancel any pending scroll on unmount so we don't fire scrollBy on a
@@ -211,7 +211,7 @@ export function useGridNavigation(puzzle: Puzzle): GridNavigation {
       if (!p) return;
       // Read repeat-click state from `lastClickedRef` (NOT from `focused`):
       // `focused` can be transiently null between two same-cell clicks
-      // because of the blur cleanup added in PR #116 + iOS soft-keyboard
+      // because of the `handleBlur` blur-clears-focused behaviour + iOS soft-keyboard
       // re-show quirks. Using it here would silently break the NYT-style
       // toggle on real devices even though jsdom tests pass. The click
       // history captures the user's actual interaction sequence regardless
@@ -262,7 +262,13 @@ export function useGridNavigation(puzzle: Puzzle): GridNavigation {
 
   const handleFocus = useCallback((event: React.FocusEvent<HTMLInputElement>) => {
     const p = posOf(event.currentTarget);
-    if (p && !same(stateRef.current.focused, p)) setFocused(p);
+    if (p) {
+      if (!same(stateRef.current.focused, p)) setFocused(p);
+      // Keyboard/programmatic navigation lands here without a preceding handleClick,
+      // so lastClickedRef still holds the old cell. Clear it so the next tap on
+      // this cell is treated as a first click (starting-clue preference), not a toggle.
+      if (!same(lastClickedRef.current, p)) lastClickedRef.current = null;
+    }
     scheduleVisibleScroll(event.currentTarget);
   }, [scheduleVisibleScroll]);
 
