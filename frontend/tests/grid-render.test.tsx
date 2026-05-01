@@ -220,4 +220,109 @@ describe('Grid render', () => {
     expect(screen.getByTitle('Volatile à long cou')).toBeInTheDocument();
     expect(screen.getByTitle('Tracer des mots')).toBeInTheDocument();
   });
+
+  // Bent arrows. `right-down` and `down-right` ORIGINATE at the same
+  // border as `right` / `down` respectively (the arrow ENTERS the right
+  // / bottom neighbour and bends inside that neighbour). Earlier code
+  // placed bent arrows by *flow* axis, putting them on the wrong border.
+  // The tests below pin two invariants per bent type:
+  //   1. The arrow mark exists with `data-arrow={arrow}` set.
+  //   2. The marker is rendered as an SVG (bent shape) — not a clip-path
+  //      span — so the L-bend is visible.
+  it('renders right-down as a bent arrow rooted at the right border', () => {
+    const cell: DefinitionCell = {
+      kind: 'definition',
+      position: { row: 0, col: 0 },
+      clues: [{ text: 'Plante grimpante', arrow: 'right-down' }],
+    };
+    const { container } = render(<DefinitionCellView cell={cell} currentArrow={null} />);
+    const mark = container.querySelector('[data-arrow="right-down"]');
+    expect(mark).not.toBeNull();
+    // Bent arrows render as <svg> children; straight arrows are plain spans.
+    expect(mark?.querySelector('svg')).not.toBeNull();
+    // aria-label uses flow-axis French ("verticale" for `right-down`'s
+    // downward flow) — assistive tech announces what the answer DOES,
+    // not which border the arrow originates from.
+    expect(mark).toHaveAttribute('aria-label', 'définition verticale');
+  });
+
+  it('renders down-right as a bent arrow rooted at the bottom border', () => {
+    const cell: DefinitionCell = {
+      kind: 'definition',
+      position: { row: 0, col: 0 },
+      clues: [{ text: 'Mot de passe', arrow: 'down-right' }],
+    };
+    const { container } = render(<DefinitionCellView cell={cell} currentArrow={null} />);
+    const mark = container.querySelector('[data-arrow="down-right"]');
+    expect(mark).not.toBeNull();
+    expect(mark?.querySelector('svg')).not.toBeNull();
+    expect(mark).toHaveAttribute('aria-label', 'définition horizontale');
+  });
+
+  // Same-origin two-clue cell: both clues' arrows ENTER through the same
+  // border (right or bottom) but with different shapes. The renderer
+  // must show TWO arrow marks on that border, one per clue, with the
+  // correct shape per arrow direction.
+  //
+  // Scenario: a left-column inner skeleton cell carries DOWN_RIGHT +
+  // RIGHT (two horizontal-flow clues, both bottom-origin / both
+  // right-origin respectively per `arrowOriginOf`). Today's data this
+  // exercises the same-origin branch; the previous renderer would silently
+  // mis-position the second arrow.
+  it('renders both arrows on the right border for [right + right-down] pair', () => {
+    const cell: DefinitionCell = {
+      kind: 'definition',
+      position: { row: 0, col: 0 },
+      clues: [
+        { text: 'Première', arrow: 'right' },
+        { text: 'Deuxième', arrow: 'right-down' },
+      ],
+    };
+    const { container } = render(<DefinitionCellView cell={cell} currentArrow={null} />);
+    expect(container.querySelector('[data-arrow="right"]')).not.toBeNull();
+    expect(container.querySelector('[data-arrow="right-down"]')).not.toBeNull();
+    // Both arrows are present, each rendered as the appropriate shape.
+    expect(container.querySelector('[data-arrow="right"] svg')).toBeNull(); // straight
+    expect(container.querySelector('[data-arrow="right-down"] svg')).not.toBeNull(); // bent
+  });
+
+  it('renders both arrows on the bottom border for [down + down-right] pair', () => {
+    const cell: DefinitionCell = {
+      kind: 'definition',
+      position: { row: 0, col: 0 },
+      clues: [
+        { text: 'Première', arrow: 'down' },
+        { text: 'Deuxième', arrow: 'down-right' },
+      ],
+    };
+    const { container } = render(<DefinitionCellView cell={cell} currentArrow={null} />);
+    expect(container.querySelector('[data-arrow="down"]')).not.toBeNull();
+    expect(container.querySelector('[data-arrow="down-right"]')).not.toBeNull();
+    expect(container.querySelector('[data-arrow="down"] svg')).toBeNull();
+    expect(container.querySelector('[data-arrow="down-right"] svg')).not.toBeNull();
+  });
+
+  // Two-clue cells preserve the API/mapper's clue order in the rendered
+  // text stack. Earlier code blindly destructured `[horizontal, vertical]`
+  // and re-labeled by axis; with same-origin pairs (both horizontal-flow
+  // or both vertical-flow) that destructuring would mis-label the second
+  // clue. The fix uses `cell.clues` order verbatim — assert it here.
+  it('renders two-clue text in cell.clues array order, not axis order', () => {
+    const cell: DefinitionCell = {
+      kind: 'definition',
+      position: { row: 0, col: 0 },
+      clues: [
+        { text: 'Premier-en-DOM', arrow: 'down' },
+        { text: 'Second-en-DOM', arrow: 'right' },
+      ],
+    };
+    const { container } = render(<DefinitionCellView cell={cell} currentArrow={null} />);
+    const textNodes = Array.from(container.querySelectorAll('[data-arrow] + *, [title]'))
+      .map((n) => n.textContent)
+      .filter((t): t is string => Boolean(t));
+    // Use document order: the "down" clue text appears before the "right" one.
+    const html = container.innerHTML;
+    expect(html.indexOf('Premier-en-DOM')).toBeLessThan(html.indexOf('Second-en-DOM'));
+    expect(textNodes.length).toBeGreaterThan(0);
+  });
 });

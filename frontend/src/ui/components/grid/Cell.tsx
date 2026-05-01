@@ -59,44 +59,137 @@ const defText = css({
   wordBreak: 'normal',
 });
 
-// CSS clip-path triangles whose BASE sits exactly on the cell border, tip
-// pointing into the adjacent answer cell (classic mots fléchés convention).
-// translate(100%/-50%) for right arrow: right:0 puts the right edge of the
-// box on the border, then translateX(100%) shifts it so the LEFT edge (base
-// of the triangle) lands on the border line. Mirror logic for the down arrow.
-// pointerEvents:none so clicks reach the adjacent letter cell.
-// zIndex:2 renders above the defCell's z-index:1 stacking context.
-const arrowShared = {
-  position: 'absolute' as const,
-  width: '10cqi' as const,
-  height: '10cqi' as const,
-  bg: 'leaf.700' as const,
-  pointerEvents: 'none' as const,
-  zIndex: 2,
+// Arrow shapes — straight triangles + bent L-shapes.
+//
+// A def cell's arrow originates at one of two borders:
+//   * RIGHT border  — answer's first cell is the right neighbour.
+//                     `right` (straight) and `right-down` (bent) are both
+//                     right-origin: the arrow ENTERS the right neighbour.
+//                     For `right-down` the path bends DOWN inside that
+//                     neighbour (answer continues downward from there).
+//   * BOTTOM border — answer's first cell is the bottom neighbour.
+//                     `down` (straight) and `down-right` (bent) are both
+//                     bottom-origin: arrow enters the bottom neighbour.
+//                     For `down-right` the path bends RIGHT inside that
+//                     neighbour (answer continues rightward).
+//
+// The earlier code keyed arrow placement on flow axis (`HorizontalArrow`
+// vs `VerticalArrow`), which puts `right-down` on the bottom border and
+// `down-right` on the right border — wrong: those bent variants share
+// the *origin* of `right` / `down` respectively, not the flow.
+//
+// `arrowOriginOf` is the single source of truth used by every arrow site
+// (single-clue, stacked-clue, current-clue highlight stripe).
+type ArrowOrigin = 'right' | 'bottom';
+const arrowOriginOf = (a: ArrowDirection): ArrowOrigin =>
+  a === 'right' || a === 'right-down' ? 'right' : 'bottom';
+
+// Slot = which physical position on a def cell's border an arrow occupies.
+// Single-clue cells use `*Center`. Two-clue cells use `*Top`/`*Bottom`
+// (right border) or `*Left`/`*Right` (bottom border) when both clues
+// share an origin, or `*Top` (right) + `*Center` (bottom) for mixed
+// origins (matches the existing visual: horizontal-flow text on top
+// with right-arrow at top half; vertical-flow text on bottom with
+// down-arrow centered).
+type ArrowSlot =
+  | 'rightCenter' | 'rightTop' | 'rightBottom'
+  | 'bottomCenter' | 'bottomLeft' | 'bottomRight';
+
+const SLOT_POSITION: Record<ArrowSlot, React.CSSProperties> = {
+  rightCenter:  { right: 0, top: '50%', transform: 'translate(100%, -50%)' },
+  rightTop:     { right: 0, top: '25%', transform: 'translate(100%, -50%)' },
+  rightBottom:  { right: 0, top: '75%', transform: 'translate(100%, -50%)' },
+  bottomCenter: { bottom: 0, left: '50%', transform: 'translate(-50%, 100%)' },
+  bottomLeft:   { bottom: 0, left: '25%', transform: 'translate(-50%, 100%)' },
+  bottomRight:  { bottom: 0, left: '75%', transform: 'translate(-50%, 100%)' },
 };
-// Single-clue: base on the full right edge.
-const defArrowRight = css({
-  ...arrowShared,
-  right: 0,
-  top: '50%',
-  transform: 'translate(100%, -50%)',
-  clipPath: 'polygon(0 0, 100% 50%, 0 100%)',
+
+// Straight (10cqi × 10cqi) triangles whose BASE sits exactly on the cell
+// border, tip pointing into the adjacent answer cell. pointer-events:none
+// so clicks reach the adjacent letter cell. zIndex:2 renders above the
+// defCell's z-index:1 stacking context.
+const arrowStraightBase = css({
+  position: 'absolute',
+  width: '10cqi',
+  height: '10cqi',
+  bg: 'leaf.700',
+  pointerEvents: 'none',
+  zIndex: 2,
 });
-// Stacked: base on the TOP HALF of the right edge.
-const defArrowRightStack = css({
-  ...arrowShared,
-  right: 0,
-  top: '25%',
-  transform: 'translate(100%, -50%)',
-  clipPath: 'polygon(0 0, 100% 50%, 0 100%)',
+const triangleRightClip = css({ clipPath: 'polygon(0 0, 100% 50%, 0 100%)' });
+const triangleDownClip = css({ clipPath: 'polygon(0 0, 100% 0, 50% 100%)' });
+
+// Bent L-arrows are rendered as SVG paths inside a 30cqi × 30cqi box
+// anchored at the same slot position (entry point at the box's left edge
+// for right-origin, top edge for bottom-origin). The path traces the
+// vertical stroke + horizontal stroke + triangle tip as a single polygon
+// so the fill produces a single solid shape with no seams.
+//
+// The 30cqi size is enough to push the bend partway into the entry
+// neighbour and keep the triangle tip clear of the def cell border.
+// Smaller boxes hide the L; larger boxes intrude on the next neighbour.
+const arrowBentBase = css({
+  position: 'absolute',
+  width: '30cqi',
+  height: '30cqi',
+  color: 'leaf.700',
+  pointerEvents: 'none',
+  zIndex: 2,
 });
-const defArrowDown = css({
-  ...arrowShared,
-  bottom: 0,
-  left: '50%',
-  transform: 'translate(-50%, 100%)',
-  clipPath: 'polygon(0 0, 100% 0, 50% 100%)',
-});
+// `right-down`: stroke goes RIGHT from the box's left-center, then bends
+// DOWN inside the entry neighbour. Triangle tip points DOWN.
+// 100×100 viewBox; entry is at (0, 50) — the box's left-center.
+const PATH_RIGHT_DOWN = 'M 0 42 L 65 42 L 65 75 L 75 75 L 58 95 L 40 75 L 50 75 L 50 58 L 0 58 Z';
+// `down-right`: stroke goes DOWN from the box's top-center, then bends
+// RIGHT inside the entry neighbour. Triangle tip points RIGHT.
+// 100×100 viewBox; entry is at (50, 0) — the box's top-center.
+const PATH_DOWN_RIGHT = 'M 42 0 L 58 0 L 58 50 L 75 50 L 75 40 L 95 58 L 75 75 L 75 65 L 42 65 Z';
+
+// One-stop arrow renderer. Picks the right shape (straight triangle or
+// bent SVG L) and the right border position (slot) for a given arrow
+// direction. Single source of truth — both single-clue and two-clue
+// branches go through it so the rendering rules stay consistent.
+function ArrowMark({
+  arrow, slot, ariaLabel, ariaHidden = false,
+}: {
+  arrow: ArrowDirection;
+  slot: ArrowSlot;
+  ariaLabel?: string;
+  ariaHidden?: boolean;
+}) {
+  const positionStyle = SLOT_POSITION[slot];
+  const isBent = arrow === 'right-down' || arrow === 'down-right';
+  if (isBent) {
+    return (
+      <span
+        className={arrowBentBase}
+        style={positionStyle}
+        role={ariaHidden ? undefined : 'img'}
+        aria-hidden={ariaHidden || undefined}
+        aria-label={ariaHidden ? undefined : ariaLabel}
+        data-arrow={arrow}
+      >
+        <svg viewBox="0 0 100 100" preserveAspectRatio="none" width="100%" height="100%">
+          <path
+            d={arrow === 'right-down' ? PATH_RIGHT_DOWN : PATH_DOWN_RIGHT}
+            fill="currentColor"
+          />
+        </svg>
+      </span>
+    );
+  }
+  const clipClass = arrow === 'right' ? triangleRightClip : triangleDownClip;
+  return (
+    <span
+      className={`${arrowStraightBase} ${clipClass}`}
+      style={positionStyle}
+      role={ariaHidden ? undefined : 'img'}
+      aria-hidden={ariaHidden || undefined}
+      aria-label={ariaHidden ? undefined : ariaLabel}
+      data-arrow={arrow}
+    />
+  );
+}
 
 // Stacked layout: two clues share the cell vertically.
 // Arrows are outside the flow (border-positioned), so text gets the full area.
@@ -249,15 +342,51 @@ function StackedClue({ clue, isCurrent }: { clue: DefinitionClue; isCurrent: boo
   );
 }
 
+// Picks the arrow slots for a two-clue cell. Same-origin pairs share a
+// border and split slot1/slot2 along it; mixed-origin pairs each take
+// their own border (right-origin → top-half of right; bottom-origin →
+// centered on bottom — matches the existing mixed-axis visual).
+//
+// The clue order in `cell.clues` is taken as-given. The mapper at
+// `infrastructure/api/grid/mapper.ts` already normalizes mixed-axis
+// pairs to [horizontal-flow, vertical-flow] for the text stack; for
+// same-origin pairs the API order is preserved (per the comment in
+// `Cell.ts`: top-row inner skeleton cells produce RIGHT_DOWN + DOWN,
+// left-col cells produce DOWN_RIGHT + RIGHT — the renderer must keep
+// that order so each clue's arrow stays paired with its text).
+function twoClueSlots(
+  a: ArrowDirection,
+  b: ArrowDirection,
+): { slotA: ArrowSlot; slotB: ArrowSlot } {
+  const oa = arrowOriginOf(a);
+  const ob = arrowOriginOf(b);
+  if (oa === ob) {
+    return oa === 'right'
+      ? { slotA: 'rightTop', slotB: 'rightBottom' }
+      : { slotA: 'bottomLeft', slotB: 'bottomRight' };
+  }
+  // Mixed: each clue on its own border. Right-origin gets the top-half
+  // slot (visual continuity with the existing layout where the
+  // horizontal-flow clue sat at right-top); bottom-origin stays centered.
+  return {
+    slotA: oa === 'right' ? 'rightTop' : 'bottomCenter',
+    slotB: ob === 'right' ? 'rightTop' : 'bottomCenter',
+  };
+}
+
 export const DefinitionCellView = memo(function DefinitionCellView({
   cell, currentArrow,
 }: { cell: DefinitionCell; currentArrow: ArrowDirection | null }) {
   if (cell.clues.length === 1) {
     const clue = cell.clues[0];
     const isCurrent = currentArrow === clue.arrow;
-    const isVertical = clue.arrow === 'down' || clue.arrow === 'right-down';
+    // Highlight stripe on the side OPPOSITE the arrow so it doesn't
+    // compete with the arrow badge. Origin border drives the choice
+    // (matches `right-down` → right border → left-side stripe, and
+    // `down-right` → bottom border → top stripe).
+    const origin = arrowOriginOf(clue.arrow);
     const currentClass = isCurrent
-      ? isVertical ? defCellCurrentDown : defCellCurrentRight
+      ? origin === 'right' ? defCellCurrentRight : defCellCurrentDown
       : '';
     return (
       <div
@@ -274,18 +403,20 @@ export const DefinitionCellView = memo(function DefinitionCellView({
             {clue.text}
           </span>
         </div>
-        <span
-          role="img"
-          className={isVertical ? defArrowDown : defArrowRight}
-          aria-label={`définition ${arrowLabel[clue.arrow]}`}
+        <ArrowMark
+          arrow={clue.arrow}
+          slot={origin === 'right' ? 'rightCenter' : 'bottomCenter'}
+          ariaLabel={`définition ${arrowLabel[clue.arrow]}`}
         />
       </div>
     );
   }
 
-  // Two-clue branch — horizontal clue (right arrow) on top, vertical below.
-  // Both arrows are placed at their respective cell borders.
-  const [horizontal, vertical] = cell.clues;
+  // Two-clue branch — text stack (top: clues[0], bottom: clues[1])
+  // matches the API/mapper order. Arrow slots come from `twoClueSlots`,
+  // which routes each clue to its origin border.
+  const [first, second] = cell.clues;
+  const { slotA, slotB } = twoClueSlots(first.arrow, second.arrow);
   return (
     <div
       role="gridcell"
@@ -297,11 +428,11 @@ export const DefinitionCellView = memo(function DefinitionCellView({
       data-current-clue={currentArrow !== null ? 'true' : 'false'}
     >
       <div className={defStack} role="group" aria-label="deux définitions">
-        <StackedClue clue={horizontal} isCurrent={currentArrow === horizontal.arrow} />
-        <StackedClue clue={vertical} isCurrent={currentArrow === vertical.arrow} />
+        <StackedClue clue={first} isCurrent={currentArrow === first.arrow} />
+        <StackedClue clue={second} isCurrent={currentArrow === second.arrow} />
       </div>
-      <span aria-hidden="true" className={defArrowRightStack} />
-      <span aria-hidden="true" className={defArrowDown} />
+      <ArrowMark arrow={first.arrow} slot={slotA} ariaHidden />
+      <ArrowMark arrow={second.arrow} slot={slotB} ariaHidden />
     </div>
   );
 });
