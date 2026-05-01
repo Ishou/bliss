@@ -47,7 +47,20 @@ const panel = css({
   display: 'flex',
   alignItems: 'center',
   gap: 'sm',
-  minHeight: '2.5rem',
+  // Reserve enough vertical space for two lines of body text + padding so
+  // the panel's height is stable across content changes. The placeholder
+  // ("Sélectionnez une case pour afficher la définition.", ~47 chars)
+  // wraps to two lines on phone widths; clue text varies between one and
+  // two-plus lines depending on the puzzle. Without a 2-line reserve, the
+  // panel grew/shrunk between placeholder and clue selections, which made
+  // the grid below jitter (the panel sits in flow above the grid).
+  //
+  // Mobile font is `md` (1.125rem) × line-height 1.3 → ~1.46rem per line;
+  // two lines ≈ 2.93rem; plus paddingBlock sm × 2 (1rem) and a small
+  // buffer for the arrow's `lg` (1.5rem) line-box on the clue branch
+  // → 4.25rem. Desktop reverts to `body` (1rem) so the same 4.25rem value
+  // also covers two lines comfortably with a touch of breathing room.
+  minHeight: '4.25rem',
 });
 const arrow = css({
   fontSize: 'lg',
