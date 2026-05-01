@@ -141,6 +141,14 @@ export function useGridNavigation(puzzle: Puzzle): GridNavigation {
   const stateRef = useRef({ focused, direction });
   stateRef.current = { focused, direction };
   const scrollTimeoutRef = useRef<number | null>(null);
+  // Tracks the last cell the user clicked, separately from `focused`.
+  // The toggle-on-repeat-click path needs to know whether the *previous
+  // click* targeted the same cell — using `focused` would miss the case
+  // where the input lost focus between clicks (iOS soft-keyboard quirks,
+  // a stray pointer event, the `handleBlur` cleanup from PR #116, etc.).
+  // Reset to `null` on every reset path; non-null here means "the user's
+  // most recent tap landed on this cell."
+  const lastClickedRef = useRef<Position | null>(null);
 
   // Cancel any pending scroll on unmount so we don't fire scrollBy on a
   // detached input after the puzzle component is gone.
@@ -201,10 +209,19 @@ export function useGridNavigation(puzzle: Puzzle): GridNavigation {
     (event: React.MouseEvent<HTMLDivElement>) => {
       const p = posOf(event.currentTarget);
       if (!p) return;
-      const { focused: prev, direction: dir } = stateRef.current;
+      // Read repeat-click state from `lastClickedRef` (NOT from `focused`):
+      // `focused` can be transiently null between two same-cell clicks
+      // because of the blur cleanup added in PR #116 + iOS soft-keyboard
+      // re-show quirks. Using it here would silently break the NYT-style
+      // toggle on real devices even though jsdom tests pass. The click
+      // history captures the user's actual interaction sequence regardless
+      // of focus churn.
+      const isRepeatClick = lastClickedRef.current !== null && same(lastClickedRef.current, p);
+      lastClickedRef.current = p;
+      const { direction: dir } = stateRef.current;
       const allClues = lookup.cluesAt(p.row, p.col);
       let next = dir;
-      if (same(prev, p)) {
+      if (isRepeatClick) {
         // Same-cell repeat click — NYT-style toggle. Apply across ALL clues
         // at this cell, even if one of them starts here, so the user can
         // still reach the other clue (e.g. tapping the first cell of a

@@ -194,6 +194,28 @@ describe('Grid keyboard interactions', () => {
     expect(defAt(container, 0, 2)?.dataset.currentClue).toBe('false');
   });
 
+  // Pins the regression that prompted the lastClickedRef refactor: even if
+  // the input blurs between two same-cell clicks (iOS soft-keyboard
+  // re-show, stray pointer events, the `handleBlur` cleanup added in
+  // PR #116), the second click must still toggle direction. Using
+  // `focused` as the repeat-click signal would fail this test because
+  // blur clears it.
+  it('toggles direction on second click even if focus was lost between clicks', () => {
+    const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
+    click(inputAt(container, 1, 1)!);
+    const target = inputAt(container, 1, 2)!;
+    click(target); // direction = down (down-1 starts here)
+    expect(wrapAt(container, 2, 2)?.dataset.inWord).toBe('true');
+    // Simulate the input losing focus (e.g. user briefly tapped the
+    // page chrome, soft keyboard hid + reshowed, etc.).
+    act(() => target.blur());
+    // Second click on the same cell should still toggle direction.
+    act(() => click(target));
+    expect(wrapAt(container, 1, 3)?.dataset.inWord).toBe('true');
+    expect(wrapAt(container, 1, 4)?.dataset.inWord).toBe('true');
+    expect(wrapAt(container, 2, 2)?.dataset.inWord).toBe('false');
+  });
+
   // Android Gboard / Samsung keyboards fire `keydown` with
   // `key === "Unidentified"` for printable characters, so the desktop
   // keydown path doesn't help. The real letter only arrives on the
