@@ -25,7 +25,8 @@
     "msw": "^2.13.6",
     "openapi-fetch": "^0.17.0",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "react-zoom-pan-pinch": "^4.0.3"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",

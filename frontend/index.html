@@ -2,7 +2,16 @@
 <html lang="fr">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <!--
+      `user-scalable=no, maximum-scale=1`: native browser pinch-zoom on the page
+      is intentionally disabled. The crossword grid implements its own
+      pinch/pan via react-zoom-pan-pinch (see Grid.tsx) so the active-clue
+      panel can stay pinned to the layout viewport (`position: sticky`
+      survives because there is no longer a divergent visual viewport).
+      Browser-level page zoom (Ctrl/Cmd +/-, OS-level text resize) is still
+      respected, satisfying WCAG 1.4.4.
+    -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
     <meta name="theme-color" content="#10B981" />
     <meta name="description" content="WordSparrow — mots fléchés, the puzzle game." />
     <link rel="manifest" href="/manifest.webmanifest" />

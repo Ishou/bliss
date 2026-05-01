@@ -7,3 +7,18 @@
  * `vite.config.ts` for the plugin wiring. */
 
 @layer reset, base, tokens, recipes, utilities;
+
+/* Disable native page-level pinch-zoom. The crossword grid implements
+ * its own pinch/pan via react-zoom-pan-pinch (Grid.tsx); without this
+ * rule, native pinch on iOS would zoom the layout viewport and the
+ * sticky clue-panel would drift off-screen during pan (the visual
+ * viewport diverges from the layout viewport). `pan-x pan-y` keeps
+ * one-finger scroll working everywhere on the page; only the pinch
+ * gesture is suppressed. iOS Safari ignores `user-scalable=no` for
+ * accessibility — `touch-action` is the surefire knob there.
+ * Browser-level zoom (Ctrl/Cmd +/-) is unaffected. */
+@layer base {
+  body {
+    touch-action: pan-x pan-y;
+  }
+}

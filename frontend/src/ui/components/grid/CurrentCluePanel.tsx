@@ -12,6 +12,15 @@ import type { Clue } from './useGridNavigation';
 // Mobile (`base`): full available width inside `<main>`'s padding, slightly
 // larger font for thumb-distance reading.
 // Desktop (`md`): capped at 480px (same as grid), font reverts to body.
+//
+// Why this is plain sticky and NOT visual-viewport tracked: the grid runs
+// its own pinch/pan via `react-zoom-pan-pinch` (see Grid.tsx), and native
+// page-level pinch-zoom is suppressed (`touch-action: pan-x pan-y` on body
+// + viewport meta `user-scalable=no`). The visual viewport never diverges
+// from the layout viewport, so `position: sticky` (which is layout-
+// viewport-aware) stays exactly where the user expects. Earlier revisions
+// hand-rolled a rAF loop reading `window.visualViewport` to compensate for
+// pinch-pan; isolating zoom to the grid removed the need entirely.
 const panel = css({
   position: 'sticky',
   top: 0,
