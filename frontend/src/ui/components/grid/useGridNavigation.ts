@@ -202,13 +202,35 @@ export function useGridNavigation(puzzle: Puzzle): GridNavigation {
       const p = posOf(event.currentTarget);
       if (!p) return;
       const { focused: prev, direction: dir } = stateRef.current;
-      const clues = lookup.cluesAt(p.row, p.col);
+      const allClues = lookup.cluesAt(p.row, p.col);
       let next = dir;
-      if (clues.length === 1) next = clues[0].direction;
-      else if (clues.length > 1) {
-        const onCurrent = clues.some((c) => c.direction === dir);
-        if (same(prev, p) && onCurrent) next = dir === 'across' ? 'down' : 'across';
-        else if (!onCurrent) next = clues[0].direction;
+      if (same(prev, p)) {
+        // Same-cell repeat click — NYT-style toggle. Apply across ALL clues
+        // at this cell, even if one of them starts here, so the user can
+        // still reach the other clue (e.g. tapping the first cell of a
+        // down word once focuses the down clue, tapping again toggles to
+        // the across clue passing through that same cell).
+        if (allClues.length === 1) next = allClues[0].direction;
+        else if (allClues.length > 1) {
+          const onCurrent = allClues.some((c) => c.direction === dir);
+          if (onCurrent) next = dir === 'across' ? 'down' : 'across';
+          else next = allClues[0].direction;
+        }
+      } else {
+        // First click on this cell — prefer a clue that STARTS here. When
+        // the user taps the first letter of a word, that word's clue takes
+        // precedence over the user's previous direction; otherwise typing
+        // would pick up mid-answer in an unrelated clue that happens to
+        // pass through. Cells with NO starting clue fall back to the
+        // existing "pick by current direction / first clue" logic.
+        const starting = allClues.filter((c) => same(c.cells[0].position, p));
+        const candidates = starting.length > 0 ? starting : allClues;
+        if (candidates.length === 1) {
+          next = candidates[0].direction;
+        } else if (candidates.length > 1) {
+          const onCurrent = candidates.some((c) => c.direction === dir);
+          next = onCurrent ? dir : candidates[0].direction;
+        }
       }
       setDirection(next);
       // Don't call `focusCell` here — the browser focuses the input itself

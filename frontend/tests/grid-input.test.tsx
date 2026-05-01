@@ -139,9 +139,16 @@ describe('Grid keyboard interactions', () => {
 
   it('arrow keys move focus and switch direction when perpendicular', () => {
     const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
+    // Click (1,1) — first of across-2, sets direction = across. Move via
+    // ArrowRight to (1,2) so we land there with direction still 'across'
+    // (clicking (1,2) directly would now set direction = 'down' because
+    // (1,2) is the first cell of down-1; navigation doesn't apply that
+    // starting-clue rule).
+    click(inputAt(container, 1, 1)!);
+    fireEvent.keyDown(inputAt(container, 1, 1)!, { key: 'ArrowRight' });
     const start = inputAt(container, 1, 2)!;
-    click(start);
-    // Direction starts 'across'; first ArrowDown only flips direction.
+    expect(document.activeElement).toBe(start);
+    // First ArrowDown flips direction; second moves down.
     fireEvent.keyDown(start, { key: 'ArrowDown' });
     expect(document.activeElement).toBe(start);
     fireEvent.keyDown(start, { key: 'ArrowDown' });
@@ -153,16 +160,38 @@ describe('Grid keyboard interactions', () => {
     expect(document.activeElement).toBe(inputAt(container, 2, 3));
   });
 
-  it('clicking the focused cell toggles direction (NYT-style)', () => {
+  // Two related behaviors at multi-clue cells:
+  //   1. First click at the FIRST CELL of a word focuses that word,
+  //      regardless of the user's previous direction.
+  //   2. Repeat-click on the same cell still toggles direction across
+  //      ALL clues that pass through it (NYT-style).
+  // Cell (1,2) is first of down-1 AND middle of across-2 — perfect for
+  // pinning both behaviors.
+  it('clicking the first cell of a word focuses that word, then toggles on repeat', () => {
     const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
+    // Pre-condition: previous selection on across (across-2 starts at (1,1)).
+    click(inputAt(container, 1, 1)!);
+    // Now click (1,2) — first letter of down-1. Direction must SWITCH to
+    // 'down' even though across-2 (the previously active clue) also
+    // passes through (1,2).
     const target = inputAt(container, 1, 2)!;
     click(target);
-    expect(wrapAt(container, 1, 3)?.dataset.inWord).toBe('true');
-    expect(wrapAt(container, 2, 2)?.dataset.inWord).toBe('false');
-    act(() => click(target));
-    expect(wrapAt(container, 1, 3)?.dataset.inWord).toBe('false');
+    // down-1 highlighted: cells (2,2) and (3,2) are in-word. across-2's
+    // (1,3)/(1,4) are not.
     expect(wrapAt(container, 2, 2)?.dataset.inWord).toBe('true');
     expect(wrapAt(container, 3, 2)?.dataset.inWord).toBe('true');
+    expect(wrapAt(container, 1, 3)?.dataset.inWord).toBe('false');
+    expect(wrapAt(container, 1, 4)?.dataset.inWord).toBe('false');
+    expect(defAt(container, 0, 2)?.dataset.currentClue).toBe('true'); // down-1 def
+    expect(defAt(container, 1, 0)?.dataset.currentClue).toBe('false'); // across-2 def
+    // Repeat-click toggles to the other clue passing through (1,2) — across-2.
+    act(() => click(target));
+    expect(wrapAt(container, 1, 3)?.dataset.inWord).toBe('true');
+    expect(wrapAt(container, 1, 4)?.dataset.inWord).toBe('true');
+    expect(wrapAt(container, 2, 2)?.dataset.inWord).toBe('false');
+    expect(wrapAt(container, 3, 2)?.dataset.inWord).toBe('false');
+    expect(defAt(container, 1, 0)?.dataset.currentClue).toBe('true');
+    expect(defAt(container, 0, 2)?.dataset.currentClue).toBe('false');
   });
 
   // Android Gboard / Samsung keyboards fire `keydown` with
