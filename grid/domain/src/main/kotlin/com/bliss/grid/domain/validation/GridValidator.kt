@@ -13,7 +13,7 @@ class GridValidator {
     ): List<GridViolation> {
         val violations = mutableListOf<GridViolation>()
         violations += outOfBoundsCells(grid)
-        violations += duplicateWords(grid)
+        violations += duplicateViolations(grid)
 
         val expectedLetters = mutableMapOf<Position, Char>()
         val cluePositions = mutableSetOf<Position>()
@@ -91,7 +91,7 @@ class GridValidator {
             .filter { it.row.value !in 0 until grid.height || it.column.value !in 0 until grid.width }
             .map { GridViolation.OutOfBounds(it, grid.width, grid.height) }
 
-    private fun duplicateWords(grid: Grid): List<GridViolation> {
+    private fun duplicateViolations(grid: Grid): List<GridViolation> {
         val seen = mutableSetOf<String>()
         val byLemma = mutableMapOf<String, MutableList<com.bliss.grid.domain.model.Word>>()
         val duplicates = mutableListOf<GridViolation>()
