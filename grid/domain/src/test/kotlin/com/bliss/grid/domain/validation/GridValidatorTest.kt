@@ -127,7 +127,9 @@ class GridValidatorTest {
             )
         val grid = Grid(width = 4, height = 4, cells = cells, placements = listOf(a, b))
 
-        assertThat(validator.validate(grid)).contains(GridViolation.DuplicateWord(Word("OR", "x")))
+        val violations = validator.validate(grid)
+        assertThat(violations).contains(GridViolation.DuplicateWord(Word("OR", "x")))
+        assertThat(violations.filterIsInstance<GridViolation.DuplicateLemma>()).isEmpty()
     }
 
     @Test

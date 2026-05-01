@@ -107,7 +107,7 @@ class GridValidator {
             byLemma.getOrPut(placement.word.lemma) { mutableListOf() }.add(placement.word)
         }
         for ((lemma, words) in byLemma) {
-            if (words.size > 1) {
+            if (words.distinctBy { it.text }.size > 1) {
                 duplicates += GridViolation.DuplicateLemma(lemma, words.toList())
             }
         }
