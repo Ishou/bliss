@@ -1,5 +1,5 @@
 import { render, fireEvent, screen } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, afterEach, vi } from 'vitest';
 import type { Cell, Puzzle } from '@/domain';
 import { Grid } from '@/ui/components/grid';
 import { CurrentCluePanel } from '@/ui/components/grid/CurrentCluePanel';
@@ -72,5 +72,55 @@ describe('CurrentCluePanel (wired into Grid)', () => {
     const panel = screen.getByTestId('current-clue-panel');
     expect(panel).toHaveTextContent('across-2');
     expect(panel.querySelector('[aria-label="définition horizontale"]')).not.toBeNull();
+  });
+});
+
+// `window.visualViewport` lets the panel survive mobile pinch-zoom — sticky
+// alone pins to the layout viewport, which scrolls off when the user pans
+// the zoomed visual viewport. The hook applies a `transform` that keeps the
+// panel anchored to the visible top at a constant on-screen size.
+describe('CurrentCluePanel (visual viewport)', () => {
+  afterEach(() => {
+    // jsdom's default has no `visualViewport`; restore that between tests
+    // so the absent-API test isn't polluted by a previous mock.
+    Object.defineProperty(window, 'visualViewport', {
+      configurable: true,
+      value: undefined,
+    });
+  });
+
+  it('switches to fixed positioning + transform when the visual viewport is zoomed', () => {
+    Object.defineProperty(window, 'visualViewport', {
+      configurable: true,
+      value: {
+        scale: 2,
+        offsetLeft: 30,
+        offsetTop: 50,
+        width: 180,
+        height: 320,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      },
+    });
+    render(<CurrentCluePanel clue={null} />);
+    const panel = screen.getByTestId('current-clue-panel');
+    // `fixed` overrides the Panda `position: sticky` so the panel anchors
+    // to the layout viewport top regardless of its natural flow position.
+    expect(panel.style.position).toBe('fixed');
+    expect(panel.style.top).toBe('0px');
+    expect(panel.style.left).toBe('0px');
+    expect(panel.style.right).toBe('0px');
+    expect(panel.style.transform).toBe('translate(30px, 50px) scale(0.5)');
+    expect(panel.style.transformOrigin).toBe('top left');
+  });
+
+  it('leaves the inline overrides empty when window.visualViewport is unsupported', () => {
+    // jsdom default — `window.visualViewport === undefined`.
+    expect(window.visualViewport).toBeUndefined();
+    render(<CurrentCluePanel clue={null} />);
+    const panel = screen.getByTestId('current-clue-panel');
+    expect(panel.style.position).toBe('');
+    expect(panel.style.transform).toBe('');
+    expect(panel.style.transformOrigin).toBe('');
   });
 });
