@@ -67,11 +67,14 @@ class CsvWordRepositoryTest {
     }
 
     @Test
-    fun `lemma column when absent defaults to the word itself (legacy CSV)`() {
-        // The bundled french CSV is currently lemma-less; every row should have
-        // lemma == text. This pins the backward-compatibility contract until a
-        // re-export populates the column.
-        val sample = repo.findByLength(4).take(20)
-        sample.forEach { word -> assertThat(word.lemma).isEqualTo(word.text) }
+    fun `bundled french CSV carries real lemma data (non-trivial inflections)`() {
+        // The production export populates lemma for every row. Most short words
+        // are themselves lemmas (lemma == text), but a meaningful fraction of
+        // longer words are inflections whose lemma differs — pin that fraction
+        // is non-zero so a regression to the legacy `lemma=word` fallback is
+        // caught loudly.
+        val longerWords = (4..7).flatMap { repo.findByLength(it) }
+        val inflected = longerWords.count { it.lemma != it.text }
+        assertThat(inflected).isGreaterThanOrEqualTo(1)
     }
 }
