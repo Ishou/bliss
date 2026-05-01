@@ -1,5 +1,5 @@
 import { render, fireEvent, act } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { Cell, Puzzle } from '@/domain';
 import { Grid } from '@/ui/components/grid';
 
@@ -197,5 +197,48 @@ describe('Grid keyboard interactions', () => {
     cell.value = '12';
     cell.dispatchEvent(new InputEvent('input', { inputType: 'insertText', data: '12', bubbles: true }));
     expect(cell.value).toBe('');
+  });
+});
+
+describe('scheduleVisibleScroll', () => {
+  beforeEach(() => { vi.useFakeTimers(); });
+  afterEach(() => { vi.restoreAllMocks(); vi.useRealTimers(); });
+
+  it('debounces: only the last cell in a rapid focus burst triggers scrollBy', () => {
+    const scrollBy = vi.spyOn(window, 'scrollBy');
+    const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
+    const cell1 = inputAt(container, 1, 1)!;
+    const cell2 = inputAt(container, 1, 2)!;
+    // Two focus events before the 250 ms window elapses — first timer is
+    // cancelled, only the second one fires.
+    act(() => { cell1.focus(); });
+    act(() => { cell2.focus(); });
+    act(() => { vi.advanceTimersByTime(300); });
+    expect(scrollBy).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not call scrollBy after the component unmounts within the debounce window', () => {
+    const scrollBy = vi.spyOn(window, 'scrollBy');
+    const { container, unmount } = render(<Grid puzzle={TEST_PUZZLE} />);
+    act(() => { inputAt(container, 1, 1)!.focus(); });
+    // Unmount clears the pending timeout via the useEffect cleanup.
+    act(() => { unmount(); });
+    act(() => { vi.advanceTimersByTime(300); });
+    expect(scrollBy).not.toHaveBeenCalled();
+  });
+
+  it('does not call scrollBy when the focused cell is already in the visible region', () => {
+    const scrollBy = vi.spyOn(window, 'scrollBy');
+    const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
+    const cell = inputAt(container, 1, 1)!;
+    // jsdom: window.visualViewport is undefined → vvTop=0, vvHeight=innerHeight.
+    // SCROLL_TOP_MARGIN_PX=64, SCROLL_BOTTOM_MARGIN_PX=24.
+    // rect(top:100, bottom:200) lies within [64, innerHeight-24] → dy===0.
+    vi.spyOn(cell, 'getBoundingClientRect').mockReturnValue(
+      { top: 100, bottom: 200, left: 0, right: 100, width: 100, height: 100, x: 0, y: 100, toJSON: () => ({}) } as DOMRect,
+    );
+    act(() => { cell.focus(); });
+    act(() => { vi.advanceTimersByTime(300); });
+    expect(scrollBy).not.toHaveBeenCalled();
   });
 });
