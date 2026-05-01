@@ -141,6 +141,14 @@ export function useGridNavigation(puzzle: Puzzle): GridNavigation {
   const stateRef = useRef({ focused, direction });
   stateRef.current = { focused, direction };
   const scrollTimeoutRef = useRef<number | null>(null);
+  // Tracks the last cell the user clicked, separately from `focused`.
+  // The toggle-on-repeat-click path needs to know whether the *previous
+  // click* targeted the same cell — using `focused` would miss the case
+  // where the input lost focus between clicks (iOS soft-keyboard quirks,
+  // a stray pointer event, the `handleBlur` blur-clears-focused behaviour, etc.).
+  // Cleared by `handleFocus` when focus moves to a new cell via keyboard or
+  // programmatic navigation, so the next tap is treated as a first click.
+  const lastClickedRef = useRef<Position | null>(null);
 
   // Cancel any pending scroll on unmount so we don't fire scrollBy on a
   // detached input after the puzzle component is gone.
@@ -201,14 +209,45 @@ export function useGridNavigation(puzzle: Puzzle): GridNavigation {
     (event: React.MouseEvent<HTMLDivElement>) => {
       const p = posOf(event.currentTarget);
       if (!p) return;
-      const { focused: prev, direction: dir } = stateRef.current;
-      const clues = lookup.cluesAt(p.row, p.col);
+      // Read repeat-click state from `lastClickedRef` (NOT from `focused`):
+      // `focused` can be transiently null between two same-cell clicks
+      // because of the `handleBlur` blur-clears-focused behaviour + iOS soft-keyboard
+      // re-show quirks. Using it here would silently break the NYT-style
+      // toggle on real devices even though jsdom tests pass. The click
+      // history captures the user's actual interaction sequence regardless
+      // of focus churn.
+      const isRepeatClick = lastClickedRef.current !== null && same(lastClickedRef.current, p);
+      lastClickedRef.current = p;
+      const { direction: dir } = stateRef.current;
+      const allClues = lookup.cluesAt(p.row, p.col);
       let next = dir;
-      if (clues.length === 1) next = clues[0].direction;
-      else if (clues.length > 1) {
-        const onCurrent = clues.some((c) => c.direction === dir);
-        if (same(prev, p) && onCurrent) next = dir === 'across' ? 'down' : 'across';
-        else if (!onCurrent) next = clues[0].direction;
+      if (isRepeatClick) {
+        // Same-cell repeat click — NYT-style toggle. Apply across ALL clues
+        // at this cell, even if one of them starts here, so the user can
+        // still reach the other clue (e.g. tapping the first cell of a
+        // down word once focuses the down clue, tapping again toggles to
+        // the across clue passing through that same cell).
+        if (allClues.length === 1) next = allClues[0].direction;
+        else if (allClues.length > 1) {
+          const onCurrent = allClues.some((c) => c.direction === dir);
+          if (onCurrent) next = dir === 'across' ? 'down' : 'across';
+          else next = allClues[0].direction;
+        }
+      } else {
+        // First click on this cell — prefer a clue that STARTS here. When
+        // the user taps the first letter of a word, that word's clue takes
+        // precedence over the user's previous direction; otherwise typing
+        // would pick up mid-answer in an unrelated clue that happens to
+        // pass through. Cells with NO starting clue fall back to the
+        // existing "pick by current direction / first clue" logic.
+        const starting = allClues.filter((c) => same(c.cells[0].position, p));
+        const candidates = starting.length > 0 ? starting : allClues;
+        if (candidates.length === 1) {
+          next = candidates[0].direction;
+        } else if (candidates.length > 1) {
+          const onCurrent = candidates.some((c) => c.direction === dir);
+          next = onCurrent ? dir : candidates[0].direction;
+        }
       }
       setDirection(next);
       // Don't call `focusCell` here — the browser focuses the input itself
@@ -223,7 +262,13 @@ export function useGridNavigation(puzzle: Puzzle): GridNavigation {
 
   const handleFocus = useCallback((event: React.FocusEvent<HTMLInputElement>) => {
     const p = posOf(event.currentTarget);
-    if (p && !same(stateRef.current.focused, p)) setFocused(p);
+    if (p) {
+      if (!same(stateRef.current.focused, p)) setFocused(p);
+      // Keyboard/programmatic navigation lands here without a preceding handleClick,
+      // so lastClickedRef still holds the old cell. Clear it so the next tap on
+      // this cell is treated as a first click (starting-clue preference), not a toggle.
+      if (!same(lastClickedRef.current, p)) lastClickedRef.current = null;
+    }
     scheduleVisibleScroll(event.currentTarget);
   }, [scheduleVisibleScroll]);
 
