@@ -110,7 +110,10 @@ describe('CurrentCluePanel (visual viewport)', () => {
     expect(panel.style.top).toBe('0px');
     expect(panel.style.left).toBe('0px');
     expect(panel.style.right).toBe('0px');
-    expect(panel.style.transform).toBe('translate(30px, 50px) scale(0.5)');
+    // `translate3d(...)` instead of `translate(...)` to force a GPU layer.
+    // Offsets are rounded to whole pixels to avoid sub-pixel jitter on the
+    // Android compositor during fast panning.
+    expect(panel.style.transform).toBe('translate3d(30px, 50px, 0) scale(0.5)');
     expect(panel.style.transformOrigin).toBe('top left');
   });
 

@@ -109,12 +109,27 @@ const arrowLabel: Record<ArrowDirection, string> = {
 // flow box, fixed panel doesn't). Brief and only during the pinch gesture.
 //
 // Implementation note: we mutate `el.style` directly instead of going
-// through React state. `visualViewport.scroll` fires once per frame during
-// a pinch-pan, and going through `setState → re-render` 60 times a second
-// burns the reconciler for what's just a transform string. Direct DOM
-// mutation inside the rAF callback updates the GPU layer (see
-// `willChange: transform` on the panel class) without touching React.
-// Co-located here (~50 lines) to match `useGridNavigation.ts`'s
+// through React state, AND we run a continuous `requestAnimationFrame`
+// loop while zoomed instead of an event-coalesced rAF. The event-driven
+// version (event → schedule rAF → read vv values) lagged by one frame
+// during pinch-pan because `vv.scroll` fires AFTER the browser has
+// already started compositing the new frame; our update landed in the
+// next composite, visibly trailing the gesture. The continuous loop
+// reads `vv.offsetLeft`/`offsetTop` *inside* the rAF callback, which
+// fires before the next composite — so the transform applies for the
+// frame about to be drawn, not the one after.
+//
+// `translate3d(...)` (instead of `translate(...)`) is redundant with
+// `willChange: transform` on the class but cheap insurance — guarantees
+// a GPU layer on every browser. `Math.round` on the offsets eliminates
+// sub-pixel jitter that otherwise shows up as text ghosting / flicker.
+//
+// CPU cost while zoomed: 60 fps callback that reads two numbers and
+// writes six string properties — trivial. The loop self-stops when
+// `scale` drops back to ~1 so we don't burn battery in the steady
+// un-zoomed state.
+//
+// Co-located here (~70 lines) to match `useGridNavigation.ts`'s
 // component-adjacent-hook style; not worth a `hooks/` folder for this.
 function useVisualViewportZoom(elementRef: React.RefObject<HTMLElement | null>) {
   useEffect(() => {
@@ -124,15 +139,18 @@ function useVisualViewportZoom(elementRef: React.RefObject<HTMLElement | null>) 
     if (!el) return;
     let raf = 0;
     const apply = () => {
-      raf = 0;
       // Tolerance — pinch gestures sometimes leave scale at 1.0001 or so.
       // Below that we treat the user as not zoomed and let CSS sticky run.
       if (vv.scale > 1.001) {
+        // Round to whole CSS pixels — sub-pixel transforms cause text
+        // ghosting on some Android compositors during fast panning.
+        const tx = Math.round(vv.offsetLeft);
+        const ty = Math.round(vv.offsetTop);
         el.style.position = 'fixed';
         el.style.top = '0px';
         el.style.left = '0px';
         el.style.right = '0px';
-        el.style.transform = `translate(${vv.offsetLeft}px, ${vv.offsetTop}px) scale(${1 / vv.scale})`;
+        el.style.transform = `translate3d(${tx}px, ${ty}px, 0) scale(${1 / vv.scale})`;
         el.style.transformOrigin = 'top left';
       } else {
         // Clear inline overrides so the Panda `panel` class's
@@ -145,18 +163,32 @@ function useVisualViewportZoom(elementRef: React.RefObject<HTMLElement | null>) 
         el.style.transformOrigin = '';
       }
     };
-    const schedule = () => {
-      // visualViewport.scroll fires every frame during a pinch-pan; rAF
-      // coalesces. Listeners are passive by spec, no { passive: true } needed.
-      if (!raf) raf = requestAnimationFrame(apply);
+    const tick = () => {
+      apply();
+      // Self-stopping loop: keep ticking only while zoomed. When the
+      // user pinches back out, scale drops, apply() clears the inline
+      // overrides, and the loop ends. A future pinch-in re-arms via
+      // the resize listener below.
+      if (vv.scale > 1.001) {
+        raf = requestAnimationFrame(tick);
+      } else {
+        raf = 0;
+      }
     };
-    vv.addEventListener('scroll', schedule);
-    vv.addEventListener('resize', schedule);
+    const start = () => {
+      if (!raf) raf = requestAnimationFrame(tick);
+    };
+    // `resize` fires when scale changes (entering / exiting zoom).
+    // `scroll` fires when offset changes (panning while zoomed). Either
+    // one re-arms the loop in case it self-stopped or never started.
+    vv.addEventListener('resize', start);
+    vv.addEventListener('scroll', start);
     apply();
+    if (vv.scale > 1.001) start();
     return () => {
       cancelAnimationFrame(raf);
-      vv.removeEventListener('scroll', schedule);
-      vv.removeEventListener('resize', schedule);
+      vv.removeEventListener('resize', start);
+      vv.removeEventListener('scroll', start);
       // Reset on unmount — the next mount of this component starts from a
       // clean Panda-class state, not whatever the last zoom left behind.
       el.style.position = '';
