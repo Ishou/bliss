@@ -25,7 +25,10 @@ const gridContainer = css({
 // box to `width: fit-content`, which would collapse around `width: 100%`
 // children — we override here so the outer box drives the layout and the
 // grid inside fills it.
-const transformWrapperStyle = { width: '100%', maxWidth: '480px', margin: '0 auto' };
+// `touchAction: 'none'` scopes native-pinch suppression to this element only,
+// keeping native browser zoom available on the clue panel and page chrome
+// (required for WCAG 1.4.4 on mobile — pinch IS browser zoom on touch devices).
+const transformWrapperStyle = { width: '100%', maxWidth: '480px', margin: '0 auto', touchAction: 'none' as const };
 // `transformContentStyle.width: 100%` defeats the same library default on
 // the inner (transformed) plane so the grid actually spans the wrapper.
 // The library composes its `transform: translate3d() scale()` on top of
@@ -48,13 +51,12 @@ const positionKey = (p: Position) => `${p.row},${p.col}`;
 // equaled its content — sticky un-stuck instantly.
 //
 // Pinch-zoom: the grid (and only the grid) is wrapped in
-// `react-zoom-pan-pinch`'s `TransformWrapper`. Native page-level
-// pinch-zoom is suppressed at the document level (`touch-action: pan-x
-// pan-y` on body + viewport meta `user-scalable=no`), so this is the
-// sole zoom surface in the app. That separation is what lets the clue
-// panel stay pinned via plain `position: sticky` — the layout viewport
-// no longer diverges from the visual viewport, which is what made the
-// panel drift off-screen on mobile (see CurrentCluePanel.tsx history).
+// `react-zoom-pan-pinch`'s `TransformWrapper`. Native pinch is suppressed
+// only on the wrapper element (`touch-action: none` in transformWrapperStyle),
+// not at the page level — preserving native browser zoom on the clue panel
+// and page chrome for WCAG 1.4.4 compliance (see ADR-0016). Because the page
+// itself never zooms, the layout viewport never diverges from the visual
+// viewport, so `position: sticky` on the clue panel works without JS.
 export function Grid({ puzzle }: { puzzle: Puzzle }) {
   const cellByPosition = useMemo(() => {
     const m = new Map<string, Cell>();
