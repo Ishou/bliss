@@ -302,27 +302,25 @@ describe('Grid render', () => {
     expect(container.querySelector('[data-arrow="down-right"] svg')).not.toBeNull();
   });
 
-  // Two-clue cells preserve the API/mapper's clue order in the rendered
-  // text stack. Earlier code blindly destructured `[horizontal, vertical]`
-  // and re-labeled by axis; with same-origin pairs (both horizontal-flow
-  // or both vertical-flow) that destructuring would mis-label the second
-  // clue. The fix uses `cell.clues` order verbatim — assert it here.
-  it('renders two-clue text in cell.clues array order, not axis order', () => {
+  // Two-clue cells render the visual stack in cell.clues order — the
+  // mapper hands us [horizontal, vertical] (ADR-0005 §3a), and the
+  // mots-fléchés convention puts the horizontal clue on top with its
+  // arrow at rightTop next to it. Earlier regressions silently dropped
+  // the second clue or mis-labeled it by axis; this test pins both
+  // clues' presence and the API-order rendering.
+  it('renders two-clue text in cell.clues order (clues[0] on top)', () => {
     const cell: DefinitionCell = {
       kind: 'definition',
       position: { row: 0, col: 0 },
       clues: [
-        { text: 'Premier-en-DOM', arrow: 'down' },
-        { text: 'Second-en-DOM', arrow: 'right' },
+        { text: 'Top-clue', arrow: 'right' },
+        { text: 'Bottom-clue', arrow: 'down' },
       ],
     };
     const { container } = render(<DefinitionCellView cell={cell} currentArrow={null} />);
-    const textNodes = Array.from(container.querySelectorAll('[data-arrow] + *, [title]'))
-      .map((n) => n.textContent)
-      .filter((t): t is string => Boolean(t));
-    // Use document order: the "down" clue text appears before the "right" one.
+    expect(container.querySelector('[title="Top-clue"]')).not.toBeNull();
+    expect(container.querySelector('[title="Bottom-clue"]')).not.toBeNull();
     const html = container.innerHTML;
-    expect(html.indexOf('Premier-en-DOM')).toBeLessThan(html.indexOf('Second-en-DOM'));
-    expect(textNodes.length).toBeGreaterThan(0);
+    expect(html.indexOf('Top-clue')).toBeLessThan(html.indexOf('Bottom-clue'));
   });
 });

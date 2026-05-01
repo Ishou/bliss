@@ -7,6 +7,15 @@ import type {
   DefinitionClue,
   LetterCell,
 } from '@/domain';
+import { FitText } from './FitText';
+
+// Clue text size bounds (px). Floors keep clues legible on dense grids;
+// ceilings prevent a 3-letter clue ("rai") from ballooning past the cell.
+// Stacked clues split the cell vertically, so their ceiling is lower.
+const SINGLE_MIN = 11;
+const SINGLE_MAX = 22;
+const STACK_MIN = 10;
+const STACK_MAX = 16;
 
 const cellBase = css({
   position: 'relative',
@@ -32,7 +41,7 @@ const defCell = css({
   containerType: 'inline-size',
   lineHeight: '1.1',
   padding: '3px',
-  textAlign: 'left',
+  textAlign: 'center',
   zIndex: 1,
 });
 
@@ -49,13 +58,17 @@ const defSingle = css({
 const defCellCurrentRight = css({ borderLeft: '3px solid token(colors.leaf.700)', color: 'leaf.700' });
 const defCellCurrentDown = css({ borderTop: '3px solid token(colors.leaf.700)', color: 'leaf.700' });
 
-// Single-clue text: 19cqi scales with cell width.
-//   96px cell (5-col) → ~18px  ·  68px cell (7-col) → ~13px
+// Single-clue text: font size is auto-fit at runtime (FitText) — the inline
+// font-size set by FitText overrides any value here. We still need flex:1 +
+// alignSelf so the span fills the cell (FitText measures clientWidth/
+// clientHeight on this very element).
 const defText = css({
   flex: 1,
   alignSelf: 'stretch',
-  fontSize: '19cqi',
-  overflowWrap: 'break-word',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  overflowWrap: 'normal',
   wordBreak: 'normal',
 });
 
@@ -203,16 +216,23 @@ const defStack = css({
 });
 const defStackClue = css({
   display: 'flex',
-  alignItems: 'flex-start',
+  alignItems: 'center',
+  justifyContent: 'center',
   flex: 1,
+  minHeight: 0,
   wordBreak: 'break-word',
-  '&:not(:first-child)': { borderTop: '1px solid token(colors.border)', paddingTop: '1px' },
+  // Separator between the two stacked clues. `colors.border` is `sand`, the
+  // same hue as the def cell bg, so a token-based rule was invisible — use
+  // ink at low alpha for a subtle but legible divider.
+  '&:not(:first-child)': { borderTop: '1px solid rgba(27, 40, 69, 0.25)', paddingTop: '2px' },
 });
 const defStackClueCurrent = css({ color: 'leaf.700' });
 const defStackText = css({
   flex: 1,
-  fontSize: '13cqi',
-  overflowWrap: 'break-word',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  overflowWrap: 'normal',
   wordBreak: 'normal',
 });
 
@@ -339,42 +359,36 @@ function StackedClue({ clue, isCurrent }: { clue: DefinitionClue; isCurrent: boo
       data-arrow={clue.arrow}
       data-current-clue={isCurrent ? 'true' : 'false'}
     >
-      <span className={defStackText} title={clue.text}>
-        {clue.text}
-      </span>
+      <FitText
+        text={clue.text}
+        min={STACK_MIN}
+        max={STACK_MAX}
+        className={defStackText}
+        title={clue.text}
+      />
     </div>
   );
 }
 
-// Picks the arrow slots for a two-clue cell. Same-origin pairs share a
-// border and split slot1/slot2 along it; mixed-origin pairs each take
-// their own border (right-origin → top-half of right; bottom-origin →
-// centered on bottom — matches the existing mixed-axis visual).
-//
-// The clue order in `cell.clues` is taken as-given. The mapper at
-// `infrastructure/api/grid/mapper.ts` already normalizes mixed-axis
-// pairs to [horizontal-flow, vertical-flow] for the text stack; for
-// same-origin pairs the API order is preserved (per the comment in
-// `Cell.ts`: top-row inner skeleton cells produce RIGHT_DOWN + DOWN,
-// left-col cells produce DOWN_RIGHT + RIGHT — the renderer must keep
-// that order so each clue's arrow stays paired with its text).
+// Picks the arrow slots for a two-clue cell, given the arrows in *visual*
+// stack order (top first, bottom second). Each arrow is placed at the
+// position on its own border that sits next to its own text:
+//   * right-origin + top text  → rightTop
+//   * right-origin + bottom text → rightBottom
+//   * bottom-origin → bottomCenter (one position per edge in mixed cases)
+// Same-border pairs split that border (both rightTop/rightBottom or
+// bottomLeft/bottomRight) so the two arrows don't overlap.
 function twoClueSlots(
-  a: ArrowDirection,
-  b: ArrowDirection,
+  top: ArrowDirection,
+  bottom: ArrowDirection,
 ): { slotA: ArrowSlot; slotB: ArrowSlot } {
-  const oa = arrowOriginOf(a);
-  const ob = arrowOriginOf(b);
-  if (oa === ob) {
-    return oa === 'right'
-      ? { slotA: 'rightTop', slotB: 'rightBottom' }
-      : { slotA: 'bottomLeft', slotB: 'bottomRight' };
-  }
-  // Mixed: each clue on its own border. Right-origin gets the top-half
-  // slot (visual continuity with the existing layout where the
-  // horizontal-flow clue sat at right-top); bottom-origin stays centered.
+  const ot = arrowOriginOf(top);
+  const ob = arrowOriginOf(bottom);
+  if (ot === 'right' && ob === 'right') return { slotA: 'rightTop', slotB: 'rightBottom' };
+  if (ot === 'bottom' && ob === 'bottom') return { slotA: 'bottomLeft', slotB: 'bottomRight' };
   return {
-    slotA: oa === 'right' ? 'rightTop' : 'bottomCenter',
-    slotB: ob === 'right' ? 'rightTop' : 'bottomCenter',
+    slotA: ot === 'right' ? 'rightTop' : 'bottomCenter',
+    slotB: ob === 'right' ? 'rightBottom' : 'bottomCenter',
   };
 }
 
@@ -403,9 +417,13 @@ export const DefinitionCellView = memo(function DefinitionCellView({
         data-current-clue={isCurrent ? 'true' : 'false'}
       >
         <div className={defSingle}>
-          <span className={defText} title={clue.text}>
-            {clue.text}
-          </span>
+          <FitText
+            text={clue.text}
+            min={SINGLE_MIN}
+            max={SINGLE_MAX}
+            className={defText}
+            title={clue.text}
+          />
         </div>
         <ArrowMark
           arrow={clue.arrow}
@@ -416,11 +434,23 @@ export const DefinitionCellView = memo(function DefinitionCellView({
     );
   }
 
-  // Two-clue branch — text stack (top: clues[0], bottom: clues[1])
-  // matches the API/mapper order. Arrow slots come from `twoClueSlots`,
-  // which routes each clue to its origin border.
-  const [first, second] = cell.clues;
-  const { slotA, slotB } = twoClueSlots(first.arrow, second.arrow);
+  // Two-clue branch. The visual stack pairs each clue with its arrow:
+  //   * mixed-origin pairs → right-origin clue on top (its arrow lives
+  //     at the right edge, naturally near top text), bottom-origin
+  //     clue on bottom (its arrow lives at the bottom edge, naturally
+  //     near bottom text). Without this the bent-arrow combos
+  //     (e.g. clues[0]=down-right + clues[1]=right-down) end up with
+  //     BOTH arrows in the bottom half of the cell.
+  //   * same-origin pairs → keep API order; their arrows split the
+  //     shared edge (rightTop/rightBottom or bottomLeft/bottomRight).
+  // Domain order is untouched (ADR-0005 §3a) — this is purely visual.
+  const [domFirst, domSecond] = cell.clues;
+  const o1 = arrowOriginOf(domFirst.arrow);
+  const o2 = arrowOriginOf(domSecond.arrow);
+  const sameOrigin = o1 === o2;
+  const topClue = sameOrigin || o1 === 'right' ? domFirst : domSecond;
+  const bottomClue = sameOrigin || o1 === 'right' ? domSecond : domFirst;
+  const { slotA, slotB } = twoClueSlots(topClue.arrow, bottomClue.arrow);
   return (
     <div
       role="gridcell"
@@ -432,11 +462,11 @@ export const DefinitionCellView = memo(function DefinitionCellView({
       data-current-clue={currentArrow !== null ? 'true' : 'false'}
     >
       <div className={defStack} role="group" aria-label="deux définitions">
-        <StackedClue clue={first} isCurrent={currentArrow === first.arrow} />
-        <StackedClue clue={second} isCurrent={currentArrow === second.arrow} />
+        <StackedClue clue={topClue} isCurrent={currentArrow === topClue.arrow} />
+        <StackedClue clue={bottomClue} isCurrent={currentArrow === bottomClue.arrow} />
       </div>
-      <ArrowMark arrow={first.arrow} slot={slotA} ariaHidden />
-      <ArrowMark arrow={second.arrow} slot={slotB} ariaHidden />
+      <ArrowMark arrow={topClue.arrow} slot={slotA} ariaHidden />
+      <ArrowMark arrow={bottomClue.arrow} slot={slotB} ariaHidden />
     </div>
   );
 });
