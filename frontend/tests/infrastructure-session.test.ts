@@ -57,6 +57,14 @@ describe('localStorageSession', () => {
       expect(getOrCreateSessionId()).toBe(seeded);
     });
 
+    it('accepts a pre-existing UUID v4 without regenerating', async () => {
+      const v4 = '550e8400-e29b-41d4-a716-446655440000';
+      window.localStorage.setItem(SESSION_ID_KEY, v4);
+      const { getOrCreateSessionId } = await loadFresh();
+
+      expect(getOrCreateSessionId()).toBe(v4);
+    });
+
     it('regenerates when the stored value is malformed', async () => {
       window.localStorage.setItem(SESSION_ID_KEY, 'not-a-uuid');
       const { getOrCreateSessionId } = await loadFresh();
