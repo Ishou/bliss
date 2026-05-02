@@ -40,6 +40,18 @@ export interface GridNavigation {
   // Surfaced so the grid container can render the full clue text in a
   // panel outside the grid (cells truncate the prose at small font sizes).
   readonly currentClue: Clue | null;
+  // Inbound multiplayer write — apply a remote `cellUpdated` event to the
+  // uncontrolled <input> at (row, col). Writes `letter ?? ''` directly to
+  // `el.value` (per ADR-0002 §4: cell values live in the DOM), updates
+  // the same per-cell mirror that handleInput/handleKeyDown use so a
+  // subsequent local same-letter no-op is detected, and DOES NOT fire
+  // `onCellChange` (the inbound path must never re-emit and create an
+  // echo loop). No focus or direction change — remote writes by other
+  // players must not yank the local user's caret. Used by `Grid` (Wave H
+  // PR #19) when wired to the WebSocket cellUpdated stream. No-op if the
+  // target cell is not a registered letter input (out-of-bounds writes
+  // from a stale broadcast are ignored).
+  readonly applyRemoteCellUpdate: (row: number, col: number, letter: string | null) => void;
 }
 
 // Divergences from NYT-app behavior:
@@ -448,5 +460,29 @@ export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOpt
     [currentClue, focused],
   );
 
-  return { registerCellRef, highlightFor, handleClick, handleFocus, handleBlur, handleKeyDown, handleInput, currentClue };
+  // Inbound remote-update path. Mirrors the local-write side-effects on the
+  // DOM (set `el.value`, sync the per-cell mirror) WITHOUT firing
+  // `onCellChange` and WITHOUT touching focus/direction — see the field
+  // comment on `GridNavigation.applyRemoteCellUpdate` for the full rationale.
+  const applyRemoteCellUpdate = useCallback((row: number, col: number, letter: string | null) => {
+    const k = key({ row, col });
+    const el = refs.current.get(k);
+    if (!el) return;
+    const value = letter ?? '';
+    el.value = value;
+    if (value === '') cellValuesRef.current.delete(k);
+    else cellValuesRef.current.set(k, value);
+  }, []);
+
+  return {
+    registerCellRef,
+    highlightFor,
+    handleClick,
+    handleFocus,
+    handleBlur,
+    handleKeyDown,
+    handleInput,
+    currentClue,
+    applyRemoteCellUpdate,
+  };
 }

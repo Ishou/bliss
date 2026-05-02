@@ -1,6 +1,7 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { TransformComponent, TransformWrapper } from 'react-zoom-pan-pinch';
 import { css } from 'styled-system/css';
+import type { GameEvent, Unsubscribe } from '@/application/game';
 import type { Cell, Position, Puzzle } from '@/domain';
 import { BlockCellView, DefinitionCellView, LetterCellView } from './Cell';
 import { CurrentCluePanel } from './CurrentCluePanel';
@@ -62,12 +63,25 @@ const positionKey = (p: Position) => `${p.row},${p.col}`;
 // omit it; multiplayer callers (Wave H) wire it to the WebSocket
 // cellUpdate broadcast per ADR-0018. See `useGridNavigation` for the
 // exhaustive list of write sites.
+//
+// `subscribeToRemoteCellUpdates`: optional subscribe-style registrar
+// (Wave H · PR #19). When present, Grid attaches a handler on mount and
+// detaches it on unmount; each `cellUpdated` frame is written directly
+// into `el.value` of the matching uncontrolled <input> via the
+// navigation hook's imperative `applyRemoteCellUpdate`. The inbound
+// path explicitly DOES NOT re-fire `onCellChange` (would cause an echo
+// loop) and DOES NOT move the local user's caret. Solo callers omit
+// this prop and the entire mechanism — including the `useEffect` below
+// — is dormant. The `Unsubscribe` return contract matches
+// `GameClient.subscribe` in `@/application/game`.
 export function Grid({
   puzzle,
   onCellChange,
+  subscribeToRemoteCellUpdates,
 }: {
   puzzle: Puzzle;
   onCellChange?: (row: number, col: number, letter: string | null) => void;
+  subscribeToRemoteCellUpdates?: (handler: (event: GameEvent) => void) => Unsubscribe;
 }) {
   const cellByPosition = useMemo(() => {
     const m = new Map<string, Cell>();
@@ -84,6 +98,22 @@ export function Grid({
   );
 
   const nav = useGridNavigation(puzzle, { onCellChange });
+
+  // Wire the inbound multiplayer path. Stable across renders because the
+  // hook returns a stable `applyRemoteCellUpdate` callback and we depend
+  // on the subscribe registrar reference (callers should keep it stable
+  // — pass `gameClient.subscribe` directly; the filter below ignores
+  // non-`cellUpdated` frames so no adapter wrapper is needed at the call site).
+  // CellUpdatedEvent.column maps to the grid's `col` axis.
+  const applyRemoteCellUpdate = nav.applyRemoteCellUpdate;
+  useEffect(() => {
+    if (!subscribeToRemoteCellUpdates) return;
+    const unsubscribe = subscribeToRemoteCellUpdates((event) => {
+      if (event.type !== 'cellUpdated') return;
+      applyRemoteCellUpdate(event.row, event.column, event.letter);
+    });
+    return unsubscribe;
+  }, [subscribeToRemoteCellUpdates, applyRemoteCellUpdate]);
 
   const rows: { row: number; cells: (Cell | null)[] }[] = [];
   for (let row = 0; row < puzzle.height; row++) {
