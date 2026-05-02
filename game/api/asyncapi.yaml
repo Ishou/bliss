@@ -400,6 +400,6 @@ components:
         type:      { type: string, enum: [error] }
         errorType: { type: string, format: uri, description: Stable URI per error class (RFC 7807 `type`)., example: 'https://bliss.example/errors/lobby-full' }
         title:     { type: string, description: Short, human-readable summary., example: Lobby is full }
-        detail:    { type: string, nullable: true, description: Occurrence-specific explanation. }
-        status:    { type: integer, minimum: 100, maximum: 599, nullable: true, description: HTTP-style status code, mirrored for parity with REST. }
+        detail:    { type: string, description: Occurrence-specific explanation. }
+        status:    { type: integer, minimum: 100, maximum: 599, description: HTTP-style status code, mirrored for parity with REST. }
       example: { type: error, errorType: 'https://bliss.example/errors/lobby-full', title: Lobby is full, detail: This lobby already has 8 players., status: 409 }
