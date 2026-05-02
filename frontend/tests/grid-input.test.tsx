@@ -289,6 +289,93 @@ describe('Grid keyboard interactions', () => {
   });
 });
 
+// onCellChange is the multiplayer hook (Wave H · PR #19) that lets a
+// parent broadcast cell writes over the WebSocket without coupling the
+// hook to any transport. Solo mode passes nothing and observes no
+// behavior change — the existing `Grid keyboard interactions` block
+// above is the regression net for that. These tests pin the new
+// callback's contract: fires with `(row, col, letter|null)` after the
+// uncontrolled <input> has been mutated, exactly once per write site.
+describe('Grid keyboard interactions — onCellChange callback', () => {
+  it('fires (row, col, "L") when desktop letter typing writes a cell', () => {
+    const onCellChange = vi.fn();
+    const { container } = render(<Grid puzzle={TEST_PUZZLE} onCellChange={onCellChange} />);
+    const start = inputAt(container, 1, 1)!;
+    click(start);
+    typeChar(start, 'l');
+    expect(onCellChange).toHaveBeenCalledTimes(1);
+    expect(onCellChange).toHaveBeenCalledWith(1, 1, 'L');
+  });
+
+  it('fires (row, col, null) when Backspace clears a filled cell', () => {
+    const onCellChange = vi.fn();
+    const { container } = render(<Grid puzzle={TEST_PUZZLE} onCellChange={onCellChange} />);
+    const target = inputAt(container, 1, 2)!;
+    click(target);
+    typeChar(target, 'x');           // (1,2,'X')
+    click(target);                   // typeChar advanced focus; come back.
+    onCellChange.mockClear();
+    fireEvent.keyDown(target, { key: 'Backspace' });
+    expect(onCellChange).toHaveBeenCalledTimes(1);
+    expect(onCellChange).toHaveBeenCalledWith(1, 2, null);
+  });
+
+  it('fires (prevRow, prevCol, null) when Backspace on an empty cell clears the previous cell', () => {
+    const onCellChange = vi.fn();
+    const { container } = render(<Grid puzzle={TEST_PUZZLE} onCellChange={onCellChange} />);
+    const first = inputAt(container, 1, 1)!;
+    click(first);
+    typeChar(first, 'a');            // (1,1,'A'), focus advances to (1,2)
+    onCellChange.mockClear();
+    const second = inputAt(container, 1, 2)!;
+    fireEvent.keyDown(second, { key: 'Backspace' });
+    expect(onCellChange).toHaveBeenCalledTimes(1);
+    expect(onCellChange).toHaveBeenCalledWith(1, 1, null);
+  });
+
+  it('fires (row, col, "L") on Android InputEvent insertText', () => {
+    const onCellChange = vi.fn();
+    const { container } = render(<Grid puzzle={TEST_PUZZLE} onCellChange={onCellChange} />);
+    const start = inputAt(container, 1, 1)!;
+    click(start);
+    start.value = 'l';
+    start.dispatchEvent(new InputEvent('input', { inputType: 'insertText', data: 'l', bubbles: true }));
+    expect(onCellChange).toHaveBeenCalledWith(1, 1, 'L');
+  });
+
+  it('does not fire when typing the same letter that is already in the cell', () => {
+    const onCellChange = vi.fn();
+    const { container } = render(<Grid puzzle={TEST_PUZZLE} onCellChange={onCellChange} />);
+    const start = inputAt(container, 1, 1)!;
+    click(start);
+    typeChar(start, 'l');            // (1,1,'L')
+    click(start);                    // come back: typeChar advanced focus.
+    onCellChange.mockClear();
+    typeChar(start, 'l');            // same letter — no change → no callback.
+    expect(onCellChange).not.toHaveBeenCalled();
+  });
+
+  it('does not fire when Backspace on an already-empty first cell has nowhere to walk back', () => {
+    const onCellChange = vi.fn();
+    const { container } = render(<Grid puzzle={TEST_PUZZLE} onCellChange={onCellChange} />);
+    const first = inputAt(container, 1, 1)!;
+    click(first);
+    fireEvent.keyDown(first, { key: 'Backspace' });
+    expect(onCellChange).not.toHaveBeenCalled();
+  });
+
+  it('fires (row, col, null) when defensive paste-blanking clears the cell', () => {
+    const onCellChange = vi.fn();
+    const { container } = render(<Grid puzzle={TEST_PUZZLE} onCellChange={onCellChange} />);
+    const cell = inputAt(container, 1, 1)!;
+    click(cell);
+    cell.value = 'bonjour';
+    cell.dispatchEvent(new InputEvent('input', { inputType: 'insertFromPaste', data: null, bubbles: true }));
+    expect(cell.value).toBe('');
+    expect(onCellChange).toHaveBeenCalledWith(1, 1, null);
+  });
+});
+
 describe('scheduleVisibleScroll', () => {
   beforeEach(() => { vi.useFakeTimers(); });
   afterEach(() => { vi.restoreAllMocks(); vi.useRealTimers(); });
