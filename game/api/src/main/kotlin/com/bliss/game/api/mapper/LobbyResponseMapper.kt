@@ -7,6 +7,7 @@
 // types` Konsist rule (ApiArchitectureTest) forbids inside the dto package.
 package com.bliss.game.api.mapper
 
+import com.bliss.game.api.dto.CellEntryDto
 import com.bliss.game.api.dto.GameCellDto
 import com.bliss.game.api.dto.GameClueDto
 import com.bliss.game.api.dto.GameDefinitionClueDto
@@ -17,6 +18,7 @@ import com.bliss.game.api.dto.GridConfigDto
 import com.bliss.game.api.dto.LobbyResponseDto
 import com.bliss.game.api.dto.PlayerDto
 import com.bliss.game.domain.BlockCell
+import com.bliss.game.domain.CellEntry
 import com.bliss.game.domain.DefinitionCell
 import com.bliss.game.domain.GameArrow
 import com.bliss.game.domain.GameCell
@@ -55,7 +57,28 @@ private fun Player.toDto() = PlayerDto(sessionId.value, pseudonym.value, ISO.for
 
 private fun GridConfig.toDto() = GridConfigDto(width, height)
 
-private fun GameSession.toDto() = GameSessionDto(puzzle.toDto(), ISO.format(startedAt), completedAt?.let(ISO::format))
+// Stable ordering: sort by row then column so two structurally-equal sessions
+// always produce identical JSON (the domain `entries` map is unordered; the
+// wire is an ordered array).
+private fun GameSession.toDto() =
+    GameSessionDto(
+        puzzle = puzzle.toDto(),
+        entries =
+            entries.entries
+                .sortedWith(compareBy({ it.key.row }, { it.key.column }))
+                .map { (pos, entry) -> entry.toDto(pos) },
+        startedAt = ISO.format(startedAt),
+        completedAt = completedAt?.let(ISO::format),
+    )
+
+private fun CellEntry.toDto(position: Position) =
+    CellEntryDto(
+        sessionId = sessionId.value,
+        row = position.row,
+        column = position.column,
+        letter = letter.value.toString(),
+        writtenAt = ISO.format(writtenAt),
+    )
 
 private fun GamePuzzle.toDto() =
     GamePuzzleDto(

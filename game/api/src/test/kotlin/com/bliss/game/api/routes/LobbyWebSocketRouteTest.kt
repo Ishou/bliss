@@ -17,7 +17,9 @@ import com.bliss.game.application.usecases.StartGameUseCase
 import com.bliss.game.application.usecases.UpdateCellUseCase
 import com.bliss.game.application.usecases.UseCaseOutcome
 import com.bliss.game.domain.GamePuzzle
+import com.bliss.game.domain.Letter
 import com.bliss.game.domain.LobbyId
+import com.bliss.game.domain.Position
 import com.bliss.game.domain.Pseudonym
 import com.bliss.game.domain.SessionId
 import com.bliss.game.infrastructure.InMemoryLobbyRepository
@@ -200,6 +202,29 @@ class LobbyWebSocketRouteTest {
         }
 
     @Test
+    fun `lobbyState snapshot carries entries typed before the reconnecting client opened its socket`() =
+        runWith { harness ->
+            // Reproduces the refresh-wipes-letters bug: player A types
+            // a letter mid-game; player B (or A on a fresh socket)
+            // connects and the FIRST frame they see is `lobbyState`,
+            // which must already carry the entry — otherwise a refresh
+            // re-renders the grid empty.
+            val lobbyId = harness.seedLobby()
+            harness.startGame(lobbyId)
+            harness.typeLetter(lobbyId, SessionId(sessionA), Position(0, 3), Letter('P'))
+
+            harness.client.webSocket("/v1/lobbies/${lobbyId.value}/ws") {
+                val text = receiveText()
+                assertThat(text).contains("\"type\":\"lobbyState\"")
+                assertThat(text).contains("\"entries\":[")
+                assertThat(text).contains("\"row\":0")
+                assertThat(text).contains("\"column\":3")
+                assertThat(text).contains("\"letter\":\"P\"")
+                assertThat(text).contains("\"sessionId\":\"$sessionA\"")
+            }
+        }
+
+    @Test
     fun `invalid lobbyId is rejected before registration`() =
         runWith { harness ->
             harness.client.webSocket("/v1/lobbies/not-base58!/ws") {
@@ -249,6 +274,7 @@ class LobbyWebSocketRouteTest {
         val client: HttpClient,
         private val createLobby: CreateLobbyUseCase,
         private val startGameUseCase: StartGameUseCase,
+        private val updateCellUseCase: UpdateCellUseCase,
     ) {
         suspend fun seedLobby(): LobbyId {
             val outcome = createLobby(SessionId("0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6b"), Pseudonym("Alice"))
@@ -258,6 +284,16 @@ class LobbyWebSocketRouteTest {
         suspend fun startGame(lobbyId: LobbyId) {
             val out = startGameUseCase(lobbyId, SessionId("0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6b"))
             check(out is UseCaseOutcome.Success) { "startGame failed: $out" }
+        }
+
+        suspend fun typeLetter(
+            lobbyId: LobbyId,
+            sessionId: SessionId,
+            position: Position,
+            letter: Letter,
+        ) {
+            val out = updateCellUseCase(lobbyId, sessionId, position, letter)
+            check(out is UseCaseOutcome.Success) { "updateCell failed: $out" }
         }
     }
 
@@ -275,6 +311,7 @@ class LobbyWebSocketRouteTest {
                 }
             val createLobby = CreateLobbyUseCase(repo, clock)
             val startGameUseCase = StartGameUseCase(repo, provider, clock)
+            val updateCellUseCase = UpdateCellUseCase(repo, clock)
             val useCases =
                 LobbyUseCases(
                     createLobby = createLobby,
@@ -282,7 +319,7 @@ class LobbyWebSocketRouteTest {
                     renameSelf = RenameSelfUseCase(repo, clock),
                     setGridConfig = SetGridConfigUseCase(repo, clock),
                     startGame = startGameUseCase,
-                    updateCell = UpdateCellUseCase(repo, clock),
+                    updateCell = updateCellUseCase,
                     leaveLobby = LeaveLobbyUseCase(repo, clock),
                 )
             val sessionManager = SessionManager()
@@ -293,7 +330,7 @@ class LobbyWebSocketRouteTest {
                 }
             }
             val client = createClient { install(WebSockets) }
-            block(Harness(client, createLobby, startGameUseCase))
+            block(Harness(client, createLobby, startGameUseCase, updateCellUseCase))
         }
 
     private object SamplePuzzles {

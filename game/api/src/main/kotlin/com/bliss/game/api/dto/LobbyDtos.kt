@@ -34,10 +34,17 @@ data class GridConfigDto(
     val height: Int,
 )
 
-/** `GameSession` schema. `completedAt` is required + nullable on the wire. */
+/**
+ * `GameSession` schema. `completedAt` is required + nullable on the wire.
+ * `entries` lists every cell typed so far (server-authoritative, sorted by
+ * row then column) so a refreshing client rehydrates the grid state from
+ * this snapshot instead of receiving an empty grid. Cleared cells are
+ * absent from the list.
+ */
 @Serializable
 data class GameSessionDto(
     val puzzle: GamePuzzleDto,
+    val entries: List<CellEntryDto>,
     val startedAt: String,
     val completedAt: String?,
 )

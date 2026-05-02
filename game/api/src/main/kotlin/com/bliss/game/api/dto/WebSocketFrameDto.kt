@@ -138,13 +138,20 @@ sealed class ServerToClientFrame {
 }
 
 /**
- * Server-side cell entry projection used in `gameSolved`'s final-state digest.
- * Unique to the WebSocket surface — REST never emits it (puzzle answers are
- * domain-private until the game is solved).
+ * Server-side cell entry projection. Used by both the WebSocket surface
+ * (`gameSolved.finalEntries` end-of-game digest, and `lobbyState.game.entries`
+ * mid-game snapshot for reconnecting / late-joining clients) and the REST
+ * surface (`Lobby.game.entries` so a client refreshing the page rehydrates
+ * the grid before opening the WebSocket). `letter` is always non-null —
+ * cleared cells are absent from the list. `sessionId` and `writtenAt`
+ * mirror the per-cell `cellUpdated` event so a future per-author UI tint
+ * can colour each entry.
  */
 @Serializable
 data class CellEntryDto(
+    val sessionId: String,
     val row: Int,
     val column: Int,
     val letter: String,
+    val writtenAt: String,
 )

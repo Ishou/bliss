@@ -153,6 +153,14 @@ private fun GridConfig.toDto(): GridConfigDto = GridConfigDto(width = width, hei
 private fun GameSession.toDto(): GameSessionDto =
     GameSessionDto(
         puzzle = puzzle.toDto(),
+        // Stable order = sort by row then column so two structurally-equal
+        // sessions always serialize byte-identically. The domain `entries`
+        // map is unordered (Map<Position, CellEntry>); the wire is an
+        // ordered array so the frontend can render deterministically.
+        entries =
+            entries.entries
+                .sortedWith(compareBy({ it.key.row }, { it.key.column }))
+                .map { (pos, entry) -> entry.toDto(pos) },
         startedAt = startedAt.toIsoString(),
         completedAt = completedAt?.toIsoString(),
     )
@@ -210,9 +218,11 @@ private fun GameClue.toDto(): GameClueDto =
 
 private fun CellEntry.toDto(position: Position): CellEntryDto =
     CellEntryDto(
+        sessionId = sessionId.value,
         row = position.row,
         column = position.column,
         letter = letter.value.toString(),
+        writtenAt = writtenAt.toIsoString(),
     )
 
 private fun GameArrow.toWire(): String =

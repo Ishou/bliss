@@ -171,12 +171,21 @@ components:
       example: P
     CellEntry:
       type: object
-      required: [row, column, letter]
-      description: A single placed letter in the canonical entries list.
+      required: [sessionId, row, column, letter, writtenAt]
+      description: |
+        A single placed letter in the canonical entries list. Used both by
+        `gameSolved.finalEntries` (every solved cell) and by
+        `lobbyState.game.entries` (every cell typed so far on a snapshot
+        delivered to a reconnecting / late-joining client). `letter` is
+        always non-null here — cleared cells are simply absent from the
+        list. `sessionId` and `writtenAt` mirror the per-cell `cellUpdated`
+        event so a future per-author UI tint can colour each entry.
       properties:
-        row:    { type: integer, minimum: 0, example: 0 }
-        column: { type: integer, minimum: 0, example: 3 }
-        letter: { type: string, minLength: 1, maxLength: 1, pattern: '^[A-Z]$', description: Always non-null in `finalEntries`., example: P }
+        sessionId: { $ref: '#/components/schemas/SessionId' }
+        row:       { type: integer, minimum: 0, example: 0 }
+        column:    { type: integer, minimum: 0, example: 3 }
+        letter:    { type: string, minLength: 1, maxLength: 1, pattern: '^[A-Z]$', description: Always non-null. Cleared cells are absent from the list., example: P }
+        writtenAt: { $ref: '#/components/schemas/Instant' }
     Player:
       type: object
       required: [sessionId, pseudonym, joinedAt]
@@ -292,10 +301,20 @@ components:
       description: Direction a clue's answer is written.
     GameSession:
       type: object
-      required: [puzzle, startedAt, completedAt]
-      description: Active game embedded in `lobbyState` while IN_PROGRESS.
+      required: [puzzle, entries, startedAt, completedAt]
+      description: |
+        Active game embedded in `lobbyState` while IN_PROGRESS or COMPLETED.
+        `entries` carries every letter typed so far (server-authoritative,
+        last-write-wins per ADR-0018) so a reconnecting or late-joining
+        client receives the current grid state in its first frame instead
+        of an empty grid. Cleared cells are absent from the list. The
+        server emits entries sorted by row then column for stable rendering.
       properties:
         puzzle:      { $ref: '#/components/schemas/GamePuzzle' }
+        entries:
+          type: array
+          items: { $ref: '#/components/schemas/CellEntry' }
+          description: Every cell typed so far. Empty list when no player has typed yet.
         startedAt:   { $ref: '#/components/schemas/Instant' }
         completedAt: { $ref: '#/components/schemas/Instant', nullable: true, description: Set once the lobby reaches COMPLETED. }
     # ----- Client → server payloads -----
@@ -363,9 +382,15 @@ components:
         type: lobbyState
         players: [{ sessionId: 0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6b, pseudonym: Joueur 1234, joinedAt: '2026-05-02T15:30:00Z' }]
         ownerSessionId: 0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6b
-        state: WAITING
+        state: IN_PROGRESS
         gridConfig: { width: 7, height: 7 }
-        game: null
+        game:
+          puzzle: { id: 0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6c, title: Petite grille du mardi, language: fr, width: 5, height: 5, cells: [], clues: [], createdAt: '2026-04-24T15:30:00Z' }
+          entries:
+            - { sessionId: 0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6b, row: 0, column: 3, letter: P, writtenAt: '2026-05-02T15:35:42Z' }
+            - { sessionId: 0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6b, row: 0, column: 4, letter: A, writtenAt: '2026-05-02T15:35:43Z' }
+          startedAt: '2026-05-02T15:35:00Z'
+          completedAt: null
     PlayerJoinedPayload:
       type: object
       required: [type, sessionId, pseudonym, joinedAt]
@@ -422,7 +447,9 @@ components:
       example:
         type: gameSolved
         durationMs: 184250
-        finalEntries: [{ row: 0, column: 3, letter: P }, { row: 0, column: 4, letter: A }]
+        finalEntries:
+          - { sessionId: 0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6b, row: 0, column: 3, letter: P, writtenAt: '2026-05-02T15:35:42Z' }
+          - { sessionId: 0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6b, row: 0, column: 4, letter: A, writtenAt: '2026-05-02T15:35:43Z' }
     ErrorPayload:
       type: object
       required: [type, errorType, title]
