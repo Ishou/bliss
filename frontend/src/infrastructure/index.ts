@@ -15,3 +15,7 @@ export {
   createHttpPuzzleRepository,
   type HttpPuzzleRepositoryOptions,
 } from './api/grid/HttpPuzzleRepository';
+export {
+  createWebSocketGameClient,
+  type WebSocketGameClientOptions,
+} from './game/WebSocketGameClient';
