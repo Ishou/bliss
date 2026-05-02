@@ -37,6 +37,9 @@ importers:
       react-zoom-pan-pinch:
         specifier: ^4.0.3
         version: 4.0.3(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
+      uuidv7:
+        specifier: ^1.2.1
+        version: 1.2.1
     devDependencies:
       '@eslint/js':
         specifier: ^9.17.0
@@ -3205,6 +3208,10 @@ packages:
 
   util-deprecate@1.0.2:
     resolution: {integrity: sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw==}
+
+  uuidv7@1.2.1:
+    resolution: {integrity: sha512-4kPkK3/XTQW9Hbm4CaqfICn+kY9LJtDVEOfgsRRra/+n2Ofg4NqzRFceAkxvQ/Ud/6BpHOPzj8cirqM7TzTN5Q==}
+    hasBin: true
 
   vite-node@3.2.4:
     resolution: {integrity: sha512-EbKSKh+bh1E1IFxeO0pg1n4dvoOTt0UDiXMd/qn++r98+jPO1xtJilvXldeuQ8giIB5IkpjCgMleHMNEsGH6pg==}
@@ -7103,6 +7110,8 @@ snapshots:
       react: 19.2.5
 
   util-deprecate@1.0.2: {}
+
+  uuidv7@1.2.1: {}
 
   vite-node@3.2.4(@types/node@22.19.17)(lightningcss@1.25.1):
     dependencies:

@@ -26,7 +26,8 @@
     "openapi-fetch": "^0.17.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "react-zoom-pan-pinch": "^4.0.3"
+    "react-zoom-pan-pinch": "^4.0.3",
+    "uuidv7": "^1.2.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",
