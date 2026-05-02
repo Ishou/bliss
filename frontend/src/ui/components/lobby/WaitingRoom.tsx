@@ -209,7 +209,7 @@ function GridSizePicker({
   return (
     <fieldset className={styles.fieldset}>
       <legend className={styles.sectionTitle}>Taille de la grille</legend>
-      <div className={styles.radioGroup} role="radiogroup" aria-label="Taille de la grille">
+      <div className={styles.radioGroup}>
         {GRID_SIZES.map((size) => (
           <label key={size} className={styles.radioLabel}>
             <input

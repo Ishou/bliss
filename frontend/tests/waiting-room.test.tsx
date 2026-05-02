@@ -75,7 +75,7 @@ describe('WaitingRoom — owner-gated controls', () => {
     render(
       <WaitingRoom lobby={baseLobby} currentSessionId={ownerSessionId} {...noopProps} />,
     );
-    expect(screen.getByRole('radiogroup', { name: /taille de la grille/i })).toBeInTheDocument();
+    expect(screen.getByRole('group', { name: /taille de la grille/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /démarrer la partie/i })).toBeInTheDocument();
   });
 
@@ -83,7 +83,7 @@ describe('WaitingRoom — owner-gated controls', () => {
     render(
       <WaitingRoom lobby={baseLobby} currentSessionId={peerSessionId} {...noopProps} />,
     );
-    expect(screen.queryByRole('radiogroup', { name: /taille de la grille/i })).toBeNull();
+    expect(screen.queryByRole('group', { name: /taille de la grille/i })).toBeNull();
     expect(screen.queryByRole('button', { name: /démarrer la partie/i })).toBeNull();
   });
 });
