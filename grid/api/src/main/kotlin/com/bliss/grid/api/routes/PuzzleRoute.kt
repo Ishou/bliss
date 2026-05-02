@@ -14,13 +14,26 @@ import org.slf4j.LoggerFactory
 import java.time.Instant
 import java.util.UUID
 
+// Mirrors minimum/maximum from PuzzleWidth/PuzzleHeight in openapi.yaml; keep in sync manually.
+internal const val PUZZLE_MIN_DIMENSION: Int = 5
+internal const val PUZZLE_MAX_DIMENSION: Int = 15
+
+private const val INVALID_DIMENSIONS_TYPE: String =
+    "https://bliss.example/errors/invalid-puzzle-dimensions"
+
 /**
  * `GET /v1/puzzles/{puzzleId}` — generates a fresh mots-fléchés puzzle on every
  * request. v1 is stateless: the path id is informational and echoes back into
  * `Puzzle.id`. Persistence lands in a later workstream.
  *
+ * Optional `?width=N&height=N` query params (5..15 inclusive) let a caller —
+ * for the multiplayer rollout, a lobby owner — pick a non-default size.
+ * Omitted params fall back to the use case's configured defaults.
+ *
  * Failure modes:
- * - puzzleId is not a UUID → 400 ProblemDetails
+ * - puzzleId is not a UUID → 400 ProblemDetails (`invalid-puzzle-id`)
+ * - width/height not an integer or outside 5..15 → 400 ProblemDetails
+ *   (`invalid-puzzle-dimensions`)
  * - generator can't satisfy the constraints → 422 ProblemDetails
  */
 fun Route.puzzles(
@@ -42,7 +55,34 @@ fun Route.puzzles(
             return@get
         }
 
-        val grid = generatePuzzle.execute()
+        val width =
+            when (val parsed = parseDimension(call.parameters["width"], "width")) {
+                is DimensionParse.Invalid -> {
+                    call.respondProblem(
+                        status = HttpStatusCode.BadRequest,
+                        title = "Invalid puzzle dimensions",
+                        type = INVALID_DIMENSIONS_TYPE,
+                        detail = parsed.detail,
+                    )
+                    return@get
+                }
+                is DimensionParse.Ok -> parsed.value
+            }
+        val height =
+            when (val parsed = parseDimension(call.parameters["height"], "height")) {
+                is DimensionParse.Invalid -> {
+                    call.respondProblem(
+                        status = HttpStatusCode.BadRequest,
+                        title = "Invalid puzzle dimensions",
+                        type = INVALID_DIMENSIONS_TYPE,
+                        detail = parsed.detail,
+                    )
+                    return@get
+                }
+                is DimensionParse.Ok -> parsed.value
+            }
+
+        val grid = generatePuzzle.execute(width = width, height = height)
         if (grid == null) {
             log.warn("puzzle_generation_failed puzzle_id={}", puzzleId)
             call.respondProblem(
@@ -56,6 +96,35 @@ fun Route.puzzles(
 
         call.respond(mapper.toApi(grid = grid, puzzleId = puzzleId, createdAt = Instant.now()))
     }
+}
+
+private sealed interface DimensionParse {
+    data class Ok(
+        val value: Int?,
+    ) : DimensionParse
+
+    data class Invalid(
+        val detail: String,
+    ) : DimensionParse
+}
+
+private fun parseDimension(
+    raw: String?,
+    name: String,
+): DimensionParse {
+    if (raw == null) return DimensionParse.Ok(null)
+    val parsed =
+        raw.toIntOrNull()
+            ?: return DimensionParse.Invalid(
+                "Query parameter '$name' must be an integer, was '$raw'.",
+            )
+    if (parsed !in PUZZLE_MIN_DIMENSION..PUZZLE_MAX_DIMENSION) {
+        return DimensionParse.Invalid(
+            "Query parameter '$name' must be between $PUZZLE_MIN_DIMENSION and " +
+                "$PUZZLE_MAX_DIMENSION inclusive, was $parsed.",
+        )
+    }
+    return DimensionParse.Ok(parsed)
 }
 
 private fun parseUuid(raw: String): UUID? =

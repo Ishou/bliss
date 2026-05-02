@@ -13,16 +13,29 @@ import kotlin.random.Random
  * Calls the domain [GridGenerator] up to [maxAttempts] times — each attempt uses
  * a fresh [Random] so refreshes vary. Returns the first successful grid, or
  * `null` if every attempt fails (the API adapter then surfaces 422).
+ *
+ * The [defaults] constraints govern requests that omit `width`/`height`.
+ * Per the multiplayer rollout, lobby owners may request a non-default size
+ * via [execute]; range validation lives at the API edge so the use case
+ * trusts whatever the caller passes through.
  */
 class GeneratePuzzleUseCase(
     wordRepository: WordRepository,
-    private val constraints: GridConstraints,
+    private val defaults: GridConstraints,
     private val maxAttempts: Int = DEFAULT_MAX_ATTEMPTS,
 ) {
     private val log = LoggerFactory.getLogger(GeneratePuzzleUseCase::class.java)
     private val generator = GridGenerator(wordRepository)
 
-    fun execute(): Grid? {
+    fun execute(
+        width: Int? = null,
+        height: Int? = null,
+    ): Grid? {
+        val constraints =
+            defaults.copy(
+                width = width ?: defaults.width,
+                height = height ?: defaults.height,
+            )
         repeat(maxAttempts) { attempt ->
             val random = Random(System.nanoTime() + attempt)
             generator.generate(constraints, random)?.let { return it }

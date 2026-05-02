@@ -151,6 +151,55 @@ class PuzzleRouteTest {
         }
 
     @Test
+    fun `accepts width and height query params and reflects them in the response`() =
+        testApplication {
+            application { module() }
+
+            val response = client.get("/v1/puzzles/$validId?width=7&height=7")
+
+            assertThat(response.status).isEqualTo(HttpStatusCode.OK)
+            val json = Json.parseToJsonElement(response.bodyAsText()).jsonObject
+            assertThat(json["width"]!!.jsonPrimitive.content.toInt()).isEqualTo(7)
+            assertThat(json["height"]!!.jsonPrimitive.content.toInt()).isEqualTo(7)
+        }
+
+    @Test
+    fun `responds 400 with invalid-puzzle-dimensions when width is below the minimum`() =
+        testApplication {
+            application { module() }
+
+            val response = client.get("/v1/puzzles/$validId?width=4") // one below the spec minimum of 5
+
+            assertThat(response.status).isEqualTo(HttpStatusCode.BadRequest)
+            assertThat(response.headers["Content-Type"]!!).startsWith("application/problem+json")
+            val body = response.bodyAsText()
+            assertThat(body).contains("invalid-puzzle-dimensions")
+            assertThat(body).contains("\"status\":400")
+        }
+
+    @Test
+    fun `responds 400 with invalid-puzzle-dimensions when height is above the maximum`() =
+        testApplication {
+            application { module() }
+
+            val response = client.get("/v1/puzzles/$validId?height=16") // one above the spec maximum of 15
+
+            assertThat(response.status).isEqualTo(HttpStatusCode.BadRequest)
+            assertThat(response.bodyAsText()).contains("invalid-puzzle-dimensions")
+        }
+
+    @Test
+    fun `responds 400 with invalid-puzzle-dimensions when width is not an integer`() =
+        testApplication {
+            application { module() }
+
+            val response = client.get("/v1/puzzles/$validId?width=abc")
+
+            assertThat(response.status).isEqualTo(HttpStatusCode.BadRequest)
+            assertThat(response.bodyAsText()).contains("invalid-puzzle-dimensions")
+        }
+
+    @Test
     fun `responds 422 with problem json when generator cannot satisfy constraints`() =
         testApplication {
             application {
