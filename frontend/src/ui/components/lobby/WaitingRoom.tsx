@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { css } from 'styled-system/css';
 import type { Lobby, Pseudonym, SessionId } from '@/domain/game';
+import { PlayerList, MAX_PLAYERS } from './PlayerList';
 
 // Pure prop-driven WaitingRoom rendered while `lobby.state === 'WAITING'`.
 // Owns no network, no router context, no localStorage — every side effect
@@ -9,10 +10,9 @@ import type { Lobby, Pseudonym, SessionId } from '@/domain/game';
 // `infrastructure/` import (eslint-plugin-boundaries) and makes the
 // component trivially unit-testable.
 //
-// Slot model: the lobby caps at 8 players (game/api ServerLobbyState
-// schema `maxItems: 8`). Empty slots render as placeholder rows so the
-// list keeps a stable height while peers join.
-const MAX_PLAYERS = 8;
+// Roster rendering (with empty-slot placeholders) lives in PlayerList so
+// the in-game route can mount the same component in its `inline` variant
+// during IN_PROGRESS / COMPLETED.
 const GRID_SIZES: readonly number[] = [5, 7, 9, 11];
 
 export interface WaitingRoomProps {
@@ -32,31 +32,6 @@ const styles = {
   }),
   sectionTitle: css({
     fontSize: 'md', fontWeight: 'bold', color: 'leaf.700', margin: 0,
-  }),
-  list: css({
-    display: 'flex', flexDirection: 'column', gap: 'xs',
-    listStyle: 'none', padding: 0, margin: 0,
-  }),
-  playerRow: css({
-    display: 'flex', alignItems: 'center', gap: 'sm',
-    padding: 'sm', border: '1px solid token(colors.border)',
-    borderRadius: 'sm', bg: 'surface',
-  }),
-  emptySlot: css({
-    display: 'flex', alignItems: 'center', padding: 'sm',
-    border: '1px dashed token(colors.border)', borderRadius: 'sm',
-    bg: 'bg', color: 'accent', fontStyle: 'italic',
-  }),
-  pseudonym: css({ flex: 1, fontWeight: 'medium', color: 'fg' }),
-  badge: css({
-    fontSize: 'xs', fontWeight: 'bold', letterSpacing: '0.06em',
-    textTransform: 'uppercase', paddingInline: 'sm', paddingBlock: 'xs',
-    borderRadius: '9999px', bg: 'leaf.50', color: 'leaf.700',
-  }),
-  ownerBadge: css({
-    fontSize: 'xs', fontWeight: 'bold', letterSpacing: '0.06em',
-    textTransform: 'uppercase', paddingInline: 'sm', paddingBlock: 'xs',
-    borderRadius: '9999px', bg: 'blossom.50', color: 'blossom.700',
   }),
   button: css({
     paddingBlock: 'sm', paddingInline: 'md', borderRadius: 'sm',
@@ -97,7 +72,6 @@ export function WaitingRoom({
   // least one player, which is always true since the owner is a member.
   const canStart = isOwner && lobby.players.length >= 1;
   const me = lobby.players.find((p) => p.sessionId === currentSessionId);
-  const emptySlots = Math.max(0, MAX_PLAYERS - lobby.players.length);
 
   return (
     <section className={styles.container} aria-label="Salle d'attente">
@@ -105,22 +79,12 @@ export function WaitingRoom({
         <h2 className={styles.sectionTitle}>
           Joueurs ({lobby.players.length}/{MAX_PLAYERS})
         </h2>
-        <ul className={styles.list} aria-label="Liste des joueurs">
-          {lobby.players.map((player) => (
-            <li key={player.sessionId} className={styles.playerRow}>
-              <span className={styles.pseudonym}>{player.pseudonym}</span>
-              {player.sessionId === currentSessionId
-                ? <span className={styles.badge}>vous</span> : null}
-              {player.sessionId === lobby.ownerSessionId
-                ? <span className={styles.ownerBadge}>propriétaire</span> : null}
-            </li>
-          ))}
-          {Array.from({ length: emptySlots }).map((_, idx) => (
-            <li key={`empty-${idx}`} className={styles.emptySlot} aria-label="Place libre">
-              Place libre
-            </li>
-          ))}
-        </ul>
+        <PlayerList
+          players={lobby.players}
+          ownerSessionId={lobby.ownerSessionId}
+          currentSessionId={currentSessionId}
+          variant="stacked"
+        />
       </div>
 
       <div className={styles.row}>
