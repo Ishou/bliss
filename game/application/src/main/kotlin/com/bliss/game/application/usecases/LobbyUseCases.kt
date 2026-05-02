@@ -159,28 +159,37 @@ class LeaveLobbyUseCase(
         lobbyId: LobbyId,
         sessionId: SessionId,
     ): UseCaseOutcome<Lobby?> {
-        val before = repo.findById(lobbyId) ?: return failure(UseCaseError.LobbyNotFound)
-        if (!before.hasJoined(sessionId)) return failure(UseCaseError.PlayerNotInLobby)
-        val remaining = before.players - sessionId
         val events = mutableListOf<LobbyEvent>(LobbyEvent.PlayerLeft(sessionId))
-        if (remaining.isEmpty()) {
+        var shouldDelete = false
+        var playerWasPresent = false
+        val updated =
+            repo.mutate(lobbyId) { lobby ->
+                if (!lobby.hasJoined(sessionId)) return@mutate lobby
+                playerWasPresent = true
+                val liveRemaining = lobby.players - sessionId
+                if (liveRemaining.isEmpty()) {
+                    shouldDelete = true
+                    // Return lobby unchanged — Lobby.init forbids an empty players map.
+                    // The deletion happens immediately after mutate releases the per-lobby lock.
+                    lobby
+                } else {
+                    // Compute nextOwner from the live snapshot inside the lock so a concurrent
+                    // join/leave between the outer read and mutate cannot produce a ghost owner.
+                    val nextOwner =
+                        if (lobby.isOwner(sessionId)) {
+                            liveRemaining.values.minBy { it.joinedAt }.sessionId
+                        } else {
+                            lobby.ownerSessionId
+                        }
+                    lobby.copy(players = liveRemaining, ownerSessionId = nextOwner)
+                }
+            } ?: return failure(UseCaseError.LobbyNotFound)
+        if (!playerWasPresent) return failure(UseCaseError.PlayerNotInLobby)
+        if (shouldDelete) {
             repo.delete(lobbyId)
             events += LobbyEvent.LobbyClosed("last player left")
             return success(null, events)
         }
-        val updated =
-            repo.mutate(lobbyId) { lobby ->
-                val liveRemaining = lobby.players - sessionId
-                // Compute nextOwner from the live snapshot inside the lock so a concurrent join/leave
-                // between findById and mutate cannot produce a ghost owner reference.
-                val nextOwner =
-                    if (lobby.isOwner(sessionId) && liveRemaining.isNotEmpty()) {
-                        liveRemaining.values.minBy { it.joinedAt }.sessionId
-                    } else {
-                        lobby.ownerSessionId
-                    }
-                lobby.copy(players = liveRemaining, ownerSessionId = nextOwner)
-            } ?: return failure(UseCaseError.LobbyNotFound)
         return success(updated, events)
     }
 }
