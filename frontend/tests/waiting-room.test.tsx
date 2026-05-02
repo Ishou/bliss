@@ -6,10 +6,10 @@ import { WaitingRoom } from '@/ui/components/lobby/WaitingRoom';
 // `WaitingRoom` is a pure prop-driven component (Wave H PR #16). The
 // tests exercise the four user-facing flows promised by the props
 // surface: render the player list with badges, gate owner-only
-// controls, gate Start on a 2-player minimum, fire the rename / grid /
-// share callbacks. No GameClient / network mocking — the parent route
-// owns wiring; this suite only asserts the contract this component
-// promises its caller.
+// controls, allow the owner to Start solo (1+ players), fire the
+// rename / grid / share callbacks. No GameClient / network mocking —
+// the parent route owns wiring; this suite only asserts the contract
+// this component promises its caller.
 
 const ownerSessionId = '0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6b' as SessionId;
 const peerSessionId = '0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6c' as SessionId;
@@ -89,12 +89,16 @@ describe('WaitingRoom — owner-gated controls', () => {
 });
 
 describe('WaitingRoom — Start button', () => {
-  it('is disabled when fewer than 2 players are present', () => {
+  it('is enabled for the owner in a solo lobby (1 player) so the owner can play through the multiplayer flow alone', () => {
     const soloLobby: Lobby = { ...baseLobby, players: [baseLobby.players[0]!] };
+    const onStart = vi.fn();
     render(
-      <WaitingRoom lobby={soloLobby} currentSessionId={ownerSessionId} {...noopProps} />,
+      <WaitingRoom lobby={soloLobby} currentSessionId={ownerSessionId} {...noopProps} onStart={onStart} />,
     );
-    expect(screen.getByRole('button', { name: /démarrer la partie/i })).toBeDisabled();
+    const startButton = screen.getByRole('button', { name: /démarrer la partie/i });
+    expect(startButton).toBeEnabled();
+    fireEvent.click(startButton);
+    expect(onStart).toHaveBeenCalledTimes(1);
   });
 
   it('is enabled with 2+ players and fires onStart on click', () => {
