@@ -46,7 +46,11 @@ data class GameSession(
         }
     }
 
-    fun isSolved(): Boolean = solvedPositions() == letterCellPositionsWithAnswer()
+    fun isSolved(): Boolean {
+        val answerable = letterCellPositionsWithAnswer()
+        // A puzzle with no answerable cells is not solvable, so it is not solved.
+        return answerable.isNotEmpty() && solvedPositions() == answerable
+    }
 
     /** Positions whose [LetterCell] answer matches the placed [CellEntry]. */
     fun solvedPositions(): Set<Position> =

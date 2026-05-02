@@ -12,12 +12,28 @@ import com.bliss.game.domain.Fixtures.later
 import com.bliss.game.domain.Fixtures.now
 import org.junit.jupiter.api.Test
 import java.time.Instant
+import java.util.UUID
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
 class GameSessionTest {
     private val pPos = Position(0, 3)
     private val aPos = Position(0, 4)
+
+    @Test
+    fun `isSolved is false when the puzzle has no answerable cells`() {
+        val noAnswerPuzzle =
+            GamePuzzle(
+                id = UUID.randomUUID(),
+                width = 5,
+                height = 5,
+                cells = listOf(BlockCell(Position(0, 0))),
+                clues = emptyList(),
+                createdAt = now,
+            )
+        val s = GameSession(noAnswerPuzzle, emptyMap(), now, null)
+        assertThat(s.isSolved()).isFalse()
+    }
 
     @Test
     fun `isSolved is false when no entries are placed`() {
