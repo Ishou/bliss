@@ -83,6 +83,12 @@ class GameSessionTest {
     }
 
     @Test
+    fun `GameSession accepts completedAt equal to startedAt`() {
+        val s = gameSession(startedAt = now, completedAt = now)
+        assertThat(s.completedAt).isEqualTo(now)
+    }
+
+    @Test
     fun `GameSession rejects a completedAt before startedAt`() {
         assertFailure {
             gameSession(startedAt = later, completedAt = now)
