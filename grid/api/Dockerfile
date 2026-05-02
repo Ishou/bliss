@@ -27,6 +27,7 @@ COPY grid/worker/build.gradle.kts grid/worker/
 # :grid:api:shadowJar has no dependency on game/, so the build script alone
 # is enough; src/ is intentionally not copied.
 COPY game/domain/build.gradle.kts game/domain/
+COPY game/application/build.gradle.kts game/application/
 
 COPY grid/domain/src grid/domain/src
 COPY grid/application/src grid/application/src
