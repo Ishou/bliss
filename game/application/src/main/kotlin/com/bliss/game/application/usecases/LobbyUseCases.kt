@@ -160,7 +160,6 @@ class LeaveLobbyUseCase(
         sessionId: SessionId,
     ): UseCaseOutcome<Lobby?> {
         val events = mutableListOf<LobbyEvent>(LobbyEvent.PlayerLeft(sessionId))
-        var shouldDelete = false
         var playerWasPresent = false
         val updated =
             repo.mutate(lobbyId) { lobby ->
@@ -168,10 +167,9 @@ class LeaveLobbyUseCase(
                 playerWasPresent = true
                 val liveRemaining = lobby.players - sessionId
                 if (liveRemaining.isEmpty()) {
-                    shouldDelete = true
-                    // Return lobby unchanged — Lobby.init forbids an empty players map.
-                    // The deletion happens immediately after mutate releases the per-lobby lock.
-                    lobby
+                    // null signals the repo to delete atomically inside the lock,
+                    // closing the window between "decide to delete" and "execute delete".
+                    null
                 } else {
                     // Compute nextOwner from the live snapshot inside the lock so a concurrent
                     // join/leave between the outer read and mutate cannot produce a ghost owner.
@@ -183,10 +181,11 @@ class LeaveLobbyUseCase(
                         }
                     lobby.copy(players = liveRemaining, ownerSessionId = nextOwner)
                 }
-            } ?: return failure(UseCaseError.LobbyNotFound)
+            }
+        // Distinguish: null+!present = lobby not found; null+present = deleted; non-null+!present = not a member.
+        if (!playerWasPresent && updated == null) return failure(UseCaseError.LobbyNotFound)
         if (!playerWasPresent) return failure(UseCaseError.PlayerNotInLobby)
-        if (shouldDelete) {
-            repo.delete(lobbyId)
+        if (updated == null) {
             events += LobbyEvent.LobbyClosed("last player left")
             return success(null, events)
         }

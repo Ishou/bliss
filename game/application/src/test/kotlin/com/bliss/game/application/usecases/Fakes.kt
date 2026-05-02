@@ -50,12 +50,19 @@ class InMemoryLobbyRepository : LobbyRepository {
 
     override suspend fun mutate(
         id: LobbyId,
-        mutator: (Lobby) -> Lobby,
+        mutator: (Lobby) -> Lobby?,
     ): Lobby? =
         lockFor(id).withLock {
             val current = storeLock.withLock { store[id] } ?: return null
             val next = mutator(current)
-            storeLock.withLock { store[id] = next }
+            storeLock.withLock {
+                if (next == null) {
+                    store.remove(id)
+                    locks.remove(id)
+                } else {
+                    store[id] = next
+                }
+            }
             next
         }
 

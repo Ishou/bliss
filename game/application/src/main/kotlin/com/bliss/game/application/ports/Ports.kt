@@ -17,11 +17,14 @@ interface LobbyRepository {
 
     /**
      * Read-modify-write under a per-lobby lock. Returns the new state, or `null`
-     * when no lobby exists for [id]. The mutator is invoked at most once.
+     * when no lobby exists for [id] or when the mutator returns `null` (delete signal).
+     * A `null` return from the mutator atomically deletes the lobby inside the lock,
+     * closing the TOCTOU window between "decide to delete" and "execute delete".
+     * The mutator is invoked at most once.
      */
     suspend fun mutate(
         id: LobbyId,
-        mutator: (Lobby) -> Lobby,
+        mutator: (Lobby) -> Lobby?,
     ): Lobby?
 
     suspend fun delete(id: LobbyId)
