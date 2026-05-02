@@ -64,7 +64,11 @@ export function createHttpLobbyClient(
       const wire = await safeRequest(() =>
         client.POST('/v1/lobbies', { body: { ownerSessionId, ownerPseudonym } }),
       );
-      return wireToDomain(wire);
+      // Carry the server-issued `LobbyId` through to callers — the home
+      // route reads it to navigate to `/lobby/:lobbyId`. `getLobby`
+      // intentionally drops `id` because the route already knows it
+      // from the URL (see `wireToDomain`).
+      return { id: wire.id as unknown as LobbyId, ...wireToDomain(wire) };
     },
     async getLobby(lobbyId: LobbyId) {
       const wire = await safeRequest(() =>

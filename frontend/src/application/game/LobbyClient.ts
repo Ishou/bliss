@@ -12,11 +12,17 @@ export interface LobbyClient {
    * player as the sole member and owner. Throws {@link LobbyClientError}
    * on a non-2xx response — callers `switch` on `error.kind` to render
    * the matching UI banner.
+   *
+   * Resolves with the freshly-minted lobby intersected with its
+   * server-issued `LobbyId`. Unlike {@link getLobby}, the `id` is not
+   * known from the URL on this seam — the home-route "Créer une partie
+   * multijoueur" button (Wave H PR #21) reads it to navigate to
+   * `/lobby/:lobbyId`.
    */
   createLobby(args: {
     ownerSessionId: SessionId;
     ownerPseudonym: Pseudonym;
-  }): Promise<Lobby>;
+  }): Promise<Lobby & { readonly id: LobbyId }>;
 
   /**
    * `GET /v1/lobbies/{lobbyId}`. Bootstraps the lobby route loader before

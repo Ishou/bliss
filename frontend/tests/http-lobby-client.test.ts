@@ -71,16 +71,17 @@ describe('HttpLobbyClient.createLobby', () => {
     const lobby = await makeClient().createLobby({ ownerSessionId: sessionId, ownerPseudonym: pseudonym });
 
     expect(receivedBody).toEqual({ ownerSessionId: sessionId, ownerPseudonym: pseudonym });
-    // Domain Lobby has no `id` (route knows it from the URL); the rest is
-    // a structural pass-through of the wire payload.
+    // `createLobby` carries the server-issued `id` (Wave H PR #21 — the
+    // home-route button reads it to navigate). `getLobby` still drops
+    // `id` because the route already knows it from the URL.
     expect(lobby).toEqual({
+      id: lobbyFixture.id,
       players: lobbyFixture.players,
       ownerSessionId: lobbyFixture.ownerSessionId,
       state: lobbyFixture.state,
       gridConfig: lobbyFixture.gridConfig,
       game: lobbyFixture.game,
     });
-    expect('id' in lobby).toBe(false);
   });
 
   it('lifts a 400 problem-details body into LobbyClientError(kind: validation)', async () => {

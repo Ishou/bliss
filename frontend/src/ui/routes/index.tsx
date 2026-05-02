@@ -1,6 +1,8 @@
-import { createRoute } from '@tanstack/react-router';
+import { createRoute, useNavigate } from '@tanstack/react-router';
+import { useState } from 'react';
 import { css } from 'styled-system/css';
 import type { Puzzle } from '@/domain';
+import { LobbyClientError } from '@/application/game';
 import { Grid } from '@/ui/components/grid';
 import { Route as RootRoute } from './__root';
 
@@ -61,11 +63,44 @@ const statusStyles = css({
   color: 'accent',
 });
 
+// Multiplayer call-to-action — only mounted when
+// `VITE_FEATURE_MULTIPLAYER === 'true'` (ADR-0018 §10). Solid `leaf.700`
+// on `cream` for the brand primary; the disabled state dims to keep the
+// visual under the puzzle while the request is in flight.
+const createLobbyButtonStyles = css({
+  fontFamily: 'body',
+  fontSize: 'body',
+  fontWeight: 'bold',
+  color: 'cream',
+  bg: 'leaf.700',
+  paddingInline: 'lg',
+  paddingBlock: 'sm',
+  borderRadius: 'md',
+  border: 'none',
+  cursor: 'pointer',
+  _disabled: { opacity: 0.6, cursor: 'not-allowed' },
+  _hover: { bg: 'leaf.800' },
+});
+
+const createLobbyErrorStyles = css({
+  fontSize: 'body',
+  margin: 0,
+  color: 'blossom.700',
+});
+
 // Hard-coded UUID v7 for v1: the Grid API is stateless (per the §404
 // note in `grid/api/openapi.yaml`) — every well-formed id yields a
 // freshly generated puzzle. Replaced with a route param or a
 // client-minted UUID v7 once persistence lands.
 const DEFAULT_PUZZLE_ID = '0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6b';
+
+// Multiplayer feature flag (ADR-0018 §10). Read once per render — when
+// off, the CTA is not mounted at all and the solo flow above is the
+// only thing on `/`. Reading `import.meta.env` here keeps the seam
+// inside `ui/` (no `infrastructure/` import); tests stub it via
+// `vi.stubEnv('VITE_FEATURE_MULTIPLAYER', '...')`.
+const isMultiplayerEnabled = (): boolean =>
+  import.meta.env.VITE_FEATURE_MULTIPLAYER === 'true';
 
 function HomeShell({ children }: { children: React.ReactNode }) {
   return (
@@ -87,8 +122,80 @@ function HomePage() {
     <HomeShell>
       <p className={subtitleStyles}>{puzzle.title}</p>
       <Grid puzzle={puzzle} />
+      {isMultiplayerEnabled() ? <CreateLobbyButton /> : null}
     </HomeShell>
   );
+}
+
+// Self-contained multiplayer entry-point. Reads `lobbyClient` and
+// `getSession` from the route context (PR #140 plumbed both); on click,
+// mints a lobby and navigates to `/lobby/:lobbyId`. Failures map to the
+// same `LobbyClientError.kind` switch used by the lobby route's error
+// boundary so copy stays consistent across the multiplayer surface.
+function CreateLobbyButton() {
+  const navigate = useNavigate();
+  const ctx = Route.useRouteContext();
+  // Adapters are guaranteed present when the multiplayer flag is on:
+  // the composition root in `main.tsx` wires them in that branch only.
+  const lobbyClient = ctx.lobbyClient!;
+  const getSession = ctx.getSession!;
+  const [pending, setPending] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const handleClick = async () => {
+    setPending(true);
+    setErrorMessage(null);
+    try {
+      const { sessionId, pseudonym } = getSession();
+      const created = await lobbyClient.createLobby({
+        ownerSessionId: sessionId,
+        ownerPseudonym: pseudonym,
+      });
+      await navigate({ to: '/lobby/$lobbyId', params: { lobbyId: created.id } });
+    } catch (err) {
+      setErrorMessage(messageForError(err));
+      setPending(false);
+    }
+  };
+
+  return (
+    <>
+      <button
+        type="button"
+        className={createLobbyButtonStyles}
+        disabled={pending}
+        onClick={() => {
+          void handleClick();
+        }}
+      >
+        {pending ? 'Création…' : 'Créer une partie multijoueur'}
+      </button>
+      {errorMessage != null ? (
+        <p className={createLobbyErrorStyles} role="alert">
+          {errorMessage}
+        </p>
+      ) : null}
+    </>
+  );
+}
+
+// Mirrors the lobby route's `LobbyErrorComponent` (PR #140) so the user
+// sees consistent copy whether the failure happens at create-time on
+// `/` or at load-time on `/lobby/:id`. `not-found` is unreachable for
+// `createLobby` (the server never returns 404) but is included for
+// totality so future kinds light up the type-checker.
+function messageForError(err: unknown): string {
+  if (err instanceof LobbyClientError) {
+    switch (err.kind) {
+      case 'upstream-unavailable':
+        return 'Service indisponible. Réessayez dans un instant.';
+      case 'validation':
+      case 'transient':
+      case 'not-found':
+        return 'Une erreur est survenue. Réessayez.';
+    }
+  }
+  return 'Une erreur est survenue. Réessayez.';
 }
 
 const HomeStatus = ({ role, text }: { role: 'status' | 'alert'; text: string }) => (
