@@ -1,6 +1,6 @@
 # Game bounded-context WebSocket contract.
 #
-# Hand-written AsyncAPI 2.6 per ADR-0003 §1 (source of truth, not generated
+# Hand-written AsyncAPI 2.6 per ADR-0003 §5 (source of truth, not generated
 # from handler annotations). Wire conventions per ADR-0003 §6: UUID v7 ids,
 # ISO-8601 instants with offset, camelCase, RFC 7807 errors, string enums.
 #
