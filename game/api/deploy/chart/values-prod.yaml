@@ -1,6 +1,14 @@
 # Production overrides — Hetzner k3s cluster (ADR-0009 §2).
 # replicaCount is intentionally NOT overridden here. The deployment
 # template hard-codes replicas: 1 per ADR-0018 §3 (in-memory state).
+
+# Pin the K8s resource name to the release name so the CD workflow's
+# `kubectl rollout status deployment/wordsparrow-game-api` line resolves
+# without per-context name arithmetic. Without this, helm's default
+# fullname is `<release>-<chart>` = `wordsparrow-game-api-bliss-game-api`
+# (since the release name doesn't contain the chart name `bliss-game-api`).
+fullnameOverride: "wordsparrow-game-api"
+
 image:
   # Fail-fast guard: helm aborts if digest is empty (see _helpers.tpl).
   requireDigest: true
