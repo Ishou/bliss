@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted
+Accepted — Implemented 2026-05-02
 
 ## Context
 
@@ -295,3 +295,116 @@ seams that need new adapters.
   this ADR resolves.
 - **ADR-0009** — k3s on Hetzner deploy target; the `game-api` Helm
   chart is a single-replica clone of the `grid-api` chart shape.
+- **ADR-0019** — AsyncAPI 2.6 retained over 3.x; granted as an
+  exception during Wave A because Spectral's 3.0 ruleset was not
+  yet stable.
+- **ADR-0020** — `lobbyId` base58 nanoid (8 chars), formalising
+  the §5 deviation from ADR-0003 §6 once implementation confirmed
+  the trade-off held.
+- **ADR-0021** — `sessionId` UUID v7 generation, reaffirming §6.
+- **ADR-0022** — application-layer deviations from this ADR
+  documented during Wave C (PR #127).
+
+## Implementation
+
+This ADR was opened as `Proposed` in Wave A on 2026-05-02 and walked
+through the rollout in nine dispatch waves over the same day. All
+contributing PRs landed against `main` via the §6a review-and-fix
+cycle. Per ADR-0001 §9, the `git log` is the source of truth; this
+list is a navigational index, not an authority.
+
+### Wave A — schemas + ADR
+- **PR #121** — `docs(adr): adr-0018 multiplayer realtime architecture` (this ADR, original `Proposed` form).
+- **PR #122** — `feat(game-api): asyncapi 2.6 spec for lobby + game websocket events`.
+- **PR #123** — `feat(grid-api): accept width/height query params on GET /v1/puzzles/{id}`.
+
+### Wave B — domain types + frontend helpers
+- **PR #124** — `feat(frontend-grid): optional onCellChange callback on useGridNavigation` (supersedes the `gameClient` prop sketched in §8; see in-line update note).
+- **PR #125** — `feat(frontend-session): localStorage helper for sessionId + pseudonym`.
+- **PR #126** — `feat(game-domain): Lobby, Player, GameSession domain types`.
+
+### Wave C — application layer
+- **PR #127** — `feat(game-application): use cases + ports for lobby + game lifecycle`. Drift from §1's port list captured separately in **ADR-0022**.
+
+### Wave D — infra adapters + frontend domain port
+- **PR #130** — `feat(frontend-game): domain types + GameClient port`.
+- **PR #131** — `feat(game-infrastructure): in-memory LobbyRepository + per-lobby locks` (the `ConcurrentHashMap` + `ReentrantLock` shape from §3).
+- **PR #132** — `feat(game-infrastructure): HttpPuzzleProvider adapter for grid REST`.
+
+### Wave E — Ktor module skeleton + WebSocket client
+- **PR #133** — `feat(game-api): bootstrap ktor module with websockets plugin + health route`.
+- **PR #134** — `feat(frontend-game-infrastructure): websocket adapter for GameClient port` (the `WebSocketGameClient`).
+
+### Wave F — REST + WS endpoints + Helm chart
+- **PR #136** — `chore(game-api-chart): helm chart for game-api with replicas=1` (encodes the §3 single-replica constraint and the WS-friendly ingress annotation).
+- **PR #137** — `feat(game-api): rest endpoints for lobby create + get`.
+- **PR #138** — `feat(game-api): websocket endpoint + session manager + broadcaster`.
+
+### Wave G — `/lobby/:lobbyId` route
+- **PR #140** — `feat(frontend-game-ui): /lobby/:lobbyId route + GameClient context wiring`.
+
+### Wave H — UI components + integration
+- **PR #141** — `feat(frontend-grid): apply remote cellUpdated events to uncontrolled inputs`.
+- **PR #142** — `feat(frontend-game-ui): WaitingRoom component for lobby waiting state`.
+- **PR #143** — `feat(frontend-game-ui): connection-state banner component`.
+- **PR #144** — `feat(frontend-ui): create-lobby button on home route`.
+- **PR #145** — `feat(frontend-game-ui): live timer + end-of-game modal`.
+- **PR #146** — `feat(frontend-game-ui): wire Wave H components into /lobby/:lobbyId`.
+
+### Closure
+- **PR #147** — `feat(frontend): enable VITE_FEATURE_MULTIPLAYER in production` (the §10 flag flip; preview environments stay `false` because MSW handlers for the lobby surfaces are not yet written — a separate workstream).
+- **PR #148** — this closure update.
+
+### Tangential follow-ups landed during the workstream
+These were not on the wave dependency map but shipped during the
+rollout window because the work surfaced during review:
+- **PR #128** — `chore(skills): add dispatch playbook for parallel-agent rollouts`.
+- **PR #129** — `chore(skills): add frontend / schemas / jvm-backend domain playbooks`.
+- **PR #135** — `feat(game): support dual-clue mots-fleches cells across spec/domain/infra` (resolved a deferral from PR #132's review; touched spec + domain + infrastructure in one PR under an explicit user-approved exception to ADR-0001 §1).
+- **PR #139** — `feat(frontend-game-infrastructure): http lobby client + openapi codegen for game/` (split out of Wave E and landed once `game/api/openapi.yaml` was on `main` after PR #137).
+
+## Lessons learned
+
+These are the recurring failure modes and cross-cutting observations
+worth preserving for the next multi-wave rollout. They are bullets,
+not narrative: each should map to a concrete change in playbook,
+skill file, or CI rule.
+
+- **`settings.gradle.kts` ↔ `Dockerfile` `COPY <module>/build.gradle.kts` drift is a recurring failure mode.** Adding a new Gradle module without also adding the matching `COPY` line to the JVM Dockerfile reliably broke CI in Waves D, E, and F. Three independent agents hit it before the `/jvm-backend` skill grew a checklist item. Lesson: when an agent adds a Gradle subproject, the same PR must touch the Dockerfile, and the skill file must say so explicitly.
+- **Cross-PR port-shape changes during a parallel wave are dangerous.** PR #144's deploy went red because PR #143's port-shape change merged into `main` between #144's fork-point and CI's merge-commit `tsc -b`. Both PRs were green at fork time; the merge commit was where the type mismatch surfaced. Lesson: when a wave touches a shared port surface, freeze the port shape PR and let it merge first; do not parallelise PRs that change the same port's signature.
+- **PRs must be opened with `gh pr create` *before* polling CI.** PR #146's integration agent committed and pushed but never opened the PR; its CI poll loop waited for checks that would never run because GitHub does not run the full CI matrix on a branch absent a PR. Lesson: agent briefs must list `gh pr create` as an explicit step before any CI poll, and the dispatcher template should not mark a workstream "in CI" until the PR URL is recorded.
+- **Manual rebases happen and need a documented playbook.** PR #138 needed a manual rebase after #137 merged ahead, with three-file conflicts (`SystemClock`, `Module.kt`, `WebSocketFrameDto`). The rebase was straightforward but undocumented; a fixer agent without the prior context would have stalled. Lesson: when two PRs in the same wave touch overlapping module-level files, the second PR's brief should pre-declare the expected conflict surface.
+- **Investing in skill files mid-rollout paid off.** PRs #128 and #129 (the `dispatch`, `frontend`, `schemas`, and `jvm-backend` playbooks) landed mid-Wave-D and reduced per-agent prompt boilerplate by ~30–50% on subsequent waves while locking in repeated gotchas (the Dockerfile-COPY rule, the em-dash test-name rule, the boundaries plugin layering rules). Lesson: do not wait until a rollout ends to extract skill files; the second occurrence of a gotcha is the trigger to write the skill, not the tenth.
+- **Em-dashes in `@Test fun` names crash `compileTestKotlin` under POSIX-locale CI.** Three test files used Unicode em-dashes in backticked test names; locally they compiled, in CI they did not because the runner's `LC_ALL=C` cannot encode the bytes through `javac`'s source-file path. Lesson: ASCII-hyphen-only is now a hard rule in the `/jvm-backend` skill; lint or a pre-commit hook should enforce it rather than relying on agent memory.
+- **The 400-line cap is a tension worth documenting, not a rule to silently break.** Several PRs blew the cap as cohesive single-context work — notably #127, #132, #137, and #138 (the largest at 1,167 LOC). They were merged anyway because splitting would have produced PRs that referenced each other's unmerged code, which fails CI's "compiles independently" gate. The cap exists for review fatigue, and the user-approved exceptions were honest about that. Lesson: when a wave's scope provably cannot be cut under 400 lines without producing dependent fragments, the brief should pre-declare the exception and note the reviewer-fatigue cost rather than relying on an in-flight ad-hoc waiver.
+- **Pre-3.0 schema tooling sometimes requires its own ADR.** AsyncAPI 2.6 had to be granted an exception because Spectral's 3.0 ruleset was not yet stable; that exception is **ADR-0019**. Lesson: when a schema-first rollout depends on a spec version that lags upstream tooling, capture the version pin in its own short ADR — not as a footnote in the feature ADR — so the deferral has its own revisit trigger.
+
+## Open questions
+
+The §"Future work — multi-replica scale-out" question (sticky
+sessions + Redis vs Postgres event log + advisory locks) is unchanged
+and remains the next architectural decision when the single-replica
+ceiling is hit. Persisted accounts and spectator/replay also remain
+out of scope, deferred to their own future ADRs as originally noted.
+
+Surfaced during implementation:
+
+- **Reconnect-with-backoff in the WebSocket adapter is still stubbed.**
+  The `ConnectionBanner` component (PR #143) renders a `reconnecting`
+  state, but no logic in `WebSocketGameClient` (PR #134) emits that
+  state — the adapter currently closes and reopens on the next user
+  event without any backoff strategy. The 30-second reconnect window
+  in §5 is correctly enforced server-side; the gap is purely client
+  UX. A follow-up workstream should land a real backoff loop (e.g.
+  exponential with jitter, capped at the 30 s server window) and wire
+  it through the existing port surface so the banner reflects reality.
+- **Lobby creation is not rate-limited.** §7's threat-model bullet
+  acknowledged this as a v1 acceptance; no traffic data has yet
+  emerged that argues for a specific limit, but the gap is now live
+  in production and should be revisited once the flag has been
+  bright for a month.
+- **MSW handlers for the lobby REST and WebSocket surfaces do not
+  exist.** PR #147 keeps `VITE_FEATURE_MULTIPLAYER=false` in preview
+  environments specifically because the CTA would render and 500 in
+  any PR preview that uses MSW. Closing that gap is a frontend
+  workstream of its own.
