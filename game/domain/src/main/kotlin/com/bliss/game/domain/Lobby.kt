@@ -81,6 +81,11 @@ data class GameSession(
 /**
  * In-memory lobby aggregate. State machine: WAITING → IN_PROGRESS → COMPLETED.
  * `game` is null while WAITING and required otherwise (validated in [init]).
+ *
+ * [lastActivityAt] is bumped on every state-changing use case (create, join,
+ * rename, setGridConfig, startGame, updateCell, leave). It is consumed by the
+ * lobby garbage collector to evict abandoned WAITING lobbies and is purely
+ * server-side bookkeeping — not on the wire (see `game/api/openapi.yaml`).
  */
 data class Lobby(
     val id: LobbyId,
@@ -89,6 +94,7 @@ data class Lobby(
     val state: LobbyLifecycleState,
     val gridConfig: GridConfig,
     val game: GameSession?,
+    val lastActivityAt: Instant,
 ) {
     init {
         require(players.size <= MAX_PLAYERS) {
@@ -115,6 +121,9 @@ data class Lobby(
     fun isFull(): Boolean = players.size >= MAX_PLAYERS
 
     fun hasJoined(sessionId: SessionId): Boolean = players.containsKey(sessionId)
+
+    /** Returns a copy with [lastActivityAt] advanced to [now]. */
+    fun touched(now: Instant): Lobby = copy(lastActivityAt = now)
 
     companion object {
         const val MAX_PLAYERS = 8

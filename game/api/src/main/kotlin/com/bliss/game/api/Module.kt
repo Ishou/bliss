@@ -7,6 +7,7 @@ import com.bliss.game.api.routes.lobbyWebSocketRoute
 import com.bliss.game.application.usecases.CreateLobbyUseCase
 import com.bliss.game.application.usecases.JoinLobbyUseCase
 import com.bliss.game.application.usecases.LeaveLobbyUseCase
+import com.bliss.game.application.usecases.LobbyGarbageCollector
 import com.bliss.game.application.usecases.RenameSelfUseCase
 import com.bliss.game.application.usecases.SetGridConfigUseCase
 import com.bliss.game.application.usecases.StartGameUseCase
@@ -20,6 +21,7 @@ import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.Application
+import io.ktor.server.application.ApplicationStopped
 import io.ktor.server.application.install
 import io.ktor.server.plugins.calllogging.CallLogging
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
@@ -32,6 +34,7 @@ import io.ktor.server.websocket.pingPeriod
 import io.ktor.server.websocket.timeout
 import kotlinx.serialization.json.Json
 import org.slf4j.event.Level
+import java.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
 /**
@@ -151,13 +154,32 @@ fun Application.module() {
         LobbyUseCases(
             createLobby = CreateLobbyUseCase(lobbyRepository, SystemClock),
             joinLobby = JoinLobbyUseCase(lobbyRepository, SystemClock),
-            renameSelf = RenameSelfUseCase(lobbyRepository),
-            setGridConfig = SetGridConfigUseCase(lobbyRepository),
+            renameSelf = RenameSelfUseCase(lobbyRepository, SystemClock),
+            setGridConfig = SetGridConfigUseCase(lobbyRepository, SystemClock),
             startGame = StartGameUseCase(lobbyRepository, puzzleProvider, SystemClock),
             updateCell = UpdateCellUseCase(lobbyRepository, SystemClock),
-            leaveLobby = LeaveLobbyUseCase(lobbyRepository),
+            leaveLobby = LeaveLobbyUseCase(lobbyRepository, SystemClock),
         )
     val sessionManager = SessionManager()
+
+    // Lobby garbage collector — evicts WAITING lobbies idle for >30 minutes (ADR-0018 §3
+    // already promises this in `game/api/openapi.yaml`'s 404 description). Companion to the
+    // per-session idempotency in CreateLobbyUseCase: idempotency stops the click-to-spam
+    // path at the source; the GC mops up tab-close / network-drop / crash residue.
+    //
+    // 30 minutes is the right knob for a casual game: long enough that a player who tabs
+    // away to reply to a message can come back, short enough that abandoned lobbies do not
+    // accumulate over a play session. The 5-minute sweep cadence balances responsiveness
+    // against scan cost (O(n) over the in-memory map).
+    val gc =
+        LobbyGarbageCollector(
+            repo = lobbyRepository,
+            clock = SystemClock,
+            idleTtl = Duration.ofMinutes(30),
+            sweepInterval = Duration.ofMinutes(5),
+        )
+    val gcJob = gc.run(this)
+    monitor.subscribe(ApplicationStopped) { gcJob.cancel() }
 
     routing {
         health(APP_VERSION)

@@ -115,4 +115,12 @@ class LobbyTest {
         assertThat(l.hasJoined(sessionA)).isTrue()
         assertThat(l.hasJoined(sessionB)).isFalse()
     }
+
+    @Test
+    fun `touched returns a copy with the new lastActivityAt and otherwise-equal state`() {
+        val before = lobby(lastActivityAt = Fixtures.now)
+        val after = before.touched(Fixtures.later)
+        assertThat(after.lastActivityAt).isEqualTo(Fixtures.later)
+        assertThat(after.copy(lastActivityAt = before.lastActivityAt)).isEqualTo(before)
+    }
 }

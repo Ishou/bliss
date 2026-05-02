@@ -18,7 +18,20 @@ import com.bliss.game.domain.SessionId
 import java.time.Duration
 import java.time.Instant
 
-/** Bootstraps a new lobby in WAITING with the calling player as owner. */
+/**
+ * Bootstraps a new lobby in WAITING with the calling player as owner.
+ *
+ * Idempotent per [SessionId]: if the caller already owns a WAITING lobby, that
+ * lobby is returned with no event emitted (and no new lobby minted). This kills
+ * the trivial DOS / RAM-exhaustion path where a single user creates an unbounded
+ * number of lobbies by repeatedly hitting POST /v1/lobbies on the home screen.
+ *
+ * Note: the lookup-then-save sequence is not strictly atomic — two concurrent
+ * createLobby calls from the same sessionId may both miss the existing lobby and
+ * mint two. The window is microseconds and the GC sweep evicts the loser in at
+ * most one TTL period. A stricter "create-or-get" would require a per-session
+ * lock or a unique index in the eventual Postgres adapter; out of scope for v1.
+ */
 class CreateLobbyUseCase(
     private val repo: LobbyRepository,
     private val clock: Clock,
@@ -28,7 +41,11 @@ class CreateLobbyUseCase(
         ownerSessionId: SessionId,
         ownerPseudonym: Pseudonym,
     ): UseCaseResult<Lobby> {
-        val owner = Player(ownerSessionId, ownerPseudonym, clock.now())
+        repo.findWaitingByOwnerSession(ownerSessionId)?.let { existing ->
+            return UseCaseResult(existing, emptyList())
+        }
+        val now = clock.now()
+        val owner = Player(ownerSessionId, ownerPseudonym, now)
         val lobby =
             Lobby(
                 id = LobbyId.generate(),
@@ -37,6 +54,7 @@ class CreateLobbyUseCase(
                 state = LobbyLifecycleState.WAITING,
                 gridConfig = defaultGridConfig,
                 game = null,
+                lastActivityAt = now,
             )
         return UseCaseResult(repo.save(lobby), listOf(LobbyEvent.PlayerJoined(owner)))
     }
@@ -56,12 +74,14 @@ class JoinLobbyUseCase(
         val updated =
             repo.mutate(lobbyId) { lobby ->
                 when {
-                    lobby.hasJoined(sessionId) -> lobby
+                    // Reconnect path: bump lastActivityAt so an idle re-open keeps the lobby alive.
+                    lobby.hasJoined(sessionId) -> lobby.touched(clock.now())
                     lobby.isFull() -> lobby
                     else -> {
-                        val player = Player(sessionId, pseudonym, clock.now())
+                        val now = clock.now()
+                        val player = Player(sessionId, pseudonym, now)
                         emitted = LobbyEvent.PlayerJoined(player)
-                        lobby.copy(players = lobby.players + (sessionId to player))
+                        lobby.copy(players = lobby.players + (sessionId to player), lastActivityAt = now)
                     }
                 }
             } ?: return failure(UseCaseError.LobbyNotFound)
@@ -73,6 +93,7 @@ class JoinLobbyUseCase(
 /** Updates the caller's pseudonym; player must already be in the lobby. */
 class RenameSelfUseCase(
     private val repo: LobbyRepository,
+    private val clock: Clock,
 ) {
     suspend operator fun invoke(
         lobbyId: LobbyId,
@@ -86,7 +107,10 @@ class RenameSelfUseCase(
             repo.mutate(lobbyId) { lobby ->
                 val existing = lobby.players[sessionId] ?: return@mutate lobby
                 renamed = true
-                lobby.copy(players = lobby.players + (sessionId to existing.copy(pseudonym = newPseudonym)))
+                lobby.copy(
+                    players = lobby.players + (sessionId to existing.copy(pseudonym = newPseudonym)),
+                    lastActivityAt = clock.now(),
+                )
             } ?: return failure(UseCaseError.LobbyNotFound)
         // Player left between findById and mutate; mutator no-oped silently.
         if (!renamed) return failure(UseCaseError.PlayerNotInLobby)
@@ -97,6 +121,7 @@ class RenameSelfUseCase(
 /** Owner-only, WAITING-only: change the grid dimensions before Start. */
 class SetGridConfigUseCase(
     private val repo: LobbyRepository,
+    private val clock: Clock,
 ) {
     suspend operator fun invoke(
         lobbyId: LobbyId,
@@ -112,7 +137,7 @@ class SetGridConfigUseCase(
                 // Re-verify inside the lock: a concurrent startGame may have transitioned the lobby.
                 if (!lobby.isOwner(sessionId) || lobby.state != LobbyLifecycleState.WAITING) return@mutate lobby
                 changed = true
-                lobby.copy(gridConfig = config)
+                lobby.copy(gridConfig = config, lastActivityAt = clock.now())
             } ?: return failure(UseCaseError.LobbyNotFound)
         if (!changed) {
             return if (!updated.isOwner(sessionId)) failure(UseCaseError.NotOwner) else failure(UseCaseError.InvalidState)
@@ -142,9 +167,10 @@ class StartGameUseCase(
         val updated =
             repo.mutate(lobbyId) { lobby ->
                 if (!lobby.isOwner(sessionId) || lobby.state != LobbyLifecycleState.WAITING) return@mutate lobby
-                val s = GameSession(puzzle, emptyMap(), clock.now(), null)
+                val now = clock.now()
+                val s = GameSession(puzzle, emptyMap(), now, null)
                 session = s
-                lobby.copy(state = LobbyLifecycleState.IN_PROGRESS, game = s)
+                lobby.copy(state = LobbyLifecycleState.IN_PROGRESS, game = s, lastActivityAt = now)
             } ?: return failure(UseCaseError.LobbyNotFound)
         val started = session ?: return failure(UseCaseError.InvalidState)
         return success(updated, listOf(LobbyEvent.GameStarted(started)))
@@ -154,6 +180,7 @@ class StartGameUseCase(
 /** Removes the player; transfers ownership or closes the lobby when the owner leaves. */
 class LeaveLobbyUseCase(
     private val repo: LobbyRepository,
+    private val clock: Clock,
 ) {
     suspend operator fun invoke(
         lobbyId: LobbyId,
@@ -179,7 +206,7 @@ class LeaveLobbyUseCase(
                         } else {
                             lobby.ownerSessionId
                         }
-                    lobby.copy(players = liveRemaining, ownerSessionId = nextOwner)
+                    lobby.copy(players = liveRemaining, ownerSessionId = nextOwner, lastActivityAt = clock.now())
                 }
             }
         // Distinguish: null+!present = lobby not found; null+present = deleted; non-null+!present = not a member.
@@ -226,9 +253,9 @@ class UpdateCellUseCase(
                 if (nextSession.isSolved() && session.completedAt == null) {
                     val completed = nextSession.copy(completedAt = now)
                     solved = Duration.between(session.startedAt, now).toMillis() to entries
-                    lobby.copy(state = LobbyLifecycleState.COMPLETED, game = completed)
+                    lobby.copy(state = LobbyLifecycleState.COMPLETED, game = completed, lastActivityAt = now)
                 } else {
-                    lobby.copy(game = nextSession)
+                    lobby.copy(game = nextSession, lastActivityAt = now)
                 }
             } ?: return failure(UseCaseError.LobbyNotFound)
         // Validate post-conditions (writtenAt is null only if mutator short-circuited).

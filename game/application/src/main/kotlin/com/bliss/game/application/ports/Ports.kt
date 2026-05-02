@@ -3,6 +3,7 @@ package com.bliss.game.application.ports
 import com.bliss.game.domain.GamePuzzle
 import com.bliss.game.domain.Lobby
 import com.bliss.game.domain.LobbyId
+import com.bliss.game.domain.SessionId
 import java.time.Instant
 
 /**
@@ -28,6 +29,23 @@ interface LobbyRepository {
     ): Lobby?
 
     suspend fun delete(id: LobbyId)
+
+    /**
+     * Returns the WAITING lobby owned by [ownerSessionId] if one exists. Used by
+     * `CreateLobbyUseCase` for idempotency: a player who already owns a WAITING
+     * lobby gets that lobby back instead of minting a new one. Currently O(n) over
+     * the in-memory store — fine for v1 single-replica (ADR-0018 §3); a Postgres
+     * adapter can index `(owner_session_id, state)` if/when it lands.
+     */
+    suspend fun findWaitingByOwnerSession(ownerSessionId: SessionId): Lobby?
+
+    /**
+     * Returns WAITING lobbies whose [Lobby.lastActivityAt] is at or before [cutoff].
+     * Consumed by the lobby garbage collector to evict abandoned lobbies. Snapshot —
+     * callers must re-validate inside [mutate] (or [delete]) to avoid TOCTOU between
+     * the scan and the eviction.
+     */
+    suspend fun findIdleWaiting(cutoff: Instant): List<Lobby>
 }
 
 /**

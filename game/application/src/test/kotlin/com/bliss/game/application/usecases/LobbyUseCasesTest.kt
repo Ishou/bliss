@@ -5,6 +5,7 @@ import assertk.assertions.containsExactly
 import assertk.assertions.hasSize
 import assertk.assertions.isEqualTo
 import assertk.assertions.isInstanceOf
+import assertk.assertions.isNotEqualTo
 import assertk.assertions.isNotNull
 import assertk.assertions.isNull
 import com.bliss.game.application.ports.LobbyEvent
@@ -40,6 +41,47 @@ class LobbyUseCasesTest {
             assertThat(result.value.players.keys).isEqualTo(setOf(sessionA))
             assertThat(result.events).hasSize(1)
             assertThat(result.events[0]).isInstanceOf(LobbyEvent.PlayerJoined::class)
+        }
+
+    // Repro for the "infinite lobbies" DOS path: clicking "Create" repeatedly on the home
+    // screen used to mint a fresh in-memory Lobby on every call. With idempotency the second
+    // call returns the existing lobby and emits no event.
+    @Test
+    fun `CreateLobby is idempotent for an owner with an existing WAITING lobby`() =
+        runTest {
+            val h = harness()
+            val first = h.create(sessionA, alice)
+            h.clock.advance(Duration.ofSeconds(30))
+            val second = h.create(sessionA, alice)
+
+            assertThat(second.value.id).isEqualTo(first.value.id)
+            assertThat(second.events).hasSize(0)
+        }
+
+    // Once the owner's lobby leaves WAITING (game starts) the next create call mints a fresh
+    // lobby — owner is back in the matchmaking flow with their old game still IN_PROGRESS.
+    @Test
+    fun `CreateLobby mints a new lobby when the owner's previous lobby has left WAITING`() =
+        runTest {
+            val h = harness()
+            val first = h.create(sessionA, alice).value
+            h.start(first.id, sessionA).requireSuccess()
+            val second = h.create(sessionA, alice)
+
+            assertThat(second.value.id).isNotEqualTo(first.id)
+            assertThat(second.events).hasSize(1)
+        }
+
+    // A lobby owned by a different session is NOT returned by the idempotency path.
+    @Test
+    fun `CreateLobby mints a new lobby for a different owner even if other lobbies exist`() =
+        runTest {
+            val h = harness()
+            val a = h.create(sessionA, alice).value
+            val b = h.create(sessionB, bob)
+
+            assertThat(b.value.id).isNotEqualTo(a.id)
+            assertThat(b.value.ownerSessionId).isEqualTo(sessionB)
         }
 
     @Test
@@ -290,11 +332,11 @@ internal class Harness {
     val provider = FakePuzzleProvider(Samples.puzzle())
     val create = CreateLobbyUseCase(repo, clock)
     val join = JoinLobbyUseCase(repo, clock)
-    val rename = RenameSelfUseCase(repo)
-    val setConfig = SetGridConfigUseCase(repo)
+    val rename = RenameSelfUseCase(repo, clock)
+    val setConfig = SetGridConfigUseCase(repo, clock)
     val start = StartGameUseCase(repo, provider, clock)
     val update = UpdateCellUseCase(repo, clock)
-    val leave = LeaveLobbyUseCase(repo)
+    val leave = LeaveLobbyUseCase(repo, clock)
 
     suspend fun create(
         s: SessionId,

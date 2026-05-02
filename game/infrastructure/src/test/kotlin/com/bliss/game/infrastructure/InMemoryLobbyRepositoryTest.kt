@@ -1,6 +1,9 @@
 package com.bliss.game.infrastructure
 
 import assertk.assertThat
+import assertk.assertions.containsExactlyInAnyOrder
+import assertk.assertions.hasSize
+import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
 import assertk.assertions.isNotNull
 import assertk.assertions.isNull
@@ -29,14 +32,18 @@ class InMemoryLobbyRepositoryTest {
     private fun lobbyAt(
         id: LobbyId,
         joinedAt: Instant = baseInstant,
+        ownerSessionId: SessionId = sessionA,
+        state: LobbyLifecycleState = LobbyLifecycleState.WAITING,
+        lastActivityAt: Instant = joinedAt,
     ): Lobby =
         Lobby(
             id = id,
-            ownerSessionId = sessionA,
-            players = mapOf(sessionA to Player(sessionA, alice, joinedAt)),
-            state = LobbyLifecycleState.WAITING,
+            ownerSessionId = ownerSessionId,
+            players = mapOf(ownerSessionId to Player(ownerSessionId, alice, joinedAt)),
+            state = state,
             gridConfig = gridConfig,
             game = null,
+            lastActivityAt = lastActivityAt,
         )
 
     @Test
@@ -172,5 +179,67 @@ class InMemoryLobbyRepositoryTest {
                 // A follow-up mutate must report absence, not blow up on a stranded lock.
                 assertThat(repo.mutate(id) { it }).isNull()
             }
+        }
+
+    @Test
+    fun `findWaitingByOwnerSession returns the WAITING lobby owned by the session`() =
+        runTest {
+            val repo = InMemoryLobbyRepository()
+            val ownerLobby = lobbyAt(LobbyId.generate())
+            repo.save(ownerLobby)
+
+            val found = repo.findWaitingByOwnerSession(sessionA)
+
+            assertThat(found).isNotNull()
+            assertThat(found!!.id).isEqualTo(ownerLobby.id)
+        }
+
+    @Test
+    fun `findWaitingByOwnerSession returns null when the owner has no WAITING lobby`() =
+        runTest {
+            val repo = InMemoryLobbyRepository()
+
+            val found = repo.findWaitingByOwnerSession(sessionA)
+
+            assertThat(found).isNull()
+        }
+
+    @Test
+    fun `findWaitingByOwnerSession ignores lobbies owned by a different session`() =
+        runTest {
+            val repo = InMemoryLobbyRepository()
+            val otherSession = SessionId("0190e3b2-1c45-7d2e-9a3f-c0d1e2f3a4b5")
+            repo.save(lobbyAt(LobbyId.generate(), ownerSessionId = otherSession))
+
+            val found = repo.findWaitingByOwnerSession(sessionA)
+
+            assertThat(found).isNull()
+        }
+
+    @Test
+    fun `findIdleWaiting returns lobbies whose lastActivityAt is at or before cutoff`() =
+        runTest {
+            val repo = InMemoryLobbyRepository()
+            val stale = lobbyAt(LobbyId.generate(), lastActivityAt = baseInstant)
+            val fresh = lobbyAt(LobbyId.generate(), lastActivityAt = baseInstant.plusSeconds(3600))
+            repo.save(stale)
+            repo.save(fresh)
+
+            val cutoff = baseInstant.plusSeconds(60)
+            val idle = repo.findIdleWaiting(cutoff)
+
+            assertThat(idle).hasSize(1)
+            assertThat(idle.map { it.id }).containsExactlyInAnyOrder(stale.id)
+        }
+
+    @Test
+    fun `findIdleWaiting returns empty when no lobbies match the cutoff`() =
+        runTest {
+            val repo = InMemoryLobbyRepository()
+            repo.save(lobbyAt(LobbyId.generate(), lastActivityAt = baseInstant.plusSeconds(7200)))
+
+            val idle = repo.findIdleWaiting(baseInstant)
+
+            assertThat(idle).isEmpty()
         }
 }
