@@ -81,11 +81,15 @@ class RenameSelfUseCase(
     ): UseCaseOutcome<Lobby> {
         val before = repo.findById(lobbyId) ?: return failure(UseCaseError.LobbyNotFound)
         if (!before.hasJoined(sessionId)) return failure(UseCaseError.PlayerNotInLobby)
+        var renamed = false
         val updated =
             repo.mutate(lobbyId) { lobby ->
                 val existing = lobby.players[sessionId] ?: return@mutate lobby
+                renamed = true
                 lobby.copy(players = lobby.players + (sessionId to existing.copy(pseudonym = newPseudonym)))
             } ?: return failure(UseCaseError.LobbyNotFound)
+        // Player left between findById and mutate; mutator no-oped silently.
+        if (!renamed) return failure(UseCaseError.PlayerNotInLobby)
         return success(updated, listOf(LobbyEvent.PlayerRenamed(sessionId, newPseudonym)))
     }
 }
@@ -102,9 +106,17 @@ class SetGridConfigUseCase(
         val current = repo.findById(lobbyId) ?: return failure(UseCaseError.LobbyNotFound)
         if (!current.isOwner(sessionId)) return failure(UseCaseError.NotOwner)
         if (current.state != LobbyLifecycleState.WAITING) return failure(UseCaseError.InvalidState)
+        var changed = false
         val updated =
-            repo.mutate(lobbyId) { lobby -> lobby.copy(gridConfig = config) }
-                ?: return failure(UseCaseError.LobbyNotFound)
+            repo.mutate(lobbyId) { lobby ->
+                // Re-verify inside the lock: a concurrent startGame may have transitioned the lobby.
+                if (!lobby.isOwner(sessionId) || lobby.state != LobbyLifecycleState.WAITING) return@mutate lobby
+                changed = true
+                lobby.copy(gridConfig = config)
+            } ?: return failure(UseCaseError.LobbyNotFound)
+        if (!changed) {
+            return if (!updated.isOwner(sessionId)) failure(UseCaseError.NotOwner) else failure(UseCaseError.InvalidState)
+        }
         return success(updated, listOf(LobbyEvent.GridConfigChanged(config)))
     }
 }
@@ -122,14 +134,20 @@ class StartGameUseCase(
         val current = repo.findById(lobbyId) ?: return failure(UseCaseError.LobbyNotFound)
         if (!current.isOwner(sessionId)) return failure(UseCaseError.NotOwner)
         if (current.state != LobbyLifecycleState.WAITING) return failure(UseCaseError.InvalidState)
-        // Fetch outside the lock — IO must not stall other lobbies.
+        // Fetch outside the lock — IO must not stall other lobbies' mutators.
         val puzzle = puzzleProvider.fetch(current.gridConfig.width, current.gridConfig.height)
-        val session = GameSession(puzzle, emptyMap(), clock.now(), null)
+        // Session is created inside the mutator so startedAt is stamped under the lock and a
+        // concurrent double-tap cannot overwrite a live session with a second one.
+        var session: GameSession? = null
         val updated =
             repo.mutate(lobbyId) { lobby ->
-                lobby.copy(state = LobbyLifecycleState.IN_PROGRESS, game = session)
+                if (!lobby.isOwner(sessionId) || lobby.state != LobbyLifecycleState.WAITING) return@mutate lobby
+                val s = GameSession(puzzle, emptyMap(), clock.now(), null)
+                session = s
+                lobby.copy(state = LobbyLifecycleState.IN_PROGRESS, game = s)
             } ?: return failure(UseCaseError.LobbyNotFound)
-        return success(updated, listOf(LobbyEvent.GameStarted(session)))
+        val started = session ?: return failure(UseCaseError.InvalidState)
+        return success(updated, listOf(LobbyEvent.GameStarted(started)))
     }
 }
 
@@ -150,15 +168,18 @@ class LeaveLobbyUseCase(
             events += LobbyEvent.LobbyClosed("last player left")
             return success(null, events)
         }
-        val nextOwner =
-            if (before.isOwner(sessionId)) {
-                remaining.values.minBy { it.joinedAt }.sessionId
-            } else {
-                before.ownerSessionId
-            }
         val updated =
             repo.mutate(lobbyId) { lobby ->
-                lobby.copy(players = lobby.players - sessionId, ownerSessionId = nextOwner)
+                val liveRemaining = lobby.players - sessionId
+                // Compute nextOwner from the live snapshot inside the lock so a concurrent join/leave
+                // between findById and mutate cannot produce a ghost owner reference.
+                val nextOwner =
+                    if (lobby.isOwner(sessionId) && liveRemaining.isNotEmpty()) {
+                        liveRemaining.values.minBy { it.joinedAt }.sessionId
+                    } else {
+                        lobby.ownerSessionId
+                    }
+                lobby.copy(players = liveRemaining, ownerSessionId = nextOwner)
             } ?: return failure(UseCaseError.LobbyNotFound)
         return success(updated, events)
     }

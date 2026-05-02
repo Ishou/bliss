@@ -29,6 +29,11 @@ sealed interface LobbyEvent {
         val pseudonym: Pseudonym,
     ) : LobbyEvent
 
+    /**
+     * Wire mapping: the API layer re-broadcasts the full [LobbyState] snapshot (not a dedicated
+     * `gridConfigChanged` frame) so all clients converge on the new dimensions without a separate
+     * message type. No `gridConfigChanged` entry is needed in `asyncapi.yaml`.
+     */
     data class GridConfigChanged(
         val config: GridConfig,
     ) : LobbyEvent
@@ -49,6 +54,10 @@ sealed interface LobbyEvent {
         val finalEntries: Map<Position, CellEntry>,
     ) : LobbyEvent
 
+    /**
+     * Wire mapping: the API layer sends a WebSocket close frame (no `lobbyClosed` broadcast to
+     * remaining members — there are none). No `lobbyClosed` entry is needed in `asyncapi.yaml`.
+     */
     data class LobbyClosed(
         val reason: String,
     ) : LobbyEvent
