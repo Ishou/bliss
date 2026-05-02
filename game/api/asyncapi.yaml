@@ -14,7 +14,8 @@ info:
   description: |
     Real-time lobby + game events for the game/ bounded context.
     Resolves ADR-0006 §5's WebSocket defer; companion to game/api/openapi.yaml
-    (REST control plane). AsyncAPI 2.6; ADR-0018 records the exception to ADR-0003 §5.
+    (REST control plane). Decision rationale in ADR-0018; ADR-0019 records the
+    AsyncAPI 2.6 exception to ADR-0003 §5.
 
     Every frame is a JSON object with a top-level `type` discriminator
     (e.g. `"type": "cellUpdate"`). TypeScript and Kotlin codegen dispatch on
@@ -37,7 +38,7 @@ servers:
   production:
     url: game.wordsparrow.io
     protocol: wss
-    description: Placeholder host; canonical URL stabilizes when the game-api Helm chart lands (ADR-0017).
+    description: Placeholder host; canonical URL stabilizes when the game-api Helm chart lands (ADR-0018).
   local:
     url: localhost:8081
     protocol: ws
@@ -108,7 +109,7 @@ components:
     PlayerLeft:     { name: playerLeft,     title: Player left,                                                                                                                                    payload: { $ref: '#/components/schemas/PlayerLeftPayload' } }
     PlayerRenamed:  { name: playerRenamed,  title: Player renamed,                                                                                                                                 payload: { $ref: '#/components/schemas/PlayerRenamedPayload' } }
     GameStarted:    { name: gameStarted,    title: Game started,                       summary: Server fetched a puzzle and transitioned to IN_PROGRESS.,                                          payload: { $ref: '#/components/schemas/GameStartedPayload' } }
-    CellUpdated:    { name: cellUpdated,    title: Canonical cell update,              summary: Server-stamped broadcast of an accepted `cellUpdate`.,                                             payload: { $ref: '#/components/schemas/CellUpdatedPayload' },   description: Last-write-wins per ADR-0017; clients apply unconditionally. }
+    CellUpdated:    { name: cellUpdated,    title: Canonical cell update,              summary: Server-stamped broadcast of an accepted `cellUpdate`.,                                             payload: { $ref: '#/components/schemas/CellUpdatedPayload' },   description: Last-write-wins per ADR-0018; clients apply unconditionally. }
     GameSolved:     { name: gameSolved,     title: Game solved,                        summary: All cells match the canonical solution; lobby is COMPLETED.,                                       payload: { $ref: '#/components/schemas/GameSolvedPayload' } }
     Error:          { name: error,          title: Error frame,                        summary: RFC 7807 problem document for a rejected client frame.,                                            payload: { $ref: '#/components/schemas/ErrorPayload' },         description: Mirrors the REST error envelope. Closing the socket is at the server's discretion. }
 
@@ -140,7 +141,7 @@ components:
       type: string
       enum: [WAITING, IN_PROGRESS, COMPLETED]
       x-enum-varnames: [WAITING, IN_PROGRESS, COMPLETED]
-      description: Lobby lifecycle (ADR-0017).
+      description: Lobby lifecycle (ADR-0018).
     GridConfig:
       type: object
       required: [width, height]

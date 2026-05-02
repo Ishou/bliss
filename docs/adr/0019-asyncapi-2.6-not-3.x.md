@@ -1,4 +1,8 @@
-# ADR-0018: Game Bounded Context — AsyncAPI 2.6 Exception to ADR-0003 §5
+# ADR-0019: AsyncAPI 2.6, not 3.x, for the game/ context's WebSocket spec
+
+> Companion to ADR-0018 (game bounded context + realtime architecture).
+> ADR-0018 sets the strategic decisions; this ADR records a tactical
+> exception to ADR-0003 §5's AsyncAPI 3.0 baseline.
 
 ## Status
 
