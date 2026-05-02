@@ -21,6 +21,12 @@ COPY grid/api/build.gradle.kts grid/api/
 # never built into this image; copying its build script is enough to satisfy
 # the project-directory check.
 COPY grid/worker/build.gradle.kts grid/worker/
+# Same reason for the game/ bounded context — settings.gradle.kts includes
+# :game:domain (and future :game:* modules), so Gradle's configuration step
+# requires those project directories to exist before any task can run.
+# :grid:api:shadowJar has no dependency on game/, so the build script alone
+# is enough; src/ is intentionally not copied.
+COPY game/domain/build.gradle.kts game/domain/
 
 COPY grid/domain/src grid/domain/src
 COPY grid/application/src grid/application/src

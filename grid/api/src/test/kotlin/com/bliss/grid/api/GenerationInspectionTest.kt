@@ -64,7 +64,7 @@ class GenerationInspectionTest {
     }
 
     @Test
-    fun `cell counts add up — letter cells plus distinct clue positions equals grid area`() {
+    fun `cell counts add up - letter cells plus distinct clue positions equals grid area`() {
         val repo = CsvWordRepository.frenchFromClasspath()
         val generator = GridGenerator(repo)
         val mapper = GridToPuzzleMapper()

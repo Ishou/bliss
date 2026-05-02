@@ -116,7 +116,7 @@ class PuzzleRouteTest {
         }
 
     @Test
-    fun `consecutive GETs produce different cell layouts — randomness end-to-end`() =
+    fun `consecutive GETs produce different cell layouts - randomness end-to-end`() =
         testApplication {
             application { module() }
 
@@ -141,7 +141,7 @@ class PuzzleRouteTest {
         }
 
     @Test
-    fun `response body deserializes as PuzzleResponse — schema drift guard`() =
+    fun `response body deserializes as PuzzleResponse - schema drift guard`() =
         testApplication {
             application { module() }
             val body = client.get("/v1/puzzles/$validId").bodyAsText()
