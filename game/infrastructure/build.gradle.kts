@@ -9,8 +9,7 @@ kotlin {
 dependencies {
     implementation(project(":game:domain"))
     implementation(project(":game:application"))
-    // Adapters expose `suspend` functions so the use-case layer (and the future
-    // WebSocket layer in Wave F) can call them from coroutine context.
+    // suspend adapters need coroutines-core at runtime.
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.0")
     implementation("org.slf4j:slf4j-api:2.0.16")
 

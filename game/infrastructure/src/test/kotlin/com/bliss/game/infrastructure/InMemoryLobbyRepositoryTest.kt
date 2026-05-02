@@ -111,12 +111,7 @@ class InMemoryLobbyRepositoryTest {
             repo.delete(LobbyId.generate())
         }
 
-    /**
-     * 100 coroutines each advance the owner's [Player.joinedAt] by one second
-     * inside [InMemoryLobbyRepository.mutate]. Without a per-lobby lock, the
-     * read-modify-write pattern would lose updates and the final joinedAt
-     * would be earlier than baseInstant + 100s.
-     */
+    // Verifies no lost writes under concurrent read-modify-write.
     @Test
     fun `concurrent mutate increments do not lose updates`() =
         runBlocking {
@@ -151,11 +146,7 @@ class InMemoryLobbyRepositoryTest {
             assertThat(finalJoinedAt).isEqualTo(baseInstant.plusSeconds(iterations.toLong()))
         }
 
-    /**
-     * Race [InMemoryLobbyRepository.mutate] against [InMemoryLobbyRepository.delete].
-     * Whichever wins the lock, the post-condition is the same: store entry gone,
-     * any subsequent mutate returns null. No stranded state.
-     */
+    // Verifies no stranded state after mutate-vs-delete race, regardless of which wins the lock.
     @Test
     fun `mutate racing with delete leaves no stranded state`() =
         runBlocking {

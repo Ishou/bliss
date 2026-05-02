@@ -7,16 +7,7 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 
-/**
- * Process-local [LobbyRepository] backed by [ConcurrentHashMap]. Each lobby
- * gets its own [ReentrantLock]; [mutate] and [delete] run their critical
- * section under that lock so the use-case-layer TOCTOU guards introduced in
- * PR #127's review hold (decide-and-act inside the same lambda).
- *
- * This is the bootstrap adapter for `:game:infrastructure`. A Postgres-backed
- * implementation lands in a later Wave D PR; until then, lobby state is lost
- * on process restart, which is acceptable for the early multiplayer slices.
- */
+// In-memory adapter; state is lost on restart — acceptable until the Postgres adapter lands.
 class InMemoryLobbyRepository : LobbyRepository {
     private val store: ConcurrentHashMap<LobbyId, Lobby> = ConcurrentHashMap()
     private val locks: ConcurrentHashMap<LobbyId, ReentrantLock> = ConcurrentHashMap()

@@ -4,14 +4,6 @@ import com.lemonappdev.konsist.api.Konsist
 import com.lemonappdev.konsist.api.verify.assertFalse
 import org.junit.jupiter.api.Test
 
-/**
- * Wave D bootstrap rules for `:game:infrastructure`. The HTTP adapter
- * (Wave D PR #7 — HttpPuzzleProvider) and the Postgres adapter (later in
- * Wave D) will lift the Ktor and JDBC bans respectively in their own PRs;
- * until then this module ships a single in-memory adapter and stays free
- * of framework code. Mirrors `:grid:domain` and `:game:application`'s
- * Konsist style.
- */
 class InfrastructureArchitectureTest {
     private val infrastructureScope = Konsist.scopeFromModule("game/infrastructure")
 
