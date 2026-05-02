@@ -20,8 +20,19 @@ ingress:
   # Issuer + external-dns provider installed by cluster bring-up (ADR-0009 §3).
   # WebSocket-specific annotations (proxy-read-timeout, http/1.1) live
   # inline in templates/ingress.yaml — they are not env-specific.
+  #
+  # `external-dns.alpha.kubernetes.io/target` pins the public Hetzner
+  # floating IP (ADR-0012) instead of letting external-dns read the
+  # ClusterIP from `status.loadBalancer.ingress[*].ip` — the
+  # ingress-nginx Service's ClusterIP would land in Cloudflare as a
+  # reserved-range A record (Cloudflare flags it "DNS only - reserved
+  # IP"), which Let's Encrypt can't reach for HTTP-01 validation. The
+  # grid Ingress avoids this by historical luck (its A record was
+  # written before this misconfig surfaced); pinning is the explicit
+  # cure.
   annotations:
     cert-manager.io/cluster-issuer: "letsencrypt-prod"
     external-dns.alpha.kubernetes.io/hostname: "game.wordsparrow.io"
+    external-dns.alpha.kubernetes.io/target: "178.105.38.131"
 # Bootstrapped via `kubectl create secret generic bliss-game-api-env ...` (ADR-0009 §10).
 envFromSecret: "bliss-game-api-env"
