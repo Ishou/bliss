@@ -172,6 +172,17 @@ zero regression risk for solo play. `Grid.tsx` is extended to accept
 an optional `gameClient` prop; solo mode passes `undefined` and the
 existing uncontrolled-input path (ADR-0002 §4) is unchanged.
 
+> **Update (2026-05-02):** Wave B (PR #124) superseded the `gameClient`
+> prop with `onCellChange?: (row: number, col: number, letter: string | null) => void`
+> on `Grid.tsx`. The callback decouples the Grid component from any
+> transport object — the parent owns the WebSocket client and decides
+> what to do with each cell change — which aligns with the hexagonal
+> architecture principle that UI components must not hold infrastructure
+> references. Solo mode passes no callback (`undefined`), leaving the
+> uncontrolled-input path unchanged. The `gameClient` design was
+> superseded before any implementation used it. Wave H wires
+> `onCellChange` to the WebSocket `cellUpdate` broadcast.
+
 ### 9. Schemas first
 
 Per ADR-0006 §spec-first, the contract precedes the implementation:
