@@ -14,7 +14,7 @@ import org.slf4j.LoggerFactory
 import java.time.Instant
 import java.util.UUID
 
-// API-boundary guard: valid range for ?width / ?height. Source of truth; openapi.yaml mirrors these.
+// Mirrors minimum/maximum from PuzzleWidth/PuzzleHeight in openapi.yaml; keep in sync manually.
 internal const val PUZZLE_MIN_DIMENSION: Int = 5
 internal const val PUZZLE_MAX_DIMENSION: Int = 15
 
