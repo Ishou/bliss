@@ -24,6 +24,20 @@ import type {
 
 export type Unsubscribe = () => void;
 
+// Lifecycle of the underlying transport from the UI's point of view.
+// Wave H PR #17's `ConnectionBanner` renders French copy keyed off this
+// union: `connecting` while the socket is opening, `connected` once
+// `onopen` has fired, `disconnected` after a non-clean close, and
+// `reconnecting` while a retry attempt is in flight. The adapter is
+// the single source of truth — components never derive state from
+// `WebSocket.readyState` directly (that would re-introduce an
+// `infrastructure/` import in the `ui/` layer per ADR-0002 §7).
+export type ConnectionState =
+  | 'connecting'
+  | 'connected'
+  | 'disconnected'
+  | 'reconnecting';
+
 export interface GameClient {
   // Open the WebSocket. Resolves once the socket is OPEN. The handshake
   // payload (sessionId + pseudonym) is sent inside the `joinLobby` frame,
@@ -58,6 +72,11 @@ export interface GameClient {
   // Server→client event stream. Returns an `Unsubscribe` that detaches
   // the handler. Multiple subscribers are supported.
   subscribe(handler: (event: GameEvent) => void): Unsubscribe;
+
+  // Transport-lifecycle stream. The handler is invoked synchronously
+  // with the current state on subscribe so a freshly-mounted banner
+  // never flashes stale chrome. Multiple subscribers are supported.
+  subscribeConnectionState(handler: (state: ConnectionState) => void): Unsubscribe;
 }
 
 // ----- Server→client event union (AsyncAPI subscribe operation) -----

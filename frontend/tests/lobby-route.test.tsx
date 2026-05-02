@@ -63,6 +63,11 @@ const makeFakeGameClient = (): FakeGameClient => {
     leaveLobby: () => {},
     disconnect: () => { disconnectCalls.count += 1; },
     subscribe: (handler) => { subscribers.add(handler); return () => { subscribers.delete(handler); }; },
+    // No-op for the fake — the lobby-route tests don't assert on
+    // connection state. The real adapter's lifecycle is covered in
+    // tests/websocket-game-client.test.ts; the banner component is
+    // covered in tests/connection-banner.test.tsx.
+    subscribeConnectionState: () => () => {},
   };
 };
 

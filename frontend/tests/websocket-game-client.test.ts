@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createWebSocketGameClient } from '@/infrastructure';
-import type { GameEvent } from '@/application/game';
+import type { ConnectionState, GameEvent } from '@/application/game';
 import type { Letter, LobbyId, Pseudonym, SessionId } from '@/domain/game';
 
 // Mock socket exposing the structural surface the adapter consumes
@@ -175,6 +175,52 @@ describe('WebSocketGameClient.subscribe', () => {
 
     expect(events).toHaveLength(0);
     expect(warn).toHaveBeenCalledWith(expect.stringContaining('futureMessage'));
+  });
+});
+
+describe('WebSocketGameClient.subscribeConnectionState', () => {
+  it('primes the handler with the current state and emits transitions', async () => {
+    const client = makeClient();
+    const states: ConnectionState[] = [];
+    const unsub = client.subscribeConnectionState((s) => states.push(s));
+    // Synchronous priming call — a freshly-mounted banner gets the
+    // current state before any transition fires.
+    expect(states).toEqual(['disconnected']);
+
+    const connected = client.connect({ lobbyId, sessionId, pseudonym });
+    expect(states).toEqual(['disconnected', 'connecting']);
+    const ws = MockWebSocket.instances[0]!;
+    ws.emitOpen();
+    await connected;
+    expect(states).toEqual(['disconnected', 'connecting', 'connected']);
+
+    ws.close(1006, 'abnormal');
+    expect(states).toEqual([
+      'disconnected', 'connecting', 'connected', 'disconnected',
+    ]);
+    unsub();
+  });
+
+  it('returns an Unsubscribe that detaches the handler', async () => {
+    const { client, ws } = await connectAndOpen();
+    const states: ConnectionState[] = [];
+    const unsub = client.subscribeConnectionState((s) => states.push(s));
+    states.length = 0; // discard the priming call
+    unsub();
+    ws.close(1000);
+    expect(states).toEqual([]);
+  });
+
+  it('does not re-emit when the state has not actually changed', () => {
+    const client = makeClient();
+    const states: ConnectionState[] = [];
+    client.subscribeConnectionState((s) => states.push(s));
+    states.length = 0;
+    // `disconnect()` on a never-connected client is a no-op (covered
+    // elsewhere); state stays `disconnected` so subscribers must
+    // not see a duplicate emission.
+    client.disconnect();
+    expect(states).toEqual([]);
   });
 });
 
