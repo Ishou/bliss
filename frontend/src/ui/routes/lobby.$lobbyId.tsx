@@ -180,6 +180,22 @@ function LobbyPage() {
     () => (gamePuzzle ? gamePuzzleToPuzzle(gamePuzzle) : null),
     [gamePuzzle],
   );
+  // Stable reference for `Grid.initialEntries`: only re-computed when the
+  // domain `entries` array reference changes (i.e. on `lobbyState` after
+  // reconnect or on the loader's REST snapshot). The reducer already
+  // leaves `gameSession` untouched on `cellUpdated` (those go straight to
+  // the DOM through `subscribeToRemoteCellUpdates`), so the array stays
+  // stable across keystrokes and a player's local typing is not wiped on
+  // every re-render.
+  const initialEntries = useMemo(
+    () =>
+      lobby.game?.entries.map((e) => ({
+        row: e.row,
+        column: e.column,
+        letter: e.letter,
+      })) ?? [],
+    [lobby.game?.entries],
+  );
 
   return (
     <>
@@ -214,6 +230,7 @@ function LobbyPage() {
               puzzle={gridPuzzle}
               onCellChange={handleCellChange}
               subscribeToRemoteCellUpdates={subscribeToRemoteCellUpdates}
+              initialEntries={initialEntries}
             />
           </div>
         ) : null}
@@ -231,6 +248,7 @@ function LobbyPage() {
               <Grid
                 puzzle={gridPuzzle}
                 subscribeToRemoteCellUpdates={subscribeToRemoteCellUpdates}
+                initialEntries={initialEntries}
               />
             ) : null}
           </div>
@@ -301,8 +319,12 @@ function applyEvent(current: LobbyView, event: GameEvent): LobbyView {
         lobby: {
           ...current.lobby,
           state: 'IN_PROGRESS',
+          // Fresh game = no entries yet. The list grows as `cellUpdated`
+          // frames arrive (and any reconnect-time `lobbyState` snapshot
+          // carries the authoritative server-side set).
           game: {
             puzzle: event.puzzle,
+            entries: [],
             startedAt: event.startedAt,
             completedAt: null,
           },

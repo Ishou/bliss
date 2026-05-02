@@ -74,14 +74,27 @@ const positionKey = (p: Position) => `${p.row},${p.col}`;
 // this prop and the entire mechanism — including the `useEffect` below
 // — is dormant. The `Unsubscribe` return contract matches
 // `GameClient.subscribe` in `@/application/game`.
+//
+// `initialEntries`: optional list of `{row, column, letter}` triples to
+// pre-fill into the matching uncontrolled <input>s on mount. Drives the
+// refresh-during-IN_PROGRESS rehydration: the route reads
+// `lobby.game.entries` from the REST snapshot (or from a `lobbyState`
+// WebSocket frame) and hands the list here. Applied through the same
+// imperative `applyRemoteCellUpdate` path the live `cellUpdated` stream
+// uses, so the same DOM-write contract holds (no `onCellChange` fire,
+// no focus / direction churn). Re-applied whenever the array reference
+// changes — pass a stable reference (`useMemo`-ed at the call site) to
+// avoid wiping a player's local typing on every re-render.
 export function Grid({
   puzzle,
   onCellChange,
   subscribeToRemoteCellUpdates,
+  initialEntries,
 }: {
   puzzle: Puzzle;
   onCellChange?: (row: number, col: number, letter: string | null) => void;
   subscribeToRemoteCellUpdates?: (handler: (event: GameEvent) => void) => Unsubscribe;
+  initialEntries?: ReadonlyArray<{ row: number; column: number; letter: string }>;
 }) {
   const cellByPosition = useMemo(() => {
     const m = new Map<string, Cell>();
@@ -114,6 +127,23 @@ export function Grid({
     });
     return unsubscribe;
   }, [subscribeToRemoteCellUpdates, applyRemoteCellUpdate]);
+
+  // Initial-entries rehydration. Replays each entry through the same
+  // `applyRemoteCellUpdate` path a live `cellUpdated` frame would take,
+  // so the contract is identical: writes go straight to `el.value`
+  // (uncontrolled per ADR-0002 §4), no `onCellChange` fires (would echo
+  // back to the server), no focus or direction change. This effect runs
+  // after `registerCellRef` callbacks have populated the refs map (refs
+  // attach during render-commit; the effect runs after commit, so the
+  // map is ready). Re-runs only when the entries array reference changes
+  // — a stable reference at the call site keeps a player's mid-typing
+  // letters from being overwritten on every parent re-render.
+  useEffect(() => {
+    if (!initialEntries || initialEntries.length === 0) return;
+    for (const entry of initialEntries) {
+      applyRemoteCellUpdate(entry.row, entry.column, entry.letter);
+    }
+  }, [initialEntries, applyRemoteCellUpdate]);
 
   const rows: { row: number; cells: (Cell | null)[] }[] = [];
   for (let row = 0; row < puzzle.height; row++) {
