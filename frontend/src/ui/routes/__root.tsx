@@ -7,10 +7,13 @@ import type { Pseudonym, SessionId } from '@/domain/game';
 // Router context surface — every route loader receives this object as
 // `ctx.context`. The composition root (`main.tsx`) is the only place
 // that wires concrete adapters, keeping `ui/` free of `infrastructure/`
-// imports (ADR-0002 §7). Wave G adds `lobbyClient` (REST bootstrap for
-// the lobby route's loader), `gameClient` (WebSocket lifecycle the
-// route owns on mount/unmount), and a `getSession` accessor that hides
-// the localStorage adapter behind a function reference.
+// imports (ADR-0002 §7).
+//
+// Multiplayer adapters (`lobbyClient`, `gameClient`, `getSession`) are
+// optional: they are only present when the runtime feature flag
+// (ADR-0018 §10) enables the lobby route. Routes that consume them are
+// only registered when the flag is on, so they may safely assert
+// non-null at the call site.
 export interface AppSession {
   readonly sessionId: SessionId;
   readonly pseudonym: Pseudonym;
@@ -18,9 +21,9 @@ export interface AppSession {
 
 export interface AppRouterContext {
   readonly puzzleRepository: PuzzleRepository;
-  readonly lobbyClient: LobbyClient;
-  readonly gameClient: GameClient;
-  readonly getSession: () => AppSession;
+  readonly lobbyClient?: LobbyClient;
+  readonly gameClient?: GameClient;
+  readonly getSession?: () => AppSession;
 }
 
 const errorPageStyles = css({

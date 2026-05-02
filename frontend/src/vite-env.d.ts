@@ -21,6 +21,15 @@ interface ImportMetaEnv {
    * String, not boolean — Vite injects env vars verbatim.
    */
   readonly VITE_USE_MOCK_API: 'true' | 'false';
+  /**
+   * Multiplayer feature flag (ADR-0018 §10). When `'true'`, the
+   * `/lobby/:lobbyId` route is registered and the lobby/game adapters
+   * are instantiated. Defaults to `'false'` in every environment;
+   * production flips to `'true'` only after the `game-api` Helm chart
+   * is live. Expires no later than 90 days after first enablement
+   * (MANIFESTO: expired flags fail CI).
+   */
+  readonly VITE_FEATURE_MULTIPLAYER: 'true' | 'false';
 }
 interface ImportMeta {
   readonly env: ImportMetaEnv;

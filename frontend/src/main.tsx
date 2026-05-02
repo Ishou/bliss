@@ -59,26 +59,31 @@ enableMocks()
     const puzzleRepository = createHttpPuzzleRepository({
       baseUrl: import.meta.env.VITE_GRID_API_URL,
     });
-    const gameApiBaseUrl = import.meta.env.VITE_GAME_API_BASE_URL;
-    const lobbyClient = createHttpLobbyClient({ baseUrl: gameApiBaseUrl });
-    // WebSocket URL derives from the same host: swap the http(s) scheme
-    // for ws(s). Keeps a single env var across the two adapters.
-    const wsBaseUrl = gameApiBaseUrl.replace(/^http/, 'ws');
-    const gameClient = createWebSocketGameClient({ wsBaseUrl });
-    // `getSession` is a thin closure over the localStorage helpers —
-    // routes call it inside an effect so the read happens client-side
-    // (the helpers gracefully fall back to in-memory under SSR / private
-    // mode). Branding is asserted at this single seam.
-    const getSession = () => ({
-      sessionId: getOrCreateSessionId() as SessionId,
-      pseudonym: getPseudonym() as Pseudonym,
-    });
-    const router = createAppRouter({
-      puzzleRepository,
-      lobbyClient,
-      gameClient,
-      getSession,
-    });
+    // ADR-0018 §10 — multiplayer ships dark. The lobby route, its
+    // adapters, and the session accessor are only instantiated when
+    // the runtime flag is on. Production flips this to `'true'` after
+    // the game-api Helm chart is live and the smoke tests pass; the
+    // flag expires no later than 2026-08-02 per .env.
+    const multiplayer = import.meta.env.VITE_FEATURE_MULTIPLAYER === 'true';
+    const context = multiplayer
+      ? (() => {
+          const gameApiBaseUrl = import.meta.env.VITE_GAME_API_BASE_URL;
+          const lobbyClient = createHttpLobbyClient({ baseUrl: gameApiBaseUrl });
+          // WebSocket URL derives from the same host: swap http(s) for
+          // ws(s) so a single env var configures both adapters.
+          const wsBaseUrl = gameApiBaseUrl.replace(/^http/, 'ws');
+          const gameClient = createWebSocketGameClient({ wsBaseUrl });
+          // `getSession` is a thin closure over the localStorage helpers
+          // so routes don't pull `infrastructure/` into `ui/` directly.
+          // Branding is asserted at this single seam.
+          const getSession = () => ({
+            sessionId: getOrCreateSessionId() as SessionId,
+            pseudonym: getPseudonym() as Pseudonym,
+          });
+          return { puzzleRepository, lobbyClient, gameClient, getSession };
+        })()
+      : { puzzleRepository };
+    const router = createAppRouter({ context, multiplayer });
 
     createRoot(container).render(
       <StrictMode>

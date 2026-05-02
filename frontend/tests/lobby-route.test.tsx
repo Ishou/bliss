@@ -8,11 +8,11 @@ import { Route as RootRoute } from '@/ui/routes/__root';
 import { Route as IndexRoute } from '@/ui/routes/index';
 import { Route as LobbyRoute } from '@/ui/routes/lobby.$lobbyId';
 
-// Wave G PR #15 — `/lobby/:lobbyId` route. Covers loader happy path,
-// loader 404, WS connect-on-mount + disconnect-on-unmount, and the
-// player-count rendering. Adapter classes are not mocked: the route
-// consumes the *port* (`GameClient`/`LobbyClient`), so the test stands
-// up the simplest in-memory fakes that satisfy the interface.
+// `/lobby/:lobbyId` route tests. Covers loader happy path, loader 404,
+// WS connect-on-mount + disconnect-on-unmount, and player-count
+// rendering. Adapter classes are not mocked: the route consumes the
+// *port* (`GameClient`/`LobbyClient`), so the test stands up the
+// simplest in-memory fakes that satisfy the interface.
 
 const sessionId = '0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6b' as SessionId;
 const pseudonym = 'Joueur 1234' as Pseudonym;
