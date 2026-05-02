@@ -17,6 +17,8 @@ class GamePuzzleTest {
         val p =
             GamePuzzle(
                 id = id,
+                title = "Mini",
+                language = "en",
                 width = 1,
                 height = 1,
                 cells = listOf(LetterCell(Position(0, 0), Letter('A'))),
@@ -29,28 +31,28 @@ class GamePuzzleTest {
     @Test
     fun `GamePuzzle rejects width 0`() {
         assertFailure {
-            GamePuzzle(id, 0, 1, emptyList(), emptyList(), createdAt)
+            GamePuzzle(id, "T", "en", 0, 1, emptyList(), emptyList(), createdAt)
         }.messageContains("width")
     }
 
     @Test
     fun `GamePuzzle rejects width above 50`() {
         assertFailure {
-            GamePuzzle(id, 51, 1, emptyList(), emptyList(), createdAt)
+            GamePuzzle(id, "T", "en", 51, 1, emptyList(), emptyList(), createdAt)
         }.messageContains("width")
     }
 
     @Test
     fun `GamePuzzle rejects height 0`() {
         assertFailure {
-            GamePuzzle(id, 1, 0, emptyList(), emptyList(), createdAt)
+            GamePuzzle(id, "T", "en", 1, 0, emptyList(), emptyList(), createdAt)
         }.messageContains("height")
     }
 
     @Test
     fun `GamePuzzle rejects height above 50`() {
         assertFailure {
-            GamePuzzle(id, 1, 51, emptyList(), emptyList(), createdAt)
+            GamePuzzle(id, "T", "en", 1, 51, emptyList(), emptyList(), createdAt)
         }.messageContains("height")
     }
 
@@ -59,6 +61,8 @@ class GamePuzzleTest {
         assertFailure {
             GamePuzzle(
                 id,
+                title = "T",
+                language = "en",
                 width = 5,
                 height = 5,
                 cells = listOf(LetterCell(Position(0, 5), Letter('A'))),
@@ -73,6 +77,8 @@ class GamePuzzleTest {
         assertFailure {
             GamePuzzle(
                 id,
+                title = "T",
+                language = "en",
                 width = 5,
                 height = 5,
                 cells =
@@ -84,5 +90,44 @@ class GamePuzzleTest {
                 createdAt = createdAt,
             )
         }.messageContains("Duplicate")
+    }
+
+    @Test
+    fun `GamePuzzle rejects blank title`() {
+        assertFailure {
+            GamePuzzle(id, "  ", "en", 1, 1, emptyList(), emptyList(), createdAt)
+        }.messageContains("title")
+    }
+
+    @Test
+    fun `GamePuzzle rejects title longer than 200 chars`() {
+        assertFailure {
+            GamePuzzle(id, "x".repeat(201), "en", 1, 1, emptyList(), emptyList(), createdAt)
+        }.messageContains("title")
+    }
+
+    @Test
+    fun `GamePuzzle accepts title of exactly 200 chars`() {
+        val p = GamePuzzle(id, "x".repeat(200), "en", 1, 1, emptyList(), emptyList(), createdAt)
+        assertThat(p.title.length).isEqualTo(200)
+    }
+
+    @Test
+    fun `GamePuzzle accepts valid BCP-47 language tags`() {
+        // simple 2-letter
+        assertThat(
+            GamePuzzle(id, "T", "fr", 1, 1, emptyList(), emptyList(), createdAt).language,
+        ).isEqualTo("fr")
+        // with subtag
+        assertThat(
+            GamePuzzle(id, "T", "zh-Hant", 1, 1, emptyList(), emptyList(), createdAt).language,
+        ).isEqualTo("zh-Hant")
+    }
+
+    @Test
+    fun `GamePuzzle rejects invalid language tag`() {
+        assertFailure {
+            GamePuzzle(id, "T", "not-valid!!", 1, 1, emptyList(), emptyList(), createdAt)
+        }.messageContains("language")
     }
 }

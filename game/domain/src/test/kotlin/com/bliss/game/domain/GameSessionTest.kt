@@ -25,6 +25,8 @@ class GameSessionTest {
         val noAnswerPuzzle =
             GamePuzzle(
                 id = UUID.randomUUID(),
+                title = "Empty",
+                language = "en",
                 width = 5,
                 height = 5,
                 cells = listOf(BlockCell(Position(0, 0))),

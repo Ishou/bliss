@@ -22,6 +22,8 @@ internal object Fixtures {
     fun puzzle(): GamePuzzle =
         GamePuzzle(
             id = UUID.fromString("0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6c"),
+            title = "Petite grille du mardi",
+            language = "fr",
             width = 5,
             height = 5,
             cells =
