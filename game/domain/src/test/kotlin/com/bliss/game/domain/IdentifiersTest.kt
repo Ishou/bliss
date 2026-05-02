@@ -101,7 +101,7 @@ class IdentifiersTest {
             checkAll(PropTestConfig(iterations = 200), Arb.string(0..40)) { raw ->
                 val trimmed = raw.trim()
                 if (trimmed.isEmpty() || trimmed.length > 32) {
-                    runCatching { Pseudonym.of(raw) }.isFailure
+                    assertFailure { Pseudonym.of(raw) }
                 } else {
                     val p = Pseudonym.of(raw)
                     assertThat(p.value).isEqualTo(trimmed)
