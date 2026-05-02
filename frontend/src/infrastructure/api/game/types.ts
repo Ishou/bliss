@@ -166,8 +166,13 @@ export interface components {
          */
         GameCellKind: "letter" | "definition" | "block";
         /**
-         * @description Answer cell. `letter` is uppercase A-Z when pre-filled or `null` for
-         *     blank — both are explicit on the wire (`null` and absence are distinct).
+         * @description Player-fillable answer cell. The `letter` slot exists for the pre-filled
+         *     / placeholder use case; in v1 the server ALWAYS emits `null` here. The
+         *     canonical solution is domain-private until the puzzle is solved (see the
+         *     AsyncAPI `gameSolved.finalEntries` payload); player input is broadcast
+         *     over the WebSocket via `cellUpdated`. Sending the answer here would
+         *     render every grid pre-solved on the client. Mirrors `GameLetterCell` in
+         *     `game/api/asyncapi.yaml`; keep in sync.
          */
         GameLetterCell: {
             /**
@@ -176,7 +181,7 @@ export interface components {
              */
             kind: "letter";
             position: components["schemas"]["GamePosition"];
-            /** @description Pre-filled uppercase letter; `null` means blank. */
+            /** @description Always `null` in v1. The slot is reserved for a future pre-filled / replay use case. */
             letter: string | null;
         };
         /**

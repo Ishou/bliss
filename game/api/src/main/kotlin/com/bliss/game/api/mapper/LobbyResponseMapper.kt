@@ -71,7 +71,13 @@ private fun GamePuzzle.toDto() =
 
 private fun GameCell.toDto(): GameCellDto =
     when (this) {
-        is LetterCell -> GameCellDto.Letter(position.toDto(), answer?.value?.toString())
+        // Wire `letter` is the BLANK / pre-filled-input slot, NOT the canonical
+        // answer. Puzzle answers are domain-private until `gameSolved` (see the
+        // ADR-0018 echo in `WebSocketFrameDto.kt` for `finalEntries`); leaking
+        // them in `gameStarted.puzzle.cells[*].letter` would render the grid
+        // pre-solved on the client. Player input flows back via `cellUpdated`
+        // events keyed by sessionId, never via this projection.
+        is LetterCell -> GameCellDto.Letter(position.toDto(), letter = null)
         is DefinitionCell -> GameCellDto.Definition(position.toDto(), clues.map { it.toDto() })
         is BlockCell -> GameCellDto.Block(position.toDto())
     }

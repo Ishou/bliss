@@ -167,12 +167,14 @@ function LobbyPage() {
   }, []);
 
   // `GamePuzzle` (game/) ↔ `Puzzle` (puzzle/) shapes diverge on three
-  // axes: `Position.column` vs `.col`, `LetterCell.letter` vs `.entry`,
-  // and `DefinitionCell.text/arrow/clueId` vs `.clues[1|2]`. Mapping at
-  // the route boundary keeps `domain/` faithful to each context's wire
-  // shape while letting the existing `Grid` consume the multiplayer
-  // puzzle. Memoized on the puzzle ref so a steady-state render does
-  // not rebuild the cell array.
+  // axes: `Position.column` vs `.col`, the wire's `LetterCell.letter`
+  // (server blank/pre-fill slot — distinct from the player's `entry`,
+  // which always starts empty), and `GameDefinitionCell.clues[1|2]` vs
+  // the UI's `clues: [DefinitionClue]|[DefinitionClue, DefinitionClue]`
+  // tuple. Mapping at the route boundary keeps `domain/` faithful to
+  // each context's wire shape while letting the existing `Grid` consume
+  // the multiplayer puzzle. Memoized on the puzzle ref so a steady-state
+  // render does not rebuild the cell array.
   const gamePuzzle = lobby.game?.puzzle ?? null;
   const gridPuzzle = useMemo<Puzzle | null>(
     () => (gamePuzzle ? gamePuzzleToPuzzle(gamePuzzle) : null),
@@ -349,14 +351,17 @@ function gameCellToCell(cell: GameCell): Cell {
   const position = { row: cell.position.row, col: cell.position.column };
   switch (cell.kind) {
     case 'letter':
-      return {
-        kind: 'letter',
-        position,
-        // `entry` mirrors what the player has typed; on first paint of a
-        // freshly-started game the server-supplied `letter` is null
-        // because no one has typed anything yet, so we pass `''`.
-        entry: cell.letter ?? '',
-      };
+      // `entry` is the player's local input — ALWAYS empty on first paint
+      // of a freshly-started game. The wire's `letter` field is the
+      // server's blank/pre-fill slot, NOT the canonical solution: per
+      // game/api/asyncapi.yaml `GameLetterCell`, the server sends `null`
+      // here in v1 precisely because the answer is domain-private until
+      // `gameSolved` (otherwise the grid would render pre-solved on every
+      // client). Routing `letter` into `entry` here was the original bug
+      // — keep this defensive even if a future server starts sending a
+      // pre-filled hint, because that hint is still NOT the player's own
+      // input.
+      return { kind: 'letter', position, entry: '' };
     case 'definition':
       return definitionCellToCell(cell, position);
     case 'block':
@@ -364,15 +369,34 @@ function gameCellToCell(cell: GameCell): Cell {
   }
 }
 
+// `GameDefinitionCell` carries 1 or 2 clues per game/api/asyncapi.yaml's
+// `clues` array (mots-fléchés corner-cell idiom: an across clue and a down
+// clue stacked at the same position). The UI `DefinitionCell` accepts either
+// shape via its `[clue]` / `[clue, clue]` tuple, so we pass the wire order
+// straight through; the renderer in `Cell.tsx` re-orders for visual layout
+// (mixed-origin pairs put the right-origin clue on top) without touching
+// domain order — see ADR-0005 §3a.
 function definitionCellToCell(
   cell: GameDefinitionCell,
   position: { row: number; col: number },
 ): Cell {
-  const clue: DefinitionClue = {
-    text: cell.text,
-    arrow: gameArrowToArrow(cell.arrow),
+  if (cell.clues.length === 0) {
+    // Spec violation (asyncapi minItems: 1) — guard against malformed wire
+    // data so we degrade to an inert block instead of crashing the grid.
+    return { kind: 'block', position };
+  }
+  const first: DefinitionClue = {
+    text: cell.clues[0].text,
+    arrow: gameArrowToArrow(cell.clues[0].arrow),
   };
-  return { kind: 'definition', position, clues: [clue] };
+  if (cell.clues.length === 1) {
+    return { kind: 'definition', position, clues: [first] };
+  }
+  const second: DefinitionClue = {
+    text: cell.clues[1].text,
+    arrow: gameArrowToArrow(cell.clues[1].arrow),
+  };
+  return { kind: 'definition', position, clues: [first, second] };
 }
 
 // `GameArrowDirection` and `ArrowDirection` happen to enumerate the

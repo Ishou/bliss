@@ -54,16 +54,33 @@ export interface CellEntry {
 export type GameArrowDirection = 'right' | 'down' | 'down-right' | 'right-down';
 export type GameClueDirection = 'across' | 'down';
 
+// `letter` is the placeholder / pre-fill slot on the wire. Per
+// game/api/asyncapi.yaml `GameLetterCell`, the server ALWAYS emits `null`
+// here in v1: the canonical solution is domain-private until `gameSolved`
+// (otherwise the grid would render pre-solved on every client). Player
+// input is broadcast separately via `cellUpdated` events. The field is
+// kept in the type for forward-compat with a future pre-filled / replay
+// use case but the route-local adapter MUST NOT route it into the UI's
+// `entry` field — see `lobby.$lobbyId.tsx` for the conversion.
 export interface GameLetterCell {
   readonly kind: 'letter';
   readonly position: Position;
   readonly letter: Letter | null;
 }
 
+// 1 or 2 clues per cell — matches `GameDefinitionCell` in
+// `game/api/asyncapi.yaml`. The 2-clue case is the mots-fléchés
+// corner-cell idiom (an across clue and a down clue stacked at the
+// same position). Mirrors the backend domain shape in
+// `game/domain/.../GameCell.kt`.
 export interface GameDefinitionCell {
   readonly kind: 'definition';
   readonly position: Position;
-  readonly clueId: string;
+  readonly clues: readonly GameDefinitionCellClue[];
+}
+
+export interface GameDefinitionCellClue {
+  readonly id: string;
   readonly text: string;
   readonly arrow: GameArrowDirection;
 }
