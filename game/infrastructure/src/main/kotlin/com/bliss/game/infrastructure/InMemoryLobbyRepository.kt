@@ -51,10 +51,7 @@ class InMemoryLobbyRepository : LobbyRepository {
     override suspend fun delete(id: LobbyId) {
         lockFor(id).withLock {
             store.remove(id)
+            locks.remove(id)
         }
-        // Drop the lock entry only after the critical section above releases.
-        // Concurrent callers that observed this lock instance will block on it
-        // and then see store[id] == null, which is the correct deleted state.
-        locks.remove(id)
     }
 }
