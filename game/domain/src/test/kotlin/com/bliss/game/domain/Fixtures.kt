@@ -30,7 +30,7 @@ internal object Fixtures {
                     LetterCell(Position(0, 3), Letter('P')),
                     LetterCell(Position(0, 4), Letter('A')),
                 ),
-            clues = null,
+            clues = emptyList(),
             createdAt = now,
         )
 

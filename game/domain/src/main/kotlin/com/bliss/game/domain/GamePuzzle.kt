@@ -13,7 +13,7 @@ data class GamePuzzle(
     val width: Int,
     val height: Int,
     val cells: List<GameCell>,
-    val clues: List<GameClue>?,
+    val clues: List<GameClue>,
     val createdAt: Instant,
 ) {
     init {

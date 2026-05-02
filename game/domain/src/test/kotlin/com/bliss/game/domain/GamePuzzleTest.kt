@@ -20,7 +20,7 @@ class GamePuzzleTest {
                 width = 1,
                 height = 1,
                 cells = listOf(LetterCell(Position(0, 0), Letter('A'))),
-                clues = null,
+                clues = emptyList(),
                 createdAt = createdAt,
             )
         assertThat(p.width).isEqualTo(1)
@@ -29,28 +29,28 @@ class GamePuzzleTest {
     @Test
     fun `GamePuzzle rejects width 0`() {
         assertFailure {
-            GamePuzzle(id, 0, 1, emptyList(), null, createdAt)
+            GamePuzzle(id, 0, 1, emptyList(), emptyList(), createdAt)
         }.messageContains("width")
     }
 
     @Test
     fun `GamePuzzle rejects width above 50`() {
         assertFailure {
-            GamePuzzle(id, 51, 1, emptyList(), null, createdAt)
+            GamePuzzle(id, 51, 1, emptyList(), emptyList(), createdAt)
         }.messageContains("width")
     }
 
     @Test
     fun `GamePuzzle rejects height 0`() {
         assertFailure {
-            GamePuzzle(id, 1, 0, emptyList(), null, createdAt)
+            GamePuzzle(id, 1, 0, emptyList(), emptyList(), createdAt)
         }.messageContains("height")
     }
 
     @Test
     fun `GamePuzzle rejects height above 50`() {
         assertFailure {
-            GamePuzzle(id, 1, 51, emptyList(), null, createdAt)
+            GamePuzzle(id, 1, 51, emptyList(), emptyList(), createdAt)
         }.messageContains("height")
     }
 
@@ -62,7 +62,7 @@ class GamePuzzleTest {
                 width = 5,
                 height = 5,
                 cells = listOf(LetterCell(Position(0, 5), Letter('A'))),
-                clues = null,
+                clues = emptyList(),
                 createdAt = createdAt,
             )
         }.messageContains("out of bounds")
@@ -80,7 +80,7 @@ class GamePuzzleTest {
                         LetterCell(Position(0, 0), Letter('A')),
                         BlockCell(Position(0, 0)),
                     ),
-                clues = null,
+                clues = emptyList(),
                 createdAt = createdAt,
             )
         }.messageContains("Duplicate")
