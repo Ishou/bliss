@@ -1,19 +1,22 @@
 // MSW request handlers for Cloudflare Pages preview deploys.
 //
 // Per ADR-0007 §5 and ADR-0009 §7, per-PR previews stay frontend-only:
-// the real Grid API runs only on `main`, so previews would otherwise
-// either point at production (data-leak risk + noise on real metrics)
-// or 404. These handlers intercept every Grid API call in the browser
-// and replay the spec's `examples/` payloads — exactly the contract
-// the real server will satisfy once consumed end-to-end. Reviewers
-// see real shapes; production never gets touched by preview traffic.
+// the real Grid and Game APIs run only on `main`, so previews would
+// otherwise either point at production (data-leak risk + noise on real
+// metrics) or 404. These handlers intercept every Grid REST call, every
+// Game REST call, and every Game WebSocket connection in the browser
+// and replay the spec's contract — exactly the surface the real servers
+// will satisfy once consumed end-to-end. Reviewers see real shapes;
+// production never gets touched by preview traffic.
 //
-// The fixture is sourced from `grid/api/examples/get-puzzle-200.json`
+// The grid fixture is sourced from `grid/api/examples/get-puzzle-200.json`
 // via the `virtual:grid-api-examples/*` Vite plugin (see
-// `vite.config.ts`). That keeps the spec as the single source of
-// truth — there is no committed JSON copy in `frontend/` to drift
-// from the spec, and ADR-0003 §9's "replay the spec's examples"
-// pattern is honored verbatim.
+// `vite.config.ts`). The game/lobby surface is hand-built in
+// `handlers/game.ts` because the game/api spec doesn't ship `examples/`
+// payloads yet — the generated TS types are the contract, the WS frames
+// mirror `game/api/asyncapi.yaml`. ADR-0003 §9's "replay the spec's
+// examples" pattern is honored where examples exist; where they don't,
+// the wire shapes still match the spec byte-for-byte.
 //
 // This module is reached only from `main.tsx` and only when
 // `import.meta.env.VITE_USE_MOCK_API === 'true'` (preview builds). Vite
@@ -29,6 +32,8 @@ import type { components } from '@/infrastructure/api/grid/types';
 // `gridApiExamplesAsVirtualModule` plugin in `vite.config.ts`.
 import getPuzzleExample from 'virtual:grid-api-examples/get-puzzle-200';
 
+import { gameHandlers, gameWsHandler } from './handlers/game';
+
 type Puzzle = components['schemas']['Puzzle'];
 
 // The fixture is the spec example as JSON. Cast through `unknown`
@@ -42,7 +47,7 @@ const puzzleFixture = getPuzzleExample as unknown as Puzzle;
  * they match both `${VITE_GRID_API_URL}/v1/...` (preview's effective
  * URL) and any same-origin proxy a future ADR introduces.
  */
-export const handlers = [
+const gridHandlers = [
   http.get('*/v1/puzzles/:puzzleId', ({ params }) => {
     // Echo the requested id back so the round-trip looks realistic
     // (the spec example's hard-coded UUID would otherwise mismatch
@@ -51,3 +56,8 @@ export const handlers = [
     return HttpResponse.json({ ...puzzleFixture, id: puzzleId });
   }),
 ];
+
+// Order matters only for overlap, which we don't have: grid REST is
+// `/v1/puzzles/...`, game REST is `/v1/lobbies/...`, game WS is its own
+// dimension. The WS link handler is appended last by convention.
+export const handlers = [...gridHandlers, ...gameHandlers, gameWsHandler];

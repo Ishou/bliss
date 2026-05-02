@@ -1,0 +1,383 @@
+// MSW handlers for the game/ bounded context (lobby REST + lobby WS).
+// Mounted only in preview builds (`VITE_USE_MOCK_API=true`); the entire
+// `mocks/` tree tree-shakes out of production. Per ADR-0007 §5 these
+// handlers replay the spec contract so a reviewer can click "Créer une
+// partie", land on `/lobby/:id`, see the WaitingRoom, start a game,
+// type into the grid, and feel another player typing back.
+//
+// Wire shapes mirror `game/api/openapi.yaml` (REST) and
+// `game/api/asyncapi.yaml` (WebSocket) verbatim. Identifier formats per
+// ADR-0003 §6 and ADR-0020 (LobbyId is base58 nanoid, sessions are
+// UUID v7); errors are RFC 7807.
+
+import { http, HttpResponse, ws } from 'msw';
+
+import type { components } from '@/infrastructure/api/game/types';
+
+import {
+  BOT_PSEUDONYM,
+  BOT_SESSION_ID,
+  buildGameSession,
+  generateLobbyId,
+  getLobby,
+  putLobby,
+  updateLobby,
+  type Lobby,
+  type Player,
+} from './lobbyStore';
+
+type CreateLobbyRequest = components['schemas']['CreateLobbyRequest'];
+type Problem = components['schemas']['Problem'];
+
+// LobbyId per ADR-0020: 8 chars from the URL-safe base58 alphabet.
+const LOBBY_ID_PATTERN = /^[1-9A-HJ-NP-Za-km-z]{8}$/;
+
+// `*://*/...` glob so MSW intercepts whatever host the adapters use —
+// `wss://game.wordsparrow.io` in preview, `ws://localhost:8081` in dev.
+const lobbyWs = ws.link('*://*/v1/lobbies/:lobbyId/ws');
+
+// Bot cadence — random in 4–8 s so the demo feels alive without being
+// frantic. 3-s delay before join lets the reviewer see the empty
+// WaitingRoom first, then watch the bot pop in.
+const BOT_TICK_MIN_MS = 4_000;
+const BOT_TICK_MAX_MS = 8_000;
+const BOT_JOIN_DELAY_MS = 3_000;
+
+const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+const randomLetter = (): string =>
+  ALPHABET.charAt(Math.floor(Math.random() * ALPHABET.length));
+const nowIso = (): string => new Date().toISOString();
+
+function problem(status: number, type: string, title: string, detail: string): Response {
+  const body: Problem = { type, title, status, detail };
+  return HttpResponse.json(body, {
+    status,
+    headers: { 'content-type': 'application/problem+json' },
+  });
+}
+
+export const gameHandlers = [
+  // POST /v1/lobbies — owner creates a lobby; server mints LobbyId and
+  // returns the full resource. Persists in the in-memory store so the
+  // subsequent route loader's `GET /v1/lobbies/:id` resolves the body.
+  http.post('*/v1/lobbies', async ({ request }) => {
+    let body: CreateLobbyRequest;
+    try {
+      body = (await request.json()) as CreateLobbyRequest;
+    } catch {
+      return problem(
+        400,
+        'https://bliss.example/errors/invalid-lobby-create-request',
+        'Invalid request body',
+        'Body is not valid JSON.',
+      );
+    }
+    if (!body?.ownerSessionId || !body?.ownerPseudonym) {
+      return problem(
+        400,
+        'https://bliss.example/errors/invalid-lobby-create-request',
+        'Invalid request body',
+        '`ownerSessionId` and `ownerPseudonym` are required.',
+      );
+    }
+
+    const id = generateLobbyId();
+    const player: Player = {
+      sessionId: body.ownerSessionId,
+      pseudonym: body.ownerPseudonym,
+      joinedAt: nowIso(),
+    };
+    const lobby: Lobby = {
+      id,
+      ownerSessionId: body.ownerSessionId,
+      players: [player],
+      state: 'WAITING',
+      gridConfig: { width: 5, height: 5 },
+      // ADR-0003 §6: `game` is in `required`; `null` (still WAITING) is
+      // the explicit blank value, not absence.
+      game: null,
+    };
+    putLobby(lobby);
+
+    return HttpResponse.json(lobby, {
+      status: 201,
+      headers: { Location: `/v1/lobbies/${id}` },
+    });
+  }),
+
+  // GET /v1/lobbies/:lobbyId — replay the persisted lobby.
+  http.get('*/v1/lobbies/:lobbyId', ({ params }) => {
+    const lobbyId = String(params.lobbyId);
+    if (!LOBBY_ID_PATTERN.test(lobbyId)) {
+      return problem(
+        400,
+        'https://bliss.example/errors/invalid-lobby-id',
+        'Invalid lobbyId',
+        `\`${lobbyId}\` does not match the base58 nanoid pattern.`,
+      );
+    }
+    const lobby = getLobby(lobbyId);
+    if (!lobby) {
+      return problem(
+        404,
+        'https://bliss.example/errors/lobby-not-found',
+        'Lobby not found',
+        `No lobby with id ${lobbyId}.`,
+      );
+    }
+    return HttpResponse.json(lobby);
+  }),
+];
+
+// `addEventListener` returns the `WebSocketHandler` that `setupWorker`
+// expects in its handler array — capture and export it below.
+const lobbyWsHandler = lobbyWs.addEventListener('connection', ({ client, params }) => {
+  const lobbyId = String(params.lobbyId);
+  // Per-connection state. Closing the socket clears both timers so a
+  // reload does not leak setTimeout callbacks into the next session.
+  let joinTimer: ReturnType<typeof setTimeout> | null = null;
+  let tickTimer: ReturnType<typeof setTimeout> | null = null;
+  let botJoined = false;
+  // CellKey → latest letter, used for the relaxed "all cells filled"
+  // gameSolved trigger.
+  const cellEntries = new Map<string, string>();
+  const cellKey = (row: number, column: number): string => `${row},${column}`;
+
+  const sendSnapshot = (): void => {
+    const lobby = getLobby(lobbyId);
+    if (!lobby) return;
+    client.send(
+      JSON.stringify({
+        type: 'lobbyState',
+        players: lobby.players,
+        ownerSessionId: lobby.ownerSessionId,
+        state: lobby.state,
+        gridConfig: lobby.gridConfig,
+        game: lobby.game,
+      }),
+    );
+  };
+
+  const ensureBotJoined = (): void => {
+    if (botJoined) return;
+    const joinedAt = nowIso();
+    updateLobby(lobbyId, (current) =>
+      current.players.some((p) => p.sessionId === BOT_SESSION_ID)
+        ? current
+        : {
+            ...current,
+            players: [
+              ...current.players,
+              { sessionId: BOT_SESSION_ID, pseudonym: BOT_PSEUDONYM, joinedAt },
+            ],
+          },
+    );
+    botJoined = true;
+    client.send(
+      JSON.stringify({
+        type: 'playerJoined',
+        sessionId: BOT_SESSION_ID,
+        pseudonym: BOT_PSEUDONYM,
+        joinedAt,
+      }),
+    );
+  };
+
+  // Bot keystroke loop. Picks a random letter cell and emits a
+  // `cellUpdated` frame stamped as the bot. Reschedules itself so the
+  // cadence randomizes per beat. Halts when the lobby leaves IN_PROGRESS.
+  const scheduleBotTick = (): void => {
+    const delay =
+      BOT_TICK_MIN_MS + Math.floor(Math.random() * (BOT_TICK_MAX_MS - BOT_TICK_MIN_MS));
+    tickTimer = setTimeout(() => {
+      const lobby = getLobby(lobbyId);
+      if (!lobby || lobby.state !== 'IN_PROGRESS' || !lobby.game) return;
+      const letterCells = lobby.game.puzzle.cells.filter((c) => c.kind === 'letter');
+      if (letterCells.length === 0) return;
+      const target = letterCells[Math.floor(Math.random() * letterCells.length)]!;
+      client.send(
+        JSON.stringify({
+          type: 'cellUpdated',
+          sessionId: BOT_SESSION_ID,
+          row: target.position.row,
+          column: target.position.column,
+          letter: randomLetter(),
+          writtenAt: nowIso(),
+        }),
+      );
+      scheduleBotTick();
+    }, delay);
+  };
+
+  // Mock relaxation: emit `gameSolved` once every non-block cell holds
+  // any letter. The route consumes `durationMs` to freeze the timer
+  // and the modal; `finalEntries` is the cell list we just collected.
+  const maybeFireGameSolved = (): void => {
+    const lobby = getLobby(lobbyId);
+    if (!lobby || lobby.state !== 'IN_PROGRESS' || !lobby.game) return;
+    const letterCells = lobby.game.puzzle.cells.filter((c) => c.kind === 'letter');
+    if (letterCells.length === 0 || cellEntries.size < letterCells.length) return;
+    const durationMs = Date.now() - new Date(lobby.game.startedAt).getTime();
+    updateLobby(lobbyId, (current) => ({
+      ...current,
+      state: 'COMPLETED',
+      game: current.game ? { ...current.game, completedAt: nowIso() } : current.game,
+    }));
+    if (tickTimer) clearTimeout(tickTimer);
+    tickTimer = null;
+    client.send(
+      JSON.stringify({
+        type: 'gameSolved',
+        durationMs,
+        finalEntries: Array.from(cellEntries.entries()).map(([key, letter]) => {
+          const [row, column] = key.split(',').map(Number);
+          return { row: row!, column: column!, letter };
+        }),
+      }),
+    );
+  };
+
+  // 1. Initial snapshot (or close if the lobby vanished across a hot
+  //    reload — same as the real server's behavior).
+  if (!getLobby(lobbyId)) {
+    client.close(1011, 'lobby not found');
+    return;
+  }
+  sendSnapshot();
+
+  // 2. Schedule the bot's delayed join.
+  joinTimer = setTimeout(() => {
+    ensureBotJoined();
+    sendSnapshot();
+  }, BOT_JOIN_DELAY_MS);
+
+  // 3. Inbound message handler. Top-level `type` discriminates per
+  //    AsyncAPI; unknown frames are silently dropped (forward-compat).
+  client.addEventListener('message', (event) => {
+    const raw = typeof event.data === 'string' ? event.data : null;
+    if (!raw) return;
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      return;
+    }
+    if (!parsed || typeof parsed !== 'object' || !('type' in parsed)) return;
+    const type = (parsed as { type: unknown }).type;
+
+    switch (type) {
+      case 'joinLobby': {
+        const join = parsed as unknown as { sessionId: string; pseudonym: string };
+        const joinedAt = nowIso();
+        updateLobby(lobbyId, (current) =>
+          current.players.some((p) => p.sessionId === join.sessionId)
+            ? current
+            : {
+                ...current,
+                players: [
+                  ...current.players,
+                  { sessionId: join.sessionId, pseudonym: join.pseudonym, joinedAt },
+                ],
+              },
+        );
+        client.send(
+          JSON.stringify({
+            type: 'playerJoined',
+            sessionId: join.sessionId,
+            pseudonym: join.pseudonym,
+            joinedAt,
+          }),
+        );
+        return;
+      }
+
+      case 'setGridConfig': {
+        const cfg = parsed as unknown as { width: number; height: number };
+        updateLobby(lobbyId, (current) => ({
+          ...current,
+          gridConfig: { width: cfg.width, height: cfg.height },
+        }));
+        sendSnapshot();
+        return;
+      }
+
+      case 'startGame': {
+        const session = buildGameSession();
+        updateLobby(lobbyId, (current) => ({
+          ...current,
+          state: 'IN_PROGRESS',
+          game: session,
+        }));
+        client.send(
+          JSON.stringify({
+            type: 'gameStarted',
+            puzzle: session.puzzle,
+            startedAt: session.startedAt,
+          }),
+        );
+        scheduleBotTick();
+        return;
+      }
+
+      case 'cellUpdate': {
+        const upd = parsed as unknown as {
+          row: number;
+          column: number;
+          letter: string | null;
+        };
+        const ownerSessionId =
+          getLobby(lobbyId)?.ownerSessionId ?? '00000000-0000-0000-0000-000000000000';
+        // Echo via canonical broadcast — last-write-wins, server-stamped.
+        client.send(
+          JSON.stringify({
+            type: 'cellUpdated',
+            sessionId: ownerSessionId,
+            row: upd.row,
+            column: upd.column,
+            letter: upd.letter,
+            writtenAt: nowIso(),
+          }),
+        );
+        const key = cellKey(upd.row, upd.column);
+        if (upd.letter == null) cellEntries.delete(key);
+        else cellEntries.set(key, upd.letter);
+        maybeFireGameSolved();
+        return;
+      }
+
+      case 'renameSelf': {
+        const rn = parsed as unknown as { newPseudonym: string };
+        // No per-connection sessionId stash; fall back to owner — the
+        // most common rename target in a preview demo.
+        const ownerSessionId = getLobby(lobbyId)?.ownerSessionId;
+        if (!ownerSessionId) return;
+        updateLobby(lobbyId, (current) => ({
+          ...current,
+          players: current.players.map((p) =>
+            p.sessionId === ownerSessionId ? { ...p, pseudonym: rn.newPseudonym } : p,
+          ),
+        }));
+        client.send(
+          JSON.stringify({
+            type: 'playerRenamed',
+            sessionId: ownerSessionId,
+            newPseudonym: rn.newPseudonym,
+          }),
+        );
+        return;
+      }
+
+      case 'leaveLobby':
+      default:
+        return;
+    }
+  });
+
+  // 4. Cleanup on close — fires even on abnormal terminations.
+  client.addEventListener('close', () => {
+    if (joinTimer) clearTimeout(joinTimer);
+    if (tickTimer) clearTimeout(tickTimer);
+  });
+});
+
+export const gameWsHandler = lobbyWsHandler;
