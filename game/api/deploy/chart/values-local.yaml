@@ -1,0 +1,22 @@
+# Local overrides — k3d cluster (ADR-0009 §5, scripts/local-cluster.sh).
+# Divergences in docs/local-development.md "Divergences from prod".
+# replicaCount is hard-coded to 1 in the deployment template — not
+# overridable, see ADR-0018 §3.
+image:
+  # Documented divergence: local pulls by tag (or uses pre-loaded image).
+  digest: ""
+  tag: "0.1.0"
+  # Use Never so a locally-built `bliss-game-api:0.1.0` (loaded into k3d
+  # via `k3d image import`) wins over any GHCR pull attempt.
+  pullPolicy: Never
+# No limits locally — k3d node is small; JVM honours UseContainerSupport.
+resources: {}
+ingress:
+  # Matches /etc/hosts step in docs/local-development.md §3.
+  host: "localhost"
+  tlsSecretName: "bliss-game-api-tls"
+  # "selfsigned" issuer installed by cluster bring-up. No external-dns locally.
+  annotations:
+    cert-manager.io/cluster-issuer: "selfsigned"
+# Same recipe as prod, against the k3d context (ADR-0009 §10).
+envFromSecret: "bliss-game-api-env"

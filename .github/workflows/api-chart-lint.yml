@@ -1,8 +1,9 @@
 name: API Chart Lint
 
-# Tier-1 pre-merge gate for the grid-api Helm chart at
-# grid/api/deploy/chart/ — counterpart to helm-lint.yml (which lints the
-# infra/platform/ umbrella chart only). Catches:
+# Tier-1 pre-merge gate for per-context API Helm charts at
+# <context>/api/deploy/chart/ (currently grid/ and game/) — counterpart
+# to helm-lint.yml (which lints the infra/platform/ umbrella chart
+# only). Catches:
 #   - chart structure / template syntax bugs (`helm lint`),
 #   - render errors with both prod and local values (`helm template`),
 #   - rendered manifests that violate the Kubernetes API schema
@@ -14,18 +15,20 @@ name: API Chart Lint
 # deploy-api-k8s.yml; a future tier-3 PR can add an ephemeral k3d run
 # that exercises them pre-merge.
 #
-# Path filter: only fires when chart files or this workflow itself
-# change, so docs / frontend / non-chart PRs don't pay for it.
+# Path filter: only fires when any context's chart files (or this
+# workflow itself) change, so docs / frontend / non-chart PRs don't
+# pay for it. Glob covers grid/api/deploy/chart/** and
+# game/api/deploy/chart/** (Wave F PR #11).
 
 on:
   pull_request:
     paths:
-      - 'grid/api/deploy/chart/**'
+      - '*/api/deploy/chart/**'
       - '.github/workflows/api-chart-lint.yml'
   push:
     branches: [main]
     paths:
-      - 'grid/api/deploy/chart/**'
+      - '*/api/deploy/chart/**'
       - '.github/workflows/api-chart-lint.yml'
 
 concurrency:
@@ -37,8 +40,21 @@ permissions:
 
 jobs:
   lint:
-    name: helm lint + template + kubeconform
+    name: helm lint + template + kubeconform (${{ matrix.chart.release }})
     runs-on: ubuntu-latest
+    strategy:
+      # fail-fast: false so a green grid chart isn't masked by a red
+      # game chart (and vice versa) — devs see both signals at once.
+      fail-fast: false
+      matrix:
+        chart:
+          - path: grid/api/deploy/chart
+            release: wordsparrow-api
+          # game-api chart (Wave F PR #11). No CNPG resources — game/
+          # is in-memory v1 per ADR-0018 §3, so the prod values file's
+          # requireDigest gate is the only -set flag still needed.
+          - path: game/api/deploy/chart
+            release: bliss-game-api
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
@@ -67,14 +83,14 @@ jobs:
       # renders manifests, so the placeholder is harmless.
       - name: helm lint (prod values)
         run: |
-          helm lint grid/api/deploy/chart/ \
-            -f grid/api/deploy/chart/values-prod.yaml \
+          helm lint ${{ matrix.chart.path }}/ \
+            -f ${{ matrix.chart.path }}/values-prod.yaml \
             --set image.digest=sha256:0000000000000000000000000000000000000000000000000000000000000000
 
       - name: helm lint (local values)
         run: |
-          helm lint grid/api/deploy/chart/ \
-            -f grid/api/deploy/chart/values-local.yaml
+          helm lint ${{ matrix.chart.path }}/ \
+            -f ${{ matrix.chart.path }}/values-local.yaml
 
       # `kubeconform -strict` rejects unknown fields (catches typos like
       # `livenessProb:`). `-ignore-missing-schemas` skips CRD-backed
@@ -85,13 +101,13 @@ jobs:
       # Service, Ingress, ServiceAccount) are still strictly checked.
       - name: helm template + kubeconform (prod values)
         run: |
-          helm template wordsparrow-api grid/api/deploy/chart/ \
-            -f grid/api/deploy/chart/values-prod.yaml \
+          helm template ${{ matrix.chart.release }} ${{ matrix.chart.path }}/ \
+            -f ${{ matrix.chart.path }}/values-prod.yaml \
             --set image.digest=sha256:0000000000000000000000000000000000000000000000000000000000000000 \
           | kubeconform -strict -ignore-missing-schemas -summary -
 
       - name: helm template + kubeconform (local values)
         run: |
-          helm template wordsparrow-api grid/api/deploy/chart/ \
-            -f grid/api/deploy/chart/values-local.yaml \
+          helm template ${{ matrix.chart.release }} ${{ matrix.chart.path }}/ \
+            -f ${{ matrix.chart.path }}/values-local.yaml \
           | kubeconform -strict -ignore-missing-schemas -summary -

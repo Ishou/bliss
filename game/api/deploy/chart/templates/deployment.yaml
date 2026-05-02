@@ -1,0 +1,77 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "bliss-game-api.fullname" . }}
+  labels: {{- include "bliss-game-api.labels" . | nindent 4 }}
+spec:
+  # ADR-0018 §3: lobbies + GameSessions live in-memory in
+  # :game:infrastructure (InMemoryLobbyRepository, per-lobby locks).
+  # Scaling out shards state across pods — a player's WebSocket would
+  # land on a replica that has no record of their lobby. Hard-coded to
+  # 1 here (deliberately not exposed as a value) so a typo in an env
+  # values file cannot accidentally double-schedule. Bumping this is
+  # blocked until ADR-0018's "v2 — externalize state" follow-up lands.
+  replicas: 1
+  strategy:
+    # Recreate (not RollingUpdate): with in-memory state and replicas=1,
+    # the rolling overlap window would briefly run two pods, but the new
+    # pod has none of the old pod's lobbies. Recreate guarantees the old
+    # pod is fully gone before the new one starts — every active session
+    # gets a clean disconnect (vs a half-broken one mid-handshake).
+    # Trade-off: ~30 s of downtime per deploy. Acceptable for v1
+    # (dev-grade service, no SLO yet); revisit when ADR-0018 v2 lands.
+    type: Recreate
+  selector:
+    matchLabels: {{- include "bliss-game-api.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels: {{- include "bliss-game-api.selectorLabels" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ include "bliss-game-api.serviceAccountName" . }}
+      securityContext: {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      # Give in-flight WebSocket handshakes time to drain before SIGKILL.
+      # Ktor's graceful shutdown closes WS sessions with a 1001 "Going
+      # Away" frame; 30 s covers a slow client RTT + the application's
+      # final write of any pending lobby state.
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: api
+          image: {{ include "bliss-game-api.image" . | quote }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext: {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+          ports:
+            - {name: http, containerPort: {{ .Values.service.port }}, protocol: TCP}
+          {{- with .Values.env }}
+          env: {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.envFromSecret }}
+          envFrom:
+            - secretRef: {name: {{ . }}}
+          {{- end }}
+          # Game has no DB cold-start, but parity with grid/api keeps the
+          # 30 × 5 s = 150 s startup budget; trims later if pod boots
+          # consistently faster.
+          {{- with .Values.probes.startup }}
+          startupProbe:
+            httpGet: {path: {{ .path }}, port: http}
+            periodSeconds: {{ .periodSeconds | default 5 }}
+            failureThreshold: {{ .failureThreshold | default 30 }}
+          {{- end }}
+          livenessProbe:
+            httpGet: {path: {{ .Values.probes.liveness.path }}, port: http}
+            periodSeconds: {{ .Values.probes.liveness.periodSeconds | default 15 }}
+            timeoutSeconds: {{ .Values.probes.liveness.timeoutSeconds | default 5 }}
+            failureThreshold: {{ .Values.probes.liveness.failureThreshold | default 3 }}
+          readinessProbe:
+            httpGet: {path: {{ .Values.probes.readiness.path }}, port: http}
+            periodSeconds: {{ .Values.probes.readiness.periodSeconds | default 10 }}
+            timeoutSeconds: {{ .Values.probes.readiness.timeoutSeconds | default 3 }}
+            failureThreshold: {{ .Values.probes.readiness.failureThreshold | default 2 }}
+          {{- with .Values.resources }}
+          resources: {{- toYaml . | nindent 12 }}
+          {{- end }}
+          # readOnlyRootFilesystem requires a writable /tmp (JVM PerfData etc).
+          volumeMounts:
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - {name: tmp, emptyDir: {}}

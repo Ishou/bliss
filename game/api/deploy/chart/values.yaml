@@ -1,0 +1,80 @@
+# Shared defaults. Per-env files override what differs.
+image:
+  # GHCR image built by the sibling image-build pipeline.
+  repository: ghcr.io/ishou/bliss-game-api
+  # Required by manifesto ("pin to digest"). Empty -> tag fallback. Format "sha256:...".
+  digest: ""
+  # Pull reference when digest is empty (local-only divergence).
+  tag: "0.1.0"
+  pullPolicy: IfNotPresent
+  # Manifesto: container images pinned to digest. Local dev tolerates a
+  # mutable tag; prod must not. Overridden to true in values-prod.yaml so
+  # `helm install/upgrade` aborts when CD forgot to inject the digest.
+  requireDigest: false
+# ADR-0018 §3: lobbies + GameSessions live in-memory in :game:infrastructure
+# (InMemoryLobbyRepository). Scaling out would shard state across pods and
+# break players whose WebSocket lands on a replica that has no record of
+# their lobby. The deployment template hard-codes `replicas: 1` directly
+# (NOT read from a value here) so a typo in an env values file cannot
+# accidentally double-schedule. Where do I bump replicas? You don't,
+# until ADR-0018's "v2 — externalize state" follow-up lands.
+# Pod resources. Mirrors grid/api small-API sizing (game has no CSV
+# cold-start, so the request floor could be lower, but parity wins).
+resources:
+  requests: {cpu: 100m, memory: 256Mi}
+  limits: {cpu: 1000m, memory: 512Mi}
+service:
+  type: ClusterIP
+  # API listens on 8081 — game/api/src/main/kotlin/com/bliss/game/api/Main.kt:14.
+  # Grid owns 8080; both services co-exist on a single node without collision.
+  port: 8081
+ingress:
+  enabled: true
+  className: nginx
+  # REQUIRED per env (game.wordsparrow.io prod, localhost local).
+  host: ""
+  # Path prefix routed to this service. Mirrors grid's /grid pattern.
+  path: "/game"
+  # TLS Secret name created by cert-manager from the ingress annotation.
+  tlsSecretName: ""
+  # Env files set cert-manager and external-dns annotations here.
+  annotations: {}
+serviceAccount:
+  create: true
+  # Empty -> templated as <fullname>.
+  name: ""
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities: {drop: [ALL]}
+probes:
+  # Health endpoint — game/api/src/main/kotlin/com/bliss/game/api/routes/HealthRoute.kt.
+  liveness:
+    path: "/v1/health"
+    periodSeconds: 15
+    timeoutSeconds: 5
+    failureThreshold: 3
+  readiness:
+    path: "/v1/health"
+    periodSeconds: 10
+    timeoutSeconds: 3
+    failureThreshold: 2
+  # Game has no DB to wait for, so 30 × 5 s = 150 s startup budget is
+  # generous; kept at parity with grid for operational consistency.
+  startup:
+    path: "/v1/health"
+    periodSeconds: 5
+    failureThreshold: 30
+# Inline env vars. Prefer envFromSecret for anything sensitive.
+# OpenJDK default MaxRAMPercentage=25 → ~128 MB on 512Mi; 75% → ~384 MB heap.
+env:
+  - name: JAVA_TOOL_OPTIONS
+    value: "-XX:MaxRAMPercentage=75.0"
+# Name of a Kubernetes Secret to envFrom into the pod. ADR-0009 §10:
+# bootstrapped via `kubectl create secret`, never committed.
+envFromSecret: ""

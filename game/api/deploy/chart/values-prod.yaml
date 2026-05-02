@@ -1,0 +1,19 @@
+# Production overrides — Hetzner k3s cluster (ADR-0009 §2).
+# replicaCount is intentionally NOT overridden here. The deployment
+# template hard-codes replicas: 1 per ADR-0018 §3 (in-memory state).
+image:
+  # Fail-fast guard: helm aborts if digest is empty (see _helpers.tpl).
+  requireDigest: true
+  # Set by the CD workflow per push (ADR-0009 §8 step 5). Format "sha256:...".
+  digest: ""
+ingress:
+  host: "game.wordsparrow.io"
+  tlsSecretName: "bliss-game-api-tls"
+  # Issuer + external-dns provider installed by cluster bring-up (ADR-0009 §3).
+  # WebSocket-specific annotations (proxy-read-timeout, http/1.1) live
+  # inline in templates/ingress.yaml — they are not env-specific.
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    external-dns.alpha.kubernetes.io/hostname: "game.wordsparrow.io"
+# Bootstrapped via `kubectl create secret generic bliss-game-api-env ...` (ADR-0009 §10).
+envFromSecret: "bliss-game-api-env"
