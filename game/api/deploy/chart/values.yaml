@@ -1,7 +1,7 @@
 # Shared defaults. Per-env files override what differs.
 image:
   # GHCR image built by the sibling image-build pipeline.
-  repository: ghcr.io/ishou/bliss-game-api
+  repository: ghcr.io/ishou/bliss/wordsparrow-game-api
   # Required by manifesto ("pin to digest"). Empty -> tag fallback. Format "sha256:...".
   digest: ""
   # Pull reference when digest is empty (local-only divergence).
