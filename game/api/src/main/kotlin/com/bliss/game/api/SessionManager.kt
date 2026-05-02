@@ -103,7 +103,7 @@ class SessionManager(
             Json {
                 prettyPrint = false
                 ignoreUnknownKeys = true
-                explicitNulls = false
+                explicitNulls = true
                 classDiscriminator = "type"
             }
     }

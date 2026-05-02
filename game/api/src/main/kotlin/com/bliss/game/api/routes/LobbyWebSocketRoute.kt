@@ -32,7 +32,7 @@ private val ROUTE_JSON: Json =
     Json {
         prettyPrint = false
         ignoreUnknownKeys = true
-        explicitNulls = false
+        explicitNulls = true
         classDiscriminator = "type"
     }
 
@@ -194,12 +194,19 @@ private suspend fun DefaultWebSocketServerSession.handleFrame(
                     sendNotJoined()
                     return memberSessionId
                 }
+            val letter =
+                try {
+                    parsed.letter?.let { Letter(it.single()) }
+                } catch (_: Exception) {
+                    sendError("Invalid letter", "letter must be a single uppercase A-Z character or null")
+                    return memberSessionId
+                }
             dispatch(lobbyId, sessionManager) {
                 useCases.updateCell(
                     lobbyId,
                     SessionId(sid),
                     Position(parsed.row, parsed.column),
-                    parsed.letter?.let { Letter(it.single()) },
+                    letter,
                 )
             }
             memberSessionId
