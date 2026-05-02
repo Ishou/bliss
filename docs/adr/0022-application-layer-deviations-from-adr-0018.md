@@ -62,6 +62,22 @@ implementation is a single-line adapter with no infrastructure dependencies. Pro
 `game:infrastructure` would require a separate PR touching that module, which is disproportionate
 for a one-liner. Promote to `game:infrastructure` when a second consumer appears.
 
+### 5. Wave H PR #146 exceeds ADR-0001 §4 400-line cap
+
+ADR-0001 §4 sets a hard cap of 400 non-blank, non-generated lines per PR. Wave H PR #146
+(`feat/frontend-game-lobby-integration`) ships approximately 306 implementation + 249 test
+non-blank lines ≈ 555 non-blank total.
+
+**Rationale:** The natural split (route wiring | Wave H integration tests) was evaluated:
+each half is under the cap (~306 + ~249 non-blank LOC). However, the 8 new
+`describe('Lobby route Wave H integration', …)` test cases are the primary verification for
+the 8 new behaviors introduced in `lobby.$lobbyId.tsx` (rename, set-grid-config, start-game,
+clipboard copy, game-started transition, gameSolved modal, modal dismiss, cell-update
+forwarding). Splitting would land the implementation on `main` untested for the window
+between merging PR A and PR B, temporarily violating the TDD principle in `MANIFESTO.md`.
+Unlike ADR-0022 §3 (where neither Wave F half fit under the cap), here the split is
+mechanically viable; the justification is co-shipping of implementation and its covering tests.
+
 ## Consequences
 
 - `LobbyEventBroadcaster` does not exist as a port. Wave D (infrastructure) does not
