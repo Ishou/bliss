@@ -30,6 +30,15 @@ info:
 
     Reconnect: a client may close and reopen the WebSocket within ~30s while
     keeping its slot — the server identifies the player by `sessionId`.
+
+    Changelog (still 0.1.0 — pre-release wire latitude):
+    - `GameDefinitionCell` now carries `clues: array of GameDefinitionClue`
+      (1..2 items) instead of a single flat `clueId`/`text`/`arrow` triple.
+      Mirrors grid's stacked-clue idiom (the mots-fléchés corner cell with
+      both an across and a down clue at one position) — the upstream wire
+      emits one such cell per clue at the same position, and the game
+      bounded context now bundles them into a single cell with a list of
+      clues. Resolves the limitation flagged in PR #132's review.
   contact: { name: Bliss maintainers, url: https://github.com/Ishou/bliss, email: noreply@bliss.example }
   license: { name: FSL-1.1-MIT, url: https://github.com/Ishou/bliss/blob/main/LICENSE }
 
@@ -218,13 +227,30 @@ components:
         letter:   { type: string, minLength: 1, maxLength: 1, pattern: '^[A-Z]$', nullable: true, description: Pre-filled uppercase letter; null means blank. Absence is a protocol error (field is always present). }
     GameDefinitionCell:
       type: object
-      required: [kind, position, clueId, text, arrow]
+      required: [kind, position, clues]
+      description: |
+        Mots-fléchés definition cell. Carries 1 clue (the common case) or 2
+        clues (the corner-cell idiom: an across clue and a down clue stacked
+        at the same position). Mirrors the upstream grid wire shape, where
+        stacked clues are emitted as one wire `DefinitionCell` per clue at
+        the same position; the game bounded context groups them into a
+        single cell whose `clues` list preserves wire order.
       properties:
         kind:     { type: string, enum: [definition] }
         position: { $ref: '#/components/schemas/GamePosition' }
-        clueId:   { type: string, format: uuid }
-        text:     { type: string, minLength: 1, maxLength: 500, example: Capitale de la France }
-        arrow:    { $ref: '#/components/schemas/GameArrow' }
+        clues:
+          type: array
+          minItems: 1
+          maxItems: 2
+          items: { $ref: '#/components/schemas/GameDefinitionClue' }
+    GameDefinitionClue:
+      type: object
+      required: [id, text, arrow]
+      description: A single clue carried by a `GameDefinitionCell`.
+      properties:
+        id:    { type: string, format: uuid }
+        text:  { type: string, minLength: 1, maxLength: 500, example: Capitale de la France }
+        arrow: { $ref: '#/components/schemas/GameArrow' }
     GameBlockCell:
       type: object
       required: [kind, position]
