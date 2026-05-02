@@ -113,6 +113,23 @@ class PuzzleResponseMapperTest {
     }
 
     @Test
+    fun `third stacked definition cell at the same position is silently dropped`() {
+        val clueIdC = "0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6f"
+        val dto =
+            base(
+                listOf(
+                    CellDto.Definition(PositionDto(0, 0), clueId, "first", "down"),
+                    CellDto.Definition(PositionDto(0, 0), clueIdB, "second", "right"),
+                    CellDto.Definition(PositionDto(0, 0), clueIdC, "third", "down"),
+                ),
+            )
+        val cells = dto.toDomain().cells
+        assertThat(cells).hasSize(1)
+        val def = cells.single() as DefinitionCell
+        assertThat(def.clues.map { it.text }).containsExactly("first", "second")
+    }
+
+    @Test
     fun `unknown arrow value throws IllegalArgumentException`() {
         val dto = base(listOf(CellDto.Definition(PositionDto(0, 0), clueId, "x", "diagonal")))
         assertThrows<IllegalArgumentException> { dto.toDomain() }

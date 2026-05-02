@@ -41,7 +41,9 @@ internal fun PuzzleResponseDto.toDomain(): GamePuzzle {
                     mappedCells += DefinitionCell(position = position, clues = listOf(clue))
                 } else {
                     val previous = mappedCells[existing] as DefinitionCell
-                    mappedCells[existing] = previous.copy(clues = previous.clues + clue)
+                    if (previous.clues.size < 2) {
+                        mappedCells[existing] = previous.copy(clues = previous.clues + clue)
+                    } // else: 3rd+ clue at same position — drop, same resilience policy as Letter/Block duplicates
                 }
             }
             is CellDto.Letter, is CellDto.Block -> {
@@ -79,7 +81,7 @@ private fun CellDto.toDomain(position: Position): GameCell =
                 answer = letter?.firstOrNull()?.let { Letter(it) },
             )
         is CellDto.Definition ->
-            DefinitionCell(position = position, clues = listOf(toDomainClue()))
+            error("unreachable: Definition cells are handled inline in PuzzleResponseDto.toDomain()")
         is CellDto.Block -> BlockCell(position = position)
     }
 
