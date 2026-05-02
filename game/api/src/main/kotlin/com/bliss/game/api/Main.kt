@@ -4,11 +4,7 @@ import io.ktor.server.application.Application
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
 
-/**
- * Entrypoint. PORT defaults to 8081 — grid/api owns 8080 in the cluster
- * (ADR-0007 §3, ADR-0009), so the two services can co-exist on a single
- * node without a port collision. Env override for local dev / tests.
- */
+// Port 8081 — grid/api owns 8080 (ADR-0009); env PORT overrides for local dev.
 fun main() {
     val port = System.getenv("PORT")?.toIntOrNull() ?: DEFAULT_PORT
     embeddedServer(Netty, port = port, host = "0.0.0.0", module = Application::module)

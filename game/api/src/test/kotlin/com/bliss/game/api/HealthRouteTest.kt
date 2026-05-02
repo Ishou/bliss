@@ -15,7 +15,6 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import org.junit.jupiter.api.Test
 
-/** Wire-path tests for `/v1/health` — exercises the route via Ktor [testApplication]. */
 class HealthRouteTest {
     @Test
     fun `responds with 200 and application json`() =
@@ -40,8 +39,6 @@ class HealthRouteTest {
             val json = Json.parseToJsonElement(body) as JsonObject
 
             assertThat(json["status"]?.jsonPrimitive?.content).isEqualTo("ok")
-            // Version is the compile-time constant from version.kt; bumps in lockstep
-            // with build.gradle.kts. If this fails after a release bump, update both.
             assertThat(json["version"]?.jsonPrimitive?.content).isEqualTo(APP_VERSION)
 
             val uptime = json["uptime"]?.jsonPrimitive?.content

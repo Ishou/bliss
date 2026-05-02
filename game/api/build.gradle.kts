@@ -1,10 +1,4 @@
-// game/api — Ktor JVM HTTP + WebSocket server (ADR-0006, ADR-0018 §3).
-// Outermost layer of the game bounded context per ADR-0001 §1. v1 is
-// in-memory only — no Postgres, no Flyway, no HikariCP (ADR-0018 §3).
-// REST endpoints + the WebSocket route land in Wave F PR #9 / #10.
-//
-// shadowJar lands at: build/libs/game-api-<version>-all.jar
-// Used by game/api/Dockerfile.
+// game/api — Ktor HTTP + WebSocket server (ADR-0006, ADR-0018 §3). shadowJar → build/libs/game-api-*-all.jar
 
 plugins {
     kotlin("jvm")
@@ -59,8 +53,7 @@ dependencies {
     // CORS — wordsparrow.io frontend talks to this API in the browser.
     implementation("io.ktor:ktor-server-cors:$ktorVersion")
 
-    // WebSockets — game/api is the first WS-using service in this repo
-    // (ADR-0018 §3 / ADR-0006). The route itself lands in Wave F PR #10.
+    // WebSockets: first WS service in repo (ADR-0018, ADR-0006).
     implementation("io.ktor:ktor-server-websockets:$ktorVersion")
 
     // Structured JSON logging stack (ADR-0007 §7), parity with grid/api.

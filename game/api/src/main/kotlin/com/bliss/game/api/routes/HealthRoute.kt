@@ -9,12 +9,7 @@ import java.time.Instant
 
 private val startedAt: Instant = Instant.now()
 
-/**
- * `GET /v1/health` — k8s liveness, readiness, and startup probes
- * (Helm chart lands in Wave F PR #11), plus the Dockerfile HEALTHCHECK
- * (ADR-0007 §3). Out-of-OpenAPI by design; ops endpoints live below
- * the contract layer.
- */
+// Out-of-OpenAPI: ops endpoint, also serves Dockerfile HEALTHCHECK (ADR-0007 §3).
 fun Route.health(version: String) {
     get("/v1/health") {
         val uptime = Duration.between(startedAt, Instant.now())
