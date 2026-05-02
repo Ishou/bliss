@@ -84,7 +84,7 @@ fun Route.lobbyWebSocketRoute(
 
         // Track the player's identity once they joinLobby so we can synthesize
         // a playerLeft broadcast on disconnect even if they never sent leaveLobby.
-        var memberSessionId: String? = querySessionId
+        var memberSessionId: String? = querySessionId.takeIf { it.isNotEmpty() }
 
         try {
             for (frame in incoming) {

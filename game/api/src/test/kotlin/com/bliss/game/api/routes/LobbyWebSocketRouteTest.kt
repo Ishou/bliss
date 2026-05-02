@@ -34,7 +34,6 @@ import io.ktor.websocket.send
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.withTimeout
 import org.junit.jupiter.api.Test
 import java.time.Instant
@@ -165,12 +164,14 @@ class LobbyWebSocketRouteTest {
         runWith { harness ->
             val lobbyId = harness.seedLobby()
             val ownerSawLeft = CompletableDeferred<String>()
+            val ownerJoined = CompletableDeferred<Unit>()
             coroutineScope {
                 val ownerJob =
                     async {
                         harness.client.webSocket("/v1/lobbies/${lobbyId.value}/ws") {
                             receiveText() // initial snapshot
                             sendText("""{"type":"joinLobby","sessionId":"$sessionA","pseudonym":"$pseudoA"}""")
+                            ownerJoined.complete(Unit)
                             while (!ownerSawLeft.isCompleted) {
                                 val text = receiveText()
                                 if (text.contains("\"type\":\"playerLeft\"") && text.contains(sessionB)) {
@@ -179,8 +180,7 @@ class LobbyWebSocketRouteTest {
                             }
                         }
                     }
-                // Tiny delay to ensure the owner is connected first.
-                delay(150)
+                ownerJoined.await()
                 harness.client.webSocket("/v1/lobbies/${lobbyId.value}/ws") {
                     receiveText() // snapshot
                     sendText("""{"type":"joinLobby","sessionId":"$sessionB","pseudonym":"$pseudoB"}""")
