@@ -10,6 +10,8 @@ data class ExportRow(
     val clue: String,
     val source: String,
     val sourceLicense: String,
+    /** Dictionary headword for [word]; equals [word] for lemma forms themselves. */
+    val lemma: String,
 )
 
 /** Selection knobs for the export query. */

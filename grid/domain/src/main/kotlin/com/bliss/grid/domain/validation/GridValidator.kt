@@ -13,7 +13,7 @@ class GridValidator {
     ): List<GridViolation> {
         val violations = mutableListOf<GridViolation>()
         violations += outOfBoundsCells(grid)
-        violations += duplicateWords(grid)
+        violations += duplicateViolations(grid)
 
         val expectedLetters = mutableMapOf<Position, Char>()
         val cluePositions = mutableSetOf<Position>()
@@ -91,12 +91,24 @@ class GridValidator {
             .filter { it.row.value !in 0 until grid.height || it.column.value !in 0 until grid.width }
             .map { GridViolation.OutOfBounds(it, grid.width, grid.height) }
 
-    private fun duplicateWords(grid: Grid): List<GridViolation> {
+    private fun duplicateViolations(grid: Grid): List<GridViolation> {
         val seen = mutableSetOf<String>()
+        val byLemma = mutableMapOf<String, MutableList<com.bliss.grid.domain.model.Word>>()
         val duplicates = mutableListOf<GridViolation>()
         for (placement in grid.placements) {
             if (!seen.add(placement.word.text)) {
                 duplicates += GridViolation.DuplicateWord(placement.word)
+            }
+            // Track lemma-level duplicates separately. A surface-form duplicate
+            // is also a lemma duplicate, but the latter is reported per-lemma
+            // (one violation listing every offending word) instead of one per
+            // collision so callers can render "couru/courait/courrons" as a
+            // single grouping rather than three repeated entries.
+            byLemma.getOrPut(placement.word.lemma) { mutableListOf() }.add(placement.word)
+        }
+        for ((lemma, words) in byLemma) {
+            if (words.distinctBy { it.text }.size > 1) {
+                duplicates += GridViolation.DuplicateLemma(lemma, words.toList())
             }
         }
         return duplicates

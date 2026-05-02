@@ -21,8 +21,12 @@ import java.text.Normalizer
  * no autonomous remote dependency. The dataset is auditable, deterministic,
  * and deploys with the image.
  *
- * CSV columns (header row required, in this order):
- * `word, language, length, frequency, difficulty, clue, source, source_license`.
+ * CSV columns (header row required, in the listed order):
+ * `word, language, length, frequency, difficulty, clue, source, source_license`
+ * with an optional trailing `lemma` column. When `lemma` is present the
+ * generator dedupes inflected forms of the same headword (e.g. "court" +
+ * "courait") within a single grid; when absent, lemma defaults to the word
+ * itself and dedup degenerates to surface-form-only (legacy behavior).
  *
  * Rows are required to carry a non-blank `clue` — `export-words` never emits
  * empty clues, so an empty `clue` here means hand-edited corruption and
@@ -81,6 +85,7 @@ class CsvWordRepository(
 
         private val REQUIRED_HEADERS =
             listOf("word", "language", "length", "frequency", "difficulty", "clue", "source", "source_license")
+        private const val OPTIONAL_LEMMA_HEADER = "lemma"
 
         /**
          * Frequency cutoff applied at load time. Drops the long tail of rare/technical
@@ -148,8 +153,14 @@ class CsvWordRepository(
             headers: List<String>,
             path: String,
         ) {
-            require(headers == REQUIRED_HEADERS) {
-                "CSV $path header mismatch — expected $REQUIRED_HEADERS, got $headers"
+            // Accept either the legacy 8-column header or the same 8 columns
+            // followed by `lemma`. Anything else (renamed, reordered, missing
+            // a required column) is hand-edited corruption — fail fast.
+            val matchesLegacy = headers == REQUIRED_HEADERS
+            val matchesWithLemma = headers == REQUIRED_HEADERS + OPTIONAL_LEMMA_HEADER
+            require(matchesLegacy || matchesWithLemma) {
+                "CSV $path header mismatch — expected $REQUIRED_HEADERS " +
+                    "(optionally followed by '$OPTIONAL_LEMMA_HEADER'), got $headers"
             }
         }
 
@@ -176,7 +187,17 @@ class CsvWordRepository(
             // fold — e.g. ℓ, ß, Greek letters smuggled in via the corpus). Silent skip is fine
             // here: the corpus is large enough that a handful of dropped rows is invisible.
             if (!folded.all { it in 'A'..'Z' }) return null
-            return Word(text = folded, definition = clue) to frequency
+            // Lemma column is optional (legacy CSVs predate it). When present-and-foldable,
+            // store it folded so dedup compares like-with-like; otherwise fall back to the
+            // word itself, which makes lemma-dedup degenerate to surface-form dedup.
+            val rawLemma = if (OPTIONAL_LEMMA_HEADER in record.parser.headerNames) record.get(OPTIONAL_LEMMA_HEADER) else null
+            val foldedLemma =
+                rawLemma
+                    ?.takeIf { it.isNotBlank() }
+                    ?.let(::foldToAscii)
+                    ?.takeIf { it.all { ch -> ch in 'A'..'Z' } }
+                    ?: folded
+            return Word(text = folded, definition = clue, lemma = foldedLemma) to frequency
         }
 
         private val DIACRITICS = "\\p{InCombiningDiacriticalMarks}+".toRegex()

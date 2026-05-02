@@ -38,8 +38,13 @@ internal class SkeletonFiller(
         if (slots.isEmpty()) return emptyList()
         val letters = HashMap<Position, Char>()
         val usedWords = HashSet<String>()
+        // Lemma-level dedup: forbid placing two inflected forms of the same
+        // headword in one grid (e.g. "court" + "courait" both → "courir").
+        // For corpora that don't carry lemma data, Word.lemma defaults to
+        // Word.text and this set is functionally identical to usedWords.
+        val usedLemmas = HashSet<String>()
         val assigned = arrayOfNulls<Word>(slots.size)
-        if (!search(slots, letters, usedWords, assigned, random, deadline)) return null
+        if (!search(slots, letters, usedWords, usedLemmas, assigned, random, deadline)) return null
         return slots.mapIndexed { i, slot ->
             WordPlacement(assigned[i]!!, slot.cluePosition, slot.direction)
         }
@@ -49,6 +54,7 @@ internal class SkeletonFiller(
         slots: List<WordSlot>,
         letters: HashMap<Position, Char>,
         usedWords: HashSet<String>,
+        usedLemmas: HashSet<String>,
         assigned: Array<Word?>,
         random: Random,
         deadline: Long,
@@ -62,7 +68,7 @@ internal class SkeletonFiller(
         var bestSize = Int.MAX_VALUE
         for (i in slots.indices) {
             if (assigned[i] != null) continue
-            val domain = domainFor(slots[i], letters, usedWords)
+            val domain = domainFor(slots[i], letters, usedWords, usedLemmas)
             if (domain.size < bestSize) {
                 bestSize = domain.size
                 bestIdx = i
@@ -79,6 +85,7 @@ internal class SkeletonFiller(
         for (word in ordering) {
             assigned[bestIdx] = word
             usedWords += word.text
+            usedLemmas += word.lemma
             val newlyPlaced = ArrayList<Position>(positions.size)
             for ((i, pos) in positions.withIndex()) {
                 if (pos !in letters) {
@@ -87,24 +94,27 @@ internal class SkeletonFiller(
                 }
             }
 
-            if (search(slots, letters, usedWords, assigned, random, deadline)) return true
+            if (search(slots, letters, usedWords, usedLemmas, assigned, random, deadline)) return true
 
             // Undo.
             for (pos in newlyPlaced) letters.remove(pos)
             usedWords -= word.text
+            usedLemmas -= word.lemma
             assigned[bestIdx] = null
         }
         return false
     }
 
     /**
-     * Candidates for [slot] consistent with currently placed [letters], excluding [usedWords].
+     * Candidates for [slot] consistent with currently placed [letters], excluding both
+     * [usedWords] (surface-form dedup) and [usedLemmas] (lemma-level dedup).
      * The pattern at each fixed position prunes via the repository's position-letter index.
      */
     private fun domainFor(
         slot: WordSlot,
         letters: Map<Position, Char>,
         usedWords: Set<String>,
+        usedLemmas: Set<String>,
     ): List<Word> {
         val pattern = HashMap<Int, Char>(slot.length)
         slot.letterPositions().forEachIndexed { i, pos ->
@@ -112,7 +122,11 @@ internal class SkeletonFiller(
         }
         val matches = repository.findByLengthAndPattern(slot.length, pattern)
         // Filter used last — keeps the cheap path (no allocation) when nothing's used yet.
-        return if (usedWords.isEmpty()) matches else matches.filter { it.text !in usedWords }
+        return if (usedWords.isEmpty() && usedLemmas.isEmpty()) {
+            matches
+        } else {
+            matches.filter { it.text !in usedWords && it.lemma !in usedLemmas }
+        }
     }
 
     /**

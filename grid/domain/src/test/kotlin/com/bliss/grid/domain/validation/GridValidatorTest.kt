@@ -3,6 +3,7 @@ package com.bliss.grid.domain.validation
 import assertk.assertThat
 import assertk.assertions.contains
 import assertk.assertions.isEmpty
+import assertk.assertions.isEqualTo
 import com.bliss.grid.domain.model.Cell
 import com.bliss.grid.domain.model.Clue
 import com.bliss.grid.domain.model.ClueCell
@@ -126,7 +127,38 @@ class GridValidatorTest {
             )
         val grid = Grid(width = 4, height = 4, cells = cells, placements = listOf(a, b))
 
-        assertThat(validator.validate(grid)).contains(GridViolation.DuplicateWord(Word("OR", "x")))
+        val violations = validator.validate(grid)
+        assertThat(violations).contains(GridViolation.DuplicateWord(Word("OR", "x")))
+        assertThat(violations.filterIsInstance<GridViolation.DuplicateLemma>()).isEmpty()
+    }
+
+    @Test
+    fun `duplicate lemmas across distinct surface forms are reported`() {
+        // "AIME" and "AIMA" share lemma "AIMER" — distinct surface forms, no
+        // DuplicateWord violation, but a DuplicateLemma violation grouping the
+        // two offenders under their shared headword.
+        val a = WordPlacement(Word("AIME", "x", lemma = "AIMER"), Position(Row(0), Column(0)), Direction.RIGHT)
+        val b = WordPlacement(Word("AIMA", "x", lemma = "AIMER"), Position(Row(2), Column(0)), Direction.RIGHT)
+        val cells: Map<Position, Cell> =
+            mapOf(
+                Position(Row(0), Column(0)) to ClueCell(listOf(Clue("x", Direction.RIGHT))),
+                Position(Row(0), Column(1)) to LetterCell('A'),
+                Position(Row(0), Column(2)) to LetterCell('I'),
+                Position(Row(0), Column(3)) to LetterCell('M'),
+                Position(Row(0), Column(4)) to LetterCell('E'),
+                Position(Row(2), Column(0)) to ClueCell(listOf(Clue("x", Direction.RIGHT))),
+                Position(Row(2), Column(1)) to LetterCell('A'),
+                Position(Row(2), Column(2)) to LetterCell('I'),
+                Position(Row(2), Column(3)) to LetterCell('M'),
+                Position(Row(2), Column(4)) to LetterCell('A'),
+            )
+        val grid = Grid(width = 5, height = 4, cells = cells, placements = listOf(a, b))
+
+        val violations = validator.validate(grid)
+        val lemmaDup = violations.filterIsInstance<GridViolation.DuplicateLemma>()
+        assertThat(lemmaDup.size).isEqualTo(1)
+        assertThat(lemmaDup[0].lemma).isEqualTo("AIMER")
+        assertThat(lemmaDup[0].words.map { it.text }.toSet()).isEqualTo(setOf("AIME", "AIMA"))
     }
 
     @Test
