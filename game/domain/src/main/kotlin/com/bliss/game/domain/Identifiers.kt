@@ -6,7 +6,7 @@ private val LOBBY_ID_REGEX = Regex("^[1-9A-HJ-NP-Za-km-z]{8}$")
 private const val BASE58_ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
 private const val LOBBY_ID_LENGTH = 8
 private val SESSION_ID_REGEX =
-    Regex("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
+    Regex("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89aAbB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$")
 
 @JvmInline
 value class LobbyId(
@@ -37,7 +37,7 @@ value class SessionId(
 ) {
     init {
         require(SESSION_ID_REGEX.matches(value)) {
-            "SessionId must be a UUID string, was '$value'"
+            "SessionId must be a UUID v7 string, was '$value'"
         }
     }
 }

@@ -41,12 +41,10 @@ class IdentifiersTest {
 
     @Test
     fun `LobbyId generate always produces a valid id`() {
-        runBlocking {
-            checkAll(PropTestConfig(iterations = 200), Arb.string()) { _ ->
-                val id = LobbyId.generate()
-                assertThat(id.value).hasLength(8)
-                assertThat(base58.matches(id.value)).isTrue()
-            }
+        repeat(200) {
+            val id = LobbyId.generate()
+            assertThat(id.value).hasLength(8)
+            assertThat(base58.matches(id.value)).isTrue()
         }
     }
 
@@ -60,6 +58,11 @@ class IdentifiersTest {
     fun `SessionId rejects non-UUID strings`() {
         assertFailure { SessionId("not-a-uuid") }.messageContains("UUID")
         assertFailure { SessionId("") }.messageContains("UUID")
+    }
+
+    @Test
+    fun `SessionId rejects UUID v4`() {
+        assertFailure { SessionId("550e8400-e29b-41d4-a716-446655440000") }.messageContains("UUID")
     }
 
     @Test
