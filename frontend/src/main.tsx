@@ -13,6 +13,7 @@ import {
 import {
   getOrCreateSessionId,
   getPseudonym,
+  setPseudonym,
 } from '@/infrastructure/session/localStorageSession';
 import { registerServiceWorker } from '@/infrastructure/pwa';
 import type { Pseudonym, SessionId } from '@/domain/game';
@@ -75,12 +76,23 @@ enableMocks()
           const gameClient = createWebSocketGameClient({ wsBaseUrl });
           // `getSession` is a thin closure over the localStorage helpers
           // so routes don't pull `infrastructure/` into `ui/` directly.
-          // Branding is asserted at this single seam.
+          // Branding is asserted at this single seam. `setPersistedPseudonym`
+          // is the write-side counterpart used by the lobby route's
+          // `onRename` callback so a chosen pseudonym survives reload.
           const getSession = () => ({
             sessionId: getOrCreateSessionId() as SessionId,
             pseudonym: getPseudonym() as Pseudonym,
           });
-          return { puzzleRepository, lobbyClient, gameClient, getSession };
+          const setPersistedPseudonym = (pseudonym: Pseudonym) => {
+            setPseudonym(pseudonym);
+          };
+          return {
+            puzzleRepository,
+            lobbyClient,
+            gameClient,
+            getSession,
+            setPseudonym: setPersistedPseudonym,
+          };
         })()
       : { puzzleRepository };
     const router = createAppRouter({ context, multiplayer });
