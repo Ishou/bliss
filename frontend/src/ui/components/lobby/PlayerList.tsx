@@ -14,7 +14,7 @@ import type { Lobby, SessionId } from '@/domain/game';
 // ServerLobbyState `maxItems: 8`) is enforced server-side; the
 // `stacked` variant pads with placeholder rows so the list height
 // stays stable while peers join.
-const MAX_PLAYERS = 8;
+export const MAX_PLAYERS = 8;
 
 export interface PlayerListProps {
   readonly players: Lobby['players'];

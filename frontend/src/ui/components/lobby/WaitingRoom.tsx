@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { css } from 'styled-system/css';
 import type { Lobby, Pseudonym, SessionId } from '@/domain/game';
-import { PlayerList } from './PlayerList';
+import { PlayerList, MAX_PLAYERS } from './PlayerList';
 
 // Pure prop-driven WaitingRoom rendered while `lobby.state === 'WAITING'`.
 // Owns no network, no router context, no localStorage — every side effect
@@ -13,7 +13,6 @@ import { PlayerList } from './PlayerList';
 // Roster rendering (with empty-slot placeholders) lives in PlayerList so
 // the in-game route can mount the same component in its `inline` variant
 // during IN_PROGRESS / COMPLETED.
-const MAX_PLAYERS = 8;
 const GRID_SIZES: readonly number[] = [5, 7, 9, 11];
 
 export interface WaitingRoomProps {
