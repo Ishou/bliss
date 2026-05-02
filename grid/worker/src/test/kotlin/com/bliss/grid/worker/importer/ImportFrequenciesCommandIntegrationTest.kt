@@ -75,7 +75,7 @@ class ImportFrequenciesCommandIntegrationTest {
     }
 
     @Test
-    fun `import-frequencies is idempotent — re-running with same data yields same result`() {
+    fun `import-frequencies is idempotent - re-running with same data yields same result`() {
         seedWords(requireNotNull(Database.dataSource()))
 
         val freqFile = tempDir.resolve("freq.txt")
