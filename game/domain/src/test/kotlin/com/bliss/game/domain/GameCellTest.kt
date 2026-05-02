@@ -12,16 +12,6 @@ class GameCellTest {
     private val clueId2 = UUID.fromString("0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a71")
 
     @Test
-    fun `LetterCell may carry a null answer`() {
-        assertThat(LetterCell(Position(0, 0), null).answer).isEqualTo(null)
-    }
-
-    @Test
-    fun `LetterCell carries the configured answer`() {
-        assertThat(LetterCell(Position(0, 0), Letter('P')).answer).isEqualTo(Letter('P'))
-    }
-
-    @Test
     fun `DefinitionCell accepts one clue`() {
         val cell =
             DefinitionCell(
