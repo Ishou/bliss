@@ -79,16 +79,18 @@ export interface GameLetterCell {
 // corner-cell idiom (an across clue and a down clue stacked at the
 // same position). Mirrors the backend domain shape in
 // `game/domain/.../GameCell.kt`.
-export interface GameDefinitionCell {
-  readonly kind: 'definition';
-  readonly position: Position;
-  readonly clues: readonly GameDefinitionCellClue[];
-}
-
 export interface GameDefinitionCellClue {
   readonly id: string;
   readonly text: string;
   readonly arrow: GameArrowDirection;
+}
+
+export interface GameDefinitionCell {
+  readonly kind: 'definition';
+  readonly position: Position;
+  readonly clues:
+    | readonly [GameDefinitionCellClue]
+    | readonly [GameDefinitionCellClue, GameDefinitionCellClue];
 }
 
 export interface GameBlockCell {

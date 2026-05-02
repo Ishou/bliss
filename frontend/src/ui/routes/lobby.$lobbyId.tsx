@@ -402,23 +402,12 @@ function definitionCellToCell(
   cell: GameDefinitionCell,
   position: { row: number; col: number },
 ): Cell {
-  if (cell.clues.length === 0) {
-    // Spec violation (asyncapi minItems: 1) — guard against malformed wire
-    // data so we degrade to an inert block instead of crashing the grid.
-    return { kind: 'block', position };
-  }
-  const first: DefinitionClue = {
-    text: cell.clues[0].text,
-    arrow: gameArrowToArrow(cell.clues[0].arrow),
-  };
-  if (cell.clues.length === 1) {
-    return { kind: 'definition', position, clues: [first] };
-  }
-  const second: DefinitionClue = {
-    text: cell.clues[1].text,
-    arrow: gameArrowToArrow(cell.clues[1].arrow),
-  };
-  return { kind: 'definition', position, clues: [first, second] };
+  const [first, second] = cell.clues;
+  const clue0: DefinitionClue = { text: first.text, arrow: gameArrowToArrow(first.arrow) };
+  const clues: readonly [DefinitionClue] | readonly [DefinitionClue, DefinitionClue] = second
+    ? [clue0, { text: second.text, arrow: gameArrowToArrow(second.arrow) }]
+    : [clue0];
+  return { kind: 'definition', position, clues };
 }
 
 // `GameArrowDirection` and `ArrowDirection` happen to enumerate the

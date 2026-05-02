@@ -77,12 +77,6 @@ export function __resetLobbyStore(): void {
 //   L L B L L      row 2: four letters with a block in the middle
 //   L L L L L      row 3: five letters
 //   L L L L L      row 4: five letters
-//
-// The route's `gameCellToCell` reads `text/arrow/clueId` directly off
-// definition cells (singular fields, not the wire `clues: []` array),
-// so the mock matches what the runtime consumes today rather than the
-// AsyncAPI's stacked-clues shape — the domain type and the wire shape
-// disagree pending a follow-up resync (out of scope for this PR).
 export function buildMockPuzzle(): GamePuzzle {
   // Use a deterministic id so the mock is recognizable in DevTools.
   const id = '0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6e';
@@ -90,20 +84,14 @@ export function buildMockPuzzle(): GamePuzzle {
   for (let row = 0; row < 5; row++) {
     for (let column = 0; column < 5; column++) {
       if (row === 0 && column === 0) {
-        // Mirror the singular `clueId/text/arrow` shape the route
-        // currently consumes. The OpenAPI/AsyncAPI now bundles clues
-        // into `clues: [...]`; the domain type still uses singular
-        // fields and that's what `gameCellToCell` actually reads.
-        // Cast through `unknown` to bridge the wire-vs-domain shape
-        // gap at this single seam — the route consumer is the contract.
         cells.push({
           kind: 'definition',
           position: { row, column },
-          ...({
-            clueId: '0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6f',
+          clues: [{
+            id: '0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6f',
             text: 'Démo',
             arrow: 'right',
-          } as unknown as { clues: never[] }),
+          }],
         });
       } else if (row === 2 && column === 2) {
         cells.push({ kind: 'block', position: { row, column } });
@@ -140,5 +128,6 @@ export function buildGameSession(): GameSession {
     puzzle: buildMockPuzzle(),
     startedAt: new Date().toISOString(),
     completedAt: null,
+    entries: [],
   };
 }
