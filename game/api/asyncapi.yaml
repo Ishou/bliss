@@ -1,0 +1,406 @@
+# Game bounded-context WebSocket contract.
+#
+# Hand-written AsyncAPI 2.6 per ADR-0003 §5 (source of truth, not generated
+# from handler annotations). Wire conventions per ADR-0003 §6: UUID v7 ids,
+# ISO-8601 instants with offset, camelCase, RFC 7807 errors, string enums.
+# Single-value inline `type`/`kind` discriminators (e.g. `enum: [joinLobby]`)
+# are exempt from x-enum-varnames: the constant name is trivially derivable and
+# modelina emits it without the hint. Named multi-value enums carry the hint.
+#
+# AsyncAPI 2.6 (not 3.x): it is the version Spectral's
+# `@asyncapi/spectral-ruleset` is stable on, and 3.x reshapes operations
+# (channel-as-resource) in ways that complicate codegen here.
+asyncapi: 2.6.0
+info:
+  title: Bliss Game WebSocket API
+  version: 0.1.0
+  description: |
+    Real-time lobby + game events for the game/ bounded context.
+    Resolves ADR-0006 §5's WebSocket defer. A REST control plane
+    (game/api/openapi.yaml) is planned but not yet merged. Decision rationale
+    in ADR-0018; ADR-0019 records the AsyncAPI 2.6 exception to ADR-0003 §5.
+
+    Every frame is a JSON object with a top-level `type` discriminator
+    (e.g. `"type": "cellUpdate"`). TypeScript and Kotlin codegen dispatch on
+    that field; do NOT rely on positional or schema-shape inference.
+
+    Conflict policy on `cellUpdate` is last-write-wins, server-stamped.
+    The server rebroadcasts `cellUpdated` with its own `writtenAt` so all
+    clients converge on identical state regardless of latency.
+
+    Reconnect: a client may close and reopen the WebSocket within ~30s while
+    keeping its slot — the server identifies the player by `sessionId`.
+  contact: { name: Bliss maintainers, url: https://github.com/Ishou/bliss, email: noreply@bliss.example }
+  license: { name: FSL-1.1-MIT, url: https://github.com/Ishou/bliss/blob/main/LICENSE }
+
+tags:
+  - { name: lobby, description: Pre-game lobby membership and configuration. }
+  - { name: game,  description: In-progress game-state synchronisation. }
+
+servers:
+  production:
+    url: game.wordsparrow.io
+    protocol: wss
+    description: Placeholder host; canonical URL stabilizes when the game-api Helm chart lands (ADR-0018).
+  local:
+    url: localhost:8081
+    protocol: ws
+    description: Local dev server (Ktor `embeddedServer`).
+
+defaultContentType: application/json
+
+channels:
+  /v1/lobbies/{lobbyId}/ws:
+    description: |
+      One WebSocket per (browser tab × lobby). The client opens the socket
+      after fetching the lobby via REST (`GET /v1/lobbies/{lobbyId}`) and
+      sends `joinLobby` as its first frame. The server replies with a
+      `lobbyState` snapshot, then streams incremental events.
+    parameters:
+      lobbyId:
+        description: 8-char base58 nanoid identifying the lobby.
+        schema: { $ref: '#/components/schemas/LobbyId' }
+    publish:
+      operationId: clientToServer
+      summary: Frames sent by a connected player to the server.
+      description: |
+        Every client frame carries a `type` discriminator. Owner-only
+        messages (`setGridConfig`, `startGame`) are rejected with an
+        `error` frame when sent by a non-owner.
+      tags:
+        - { name: lobby }
+        - { name: game }
+      message:
+        oneOf:
+          - { $ref: '#/components/messages/JoinLobby' }
+          - { $ref: '#/components/messages/RenameSelf' }
+          - { $ref: '#/components/messages/SetGridConfig' }
+          - { $ref: '#/components/messages/StartGame' }
+          - { $ref: '#/components/messages/CellUpdate' }
+          - { $ref: '#/components/messages/LeaveLobby' }
+    subscribe:
+      operationId: serverToClient
+      summary: Frames broadcast by the server to subscribed players.
+      description: |
+        `lobbyState` fires once on join and on reconnect; the rest are
+        incremental deltas. Clients SHOULD treat any unknown `type` as
+        forward-compatible no-ops, not errors.
+      tags:
+        - { name: lobby }
+        - { name: game }
+      message:
+        oneOf:
+          - { $ref: '#/components/messages/LobbyState' }
+          - { $ref: '#/components/messages/PlayerJoined' }
+          - { $ref: '#/components/messages/PlayerLeft' }
+          - { $ref: '#/components/messages/PlayerRenamed' }
+          - { $ref: '#/components/messages/GameStarted' }
+          - { $ref: '#/components/messages/CellUpdated' }
+          - { $ref: '#/components/messages/GameSolved' }
+          - { $ref: '#/components/messages/Error' }
+
+components:
+  messages:
+    JoinLobby:      { name: joinLobby,      title: Join lobby,                         summary: First frame after the WebSocket opens; claims a slot.,                                              payload: { $ref: '#/components/schemas/JoinLobbyPayload' } }
+    RenameSelf:     { name: renameSelf,     title: Rename self,                        summary: Update the sender's pseudonym.,                                                                    payload: { $ref: '#/components/schemas/RenameSelfPayload' } }
+    SetGridConfig:  { name: setGridConfig,  title: Set grid config (owner only),       summary: Owner picks the grid dimensions while WAITING.,                                                    payload: { $ref: '#/components/schemas/SetGridConfigPayload' }, description: Rejected with `error` when sent by a non-owner or outside WAITING. }
+    StartGame:      { name: startGame,      title: Start game (owner only),            summary: Owner transitions the lobby to IN_PROGRESS.,                                                       payload: { $ref: '#/components/schemas/StartGamePayload' },     description: Rejected with `error` when sent by a non-owner or outside WAITING. }
+    CellUpdate:     { name: cellUpdate,     title: Client cell write,                  summary: Player typed (or cleared) a letter into a cell.,                                                   payload: { $ref: '#/components/schemas/CellUpdatePayload' } }
+    LeaveLobby:     { name: leaveLobby,     title: Leave lobby,                        summary: Voluntary disconnect; frees the slot immediately.,                                                 payload: { $ref: '#/components/schemas/LeaveLobbyPayload' } }
+    LobbyState:     { name: lobbyState,     title: Lobby snapshot,                     summary: Full lobby state; fires on join and on reconnect.,                                                 payload: { $ref: '#/components/schemas/LobbyStatePayload' } }
+    PlayerJoined:   { name: playerJoined,   title: Player joined,                                                                                                                                  payload: { $ref: '#/components/schemas/PlayerJoinedPayload' } }
+    PlayerLeft:     { name: playerLeft,     title: Player left,                                                                                                                                    payload: { $ref: '#/components/schemas/PlayerLeftPayload' } }
+    PlayerRenamed:  { name: playerRenamed,  title: Player renamed,                                                                                                                                 payload: { $ref: '#/components/schemas/PlayerRenamedPayload' } }
+    GameStarted:    { name: gameStarted,    title: Game started,                       summary: Server fetched a puzzle and transitioned to IN_PROGRESS.,                                          payload: { $ref: '#/components/schemas/GameStartedPayload' } }
+    CellUpdated:    { name: cellUpdated,    title: Canonical cell update,              summary: Server-stamped broadcast of an accepted `cellUpdate`.,                                             payload: { $ref: '#/components/schemas/CellUpdatedPayload' },   description: Last-write-wins per ADR-0018; clients apply unconditionally. }
+    GameSolved:     { name: gameSolved,     title: Game solved,                        summary: All cells match the canonical solution; lobby is COMPLETED.,                                       payload: { $ref: '#/components/schemas/GameSolvedPayload' } }
+    Error:          { name: error,          title: Error frame,                        summary: RFC 7807 problem document for a rejected client frame.,                                            payload: { $ref: '#/components/schemas/ErrorPayload' },         description: Mirrors the REST error envelope. Closing the socket is at the server's discretion. }
+
+  schemas:
+    LobbyId:
+      type: string
+      minLength: 8
+      maxLength: 8
+      pattern: '^[1-9A-HJ-NP-Za-km-z]{8}$'
+      description: 8-char base58 nanoid (URL-safe; no 0/O/I/l). UUID v7 exception per ADR-0020.
+      example: 7gQ2xK9p
+    SessionId:
+      type: string
+      format: uuid
+      description: UUID v7 string per ADR-0003 §6. Generated client-side on first visit and persisted in `localStorage`.
+      example: 0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6b
+    Pseudonym:
+      type: string
+      minLength: 1
+      maxLength: 32
+      description: Player display name. Not unique within a lobby.
+      example: Joueur 1234
+    Instant:
+      type: string
+      format: date-time
+      description: ISO-8601 instant with timezone offset (ADR-0003 §6).
+      example: '2026-05-02T15:30:00Z'
+    LobbyLifecycleState:
+      type: string
+      enum: [WAITING, IN_PROGRESS, COMPLETED]
+      x-enum-varnames: [WAITING, IN_PROGRESS, COMPLETED]
+      description: Lobby lifecycle (ADR-0018).
+    GridConfig:
+      type: object
+      required: [width, height]
+      description: Dimensions chosen by the lobby owner before start.
+      properties:
+        width:  { type: integer, minimum: 5, maximum: 15, description: Number of columns., example: 7 }
+        height: { type: integer, minimum: 5, maximum: 15, description: Number of rows.,    example: 7 }
+    Letter:
+      type: string
+      minLength: 1
+      maxLength: 1
+      pattern: '^[A-Z]$'
+      nullable: true
+      description: Single uppercase A-Z, or `null` to clear the cell. `null` and absence are distinct.
+      example: P
+    CellEntry:
+      type: object
+      required: [row, column, letter]
+      description: A single placed letter in the canonical entries list.
+      properties:
+        row:    { type: integer, minimum: 0, example: 0 }
+        column: { type: integer, minimum: 0, example: 3 }
+        letter: { type: string, minLength: 1, maxLength: 1, pattern: '^[A-Z]$', description: Always non-null in `finalEntries`., example: P }
+    Player:
+      type: object
+      required: [sessionId, pseudonym, joinedAt]
+      description: A player currently holding a slot in the lobby.
+      properties:
+        sessionId: { $ref: '#/components/schemas/SessionId' }
+        pseudonym: { $ref: '#/components/schemas/Pseudonym' }
+        joinedAt:  { $ref: '#/components/schemas/Instant' }
+    GamePuzzle:
+      type: object
+      description: |
+        Game-context projection of a puzzle. Carries all fields a client
+        needs to render and play. Owned by game/ — not a $ref into grid/
+        (ADR-0001 §1 forbids cross-context file dependencies). The server
+        fetches from grid/ on startGame and forwards the document verbatim.
+      required: [id, title, language, width, height, cells, clues, createdAt]
+      properties:
+        id:        { type: string, format: uuid, description: UUID v7 puzzle identifier., example: 0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6c }
+        title:     { type: string, minLength: 1, maxLength: 200, example: Petite grille du mardi }
+        language:  { type: string, pattern: '^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$', description: BCP-47 tag., example: fr }
+        width:     { type: integer, minimum: 1, maximum: 50, description: Number of columns., example: 5 }
+        height:    { type: integer, minimum: 1, maximum: 50, description: Number of rows., example: 5 }
+        cells:     { type: array, items: { $ref: '#/components/schemas/GameCell' }, description: Cells in row-major order; look up by position.row/position.column. }
+        clues:     { type: array, items: { $ref: '#/components/schemas/GameClue' } }
+        createdAt: { $ref: '#/components/schemas/Instant' }
+    GameCell:
+      type: object
+      required: [kind, position]
+      description: Grid cell. `kind` discriminates letter/definition/block.
+      discriminator: kind
+      properties:
+        kind:     { $ref: '#/components/schemas/GameCellKind' }
+        position: { $ref: '#/components/schemas/GamePosition' }
+      oneOf:
+        - { $ref: '#/components/schemas/GameLetterCell' }
+        - { $ref: '#/components/schemas/GameDefinitionCell' }
+        - { $ref: '#/components/schemas/GameBlockCell' }
+    GameCellKind:
+      type: string
+      enum: [letter, definition, block]
+      x-enum-varnames: [LETTER, DEFINITION, BLOCK]
+    GameLetterCell:
+      type: object
+      required: [kind, position, letter]
+      properties:
+        kind:     { type: string, enum: [letter] }
+        position: { $ref: '#/components/schemas/GamePosition' }
+        letter:   { type: string, minLength: 1, maxLength: 1, pattern: '^[A-Z]$', nullable: true, description: Pre-filled uppercase letter; null means blank. Absence is a protocol error (field is always present). }
+    GameDefinitionCell:
+      type: object
+      required: [kind, position, clueId, text, arrow]
+      properties:
+        kind:     { type: string, enum: [definition] }
+        position: { $ref: '#/components/schemas/GamePosition' }
+        clueId:   { type: string, format: uuid }
+        text:     { type: string, minLength: 1, maxLength: 500, example: Capitale de la France }
+        arrow:    { $ref: '#/components/schemas/GameArrow' }
+    GameBlockCell:
+      type: object
+      required: [kind, position]
+      properties:
+        kind:     { type: string, enum: [block] }
+        position: { $ref: '#/components/schemas/GamePosition' }
+    GameArrow:
+      type: string
+      enum: [right, down, down-right, right-down]
+      x-enum-varnames: [RIGHT, DOWN, DOWN_RIGHT, RIGHT_DOWN]
+      description: Arrow direction on a mots-fléchés definition cell.
+    GamePosition:
+      type: object
+      required: [row, column]
+      description: Zero-indexed grid coordinate.
+      properties:
+        row:    { type: integer, minimum: 0, description: Zero-indexed row, top to bottom. }
+        column: { type: integer, minimum: 0, description: Zero-indexed column, left to right. }
+    GameClue:
+      type: object
+      required: [id, direction, start, length, text]
+      properties:
+        id:        { type: string, format: uuid }
+        direction: { $ref: '#/components/schemas/GameClueDirection' }
+        start:     { $ref: '#/components/schemas/GamePosition' }
+        length:    { type: integer, minimum: 1, maximum: 50, description: Number of letter cells in the answer. }
+        text:      { type: string, minLength: 1, maxLength: 500 }
+    GameClueDirection:
+      type: string
+      enum: [across, down]
+      x-enum-varnames: [ACROSS, DOWN]
+      description: Direction a clue's answer is written.
+    GameSession:
+      type: object
+      required: [puzzle, startedAt, completedAt]
+      description: Active game embedded in `lobbyState` while IN_PROGRESS.
+      properties:
+        puzzle:      { $ref: '#/components/schemas/GamePuzzle' }
+        startedAt:   { $ref: '#/components/schemas/Instant' }
+        completedAt: { $ref: '#/components/schemas/Instant', nullable: true, description: Set once the lobby reaches COMPLETED. }
+    # ----- Client → server payloads -----
+    JoinLobbyPayload:
+      type: object
+      required: [type, sessionId, pseudonym]
+      properties:
+        type:      { type: string, enum: [joinLobby] }
+        sessionId: { $ref: '#/components/schemas/SessionId' }
+        pseudonym: { $ref: '#/components/schemas/Pseudonym' }
+      example: { type: joinLobby, sessionId: 0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6b, pseudonym: Joueur 1234 }
+    RenameSelfPayload:
+      type: object
+      required: [type, newPseudonym]
+      properties:
+        type:         { type: string, enum: [renameSelf] }
+        newPseudonym: { $ref: '#/components/schemas/Pseudonym' }
+      example: { type: renameSelf, newPseudonym: Alice }
+    SetGridConfigPayload:
+      type: object
+      required: [type, width, height]
+      description: Owner-only. Server rejects with `error` otherwise.
+      properties:
+        type:   { type: string, enum: [setGridConfig] }
+        width:  { type: integer, minimum: 5, maximum: 15 }
+        height: { type: integer, minimum: 5, maximum: 15 }
+      example: { type: setGridConfig, width: 7, height: 7 }
+    StartGamePayload:
+      type: object
+      required: [type]
+      description: Owner-only. Server rejects with `error` otherwise.
+      properties:
+        type: { type: string, enum: [startGame] }
+      example: { type: startGame }
+    CellUpdatePayload:
+      type: object
+      required: [type, row, column, letter]
+      description: Client-initiated cell write. `letter` is `null` to clear. Server rebroadcasts as `cellUpdated` with a `writtenAt` stamp.
+      properties:
+        type:   { type: string, enum: [cellUpdate] }
+        row:    { type: integer, minimum: 0 }
+        column: { type: integer, minimum: 0 }
+        letter: { $ref: '#/components/schemas/Letter' }
+      example: { type: cellUpdate, row: 0, column: 3, letter: P }
+    LeaveLobbyPayload:
+      type: object
+      required: [type]
+      properties:
+        type: { type: string, enum: [leaveLobby] }
+      example: { type: leaveLobby }
+
+    # ----- Server → client payloads -----
+    LobbyStatePayload:
+      type: object
+      required: [type, players, ownerSessionId, state, gridConfig, game]
+      description: Snapshot fired on join and on reconnect.
+      properties:
+        type:           { type: string, enum: [lobbyState] }
+        players:        { type: array, maxItems: 8, items: { $ref: '#/components/schemas/Player' } }
+        ownerSessionId: { $ref: '#/components/schemas/SessionId' }
+        state:          { $ref: '#/components/schemas/LobbyLifecycleState' }
+        gridConfig:     { $ref: '#/components/schemas/GridConfig' }
+        game:           { $ref: '#/components/schemas/GameSession', nullable: true }
+      example:
+        type: lobbyState
+        players: [{ sessionId: 0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6b, pseudonym: Joueur 1234, joinedAt: '2026-05-02T15:30:00Z' }]
+        ownerSessionId: 0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6b
+        state: WAITING
+        gridConfig: { width: 7, height: 7 }
+        game: null
+    PlayerJoinedPayload:
+      type: object
+      required: [type, sessionId, pseudonym, joinedAt]
+      properties:
+        type:      { type: string, enum: [playerJoined] }
+        sessionId: { $ref: '#/components/schemas/SessionId' }
+        pseudonym: { $ref: '#/components/schemas/Pseudonym' }
+        joinedAt:  { $ref: '#/components/schemas/Instant' }
+      example: { type: playerJoined, sessionId: 0190e3b2-1c45-7d2e-9a3f-c0d1e2f3a4b5, pseudonym: Bob, joinedAt: '2026-05-02T15:31:12Z' }
+    PlayerLeftPayload:
+      type: object
+      required: [type, sessionId]
+      properties:
+        type:      { type: string, enum: [playerLeft] }
+        sessionId: { $ref: '#/components/schemas/SessionId' }
+      example: { type: playerLeft, sessionId: 0190e3b2-1c45-7d2e-9a3f-c0d1e2f3a4b5 }
+    PlayerRenamedPayload:
+      type: object
+      required: [type, sessionId, newPseudonym]
+      properties:
+        type:         { type: string, enum: [playerRenamed] }
+        sessionId:    { $ref: '#/components/schemas/SessionId' }
+        newPseudonym: { $ref: '#/components/schemas/Pseudonym' }
+      example: { type: playerRenamed, sessionId: 0190e3b2-1c45-7d2e-9a3f-c0d1e2f3a4b5, newPseudonym: Alice }
+    GameStartedPayload:
+      type: object
+      required: [type, puzzle, startedAt]
+      description: Sent once when the owner clicks Start. `puzzle` is the document the server fetched from grid/ verbatim; clients render directly from it.
+      properties:
+        type:      { type: string, enum: [gameStarted] }
+        puzzle:    { $ref: '#/components/schemas/GamePuzzle' }
+        startedAt: { $ref: '#/components/schemas/Instant' }
+      example: { type: gameStarted, startedAt: '2026-05-02T15:35:00Z', puzzle: { id: 0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6c, title: Petite grille du mardi, language: fr, width: 5, height: 5, cells: [], clues: [], createdAt: '2026-04-24T15:30:00Z' } }
+    CellUpdatedPayload:
+      type: object
+      required: [type, sessionId, row, column, letter, writtenAt]
+      description: Canonical broadcast for an accepted `cellUpdate`. Server stamps `writtenAt`; clients use it to break ties.
+      properties:
+        type:      { type: string, enum: [cellUpdated] }
+        sessionId: { $ref: '#/components/schemas/SessionId' }
+        row:       { type: integer, minimum: 0 }
+        column:    { type: integer, minimum: 0 }
+        letter:    { $ref: '#/components/schemas/Letter' }
+        writtenAt: { $ref: '#/components/schemas/Instant' }
+      example: { type: cellUpdated, sessionId: 0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6b, row: 0, column: 3, letter: P, writtenAt: '2026-05-02T15:35:42Z' }
+    GameSolvedPayload:
+      type: object
+      required: [type, durationMs, finalEntries]
+      description: All cells match the canonical solution; lobby is COMPLETED.
+      properties:
+        type:         { type: string, enum: [gameSolved] }
+        durationMs:   { type: integer, minimum: 0, description: Authoritative duration from `gameStarted` to solve., example: 184250 }
+        finalEntries: { type: array, items: { $ref: '#/components/schemas/CellEntry' }, description: Every solved cell. Convenience for the end-game UI. }
+      example:
+        type: gameSolved
+        durationMs: 184250
+        finalEntries: [{ row: 0, column: 3, letter: P }, { row: 0, column: 4, letter: A }]
+    ErrorPayload:
+      type: object
+      required: [type, errorType, title]
+      description: |
+        RFC 7807-shaped error frame. The on-the-wire field is `errorType`
+        (not `type`) so it does not collide with the discriminator; the
+        `type` discriminator value is `error`.
+      properties:
+        type:      { type: string, enum: [error] }
+        errorType: { type: string, format: uri, description: Stable URI per error class (RFC 7807 `type`)., example: 'https://bliss.example/errors/lobby-full' }
+        title:     { type: string, description: Short, human-readable summary., example: Lobby is full }
+        detail:    { type: string, description: Occurrence-specific explanation. }
+        status:    { type: integer, minimum: 100, maximum: 599, description: HTTP-style status code, mirrored for parity with REST. }
+      example: { type: error, errorType: 'https://bliss.example/errors/lobby-full', title: Lobby is full, detail: This lobby already has 8 players., status: 409 }
