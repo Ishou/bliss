@@ -327,6 +327,11 @@ describe('Lobby route applyEvent reducer', () => {
 //   D→  X    X       across-1 from (0,0)
 //   X   X    X       letters
 //   B   X    X       blocked top-left of last row
+//
+// `GameDefinitionCell` carries `clues: array (1..2)` per
+// game/api/asyncapi.yaml. The 1-clue case below is the common shape; a
+// 2-clue corner cell would carry both an across and a down clue at the
+// same position.
 const buildGamePuzzle = (): GamePuzzle => ({
   id: 'test-puzzle',
   title: 'Test',
@@ -334,7 +339,11 @@ const buildGamePuzzle = (): GamePuzzle => ({
   width: 3,
   height: 3,
   cells: [
-    { kind: 'definition', position: { row: 0, column: 0 }, clueId: 'c1', text: 'a clue', arrow: 'right' },
+    {
+      kind: 'definition',
+      position: { row: 0, column: 0 },
+      clues: [{ id: 'c1', text: 'a clue', arrow: 'right' }],
+    },
     { kind: 'letter', position: { row: 0, column: 1 }, letter: null },
     { kind: 'letter', position: { row: 0, column: 2 }, letter: null },
     { kind: 'letter', position: { row: 1, column: 0 }, letter: null },
@@ -580,6 +589,68 @@ describe('Lobby route Wave H integration', () => {
     expect(
       screen.getByRole('list', { name: /Liste des joueurs/i }),
     ).not.toHaveTextContent('Joueur Tardif');
+  });
+
+  it('renders letter cells empty even when the wire defensively carries a `letter`', async () => {
+    // Regression: PR #146 mapped wire `letter` into UI `entry`, so any
+    // server frame carrying a non-null `letter` (whether by accident or
+    // by a future pre-fill use case) rendered the grid pre-solved on
+    // every client. Per game/api/asyncapi.yaml `GameLetterCell`, the
+    // server emits `null` here in v1, but the route MUST stay defensive:
+    // `entry` is local player input — never the wire's letter slot.
+    const gameClient = makeFakeGameClient();
+    const { container } = renderLobby({ gameClient });
+    await screen.findByRole('heading', { name: /Salon · 7gQ2xK9p/ });
+
+    const puzzleWithLeak: GamePuzzle = {
+      ...buildGamePuzzle(),
+      cells: [
+        {
+          kind: 'definition',
+          position: { row: 0, column: 0 },
+          clues: [{ id: 'c1', text: 'a clue', arrow: 'right' }],
+        },
+        // Simulate a hypothetical server slip-up: the wire carries a
+        // would-be answer letter. The route adapter must still render
+        // these cells blank.
+        { kind: 'letter', position: { row: 0, column: 1 }, letter: 'A' as Letter },
+        { kind: 'letter', position: { row: 0, column: 2 }, letter: 'B' as Letter },
+      ],
+    };
+    act(() => {
+      gameClient.dispatch({
+        type: 'gameStarted',
+        puzzle: puzzleWithLeak,
+        startedAt: '2026-05-02T15:30:00Z',
+      });
+    });
+
+    const inputs = container.querySelectorAll<HTMLInputElement>(
+      'input[data-cell-kind="letter"]',
+    );
+    expect(inputs.length).toBeGreaterThan(0);
+    for (const input of inputs) {
+      expect(input.value).toBe('');
+    }
+  });
+
+  it('renders the current-clue panel placeholder beside the grid on gameStarted', async () => {
+    const gameClient = makeFakeGameClient();
+    const { container } = renderLobby({ gameClient });
+    await screen.findByRole('heading', { name: /Salon · 7gQ2xK9p/ });
+    act(() => {
+      gameClient.dispatch({
+        type: 'gameStarted',
+        puzzle: buildGamePuzzle(),
+        startedAt: '2026-05-02T15:30:00Z',
+      });
+    });
+    // The Grid component mounts a `CurrentCluePanel` next to the grid;
+    // its placeholder copy is the visible cue that clue text renders
+    // alongside (rather than baked into) the cells.
+    const panel = container.querySelector('[data-testid="current-clue-panel"]');
+    expect(panel).not.toBeNull();
+    expect(panel?.textContent).toMatch(/Sélectionnez une case/i);
   });
 
   it('forwards a typed letter to gameClient.cellUpdate with row/column/letter', async () => {

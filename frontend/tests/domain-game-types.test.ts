@@ -34,14 +34,14 @@ describe('domain/game types', () => {
   });
 
   it('discriminates GameCell variants on `kind`', () => {
+    // `GameDefinitionCell.clues` is a 1..2-item array per
+    // game/api/asyncapi.yaml; the 1-item shape is the common case.
     const cells: GameCell[] = [
       { kind: 'letter', position: { row: 0, column: 0 }, letter: null },
       {
         kind: 'definition',
         position: { row: 0, column: 1 },
-        clueId: 'c1',
-        text: 'Capitale',
-        arrow: 'right',
+        clues: [{ id: 'c1', text: 'Capitale', arrow: 'right' }],
       },
       { kind: 'block', position: { row: 0, column: 2 } },
     ];
