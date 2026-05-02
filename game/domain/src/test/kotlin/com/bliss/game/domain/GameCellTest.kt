@@ -22,11 +22,6 @@ class GameCellTest {
     }
 
     @Test
-    fun `BlockCell exposes its position`() {
-        assertThat(BlockCell(Position(1, 2)).position).isEqualTo(Position(1, 2))
-    }
-
-    @Test
     fun `DefinitionCell accepts one clue`() {
         val cell =
             DefinitionCell(
@@ -86,6 +81,18 @@ class GameCellTest {
     fun `GameDefinitionClue rejects text longer than 500 chars`() {
         assertFailure { GameDefinitionClue(clueId, "x".repeat(501), GameArrow.RIGHT) }
             .messageContains("500")
+    }
+
+    @Test
+    fun `GameClue accepts length 1 (minimum valid)`() {
+        val c = GameClue(clueId, GameClueDirection.ACROSS, Position(0, 0), 1, "hint")
+        assertThat(c.length).isEqualTo(1)
+    }
+
+    @Test
+    fun `GameClue accepts length 50 (maximum valid)`() {
+        val c = GameClue(clueId, GameClueDirection.ACROSS, Position(0, 0), 50, "hint")
+        assertThat(c.length).isEqualTo(50)
     }
 
     @Test

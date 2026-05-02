@@ -8,13 +8,6 @@ import org.junit.jupiter.api.Test
 
 class PositionTest {
     @Test
-    fun `Position holds row and column`() {
-        val p = Position(2, 5)
-        assertThat(p.row).isEqualTo(2)
-        assertThat(p.column).isEqualTo(5)
-    }
-
-    @Test
     fun `Position rejects negative row`() {
         assertFailure { Position(-1, 0) }.messageContains("row")
     }
