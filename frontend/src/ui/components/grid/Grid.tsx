@@ -57,7 +57,18 @@ const positionKey = (p: Position) => `${p.row},${p.col}`;
 // and page chrome for WCAG 1.4.4 compliance (see ADR-0016). Because the page
 // itself never zooms, the layout viewport never diverges from the visual
 // viewport, so `position: sticky` on the clue panel works without JS.
-export function Grid({ puzzle }: { puzzle: Puzzle }) {
+// `onCellChange`: optional callback fired after every cell-write
+// (letter typed, backspace clear, defensive paste blank). Solo callers
+// omit it; multiplayer callers (Wave H) wire it to the WebSocket
+// cellUpdate broadcast per ADR-0018. See `useGridNavigation` for the
+// exhaustive list of write sites.
+export function Grid({
+  puzzle,
+  onCellChange,
+}: {
+  puzzle: Puzzle;
+  onCellChange?: (row: number, col: number, letter: string | null) => void;
+}) {
   const cellByPosition = useMemo(() => {
     const m = new Map<string, Cell>();
     for (const c of puzzle.cells) m.set(positionKey(c.position), c);
@@ -72,7 +83,7 @@ export function Grid({ puzzle }: { puzzle: Puzzle }) {
     [puzzle.height, puzzle.width],
   );
 
-  const nav = useGridNavigation(puzzle);
+  const nav = useGridNavigation(puzzle, { onCellChange });
 
   const rows: { row: number; cells: (Cell | null)[] }[] = [];
   for (let row = 0; row < puzzle.height; row++) {
