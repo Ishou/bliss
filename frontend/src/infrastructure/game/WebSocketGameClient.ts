@@ -10,6 +10,17 @@
 // Reconnection is OUT OF SCOPE — basic open/close only. The lobby route in
 // Wave G wraps this adapter and adds reconnect-with-backoff (§Reconnect in
 // `game/api/asyncapi.yaml`).
+//
+// Page-lifecycle leave: when the tab is actually being torn down (pagehide
+// with `persisted === false`, i.e. NOT entering bfcache, or `beforeunload`),
+// we attempt a best-effort `leaveLobby` frame so the server doesn't have to
+// wait out the full ADR-0018 §5 30s reconnect grace. This is opportunistic:
+// many close paths (mobile OOM kill, network drop, force-quit) skip the
+// event entirely — the server-side grace is the source of truth, this just
+// shortens the common explicit-close case. We deliberately do NOT fire on
+// tab backgrounding (`pagehide` with `persisted === true` means the page is
+// being frozen into bfcache and may be restored — sending `leaveLobby` then
+// would kick the player when they alt-tabbed).
 
 import type {
   ConnectionState,
@@ -66,6 +77,10 @@ export function createWebSocketGameClient(
 
   let socket: WebSocketLike | null = null;
   let pendingJoin: { sessionId: SessionId; pseudonym: Pseudonym } | null = null;
+  // Track the page-lifecycle listeners we attach in `connect` so we can
+  // detach them in `onclose` / `disconnect` — without removal the listener
+  // would leak across reconnects.
+  let detachLifecycle: (() => void) | null = null;
   const subscribers = new Set<(event: GameEvent) => void>();
   // Transport-lifecycle subscribers (Wave H PR #17, `ConnectionBanner`).
   // `disconnected` is the initial state — `connect()` flips it to
@@ -89,6 +104,48 @@ export function createWebSocketGameClient(
       throw new Error('WebSocketGameClient: socket is not open');
     }
     socket.send(JSON.stringify(frame));
+  };
+
+  // Best-effort leave on real page teardown. Wrapped in try/catch because
+  // the socket may be in CLOSING by the time the handler fires (the browser
+  // tears the connection down before our event runs in some paths) — we
+  // don't want a final exception propagating into the lifecycle event.
+  const sendLeaveBestEffort = (): void => {
+    try {
+      if (socket && socket.readyState === WS_OPEN) {
+        socket.send(JSON.stringify({ type: 'leaveLobby' } satisfies LeaveLobbyFrame));
+      }
+    } catch {
+      // Browser tore the socket down between the readyState check and the
+      // send; the server's reconnect-grace will free the slot in 30s.
+    }
+  };
+
+  const attachLifecycleListeners = (): void => {
+    // Skip when there's no DOM (SSR, Node-side test harness without
+    // jsdom hooks). The application root attaches a no-op
+    // `globalThis.WebSocket` in those paths but doesn't always polyfill
+    // `addEventListener` on `window`.
+    const target = (globalThis as { addEventListener?: typeof addEventListener }).addEventListener
+      ? (globalThis as unknown as EventTarget)
+      : null;
+    if (!target) return;
+    const onPageHide = (event: Event): void => {
+      // `persisted === true` means the page is going into bfcache and may
+      // be restored as-is; sending `leaveLobby` then would kick the player
+      // on a simple back/forward navigation. Only fire on real teardown.
+      const pageEvent = event as PageTransitionEvent;
+      if (pageEvent.persisted) return;
+      sendLeaveBestEffort();
+    };
+    const onBeforeUnload = (): void => sendLeaveBestEffort();
+    target.addEventListener('pagehide', onPageHide as EventListener);
+    target.addEventListener('beforeunload', onBeforeUnload as EventListener);
+    detachLifecycle = (): void => {
+      target.removeEventListener('pagehide', onPageHide as EventListener);
+      target.removeEventListener('beforeunload', onBeforeUnload as EventListener);
+      detachLifecycle = null;
+    };
   };
 
   const handleMessage = (raw: unknown): void => {
@@ -120,6 +177,7 @@ export function createWebSocketGameClient(
       socket = ws;
       pendingJoin = { sessionId, pseudonym };
       setConnectionState('connecting');
+      attachLifecycleListeners();
 
       return new Promise<void>((resolve, reject) => {
         let settled = false;
@@ -150,6 +208,7 @@ export function createWebSocketGameClient(
         ws.onclose = () => {
           socket = null;
           pendingJoin = null;
+          detachLifecycle?.();
           // Any close — clean or not — drops the transport. A future
           // reconnect wrapper will flip this to `reconnecting` before
           // the next `connect()` attempt.
@@ -189,12 +248,19 @@ export function createWebSocketGameClient(
 
     disconnect() {
       const ws = socket;
-      if (!ws) return;
+      if (!ws) {
+        // Still detach any lifecycle listener that survived an earlier
+        // `onclose` — defensive, the listener keeps a closure over
+        // `socket`, so leaving it attached would be a small leak.
+        detachLifecycle?.();
+        return;
+      }
       // Normal closure per RFC 6455. The server keeps the slot warm for
       // ~30s by sessionId so reconnects don't kick the player.
       ws.close(1000);
       socket = null;
       pendingJoin = null;
+      detachLifecycle?.();
     },
 
     subscribe(handler): Unsubscribe {
