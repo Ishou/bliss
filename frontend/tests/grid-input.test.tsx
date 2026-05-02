@@ -355,6 +355,21 @@ describe('Grid keyboard interactions — onCellChange callback', () => {
     expect(onCellChange).not.toHaveBeenCalled();
   });
 
+  it('does not fire on Android insertText when typing the same letter already in the cell', () => {
+    const onCellChange = vi.fn();
+    const { container } = render(<Grid puzzle={TEST_PUZZLE} onCellChange={onCellChange} />);
+    const start = inputAt(container, 1, 1)!;
+    click(start);
+    start.value = 'l';
+    start.dispatchEvent(new InputEvent('input', { inputType: 'insertText', data: 'l', bubbles: true }));
+    expect(onCellChange).toHaveBeenCalledTimes(1);
+    click(start);                    // insertText advanced focus; come back.
+    onCellChange.mockClear();
+    start.value = 'l';
+    start.dispatchEvent(new InputEvent('input', { inputType: 'insertText', data: 'l', bubbles: true }));
+    expect(onCellChange).not.toHaveBeenCalled();
+  });
+
   it('does not fire when Backspace on an already-empty first cell has nowhere to walk back', () => {
     const onCellChange = vi.fn();
     const { container } = render(<Grid puzzle={TEST_PUZZLE} onCellChange={onCellChange} />);

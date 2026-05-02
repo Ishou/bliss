@@ -149,6 +149,11 @@ export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOpt
   // (and so consumers passing an inline function don't churn handlers).
   const onCellChangeRef = useRef(options?.onCellChange);
   onCellChangeRef.current = options?.onCellChange;
+  // Tracks the per-cell normalized (uppercase) value so handleInput can
+  // detect same-letter no-ops. The browser overwrites target.value with the
+  // raw IME character before handleInput fires, making a simple before/after
+  // check on target.value unreliable for the Android insertText path.
+  const cellValuesRef = useRef(new Map<string, string>());
   // State mirror so stable callbacks see the latest values.
   const stateRef = useRef({ focused, direction });
   stateRef.current = { focused, direction };
@@ -326,7 +331,10 @@ export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOpt
         if (el) {
           const before = el.value;
           el.value = letter;
-          if (before !== letter) onCellChangeRef.current?.(f.row, f.col, letter);
+          if (before !== letter) {
+            cellValuesRef.current.set(key(f), letter);
+            onCellChangeRef.current?.(f.row, f.col, letter);
+          }
         }
         const clue = lookup.clueAt(f.row, f.col, dir);
         if (!clue) return;
@@ -352,6 +360,7 @@ export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOpt
           const el = refs.current.get(key(f));
           if (el && el.value !== '') {
             el.value = '';
+            cellValuesRef.current.delete(key(f));
             onCellChangeRef.current?.(f.row, f.col, null);
             return;
           }
@@ -364,7 +373,10 @@ export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOpt
           if (prevEl) {
             const before = prevEl.value;
             prevEl.value = '';
-            if (before !== '') onCellChangeRef.current?.(prev.row, prev.col, null);
+            if (before !== '') {
+              cellValuesRef.current.delete(key(prev));
+              onCellChangeRef.current?.(prev.row, prev.col, null);
+            }
           }
           focusCell(prev);
           return;
@@ -384,7 +396,10 @@ export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOpt
         if (target.value.length > 1 || (target.value && !LETTER_RE.test(target.value))) {
           target.value = '';
           const p = posOf(target);
-          if (p) onCellChangeRef.current?.(p.row, p.col, null);
+          if (p) {
+            cellValuesRef.current.delete(key(p));
+            onCellChangeRef.current?.(p.row, p.col, null);
+          }
         }
         return;
       }
@@ -394,7 +409,10 @@ export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOpt
         target.value = '';
         if (before !== '') {
           const p = posOf(target);
-          if (p) onCellChangeRef.current?.(p.row, p.col, null);
+          if (p) {
+            cellValuesRef.current.delete(key(p));
+            onCellChangeRef.current?.(p.row, p.col, null);
+          }
         }
         return;
       }
@@ -402,7 +420,11 @@ export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOpt
       target.value = letter;
       const { focused: f, direction: dir } = stateRef.current;
       if (!f) return;
-      onCellChangeRef.current?.(f.row, f.col, letter);
+      const prevLetter = cellValuesRef.current.get(key(f)) ?? '';
+      if (prevLetter !== letter) {
+        cellValuesRef.current.set(key(f), letter);
+        onCellChangeRef.current?.(f.row, f.col, letter);
+      }
       const clue = lookup.clueAt(f.row, f.col, dir);
       if (!clue) return;
       const idx = clue.cells.findIndex((c) => same(c.position, f));
