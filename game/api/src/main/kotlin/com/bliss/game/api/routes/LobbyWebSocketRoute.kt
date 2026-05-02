@@ -253,8 +253,13 @@ private suspend fun DefaultWebSocketServerSession.handleFrame(
             dispatch(lobbyId, sessionManager) {
                 useCases.leaveLobby(lobbyId, SessionId(sid))
             }
-            // Clear so finally{} does not attempt to schedule a grace timer
-            // on top of the explicit voluntary leave.
+            // Returning null here only prevents a grace timer when the session
+            // was never bound (unregister returns null AND memberSessionId is
+            // null → finally skips scheduleReconnectGrace). For a player who
+            // completed joinLobby, unregister always returns the bound sessionId
+            // so a grace coroutine still fires; the second leaveLobby returns
+            // Failure(PlayerNotInLobby), which scheduleReconnectGrace silently
+            // swallows — no double broadcast.
             null
         }
     }
