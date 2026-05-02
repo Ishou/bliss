@@ -63,6 +63,13 @@ dependencies {
     // (ADR-0018 §3 / ADR-0006). The route itself lands in Wave F PR #10.
     implementation("io.ktor:ktor-server-websockets:$ktorVersion")
 
+    // Ktor client + CIO engine — Module.kt instantiates an HttpClient for
+    // HttpPuzzleProvider (which lives in :game:infrastructure but is a
+    // pure suspend adapter). `implementation` deps are not exposed across
+    // module boundaries, so the api module declares its own client.
+    implementation("io.ktor:ktor-client-core:$ktorVersion")
+    implementation("io.ktor:ktor-client-cio:$ktorVersion")
+
     // Structured JSON logging stack (ADR-0007 §7), parity with grid/api.
     implementation("ch.qos.logback:logback-classic:$logbackVersion")
     implementation("net.logstash.logback:logstash-logback-encoder:$logstashEncoderVersion")
@@ -74,6 +81,10 @@ dependencies {
     testImplementation("com.willowtreeapps.assertk:assertk-jvm:$assertkVersion")
     testImplementation("io.ktor:ktor-server-test-host:$ktorVersion")
     testImplementation("io.ktor:ktor-client-content-negotiation:$ktorVersion")
+    // Ktor's testApplication exposes a client; enabling the WebSockets plugin
+    // on it lets us drive `/v1/lobbies/{lobbyId}/ws` from tests.
+    testImplementation("io.ktor:ktor-client-websockets:$ktorVersion")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.0")
     testImplementation("com.lemonappdev:konsist:$konsistVersion")
     testImplementation("io.kotest:kotest-property-jvm:$kotestPropertyVersion")
 }

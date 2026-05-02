@@ -3,8 +3,17 @@ package com.bliss.game.api
 import com.bliss.game.api.dto.ProblemDetails
 import com.bliss.game.api.routes.health
 import com.bliss.game.api.routes.lobbies
+import com.bliss.game.api.routes.lobbyWebSocketRoute
 import com.bliss.game.application.usecases.CreateLobbyUseCase
+import com.bliss.game.application.usecases.JoinLobbyUseCase
+import com.bliss.game.application.usecases.LeaveLobbyUseCase
+import com.bliss.game.application.usecases.RenameSelfUseCase
+import com.bliss.game.application.usecases.SetGridConfigUseCase
+import com.bliss.game.application.usecases.StartGameUseCase
+import com.bliss.game.application.usecases.UpdateCellUseCase
+import com.bliss.game.infrastructure.HttpPuzzleProvider
 import com.bliss.game.infrastructure.InMemoryLobbyRepository
+import io.ktor.client.HttpClient
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
@@ -31,8 +40,10 @@ import kotlin.time.Duration.Companion.seconds
  * the two services have the same observability and error envelope.
  *
  * No persistence wiring — game/ is in-memory in v1 (ADR-0018 §3); no
- * Database.start() unlike grid/api. Game-specific REST + WebSocket routes
- * land in Wave F (PR #9 / #10); only the health route is wired here.
+ * Database.start() unlike grid/api. Both REST routes (PR #137) and the
+ * WebSocket endpoint (PR #138) consume the same in-memory
+ * InMemoryLobbyRepository so a lobby created via REST is visible to a
+ * subsequent WebSocket connection on the same process.
  */
 fun Application.module() {
     install(CORS) {
@@ -80,8 +91,8 @@ fun Application.module() {
     }
 
     // game/api is the FIRST WebSocket-using service in this repo (ADR-0018 §3,
-    // ADR-0006). The WebSocket route itself lands in Wave F PR #10; installing
-    // the plugin here lets that PR add the route without touching Module wiring.
+    // ADR-0006). The WebSocket route (PR #138) attaches inside `routing { }`
+    // below; the plugin install must precede route registration.
     install(WebSockets) {
         pingPeriod = 15.seconds
         timeout = 15.seconds
@@ -125,21 +136,32 @@ fun Application.module() {
         }
     }
 
-    // ---- DI for game-specific routes ------------------------------------
+    // ---- DI for game routes ---------------------------------------------
     // Manual wiring; mirrors grid/api's pattern (no DI framework). v1 is
     // in-memory only (ADR-0018 §3); :game:infrastructure's Postgres adapter
     // will replace InMemoryLobbyRepository when it lands.
     //
-    // PR #10 (WebSocket route, in parallel) introduces the additional ports
-    // — HttpPuzzleProvider for StartGameUseCase, the JoinLobby / RenameSelf /
-    // SetGridConfig / StartGame / UpdateCell / LeaveLobby use cases — and
-    // the wiring lines for them here. This PR wires only what POST + GET
-    // need.
+    // The repository instance is shared between REST routes (PR #137) and
+    // the WebSocket route (PR #138) so a lobby created via POST /v1/lobbies
+    // is visible to a subsequent WebSocket connection on the same process.
     val lobbyRepository = InMemoryLobbyRepository()
-    val createLobby = CreateLobbyUseCase(lobbyRepository, SystemClock)
+    val gridBaseUrl = System.getenv("GRID_BASE_URL") ?: "http://grid-api:8080"
+    val puzzleProvider = HttpPuzzleProvider(HttpClient(), gridBaseUrl)
+    val useCases =
+        LobbyUseCases(
+            createLobby = CreateLobbyUseCase(lobbyRepository, SystemClock),
+            joinLobby = JoinLobbyUseCase(lobbyRepository, SystemClock),
+            renameSelf = RenameSelfUseCase(lobbyRepository),
+            setGridConfig = SetGridConfigUseCase(lobbyRepository),
+            startGame = StartGameUseCase(lobbyRepository, puzzleProvider, SystemClock),
+            updateCell = UpdateCellUseCase(lobbyRepository, SystemClock),
+            leaveLobby = LeaveLobbyUseCase(lobbyRepository),
+        )
+    val sessionManager = SessionManager()
 
     routing {
         health(APP_VERSION)
-        lobbies(createLobby = createLobby, repo = lobbyRepository)
+        lobbies(createLobby = useCases.createLobby, repo = lobbyRepository)
+        lobbyWebSocketRoute(sessionManager, useCases, lobbyRepository)
     }
 }

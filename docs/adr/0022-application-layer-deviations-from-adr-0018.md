@@ -40,6 +40,28 @@ unit: no intermediate state is observable. `GameSession.isSolved()` encapsulates
 logic; a thin `EvaluateSolved` wrapper would add indirection with no independent testable
 behaviour.
 
+### 3. Wave F PR #10 exceeds ADR-0001 §4 400-line cap
+
+ADR-0001 §4 sets a hard cap of 400 non-blank, non-generated lines per PR. Wave F PR #10
+(`feat/game-api-websocket-endpoint`) ships approximately 731 main + 436 test non-blank lines.
+
+**Rationale:** The natural split (SessionManager + DTOs | route + route tests) was evaluated:
+each half still exceeds the cap (~610 + ~495 non-blank LOC) and would require duplicating the
+Ktor `testApplication` harness or leaving the first half untested against real wire shapes.
+Tight coupling between the route, mapper, DTOs, and their integration tests makes further
+splitting impractical without incurring more review burden than the single large PR. The Wave F
+dispatch brief explicitly anticipated and accepted this outcome.
+
+### 4. `SystemClock` deferred to `game:api` instead of `game:infrastructure`
+
+ADR-0018 §1 places production port adapters in `game:infrastructure`. `SystemClock` (a `Clock`
+port adapter calling `Instant.now()`) lives in `game:api` in Wave F.
+
+**Rationale:** The Wave F brief explicitly excluded `game:infrastructure` changes; the
+implementation is a single-line adapter with no infrastructure dependencies. Promoting it to
+`game:infrastructure` would require a separate PR touching that module, which is disproportionate
+for a one-liner. Promote to `game:infrastructure` when a second consumer appears.
+
 ## Consequences
 
 - `LobbyEventBroadcaster` does not exist as a port. Wave D (infrastructure) does not
