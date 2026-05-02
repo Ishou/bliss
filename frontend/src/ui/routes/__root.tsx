@@ -9,11 +9,17 @@ import type { Pseudonym, SessionId } from '@/domain/game';
 // that wires concrete adapters, keeping `ui/` free of `infrastructure/`
 // imports (ADR-0002 §7).
 //
-// Multiplayer adapters (`lobbyClient`, `gameClient`, `getSession`) are
-// optional: they are only present when the runtime feature flag
-// (ADR-0018 §10) enables the lobby route. Routes that consume them are
-// only registered when the flag is on, so they may safely assert
-// non-null at the call site.
+// Multiplayer adapters (`lobbyClient`, `gameClient`, `getSession`,
+// `setPseudonym`) are optional: they are only present when the runtime
+// feature flag (ADR-0018 §10) enables the lobby route. Routes that
+// consume them are only registered when the flag is on, so they may
+// safely assert non-null at the call site.
+//
+// `setPseudonym` is the write-side counterpart to `getSession`'s
+// pseudonym field — exposed here so `ui/routes/` can persist a rename
+// without importing `infrastructure/session/` directly (boundary rule
+// per ADR-0002 §7). The composition root in `main.tsx` wires it to
+// `localStorageSession.setPseudonym`.
 export interface AppSession {
   readonly sessionId: SessionId;
   readonly pseudonym: Pseudonym;
@@ -24,6 +30,7 @@ export interface AppRouterContext {
   readonly lobbyClient?: LobbyClient;
   readonly gameClient?: GameClient;
   readonly getSession?: () => AppSession;
+  readonly setPseudonym?: (pseudonym: Pseudonym) => void;
 }
 
 const errorPageStyles = css({
