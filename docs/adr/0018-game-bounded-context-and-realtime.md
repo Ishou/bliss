@@ -99,6 +99,15 @@ introduces no UX friction at human typing speeds.
 - **`/lobby/:lobbyId`** — frontend route. `lobbyId` is an 8-character
   base58 nanoid (URL-safe, low collision probability for the lobby
   population we expect, short enough to share verbally).
+
+  > **Exception to ADR-0003 §6 (UUID v7 identifiers):** `lobbyId`
+  > uses an 8-character base58 nanoid rather than UUID v7 because a
+  > lobby code must be short enough to share verbally and type without
+  > error; a 36-character UUID v7 string is unsuitable for that UX.
+  > The trade-off accepted is slightly reduced uniqueness guarantees
+  > (acceptable at expected lobby volumes) and a deviation from the
+  > cross-context identifier convention. `sessionId` (§6) is correctly
+  > UUID v7 and is unaffected.
 - **Max 8 players** per lobby. Acts as natural rate-limiting and
   bounds the broadcast fan-out per cell write.
 - **30-second reconnect window.** Closing and reopening the WS keeps
@@ -122,7 +131,40 @@ Pseudonym uniqueness is **not** enforced. Two players named "Alice"
 coexist; the UI differentiates them with a `sessionId`-derived hue on
 each player's avatar.
 
-### 7. Solo mode unchanged
+### 7. Threat model (v1 accepted risks)
+
+This ADR introduces a two-tier authorization surface: `sessionId` (a
+client-generated UUID v7 in `localStorage`) is the ownership
+credential for owner-only operations (`setGridConfig`, `startGame`).
+A STRIDE pass over the v1 design:
+
+- **SessionId spoofing / ownership hijack** *(Elevation of Privilege)*:
+  A client that learns another player's `sessionId` could issue
+  owner-only commands in their name. Mitigation: the server binds
+  `sessionId` to the WebSocket connection at join time; commands
+  arriving on a connection whose bound `sessionId` does not match the
+  stored owner `sessionId` are rejected. Accepted residual risk: no
+  cryptographic challenge is performed — if a `sessionId` leaks on a
+  plain-HTTP path, spoofing is possible. Fully mitigated in production
+  by mandatory HTTPS/WSS.
+- **Reconnect-window ownership takeover** *(Elevation of Privilege)*:
+  During the 30-second reconnect window the owner's slot is reserved;
+  a reconnecting client must present the same `sessionId` to reclaim
+  it. A client presenting a different `sessionId` joins only as a new
+  regular player — it never inherits owner status. After the window
+  expires, ownership transfers to the next-oldest connected player
+  server-side; this is an accepted UX trade-off, not a
+  privilege-escalation vector.
+- **Lobby enumeration / DoS** *(Denial of Service)*: The 8-character
+  base58 namespace is ~2.8 × 10¹³ combinations; blind brute-force is
+  infeasible. The 8-player hard cap bounds broadcast fan-out per
+  lobby. Lobby creation rate-limiting is **not** implemented in v1;
+  it is noted as a follow-up task once traffic data is available.
+- **Out of v1 scope**: private / password-protected lobbies, spectator
+  roles, cross-lobby DoS amplification, and cryptographic session
+  binding. Each is explicitly deferred to a follow-up ADR.
+
+### 8. Solo mode unchanged
 
 The existing `/` route stays exactly as today. Multiplayer is a
 separate route under `/lobby/:lobbyId`. No refactor of the solo flow,
@@ -130,7 +172,7 @@ zero regression risk for solo play. `Grid.tsx` is extended to accept
 an optional `gameClient` prop; solo mode passes `undefined` and the
 existing uncontrolled-input path (ADR-0002 §4) is unchanged.
 
-### 8. Schemas first
+### 9. Schemas first
 
 Per ADR-0006 §spec-first, the contract precedes the implementation:
 
