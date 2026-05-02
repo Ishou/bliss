@@ -88,16 +88,21 @@ jobs:
   deploy:
     name: deploy (${{ matrix.context }})
     # workflow_run path: only proceed on successful upstream push builds.
-    # workflow_dispatch path: only the row matching `inputs.context` runs;
-    # the other row is skipped via this if guard so a manual rollback to
-    # one service doesn't accidentally redeploy the other with the same
-    # digest (which would also be wrong because the digests are distinct).
+    # workflow_dispatch path: every matrix row is launched, but rows whose
+    # context doesn't match `inputs.context` short-circuit at the first
+    # step (see "Filter dispatch target") so a manual rollback to one
+    # service doesn't accidentally redeploy the other with the same
+    # digest (which would also be wrong — digests are distinct).
+    #
+    # NOTE: `matrix.*` is NOT available in a job-level `if:` because GHA
+    # evaluates job-level conditions before matrix expansion. That's why
+    # the per-context dispatch filter lives in a step, not here.
+    # See https://github.com/actions/runner/issues/1985.
     if: >-
-      ${{ (github.event_name == 'workflow_run' &&
+      ${{ github.event_name == 'workflow_dispatch' ||
+          (github.event_name == 'workflow_run' &&
            github.event.workflow_run.conclusion == 'success' &&
-           github.event.workflow_run.event == 'push') ||
-          (github.event_name == 'workflow_dispatch' &&
-           inputs.context == matrix.context) }}
+           github.event.workflow_run.event == 'push') }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     strategy:
@@ -126,13 +131,35 @@ jobs:
       url: ${{ matrix.health-url }}
 
     steps:
+      - name: Filter dispatch target
+        # On workflow_dispatch, only the matrix row whose context matches
+        # `inputs.context` should actually deploy; the other row no-ops.
+        # On workflow_run, every row runs (both contexts deploy after a
+        # successful main build). Sets RUN_ROW=true|false in $GITHUB_ENV;
+        # every subsequent step gates on `env.RUN_ROW == 'true'`.
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          DISPATCH_CONTEXT: ${{ inputs.context }}
+          ROW_CONTEXT: ${{ matrix.context }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT_NAME" = "workflow_dispatch" ] \
+             && [ "$DISPATCH_CONTEXT" != "$ROW_CONTEXT" ]; then
+            echo "Dispatch target is '$DISPATCH_CONTEXT'; skipping '$ROW_CONTEXT' row."
+            echo "RUN_ROW=false" >> "$GITHUB_ENV"
+          else
+            echo "RUN_ROW=true" >> "$GITHUB_ENV"
+          fi
+
       - name: Checkout repository
+        if: env.RUN_ROW == 'true'
         # actions/checkout v4.3.1 — same SHA as helm-lint.yml.
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
           fetch-depth: 1
 
       - name: Set up Helm
+        if: env.RUN_ROW == 'true'
         # azure/setup-helm v4.3.1 — same SHA as helm-lint.yml.
         uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4 # v4.3.1
         with:
@@ -141,7 +168,7 @@ jobs:
       - name: Download digest artifact (workflow_run)
         # Cross-workflow artifact download: the build workflow uploaded
         # `image-digest-<context>` in the run identified by `workflow_run.id`.
-        if: github.event_name == 'workflow_run'
+        if: env.RUN_ROW == 'true' && github.event_name == 'workflow_run'
         # actions/download-artifact v4.3.0
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
@@ -151,6 +178,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Resolve image digest
+        if: env.RUN_ROW == 'true'
         id: digest
         env:
           DISPATCH_DIGEST: ${{ inputs.digest }}
@@ -177,6 +205,7 @@ jobs:
           echo "Resolved digest: $digest"
 
       - name: Configure kubeconfig
+        if: env.RUN_ROW == 'true'
         env:
           KUBECONFIG_DATA: ${{ secrets.KUBECONFIG_PROD }}
         run: |
@@ -190,6 +219,7 @@ jobs:
           chmod 600 ~/.kube/config
 
       - name: Helm upgrade --install
+        if: env.RUN_ROW == 'true'
         id: helm
         env:
           DIGEST: ${{ steps.digest.outputs.digest }}
@@ -214,7 +244,7 @@ jobs:
         # Only runs when the helm step failed. `set +e` so we don't
         # short-circuit on missing resources. Output is grouped so the
         # GHA log UI surfaces collapsible sections.
-        if: failure() && steps.helm.conclusion == 'failure'
+        if: failure() && env.RUN_ROW == 'true' && steps.helm.conclusion == 'failure'
         env:
           RELEASE: ${{ matrix.release-name }}
         run: |
@@ -261,7 +291,7 @@ jobs:
         # and rolls back synchronously. If there is no prior revision
         # (very first install), we uninstall instead so the namespace
         # doesn't keep a permanently-failed release lying around.
-        if: failure() && steps.helm.conclusion == 'failure'
+        if: failure() && env.RUN_ROW == 'true' && steps.helm.conclusion == 'failure'
         env:
           RELEASE: ${{ matrix.release-name }}
         run: |
@@ -280,6 +310,7 @@ jobs:
           fi
 
       - name: Verify rollout
+        if: env.RUN_ROW == 'true'
         env:
           RELEASE: ${{ matrix.release-name }}
         # `fullnameOverride` in each chart's values-prod.yaml pins the
@@ -291,6 +322,7 @@ jobs:
           kubectl -n wordsparrow get pods -l app.kubernetes.io/instance="$RELEASE" -o wide
 
       - name: Smoke test /v1/health
+        if: env.RUN_ROW == 'true'
         env:
           HEALTH_URL: ${{ matrix.health-url }}
         # External smoke test against the public ingress. cert-manager
