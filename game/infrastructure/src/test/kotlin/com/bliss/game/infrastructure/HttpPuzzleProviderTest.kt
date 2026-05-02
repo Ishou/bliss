@@ -7,6 +7,7 @@ import assertk.assertions.hasSize
 import assertk.assertions.isEqualTo
 import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotNull
+import com.bliss.game.application.ports.PuzzleProviderException
 import com.bliss.game.domain.BlockCell
 import com.bliss.game.domain.DefinitionCell
 import com.bliss.game.domain.GameArrow

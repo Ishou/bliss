@@ -5,6 +5,7 @@
 package com.bliss.game.infrastructure
 
 import com.bliss.game.application.ports.PuzzleProvider
+import com.bliss.game.application.ports.PuzzleProviderException
 import com.bliss.game.domain.GamePuzzle
 import com.fasterxml.uuid.Generators
 import io.ktor.client.HttpClient
@@ -12,7 +13,6 @@ import io.ktor.client.request.get
 import io.ktor.client.request.parameter
 import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsText
-import io.ktor.http.HttpStatusCode
 import io.ktor.http.isSuccess
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
@@ -80,26 +80,4 @@ class HttpPuzzleProvider(
                 explicitNulls = false
             }
     }
-}
-
-/**
- * Failure modes raised by [HttpPuzzleProvider]. The application layer translates these to
- * [com.bliss.game.application.usecases.UseCaseError] in StartGameUseCase (Wave D · PR #4).
- */
-sealed class PuzzleProviderException(
-    message: String,
-    cause: Throwable? = null,
-) : RuntimeException(message, cause) {
-    class UpstreamError(
-        val status: Int,
-        val body: String,
-    ) : PuzzleProviderException("grid responded with HTTP $status: ${HttpStatusCode.fromValue(status).description}")
-
-    class UpstreamUnavailable(
-        cause: Throwable,
-    ) : PuzzleProviderException("grid is unreachable: ${cause.message}", cause)
-
-    class UpstreamMalformed(
-        cause: Throwable,
-    ) : PuzzleProviderException("grid response failed to parse: ${cause.message}", cause)
 }
