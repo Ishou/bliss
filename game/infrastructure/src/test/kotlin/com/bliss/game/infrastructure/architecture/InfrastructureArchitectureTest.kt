@@ -24,17 +24,19 @@ class InfrastructureArchitectureTest {
         }
     }
 
+    // Ktor client + kotlinx-serialization are legitimate adapter deps (HttpPuzzleProvider
+    // talks to grid over REST). Server-side Ktor stays banned — that belongs in :game:api.
+    // JDBC / Postgres / Flyway stay banned until the persistence adapter PR adds them.
     @Test
-    fun `infrastructure has no framework imports`() {
+    fun `infrastructure has no banned framework imports`() {
         val forbiddenPrefixes =
             listOf(
                 "org.springframework",
                 "jakarta.",
-                "io.ktor",
+                "io.ktor.server",
                 "org.http4k",
                 "org.jetbrains.exposed",
                 "io.micronaut",
-                "kotlinx.serialization",
                 "java.sql",
                 "javax.sql",
                 "com.zaxxer.hikari",

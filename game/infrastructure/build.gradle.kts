@@ -1,10 +1,18 @@
 plugins {
     kotlin("jvm")
+    // Wire DTOs are @Serializable — kotlinx-serialization plugin generates the (de)serializers.
+    kotlin("plugin.serialization") version "2.3.21"
 }
 
 kotlin {
     jvmToolchain(21)
 }
+
+// Versions mirrored from grid/api/build.gradle.kts so the Ktor stack stays uniform across
+// bounded contexts. Bump in lockstep when grid moves.
+val ktorVersion = "3.4.3"
+val kotlinxSerializationVersion = "1.11.0"
+val javaUuidGeneratorVersion = "4.3.0"
 
 dependencies {
     implementation(project(":game:domain"))
@@ -13,6 +21,17 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.0")
     implementation("org.slf4j:slf4j-api:2.0.16")
 
+    // Ktor client + CIO engine — calls grid's REST API from HttpPuzzleProvider.
+    // CIO matches grid/api's server-side engine choice (ADR-0006); no extra native deps.
+    implementation("io.ktor:ktor-client-core:$ktorVersion")
+    implementation("io.ktor:ktor-client-cio:$ktorVersion")
+    implementation("io.ktor:ktor-client-content-negotiation:$ktorVersion")
+    implementation("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$kotlinxSerializationVersion")
+
+    // UUID v7 generation for fresh PuzzleIds (ADR-0003 §6).
+    implementation("com.fasterxml.uuid:java-uuid-generator:$javaUuidGeneratorVersion")
+
     testImplementation(platform("org.junit:junit-bom:5.11.4"))
     testImplementation("org.junit.jupiter:junit-jupiter")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
@@ -20,6 +39,10 @@ dependencies {
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.0")
     testImplementation("io.kotest:kotest-property:6.1.9")
     testImplementation("com.lemonappdev:konsist:0.17.3")
+
+    // MockEngine — fake transport for HttpPuzzleProvider tests. Avoids Testcontainers
+    // for an HTTP-only adapter (no DB needed); MockEngine starts in microseconds.
+    testImplementation("io.ktor:ktor-client-mock:$ktorVersion")
 }
 
 tasks.test {
