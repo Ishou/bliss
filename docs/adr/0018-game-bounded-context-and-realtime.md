@@ -248,6 +248,32 @@ Either path is reachable from the v1 in-memory shape because the
 `LobbyRepository` and `LobbyEventBroadcaster` ports are the only
 seams that need new adapters.
 
+### 10. Deployment posture
+
+MANIFESTO §CI/CD (`MUST`: "New features are deployed behind flags. Flags have an
+expiration date. Expired flags fail CI.") applies to this workstream. This section
+documents how the multiplayer feature satisfies that requirement.
+
+**`game-api` backend service.** The entire `game:api` module is a new, independent
+Helm chart that does not exist in the production stack until a deployment PR
+explicitly provisions it. The REST and WebSocket endpoints are structurally absent
+from production until that chart is applied — no running code to flag-gate. The
+Helm chart deployment PR (Wave A) is itself the "deploy dark" gate for the backend.
+
+**Frontend multiplayer routes.** The `/lobby/:lobbyId` route and the `POST
+/v1/lobbies` call site will be wrapped behind a `FEATURE_MULTIPLAYER` flag,
+evaluated at runtime via the project's flag interface (MANIFESTO: "simple runtime
+interface — not a vendor SDK in domain code"). The flag defaults to `false` in all
+environments; it is set to `true` in production only when the `game-api` Helm chart
+is live and the end-to-end smoke tests pass. The flag expiration date (no more than
+90 days from the Wave A merge that enables it) is set in the implementation PR that
+introduces the flag — not in this ADR — per the convention that expiration dates are
+tied to implementation, not architecture decisions.
+
+**No permanent flag.** Once multiplayer is fully released, the flag is removed
+(MANIFESTO: `MUST NOT` use permanent feature flags). That removal PR is the last
+step of the Wave A workstream.
+
 ## References
 
 - **ADR-0001 §4** — 400-line PR cap that drove the 22-PR / 9-wave
