@@ -5,8 +5,17 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from '@/ui/App';
 import { createAppRouter } from '@/ui/router';
-import { createHttpPuzzleRepository } from '@/infrastructure';
+import {
+  createHttpLobbyClient,
+  createHttpPuzzleRepository,
+  createWebSocketGameClient,
+} from '@/infrastructure';
+import {
+  getOrCreateSessionId,
+  getPseudonym,
+} from '@/infrastructure/session/localStorageSession';
 import { registerServiceWorker } from '@/infrastructure/pwa';
+import type { Pseudonym, SessionId } from '@/domain/game';
 // `fonts.css` is imported separately (rather than via `@import` from
 // `index.css`) so the `@font-face` rules reach the `fontaine` Vite
 // plugin's `transform` hook directly. CSS-side `@import` is resolved
@@ -50,7 +59,31 @@ enableMocks()
     const puzzleRepository = createHttpPuzzleRepository({
       baseUrl: import.meta.env.VITE_GRID_API_URL,
     });
-    const router = createAppRouter({ puzzleRepository });
+    // ADR-0018 §10 — multiplayer ships dark. The lobby route, its
+    // adapters, and the session accessor are only instantiated when
+    // the runtime flag is on. Production flips this to `'true'` after
+    // the game-api Helm chart is live and the smoke tests pass; the
+    // flag expires no later than 2026-08-02 per .env.
+    const multiplayer = import.meta.env.VITE_FEATURE_MULTIPLAYER === 'true';
+    const context = multiplayer
+      ? (() => {
+          const gameApiBaseUrl = import.meta.env.VITE_GAME_API_BASE_URL;
+          const lobbyClient = createHttpLobbyClient({ baseUrl: gameApiBaseUrl });
+          // WebSocket URL derives from the same host: swap http(s) for
+          // ws(s) so a single env var configures both adapters.
+          const wsBaseUrl = gameApiBaseUrl.replace(/^http/, 'ws');
+          const gameClient = createWebSocketGameClient({ wsBaseUrl });
+          // `getSession` is a thin closure over the localStorage helpers
+          // so routes don't pull `infrastructure/` into `ui/` directly.
+          // Branding is asserted at this single seam.
+          const getSession = () => ({
+            sessionId: getOrCreateSessionId() as SessionId,
+            pseudonym: getPseudonym() as Pseudonym,
+          });
+          return { puzzleRepository, lobbyClient, gameClient, getSession };
+        })()
+      : { puzzleRepository };
+    const router = createAppRouter({ context, multiplayer });
 
     createRoot(container).render(
       <StrictMode>

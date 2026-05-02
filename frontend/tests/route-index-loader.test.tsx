@@ -17,6 +17,8 @@ const renderWith = (repository: PuzzleRepository) => {
   const router = createRouter({
     routeTree,
     history: createMemoryHistory({ initialEntries: ['/'] }),
+    // Multiplayer context fields are unused on `/` and remain absent
+    // here, mirroring the production root when the flag is off.
     context: { puzzleRepository: repository },
   });
   return render(<RouterProvider router={router} />);

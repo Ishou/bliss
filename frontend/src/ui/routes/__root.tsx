@@ -1,13 +1,29 @@
 import { HeadContent, Outlet, createRootRouteWithContext } from '@tanstack/react-router';
 import { css } from 'styled-system/css';
 import type { PuzzleRepository } from '@/application';
+import type { GameClient, LobbyClient } from '@/application/game';
+import type { Pseudonym, SessionId } from '@/domain/game';
 
 // Router context surface — every route loader receives this object as
 // `ctx.context`. The composition root (`main.tsx`) is the only place
-// that wires a concrete `PuzzleRepository`, keeping `ui/` free of
-// `infrastructure/` imports (ADR-0002 §7).
+// that wires concrete adapters, keeping `ui/` free of `infrastructure/`
+// imports (ADR-0002 §7).
+//
+// Multiplayer adapters (`lobbyClient`, `gameClient`, `getSession`) are
+// optional: they are only present when the runtime feature flag
+// (ADR-0018 §10) enables the lobby route. Routes that consume them are
+// only registered when the flag is on, so they may safely assert
+// non-null at the call site.
+export interface AppSession {
+  readonly sessionId: SessionId;
+  readonly pseudonym: Pseudonym;
+}
+
 export interface AppRouterContext {
   readonly puzzleRepository: PuzzleRepository;
+  readonly lobbyClient?: LobbyClient;
+  readonly gameClient?: GameClient;
+  readonly getSession?: () => AppSession;
 }
 
 const errorPageStyles = css({

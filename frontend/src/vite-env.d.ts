@@ -9,11 +9,27 @@ interface ImportMetaEnv {
   /** Absolute base URL of the Grid API (production target). */
   readonly VITE_GRID_API_URL: string;
   /**
+   * Absolute base URL of the Game API (production target). Used by the
+   * lobby route's `HttpLobbyClient` and `WebSocketGameClient` adapters.
+   * The composition root resolves it once and threads the adapters
+   * through router context per ADR-0002 §7.
+   */
+  readonly VITE_GAME_API_BASE_URL: string;
+  /**
    * `'true'` for preview builds: register Mock Service Worker so the
    * SPA never reaches the real API. `'false'` (default) for prod.
    * String, not boolean — Vite injects env vars verbatim.
    */
   readonly VITE_USE_MOCK_API: 'true' | 'false';
+  /**
+   * Multiplayer feature flag (ADR-0018 §10). When `'true'`, the
+   * `/lobby/:lobbyId` route is registered and the lobby/game adapters
+   * are instantiated. Defaults to `'false'` in every environment;
+   * production flips to `'true'` only after the `game-api` Helm chart
+   * is live. Expires no later than 90 days after first enablement
+   * (MANIFESTO: expired flags fail CI).
+   */
+  readonly VITE_FEATURE_MULTIPLAYER: 'true' | 'false';
 }
 interface ImportMeta {
   readonly env: ImportMetaEnv;

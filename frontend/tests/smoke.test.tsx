@@ -18,6 +18,10 @@ const samplePuzzle: Puzzle = {
   cells: [{ kind: 'letter', position: { row: 0, col: 0 }, entry: '' }],
 };
 const puzzleRepository: PuzzleRepository = { fetchById: () => Promise.resolve(samplePuzzle) };
+// Multiplayer context fields are unused on `/` and remain absent
+// here, mirroring the production composition root when the
+// multiplayer flag is off.
+const ctx = { puzzleRepository };
 
 describe('App smoke test', () => {
   it('renders the WordSparrow heading on the root route', async () => {
@@ -25,7 +29,7 @@ describe('App smoke test', () => {
     const router = createRouter({
       routeTree,
       history: createMemoryHistory({ initialEntries: ['/'] }),
-      context: { puzzleRepository },
+      context: ctx,
     });
 
     render(<RouterProvider router={router} />);
@@ -42,7 +46,7 @@ describe('App smoke test', () => {
     const router = createRouter({
       routeTree,
       history: createMemoryHistory({ initialEntries: ['/'] }),
-      context: { puzzleRepository },
+      context: ctx,
     });
 
     render(<RouterProvider router={router} />);
@@ -57,7 +61,7 @@ describe('App smoke test', () => {
     const router = createRouter({
       routeTree,
       history: createMemoryHistory({ initialEntries: ['/'] }),
-      context: { puzzleRepository },
+      context: ctx,
     });
 
     const { container } = render(<RouterProvider router={router} />);
