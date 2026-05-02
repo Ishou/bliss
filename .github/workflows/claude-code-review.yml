@@ -162,101 +162,42 @@ jobs:
             You are the §6a reviewer agent for PR #${{ github.event.pull_request.number }}
             on the bliss repository (${{ github.repository }}).
 
-            ## Read first
+            **Invoke the `/reviewer` skill first.** It encodes your role,
+            scope, output format, and how to submit (CI mode: write to
+            `/tmp/review.md`; the workflow's "Submit review" step posts
+            it via `gh pr review`). Then also invoke the relevant domain
+            playbook for the conventions specific to this PR's files:
 
-            Before reviewing, read these files in the checked-out repo:
-            - `CLAUDE.md` (engineering rules; the authoritative ruleset)
-            - `MANIFESTO.md` (rationale)
-            - All merged ADRs under `docs/adr/` (especially ADR-0001 §6a,
-              which defines your role).
-            - Any `<context>/api/openapi.yaml` or `asyncapi.yaml` relevant to
-              the files changed in this PR.
+            - `/schemas` if the PR touches `**/openapi.yaml` or
+              `**/asyncapi.yaml`.
+            - `/frontend` if the PR touches `frontend/**`.
+            - `/jvm-backend` if the PR touches `grid/**`, `game/**`, or
+              `*.gradle.kts`.
 
-            ## Your role
-
-            You perform exactly **one** review pass on this PR. There is no
-            second pass. Your output is the input to the §6a fixer agent
-            that runs immediately after you in this same workflow; the fixer
-            applies your findings (or writes rebuttals), pushes once, and
-            stops. The human maintainer arbitrates at merge time.
-
-            ## In scope (you must check)
-
-            1. **Contract adherence.** If the PR touches a bounded context
-               with an `api/openapi.yaml` or `api/asyncapi.yaml`, verify the
-               implementation matches the merged spec. If this *is* a schema
-               PR, verify ADR-0003 wire conventions: OpenAPI 3.1, UUID v7,
-               ISO-8601, RFC 7807, cursor pagination, camelCase, explicit
-               `required` and `nullable`, no numeric enums.
-
-            2. **Manifesto adherence.** Verify:
-               - Domain layer has no infrastructure, application, or api
-                 imports.
-               - No vendor SDK imports in `domain/` or `application/`.
-               - No cross-bounded-context imports of another context's
-                 `domain/` or `application/`.
-               - Tests test behavior, not structure.
-               - Mocks only at external boundaries.
-               - Conventional-commit message scoping is correct.
-               - Branch name matches
-                 `^(feat|fix|chore|refactor|test|docs)/[A-Za-z0-9._-]+$`.
-               - PR diff stays under 400 lines (generated code excluded).
-               - Single bounded context, single workstream.
-
-            3. **Test coverage of behavior.** New domain logic has tests for
-               behavior including failure modes. Trivial code (getters,
-               setters, simple delegation) should *not* have tests.
-
-            4. **Obvious bugs.** Off-by-one, null deref, leaked secrets,
-               race conditions visible at the surface, hard-coded
-               credentials, missing validation at system boundaries.
-
-            ## Out of scope (you must NOT comment on)
-
-            - Formatting (the formatter is the authority).
-            - Style preferences not grounded in the manifesto.
-            - Unrelated improvements / scope creep.
-            - Disagreements with the manifesto itself — those are separate
-              ADR-amendment workstreams, not review comments.
-
-            ## Output (you must actually post this — not just write it)
-
-            Drafting the review is not enough. You must call the GitHub CLI
-            to submit it; if you only write the text and exit, nothing
-            reaches the PR.
-
-            Steps, in order:
+            ## PR-specific bits
 
             1. `gh pr view "$PR_NUMBER" --json title,body,files,additions,deletions`
                and `gh pr diff "$PR_NUMBER"` to see the change.
-            2. Read the rule files (Read tool).
-            3. Compose the review body in markdown. **Begin with one of:**
-               - `LGTM, no findings.`
-               - `Findings — see comments below.`
-               For each finding: cite the rule (`CLAUDE.md` "no SDK in
-               domain", `ADR-0001 §6`, etc.), quote the file/line briefly,
-               and propose a fix.
-            4. **Write the body to `/tmp/review.md`** using the Write tool.
-               That is your only output. **Do not** attempt to post the
-               review yourself — you have no `gh pr review` capability.
-               A separate workflow step submits the file. If `/tmp/review.md`
-               doesn't exist when this agent step exits, the submit step
-               posts a default `LGTM, no findings.` so the PR isn't left
-               in a dangling state — but that fallback is a failure mode,
-               not the happy path: you must produce the file.
-
-            ## Tone
-
-            Direct, no sycophancy. State facts, cite rules, be brief.
+            2. Read prior reviews on this PR with
+               `gh pr view "$PR_NUMBER" --json reviews`. Don't repeat
+               findings already in flight — the workflow's convergence
+               step handles cycles.
+            3. Read CLAUDE.md, MANIFESTO.md, and all merged ADRs under
+               `docs/adr/` (especially ADR-0001 §6a). Read any
+               `<context>/api/openapi.yaml` or `asyncapi.yaml` relevant
+               to the files changed.
+            4. Compose the review body. First line is `LGTM, no findings.`
+               or `Findings — see comments below.` per the skill.
+            5. Write to `/tmp/review.md` and exit. The "Submit review"
+               step posts it. You have no `gh pr review` capability; do
+               not try to post yourself.
 
             ## Cap
 
-            This is your only pass. The fixer will run after you and push
-            once. The workflow does fire again on subsequent `synchronize`
-            and `reopened` events (so every PR head receives a definitive
-            check status), but the pre-flight "Check for prior §6a review"
-            step short-circuits all agent steps when this review already
-            exists. You will not run twice on the same PR.
+            This is your only pass per cycle. The fixer runs after you
+            and pushes once, which fires the next cycle. The pre-flight
+            "Check for convergence" step gates further cycles when the
+            latest review is `LGTM` or 5 cycles have run.
 
       - name: Submit review
         # The reviewer agent above writes its review to /tmp/review.md and
@@ -339,6 +280,15 @@ jobs:
             The §6a reviewer just posted a review with findings on this PR.
             Your job is to apply the fixes (or post rebuttals) and push the
             result, exactly once.
+
+            **Invoke the relevant domain skill before applying fixes.** It
+            encodes the conventions and gotchas you're likely to hit:
+
+            - `/schemas` if the PR touches `**/openapi.yaml` or
+              `**/asyncapi.yaml`.
+            - `/frontend` if the PR touches `frontend/**`.
+            - `/jvm-backend` if the PR touches `grid/**`, `game/**`, or
+              `*.gradle.kts`.
 
             ## Read first
 
