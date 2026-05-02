@@ -92,7 +92,10 @@ export function WaitingRoom({
   lobby, currentSessionId, onRename, onSetGridConfig, onStart, onCopyShareUrl,
 }: WaitingRoomProps): React.ReactElement {
   const isOwner = lobby.ownerSessionId === currentSessionId;
-  const canStart = isOwner && lobby.players.length >= 2;
+  // Solo-through-the-multiplayer-flow is supported (handy while waiting for
+  // friends or for testing): the owner can Start as soon as there is at
+  // least one player, which is always true since the owner is a member.
+  const canStart = isOwner && lobby.players.length >= 1;
   const me = lobby.players.find((p) => p.sessionId === currentSessionId);
   const emptySlots = Math.max(0, MAX_PLAYERS - lobby.players.length);
 
