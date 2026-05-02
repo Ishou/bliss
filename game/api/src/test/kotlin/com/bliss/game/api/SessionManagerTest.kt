@@ -4,6 +4,7 @@ import assertk.assertThat
 import assertk.assertions.contains
 import assertk.assertions.isEqualTo
 import assertk.assertions.isFalse
+import assertk.assertions.isNull
 import assertk.assertions.isTrue
 import com.bliss.game.api.dto.ServerToClientFrame
 import com.bliss.game.domain.LobbyId
@@ -113,6 +114,34 @@ class SessionManagerTest {
         withSessions(count = 3) { harness ->
             assertThat(harness.manager.connectedCount(lobbyId)).isEqualTo(3)
             assertThat(harness.manager.connectedCount(LobbyId("aaaaaaaa"))).isEqualTo(0)
+        }
+
+    @Test
+    fun `bindSession plus isSessionConnected report multi-tab presence`() =
+        withSessions(count = 2) { harness ->
+            val sid = "0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6b"
+            // Two tabs of the same browser bind the SAME sessionId. Both
+            // sockets are registered already (withSessions does that).
+            harness.manager.bindSession(lobbyId, harness.sessions[0], sid)
+            harness.manager.bindSession(lobbyId, harness.sessions[1], sid)
+            assertThat(harness.manager.isSessionConnected(lobbyId, sid)).isTrue()
+            // Closing one tab leaves the slot held by the other.
+            harness.manager.unregister(lobbyId, harness.sessions[0])
+            assertThat(harness.manager.isSessionConnected(lobbyId, sid)).isTrue()
+            // Closing the last tab releases the slot.
+            harness.manager.unregister(lobbyId, harness.sessions[1])
+            assertThat(harness.manager.isSessionConnected(lobbyId, sid)).isFalse()
+        }
+
+    @Test
+    fun `unregister returns the bound sessionId so the route can decide`() =
+        withSessions(count = 1) { harness ->
+            val sid = "0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6b"
+            harness.manager.bindSession(lobbyId, harness.sessions.single(), sid)
+            val returned = harness.manager.unregister(lobbyId, harness.sessions.single())
+            assertThat(returned).isEqualTo(sid)
+            // A second unregister returns null — nothing was bound.
+            assertThat(harness.manager.unregister(lobbyId, harness.sessions.single())).isNull()
         }
 
     // ---------- harness ----------
