@@ -25,6 +25,7 @@ import type {
 import { Grid } from '@/ui/components/grid';
 import { ConnectionBanner } from '@/ui/components/lobby/ConnectionBanner';
 import { EndGameModal } from '@/ui/components/lobby/EndGameModal';
+import { PlayerList } from '@/ui/components/lobby/PlayerList';
 import { Timer } from '@/ui/components/lobby/Timer';
 import { WaitingRoom } from '@/ui/components/lobby/WaitingRoom';
 import { Route as RootRoute } from './__root';
@@ -200,6 +201,12 @@ function LobbyPage() {
 
         {lobby.state === 'IN_PROGRESS' && lobby.game && gridPuzzle ? (
           <div className={inGameLayoutStyles}>
+            <PlayerList
+              players={lobby.players}
+              ownerSessionId={lobby.ownerSessionId}
+              currentSessionId={sessionId}
+              variant="inline"
+            />
             <Timer startedAt={lobby.game.startedAt} />
             <Grid
               puzzle={gridPuzzle}
@@ -211,6 +218,12 @@ function LobbyPage() {
 
         {lobby.state === 'COMPLETED' && lobby.game ? (
           <div className={inGameLayoutStyles}>
+            <PlayerList
+              players={lobby.players}
+              ownerSessionId={lobby.ownerSessionId}
+              currentSessionId={sessionId}
+              variant="inline"
+            />
             <Timer startedAt={lobby.game.startedAt} frozenAtMs={view.durationMs ?? 0} />
             {gridPuzzle ? (
               <Grid

@@ -520,6 +520,68 @@ describe('Lobby route Wave H integration', () => {
     expect(screen.getByTestId('connection-banner')).toHaveAttribute('data-state', 'reconnecting');
   });
 
+  it('renders the player roster during IN_PROGRESS with vous + propriétaire badges on the right rows', async () => {
+    const gameClient = makeFakeGameClient();
+    renderLobby({ gameClient });
+    await screen.findByRole('heading', { name: /Salon · 7gQ2xK9p/ });
+    act(() => {
+      gameClient.dispatch({
+        type: 'gameStarted',
+        puzzle: buildGamePuzzle(),
+        startedAt: '2026-05-02T15:30:00Z',
+      });
+    });
+
+    // The roster is mounted alongside the Grid+Timer. Both names appear.
+    const roster = screen.getByRole('list', { name: /Liste des joueurs/i });
+    expect(roster).toBeInTheDocument();
+    expect(roster).toHaveTextContent('Joueur 1234');
+    expect(roster).toHaveTextContent('Joueur 5678');
+
+    // Owner row (current session is the owner in baseLobby) carries
+    // both badges; the other player carries neither.
+    const rows = roster.querySelectorAll('li');
+    expect(rows).toHaveLength(2);
+    expect(rows[0]).toHaveTextContent('Joueur 1234');
+    expect(rows[0]).toHaveTextContent('vous');
+    expect(rows[0]).toHaveTextContent('propriétaire');
+    expect(rows[1]).toHaveTextContent('Joueur 5678');
+    expect(rows[1]).not.toHaveTextContent('vous');
+    expect(rows[1]).not.toHaveTextContent('propriétaire');
+  });
+
+  it('updates the roster on playerJoined / playerLeft fired during IN_PROGRESS', async () => {
+    const gameClient = makeFakeGameClient();
+    renderLobby({ gameClient });
+    await screen.findByRole('heading', { name: /Salon · 7gQ2xK9p/ });
+    act(() => {
+      gameClient.dispatch({
+        type: 'gameStarted',
+        puzzle: buildGamePuzzle(),
+        startedAt: '2026-05-02T15:30:00Z',
+      });
+    });
+    expect(screen.getByRole('list', { name: /Liste des joueurs/i })).toHaveTextContent('Joueur 5678');
+
+    const lateJoinerSessionId = '0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6e' as SessionId;
+    act(() => {
+      gameClient.dispatch({
+        type: 'playerJoined',
+        sessionId: lateJoinerSessionId,
+        pseudonym: 'Joueur Tardif' as Pseudonym,
+        joinedAt: '2026-05-02T15:31:00Z',
+      });
+    });
+    expect(screen.getByRole('list', { name: /Liste des joueurs/i })).toHaveTextContent('Joueur Tardif');
+
+    act(() => {
+      gameClient.dispatch({ type: 'playerLeft', sessionId: lateJoinerSessionId });
+    });
+    expect(
+      screen.getByRole('list', { name: /Liste des joueurs/i }),
+    ).not.toHaveTextContent('Joueur Tardif');
+  });
+
   it('forwards a typed letter to gameClient.cellUpdate with row/column/letter', async () => {
     const gameClient = makeFakeGameClient();
     const { container } = renderLobby({ gameClient });
