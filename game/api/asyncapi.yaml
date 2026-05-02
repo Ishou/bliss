@@ -207,11 +207,11 @@ components:
       x-enum-varnames: [LETTER, DEFINITION, BLOCK]
     GameLetterCell:
       type: object
-      required: [kind, position]
+      required: [kind, position, letter]
       properties:
         kind:     { type: string, enum: [letter] }
         position: { $ref: '#/components/schemas/GamePosition' }
-        letter:   { type: string, minLength: 1, maxLength: 1, pattern: '^[A-Z]$', nullable: true, description: Pre-filled uppercase letter; null/absent = blank. }
+        letter:   { type: string, minLength: 1, maxLength: 1, pattern: '^[A-Z]$', nullable: true, description: Pre-filled uppercase letter; null means blank. Absence is a protocol error (field is always present). }
     GameDefinitionCell:
       type: object
       required: [kind, position, clueId, text, arrow]
