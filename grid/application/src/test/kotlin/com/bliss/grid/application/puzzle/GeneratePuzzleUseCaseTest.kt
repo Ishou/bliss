@@ -1,6 +1,7 @@
 package com.bliss.grid.application.puzzle
 
 import assertk.assertThat
+import assertk.assertions.isEqualTo
 import assertk.assertions.isNotNull
 import assertk.assertions.isNull
 import com.bliss.grid.domain.generation.GridConstraints
@@ -14,7 +15,7 @@ class GeneratePuzzleUseCaseTest {
         val useCase =
             GeneratePuzzleUseCase(
                 wordRepository = EmptyWordRepository,
-                constraints = GridConstraints(width = 5, height = 5),
+                defaults = GridConstraints(width = 5, height = 5),
             )
         assertThat(useCase.execute()).isNull()
     }
@@ -27,7 +28,7 @@ class GeneratePuzzleUseCaseTest {
         val useCase =
             GeneratePuzzleUseCase(
                 wordRepository = AlwaysMatchingRepository,
-                constraints = GridConstraints(width = 5, height = 5),
+                defaults = GridConstraints(width = 5, height = 5),
             )
         assertThat(useCase.execute()).isNotNull()
     }
@@ -37,10 +38,38 @@ class GeneratePuzzleUseCaseTest {
         val useCase =
             GeneratePuzzleUseCase(
                 wordRepository = EmptyWordRepository,
-                constraints = GridConstraints(width = 5, height = 5),
+                defaults = GridConstraints(width = 5, height = 5),
                 maxAttempts = 1,
             )
         assertThat(useCase.execute()).isNull()
+    }
+
+    @Test
+    fun `caller-supplied width and height override the defaults`() {
+        // The lobby owner picks a 7x7 grid; the use case must produce a grid of
+        // exactly that size, not the 5x5 default carried by the constructor.
+        val useCase =
+            GeneratePuzzleUseCase(
+                wordRepository = AlwaysMatchingRepository,
+                defaults = GridConstraints(width = 5, height = 5),
+            )
+        val grid = useCase.execute(width = 7, height = 7)
+        assertThat(grid).isNotNull()
+        assertThat(grid!!.width).isEqualTo(7)
+        assertThat(grid.height).isEqualTo(7)
+    }
+
+    @Test
+    fun `omitted dimensions fall back to the configured defaults`() {
+        val useCase =
+            GeneratePuzzleUseCase(
+                wordRepository = AlwaysMatchingRepository,
+                defaults = GridConstraints(width = 6, height = 6),
+            )
+        val grid = useCase.execute()
+        assertThat(grid).isNotNull()
+        assertThat(grid!!.width).isEqualTo(6)
+        assertThat(grid.height).isEqualTo(6)
     }
 }
 

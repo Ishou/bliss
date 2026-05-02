@@ -223,6 +223,22 @@ export interface components {
     parameters: {
         /** @description UUID v7 identifier of the puzzle. */
         PuzzleId: components["schemas"]["PuzzleId"];
+        /**
+         * @description Number of columns to generate. Defaults to 10 when omitted, matching
+         *     the historical solo-mode size. Valid range is 5..15 inclusive; values
+         *     outside that range — or non-integers — produce a 400 with problem
+         *     type `https://bliss.example/errors/invalid-puzzle-dimensions`. The
+         *     bounds keep the CSP solver's vocabulary needs and per-request time
+         *     budget reasonable.
+         */
+        PuzzleWidth: number;
+        /**
+         * @description Number of rows to generate. Defaults to 10 when omitted, matching
+         *     the historical solo-mode size. Valid range is 5..15 inclusive; values
+         *     outside that range — or non-integers — produce a 400 with problem
+         *     type `https://bliss.example/errors/invalid-puzzle-dimensions`.
+         */
+        PuzzleHeight: number;
     };
     requestBodies: never;
     headers: never;
@@ -232,7 +248,24 @@ export type $defs = Record<string, never>;
 export interface operations {
     getPuzzle: {
         parameters: {
-            query?: never;
+            query?: {
+                /**
+                 * @description Number of columns to generate. Defaults to 10 when omitted, matching
+                 *     the historical solo-mode size. Valid range is 5..15 inclusive; values
+                 *     outside that range — or non-integers — produce a 400 with problem
+                 *     type `https://bliss.example/errors/invalid-puzzle-dimensions`. The
+                 *     bounds keep the CSP solver's vocabulary needs and per-request time
+                 *     budget reasonable.
+                 */
+                width?: components["parameters"]["PuzzleWidth"];
+                /**
+                 * @description Number of rows to generate. Defaults to 10 when omitted, matching
+                 *     the historical solo-mode size. Valid range is 5..15 inclusive; values
+                 *     outside that range — or non-integers — produce a 400 with problem
+                 *     type `https://bliss.example/errors/invalid-puzzle-dimensions`.
+                 */
+                height?: components["parameters"]["PuzzleHeight"];
+            };
             header?: never;
             path: {
                 /** @description UUID v7 identifier of the puzzle. */
@@ -245,7 +278,9 @@ export interface operations {
             /**
              * @description Puzzle found. Canonical sample at
              *     `grid/api/examples/get-puzzle-200.json` is the contract-test
-             *     fixture for both sides of the wire.
+             *     fixture for both sides of the wire. The example reflects the
+             *     default 10×10 size; requesting `?width=7&height=7` produces an
+             *     analogous 7×7 document with the same wire shape.
              */
             200: {
                 headers: {
@@ -256,8 +291,12 @@ export interface operations {
                 };
             };
             /**
-             * @description Path parameter `puzzleId` is not a valid UUID. RFC 7807 body;
-             *     `type` is `https://bliss.example/errors/invalid-puzzle-id`.
+             * @description Request is malformed. RFC 7807 body. Variants:
+             *     - Path parameter `puzzleId` is not a valid UUID
+             *       (`type` = `https://bliss.example/errors/invalid-puzzle-id`).
+             *     - Query parameter `width` or `height` is not an integer or is
+             *       outside the supported 5..15 range
+             *       (`type` = `https://bliss.example/errors/invalid-puzzle-dimensions`).
              */
             400: {
                 headers: {
