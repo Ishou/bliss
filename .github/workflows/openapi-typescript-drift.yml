@@ -1,10 +1,11 @@
 name: OpenAPI TypeScript Drift
 
-# Implements ADR-0003 §8.2: regenerate the TypeScript client from
-# `grid/api/openapi.yaml` and fail the build if the committed
-# `frontend/src/infrastructure/api/grid/types.ts` differs from the regen
-# output. Guarantees the committed generated code is always in sync with the
-# spec — no drift slips through review.
+# Implements ADR-0003 §8.2: regenerate the TypeScript clients from the
+# bounded contexts' OpenAPI specs (`grid/api/openapi.yaml`,
+# `game/api/openapi.yaml`) and fail the build if the committed generated
+# files (`frontend/src/infrastructure/api/{grid,game}/types.ts`) differ
+# from the regen output. Guarantees the committed generated code is always
+# in sync with the spec — no drift slips through review.
 #
 # Contributors regenerate locally with `pnpm --filter frontend api:generate`
 # (or `frontend/scripts/generate-api-client.sh`) after every spec change. See
@@ -62,8 +63,10 @@ jobs:
       - name: Verify committed types match the spec
         run: |
           set -euo pipefail
-          if ! git diff --exit-code -- frontend/src/infrastructure/api/grid/types.ts; then
-            echo "::error::frontend/src/infrastructure/api/grid/types.ts is out of sync with grid/api/openapi.yaml."
-            echo "::error::Fix: run 'pnpm --filter frontend api:generate' (or 'frontend/scripts/generate-api-client.sh') and commit the updated file."
+          if ! git diff --exit-code -- \
+            frontend/src/infrastructure/api/grid/types.ts \
+            frontend/src/infrastructure/api/game/types.ts; then
+            echo "::error::A generated frontend/src/infrastructure/api/<context>/types.ts is out of sync with its OpenAPI spec."
+            echo "::error::Fix: run 'pnpm --filter frontend api:generate' (or 'frontend/scripts/generate-api-client.sh') and commit the updated file(s)."
             exit 1
           fi
