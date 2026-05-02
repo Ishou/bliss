@@ -1,0 +1,101 @@
+// Domain → wire translation for the lobby REST surface. Pure: no IO, no clock.
+// DTOs never escape the api layer; the inbound-only CreateLobbyRequestDto is
+// unwrapped to domain types in the route itself.
+//
+// Lives outside `com.bliss.game.api.dto` because it imports
+// `com.bliss.game.domain.*`, which the `dto package does not import domain
+// types` Konsist rule (ApiArchitectureTest) forbids inside the dto package.
+package com.bliss.game.api.mapper
+
+import com.bliss.game.api.dto.GameCellDto
+import com.bliss.game.api.dto.GameClueDto
+import com.bliss.game.api.dto.GameDefinitionClueDto
+import com.bliss.game.api.dto.GamePositionDto
+import com.bliss.game.api.dto.GamePuzzleDto
+import com.bliss.game.api.dto.GameSessionDto
+import com.bliss.game.api.dto.GridConfigDto
+import com.bliss.game.api.dto.LobbyResponseDto
+import com.bliss.game.api.dto.PlayerDto
+import com.bliss.game.domain.BlockCell
+import com.bliss.game.domain.DefinitionCell
+import com.bliss.game.domain.GameArrow
+import com.bliss.game.domain.GameCell
+import com.bliss.game.domain.GameClue
+import com.bliss.game.domain.GameClueDirection
+import com.bliss.game.domain.GameDefinitionClue
+import com.bliss.game.domain.GamePuzzle
+import com.bliss.game.domain.GameSession
+import com.bliss.game.domain.GridConfig
+import com.bliss.game.domain.LetterCell
+import com.bliss.game.domain.Lobby
+import com.bliss.game.domain.Player
+import com.bliss.game.domain.Position
+import java.time.format.DateTimeFormatter
+
+/**
+ * Map a [Lobby] aggregate to its wire shape. The `players` map is serialized
+ * as an array sorted by [Player.joinedAt] then sessionId so two structurally-
+ * equal lobbies always produce identical JSON; JSON object keys are unordered,
+ * an ordered array gives the frontend stable rendering.
+ */
+fun Lobby.toResponseDto(): LobbyResponseDto =
+    LobbyResponseDto(
+        id = id.value,
+        ownerSessionId = ownerSessionId.value,
+        players =
+            players.values
+                .sortedWith(compareBy({ it.joinedAt }, { it.sessionId.value }))
+                .map { it.toDto() },
+        state = state.name,
+        gridConfig = gridConfig.toDto(),
+        game = game?.toDto(),
+    )
+
+private fun Player.toDto() = PlayerDto(sessionId.value, pseudonym.value, ISO.format(joinedAt))
+
+private fun GridConfig.toDto() = GridConfigDto(width, height)
+
+private fun GameSession.toDto() = GameSessionDto(puzzle.toDto(), ISO.format(startedAt), completedAt?.let(ISO::format))
+
+private fun GamePuzzle.toDto() =
+    GamePuzzleDto(
+        id = id.toString(),
+        title = title,
+        language = language,
+        width = width,
+        height = height,
+        cells = cells.map { it.toDto() },
+        clues = clues.map { it.toDto() },
+        createdAt = ISO.format(createdAt),
+    )
+
+private fun GameCell.toDto(): GameCellDto =
+    when (this) {
+        is LetterCell -> GameCellDto.Letter(position.toDto(), answer?.value?.toString())
+        is DefinitionCell -> GameCellDto.Definition(position.toDto(), clues.map { it.toDto() })
+        is BlockCell -> GameCellDto.Block(position.toDto())
+    }
+
+private fun GameDefinitionClue.toDto() = GameDefinitionClueDto(id.toString(), text, arrow.toWire())
+
+private fun GameClue.toDto() = GameClueDto(id.toString(), direction.toWire(), start.toDto(), length, text)
+
+private fun Position.toDto() = GamePositionDto(row, column)
+
+// Domain enums are SHOUT_SNAKE; wire enums are kebab-case. Mirrors
+// game/api/asyncapi.yaml's GameArrow / GameClueDirection enums.
+private fun GameArrow.toWire(): String =
+    when (this) {
+        GameArrow.RIGHT -> "right"
+        GameArrow.DOWN -> "down"
+        GameArrow.DOWN_RIGHT -> "down-right"
+        GameArrow.RIGHT_DOWN -> "right-down"
+    }
+
+private fun GameClueDirection.toWire(): String =
+    when (this) {
+        GameClueDirection.ACROSS -> "across"
+        GameClueDirection.DOWN -> "down"
+    }
+
+private val ISO: DateTimeFormatter = DateTimeFormatter.ISO_INSTANT
