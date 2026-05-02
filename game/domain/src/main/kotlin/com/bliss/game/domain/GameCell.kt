@@ -14,6 +14,9 @@ data class LetterCell(
     val answer: Letter?,
 ) : GameCell
 
+// TODO(schema): GameDefinitionCell in game/api/asyncapi.yaml currently models a single clue
+// (flat clueId/text/arrow). This domain type supports the full dual-arrow mots-fléchés shape.
+// A schema amendment PR must be merged before the :game:api implementation PR opens (ADR-0001 §3).
 data class DefinitionCell(
     override val position: Position,
     val clues: List<GameDefinitionClue>,
