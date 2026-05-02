@@ -1,6 +1,6 @@
 import { render, fireEvent, act } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
-import type { CellUpdatedEvent, Unsubscribe } from '@/application/game';
+import type { CellUpdatedEvent, GameEvent, Unsubscribe } from '@/application/game';
 import type { Instant, Letter, SessionId } from '@/domain/game';
 import type { Cell, Puzzle } from '@/domain';
 import { Grid } from '@/ui/components/grid';
@@ -65,12 +65,12 @@ const remoteUpdate = (row: number, column: number, letter: string | null): CellU
 // handler on mount and detaches it on unmount — we expose `dispatch` so
 // each test can drive frames into the grid and assert outcomes.
 interface FakeRemoteStream {
-  readonly subscribe: (handler: (e: CellUpdatedEvent) => void) => Unsubscribe;
+  readonly subscribe: (handler: (e: GameEvent) => void) => Unsubscribe;
   readonly dispatch: (e: CellUpdatedEvent) => void;
   readonly subscriberCount: () => number;
 }
 const makeFakeRemoteStream = (): FakeRemoteStream => {
-  const subscribers = new Set<(e: CellUpdatedEvent) => void>();
+  const subscribers = new Set<(e: GameEvent) => void>();
   return {
     subscribe: (handler) => {
       subscribers.add(handler);

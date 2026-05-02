@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from 'react';
 import { TransformComponent, TransformWrapper } from 'react-zoom-pan-pinch';
 import { css } from 'styled-system/css';
-import type { CellUpdatedEvent, Unsubscribe } from '@/application/game';
+import type { GameEvent, Unsubscribe } from '@/application/game';
 import type { Cell, Position, Puzzle } from '@/domain';
 import { BlockCellView, DefinitionCellView, LetterCellView } from './Cell';
 import { CurrentCluePanel } from './CurrentCluePanel';
@@ -81,7 +81,7 @@ export function Grid({
 }: {
   puzzle: Puzzle;
   onCellChange?: (row: number, col: number, letter: string | null) => void;
-  subscribeToRemoteCellUpdates?: (handler: (event: CellUpdatedEvent) => void) => Unsubscribe;
+  subscribeToRemoteCellUpdates?: (handler: (event: GameEvent) => void) => Unsubscribe;
 }) {
   const cellByPosition = useMemo(() => {
     const m = new Map<string, Cell>();
@@ -102,12 +102,14 @@ export function Grid({
   // Wire the inbound multiplayer path. Stable across renders because the
   // hook returns a stable `applyRemoteCellUpdate` callback and we depend
   // on the subscribe registrar reference (callers should keep it stable
-  // — typically `gameClient.subscribe.bind(gameClient)` or equivalent).
+  // — pass `gameClient.subscribe` directly; the filter below ignores
+  // non-`cellUpdated` frames so no adapter wrapper is needed at the call site).
   // CellUpdatedEvent.column maps to the grid's `col` axis.
   const applyRemoteCellUpdate = nav.applyRemoteCellUpdate;
   useEffect(() => {
     if (!subscribeToRemoteCellUpdates) return;
     const unsubscribe = subscribeToRemoteCellUpdates((event) => {
+      if (event.type !== 'cellUpdated') return;
       applyRemoteCellUpdate(event.row, event.column, event.letter);
     });
     return unsubscribe;
