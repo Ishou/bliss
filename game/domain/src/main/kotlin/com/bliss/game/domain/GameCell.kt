@@ -14,25 +14,13 @@ data class LetterCell(
     val answer: Letter?,
 ) : GameCell
 
-// TODO(schema): GameDefinitionCell in game/api/asyncapi.yaml currently models a single clue
-// (flat clueId/text/arrow). This domain type supports the full dual-arrow mots-fléchés shape.
-// A schema amendment PR must be merged before the :game:api implementation PR opens (ADR-0001 §3).
+// Single clue per cell — matches the flat GameDefinitionCell shape in game/api/asyncapi.yaml.
+// Dual-clue mots-fléchés semantics are deferred to a future schema-amendment + domain PR pair
+// (ADR-0001 §3).
 data class DefinitionCell(
     override val position: Position,
-    val clues: List<GameDefinitionClue>,
-) : GameCell {
-    init {
-        require(clues.isNotEmpty()) { "DefinitionCell must have at least one clue" }
-        require(clues.size <= MAX_CLUES) { "DefinitionCell may hold at most $MAX_CLUES clues, was ${clues.size}" }
-        require(clues.map { it.arrow }.toSet().size == clues.size) {
-            "DefinitionCell may not contain two clues with the same arrow"
-        }
-    }
-
-    companion object {
-        const val MAX_CLUES = 2
-    }
-}
+    val clue: GameDefinitionClue,
+) : GameCell
 
 data class BlockCell(
     override val position: Position,
