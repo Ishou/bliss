@@ -33,8 +33,14 @@ ingress:
   className: nginx
   # REQUIRED per env (game.wordsparrow.io prod, localhost local).
   host: ""
-  # Path prefix routed to this service. Mirrors grid's /grid pattern.
-  path: "/game"
+  # Path prefix routed to this service. The host (game.wordsparrow.io)
+  # already isolates this service, so no path prefix is needed — mirrors
+  # grid which uses `/` at api.wordsparrow.io. An earlier draft of this
+  # file used `/game` ("mirrors grid's /grid pattern"), but grid actually
+  # uses `/`; the prefix was vestigial and broke the smoke test
+  # (https://game.wordsparrow.io/v1/health → 404 because Ingress only
+  # routed /game/*).
+  path: "/"
   # TLS Secret name created by cert-manager from the ingress annotation.
   tlsSecretName: ""
   # Env files set cert-manager and external-dns annotations here.
