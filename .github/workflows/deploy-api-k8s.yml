@@ -1,21 +1,23 @@
 name: Deploy API (k8s)
 
 # Implements ADR-0009 §8 step 5: continuous delivery of the WordSparrow
-# API to the Hetzner k3s cluster (FSN1, 1 CP + 1 worker, ADR-0009 §2).
+# services to the Hetzner k3s cluster (FSN1, 1 CP + 1 worker, ADR-0009 §2).
+#
+# As of Wave G PR (this commit) the workflow is a matrix that fans out
+# over the {grid, game} bounded contexts:
+#   - wordsparrow-api      → grid/api/deploy/chart, api.wordsparrow.io
+#   - wordsparrow-game-api → game/api/deploy/chart, game.wordsparrow.io
 #
 # Triggered by `Build and Push Image` (build-and-push-image.yml) on every
-# successful main push: the build workflow publishes a digest-pinned
-# image to GHCR and uploads the resolved sha256 as an `image-digest`
-# artifact; this workflow downloads the digest and runs `helm upgrade`
-# against the cluster with `--set image.digest=<sha256>` so the chart's
-# `image.requireDigest` guard (grid/api/deploy/chart/templates/_helpers.tpl)
-# is satisfied. `workflow_dispatch` is wired for manual rollback /
-# redeploy: pass the desired digest as the `digest` input.
+# successful main push: each matrix row of the build workflow uploads
+# `image-digest-<context>` as an artifact; this workflow downloads the
+# matching one and runs `helm upgrade --install <release-name> <chart-path>`
+# with `--set image.digest=<sha256>` so each chart's `image.requireDigest`
+# guard is satisfied. `workflow_dispatch` is wired for manual rollback /
+# redeploy: pass the bounded context + desired digest as inputs.
 #
 # Runs ALONGSIDE the existing Fly deploy at .github/workflows/deploy-api.yml
-# until ADR-0009 §8 step 7 cutover removes Fly. Both workflows shipping
-# the same image to two production targets is intentional during the
-# migration window — the cutover PR removes Fly, not this file.
+# until ADR-0009 §8 step 7 cutover removes Fly.
 #
 # Images are immutable per the MANIFESTO ("Container images pinned to
 # digest. Builds are deterministic."): no `:latest`, no floating tags
@@ -23,11 +25,11 @@ name: Deploy API (k8s)
 # is supplied, so a degraded artifact path here surfaces as a build
 # failure, not a silent untagged deploy.
 #
-# `--atomic --wait` wires the manifesto's "Rollback is always one click"
-# rule into the failure path: if the new ReplicaSet doesn't reach Ready
-# within the timeout, Helm rolls back to the prior revision automatically.
-# Manual rollback uses the `workflow_dispatch` input with the previous
-# good digest.
+# Failure handling: `--atomic` was dropped on purpose so diagnostics can
+# capture the broken pods/events before rollback. The
+# "Capture failure diagnostics" + "Rollback failed release" steps
+# replicate `--atomic`'s rollback semantics while keeping the manifesto's
+# "one-click rollback" promise intact.
 #
 # PREREQUISITES (one-time human bootstrap, see docs/deploy.md):
 #   - The Hetzner k8s cluster + platform operators (cert-manager,
@@ -35,23 +37,30 @@ name: Deploy API (k8s)
 #     via `infra/platform/` per ADR-0009 §3 (PR56).
 #   - The `KUBECONFIG_PROD` repository secret holds the cluster's
 #     kubeconfig with the rewritten public IP.
-#   - The `wordsparrow-api-env` secret is created in the `wordsparrow`
-#     namespace per ADR-0009 §10.
-#   - The GHCR package `bliss/wordsparrow-api` is set to public (the
-#     one-time package-visibility flip from build-and-push-image.yml's
-#     header), so the cluster pulls anonymously without an
-#     imagePullSecret.
+#   - Per-context env secrets exist in the `wordsparrow` namespace:
+#       - `wordsparrow-api-env` (grid)            (ADR-0009 §10)
+#       - `bliss-game-api-env` (game)             (ADR-0018, see chart values)
+#   - The GHCR packages are PUBLIC (one-time visibility flip per
+#     build-and-push-image.yml's header):
+#       - bliss/wordsparrow-api      (already public)
+#       - bliss/wordsparrow-game-api (NEW — must be flipped after first push)
 
 on:
   workflow_run:
-    # Must match the upstream workflow's `name:` field exactly. If that
-    # workflow is renamed, update the string here — there is no symbol
-    # link, GitHub matches on display name.
+    # Must match the upstream workflow's `name:` field exactly.
     workflows: ["Build and Push Image"]
     types: [completed]
     branches: [main]
   workflow_dispatch:
     inputs:
+      context:
+        description: 'Bounded context to deploy.'
+        required: true
+        type: choice
+        options:
+          - grid
+          - game
+        default: grid
       digest:
         description: 'Image digest to deploy, format "sha256:..." (manual rollback / redeploy).'
         required: true
@@ -62,7 +71,9 @@ concurrency:
   # cancels (cancel-in-progress: false). Mid-flight `helm upgrade`
   # cancellation can leave the release in a `pending-upgrade` state
   # that requires manual `helm rollback`, which violates the one-click
-  # rollback rule.
+  # rollback rule. The matrix runs grid + game in parallel within a
+  # single workflow run; the concurrency group serializes runs against
+  # each other, not jobs within one run.
   group: deploy-api-k8s-prod
   cancel-in-progress: false
 
@@ -75,22 +86,44 @@ permissions:
 
 jobs:
   deploy:
-    # Skip when the upstream build failed or was cancelled. On
-    # `workflow_dispatch` there is no upstream run to consult, so the
-    # event-name guard short-circuits the conclusion check.
-    # Skip when upstream build was workflow_dispatch — that path doesn't upload the digest artifact (see build-and-push-image.yml).
+    name: deploy (${{ matrix.context }})
+    # workflow_run path: only proceed on successful upstream push builds.
+    # workflow_dispatch path: only the row matching `inputs.context` runs;
+    # the other row is skipped via this if guard so a manual rollback to
+    # one service doesn't accidentally redeploy the other with the same
+    # digest (which would also be wrong because the digests are distinct).
     if: >-
-      ${{ github.event_name == 'workflow_dispatch' ||
-          (github.event.workflow_run.conclusion == 'success' &&
-           github.event.workflow_run.event == 'push') }}
+      ${{ (github.event_name == 'workflow_run' &&
+           github.event.workflow_run.conclusion == 'success' &&
+           github.event.workflow_run.event == 'push') ||
+          (github.event_name == 'workflow_dispatch' &&
+           inputs.context == matrix.context) }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    strategy:
+      # fail-fast: false so a green grid deploy isn't masked by a red
+      # game deploy (and vice versa). Matches build-and-push-image.yml.
+      fail-fast: false
+      matrix:
+        include:
+          - context: grid
+            release-name: wordsparrow-api
+            chart-path: grid/api/deploy/chart/
+            values-file: grid/api/deploy/chart/values-prod.yaml
+            digest-artifact: image-digest-grid
+            health-url: https://api.wordsparrow.io/v1/health
+          - context: game
+            release-name: wordsparrow-game-api
+            chart-path: game/api/deploy/chart/
+            values-file: game/api/deploy/chart/values-prod.yaml
+            digest-artifact: image-digest-game
+            health-url: https://game.wordsparrow.io/v1/health
     environment:
-      # Surfaces this deploy in the GitHub "Environments" UI and lets
-      # the maintainer attach manual-approval / required-reviewer
-      # protection rules later without changing this file.
-      name: prod
-      url: https://api.wordsparrow.io/v1/health
+      # Per-context environment so each appears separately in the GitHub
+      # Environments UI and required-reviewer rules can be applied
+      # independently (e.g. only require approval for grid deploys).
+      name: prod-${{ matrix.context }}
+      url: ${{ matrix.health-url }}
 
     steps:
       - name: Checkout repository
@@ -107,16 +140,12 @@ jobs:
 
       - name: Download digest artifact (workflow_run)
         # Cross-workflow artifact download: the build workflow uploaded
-        # `image-digest` in the run identified by `workflow_run.id`.
-        # `actions/download-artifact@v4` supports this via `run-id` +
-        # `github-token` (the token needs `actions: read`, granted at
-        # job scope above). Skipped on `workflow_dispatch` — that path
-        # uses the `inputs.digest` value below instead.
+        # `image-digest-<context>` in the run identified by `workflow_run.id`.
         if: github.event_name == 'workflow_run'
         # actions/download-artifact v4.3.0
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
-          name: image-digest
+          name: ${{ matrix.digest-artifact }}
           path: artifact
           run-id: ${{ github.event.workflow_run.id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -164,46 +193,47 @@ jobs:
         id: helm
         env:
           DIGEST: ${{ steps.digest.outputs.digest }}
+          RELEASE: ${{ matrix.release-name }}
+          CHART: ${{ matrix.chart-path }}
+          VALUES: ${{ matrix.values-file }}
         # `--atomic` was dropped on purpose: when a release fails,
         # `--atomic` rolls back BEFORE the diagnostics step can run, so
         # the broken pods (and their logs / events) are gone by the time
         # we'd otherwise capture them. We keep `--wait --timeout 5m` so
         # the step still surfaces the failure as a non-zero exit, but
-        # leave the pending-upgrade release in place. The
-        # "Capture failure diagnostics" + "Rollback failed release"
-        # steps below replicate `--atomic`'s rollback semantics while
-        # keeping the manifesto's "one-click rollback" promise intact.
+        # leave the pending-upgrade release in place.
         run: |
           set -euo pipefail
-          helm upgrade --install wordsparrow-api grid/api/deploy/chart/ \
+          helm upgrade --install "$RELEASE" "$CHART" \
             -n wordsparrow --create-namespace \
-            -f grid/api/deploy/chart/values-prod.yaml \
+            -f "$VALUES" \
             --set image.digest="$DIGEST" \
             --wait --timeout 5m
 
       - name: Capture failure diagnostics
         # Only runs when the helm step failed. `set +e` so we don't
-        # short-circuit on missing resources (e.g. namespace doesn't
-        # exist when first install fails very early). Output is
-        # grouped so the GHA log UI surfaces collapsible sections.
+        # short-circuit on missing resources. Output is grouped so the
+        # GHA log UI surfaces collapsible sections.
         if: failure() && steps.helm.conclusion == 'failure'
+        env:
+          RELEASE: ${{ matrix.release-name }}
         run: |
           set +e
           echo "::group::helm history (last 5 revisions)"
-          helm history wordsparrow-api -n wordsparrow --max 5
+          helm history "$RELEASE" -n wordsparrow --max 5
           echo "::endgroup::"
 
           echo "::group::helm status"
-          helm status wordsparrow-api -n wordsparrow --show-resources
+          helm status "$RELEASE" -n wordsparrow --show-resources
           echo "::endgroup::"
 
           echo "::group::pod summary"
-          kubectl get pods -n wordsparrow -o wide
+          kubectl get pods -n wordsparrow -l app.kubernetes.io/instance="$RELEASE" -o wide
           echo "::endgroup::"
 
           echo "::group::pod descriptions (events + probe failures)"
           kubectl describe pods -n wordsparrow \
-            -l app.kubernetes.io/name=wordsparrow-api
+            -l app.kubernetes.io/instance="$RELEASE"
           echo "::endgroup::"
 
           # Logs from current AND previous container — CrashLoopBackOff
@@ -212,7 +242,7 @@ jobs:
           # actual exception lives.
           echo "::group::pod logs (current + previous, last 500 lines)"
           for pod in $(kubectl get pods -n wordsparrow \
-            -l app.kubernetes.io/name=wordsparrow-api -o name); do
+            -l app.kubernetes.io/instance="$RELEASE" -o name); do
             echo "=== $pod (current) ==="
             kubectl logs -n wordsparrow "$pod" --all-containers --tail=500
             echo "=== $pod (previous) ==="
@@ -232,44 +262,49 @@ jobs:
         # (very first install), we uninstall instead so the namespace
         # doesn't keep a permanently-failed release lying around.
         if: failure() && steps.helm.conclusion == 'failure'
+        env:
+          RELEASE: ${{ matrix.release-name }}
         run: |
           set -euo pipefail
-          history_json=$(helm history wordsparrow-api \
+          history_json=$(helm history "$RELEASE" \
             -n wordsparrow -o json 2>/dev/null || echo '[]')
-          # Prior good revision = newest entry whose status is
-          # "deployed" or "superseded" (helm marks all previous good
-          # revisions as superseded once a new one deploys).
           prev_rev=$(echo "$history_json" | \
             jq -r '[.[] | select(.status=="deployed" or .status=="superseded")] | sort_by(.revision) | last | .revision // empty')
           if [ -n "$prev_rev" ]; then
             echo "Rolling back to revision $prev_rev"
-            helm rollback wordsparrow-api "$prev_rev" \
+            helm rollback "$RELEASE" "$prev_rev" \
               -n wordsparrow --wait --timeout 2m
           else
             echo "No prior good revision; uninstalling failed release"
-            helm uninstall wordsparrow-api -n wordsparrow --wait --timeout 2m
+            helm uninstall "$RELEASE" -n wordsparrow --wait --timeout 2m
           fi
 
       - name: Verify rollout
+        env:
+          RELEASE: ${{ matrix.release-name }}
+        # `fullnameOverride` in each chart's values-prod.yaml pins the
+        # deployment name to the release name, so this resolves
+        # `deployment/wordsparrow-api` and `deployment/wordsparrow-game-api`.
         run: |
           set -euo pipefail
-          kubectl -n wordsparrow rollout status deployment/wordsparrow-api --timeout=2m
-          kubectl -n wordsparrow get pods -o wide
+          kubectl -n wordsparrow rollout status deployment/"$RELEASE" --timeout=2m
+          kubectl -n wordsparrow get pods -l app.kubernetes.io/instance="$RELEASE" -o wide
 
       - name: Smoke test /v1/health
+        env:
+          HEALTH_URL: ${{ matrix.health-url }}
         # External smoke test against the public ingress. cert-manager
-        # + external-dns must already have the cert + DNS in place
-        # (covered by the platform bootstrap). Five attempts at 10s
-        # apart absorbs DNS / cache propagation jitter without masking
-        # a real outage — total budget 50s.
+        # + external-dns must already have the cert + DNS in place.
+        # Five attempts at 10s apart absorbs DNS / cache propagation
+        # jitter without masking a real outage — total budget 50s.
         run: |
           set -euo pipefail
           for i in 1 2 3 4 5; do
-            if curl -sf -m 5 https://api.wordsparrow.io/v1/health; then
+            if curl -sf -m 5 "$HEALTH_URL"; then
               echo "healthy"
               exit 0
             fi
             sleep 10
           done
-          echo "::error::api.wordsparrow.io did not return 200 after 50s"
+          echo "::error::$HEALTH_URL did not return 200 after 50s"
           exit 1
