@@ -87,8 +87,23 @@ The agent has zero conversation history. Every prompt MUST include:
 4. **What NOT to do**: scope caps. "Don't touch grid:application from this PR." "Don't add new deps." "Don't refactor X."
 5. **How to ship**: branch name, validation commands (gradle / pnpm), commit message template, PR title + body shape, the `mcp__github__create_pull_request` call.
 6. **Constraints**: ADR-0001 §4 cap, conventional commits, DCO sign-off (`git commit -s`), no emojis.
-7. **CI auto-fix loop** (paste-ready snippet — see below).
-8. **Report-back contract**: max ~250 words, branch + PR URL, line counts, test/lint/build outputs, decisions beyond the prompt, blockers.
+7. **Domain skill pointer** — tell the agent to invoke the relevant playbook at the start of work (see "Domain-specific skills" below). Saves you copy-pasting 100s of lines of conventions per prompt.
+8. **CI auto-fix loop** (paste-ready snippet — see below).
+9. **Report-back contract**: max ~250 words, branch + PR URL, line counts, test/lint/build outputs, decisions beyond the prompt, blockers.
+
+### Domain-specific skills
+
+Three playbooks encode the per-area conventions so you don't have to repeat them in every agent prompt. Tell the agent to invoke whichever applies before starting work — e.g. include this line in the prompt:
+
+> Before you begin, invoke `/jvm-backend` (or `/frontend`, `/schemas`) for the conventions and gotchas specific to this work.
+
+| Skill | Triggers when work touches | Encodes |
+|---|---|---|
+| `frontend` | `frontend/**` | Vite/React 19/TanStack Router/Panda/Vitest, hexagonal layering enforced by eslint-plugin-boundaries, ADR-0002 §4 uncontrolled-input contract, MSW preview-only rule, generated-types regen, jsdom polyfills. |
+| `schemas` | `**/openapi.yaml`, `**/asyncapi.yaml` | ADR-0003 §6 wire conventions (UUID v7, ISO-8601, RFC 7807, camelCase, x-enum-varnames), the absence-≠-null rule, AsyncAPI 2.6 exception (ADR-0019), LobbyId base58 nanoid exception (ADR-0018 §5), no cross-context $ref, Spectral commands, regen-and-diff workflow. |
+| `jvm-backend` | `grid/**`, `game/**`, `*.gradle.kts`, `settings.gradle.kts` | Bounded-context module layout, Konsist-enforced layer rules, no cross-context imports, ASCII-only test names, Spotless/ktlint, build commands, the **settings-meets-Dockerfile gotcha** that has bitten three PRs in this rollout, TOCTOU rules for `repo.mutate`, configuration-cache pitfalls. |
+
+The skills are project-level (`.claude/skills/<name>/SKILL.md`) so every agent dispatched in a worktree auto-loads the descriptions. They invoke the body on demand when their task matches.
 
 ### Branch + commit conventions
 
