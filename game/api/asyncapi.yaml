@@ -3,6 +3,9 @@
 # Hand-written AsyncAPI 2.6 per ADR-0003 §5 (source of truth, not generated
 # from handler annotations). Wire conventions per ADR-0003 §6: UUID v7 ids,
 # ISO-8601 instants with offset, camelCase, RFC 7807 errors, string enums.
+# Single-value inline `type`/`kind` discriminators (e.g. `enum: [joinLobby]`)
+# are exempt from x-enum-varnames: the constant name is trivially derivable and
+# modelina emits it without the hint. Named multi-value enums carry the hint.
 #
 # AsyncAPI 2.6 (not 3.x): it is the version Spectral's
 # `@asyncapi/spectral-ruleset` is stable on, and 3.x reshapes operations
@@ -159,11 +162,11 @@ components:
       example: P
     CellEntry:
       type: object
-      required: [row, col, letter]
+      required: [row, column, letter]
       description: A single placed letter in the canonical entries list.
       properties:
         row:    { type: integer, minimum: 0, example: 0 }
-        col:    { type: integer, minimum: 0, example: 3 }
+        column: { type: integer, minimum: 0, example: 3 }
         letter: { type: string, minLength: 1, maxLength: 1, pattern: '^[A-Z]$', description: Always non-null in `finalEntries`., example: P }
     Player:
       type: object
@@ -295,14 +298,14 @@ components:
       example: { type: startGame }
     CellUpdatePayload:
       type: object
-      required: [type, row, col, letter]
+      required: [type, row, column, letter]
       description: Client-initiated cell write. `letter` is `null` to clear. Server rebroadcasts as `cellUpdated` with a `writtenAt` stamp.
       properties:
         type:   { type: string, enum: [cellUpdate] }
         row:    { type: integer, minimum: 0 }
-        col:    { type: integer, minimum: 0 }
+        column: { type: integer, minimum: 0 }
         letter: { $ref: '#/components/schemas/Letter' }
-      example: { type: cellUpdate, row: 0, col: 3, letter: P }
+      example: { type: cellUpdate, row: 0, column: 3, letter: P }
     LeaveLobbyPayload:
       type: object
       required: [type]
@@ -364,16 +367,16 @@ components:
       example: { type: gameStarted, startedAt: '2026-05-02T15:35:00Z', puzzle: { id: 0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6c, title: Petite grille du mardi, language: fr, width: 5, height: 5, cells: [], clues: [], createdAt: '2026-04-24T15:30:00Z' } }
     CellUpdatedPayload:
       type: object
-      required: [type, sessionId, row, col, letter, writtenAt]
+      required: [type, sessionId, row, column, letter, writtenAt]
       description: Canonical broadcast for an accepted `cellUpdate`. Server stamps `writtenAt`; clients use it to break ties.
       properties:
         type:      { type: string, enum: [cellUpdated] }
         sessionId: { $ref: '#/components/schemas/SessionId' }
         row:       { type: integer, minimum: 0 }
-        col:       { type: integer, minimum: 0 }
+        column:    { type: integer, minimum: 0 }
         letter:    { $ref: '#/components/schemas/Letter' }
         writtenAt: { $ref: '#/components/schemas/Instant' }
-      example: { type: cellUpdated, sessionId: 0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6b, row: 0, col: 3, letter: P, writtenAt: '2026-05-02T15:35:42Z' }
+      example: { type: cellUpdated, sessionId: 0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6b, row: 0, column: 3, letter: P, writtenAt: '2026-05-02T15:35:42Z' }
     GameSolvedPayload:
       type: object
       required: [type, durationMs, finalEntries]
@@ -385,7 +388,7 @@ components:
       example:
         type: gameSolved
         durationMs: 184250
-        finalEntries: [{ row: 0, col: 3, letter: P }, { row: 0, col: 4, letter: A }]
+        finalEntries: [{ row: 0, column: 3, letter: P }, { row: 0, column: 4, letter: A }]
     ErrorPayload:
       type: object
       required: [type, errorType, title]
