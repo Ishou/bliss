@@ -9,6 +9,13 @@ interface ImportMetaEnv {
   /** Absolute base URL of the Grid API (production target). */
   readonly VITE_GRID_API_URL: string;
   /**
+   * Absolute base URL of the Game API (production target). Used by the
+   * lobby route's `HttpLobbyClient` and `WebSocketGameClient` adapters.
+   * The composition root resolves it once and threads the adapters
+   * through router context per ADR-0002 §7.
+   */
+  readonly VITE_GAME_API_BASE_URL: string;
+  /**
    * `'true'` for preview builds: register Mock Service Worker so the
    * SPA never reaches the real API. `'false'` (default) for prod.
    * String, not boolean — Vite injects env vars verbatim.

@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react';
 import { RouterProvider, createMemoryHistory, createRouter } from '@tanstack/react-router';
 import { describe, expect, it, vi } from 'vitest';
 import type { PuzzleRepository } from '@/application';
+import type { GameClient, LobbyClient } from '@/application/game';
 import type { Puzzle } from '@/domain';
 import { Route as RootRoute } from '@/ui/routes/__root';
 import { Route as IndexRoute } from '@/ui/routes/index';
@@ -17,7 +18,16 @@ const renderWith = (repository: PuzzleRepository) => {
   const router = createRouter({
     routeTree,
     history: createMemoryHistory({ initialEntries: ['/'] }),
-    context: { puzzleRepository: repository },
+    context: {
+      puzzleRepository: repository,
+      // Wave G context additions are unused on `/` but required by the type.
+      lobbyClient: {} as LobbyClient,
+      gameClient: {} as GameClient,
+      getSession: () => ({
+        sessionId: '00000000-0000-0000-0000-000000000000' as never,
+        pseudonym: 'Joueur 0001' as never,
+      }),
+    },
   });
   return render(<RouterProvider router={router} />);
 };

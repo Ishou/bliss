@@ -5,8 +5,17 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from '@/ui/App';
 import { createAppRouter } from '@/ui/router';
-import { createHttpPuzzleRepository } from '@/infrastructure';
+import {
+  createHttpLobbyClient,
+  createHttpPuzzleRepository,
+  createWebSocketGameClient,
+} from '@/infrastructure';
+import {
+  getOrCreateSessionId,
+  getPseudonym,
+} from '@/infrastructure/session/localStorageSession';
 import { registerServiceWorker } from '@/infrastructure/pwa';
+import type { Pseudonym, SessionId } from '@/domain/game';
 // `fonts.css` is imported separately (rather than via `@import` from
 // `index.css`) so the `@font-face` rules reach the `fontaine` Vite
 // plugin's `transform` hook directly. CSS-side `@import` is resolved
@@ -50,7 +59,26 @@ enableMocks()
     const puzzleRepository = createHttpPuzzleRepository({
       baseUrl: import.meta.env.VITE_GRID_API_URL,
     });
-    const router = createAppRouter({ puzzleRepository });
+    const gameApiBaseUrl = import.meta.env.VITE_GAME_API_BASE_URL;
+    const lobbyClient = createHttpLobbyClient({ baseUrl: gameApiBaseUrl });
+    // WebSocket URL derives from the same host: swap the http(s) scheme
+    // for ws(s). Keeps a single env var across the two adapters.
+    const wsBaseUrl = gameApiBaseUrl.replace(/^http/, 'ws');
+    const gameClient = createWebSocketGameClient({ wsBaseUrl });
+    // `getSession` is a thin closure over the localStorage helpers —
+    // routes call it inside an effect so the read happens client-side
+    // (the helpers gracefully fall back to in-memory under SSR / private
+    // mode). Branding is asserted at this single seam.
+    const getSession = () => ({
+      sessionId: getOrCreateSessionId() as SessionId,
+      pseudonym: getPseudonym() as Pseudonym,
+    });
+    const router = createAppRouter({
+      puzzleRepository,
+      lobbyClient,
+      gameClient,
+      getSession,
+    });
 
     createRoot(container).render(
       <StrictMode>

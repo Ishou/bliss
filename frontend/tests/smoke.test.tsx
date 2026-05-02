@@ -2,6 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { RouterProvider, createMemoryHistory, createRouter } from '@tanstack/react-router';
 import { describe, it, expect } from 'vitest';
 import type { PuzzleRepository } from '@/application';
+import type { GameClient, LobbyClient } from '@/application/game';
 import type { Puzzle } from '@/domain';
 import { Route as RootRoute } from '@/ui/routes/__root';
 import { Route as IndexRoute } from '@/ui/routes/index';
@@ -18,6 +19,18 @@ const samplePuzzle: Puzzle = {
   cells: [{ kind: 'letter', position: { row: 0, col: 0 }, entry: '' }],
 };
 const puzzleRepository: PuzzleRepository = { fetchById: () => Promise.resolve(samplePuzzle) };
+// Wave G context additions are unused on `/` but required by the type.
+const lobbyClient = {} as LobbyClient;
+const gameClient = {} as GameClient;
+const ctx = {
+  puzzleRepository,
+  lobbyClient,
+  gameClient,
+  getSession: () => ({
+    sessionId: '00000000-0000-0000-0000-000000000000' as never,
+    pseudonym: 'Joueur 0001' as never,
+  }),
+};
 
 describe('App smoke test', () => {
   it('renders the WordSparrow heading on the root route', async () => {
@@ -25,7 +38,7 @@ describe('App smoke test', () => {
     const router = createRouter({
       routeTree,
       history: createMemoryHistory({ initialEntries: ['/'] }),
-      context: { puzzleRepository },
+      context: ctx,
     });
 
     render(<RouterProvider router={router} />);
@@ -42,7 +55,7 @@ describe('App smoke test', () => {
     const router = createRouter({
       routeTree,
       history: createMemoryHistory({ initialEntries: ['/'] }),
-      context: { puzzleRepository },
+      context: ctx,
     });
 
     render(<RouterProvider router={router} />);
@@ -57,7 +70,7 @@ describe('App smoke test', () => {
     const router = createRouter({
       routeTree,
       history: createMemoryHistory({ initialEntries: ['/'] }),
-      context: { puzzleRepository },
+      context: ctx,
     });
 
     const { container } = render(<RouterProvider router={router} />);

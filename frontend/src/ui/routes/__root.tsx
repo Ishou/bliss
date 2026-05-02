@@ -1,13 +1,26 @@
 import { HeadContent, Outlet, createRootRouteWithContext } from '@tanstack/react-router';
 import { css } from 'styled-system/css';
 import type { PuzzleRepository } from '@/application';
+import type { GameClient, LobbyClient } from '@/application/game';
+import type { Pseudonym, SessionId } from '@/domain/game';
 
 // Router context surface — every route loader receives this object as
 // `ctx.context`. The composition root (`main.tsx`) is the only place
-// that wires a concrete `PuzzleRepository`, keeping `ui/` free of
-// `infrastructure/` imports (ADR-0002 §7).
+// that wires concrete adapters, keeping `ui/` free of `infrastructure/`
+// imports (ADR-0002 §7). Wave G adds `lobbyClient` (REST bootstrap for
+// the lobby route's loader), `gameClient` (WebSocket lifecycle the
+// route owns on mount/unmount), and a `getSession` accessor that hides
+// the localStorage adapter behind a function reference.
+export interface AppSession {
+  readonly sessionId: SessionId;
+  readonly pseudonym: Pseudonym;
+}
+
 export interface AppRouterContext {
   readonly puzzleRepository: PuzzleRepository;
+  readonly lobbyClient: LobbyClient;
+  readonly gameClient: GameClient;
+  readonly getSession: () => AppSession;
 }
 
 const errorPageStyles = css({
