@@ -1,6 +1,8 @@
-// Mirrors grid/domain/model/Cell.kt's Cell hierarchy verbatim. Per ADR-0001 §1
-// cross-context imports are forbidden; the game/ context owns its view of the
-// puzzle shape. Update both files together when the puzzle shape changes.
+// game/'s view of the cell hierarchy. NOT a verbatim copy of grid/domain/model/Cell.kt:
+// DefinitionCell is single-clue here to match the flat GameDefinitionCell shape in
+// game/api/asyncapi.yaml (dual-clue support deferred — ADR-0001 §3).
+// Cross-context imports are forbidden per ADR-0001 §1; keep the two hierarchies
+// intentionally diverged until a schema amendment promotes the second clue.
 package com.bliss.game.domain
 
 import java.util.UUID
