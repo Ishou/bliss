@@ -197,6 +197,7 @@ components:
       type: object
       required: [kind, position]
       description: Grid cell. `kind` discriminates letter/definition/block.
+      discriminator: kind
       properties:
         kind:     { $ref: '#/components/schemas/GameCellKind' }
         position: { $ref: '#/components/schemas/GamePosition' }
