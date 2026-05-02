@@ -16,8 +16,7 @@ export interface LobbyClient {
    * Resolves with the freshly-minted lobby intersected with its
    * server-issued `LobbyId`. Unlike {@link getLobby}, the `id` is not
    * known from the URL on this seam — the home-route "Créer une partie
-   * multijoueur" button (Wave H PR #21) reads it to navigate to
-   * `/lobby/:lobbyId`.
+   * multijoueur" button reads it to navigate to `/lobby/:lobbyId`.
    */
   createLobby(args: {
     ownerSessionId: SessionId;

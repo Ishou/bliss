@@ -128,10 +128,10 @@ function HomePage() {
 }
 
 // Self-contained multiplayer entry-point. Reads `lobbyClient` and
-// `getSession` from the route context (PR #140 plumbed both); on click,
-// mints a lobby and navigates to `/lobby/:lobbyId`. Failures map to the
-// same `LobbyClientError.kind` switch used by the lobby route's error
-// boundary so copy stays consistent across the multiplayer surface.
+// `getSession` from the route context (plumbed by the lobby-route wiring);
+// on click, mints a lobby and navigates to `/lobby/:lobbyId`. Failures map
+// to the same `LobbyClientError.kind` switch used by the lobby route's
+// error boundary so copy stays consistent across the multiplayer surface.
 function CreateLobbyButton() {
   const navigate = useNavigate();
   const ctx = Route.useRouteContext();
@@ -179,8 +179,8 @@ function CreateLobbyButton() {
   );
 }
 
-// Mirrors the lobby route's `LobbyErrorComponent` (PR #140) so the user
-// sees consistent copy whether the failure happens at create-time on
+// Mirrors the lobby route's `LobbyErrorComponent` so the user sees
+// consistent copy whether the failure happens at create-time on
 // `/` or at load-time on `/lobby/:id`. `not-found` is unreachable for
 // `createLobby` (the server never returns 404) but is included for
 // totality so future kinds light up the type-checker.

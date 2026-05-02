@@ -71,9 +71,9 @@ describe('HttpLobbyClient.createLobby', () => {
     const lobby = await makeClient().createLobby({ ownerSessionId: sessionId, ownerPseudonym: pseudonym });
 
     expect(receivedBody).toEqual({ ownerSessionId: sessionId, ownerPseudonym: pseudonym });
-    // `createLobby` carries the server-issued `id` (Wave H PR #21 — the
-    // home-route button reads it to navigate). `getLobby` still drops
-    // `id` because the route already knows it from the URL.
+    // `createLobby` carries the server-issued `id` — the home-route
+    // button reads it to navigate. `getLobby` still drops `id` because
+    // the route already knows it from the URL.
     expect(lobby).toEqual({
       id: lobbyFixture.id,
       players: lobbyFixture.players,

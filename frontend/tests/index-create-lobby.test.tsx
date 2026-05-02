@@ -9,8 +9,8 @@ import { Route as RootRoute } from '@/ui/routes/__root';
 import { Route as IndexRoute } from '@/ui/routes/index';
 import { Route as LobbyRoute } from '@/ui/routes/lobby.$lobbyId';
 
-// Wave H PR #21 — covers the "Créer une partie multijoueur" button:
-// flag gate, session-keyed `createLobby` call, post-success navigation,
+// Covers the "Créer une partie multijoueur" button: flag gate,
+// session-keyed `createLobby` call, post-success navigation,
 // error-banner copy per `LobbyClientError.kind`, and the disabled
 // pending state. Adapters are not mocked: the route consumes the
 // *port* (`LobbyClient`), so the test stands up the simplest in-memory
