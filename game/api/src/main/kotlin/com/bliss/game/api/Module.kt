@@ -2,6 +2,9 @@ package com.bliss.game.api
 
 import com.bliss.game.api.dto.ProblemDetails
 import com.bliss.game.api.routes.health
+import com.bliss.game.api.routes.lobbies
+import com.bliss.game.application.usecases.CreateLobbyUseCase
+import com.bliss.game.infrastructure.InMemoryLobbyRepository
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
@@ -60,7 +63,14 @@ fun Application.module() {
             Json {
                 prettyPrint = false
                 ignoreUnknownKeys = true
-                explicitNulls = false
+                // explicitNulls = true (the kotlinx-serialization default): a
+                // required field that is null on the domain side MUST appear on
+                // the wire as `null`. Per ADR-0003 §6, absence and `null` are
+                // distinct. Most prominently: `Lobby.game` is `null` while
+                // WAITING and `GameSession.completedAt` is `null` while
+                // IN_PROGRESS — both fields are in the OpenAPI spec's `required`
+                // lists and clients distinguish between "not yet" and "missing".
+                explicitNulls = true
             },
         )
     }
@@ -115,7 +125,21 @@ fun Application.module() {
         }
     }
 
+    // ---- DI for game-specific routes ------------------------------------
+    // Manual wiring; mirrors grid/api's pattern (no DI framework). v1 is
+    // in-memory only (ADR-0018 §3); :game:infrastructure's Postgres adapter
+    // will replace InMemoryLobbyRepository when it lands.
+    //
+    // PR #10 (WebSocket route, in parallel) introduces the additional ports
+    // — HttpPuzzleProvider for StartGameUseCase, the JoinLobby / RenameSelf /
+    // SetGridConfig / StartGame / UpdateCell / LeaveLobby use cases — and
+    // the wiring lines for them here. This PR wires only what POST + GET
+    // need.
+    val lobbyRepository = InMemoryLobbyRepository()
+    val createLobby = CreateLobbyUseCase(lobbyRepository, SystemClock)
+
     routing {
         health(APP_VERSION)
+        lobbies(createLobby = createLobby, repo = lobbyRepository)
     }
 }

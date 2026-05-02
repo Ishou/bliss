@@ -48,3 +48,14 @@ jobs:
           spectral_ruleset: .spectral.yaml
           # Fail the build on warnings — see header.
           fail_severity: warn
+
+      - name: Lint game/api/openapi.yaml
+        # Same Spectral pin / posture as the grid step above. Lobby create +
+        # read REST surface (Wave F · PR #9). The realtime AsyncAPI file at
+        # game/api/asyncapi.yaml uses a different ruleset and is intentionally
+        # not linted here yet (no `asyncapi-lint` workflow exists in v1).
+        uses: stoplightio/spectral-action@6416fd018ae38e60136775066eb3e98172143141 # v0.8.13
+        with:
+          file_glob: game/api/openapi.yaml
+          spectral_ruleset: .spectral.yaml
+          fail_severity: warn

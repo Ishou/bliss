@@ -1,0 +1,512 @@
+# Game bounded-context REST contract.
+#
+# Hand-written OpenAPI 3.1 per ADR-0003 §1 (source of truth, not generated
+# from controller annotations). Wire conventions per ADR-0003 §6: UUID v7 ids,
+# ISO-8601 instants with offset, camelCase, RFC 7807 errors, string enums with
+# x-enum-varnames, explicit `required` lists, `nullable: true` only when null
+# is a meaningful wire value.
+#
+# `LobbyId` deviates from the UUID v7 default: it is an 8-char base58 nanoid
+# per ADR-0020 (URL-friendly share links). All other identifiers stay UUID v7.
+#
+# v0.1.0 surface: lobby create + read. The realtime surface (joinLobby,
+# cellUpdate, etc.) lives in `game/api/asyncapi.yaml`. Persistence beyond
+# in-memory is out of scope for v0.1.0 (ADR-0018 §3); a lobby that is not
+# read soon after creation may be garbage-collected — clients see 404.
+openapi: 3.1.0
+info:
+  title: Bliss Game API
+  version: 0.1.0
+  summary: Lobby create + read for the multiplayer game/ context.
+  description: |
+    REST control plane for the game bounded context. The companion
+    `game/api/asyncapi.yaml` carries the realtime surface (one WebSocket per
+    `(browser tab x lobby)`). The frontend route loader calls
+    `GET /v1/lobbies/{lobbyId}` to bootstrap before opening the WS.
+
+    Wire conventions per ADR-0003 §6. `LobbyId` is the documented exception
+    (ADR-0020): an 8-char base58 nanoid embedded directly in URLs.
+  contact:
+    name: Bliss maintainers
+    url: https://github.com/Ishou/bliss
+    email: noreply@bliss.example
+  license:
+    name: FSL-1.1-MIT
+    url: https://github.com/Ishou/bliss/blob/main/LICENSE
+
+servers:
+  - url: https://game.wordsparrow.io
+    description: Production. URL stabilizes when the game-api Helm chart lands (ADR-0018).
+  - url: http://localhost:8081
+    description: Local dev (Ktor `embeddedServer`). Port 8081 per ADR-0007 §3.
+
+tags:
+  - name: lobbies
+    description: Pre-game lobby create and read.
+
+paths:
+  /v1/lobbies:
+    post:
+      operationId: createLobby
+      summary: Create a new lobby.
+      description: |
+        Creates a new lobby in WAITING with the calling player as the sole
+        member and owner. The client supplies `ownerSessionId` (UUID v7,
+        generated client-side per ADR-0018 §"sessions") and `ownerPseudonym`.
+        The server mints `lobbyId` (base58 nanoid, ADR-0020) and returns the
+        full `Lobby` resource.
+
+        The 201 response includes a `Location` header pointing at the
+        canonical read URL.
+      tags: [lobbies]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateLobbyRequest'
+      responses:
+        '201':
+          description: Lobby created. Body is the freshly-minted `Lobby` resource.
+          headers:
+            Location:
+              description: Canonical read URL of the new lobby.
+              required: true
+              schema:
+                type: string
+                format: uri-reference
+                example: /v1/lobbies/7gQ2xK9p
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Lobby'
+        '400':
+          description: |
+            Request body is malformed. RFC 7807. Variants:
+            - `ownerSessionId` is not a UUID v7
+              (`type` = `https://bliss.example/errors/invalid-lobby-create-request`).
+            - `ownerPseudonym` violates length / whitespace rules
+              (same `type`).
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+
+  /v1/lobbies/{lobbyId}:
+    get:
+      operationId: getLobby
+      summary: Read current lobby state.
+      description: |
+        Returns the full `Lobby` snapshot. Used by the frontend route loader
+        to bootstrap the WebSocket connection: the WS opens AFTER the loader
+        confirms the lobby exists and learns the current lifecycle state.
+      tags: [lobbies]
+      parameters:
+        - $ref: '#/components/parameters/LobbyIdPath'
+      responses:
+        '200':
+          description: Lobby found. Body is the current `Lobby` snapshot.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Lobby'
+        '400':
+          description: |
+            Path parameter `lobbyId` does not match the base58 nanoid pattern.
+            RFC 7807; `type` is `https://bliss.example/errors/invalid-lobby-id`.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '404':
+          description: |
+            No lobby exists for the supplied id. The lobby may have never
+            existed, or it may have been garbage-collected after the last
+            player left (ADR-0018 §3 — in-memory v1, no durable storage).
+            RFC 7807; `type` is `https://bliss.example/errors/lobby-not-found`.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+
+components:
+  parameters:
+    LobbyIdPath:
+      name: lobbyId
+      in: path
+      required: true
+      description: 8-char base58 nanoid identifying the lobby (ADR-0020).
+      schema:
+        $ref: '#/components/schemas/LobbyId'
+
+  schemas:
+    LobbyId:
+      type: string
+      minLength: 8
+      maxLength: 8
+      pattern: '^[1-9A-HJ-NP-Za-km-z]{8}$'
+      description: |
+        8-char base58 nanoid (URL-safe; no `0`, `O`, `I`, `l`). Documented
+        exception to ADR-0003 §6's UUID v7 default per ADR-0020 — lobbies
+        embed their id in human-shareable URLs, where 36-char UUIDs are
+        unwieldy. Mirrors `LobbyId` in `game/api/asyncapi.yaml`; keep in sync.
+      example: 7gQ2xK9p
+
+    SessionId:
+      type: string
+      format: uuid
+      description: |
+        UUID v7 string per ADR-0003 §6. Generated client-side on first visit
+        and persisted in `localStorage`. Mirrors `SessionId` in
+        `game/api/asyncapi.yaml`; keep in sync.
+      example: 0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6b
+
+    Pseudonym:
+      type: string
+      minLength: 1
+      maxLength: 32
+      description: |
+        Player display name. Not unique within a lobby. Leading / trailing
+        whitespace is rejected. Mirrors `Pseudonym` in
+        `game/api/asyncapi.yaml`; keep in sync.
+      example: Joueur 1234
+
+    Instant:
+      type: string
+      format: date-time
+      description: ISO-8601 instant with timezone offset (ADR-0003 §6).
+      example: '2026-05-02T15:30:00Z'
+
+    LobbyLifecycleState:
+      type: string
+      enum: [WAITING, IN_PROGRESS, COMPLETED]
+      x-enum-varnames: [WAITING, IN_PROGRESS, COMPLETED]
+      description: Lobby lifecycle (ADR-0018). Mirrors `LobbyLifecycleState` in `game/api/asyncapi.yaml`.
+
+    GridConfig:
+      type: object
+      required: [width, height]
+      description: |
+        Dimensions chosen by the lobby owner before start. Mirrors `GridConfig`
+        in `game/api/asyncapi.yaml`; keep in sync.
+      properties:
+        width:
+          type: integer
+          minimum: 5
+          maximum: 15
+          description: Number of columns.
+          example: 7
+        height:
+          type: integer
+          minimum: 5
+          maximum: 15
+          description: Number of rows.
+          example: 7
+
+    Player:
+      type: object
+      required: [sessionId, pseudonym, joinedAt]
+      description: |
+        A player currently holding a slot in the lobby. Mirrors `Player` in
+        `game/api/asyncapi.yaml`; keep in sync.
+      properties:
+        sessionId:
+          $ref: '#/components/schemas/SessionId'
+        pseudonym:
+          $ref: '#/components/schemas/Pseudonym'
+        joinedAt:
+          $ref: '#/components/schemas/Instant'
+
+    GamePuzzle:
+      type: object
+      description: |
+        Game-context projection of a puzzle. Carries every field a client
+        needs to render and play. Owned by game/ — not a $ref into grid/
+        (ADR-0001 §1 forbids cross-context file dependencies). The server
+        fetches from grid/ on startGame and forwards the document verbatim.
+        Mirrors `GamePuzzle` in `game/api/asyncapi.yaml`; keep in sync.
+      required: [id, title, language, width, height, cells, clues, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: UUID v7 puzzle identifier.
+          example: 0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6c
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+          example: Petite grille du mardi
+        language:
+          type: string
+          pattern: '^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$'
+          description: BCP-47 tag.
+          example: fr
+        width:
+          type: integer
+          minimum: 1
+          maximum: 50
+          description: Number of columns.
+          example: 5
+        height:
+          type: integer
+          minimum: 1
+          maximum: 50
+          description: Number of rows.
+          example: 5
+        cells:
+          type: array
+          items:
+            $ref: '#/components/schemas/GameCell'
+          description: Cells in row-major order; look up by position.row/position.column.
+        clues:
+          type: array
+          items:
+            $ref: '#/components/schemas/GameClue'
+        createdAt:
+          $ref: '#/components/schemas/Instant'
+
+    GameCell:
+      type: object
+      required: [kind, position]
+      description: |
+        Grid cell. `kind` discriminates letter / definition / block. Mirrors
+        `GameCell` in `game/api/asyncapi.yaml`; keep in sync.
+      discriminator:
+        propertyName: kind
+        mapping:
+          letter: '#/components/schemas/GameLetterCell'
+          definition: '#/components/schemas/GameDefinitionCell'
+          block: '#/components/schemas/GameBlockCell'
+      oneOf:
+        - $ref: '#/components/schemas/GameLetterCell'
+        - $ref: '#/components/schemas/GameDefinitionCell'
+        - $ref: '#/components/schemas/GameBlockCell'
+      properties:
+        kind:
+          $ref: '#/components/schemas/GameCellKind'
+        position:
+          $ref: '#/components/schemas/GamePosition'
+
+    GameCellKind:
+      type: string
+      enum: [letter, definition, block]
+      x-enum-varnames: [LETTER, DEFINITION, BLOCK]
+      description: Discriminator for `GameCell` variants.
+
+    GameLetterCell:
+      type: object
+      required: [kind, position, letter]
+      description: |
+        Answer cell. `letter` is uppercase A-Z when pre-filled or `null` for
+        blank — both are explicit on the wire (`null` and absence are distinct).
+      properties:
+        kind:
+          type: string
+          enum: [letter]
+        position:
+          $ref: '#/components/schemas/GamePosition'
+        letter:
+          type: string
+          minLength: 1
+          maxLength: 1
+          pattern: '^[A-Z]$'
+          nullable: true
+          description: Pre-filled uppercase letter; `null` means blank.
+
+    GameDefinitionCell:
+      type: object
+      required: [kind, position, clues]
+      description: |
+        Mots-fleches definition cell. Carries 1 clue (the common case) or 2
+        clues (the corner-cell idiom — an across clue and a down clue stacked
+        at one position). Mirrors `GameDefinitionCell` in
+        `game/api/asyncapi.yaml`; keep in sync.
+      properties:
+        kind:
+          type: string
+          enum: [definition]
+        position:
+          $ref: '#/components/schemas/GamePosition'
+        clues:
+          type: array
+          minItems: 1
+          maxItems: 2
+          items:
+            $ref: '#/components/schemas/GameDefinitionClue'
+
+    GameDefinitionClue:
+      type: object
+      required: [id, text, arrow]
+      description: A single clue carried by a `GameDefinitionCell`.
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: UUID v7 clue identifier.
+          example: 0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6d
+        text:
+          type: string
+          minLength: 1
+          maxLength: 500
+          example: Capitale de la France
+        arrow:
+          $ref: '#/components/schemas/GameArrow'
+
+    GameBlockCell:
+      type: object
+      required: [kind, position]
+      description: Unfillable decorative cell.
+      properties:
+        kind:
+          type: string
+          enum: [block]
+        position:
+          $ref: '#/components/schemas/GamePosition'
+
+    GameArrow:
+      type: string
+      enum: [right, down, down-right, right-down]
+      x-enum-varnames: [RIGHT, DOWN, DOWN_RIGHT, RIGHT_DOWN]
+      description: Arrow direction on a mots-fleches definition cell.
+
+    GamePosition:
+      type: object
+      required: [row, column]
+      description: Zero-indexed grid coordinate.
+      properties:
+        row:
+          type: integer
+          minimum: 0
+          description: Zero-indexed row, top to bottom.
+        column:
+          type: integer
+          minimum: 0
+          description: Zero-indexed column, left to right.
+
+    GameClue:
+      type: object
+      required: [id, direction, start, length, text]
+      description: A single clue listed in `GamePuzzle.clues`.
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: UUID v7 clue identifier.
+          example: 0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6e
+        direction:
+          $ref: '#/components/schemas/GameClueDirection'
+        start:
+          $ref: '#/components/schemas/GamePosition'
+        length:
+          type: integer
+          minimum: 1
+          maximum: 50
+          description: Number of letter cells in the answer.
+        text:
+          type: string
+          minLength: 1
+          maxLength: 500
+
+    GameClueDirection:
+      type: string
+      enum: [across, down]
+      x-enum-varnames: [ACROSS, DOWN]
+      description: Direction a clue's answer is written.
+
+    GameSession:
+      type: object
+      required: [puzzle, startedAt, completedAt]
+      description: |
+        Active game embedded in `Lobby.game` while IN_PROGRESS or COMPLETED.
+        `completedAt` is in `required` because the field is always present on
+        the wire — `null` (still in progress) and a timestamp (solved) are
+        both meaningful values. Mirrors `GameSession` in
+        `game/api/asyncapi.yaml`; keep in sync.
+      properties:
+        puzzle:
+          $ref: '#/components/schemas/GamePuzzle'
+        startedAt:
+          $ref: '#/components/schemas/Instant'
+        completedAt:
+          allOf:
+            - $ref: '#/components/schemas/Instant'
+          nullable: true
+          description: Set once the lobby reaches COMPLETED; `null` while IN_PROGRESS.
+
+    Lobby:
+      type: object
+      required: [id, ownerSessionId, players, state, gridConfig, game]
+      description: |
+        Full lobby snapshot. `game` is in `required` because the field is
+        always present on the wire — `null` (state == WAITING) and a populated
+        `GameSession` (state in {IN_PROGRESS, COMPLETED}) are both meaningful.
+        ADR-0003 §6: absence and `null` are distinct.
+      properties:
+        id:
+          $ref: '#/components/schemas/LobbyId'
+        ownerSessionId:
+          $ref: '#/components/schemas/SessionId'
+        players:
+          type: array
+          maxItems: 8
+          items:
+            $ref: '#/components/schemas/Player'
+          description: |
+            Up to 8 players (ADR-0018). Wire shape is an array, NOT a
+            map-keyed-by-sessionId — JSON object keys are unordered, an array
+            preserves join order for stable rendering.
+        state:
+          $ref: '#/components/schemas/LobbyLifecycleState'
+        gridConfig:
+          $ref: '#/components/schemas/GridConfig'
+        game:
+          allOf:
+            - $ref: '#/components/schemas/GameSession'
+          nullable: true
+          description: Null while WAITING; populated while IN_PROGRESS or COMPLETED.
+
+    CreateLobbyRequest:
+      type: object
+      required: [ownerSessionId, ownerPseudonym]
+      description: Request body for `POST /v1/lobbies`.
+      properties:
+        ownerSessionId:
+          $ref: '#/components/schemas/SessionId'
+        ownerPseudonym:
+          $ref: '#/components/schemas/Pseudonym'
+      example:
+        ownerSessionId: 0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6b
+        ownerPseudonym: Joueur 1234
+
+    Problem:
+      type: object
+      description: |
+        RFC 7807 error envelope (ADR-0003 §6). Additional members per
+        RFC 7807 §3.2 may appear; clients tolerate them.
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+          format: uri
+          description: |
+            Stable URI for the error class. Clients route on `type`, never on
+            `title` or `detail`.
+          example: https://bliss.example/errors/lobby-not-found
+        title:
+          type: string
+          description: Short, human-readable summary of the error class.
+          example: Lobby not found
+        status:
+          type: integer
+          minimum: 100
+          maximum: 599
+          description: HTTP status code, repeated for clients that lose it.
+          example: 404
+        detail:
+          type: string
+          description: Human-readable explanation specific to this occurrence.
+        instance:
+          type: string
+          format: uri-reference
+          description: URI reference identifying the specific occurrence.
