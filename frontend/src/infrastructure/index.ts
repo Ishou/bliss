@@ -16,6 +16,15 @@ export {
   type HttpPuzzleRepositoryOptions,
 } from './api/grid/HttpPuzzleRepository';
 export {
+  createGameApiClient,
+  type GameApiClient,
+  type GameApiClientOptions,
+} from './api/game/client';
+export {
+  createHttpLobbyClient,
+  type HttpLobbyClientOptions,
+} from './game/HttpLobbyClient';
+export {
   createWebSocketGameClient,
   type WebSocketGameClientOptions,
 } from './game/WebSocketGameClient';

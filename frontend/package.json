@@ -15,8 +15,8 @@
     "lint": "eslint .",
     "panda:codegen": "panda codegen --silent",
     "prepare": "pnpm panda:codegen",
-    "api:generate": "openapi-typescript ../grid/api/openapi.yaml -o src/infrastructure/api/grid/types.ts",
-    "api:check": "pnpm api:generate && git diff --exit-code -- src/infrastructure/api/grid/types.ts"
+    "api:generate": "openapi-typescript ../grid/api/openapi.yaml -o src/infrastructure/api/grid/types.ts && openapi-typescript ../game/api/openapi.yaml -o src/infrastructure/api/game/types.ts",
+    "api:check": "pnpm api:generate && git diff --exit-code -- src/infrastructure/api/grid/types.ts src/infrastructure/api/game/types.ts"
   },
   "dependencies": {
     "@ark-ui/react": "^4.9.0",
