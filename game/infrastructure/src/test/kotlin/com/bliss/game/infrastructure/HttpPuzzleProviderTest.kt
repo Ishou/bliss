@@ -43,10 +43,23 @@ class HttpPuzzleProviderTest {
             val letterCells = puzzle.cells.filterIsInstance<LetterCell>()
             assertThat(letterCells.map { it.answer }).containsExactly(Letter('P'), Letter('A'))
             val defCell = puzzle.cells.filterIsInstance<DefinitionCell>().single()
-            assertThat(defCell.clue.text).isEqualTo("verticale")
-            assertThat(defCell.clue.arrow).isEqualTo(GameArrow.DOWN)
+            assertThat(defCell.clues.single().text).isEqualTo("verticale")
+            assertThat(defCell.clues.single().arrow).isEqualTo(GameArrow.DOWN)
             assertThat(puzzle.cells.filterIsInstance<BlockCell>()).hasSize(1)
             assertThat(puzzle.clues).hasSize(1)
+        }
+
+    @Test
+    fun `fetch preserves stacked DefinitionCells (mots-fleches corner) into one cell with both clues`() =
+        runTest {
+            val puzzle =
+                providerOf { respond(stacked5x5Json, HttpStatusCode.OK, jsonHeaders) }.fetch(5, 5)
+
+            val defCells = puzzle.cells.filterIsInstance<DefinitionCell>()
+            assertThat(defCells).hasSize(1)
+            val cell = defCells.single()
+            assertThat(cell.clues.map { it.text }).containsExactly("horizontal", "vertical")
+            assertThat(cell.clues.map { it.arrow }).containsExactly(GameArrow.RIGHT, GameArrow.DOWN)
         }
 
     @Test
@@ -104,8 +117,7 @@ class HttpPuzzleProviderTest {
             }
         }
 
-    // 1 block + 2 letter + 1 definition + 1 clue. Avoids stacked cells (deferred per ADR-0001 §3 —
-    // see PuzzleResponseMapper file header).
+    // 1 block + 2 letter + 1 definition + 1 clue. Single-clue definition cell.
     private val canonical5x5Json =
         """
         {
@@ -121,6 +133,30 @@ class HttpPuzzleProviderTest {
           "clues": [
             { "id": "0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6d", "direction": "down",
               "start": { "row": 2, "column": 0 }, "length": 3, "text": "verticale" }
+          ],
+          "createdAt": "2026-04-30T06:46:14.109Z"
+        }
+        """.trimIndent()
+
+    // Stacked DefinitionCell pair at (0,0): one across clue, one down clue at the same
+    // position (the mots-fleches corner-cell idiom). The mapper groups them into one
+    // domain DefinitionCell with two clues in wire order.
+    private val stacked5x5Json =
+        """
+        {
+          "id": "0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6c",
+          "title": "Coin", "language": "fr", "width": 5, "height": 5,
+          "cells": [
+            { "kind": "definition", "position": { "row": 0, "column": 0 },
+              "clueId": "0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6d", "text": "horizontal", "arrow": "right" },
+            { "kind": "definition", "position": { "row": 0, "column": 0 },
+              "clueId": "0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6e", "text": "vertical", "arrow": "down" }
+          ],
+          "clues": [
+            { "id": "0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6d", "direction": "across",
+              "start": { "row": 0, "column": 1 }, "length": 4, "text": "horizontal" },
+            { "id": "0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6e", "direction": "down",
+              "start": { "row": 1, "column": 0 }, "length": 4, "text": "vertical" }
           ],
           "createdAt": "2026-04-30T06:46:14.109Z"
         }

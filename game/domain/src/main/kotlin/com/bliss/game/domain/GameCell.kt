@@ -1,8 +1,14 @@
 // game/'s view of the cell hierarchy. NOT a verbatim copy of grid/domain/model/Cell.kt:
-// DefinitionCell is single-clue here to match the flat GameDefinitionCell shape in
-// game/api/asyncapi.yaml (dual-clue support deferred — ADR-0001 §3).
-// Cross-context imports are forbidden per ADR-0001 §1; keep the two hierarchies
-// intentionally diverged until a schema amendment promotes the second clue.
+// DefinitionCell carries a `clues: List<GameDefinitionClue>` of 1 or 2 entries,
+// mirroring the `clues` array on GameDefinitionCell in game/api/asyncapi.yaml.
+// The 2-clue case is the mots-fléchés corner-cell idiom (an across clue and a
+// down clue stacked at the same position). The grid context's wire (see
+// grid/api/openapi.yaml) emits one DefinitionCell per clue at the same position;
+// the game infrastructure mapper groups them, so the domain sees a single cell
+// with both clues. Resolves the deferral noted on PR #132's review of
+// PuzzleResponseMapper.
+// Cross-context imports are forbidden per ADR-0001 §1; the two hierarchies
+// remain intentionally diverged but now agree on plural-clue cells.
 package com.bliss.game.domain
 
 import java.util.UUID
@@ -16,13 +22,19 @@ data class LetterCell(
     val answer: Letter?,
 ) : GameCell
 
-// Single clue per cell — matches the flat GameDefinitionCell shape in game/api/asyncapi.yaml.
-// Dual-clue mots-fléchés semantics are deferred to a future schema-amendment + domain PR pair
-// (ADR-0001 §3).
+// 1 or 2 clues per cell — matches the `clues` array on GameDefinitionCell in
+// game/api/asyncapi.yaml. The 2-clue case is the mots-fléchés corner-cell idiom
+// (now supported across spec, domain, and mapper).
 data class DefinitionCell(
     override val position: Position,
-    val clue: GameDefinitionClue,
-) : GameCell
+    val clues: List<GameDefinitionClue>,
+) : GameCell {
+    init {
+        require(clues.isNotEmpty() && clues.size <= 2) {
+            "DefinitionCell must carry 1 or 2 clues, got ${clues.size}"
+        }
+    }
+}
 
 data class BlockCell(
     override val position: Position,
