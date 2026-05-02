@@ -69,6 +69,7 @@ probes:
   startup:
     path: "/v1/health"
     periodSeconds: 5
+    timeoutSeconds: 3
     failureThreshold: 30
 # Inline env vars. Prefer envFromSecret for anything sensitive.
 # OpenJDK default MaxRAMPercentage=25 → ~128 MB on 512Mi; 75% → ~384 MB heap.

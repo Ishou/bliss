@@ -55,6 +55,7 @@ spec:
           startupProbe:
             httpGet: {path: {{ .path }}, port: http}
             periodSeconds: {{ .periodSeconds | default 5 }}
+            timeoutSeconds: {{ .timeoutSeconds | default 3 }}
             failureThreshold: {{ .failureThreshold | default 30 }}
           {{- end }}
           livenessProbe:
