@@ -115,6 +115,56 @@ class LobbyWebSocketRouteTest {
         }
 
     @Test
+    fun `cellUpdate with null letter is broadcast as explicit null to both clients`() =
+        runWith { harness ->
+            val lobbyId = harness.seedLobby()
+            harness.startGame(lobbyId)
+
+            val aReady = CompletableDeferred<Unit>()
+            val bReady = CompletableDeferred<Unit>()
+            val aSawCell = CompletableDeferred<String>()
+            val bSawCell = CompletableDeferred<String>()
+
+            coroutineScope {
+                val aJob =
+                    async {
+                        harness.client.webSocket("/v1/lobbies/${lobbyId.value}/ws") {
+                            receiveText() // initial snapshot
+                            sendText("""{"type":"joinLobby","sessionId":"$sessionA","pseudonym":"$pseudoA"}""")
+                            aReady.complete(Unit)
+                            while (!aSawCell.isCompleted) {
+                                val text = receiveText()
+                                if (text.contains("\"type\":\"cellUpdated\"")) aSawCell.complete(text)
+                            }
+                        }
+                    }
+                val bJob =
+                    async {
+                        aReady.await()
+                        harness.client.webSocket("/v1/lobbies/${lobbyId.value}/ws") {
+                            receiveText() // initial snapshot
+                            sendText("""{"type":"joinLobby","sessionId":"$sessionB","pseudonym":"$pseudoB"}""")
+                            bReady.complete(Unit)
+                            // Send a cell-clear (letter: null) — verifies explicitNulls=true is honoured.
+                            sendText("""{"type":"cellUpdate","row":0,"column":3,"letter":null}""")
+                            while (!bSawCell.isCompleted) {
+                                val text = receiveText()
+                                if (text.contains("\"type\":\"cellUpdated\"")) bSawCell.complete(text)
+                            }
+                        }
+                    }
+
+                bReady.await()
+                val aText = withTimeout(5_000) { aSawCell.await() }
+                val bText = withTimeout(5_000) { bSawCell.await() }
+                assertThat(aText).contains("\"letter\":null")
+                assertThat(bText).contains("\"letter\":null")
+                aJob.cancel()
+                bJob.cancel()
+            }
+        }
+
+    @Test
     fun `late joiner receives a fresh snapshot reflecting the current grid config`() =
         runWith { harness ->
             val lobbyId = harness.seedLobby()
