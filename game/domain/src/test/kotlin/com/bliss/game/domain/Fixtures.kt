@@ -54,6 +54,7 @@ internal object Fixtures {
         game: GameSession? = null,
         ownerSessionId: SessionId = sessionA,
         gridConfig: GridConfig = GridConfig(7, 7),
+        lastActivityAt: Instant = now,
     ): Lobby =
         Lobby(
             id = LobbyId("7gQ2xK9p"),
@@ -62,5 +63,6 @@ internal object Fixtures {
             state = state,
             gridConfig = gridConfig,
             game = game,
+            lastActivityAt = lastActivityAt,
         )
 }

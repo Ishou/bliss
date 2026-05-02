@@ -279,11 +279,11 @@ class LobbyWebSocketRouteTest {
                 LobbyUseCases(
                     createLobby = createLobby,
                     joinLobby = JoinLobbyUseCase(repo, clock),
-                    renameSelf = RenameSelfUseCase(repo),
-                    setGridConfig = SetGridConfigUseCase(repo),
+                    renameSelf = RenameSelfUseCase(repo, clock),
+                    setGridConfig = SetGridConfigUseCase(repo, clock),
                     startGame = startGameUseCase,
                     updateCell = UpdateCellUseCase(repo, clock),
-                    leaveLobby = LeaveLobbyUseCase(repo),
+                    leaveLobby = LeaveLobbyUseCase(repo, clock),
                 )
             val sessionManager = SessionManager()
             application {

@@ -10,6 +10,7 @@ import com.bliss.game.domain.Letter
 import com.bliss.game.domain.LetterCell
 import com.bliss.game.domain.Lobby
 import com.bliss.game.domain.LobbyId
+import com.bliss.game.domain.LobbyLifecycleState
 import com.bliss.game.domain.Position
 import com.bliss.game.domain.Pseudonym
 import com.bliss.game.domain.SessionId
@@ -72,6 +73,20 @@ class InMemoryLobbyRepository : LobbyRepository {
             locks.remove(id)
         }
     }
+
+    override suspend fun findWaitingByOwnerSession(ownerSessionId: SessionId): Lobby? =
+        storeLock.withLock {
+            store.values.firstOrNull {
+                it.ownerSessionId == ownerSessionId && it.state == LobbyLifecycleState.WAITING
+            }
+        }
+
+    override suspend fun findIdleWaiting(cutoff: Instant): List<Lobby> =
+        storeLock.withLock {
+            store.values
+                .filter { it.state == LobbyLifecycleState.WAITING && !it.lastActivityAt.isAfter(cutoff) }
+                .toList()
+        }
 }
 
 /** Returns the puzzle handed at construction time, regardless of width/height. */
