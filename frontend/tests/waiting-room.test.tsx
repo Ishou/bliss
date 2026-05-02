@@ -116,7 +116,7 @@ describe('WaitingRoom — pseudonym editor', () => {
       <WaitingRoom lobby={baseLobby} currentSessionId={ownerSessionId} {...noopProps} onRename={onRename} />,
     );
     // Enter edit mode by clicking the pseudonym button.
-    fireEvent.click(screen.getByRole('button', { name: /modifier votre pseudonyme/i }));
+    fireEvent.click(screen.getByRole('button', { name: new RegExp(`modifier votre pseudonyme.*${ownerPseudonym}`, 'i') }));
     const input = screen.getByLabelText(/votre pseudonyme/i) as HTMLInputElement;
     fireEvent.change(input, { target: { value: '  Nouveau Pseudo  ' } });
     fireEvent.keyDown(input, { key: 'Enter' });

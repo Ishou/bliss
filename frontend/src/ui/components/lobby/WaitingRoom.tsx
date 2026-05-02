@@ -171,7 +171,7 @@ function PseudonymEditor({
         <button
           type="button" className={styles.button}
           onClick={() => { setDraft(currentPseudonym); setIsEditing(true); }}
-          aria-label="Modifier votre pseudonyme"
+          aria-label={`Modifier votre pseudonyme : ${currentPseudonym}`}
         >
           {currentPseudonym}
         </button>
