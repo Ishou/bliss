@@ -247,6 +247,35 @@ class LobbyUseCasesTest {
             assertThat(out.events[1]).isInstanceOf(LobbyEvent.LobbyClosed::class)
             assertThat(h.repo.findById(lobby.id)).isNull()
         }
+
+    @Test
+    fun `SetGridConfig returns InvalidState when lobby is IN_PROGRESS`() =
+        runTest {
+            val h = harness()
+            val lobby = h.create(sessionA, alice).value
+            h.start(lobby.id, sessionA).requireSuccess()
+            val out = h.setConfig(lobby.id, sessionA, GridConfig(9, 9))
+            assertThat((out as UseCaseOutcome.Failure).error).isEqualTo(UseCaseError.InvalidState)
+        }
+
+    @Test
+    fun `LeaveLobby returns PlayerNotInLobby when player never joined`() =
+        runTest {
+            val h = harness()
+            val lobby = h.create(sessionA, alice).value
+            val out = h.leave(lobby.id, sessionB)
+            assertThat((out as UseCaseOutcome.Failure).error).isEqualTo(UseCaseError.PlayerNotInLobby)
+        }
+
+    @Test
+    fun `UpdateCell returns PlayerNotInLobby when caller is not in lobby`() =
+        runTest {
+            val h = harness()
+            val lobby = h.create(sessionA, alice).value
+            h.start(lobby.id, sessionA).requireSuccess()
+            val out = h.write(lobby.id, sessionB, pPos, Letter('P'))
+            assertThat((out as UseCaseOutcome.Failure).error).isEqualTo(UseCaseError.PlayerNotInLobby)
+        }
 }
 
 /** Generates a UUIDv7 with deterministic-enough hex for max-capacity tests. */
