@@ -28,6 +28,7 @@ COPY grid/worker/build.gradle.kts grid/worker/
 # is enough; src/ is intentionally not copied.
 COPY game/domain/build.gradle.kts game/domain/
 COPY game/application/build.gradle.kts game/application/
+COPY game/infrastructure/build.gradle.kts game/infrastructure/
 
 COPY grid/domain/src grid/domain/src
 COPY grid/application/src grid/application/src
