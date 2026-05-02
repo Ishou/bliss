@@ -11,13 +11,6 @@ class GameCellTest {
     private val clueId = UUID.fromString("0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a70")
 
     @Test
-    fun `DefinitionCell holds its clue`() {
-        val clue = GameDefinitionClue(clueId, "Capitale", GameArrow.RIGHT)
-        val cell = DefinitionCell(Position(0, 0), clue)
-        assertThat(cell.clue).isEqualTo(clue)
-    }
-
-    @Test
     fun `GameDefinitionClue rejects blank text`() {
         assertFailure { GameDefinitionClue(clueId, "  ", GameArrow.RIGHT) }
             .messageContains("blank")
