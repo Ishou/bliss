@@ -14,7 +14,7 @@ info:
   description: |
     Real-time lobby + game events for the game/ bounded context.
     Resolves ADR-0006 §5's WebSocket defer; companion to game/api/openapi.yaml
-    (REST control plane). Decision rationale in ADR-0017.
+    (REST control plane). AsyncAPI 2.6; ADR-0018 records the exception to ADR-0003 §5.
 
     Every frame is a JSON object with a top-level `type` discriminator
     (e.g. `"type": "cellUpdate"`). TypeScript and Kotlin codegen dispatch on
@@ -185,7 +185,7 @@ components:
         id: { type: string, format: uuid, example: 0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6c }
     GameSession:
       type: object
-      required: [puzzle, startedAt]
+      required: [puzzle, startedAt, completedAt]
       description: Active game embedded in `lobbyState` while IN_PROGRESS.
       properties:
         puzzle:      { $ref: '#/components/schemas/PuzzleRef' }
@@ -243,7 +243,7 @@ components:
     # ----- Server → client payloads -----
     LobbyStatePayload:
       type: object
-      required: [type, players, ownerSessionId, state, gridConfig]
+      required: [type, players, ownerSessionId, state, gridConfig, game]
       description: Snapshot fired on join and on reconnect.
       properties:
         type:           { type: string, enum: [lobbyState] }
