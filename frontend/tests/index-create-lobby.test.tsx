@@ -47,6 +47,7 @@ const stubGameClient: GameClient = {
   joinLobby: () => {}, renameSelf: () => {}, setGridConfig: () => {},
   startGame: () => {}, cellUpdate: () => {}, leaveLobby: () => {},
   disconnect: () => {}, subscribe: () => () => {},
+  subscribeConnectionState: () => () => {},
 };
 
 const renderHome = (overrides: { lobbyClient?: Partial<LobbyClient> } = {}) => {
