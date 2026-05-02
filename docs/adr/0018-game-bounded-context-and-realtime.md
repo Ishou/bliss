@@ -353,7 +353,7 @@ list is a navigational index, not an authority.
 
 ### Closure
 - **PR #147** — `feat(frontend): enable VITE_FEATURE_MULTIPLAYER in production` (the §10 flag flip; preview environments stay `false` because MSW handlers for the lobby surfaces are not yet written — a separate workstream).
-- **PR #TBD** — this closure update.
+- **PR #148** — this closure update.
 
 ### Tangential follow-ups landed during the workstream
 These were not on the wave dependency map but shipped during the
