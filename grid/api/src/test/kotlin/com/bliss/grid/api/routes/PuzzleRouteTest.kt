@@ -10,6 +10,8 @@ import assertk.assertions.isTrue
 import assertk.assertions.startsWith
 import com.bliss.grid.api.dto.PuzzleResponse
 import com.bliss.grid.api.module
+import com.bliss.grid.api.routes.PUZZLE_MAX_DIMENSION
+import com.bliss.grid.api.routes.PUZZLE_MIN_DIMENSION
 import com.bliss.grid.application.puzzle.GeneratePuzzleUseCase
 import com.bliss.grid.application.puzzle.PUZZLE_HEIGHT
 import com.bliss.grid.application.puzzle.PUZZLE_WIDTH
@@ -168,7 +170,7 @@ class PuzzleRouteTest {
         testApplication {
             application { module() }
 
-            val response = client.get("/v1/puzzles/$validId?width=4")
+            val response = client.get("/v1/puzzles/$validId?width=${PUZZLE_MIN_DIMENSION - 1}")
 
             assertThat(response.status).isEqualTo(HttpStatusCode.BadRequest)
             assertThat(response.headers["Content-Type"]!!).startsWith("application/problem+json")
@@ -182,7 +184,7 @@ class PuzzleRouteTest {
         testApplication {
             application { module() }
 
-            val response = client.get("/v1/puzzles/$validId?height=42")
+            val response = client.get("/v1/puzzles/$validId?height=${PUZZLE_MAX_DIMENSION + 1}")
 
             assertThat(response.status).isEqualTo(HttpStatusCode.BadRequest)
             assertThat(response.bodyAsText()).contains("invalid-puzzle-dimensions")

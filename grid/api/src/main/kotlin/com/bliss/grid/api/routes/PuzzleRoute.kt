@@ -3,8 +3,6 @@ package com.bliss.grid.api.routes
 import com.bliss.grid.api.dto.ProblemDetails
 import com.bliss.grid.api.mapper.GridToPuzzleMapper
 import com.bliss.grid.application.puzzle.GeneratePuzzleUseCase
-import com.bliss.grid.application.puzzle.PUZZLE_MAX_DIMENSION
-import com.bliss.grid.application.puzzle.PUZZLE_MIN_DIMENSION
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.response.respond
@@ -15,6 +13,10 @@ import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
 import java.time.Instant
 import java.util.UUID
+
+// API-boundary guard: valid range for ?width / ?height. Source of truth; openapi.yaml mirrors these.
+internal const val PUZZLE_MIN_DIMENSION: Int = 5
+internal const val PUZZLE_MAX_DIMENSION: Int = 15
 
 private const val INVALID_DIMENSIONS_TYPE: String =
     "https://bliss.example/errors/invalid-puzzle-dimensions"
