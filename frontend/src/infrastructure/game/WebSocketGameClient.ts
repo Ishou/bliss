@@ -11,7 +11,12 @@
 // Wave G wraps this adapter and adds reconnect-with-backoff (§Reconnect in
 // `game/api/asyncapi.yaml`).
 
-import type { GameClient, GameEvent, Unsubscribe } from '@/application/game';
+import type {
+  ConnectionState,
+  GameClient,
+  GameEvent,
+  Unsubscribe,
+} from '@/application/game';
 import type { GridConfig, Letter, Pseudonym, SessionId } from '@/domain/game';
 
 // Structural subset of the global `WebSocket`. The `this`-less event-handler
@@ -62,6 +67,22 @@ export function createWebSocketGameClient(
   let socket: WebSocketLike | null = null;
   let pendingJoin: { sessionId: SessionId; pseudonym: Pseudonym } | null = null;
   const subscribers = new Set<(event: GameEvent) => void>();
+  // Transport-lifecycle subscribers (Wave H PR #17, `ConnectionBanner`).
+  // `disconnected` is the initial state — `connect()` flips it to
+  // `connecting`, `onopen` to `connected`, and any `onclose` back to
+  // `disconnected`. The adapter does not emit `reconnecting`; that
+  // state is reserved for a higher-level reconnect-with-backoff
+  // wrapper (still out of scope per the file-level note above), which
+  // can either subscribe through this same channel or expose its own.
+  let connectionState: ConnectionState = 'disconnected';
+  const connectionSubscribers = new Set<(state: ConnectionState) => void>();
+  const setConnectionState = (next: ConnectionState): void => {
+    if (connectionState === next) return;
+    connectionState = next;
+    // Snapshot subscribers so a handler that detaches mid-dispatch
+    // doesn't skip a sibling.
+    for (const handler of [...connectionSubscribers]) handler(next);
+  };
 
   const sendFrame = (frame: ClientToServerFrame): void => {
     if (!socket || socket.readyState !== WS_OPEN) {
@@ -98,6 +119,7 @@ export function createWebSocketGameClient(
       const ws = new Ctor(`${options.wsBaseUrl}/v1/lobbies/${lobbyId}/ws`) as unknown as WebSocketLike;
       socket = ws;
       pendingJoin = { sessionId, pseudonym };
+      setConnectionState('connecting');
 
       return new Promise<void>((resolve, reject) => {
         let settled = false;
@@ -114,6 +136,7 @@ export function createWebSocketGameClient(
             } satisfies JoinLobbyFrame));
             pendingJoin = null;
           }
+          setConnectionState('connected');
           resolve();
         };
         ws.onerror = () => {
@@ -124,7 +147,14 @@ export function createWebSocketGameClient(
           // Post-open errors flow through close + the spec's structured
           // `error` server frame; we don't synthesize a GameEvent here.
         };
-        ws.onclose = () => { socket = null; pendingJoin = null; };
+        ws.onclose = () => {
+          socket = null;
+          pendingJoin = null;
+          // Any close — clean or not — drops the transport. A future
+          // reconnect wrapper will flip this to `reconnecting` before
+          // the next `connect()` attempt.
+          setConnectionState('disconnected');
+        };
         ws.onmessage = (event) => handleMessage(event.data);
       });
     },
@@ -170,6 +200,15 @@ export function createWebSocketGameClient(
     subscribe(handler): Unsubscribe {
       subscribers.add(handler);
       return () => { subscribers.delete(handler); };
+    },
+
+    subscribeConnectionState(handler): Unsubscribe {
+      connectionSubscribers.add(handler);
+      // Synchronous priming call — a freshly-mounted banner reads the
+      // current state immediately rather than rendering its initial
+      // chrome until the next transition fires.
+      handler(connectionState);
+      return () => { connectionSubscribers.delete(handler); };
     },
   };
 }
