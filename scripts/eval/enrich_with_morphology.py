@@ -176,12 +176,22 @@ def _all_forms_of(lemma: str, lemma_to_forms: dict[str, set[str]]) -> set[str]:
     return lemma_to_forms.get(lemma.lower(), {lemma.lower()})
 
 
+_SENTENCE_SPLIT = re.compile(r"(?<=[\.;])\s+")
+
+
 def clean_definition(definition: str, lemma: str, lemma_to_forms: dict[str, set[str]]) -> str:
-    """Pick the first DBnary sense that doesn't self-reference the lemma or
-    any of its inflections. The fetch step packs multiple senses pipe-
-    delimited into the `definition` column; we walk them in order. Falls back
-    to empty (the model has the lemma + synonyms anyway) when every sense is
-    contaminated. Single-sense input (legacy CSVs without `|`) still works."""
+    """Refine a DBnary definition so it doesn't self-reference the lemma.
+
+    Two-level walk:
+    1. Senses (pipe-delimited) — pick the first sense whose sentences
+       collectively yield clean text.
+    2. Within a sense, sentence by sentence — keep only sentences that
+       don't contain the lemma or any inflection. DBnary often ships
+       compound defs ('La plus chaude des quatre saisons de l'année.
+       L'été astronomique s'étend...'); the first sentence is usually
+       clean while later ones gloss with the lemma.
+
+    Falls back to empty when no sense survives the walk."""
     if not definition:
         return ""
     forms = _all_forms_of(lemma, lemma_to_forms)
@@ -190,8 +200,12 @@ def clean_definition(definition: str, lemma: str, lemma_to_forms: dict[str, set[
         re.IGNORECASE,
     )
     for sense in (s.strip() for s in definition.split("|")):
-        if sense and not pattern.search(sense):
-            return sense
+        if not sense:
+            continue
+        sentences = [s.strip() for s in _SENTENCE_SPLIT.split(sense) if s.strip()]
+        clean = [s for s in sentences if not pattern.search(s)]
+        if clean:
+            return " ".join(clean)
     return ""
 
 
