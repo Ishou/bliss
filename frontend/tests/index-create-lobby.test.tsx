@@ -113,9 +113,11 @@ describe('Index route — create-lobby button click', () => {
     renderHome();
     await screen.findByRole('grid');
     await clickButton();
-    // The lobby route's heading is the simplest end-to-end witness
+    // Both routes render the WordSparrow heading, so the player-count
+    // line (rendered only by the lobby route, with the seed pseudonym
+    // present in `baseCreatedLobby.players`) is the unambiguous witness
     // that navigation completed and the destination route mounted.
-    await screen.findByRole('heading', { name: /Salon · 7gQ2xK9p/ });
+    await screen.findByText('1 joueur');
   });
 
   it.each<[LobbyClientError['kind'], number | null, RegExp]>([
