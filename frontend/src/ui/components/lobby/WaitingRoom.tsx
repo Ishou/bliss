@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { css } from 'styled-system/css';
 import { MAX_PSEUDONYM_LENGTH, type Lobby, type Pseudonym, type SessionId } from '@/domain/game';
-import { Button, RadioGroup, TextField } from '@/ui/components/primitives';
+import { Button, TextField, ToggleGroup } from '@/ui/components/primitives';
 import { PlayerList, MAX_PLAYERS } from './PlayerList';
 
 // Pure prop-driven WaitingRoom rendered while `lobby.state === 'WAITING'`.
@@ -15,7 +15,7 @@ import { PlayerList, MAX_PLAYERS } from './PlayerList';
 // the in-game route can mount the same component in its `inline` variant
 // during IN_PROGRESS / COMPLETED.
 //
-// All interactive controls (Button, TextField, RadioGroup) are project-
+// All interactive controls (Button, TextField, ToggleGroup) are project-
 // local primitives wrapping Ark UI per ADR-0002 §2.
 const GRID_SIZES = ['5', '7', '9', '11'] as const;
 type GridSize = (typeof GRID_SIZES)[number];
@@ -200,7 +200,7 @@ function GridSizePicker({
     ? String(gridConfig.width)
     : '') as GridSize;
   return (
-    <RadioGroup<GridSize>
+    <ToggleGroup<GridSize>
       label="Taille de la grille"
       name="grid-size"
       value={currentValue}

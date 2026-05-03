@@ -75,10 +75,13 @@ describe('WaitingRoom — owner-gated controls', () => {
     render(
       <WaitingRoom lobby={baseLobby} currentSessionId={ownerSessionId} {...noopProps} />,
     );
-    // Picker is now an Ark `RadioGroup` (semantic role `radiogroup`)
-    // rather than the legacy hand-rolled `<fieldset>` (role `group`).
-    // This is a meaningful a11y improvement: keyboard arrow-key
-    // navigation between options is delegated to Ark's state machine.
+    // Picker is now an Ark `ToggleGroup` (single-select). Zag's
+    // toggle-group state machine still emits `role="radiogroup"` on
+    // the root and `role="radio"` on each item when `multiple={false}`,
+    // so the assertion shape stays a11y-aligned with the previous
+    // RadioGroup primitive — the difference is purely visual: each
+    // option is a real `<button>` chip with a pressed/unpressed state
+    // rather than a hidden `<input type="radio">`.
     expect(screen.getByRole('radiogroup', { name: /taille de la grille/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /démarrer la partie/i })).toBeInTheDocument();
   });
@@ -195,12 +198,17 @@ describe('WaitingRoom — pseudonym editor', () => {
 });
 
 describe('WaitingRoom — grid size picker', () => {
-  it('reflects the current grid config as the checked radio', () => {
+  it('reflects the current grid config as the pressed toggle', () => {
     render(
       <WaitingRoom lobby={baseLobby} currentSessionId={ownerSessionId} {...noopProps} />,
     );
-    const seven = screen.getByRole('radio', { name: '7×7' }) as HTMLInputElement;
-    expect(seven.checked).toBe(true);
+    // Ark `ToggleGroup.Item` is a real `<button role="radio">` — the
+    // pressed state surfaces via `aria-checked`, not the input `.checked`
+    // field (there is no underlying `<input>` to read).
+    const seven = screen.getByRole('radio', { name: '7×7' });
+    expect(seven).toHaveAttribute('aria-checked', 'true');
+    const five = screen.getByRole('radio', { name: '5×5' });
+    expect(five).toHaveAttribute('aria-checked', 'false');
   });
 
   it('fires onSetGridConfig with (n, n) when a different size is selected', async () => {
@@ -213,13 +221,13 @@ describe('WaitingRoom — grid size picker', () => {
         onSetGridConfig={onSetGridConfig}
       />,
     );
-    // Ark `RadioGroup.Item` renders a hidden `<input type="radio">`
-    // whose `onClick` reads `event.currentTarget.checked` to commit the
-    // new value. jsdom's `fireEvent.click` does not toggle `checked`
-    // before firing, so use the native `HTMLInputElement.click()` which
-    // jsdom implements (toggle then dispatch click).
-    const radio = screen.getByRole('radio', { name: '11×11' }) as HTMLInputElement;
-    await act(async () => { radio.click(); });
+    // Items are real `<button>` elements (no hidden `<input>`). jsdom does
+    // not focus a button on `fireEvent.click`, and zag's toggle-group
+    // ignores click events on un-focused items — so call the native
+    // `HTMLElement.click()` after focusing, matching the helper called
+    // out in the frontend playbook.
+    const item = screen.getByRole('radio', { name: '11×11' }) as HTMLButtonElement;
+    await act(async () => { item.focus(); item.click(); });
     expect(onSetGridConfig).toHaveBeenCalledWith(11, 11);
   });
 });
