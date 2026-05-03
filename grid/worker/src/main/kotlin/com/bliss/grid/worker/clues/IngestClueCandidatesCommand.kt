@@ -81,6 +81,10 @@ class IngestClueCandidatesCommand : CliktCommand(name = "ingest-clue-candidates"
             val rawRows = parse(path)
             log.info("ingest_clue_candidates_parsed rows={}", rawRows.size)
 
+            require(sourceOverride != null || rawRows.all { it.source.isNotBlank() }) {
+                "CSV must include a non-blank 'source' column, or pass --source to override."
+            }
+
             val repository = JdbcClueCandidateRepository(ds)
             val candidates = resolveCandidates(repository, rawRows)
             val resolved = candidates.size

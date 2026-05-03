@@ -223,6 +223,29 @@ class IngestClueCandidatesCommandIntegrationTest {
     }
 
     @Test
+    fun `ingest-clue-candidates throws when CSV has no source column and no --source flag`() {
+        insertWord("voiture")
+
+        val csv = tempDir.resolve("no-source.csv")
+        Files.write(
+            csv,
+            """
+            lemma,clue_text
+            voiture,Bagnole
+            """.trimIndent().toByteArray(StandardCharsets.UTF_8),
+        )
+
+        val ex =
+            try {
+                IngestClueCandidatesCommand().parse(arrayOf("--input", csv.toString()))
+                null
+            } catch (e: IllegalArgumentException) {
+                e
+            }
+        assertThat(ex).isNotNull()
+    }
+
+    @Test
     fun `ingest-clue-candidates --truncate refuses heterogeneous sources in the CSV`() {
         insertWord("voiture")
         insertWord("maison")
