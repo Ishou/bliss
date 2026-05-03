@@ -30,6 +30,7 @@ data class DbnaryWord(
         require(senseIndices.size == senseIndices.toSet().size) {
             "senseIndex must be unique within a word: $senseIndices"
         }
+        require(synonyms.all { it.isNotBlank() }) { "synonym elements must not be blank: $synonyms" }
         require(synonyms.size == synonyms.toSet().size) {
             "synonyms must be unique: $synonyms"
         }

@@ -42,6 +42,16 @@ class DbnaryWordTest {
     }
 
     @Test
+    fun `rejects blank synonym element`() {
+        assertThrows<IllegalArgumentException> {
+            DbnaryWord(lemma = "x", pos = "noun", synonyms = listOf(""))
+        }
+        assertThrows<IllegalArgumentException> {
+            DbnaryWord(lemma = "x", pos = "noun", synonyms = listOf("valid", "   "))
+        }
+    }
+
+    @Test
     fun `rejects duplicate synonyms`() {
         assertThrows<IllegalArgumentException> {
             DbnaryWord(lemma = "x", pos = "noun", synonyms = listOf("a", "a"))
