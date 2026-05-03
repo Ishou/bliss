@@ -204,6 +204,32 @@ Per ADR-0006 §spec-first, the contract precedes the implementation:
 Both new specs are linted in CI (Spectral + AsyncAPI ruleset) and
 TypeScript clients are generated from them.
 
+#### Presence (Wave I addendum, 2026-05-03)
+
+Presence — peer cursors and active-word tints — is **ephemeral
+transport state**, not domain state. Two new wire frames are added:
+client→server `cellFocus` and server→client `presenceUpdated`. Both
+carry `(row, column, direction)`, all three nullable; `null` means no
+cell is focused.
+
+Contrast with `cellUpdated`: `cellUpdated` has domain meaning
+(last-write-wins on `Lobby.entries`, persisted in the lobby's
+authoritative state, replayed via `lobbyState.game.entries` on
+reconnect). `presenceUpdated` has zero game-rule meaning. It lives in
+`SessionManager`'s in-memory map alongside the active connection
+record, mirroring the lobby's single-replica posture (§3); a server
+restart drops every cursor exactly as it drops every lobby. Presence
+is exposed on the `lobbyState`/REST snapshot via the optional
+`GameSession.presence` array so a refreshing client sees current
+cursors immediately, then is cleared on `WAITING`/`COMPLETED`
+transitions.
+
+Throttling is **client-side at 5 Hz** (200 ms debounce) — the
+collaborative-editor convention; raw focus events fire much faster on
+fast typists. Per-IP server-side rate limiting is a future hardening
+concern, same posture as `cellUpdate` today (§7 lobby-creation
+note).
+
 ### 10. Deployment posture
 
 MANIFESTO §CI/CD (`MUST`: "New features are deployed behind flags. Flags have an

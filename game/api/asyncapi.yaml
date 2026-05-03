@@ -86,6 +86,7 @@ channels:
           - { $ref: '#/components/messages/SetGridConfig' }
           - { $ref: '#/components/messages/StartGame' }
           - { $ref: '#/components/messages/CellUpdate' }
+          - { $ref: '#/components/messages/CellFocus' }
           - { $ref: '#/components/messages/LeaveLobby' }
     subscribe:
       operationId: serverToClient
@@ -105,6 +106,7 @@ channels:
           - { $ref: '#/components/messages/PlayerRenamed' }
           - { $ref: '#/components/messages/GameStarted' }
           - { $ref: '#/components/messages/CellUpdated' }
+          - { $ref: '#/components/messages/PresenceUpdated' }
           - { $ref: '#/components/messages/GameSolved' }
           - { $ref: '#/components/messages/Error' }
 
@@ -115,6 +117,7 @@ components:
     SetGridConfig:  { name: setGridConfig,  title: Set grid config (owner only),       summary: Owner picks the grid dimensions while WAITING.,                                                    payload: { $ref: '#/components/schemas/SetGridConfigPayload' }, description: Rejected with `error` when sent by a non-owner or outside WAITING. }
     StartGame:      { name: startGame,      title: Start game (owner only),            summary: Owner transitions the lobby to IN_PROGRESS.,                                                       payload: { $ref: '#/components/schemas/StartGamePayload' },     description: Rejected with `error` when sent by a non-owner or outside WAITING. }
     CellUpdate:     { name: cellUpdate,     title: Client cell write,                  summary: Player typed (or cleared) a letter into a cell.,                                                   payload: { $ref: '#/components/schemas/CellUpdatePayload' } }
+    CellFocus:      { name: cellFocus,      title: Client cell focus,                  summary: Player moved (or cleared) their cursor.,                                                           payload: { $ref: '#/components/schemas/CellFocusPayload' },     description: Pure presence signal; lets peers render the sender's cursor + active word. Carries zero domain meaning. Clients SHOULD throttle to ~5 Hz (200 ms debounce). }
     LeaveLobby:     { name: leaveLobby,     title: Leave lobby,                        summary: Voluntary disconnect; frees the slot immediately.,                                                 payload: { $ref: '#/components/schemas/LeaveLobbyPayload' } }
     LobbyState:     { name: lobbyState,     title: Lobby snapshot,                     summary: Full lobby state; fires on join and on reconnect.,                                                 payload: { $ref: '#/components/schemas/LobbyStatePayload' } }
     PlayerJoined:   { name: playerJoined,   title: Player joined,                                                                                                                                  payload: { $ref: '#/components/schemas/PlayerJoinedPayload' } }
@@ -122,6 +125,7 @@ components:
     PlayerRenamed:  { name: playerRenamed,  title: Player renamed,                                                                                                                                 payload: { $ref: '#/components/schemas/PlayerRenamedPayload' } }
     GameStarted:    { name: gameStarted,    title: Game started,                       summary: Server fetched a puzzle and transitioned to IN_PROGRESS.,                                          payload: { $ref: '#/components/schemas/GameStartedPayload' } }
     CellUpdated:    { name: cellUpdated,    title: Canonical cell update,              summary: Server-stamped broadcast of an accepted `cellUpdate`.,                                             payload: { $ref: '#/components/schemas/CellUpdatedPayload' },   description: Last-write-wins per ADR-0018; clients apply unconditionally. }
+    PresenceUpdated: { name: presenceUpdated, title: Peer presence update,              summary: Broadcast of a peer's `cellFocus`; ephemeral cursor position.,                                     payload: { $ref: '#/components/schemas/PresenceUpdatedPayload' }, description: Ephemeral; carries no domain meaning and is not persisted. Cleared on `WAITING`/`COMPLETED` transitions. }
     GameSolved:     { name: gameSolved,     title: Game solved,                        summary: All cells match the canonical solution; lobby is COMPLETED.,                                       payload: { $ref: '#/components/schemas/GameSolvedPayload' } }
     Error:          { name: error,          title: Error frame,                        summary: RFC 7807 problem document for a rejected client frame.,                                            payload: { $ref: '#/components/schemas/ErrorPayload' },         description: Mirrors the REST error envelope. Closing the socket is at the server's discretion. }
 
@@ -186,6 +190,22 @@ components:
         column:    { type: integer, minimum: 0, example: 3 }
         letter:    { type: string, minLength: 1, maxLength: 1, pattern: '^[A-Z]$', description: Always non-null. Cleared cells are absent from the list., example: P }
         writtenAt: { $ref: '#/components/schemas/Instant' }
+    PresenceEntry:
+      type: object
+      required: [sessionId, row, column, direction]
+      description: |
+        Ephemeral cursor position of one currently-connected player. Carried
+        by `lobbyState.game.presence` so a refreshing / late-joining client
+        sees peer cursors immediately. `row`, `column`, `direction` are all
+        nullable — `null` means the player has no cell focused (e.g. just
+        joined, or clicked off the grid). Absence from the list means the
+        player is not connected; absence and `null` are distinct per
+        ADR-0003 §6. Carries no domain meaning; not persisted.
+      properties:
+        sessionId: { $ref: '#/components/schemas/SessionId' }
+        row:       { type: integer, minimum: 0, nullable: true, description: Zero-indexed row of the focused cell; `null` when no cell is focused. }
+        column:    { type: integer, minimum: 0, nullable: true, description: Zero-indexed column of the focused cell; `null` when no cell is focused. }
+        direction: { $ref: '#/components/schemas/GameClueDirection', nullable: true, description: Direction the player is currently solving; `null` when no cell is focused. Lets peers tint the whole word, not just the cell. }
     Player:
       type: object
       required: [sessionId, pseudonym, joinedAt]
@@ -309,6 +329,9 @@ components:
         client receives the current grid state in its first frame instead
         of an empty grid. Cleared cells are absent from the list. The
         server emits entries sorted by row then column for stable rendering.
+        `presence` is the ephemeral cursor map for currently-connected
+        players; it is optional and absent (or empty) outside `IN_PROGRESS`,
+        and is cleared on `WAITING`/`COMPLETED` transitions.
       properties:
         puzzle:      { $ref: '#/components/schemas/GamePuzzle' }
         entries:
@@ -317,6 +340,14 @@ components:
           description: Every cell typed so far. Empty list when no player has typed yet.
         startedAt:   { $ref: '#/components/schemas/Instant' }
         completedAt: { $ref: '#/components/schemas/Instant', nullable: true, description: Set once the lobby reaches COMPLETED. }
+        presence:
+          type: array
+          items: { $ref: '#/components/schemas/PresenceEntry' }
+          description: |
+            Ephemeral cursor positions of currently-connected players. Optional;
+            absent or empty outside IN_PROGRESS. Cleared on WAITING/COMPLETED
+            transitions. Not persisted; lives only in `SessionManager`'s
+            in-memory map (single-replica posture per ADR-0018 §3).
     # ----- Client → server payloads -----
     JoinLobbyPayload:
       type: object
@@ -359,6 +390,21 @@ components:
         column: { type: integer, minimum: 0 }
         letter: { $ref: '#/components/schemas/Letter' }
       example: { type: cellUpdate, row: 0, column: 3, letter: P }
+    CellFocusPayload:
+      type: object
+      required: [type, row, column, direction]
+      description: |
+        Client cursor signal. Carries no domain meaning — peers use it only
+        to render the sender's cursor and active-word tint. Clients SHOULD
+        throttle to ~5 Hz (200 ms debounce). All three position fields are
+        nullable; `null` means no cell focused (e.g. user clicked off the
+        grid). Per ADR-0003 §6, absence and `null` are distinct.
+      properties:
+        type:      { type: string, enum: [cellFocus] }
+        row:       { type: integer, minimum: 0, nullable: true, description: Zero-indexed row of the focused cell; `null` when no cell is focused. }
+        column:    { type: integer, minimum: 0, nullable: true, description: Zero-indexed column of the focused cell; `null` when no cell is focused. }
+        direction: { $ref: '#/components/schemas/GameClueDirection', nullable: true, description: Direction the player is currently solving; `null` when no cell is focused. Lets peers tint the whole word, not just the cell. }
+      example: { type: cellFocus, row: 0, column: 3, direction: across }
     LeaveLobbyPayload:
       type: object
       required: [type]
@@ -436,6 +482,21 @@ components:
         letter:    { $ref: '#/components/schemas/Letter' }
         writtenAt: { $ref: '#/components/schemas/Instant' }
       example: { type: cellUpdated, sessionId: 0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6b, row: 0, column: 3, letter: P, writtenAt: '2026-05-02T15:35:42Z' }
+    PresenceUpdatedPayload:
+      type: object
+      required: [type, sessionId, row, column, direction]
+      description: |
+        Server broadcast of a peer's `cellFocus`. Ephemeral — carries no
+        domain meaning, is not persisted, and is dropped on lobby
+        WAITING/COMPLETED transitions. Clients render this as a cursor
+        marker + active-word tint for the named `sessionId`.
+      properties:
+        type:      { type: string, enum: [presenceUpdated] }
+        sessionId: { $ref: '#/components/schemas/SessionId' }
+        row:       { type: integer, minimum: 0, nullable: true, description: Zero-indexed row of the focused cell; `null` when the peer has no cell focused. }
+        column:    { type: integer, minimum: 0, nullable: true, description: Zero-indexed column of the focused cell; `null` when the peer has no cell focused. }
+        direction: { $ref: '#/components/schemas/GameClueDirection', nullable: true, description: Direction the peer is currently solving; `null` when no cell is focused. }
+      example: { type: presenceUpdated, sessionId: 0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6b, row: 0, column: 3, direction: across }
     GameSolvedPayload:
       type: object
       required: [type, durationMs, finalEntries]

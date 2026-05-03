@@ -259,8 +259,10 @@ export interface components {
          *     (server-authoritative) so a client refreshing the page in mid-game
          *     rehydrates the grid from the REST snapshot before the WebSocket
          *     opens. Cleared cells are absent from the list; entries are sorted
-         *     by row then column for stable rendering. Mirrors `GameSession` in
-         *     `game/api/asyncapi.yaml`; keep in sync.
+         *     by row then column for stable rendering. `presence` is the
+         *     ephemeral cursor map for currently-connected players; optional
+         *     and absent or empty when state is WAITING/COMPLETED. Mirrors
+         *     `GameSession` in `game/api/asyncapi.yaml`; keep in sync.
          */
         GameSession: {
             puzzle: components["schemas"]["GamePuzzle"];
@@ -269,6 +271,13 @@ export interface components {
             startedAt: components["schemas"]["Instant"];
             /** @description Set once the lobby reaches COMPLETED; `null` while IN_PROGRESS. */
             completedAt: components["schemas"]["Instant"] | null;
+            /**
+             * @description Ephemeral cursor positions of currently-connected players.
+             *     Empty or absent when state is WAITING/COMPLETED. Not persisted
+             *     (lives in `SessionManager`'s in-memory map per ADR-0018 §3).
+             *     Mirrors `lobbyState.game.presence` on the WebSocket snapshot.
+             */
+            presence?: components["schemas"]["PresenceEntry"][];
         };
         /**
          * @description A single placed letter in the canonical entries list. Used by
@@ -290,6 +299,31 @@ export interface components {
              */
             letter: string;
             writtenAt: components["schemas"]["Instant"];
+        };
+        /**
+         * @description Ephemeral cursor position of one currently-connected player. Carried
+         *     by `GameSession.presence` so a client bootstrapping via REST sees
+         *     peer cursors immediately, before opening the WebSocket. `row`,
+         *     `column`, `direction` are all nullable — `null` means the player
+         *     has no cell focused. Absence from the list means the player is not
+         *     connected; per ADR-0003 §6, absence and `null` are distinct.
+         *     Carries no domain meaning; not persisted. Mirrors `PresenceEntry`
+         *     in `game/api/asyncapi.yaml`; keep in sync.
+         */
+        PresenceEntry: {
+            sessionId: components["schemas"]["SessionId"];
+            /**
+             * @description Zero-indexed row of the focused cell; `null` when no cell is focused.
+             * @example 0
+             */
+            row: number | null;
+            /**
+             * @description Zero-indexed column of the focused cell; `null` when no cell is focused.
+             * @example 3
+             */
+            column: number | null;
+            /** @description Direction the player is currently solving; `null` when no cell is focused. Lets peers tint the whole word. */
+            direction: components["schemas"]["GameClueDirection"] | null;
         };
         /**
          * @description Full lobby snapshot. `game` is in `required` because the field is
