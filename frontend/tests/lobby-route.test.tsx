@@ -381,9 +381,13 @@ describe('Lobby route Wave H integration', () => {
     await screen.findByRole('heading', { name: /WordSparrow/ });
 
     // The square-only picker emits (n, n). 9×9 isn't the current
-    // gridConfig (which is 7×7), so clicking it triggers a write.
-    const ninePicker = screen.getByRole('radio', { name: /9×9/ });
-    fireEvent.click(ninePicker);
+    // gridConfig (which is 7×7), so picking it triggers a write.
+    // The picker is now an Ark `RadioGroup`; the hidden radio input's
+    // onClick reads `event.currentTarget.checked` to commit, so use the
+    // native `HTMLInputElement.click()` (jsdom toggles `checked` first)
+    // rather than `fireEvent.click` (which dispatches without toggling).
+    const ninePicker = screen.getByRole('radio', { name: /9×9/ }) as HTMLInputElement;
+    await act(async () => { ninePicker.click(); });
 
     expect(gameClient.setGridConfigCalls).toEqual([{ width: 9, height: 9 }]);
   });

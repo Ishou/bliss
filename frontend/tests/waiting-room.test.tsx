@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { Lobby, Pseudonym, SessionId } from '@/domain/game';
 import { WaitingRoom } from '@/ui/components/lobby/WaitingRoom';
@@ -75,7 +75,11 @@ describe('WaitingRoom — owner-gated controls', () => {
     render(
       <WaitingRoom lobby={baseLobby} currentSessionId={ownerSessionId} {...noopProps} />,
     );
-    expect(screen.getByRole('group', { name: /taille de la grille/i })).toBeInTheDocument();
+    // Picker is now an Ark `RadioGroup` (semantic role `radiogroup`)
+    // rather than the legacy hand-rolled `<fieldset>` (role `group`).
+    // This is a meaningful a11y improvement: keyboard arrow-key
+    // navigation between options is delegated to Ark's state machine.
+    expect(screen.getByRole('radiogroup', { name: /taille de la grille/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /démarrer la partie/i })).toBeInTheDocument();
   });
 
@@ -83,7 +87,7 @@ describe('WaitingRoom — owner-gated controls', () => {
     render(
       <WaitingRoom lobby={baseLobby} currentSessionId={peerSessionId} {...noopProps} />,
     );
-    expect(screen.queryByRole('group', { name: /taille de la grille/i })).toBeNull();
+    expect(screen.queryByRole('radiogroup', { name: /taille de la grille/i })).toBeNull();
     expect(screen.queryByRole('button', { name: /démarrer la partie/i })).toBeNull();
   });
 });
@@ -199,7 +203,7 @@ describe('WaitingRoom — grid size picker', () => {
     expect(seven.checked).toBe(true);
   });
 
-  it('fires onSetGridConfig with (n, n) when a different size is selected', () => {
+  it('fires onSetGridConfig with (n, n) when a different size is selected', async () => {
     const onSetGridConfig = vi.fn();
     render(
       <WaitingRoom
@@ -209,7 +213,13 @@ describe('WaitingRoom — grid size picker', () => {
         onSetGridConfig={onSetGridConfig}
       />,
     );
-    fireEvent.click(screen.getByRole('radio', { name: '11×11' }));
+    // Ark `RadioGroup.Item` renders a hidden `<input type="radio">`
+    // whose `onClick` reads `event.currentTarget.checked` to commit the
+    // new value. jsdom's `fireEvent.click` does not toggle `checked`
+    // before firing, so use the native `HTMLInputElement.click()` which
+    // jsdom implements (toggle then dispatch click).
+    const radio = screen.getByRole('radio', { name: '11×11' }) as HTMLInputElement;
+    await act(async () => { radio.click(); });
     expect(onSetGridConfig).toHaveBeenCalledWith(11, 11);
   });
 });

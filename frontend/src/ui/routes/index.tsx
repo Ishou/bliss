@@ -4,6 +4,7 @@ import { css } from 'styled-system/css';
 import type { Puzzle } from '@/domain';
 import { LobbyClientError } from '@/application/game';
 import { Grid } from '@/ui/components/grid';
+import { Button } from '@/ui/components/primitives';
 import { Route as RootRoute } from './__root';
 
 const pageStyles = css({
@@ -65,21 +66,11 @@ const statusStyles = css({
 
 // Multiplayer call-to-action — only mounted when
 // `VITE_FEATURE_MULTIPLAYER === 'true'` (ADR-0018 §10). Solid `leaf.700`
-// on `cream` for the brand primary; the disabled state dims to keep the
-// visual under the puzzle while the request is in flight.
+// `Button` (primary variant) keeps the brand primary in line with the
+// other call sites; the wider `paddingInline` matches the legacy
+// `lg` padding so the CTA still reads as the page's hero affordance.
 const createLobbyButtonStyles = css({
-  fontFamily: 'body',
-  fontSize: 'body',
-  fontWeight: 'bold',
-  color: 'cream',
-  bg: 'leaf.700',
   paddingInline: 'lg',
-  paddingBlock: 'sm',
-  borderRadius: 'md',
-  border: 'none',
-  cursor: 'pointer',
-  _disabled: { opacity: 0.6, cursor: 'not-allowed' },
-  _hover: { bg: 'leaf.800' },
 });
 
 const createLobbyErrorStyles = css({
@@ -160,8 +151,8 @@ function CreateLobbyButton() {
 
   return (
     <>
-      <button
-        type="button"
+      <Button
+        variant="primary"
         className={createLobbyButtonStyles}
         disabled={pending}
         onClick={() => {
@@ -169,7 +160,7 @@ function CreateLobbyButton() {
         }}
       >
         {pending ? 'Création…' : 'Créer une partie multijoueur'}
-      </button>
+      </Button>
       {errorMessage != null ? (
         <p className={createLobbyErrorStyles} role="alert">
           {errorMessage}

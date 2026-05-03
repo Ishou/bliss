@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { css } from 'styled-system/css';
 import { MAX_PSEUDONYM_LENGTH, type Lobby, type Pseudonym, type SessionId } from '@/domain/game';
+import { Button, RadioGroup, TextField } from '@/ui/components/primitives';
 import { PlayerList, MAX_PLAYERS } from './PlayerList';
 
 // Pure prop-driven WaitingRoom rendered while `lobby.state === 'WAITING'`.
@@ -13,7 +14,16 @@ import { PlayerList, MAX_PLAYERS } from './PlayerList';
 // Roster rendering (with empty-slot placeholders) lives in PlayerList so
 // the in-game route can mount the same component in its `inline` variant
 // during IN_PROGRESS / COMPLETED.
-const GRID_SIZES: readonly number[] = [5, 7, 9, 11];
+//
+// All interactive controls (Button, TextField, RadioGroup) are project-
+// local primitives wrapping Ark UI per ADR-0002 §2.
+const GRID_SIZES = ['5', '7', '9', '11'] as const;
+type GridSize = (typeof GRID_SIZES)[number];
+
+const GRID_SIZE_OPTIONS = GRID_SIZES.map((size) => ({
+  value: size,
+  label: `${size}×${size}`,
+}));
 
 export interface WaitingRoomProps {
   readonly lobby: Lobby;
@@ -46,40 +56,8 @@ const styles = {
   sectionTitle: css({
     fontSize: 'md', fontWeight: 'bold', color: 'leaf.700', margin: 0,
   }),
-  button: css({
-    paddingBlock: 'sm', paddingInline: 'md', borderRadius: 'sm',
-    border: '1px solid token(colors.border)', bg: 'surface', color: 'fg',
-    fontFamily: 'body', fontSize: 'body', fontWeight: 'semibold',
-    cursor: 'pointer',
-    _disabled: { opacity: 0.5, cursor: 'not-allowed' },
-  }),
-  primaryButton: css({
-    paddingBlock: 'sm', paddingInline: 'md', borderRadius: 'sm',
-    border: 'none', bg: 'leaf.700', color: 'breath',
-    fontFamily: 'body', fontSize: 'body', fontWeight: 'bold',
-    cursor: 'pointer',
-    _disabled: { opacity: 0.5, cursor: 'not-allowed' },
-  }),
-  input: css({
-    flex: 1, paddingBlock: 'sm', paddingInline: 'sm', borderRadius: 'sm',
-    border: '1px solid token(colors.border)', bg: 'surface', color: 'fg',
-    fontFamily: 'body', fontSize: 'body',
-  }),
-  inputError: css({
-    fontSize: 'sm', color: 'accent', marginBlockStart: 'xs',
-  }),
-  editorWrapper: css({
-    display: 'flex', flexDirection: 'column', gap: 'xs',
-  }),
   row: css({ display: 'flex', alignItems: 'center', gap: 'sm' }),
-  radioGroup: css({ display: 'flex', flexWrap: 'wrap', gap: 'sm' }),
-  radioLabel: css({
-    display: 'inline-flex', alignItems: 'center', gap: 'xs',
-    paddingBlock: 'xs', paddingInline: 'sm', borderRadius: 'sm',
-    border: '1px solid token(colors.border)', bg: 'surface',
-    cursor: 'pointer', fontSize: 'sm',
-  }),
-  fieldset: css({ border: 'none', padding: 0, margin: 0 }),
+  inlineField: css({ flex: 1 }),
 };
 
 export function WaitingRoom({
@@ -108,9 +86,9 @@ export function WaitingRoom({
       </div>
 
       <div className={styles.row}>
-        <button type="button" className={styles.button} onClick={onCopyShareUrl}>
+        <Button variant="ghost" onClick={onCopyShareUrl}>
           Copier le lien
-        </button>
+        </Button>
       </div>
 
       {me ? (
@@ -127,26 +105,27 @@ export function WaitingRoom({
       ) : null}
 
       {isOwner ? (
-        <button
-          type="button" className={styles.primaryButton}
-          onClick={onStart} disabled={!canStart}
+        <Button
+          variant="primary"
+          onClick={onStart}
+          disabled={!canStart}
         >
           Démarrer la partie
-        </button>
+        </Button>
       ) : null}
     </section>
   );
 }
 
 // Inline edit-on-click. Click the displayed pseudonym to reveal the
-// input; Enter or blur fires `onRename` and exits edit mode. Empty /
+// `TextField`; Enter or blur fires `onRename` and exits edit mode. Empty /
 // unchanged / over-cap values are no-ops so a stray click does not
 // wipe a name AND a paste of a too-long string never sends a frame the
-// server is going to reject. The `maxLength` HTML attribute prevents
-// typing past `MAX_PSEUDONYM_LENGTH` (32) in the first place — the
-// commit-time guard is belt-and-braces for the paste-then-Enter path
-// and for any future drift between the FE constant and the server cap
-// (which surfaces inline via `pseudonymError`).
+// server is going to reject. The `maxLength` HTML attribute on the
+// underlying input prevents typing past `MAX_PSEUDONYM_LENGTH` (32) in
+// the first place — the commit-time guard is belt-and-braces for the
+// paste-then-Enter path and for any future drift between the FE constant
+// and the server cap (which surfaces inline via `pseudonymError`).
 function PseudonymEditor({
   currentPseudonym, onRename, pseudonymError, onClearPseudonymError,
 }: {
@@ -171,8 +150,8 @@ function PseudonymEditor({
     return (
       <div className={styles.row}>
         <h2 className={styles.sectionTitle}>Votre pseudonyme</h2>
-        <button
-          type="button" className={styles.button}
+        <Button
+          variant="ghost"
           onClick={() => {
             setDraft(currentPseudonym);
             onClearPseudonymError?.();
@@ -181,43 +160,31 @@ function PseudonymEditor({
           aria-label={`Modifier votre pseudonyme : ${currentPseudonym}`}
         >
           {currentPseudonym}
-        </button>
+        </Button>
       </div>
     );
   }
 
   return (
-    <div className={styles.editorWrapper}>
-      <div className={styles.row}>
-        <label htmlFor="pseudonym-input" className={styles.sectionTitle}>
-          Votre pseudonyme
-        </label>
-        <input
-          id="pseudonym-input" className={styles.input} type="text"
-          value={draft}
-          maxLength={MAX_PSEUDONYM_LENGTH}
-          aria-invalid={pseudonymError != null || isOverCap || undefined}
-          aria-describedby={pseudonymError != null ? 'pseudonym-error' : undefined}
-          onChange={(e) => {
-            setDraft(e.target.value);
-            // Clear the previous server-side error as soon as the user
-            // starts editing — a fresh attempt deserves a fresh slate.
-            if (pseudonymError != null) onClearPseudonymError?.();
-          }}
-          onBlur={commit}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') { e.preventDefault(); commit(); }
-            if (e.key === 'Escape') { setIsEditing(false); }
-          }}
-          autoFocus
-        />
-      </div>
-      {pseudonymError != null ? (
-        <p id="pseudonym-error" role="alert" className={styles.inputError}>
-          {pseudonymError}
-        </p>
-      ) : null}
-    </div>
+    <TextField
+      label="Votre pseudonyme"
+      value={draft}
+      maxLength={MAX_PSEUDONYM_LENGTH}
+      invalid={pseudonymError != null || isOverCap || undefined}
+      errorText={pseudonymError ?? undefined}
+      onChange={(e) => {
+        setDraft(e.target.value);
+        // Clear the previous server-side error as soon as the user
+        // starts editing — a fresh attempt deserves a fresh slate.
+        if (pseudonymError != null) onClearPseudonymError?.();
+      }}
+      onBlur={commit}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') { e.preventDefault(); commit(); }
+        if (e.key === 'Escape') { setIsEditing(false); }
+      }}
+      autoFocus
+    />
   );
 }
 
@@ -229,21 +196,19 @@ function GridSizePicker({
   readonly gridConfig: Lobby['gridConfig'];
   readonly onSetGridConfig: (width: number, height: number) => void;
 }): React.ReactElement {
+  const currentValue = (gridConfig.width === gridConfig.height
+    ? String(gridConfig.width)
+    : '') as GridSize;
   return (
-    <fieldset className={styles.fieldset}>
-      <legend className={styles.sectionTitle}>Taille de la grille</legend>
-      <div className={styles.radioGroup}>
-        {GRID_SIZES.map((size) => (
-          <label key={size} className={styles.radioLabel}>
-            <input
-              type="radio" name="grid-size" value={size}
-              checked={gridConfig.width === size && gridConfig.height === size}
-              onChange={() => onSetGridConfig(size, size)}
-            />
-            {size}×{size}
-          </label>
-        ))}
-      </div>
-    </fieldset>
+    <RadioGroup<GridSize>
+      label="Taille de la grille"
+      name="grid-size"
+      value={currentValue}
+      onValueChange={(value) => {
+        const n = Number(value);
+        onSetGridConfig(n, n);
+      }}
+      options={GRID_SIZE_OPTIONS}
+    />
   );
 }
