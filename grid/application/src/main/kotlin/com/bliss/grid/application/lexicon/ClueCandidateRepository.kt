@@ -52,6 +52,9 @@ interface ClueCandidateRepository {
 
     /** Smoke-check count for a source. */
     fun countBySource(source: String): Long
+
+    /** Derives dbnary-synonym candidates via SQL join; filters self-refs and len>80; idempotent (ON CONFLICT DO NOTHING). Returns new-row count. */
+    fun deriveSynonymClues(language: String): Int
 }
 
 /**
