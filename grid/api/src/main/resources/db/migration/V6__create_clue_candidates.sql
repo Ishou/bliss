@@ -22,7 +22,7 @@ CREATE TABLE clue_candidates (
     confidence    NUMERIC      CHECK (confidence IS NULL OR (confidence >= 0 AND confidence <= 1)),
     model_version TEXT,
     generated_at  TIMESTAMPTZ  NOT NULL DEFAULT now(),
-    UNIQUE (word_id, source, sense_index, clue_text)
+    UNIQUE NULLS NOT DISTINCT (word_id, source, sense_index, clue_text)
 );
 
 -- The export-time pick reads (word_id, source) to find the highest-priority
