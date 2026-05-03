@@ -1,8 +1,34 @@
 import { render, fireEvent, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import type { ComponentProps } from 'react';
 import type { Cell, Puzzle } from '@/domain';
 import { Grid } from '@/ui/components/grid';
 import { useGridNavigation } from '@/ui/components/grid/useGridNavigation';
+
+type GestureCallbacks = {
+  onZoomStart?: () => void;
+  onZoomStop?: () => void;
+  onPanningStart?: () => void;
+  onPanningStop?: () => void;
+};
+const capturedCb = vi.hoisted((): { current: GestureCallbacks } => ({ current: {} }));
+vi.mock('react-zoom-pan-pinch', async (importActual) => {
+  const actual = await importActual<typeof import('react-zoom-pan-pinch')>();
+  const ActualTransformWrapper = actual.TransformWrapper;
+  type WrapperProps = ComponentProps<typeof ActualTransformWrapper>;
+  return {
+    ...actual,
+    TransformWrapper: ({ children, onZoomStart, onZoomStop, onPanningStart, onPanningStop, ...rest }: WrapperProps) => {
+      capturedCb.current = {
+        onZoomStart: onZoomStart as (() => void) | undefined,
+        onZoomStop: onZoomStop as (() => void) | undefined,
+        onPanningStart: onPanningStart as (() => void) | undefined,
+        onPanningStop: onPanningStop as (() => void) | undefined,
+      };
+      return <ActualTransformWrapper {...rest}>{children}</ActualTransformWrapper>;
+    },
+  };
+});
 
 // Inline test fixture (per workstream guidance, do not import the
 // shared SAMPLE_PUZZLE — the parallel sample-coverage workstream is
@@ -708,8 +734,7 @@ describe('Grid keyboard-aware wrapper sizing', () => {
   };
 
   // The visual-viewport listener now coalesces resize/scroll bursts into
-  // one measurement per animation frame (PR #177 throttle for iOS pinch
-  // dispatching `resize` at ~60Hz). Tests that observe the post-event
+  // one measurement per animation frame. Tests that observe the post-event
   // DOM state need to flush the pending rAF first. jsdom's rAF wraps
   // its callback in a setTimeout(~16 ms) — a 20 ms wait gets us past
   // the rAF tick on every CI runner observed here.
@@ -778,13 +803,6 @@ describe('Grid keyboard-aware wrapper sizing', () => {
     expect(wrapperEl!.style.maxHeight).toBe('');
   });
 
-  // PR #177: iOS Safari fires `visualViewport.resize` at ~60Hz during a
-  // pinch gesture; per-event measurement + setState would do a
-  // `getBoundingClientRect` and trigger a render every frame. The
-  // listener coalesces bursts into one rAF-scheduled measurement.
-  // Verifies the throttle by dispatching N synthetic resize events in a
-  // single tick and asserting only one rAF fired (i.e. the wrapper's
-  // `getBoundingClientRect` ran exactly once after the burst).
   it('coalesces multiple visualViewport resize events into a single measurement per frame', async () => {
     const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
     const wrapperEl = container.querySelector<HTMLDivElement>('.react-transform-wrapper');
@@ -839,7 +857,7 @@ describe('Grid keyboard-aware wrapper sizing', () => {
   });
 });
 
-// Blur-on-gesture coordination (PR #177). iOS Safari fights pinch / pan
+// Blur-on-gesture coordination. iOS Safari fights pinch / pan
 // with a native focus-snap that auto-scrolls / zooms to keep a focused
 // <input> visible during ANY layout change. The library drives a JS
 // CSS transform during pinch / pan, so the browser's snap fires every
@@ -847,60 +865,19 @@ describe('Grid keyboard-aware wrapper sizing', () => {
 // restoring focus on gesture end — Android Chrome doesn't do the snap
 // as aggressively, but the same blur is a no-op there (and is
 // platform-independent, simpler than UA-sniffing).
-//
-// We can't drive the library's pointer pipeline in jsdom, so we read
-// the wired-up callback props off the React fiber attached to the
-// `.react-transform-wrapper` DOM node and invoke them directly. That
-// pins the contract `<Grid>` exposes: gesture-start → blur the focused
-// cell, gesture-stop → restore focus iff the user didn't tap a
-// different cell during the gesture window.
 describe('Grid blur-on-gesture coordination', () => {
-  type Captured = {
-    onZoomStart?: () => void;
-    onZoomStop?: () => void;
-    onPanningStart?: () => void;
-    onPanningStop?: () => void;
-  };
-
-  const readWiredCallbacks = (root: HTMLElement): Captured => {
-    const wrapperDOM = root.querySelector<HTMLDivElement>('.react-transform-wrapper');
-    if (!wrapperDOM) return {};
-    const fiberKey = Object.keys(wrapperDOM).find((k) => k.startsWith('__reactFiber$'));
-    if (!fiberKey) return {};
-    type Fiber = { return?: Fiber; memoizedProps?: Record<string, unknown> };
-    let fiber: Fiber | undefined = (wrapperDOM as unknown as Record<string, Fiber>)[fiberKey];
-    while (fiber) {
-      const props = fiber.memoizedProps;
-      if (
-        props &&
-        (typeof props.onZoomStart === 'function' ||
-          typeof props.onPanningStart === 'function')
-      ) {
-        return {
-          onZoomStart: props.onZoomStart as () => void,
-          onZoomStop: props.onZoomStop as () => void,
-          onPanningStart: props.onPanningStart as () => void,
-          onPanningStop: props.onPanningStop as () => void,
-        };
-      }
-      fiber = fiber.return;
-    }
-    return {};
-  };
-
   it('blurs the focused cell on zoom start and restores on zoom stop', () => {
     const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
     const target = inputAt(container, 1, 1)!;
     act(() => { click(target); });
     expect(document.activeElement).toBe(target);
-    const cb = readWiredCallbacks(container);
-    expect(cb.onZoomStart).toBeTypeOf('function');
-    expect(cb.onZoomStop).toBeTypeOf('function');
+    expect(capturedCb.current.onZoomStart).toBeTypeOf('function');
+    expect(capturedCb.current.onZoomStop).toBeTypeOf('function');
     // Pinch start: cell loses focus.
-    act(() => { cb.onZoomStart!(); });
+    act(() => { capturedCb.current.onZoomStart!(); });
     expect(document.activeElement).not.toBe(target);
     // Pinch end: focus restored to the same cell.
-    act(() => { cb.onZoomStop!(); });
+    act(() => { capturedCb.current.onZoomStop!(); });
     expect(document.activeElement).toBe(inputAt(container, 1, 1));
   });
 
@@ -908,10 +885,9 @@ describe('Grid blur-on-gesture coordination', () => {
     const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
     const target = inputAt(container, 1, 1)!;
     act(() => { click(target); });
-    const cb = readWiredCallbacks(container);
-    act(() => { cb.onPanningStart!(); });
+    act(() => { capturedCb.current.onPanningStart!(); });
     expect(document.activeElement).not.toBe(target);
-    act(() => { cb.onPanningStop!(); });
+    act(() => { capturedCb.current.onPanningStop!(); });
     expect(document.activeElement).toBe(inputAt(container, 1, 1));
   });
 
@@ -919,9 +895,8 @@ describe('Grid blur-on-gesture coordination', () => {
     const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
     const original = inputAt(container, 1, 1)!;
     act(() => { click(original); });
-    const cb = readWiredCallbacks(container);
     // Gesture starts: original cell blurs.
-    act(() => { cb.onZoomStart!(); });
+    act(() => { capturedCb.current.onZoomStart!(); });
     expect(document.activeElement).not.toBe(original);
     // User taps a different cell mid-gesture (the click handler on the
     // Cell wrapper focuses the input synchronously).
@@ -929,17 +904,16 @@ describe('Grid blur-on-gesture coordination', () => {
     act(() => { click(other); });
     expect(document.activeElement).toBe(other);
     // Gesture ends: must NOT yank focus back to (1,1).
-    act(() => { cb.onZoomStop!(); });
+    act(() => { capturedCb.current.onZoomStop!(); });
     expect(document.activeElement).toBe(other);
   });
 
   it('is a no-op when no cell was focused at gesture start', () => {
-    const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
-    const cb = readWiredCallbacks(container);
+    render(<Grid puzzle={TEST_PUZZLE} />);
     // Pre-condition: nothing focused (just rendered).
     expect(document.activeElement).toBe(document.body);
-    act(() => { cb.onZoomStart!(); });
-    act(() => { cb.onZoomStop!(); });
+    act(() => { capturedCb.current.onZoomStart!(); });
+    act(() => { capturedCb.current.onZoomStop!(); });
     // Still nothing focused — no spurious cell focused via restore.
     expect(document.activeElement).toBe(document.body);
   });
@@ -951,14 +925,13 @@ describe('Grid blur-on-gesture coordination', () => {
     const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
     const target = inputAt(container, 1, 1)!;
     act(() => { click(target); });
-    const cb = readWiredCallbacks(container);
-    act(() => { cb.onZoomStart!(); });
-    act(() => { cb.onPanningStart!(); });
+    act(() => { capturedCb.current.onZoomStart!(); });
+    act(() => { capturedCb.current.onPanningStart!(); });
     // Zoom ends but pan still active — must NOT restore yet.
-    act(() => { cb.onZoomStop!(); });
+    act(() => { capturedCb.current.onZoomStop!(); });
     expect(document.activeElement).not.toBe(target);
     // Pan ends — now restore.
-    act(() => { cb.onPanningStop!(); });
+    act(() => { capturedCb.current.onPanningStop!(); });
     expect(document.activeElement).toBe(inputAt(container, 1, 1));
   });
 });

@@ -80,9 +80,6 @@ const rowStyles = css({ display: 'contents' });
 
 const positionKey = (p: Position) => `${p.row},${p.col}`;
 
-// Read (row, col) off a DOM element's `data-row` / `data-col` attributes.
-// Returns null if either attribute is missing or non-numeric. Used by the
-// blur-on-gesture restore path to identify which cell to restore focus to.
 const posOf = (el: Element): Position | null => {
   const rowAttr = el.getAttribute('data-row');
   const colAttr = el.getAttribute('data-col');
@@ -93,9 +90,6 @@ const posOf = (el: Element): Position | null => {
   return { row, col };
 };
 
-// Look up a letter cell's <input> within the grid frame by its
-// (row, col). Returns null if the frame is detached or the cell has
-// been unmounted (rare; e.g. game ended mid-gesture).
 const refsByPosition = (
   frame: HTMLDivElement | null,
   position: Position,
