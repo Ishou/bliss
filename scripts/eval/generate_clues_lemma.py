@@ -222,6 +222,7 @@ def main() -> None:
                 lemma, clue, vr = fut.result()
                 attempts = round_idx + 1
                 last_output[lemma] = (clue, vr.flag)
+                row_pos = pending[lemma]["pos"]
                 if vr.flag == "ok":
                     completed[lemma] = {
                         **pending[lemma],
@@ -234,7 +235,7 @@ def main() -> None:
                     marker = "OK"
                 else:
                     marker = vr.flag
-                print(f"  [{lemma:20s} ({pending.get(lemma, completed[lemma])['pos']:10s}) "
+                print(f"  [{lemma:20s} ({row_pos:10s}) "
                       f"x{attempts}] {marker:14s} -> {clue!r}")
         elapsed_round = time.time() - round_started
         print(f"  -- round of {len(round_lemmas)} took {elapsed_round:.1f}s "
