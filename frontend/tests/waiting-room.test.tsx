@@ -1,5 +1,5 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Lobby, Pseudonym, SessionId } from '@/domain/game';
 import { WaitingRoom } from '@/ui/components/lobby/WaitingRoom';
 
@@ -245,5 +245,83 @@ describe('WaitingRoom — share URL button', () => {
     );
     fireEvent.click(screen.getByRole('button', { name: /copier le lien/i }));
     expect(onCopyShareUrl).toHaveBeenCalledTimes(1);
+  });
+
+  describe('inline copy feedback', () => {
+    beforeEach(() => { vi.useFakeTimers(); });
+    afterEach(() => { vi.useRealTimers(); });
+
+    it('shows "Lien copié !" right after the click and hides it after ~2s', () => {
+      render(
+        <WaitingRoom
+          lobby={baseLobby}
+          currentSessionId={ownerSessionId}
+          {...noopProps}
+        />,
+      );
+      // No feedback visible before the click.
+      expect(screen.queryByText(/lien copié/i)).toBeNull();
+
+      fireEvent.click(screen.getByRole('button', { name: /copier le lien/i }));
+
+      // The status node uses role="status" + aria-live so assistive
+      // tech announces it; assert presence + the role at the same time.
+      const status = screen.getByRole('status');
+      expect(status).toHaveTextContent(/lien copié/i);
+
+      // After the 2s timer the feedback is gone again.
+      act(() => { vi.advanceTimersByTime(2000); });
+      expect(screen.queryByText(/lien copié/i)).toBeNull();
+    });
+  });
+});
+
+describe('WaitingRoom — Start button loading state', () => {
+  it('disables the button and flips the label to "Démarrage…" when isStarting is true', () => {
+    render(
+      <WaitingRoom
+        lobby={baseLobby}
+        currentSessionId={ownerSessionId}
+        {...noopProps}
+        isStarting
+      />,
+    );
+    // The label change moves the accessible name; query by the new
+    // label so we assert both the visible copy and the disabled state.
+    const button = screen.getByRole('button', { name: /démarrage…/i });
+    expect(button).toBeDisabled();
+    expect(button).toHaveAttribute('aria-busy', 'true');
+    expect(screen.queryByRole('button', { name: /démarrer la partie/i })).toBeNull();
+  });
+
+  it('renders the default label and is enabled when isStarting is false (default)', () => {
+    render(
+      <WaitingRoom lobby={baseLobby} currentSessionId={ownerSessionId} {...noopProps} />,
+    );
+    const button = screen.getByRole('button', { name: /démarrer la partie/i });
+    expect(button).toBeEnabled();
+    expect(button).not.toHaveAttribute('aria-busy');
+  });
+});
+
+describe('WaitingRoom — player row alignment', () => {
+  // The row layout drives the visual fix: `justify-content: space-between`
+  // pins the pseudonym left and the badge group right. Asserting the DOM
+  // structure (pseudonym + a `badgeGroup` sibling) keeps the contract
+  // visible to future refactors even though Panda class names are
+  // hashed and unstable in tests.
+  it('places the pseudonym before the badge group inside each row', () => {
+    render(
+      <WaitingRoom lobby={baseLobby} currentSessionId={ownerSessionId} {...noopProps} />,
+    );
+    const rows = screen.getAllByTestId('player-row');
+    const ownerRow = rows[0]!;
+    // Two top-level children: the pseudonym <span> first, the badge
+    // group <span> second. The badge group wraps the "vous" +
+    // "propriétaire" badges so they cluster on the right edge.
+    expect(ownerRow.children).toHaveLength(2);
+    expect(ownerRow.children[0]!.textContent).toBe(ownerPseudonym);
+    expect(ownerRow.children[1]!.textContent).toMatch(/vous/i);
+    expect(ownerRow.children[1]!.textContent).toMatch(/propriétaire/i);
   });
 });

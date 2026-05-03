@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { css } from 'styled-system/css';
 import { MAX_PSEUDONYM_LENGTH, type Lobby, type Pseudonym, type SessionId } from '@/domain/game';
 import { Button, TextField, ToggleGroup } from '@/ui/components/primitives';
@@ -45,6 +45,13 @@ export interface WaitingRoomProps {
   // not leave the previous failure rendered. Optional; if omitted, the
   // error stays visible until the parent's own clearing logic fires.
   readonly onClearPseudonymError?: () => void;
+  // True between the moment the owner clicks "Démarrer la partie" and
+  // the server-side confirmation (`gameStarted` event flips the lobby
+  // to IN_PROGRESS, at which point this component unmounts) or an
+  // `error` frame clears it. While true the Start button is disabled
+  // and the label flips to "Démarrage…" so the click is acknowledged
+  // even though the WS round-trip can take several hundred ms.
+  readonly isStarting?: boolean;
 }
 
 const styles = {
@@ -58,18 +65,53 @@ const styles = {
   }),
   row: css({ display: 'flex', alignItems: 'center', gap: 'sm' }),
   inlineField: css({ flex: 1 }),
+  // Inline confirmation surfaced next to the share button after a
+  // successful clipboard write. `role="status"` + `aria-live="polite"`
+  // so screen readers announce the change without stealing focus.
+  copyFeedback: css({
+    fontSize: 'sm', color: 'leaf.700', fontWeight: 'medium',
+  }),
 };
+
+// How long the inline "Lien copié !" feedback stays on screen after a
+// successful clipboard write. 2 s is long enough to read without
+// becoming a distraction; matches the "toast" timing patterns used
+// elsewhere in the design system without pulling in a global toast
+// store (deliberately out of scope — this is a single call site).
+const COPY_FEEDBACK_MS = 2000;
 
 export function WaitingRoom({
   lobby, currentSessionId, onRename, onSetGridConfig, onStart, onCopyShareUrl,
-  pseudonymError, onClearPseudonymError,
+  pseudonymError, onClearPseudonymError, isStarting = false,
 }: WaitingRoomProps): React.ReactElement {
   const isOwner = lobby.ownerSessionId === currentSessionId;
   // Solo-through-the-multiplayer-flow is supported (handy while waiting for
   // friends or for testing): the owner can Start as soon as there is at
   // least one player, which is always true since the owner is a member.
-  const canStart = isOwner && lobby.players.length >= 1;
+  const canStart = isOwner && lobby.players.length >= 1 && !isStarting;
   const me = lobby.players.find((p) => p.sessionId === currentSessionId);
+
+  // Inline feedback for the "Copier le lien" button. State is held here
+  // (rather than promoted to a global toast store) because this is the
+  // only call site that needs it; a full toast pipeline would be a
+  // separate PR if more surfaces start needing the same UX.
+  const [justCopied, setJustCopied] = useState(false);
+  const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(
+    () => () => {
+      if (copyTimerRef.current !== null) clearTimeout(copyTimerRef.current);
+    },
+    [],
+  );
+  const handleCopyClick = () => {
+    onCopyShareUrl();
+    if (copyTimerRef.current !== null) clearTimeout(copyTimerRef.current);
+    setJustCopied(true);
+    copyTimerRef.current = setTimeout(() => {
+      setJustCopied(false);
+      copyTimerRef.current = null;
+    }, COPY_FEEDBACK_MS);
+  };
 
   return (
     <section className={styles.container} aria-label="Salle d'attente">
@@ -86,9 +128,14 @@ export function WaitingRoom({
       </div>
 
       <div className={styles.row}>
-        <Button variant="ghost" onClick={onCopyShareUrl}>
+        <Button variant="ghost" onClick={handleCopyClick}>
           Copier le lien
         </Button>
+        {justCopied ? (
+          <span role="status" aria-live="polite" className={styles.copyFeedback}>
+            Lien copié !
+          </span>
+        ) : null}
       </div>
 
       {me ? (
@@ -109,8 +156,9 @@ export function WaitingRoom({
           variant="primary"
           onClick={onStart}
           disabled={!canStart}
+          aria-busy={isStarting || undefined}
         >
-          Démarrer la partie
+          {isStarting ? 'Démarrage…' : 'Démarrer la partie'}
         </Button>
       ) : null}
     </section>

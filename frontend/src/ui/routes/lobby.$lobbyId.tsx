@@ -32,6 +32,7 @@ import { EndGameModal } from '@/ui/components/lobby/EndGameModal';
 import { PlayerList } from '@/ui/components/lobby/PlayerList';
 import { Timer } from '@/ui/components/lobby/Timer';
 import { WaitingRoom } from '@/ui/components/lobby/WaitingRoom';
+import { Button } from '@/ui/components/primitives';
 import { Route as RootRoute } from './__root';
 
 // `/lobby/:lobbyId` route. Loader bootstraps lobby state via REST; the
@@ -76,6 +77,13 @@ const demoBadgeStyles = css({
 });
 
 const detailStyles = css({ fontSize: 'body', margin: 0, color: 'accent' });
+
+// Stack the alert copy on top of the back-home CTA so the user always
+// has a one-click exit when the lobby fails to load. Centered to match
+// the surrounding `LobbyShell` layout.
+const errorActionsStyles = css({
+  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'md',
+});
 
 const inGameLayoutStyles = css({
   display: 'flex', flexDirection: 'column',
@@ -133,6 +141,11 @@ function LobbyPage() {
   const handleClearPseudonymError = useCallback(() => {
     setPseudonymError(null);
   }, []);
+  // True between "Démarrer la partie" click and the server-side
+  // confirmation. WaitingRoom uses the flag to disable the button and
+  // flip the label to "Démarrage…" so the WS round-trip (frame →
+  // server → broadcast) is not perceived as a dead click.
+  const [isStarting, setIsStarting] = useState(false);
 
   // Single side effect: connect on mount, disconnect on unmount.
   // `joinLobby` is auto-sent by the adapter inside `connect` (PR #138's
@@ -151,6 +164,14 @@ function LobbyPage() {
         setPseudonymError(event.detail ?? event.title);
       } else if (event.type === 'playerRenamed' && event.sessionId === sessionId) {
         setPseudonymError(null);
+      }
+      // Clear the in-flight Start spinner once the server either
+      // confirms the new game or rejects the request. `gameStarted`
+      // also unmounts WaitingRoom, but resetting the flag is good
+      // hygiene for any future code path that reuses the component
+      // (e.g. a play-again flow that re-enters WAITING).
+      if (event.type === 'gameStarted' || event.type === 'error') {
+        setIsStarting(false);
       }
     });
     const unsubscribeConnection = gameClient.subscribeConnectionState((state) => {
@@ -179,6 +200,10 @@ function LobbyPage() {
   }, [gameClient]);
 
   const handleStart = useCallback(() => {
+    // Optimistic flip to the loading state — cleared either when the
+    // server's `gameStarted` event arrives (via the subscribe handler)
+    // or when an `error` frame surfaces a server-side rejection.
+    setIsStarting(true);
     gameClient.startGame();
   }, [gameClient]);
 
@@ -324,6 +349,7 @@ function LobbyPage() {
             onCopyShareUrl={handleCopyShareUrl}
             pseudonymError={pseudonymError}
             onClearPseudonymError={handleClearPseudonymError}
+            isStarting={isStarting}
           />
         ) : null}
 
@@ -540,13 +566,43 @@ function gameArrowToArrow(arrow: GameArrowDirection): ArrowDirection {
   }
 }
 
+// Both "Salon introuvable" and "Serveur indisponible" leave the user
+// stranded on a page that cannot recover on its own — the lobby id is
+// either gone for good or the upstream is down. Surface a primary CTA
+// that drops them back on `/` so they can spin up a new lobby (or join
+// another one). Uses `useNavigate` + a `Button` rather than a TanStack
+// `<Link>` because the visual treatment matches the rest of the app's
+// CTAs (solid `leaf.700`); a text link would read as secondary.
+function BackHomeButton() {
+  const navigate = useNavigate();
+  return (
+    <Button
+      variant="primary"
+      onClick={() => { void navigate({ to: '/' }); }}
+    >
+      Retour à l&apos;accueil
+    </Button>
+  );
+}
+
+function LobbyErrorWithBackHome({ text }: { text: string }) {
+  return (
+    <LobbyShell>
+      <div className={errorActionsStyles}>
+        <p className={detailStyles} role="alert">{text}</p>
+        <BackHomeButton />
+      </div>
+    </LobbyShell>
+  );
+}
+
 function LobbyErrorComponent({ error }: { error: Error }) {
   if (error instanceof LobbyClientError) {
     switch (error.kind) {
       case 'not-found':
-        return <LobbyStatus role="alert" text="Salon introuvable." />;
+        return <LobbyErrorWithBackHome text="Salon introuvable." />;
       case 'upstream-unavailable':
-        return <LobbyStatus role="alert" text="Serveur indisponible. Réessayez dans un instant." />;
+        return <LobbyErrorWithBackHome text="Serveur indisponible. Réessayez dans un instant." />;
       case 'validation':
       case 'transient':
         return <LobbyStatus role="alert" text="Une erreur est survenue. Réessayez." />;
