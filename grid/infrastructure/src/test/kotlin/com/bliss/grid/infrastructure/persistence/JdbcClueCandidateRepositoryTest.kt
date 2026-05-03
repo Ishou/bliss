@@ -60,7 +60,6 @@ class JdbcClueCandidateRepositoryTest {
 
     @BeforeEach
     fun cleanTables() {
-        if (!::repo.isInitialized) return
         dataSource.connection.use { conn ->
             conn.createStatement().use {
                 it.executeUpdate("TRUNCATE clue_candidates, words RESTART IDENTITY CASCADE")
@@ -73,21 +72,16 @@ class JdbcClueCandidateRepositoryTest {
         language: String = "fr",
     ): UUID {
         val id = UUID.randomUUID()
+        val sql = "INSERT INTO words (word_id, word, language, source, source_license) VALUES (?, ?, ?, ?, ?)"
         dataSource.connection.use { conn ->
-            conn
-                .prepareStatement(
-                    """
-                    INSERT INTO words (word_id, word, language, source, source_license)
-                    VALUES (?, ?, ?, ?, ?)
-                    """.trimIndent(),
-                ).use { stmt ->
-                    stmt.setObject(1, id)
-                    stmt.setString(2, word)
-                    stmt.setString(3, language)
-                    stmt.setString(4, "test")
-                    stmt.setString(5, "MPL-2.0")
-                    stmt.executeUpdate()
-                }
+            conn.prepareStatement(sql).use { stmt ->
+                stmt.setObject(1, id)
+                stmt.setString(2, word)
+                stmt.setString(3, language)
+                stmt.setString(4, "test")
+                stmt.setString(5, "MPL-2.0")
+                stmt.executeUpdate()
+            }
         }
         return id
     }

@@ -23,12 +23,23 @@ class JdbcClueCandidateRepository(
     private val dataSource: DataSource,
 ) : ClueCandidateRepository {
     override fun upsertAll(candidates: Sequence<ClueCandidate>): UpsertCandidatesReport {
+        val sql =
+            """
+            INSERT INTO clue_candidates
+                (word_id, source, sense_index, clue_text, confidence, model_version)
+            VALUES (?, ?, ?, ?, ?, ?)
+            ON CONFLICT (word_id, source, sense_index, clue_text) DO UPDATE
+            SET confidence = EXCLUDED.confidence,
+                model_version = EXCLUDED.model_version,
+                generated_at = now()
+            RETURNING (xmax = 0) AS inserted
+            """.trimIndent()
         var inserted = 0
         var updated = 0
         dataSource.connection.use { conn ->
             conn.autoCommit = false
             try {
-                conn.prepareStatement(UPSERT_SQL).use { stmt ->
+                conn.prepareStatement(sql).use { stmt ->
                     for (c in candidates) {
                         stmt.setObject(1, c.wordId)
                         stmt.setString(2, c.source)
@@ -83,7 +94,14 @@ class JdbcClueCandidateRepository(
 
     override fun findByWord(wordId: UUID): List<ClueCandidate> =
         dataSource.connection.use { conn ->
-            conn.prepareStatement(SELECT_BY_WORD_SQL).use { stmt ->
+            val sql =
+                """
+                SELECT word_id, source, sense_index, clue_text, confidence, model_version
+                FROM clue_candidates
+                WHERE word_id = ?
+                ORDER BY source ASC, generated_at DESC
+                """.trimIndent()
+            conn.prepareStatement(sql).use { stmt ->
                 stmt.setObject(1, wordId)
                 stmt.executeQuery().use { rs ->
                     val out = mutableListOf<ClueCandidate>()
@@ -98,12 +116,23 @@ class JdbcClueCandidateRepository(
         sourcePriority: List<String>,
     ): ClueCandidate? {
         if (sourcePriority.isEmpty()) return null
+        val sql =
+            """
+            SELECT word_id, source, sense_index, clue_text, confidence, model_version
+            FROM clue_candidates
+            WHERE word_id = ?
+              AND source = ANY(?::text[])
+            ORDER BY array_position(?::text[], source) ASC,
+                     confidence DESC NULLS LAST,
+                     generated_at DESC
+            LIMIT 1
+            """.trimIndent()
         return dataSource.connection.use { conn ->
             val priorityArray = conn.createArrayOf("text", sourcePriority.toTypedArray())
-            conn.prepareStatement(SELECT_TOP_BY_PRIORITY_SQL).use { stmt ->
+            conn.prepareStatement(sql).use { stmt ->
                 stmt.setObject(1, wordId)
-                // The query references ?::text[] twice (membership filter +
-                // ORDER BY position); JDBC binds positionally so we set both.
+                // ?::text[] appears twice (membership filter + ORDER BY position);
+                // JDBC binds positionally so we set both.
                 stmt.setArray(2, priorityArray)
                 stmt.setArray(3, priorityArray)
                 stmt.executeQuery().use { rs ->
@@ -132,45 +161,5 @@ class JdbcClueCandidateRepository(
             confidence = confidence,
             modelVersion = getString("model_version"),
         )
-    }
-
-    companion object {
-        // ON CONFLICT updates only the metadata; the natural key is invariant.
-        // RETURNING (xmax = 0) distinguishes inserts from updates.
-        private val UPSERT_SQL =
-            """
-            INSERT INTO clue_candidates
-                (word_id, source, sense_index, clue_text, confidence, model_version)
-            VALUES (?, ?, ?, ?, ?, ?)
-            ON CONFLICT (word_id, source, sense_index, clue_text) DO UPDATE
-            SET confidence = EXCLUDED.confidence,
-                model_version = EXCLUDED.model_version,
-                generated_at = now()
-            RETURNING (xmax = 0) AS inserted
-            """.trimIndent()
-
-        private val SELECT_BY_WORD_SQL =
-            """
-            SELECT word_id, source, sense_index, clue_text, confidence, model_version
-            FROM clue_candidates
-            WHERE word_id = ?
-            ORDER BY source ASC, generated_at DESC
-            """.trimIndent()
-
-        // Pick a single row by the priority list. `array_position` returns
-        // the 1-based index of `source` within `?` (NULL when absent), so
-        // ORDER BY ascending puts the highest-priority match first; rows
-        // whose source isn't in the list are filtered out by the WHERE.
-        private val SELECT_TOP_BY_PRIORITY_SQL =
-            """
-            SELECT word_id, source, sense_index, clue_text, confidence, model_version
-            FROM clue_candidates
-            WHERE word_id = ?
-              AND source = ANY(?::text[])
-            ORDER BY array_position(?::text[], source) ASC,
-                     confidence DESC NULLS LAST,
-                     generated_at DESC
-            LIMIT 1
-            """.trimIndent()
     }
 }
