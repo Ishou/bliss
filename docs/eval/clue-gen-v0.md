@@ -64,5 +64,33 @@ register", "circular definition".)
 ## Results
 
 <!-- AUTO:BEGIN -->
-No rows rated yet.
+_Last evaluated: 2026-05-03 08:25 UTC_
+
+**Acceptance: 33.1%** (74 rated, 26 unrated)
+
+**Decision: INVESTIGATE** — Acceptance < 70%. Enrich prompt, test alternative bases, grow curated set, then re-run Phase 0.
+
+### Breakdown by length
+
+| Length | N | Acceptance |
+| ---: | ---: | ---: |
+| 3 | 8 | 18.8% |
+| 4 | 10 | 25.0% |
+| 5 | 7 | 35.7% |
+| 6 | 8 | 56.2% |
+| 7 | 3 | 33.3% |
+| 8 | 5 | 50.0% |
+| 9 | 8 | 12.5% |
+| 10 | 8 | 43.8% |
+| 11 | 7 | 42.9% |
+| 12 | 10 | 25.0% |
+
+### Breakdown by POS
+
+| POS | N | Acceptance |
+| --- | ---: | ---: |
+| (unknown) | 4 | 12.5% |
+| adjective | 9 | 44.4% |
+| noun | 31 | 33.9% |
+| verb | 30 | 31.7% |
 <!-- AUTO:END -->
