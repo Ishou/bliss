@@ -129,6 +129,34 @@ class JdbcClueCandidateRepository(
             }
         }
 
+    override fun findLemmaWordIds(
+        language: String,
+        lemmas: Collection<String>,
+    ): Map<String, UUID> {
+        if (lemmas.isEmpty()) return emptyMap()
+        return dataSource.connection.use { conn ->
+            val lemmaArray = conn.createArrayOf("text", lemmas.toTypedArray())
+            conn
+                .prepareStatement(
+                    """
+                    SELECT word, word_id
+                    FROM words
+                    WHERE language = ? AND word = ANY(?::text[])
+                    """.trimIndent(),
+                ).use { stmt ->
+                    stmt.setString(1, language)
+                    stmt.setArray(2, lemmaArray)
+                    stmt.executeQuery().use { rs ->
+                        val out = HashMap<String, UUID>(lemmas.size)
+                        while (rs.next()) {
+                            out[rs.getString("word")] = rs.getObject("word_id", UUID::class.java)
+                        }
+                        out
+                    }
+                }
+        }
+    }
+
     private fun ResultSet.toCandidate(): ClueCandidate {
         val senseIndex = getInt("sense_index").takeUnless { wasNull() }
         val confidence = getBigDecimal("confidence")?.toDouble()

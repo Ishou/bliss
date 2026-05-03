@@ -55,6 +55,16 @@ interface ClueCandidateRepository {
 
     /** Derives dbnary-synonym candidates via SQL join; filters self-refs and len>80; idempotent (ON CONFLICT DO NOTHING). Returns new-row count. */
     fun deriveSynonymClues(language: String): Int
+
+    /**
+     * Bulk lookup: for each lemma in [lemmas], return the word_id of the
+     * matching `words` row with the same (language, word). Lemmas absent
+     * from the corpus are silently omitted from the result map.
+     */
+    fun findLemmaWordIds(
+        language: String,
+        lemmas: Collection<String>,
+    ): Map<String, java.util.UUID>
 }
 
 /**

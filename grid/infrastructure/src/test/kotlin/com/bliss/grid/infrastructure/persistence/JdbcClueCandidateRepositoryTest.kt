@@ -381,6 +381,37 @@ class JdbcClueCandidateRepositoryTest {
     }
 
     @Test
+    fun `findLemmaWordIds maps each lemma to its words word_id`() {
+        val voiture = insertWord("voiture")
+        val maison = insertWord("maison")
+        val absent = "doesnotexist"
+
+        val map = repo.findLemmaWordIds("fr", listOf("voiture", "maison", absent))
+
+        assertThat(map.size).isEqualTo(2)
+        assertThat(map["voiture"]).isEqualTo(voiture)
+        assertThat(map["maison"]).isEqualTo(maison)
+        assertThat(map.containsKey(absent)).isEqualTo(false)
+    }
+
+    @Test
+    fun `findLemmaWordIds is language-scoped`() {
+        val frVoiture = insertWord("voiture", language = "fr")
+        insertWord("voiture", language = "en") // different row, should NOT match fr query
+
+        val map = repo.findLemmaWordIds("fr", listOf("voiture"))
+
+        assertThat(map.size).isEqualTo(1)
+        assertThat(map["voiture"]).isEqualTo(frVoiture)
+    }
+
+    @Test
+    fun `findLemmaWordIds returns empty map on empty input`() {
+        insertWord("voiture")
+        assertThat(repo.findLemmaWordIds("fr", emptyList())).isEqualTo(emptyMap())
+    }
+
+    @Test
     fun `upsertAll rolls back the whole batch on failure`() {
         val word = insertWord("voiture")
         repo.upsertAll(
