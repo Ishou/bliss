@@ -69,7 +69,10 @@ def render_block(rows: list[dict[str, str]]) -> str:
         try:
             by_length[int(row["length"])].append(s)
         except (KeyError, ValueError):
-            pass
+            # lemma_clues.csv lacks `length`; fall back to len(lemma).
+            lemma = row.get("lemma") or row.get("word") or ""
+            if lemma:
+                by_length[len(lemma)].append(s)
         pos = (row.get("pos") or "(unknown)").strip() or "(unknown)"
         by_pos[pos].append(s)
 
