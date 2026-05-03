@@ -4,6 +4,7 @@ package com.bliss.grid.worker
 
 import com.bliss.grid.worker.clues.DeriveSynonymCluesCommand
 import com.bliss.grid.worker.clues.GenerateCluesCommand
+import com.bliss.grid.worker.clues.IngestClueCandidatesCommand
 import com.bliss.grid.worker.dbnary.IngestDbnaryCommand
 import com.bliss.grid.worker.exporter.ExportWordsCommand
 import com.bliss.grid.worker.importer.ImportFrequenciesCommand
@@ -25,6 +26,7 @@ fun main(args: Array<String>) =
             ImportFrequenciesCommand(),
             IngestDbnaryCommand(),
             DeriveSynonymCluesCommand(),
+            IngestClueCandidatesCommand(),
             GenerateCluesCommand(),
             ExportWordsCommand(),
         ).main(args)

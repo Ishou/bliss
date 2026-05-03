@@ -79,4 +79,9 @@ private class RecordingRepository(
         derivedLanguages += language
         return deriveResult
     }
+
+    override fun findLemmaWordIds(
+        language: String,
+        lemmas: Collection<String>,
+    ): Map<String, UUID> = emptyMap()
 }

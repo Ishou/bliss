@@ -55,6 +55,20 @@ interface ClueCandidateRepository {
 
     /** Derives dbnary-synonym candidates via SQL join; filters self-refs and len>80; idempotent (ON CONFLICT DO NOTHING). Returns new-row count. */
     fun deriveSynonymClues(language: String): Int
+
+    /**
+     * Bulk lookup: for each `lemma` in [lemmas], return the `word_id` of the
+     * matching row in `words` whose `(language, word)` equals `(language, lemma)`
+     * — i.e., the word_id of the lemma's citation form.
+     *
+     * Used by `ingest-clue-candidates` to map per-lemma CSV rows (which carry
+     * lemma strings) onto `clue_candidates.word_id` (a UUID). Lemmas not in
+     * the corpus are silently absent from the returned map.
+     */
+    fun findLemmaWordIds(
+        language: String,
+        lemmas: Collection<String>,
+    ): Map<String, java.util.UUID>
 }
 
 /**
