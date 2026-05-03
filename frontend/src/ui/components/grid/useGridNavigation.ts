@@ -58,8 +58,13 @@ export interface GridNavigation {
 // - Typing past the last cell of a word stays put (no auto-advance to
 //   the next clue). Backspace at the start of a word same — no surprise
 //   clue jumps.
-// - Tab / Shift+Tab clue-cycling is deferred to a follow-up PR to keep
-//   this diff under the ADR-0001 §4 line cap.
+// - Tab / Enter cycle to the NEXT word's first cell (Shift+Tab /
+//   Shift+Enter walk backward); both wrap. The clue order is
+//   across-then-down, sub-sorted by the starting cell's (row, col) — so
+//   the cycle traverses every across answer top-to-bottom, then every
+//   down answer top-to-bottom, then wraps. Mobile keyboards' "Next"
+//   button maps to Enter, so the same path serves the
+//   `enterKeyHint="next"` affordance added in PR #164.
 
 const key = (p: Position) => `${p.row},${p.col}`;
 const same = (a: Position | null, b: Position | null) =>
@@ -75,6 +80,10 @@ interface ClueLookup {
   cellAt: (r: number, c: number) => Cell | null;
   cluesAt: (r: number, c: number) => readonly Clue[];
   clueAt: (r: number, c: number, d: Direction) => Clue | undefined;
+  // All clues in deterministic puzzle order: across-then-down, each
+  // group sub-sorted by (row, col) of the starting cell. This is the
+  // order Tab / Enter walks through. Built once per puzzle.
+  readonly orderedClues: readonly Clue[];
 }
 
 // Index built once per puzzle (memo key = puzzle ref). Build O(N + sum
@@ -83,6 +92,7 @@ function buildLookup(puzzle: Puzzle): ClueLookup {
   const byPos = new Map<string, Cell>();
   for (const c of puzzle.cells) byPos.set(key(c.position), c);
   const byCell = new Map<string, Clue[]>();
+  const allClues: Clue[] = [];
   const defs = puzzle.cells
     .filter((c): c is DefinitionCell => c.kind === 'definition')
     .slice()
@@ -118,12 +128,24 @@ function buildLookup(puzzle: Puzzle): ClueLookup {
         list.push(clue);
         byCell.set(k, list);
       }
+      allClues.push(clue);
     }
   }
+  // Deterministic ordering for Tab / Enter cycling: across first, then
+  // down; within each group, by starting cell (row, col). Stable sort
+  // means same-axis clues sharing a start cell (rare but possible —
+  // see ADR-0005 §3a's stacked variants) keep the source order from
+  // `def.clues`.
+  const orderedClues: readonly Clue[] = allClues.slice().sort((a, b) => {
+    if (a.direction !== b.direction) return a.direction === 'across' ? -1 : 1;
+    const ar = a.cells[0].position, br = b.cells[0].position;
+    return ar.row - br.row || ar.col - br.col;
+  });
   return {
     cellAt: (r, c) => byPos.get(key({ row: r, col: c })) ?? null,
     cluesAt: (r, c) => byCell.get(key({ row: r, col: c })) ?? [],
     clueAt: (r, c, d) => (byCell.get(key({ row: r, col: c })) ?? []).find((q) => q.direction === d),
+    orderedClues,
   };
 }
 
@@ -333,8 +355,51 @@ export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOpt
   const handleKeyDown = useCallback(
     (event: React.KeyboardEvent<HTMLInputElement>) => {
       const { focused: f, direction: dir } = stateRef.current;
-      if (!f) return;
       const k = event.key;
+      // Tab / Enter — cycle to the next (or, with Shift, previous) word's
+      // first cell. Handled BEFORE the printable-letter branch so Enter
+      // never falls through to letter-write logic (it isn't a letter, but
+      // belt-and-braces) and BEFORE the `if (!f) return` guard so a Tab /
+      // Enter with no current focus picks the first word's first cell.
+      // preventDefault on Tab stops the browser walking out of the grid;
+      // on Enter it stops form-submit-style side effects on hosts where
+      // this hook is embedded in a form.
+      if (k === 'Tab' || k === 'Enter') {
+        event.preventDefault();
+        const clues = lookup.orderedClues;
+        if (clues.length === 0) return;
+        let nextClue: Clue;
+        if (!f) {
+          // No current focus — Shift jumps to the last word, plain to the
+          // first. Keeps the keyboard-first user from getting stuck when
+          // they Tab into the grid before clicking any cell.
+          nextClue = event.shiftKey ? clues[clues.length - 1] : clues[0];
+        } else {
+          // Locate the current word. Prefer the clue matching the active
+          // direction (the same rule `currentClue` uses); fall back to any
+          // clue passing through the focused cell so a stale `direction`
+          // doesn't strand the cycle. If no clue covers the focused cell
+          // at all (defensive — shouldn't happen for letter cells), step
+          // from "before the first / after the last" so the wrap math
+          // still lands somewhere sensible.
+          const here = lookup.cluesAt(f.row, f.col);
+          const current = here.find((h) => h.direction === dir) ?? here[0];
+          const currentIdx = current ? clues.indexOf(current) : -1;
+          const step = event.shiftKey ? -1 : 1;
+          const baseIdx = currentIdx < 0 ? (event.shiftKey ? 0 : -1) : currentIdx;
+          // Modulo-with-wrap (works for negative steps too).
+          const nextIdx = (baseIdx + step + clues.length) % clues.length;
+          nextClue = clues[nextIdx];
+        }
+        // Direction first so the new cell's `currentClue` resolves to the
+        // word we just jumped TO, not the perpendicular clue that may
+        // also pass through its starting cell. React 18 batches the
+        // setDirection + setFocused inside this handler into one render.
+        if (nextClue.direction !== dir) setDirection(nextClue.direction);
+        focusCell(nextClue.cells[0].position);
+        return;
+      }
+      if (!f) return;
       // Printable letter — write + advance along the current word.
       if (k.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey && LETTER_RE.test(k)) {
         event.preventDefault();
