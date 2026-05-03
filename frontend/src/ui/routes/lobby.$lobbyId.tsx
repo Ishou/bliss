@@ -1,5 +1,5 @@
 import { createRoute, useNavigate } from '@tanstack/react-router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { css } from 'styled-system/css';
 import {
   LobbyClientError,
@@ -10,6 +10,7 @@ import type {
   ArrowDirection,
   Cell,
   DefinitionClue,
+  Position,
   Puzzle,
 } from '@/domain';
 import type {
@@ -20,7 +21,10 @@ import type {
   Letter,
   Lobby,
   LobbyId,
+  Player,
+  PresenceEntry,
   Pseudonym,
+  SessionId,
 } from '@/domain/game';
 import { Grid } from '@/ui/components/grid';
 import { ConnectionBanner } from '@/ui/components/lobby/ConnectionBanner';
@@ -199,6 +203,58 @@ function LobbyPage() {
     [gameClient],
   );
 
+  // Local-user focus → outbound `cellFocus` frame. The hook fires this
+  // synchronously on every focused-cell / direction transition; the
+  // adapter's 200 ms debounce collapses bursts. `null` position means
+  // the player has no cell focused (and we send `null` row/column to
+  // peers so they can drop the cursor). Stable reference so the hook's
+  // option-stash ref doesn't churn.
+  const handleLocalFocusChange = useCallback(
+    (position: Position | null, direction: 'across' | 'down' | null) => {
+      gameClient.cellFocus(position?.row ?? null, position?.col ?? null, direction);
+    },
+    [gameClient],
+  );
+
+  // Snapshot presence ref. The reducer overwrites this on every
+  // `lobbyState` event; the registrar below reads the latest value at
+  // subscription time so the overlay receives a one-shot replay of
+  // current cursors. Avoids re-subscribing when the snapshot changes
+  // (which would tear down + re-mount the overlay's listener every time
+  // a peer joined/left).
+  const snapshotPresenceRef = useRef<readonly PresenceEntry[]>(
+    initialLobby.game?.presence ?? [],
+  );
+  useEffect(() => {
+    snapshotPresenceRef.current = view.lobby.game?.presence ?? [];
+  }, [view.lobby.game?.presence]);
+
+  // Stable subscribe registrar for `Grid`'s `subscribeToRemotePresence`
+  // prop. On every fresh subscription:
+  //   1. Replay the current `snapshotPresenceRef` as synthetic
+  //      `presenceUpdated` events so a freshly-mounted overlay paints
+  //      immediately, before the next live frame arrives.
+  //   2. Forward the raw `gameClient.subscribe` stream — the overlay
+  //      filters to `presenceUpdated` internally.
+  // The replay fires synchronously inside the registrar (same shape as
+  // `subscribeConnectionState`'s synchronous priming call) so the
+  // overlay's reducer sees the snapshot before any other render.
+  const subscribeToRemotePresence = useCallback(
+    (handler: (event: GameEvent) => void) => {
+      for (const entry of snapshotPresenceRef.current) {
+        handler({
+          type: 'presenceUpdated',
+          sessionId: entry.sessionId,
+          row: entry.row,
+          column: entry.column,
+          direction: entry.direction,
+        });
+      }
+      return gameClient.subscribe(handler);
+    },
+    [gameClient],
+  );
+
   const handlePlayAgain = useCallback(() => {
     void navigate({ to: '/' });
   }, [navigate]);
@@ -238,6 +294,16 @@ function LobbyPage() {
     [lobby.game?.entries],
   );
 
+  // Lookup table for the `<PresenceOverlay>` chip text. Re-derived only
+  // when the players list reference changes (i.e. on join / leave /
+  // rename), so steady-state in-game renders share the same Map across
+  // re-renders. Keyed by sessionId because the overlay sees presences
+  // identified by sessionId, not by index.
+  const playersBySessionId = useMemo<ReadonlyMap<SessionId, Player>>(
+    () => new Map(lobby.players.map((p) => [p.sessionId, p])),
+    [lobby.players],
+  );
+
   return (
     <>
       <ConnectionBanner state={connectionState} />
@@ -275,6 +341,9 @@ function LobbyPage() {
               onCellChange={handleCellChange}
               subscribeToRemoteCellUpdates={subscribeToRemoteCellUpdates}
               initialEntries={initialEntries}
+              onLocalFocusChange={handleLocalFocusChange}
+              subscribeToRemotePresence={subscribeToRemotePresence}
+              playersBySessionId={playersBySessionId}
             />
           </div>
         ) : null}
@@ -385,7 +454,10 @@ function applyEvent(current: LobbyView, event: GameEvent): LobbyView {
         modalDismissed: false,
       };
     default:
-      // `cellUpdated` and `error` frames do not change route-level state.
+      // `cellUpdated`, `presenceUpdated`, and `error` frames do not
+      // change route-level state. Presence is overlay-only — the
+      // overlay manages its own per-session map directly off the
+      // event stream (see `subscribeToRemotePresence` above).
       return current;
   }
 }

@@ -127,16 +127,34 @@ export interface GamePuzzle {
   readonly createdAt: Instant;
 }
 
+// One peer's currently-focused cell. Carried by `GameSession.presence`
+// so a refreshing client sees existing cursors immediately, before the
+// first live `presenceUpdated` frame. Mirrors AsyncAPI `PresenceEntry`.
+// `row`/`column`/`direction` are all nullable per the wire — `null`
+// means the peer has no cell focused; absence from the array means the
+// peer is not currently connected (per ADR-0003 §6, absence and `null`
+// are distinct).
+export interface PresenceEntry {
+  readonly sessionId: SessionId;
+  readonly row: number | null;
+  readonly column: number | null;
+  readonly direction: 'across' | 'down' | null;
+}
+
 // Active game embedded in `lobbyState` (and in REST `Lobby.game`) while
 // IN_PROGRESS or COMPLETED. `entries` carries every cell typed so far so
 // a refreshing or late-joining client rehydrates the grid from the
 // snapshot instead of receiving an empty grid; cleared cells are absent
 // from the list and the server emits entries sorted by row then column.
+// `presence` is the ephemeral cursor map for currently-connected peers
+// — optional and absent or empty when state is WAITING / COMPLETED.
+// Not persisted (lives in `SessionManager`'s in-memory map server-side).
 export interface GameSession {
   readonly puzzle: GamePuzzle;
   readonly entries: readonly CellEntry[];
   readonly startedAt: Instant;
   readonly completedAt: Instant | null;
+  readonly presence?: readonly PresenceEntry[];
 }
 
 export interface Lobby {

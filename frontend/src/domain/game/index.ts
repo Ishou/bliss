@@ -22,6 +22,7 @@ export type {
   LobbyLifecycleState,
   Player,
   Position,
+  PresenceEntry,
   Pseudonym,
   SessionId,
 } from './types';

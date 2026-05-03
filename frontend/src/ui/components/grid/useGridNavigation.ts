@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ArrowDirection, Cell, DefinitionCell, DefinitionClue, LetterCell, Position, Puzzle } from '@/domain';
+import { wordRange } from './wordRange';
 
 // 'across' === ArrowDirection 'right'; 'down' === 'down'.
 export type Direction = 'across' | 'down';
@@ -150,6 +151,17 @@ export interface UseGridNavigationOptions {
   // cleared. Solo callers omit this; multiplayer callers wire it to the
   // WebSocket cellUpdate broadcast (Wave H · PR #19, see ADR-0018).
   readonly onCellChange?: (row: number, col: number, letter: string | null) => void;
+  // Fires whenever the focused cell or solving direction changes. The
+  // multiplayer route wires this to `gameClient.cellFocus(...)` so peers
+  // can render a coloured cursor + word tint at the focused position
+  // (ADR-0018 §"Presence"). Adapter-side debounce (200 ms) collapses
+  // bursts of focus changes into one outbound frame, so we fire on
+  // every transition without filtering. Solo callers omit this and the
+  // hook never schedules an out-of-band call.
+  readonly onFocusChange?: (
+    position: Position | null,
+    direction: 'across' | 'down' | null,
+  ) => void;
 }
 
 export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOptions): GridNavigation {
@@ -161,6 +173,11 @@ export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOpt
   // (and so consumers passing an inline function don't churn handlers).
   const onCellChangeRef = useRef(options?.onCellChange);
   onCellChangeRef.current = options?.onCellChange;
+  // Same pattern for the presence-focus callback: refs keep handlers
+  // stable so consumers passing inline functions don't trigger a fresh
+  // mounting effect every render.
+  const onFocusChangeRef = useRef(options?.onFocusChange);
+  onFocusChangeRef.current = options?.onFocusChange;
   // Tracks the per-cell normalized (uppercase) value so handleInput can
   // detect same-letter no-ops. The browser overwrites target.value with the
   // raw IME character before handleInput fires, making a simple before/after
@@ -317,6 +334,32 @@ export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOpt
     [focused, direction, lookup],
   );
 
+  // Fire the presence-focus callback on every (focused, direction)
+  // transition. The transport-layer adapter (`WebSocketGameClient`) is
+  // the single source of truth for the 200 ms debounce — this hook
+  // surfaces every change verbatim. `null` focused fires `(null, null)`
+  // so peers drop the cursor; that's intentional and matches the wire
+  // shape (`presenceUpdated.row` is nullable per AsyncAPI). When
+  // `focused` is non-null we always have a meaningful direction.
+  useEffect(() => {
+    const handler = onFocusChangeRef.current;
+    if (!handler) return;
+    if (focused === null) {
+      handler(null, null);
+      return;
+    }
+    handler(focused, direction);
+  }, [focused, direction]);
+
+  // Word range under the focused cell along the active direction. Pure
+  // helper, same one PresenceOverlay uses to render remote cursors —
+  // so the local "current word" tint and the remote-presence tints
+  // stay byte-identical for any (position, direction) pair.
+  const currentWordRange = useMemo<readonly Position[]>(
+    () => (focused ? wordRange(puzzle, focused, direction) : []),
+    [focused, direction, puzzle],
+  );
+
   const moveByVector = useCallback(
     (dr: number, dc: number) => {
       const f = stateRef.current.focused;
@@ -447,9 +490,12 @@ export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOpt
 
   const highlightFor = useCallback(
     (p: Position): CellHighlight => {
-      if (!currentClue) return { currentWord: false, currentArrow: null };
+      if (!focused || !currentClue) return { currentWord: false, currentArrow: null };
       const isFocused = same(focused, p);
-      const inWord = currentClue.cells.some((c) => same(c.position, p));
+      // `currentWordRange` is computed via the same `wordRange` helper
+      // PresenceOverlay uses for remote cursors — both code paths now
+      // see the same range for any (position, direction) pair.
+      const inWord = currentWordRange.some((q) => q.row === p.row && q.col === p.col);
       const def = currentClue.definition.position;
       const isDef = def.row === p.row && def.col === p.col;
       return {
@@ -457,7 +503,7 @@ export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOpt
         currentArrow: isDef ? currentClue.clue.arrow : null,
       };
     },
-    [currentClue, focused],
+    [currentClue, currentWordRange, focused],
   );
 
   // Inbound remote-update path. Mirrors the local-write side-effects on the

@@ -43,8 +43,15 @@ const WS_OPEN = 1;
 // types per the spec's subscribe description).
 const SERVER_EVENT_TYPES = new Set<GameEvent['type']>([
   'lobbyState', 'playerJoined', 'playerLeft', 'playerRenamed',
-  'gameStarted', 'cellUpdated', 'gameSolved', 'error',
+  'gameStarted', 'cellUpdated', 'presenceUpdated', 'gameSolved', 'error',
 ]);
+
+// Outbound `cellFocus` debounce window. ADR-0018 §"Presence" pins the
+// budget at 5 Hz / 200 ms — fast enough to feel live, slow enough that
+// a typist auto-advancing along a word collapses N focus changes into
+// one outbound frame. Single source of truth here so every consumer
+// benefits without re-implementing the debouncer per call site.
+const CELL_FOCUS_DEBOUNCE_MS = 200;
 
 export interface WebSocketGameClientOptions {
   // Base WebSocket URL, e.g. `wss://game.wordsparrow.io`. The lobby path
@@ -66,6 +73,14 @@ export function createWebSocketGameClient(
 
   let socket: WebSocketLike | null = null;
   let pendingJoin: { sessionId: SessionId; pseudonym: Pseudonym } | null = null;
+  // Debounced `cellFocus` state. We only ever send the *latest* focus the
+  // caller asked for in the trailing edge of the window, NOT each entry.
+  // A burst of N focus changes within 200 ms compresses to a single
+  // outbound frame carrying the last (row, column, direction) tuple.
+  let pendingCellFocus:
+    | { row: number | null; column: number | null; direction: 'across' | 'down' | null }
+    | null = null;
+  let cellFocusTimer: ReturnType<typeof setTimeout> | null = null;
   const subscribers = new Set<(event: GameEvent) => void>();
   // Transport-lifecycle subscribers (Wave H PR #17, `ConnectionBanner`).
   // `disconnected` is the initial state — `connect()` flips it to
@@ -185,10 +200,42 @@ export function createWebSocketGameClient(
       sendFrame({ type: 'cellUpdate', row, column, letter });
     },
 
+    cellFocus(row, column, direction) {
+      // Always overwrite the pending tuple — the trailing-edge flush
+      // sends the latest, never an intermediate. Schedule the flush only
+      // if no timer is active so a steady stream of changes resolves
+      // every 200 ms (rather than perpetually pushing the deadline).
+      pendingCellFocus = { row, column, direction };
+      if (cellFocusTimer !== null) return;
+      cellFocusTimer = setTimeout(() => {
+        cellFocusTimer = null;
+        const next = pendingCellFocus;
+        pendingCellFocus = null;
+        if (!next) return;
+        // Drop the frame when the socket is no longer open. The server's
+        // presence map is keyed on the live connection — a stale `cellFocus`
+        // from a half-closed transport would be discarded server-side too.
+        if (!socket || socket.readyState !== WS_OPEN) return;
+        socket.send(JSON.stringify({
+          type: 'cellFocus',
+          row: next.row,
+          column: next.column,
+          direction: next.direction,
+        } satisfies CellFocusFrame));
+      }, CELL_FOCUS_DEBOUNCE_MS);
+    },
+
     leaveLobby() { sendFrame({ type: 'leaveLobby' }); },
 
     disconnect() {
       const ws = socket;
+      // Always clear any pending debounced `cellFocus` so it does not
+      // fire on a closed socket — and to drop the dangling timer.
+      if (cellFocusTimer !== null) {
+        clearTimeout(cellFocusTimer);
+        cellFocusTimer = null;
+      }
+      pendingCellFocus = null;
       if (!ws) return;
       // Normal closure per RFC 6455. The server keeps the slot warm for
       // ~30s by sessionId so reconnects don't kick the player.
@@ -236,8 +283,14 @@ interface CellUpdateFrame {
   readonly column: number;
   readonly letter: Letter | null;
 }
+interface CellFocusFrame {
+  readonly type: 'cellFocus';
+  readonly row: number | null;
+  readonly column: number | null;
+  readonly direction: 'across' | 'down' | null;
+}
 interface LeaveLobbyFrame { readonly type: 'leaveLobby'; }
 
 type ClientToServerFrame =
   | JoinLobbyFrame | RenameSelfFrame | SetGridConfigFrame
-  | StartGameFrame | CellUpdateFrame | LeaveLobbyFrame;
+  | StartGameFrame | CellUpdateFrame | CellFocusFrame | LeaveLobbyFrame;
