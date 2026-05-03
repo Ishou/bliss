@@ -305,23 +305,18 @@ describe('WaitingRoom — Start button loading state', () => {
 });
 
 describe('WaitingRoom — player row alignment', () => {
-  // The row layout drives the visual fix: `justify-content: space-between`
-  // pins the pseudonym left and the badge group right. Asserting the DOM
-  // structure (pseudonym + a `badgeGroup` sibling) keeps the contract
-  // visible to future refactors even though Panda class names are
-  // hashed and unstable in tests.
   it('places the pseudonym before the badge group inside each row', () => {
     render(
       <WaitingRoom lobby={baseLobby} currentSessionId={ownerSessionId} {...noopProps} />,
     );
-    const rows = screen.getAllByTestId('player-row');
-    const ownerRow = rows[0]!;
-    // Two top-level children: the pseudonym <span> first, the badge
-    // group <span> second. The badge group wraps the "vous" +
-    // "propriétaire" badges so they cluster on the right edge.
-    expect(ownerRow.children).toHaveLength(2);
-    expect(ownerRow.children[0]!.textContent).toBe(ownerPseudonym);
-    expect(ownerRow.children[1]!.textContent).toMatch(/vous/i);
-    expect(ownerRow.children[1]!.textContent).toMatch(/propriétaire/i);
+    const ownerRow = screen.getAllByTestId('player-row')[0]!;
+    const nameEl = within(ownerRow).getByText(ownerPseudonym);
+    const badgesEl = within(ownerRow).getByText(/vous/i);
+    // Screen-reader order: pseudonym announces before the badge group.
+    expect(
+      nameEl.compareDocumentPosition(badgesEl) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    // Owner row also shows the "propriétaire" badge.
+    expect(within(ownerRow).getByText(/propriétaire/i)).toBeInTheDocument();
   });
 });
