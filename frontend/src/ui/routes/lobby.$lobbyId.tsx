@@ -44,9 +44,31 @@ const pageStyles = css({
   padding: 'lg', bg: 'bg', color: 'fg', fontFamily: 'body', textAlign: 'center',
 });
 
-const headingStyles = css({
-  fontSize: { base: 'xl', md: 'display' }, fontWeight: 'bold',
-  letterSpacing: '-0.02em', margin: 0,
+// Wordmark — mirrors `routes/index.tsx` so `/` and `/lobby/:lobbyId`
+// render the same brand title (ADR-0005 §6 amended). The lobby id stays
+// in the URL bar and surfaces via the WaitingRoom share-URL button, so
+// dropping it from the heading does not hide it from the player.
+const wordmarkStyles = css({
+  fontFamily: 'heading',
+  fontSize: { base: 'display', md: '2.8125rem' },
+  fontWeight: 'black',
+  letterSpacing: '-0.02em',
+  color: 'leaf.700',
+  margin: 0,
+});
+
+// "DÉMO" pill — same rendering as the home route (ADR-0005 §4).
+const demoBadgeStyles = css({
+  fontSize: 'xs',
+  fontWeight: 'bold',
+  letterSpacing: '0.08em',
+  textTransform: 'uppercase',
+  color: 'blossom.700',
+  bg: 'blossom.50',
+  paddingInline: 'sm',
+  paddingBlock: 'xs',
+  borderRadius: '9999px',
+  margin: 0,
 });
 
 const detailStyles = css({ fontSize: 'body', margin: 0, color: 'accent' });
@@ -201,7 +223,8 @@ function LobbyPage() {
     <>
       <ConnectionBanner state={connectionState} />
       <LobbyShell>
-        <h1 className={headingStyles}>Salon · {lobbyId}</h1>
+        <h1 lang="en" className={wordmarkStyles}>WordSparrow</h1>
+        <span className={demoBadgeStyles} aria-label="version démo">Démo</span>
         <p className={detailStyles}>
           {lobby.players.length} {lobby.players.length === 1 ? 'joueur' : 'joueurs'}
         </p>

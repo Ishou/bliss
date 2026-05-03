@@ -154,7 +154,7 @@ describe('Lobby route loader', () => {
   it('renders the lobby id and player count from the loader payload', async () => {
     const getLobby = vi.fn().mockResolvedValue(baseLobby);
     renderLobby({ lobbyClient: { getLobby } });
-    await screen.findByRole('heading', { name: /Salon · 7gQ2xK9p/ });
+    await screen.findByRole('heading', { name: /WordSparrow/ });
     expect(getLobby).toHaveBeenCalledTimes(1);
     expect(getLobby).toHaveBeenCalledWith(lobbyId);
     expect(screen.getByText('2 joueurs')).toBeInTheDocument();
@@ -167,7 +167,7 @@ describe('Lobby route loader', () => {
     renderLobby({ lobbyClient: { getLobby: vi.fn().mockRejectedValue(notFound) } });
     const alert = await screen.findByRole('alert');
     expect(alert).toHaveTextContent('Salon introuvable.');
-    expect(screen.queryByRole('heading', { name: /Salon · / })).toBeNull();
+    expect(screen.queryByRole('heading', { name: /WordSparrow/ })).toBeNull();
   });
 
   it('renders "Serveur indisponible" when the lobby client throws kind=upstream-unavailable', async () => {
@@ -184,14 +184,14 @@ describe('Lobby route WebSocket lifecycle', () => {
   it('connects to the GameClient on mount with the route lobby id', async () => {
     const gameClient = makeFakeGameClient();
     renderLobby({ gameClient });
-    await screen.findByRole('heading', { name: /Salon · 7gQ2xK9p/ });
+    await screen.findByRole('heading', { name: /WordSparrow/ });
     expect(gameClient.connectCalls).toEqual([{ lobbyId }]);
   });
 
   it('disconnects the GameClient on unmount', async () => {
     const gameClient = makeFakeGameClient();
     const { unmount } = renderLobby({ gameClient });
-    await screen.findByRole('heading', { name: /Salon · 7gQ2xK9p/ });
+    await screen.findByRole('heading', { name: /WordSparrow/ });
     expect(gameClient.disconnectCalls.count).toBe(0);
     unmount();
     expect(gameClient.disconnectCalls.count).toBe(1);
@@ -210,7 +210,7 @@ describe('Lobby route applyEvent reducer', () => {
   it('appends a new player and updates the count on playerJoined', async () => {
     const gameClient = makeFakeGameClient();
     renderLobby({ gameClient });
-    await screen.findByRole('heading', { name: /Salon · 7gQ2xK9p/ });
+    await screen.findByRole('heading', { name: /WordSparrow/ });
     expect(screen.getByText('2 joueurs')).toBeInTheDocument();
 
     act(() => {
@@ -228,7 +228,7 @@ describe('Lobby route applyEvent reducer', () => {
   it('removes the player and decrements the count on playerLeft', async () => {
     const gameClient = makeFakeGameClient();
     renderLobby({ gameClient });
-    await screen.findByRole('heading', { name: /Salon · 7gQ2xK9p/ });
+    await screen.findByRole('heading', { name: /WordSparrow/ });
     expect(screen.getByText('2 joueurs')).toBeInTheDocument();
 
     act(() => {
@@ -245,7 +245,7 @@ describe('Lobby route applyEvent reducer', () => {
     // unchanged membership semantics.
     const gameClient = makeFakeGameClient();
     renderLobby({ gameClient });
-    await screen.findByRole('heading', { name: /Salon · 7gQ2xK9p/ });
+    await screen.findByRole('heading', { name: /WordSparrow/ });
 
     act(() => {
       gameClient.dispatch({
@@ -262,7 +262,7 @@ describe('Lobby route applyEvent reducer', () => {
   it('keeps state unchanged when playerJoined repeats an existing sessionId (dedupe guard)', async () => {
     const gameClient = makeFakeGameClient();
     renderLobby({ gameClient });
-    await screen.findByRole('heading', { name: /Salon · 7gQ2xK9p/ });
+    await screen.findByRole('heading', { name: /WordSparrow/ });
     expect(screen.getByText('2 joueurs')).toBeInTheDocument();
 
     // Re-dispatch a `playerJoined` for a sessionId already in the lobby:
@@ -283,7 +283,7 @@ describe('Lobby route applyEvent reducer', () => {
   it('replaces the entire snapshot on lobbyState', async () => {
     const gameClient = makeFakeGameClient();
     renderLobby({ gameClient });
-    await screen.findByRole('heading', { name: /Salon · 7gQ2xK9p/ });
+    await screen.findByRole('heading', { name: /WordSparrow/ });
     expect(screen.getByText('2 joueurs')).toBeInTheDocument();
 
     act(() => {
@@ -315,7 +315,7 @@ describe('Lobby route applyEvent reducer', () => {
   it('detaches the subscriber on unmount so events no longer mutate state', async () => {
     const gameClient = makeFakeGameClient();
     const { unmount } = renderLobby({ gameClient });
-    await screen.findByRole('heading', { name: /Salon · 7gQ2xK9p/ });
+    await screen.findByRole('heading', { name: /WordSparrow/ });
     expect(gameClient.subscriberCount()).toBe(1);
 
     unmount();
@@ -364,7 +364,7 @@ describe('Lobby route Wave H integration', () => {
   it('mounts WaitingRoom in WAITING state and fires sendStartGame on Start click', async () => {
     const gameClient = makeFakeGameClient();
     renderLobby({ gameClient });
-    await screen.findByRole('heading', { name: /Salon · 7gQ2xK9p/ });
+    await screen.findByRole('heading', { name: /WordSparrow/ });
 
     // Owner is the current session (baseLobby.ownerSessionId === sessionId)
     // and there are 2 players, so the Start button is enabled.
@@ -378,7 +378,7 @@ describe('Lobby route Wave H integration', () => {
   it('forwards onSetGridConfig clicks to gameClient.setGridConfig with both axes', async () => {
     const gameClient = makeFakeGameClient();
     renderLobby({ gameClient });
-    await screen.findByRole('heading', { name: /Salon · 7gQ2xK9p/ });
+    await screen.findByRole('heading', { name: /WordSparrow/ });
 
     // The square-only picker emits (n, n). 9×9 isn't the current
     // gridConfig (which is 7×7), so clicking it triggers a write.
@@ -392,7 +392,7 @@ describe('Lobby route Wave H integration', () => {
     const gameClient = makeFakeGameClient();
     const setPseudonymSpy = vi.fn();
     renderLobby({ gameClient, setPseudonym: setPseudonymSpy });
-    await screen.findByRole('heading', { name: /Salon · 7gQ2xK9p/ });
+    await screen.findByRole('heading', { name: /WordSparrow/ });
 
     // The pseudonym editor shows the current name as a button; click
     // reveals the input.
@@ -416,7 +416,7 @@ describe('Lobby route Wave H integration', () => {
     });
     const gameClient = makeFakeGameClient();
     renderLobby({ gameClient });
-    await screen.findByRole('heading', { name: /Salon · 7gQ2xK9p/ });
+    await screen.findByRole('heading', { name: /WordSparrow/ });
 
     fireEvent.click(screen.getByRole('button', { name: /Copier le lien/i }));
 
@@ -433,7 +433,7 @@ describe('Lobby route Wave H integration', () => {
   it('unmounts WaitingRoom and mounts Grid + Timer on gameStarted', async () => {
     const gameClient = makeFakeGameClient();
     const { container } = renderLobby({ gameClient });
-    await screen.findByRole('heading', { name: /Salon · 7gQ2xK9p/ });
+    await screen.findByRole('heading', { name: /WordSparrow/ });
     // Sanity: WaitingRoom present.
     expect(screen.queryByRole('button', { name: /Démarrer la partie/i })).not.toBeNull();
 
@@ -458,7 +458,7 @@ describe('Lobby route Wave H integration', () => {
   it('freezes the Timer and opens EndGameModal on gameSolved', async () => {
     const gameClient = makeFakeGameClient();
     const { container } = renderLobby({ gameClient });
-    await screen.findByRole('heading', { name: /Salon · 7gQ2xK9p/ });
+    await screen.findByRole('heading', { name: /WordSparrow/ });
 
     act(() => {
       gameClient.dispatch({
@@ -486,7 +486,7 @@ describe('Lobby route Wave H integration', () => {
   it('dismisses the EndGameModal on Fermer without leaving the page', async () => {
     const gameClient = makeFakeGameClient();
     renderLobby({ gameClient });
-    await screen.findByRole('heading', { name: /Salon · 7gQ2xK9p/ });
+    await screen.findByRole('heading', { name: /WordSparrow/ });
     act(() => {
       gameClient.dispatch({
         type: 'gameStarted',
@@ -502,13 +502,13 @@ describe('Lobby route Wave H integration', () => {
     fireEvent.click(screen.getByTestId('end-game-modal-close'));
     expect(screen.queryByTestId('end-game-modal')).toBeNull();
     // Heading is still visible — modal close did not navigate away.
-    expect(screen.getByRole('heading', { name: /Salon · 7gQ2xK9p/ })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /WordSparrow/ })).toBeInTheDocument();
   });
 
   it('renders the ConnectionBanner only while the connection is unhealthy', async () => {
     const gameClient = makeFakeGameClient();
     renderLobby({ gameClient });
-    await screen.findByRole('heading', { name: /Salon · 7gQ2xK9p/ });
+    await screen.findByRole('heading', { name: /WordSparrow/ });
 
     // Initial state is `connecting` so the banner is visible.
     expect(screen.queryByTestId('connection-banner')).not.toBeNull();
@@ -533,7 +533,7 @@ describe('Lobby route Wave H integration', () => {
   it('renders the player roster during IN_PROGRESS with vous + propriétaire badges on the right rows', async () => {
     const gameClient = makeFakeGameClient();
     renderLobby({ gameClient });
-    await screen.findByRole('heading', { name: /Salon · 7gQ2xK9p/ });
+    await screen.findByRole('heading', { name: /WordSparrow/ });
     act(() => {
       gameClient.dispatch({
         type: 'gameStarted',
@@ -563,7 +563,7 @@ describe('Lobby route Wave H integration', () => {
   it('updates the roster on playerJoined / playerLeft fired during IN_PROGRESS', async () => {
     const gameClient = makeFakeGameClient();
     renderLobby({ gameClient });
-    await screen.findByRole('heading', { name: /Salon · 7gQ2xK9p/ });
+    await screen.findByRole('heading', { name: /WordSparrow/ });
     act(() => {
       gameClient.dispatch({
         type: 'gameStarted',
@@ -601,7 +601,7 @@ describe('Lobby route Wave H integration', () => {
     // `entry` is local player input — never the wire's letter slot.
     const gameClient = makeFakeGameClient();
     const { container } = renderLobby({ gameClient });
-    await screen.findByRole('heading', { name: /Salon · 7gQ2xK9p/ });
+    await screen.findByRole('heading', { name: /WordSparrow/ });
 
     const puzzleWithLeak: GamePuzzle = {
       ...buildGamePuzzle(),
@@ -672,7 +672,7 @@ describe('Lobby route Wave H integration', () => {
       },
     };
     const { container } = renderLobby({ gameClient, initialLobby: inProgressLobby });
-    await screen.findByRole('heading', { name: /Salon · 7gQ2xK9p/ });
+    await screen.findByRole('heading', { name: /WordSparrow/ });
 
     const cellA = container.querySelector<HTMLInputElement>(
       '[data-cell-kind="letter"][data-row="0"][data-col="1"]',
@@ -696,7 +696,7 @@ describe('Lobby route Wave H integration', () => {
   it('renders the current-clue panel placeholder beside the grid on gameStarted', async () => {
     const gameClient = makeFakeGameClient();
     const { container } = renderLobby({ gameClient });
-    await screen.findByRole('heading', { name: /Salon · 7gQ2xK9p/ });
+    await screen.findByRole('heading', { name: /WordSparrow/ });
     act(() => {
       gameClient.dispatch({
         type: 'gameStarted',
@@ -715,7 +715,7 @@ describe('Lobby route Wave H integration', () => {
   it('forwards a typed letter to gameClient.cellUpdate with row/column/letter', async () => {
     const gameClient = makeFakeGameClient();
     const { container } = renderLobby({ gameClient });
-    await screen.findByRole('heading', { name: /Salon · 7gQ2xK9p/ });
+    await screen.findByRole('heading', { name: /WordSparrow/ });
     act(() => {
       gameClient.dispatch({
         type: 'gameStarted',
