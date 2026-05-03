@@ -2,6 +2,7 @@
 // Sub-commands: import-words (PR2), generate-clues (PR3), export-words (PR4 — ADR-0013 §7, §8).
 package com.bliss.grid.worker
 
+import com.bliss.grid.worker.clues.DeriveSynonymCluesCommand
 import com.bliss.grid.worker.clues.GenerateCluesCommand
 import com.bliss.grid.worker.dbnary.IngestDbnaryCommand
 import com.bliss.grid.worker.exporter.ExportWordsCommand
@@ -23,6 +24,7 @@ fun main(args: Array<String>) =
             ImportGrammalecteCommand(),
             ImportFrequenciesCommand(),
             IngestDbnaryCommand(),
+            DeriveSynonymCluesCommand(),
             GenerateCluesCommand(),
             ExportWordsCommand(),
         ).main(args)
