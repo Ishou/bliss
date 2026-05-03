@@ -2,6 +2,7 @@ import { render, fireEvent, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { Cell, Puzzle } from '@/domain';
 import { Grid } from '@/ui/components/grid';
+import { useGridNavigation } from '@/ui/components/grid/useGridNavigation';
 
 // Inline test fixture (per workstream guidance, do not import the
 // shared SAMPLE_PUZZLE — the parallel sample-coverage workstream is
@@ -586,5 +587,182 @@ describe('scheduleVisibleScroll', () => {
     act(() => { cell.focus(); });
     act(() => { vi.advanceTimersByTime(300); });
     expect(scrollBy).not.toHaveBeenCalled();
+  });
+
+  it('keeps scrolling when the grid is at its rest scale (1) — keyboard avoidance still works', () => {
+    // Sanity sibling for the pinch-zoom guard below: at scale 1 (the
+    // steady state in solo mode and in multiplayer when the user has
+    // not pinched), the keyboard-avoidance scroll fires unchanged.
+    const scrollBy = vi.spyOn(window, 'scrollBy');
+    const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
+    const cell = inputAt(container, 3, 4)!;
+    vi.spyOn(cell, 'getBoundingClientRect').mockReturnValue({
+      top: window.innerHeight + 50,
+      bottom: window.innerHeight + 150,
+      left: 0, right: 100, width: 100, height: 100,
+      x: 0, y: window.innerHeight + 50, toJSON: () => ({}),
+    } as DOMRect);
+    act(() => { cell.focus(); });
+    act(() => { vi.advanceTimersByTime(300); });
+    expect(scrollBy).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not call scrollBy while the grid is pinch-zoomed (react-zoom-pan-pinch scale > 1)', () => {
+    // Regression for the iOS pinch-zoom-vs-focus bug. The library
+    // drives a JS-CSS transform — `window.visualViewport.scale`
+    // stays at 1 throughout the user's gesture, so the earlier
+    // `vv.scale > 1.01` guard never fired. Drive the library's
+    // actual scale to 2 via its public imperative `setTransform`
+    // ref API, force the cell off-screen so the un-zoomed code path
+    // WOULD scroll, and assert the new guard skips the scroll.
+    //
+    // Capture the wrapper ref via a small harness — `<Grid>` doesn't
+    // expose its internal ref, but we can mount our own
+    // `<TransformWrapper>` here, drive its scale, and pass the same
+    // `getZoomScale` pattern Grid uses into a direct
+    // `useGridNavigation` mount. That tests the hook contract
+    // (option `getZoomScale` short-circuits the scroll) without
+    // having to reach into Grid's private wiring.
+    const scrollBy = vi.spyOn(window, 'scrollBy');
+    let resolvedScale = 1;
+    const Harness = () => {
+      const nav = useGridNavigation(TEST_PUZZLE, {
+        getZoomScale: () => resolvedScale,
+      });
+      return (
+        <input
+          ref={nav.registerCellRef}
+          data-row="3"
+          data-col="4"
+          data-cell-kind="letter"
+          onFocus={nav.handleFocus}
+        />
+      );
+    };
+    const { container } = render(<Harness />);
+    const input = container.querySelector<HTMLInputElement>('input')!;
+    // Force a rect that would otherwise trigger scrollBy.
+    vi.spyOn(input, 'getBoundingClientRect').mockReturnValue({
+      top: window.innerHeight + 50,
+      bottom: window.innerHeight + 150,
+      left: 0, right: 100, width: 100, height: 100,
+      x: 0, y: window.innerHeight + 50, toJSON: () => ({}),
+    } as DOMRect);
+    resolvedScale = 2; // simulate post-pinch scale
+    act(() => { input.focus(); });
+    act(() => { vi.advanceTimersByTime(300); });
+    expect(scrollBy).not.toHaveBeenCalled();
+  });
+});
+
+describe('Grid keyboard-aware wrapper sizing', () => {
+  // Stash & restore visualViewport across tests — jsdom doesn't ship
+  // it, so we attach a stub and tear it down explicitly to keep this
+  // test from leaking into the others (mirrors PR #175's
+  // `onTestFinished` pattern in `current-clue-panel.test.tsx`).
+  let originalVV: VisualViewport | undefined;
+  let listeners: Map<string, Set<EventListener>>;
+  let stub: VisualViewport;
+
+  beforeEach(() => {
+    originalVV = window.visualViewport ?? undefined;
+    listeners = new Map();
+    stub = {
+      width: 400,
+      height: 800,
+      offsetTop: 0,
+      offsetLeft: 0,
+      pageTop: 0,
+      pageLeft: 0,
+      scale: 1,
+      addEventListener: ((type: string, fn: EventListener) => {
+        const set = listeners.get(type) ?? new Set();
+        set.add(fn);
+        listeners.set(type, set);
+      }) as VisualViewport['addEventListener'],
+      removeEventListener: ((type: string, fn: EventListener) => {
+        listeners.get(type)?.delete(fn);
+      }) as VisualViewport['removeEventListener'],
+      dispatchEvent: () => true,
+      onresize: null,
+      onscroll: null,
+    } as unknown as VisualViewport;
+    Object.defineProperty(window, 'visualViewport', {
+      configurable: true, writable: true, value: stub,
+    });
+  });
+
+  afterEach(() => {
+    if (originalVV === undefined) {
+      delete (window as { visualViewport?: VisualViewport }).visualViewport;
+    } else {
+      Object.defineProperty(window, 'visualViewport', {
+        configurable: true, writable: true, value: originalVV,
+      });
+    }
+    vi.restoreAllMocks();
+  });
+
+  const fire = (type: string) => {
+    listeners.get(type)?.forEach((fn) => fn(new Event(type)));
+  };
+
+  it('keeps the wrapper at its natural flow height when no keyboard is open', () => {
+    const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
+    const wrapperEl = container.querySelector<HTMLDivElement>('.react-transform-wrapper');
+    expect(wrapperEl).toBeTruthy();
+    // visualViewport.height === window.innerHeight ⇒ no keyboard
+    // detected ⇒ no maxHeight override ⇒ inline style.maxHeight is
+    // empty (falls through to the panda class which sets none).
+    expect(wrapperEl!.style.maxHeight).toBe('');
+  });
+
+  it('shrinks the wrapper max-height when the soft keyboard reduces visualViewport.height', () => {
+    const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
+    const wrapperEl = container.querySelector<HTMLDivElement>('.react-transform-wrapper');
+    expect(wrapperEl).toBeTruthy();
+    // Pin a deterministic getBoundingClientRect for the wrapper so
+    // the math doesn't depend on jsdom's default zero-rect.
+    vi.spyOn(wrapperEl as HTMLDivElement, 'getBoundingClientRect').mockReturnValue({
+      top: 200, bottom: 600, left: 0, right: 480, width: 480, height: 400,
+      x: 0, y: 200, toJSON: () => ({}),
+    } as DOMRect);
+    // Simulate the keyboard opening: visualViewport.height drops well
+    // below window.innerHeight (jsdom default 768).
+    (stub as { height: number }).height = 400;
+    act(() => { fire('resize'); });
+    // available = (offsetTop + height) - rect.top - WRAPPER_BOTTOM_MARGIN_PX
+    //           = (0 + 400) - 200 - 8 = 192
+    expect(wrapperEl!.style.maxHeight).toBe('192px');
+  });
+
+  it('clamps the max-height to the floor when available space goes negative (rect.top below keyboard top)', () => {
+    const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
+    const wrapperEl = container.querySelector<HTMLDivElement>('.react-transform-wrapper');
+    vi.spyOn(wrapperEl as HTMLDivElement, 'getBoundingClientRect').mockReturnValue({
+      top: 700, bottom: 1100, left: 0, right: 480, width: 480, height: 400,
+      x: 0, y: 700, toJSON: () => ({}),
+    } as DOMRect);
+    (stub as { height: number }).height = 400;
+    act(() => { fire('resize'); });
+    // available = 400 - 700 - 8 = -308 ⇒ clamped to MIN_WRAPPER_HEIGHT_PX (140).
+    expect(wrapperEl!.style.maxHeight).toBe('140px');
+  });
+
+  it('clears the override when the keyboard closes again', () => {
+    const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
+    const wrapperEl = container.querySelector<HTMLDivElement>('.react-transform-wrapper');
+    vi.spyOn(wrapperEl as HTMLDivElement, 'getBoundingClientRect').mockReturnValue({
+      top: 200, bottom: 600, left: 0, right: 480, width: 480, height: 400,
+      x: 0, y: 200, toJSON: () => ({}),
+    } as DOMRect);
+    (stub as { height: number }).height = 400;
+    act(() => { fire('resize'); });
+    expect(wrapperEl!.style.maxHeight).toBe('192px');
+    // Keyboard closes — visualViewport.height returns to layout
+    // viewport height. The effect re-runs and clears the override.
+    (stub as { height: number }).height = 768; // jsdom default innerHeight
+    act(() => { fire('resize'); });
+    expect(wrapperEl!.style.maxHeight).toBe('');
   });
 });

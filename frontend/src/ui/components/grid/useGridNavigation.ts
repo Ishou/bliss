@@ -185,6 +185,19 @@ export interface UseGridNavigationOptions {
     position: Position | null,
     direction: 'across' | 'down' | null,
   ) => void;
+  // Returns the current zoom scale of the grid's `react-zoom-pan-pinch`
+  // wrapper (1 = unzoomed). When `> 1.01`, `scheduleVisibleScroll`
+  // bails out: a zoomed-in user has explicitly taken control of the
+  // viewport and any auto-scroll-into-view fights the gesture. Read
+  // from `transformWrapperRef.current?.state.scale` at the call site —
+  // we accept a getter (not a value) because the library mutates its
+  // state object in place, so a snapshot taken at hook-options time
+  // would be stale. Solo callers wired without zoom can omit this and
+  // the guard becomes a no-op (scale defaults to 1). Note: an earlier
+  // attempt (PR #175) used `window.visualViewport.scale` instead, but
+  // the library drives a JS-CSS transform — `visualViewport.scale`
+  // stays at 1 throughout pinch, so the guard never fired.
+  readonly getZoomScale?: () => number;
 }
 
 export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOptions): GridNavigation {
@@ -201,6 +214,11 @@ export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOpt
   // mounting effect every render.
   const onFocusChangeRef = useRef(options?.onFocusChange);
   onFocusChangeRef.current = options?.onFocusChange;
+  // Zoom-scale getter. Stashed in a ref so callers passing an inline
+  // arrow (e.g. `() => wrapperRef.current?.state.scale ?? 1`) don't
+  // churn `scheduleVisibleScroll`'s identity on every render.
+  const getZoomScaleRef = useRef(options?.getZoomScale);
+  getZoomScaleRef.current = options?.getZoomScale;
   // Tracks the per-cell normalized (uppercase) value so handleInput can
   // detect same-letter no-ops. The browser overwrites target.value with the
   // raw IME character before handleInput fires, making a simple before/after
@@ -246,6 +264,18 @@ export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOpt
     scrollTimeoutRef.current = window.setTimeout(() => {
       scrollTimeoutRef.current = null;
       if (!input.isConnected) return;
+      // Skip the auto-scroll-into-view when the grid is pinch-zoomed.
+      // The user has explicitly taken control of the in-grid viewport
+      // (the library transforms the grid's content via JS-driven CSS
+      // transform); auto-scrolling now yanks the page out from under
+      // the cell they just zoomed to inspect. 1.01 (not strict 1.0)
+      // absorbs floating-point jitter — `react-zoom-pan-pinch` has
+      // been observed to leave `state.scale` at 1.0000000002 after
+      // bounds-snap. Keyboard-avoidance (the original reason this
+      // helper exists) is preserved: at scale === 1 (the steady state
+      // unless the user has actively pinched in) the guard is a no-op.
+      const zoomScale = getZoomScaleRef.current?.() ?? 1;
+      if (zoomScale > 1.01) return;
       const rect = input.getBoundingClientRect();
       const vv = window.visualViewport;
       const vvTop = vv?.offsetTop ?? 0;

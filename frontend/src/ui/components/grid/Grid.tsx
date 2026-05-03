@@ -1,5 +1,9 @@
-import { useEffect, useMemo, useRef } from 'react';
-import { TransformComponent, TransformWrapper } from 'react-zoom-pan-pinch';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  TransformComponent,
+  TransformWrapper,
+  type ReactZoomPanPinchContentRef,
+} from 'react-zoom-pan-pinch';
 import { css } from 'styled-system/css';
 import type { GameEvent, Unsubscribe } from '@/application/game';
 import type { Cell, Position, Puzzle } from '@/domain';
@@ -30,21 +34,47 @@ const gridContainer = css({
 // float above the top row cells aren't clipped.
 const gridFrame = css({ position: 'relative', width: '100%', overflow: 'visible' });
 
-// `transformWrapperStyle` makes the zoom-pan viewport behave like the old
-// raw `<div role="grid">` did: full available width, capped at 480px,
-// centered under the clue panel. The library's stylesheet defaults this
-// box to `width: fit-content`, which would collapse around `width: 100%`
-// children — we override here so the outer box drives the layout and the
-// grid inside fills it.
-// `touchAction: 'none'` scopes native-pinch suppression to this element only,
-// keeping native browser zoom available on the clue panel and page chrome
-// (required for WCAG 1.4.4 on mobile — pinch IS browser zoom on touch devices).
-const transformWrapperStyle = { width: '100%', maxWidth: '480px', margin: '0 auto', touchAction: 'none' as const };
+// Base inline style for the `TransformComponent` wrapper. Makes the
+// zoom-pan viewport behave like the old raw `<div role="grid">` did:
+// full available width, capped at 480px, centered under the clue panel.
+// The library's stylesheet defaults this box to `width: fit-content`,
+// which would collapse around `width: 100%` children — we override here
+// so the outer box drives the layout and the grid inside fills it.
+// `touchAction: 'none'` scopes native-pinch suppression to this element
+// only, keeping native browser zoom available on the clue panel and
+// page chrome (required for WCAG 1.4.4 on mobile — pinch IS browser
+// zoom on touch devices).
+//
+// `maxHeight` is layered on per render below: when the soft keyboard is
+// open we shrink the wrapper to fit above the keyboard, which lets the
+// player pan the grid up and reveal the rows that would otherwise sit
+// underneath the keyboard with no way to reach them (the library reads
+// `wrapperComponent.offsetHeight` for every pan/zoom op, so a smaller
+// wrapper produces panable bounds even at scale 1).
+const transformWrapperBaseStyle = {
+  width: '100%',
+  maxWidth: '480px',
+  margin: '0 auto',
+  touchAction: 'none' as const,
+};
 // `transformContentStyle.width: 100%` defeats the same library default on
 // the inner (transformed) plane so the grid actually spans the wrapper.
 // The library composes its `transform: translate3d() scale()` on top of
 // any inline style we pass, so width here is preserved.
 const transformContentStyle = { width: '100%' };
+
+// Lower bound on the keyboard-aware wrapper max-height. Below this
+// (a one-row peek into a 5+ row grid) the grid is too cramped to be
+// usable, and any further shrink is more annoying than the alternative
+// of letting the bottom of the grid sit briefly behind the keyboard.
+// Picked conservatively to fit roughly two cells (~2 × 64 px) plus a
+// hairline of border.
+const MIN_WRAPPER_HEIGHT_PX = 140;
+// Bottom-of-keyboard safety margin so the last visible row doesn't
+// sit flush with the keyboard's accessory bar. iOS / Android keyboard
+// edges report inconsistent visualViewport heights at the boundary;
+// 8 px keeps the cell visually clear.
+const WRAPPER_BOTTOM_MARGIN_PX = 8;
 
 const rowStyles = css({ display: 'contents' });
 
@@ -152,9 +182,28 @@ export function Grid({
     [puzzle.height, puzzle.width],
   );
 
+  // Ref to the `react-zoom-pan-pinch` instance. Two separate uses:
+  //   1. `useGridNavigation`'s `getZoomScale` — keyboard-avoidance
+  //      auto-scroll skips when the user has zoomed in (`state.scale >
+  //      1.01`), so the auto-scroll doesn't fight a pinch gesture.
+  //   2. The viewport-aware wrapper sizing below — the wrapper's
+  //      `getBoundingClientRect()` is read on every visual-viewport
+  //      resize to compute available height above the soft keyboard.
+  // The ref is exposed as `{ instance, state, ...handlers }` per the
+  // library's `useImperativeHandle`. `state` aliases the live mutable
+  // state object, so reading `.scale` after the user pinches always
+  // returns the post-gesture value (no React snapshot in the path).
+  const transformWrapperRef = useRef<ReactZoomPanPinchContentRef | null>(null);
+
+  const getZoomScale = useCallback(
+    () => transformWrapperRef.current?.state.scale ?? 1,
+    [],
+  );
+
   const nav = useGridNavigation(puzzle, {
     onCellChange,
     onFocusChange: onLocalFocusChange,
+    getZoomScale,
   });
 
   // Ref for the positioned `gridFrame` div — the `PresenceOverlay`
@@ -162,6 +211,67 @@ export function Grid({
   // its layer stays pinned to the same pixel bounds as the grid even
   // under pinch-zoom or layout shifts.
   const gridFrameRef = useRef<HTMLDivElement | null>(null);
+
+  // Soft-keyboard-aware wrapper max-height. When the on-screen keyboard
+  // shrinks `window.visualViewport`, the wrapper's natural full-flow
+  // height stays the same — but the bottom rows now sit underneath the
+  // keyboard with no way for the player to reach them (at scale 1 the
+  // library's bounds collapse to zero, so panning doesn't help). We
+  // measure the wrapper's distance from the visible viewport top and
+  // shrink its `maxHeight` to fit the remaining space; that's enough
+  // to make the library's `wrapperComponent.offsetHeight`-based bounds
+  // give the player room to pan up. `null` = no override (sticky
+  // default — the wrapper takes its natural flow height).
+  const [wrapperMaxHeightPx, setWrapperMaxHeightPx] = useState<number | null>(null);
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.visualViewport) return;
+    const vv = window.visualViewport;
+    const update = () => {
+      // The library exposes the wrapper element via the imperative ref's
+      // `instance.wrapperComponent`. Reading it lazily here (vs caching
+      // a separate ref) avoids racing the library's mount: the ref's
+      // `instance` field is set synchronously on mount, but
+      // `wrapperComponent` is populated only after the inner
+      // `TransformComponent` has run its effect.
+      const wrapper = transformWrapperRef.current?.instance.wrapperComponent;
+      if (!wrapper) return;
+      // No keyboard ⇒ visual viewport ≈ layout viewport; clear the
+      // override so the wrapper takes its natural flow height. 24 px
+      // tolerance absorbs URL-bar collapse and rotation transients
+      // that briefly shrink visualViewport without a keyboard open.
+      const keyboardOpen = vv.height < window.innerHeight - 24;
+      if (!keyboardOpen) {
+        setWrapperMaxHeightPx(null);
+        return;
+      }
+      const rect = wrapper.getBoundingClientRect();
+      // Available height = visual viewport bottom (in layout-px) minus
+      // the wrapper's top, minus a small breathing room. `vv.offsetTop
+      // + vv.height` is the visual-viewport bottom edge expressed in
+      // layout-px coordinates (the same coords `rect.top` lives in).
+      const visibleBottom = vv.offsetTop + vv.height;
+      const available = visibleBottom - rect.top - WRAPPER_BOTTOM_MARGIN_PX;
+      setWrapperMaxHeightPx(Math.max(MIN_WRAPPER_HEIGHT_PX, available));
+    };
+    update();
+    // `resize` fires when the keyboard opens / closes; `scroll` fires
+    // as the user pans the visual viewport (e.g. native zoom on the
+    // page chrome). Both can shift the wrapper's `rect.top`, so both
+    // re-trigger the measurement. Listeners are passive by spec.
+    vv.addEventListener('resize', update);
+    vv.addEventListener('scroll', update);
+    return () => {
+      vv.removeEventListener('resize', update);
+      vv.removeEventListener('scroll', update);
+    };
+  }, []);
+  const transformWrapperStyle = useMemo(
+    () =>
+      wrapperMaxHeightPx === null
+        ? transformWrapperBaseStyle
+        : { ...transformWrapperBaseStyle, maxHeight: `${wrapperMaxHeightPx}px` },
+    [wrapperMaxHeightPx],
+  );
 
   // Wire the inbound multiplayer path. Stable across renders because the
   // hook returns a stable `applyRemoteCellUpdate` callback and we depend
@@ -236,6 +346,7 @@ export function Grid({
           the mouse handlers.
       */}
       <TransformWrapper
+        ref={transformWrapperRef}
         minScale={1}
         maxScale={4}
         initialScale={1}
