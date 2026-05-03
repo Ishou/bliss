@@ -132,15 +132,16 @@ function buildLookup(puzzle: Puzzle): ClueLookup {
       allClues.push(clue);
     }
   }
-  // Deterministic ordering for Tab / Enter cycling: across first, then
-  // down; within each group, by starting cell (row, col). Stable sort
-  // means same-axis clues sharing a start cell (rare but possible —
-  // see ADR-0005 §3a's stacked variants) keep the source order from
-  // `def.clues`.
+  // Deterministic ordering for Tab / Enter cycling: by starting cell in
+  // row-major order (row, then col). Across before down as a stable
+  // tiebreak when two clues share a start cell (unusual in standard
+  // grid geometry, but a safe default).
   const orderedClues: readonly Clue[] = allClues.slice().sort((a, b) => {
-    if (a.direction !== b.direction) return a.direction === 'across' ? -1 : 1;
     const ar = a.cells[0].position, br = b.cells[0].position;
-    return ar.row - br.row || ar.col - br.col;
+    if (ar.row !== br.row) return ar.row - br.row;
+    if (ar.col !== br.col) return ar.col - br.col;
+    if (a.direction !== b.direction) return a.direction === 'across' ? -1 : 1;
+    return 0;
   });
   return {
     cellAt: (r, c) => byPos.get(key({ row: r, col: c })) ?? null,

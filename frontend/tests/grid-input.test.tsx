@@ -290,8 +290,11 @@ describe('Grid keyboard interactions', () => {
 });
 
 // Tab / Enter cycle across the puzzle's clues in deterministic order:
-// across-then-down, sorted by starting (row, col). For TEST_PUZZLE the
-// order is across-1 [(0,1)] → across-2 [(1,1)..(1,4)] → down-1 [(1,2),(2,2),(3,2)].
+// by starting (row, col); two clues sharing a start cell (the
+// mots-fléchés stacked-clue idiom) have across before down. For
+// TEST_PUZZLE this happens to coincide with grouping-by-direction
+// because no two clues share a row — see the spatial-interleaving
+// test below for a puzzle that exercises the difference.
 // Mobile keyboards' "Next" button maps to Enter, so the same handler
 // serves the `enterKeyHint="next"` affordance for soft keyboards. Both keys
 // wrap at the ends of the list; Shift reverses the direction of travel.
@@ -388,6 +391,56 @@ describe('Grid keyboard interactions — Tab / Enter clue cycling', () => {
     // fireEvent.keyDown returns false when any handler called preventDefault.
     const notDefaulted = fireEvent.keyDown(start, { key: 'Tab' });
     expect(notDefaulted).toBe(false);
+  });
+
+  // Regression for the by-direction → by-position sort flip. Three-clue
+  // puzzle whose old / new orderings actually diverge:
+  //   across-A  start (0,1)  cells (0,1)..(0,3)   from a stacked def at (0,0)
+  //   down-1    start (1,0)  cells (1,0),(2,0)    same stacked def
+  //   across-B  start (2,2)  cells (2,2)..(2,3)   from def at (2,1)
+  // Old ordering (group across then down): A → B → down-1.
+  // New ordering (row,col then across-before-down at same start):
+  //   A (0,1) → down-1 (1,0) → B (2,2).
+  it('cycle interleaves across and down by spatial position, not by direction', () => {
+    const SPATIAL: Puzzle = {
+      id: 'spatial-test', title: 'spatial test', language: 'fr',
+      width: 4, height: 3,
+      cells: [
+        // Stacked def at (0,0): across at (0,1)..(0,3) and down at (1,0)..(2,0).
+        {
+          kind: 'definition', position: { row: 0, col: 0 },
+          clues: [
+            { text: 'A', arrow: 'right' },     // across-A: (0,1)..
+            { text: 'D', arrow: 'down' },       // down-1:  (1,0)..
+          ],
+        },
+        { kind: 'letter', position: { row: 0, col: 1 }, entry: '' },
+        { kind: 'letter', position: { row: 0, col: 2 }, entry: '' },
+        { kind: 'letter', position: { row: 0, col: 3 }, entry: '' },
+        { kind: 'letter', position: { row: 1, col: 0 }, entry: '' },
+        { kind: 'letter', position: { row: 1, col: 1 }, entry: '' },
+        { kind: 'letter', position: { row: 1, col: 2 }, entry: '' },
+        { kind: 'letter', position: { row: 1, col: 3 }, entry: '' },
+        { kind: 'letter', position: { row: 2, col: 0 }, entry: '' },
+        // def at (2,1): across-B at (2,2)..(2,3).
+        { kind: 'definition', position: { row: 2, col: 1 }, clues: [{ text: 'B', arrow: 'right' }] },
+        { kind: 'letter', position: { row: 2, col: 2 }, entry: '' },
+        { kind: 'letter', position: { row: 2, col: 3 }, entry: '' },
+      ],
+    };
+    const { container } = render(<Grid puzzle={SPATIAL} />);
+    // Click the first cell of across-A → (0,1).
+    const startA = inputAt(container, 0, 1)!;
+    click(startA);
+    // Tab: by-position cycle expects down-1 next, NOT across-B.
+    fireEvent.keyDown(startA, { key: 'Tab' });
+    expect(document.activeElement).toBe(inputAt(container, 1, 0));
+    // Tab again: across-B.
+    fireEvent.keyDown(inputAt(container, 1, 0)!, { key: 'Tab' });
+    expect(document.activeElement).toBe(inputAt(container, 2, 2));
+    // Tab once more: wraps to across-A.
+    fireEvent.keyDown(inputAt(container, 2, 2)!, { key: 'Tab' });
+    expect(document.activeElement).toBe(inputAt(container, 0, 1));
   });
 });
 
