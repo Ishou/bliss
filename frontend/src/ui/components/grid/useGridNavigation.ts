@@ -64,7 +64,7 @@ export interface GridNavigation {
 //   the cycle traverses every across answer top-to-bottom, then every
 //   down answer top-to-bottom, then wraps. Mobile keyboards' "Next"
 //   button maps to Enter, so the same path serves the
-//   `enterKeyHint="next"` affordance added in PR #164.
+//   `enterKeyHint="next"` affordance for soft keyboards.
 
 const key = (p: Position) => `${p.row},${p.col}`;
 const same = (a: Position | null, b: Position | null) =>

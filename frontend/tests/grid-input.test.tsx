@@ -293,7 +293,7 @@ describe('Grid keyboard interactions', () => {
 // across-then-down, sorted by starting (row, col). For TEST_PUZZLE the
 // order is across-1 [(0,1)] → across-2 [(1,1)..(1,4)] → down-1 [(1,2),(2,2),(3,2)].
 // Mobile keyboards' "Next" button maps to Enter, so the same handler
-// serves the `enterKeyHint="next"` affordance from PR #164. Both keys
+// serves the `enterKeyHint="next"` affordance for soft keyboards. Both keys
 // wrap at the ends of the list; Shift reverses the direction of travel.
 describe('Grid keyboard interactions — Tab / Enter clue cycling', () => {
   it('Tab from a focused cell moves focus to the first cell of the next word', () => {
