@@ -22,7 +22,10 @@ import java.util.concurrent.ConcurrentHashMap
  * per-lobby [perLobbyLock] guards the *cleanup race* between the last
  * `unregister` and a concurrent `register` — without it, a registering
  * coroutine could observe an empty set that is then removed from the outer
- * map, leaving the new registration orphaned.
+ * map, leaving the new registration orphaned. The same lock also serialises
+ * mutations to [sessionToSessionId] / [sessionIdToSessions] so the
+ * "is this player still connected?" predicate ([isSessionConnected]) can be
+ * answered atomically against an outgoing `unregister`.
  */
 class SessionManager(
     private val log: Logger = LoggerFactory.getLogger(SessionManager::class.java),
@@ -30,6 +33,16 @@ class SessionManager(
 ) {
     private val connections = ConcurrentHashMap<LobbyId, MutableSet<DefaultWebSocketServerSession>>()
     private val perLobbyLock = ConcurrentHashMap<LobbyId, Any>()
+
+    // Per-lobby reverse index: which sessionId is each connected socket
+    // identified as? Populated by [bindSession] after a successful joinLobby
+    // and cleared by [unregister]. The route uses this to answer "did the
+    // disconnect drop the LAST socket for this player, or is another tab of
+    // the same browser still attached?" — the multi-tab desync that PR #lobby-state-sync
+    // fixes hinged on broadcasting `playerLeft` even when another tab still
+    // held the slot.
+    private val sessionToSessionId = ConcurrentHashMap<LobbyId, MutableMap<DefaultWebSocketServerSession, String>>()
+    private val sessionIdToSessions = ConcurrentHashMap<LobbyId, MutableMap<String, MutableSet<DefaultWebSocketServerSession>>>()
 
     private fun lockFor(lobbyId: LobbyId): Any = perLobbyLock.computeIfAbsent(lobbyId) { Any() }
 
@@ -52,21 +65,75 @@ class SessionManager(
     /**
      * Removes [session] from the lobby's session set. If the lobby's set
      * becomes empty, the lobby entry is removed from both maps to keep
-     * memory bounded.
+     * memory bounded. Returns the sessionId previously bound to [session]
+     * via [bindSession] (or `null` if no joinLobby had been processed for
+     * this socket yet) so callers can decide whether the disconnect
+     * ended the last socket for that player.
      */
     fun unregister(
         lobbyId: LobbyId,
         session: DefaultWebSocketServerSession,
-    ) {
+    ): String? =
         synchronized(lockFor(lobbyId)) {
-            val set = connections[lobbyId] ?: return
+            val boundSessionId = sessionToSessionId[lobbyId]?.remove(session)
+            if (boundSessionId != null) {
+                val byId = sessionIdToSessions[lobbyId]
+                val sockets = byId?.get(boundSessionId)
+                if (sockets != null) {
+                    sockets.remove(session)
+                    if (sockets.isEmpty()) byId.remove(boundSessionId)
+                }
+                if (byId != null && byId.isEmpty()) sessionIdToSessions.remove(lobbyId)
+                if (sessionToSessionId[lobbyId]?.isEmpty() == true) sessionToSessionId.remove(lobbyId)
+            }
+            val set = connections[lobbyId] ?: return@synchronized boundSessionId
             set.remove(session)
             if (set.isEmpty()) {
                 connections.remove(lobbyId)
                 perLobbyLock.remove(lobbyId)
             }
+            boundSessionId
+        }
+
+    /**
+     * Records that [session] is the transport for the player identified by
+     * [sessionId]. Idempotent: re-binding the same pair is a no-op. A
+     * second [bindSession] call on the same [session] with a different
+     * [sessionId] replaces the prior binding (the route never does this
+     * today, but the behavior is documented for future-proofing).
+     */
+    fun bindSession(
+        lobbyId: LobbyId,
+        session: DefaultWebSocketServerSession,
+        sessionId: String,
+    ) {
+        synchronized(lockFor(lobbyId)) {
+            val byId = sessionIdToSessions.computeIfAbsent(lobbyId) { ConcurrentHashMap() }
+            val bySession = sessionToSessionId.computeIfAbsent(lobbyId) { ConcurrentHashMap() }
+            val previous = bySession.put(session, sessionId)
+            if (previous != null && previous != sessionId) {
+                byId[previous]?.let { sockets ->
+                    sockets.remove(session)
+                    if (sockets.isEmpty()) byId.remove(previous)
+                }
+            }
+            byId.computeIfAbsent(sessionId) { Collections.newSetFromMap(ConcurrentHashMap()) }.add(session)
         }
     }
+
+    /**
+     * True when at least one currently-registered socket in [lobbyId] is
+     * bound to [sessionId]. Drives the route's reconnect-grace decision:
+     * if a tab closes but another tab of the same browser is still
+     * attached, no `playerLeft` broadcast (and no slot release) is owed.
+     */
+    fun isSessionConnected(
+        lobbyId: LobbyId,
+        sessionId: String,
+    ): Boolean =
+        synchronized(lockFor(lobbyId)) {
+            sessionIdToSessions[lobbyId]?.get(sessionId)?.isNotEmpty() == true
+        }
 
     /**
      * Sends [frame] to every session currently registered for [lobbyId].
