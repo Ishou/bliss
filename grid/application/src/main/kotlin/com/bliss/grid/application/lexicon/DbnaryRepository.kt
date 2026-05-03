@@ -1,8 +1,10 @@
-// Domain port for the DBnary scratch tables (dbnary_words / dbnary_senses /
+// Application port for the DBnary scratch tables (dbnary_words / dbnary_senses /
 // dbnary_synonyms). Per ADR-0023 these are offline-pipeline scratch space —
 // neither readable from API code paths nor exported to the product surface.
 // The JDBC adapter lives in infrastructure.
-package com.bliss.grid.domain.lexicon
+package com.bliss.grid.application.lexicon
+
+import com.bliss.grid.domain.lexicon.DbnaryWord
 
 interface DbnaryRepository {
     /**

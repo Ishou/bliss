@@ -7,6 +7,7 @@ kotlin {
 }
 
 dependencies {
+    implementation(project(":grid:application"))
     implementation(project(":grid:domain"))
 
     // Postgres pool + migrations — shared between grid-api and grid-worker.

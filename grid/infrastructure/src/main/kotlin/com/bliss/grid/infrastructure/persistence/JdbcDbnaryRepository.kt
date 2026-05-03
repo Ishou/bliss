@@ -1,9 +1,9 @@
 package com.bliss.grid.infrastructure.persistence
 
-import com.bliss.grid.domain.lexicon.DbnaryRepository
+import com.bliss.grid.application.lexicon.DbnaryRepository
+import com.bliss.grid.application.lexicon.UpsertReport
 import com.bliss.grid.domain.lexicon.DbnarySense
 import com.bliss.grid.domain.lexicon.DbnaryWord
-import com.bliss.grid.domain.lexicon.UpsertReport
 import java.sql.Connection
 import java.util.UUID
 import javax.sql.DataSource
