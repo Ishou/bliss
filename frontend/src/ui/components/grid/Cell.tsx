@@ -330,7 +330,21 @@ export const LetterCellView = memo(function LetterCellView({
         inputMode="text"
         autoComplete="off"
         autoCapitalize="characters"
+        autoCorrect="off"
         spellCheck={false}
+        enterKeyHint="next"
+        // Password-manager + autofill ignore hints. The crossword cells
+        // are not credentials / addresses / cards / phone-numbers, but
+        // mobile browsers + extensions surface password-key, credit-card,
+        // GPS-pin, and contact icons in their suggestion bar / overlay
+        // because they fingerprint the surrounding form context. These
+        // attributes ask each major manager to ignore the field.
+        // - 1Password: data-1p-ignore
+        // - LastPass:  data-lpignore
+        // - Bitwarden / Dashlane: data-form-type="other"
+        data-1p-ignore=""
+        data-lpignore="true"
+        data-form-type="other"
         aria-label={ariaLabel}
         defaultValue={cell.entry}
         className={letterInput}
