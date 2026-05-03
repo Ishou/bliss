@@ -18,6 +18,9 @@ import sys
 from pathlib import Path
 
 # Tag glossary derived from grammalecte's Étiquettes column.
+# Possessive / demonstrative / indefinite determiners are surfaced under their
+# school-grammar names ("adjectif possessif", "adjectif démonstratif", ...) which
+# is the terminology mots-fléchés clues use.
 POS_FR = {
     "nom": "nom",
     "adj": "adjectif",
@@ -27,8 +30,21 @@ POS_FR = {
     "v2": "verbe",
     "v3": "verbe",
     "prep": "préposition",
+    "detpos": "adjectif possessif",
+    "detdem": "adjectif démonstratif",
+    "detind": "adjectif indéfini",
+    "detneg": "adjectif négatif",
+    "detnum": "adjectif numéral",
+    "detexc": "adjectif exclamatif",
+    "detint": "adjectif interrogatif",
     "det": "déterminant",
     "pro": "pronom",
+    "propos": "pronom possessif",
+    "prodem": "pronom démonstratif",
+    "proper": "pronom personnel",
+    "proind": "pronom indéfini",
+    "proint": "pronom interrogatif",
+    "prorel": "pronom relatif",
     "cjco": "conjonction de coordination",
     "cjsub": "conjonction de subordination",
     "interj": "interjection",
@@ -60,7 +76,15 @@ PERSON_FR = {
 }
 
 # Priority for picking among multiple POS analyses for the same surface form.
-POS_PRIORITY = ["nom", "v1", "v2", "v3", "v0", "adj", "adv"]
+# Closed-class determiners/pronouns sit ABOVE `nom` because for short,
+# high-frequency forms (`nos`, `mes`, `ce`, `son`...) grammalecte often also
+# carries a rare/technical noun analysis that we don't want to pick.
+POS_PRIORITY = [
+    "detpos", "detdem", "detind", "detneg", "detnum", "detexc", "detint",
+    "propos", "prodem", "proper", "proind", "proint", "prorel",
+    "nom", "v1", "v2", "v3", "v0", "adj", "adv",
+    "det", "pro", "prep", "cjco", "cjsub", "interj",
+]
 
 
 def parse_lexique(path: Path, words: set[str]) -> dict[str, list[str]]:

@@ -1,7 +1,7 @@
 word,language,length,frequency,lemma,pos,definition,synonyms,tags,morphology
 gré,fr,3,5377161,gré,noun,"Volonté, caprice, fantaisie.",,nom mas sg,"nom, masculin, singulier"
 age,fr,3,595911,age,noun,"(Agriculture) Pièce de la charrue, horizontale, reliée au tracteur, et qui soutient les pièces aratoires : soc et versoir, rasette, coutre, etc.",,nom mas sg,"nom, masculin, singulier"
-nos,fr,3,89524168,nos,,,,nom mas pl,"nom, masculin, pluriel"
+nos,fr,3,89524168,nos,,,,mg detpos epi pl,"adjectif possessif, épicène, pluriel"
 vœu,fr,3,3876465,vœu,noun,"(Religion) Promesse faite à Dieu, par laquelle on s’engage à quelque œuvre que l’on croit lui être agréable, et qui n’est pas de précepte.",,nom mas sg,"nom, masculin, singulier"
 sut,fr,3,2917438,savoir,noun,"Ensemble des connaissances acquises par l’étude, par l’expérience.",connaître,v3_it_q__a ipsi 3sg,"verbe, indicatif passé simple, 3e pers. sing."
 sir,fr,3,1855903,sir,,,,nom mas sg,"nom, masculin, singulier"
