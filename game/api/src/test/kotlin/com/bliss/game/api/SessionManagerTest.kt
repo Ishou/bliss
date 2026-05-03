@@ -144,6 +144,71 @@ class SessionManagerTest {
             assertThat(harness.manager.unregister(lobbyId, harness.sessions.single())).isNull()
         }
 
+    @Test
+    fun `recordPresence then getPresence roundtrips the position`() =
+        withSessions(count = 1) { harness ->
+            val sid = "0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6b"
+            val pos = PresencePosition(row = 2, column = 4, direction = "across")
+            harness.manager.recordPresence(lobbyId, sid, pos)
+            assertThat(harness.manager.getPresence(lobbyId)).isEqualTo(mapOf(sid to pos))
+        }
+
+    @Test
+    fun `recordPresence with all-null position removes the entry`() =
+        withSessions(count = 1) { harness ->
+            val sid = "0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6b"
+            harness.manager.recordPresence(lobbyId, sid, PresencePosition(0, 0, "across"))
+            assertThat(harness.manager.getPresence(lobbyId)[sid]).isEqualTo(PresencePosition(0, 0, "across"))
+            // All-null payload semantically signals "no cell focused" — drop the entry.
+            harness.manager.recordPresence(lobbyId, sid, PresencePosition(null, null, null))
+            assertThat(harness.manager.getPresence(lobbyId)).isEqualTo(emptyMap<String, PresencePosition>())
+        }
+
+    @Test
+    fun `recordPresence with null position removes the entry`() =
+        withSessions(count = 1) { harness ->
+            val sid = "0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6b"
+            harness.manager.recordPresence(lobbyId, sid, PresencePosition(1, 2, "down"))
+            harness.manager.recordPresence(lobbyId, sid, position = null)
+            assertThat(harness.manager.getPresence(lobbyId)).isEqualTo(emptyMap<String, PresencePosition>())
+        }
+
+    @Test
+    fun `getPresence returns empty for an unknown lobby`() =
+        withSessions(count = 1) { harness ->
+            assertThat(harness.manager.getPresence(LobbyId("aaaaaaaa"))).isEqualTo(emptyMap<String, PresencePosition>())
+        }
+
+    @Test
+    fun `unregistering the last socket for a sessionId drops that player's presence`() =
+        withSessions(count = 1) { harness ->
+            val sid = "0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6b"
+            harness.manager.bindSession(lobbyId, harness.sessions.single(), sid)
+            harness.manager.recordPresence(lobbyId, sid, PresencePosition(0, 3, "across"))
+            harness.manager.unregister(lobbyId, harness.sessions.single())
+            // The whole lobby map is dropped when the connection set empties — so
+            // the snapshot is empty either way; the important invariant is that
+            // the sid-keyed entry is gone (no leak across reconnects).
+            assertThat(harness.manager.getPresence(lobbyId)).isEqualTo(emptyMap<String, PresencePosition>())
+        }
+
+    @Test
+    fun `unregistering one of two same-session sockets keeps that player's presence`() =
+        // Multi-tab close mirror of the existing presence-survival invariant: a
+        // tab close MUST NOT clear the player's cursor while another tab of the
+        // same browser is still attached.
+        withSessions(count = 2) { harness ->
+            val sid = "0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6b"
+            harness.manager.bindSession(lobbyId, harness.sessions[0], sid)
+            harness.manager.bindSession(lobbyId, harness.sessions[1], sid)
+            harness.manager.recordPresence(lobbyId, sid, PresencePosition(0, 3, "across"))
+            harness.manager.unregister(lobbyId, harness.sessions[0])
+            assertThat(harness.manager.getPresence(lobbyId)[sid]).isEqualTo(PresencePosition(0, 3, "across"))
+            // Closing the last tab drops the entry.
+            harness.manager.unregister(lobbyId, harness.sessions[1])
+            assertThat(harness.manager.getPresence(lobbyId)).isEqualTo(emptyMap<String, PresencePosition>())
+        }
+
     // ---------- harness ----------
 
     private class Harness(

@@ -1,6 +1,7 @@
 package com.bliss.game.api.routes
 
 import com.bliss.game.api.LobbyUseCases
+import com.bliss.game.api.PresencePosition
 import com.bliss.game.api.SessionManager
 import com.bliss.game.api.dto.ClientToServerFrame
 import com.bliss.game.api.dto.ServerToClientFrame
@@ -98,7 +99,9 @@ fun Route.lobbyWebSocketRoute(
 
         sessionManager.register(lobbyId, this)
         // Initial snapshot to this socket only — bootstrap signal for the UI.
-        send(encode(current.toLobbyStateFrame()))
+        // Carries the current ephemeral presence map so a refreshing client
+        // sees peer cursors immediately, before any cellFocus traffic flows.
+        send(encode(current.toLobbyStateFrame(sessionManager.getPresence(lobbyId))))
 
         // Track the player's identity once they joinLobby so we can synthesize
         // a playerLeft broadcast on disconnect even if they never sent leaveLobby.
@@ -257,6 +260,31 @@ private suspend fun DefaultWebSocketServerSession.handleFrame(
             }
             memberSessionId
         }
+        is ClientToServerFrame.CellFocus -> {
+            // Pure presence signal (ADR-0018 §9). No domain mutation: we just
+            // record the cursor in [SessionManager.presenceState] and rebroadcast
+            // to every lobby member (including the sender — keeps the wire
+            // symmetric with `cellUpdated`, and lets the sender confirm the
+            // server saw their cursor). Carries no domain meaning, so we skip
+            // the use-case dispatch entirely.
+            val sid =
+                effectiveId ?: run {
+                    sendNotJoined()
+                    return memberSessionId
+                }
+            val position = PresencePosition(parsed.row, parsed.column, parsed.direction)
+            sessionManager.recordPresence(lobbyId, sid, position)
+            sessionManager.broadcast(
+                lobbyId,
+                ServerToClientFrame.PresenceUpdated(
+                    sessionId = sid,
+                    row = parsed.row,
+                    column = parsed.column,
+                    direction = parsed.direction,
+                ),
+            )
+            memberSessionId
+        }
         ClientToServerFrame.LeaveLobby -> {
             val sid =
                 effectiveId ?: run {
@@ -338,7 +366,10 @@ private suspend fun <T> DefaultWebSocketServerSession.handleOutcome(
             val needsSnapshot = outcome.result.events.any { it is LobbyEvent.GridConfigChanged }
             if (needsSnapshot) {
                 (outcome.result.value as? Lobby)?.let { lobby ->
-                    sessionManager.broadcast(lobbyId, lobby.toLobbyStateFrame())
+                    sessionManager.broadcast(
+                        lobbyId,
+                        lobby.toLobbyStateFrame(sessionManager.getPresence(lobbyId)),
+                    )
                 }
             }
         }

@@ -1,5 +1,6 @@
 package com.bliss.game.api.routes
 
+import com.bliss.game.api.PresencePosition
 import com.bliss.game.api.dto.CellEntryDto
 import com.bliss.game.api.dto.GameCellDto
 import com.bliss.game.api.dto.GameClueDto
@@ -9,6 +10,7 @@ import com.bliss.game.api.dto.GamePuzzleDto
 import com.bliss.game.api.dto.GameSessionDto
 import com.bliss.game.api.dto.GridConfigDto
 import com.bliss.game.api.dto.PlayerDto
+import com.bliss.game.api.dto.PresenceEntryDto
 import com.bliss.game.api.dto.ServerToClientFrame
 import com.bliss.game.application.ports.LobbyEvent
 import com.bliss.game.application.usecases.UseCaseError
@@ -25,6 +27,7 @@ import com.bliss.game.domain.GameSession
 import com.bliss.game.domain.GridConfig
 import com.bliss.game.domain.LetterCell
 import com.bliss.game.domain.Lobby
+import com.bliss.game.domain.LobbyLifecycleState
 import com.bliss.game.domain.Player
 import com.bliss.game.domain.Position
 import java.time.Instant
@@ -36,13 +39,16 @@ import java.time.Instant
  * DTO sources.
  */
 
-internal fun Lobby.toLobbyStateFrame(): ServerToClientFrame.LobbyState =
+internal fun Lobby.toLobbyStateFrame(presence: Map<String, PresencePosition> = emptyMap()): ServerToClientFrame.LobbyState =
     ServerToClientFrame.LobbyState(
         players = players.values.sortedBy { it.joinedAt }.map { it.toDto() },
         ownerSessionId = ownerSessionId.value,
         state = state.name,
         gridConfig = gridConfig.toDto(),
-        game = game?.toDto(),
+        // Presence is ephemeral and only meaningful while IN_PROGRESS — outside
+        // that we drop it on the floor (matches asyncapi `GameSession.presence`
+        // which is "absent or empty when state is WAITING/COMPLETED").
+        game = game?.toDto(if (state == LobbyLifecycleState.IN_PROGRESS) presence else emptyMap()),
     )
 
 internal fun LobbyEvent.toFrameOrNull(): ServerToClientFrame? =
@@ -150,7 +156,7 @@ private fun Player.toDto(): PlayerDto =
 
 private fun GridConfig.toDto(): GridConfigDto = GridConfigDto(width = width, height = height)
 
-private fun GameSession.toDto(): GameSessionDto =
+private fun GameSession.toDto(presence: Map<String, PresencePosition>): GameSessionDto =
     GameSessionDto(
         puzzle = puzzle.toDto(),
         // Stable order = sort by row then column so two structurally-equal
@@ -163,6 +169,12 @@ private fun GameSession.toDto(): GameSessionDto =
                 .map { (pos, entry) -> entry.toDto(pos) },
         startedAt = startedAt.toIsoString(),
         completedAt = completedAt?.toIsoString(),
+        // Presence is unordered in [SessionManager]'s map; sort by sessionId
+        // for stable JSON ordering, mirroring the entries sort above.
+        presence =
+            presence.entries
+                .sortedBy { it.key }
+                .map { (sid, pos) -> PresenceEntryDto(sid, pos.row, pos.column, pos.direction) },
     )
 
 private fun GamePuzzle.toDto(): GamePuzzleDto =

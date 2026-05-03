@@ -183,7 +183,7 @@ fun Application.module() {
 
     routing {
         health(APP_VERSION)
-        lobbies(createLobby = useCases.createLobby, repo = lobbyRepository)
+        lobbies(createLobby = useCases.createLobby, repo = lobbyRepository, sessionManager = sessionManager)
         lobbyWebSocketRoute(sessionManager, useCases, lobbyRepository)
     }
 }
