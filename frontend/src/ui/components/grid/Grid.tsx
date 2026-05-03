@@ -119,6 +119,7 @@ export function Grid({
   onLocalFocusChange,
   subscribeToRemotePresence,
   playersBySessionId,
+  currentSessionId,
 }: {
   puzzle: Puzzle;
   onCellChange?: (row: number, col: number, letter: string | null) => void;
@@ -130,6 +131,12 @@ export function Grid({
   ) => void;
   subscribeToRemotePresence?: (handler: (event: GameEvent) => void) => Unsubscribe;
   playersBySessionId?: ReadonlyMap<SessionId, Player>;
+  // The local player's sessionId. Required when the presence overlay is
+  // mounted so the overlay skips the local player's own frames (the
+  // existing `letterCellInWord` highlight + DOM caret already show
+  // where they are; rendering the overlay's hue on top muddies the
+  // base highlight without adding information).
+  currentSessionId?: SessionId;
 }) {
   const cellByPosition = useMemo(() => {
     const m = new Map<string, Cell>();
@@ -305,12 +312,13 @@ export function Grid({
                 </div>
               ))}
             </div>
-            {subscribeToRemotePresence && playersBySessionId ? (
+            {subscribeToRemotePresence && playersBySessionId && currentSessionId ? (
               <PresenceOverlay
                 containerRef={gridFrameRef}
                 puzzle={puzzle}
                 subscribe={subscribeToRemotePresence}
                 playersBySessionId={playersBySessionId}
+                currentSessionId={currentSessionId}
               />
             ) : null}
           </div>

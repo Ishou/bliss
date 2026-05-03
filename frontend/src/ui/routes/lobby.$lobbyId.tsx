@@ -344,6 +344,7 @@ function LobbyPage() {
               onLocalFocusChange={handleLocalFocusChange}
               subscribeToRemotePresence={subscribeToRemotePresence}
               playersBySessionId={playersBySessionId}
+              currentSessionId={sessionId}
             />
           </div>
         ) : null}
