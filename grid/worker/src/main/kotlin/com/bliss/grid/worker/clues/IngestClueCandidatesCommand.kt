@@ -133,7 +133,7 @@ class IngestClueCandidatesCommand : CliktCommand(name = "ingest-clue-candidates"
         }
     }
 
-    /** Test seam — kept here so the integration test can call `cmd.parse(file)`. */
+    /** Test seam. */
     internal fun parse(path: Path): List<RawRow> =
         Files.newBufferedReader(path, StandardCharsets.UTF_8).use { reader ->
             readClueCandidatesCsv(reader)
