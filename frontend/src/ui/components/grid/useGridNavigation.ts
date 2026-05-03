@@ -246,8 +246,17 @@ export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOpt
     scrollTimeoutRef.current = window.setTimeout(() => {
       scrollTimeoutRef.current = null;
       if (!input.isConnected) return;
-      const rect = input.getBoundingClientRect();
       const vv = window.visualViewport;
+      // Skip auto-scroll when the user has explicitly pinch-zoomed in.
+      // The function exists to dodge the soft keyboard (which keeps
+      // `scale === 1`); when the user has zoomed past 1.0 they have
+      // taken explicit control of the viewport, and a `window.scrollBy`
+      // mid-pan-zoom yanks the page out from under their gesture.
+      // Threshold is 1.01 (not strict 1.0) to absorb the floating-point
+      // jitter `visualViewport.scale` carries on Android Chrome even
+      // when the user hasn't actively zoomed.
+      if (vv && vv.scale > 1.01) return;
+      const rect = input.getBoundingClientRect();
       const vvTop = vv?.offsetTop ?? 0;
       const vvHeight = vv?.height ?? window.innerHeight;
       const visibleTop = vvTop + SCROLL_TOP_MARGIN_PX;

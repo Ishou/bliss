@@ -587,4 +587,39 @@ describe('scheduleVisibleScroll', () => {
     act(() => { vi.advanceTimersByTime(300); });
     expect(scrollBy).not.toHaveBeenCalled();
   });
+
+  // Mobile pinch-zoom regression: the auto-scroll exists to dodge the
+  // soft keyboard, which keeps `visualViewport.scale === 1`. When the
+  // user has explicitly zoomed in (`scale > 1`), firing a `scrollBy`
+  // mid-gesture yanks the page back to keep the focused cell in view —
+  // user-reported bug. The guard skips the scroll outright.
+  it('does not call scrollBy when the user has pinch-zoomed (visualViewport.scale > 1)', () => {
+    const scrollBy = vi.spyOn(window, 'scrollBy');
+    // jsdom doesn't define `window.visualViewport`; stub one in for the
+    // duration of this test. Other tests in this block rely on the
+    // default `undefined`, so we restore it in afterEach.
+    // CurrentCluePanel's effect attaches a listener to visualViewport,
+    // so the stub needs the EventTarget surface in addition to the
+    // pinch-zoom values the navigation hook reads.
+    Object.defineProperty(window, 'visualViewport', {
+      value: {
+        scale: 1.5, offsetTop: 0, height: window.innerHeight,
+        addEventListener: () => {}, removeEventListener: () => {},
+      },
+      configurable: true,
+    });
+    const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
+    const cell = inputAt(container, 1, 1)!;
+    // Force an off-screen rect so the function would otherwise trigger
+    // a scroll — the guard is the only thing preventing it.
+    vi.spyOn(cell, 'getBoundingClientRect').mockReturnValue(
+      { top: -200, bottom: -100, left: 0, right: 100, width: 100, height: 100, x: 0, y: -200, toJSON: () => ({}) } as DOMRect,
+    );
+    act(() => { cell.focus(); });
+    act(() => { vi.advanceTimersByTime(300); });
+    expect(scrollBy).not.toHaveBeenCalled();
+    // Cleanup the stub so the other tests in this describe see the
+    // jsdom default again.
+    Object.defineProperty(window, 'visualViewport', { value: undefined, configurable: true });
+  });
 });
