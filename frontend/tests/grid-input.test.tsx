@@ -707,17 +707,29 @@ describe('Grid keyboard-aware wrapper sizing', () => {
     listeners.get(type)?.forEach((fn) => fn(new Event(type)));
   };
 
-  it('keeps the wrapper at its natural flow height when no keyboard is open', () => {
+  // The visual-viewport listener now coalesces resize/scroll bursts into
+  // one measurement per animation frame (PR #177 throttle for iOS pinch
+  // dispatching `resize` at ~60Hz). Tests that observe the post-event
+  // DOM state need to flush the pending rAF first. jsdom's rAF wraps
+  // its callback in a setTimeout(~16 ms) — a 20 ms wait gets us past
+  // the rAF tick on every CI runner observed here.
+  const flushRaf = () => new Promise((r) => setTimeout(r, 20));
+
+  it('keeps the wrapper at its natural flow height when no keyboard is open', async () => {
     const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
     const wrapperEl = container.querySelector<HTMLDivElement>('.react-transform-wrapper');
     expect(wrapperEl).toBeTruthy();
+    // The mount-time synchronous measurement runs before this assertion,
+    // so we don't strictly need a flushRaf — but we run one for safety
+    // in case the library schedules its own initial transform via rAF.
+    await act(async () => { await flushRaf(); });
     // visualViewport.height === window.innerHeight ⇒ no keyboard
     // detected ⇒ no maxHeight override ⇒ inline style.maxHeight is
     // empty (falls through to the panda class which sets none).
     expect(wrapperEl!.style.maxHeight).toBe('');
   });
 
-  it('shrinks the wrapper max-height when the soft keyboard reduces visualViewport.height', () => {
+  it('shrinks the wrapper max-height when the soft keyboard reduces visualViewport.height', async () => {
     const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
     const wrapperEl = container.querySelector<HTMLDivElement>('.react-transform-wrapper');
     expect(wrapperEl).toBeTruthy();
@@ -730,13 +742,13 @@ describe('Grid keyboard-aware wrapper sizing', () => {
     // Simulate the keyboard opening: visualViewport.height drops well
     // below window.innerHeight (jsdom default 768).
     (stub as { height: number }).height = 400;
-    act(() => { fire('resize'); });
+    await act(async () => { fire('resize'); await flushRaf(); });
     // available = (offsetTop + height) - rect.top - WRAPPER_BOTTOM_MARGIN_PX
     //           = (0 + 400) - 200 - 8 = 192
     expect(wrapperEl!.style.maxHeight).toBe('192px');
   });
 
-  it('clamps the max-height to the floor when available space goes negative (rect.top below keyboard top)', () => {
+  it('clamps the max-height to the floor when available space goes negative (rect.top below keyboard top)', async () => {
     const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
     const wrapperEl = container.querySelector<HTMLDivElement>('.react-transform-wrapper');
     vi.spyOn(wrapperEl as HTMLDivElement, 'getBoundingClientRect').mockReturnValue({
@@ -744,12 +756,12 @@ describe('Grid keyboard-aware wrapper sizing', () => {
       x: 0, y: 700, toJSON: () => ({}),
     } as DOMRect);
     (stub as { height: number }).height = 400;
-    act(() => { fire('resize'); });
+    await act(async () => { fire('resize'); await flushRaf(); });
     // available = 400 - 700 - 8 = -308 ⇒ clamped to MIN_WRAPPER_HEIGHT_PX (140).
     expect(wrapperEl!.style.maxHeight).toBe('140px');
   });
 
-  it('clears the override when the keyboard closes again', () => {
+  it('clears the override when the keyboard closes again', async () => {
     const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
     const wrapperEl = container.querySelector<HTMLDivElement>('.react-transform-wrapper');
     vi.spyOn(wrapperEl as HTMLDivElement, 'getBoundingClientRect').mockReturnValue({
@@ -757,12 +769,196 @@ describe('Grid keyboard-aware wrapper sizing', () => {
       x: 0, y: 200, toJSON: () => ({}),
     } as DOMRect);
     (stub as { height: number }).height = 400;
-    act(() => { fire('resize'); });
+    await act(async () => { fire('resize'); await flushRaf(); });
     expect(wrapperEl!.style.maxHeight).toBe('192px');
     // Keyboard closes — visualViewport.height returns to layout
     // viewport height. The effect re-runs and clears the override.
     (stub as { height: number }).height = 768; // jsdom default innerHeight
-    act(() => { fire('resize'); });
+    await act(async () => { fire('resize'); await flushRaf(); });
     expect(wrapperEl!.style.maxHeight).toBe('');
+  });
+
+  // PR #177: iOS Safari fires `visualViewport.resize` at ~60Hz during a
+  // pinch gesture; per-event measurement + setState would do a
+  // `getBoundingClientRect` and trigger a render every frame. The
+  // listener coalesces bursts into one rAF-scheduled measurement.
+  // Verifies the throttle by dispatching N synthetic resize events in a
+  // single tick and asserting only one rAF fired (i.e. the wrapper's
+  // `getBoundingClientRect` ran exactly once after the burst).
+  it('coalesces multiple visualViewport resize events into a single measurement per frame', async () => {
+    const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
+    const wrapperEl = container.querySelector<HTMLDivElement>('.react-transform-wrapper');
+    expect(wrapperEl).toBeTruthy();
+    const rectSpy = vi.spyOn(wrapperEl as HTMLDivElement, 'getBoundingClientRect').mockReturnValue({
+      top: 200, bottom: 600, left: 0, right: 480, width: 480, height: 400,
+      x: 0, y: 200, toJSON: () => ({}),
+    } as DOMRect);
+    // Keyboard-open precondition so the listener actually runs the
+    // rect read (otherwise it bails before the spy).
+    (stub as { height: number }).height = 400;
+    // Sample baseline immediately before the burst — the library's own
+    // internal `getBoundingClientRect` reads on the wrapper get caught
+    // by this spy too, so we count only calls AFTER this point.
+    const callsBefore = rectSpy.mock.calls.length;
+    // Dispatch 5 resize events in the same synchronous tick — should
+    // schedule exactly ONE rAF, not five.
+    act(() => {
+      fire('resize');
+      fire('resize');
+      fire('resize');
+      fire('resize');
+      fire('resize');
+    });
+    // Without rAF flush, the burst should have produced no new rect
+    // reads yet (they're deferred until the rAF fires).
+    expect(rectSpy.mock.calls.length).toBe(callsBefore);
+    await act(async () => { await flushRaf(); });
+    // After the rAF fires, exactly ONE additional call to
+    // getBoundingClientRect — proves the 5 events were coalesced.
+    expect(rectSpy.mock.calls.length).toBe(callsBefore + 1);
+  });
+
+  it('cancels a pending rAF on unmount so the measurement does not run on a torn-down component', async () => {
+    const { container, unmount } = render(<Grid puzzle={TEST_PUZZLE} />);
+    const wrapperEl = container.querySelector<HTMLDivElement>('.react-transform-wrapper');
+    expect(wrapperEl).toBeTruthy();
+    const rectSpy = vi.spyOn(wrapperEl as HTMLDivElement, 'getBoundingClientRect').mockReturnValue({
+      top: 200, bottom: 600, left: 0, right: 480, width: 480, height: 400,
+      x: 0, y: 200, toJSON: () => ({}),
+    } as DOMRect);
+    (stub as { height: number }).height = 400;
+    const callsBefore = rectSpy.mock.calls.length;
+    // Schedule the rAF, then unmount before it fires.
+    act(() => { fire('resize'); });
+    act(() => { unmount(); });
+    await flushRaf();
+    // No new rect reads — the cancelled rAF didn't run the deferred
+    // measurement (which would have setState'd on a torn-down tree
+    // and warned in the console).
+    expect(rectSpy.mock.calls.length).toBe(callsBefore);
+  });
+});
+
+// Blur-on-gesture coordination (PR #177). iOS Safari fights pinch / pan
+// with a native focus-snap that auto-scrolls / zooms to keep a focused
+// <input> visible during ANY layout change. The library drives a JS
+// CSS transform during pinch / pan, so the browser's snap fires every
+// frame. We mitigate by blurring the focused cell on gesture start and
+// restoring focus on gesture end — Android Chrome doesn't do the snap
+// as aggressively, but the same blur is a no-op there (and is
+// platform-independent, simpler than UA-sniffing).
+//
+// We can't drive the library's pointer pipeline in jsdom, so we read
+// the wired-up callback props off the React fiber attached to the
+// `.react-transform-wrapper` DOM node and invoke them directly. That
+// pins the contract `<Grid>` exposes: gesture-start → blur the focused
+// cell, gesture-stop → restore focus iff the user didn't tap a
+// different cell during the gesture window.
+describe('Grid blur-on-gesture coordination', () => {
+  type Captured = {
+    onZoomStart?: () => void;
+    onZoomStop?: () => void;
+    onPanningStart?: () => void;
+    onPanningStop?: () => void;
+  };
+
+  const readWiredCallbacks = (root: HTMLElement): Captured => {
+    const wrapperDOM = root.querySelector<HTMLDivElement>('.react-transform-wrapper');
+    if (!wrapperDOM) return {};
+    const fiberKey = Object.keys(wrapperDOM).find((k) => k.startsWith('__reactFiber$'));
+    if (!fiberKey) return {};
+    type Fiber = { return?: Fiber; memoizedProps?: Record<string, unknown> };
+    let fiber: Fiber | undefined = (wrapperDOM as unknown as Record<string, Fiber>)[fiberKey];
+    while (fiber) {
+      const props = fiber.memoizedProps;
+      if (
+        props &&
+        (typeof props.onZoomStart === 'function' ||
+          typeof props.onPanningStart === 'function')
+      ) {
+        return {
+          onZoomStart: props.onZoomStart as () => void,
+          onZoomStop: props.onZoomStop as () => void,
+          onPanningStart: props.onPanningStart as () => void,
+          onPanningStop: props.onPanningStop as () => void,
+        };
+      }
+      fiber = fiber.return;
+    }
+    return {};
+  };
+
+  it('blurs the focused cell on zoom start and restores on zoom stop', () => {
+    const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
+    const target = inputAt(container, 1, 1)!;
+    act(() => { click(target); });
+    expect(document.activeElement).toBe(target);
+    const cb = readWiredCallbacks(container);
+    expect(cb.onZoomStart).toBeTypeOf('function');
+    expect(cb.onZoomStop).toBeTypeOf('function');
+    // Pinch start: cell loses focus.
+    act(() => { cb.onZoomStart!(); });
+    expect(document.activeElement).not.toBe(target);
+    // Pinch end: focus restored to the same cell.
+    act(() => { cb.onZoomStop!(); });
+    expect(document.activeElement).toBe(inputAt(container, 1, 1));
+  });
+
+  it('blurs on panning start and restores on panning stop', () => {
+    const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
+    const target = inputAt(container, 1, 1)!;
+    act(() => { click(target); });
+    const cb = readWiredCallbacks(container);
+    act(() => { cb.onPanningStart!(); });
+    expect(document.activeElement).not.toBe(target);
+    act(() => { cb.onPanningStop!(); });
+    expect(document.activeElement).toBe(inputAt(container, 1, 1));
+  });
+
+  it('does not restore focus when the user clicks a different cell during the gesture', () => {
+    const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
+    const original = inputAt(container, 1, 1)!;
+    act(() => { click(original); });
+    const cb = readWiredCallbacks(container);
+    // Gesture starts: original cell blurs.
+    act(() => { cb.onZoomStart!(); });
+    expect(document.activeElement).not.toBe(original);
+    // User taps a different cell mid-gesture (the click handler on the
+    // Cell wrapper focuses the input synchronously).
+    const other = inputAt(container, 2, 2)!;
+    act(() => { click(other); });
+    expect(document.activeElement).toBe(other);
+    // Gesture ends: must NOT yank focus back to (1,1).
+    act(() => { cb.onZoomStop!(); });
+    expect(document.activeElement).toBe(other);
+  });
+
+  it('is a no-op when no cell was focused at gesture start', () => {
+    const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
+    const cb = readWiredCallbacks(container);
+    // Pre-condition: nothing focused (just rendered).
+    expect(document.activeElement).toBe(document.body);
+    act(() => { cb.onZoomStart!(); });
+    act(() => { cb.onZoomStop!(); });
+    // Still nothing focused — no spurious cell focused via restore.
+    expect(document.activeElement).toBe(document.body);
+  });
+
+  it('keeps the cell blurred while a panning gesture chains after a zoom (both flags must clear)', () => {
+    // iOS can transition pinch → pan without firing onZoomStop strictly
+    // before onPanningStart. Verify only the LAST stop triggers the
+    // restore.
+    const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
+    const target = inputAt(container, 1, 1)!;
+    act(() => { click(target); });
+    const cb = readWiredCallbacks(container);
+    act(() => { cb.onZoomStart!(); });
+    act(() => { cb.onPanningStart!(); });
+    // Zoom ends but pan still active — must NOT restore yet.
+    act(() => { cb.onZoomStop!(); });
+    expect(document.activeElement).not.toBe(target);
+    // Pan ends — now restore.
+    act(() => { cb.onPanningStop!(); });
+    expect(document.activeElement).toBe(inputAt(container, 1, 1));
   });
 });
