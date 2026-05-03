@@ -29,13 +29,28 @@ from morphology_index import MorphologyIndex
 _CONTENT_POS = {"verbe", "nom", "adj"}
 
 _FUNCTION_WORDS = {
+    # articles + determiners
     "le", "la", "les", "un", "une", "des", "du", "de", "d",
+    # prepositions
     "à", "au", "aux", "en", "dans", "sur", "sous", "par", "pour", "avec", "sans",
+    # conjunctions
     "et", "ou", "mais", "donc", "car", "ni", "or",
+    # relative / interrogative
     "qui", "que", "qu", "dont", "où", "quoi",
+    # demonstratives
     "ce", "cet", "cette", "ces", "ceux", "celle", "celui",
+    # possessives
     "son", "sa", "ses", "leur", "leurs", "mon", "ma", "mes", "ton", "ta", "tes",
+    # negation + degree adverbs
     "ne", "pas", "plus", "très", "trop", "peu", "bien", "mal",
+    # subject pronouns (rare in lemma clues but harmless to skip)
+    "je", "tu", "il", "elle", "ils", "elles", "on",
+    # reflexive + object pronouns — pronominal verbs surface here as
+    # "Se soulever ...", "Se cabrer ..."; without these, the head loop
+    # picks the pronoun and the validator wrongly reports pos-mismatch.
+    "se", "s", "me", "m", "te", "t", "nous", "vous", "lui", "y",
+    # sundry
+    "soi",
 }
 
 _TOKEN_RE = re.compile(r"[\wÀ-ÿŒœŸ]+", re.UNICODE)
