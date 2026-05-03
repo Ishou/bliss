@@ -40,7 +40,7 @@ from pathlib import Path
 from morphology_index import MorphologyIndex
 from validate_clue import ValidationResult, validate_lemma_clue
 
-DEFAULT_MODEL = "mistral:latest"
+DEFAULT_MODEL = "mistral-nemo:latest"
 DEFAULT_HOST = "http://localhost:11434"
 DEFAULT_CONCURRENCY = 8
 TOP_P = 0.9
@@ -98,7 +98,9 @@ def ollama_health(host: str, model: str) -> tuple[bool, str]:
             "  Setup: brew install ollama && ollama serve &"
         )
     models = {m["name"] for m in data.get("models", [])}
-    if model not in models:
+    # Ollama treats `name` as shorthand for `name:latest`; mirror that here.
+    candidates = {model, model if ":" in model else f"{model}:latest"}
+    if not candidates & models:
         return False, (
             f"model {model!r} not pulled. Available: {sorted(models) or '(none)'}\n"
             f"  Pull it with: ollama pull {model}"
@@ -216,7 +218,6 @@ def main() -> None:
         round_started = time.time()
         with ThreadPoolExecutor(max_workers=args.concurrency) as pool:
             futures = {pool.submit(task, l, pending[l], temp): l for l in round_lemmas}
-            done_in_round = 0
             for fut in as_completed(futures):
                 lemma, clue, vr = fut.result()
                 attempts = round_idx + 1
@@ -233,7 +234,6 @@ def main() -> None:
                     marker = "OK"
                 else:
                     marker = vr.flag
-                done_in_round += 1
                 print(f"  [{lemma:20s} ({pending.get(lemma, completed[lemma])['pos']:10s}) "
                       f"x{attempts}] {marker:14s} -> {clue!r}")
         elapsed_round = time.time() - round_started
