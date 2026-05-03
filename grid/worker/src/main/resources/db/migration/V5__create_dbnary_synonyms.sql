@@ -1,5 +1,5 @@
 -- Phase 1 (clue-generation pipeline) §1 — DBnary synonym graph.
--- Mirror of grid/worker/src/main/resources/db/migration/V5__create_dbnary_synonyms.sql.
+-- Mirror of grid/api/src/main/resources/db/migration/V5__create_dbnary_synonyms.sql.
 --
 -- DBnary attaches `dbnary:synonym` to LexicalEntry (the word level), not
 -- per-sense — same shape we observed querying the fra/ graph. Each row is

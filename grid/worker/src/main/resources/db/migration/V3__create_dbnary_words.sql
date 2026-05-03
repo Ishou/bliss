@@ -1,5 +1,5 @@
 -- Phase 1 (clue-generation pipeline) §1 — DBnary lexical-entry table.
--- Mirror of grid/worker/src/main/resources/db/migration/V3__create_dbnary_words.sql.
+-- Mirror of grid/api/src/main/resources/db/migration/V3__create_dbnary_words.sql.
 --
 -- Schema choice notes:
 --   - id is UUID (matches words.word_id from V1; no extension needed).

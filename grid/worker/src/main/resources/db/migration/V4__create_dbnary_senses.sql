@@ -1,5 +1,5 @@
 -- Phase 1 (clue-generation pipeline) §1 — DBnary sense table.
--- Mirror of grid/worker/src/main/resources/db/migration/V4__create_dbnary_senses.sql.
+-- Mirror of grid/api/src/main/resources/db/migration/V4__create_dbnary_senses.sql.
 --
 -- Each row is one definition for a DBnary entry, ordered by sense_index
 -- (0-based, preserves the order DBnary returned). The sentence-level
