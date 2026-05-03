@@ -60,6 +60,15 @@ class ExportWordsCommand(
     private val curatedDir by option("--curated-dir", help = "Root dir holding <language>.csv curated files")
         .path(canBeFile = false)
 
+    /**
+     * Source priority for the clue_candidates overlay. Comma-separated; first
+     * matching source wins. Empty disables the overlay (legacy behaviour).
+     */
+    private val candidatePriorityRaw by option(
+        "--candidate-priority",
+        help = "Comma-separated priority list of clue_candidates sources (e.g. 'curated,dbnary-synonym')",
+    ).default(DEFAULT_CANDIDATE_PRIORITY)
+
     override fun run() {
         Database.start()
         val ds = Database.dataSource() ?: error("DATABASE_URL is required for export-words")
@@ -73,11 +82,14 @@ class ExportWordsCommand(
         curatedRoot: Path,
     ) {
         withCorrelationId {
+            val priority = parseCandidatePriority(candidatePriorityRaw)
             log.info(
-                "export_words_start language={} include_clueless={} placeholder_clue_from_word={} output={} curated_dir={}",
+                "export_words_start language={} include_clueless={} placeholder_clue_from_word={} " +
+                    "candidate_priority={} output={} curated_dir={}",
                 language,
                 includeClueless,
                 placeholderClueFromWord,
+                priority,
                 outputPath,
                 curatedRoot,
             )
@@ -92,6 +104,7 @@ class ExportWordsCommand(
                         language = language,
                         includeClueless = includeClueless,
                         placeholderClueFromWord = placeholderClueFromWord,
+                        candidateSourcePriority = priority,
                     ),
                 )
             log.info(
@@ -103,10 +116,19 @@ class ExportWordsCommand(
         }
     }
 
+    private fun parseCandidatePriority(raw: String): List<String> = raw.split(",").map { it.trim() }.filter { it.isNotBlank() }
+
     companion object {
         private fun defaultOutputPath(language: String): Path = Path.of("grid/api/src/main/resources/words/words-$language.csv")
 
         private val DEFAULT_CURATED_DIR: Path = Path.of("data/curated")
+
+        // Default priority: curated wins over DBnary-derived synonyms; lower
+        // tiers (model-generated, legacy) are added at the user's discretion
+        // via --candidate-priority. ADR-0024 sets `dbnary-synonym` below LLM
+        // sources by default — this is the LLM-free baseline; once Phase 3
+        // ships, `--candidate-priority "curated,mistral-nemo,dbnary-synonym"`.
+        private const val DEFAULT_CANDIDATE_PRIORITY: String = "curated,dbnary-synonym"
 
         // Length-2 grammalecte rows are dominated by junk (`ck, cp, mv, qi, …`) that
         // looks frequent in raw text but isn't crossword-valid; rely on the curated

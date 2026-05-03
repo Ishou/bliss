@@ -255,6 +255,135 @@ class ExportWordsCommandIntegrationTest {
         assertThat(rows[0].clue).isEqualTo("Curated clue")
     }
 
+    @Test
+    fun `clue_candidates dbnary-synonym overrides words clue when in priority list`() {
+        val voitureId =
+            insertWordReturningId(
+                word = "voiture",
+                language = "fr",
+                clue = "old legacy clue",
+                source = "grammalecte",
+                license = "MPL-2.0",
+            )
+        insertCandidate(voitureId, source = "dbnary-synonym", clueText = "Bagnole")
+
+        val output = tempDir.resolve("dbnary.csv")
+        passthroughCommand().parse(
+            arrayOf(
+                "--language",
+                "fr",
+                "--output",
+                output.toString(),
+                "--curated-dir",
+                emptyCuratedDir().toString(),
+                "--candidate-priority",
+                "curated,dbnary-synonym",
+            ),
+        )
+
+        val row = parseCsv(output).single { it.word == "voiture" }
+        assertThat(row.clue).isEqualTo("Bagnole")
+        assertThat(row.source).isEqualTo("dbnary-synonym")
+        assertThat(row.sourceLicense).isEqualTo("CC-BY-SA-4.0")
+    }
+
+    @Test
+    fun `clue_candidates curated wins over dbnary-synonym for the same word`() {
+        val voitureId =
+            insertWordReturningId(
+                word = "voiture",
+                language = "fr",
+                clue = "old legacy clue",
+                source = "grammalecte",
+                license = "MPL-2.0",
+            )
+        insertCandidate(voitureId, source = "dbnary-synonym", clueText = "Bagnole")
+        insertCandidate(voitureId, source = "curated", clueText = "Quatre roues motorisees")
+
+        val output = tempDir.resolve("priority.csv")
+        passthroughCommand().parse(
+            arrayOf(
+                "--language",
+                "fr",
+                "--output",
+                output.toString(),
+                "--curated-dir",
+                emptyCuratedDir().toString(),
+                "--candidate-priority",
+                "curated,dbnary-synonym",
+            ),
+        )
+
+        val row = parseCsv(output).single { it.word == "voiture" }
+        assertThat(row.clue).isEqualTo("Quatre roues motorisees")
+        assertThat(row.source).isEqualTo("curated")
+        assertThat(row.sourceLicense).isEqualTo("CC0-1.0")
+    }
+
+    @Test
+    fun `empty candidate priority preserves legacy words clue`() {
+        val voitureId =
+            insertWordReturningId(
+                word = "voiture",
+                language = "fr",
+                clue = "old legacy clue",
+                source = "grammalecte",
+                license = "MPL-2.0",
+            )
+        insertCandidate(voitureId, source = "dbnary-synonym", clueText = "Bagnole")
+
+        val output = tempDir.resolve("empty-priority.csv")
+        passthroughCommand().parse(
+            arrayOf(
+                "--language",
+                "fr",
+                "--output",
+                output.toString(),
+                "--curated-dir",
+                emptyCuratedDir().toString(),
+                "--candidate-priority",
+                "",
+            ),
+        )
+
+        val row = parseCsv(output).single { it.word == "voiture" }
+        assertThat(row.clue).isEqualTo("old legacy clue")
+        assertThat(row.source).isEqualTo("grammalecte")
+        assertThat(row.sourceLicense).isEqualTo("MPL-2.0")
+    }
+
+    @Test
+    fun `priority list excludes a source when not listed`() {
+        val voitureId =
+            insertWordReturningId(
+                word = "voiture",
+                language = "fr",
+                clue = "legacy",
+                source = "grammalecte",
+                license = "MPL-2.0",
+            )
+        insertCandidate(voitureId, source = "dbnary-synonym", clueText = "Bagnole")
+
+        val output = tempDir.resolve("only-curated.csv")
+        passthroughCommand().parse(
+            arrayOf(
+                "--language",
+                "fr",
+                "--output",
+                output.toString(),
+                "--curated-dir",
+                emptyCuratedDir().toString(),
+                // dbnary-synonym is NOT in the priority list — it must not win.
+                "--candidate-priority",
+                "curated",
+            ),
+        )
+
+        val row = parseCsv(output).single { it.word == "voiture" }
+        assertThat(row.clue).isEqualTo("legacy")
+        assertThat(row.source).isEqualTo("grammalecte")
+    }
+
     // ---------------------------------------------------------------------------------
     // Helpers
     // ---------------------------------------------------------------------------------
@@ -271,6 +400,55 @@ class ExportWordsCommandIntegrationTest {
 
     /** Curated dir that exists but holds no `<lang>.csv` — keeps tests isolated from `data/curated`. */
     private fun emptyCuratedDir(): Path = Files.createDirectories(tempDir.resolve("empty-curated"))
+
+    private fun insertWordReturningId(
+        word: String,
+        language: String,
+        clue: String?,
+        source: String,
+        license: String,
+    ): java.util.UUID {
+        val id = java.util.UUID.randomUUID()
+        ds().connection.use { conn ->
+            conn
+                .prepareStatement(
+                    """
+                    INSERT INTO words (word_id, word, language, clue, source, source_license)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                    """.trimIndent(),
+                ).use { stmt ->
+                    stmt.setObject(1, id)
+                    stmt.setString(2, word)
+                    stmt.setString(3, language)
+                    if (clue == null) stmt.setNull(4, java.sql.Types.VARCHAR) else stmt.setString(4, clue)
+                    stmt.setString(5, source)
+                    stmt.setString(6, license)
+                    stmt.executeUpdate()
+                }
+        }
+        return id
+    }
+
+    private fun insertCandidate(
+        wordId: java.util.UUID,
+        source: String,
+        clueText: String,
+    ) {
+        ds().connection.use { conn ->
+            conn
+                .prepareStatement(
+                    """
+                    INSERT INTO clue_candidates (word_id, source, clue_text)
+                    VALUES (?, ?, ?)
+                    """.trimIndent(),
+                ).use { stmt ->
+                    stmt.setObject(1, wordId)
+                    stmt.setString(2, source)
+                    stmt.setString(3, clueText)
+                    stmt.executeUpdate()
+                }
+        }
+    }
 
     private fun seedFixtures() {
         // 5 fr rows with clues (varied difficulty: 4 NULL, 1 non-null), 1 fr row with NULL clue

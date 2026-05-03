@@ -3,6 +3,8 @@ package com.bliss.grid.infrastructure.persistence
 import com.bliss.grid.domain.lexicon.ExportRow
 import com.bliss.grid.domain.lexicon.ExportSelectionCriteria
 import com.bliss.grid.domain.lexicon.WordCorpusReader
+import java.sql.Array as SqlArray
+import java.sql.Connection
 import javax.sql.DataSource
 
 /** JDBC adapter for [WordCorpusReader]. */
@@ -23,12 +25,16 @@ class JdbcWordCorpusReader(
             }
         return dataSource.connection.use { conn ->
             conn.prepareStatement(sql).use { stmt ->
-                stmt.setString(1, criteria.language)
+                val priorityArray = priorityArray(conn, criteria.candidateSourcePriority)
+                // Each query interleaves the priority array twice (LATERAL JOIN
+                // membership filter + array_position ORDER BY), then language.
+                stmt.setArray(1, priorityArray)
+                stmt.setArray(2, priorityArray)
+                stmt.setString(3, criteria.language)
                 stmt.executeQuery().use { rs ->
                     val rows =
                         sequence {
                             while (rs.next()) {
-                                // Frequency is a count, not a probability — render as integer.
                                 val freqRaw = rs.getObject("frequency") as Number?
                                 val difficultyRaw = rs.getObject("difficulty") as Number?
                                 val word = rs.getString("word")
@@ -56,28 +62,57 @@ class JdbcWordCorpusReader(
         }
     }
 
+    private fun priorityArray(
+        conn: Connection,
+        priority: List<String>,
+    ): SqlArray = conn.createArrayOf("text", priority.toTypedArray())
+
     companion object {
         // ORDER BY language, word for stable git diffs (ADR-0013 §7).
         // LEFT JOIN propagates a lemma's clue to every inflected form
         // (generate-clues only targets lemmas by default — see ADR-0013 §5 amendment).
+        //
+        // The LATERAL JOIN against clue_candidates implements Phase 2 §4 of the
+        // clue-generation pipeline plan: when a word has any candidate from the
+        // requested source-priority list, that candidate's clue_text + source
+        // wins over words.clue. Empty priority array makes the LATERAL match
+        // nothing, falling through to the legacy behaviour.
+        private const val LATERAL_CANDIDATE_JOIN: String =
+            """
+            LEFT JOIN LATERAL (
+                SELECT cc.clue_text, cc.source
+                FROM clue_candidates cc
+                WHERE cc.word_id = w.word_id
+                  AND cc.source = ANY(?::text[])
+                ORDER BY array_position(?::text[], cc.source) ASC,
+                         cc.confidence DESC NULLS LAST,
+                         cc.generated_at DESC
+                LIMIT 1
+            ) cand ON TRUE
+            """
+
         private val SELECT_CLUED_SQL =
             """
             SELECT w.word, w.language, w.length, w.frequency, w.difficulty,
-                   COALESCE(w.clue, l.clue) AS clue,
-                   w.source, w.source_license, w.lemma
+                   COALESCE(cand.clue_text, w.clue, l.clue) AS clue,
+                   COALESCE(cand.source, w.source) AS source,
+                   w.source_license, w.lemma
             FROM words w
             LEFT JOIN words l ON l.language = w.language AND l.word = w.lemma
-            WHERE w.language = ? AND COALESCE(w.clue, l.clue) IS NOT NULL
+            $LATERAL_CANDIDATE_JOIN
+            WHERE w.language = ? AND COALESCE(cand.clue_text, w.clue, l.clue) IS NOT NULL
             ORDER BY w.language, w.word
             """.trimIndent()
 
         private val SELECT_ALL_SQL =
             """
             SELECT w.word, w.language, w.length, w.frequency, w.difficulty,
-                   COALESCE(w.clue, l.clue) AS clue,
-                   w.source, w.source_license, w.lemma
+                   COALESCE(cand.clue_text, w.clue, l.clue) AS clue,
+                   COALESCE(cand.source, w.source) AS source,
+                   w.source_license, w.lemma
             FROM words w
             LEFT JOIN words l ON l.language = w.language AND l.word = w.lemma
+            $LATERAL_CANDIDATE_JOIN
             WHERE w.language = ?
             ORDER BY w.language, w.word
             """.trimIndent()
@@ -85,10 +120,12 @@ class JdbcWordCorpusReader(
         private val SELECT_ALL_PLACEHOLDER_SQL =
             """
             SELECT w.word, w.language, w.length, w.frequency, w.difficulty,
-                   COALESCE(w.clue, l.clue, w.word) AS clue,
-                   w.source, w.source_license, w.lemma
+                   COALESCE(cand.clue_text, w.clue, l.clue, w.word) AS clue,
+                   COALESCE(cand.source, w.source) AS source,
+                   w.source_license, w.lemma
             FROM words w
             LEFT JOIN words l ON l.language = w.language AND l.word = w.lemma
+            $LATERAL_CANDIDATE_JOIN
             WHERE w.language = ?
             ORDER BY w.language, w.word
             """.trimIndent()
