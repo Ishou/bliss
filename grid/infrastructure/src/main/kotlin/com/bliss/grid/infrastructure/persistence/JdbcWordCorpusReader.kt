@@ -72,19 +72,28 @@ class JdbcWordCorpusReader(
         // LEFT JOIN propagates a lemma's clue to every inflected form
         // (generate-clues only targets lemmas by default — see ADR-0013 §5 amendment).
         //
-        // The LATERAL JOIN against clue_candidates implements Phase 2 §4 of the
-        // clue-generation pipeline plan: when a word has any candidate from the
-        // requested source-priority list, that candidate's clue_text + source
-        // wins over words.clue. Empty priority array makes the LATERAL match
-        // nothing, falling through to the legacy behaviour.
+        // The LATERAL JOIN against clue_candidates implements Phase 2 §4 +
+        // Phase 3 §B of the clue-generation pipeline plan:
+        //   §4 — when a word has any candidate from the requested source-
+        //        priority list, that candidate's clue_text + source wins
+        //        over words.clue.
+        //   §B — when only the LEMMA's word_id has a candidate (the common
+        //        case for LLM-generated clues that target lemmas only), the
+        //        candidate is inherited by every inflected form via the
+        //        l.word_id branch in the WHERE.
+        // Within the lateral, candidates targeting the exact word win over
+        // lemma-inherited ones (CASE WHEN cc.word_id = w.word_id THEN 0 ELSE 1).
+        // Empty priority array makes the LATERAL match nothing, falling
+        // through to the legacy behaviour.
         private const val LATERAL_CANDIDATE_JOIN: String =
             """
             LEFT JOIN LATERAL (
                 SELECT cc.clue_text, cc.source
                 FROM clue_candidates cc
-                WHERE cc.word_id = w.word_id
+                WHERE (cc.word_id = w.word_id OR cc.word_id = l.word_id)
                   AND cc.source = ANY(?::text[])
-                ORDER BY array_position(?::text[], cc.source) ASC,
+                ORDER BY CASE WHEN cc.word_id = w.word_id THEN 0 ELSE 1 END,
+                         array_position(?::text[], cc.source) ASC,
                          cc.confidence DESC NULLS LAST,
                          cc.generated_at DESC
                 LIMIT 1
