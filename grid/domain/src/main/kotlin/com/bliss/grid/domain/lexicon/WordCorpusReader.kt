@@ -21,6 +21,15 @@ data class ExportSelectionCriteria(
     val includeClueless: Boolean,
     /** When `true`, fall back to the word itself when no real clue exists (unblocks grid-api loading). */
     val placeholderClueFromWord: Boolean,
+    /**
+     * Source priority for `clue_candidates` lookup at export time. When non-empty,
+     * each word's exported clue/source is overlaid with the highest-priority
+     * matching candidate; words without a matching candidate keep the legacy
+     * `words.clue` value. Empty list disables the lookup (legacy behaviour).
+     *
+     * Phase 2 §4 of the clue-generation pipeline plan; see also ADR-0024.
+     */
+    val candidateSourcePriority: List<String> = emptyList(),
 )
 
 /** Port: stream export rows from the corpus, scoped to [block]. */
