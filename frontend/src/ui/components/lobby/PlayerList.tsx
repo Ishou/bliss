@@ -35,8 +35,14 @@ const styles = {
     listStyle: 'none', padding: 0, margin: 0,
   }),
   stackedRow: css({
-    display: 'flex', alignItems: 'center', gap: 'sm',
-    padding: 'sm', border: '1px solid token(colors.border)',
+    // `space-between` keeps the pseudonym hard-left and the badges hard-
+    // right regardless of the row width; the surrounding LobbyShell
+    // applies `text-align: center` to the page, which previously bled
+    // into the row and stretched the centered name across the row when
+    // combined with `flex: 1`. Anchoring the name to the start with an
+    // explicit `text-align: left` is the durable fix.
+    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+    gap: 'sm', padding: 'sm', border: '1px solid token(colors.border)',
     // Per-player colour accent (ADR-0018 §"Presence"): a 4 px left
     // border tinted by `--player-color`. Inline `style` per row sets
     // the var so the same hue the in-game cursor / chip use also
@@ -45,11 +51,18 @@ const styles = {
     borderRadius: 'sm', bg: 'surface',
   }),
   emptySlot: css({
-    display: 'flex', alignItems: 'center', padding: 'sm',
-    border: '1px dashed token(colors.border)', borderRadius: 'sm',
-    bg: 'bg', color: 'accent', fontStyle: 'italic',
+    // Same flex shape as a filled row so empty + filled rows align
+    // identically — placeholder copy reads from the left edge instead of
+    // inheriting the page's centered text-align.
+    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+    gap: 'sm', padding: 'sm', border: '1px dashed token(colors.border)',
+    borderRadius: 'sm', bg: 'bg', color: 'accent', fontStyle: 'italic',
+    textAlign: 'left',
   }),
-  stackedPseudonym: css({ flex: 1, fontWeight: 'medium', color: 'fg' }),
+  stackedPseudonym: css({ flex: 1, textAlign: 'left', fontWeight: 'medium', color: 'fg' }),
+  badgeGroup: css({
+    display: 'flex', alignItems: 'center', gap: 'xs',
+  }),
   inlineList: css({
     display: 'flex', flexDirection: 'row', flexWrap: 'wrap',
     alignItems: 'center', justifyContent: 'center', gap: 'sm',
@@ -118,10 +131,12 @@ export function PlayerList({
           data-session-id={player.sessionId}
         >
           <span className={styles.stackedPseudonym}>{player.pseudonym}</span>
-          {player.sessionId === currentSessionId
-            ? <span className={styles.badge}>vous</span> : null}
-          {player.sessionId === ownerSessionId
-            ? <span className={styles.ownerBadge}>propriétaire</span> : null}
+          <span className={styles.badgeGroup}>
+            {player.sessionId === currentSessionId
+              ? <span className={styles.badge}>vous</span> : null}
+            {player.sessionId === ownerSessionId
+              ? <span className={styles.ownerBadge}>propriétaire</span> : null}
+          </span>
         </li>
       ))}
       {Array.from({ length: emptySlots }).map((_, idx) => (

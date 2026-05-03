@@ -835,4 +835,98 @@ describe('Lobby route error boundary', () => {
     const alert = await screen.findByRole('alert');
     expect(alert).toHaveTextContent('Une erreur est survenue. Réessayez.');
   });
+
+  // Both `not-found` and `upstream-unavailable` strand the user on a
+  // page that cannot recover on its own — surface a CTA back to `/` so
+  // they can spin up a new lobby. The other two kinds (validation,
+  // transient) suggest a retry is meaningful, so they keep the simpler
+  // layout for now.
+  it('renders a "Retour à l\'accueil" button on kind=not-found', async () => {
+    const notFound = new LobbyClientError({
+      kind: 'not-found', status: 404, problem: null, message: 'No lobby with id 7gQ2xK9p',
+    });
+    renderLobby({ lobbyClient: { getLobby: vi.fn().mockRejectedValue(notFound) } });
+    await screen.findByRole('alert');
+    expect(screen.getByRole('button', { name: /retour à l'accueil/i })).toBeInTheDocument();
+  });
+
+  it('renders a "Retour à l\'accueil" button on kind=upstream-unavailable', async () => {
+    const unavailable = new LobbyClientError({
+      kind: 'upstream-unavailable', status: null, problem: null, message: 'fetch failed',
+    });
+    renderLobby({ lobbyClient: { getLobby: vi.fn().mockRejectedValue(unavailable) } });
+    await screen.findByRole('alert');
+    expect(screen.getByRole('button', { name: /retour à l'accueil/i })).toBeInTheDocument();
+  });
+
+  it('navigates to "/" when the back-home button is clicked from the not-found error', async () => {
+    const notFound = new LobbyClientError({
+      kind: 'not-found', status: 404, problem: null, message: 'No lobby with id 7gQ2xK9p',
+    });
+    renderLobby({ lobbyClient: { getLobby: vi.fn().mockRejectedValue(notFound) } });
+    await screen.findByRole('alert');
+    const back = screen.getByRole('button', { name: /retour à l'accueil/i });
+    fireEvent.click(back);
+    // `/` mounts the Index route which would attempt the puzzle loader;
+    // the stub rejects, so the route renders its alert. We just need
+    // proof the navigation left the lobby's error screen — assert the
+    // alert copy is no longer the lobby's "Salon introuvable" string.
+    await screen.findByRole('alert');
+    expect(screen.queryByText('Salon introuvable.')).toBeNull();
+  });
+});
+
+describe('Lobby route Start button loading feedback', () => {
+  it('flips the Start button label to "Démarrage…" after click and back to default on gameStarted', async () => {
+    const gameClient = makeFakeGameClient();
+    renderLobby({ gameClient });
+    await screen.findByRole('heading', { name: /WordSparrow/ });
+
+    const startButton = screen.getByRole('button', { name: /démarrer la partie/i });
+    expect(startButton).toBeEnabled();
+    fireEvent.click(startButton);
+
+    // The very next render carries the `isStarting` flag down to
+    // WaitingRoom; the button label and disabled state confirm the
+    // user-visible feedback is in place.
+    const busy = await screen.findByRole('button', { name: /démarrage…/i });
+    expect(busy).toBeDisabled();
+    expect(busy).toHaveAttribute('aria-busy', 'true');
+    expect(gameClient.startGameCalls.count).toBe(1);
+
+    // The `gameStarted` frame swings the lobby into IN_PROGRESS, which
+    // unmounts WaitingRoom entirely — the loading button should be
+    // gone from the DOM.
+    act(() => {
+      gameClient.dispatch({
+        type: 'gameStarted',
+        puzzle: buildGamePuzzle(),
+        startedAt: '2026-05-02T15:30:00Z',
+      });
+    });
+    expect(screen.queryByRole('button', { name: /démarrage…/i })).toBeNull();
+  });
+
+  it('clears the loading state when an error frame arrives so the owner can retry', async () => {
+    const gameClient = makeFakeGameClient();
+    renderLobby({ gameClient });
+    await screen.findByRole('heading', { name: /WordSparrow/ });
+
+    fireEvent.click(screen.getByRole('button', { name: /démarrer la partie/i }));
+    expect(await screen.findByRole('button', { name: /démarrage…/i })).toBeDisabled();
+
+    act(() => {
+      gameClient.dispatch({
+        type: 'error',
+        errorType: 'https://bliss.example/errors/start-rejected',
+        title: 'Could not start',
+        detail: 'reason',
+      });
+    });
+
+    // Server-side rejection ⇒ flag clears, button reverts to its
+    // default label, and the owner can click again.
+    const reset = await screen.findByRole('button', { name: /démarrer la partie/i });
+    expect(reset).toBeEnabled();
+  });
 });
