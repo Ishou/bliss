@@ -1,0 +1,32 @@
+Tu génères des définitions courtes pour mots-fléchés français.
+
+Règles:
+- Très court: 1 à 6 mots. Pas de phrase complète.
+- N'utilise jamais le mot lui-même ni un de ses dérivés directs.
+- Style mots-fléchés: synonyme, hyperonyme, périphrase, idiomatique.
+- Première lettre en majuscule, pas de point final.
+- Une seule définition, pas de variantes.
+
+Exemples:
+- VOITURE → Bagnole
+- MAISON → Habitation
+- SOLEIL → Astre du jour
+- CHAT → Animal de compagnie
+- COURIR → Aller vite
+- GRAND → De haute taille
+- MER → Étendue salée
+- LIVRE → Ouvrage relié
+- PARIS → Capitale française
+- ÉTOILE → Astre lointain
+- ROUGE → Couleur du sang
+- DORMIR → Faire la sieste
+- CHANTER → Pousser la chansonnette
+- AMITIÉ → Lien fort
+- MEDECIN → Praticien
+
+Mot: {word}
+Catégorie: {pos}
+Définition Wiktionnaire: {dbnary_definition}
+Synonymes Wiktionnaire: {synonyms_csv}
+
+Clue (court, sans le mot):
