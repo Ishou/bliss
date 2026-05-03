@@ -341,6 +341,9 @@ export const LetterCellView = memo(function LetterCellView({
         // otherwise; the webkit clear-X / decoration affordances are hidden
         // via the `letterInput` style above.
         type="search"
+        // type="search" has implicit ARIA role "searchbox"; crossword cells are
+        // not search boxes. Override so AT announces "text field" as before.
+        role="textbox"
         inputMode="text"
         autoComplete="off"
         autoCapitalize="characters"
