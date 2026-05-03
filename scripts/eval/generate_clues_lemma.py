@@ -82,55 +82,36 @@ def pos_label(morphology: str) -> str:
     return morphology.split(",", 1)[0].strip()
 
 
-def _resolve_batch_generate():
-    """Return (batch_fn, sampler_factory) tuple. batch_fn signature is
-        batch_fn(model, tokenizer, prompts: list[str], *, max_tokens: int, temp: float, top_p: float) -> list[str]
-    Tries mlx-lm's native batched API first; falls back to a serial loop over
-    `generate` if not available (older mlx-lm versions) so the script still runs."""
-    sampler_factory = None
+def _patch_mlx_stats_zero_division() -> bool:
+    """Monkey-patch mlx_lm's prompt_tps division to avoid ZeroDivisionError on
+    fast cache-hit paths (observed on mlx-lm 0.20.x). Returns True if patched."""
     try:
-        from mlx_lm.sample_utils import make_sampler  # type: ignore[import-not-found]
-        sampler_factory = make_sampler
+        import mlx_lm.generate as gmod  # type: ignore[import-not-found]
     except ImportError:
-        pass
+        return False
+    # Find any class in the module that has a `stats` contextmanager method.
+    # The structure varies across versions; we patch defensively by wrapping
+    # any `prompt_tps` setter we can find.
+    for attr in dir(gmod):
+        cls = getattr(gmod, attr)
+        if not isinstance(cls, type):
+            continue
+        if hasattr(cls, "prompt_time") and hasattr(cls, "prompt_tokens"):
+            # The dataclass holds the timing values; wrap its setattr so any
+            # near-zero prompt_time becomes a tiny epsilon before downstream
+            # division.
+            original_setattr = cls.__setattr__
 
-    # Modern mlx-lm: top-level batch_generate.
-    try:
-        from mlx_lm import batch_generate as _native  # type: ignore[import-not-found]
+            def safe_setattr(self, name, value, _orig=original_setattr):
+                if name == "prompt_time" and value == 0:
+                    value = 1e-9
+                _orig(self, name, value)
 
-        def fn(model, tokenizer, prompts, *, max_tokens, temp, top_p):
-            kwargs = {"max_tokens": max_tokens, "verbose": False}
-            if sampler_factory is not None:
-                kwargs["sampler"] = sampler_factory(temp=temp, top_p=top_p)
-            else:
-                kwargs["temp"] = temp
-                kwargs["top_p"] = top_p
-            return _native(model, tokenizer, prompts=prompts, **kwargs)
+            cls.__setattr__ = safe_setattr
+    return True
 
-        return fn, "native"
-    except ImportError:
-        pass
 
-    # Some versions expose it under utils.
-    try:
-        from mlx_lm.utils import batch_generate as _native  # type: ignore[import-not-found]
-
-        def fn(model, tokenizer, prompts, *, max_tokens, temp, top_p):
-            kwargs = {"max_tokens": max_tokens, "verbose": False}
-            if sampler_factory is not None:
-                kwargs["sampler"] = sampler_factory(temp=temp, top_p=top_p)
-            else:
-                kwargs["temp"] = temp
-                kwargs["top_p"] = top_p
-            return _native(model, tokenizer, prompts=prompts, **kwargs)
-
-        return fn, "utils"
-    except ImportError:
-        pass
-
-    # Fallback: serial loop. Same interface, but no real batching.
-    from mlx_lm import generate  # type: ignore[import-not-found]
-
+def _serial_generate(generate_fn, sampler_factory):
     def fn(model, tokenizer, prompts, *, max_tokens, temp, top_p):
         outs: list[str] = []
         for p in prompts:
@@ -140,10 +121,68 @@ def _resolve_batch_generate():
             else:
                 kwargs["temp"] = temp
                 kwargs["top_p"] = top_p
-            outs.append(generate(model, tokenizer, prompt=p, **kwargs))
+            outs.append(generate_fn(model, tokenizer, prompt=p, **kwargs))
         return outs
 
-    return fn, "serial-fallback"
+    return fn
+
+
+def _resolve_batch_generate():
+    """Return (batch_fn, mode_label). batch_fn signature is
+        batch_fn(model, tokenizer, prompts, *, max_tokens, temp, top_p) -> list[str]
+
+    Tries mlx-lm's native batched API first. On ZeroDivisionError (a known
+    bug in some mlx-lm 0.20.x stats finalisation) the call transparently
+    falls back to serial generation for that batch."""
+    sampler_factory = None
+    try:
+        from mlx_lm.sample_utils import make_sampler  # type: ignore[import-not-found]
+        sampler_factory = make_sampler
+    except ImportError:
+        pass
+
+    from mlx_lm import generate as single_generate  # type: ignore[import-not-found]
+    serial_fn = _serial_generate(single_generate, sampler_factory)
+
+    _patch_mlx_stats_zero_division()
+
+    native = None
+    label = ""
+    for source, attr in (("mlx_lm", "batch_generate"), ("mlx_lm.utils", "batch_generate")):
+        try:
+            mod = __import__(source, fromlist=[attr])
+            native = getattr(mod, attr)
+            label = source
+            break
+        except (ImportError, AttributeError):
+            continue
+
+    if native is None:
+        return serial_fn, "serial-only"
+
+    seen_zero_div = {"yes": False}
+
+    def fn(model, tokenizer, prompts, *, max_tokens, temp, top_p):
+        if seen_zero_div["yes"]:
+            return serial_fn(model, tokenizer, prompts, max_tokens=max_tokens, temp=temp, top_p=top_p)
+        kwargs = {"max_tokens": max_tokens, "verbose": False}
+        if sampler_factory is not None:
+            kwargs["sampler"] = sampler_factory(temp=temp, top_p=top_p)
+        else:
+            kwargs["temp"] = temp
+            kwargs["top_p"] = top_p
+        try:
+            return native(model, tokenizer, prompts=prompts, **kwargs)
+        except ZeroDivisionError:
+            print(
+                "  [warn] mlx-lm batch_generate hit ZeroDivisionError in stats; "
+                "falling back to serial generate for the rest of the run",
+                file=sys.stderr,
+            )
+            seen_zero_div["yes"] = True
+            return serial_fn(model, tokenizer, prompts, max_tokens=max_tokens, temp=temp, top_p=top_p)
+
+    return fn, label
 
 
 def main() -> None:
