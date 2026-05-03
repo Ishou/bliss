@@ -81,17 +81,34 @@ def _pos_rank(pos: str) -> int:
         return len(POS_PREFERENCE)
 
 
+_MAX_SENSES = 5
+
+
 def _lookup_one(safe_word: str) -> tuple[str, str, str]:
+    """Return (pos, senses_pipe_delimited, synonyms_pipe_delimited).
+
+    `senses_pipe_delimited` carries up to _MAX_SENSES DBnary definitions for
+    the chosen POS, in the order DBnary returned them. Downstream (enrich
+    step) picks the first non-self-referential sense — multi-sense fetching
+    means we only fall back to blanking when ALL senses self-reference."""
     def_bindings = _run(DEFINITION_QUERY.replace("__WORD__", safe_word))
     if not def_bindings:
         return ("", "", "")
 
-    chosen = min(
-        def_bindings,
-        key=lambda b: _pos_rank(b.get("pos", {}).get("value", "").rsplit("#", 1)[-1]),
+    # Choose a POS class by priority, then keep every sense from that class.
+    chosen_pos = min(
+        (b.get("pos", {}).get("value", "").rsplit("#", 1)[-1] for b in def_bindings),
+        key=_pos_rank,
     )
-    pos = chosen.get("pos", {}).get("value", "").rsplit("#", 1)[-1]
-    definition = chosen.get("defText", {}).get("value", "")
+    senses: list[str] = []
+    for b in def_bindings:
+        if b.get("pos", {}).get("value", "").rsplit("#", 1)[-1] != chosen_pos:
+            continue
+        text = b.get("defText", {}).get("value", "").strip()
+        if text and text not in senses:
+            senses.append(text)
+        if len(senses) >= _MAX_SENSES:
+            break
 
     syn_bindings = _run(SYNONYM_QUERY.replace("__WORD__", safe_word))
     synonyms_seen: list[str] = []
@@ -102,7 +119,7 @@ def _lookup_one(safe_word: str) -> tuple[str, str, str]:
         synonyms_seen.append(label)
         if len(synonyms_seen) >= 8:
             break
-    return (pos, definition, "|".join(synonyms_seen))
+    return (chosen_pos, "|".join(senses), "|".join(synonyms_seen))
 
 
 def _escape(word: str) -> str:

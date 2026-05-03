@@ -177,11 +177,11 @@ def _all_forms_of(lemma: str, lemma_to_forms: dict[str, set[str]]) -> set[str]:
 
 
 def clean_definition(definition: str, lemma: str, lemma_to_forms: dict[str, set[str]]) -> str:
-    """Drop the definition entirely if it self-references (the lemma or any
-    inflection appears in it). Self-referential defs cause the model to copy
-    the target word into the clue; the model does better with no def + the
-    synonyms list than with a contaminated def. The original raw def is
-    preserved in `definition_raw`."""
+    """Pick the first DBnary sense that doesn't self-reference the lemma or
+    any of its inflections. The fetch step packs multiple senses pipe-
+    delimited into the `definition` column; we walk them in order. Falls back
+    to empty (the model has the lemma + synonyms anyway) when every sense is
+    contaminated. Single-sense input (legacy CSVs without `|`) still works."""
     if not definition:
         return ""
     forms = _all_forms_of(lemma, lemma_to_forms)
@@ -189,9 +189,10 @@ def clean_definition(definition: str, lemma: str, lemma_to_forms: dict[str, set[
         r"\b(?:" + "|".join(re.escape(f) for f in sorted(forms, key=len, reverse=True)) + r")\b",
         re.IGNORECASE,
     )
-    if pattern.search(definition):
-        return ""
-    return definition
+    for sense in (s.strip() for s in definition.split("|")):
+        if sense and not pattern.search(sense):
+            return sense
+    return ""
 
 
 def clean_synonyms(synonyms_csv: str, lemma: str, lemma_to_forms: dict[str, set[str]]) -> str:
