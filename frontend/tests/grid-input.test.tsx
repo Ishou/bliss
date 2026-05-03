@@ -289,6 +289,108 @@ describe('Grid keyboard interactions', () => {
   });
 });
 
+// Tab / Enter cycle across the puzzle's clues in deterministic order:
+// across-then-down, sorted by starting (row, col). For TEST_PUZZLE the
+// order is across-1 [(0,1)] → across-2 [(1,1)..(1,4)] → down-1 [(1,2),(2,2),(3,2)].
+// Mobile keyboards' "Next" button maps to Enter, so the same handler
+// serves the `enterKeyHint="next"` affordance for soft keyboards. Both keys
+// wrap at the ends of the list; Shift reverses the direction of travel.
+describe('Grid keyboard interactions — Tab / Enter clue cycling', () => {
+  it('Tab from a focused cell moves focus to the first cell of the next word', () => {
+    const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
+    // Click (1,1) — first of across-2. orderedClues index = 1.
+    const start = inputAt(container, 1, 1)!;
+    click(start);
+    fireEvent.keyDown(start, { key: 'Tab' });
+    // Next clue in order is down-1, starting at (1,2). Direction must
+    // flip to 'down' so the new word's cells highlight.
+    expect(document.activeElement).toBe(inputAt(container, 1, 2));
+    expect(wrapAt(container, 2, 2)?.dataset.inWord).toBe('true');
+    expect(wrapAt(container, 3, 2)?.dataset.inWord).toBe('true');
+    // across-2's perpendicular cells must NOT remain highlighted.
+    expect(wrapAt(container, 1, 3)?.dataset.inWord).toBe('false');
+    expect(wrapAt(container, 1, 4)?.dataset.inWord).toBe('false');
+  });
+
+  it('Tab from the last word wraps to the first word', () => {
+    const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
+    // Click (1,2) — first cell of down-1 (the last clue in orderedClues).
+    // Repeat-click logic doesn't apply on the first click; the
+    // starting-clue preference picks down-1 → direction='down'.
+    const start = inputAt(container, 1, 2)!;
+    click(start);
+    fireEvent.keyDown(start, { key: 'Tab' });
+    // Wraps to across-1, whose only cell is (0,1).
+    expect(document.activeElement).toBe(inputAt(container, 0, 1));
+  });
+
+  it('Shift+Tab from the first word wraps to the last word', () => {
+    const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
+    // Click (0,1) — across-1. Shift+Tab walks to down-1's start (1,2).
+    const start = inputAt(container, 0, 1)!;
+    click(start);
+    fireEvent.keyDown(start, { key: 'Tab', shiftKey: true });
+    expect(document.activeElement).toBe(inputAt(container, 1, 2));
+    // Direction must be 'down' — verify via the down-1 in-word stripe.
+    expect(wrapAt(container, 2, 2)?.dataset.inWord).toBe('true');
+    expect(wrapAt(container, 3, 2)?.dataset.inWord).toBe('true');
+  });
+
+  it('Enter behaves identically to Tab (advances to the next word)', () => {
+    const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
+    const start = inputAt(container, 1, 1)!;
+    click(start);
+    fireEvent.keyDown(start, { key: 'Enter' });
+    expect(document.activeElement).toBe(inputAt(container, 1, 2));
+  });
+
+  it('Shift+Enter walks backward like Shift+Tab', () => {
+    const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
+    // Click (1,1) [across-2, idx 1]. Shift+Enter steps back to across-1 [idx 0].
+    const start = inputAt(container, 1, 1)!;
+    click(start);
+    fireEvent.keyDown(start, { key: 'Enter', shiftKey: true });
+    expect(document.activeElement).toBe(inputAt(container, 0, 1));
+  });
+
+  it('Tab when no cell is focused picks the first word\'s first cell', () => {
+    const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
+    // No click — `focused` is still null. Fire Tab on any cell input;
+    // the React onKeyDown handler runs regardless of whether the input
+    // is the document's activeElement, and the no-focus branch must
+    // pick orderedClues[0] = across-1 at (0,1).
+    fireEvent.keyDown(inputAt(container, 2, 0)!, { key: 'Tab' });
+    expect(document.activeElement).toBe(inputAt(container, 0, 1));
+  });
+
+  it('direction flips when Tab moves between an across-word and a down-word', () => {
+    const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
+    // Start at across-1 (idx 0, across). Tab → across-2 (idx 1, still across).
+    click(inputAt(container, 0, 1)!);
+    fireEvent.keyDown(inputAt(container, 0, 1)!, { key: 'Tab' });
+    expect(document.activeElement).toBe(inputAt(container, 1, 1));
+    // across-2's stripe should be highlighted (cells (1,2)..(1,4) in word).
+    expect(wrapAt(container, 1, 2)?.dataset.inWord).toBe('true');
+    expect(wrapAt(container, 1, 4)?.dataset.inWord).toBe('true');
+    // Tab again → down-1 (idx 2). Direction must flip to 'down'.
+    fireEvent.keyDown(inputAt(container, 1, 1)!, { key: 'Tab' });
+    expect(document.activeElement).toBe(inputAt(container, 1, 2));
+    expect(wrapAt(container, 2, 2)?.dataset.inWord).toBe('true');
+    expect(wrapAt(container, 3, 2)?.dataset.inWord).toBe('true');
+    // The across-2 cells perpendicular to (1,2) must not stay lit.
+    expect(wrapAt(container, 1, 3)?.dataset.inWord).toBe('false');
+  });
+
+  it('Tab calls preventDefault so the browser does not move focus out of the grid', () => {
+    const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
+    const start = inputAt(container, 1, 1)!;
+    click(start);
+    // fireEvent.keyDown returns false when any handler called preventDefault.
+    const notDefaulted = fireEvent.keyDown(start, { key: 'Tab' });
+    expect(notDefaulted).toBe(false);
+  });
+});
+
 // onCellChange is the multiplayer hook (Wave H · PR #19) that lets a
 // parent broadcast cell writes over the WebSocket without coupling the
 // hook to any transport. Solo mode passes nothing and observes no
