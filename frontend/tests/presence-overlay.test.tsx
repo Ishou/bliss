@@ -45,6 +45,11 @@ const TEST_PUZZLE: Puzzle = {
 
 const SESSION_ALICE = '0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6c' as SessionId;
 const SESSION_BOB = 'aaaa1111-7a2c-7c9e-8f1a-9b2d3e4f5a6c' as SessionId;
+// Stand-in for the local player's session — the overlay filters out
+// frames whose sessionId matches `currentSessionId` (own presence is
+// already conveyed by `letterCellInWord` + the DOM caret), so tests use
+// a third session id distinct from any peer being asserted.
+const SESSION_LOCAL = 'bbbb2222-7a2c-7c9e-8f1a-9b2d3e4f5a6c' as SessionId;
 
 const players: Map<SessionId, Player> = new Map([
   [SESSION_ALICE, { sessionId: SESSION_ALICE, pseudonym: 'Alice' as Pseudonym, joinedAt: '2026-05-02T15:30:00Z' }],
@@ -84,6 +89,7 @@ describe('PresenceOverlay — single peer cursor', () => {
         puzzle={TEST_PUZZLE}
         subscribeToRemotePresence={stream.subscribe}
         playersBySessionId={players}
+        currentSessionId={SESSION_LOCAL}
       />,
     );
     act(() => stream.dispatch(presence(SESSION_ALICE, 1, 2, 'across')));
@@ -102,6 +108,7 @@ describe('PresenceOverlay — single peer cursor', () => {
         puzzle={TEST_PUZZLE}
         subscribeToRemotePresence={stream.subscribe}
         playersBySessionId={players}
+        currentSessionId={SESSION_LOCAL}
       />,
     );
     act(() => stream.dispatch(presence(SESSION_ALICE, 1, 3, 'across')));
@@ -119,6 +126,7 @@ describe('PresenceOverlay — single peer cursor', () => {
         puzzle={TEST_PUZZLE}
         subscribeToRemotePresence={stream.subscribe}
         playersBySessionId={players}
+        currentSessionId={SESSION_LOCAL}
       />,
     );
     act(() => stream.dispatch(presence(SESSION_ALICE, 1, 2, 'across')));
@@ -126,6 +134,30 @@ describe('PresenceOverlay — single peer cursor', () => {
     act(() => stream.dispatch(presence(SESSION_ALICE, null, null, null)));
     expect(container.querySelectorAll('[data-testid="presence-ring"]')).toHaveLength(0);
     expect(container.querySelectorAll('[data-testid="presence-chip"]')).toHaveLength(0);
+  });
+
+  it('drops a presence frame whose sessionId matches currentSessionId (own cursor never overlaid)', () => {
+    const stream = makeFakeStream();
+    const localPlayers: Map<SessionId, Player> = new Map([
+      [SESSION_LOCAL, { sessionId: SESSION_LOCAL, pseudonym: 'Me' as Pseudonym, joinedAt: '2026-05-02T15:30:00Z' }],
+      [SESSION_ALICE, { sessionId: SESSION_ALICE, pseudonym: 'Alice' as Pseudonym, joinedAt: '2026-05-02T15:30:01Z' }],
+    ]);
+    const { container } = render(
+      <Grid
+        puzzle={TEST_PUZZLE}
+        subscribeToRemotePresence={stream.subscribe}
+        playersBySessionId={localPlayers}
+        currentSessionId={SESSION_LOCAL}
+      />,
+    );
+    // Server echoes the local player's own cellFocus back via presenceUpdated;
+    // the overlay must NOT paint a ring for the local player on top of the
+    // existing letterCellInWord highlight.
+    act(() => stream.dispatch(presence(SESSION_LOCAL, 1, 2, 'across')));
+    expect(container.querySelectorAll('[data-testid="presence-ring"]')).toHaveLength(0);
+    // A peer presence on the same dispatch round still renders.
+    act(() => stream.dispatch(presence(SESSION_ALICE, 2, 2, 'down')));
+    expect(container.querySelectorAll('[data-testid="presence-ring"]')).toHaveLength(1);
   });
 
   it('drops a presence frame for a session not in playersBySessionId', () => {
@@ -136,6 +168,7 @@ describe('PresenceOverlay — single peer cursor', () => {
         puzzle={TEST_PUZZLE}
         subscribeToRemotePresence={stream.subscribe}
         playersBySessionId={players}
+        currentSessionId={SESSION_LOCAL}
       />,
     );
     act(() => stream.dispatch(presence(ghost, 1, 2, 'across')));
@@ -151,6 +184,7 @@ describe('PresenceOverlay — overlapping presences', () => {
         puzzle={TEST_PUZZLE}
         subscribeToRemotePresence={stream.subscribe}
         playersBySessionId={players}
+        currentSessionId={SESSION_LOCAL}
       />,
     );
     act(() => {

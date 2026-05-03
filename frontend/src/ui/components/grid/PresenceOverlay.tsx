@@ -119,6 +119,7 @@ export function PresenceOverlay({
   puzzle,
   subscribe,
   playersBySessionId,
+  currentSessionId,
 }: {
   // Ref to the grid container the overlay measures cells against.
   // Bounding rectangles are computed relative to this element so layer
@@ -133,6 +134,12 @@ export function PresenceOverlay({
   // Missing sessions are skipped (a presence frame for a player who
   // hasn't joined yet is dropped silently).
   readonly playersBySessionId: ReadonlyMap<SessionId, Player>;
+  // The local player's sessionId. Their own presenceUpdated frames are
+  // filtered out — the local "current word" highlight (leaf.50 background
+  // on `letterCellInWord` cells) plus the DOM caret already show where
+  // they are, and stacking the overlay's hue on top of leaf.50 muddies
+  // the visual without adding information.
+  readonly currentSessionId: SessionId;
 }) {
   // Insertion-ordered list. A fresh presence overwrites the previous
   // entry but keeps its position in iteration order, so chip-stacking
@@ -144,14 +151,16 @@ export function PresenceOverlay({
   const [, setLayoutTick] = useState(0);
 
   // Subscribe on mount, detach on unmount. Same registrar pattern as
-  // `subscribeToRemoteCellUpdates` in Grid.
+  // `subscribeToRemoteCellUpdates` in Grid. The local player's own
+  // frames are dropped here — see the prop docs for why.
   useEffect(() => {
     const unsubscribe = subscribe((event) => {
       if (event.type !== 'presenceUpdated') return;
+      if (event.sessionId === currentSessionId) return;
       applyPresenceUpdate(event, setPresences);
     });
     return unsubscribe;
-  }, [subscribe]);
+  }, [subscribe, currentSessionId]);
 
   // Re-measure on container resize. jsdom polyfills `ResizeObserver` to
   // a no-op (vitest.setup.ts), so this is a noop in unit tests; the
