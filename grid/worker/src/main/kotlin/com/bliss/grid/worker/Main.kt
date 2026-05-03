@@ -3,6 +3,7 @@
 package com.bliss.grid.worker
 
 import com.bliss.grid.worker.clues.GenerateCluesCommand
+import com.bliss.grid.worker.dbnary.IngestDbnaryCommand
 import com.bliss.grid.worker.exporter.ExportWordsCommand
 import com.bliss.grid.worker.importer.ImportFrequenciesCommand
 import com.bliss.grid.worker.importer.ImportGrammalecteCommand
@@ -21,6 +22,7 @@ fun main(args: Array<String>) =
             ImportWordsCommand(),
             ImportGrammalecteCommand(),
             ImportFrequenciesCommand(),
+            IngestDbnaryCommand(),
             GenerateCluesCommand(),
             ExportWordsCommand(),
         ).main(args)
