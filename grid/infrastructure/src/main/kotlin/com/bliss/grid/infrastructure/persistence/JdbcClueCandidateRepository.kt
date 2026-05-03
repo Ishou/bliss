@@ -117,9 +117,7 @@ class JdbcClueCandidateRepository(
         dataSource.connection.use { conn ->
             conn.prepareStatement("SELECT COUNT(*) FROM clue_candidates WHERE source = ?").use { stmt ->
                 stmt.setString(1, source)
-                stmt.executeQuery().use { rs ->
-                    if (rs.next()) rs.getLong(1) else 0L
-                }
+                stmt.executeQuery().use { if (it.next()) it.getLong(1) else 0L }
             }
         }
 
@@ -151,12 +149,9 @@ class JdbcClueCandidateRepository(
             RETURNING (xmax = 0) AS inserted
             """.trimIndent()
 
-        private val SELECT_COLUMNS =
-            "id, word_id, source, sense_index, clue_text, confidence, model_version, generated_at"
-
         private val SELECT_BY_WORD_SQL =
             """
-            SELECT $SELECT_COLUMNS
+            SELECT word_id, source, sense_index, clue_text, confidence, model_version
             FROM clue_candidates
             WHERE word_id = ?
             ORDER BY source ASC, generated_at DESC
@@ -168,7 +163,7 @@ class JdbcClueCandidateRepository(
         // whose source isn't in the list are filtered out by the WHERE.
         private val SELECT_TOP_BY_PRIORITY_SQL =
             """
-            SELECT $SELECT_COLUMNS
+            SELECT word_id, source, sense_index, clue_text, confidence, model_version
             FROM clue_candidates
             WHERE word_id = ?
               AND source = ANY(?::text[])
