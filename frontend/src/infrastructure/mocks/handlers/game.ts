@@ -42,6 +42,10 @@ const lobbyWs = ws.link('*://*/v1/lobbies/:lobbyId/ws');
 const BOT_TICK_MIN_MS = 4_000;
 const BOT_TICK_MAX_MS = 8_000;
 const BOT_JOIN_DELAY_MS = 3_000;
+// Bot presence cadence — slightly faster than the typing tick so the
+// reviewer sees the cursor wander between keystrokes. ~3 s feels alive
+// without being distracting on a single screen.
+const BOT_PRESENCE_TICK_MS = 3_000;
 
 const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 const randomLetter = (): string =>
@@ -133,10 +137,11 @@ export const gameHandlers = [
 // expects in its handler array — capture and export it below.
 const lobbyWsHandler = lobbyWs.addEventListener('connection', ({ client, params }) => {
   const lobbyId = String(params.lobbyId);
-  // Per-connection state. Closing the socket clears both timers so a
+  // Per-connection state. Closing the socket clears every timer so a
   // reload does not leak setTimeout callbacks into the next session.
   let joinTimer: ReturnType<typeof setTimeout> | null = null;
   let tickTimer: ReturnType<typeof setTimeout> | null = null;
+  let presenceTimer: ReturnType<typeof setTimeout> | null = null;
   let botJoined = false;
   // CellKey → latest letter, used for the relaxed "all cells filled"
   // gameSolved trigger.
@@ -209,6 +214,34 @@ const lobbyWsHandler = lobbyWs.addEventListener('connection', ({ client, params 
     }, delay);
   };
 
+  // Bot presence loop. Emits a `presenceUpdated` frame at a random
+  // letter cell every ~3 s while IN_PROGRESS, so reviewers can see the
+  // PresenceOverlay (cursor ring + word tint + chip) in action without
+  // opening a second tab. Direction alternates randomly so the word
+  // tint changes axis between ticks. Halts when the lobby leaves
+  // IN_PROGRESS — the closing-tick guard inside ensures we drop the
+  // timer once the game is solved.
+  const scheduleBotPresence = (): void => {
+    presenceTimer = setTimeout(() => {
+      const lobby = getLobby(lobbyId);
+      if (!lobby || lobby.state !== 'IN_PROGRESS' || !lobby.game) return;
+      const letterCells = lobby.game.puzzle.cells.filter((c) => c.kind === 'letter');
+      if (letterCells.length === 0) return;
+      const target = letterCells[Math.floor(Math.random() * letterCells.length)]!;
+      const direction = Math.random() < 0.5 ? 'across' : 'down';
+      client.send(
+        JSON.stringify({
+          type: 'presenceUpdated',
+          sessionId: BOT_SESSION_ID,
+          row: target.position.row,
+          column: target.position.column,
+          direction,
+        }),
+      );
+      scheduleBotPresence();
+    }, BOT_PRESENCE_TICK_MS);
+  };
+
   // Mock relaxation: emit `gameSolved` once every non-block cell holds
   // any letter. The route consumes `durationMs` to freeze the timer
   // and the modal; `finalEntries` is the cell list we just collected.
@@ -225,6 +258,8 @@ const lobbyWsHandler = lobbyWs.addEventListener('connection', ({ client, params 
     }));
     if (tickTimer) clearTimeout(tickTimer);
     tickTimer = null;
+    if (presenceTimer) clearTimeout(presenceTimer);
+    presenceTimer = null;
     client.send(
       JSON.stringify({
         type: 'gameSolved',
@@ -316,6 +351,7 @@ const lobbyWsHandler = lobbyWs.addEventListener('connection', ({ client, params 
           }),
         );
         scheduleBotTick();
+        scheduleBotPresence();
         return;
       }
 
@@ -342,6 +378,32 @@ const lobbyWsHandler = lobbyWs.addEventListener('connection', ({ client, params 
         if (upd.letter == null) cellEntries.delete(key);
         else cellEntries.set(key, upd.letter);
         maybeFireGameSolved();
+        return;
+      }
+
+      case 'cellFocus': {
+        // The bot answers a player's cellFocus by emitting its own
+        // presenceUpdated at a randomly-chosen letter cell. That keeps
+        // the overlay alive and visible to a single reviewer without a
+        // second tab — every time the player focuses a cell, the bot
+        // "looks somewhere" too. Bursts compress server-side because
+        // the player's cellFocus is already debounced client-side at
+        // 200 ms (`WebSocketGameClient`).
+        const lobby = getLobby(lobbyId);
+        if (!lobby || lobby.state !== 'IN_PROGRESS' || !lobby.game) return;
+        const letterCells = lobby.game.puzzle.cells.filter((c) => c.kind === 'letter');
+        if (letterCells.length === 0) return;
+        const target = letterCells[Math.floor(Math.random() * letterCells.length)]!;
+        const direction = Math.random() < 0.5 ? 'across' : 'down';
+        client.send(
+          JSON.stringify({
+            type: 'presenceUpdated',
+            sessionId: BOT_SESSION_ID,
+            row: target.position.row,
+            column: target.position.column,
+            direction,
+          }),
+        );
         return;
       }
 
@@ -377,6 +439,7 @@ const lobbyWsHandler = lobbyWs.addEventListener('connection', ({ client, params 
   client.addEventListener('close', () => {
     if (joinTimer) clearTimeout(joinTimer);
     if (tickTimer) clearTimeout(tickTimer);
+    if (presenceTimer) clearTimeout(presenceTimer);
   });
 });
 

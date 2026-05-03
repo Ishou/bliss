@@ -1,11 +1,13 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { TransformComponent, TransformWrapper } from 'react-zoom-pan-pinch';
 import { css } from 'styled-system/css';
 import type { GameEvent, Unsubscribe } from '@/application/game';
 import type { Cell, Position, Puzzle } from '@/domain';
+import type { Player, SessionId } from '@/domain/game';
 import { BlockCellView, DefinitionCellView, LetterCellView } from './Cell';
 import { CurrentCluePanel } from './CurrentCluePanel';
-import { useGridNavigation } from './useGridNavigation';
+import { PresenceOverlay } from './PresenceOverlay';
+import { useGridNavigation, type Direction } from './useGridNavigation';
 
 const gridContainer = css({
   display: 'grid',
@@ -19,6 +21,14 @@ const gridContainer = css({
   overflow: 'visible',
   // Omitted: touch-action:manipulation blocked pinch/pan; user-select:none blocked iOS magnifier on clue cells.
 });
+
+// Positioning frame for the optional `<PresenceOverlay>` sibling. The
+// overlay is `position: absolute; inset: 0`, so it needs a positioned
+// ancestor — and that ancestor must be the same box that wraps the
+// `<div role="grid">` so the overlay's coordinate system shares the
+// grid's pixel bounds. `overflow: visible` so pseudonym chips that
+// float above the top row cells aren't clipped.
+const gridFrame = css({ position: 'relative', width: '100%', overflow: 'visible' });
 
 // `transformWrapperStyle` makes the zoom-pan viewport behave like the old
 // raw `<div role="grid">` did: full available width, capped at 480px,
@@ -85,16 +95,41 @@ const positionKey = (p: Position) => `${p.row},${p.col}`;
 // no focus / direction churn). Re-applied whenever the array reference
 // changes — pass a stable reference (`useMemo`-ed at the call site) to
 // avoid wiping a player's local typing on every re-render.
+// `onLocalFocusChange`: optional callback invoked when the local user's
+// focused cell or solving direction changes. The lobby route wires this
+// to `gameClient.cellFocus(...)` so peers can render the local user's
+// cursor on their grids (ADR-0018 §"Presence"). Adapter-side debounce
+// (200 ms in `WebSocketGameClient`) collapses bursts. Solo callers omit
+// the prop and the hook never schedules an out-of-band call.
+//
+// `subscribeToRemotePresence`: optional subscribe-style registrar that
+// receives every `GameEvent`; the overlay filters for `presenceUpdated`
+// internally (mirrors `subscribeToRemoteCellUpdates`). Solo callers
+// omit it and the overlay never mounts.
+//
+// `playersBySessionId`: optional lookup so the overlay can display
+// pseudonyms on the per-cursor chips. A presence frame for a session
+// not in the map is dropped silently — keeps a stale frame after a
+// `playerLeft` from re-introducing a phantom cursor.
 export function Grid({
   puzzle,
   onCellChange,
   subscribeToRemoteCellUpdates,
   initialEntries,
+  onLocalFocusChange,
+  subscribeToRemotePresence,
+  playersBySessionId,
 }: {
   puzzle: Puzzle;
   onCellChange?: (row: number, col: number, letter: string | null) => void;
   subscribeToRemoteCellUpdates?: (handler: (event: GameEvent) => void) => Unsubscribe;
   initialEntries?: ReadonlyArray<{ row: number; column: number; letter: string }>;
+  onLocalFocusChange?: (
+    position: Position | null,
+    direction: Direction | null,
+  ) => void;
+  subscribeToRemotePresence?: (handler: (event: GameEvent) => void) => Unsubscribe;
+  playersBySessionId?: ReadonlyMap<SessionId, Player>;
 }) {
   const cellByPosition = useMemo(() => {
     const m = new Map<string, Cell>();
@@ -110,7 +145,16 @@ export function Grid({
     [puzzle.height, puzzle.width],
   );
 
-  const nav = useGridNavigation(puzzle, { onCellChange });
+  const nav = useGridNavigation(puzzle, {
+    onCellChange,
+    onFocusChange: onLocalFocusChange,
+  });
+
+  // Ref for the positioned `gridFrame` div — the `PresenceOverlay`
+  // measures peer-cursor cell rectangles relative to this element so
+  // its layer stays pinned to the same pixel bounds as the grid even
+  // under pinch-zoom or layout shifts.
+  const gridFrameRef = useRef<HTMLDivElement | null>(null);
 
   // Wire the inbound multiplayer path. Stable across renders because the
   // hook returns a stable `applyRemoteCellUpdate` callback and we depend
@@ -197,59 +241,78 @@ export function Grid({
           wrapperStyle={transformWrapperStyle}
           contentStyle={transformContentStyle}
         >
-          <div
-            role="grid"
-            aria-label={puzzle.title}
-            lang={puzzle.language}
-            className={gridContainer}
-            style={templateStyle}
-          >
-            {rows.map(({ row, cells }) => (
-              <div key={row} role="row" className={rowStyles}>
-                {cells.map((cell, col) => {
-                  if (cell === null) {
-                    return (
-                      <BlockCellView
-                        key={`empty-${row}-${col}`}
-                        cell={{ kind: 'block', position: { row, col } }}
-                      />
-                    );
-                  }
-                  const key = positionKey(cell.position);
-                  switch (cell.kind) {
-                    case 'letter': {
-                      const highlight = nav.highlightFor(cell.position);
+          {/*
+            `gridFrame` is the positioning ancestor for the optional
+            `<PresenceOverlay>` sibling. The overlay anchors its rects
+            to this box's coordinate system so cursor / word-tint /
+            chip layers track the grid's pixel bounds even under
+            pinch-zoom transforms applied by the wrapper above. Solo
+            mode (no presence props) renders only the grid div — the
+            extra `<div>` is harmless layout chrome.
+          */}
+          <div ref={gridFrameRef} className={gridFrame}>
+            <div
+              role="grid"
+              aria-label={puzzle.title}
+              lang={puzzle.language}
+              className={gridContainer}
+              style={templateStyle}
+            >
+              {rows.map(({ row, cells }) => (
+                <div key={row} role="row" className={rowStyles}>
+                  {cells.map((cell, col) => {
+                    if (cell === null) {
                       return (
-                        <LetterCellView
-                          key={key}
-                          cell={cell}
-                          ariaLabel={`Case ligne ${cell.position.row + 1}, colonne ${cell.position.col + 1}`}
-                          inWord={highlight.currentWord}
-                          inputRef={nav.registerCellRef}
-                          onClick={nav.handleClick}
-                          onFocus={nav.handleFocus}
-                          onBlur={nav.handleBlur}
-                          onKeyDown={nav.handleKeyDown}
-                          onInput={nav.handleInput}
+                        <BlockCellView
+                          key={`empty-${row}-${col}`}
+                          cell={{ kind: 'block', position: { row, col } }}
                         />
                       );
                     }
-                    case 'definition': {
-                      const highlight = nav.highlightFor(cell.position);
-                      return (
-                        <DefinitionCellView
-                          key={key}
-                          cell={cell}
-                          currentArrow={highlight.currentArrow}
-                        />
-                      );
+                    const key = positionKey(cell.position);
+                    switch (cell.kind) {
+                      case 'letter': {
+                        const highlight = nav.highlightFor(cell.position);
+                        return (
+                          <LetterCellView
+                            key={key}
+                            cell={cell}
+                            ariaLabel={`Case ligne ${cell.position.row + 1}, colonne ${cell.position.col + 1}`}
+                            inWord={highlight.currentWord}
+                            inputRef={nav.registerCellRef}
+                            onClick={nav.handleClick}
+                            onFocus={nav.handleFocus}
+                            onBlur={nav.handleBlur}
+                            onKeyDown={nav.handleKeyDown}
+                            onInput={nav.handleInput}
+                          />
+                        );
+                      }
+                      case 'definition': {
+                        const highlight = nav.highlightFor(cell.position);
+                        return (
+                          <DefinitionCellView
+                            key={key}
+                            cell={cell}
+                            currentArrow={highlight.currentArrow}
+                          />
+                        );
+                      }
+                      case 'block':
+                        return <BlockCellView key={key} cell={cell} />;
                     }
-                    case 'block':
-                      return <BlockCellView key={key} cell={cell} />;
-                  }
-                })}
-              </div>
-            ))}
+                  })}
+                </div>
+              ))}
+            </div>
+            {subscribeToRemotePresence && playersBySessionId ? (
+              <PresenceOverlay
+                containerRef={gridFrameRef}
+                puzzle={puzzle}
+                subscribe={subscribeToRemotePresence}
+                playersBySessionId={playersBySessionId}
+              />
+            ) : null}
           </div>
         </TransformComponent>
       </TransformWrapper>

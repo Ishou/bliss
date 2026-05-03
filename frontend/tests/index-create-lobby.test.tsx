@@ -45,7 +45,7 @@ const baseCreatedLobby: Lobby & { readonly id: LobbyId } = {
 const stubGameClient: GameClient = {
   connect: () => Promise.resolve(),
   joinLobby: () => {}, renameSelf: () => {}, setGridConfig: () => {},
-  startGame: () => {}, cellUpdate: () => {}, leaveLobby: () => {},
+  startGame: () => {}, cellUpdate: () => {}, cellFocus: () => {}, leaveLobby: () => {},
   disconnect: () => {}, subscribe: () => () => {},
   subscribeConnectionState: () => () => {},
 };

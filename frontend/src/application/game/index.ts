@@ -14,6 +14,7 @@ export type {
   PlayerJoinedEvent,
   PlayerLeftEvent,
   PlayerRenamedEvent,
+  PresenceUpdatedEvent,
   Unsubscribe,
 } from './GameClient';
 export {

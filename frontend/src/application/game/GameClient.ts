@@ -63,6 +63,19 @@ export interface GameClient {
   // Player typed (or cleared) a letter. `null` clears the cell.
   cellUpdate(row: number, column: number, letter: Letter | null): void;
 
+  // Player's focus moved to a different cell (or cleared). Carries the
+  // direction (`across`/`down`) the player is solving so peers can tint
+  // the whole word, not just the focused cell. `null` row/column means
+  // the player has no cell focused. The adapter MUST debounce these so
+  // bursts of focus changes (a fast typist auto-advancing along a word)
+  // collapse to one outbound `cellFocus` frame; ADR-0018 §"Presence"
+  // pins the cadence at 5 Hz / 200 ms. Solo callers never invoke this.
+  cellFocus(
+    row: number | null,
+    column: number | null,
+    direction: 'across' | 'down' | null,
+  ): void;
+
   // Voluntary disconnect; frees the slot immediately.
   leaveLobby(): void;
 
@@ -125,6 +138,20 @@ export interface CellUpdatedEvent {
   readonly writtenAt: Instant;
 }
 
+// Ephemeral cursor update — one peer's focus moved (or cleared). Carries
+// no domain meaning: not persisted, not folded into game state, never
+// triggers conflict resolution. Consumers (the grid's `PresenceOverlay`)
+// use it to render a coloured ring + word tint + pseudonym chip on the
+// peer's currently-focused cell. `null` row/column means the peer has
+// nothing focused (drop their overlay). Mirrors AsyncAPI `presenceUpdated`.
+export interface PresenceUpdatedEvent {
+  readonly type: 'presenceUpdated';
+  readonly sessionId: SessionId;
+  readonly row: number | null;
+  readonly column: number | null;
+  readonly direction: 'across' | 'down' | null;
+}
+
 export interface GameSolvedEvent {
   readonly type: 'gameSolved';
   readonly durationMs: number;
@@ -148,5 +175,6 @@ export type GameEvent =
   | PlayerRenamedEvent
   | GameStartedEvent
   | CellUpdatedEvent
+  | PresenceUpdatedEvent
   | GameSolvedEvent
   | GameErrorEvent;

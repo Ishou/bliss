@@ -113,6 +113,81 @@ describe('WebSocketGameClient client→server frames', () => {
   });
 });
 
+describe('WebSocketGameClient.cellFocus debounce', () => {
+  // ADR-0018 §"Presence" pins the outbound cadence at 5 Hz / 200 ms.
+  // The adapter is the single source of truth for the debounce so
+  // every consumer benefits without re-implementing the timer.
+  it('collapses a burst of focus changes within 200 ms into one outbound frame carrying the latest tuple', async () => {
+    vi.useFakeTimers();
+    try {
+      const client = makeClient();
+      const connected = client.connect({ lobbyId, sessionId, pseudonym });
+      MockWebSocket.instances[0]!.emitOpen();
+      await connected;
+      const ws = MockWebSocket.instances[0]!;
+      // Three rapid focus changes within the window — only the last
+      // tuple should reach the wire after the timer fires.
+      client.cellFocus(0, 0, 'across');
+      client.cellFocus(1, 2, 'across');
+      client.cellFocus(3, 4, 'down');
+      // Before the window elapses, only the join handshake (index 0)
+      // is on the wire — no cellFocus frame yet.
+      expect(ws.sent.length).toBe(1);
+      vi.advanceTimersByTime(200);
+      expect(ws.sent.length).toBe(2);
+      expect(JSON.parse(ws.sent[1]!)).toEqual({
+        type: 'cellFocus',
+        row: 3,
+        column: 4,
+        direction: 'down',
+      });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('forwards a `null` focus tuple verbatim so peers can drop the cursor', async () => {
+    vi.useFakeTimers();
+    try {
+      const client = makeClient();
+      const connected = client.connect({ lobbyId, sessionId, pseudonym });
+      MockWebSocket.instances[0]!.emitOpen();
+      await connected;
+      const ws = MockWebSocket.instances[0]!;
+      client.cellFocus(null, null, null);
+      vi.advanceTimersByTime(200);
+      expect(JSON.parse(ws.sent[1]!)).toEqual({
+        type: 'cellFocus',
+        row: null,
+        column: null,
+        direction: null,
+      });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('drops a pending cellFocus on disconnect so the timer does not fire on a closed socket', async () => {
+    vi.useFakeTimers();
+    try {
+      const client = makeClient();
+      const connected = client.connect({ lobbyId, sessionId, pseudonym });
+      MockWebSocket.instances[0]!.emitOpen();
+      await connected;
+      const ws = MockWebSocket.instances[0]!;
+      client.cellFocus(2, 2, 'across');
+      client.disconnect();
+      vi.advanceTimersByTime(500);
+      // The only frame that landed before disconnect was the join
+      // handshake — the pending cellFocus was discarded with the
+      // pending timer.
+      expect(ws.sent.length).toBe(1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});
+
 describe('WebSocketGameClient.subscribe', () => {
   it('dispatches incoming lobbyState frames to handlers', async () => {
     const { client, ws } = await connectAndOpen();
@@ -143,6 +218,24 @@ describe('WebSocketGameClient.subscribe', () => {
     unsub();
     ws.emitMessage({ type: 'playerLeft', sessionId });
     expect(events).toHaveLength(0);
+  });
+
+  it('dispatches incoming presenceUpdated frames to handlers', async () => {
+    const { client, ws } = await connectAndOpen();
+    const events: GameEvent[] = [];
+    client.subscribe((e) => events.push(e));
+    ws.emitMessage({
+      type: 'presenceUpdated',
+      sessionId,
+      row: 2,
+      column: 3,
+      direction: 'across',
+    });
+    const event = events[0]!;
+    if (event.type !== 'presenceUpdated') throw new Error('expected presenceUpdated');
+    expect(event.row).toBe(2);
+    expect(event.column).toBe(3);
+    expect(event.direction).toBe('across');
   });
 
   it('maps server `error` frames into GameErrorEvent with errorType preserved', async () => {

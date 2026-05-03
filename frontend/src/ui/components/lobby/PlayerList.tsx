@@ -1,5 +1,6 @@
 import { css } from 'styled-system/css';
 import type { Lobby, SessionId } from '@/domain/game';
+import { playerColorVars } from '@/ui/lib/playerColor';
 
 // Pure prop-driven roster. Used in two layouts:
 //   - `stacked`: vertical list with empty-slot placeholders, mounted by
@@ -36,6 +37,11 @@ const styles = {
   stackedRow: css({
     display: 'flex', alignItems: 'center', gap: 'sm',
     padding: 'sm', border: '1px solid token(colors.border)',
+    // Per-player colour accent (ADR-0018 §"Presence"): a 4 px left
+    // border tinted by `--player-color`. Inline `style` per row sets
+    // the var so the same hue the in-game cursor / chip use also
+    // tags the row in the roster — a single visual signature per peer.
+    borderLeft: '4px solid var(--player-color, token(colors.border))',
     borderRadius: 'sm', bg: 'surface',
   }),
   emptySlot: css({
@@ -54,6 +60,12 @@ const styles = {
     display: 'inline-flex', alignItems: 'center', gap: 'xs',
     paddingBlock: 'xs', paddingInline: 'sm',
     border: '1px solid token(colors.border)', borderRadius: '9999px',
+    // Per-player colour accent: a 3 px left stripe via inline-style
+    // `--player-color`. Same hue the in-game cursor uses, so the
+    // pill chip in the roster matches the cursor on the grid at a
+    // glance. Decorative — no contrast requirement (the stripe
+    // doesn't carry semantic content).
+    borderLeft: '3px solid var(--player-color, token(colors.border))',
     bg: 'surface', fontSize: 'sm',
   }),
   inlinePseudonym: css({ fontWeight: 'medium', color: 'fg' }),
@@ -76,7 +88,13 @@ export function PlayerList({
     return (
       <ul className={styles.inlineList} aria-label="Liste des joueurs">
         {players.map((player) => (
-          <li key={player.sessionId} className={styles.inlineRow}>
+          <li
+            key={player.sessionId}
+            className={styles.inlineRow}
+            style={playerColorVars(player.sessionId)}
+            data-testid="player-row"
+            data-session-id={player.sessionId}
+          >
             <span className={styles.inlinePseudonym}>{player.pseudonym}</span>
             {player.sessionId === currentSessionId
               ? <span className={styles.badge}>vous</span> : null}
@@ -92,7 +110,13 @@ export function PlayerList({
   return (
     <ul className={styles.stackedList} aria-label="Liste des joueurs">
       {players.map((player) => (
-        <li key={player.sessionId} className={styles.stackedRow}>
+        <li
+          key={player.sessionId}
+          className={styles.stackedRow}
+          style={playerColorVars(player.sessionId)}
+          data-testid="player-row"
+          data-session-id={player.sessionId}
+        >
           <span className={styles.stackedPseudonym}>{player.pseudonym}</span>
           {player.sessionId === currentSessionId
             ? <span className={styles.badge}>vous</span> : null}

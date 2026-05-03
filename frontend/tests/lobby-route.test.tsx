@@ -57,6 +57,14 @@ interface FakeGameClient extends GameClient {
   readonly setGridConfigCalls: GridConfig[];
   readonly startGameCalls: { count: number };
   readonly cellUpdateCalls: Array<{ row: number; column: number; letter: Letter | null }>;
+  // Outbound presence calls from the local user's focus / direction
+  // changes. Wave III asserts the route wires `gameClient.cellFocus`
+  // into Grid's `onLocalFocusChange` prop end-to-end.
+  readonly cellFocusCalls: Array<{
+    row: number | null;
+    column: number | null;
+    direction: 'across' | 'down' | null;
+  }>;
   // Number of currently-attached event subscribers — lets tests assert
   // the route's `unsubscribe` cleanup ran on unmount.
   readonly subscriberCount: () => number;
@@ -82,6 +90,11 @@ const makeFakeGameClient = (): FakeGameClient => {
   const setGridConfigCalls: GridConfig[] = [];
   const startGameCalls = { count: 0 };
   const cellUpdateCalls: Array<{ row: number; column: number; letter: Letter | null }> = [];
+  const cellFocusCalls: Array<{
+    row: number | null;
+    column: number | null;
+    direction: 'across' | 'down' | null;
+  }> = [];
   return {
     connectCalls,
     disconnectCalls,
@@ -89,6 +102,7 @@ const makeFakeGameClient = (): FakeGameClient => {
     setGridConfigCalls,
     startGameCalls,
     cellUpdateCalls,
+    cellFocusCalls,
     subscriberCount: () => subscribers.size,
     dispatch: (event) => { for (const s of [...subscribers]) s(event); },
     dispatchConnectionState: (state) => {
@@ -101,6 +115,7 @@ const makeFakeGameClient = (): FakeGameClient => {
     setGridConfig: (config) => { setGridConfigCalls.push(config); },
     startGame: () => { startGameCalls.count += 1; },
     cellUpdate: (row, column, letter) => { cellUpdateCalls.push({ row, column, letter }); },
+    cellFocus: (row, column, direction) => { cellFocusCalls.push({ row, column, direction }); },
     leaveLobby: () => {},
     disconnect: () => { disconnectCalls.count += 1; },
     subscribe: (handler) => { subscribers.add(handler); return () => { subscribers.delete(handler); }; },
@@ -740,6 +755,59 @@ describe('Lobby route Wave H integration', () => {
     fireEvent.keyDown(cell!, { key: 'a' });
 
     expect(gameClient.cellUpdateCalls).toEqual([{ row: 0, column: 1, letter: 'A' }]);
+  });
+
+  it('forwards local focus changes to gameClient.cellFocus with row/column/direction', async () => {
+    const gameClient = makeFakeGameClient();
+    const { container } = renderLobby({ gameClient });
+    await screen.findByRole('heading', { name: /WordSparrow/ });
+    act(() => {
+      gameClient.dispatch({
+        type: 'gameStarted',
+        puzzle: buildGamePuzzle(),
+        startedAt: '2026-05-02T15:30:00Z',
+      });
+    });
+    const cell = container.querySelector<HTMLInputElement>(
+      '[data-cell-kind="letter"][data-row="0"][data-col="1"]',
+    );
+    cell!.focus();
+    fireEvent.click(cell!);
+    // The route wires Grid.onLocalFocusChange to gameClient.cellFocus.
+    // The hook fires every transition; the adapter (not under test
+    // here) is the single source of truth for the 200 ms debounce.
+    const last = gameClient.cellFocusCalls[gameClient.cellFocusCalls.length - 1]!;
+    expect(last.row).toBe(0);
+    expect(last.column).toBe(1);
+    expect(last.direction).toBe('across');
+  });
+
+  it('renders a peer presence chip after a presenceUpdated dispatch during IN_PROGRESS', async () => {
+    const gameClient = makeFakeGameClient();
+    const peerSessionId = '0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6c' as SessionId;
+    const { container } = renderLobby({ gameClient });
+    await screen.findByRole('heading', { name: /WordSparrow/ });
+    act(() => {
+      gameClient.dispatch({
+        type: 'gameStarted',
+        puzzle: buildGamePuzzle(),
+        startedAt: '2026-05-02T15:30:00Z',
+      });
+    });
+    act(() => {
+      gameClient.dispatch({
+        type: 'presenceUpdated',
+        sessionId: peerSessionId,
+        row: 0,
+        column: 1,
+        direction: 'across',
+      });
+    });
+    const chip = container.querySelector('[data-testid="presence-chip"]');
+    expect(chip).not.toBeNull();
+    // The fake's session 5678 player is in baseLobby.players; the chip
+    // text is the matching pseudonym.
+    expect(chip?.textContent).toContain('Joueur 5678');
   });
 });
 
