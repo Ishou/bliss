@@ -353,6 +353,101 @@ class ExportWordsCommandIntegrationTest {
     }
 
     @Test
+    fun `clue_candidates on a lemma propagates to inflected forms via the lemma JOIN`() {
+        // The lemma "voiture" has a `mistral-nemo` candidate; "voitures" (plural,
+        // lemma="voiture") has none of its own. The export must inherit the
+        // lemma's candidate via the LATERAL's lemma branch.
+        val voitureLemma =
+            insertWordReturningId(
+                word = "voiture",
+                language = "fr",
+                clue = "lemma legacy clue",
+                source = "grammalecte",
+                license = "MPL-2.0",
+                lemma = "voiture",
+            )
+        insertWordReturningId(
+            word = "voitures",
+            language = "fr",
+            clue = null,
+            source = "grammalecte",
+            license = "MPL-2.0",
+            lemma = "voiture",
+        )
+        insertCandidate(voitureLemma, source = "mistral-nemo", clueText = "Bagnole")
+
+        val output = tempDir.resolve("propagation.csv")
+        passthroughCommand().parse(
+            arrayOf(
+                "--language",
+                "fr",
+                "--include-clueless",
+                "--output",
+                output.toString(),
+                "--curated-dir",
+                emptyCuratedDir().toString(),
+                "--candidate-priority",
+                "mistral-nemo",
+            ),
+        )
+
+        val rows = parseCsv(output)
+        val voitures = rows.single { it.word == "voitures" }
+        assertThat(voitures.clue).isEqualTo("Bagnole")
+        assertThat(voitures.source).isEqualTo("mistral-nemo")
+        // Lemma row gets the same candidate too.
+        val voiture = rows.single { it.word == "voiture" }
+        assertThat(voiture.clue).isEqualTo("Bagnole")
+        assertThat(voiture.source).isEqualTo("mistral-nemo")
+    }
+
+    @Test
+    fun `clue_candidates targeting the exact word wins over the lemma's candidate`() {
+        // Both lemma and inflected form have candidates for the same source.
+        // The exact-word match must win on the inflected form's row.
+        val voitureLemma =
+            insertWordReturningId(
+                word = "voiture",
+                language = "fr",
+                clue = null,
+                source = "grammalecte",
+                license = "MPL-2.0",
+                lemma = "voiture",
+            )
+        val voitures =
+            insertWordReturningId(
+                word = "voitures",
+                language = "fr",
+                clue = null,
+                source = "grammalecte",
+                license = "MPL-2.0",
+                lemma = "voiture",
+            )
+        insertCandidate(voitureLemma, source = "mistral-nemo", clueText = "Bagnole")
+        insertCandidate(voitures, source = "mistral-nemo", clueText = "Bagnoles")
+
+        val output = tempDir.resolve("exact-win.csv")
+        passthroughCommand().parse(
+            arrayOf(
+                "--language",
+                "fr",
+                "--include-clueless",
+                "--output",
+                output.toString(),
+                "--curated-dir",
+                emptyCuratedDir().toString(),
+                "--candidate-priority",
+                "mistral-nemo",
+            ),
+        )
+
+        val rows = parseCsv(output)
+        // Inflected word picks its own candidate, not the lemma's.
+        assertThat(rows.single { it.word == "voitures" }.clue).isEqualTo("Bagnoles")
+        assertThat(rows.single { it.word == "voiture" }.clue).isEqualTo("Bagnole")
+    }
+
+    @Test
     fun `priority list excludes a source when not listed`() {
         val voitureId =
             insertWordReturningId(
@@ -407,14 +502,15 @@ class ExportWordsCommandIntegrationTest {
         clue: String?,
         source: String,
         license: String,
+        lemma: String? = null,
     ): java.util.UUID {
         val id = java.util.UUID.randomUUID()
         ds().connection.use { conn ->
             conn
                 .prepareStatement(
                     """
-                    INSERT INTO words (word_id, word, language, clue, source, source_license)
-                    VALUES (?, ?, ?, ?, ?, ?)
+                    INSERT INTO words (word_id, word, language, clue, source, source_license, lemma)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
                     """.trimIndent(),
                 ).use { stmt ->
                     stmt.setObject(1, id)
@@ -423,6 +519,7 @@ class ExportWordsCommandIntegrationTest {
                     if (clue == null) stmt.setNull(4, java.sql.Types.VARCHAR) else stmt.setString(4, clue)
                     stmt.setString(5, source)
                     stmt.setString(6, license)
+                    if (lemma == null) stmt.setNull(7, java.sql.Types.VARCHAR) else stmt.setString(7, lemma)
                     stmt.executeUpdate()
                 }
         }
