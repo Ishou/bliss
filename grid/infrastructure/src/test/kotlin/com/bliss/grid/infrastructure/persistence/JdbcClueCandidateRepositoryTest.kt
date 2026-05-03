@@ -63,7 +63,10 @@ class JdbcClueCandidateRepositoryTest {
         if (!::repo.isInitialized) return
         dataSource.connection.use { conn ->
             conn.createStatement().use {
-                it.executeUpdate("TRUNCATE clue_candidates, words RESTART IDENTITY CASCADE")
+                it.executeUpdate(
+                    "TRUNCATE clue_candidates, dbnary_synonyms, dbnary_senses, " +
+                        "dbnary_words, words RESTART IDENTITY CASCADE",
+                )
             }
         }
     }
@@ -71,14 +74,15 @@ class JdbcClueCandidateRepositoryTest {
     private fun insertWord(
         word: String,
         language: String = "fr",
+        lemma: String? = null,
     ): UUID {
         val id = UUID.randomUUID()
         dataSource.connection.use { conn ->
             conn
                 .prepareStatement(
                     """
-                    INSERT INTO words (word_id, word, language, source, source_license)
-                    VALUES (?, ?, ?, ?, ?)
+                    INSERT INTO words (word_id, word, language, source, source_license, lemma)
+                    VALUES (?, ?, ?, ?, ?, ?)
                     """.trimIndent(),
                 ).use { stmt ->
                     stmt.setObject(1, id)
@@ -86,7 +90,40 @@ class JdbcClueCandidateRepositoryTest {
                     stmt.setString(3, language)
                     stmt.setString(4, "test")
                     stmt.setString(5, "MPL-2.0")
+                    stmt.setString(6, lemma ?: word)
                     stmt.executeUpdate()
+                }
+        }
+        return id
+    }
+
+    private fun insertDbnaryWordWithSynonyms(
+        lemma: String,
+        pos: String,
+        language: String,
+        synonyms: List<String>,
+    ): UUID {
+        val id = UUID.randomUUID()
+        dataSource.connection.use { conn ->
+            conn
+                .prepareStatement(
+                    "INSERT INTO dbnary_words (id, lemma, pos, language) VALUES (?, ?, ?, ?)",
+                ).use { stmt ->
+                    stmt.setObject(1, id)
+                    stmt.setString(2, lemma)
+                    stmt.setString(3, pos)
+                    stmt.setString(4, language)
+                    stmt.executeUpdate()
+                }
+            conn
+                .prepareStatement(
+                    "INSERT INTO dbnary_synonyms (dbnary_word_id, synonym_lemma) VALUES (?, ?)",
+                ).use { stmt ->
+                    for (syn in synonyms) {
+                        stmt.setObject(1, id)
+                        stmt.setString(2, syn)
+                        stmt.executeUpdate()
+                    }
                 }
         }
         return id
@@ -258,6 +295,78 @@ class JdbcClueCandidateRepositoryTest {
 
         assertThat(repo.findByWord(word)).isEqualTo(emptyList())
         assertThat(repo.countBySource(ClueSource.CURATED)).isEqualTo(0L)
+    }
+
+    @Test
+    fun `deriveSynonymClues emits one capitalised candidate per synonym`() {
+        val voiture = insertWord("voiture")
+        insertDbnaryWordWithSynonyms(
+            lemma = "voiture",
+            pos = "noun",
+            language = "fr",
+            synonyms = listOf("automobile", "tas de tôle", "bagnole"),
+        )
+
+        val inserted = repo.deriveSynonymClues("fr")
+
+        assertThat(inserted).isEqualTo(3)
+        val candidates = repo.findByWord(voiture)
+        assertThat(candidates.map { it.clueText })
+            .containsExactlyInAnyOrder("Automobile", "Tas de tôle", "Bagnole")
+        candidates.forEach { c ->
+            assertThat(c.source).isEqualTo(ClueSource.DBNARY_SYNONYM)
+            assertThat(c.senseIndex).isNull()
+            assertThat(c.confidence).isNull()
+        }
+    }
+
+    @Test
+    fun `deriveSynonymClues filters out self-references and oversize synonyms`() {
+        val voiture = insertWord("voiture", lemma = "voiture")
+        insertDbnaryWordWithSynonyms(
+            lemma = "voiture",
+            pos = "noun",
+            language = "fr",
+            synonyms =
+                listOf(
+                    "voiture", // exact-form self-reference
+                    "VOITURE", // case-insensitive self-reference
+                    "a".repeat(81), // exceeds V6 length CHECK
+                    "Bolide", // valid
+                ),
+        )
+
+        val inserted = repo.deriveSynonymClues("fr")
+
+        assertThat(inserted).isEqualTo(1)
+        assertThat(repo.findByWord(voiture).map { it.clueText }).containsExactly("Bolide")
+    }
+
+    @Test
+    fun `deriveSynonymClues only joins on the requested language`() {
+        val frWord = insertWord("chat", language = "fr")
+        val enWord = insertWord("cat", language = "en")
+        insertDbnaryWordWithSynonyms("chat", "noun", "fr", listOf("matou"))
+        insertDbnaryWordWithSynonyms("cat", "noun", "en", listOf("feline"))
+
+        val inserted = repo.deriveSynonymClues("fr")
+
+        assertThat(inserted).isEqualTo(1)
+        assertThat(repo.findByWord(frWord).map { it.clueText }).containsExactly("Matou")
+        assertThat(repo.findByWord(enWord)).isEqualTo(emptyList())
+    }
+
+    @Test
+    fun `deriveSynonymClues is idempotent thanks to NULLS NOT DISTINCT`() {
+        val voiture = insertWord("voiture")
+        insertDbnaryWordWithSynonyms("voiture", "noun", "fr", listOf("bagnole"))
+
+        val first = repo.deriveSynonymClues("fr")
+        val second = repo.deriveSynonymClues("fr")
+
+        assertThat(first).isEqualTo(1)
+        assertThat(second).isEqualTo(0) // ON CONFLICT DO NOTHING
+        assertThat(repo.findByWord(voiture).size).isEqualTo(1)
     }
 
     @Test

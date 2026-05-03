@@ -52,6 +52,24 @@ interface ClueCandidateRepository {
 
     /** Smoke-check count for a source. */
     fun countBySource(source: String): Long
+
+    /**
+     * Bulk-insert `dbnary-synonym` candidates by joining the `words` table
+     * with `dbnary_synonyms` via the lemma key. For each `(word, synonym)`
+     * pair, emits one candidate whose `clue_text` is the synonym lemma with
+     * its first character upper-cased (FR convention: `bagnole` -> `Bagnole`,
+     * `tas de tôle` -> `Tas de tôle`).
+     *
+     * Skipped server-side:
+     * - synonyms longer than 80 chars (V6 length CHECK upper bound),
+     * - synonyms whose lemma equals the target word or its lemma — case-
+     *   insensitive — so a circular DBnary edge never lands as a clue.
+     *
+     * Idempotent: V6's `UNIQUE NULLS NOT DISTINCT` + ON CONFLICT DO NOTHING
+     * make repeat runs additive (newly-discovered synonyms add rows; existing
+     * ones are no-ops). Returns the number of newly-inserted rows.
+     */
+    fun deriveSynonymClues(language: String): Int
 }
 
 /**
