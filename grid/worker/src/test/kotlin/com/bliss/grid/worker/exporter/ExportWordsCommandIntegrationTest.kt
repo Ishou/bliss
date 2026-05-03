@@ -1,8 +1,8 @@
 package com.bliss.grid.worker.exporter
 
 import assertk.assertThat
-import assertk.assertions.containsExactly
 import assertk.assertions.contains
+import assertk.assertions.containsExactly
 import assertk.assertions.containsNone
 import assertk.assertions.isEqualTo
 import assertk.assertions.isTrue
@@ -58,7 +58,9 @@ class ExportWordsCommandIntegrationTest {
         seedFixtures()
 
         val output = tempDir.resolve("words-fr.csv")
-        passthroughCommand().parse(arrayOf("--language", "fr", "--output", output.toString(), "--curated-dir", emptyCuratedDir().toString()))
+        passthroughCommand().parse(
+            arrayOf("--language", "fr", "--output", output.toString(), "--curated-dir", emptyCuratedDir().toString()),
+        )
 
         val lines = Files.readAllLines(output, StandardCharsets.UTF_8)
         // 1 header + 5 fr rows with clues (the 6th fr row has NULL clue and the en row is filtered by language).
@@ -106,9 +108,13 @@ class ExportWordsCommandIntegrationTest {
         val output = tempDir.resolve("words-clueless.csv")
         passthroughCommand().parse(
             arrayOf(
-                "--language", "fr", "--include-clueless",
-                "--output", output.toString(),
-                "--curated-dir", emptyCuratedDir().toString(),
+                "--language",
+                "fr",
+                "--include-clueless",
+                "--output",
+                output.toString(),
+                "--curated-dir",
+                emptyCuratedDir().toString(),
             ),
         )
 
@@ -127,9 +133,13 @@ class ExportWordsCommandIntegrationTest {
         val output = tempDir.resolve("words-placeholder.csv")
         passthroughCommand().parse(
             arrayOf(
-                "--language", "fr", "--placeholder-clue-from-word",
-                "--output", output.toString(),
-                "--curated-dir", emptyCuratedDir().toString(),
+                "--language",
+                "fr",
+                "--placeholder-clue-from-word",
+                "--output",
+                output.toString(),
+                "--curated-dir",
+                emptyCuratedDir().toString(),
             ),
         )
 
@@ -145,7 +155,9 @@ class ExportWordsCommandIntegrationTest {
         seedLemmaFixtures()
 
         val output = tempDir.resolve("words-lemma.csv")
-        passthroughCommand().parse(arrayOf("--language", "fr", "--output", output.toString(), "--curated-dir", emptyCuratedDir().toString()))
+        passthroughCommand().parse(
+            arrayOf("--language", "fr", "--output", output.toString(), "--curated-dir", emptyCuratedDir().toString()),
+        )
 
         val records = parseCsv(output)
         // Both "aimer" (own clue) and "aimera" (inherited via lemma JOIN) appear.
@@ -161,24 +173,28 @@ class ExportWordsCommandIntegrationTest {
         // Length 2: ratio 0.0 → curated-only. Length 3: ratio 0.4. Length 4: ratio 0.5.
         // Two grammalecte rows per length so the math is unambiguous (drop bottom one).
         ds().connection.use { conn ->
-            conn.prepareStatement(
-                """
-                INSERT INTO words (word, language, clue, frequency, source, source_license)
-                VALUES (?, 'fr', ?, ?, 'grammalecte', 'MPL-2.0')
-                """.trimIndent(),
-            ).use { stmt ->
-                listOf(
-                    Triple("ck", "noise", 100f),
-                    Triple("ab", "noise", 200f),
-                    Triple("xyz", "noise", 100f),
-                    Triple("abc", "noise", 200f),
-                    Triple("abcd", "noise", 100f),
-                    Triple("efgh", "noise", 200f),
-                ).forEach { (w, c, f) ->
-                    stmt.setString(1, w); stmt.setString(2, c); stmt.setFloat(3, f); stmt.addBatch()
+            conn
+                .prepareStatement(
+                    """
+                    INSERT INTO words (word, language, clue, frequency, source, source_license)
+                    VALUES (?, 'fr', ?, ?, 'grammalecte', 'MPL-2.0')
+                    """.trimIndent(),
+                ).use { stmt ->
+                    listOf(
+                        Triple("ck", "noise", 100f),
+                        Triple("ab", "noise", 200f),
+                        Triple("xyz", "noise", 100f),
+                        Triple("abc", "noise", 200f),
+                        Triple("abcd", "noise", 100f),
+                        Triple("efgh", "noise", 200f),
+                    ).forEach { (w, c, f) ->
+                        stmt.setString(1, w)
+                        stmt.setString(2, c)
+                        stmt.setFloat(3, f)
+                        stmt.addBatch()
+                    }
+                    stmt.executeBatch()
                 }
-                stmt.executeBatch()
-            }
         }
         val curatedDir = Files.createDirectory(tempDir.resolve("curated"))
         Files.writeString(
@@ -192,10 +208,11 @@ class ExportWordsCommandIntegrationTest {
 
         val output = tempDir.resolve("merged.csv")
         ExportWordsCommand(
-            percentileConfig = PercentileLengthFilterConfig(
-                keepRatioByLength = mapOf(2 to 0.0, 3 to 0.4),
-                defaultKeepRatio = 0.5,
-            ),
+            percentileConfig =
+                PercentileLengthFilterConfig(
+                    keepRatioByLength = mapOf(2 to 0.0, 3 to 0.4),
+                    defaultKeepRatio = 0.5,
+                ),
         ).parse(arrayOf("--language", "fr", "--output", output.toString(), "--curated-dir", curatedDir.toString()))
 
         val words = parseCsv(output).map { it.word }
@@ -214,10 +231,11 @@ class ExportWordsCommandIntegrationTest {
     @Test
     fun `curated row overrides a grammalecte row with the same word`() {
         ds().connection.use { conn ->
-            conn.prepareStatement(
-                "INSERT INTO words (word, language, clue, frequency, source, source_license) " +
-                    "VALUES ('ne', 'fr', 'grammalecte clue', 999999, 'grammalecte', 'MPL-2.0')",
-            ).use { it.executeUpdate() }
+            conn
+                .prepareStatement(
+                    "INSERT INTO words (word, language, clue, frequency, source, source_license) " +
+                        "VALUES ('ne', 'fr', 'grammalecte clue', 999999, 'grammalecte', 'MPL-2.0')",
+                ).use { it.executeUpdate() }
         }
         val curatedDir = Files.createDirectory(tempDir.resolve("curated"))
         Files.writeString(
@@ -244,15 +262,15 @@ class ExportWordsCommandIntegrationTest {
     /** Build a command that disables percentile filtering — most tests assert raw fixture content. */
     private fun passthroughCommand(): ExportWordsCommand =
         ExportWordsCommand(
-            percentileConfig = PercentileLengthFilterConfig(
-                keepRatioByLength = emptyMap(),
-                defaultKeepRatio = 1.0,
-            ),
+            percentileConfig =
+                PercentileLengthFilterConfig(
+                    keepRatioByLength = emptyMap(),
+                    defaultKeepRatio = 1.0,
+                ),
         )
 
     /** Curated dir that exists but holds no `<lang>.csv` — keeps tests isolated from `data/curated`. */
     private fun emptyCuratedDir(): Path = Files.createDirectories(tempDir.resolve("empty-curated"))
-
 
     private fun seedFixtures() {
         // 5 fr rows with clues (varied difficulty: 4 NULL, 1 non-null), 1 fr row with NULL clue
