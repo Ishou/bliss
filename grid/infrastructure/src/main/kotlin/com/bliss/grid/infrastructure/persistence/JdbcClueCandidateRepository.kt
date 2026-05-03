@@ -181,14 +181,6 @@ class JdbcClueCandidateRepository(
             LIMIT 1
             """.trimIndent()
 
-        // Derive one candidate per (word, synonym) pair. Joins via the
-        // language-scoped lemma key. clue_text capitalises the synonym's
-        // first character (FR convention: 'Bagnole', 'Tas de tôle') without
-        // touching the rest. Self-references — synonym whose lemma matches
-        // the word OR the word's lemma, case-insensitive — are filtered
-        // server-side so circular DBnary edges never land as clues.
-        // ON CONFLICT DO NOTHING + V6 NULLS NOT DISTINCT make repeat runs
-        // idempotent (already-inserted rows are no-ops).
         private val DERIVE_SYNONYM_SQL =
             """
             INSERT INTO clue_candidates (word_id, source, sense_index, clue_text)

@@ -370,6 +370,17 @@ class JdbcClueCandidateRepositoryTest {
     }
 
     @Test
+    fun `deriveSynonymClues filters synonym that matches lemma but not word`() {
+        val voitures = insertWord("voitures", lemma = "voiture")
+        insertDbnaryWordWithSynonyms("voiture", "noun", "fr", listOf("voiture", "carrosse"))
+
+        val inserted = repo.deriveSynonymClues("fr")
+
+        assertThat(inserted).isEqualTo(1)
+        assertThat(repo.findByWord(voitures).map { it.clueText }).containsExactly("Carrosse")
+    }
+
+    @Test
     fun `upsertAll rolls back the whole batch on failure`() {
         val word = insertWord("voiture")
         repo.upsertAll(
