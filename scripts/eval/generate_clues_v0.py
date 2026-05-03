@@ -22,8 +22,9 @@ import unicodedata
 from pathlib import Path
 
 MODEL = "mlx-community/Mistral-7B-Instruct-v0.3-4bit"
-TEMPERATURE = 0.7
-MAX_TOKENS = 24
+TEMPERATURE = 0.3
+MAX_TOKENS = 20
+TOP_P = 0.9
 
 
 def _strip_accents(s: str) -> str:
@@ -38,7 +39,7 @@ def load_prompt_template(path: Path) -> str:
     return path.read_text(encoding="utf-8")
 
 
-def render_prompt(template: str, row: dict[str, str]) -> str:
+def render_user_content(template: str, row: dict[str, str]) -> str:
     return (
         template
         .replace("{word_upper}", row["word"].upper())
@@ -46,6 +47,19 @@ def render_prompt(template: str, row: dict[str, str]) -> str:
         .replace("{morphology}", row.get("morphology") or "?")
         .replace("{dbnary_definition}", row.get("definition") or "(aucune)")
         .replace("{synonyms_csv}", row.get("synonyms") or "(aucun)")
+    )
+
+
+def render_prompt(template: str, row: dict[str, str], tokenizer) -> str:
+    """Apply the model's chat template so Mistral-Instruct treats the input as
+    an instruction, not autocomplete material. Without this the model rambles
+    in markdown/English and ignores the rules."""
+    user_content = render_user_content(template, row)
+    messages = [{"role": "user", "content": user_content}]
+    return tokenizer.apply_chat_template(
+        messages,
+        tokenize=False,
+        add_generation_prompt=True,
     )
 
 
@@ -126,23 +140,24 @@ def main() -> None:
         if word in existing:
             enriched.append(existing[word])
             continue
-        prompt = render_prompt(template, row)
+        prompt = render_prompt(template, row, tokenizer)
         try:
             raw = generate(
                 model, tokenizer,
                 prompt=prompt,
                 max_tokens=MAX_TOKENS,
                 temp=TEMPERATURE,
+                top_p=TOP_P,
                 verbose=False,
             )
         except TypeError:
-            # Newer mlx-lm replaced `temp` with a sampler argument.
+            # Newer mlx-lm replaced `temp`/`top_p` with a sampler argument.
             from mlx_lm.sample_utils import make_sampler  # type: ignore[import-not-found]
             raw = generate(
                 model, tokenizer,
                 prompt=prompt,
                 max_tokens=MAX_TOKENS,
-                sampler=make_sampler(temp=TEMPERATURE),
+                sampler=make_sampler(temp=TEMPERATURE, top_p=TOP_P),
                 verbose=False,
             )
         clue = clean_first_line(raw)
