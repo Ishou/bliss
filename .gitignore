@@ -11,3 +11,7 @@ build/
 # .claude/ are versioned. Ignore only the ephemeral and per-developer entries.
 .claude/worktrees/
 .claude/settings.local.json
+
+# Python
+__pycache__/
+*.pyc
