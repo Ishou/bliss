@@ -89,20 +89,21 @@ class MorphologyIndex:
     def pos_of_form(self, surface: str) -> str:
         """Return 'verbe' / 'nom' / 'adj' / '' — the dominant POS class of the
         surface's analyses (verb wins over nom over adj over none)."""
+        return next(iter(self.pos_classes_of_form(surface)), "")
+
+    def pos_classes_of_form(self, surface: str) -> list[str]:
+        """Return every POS class the surface admits, ordered verb > nom > adj.
+        Many French words are both nom and adj (sauvage, rouge, ...); the
+        single-POS view loses information."""
         analyses = self.lookup_form(surface)
-        if not analyses:
-            return ""
-        for _, tags in analyses:
-            for t in tags:
-                if t.startswith(POS_VERB_PREFIX) and len(t) > 1 and t[1].isdigit():
-                    return "verbe"
-        for _, tags in analyses:
-            if tags & POS_NOMINAL:
-                return "nom"
-        for _, tags in analyses:
-            if tags & POS_ADJ:
-                return "adj"
-        return ""
+        classes: list[str] = []
+        if any(_classify(tags) == "verbe" for _, tags in analyses):
+            classes.append("verbe")
+        if any("nom" in tags for _, tags in analyses):
+            classes.append("nom")
+        if any("adj" in tags for _, tags in analyses):
+            classes.append("adj")
+        return classes
 
     def lemma_of_form(self, surface: str, prefer_pos: str = "") -> str | None:
         """Return the most-likely lemma for the surface form. If `prefer_pos` is

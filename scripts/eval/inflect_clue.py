@@ -31,6 +31,11 @@ from morphology_index import (
     extract_inflection_target,
 )
 
+# In French crosswords, the clue's gender doesn't need to match the surface's
+# gender for nominal targets — "Arrêt" (mas) is a fine clue for "Halte" (fem).
+# Verbs and adjectives must keep agreement; nouns relax to number-only.
+_RELAX_GENDER_FOR = {"nom"}
+
 # Tokens we consider "content words" (eligible to be the head).
 _CONTENT_POS = {"verbe", "nom", "adj"}
 
@@ -88,8 +93,12 @@ def inflect_clue(
             continue
         if tok.lower() in _FUNCTION_WORDS:
             continue
+        # Many French words admit several POS (sauvage = nom+adj). Accept the
+        # token as head if the target POS appears in any of its analyses.
+        if target_pos not in index.pos_classes_of_form(tok.lower()):
+            continue
         lemma = index.lemma_of_form(tok.lower(), prefer_pos=target_pos)
-        if lemma and index.pos_of_form(tok.lower()) == target_pos:
+        if lemma:
             head_idx = i
             head_lemma = lemma
             break
@@ -99,6 +108,11 @@ def inflect_clue(
         # the surface morphology (e.g. surface is a verb but the clue head is
         # a noun, like "Astre du jour" cluing a verb form). Leave verbatim.
         return InflectionResult(_capitalize_first(clue), "head-pos-mismatch")
+
+    # For nominal targets, drop gender constraint — "Arrêt" (mas) is a valid
+    # crossword clue for "Halte" (fem); only number agreement matters.
+    if target_pos in _RELAX_GENDER_FOR:
+        target = target - GENDER_TOKENS
 
     inflected = index.inflect(head_lemma, target)
     if not inflected:
@@ -114,15 +128,23 @@ def inflect_clue(
     return InflectionResult(_capitalize_first(rebuilt), "")
 
 
+# Punctuation tokens that should never have whitespace around them — they
+# cling to both sides ("d'objets", "Connaître-le-plus").
+_GLUE_BOTH_SIDES = {"'", "’", "-"}
+# Punctuation tokens that cling to the previous token only (no space before).
+_GLUE_BEFORE = {",", ".", "!", "?", ":", ";", ")", "]"}
+
+
 def _detokenize(tokens: list[str]) -> str:
-    """Glue tokens back together. Punctuation tokens attach to the previous
-    word; alphabetic tokens are space-separated."""
-    out = []
-    for tok in tokens:
-        if not _is_alpha_token(tok) and out:
-            out[-1] = out[-1] + tok
+    """Glue tokens back together with crossword-style spacing."""
+    if not tokens:
+        return ""
+    parts = [tokens[0]]
+    for prev, tok in zip(tokens, tokens[1:]):
+        glue_left = tok in _GLUE_BOTH_SIDES or tok in _GLUE_BEFORE
+        glue_right = prev in _GLUE_BOTH_SIDES
+        if glue_left or glue_right:
+            parts.append(tok)
         else:
-            if out:
-                out.append(" ")
-            out.append(tok)
-    return "".join(out)
+            parts.append(" " + tok)
+    return "".join(parts)
