@@ -44,7 +44,15 @@ interface BannerCopy {
 }
 
 const baseStyles = css({
-  width: '100%',
+  // Float at the top of the viewport so the banner's mount/unmount
+  // doesn't reflow the lobby content underneath. Without this the
+  // layout stuttered every time the connection state flipped (e.g.
+  // every WebSocket reconnect handshake during a flaky network).
+  position: 'fixed',
+  top: 0,
+  left: 0,
+  right: 0,
+  zIndex: 100,
   paddingBlock: 'sm',
   paddingInline: 'md',
   textAlign: 'center',
@@ -55,6 +63,7 @@ const baseStyles = css({
   alignItems: 'center',
   justifyContent: 'center',
   gap: 'sm',
+  boxShadow: '0 2px 4px rgba(27, 40, 69, 0.08)',
 });
 
 const connectingStyles = css({
