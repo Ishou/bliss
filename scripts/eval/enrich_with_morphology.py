@@ -14,8 +14,11 @@ Usage:
 
 import argparse
 import csv
+import re
 import sys
 from pathlib import Path
+
+from morphology_index import MorphologyIndex
 
 # Tag glossary derived from grammalecte's Étiquettes column.
 # Possessive / demonstrative / indefinite determiners are surfaced under their
@@ -169,6 +172,42 @@ def render_morphology(tags: str) -> str:
     return ", ".join(parts)
 
 
+def _all_forms_of(lemma: str, lemma_to_forms: dict[str, set[str]]) -> set[str]:
+    return lemma_to_forms.get(lemma.lower(), {lemma.lower()})
+
+
+def clean_definition(definition: str, lemma: str, lemma_to_forms: dict[str, set[str]]) -> str:
+    """Drop the definition entirely if it self-references (the lemma or any
+    inflection appears in it). Self-referential defs cause the model to copy
+    the target word into the clue; the model does better with no def + the
+    synonyms list than with a contaminated def. The original raw def is
+    preserved in `definition_raw`."""
+    if not definition:
+        return ""
+    forms = _all_forms_of(lemma, lemma_to_forms)
+    pattern = re.compile(
+        r"\b(?:" + "|".join(re.escape(f) for f in sorted(forms, key=len, reverse=True)) + r")\b",
+        re.IGNORECASE,
+    )
+    if pattern.search(definition):
+        return ""
+    return definition
+
+
+def clean_synonyms(synonyms_csv: str, lemma: str, lemma_to_forms: dict[str, set[str]]) -> str:
+    """Drop any synonym that is the lemma itself or one of its inflections —
+    DBnary occasionally surfaces such 'synonyms' (the lemma's own forms),
+    which are noise, not synonyms."""
+    if not synonyms_csv:
+        return ""
+    forms = _all_forms_of(lemma, lemma_to_forms)
+    kept = [
+        s for s in (p.strip() for p in synonyms_csv.split("|"))
+        if s and s.lower() not in forms
+    ]
+    return "|".join(kept)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--lexique", type=Path, required=True, help="path to lexique-grammalecte-fr-vX.txt")
@@ -194,7 +233,21 @@ def main() -> None:
     print(f"parsing {args.lexique} for {len(sample_words)} words...", file=sys.stderr)
     by_word = parse_lexique(args.lexique, sample_words)
 
+    # Full grammalecte index — needed for the lemma -> all-inflections lookup
+    # used to detect (and drop) self-referential definitions and lemma-form
+    # synonyms.
+    print(f"loading full grammalecte index from {args.lexique}...", file=sys.stderr)
+    index = MorphologyIndex.load(args.lexique)
+    lemma_to_forms: dict[str, set[str]] = {}
+    for lemma, entries in index.by_lemma.items():
+        forms = {lemma}
+        for surface, _tags in entries:
+            forms.add(surface)
+        lemma_to_forms[lemma] = forms
+
     misses = 0
+    selfref_defs = 0
+    dropped_synonyms = 0
     for r in rows:
         analyses = by_word.get(r["word"], [])
         primary = pick_primary(analyses)
@@ -203,11 +256,22 @@ def main() -> None:
         if not primary:
             misses += 1
 
+        lemma = (r.get("lemma") or r["word"]).strip().lower()
+        original_def = r.get("definition", "")
+        original_syns = r.get("synonyms", "")
+        cleaned_def = clean_definition(original_def, lemma, lemma_to_forms)
+        cleaned_syns = clean_synonyms(original_syns, lemma, lemma_to_forms)
+        if original_def and not cleaned_def:
+            selfref_defs += 1
+        if original_syns and len(original_syns.split("|")) != len(cleaned_syns.split("|") if cleaned_syns else []):
+            dropped_synonyms += 1
+        r["definition"] = cleaned_def
+        r["synonyms"] = cleaned_syns
+
     fieldnames = list(rows[0].keys())
-    if "tags" not in fieldnames:
-        fieldnames.append("tags")
-    if "morphology" not in fieldnames:
-        fieldnames.append("morphology")
+    for col in ("tags", "morphology"):
+        if col not in fieldnames:
+            fieldnames.append(col)
 
     with out.open("w", encoding="utf-8", newline="") as fh:
         writer = csv.DictWriter(fh, fieldnames=fieldnames, lineterminator="\n")
@@ -215,10 +279,12 @@ def main() -> None:
         for r in rows:
             writer.writerow({k: r.get(k, "") for k in fieldnames})
 
-    print(f"Wrote {len(rows)} rows to {out.relative_to(repo_root)} ({misses} morph misses)")
+    print(f"Wrote {len(rows)} rows to {out.relative_to(repo_root)} "
+          f"({misses} morph misses, {selfref_defs} self-ref defs blanked, "
+          f"{dropped_synonyms} rows had lemma-form synonyms dropped)")
     # Quick spot-check
     for r in rows[:5]:
-        print(f"  {r['word']:20s} -> {r['morphology']}")
+        print(f"  {r['word']:20s} morph={r['morphology']!r:45s} def={r['definition'][:50]!r}")
 
 
 if __name__ == "__main__":

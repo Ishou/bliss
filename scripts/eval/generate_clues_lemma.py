@@ -30,7 +30,6 @@ import argparse
 import csv
 import json
 import os
-import re
 import sys
 import time
 import urllib.error
@@ -62,53 +61,13 @@ def normalize_pos(label: str) -> str:
     return POS_NORMALIZE.get(label.strip().lower(), label.strip().lower())
 
 
-_MASK = "[MOT]"
-
-
-def all_forms_of(lemma: str, index: MorphologyIndex) -> set[str]:
-    """All surface forms grammalecte knows for `lemma`, plus the lemma itself."""
-    forms = {lemma.lower()}
-    for surface, _tags in index.by_lemma.get(lemma.lower(), []):
-        forms.add(surface.lower())
-    return forms
-
-
-def mask_lemma_in_text(text: str, lemma: str, index: MorphologyIndex) -> str:
-    """Replace any occurrence of the lemma or one of its inflections with [MOT].
-    Stops the model from copying the target word straight out of the def
-    (e.g. DBnary's 'Celui qui a été élu' for the lemma 'élu')."""
-    if not text:
-        return text
-    forms = all_forms_of(lemma, index)
-    if not forms:
-        return text
-    # Longest-first so 'élections' matches before 'élu'.
-    pattern = re.compile(
-        r"\b(?:" + "|".join(re.escape(f) for f in sorted(forms, key=len, reverse=True)) + r")\b",
-        re.IGNORECASE,
-    )
-    return pattern.sub(_MASK, text)
-
-
-def filter_synonyms(synonyms_csv: str, lemma: str, index: MorphologyIndex) -> str:
-    """Drop any synonym that is the lemma itself or one of its inflections."""
-    if not synonyms_csv:
-        return synonyms_csv
-    forms = all_forms_of(lemma, index)
-    kept = [s for s in (p.strip() for p in synonyms_csv.split("|")) if s and s.lower() not in forms]
-    return "|".join(kept)
-
-
-def render_user_content(template: str, lemma: str, pos: str, definition: str, synonyms: str,
-                        index: MorphologyIndex) -> str:
-    masked_def = mask_lemma_in_text(definition, lemma, index)
-    filtered_syns = filter_synonyms(synonyms, lemma, index)
+def render_user_content(template: str, lemma: str, pos: str, definition: str, synonyms: str) -> str:
     return (
         template
         .replace("{lemma_upper}", lemma.upper())
         .replace("{pos}", pos or "?")
-        .replace("{dbnary_definition}", masked_def or "(aucune)")
-        .replace("{synonyms_csv}", filtered_syns or "(aucun)")
+        .replace("{dbnary_definition}", definition or "(aucune)")
+        .replace("{synonyms_csv}", synonyms or "(aucun)")
     )
 
 
@@ -235,7 +194,7 @@ def main() -> None:
     completed: dict[str, dict[str, str]] = {r["lemma"]: r for r in cached}
 
     def task(lemma: str, row: dict[str, str], temperature: float) -> tuple[str, str, ValidationResult]:
-        prompt = render_user_content(template, lemma, row["pos"], row["definition"], row["synonyms"], index)
+        prompt = render_user_content(template, lemma, row["pos"], row["definition"], row["synonyms"])
         try:
             raw = ollama_chat(args.host, args.model, prompt,
                               temperature=temperature, max_tokens=MAX_TOKENS)
