@@ -255,14 +255,41 @@ export interface components {
          * @description Active game embedded in `Lobby.game` while IN_PROGRESS or COMPLETED.
          *     `completedAt` is in `required` because the field is always present on
          *     the wire — `null` (still in progress) and a timestamp (solved) are
-         *     both meaningful values. Mirrors `GameSession` in
+         *     both meaningful values. `entries` carries every letter typed so far
+         *     (server-authoritative) so a client refreshing the page in mid-game
+         *     rehydrates the grid from the REST snapshot before the WebSocket
+         *     opens. Cleared cells are absent from the list; entries are sorted
+         *     by row then column for stable rendering. Mirrors `GameSession` in
          *     `game/api/asyncapi.yaml`; keep in sync.
          */
         GameSession: {
             puzzle: components["schemas"]["GamePuzzle"];
+            /** @description Every cell typed so far. Empty list when no player has typed yet. */
+            entries: components["schemas"]["CellEntry"][];
             startedAt: components["schemas"]["Instant"];
             /** @description Set once the lobby reaches COMPLETED; `null` while IN_PROGRESS. */
             completedAt: components["schemas"]["Instant"] | null;
+        };
+        /**
+         * @description A single placed letter in the canonical entries list. Used by
+         *     `GameSession.entries` to rehydrate a refreshing client's grid.
+         *     `letter` is always non-null — cleared cells are absent from the
+         *     list. `sessionId` and `writtenAt` mirror the per-cell `cellUpdated`
+         *     WebSocket event so a future per-author UI tint can colour each
+         *     entry. Mirrors `CellEntry` in `game/api/asyncapi.yaml`; keep in sync.
+         */
+        CellEntry: {
+            sessionId: components["schemas"]["SessionId"];
+            /** @example 0 */
+            row: number;
+            /** @example 3 */
+            column: number;
+            /**
+             * @description Always non-null. Cleared cells are absent from the list.
+             * @example P
+             */
+            letter: string;
+            writtenAt: components["schemas"]["Instant"];
         };
         /**
          * @description Full lobby snapshot. `game` is in `required` because the field is

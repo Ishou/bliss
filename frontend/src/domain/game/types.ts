@@ -42,12 +42,18 @@ export interface Player {
   readonly joinedAt: Instant;
 }
 
-// A single placed letter in the canonical solution entries list. `letter`
-// is always non-null here — see AsyncAPI `CellEntry`.
+// A single placed letter. Used by both `gameSolved.finalEntries` and
+// `lobbyState.game.entries` (and the REST `Lobby.game.entries` snapshot
+// consumed by the route loader on refresh). `letter` is always non-null —
+// cleared cells are absent from the list. `sessionId` and `writtenAt`
+// mirror the per-cell `cellUpdated` event so a future per-author UI tint
+// can colour each entry. See AsyncAPI `CellEntry`.
 export interface CellEntry {
+  readonly sessionId: SessionId;
   readonly row: number;
   readonly column: number;
   readonly letter: Letter;
+  readonly writtenAt: Instant;
 }
 
 // ----- Puzzle projection (game-context) -----
@@ -111,9 +117,14 @@ export interface GamePuzzle {
   readonly createdAt: Instant;
 }
 
-// Active game embedded in `lobbyState` while IN_PROGRESS.
+// Active game embedded in `lobbyState` (and in REST `Lobby.game`) while
+// IN_PROGRESS or COMPLETED. `entries` carries every cell typed so far so
+// a refreshing or late-joining client rehydrates the grid from the
+// snapshot instead of receiving an empty grid; cleared cells are absent
+// from the list and the server emits entries sorted by row then column.
 export interface GameSession {
   readonly puzzle: GamePuzzle;
+  readonly entries: readonly CellEntry[];
   readonly startedAt: Instant;
   readonly completedAt: Instant | null;
 }

@@ -421,16 +421,25 @@ components:
 
     GameSession:
       type: object
-      required: [puzzle, startedAt, completedAt]
+      required: [puzzle, entries, startedAt, completedAt]
       description: |
         Active game embedded in `Lobby.game` while IN_PROGRESS or COMPLETED.
         `completedAt` is in `required` because the field is always present on
         the wire — `null` (still in progress) and a timestamp (solved) are
-        both meaningful values. Mirrors `GameSession` in
+        both meaningful values. `entries` carries every letter typed so far
+        (server-authoritative) so a client refreshing the page in mid-game
+        rehydrates the grid from the REST snapshot before the WebSocket
+        opens. Cleared cells are absent from the list; entries are sorted
+        by row then column for stable rendering. Mirrors `GameSession` in
         `game/api/asyncapi.yaml`; keep in sync.
       properties:
         puzzle:
           $ref: '#/components/schemas/GamePuzzle'
+        entries:
+          type: array
+          items:
+            $ref: '#/components/schemas/CellEntry'
+          description: Every cell typed so far. Empty list when no player has typed yet.
         startedAt:
           $ref: '#/components/schemas/Instant'
         completedAt:
@@ -438,6 +447,37 @@ components:
             - $ref: '#/components/schemas/Instant'
           nullable: true
           description: Set once the lobby reaches COMPLETED; `null` while IN_PROGRESS.
+
+    CellEntry:
+      type: object
+      required: [sessionId, row, column, letter, writtenAt]
+      description: |
+        A single placed letter in the canonical entries list. Used by
+        `GameSession.entries` to rehydrate a refreshing client's grid.
+        `letter` is always non-null — cleared cells are absent from the
+        list. `sessionId` and `writtenAt` mirror the per-cell `cellUpdated`
+        WebSocket event so a future per-author UI tint can colour each
+        entry. Mirrors `CellEntry` in `game/api/asyncapi.yaml`; keep in sync.
+      properties:
+        sessionId:
+          $ref: '#/components/schemas/SessionId'
+        row:
+          type: integer
+          minimum: 0
+          example: 0
+        column:
+          type: integer
+          minimum: 0
+          example: 3
+        letter:
+          type: string
+          minLength: 1
+          maxLength: 1
+          pattern: '^[A-Z]$'
+          description: Always non-null. Cleared cells are absent from the list.
+          example: P
+        writtenAt:
+          $ref: '#/components/schemas/Instant'
 
     Lobby:
       type: object

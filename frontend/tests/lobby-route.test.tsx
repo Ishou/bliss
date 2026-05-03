@@ -10,6 +10,7 @@ import {
 } from '@/application/game';
 import type { PuzzleRepository } from '@/application';
 import type {
+  CellEntry,
   GamePuzzle,
   GridConfig,
   Letter,
@@ -632,6 +633,64 @@ describe('Lobby route Wave H integration', () => {
     for (const input of inputs) {
       expect(input.value).toBe('');
     }
+  });
+
+  it('rehydrates already-typed letters into the grid when the loader returns an IN_PROGRESS lobby with entries', async () => {
+    // Refresh-during-IN_PROGRESS regression: before the fix, the
+    // AsyncAPI `GameSession` schema omitted `entries`, so the snapshot
+    // a reconnecting client received had no record of what had been
+    // typed. The route now reads `lobby.game.entries` from the loader
+    // payload and hands them to Grid, which writes each letter into
+    // the matching uncontrolled <input> via the same imperative path
+    // a live `cellUpdated` frame would use (per ADR-0002 §4).
+    const gameClient = makeFakeGameClient();
+    const otherSessionId = '0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6f' as SessionId;
+    const entries: readonly CellEntry[] = [
+      {
+        sessionId,
+        row: 0,
+        column: 1,
+        letter: 'A' as Letter,
+        writtenAt: '2026-05-02T15:35:42Z',
+      },
+      {
+        sessionId: otherSessionId,
+        row: 1,
+        column: 2,
+        letter: 'Z' as Letter,
+        writtenAt: '2026-05-02T15:35:43Z',
+      },
+    ];
+    const inProgressLobby: Lobby = {
+      ...baseLobby,
+      state: 'IN_PROGRESS',
+      game: {
+        puzzle: buildGamePuzzle(),
+        entries,
+        startedAt: '2026-05-02T15:30:00Z',
+        completedAt: null,
+      },
+    };
+    const { container } = renderLobby({ gameClient, initialLobby: inProgressLobby });
+    await screen.findByRole('heading', { name: /Salon · 7gQ2xK9p/ });
+
+    const cellA = container.querySelector<HTMLInputElement>(
+      '[data-cell-kind="letter"][data-row="0"][data-col="1"]',
+    );
+    const cellZ = container.querySelector<HTMLInputElement>(
+      '[data-cell-kind="letter"][data-row="1"][data-col="2"]',
+    );
+    expect(cellA).not.toBeNull();
+    expect(cellZ).not.toBeNull();
+    expect(cellA!.value).toBe('A');
+    expect(cellZ!.value).toBe('Z');
+    // An untyped cell stays empty — initialEntries only fills the
+    // positions present in the list.
+    const blankCell = container.querySelector<HTMLInputElement>(
+      '[data-cell-kind="letter"][data-row="0"][data-col="2"]',
+    );
+    expect(blankCell).not.toBeNull();
+    expect(blankCell!.value).toBe('');
   });
 
   it('renders the current-clue panel placeholder beside the grid on gameStarted', async () => {
