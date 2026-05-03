@@ -16,6 +16,7 @@ fields; re-run to retry only those rows.
 """
 
 import csv
+import re
 import sys
 import time
 import urllib.parse
@@ -126,20 +127,80 @@ def _escape(word: str) -> str:
     return word.replace("\\", "\\\\").replace('"', '\\"')
 
 
+# DBnary frequently records short forms only as ellipsis pointers:
+#   pull   -> "(Par ellipse) Pull-over."
+#   agar   -> "Synonyme de agar-agar."
+#   tv     -> "Abréviation de télévision."
+# When EVERY sense fits this shape, the actual definition lives at the target;
+# we follow the pointer once and use the unshortened word's senses instead.
+_POINTER_RE = re.compile(
+    r"(?:\(Par\s+ellipse\)|Synonyme\s+de|Diminutif\s+de"
+    r"|Variante\s+(?:de|orthographique\s+de)"
+    r"|Abr[ée]viation\s+de|Forme\s+courte\s+de"
+    r"|Apocope\s+de|Aph[ée]r[èe]se\s+de|Sigle\s+de)"
+    r"\s+(.+?)\s*$",
+    re.IGNORECASE,
+)
+_TAG_PREFIX_RE = re.compile(r"^(?:\([^)]*\)\s*)*$")
+
+
+def _ellipsis_target(senses_csv: str) -> str | None:
+    """If every sense is an ellipsis/synonym pointer, return the target word
+    or phrase. The pointer can have leading domain tags like '(Pharmacologie)'
+    that are tolerated — only the actual content has to be the pointer."""
+    if not senses_csv:
+        return None
+    targets: list[str] = []
+    for raw in senses_csv.split("|"):
+        sense = raw.strip().rstrip(".")
+        if not sense:
+            continue
+        m = _POINTER_RE.search(sense)
+        if not m:
+            return None
+        # Everything before the pointer phrase must be empty or only
+        # parenthetical domain tags (e.g. '(Pharmacologie) ').
+        prefix = sense[: m.start()].strip()
+        if prefix and not _TAG_PREFIX_RE.fullmatch(prefix + " "):
+            return None
+        target = m.group(1).strip().rstrip(".").strip()
+        # Strip trailing parentheticals from the target ('Pull-over (vêtement)').
+        target = re.sub(r"\s*\([^)]*\)\s*$", "", target).strip()
+        if not target or len(target) > 40:
+            return None
+        targets.append(target)
+    return targets[0] if targets else None
+
+
 def query_sparql(word: str, lemma: str = "") -> tuple[str, str, str]:
     """Return (pos, definition, synonyms_pipe_delimited).
 
     The downstream pipeline clues lemmas, so look up the LEMMA's DBnary entry
     directly (the citation-form definition) rather than the surface form.
     For 'étés' this fetches 'été' (the noun); for 'fumes' it fetches 'fumer'
-    (the verb), avoiding the noisier surface-form senses ('Pluriel de été' /
-    "fumée d'un cigare").
+    (the verb), avoiding the noisier surface-form senses.
+
+    When the lemma's only senses are ellipsis pointers ("(Par ellipse) Pull-
+    over.", "Synonyme de agar-agar."), follow the pointer once and use the
+    target's senses. Synonyms from the original lookup are preserved if the
+    redirect didn't surface any.
 
     Falls back to the surface form only when no lemma is provided."""
     target = (lemma or word).strip()
     if not target:
         return ("", "", "")
-    return _lookup_one(_escape(target))
+    pos, definition, synonyms = _lookup_one(_escape(target))
+
+    redirect = _ellipsis_target(definition)
+    if redirect and redirect.lower() != target.lower():
+        time.sleep(SLEEP_BETWEEN_QUERIES)
+        # DBnary's writtenRep is stored lowercase for common nouns; chase by
+        # the lowercased target so 'Pull-over' resolves to the entry stored
+        # as 'pull-over'.
+        pos2, def2, syn2 = _lookup_one(_escape(redirect.lower()))
+        if def2:
+            return (pos2 or pos, def2, syn2 or synonyms)
+    return (pos, definition, synonyms)
 
 
 def main() -> None:
