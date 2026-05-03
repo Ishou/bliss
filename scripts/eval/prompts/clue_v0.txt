@@ -1,32 +1,34 @@
 Tu génères des définitions courtes pour mots-fléchés français.
 
-Règles:
-- Très court: 1 à 6 mots. Pas de phrase complète.
-- N'utilise jamais le mot lui-même ni un de ses dérivés directs.
+Règles strictes:
+- Très court: 1 à 6 mots. Pas de phrase complète, pas de point final.
+- N'utilise JAMAIS le mot lui-même ni un de ses dérivés directs.
 - Style mots-fléchés: synonyme, hyperonyme, périphrase, idiomatique.
-- Première lettre en majuscule, pas de point final.
-- Une seule définition, pas de variantes.
+- ⚠️ La clue doit être à la MÊME forme grammaticale que le mot:
+    * verbe à la 3e pers. plur. ➜ clue à la 3e pers. plur.
+    * nom féminin pluriel ➜ clue au féminin pluriel
+    * adjectif masculin singulier ➜ clue au masculin singulier
+- Une seule définition, première lettre en majuscule.
 
-Exemples:
-- VOITURE → Bagnole
-- MAISON → Habitation
-- SOLEIL → Astre du jour
-- CHAT → Animal de compagnie
-- COURIR → Aller vite
-- GRAND → De haute taille
-- MER → Étendue salée
-- LIVRE → Ouvrage relié
-- PARIS → Capitale française
-- ÉTOILE → Astre lointain
-- ROUGE → Couleur du sang
-- DORMIR → Faire la sieste
-- CHANTER → Pousser la chansonnette
-- AMITIÉ → Lien fort
-- MEDECIN → Praticien
+Exemples (noter l'accord grammatical):
+- VOITURE [nom, féminin, singulier] ➜ Bagnole
+- VOITURES [nom, féminin, pluriel] ➜ Bagnoles
+- MAISON [nom, féminin, singulier] ➜ Habitation
+- SOLEIL [nom, masculin, singulier] ➜ Astre du jour
+- CHATS [nom, masculin, pluriel] ➜ Animaux familiers
+- COURIR [verbe, infinitif] ➜ Aller vite
+- COURENT [verbe, indicatif présent, 3e pers. plur.] ➜ Filent à toute allure
+- DESSINERONS [verbe, indicatif futur, 1re pers. plur.] ➜ Crayonnerons
+- SEXUALISENT [verbe, indicatif présent, 3e pers. plur.] ➜ Érotisent
+- DORMIT [verbe, indicatif passé simple, 3e pers. sing.] ➜ Roupilla
+- GRAND [adjectif, masculin, singulier] ➜ De haute taille
+- FRAUDULEUSES [adjectif, féminin, pluriel] ➜ Malhonnêtes
+- ROUGE [adjectif, épicène, singulier] ➜ Couleur du sang
 
-Mot: {word}
-Catégorie: {pos}
-Définition Wiktionnaire: {dbnary_definition}
+Mot à définir:
+{word_upper} [{morphology}]
+Lemme: {lemma}
+Définition Wiktionnaire (sens 1): {dbnary_definition}
 Synonymes Wiktionnaire: {synonyms_csv}
 
-Clue (court, sans le mot):
+Clue (1 à 6 mots, accord grammatical respecté, sans le mot ni ses dérivés):

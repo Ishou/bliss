@@ -1,25 +1,37 @@
 #!/usr/bin/env python3
-"""Run Mistral-7B-Instruct-v0.3 (via mlx-lm) over data/eval/sample_100_with_definitions.csv
+"""Run Mistral-7B-Instruct-v0.3 (via mlx-lm) over the morphology-enriched sample
 using the prompt template at scripts/eval/prompts/clue_v0.txt. Write outputs to
 data/eval/run_v0_results.csv with columns:
-    word, length, lemma, pos, definition, synonyms, generated_clue, rating
-The `rating` column is left blank for the user to hand-fill (✓ / ◯ / ✗).
+    word, length, lemma, pos, morphology, definition, synonyms, generated_clue, flag, rating
+The `rating` column is left blank for the user to hand-fill (y / b / n).
+
+`flag` is auto-set when the post-filter rejects the model output (e.g. clue
+echoes the surface or the lemma) so review can prioritise those.
 
 Idempotent: rows with a non-empty `generated_clue` in the existing output are
 preserved and skipped.
 
 Prerequisites (run once):
     pip install mlx-lm
-    python -m mlx_lm.convert --hf-path mistralai/Mistral-7B-Instruct-v0.3 -q
+    # First run downloads the 4-bit Mistral weights (~4 GB).
 """
 
 import csv
 import sys
+import unicodedata
 from pathlib import Path
 
 MODEL = "mlx-community/Mistral-7B-Instruct-v0.3-4bit"
 TEMPERATURE = 0.7
 MAX_TOKENS = 24
+
+
+def _strip_accents(s: str) -> str:
+    return "".join(c for c in unicodedata.normalize("NFD", s) if unicodedata.category(c) != "Mn")
+
+
+def _normalize(s: str) -> str:
+    return _strip_accents(s).lower().strip()
 
 
 def load_prompt_template(path: Path) -> str:
@@ -29,18 +41,42 @@ def load_prompt_template(path: Path) -> str:
 def render_prompt(template: str, row: dict[str, str]) -> str:
     return (
         template
-        .replace("{word}", row["word"].upper())
-        .replace("{pos}", row.get("pos") or "?")
+        .replace("{word_upper}", row["word"].upper())
+        .replace("{lemma}", row.get("lemma") or row["word"])
+        .replace("{morphology}", row.get("morphology") or "?")
         .replace("{dbnary_definition}", row.get("definition") or "(aucune)")
         .replace("{synonyms_csv}", row.get("synonyms") or "(aucun)")
     )
 
 
-def first_line(text: str) -> str:
+def clean_first_line(text: str) -> str:
     for line in text.splitlines():
-        line = line.strip().lstrip("-•*").strip()
+        line = line.strip().lstrip("-•*➜→>").strip().rstrip(".")
+        # Strip surrounding quotes / brackets the model sometimes adds.
+        for pair in ('""', "''", "[]", "()"):
+            if line.startswith(pair[0]) and line.endswith(pair[1]):
+                line = line[1:-1].strip()
         if line:
             return line
+    return ""
+
+
+def post_filter(clue: str, word: str, lemma: str) -> str:
+    """Return a flag string if clue should be flagged for review, else ''."""
+    if not clue:
+        return "empty"
+    n_clue = _normalize(clue)
+    n_word = _normalize(word)
+    n_lemma = _normalize(lemma) if lemma else ""
+    # Reject if clue contains the surface form as a substring.
+    if n_word and n_word in n_clue.split():
+        return "echoes-surface"
+    # Reject if clue is the lemma when surface differs (the inflection bug
+    # that motivated the morphology work).
+    if n_lemma and n_lemma != n_word and n_clue == n_lemma:
+        return "echoes-lemma"
+    if len(clue.split()) > 8:
+        return "too-long"
     return ""
 
 
@@ -48,17 +84,21 @@ def main() -> None:
     try:
         from mlx_lm import generate, load  # type: ignore[import-not-found]
     except ImportError:
-        print("mlx-lm not installed. Run: pip install mlx-lm", file=sys.stderr)
+        print("mlx-lm not installed. Activate your venv and run: pip install mlx-lm", file=sys.stderr)
         sys.exit(1)
 
     repo_root = Path(__file__).resolve().parent.parent.parent
-    src = repo_root / "data" / "eval" / "sample_100_with_definitions.csv"
+    enriched_path = repo_root / "data" / "eval" / "sample_100_enriched.csv"
+    fallback_path = repo_root / "data" / "eval" / "sample_100_with_definitions.csv"
+    src = enriched_path if enriched_path.exists() else fallback_path
     out = repo_root / "data" / "eval" / "run_v0_results.csv"
     template_path = repo_root / "scripts" / "eval" / "prompts" / "clue_v0.txt"
 
     if not src.exists():
-        print(f"missing {src} - run fetch_dbnary_for_sample.py first", file=sys.stderr)
+        print(f"missing {src} - run fetch_dbnary_for_sample.py + enrich_with_morphology.py first", file=sys.stderr)
         sys.exit(1)
+    if src == fallback_path:
+        print("WARNING: sample_100_enriched.csv missing; running without morphology", file=sys.stderr)
 
     template = load_prompt_template(template_path)
 
@@ -75,8 +115,12 @@ def main() -> None:
     print(f"loading {MODEL}...", file=sys.stderr)
     model, tokenizer = load(MODEL)
 
-    fieldnames = ["word", "length", "lemma", "pos", "definition", "synonyms", "generated_clue", "rating"]
+    fieldnames = [
+        "word", "length", "lemma", "pos", "morphology",
+        "definition", "synonyms", "generated_clue", "flag", "rating",
+    ]
     enriched: list[dict[str, str]] = []
+    flagged = 0
     for i, row in enumerate(rows, 1):
         word = row["word"]
         if word in existing:
@@ -92,7 +136,7 @@ def main() -> None:
                 verbose=False,
             )
         except TypeError:
-            # mlx-lm dropped `temp` in favor of a sampler argument in newer versions.
+            # Newer mlx-lm replaced `temp` with a sampler argument.
             from mlx_lm.sample_utils import make_sampler  # type: ignore[import-not-found]
             raw = generate(
                 model, tokenizer,
@@ -101,16 +145,22 @@ def main() -> None:
                 sampler=make_sampler(temp=TEMPERATURE),
                 verbose=False,
             )
-        clue = first_line(raw)
-        print(f"  [{i:3d}/{len(rows)}] {word:15s} -> {clue!r}")
+        clue = clean_first_line(raw)
+        flag = post_filter(clue, word, row.get("lemma", ""))
+        if flag:
+            flagged += 1
+        marker = f" [{flag}]" if flag else ""
+        print(f"  [{i:3d}/{len(rows)}] {word:18s} ({row.get('morphology','?')[:40]:40s}) -> {clue!r}{marker}")
         enriched.append({
             "word": word,
             "length": row["length"],
             "lemma": row.get("lemma", ""),
             "pos": row.get("pos", ""),
+            "morphology": row.get("morphology", ""),
             "definition": row.get("definition", ""),
             "synonyms": row.get("synonyms", ""),
             "generated_clue": clue,
+            "flag": flag,
             "rating": "",
         })
 
@@ -120,8 +170,8 @@ def main() -> None:
         for r in enriched:
             writer.writerow({k: r.get(k, "") for k in fieldnames})
 
-    print(f"\nWrote {len(enriched)} rows to {out.relative_to(repo_root)}")
-    print(f"Hand-rate the `rating` column (use: y / borderline / n) then run scripts/eval/eval_clue_quality.py")
+    print(f"\nWrote {len(enriched)} rows to {out.relative_to(repo_root)} ({flagged} flagged by post-filter)")
+    print("Hand-rate the `rating` column (y / b / n) then run: python scripts/eval/eval_clue_quality.py")
 
 
 if __name__ == "__main__":

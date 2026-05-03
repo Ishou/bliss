@@ -8,21 +8,31 @@ Status: in progress.
   `grid/api/src/main/resources/words/words-fr.csv` and filtered to entries with
   a non-empty `lemma` and an alphabetic `word`. The plan called for POS
   stratification, but `words-fr.csv` does not retain POS — length stratification
-  + lemmatized-alphabetic filter is the proxy used here. POS comes back from
-  DBnary at enrichment time and is reported in the breakdown below.
+  + lemmatized-alphabetic filter is the proxy used here. POS + morphology come
+  back from grammalecte at enrichment time.
   - Generated via `python scripts/eval/sample_eval_words.py`.
   - Saved at `data/eval/sample_100.csv`.
 - **Definitions + synonyms**: pulled per-word from the DBnary public SPARQL
   endpoint (`http://kaiko.getalp.org/sparql`) — no full TTL download.
   - Run `python scripts/eval/fetch_dbnary_for_sample.py`.
   - Saved at `data/eval/sample_100_with_definitions.csv`.
+- **Morphology**: parsed from `lexique-grammalecte-fr-v7.7.txt` (MPL-2.0 — same
+  licence the `import-grammalecte` worker pipeline declares). Each word gets
+  POS + gender + number + (for verbs) mood + tense + person, e.g. `SEXUALISENT
+  → verbe, indicatif présent, 3e pers. plur.`. Lexique 4 / Lexique3 was
+  evaluated and rejected (CC BY-SA share-alike would virally taint the corpus).
+  - Run `python scripts/eval/enrich_with_morphology.py --lexique <path>`.
+  - Saved at `data/eval/sample_100_enriched.csv`.
 - **Model**: `mlx-community/Mistral-7B-Instruct-v0.3-4bit` via `mlx-lm`.
-  - One-time install: `pip install mlx-lm`. Weights download on first load.
-- **Prompt**: `scripts/eval/prompts/clue_v0.txt` (15 hand-crafted exemplars +
-  the per-word slots `{word}`, `{pos}`, `{dbnary_definition}`,
-  `{synonyms_csv}`).
-- **Inference**: `python scripts/eval/generate_clues_v0.py` (writes
-  `data/eval/run_v0_results.csv`, leaving the `rating` column blank).
+  - One-time install (in a venv): `pip install mlx-lm`. Weights download on
+    first load.
+- **Prompt**: `scripts/eval/prompts/clue_v0.txt` (13 hand-crafted exemplars
+  showing inflection-matching, plus per-word slots `{word_upper}`, `{lemma}`,
+  `{morphology}`, `{dbnary_definition}`, `{synonyms_csv}`).
+- **Inference + post-filter**: `python scripts/eval/generate_clues_v0.py`
+  writes `data/eval/run_v0_results.csv`. A `flag` column is auto-set when the
+  clue echoes the surface, the lemma, or exceeds 8 words — those rows should
+  be reviewed first. The `rating` column is left blank for hand-rating.
 
 ## How to hand-rate
 
