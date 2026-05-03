@@ -2,8 +2,11 @@ package com.bliss.grid.worker.exporter
 
 import assertk.assertThat
 import assertk.assertions.containsExactly
+import assertk.assertions.contains
+import assertk.assertions.containsNone
 import assertk.assertions.isEqualTo
 import assertk.assertions.isTrue
+import com.bliss.grid.domain.lexicon.PercentileLengthFilterConfig
 import com.bliss.grid.worker.db.Database
 import com.github.ajalt.clikt.core.parse
 import org.apache.commons.csv.CSVFormat
@@ -55,7 +58,7 @@ class ExportWordsCommandIntegrationTest {
         seedFixtures()
 
         val output = tempDir.resolve("words-fr.csv")
-        ExportWordsCommand().parse(arrayOf("--language", "fr", "--output", output.toString()))
+        passthroughCommand().parse(arrayOf("--language", "fr", "--output", output.toString(), "--curated-dir", emptyCuratedDir().toString()))
 
         val lines = Files.readAllLines(output, StandardCharsets.UTF_8)
         // 1 header + 5 fr rows with clues (the 6th fr row has NULL clue and the en row is filtered by language).
@@ -87,8 +90,9 @@ class ExportWordsCommandIntegrationTest {
 
         val first = tempDir.resolve("first.csv")
         val second = tempDir.resolve("second.csv")
-        ExportWordsCommand().parse(arrayOf("--language", "fr", "--output", first.toString()))
-        ExportWordsCommand().parse(arrayOf("--language", "fr", "--output", second.toString()))
+        val curated = emptyCuratedDir()
+        passthroughCommand().parse(arrayOf("--language", "fr", "--output", first.toString(), "--curated-dir", curated.toString()))
+        passthroughCommand().parse(arrayOf("--language", "fr", "--output", second.toString(), "--curated-dir", curated.toString()))
 
         val firstBytes = Files.readAllBytes(first)
         val secondBytes = Files.readAllBytes(second)
@@ -100,8 +104,12 @@ class ExportWordsCommandIntegrationTest {
         seedFixtures()
 
         val output = tempDir.resolve("words-clueless.csv")
-        ExportWordsCommand().parse(
-            arrayOf("--language", "fr", "--include-clueless", "--output", output.toString()),
+        passthroughCommand().parse(
+            arrayOf(
+                "--language", "fr", "--include-clueless",
+                "--output", output.toString(),
+                "--curated-dir", emptyCuratedDir().toString(),
+            ),
         )
 
         val records = parseCsv(output)
@@ -117,8 +125,12 @@ class ExportWordsCommandIntegrationTest {
         seedFixtures()
 
         val output = tempDir.resolve("words-placeholder.csv")
-        ExportWordsCommand().parse(
-            arrayOf("--language", "fr", "--placeholder-clue-from-word", "--output", output.toString()),
+        passthroughCommand().parse(
+            arrayOf(
+                "--language", "fr", "--placeholder-clue-from-word",
+                "--output", output.toString(),
+                "--curated-dir", emptyCuratedDir().toString(),
+            ),
         )
 
         val records = parseCsv(output)
@@ -133,7 +145,7 @@ class ExportWordsCommandIntegrationTest {
         seedLemmaFixtures()
 
         val output = tempDir.resolve("words-lemma.csv")
-        ExportWordsCommand().parse(arrayOf("--language", "fr", "--output", output.toString()))
+        passthroughCommand().parse(arrayOf("--language", "fr", "--output", output.toString(), "--curated-dir", emptyCuratedDir().toString()))
 
         val records = parseCsv(output)
         // Both "aimer" (own clue) and "aimera" (inherited via lemma JOIN) appear.
@@ -144,9 +156,103 @@ class ExportWordsCommandIntegrationTest {
         assertThat(aimera.clue).isEqualTo("Eprouver de l'amour")
     }
 
+    @Test
+    fun `export-words merges curated rows and applies per-length percentile filter`() {
+        // Length 2: ratio 0.0 → curated-only. Length 3: ratio 0.4. Length 4: ratio 0.5.
+        // Two grammalecte rows per length so the math is unambiguous (drop bottom one).
+        ds().connection.use { conn ->
+            conn.prepareStatement(
+                """
+                INSERT INTO words (word, language, clue, frequency, source, source_license)
+                VALUES (?, 'fr', ?, ?, 'grammalecte', 'MPL-2.0')
+                """.trimIndent(),
+            ).use { stmt ->
+                listOf(
+                    Triple("ck", "noise", 100f),
+                    Triple("ab", "noise", 200f),
+                    Triple("xyz", "noise", 100f),
+                    Triple("abc", "noise", 200f),
+                    Triple("abcd", "noise", 100f),
+                    Triple("efgh", "noise", 200f),
+                ).forEach { (w, c, f) ->
+                    stmt.setString(1, w); stmt.setString(2, c); stmt.setFloat(3, f); stmt.addBatch()
+                }
+                stmt.executeBatch()
+            }
+        }
+        val curatedDir = Files.createDirectory(tempDir.resolve("curated"))
+        Files.writeString(
+            curatedDir.resolve("fr.csv"),
+            """
+            word,language,length,frequency,difficulty,clue,source,source_license
+            ne,fr,2,100000,,Cardinal,bliss,CC0-1.0
+            mr,fr,2,100000,,Monsieur,bliss,CC0-1.0
+            """.trimIndent() + "\n",
+        )
+
+        val output = tempDir.resolve("merged.csv")
+        ExportWordsCommand(
+            percentileConfig = PercentileLengthFilterConfig(
+                keepRatioByLength = mapOf(2 to 0.0, 3 to 0.4),
+                defaultKeepRatio = 0.5,
+            ),
+        ).parse(arrayOf("--language", "fr", "--output", output.toString(), "--curated-dir", curatedDir.toString()))
+
+        val words = parseCsv(output).map { it.word }
+        // Length 2: only curated survive (`ne`, `mr`). Grammalecte `ck`, `ab` dropped.
+        assertThat(words).contains("ne")
+        assertThat(words).contains("mr")
+        assertThat(words).containsNone("ck", "ab")
+        // Length 3: keep top 40% of 2 → drop floor(2 * 0.6)=1 → keep 1, the higher freq.
+        assertThat(words).contains("abc")
+        assertThat(words).containsNone("xyz")
+        // Length 4: keep top 50% of 2 → drop 1, keep 1.
+        assertThat(words).contains("efgh")
+        assertThat(words).containsNone("abcd")
+    }
+
+    @Test
+    fun `curated row overrides a grammalecte row with the same word`() {
+        ds().connection.use { conn ->
+            conn.prepareStatement(
+                "INSERT INTO words (word, language, clue, frequency, source, source_license) " +
+                    "VALUES ('ne', 'fr', 'grammalecte clue', 999999, 'grammalecte', 'MPL-2.0')",
+            ).use { it.executeUpdate() }
+        }
+        val curatedDir = Files.createDirectory(tempDir.resolve("curated"))
+        Files.writeString(
+            curatedDir.resolve("fr.csv"),
+            "word,language,length,frequency,difficulty,clue,source,source_license\n" +
+                "ne,fr,2,100000,,Curated clue,bliss,CC0-1.0\n",
+        )
+
+        val output = tempDir.resolve("override.csv")
+        passthroughCommand().parse(
+            arrayOf("--language", "fr", "--output", output.toString(), "--curated-dir", curatedDir.toString()),
+        )
+
+        val rows = parseCsv(output).filter { it.word == "ne" }
+        assertThat(rows.size).isEqualTo(1)
+        assertThat(rows[0].source).isEqualTo("bliss")
+        assertThat(rows[0].clue).isEqualTo("Curated clue")
+    }
+
     // ---------------------------------------------------------------------------------
     // Helpers
     // ---------------------------------------------------------------------------------
+
+    /** Build a command that disables percentile filtering — most tests assert raw fixture content. */
+    private fun passthroughCommand(): ExportWordsCommand =
+        ExportWordsCommand(
+            percentileConfig = PercentileLengthFilterConfig(
+                keepRatioByLength = emptyMap(),
+                defaultKeepRatio = 1.0,
+            ),
+        )
+
+    /** Curated dir that exists but holds no `<lang>.csv` — keeps tests isolated from `data/curated`. */
+    private fun emptyCuratedDir(): Path = Files.createDirectories(tempDir.resolve("empty-curated"))
+
 
     private fun seedFixtures() {
         // 5 fr rows with clues (varied difficulty: 4 NULL, 1 non-null), 1 fr row with NULL clue

@@ -3,7 +3,9 @@ package com.bliss.grid.worker.exporter
 
 import com.bliss.grid.application.lexicon.ExportWordsUseCase
 import com.bliss.grid.domain.lexicon.ExportSelectionCriteria
+import com.bliss.grid.domain.lexicon.PercentileLengthFilterConfig
 import com.bliss.grid.infrastructure.persistence.CsvWordCorpusExportSink
+import com.bliss.grid.infrastructure.persistence.FileCuratedSourceReader
 import com.bliss.grid.infrastructure.persistence.JdbcWordCorpusReader
 import com.bliss.grid.worker.db.Database
 import com.bliss.grid.worker.withCorrelationId
@@ -23,7 +25,14 @@ import javax.sql.DataSource
  * local-dev scratch space for the `import-words` → `generate-clues` →
  * review → `export-words` pipeline.
  */
-class ExportWordsCommand : CliktCommand(name = "export-words") {
+class ExportWordsCommand(
+    /**
+     * Per-length percentile filter applied at export time. Production wiring
+     * uses [DEFAULT_PERCENTILE_CONFIG]; tests inject a passthrough config to
+     * keep fixture rows intact.
+     */
+    private val percentileConfig: PercentileLengthFilterConfig = DEFAULT_PERCENTILE_CONFIG,
+) : CliktCommand(name = "export-words") {
     private val log = LoggerFactory.getLogger(ExportWordsCommand::class.java)
 
     private val language by option("--language", help = "ISO language code").default("fr")
@@ -47,29 +56,37 @@ class ExportWordsCommand : CliktCommand(name = "export-words") {
         help = "When clue is NULL, emit the word as its own clue (transitional)",
     ).flag()
 
+    /** Override the curated-source root directory; default is repo `data/curated`. */
+    private val curatedDir by option("--curated-dir", help = "Root dir holding <language>.csv curated files")
+        .path(canBeFile = false)
+
     override fun run() {
         Database.start()
         val ds = Database.dataSource() ?: error("DATABASE_URL is required for export-words")
-        executeExport(ds, output ?: defaultOutputPath(language))
+        executeExport(ds, output ?: defaultOutputPath(language), curatedDir ?: DEFAULT_CURATED_DIR)
     }
 
-    /** Test seam: integration test wires its own [DataSource] and output path. */
+    /** Test seam: integration test wires its own [DataSource], output, and curated dir. */
     internal fun executeExport(
         ds: DataSource,
         outputPath: Path,
+        curatedRoot: Path,
     ) {
         withCorrelationId {
             log.info(
-                "export_words_start language={} include_clueless={} placeholder_clue_from_word={} output={}",
+                "export_words_start language={} include_clueless={} placeholder_clue_from_word={} output={} curated_dir={}",
                 language,
                 includeClueless,
                 placeholderClueFromWord,
                 outputPath,
+                curatedRoot,
             )
             val report =
                 ExportWordsUseCase(
                     reader = JdbcWordCorpusReader(ds),
                     sink = CsvWordCorpusExportSink(outputPath),
+                    curatedReader = FileCuratedSourceReader(curatedRoot),
+                    percentileConfig = percentileConfig,
                 ).execute(
                     ExportSelectionCriteria(
                         language = language,
@@ -88,5 +105,17 @@ class ExportWordsCommand : CliktCommand(name = "export-words") {
 
     companion object {
         private fun defaultOutputPath(language: String): Path = Path.of("grid/api/src/main/resources/words/words-$language.csv")
+
+        private val DEFAULT_CURATED_DIR: Path = Path.of("data/curated")
+
+        // Length-2 grammalecte rows are dominated by junk (`ck, cp, mv, qi, …`) that
+        // looks frequent in raw text but isn't crossword-valid; rely on the curated
+        // source instead. Length-3 keeps the top 40 % by frequency, length 4+ keeps
+        // the top half (median). Tune in PRs after measuring grid quality.
+        private val DEFAULT_PERCENTILE_CONFIG: PercentileLengthFilterConfig =
+            PercentileLengthFilterConfig(
+                keepRatioByLength = mapOf(2 to 0.0, 3 to 0.4),
+                defaultKeepRatio = 0.5,
+            )
     }
 }
