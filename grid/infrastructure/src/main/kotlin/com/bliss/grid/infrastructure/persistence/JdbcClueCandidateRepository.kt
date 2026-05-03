@@ -121,14 +121,6 @@ class JdbcClueCandidateRepository(
             }
         }
 
-    override fun deriveSynonymClues(language: String): Int =
-        dataSource.connection.use { conn ->
-            conn.prepareStatement(DERIVE_SYNONYM_SQL).use { stmt ->
-                stmt.setString(1, language)
-                stmt.executeUpdate()
-            }
-        }
-
     private fun ResultSet.toCandidate(): ClueCandidate {
         val senseIndex = getInt("sense_index").takeUnless { wasNull() }
         val confidence = getBigDecimal("confidence")?.toDouble()
@@ -179,31 +171,6 @@ class JdbcClueCandidateRepository(
                      confidence DESC NULLS LAST,
                      generated_at DESC
             LIMIT 1
-            """.trimIndent()
-
-        // Derive one candidate per (word, synonym) pair. Joins via the
-        // language-scoped lemma key. clue_text capitalises the synonym's
-        // first character (FR convention: 'Bagnole', 'Tas de tôle') without
-        // touching the rest. Self-references are filtered server-side so a
-        // synonym entry that mirrors the target word/lemma never lands in
-        // the candidates table. ON CONFLICT DO NOTHING + V7 NULLS NOT
-        // DISTINCT make repeat runs idempotent.
-        private val DERIVE_SYNONYM_SQL =
-            """
-            INSERT INTO clue_candidates (word_id, source, sense_index, clue_text)
-            SELECT
-                w.word_id,
-                'dbnary-synonym',
-                NULL,
-                upper(left(syn.synonym_lemma, 1)) || substring(syn.synonym_lemma, 2)
-            FROM words w
-            JOIN dbnary_words dw ON dw.language = w.language AND dw.lemma = w.lemma
-            JOIN dbnary_synonyms syn ON syn.dbnary_word_id = dw.id
-            WHERE w.language = ?
-              AND length(syn.synonym_lemma) BETWEEN 1 AND 80
-              AND lower(syn.synonym_lemma) <> lower(w.word)
-              AND (w.lemma IS NULL OR lower(syn.synonym_lemma) <> lower(w.lemma))
-            ON CONFLICT (word_id, source, sense_index, clue_text) DO NOTHING
             """.trimIndent()
     }
 }
