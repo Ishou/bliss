@@ -258,6 +258,13 @@ const letterInput = css({
   userSelect: 'none',
   padding: 0,
   _focus: { bg: 'leaf.500', color: 'ink' },
+  // type="search" exposes a webkit clear-X button on focus + a search-results
+  // decoration affordance. Hide both — the cell is a single-character input,
+  // not a real search box. (See `<input type="search">` below for why we use
+  // search instead of text on Android.)
+  '&::-webkit-search-cancel-button': { display: 'none' },
+  '&::-webkit-search-decoration': { display: 'none' },
+  '&::-webkit-search-results-button': { display: 'none' },
 });
 
 const arrowLabel: Record<ArrowDirection, string> = { right: 'horizontale', down: 'verticale', 'down-right': 'horizontale', 'right-down': 'verticale' };
@@ -326,7 +333,14 @@ export const LetterCellView = memo(function LetterCellView({
       */}
       <input
         ref={setInputRef}
-        type="text"
+        // type="search" instead of "text" so Android Autofill (and Samsung
+        // Browser's equivalent) does NOT fingerprint the field as a form
+        // input — that's the toolbar with password / credit-card / GPS-pin
+        // icons reported in the field. Search inputs are exempt from the
+        // autofill heuristics. Identical keyboard behaviour to type="text"
+        // otherwise; the webkit clear-X / decoration affordances are hidden
+        // via the `letterInput` style above.
+        type="search"
         inputMode="text"
         autoComplete="off"
         autoCapitalize="characters"
