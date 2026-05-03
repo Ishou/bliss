@@ -7,6 +7,7 @@
 // types` Konsist rule (ApiArchitectureTest) forbids inside the dto package.
 package com.bliss.game.api.mapper
 
+import com.bliss.game.api.PresencePosition
 import com.bliss.game.api.dto.CellEntryDto
 import com.bliss.game.api.dto.GameCellDto
 import com.bliss.game.api.dto.GameClueDto
@@ -17,6 +18,7 @@ import com.bliss.game.api.dto.GameSessionDto
 import com.bliss.game.api.dto.GridConfigDto
 import com.bliss.game.api.dto.LobbyResponseDto
 import com.bliss.game.api.dto.PlayerDto
+import com.bliss.game.api.dto.PresenceEntryDto
 import com.bliss.game.domain.BlockCell
 import com.bliss.game.domain.CellEntry
 import com.bliss.game.domain.DefinitionCell
@@ -30,6 +32,7 @@ import com.bliss.game.domain.GameSession
 import com.bliss.game.domain.GridConfig
 import com.bliss.game.domain.LetterCell
 import com.bliss.game.domain.Lobby
+import com.bliss.game.domain.LobbyLifecycleState
 import com.bliss.game.domain.Player
 import com.bliss.game.domain.Position
 import java.time.format.DateTimeFormatter
@@ -40,7 +43,7 @@ import java.time.format.DateTimeFormatter
  * equal lobbies always produce identical JSON; JSON object keys are unordered,
  * an ordered array gives the frontend stable rendering.
  */
-fun Lobby.toResponseDto(): LobbyResponseDto =
+fun Lobby.toResponseDto(presence: Map<String, PresencePosition> = emptyMap()): LobbyResponseDto =
     LobbyResponseDto(
         id = id.value,
         ownerSessionId = ownerSessionId.value,
@@ -50,7 +53,10 @@ fun Lobby.toResponseDto(): LobbyResponseDto =
                 .map { it.toDto() },
         state = state.name,
         gridConfig = gridConfig.toDto(),
-        game = game?.toDto(),
+        // Presence is meaningful only while IN_PROGRESS — outside that we drop
+        // the map (matches openapi `GameSession.presence` which is "absent or
+        // empty when state is WAITING/COMPLETED").
+        game = game?.toDto(if (state == LobbyLifecycleState.IN_PROGRESS) presence else emptyMap()),
     )
 
 private fun Player.toDto() = PlayerDto(sessionId.value, pseudonym.value, ISO.format(joinedAt))
@@ -60,7 +66,7 @@ private fun GridConfig.toDto() = GridConfigDto(width, height)
 // Stable ordering: sort by row then column so two structurally-equal sessions
 // always produce identical JSON (the domain `entries` map is unordered; the
 // wire is an ordered array).
-private fun GameSession.toDto() =
+private fun GameSession.toDto(presence: Map<String, PresencePosition>) =
     GameSessionDto(
         puzzle = puzzle.toDto(),
         entries =
@@ -69,6 +75,11 @@ private fun GameSession.toDto() =
                 .map { (pos, entry) -> entry.toDto(pos) },
         startedAt = ISO.format(startedAt),
         completedAt = completedAt?.let(ISO::format),
+        // Sort by sessionId for deterministic JSON, mirroring `entries` above.
+        presence =
+            presence.entries
+                .sortedBy { it.key }
+                .map { (sid, pos) -> PresenceEntryDto(sid, pos.row, pos.column, pos.direction) },
     )
 
 private fun CellEntry.toDto(position: Position) =

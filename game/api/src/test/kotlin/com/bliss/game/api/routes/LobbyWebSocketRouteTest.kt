@@ -5,8 +5,10 @@ import assertk.assertions.contains
 import assertk.assertions.isEqualTo
 import assertk.assertions.isFalse
 import assertk.assertions.isNotNull
+import assertk.assertions.isNull
 import assertk.assertions.isTrue
 import com.bliss.game.api.LobbyUseCases
+import com.bliss.game.api.PresencePosition
 import com.bliss.game.api.SessionManager
 import com.bliss.game.api.SystemClock
 import com.bliss.game.application.ports.Clock
@@ -614,6 +616,141 @@ class LobbyWebSocketRouteTest {
                 assertThat(lobby).isNotNull()
                 assertThat(lobby!!.players.containsKey(SessionId(sessionB))).isFalse()
                 observer.cancel()
+            }
+        }
+
+    @Test
+    fun `cellFocus from one client broadcasts presenceUpdated to both`() =
+        runWith { harness ->
+            val lobbyId = harness.seedLobby()
+            harness.startGame(lobbyId)
+
+            val aReady = CompletableDeferred<Unit>()
+            val bReady = CompletableDeferred<Unit>()
+            val aSawPresence = CompletableDeferred<String>()
+            val bSawPresence = CompletableDeferred<String>()
+
+            coroutineScope {
+                val aJob =
+                    async {
+                        harness.client.webSocket("/v1/lobbies/${lobbyId.value}/ws") {
+                            receiveText() // initial snapshot
+                            sendText("""{"type":"joinLobby","sessionId":"$sessionA","pseudonym":"$pseudoA"}""")
+                            aReady.complete(Unit)
+                            while (!aSawPresence.isCompleted) {
+                                val text = receiveText()
+                                if (text.contains("\"type\":\"presenceUpdated\"")) aSawPresence.complete(text)
+                            }
+                        }
+                    }
+                val bJob =
+                    async {
+                        aReady.await()
+                        harness.client.webSocket("/v1/lobbies/${lobbyId.value}/ws") {
+                            receiveText() // initial snapshot
+                            sendText("""{"type":"joinLobby","sessionId":"$sessionB","pseudonym":"$pseudoB"}""")
+                            bReady.complete(Unit)
+                            sendText("""{"type":"cellFocus","row":1,"column":2,"direction":"down"}""")
+                            while (!bSawPresence.isCompleted) {
+                                val text = receiveText()
+                                if (text.contains("\"type\":\"presenceUpdated\"")) bSawPresence.complete(text)
+                            }
+                        }
+                    }
+
+                bReady.await()
+                val aText = withTimeout(5_000) { aSawPresence.await() }
+                val bText = withTimeout(5_000) { bSawPresence.await() }
+                // Both clients (sender included — keeps the wire symmetric with cellUpdated)
+                // see the broadcast carrying the sender's sessionId and the focused position.
+                assertThat(aText).contains("\"sessionId\":\"$sessionB\"")
+                assertThat(aText).contains("\"row\":1")
+                assertThat(aText).contains("\"column\":2")
+                assertThat(aText).contains("\"direction\":\"down\"")
+                assertThat(bText).contains("\"sessionId\":\"$sessionB\"")
+                aJob.cancel()
+                bJob.cancel()
+            }
+        }
+
+    @Test
+    fun `cellFocus with all-null payload removes the player from presence`() =
+        // Sender publishes a focus, then publishes an "all null" frame (the
+        // wire signal for "no cell focused"). The next snapshot delivered to
+        // a fresh joiner must NOT carry the sender's entry.
+        runWith { harness ->
+            val lobbyId = harness.seedLobby()
+            harness.startGame(lobbyId)
+
+            val ownerJoined = CompletableDeferred<Unit>()
+            val ownerSawClear = CompletableDeferred<Unit>()
+            val ownerHoldOpen = CompletableDeferred<Unit>()
+            coroutineScope {
+                val owner =
+                    async {
+                        harness.client.webSocket("/v1/lobbies/${lobbyId.value}/ws") {
+                            receiveText() // snapshot
+                            sendText("""{"type":"joinLobby","sessionId":"$sessionA","pseudonym":"$pseudoA"}""")
+                            ownerJoined.complete(Unit)
+                            // First focus -> a presenceUpdated with row=0,column=3.
+                            sendText("""{"type":"cellFocus","row":0,"column":3,"direction":"across"}""")
+                            // Second focus -> all-null payload signals "clear".
+                            sendText("""{"type":"cellFocus","row":null,"column":null,"direction":null}""")
+                            var seenFocus = false
+                            while (!ownerSawClear.isCompleted) {
+                                val text = receiveText()
+                                if (!text.contains("\"type\":\"presenceUpdated\"")) continue
+                                if (!seenFocus) {
+                                    seenFocus = true
+                                    continue
+                                }
+                                // Second presenceUpdated must carry row/column/direction = null.
+                                if (text.contains("\"row\":null") &&
+                                    text.contains("\"column\":null") &&
+                                    text.contains("\"direction\":null")
+                                ) {
+                                    ownerSawClear.complete(Unit)
+                                }
+                            }
+                            ownerHoldOpen.await()
+                        }
+                    }
+                ownerJoined.await()
+                withTimeout(5_000) { ownerSawClear.await() }
+
+                // Direct read of the presence map confirms the entry is gone —
+                // a future snapshot to a late joiner would not carry sessionA.
+                assertThat(harness.sessionManager.getPresence(lobbyId)[sessionA]).isNull()
+
+                ownerHoldOpen.complete(Unit)
+                owner.await()
+            }
+        }
+
+    @Test
+    fun `lobbyState snapshot on connect carries current presence`() =
+        // A reconnecting client must see peer cursors in its first frame —
+        // otherwise the cursor overlay flickers blank until the next focus
+        // event arrives.
+        runWith { harness ->
+            val lobbyId = harness.seedLobby()
+            harness.startGame(lobbyId)
+            // Pre-populate presence as if another player had focused a cell
+            // before this connection opens.
+            harness.sessionManager.recordPresence(
+                lobbyId,
+                sessionB,
+                PresencePosition(row = 2, column = 4, direction = "across"),
+            )
+
+            harness.client.webSocket("/v1/lobbies/${lobbyId.value}/ws") {
+                val text = receiveText()
+                assertThat(text).contains("\"type\":\"lobbyState\"")
+                assertThat(text).contains("\"presence\":[")
+                assertThat(text).contains("\"sessionId\":\"$sessionB\"")
+                assertThat(text).contains("\"row\":2")
+                assertThat(text).contains("\"column\":4")
+                assertThat(text).contains("\"direction\":\"across\"")
             }
         }
 

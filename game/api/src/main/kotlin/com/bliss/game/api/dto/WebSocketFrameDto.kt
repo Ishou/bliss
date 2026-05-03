@@ -59,6 +59,22 @@ sealed class ClientToServerFrame {
         val letter: String?,
     ) : ClientToServerFrame()
 
+    /**
+     * Pure presence signal — peers render the sender's cursor and active-word
+     * tint. Carries zero domain meaning; not persisted. All three position
+     * fields are nullable: `null` means "no cell focused" (e.g. user clicked
+     * off the grid). `direction` mirrors the wire `GameClueDirection`
+     * (`across` | `down`); kept as a raw String here so this DTO file stays
+     * free of domain imports (enforced by `ApiArchitectureTest`).
+     */
+    @Serializable
+    @SerialName("cellFocus")
+    data class CellFocus(
+        val row: Int?,
+        val column: Int?,
+        val direction: String?,
+    ) : ClientToServerFrame()
+
     @Serializable
     @SerialName("leaveLobby")
     object LeaveLobby : ClientToServerFrame()
@@ -116,6 +132,23 @@ sealed class ServerToClientFrame {
         val writtenAt: String,
     ) : ServerToClientFrame()
 
+    /**
+     * Server broadcast of a peer's `cellFocus`. Ephemeral — carries no
+     * domain meaning, is not persisted, and is dropped on lobby
+     * WAITING/COMPLETED transitions. Mirrors `PresenceUpdatedPayload` in
+     * `game/api/asyncapi.yaml`. `direction` is the wire enum value
+     * (`across` | `down`) kept as a raw String for the same domain-import
+     * reason as `ClientToServerFrame.CellFocus`.
+     */
+    @Serializable
+    @SerialName("presenceUpdated")
+    data class PresenceUpdated(
+        val sessionId: String,
+        val row: Int?,
+        val column: Int?,
+        val direction: String?,
+    ) : ServerToClientFrame()
+
     @Serializable
     @SerialName("gameSolved")
     data class GameSolved(
@@ -154,4 +187,21 @@ data class CellEntryDto(
     val column: Int,
     val letter: String,
     val writtenAt: String,
+)
+
+/**
+ * Snapshot projection of one currently-connected player's cursor. Carried by
+ * `lobbyState.game.presence` and `Lobby.game.presence` so a refreshing /
+ * late-joining client sees peer cursors immediately. All three position
+ * fields are nullable: `null` means the player has no cell focused.
+ * Absence from the list means the player is not connected; per ADR-0003 §6,
+ * absence and `null` are distinct. Mirrors `PresenceEntry` in both
+ * `game/api/asyncapi.yaml` and `game/api/openapi.yaml`.
+ */
+@Serializable
+data class PresenceEntryDto(
+    val sessionId: String,
+    val row: Int?,
+    val column: Int?,
+    val direction: String?,
 )

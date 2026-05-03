@@ -8,6 +8,7 @@
 // `routing { }` block — the additions are independent lines and merge cleanly.
 package com.bliss.game.api.routes
 
+import com.bliss.game.api.SessionManager
 import com.bliss.game.api.dto.CreateLobbyRequestDto
 import com.bliss.game.api.dto.ProblemDetails
 import com.bliss.game.api.mapper.toResponseDto
@@ -45,6 +46,7 @@ private const val LOBBY_NOT_FOUND_TYPE = "https://bliss.example/errors/lobby-not
 fun Route.lobbies(
     createLobby: CreateLobbyUseCase,
     repo: LobbyRepository,
+    sessionManager: SessionManager,
 ) {
     route("/v1/lobbies") {
         post {
@@ -63,6 +65,7 @@ fun Route.lobbies(
 
             val lobby = createLobby(ownerSessionId, ownerPseudonym).value
             call.response.header(HttpHeaders.Location, "/v1/lobbies/${lobby.id.value}")
+            // Newly-created lobby has no live WS sessions yet; presence is empty.
             call.respond(HttpStatusCode.Created, lobby.toResponseDto())
         }
 
@@ -88,7 +91,10 @@ fun Route.lobbies(
                     "No lobby exists for id '${lobbyId.value}'.",
                 )
             }
-            call.respond(HttpStatusCode.OK, lobby.toResponseDto())
+            // Mirror the WebSocket snapshot: REST `GET` rehydrating a refreshing
+            // client carries the same ephemeral cursor map so the UI can render
+            // peer cursors before the WS handshake completes.
+            call.respond(HttpStatusCode.OK, lobby.toResponseDto(sessionManager.getPresence(lobbyId)))
         }
     }
 }

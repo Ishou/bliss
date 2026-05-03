@@ -34,6 +34,19 @@ class SessionManager(
     private val connections = ConcurrentHashMap<LobbyId, MutableSet<DefaultWebSocketServerSession>>()
     private val perLobbyLock = ConcurrentHashMap<LobbyId, Any>()
 
+    // Ephemeral cursor map per ADR-0018 §9 (Presence). Outer key is the lobby,
+    // inner key is the player's sessionId. Lives only in the JVM heap; not
+    // persisted, not replicated, not domain. Two-level ConcurrentHashMap is
+    // sufficient: every operation is a single put / single remove keyed by
+    // sessionId, so per-key atomicity is what the inner map already provides.
+    // No additional locking is added — the [perLobbyLock] above guards a
+    // *different* invariant (cleanup-vs-register race on `connections` /
+    // `sessionIdToSessions`). Stale presence is cleaned up in [unregister]
+    // when the per-session entry is dropped, and the entire per-lobby map
+    // is dropped when the lobby's connection set empties (the same trigger
+    // that prunes [connections]).
+    private val presenceState = ConcurrentHashMap<LobbyId, ConcurrentHashMap<String, PresencePosition>>()
+
     // Per-lobby reverse index: which sessionId is each connected socket
     // identified as? Populated by [bindSession] after a successful joinLobby
     // and cleared by [unregister]. The route uses this to answer "did the
@@ -85,12 +98,23 @@ class SessionManager(
                 }
                 if (byId != null && byId.isEmpty()) sessionIdToSessions.remove(lobbyId)
                 if (sessionToSessionId[lobbyId]?.isEmpty() == true) sessionToSessionId.remove(lobbyId)
+                // Drop the player's presence entry once the LAST socket for the
+                // sessionId is gone — multi-tab close MUST keep presence
+                // visible while another tab is still attached.
+                if (byId?.get(boundSessionId)?.isNotEmpty() != true) {
+                    presenceState[lobbyId]?.remove(boundSessionId)
+                }
             }
             val set = connections[lobbyId] ?: return@synchronized boundSessionId
             set.remove(session)
             if (set.isEmpty()) {
                 connections.remove(lobbyId)
                 perLobbyLock.remove(lobbyId)
+                // Last socket for the lobby is gone — drop the whole presence
+                // map for this lobby. Covers both "last player left" and the
+                // GC-evicted-while-clients-disconnected case (presence is
+                // freed at most one disconnect after the lobby is gone).
+                presenceState.remove(lobbyId)
             }
             boundSessionId
         }
@@ -165,6 +189,35 @@ class SessionManager(
 
     fun connectedCount(lobbyId: LobbyId): Int = connections[lobbyId]?.size ?: 0
 
+    /**
+     * Upsert the cursor position for [sessionId] inside [lobbyId]. A null
+     * [position] (or one whose all three fields are null) is treated as
+     * "no focus" and REMOVES the entry from the map — that matches the
+     * AsyncAPI semantics where an absent player is "not focused", and lets
+     * the wire convey both transient un-focus (clear) and player exit
+     * (unregister).
+     */
+    fun recordPresence(
+        lobbyId: LobbyId,
+        sessionId: String,
+        position: PresencePosition?,
+    ) {
+        if (position == null || (position.row == null && position.column == null && position.direction == null)) {
+            presenceState[lobbyId]?.remove(sessionId)
+            return
+        }
+        presenceState
+            .computeIfAbsent(lobbyId) { ConcurrentHashMap() }
+            .put(sessionId, position)
+    }
+
+    /**
+     * Snapshot of the current presence map for [lobbyId]. Returns a copy so
+     * callers can iterate without observing concurrent mutations. Empty map
+     * when no entries exist (or the lobby is unknown to the manager).
+     */
+    fun getPresence(lobbyId: LobbyId): Map<String, PresencePosition> = presenceState[lobbyId]?.toMap().orEmpty()
+
     companion object {
         internal val DEFAULT_JSON: Json =
             Json {
@@ -175,3 +228,20 @@ class SessionManager(
             }
     }
 }
+
+/**
+ * Cursor position carried by [SessionManager.presenceState]. Co-located with
+ * the manager because nothing else in the codebase needs it — it is a pure
+ * api-layer transport concern (ADR-0018 §9 Presence: ephemeral, not domain).
+ * All three fields are nullable mirroring `CellFocusPayload` /
+ * `PresenceEntry` on the wire; a position with all three nulls is normalised
+ * by [SessionManager.recordPresence] to "remove the entry".
+ *
+ * `direction` is the wire enum string (`across` | `down`) — kept as a raw
+ * String so this file does not import `com.bliss.game.domain.*`.
+ */
+data class PresencePosition(
+    val row: Int?,
+    val column: Int?,
+    val direction: String?,
+)
