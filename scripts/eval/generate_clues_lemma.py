@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate one lemma-form clue per unique lemma in the sample, batched.
+"""Generate one lemma-form clue per unique lemma in the sample, via Ollama.
 
 Reads:  data/eval/sample_100_enriched.csv
 Writes: data/eval/lemma_clues.csv
@@ -8,34 +8,46 @@ Schema:
     lemma, pos, definition, synonyms, lemma_clue, attempts, validation_flag, rating
 
 Pipeline per round:
-1. Render prompts for every lemma still pending.
-2. Run them through mlx-lm's batch_generate (real GPU-side batching, not
-   thread overlap).
-3. Validate each output. Passing clues are kept; failures are queued for the
-   next round at a higher sampling temperature.
-4. Stop when all lemmas pass or MAX_ATTEMPTS rounds have elapsed; the last
-   output is kept either way and the validation_flag records the outcome.
+1. Render a chat message for every still-pending lemma.
+2. Fire all of them at Ollama's /api/chat endpoint concurrently (the daemon
+   does its own continuous batching, so we just feed it as many in-flight
+   requests as it'll absorb).
+3. Validate each output. Passing clues are kept; failures queue for the next
+   round at a higher sampling temperature (0.3 -> 0.6 -> 0.9).
+4. Stop when all pass or MAX_ATTEMPTS rounds elapse; the last output is kept
+   either way and `validation_flag` records the outcome.
 
-Validation requires the clue's first content-word head to be (a) a citation
-form in grammalecte and (b) the same POS class as the target lemma.
+Validation requires the clue's first content-word head to be a citation form
+in grammalecte AND the same POS class as the target lemma.
+
+Setup:
+    brew install ollama
+    ollama serve &           # if not already running as a service
+    ollama pull mistral:7b-instruct
 """
 
 import argparse
 import csv
+import json
 import os
 import sys
 import time
+import urllib.error
+import urllib.request
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 from morphology_index import MorphologyIndex
 from validate_clue import ValidationResult, validate_lemma_clue
 
-MODEL = "mlx-community/Mistral-7B-Instruct-v0.3-4bit"
+DEFAULT_MODEL = "mistral:latest"
+DEFAULT_HOST = "http://localhost:11434"
+DEFAULT_CONCURRENCY = 8
 TOP_P = 0.9
-MAX_TOKENS = 20
+MAX_TOKENS = 24
 MAX_ATTEMPTS = 3
 ATTEMPT_TEMPERATURES = (0.3, 0.6, 0.9)
-DEFAULT_BATCH_SIZE = 8
+HTTP_TIMEOUT = 120
 
 POS_NORMALIZE = {
     "verbe": "verbe",
@@ -59,12 +71,6 @@ def render_user_content(template: str, lemma: str, pos: str, definition: str, sy
     )
 
 
-def render_prompt(template: str, lemma: str, pos: str, definition: str, synonyms: str, tokenizer) -> str:
-    user = render_user_content(template, lemma, pos, definition, synonyms)
-    messages = [{"role": "user", "content": user}]
-    return tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
-
-
 def clean_first_line(text: str) -> str:
     for line in text.splitlines():
         line = line.strip().lstrip("-•*➜→>").strip().rstrip(".")
@@ -82,121 +88,54 @@ def pos_label(morphology: str) -> str:
     return morphology.split(",", 1)[0].strip()
 
 
-def _patch_mlx_stats_zero_division() -> bool:
-    """Monkey-patch mlx_lm's prompt_tps division to avoid ZeroDivisionError on
-    fast cache-hit paths (observed on mlx-lm 0.20.x). Returns True if patched."""
+def ollama_health(host: str, model: str) -> tuple[bool, str]:
     try:
-        import mlx_lm.generate as gmod  # type: ignore[import-not-found]
-    except ImportError:
-        return False
-    # Find any class in the module that has a `stats` contextmanager method.
-    # The structure varies across versions; we patch defensively by wrapping
-    # any `prompt_tps` setter we can find.
-    for attr in dir(gmod):
-        cls = getattr(gmod, attr)
-        if not isinstance(cls, type):
-            continue
-        if hasattr(cls, "prompt_time") and hasattr(cls, "prompt_tokens"):
-            # The dataclass holds the timing values; wrap its setattr so any
-            # near-zero prompt_time becomes a tiny epsilon before downstream
-            # division.
-            original_setattr = cls.__setattr__
-
-            def safe_setattr(self, name, value, _orig=original_setattr):
-                if name == "prompt_time" and value == 0:
-                    value = 1e-9
-                _orig(self, name, value)
-
-            cls.__setattr__ = safe_setattr
-    return True
+        with urllib.request.urlopen(f"{host}/api/tags", timeout=5) as resp:
+            data = json.load(resp)
+    except (urllib.error.URLError, ConnectionError) as e:
+        return False, (
+            f"cannot reach Ollama at {host}: {e}\n"
+            "  Setup: brew install ollama && ollama serve &"
+        )
+    models = {m["name"] for m in data.get("models", [])}
+    if model not in models:
+        return False, (
+            f"model {model!r} not pulled. Available: {sorted(models) or '(none)'}\n"
+            f"  Pull it with: ollama pull {model}"
+        )
+    return True, ""
 
 
-def _serial_generate(generate_fn, sampler_factory):
-    def fn(model, tokenizer, prompts, *, max_tokens, temp, top_p):
-        outs: list[str] = []
-        for p in prompts:
-            kwargs = {"max_tokens": max_tokens, "verbose": False}
-            if sampler_factory is not None:
-                kwargs["sampler"] = sampler_factory(temp=temp, top_p=top_p)
-            else:
-                kwargs["temp"] = temp
-                kwargs["top_p"] = top_p
-            outs.append(generate_fn(model, tokenizer, prompt=p, **kwargs))
-        return outs
-
-    return fn
-
-
-def _resolve_batch_generate():
-    """Return (batch_fn, mode_label). batch_fn signature is
-        batch_fn(model, tokenizer, prompts, *, max_tokens, temp, top_p) -> list[str]
-
-    Tries mlx-lm's native batched API first. On ZeroDivisionError (a known
-    bug in some mlx-lm 0.20.x stats finalisation) the call transparently
-    falls back to serial generation for that batch."""
-    sampler_factory = None
-    try:
-        from mlx_lm.sample_utils import make_sampler  # type: ignore[import-not-found]
-        sampler_factory = make_sampler
-    except ImportError:
-        pass
-
-    from mlx_lm import generate as single_generate  # type: ignore[import-not-found]
-    serial_fn = _serial_generate(single_generate, sampler_factory)
-
-    _patch_mlx_stats_zero_division()
-
-    native = None
-    label = ""
-    for source, attr in (("mlx_lm", "batch_generate"), ("mlx_lm.utils", "batch_generate")):
-        try:
-            mod = __import__(source, fromlist=[attr])
-            native = getattr(mod, attr)
-            label = source
-            break
-        except (ImportError, AttributeError):
-            continue
-
-    if native is None:
-        return serial_fn, "serial-only"
-
-    seen_zero_div = {"yes": False}
-
-    def fn(model, tokenizer, prompts, *, max_tokens, temp, top_p):
-        if seen_zero_div["yes"]:
-            return serial_fn(model, tokenizer, prompts, max_tokens=max_tokens, temp=temp, top_p=top_p)
-        kwargs = {"max_tokens": max_tokens, "verbose": False}
-        if sampler_factory is not None:
-            kwargs["sampler"] = sampler_factory(temp=temp, top_p=top_p)
-        else:
-            kwargs["temp"] = temp
-            kwargs["top_p"] = top_p
-        try:
-            return native(model, tokenizer, prompts=prompts, **kwargs)
-        except ZeroDivisionError:
-            print(
-                "  [warn] mlx-lm batch_generate hit ZeroDivisionError in stats; "
-                "falling back to serial generate for the rest of the run",
-                file=sys.stderr,
-            )
-            seen_zero_div["yes"] = True
-            return serial_fn(model, tokenizer, prompts, max_tokens=max_tokens, temp=temp, top_p=top_p)
-
-    return fn, label
+def ollama_chat(host: str, model: str, user_content: str, *, temperature: float, max_tokens: int) -> str:
+    body = json.dumps({
+        "model": model,
+        "messages": [{"role": "user", "content": user_content}],
+        "options": {
+            "temperature": temperature,
+            "top_p": TOP_P,
+            "num_predict": max_tokens,
+        },
+        "stream": False,
+    }).encode("utf-8")
+    req = urllib.request.Request(
+        f"{host}/api/chat",
+        data=body,
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    with urllib.request.urlopen(req, timeout=HTTP_TIMEOUT) as resp:
+        payload = json.load(resp)
+    return payload.get("message", {}).get("content", "")
 
 
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--lexique", type=Path, default=None)
-    parser.add_argument("--batch-size", type=int, default=DEFAULT_BATCH_SIZE)
+    parser.add_argument("--model", default=DEFAULT_MODEL)
+    parser.add_argument("--host", default=DEFAULT_HOST)
+    parser.add_argument("--concurrency", type=int, default=DEFAULT_CONCURRENCY)
     parser.add_argument("--limit", type=int, default=None)
     args = parser.parse_args()
-
-    try:
-        from mlx_lm import load  # type: ignore[import-not-found]
-    except ImportError:
-        print("mlx-lm not installed. Activate your venv and run: pip install mlx-lm", file=sys.stderr)
-        sys.exit(1)
 
     repo_root = Path(__file__).resolve().parent.parent.parent
     src = repo_root / "data" / "eval" / "sample_100_enriched.csv"
@@ -208,6 +147,12 @@ def main() -> None:
         print(f"missing {src}", file=sys.stderr); sys.exit(1)
     if not lexique_path.exists():
         print(f"missing lexique: {lexique_path}", file=sys.stderr); sys.exit(1)
+
+    ok, reason = ollama_health(args.host, args.model)
+    if not ok:
+        print(reason, file=sys.stderr)
+        sys.exit(1)
+    print(f"ollama: {args.host} model={args.model} concurrency={args.concurrency}", file=sys.stderr)
 
     template = template_path.read_text(encoding="utf-8")
 
@@ -240,20 +185,22 @@ def main() -> None:
 
     todo = [r for lemma, r in by_lemma.items() if lemma not in existing]
     cached = [existing[l] for l in by_lemma if l in existing]
-
     print(f"unique lemmas: {len(by_lemma)} (todo: {len(todo)}, cached: {len(cached)})", file=sys.stderr)
-    print(f"loading {MODEL}...", file=sys.stderr)
-    from mlx_lm import load
-    model, tokenizer = load(MODEL)
 
-    batch_fn, mode = _resolve_batch_generate()
-    print(f"batch path: {mode}", file=sys.stderr)
-
-    # State: pending[lemma] = (row, attempt_idx, last_clue, last_flag)
-    pending: dict[str, tuple[dict, int, str, str]] = {
-        r["lemma"]: (r, 0, "", "") for r in todo
-    }
+    pending: dict[str, dict[str, str]] = {r["lemma"]: r for r in todo}
+    last_output: dict[str, tuple[str, str]] = {}  # lemma -> (clue, flag)
     completed: dict[str, dict[str, str]] = {r["lemma"]: r for r in cached}
+
+    def task(lemma: str, row: dict[str, str], temperature: float) -> tuple[str, str, ValidationResult]:
+        prompt = render_user_content(template, lemma, row["pos"], row["definition"], row["synonyms"])
+        try:
+            raw = ollama_chat(args.host, args.model, prompt,
+                              temperature=temperature, max_tokens=MAX_TOKENS)
+        except Exception as e:
+            return lemma, "", ValidationResult("http-error", str(e))
+        clue = clean_first_line(raw)
+        target_pos = normalize_pos(row["pos"])
+        return lemma, clue, validate_lemma_clue(clue, lemma, target_pos, index)
 
     started = time.time()
     for round_idx in range(MAX_ATTEMPTS):
@@ -263,50 +210,48 @@ def main() -> None:
         round_lemmas = list(pending.keys())
         print(
             f"\n=== round {round_idx + 1}/{MAX_ATTEMPTS} | temp={temp} | "
-            f"{len(round_lemmas)} lemmas | batch={args.batch_size} ===",
+            f"{len(round_lemmas)} lemmas | concurrency={args.concurrency} ===",
             file=sys.stderr,
         )
-
-        for batch_start in range(0, len(round_lemmas), args.batch_size):
-            batch = round_lemmas[batch_start : batch_start + args.batch_size]
-            prompts = [
-                render_prompt(template, l, pending[l][0]["pos"], pending[l][0]["definition"],
-                              pending[l][0]["synonyms"], tokenizer)
-                for l in batch
-            ]
-            t0 = time.time()
-            outputs = batch_fn(model, tokenizer, prompts,
-                               max_tokens=MAX_TOKENS, temp=temp, top_p=TOP_P)
-            t1 = time.time()
-            for lemma, raw in zip(batch, outputs):
-                row, attempt_idx, _, _ = pending[lemma]
-                clue = clean_first_line(raw)
-                target_pos = normalize_pos(row["pos"])
-                vr = validate_lemma_clue(clue, lemma, target_pos, index)
+        round_started = time.time()
+        with ThreadPoolExecutor(max_workers=args.concurrency) as pool:
+            futures = {pool.submit(task, l, pending[l], temp): l for l in round_lemmas}
+            done_in_round = 0
+            for fut in as_completed(futures):
+                lemma, clue, vr = fut.result()
                 attempts = round_idx + 1
-                pending[lemma] = (row, attempt_idx, clue, vr.flag)
+                last_output[lemma] = (clue, vr.flag)
                 if vr.flag == "ok":
                     completed[lemma] = {
-                        **row, "lemma_clue": clue,
-                        "attempts": str(attempts), "validation_flag": "ok", "rating": "",
+                        **pending[lemma],
+                        "lemma_clue": clue,
+                        "attempts": str(attempts),
+                        "validation_flag": "ok",
+                        "rating": "",
                     }
                     pending.pop(lemma)
                     marker = "OK"
                 else:
                     marker = vr.flag
-                print(f"  [{lemma:20s} ({row['pos']:10s}) x{attempts}] {marker:14s} -> {clue!r}")
-            elapsed_batch = t1 - t0
-            print(f"  -- batch of {len(batch)} took {elapsed_batch:.1f}s ({len(batch)/max(elapsed_batch,0.001):.1f} clue/s)", file=sys.stderr)
+                done_in_round += 1
+                print(f"  [{lemma:20s} ({pending.get(lemma, completed[lemma])['pos']:10s}) "
+                      f"x{attempts}] {marker:14s} -> {clue!r}")
+        elapsed_round = time.time() - round_started
+        print(f"  -- round of {len(round_lemmas)} took {elapsed_round:.1f}s "
+              f"({len(round_lemmas)/max(elapsed_round, 0.001):.1f} clue/s)", file=sys.stderr)
 
-    # Anything left in `pending` after the final round: keep the last attempt with its flag.
-    for lemma, (row, _, last_clue, last_flag) in pending.items():
+    # Anything still pending after the last round: keep the last attempt.
+    for lemma, row in pending.items():
+        clue, flag = last_output.get(lemma, ("", "no-attempt"))
         completed[lemma] = {
-            **row, "lemma_clue": last_clue,
-            "attempts": str(MAX_ATTEMPTS), "validation_flag": last_flag or "no-attempt",
+            **row, "lemma_clue": clue,
+            "attempts": str(MAX_ATTEMPTS),
+            "validation_flag": flag,
             "rating": "",
         }
 
-    fieldnames = ["lemma", "pos", "definition", "synonyms", "lemma_clue", "attempts", "validation_flag", "rating"]
+    fieldnames = ["lemma", "pos", "definition", "synonyms",
+                  "lemma_clue", "attempts", "validation_flag", "rating"]
     out_rows = sorted(completed.values(), key=lambda r: r["lemma"])
     with out.open("w", encoding="utf-8", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames, lineterminator="\n")
@@ -318,8 +263,9 @@ def main() -> None:
     for r in out_rows:
         counts[r["validation_flag"]] = counts.get(r["validation_flag"], 0) + 1
     elapsed = time.time() - started
+    new_count = max(len(todo), 1)
     print(f"\nWrote {len(out_rows)} rows to {out.relative_to(repo_root)} in {elapsed:.1f}s "
-          f"({len(todo)/max(elapsed,0.001):.1f} new clue/s)")
+          f"({new_count/elapsed:.1f} new clue/s)")
     for flag, n in sorted(counts.items(), key=lambda kv: -kv[1]):
         print(f"  {flag:18s} {n}")
     print("\nHand-rate the `rating` column then run:")
