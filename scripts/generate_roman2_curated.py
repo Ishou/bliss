@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Generate data/curated/roman2.csv: every canonical 2-letter Roman numeral
-with an arithmetic-decomposition clue (e.g. MM -> "M + M", IX -> "V + IV")."""
+with an arithmetic-decomposition clue (e.g. MM -> "M + M", IX -> "X - I")."""
 
 import csv
 from pathlib import Path
