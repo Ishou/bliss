@@ -1,101 +1,101 @@
 word,language,length,frequency,lemma,pos,definition,synonyms
-gré,fr,3,5377161,gré,noun,"Volonté, caprice, fantaisie.",
-age,fr,3,595911,age,noun,"(Agriculture) Pièce de la charrue, horizontale, reliée au tracteur, et qui soutient les pièces aratoires : soc et versoir, rasette, coutre, etc.",
+gré,fr,3,5377161,gré,noun,"Volonté, caprice, fantaisie.|(En particulier) Bonne, franche volonté qu’on a de faire quelque chose.|Il se prend aussi pour goût, sentiment, opinion.|Gratitude, reconnaissance. — Note : locution construite avec savoir gré.",
+age,fr,3,595911,age,noun,"(Agriculture) Pièce de la charrue, horizontale, reliée au tracteur, et qui soutient les pièces aratoires : soc et versoir, rasette, coutre, etc.|(Régionalisme) Haie.",
 nos,fr,3,89524168,nos,,,
-vœu,fr,3,3876465,vœu,noun,"(Religion) Promesse faite à Dieu, par laquelle on s’engage à quelque œuvre que l’on croit lui être agréable, et qui n’est pas de précepte.",
+vœu,fr,3,3876465,vœu,noun,"(Religion) Promesse faite à Dieu, par laquelle on s’engage à quelque œuvre que l’on croit lui être agréable, et qui n’est pas de précepte.|Promesse qu’on s’est faite à soi-même, résolution ferme qu’on a prise de faire ou de ne pas faire une chose.|(Vieilli) Offrande promise par un vœu → voir ex-voto.|Souhait ; désir.|(Au pluriel) (En particulier) Usage d’envoyer une carte, ou de présenter des souhaits de bonheur et de prospérité, au moment de noël ou du nouvel an. → voir vœux",
 sut,fr,3,2917438,savoir,noun,"Ensemble des connaissances acquises par l’étude, par l’expérience.",connaître
 sir,fr,3,1855903,sir,,,
-élu,fr,3,4614340,élu,noun,Celui qui a été élu.,
-bey,fr,3,655772,bey,noun,(Noblesse) Gouverneur dans l’ancien Empire ottoman.,
-use,fr,3,1142242,user,noun,"(Désuet) Usage, utilisation.",recours|bouffer|utiliser|consommer
-ère,fr,3,4021139,ère,noun,(Temps) Point fixe d’où l’on commence à compter les années.,
-bête,fr,4,1091883,bête,noun,Tout animal autre que l’être humain.,
-dure,fr,4,1949371,durer,noun,"Femme pleine de dureté, insensible ou très sévère.",
+élu,fr,3,4614340,élu,noun,Celui qui a été élu.|(Religion) Un de ceux qui sont choisis par Dieu pour jouir de la félicité éternelle.,
+bey,fr,3,655772,bey,noun,"(Noblesse) Gouverneur dans l’ancien Empire ottoman.|Titre honorifique (sire, sieur) accordé par le sultan. Note : le titre se place après le nom de la personne.",
+use,fr,3,1142242,user,noun,"(Désuet) Usage, utilisation.|(Désuet) Fréquentation.",recours|bouffer|utiliser|consommer
+ère,fr,3,4021139,ère,noun,"(Temps) Point fixe d’où l’on commence à compter les années.|(Par extension) Époque très remarquable où un nouvel ordre de choses s’établit, commence.|(Géologie) Subdivision, seconde par durée après l'éon, de l'échelle des temps géologiques.",
+bête,fr,4,1091883,bête,noun,"Tout animal autre que l’être humain.|(Par ellipse) Bête sauvage.|(Chasse) Pièce de gibier, tout animal qu’on poursuit dans les chasses à courre.|Animal féroce que, chez les Romains, on faisait combattre dans le cirque.|(Religion) (Au singulier) Le mal ; le malin ; le diable.",
+dure,fr,4,1949371,durer,verb,"Continuer d’être, se prolonger.|Persister, rester, durer longtemps.|Résister au temps, à l’usure.|(Familier) Supporter, endurer.|Paraître long et ennuyeux.",
 pull,fr,4,102255,pull,noun,(Habillement) (Par ellipse) Pull-over.,
 agar,fr,4,105635,agar,noun,Synonyme de agar-agar.,
-tris,fr,4,124496,tri,noun,Action de trier.,
-arcs,fr,4,1659045,arc,noun,"(Armement) Arme de trait servant à lancer des flèches, formée d’une branche de bois ou d’une verge, soit de métal, soit d’autre matière, courbée avec effort au moyen d’une corde qui s’attache aux deux extrémités.",
+tris,fr,4,124496,tri,noun,Action de trier.|(Par ellipse) (Familier) (Désuet) Triporteur,
+arcs,fr,4,1659045,arc,noun,"(Armement) Arme de trait servant à lancer des flèches, formée d’une branche de bois ou d’une verge, soit de métal, soit d’autre matière, courbée avec effort au moyen d’une corde qui s’attache aux deux extrémités.|(Géométrie) Portion définie d’une courbe.|(Spécialement) (Politique) Coalition politique qui regroupe plusieurs partis dans l’hémicycle d'une assemblée politique.|(Architecture) Construction de forme courbe dont les deux extrémités vont s’appuyer sur des points solides.|(Spécialement) Monument public ayant la forme d'une arche. → voir arc de triomphe",
 étés,fr,4,241831,été,noun,"La plus chaude des quatre saisons de l’année. Dans l’hémisphère nord, l’été astronomique s’étend du 7 mai au 7 août, le solstice d’été représentant le milieu de l’été. L’été météorologique, qui comprend les mois les plus chauds de l’année, comprend les mois de juin, juillet et août. L’été calendaire français, enfin, s’étend du 21 juin (solstice d’été) au 22 septembre (équinoxe d’automne). Dans l’hémisphère sud, ce découpage correspond à la saison d’hiver.",
-apex,fr,4,184408,apex,noun,(Biologie) Extrémité d’un organe.,obit
-haie,fr,4,566751,haie,noun,"Ensemble linéaire, naturel ou artificiel, de végétaux (dont parfois des arbres), ligneux, semi-ligneux, herbacés, plus ou moins homogène (taille, espèces, etc.) et servant parfois de clôture, de limite entre deux parcelles cadastrales ou de protection contre la vue et le vent ou simplement dans un but purement décoratif.",
+apex,fr,4,184408,apex,noun,"(Biologie) Extrémité d’un organe.|(Botanique) Extrémité d’une racine ou d’une tige.|(Entomologie) Sans autre précision, désigne l'angle antéro-distal de l'aile antérieure des lépidoptères, entre la costa et le termen.|(Médecine) Extrémité d’une racine dentaire.|(Typographie) Empattement supérieur d’une lettre ou élément prolongeant une lettre à son sommet.",obit
+haie,fr,4,566751,haie,noun,"Ensemble linéaire, naturel ou artificiel, de végétaux (dont parfois des arbres), ligneux, semi-ligneux, herbacés, plus ou moins homogène (taille, espèces, etc.) et servant parfois de clôture, de limite entre deux parcelles cadastrales ou de protection contre la vue et le vent ou simplement dans un but purement décoratif.|(Athlétisme) Obstacle qui doit être franchi par le concurrent qui participe à une course.|(Marine) Se dit d’un obstacle empêchant le passage, comme un long banc d’écueils.|(Technique) Disposition donnée aux briques que l’on souhaite faire sécher.|File de personnes (soldats, gardes, curieux, etc.) bordant une voie pour laisser le passage à quelqu’un ou à un cortège.",
 judo,fr,4,54207,judo,noun,"(Arts martiaux) Art martial japonais issu du jiu-jitsu, aujourd’hui sport olympique.",
-fumes,fr,5,69801,fumer,verb,Jeter de la fumée.,tirer une goulée|tuber|tirer une biffe|boucaner|tirer une taffe
+fumes,fr,5,69801,fumer,verb,"Jeter de la fumée.|Exhaler de la vapeur, en parlant d’un corps très chaud.|(Sens figuré) (Populaire) Avoir de la colère, du dépit, de l’impatience, etc.|(Transitif) Soumettre des viandes à l’action de la fumée plus ou moins longtemps, pour les sécher et les conserver.|Forcer un animal dans son terrier qu’on remplit de fumée ; enfumer.",tirer une goulée|tuber|tirer une biffe|boucaner|tirer une taffe
 selon,fr,5,23605716,selon,,,
-sylve,fr,5,23502,sylve,noun,(Poétique) Forêt.,recueil|anthologie|florilège|spicilège
-pâtir,fr,5,102855,pâtir,verb,"Souffrir, être dans la misère.",
-série,fr,5,21738800,série,noun,"(Nom collectif) Suite, succession, séquence.",séquence|suite
-lacté,fr,5,77654,lacté,adjective,Relatif au lait.,laiteux|laitier
-baril,fr,5,275493,baril,noun,Sorte de petit tonneau en bois.,
-repas,fr,5,4420779,repas,noun,"Nourriture que l’on prend pour s’alimenter pendant une période spécifiquement consacrée à cette activité, souvent à des heures régulières de la journée.",croustance|casse-croûte|bouffe|mâchon|graillou
-halte,fr,5,654081,halte,noun,"Pause, station des gens de guerre dans leur marche.",pause
-koinè,fr,5,10425,koinè,noun,"Grec ancien normalisé à l’époque hellénistique, commun à la Grèce puis au monde antique.",langue-toit
-cabrer,fr,6,29024,cabrer,verb,"Faire dresser sur les pieds de derrière, en parlant d’un cheval.",
-forent,fr,6,43703,forer,verb,(Art) Creuser un orifice dans une matière rigide.,borer
-mutina,fr,6,4863,mutiner,verb,"Se porter à la sédition, à la révolte.",
+sylve,fr,5,23502,sylve,noun,"(Poétique) Forêt.|(Géographie) Forêt équatoriale et humide.|(Au pluriel) (Littérature) Recueil, d’œuvres poétiques, principalement de la littérature latine, et sans rapport entre elles.",recueil|anthologie|florilège|spicilège
+pâtir,fr,5,102855,pâtir,verb,"Souffrir, être dans la misère.|Subir des conséquences fâcheuses.",
+série,fr,5,21738800,série,noun,"(Nom collectif) Suite, succession, séquence.|(Industrie) Quantité d'un même modèle industriel.|(Télévision) (Par ellipse) Série télévisée.|(Mathématiques) Suite formée par les sommes partielles des premiers termes consécutifs d'une seconde suite u=(un), la série se notant dans ce cas Σun.|Divisions dans lesquelles on classe, on distribue des objets nombreux.",séquence|suite
+lacté,fr,5,77654,lacté,adjective,"Relatif au lait.|(Botanique) Lactifère, contenant des sucs laiteux|(Anatomie) Relatif aux petits conduits qui sont dispersés dans le mésentère et qui des intestins portent le chyle au réservoir de Pecquet.|Qui évoque la couleur du lait.",laiteux|laitier
+baril,fr,5,275493,baril,noun,"Sorte de petit tonneau en bois.|(Par extension) Contenant cylindrique en métal ou en plastique d'une contenance d'environ 50 à 200 litres.|(Par analogie) Le contenu de ce contenant.|(Métrologie) (Industrie pétrolière) Unité de mesure surtout utilisée pour le pétrole brut et ses dérivés. Son symbole est bl ou bbl.|(Par analogie) Pétrole, essence, carburant automobile.",
+repas,fr,5,4420779,repas,noun,"Nourriture que l’on prend pour s’alimenter pendant une période spécifiquement consacrée à cette activité, souvent à des heures régulières de la journée.|(Par extension) Période où l'on prend le repas.|(Par extension) Pratiques sociales, cérémonial qui entoure le repas.",croustance|casse-croûte|bouffe|mâchon|graillou
+halte,fr,5,654081,halte,noun,"Pause, station des gens de guerre dans leur marche.|(Par analogie) Pause ou station des individus quelconques qui s’arrêtent en marchant.|(Par extension) Le lieu où l'on fait halte.|(Chemin de fer) Station secondaire, où le train prend des voyageurs mais pas de marchandises.",pause
+koinè,fr,5,10425,koinè,noun,"Grec ancien normalisé à l’époque hellénistique, commun à la Grèce puis au monde antique.|(Par extension) Lingua franca, langue commune.",langue-toit
+cabrer,fr,6,29024,cabrer,verb,"Faire dresser sur les pieds de derrière, en parlant d’un cheval.|(Aéronautique) Action de faire augmenter l’assiette d’un aéronef.|(Pronominal) Se dresser sur les pieds de derrière, en parlant d’un cheval effarouché.|(Motocyclisme) (Par analogie) Action de dresser sur la roue arrière.|(Pronominal) (Par analogie) Se relever de l’avant, en parlant d’une chose.",
+forent,fr,6,43703,forer,verb,(Art) Creuser un orifice dans une matière rigide.|(Sens figuré),borer
+mutina,fr,6,4863,mutiner,verb,"Se porter à la sédition, à la révolte.|Enfant qui se dépite et manque à l’obéissance.|(Poétique) …",
 eskimo,fr,6,14279,eskimo,adjective,(Vieilli) Graphie ancienne de esquimau.,
-réglai,fr,6,6537,régler,verb,"Tirer avec la règle des lignes droites sur du papier, du carton, etc.",
-avaler,fr,6,498841,avaler,verb,Faire descendre par le gosier dans l’estomac.,capturer|engloutir|absorber|boire|ingurgiter|gober|déglutir|dévorer
-clouté,fr,6,12567,clouter,adjective,Qui est muni de clous.,
+réglai,fr,6,6537,régler,verb,"Tirer avec la règle des lignes droites sur du papier, du carton, etc.|Conduire, diriger suivant certaines règles, assujettir à certaines règles.|Mettre dans un bon ordre.|Retrancher de sa dépense, de sa table, etc.|Mettre en état d’aller bien, de marcher régulièrement.",
+avaler,fr,6,498841,avaler,verb,"Faire descendre par le gosier dans l’estomac.|Manger ou boire rapidement ; manger sans mâcher ou en mâchant à peine.|(Sens figuré) Absorber (en parlant d'un territoire).|(Sens figuré) Par extension, Absorber (en parlant d'une fusion-acquisition).|(Sens figuré) Anéantir en étant plus fort (en parlant d'un bruit).",capturer|engloutir|absorber|boire|ingurgiter|gober|déglutir|dévorer
+clouté,fr,6,12567,clouter,verb,Garnir un objet de clous pour l’orner.|Garnir un pneu de clous destinés à améliorer l’adhérence sur la glace.|Fixer avec de petits clous.,
 nargué,fr,6,4359,narguer,verb,Braver avec mépris.,
-coraux,fr,6,160987,corail,noun,"Animal marin, microscopique et symbiotique vivant en colonie et construisant le récif corallien.",
-agréez,fr,6,13578,agréer,verb,Prendre à gré ; recevoir favorablement.,prendre en gré
+coraux,fr,6,160987,corail,noun,"Animal marin, microscopique et symbiotique vivant en colonie et construisant le récif corallien.|(Par extension) Récif constitué par les colonies de coraux ou leurs restes.|Cnidaire de la Méditerranée au squelette rouge et a la forme d’un arbuste plus ou moins rameux et d’une extrême dureté. Son appellation binomiale est : Corallium rubrum.|(Par extension) Matière calcaire issue du squelette du cnidaire Corallium rubrum utilisée en joaillerie.|(Poétique) Une bouche de corail, des lèvres de corail, Une bouche fraîche et vermeille.",
+agréez,fr,6,13578,agréer,verb,"Prendre à gré ; recevoir favorablement.|Trouver bon, approuver, ratifier.",prendre en gré
 blésois,fr,7,6946,blésois,adjective,"Relatif à Blois, commune du Loir-et-Cher.",
-bélière,fr,7,11505,bélière,noun,Anneau qui est au-dedans d’une cloche pour tenir le battant suspendu.,
-crieurs,fr,7,74860,crieur,noun,Celui qui crie.,
-ravinés,fr,7,19038,raviner,verb,"Creuser de sillons profonds, des ravines.",
-gaufrée,fr,7,40362,gaufrer,verb,"(Imprimerie) Imprimer des figures sur des étoffes, sur du cuir, sur du papier, au moyen de fers chauds ou de cylindres gravés.",
-tableur,fr,7,13271,tableur,noun,(Musique) Fabricant de table d'harmonie pour les instruments de musique.,
-sursoir,fr,7,1669,sursoir,verb,"Suspendre, remettre, différer. Il ne se dit guère qu’en parlant des affaires, des procédures.",atermoyer
-cousues,fr,7,74358,coudre,noun,"(Vieilli) (Botanique) Coudrier, autre appellation du noisetier sauvage.",tirer l’aiguille
-animées,fr,7,575129,animer,verb,Douer de vie un corps organisé.,
-poreuse,fr,7,182941,poreux,adjective,Qui a des pores.,
-professé,fr,8,343651,professer,verb,"Avouer publiquement, reconnaître hautement quelque chose.",
-doberman,fr,8,1948,doberman,noun,"(Cynologie) Race de chien type pinscher créé comme chien de défense en Allemagne, assez grand, au corps musclé et élégant, au poil court et lisse, noir et feu ou brun et feu.",dobermann pinscher
-placardé,fr,8,20847,placarder,verb,"Mettre, afficher un placard.",
+bélière,fr,7,11505,bélière,noun,"Anneau qui est au-dedans d’une cloche pour tenir le battant suspendu.|(Par extension) Anneau servant à suspendre une médaille, une montre à gousset ou de col, un sabre ou encore la courroie servant à attacher le sabre au ceinturon ou à la selle du cheval.|Clochette accrochée au bélier conduisant le troupeau de moutons.|(Drôme) Canal d’irrigation.",
+crieurs,fr,7,74860,crieur,noun,"Celui qui crie.|Gens qui courent les rues en annonçant ce qu’ils vendent.|Celui qui proclame, qui annonce quelque chose.",
+ravinés,fr,7,19038,raviner,verb,"Creuser de sillons profonds, des ravines.|(Sens figuré) Causer des rides.",
+gaufrée,fr,7,40362,gaufrer,verb,"(Imprimerie) Imprimer des figures sur des étoffes, sur du cuir, sur du papier, au moyen de fers chauds ou de cylindres gravés.|(Par analogie)|Donner aux pétales de fleurs artificielles la forme naturelle par les opérations de gaufrage.|(Populaire) Tomber.|(Populaire) Se tromper.",
+tableur,fr,7,13271,tableur,noun,(Musique) Fabricant de table d'harmonie pour les instruments de musique.|(Informatique) Logiciel de création et de manipulation interactives de tableaux numériques.,
+sursoir,fr,7,1669,sursoir,verb,"Suspendre, remettre, différer. Il ne se dit guère qu’en parlant des affaires, des procédures.|Il s’emploie plus ordinairement comme verbe intransitif.",atermoyer
+cousues,fr,7,74358,coudre,noun,"(Vieilli) (Botanique) Coudrier, autre appellation du noisetier sauvage.|Bois de cet arbre.",tirer l’aiguille
+animées,fr,7,575129,animer,verb,"Douer de vie un corps organisé.|(Sens figuré) Douer de vivacité, de mouvement, d’une sorte de vie.|Donner de la force et de la chaleur à un ouvrage d’esprit, à un discours, soit par les traits vifs et brillants que l’on y jette, soit par la manière vive dont on le lit, dont on le prononce.|Encourager, exciter.|Irriter, mettre en colère.",
+poreuse,fr,7,182941,poreux,adjective,Qui a des pores.|(Par extension) Qui est perméable.,
+professé,fr,8,343651,professer,verb,"Avouer publiquement, reconnaître hautement quelque chose.|(Vieilli) Exercer.|Proclamer ; dire au public.|Enseigner publiquement.|S'adresser à un groupe en tant que professeur.",
+doberman,fr,8,1948,doberman,noun,"(Cynologie) Race de chien type pinscher créé comme chien de défense en Allemagne, assez grand, au corps musclé et élégant, au poil court et lisse, noir et feu ou brun et feu.|Quelqu’un de ces animaux.",dobermann pinscher
+placardé,fr,8,20847,placarder,verb,"Mettre, afficher un placard.|Couvrir de placards, d’imprimés.|(Vieilli) Publier une critique contre quelqu'un.",
 grimpais,fr,8,5852,grimper,noun,Action consistant à grimper.,
 cambiums,fr,8,1591,cambium,noun,"(Botanique, Histologie végétale) Méristème secondaire formant une fine couche de cellules indifférenciées entre le xylème secondaire et le phloème secondaire, responsable de la croissance en épaisseur des tiges et des racines chez les plantes ligneuses. Il produit vers l’intérieur le xylème secondaire et vers l’extérieur le phloème secondaire.",
-apocopes,fr,8,2735,apocope,noun,(Linguistique) Élision d’un ou plusieurs phonèmes en fin de mot.,apocopation
-roueries,fr,8,35263,rouerie,noun,"Action de roué, tour de roué.",
+apocopes,fr,8,2735,apocope,noun,"(Linguistique) Élision d’un ou plusieurs phonèmes en fin de mot.|Résultat de cette élision.|(Poésie) Disparition en fin de mot d’un e caduc non élidable, pour gagner une syllabe.",apocopation
+roueries,fr,8,35263,rouerie,noun,"Action de roué, tour de roué.|Ruse, dissimulation, caractère d’un roué.",
 myotique,fr,8,1294,myotique,noun,(Pharmacologie) (Par ellipse) Collyre myotique.,
 rendzine,fr,8,6066,rendzine,noun,"(Pédologie) Sol riche en humus et matière organique, qui se développe sur un substrat calcaire, soutenant une végétation calcicole.",
 plagiées,fr,8,1105,plagier,verb,Emprunter à d’autres auteurs des passages de quelque importance en les donnant comme siens.,
-effritent,fr,9,30308,effriter,verb,"(Vieilli) (Agriculture) User, épuiser une terre.",
-baiseuses,fr,9,241,baiseur,noun,"(Vieilli) Celui qui baise, embrasse.",tendeur
+effritent,fr,9,30308,effriter,verb,"(Vieilli) (Agriculture) User, épuiser une terre.|Rendre friable, réduire en poussière.|(Pronominal) Se détruire peu à peu, se déliter.",
+baiseuses,fr,9,241,baiseur,noun,"(Vieilli) Celui qui baise, embrasse.|(Vulgaire) Qui se plaît à baiser, à faire l’amour.",tendeur
 vipéridés,fr,9,775,vipéridé,noun,Serpent qui appartient à la famille des vipéridés.,
-entretînt,fr,9,14363,entretenir,verb,Tenir en bon état.,
+entretînt,fr,9,14363,entretenir,verb,Tenir en bon état.|Maintenir en un certain état une chose ou une personne.|(En particulier) Faire subsister en fournissant les choses nécessaires.|(Spécialement) Pourvoir aux dépenses d’une personne avec laquelle on est en commerce de galanterie.|(Par extension) Converser avec quelqu’un sur tel ou tel sujet.,
 estancias,fr,9,23195,estancia,noun,Vaste exploitation agricole d’Amérique du Sud.,
-englobant,fr,9,373130,englober,adjective,Qui réunit plusieurs éléments en un élément unique.,
-corrodées,fr,9,17953,corroder,verb,"(Sens propre) Ronger. Il se dit des substances qui, en vertu d’une qualité caustique, rongent, brûlent quelque partie du corps vivant ou de quelque autre corps solide.",brûler|ronger
-répercute,fr,9,90899,répercuter,verb,Renvoyer un son.,
-contrefis,fr,9,299,contrefaire,verb,"Imiter une personne, une chose.",falsifier
-enduisait,fr,9,10326,enduire,verb,(Absolument) (Maçonnerie) Appliquer un enduit.,
+englobant,fr,9,373130,englober,verb,Réunir plusieurs choses ou plusieurs personnes pour en former un tout.|Réunir une ou plusieurs choses à un tout déjà existant.,
+corrodées,fr,9,17953,corroder,verb,"(Sens propre) Ronger. Il se dit des substances qui, en vertu d’une qualité caustique, rongent, brûlent quelque partie du corps vivant ou de quelque autre corps solide.|(En particulier) (Métallurgie) Action de dégrader une pièce métallique par une réaction d'oxydation.|(Sens figuré) (Soutenu) Ronger.",brûler|ronger
+répercute,fr,9,90899,répercuter,verb,Renvoyer un son.|Réfléchir la lumière.|(Sens figuré) Entraîner un effet.,
+contrefis,fr,9,299,contrefaire,verb,"Imiter une personne, une chose.|Copier les autres, dans le dessein de les tourner en ridicule.|Feindre d’être ce qu’on n’est pas.|(En particulier) Imiter par contrefaçon, par contrefaction.|Déguiser.",falsifier
+enduisait,fr,9,10326,enduire,verb,(Absolument) (Maçonnerie) Appliquer un enduit.|(Par extension) Couvrir d’une matière qui forme un enduit.,
 dénombrons,fr,10,2864,dénombrer,verb,Énoncer pour en avoir un compte exact les personnes ou les choses qui forment un ensemble.,
-percevions,fr,10,16051,percevoir,verb,"(Finance) Recevoir, recueillir certaines choses, comme les revenus d’une propriété, des droits, des impôts, etc.",
+percevions,fr,10,16051,percevoir,verb,"(Finance) Recevoir, recueillir certaines choses, comme les revenus d’une propriété, des droits, des impôts, etc.|(Philosophie) Prendre connaissance des objets qui ont fait impression sur les sens et en concevoir l’idée.",
 gyropilote,fr,10,314,gyropilote,,,
 gélinottes,fr,10,4452,gélinotte,noun,"(Ornithologie) Oiseau sauvage, gallinacé de la taille d’une perdrix et dont la chair est fort délicate.",
 intramuros,fr,10,2914,intramuros,adjective,Intérieur par opposition aux banlieues.,
-épargnerai,fr,10,21131,épargner,verb,"Ménager quelque chose, ne l’employer qu’avec réserve.",
-instituées,fr,10,453636,instituer,verb,"Établir quelque chose, donner commencement à quelque chose.",
-crochetons,fr,10,171,crocheter,verb,"Ouvrir une porte, un meuble, etc., avec un crochet, au lieu de clef.",
-affublions,fr,10,62,affubler,verb,Couvrir d’un affublement.,
-appropriât,fr,10,3440,approprier,verb,"Adapter, rendre propre à une destination.",
-barragistes,fr,11,1982,barragiste,noun,Préposé qui est chargé de régler un barrage sur une rivière.,
+épargnerai,fr,10,21131,épargner,verb,"Ménager quelque chose, ne l’employer qu’avec réserve.|(Sens figuré) Dispenser ou préserver quelqu’un d’une chose, ne pas la lui laisser éprouver, ne pas la lui faire subir.|(En particulier) Laisser la vie sauve.|(En particulier) Ne pas porter atteinte.|(Sens figuré) Traiter avec ménagement.",
+instituées,fr,10,453636,instituer,verb,"Établir quelque chose, donner commencement à quelque chose.|(Droit) Nommer, faire quelqu’un son héritier par testament.|Établir en charge, en fonction.",
+crochetons,fr,10,171,crocheter,verb,"Ouvrir une porte, un meuble, etc., avec un crochet, au lieu de clef.|(Péjoratif) Forcer une serrure, une porte, comme le fait un voleur.|(Sens figuré) Forcer un accès.|Réaliser un vêtement à l’aide de fil et d’un crochet.|(Belgique) (Québec) Broder au crochet, garnir des dessins ou créer de la dentelle de fil à l’aide d’un crochet.",
+affublions,fr,10,62,affubler,verb,Couvrir d’un affublement.|(Sens figuré) (Familier) Couvrir ; recouvrir.,
+appropriât,fr,10,3440,approprier,verb,"Adapter, rendre propre à une destination.|(Philosophie) Demeurer ensemble, destinés à être ensemble, ajointé|(Pronominal) Faire de quelque chose sa propriété, même de façon illégitime.|Se rendre propre une pensée, par la manière de l’exprimer, de la placer ou de la faire valoir.|(Suisse)(Belgique) Nettoyer, rendre propre.",
+barragistes,fr,11,1982,barragiste,noun,Préposé qui est chargé de régler un barrage sur une rivière.|Concurrent d’une compétition effectuant un match de barrage.,
 sexualisent,fr,11,623,sexualiser,verb,Donner un caractère sexuel à.,
-recordèrent,fr,11,230,recorder,noun,(Anglicisme) Nom d'une fonction juridique en Grande-Bretagne.,rabâcher
-inventerons,fr,11,2066,inventer,verb,"Concevoir, avoir l’idée le premier, de quelque chose de nouveau ayant une utilité pratique (sans concrétisation).",découvrir|construire|sorti de la manche|réaliser|trouver|concevoir|forger|affabuler
-dessinerons,fr,11,1596,dessiner,verb,"Représenter, reproduire par le dessin.",
-bloquerions,fr,11,1,bloquer,verb,"(Militaire) Fermer par un blocus les avenues d'une place, les approches d'un port, etc, immobiliser par un blocus.",
-productique,fr,11,16366,productique,noun,"(Industrie, Informatique) Techniques informatiques de mise en œuvre des systèmes de production automatisés.",
+recordèrent,fr,11,230,recorder,noun,(Anglicisme) Nom d'une fonction juridique en Grande-Bretagne.|(Anglicisme) (Électronique) Appareil enregistreur ; magnétocassette.,rabâcher
+inventerons,fr,11,2066,inventer,verb,"Concevoir, avoir l’idée le premier, de quelque chose de nouveau ayant une utilité pratique (sans concrétisation).|(Spécialement) Trouver et mettre au point un système, une machine ou un procédé nouveau éligible pour un brevet d’invention.|(Linguistique) Créer, forger des néologismes et des noms de marques.|(Droit) Découvrir, en parlant d’un trésor ou d’un site archéologique.|Imaginer.",découvrir|construire|sorti de la manche|réaliser|trouver|concevoir|forger|affabuler
+dessinerons,fr,11,1596,dessiner,verb,"Représenter, reproduire par le dessin.|(En particulier) Tracer le contour, exprimer les formes des figures d’un tableau.|Tracer sur le terrain un jardin ou un parc.|Élaborer et rédiger les plans d'un vaisseau, d'un aéronef ou d'un astronef.|(Par analogie) Indiquer ou faire ressortir les formes du corps.",
+bloquerions,fr,11,1,bloquer,verb,"(Militaire) Fermer par un blocus les avenues d'une place, les approches d'un port, etc, immobiliser par un blocus.|Empêcher de bouger, de se déplacer, d'avoir lieu ; arrêter, immobiliser.|Serrer complètement.|(Pronominal) Se coincer.|(Parler gaga) (Jeux) Aux jeu de billes, tout miser.",
+productique,fr,11,16366,productique,noun,"(Industrie, Informatique) Techniques informatiques de mise en œuvre des systèmes de production automatisés.|(Par extension) (Industrie, Mécanique) Sciences et techniques de la fabrication mécanique.",
 verticalité,fr,11,128646,verticalité,noun,"(Didactique) Caractère, état de ce qui est vertical.",
 procyclique,fr,11,4997,procyclique,adjective,(Économie) Qui va dans le sens d'un cycle.,
 tripoteuses,fr,11,177,tripoteur,noun,(Péjoratif) Manieur d’argent dépourvu de scrupules.,
 cunnilinctus,fr,12,601,cunnilinctus,noun,(Sexualité) Excitation buccale des organes génitaux féminins.,
-frauduleuses,fr,12,184808,frauduleux,adjective,Qui est fait avec fraude ; qui est entaché de fraude.,
+frauduleuses,fr,12,184808,frauduleux,adjective,Qui est fait avec fraude ; qui est entaché de fraude.|Falsifié.|Qui est enclin à la fraude.,
 nectarivores,fr,12,494,nectarivore,adjective,(Zoologie) Qui se nourrit de nectar.,
 verdoiements,fr,12,129,verdoiement,noun,Action de verdoyer.,
-assassineras,fr,12,659,assassiner,verb,Tuer intentionnellement.,
+assassineras,fr,12,659,assassiner,verb,"Tuer intentionnellement.|(Sens figuré) Porter un grand préjudice à autrui par des actions ou des discours.|(Par hyperbole) Fatiguer, importuner avec excès.|(Par hyperbole) (Sens figuré) Lorsqu’un élément est particulièrement néfaste à un domaine, on utilise parfois assassiner, associé au nom d’un éminent représentant de ce domaine, pour mettre en exergue l’agressivité de cet élément pour ledit domaine.|(Sens figuré) Dissiper, occuper, en parlant du temps, de la durée.",
 barbifierons,fr,12,0,barbifier,verb,"(Familier) (Barbe) Raser, faire la barbe.",
 actionnaires,fr,12,2024274,actionnaire,noun,"(Commerce, Finance) Propriétaire d’actions dans une société commerciale ou civile.",
-mouvementées,fr,12,43362,mouvementer,verb,Faire bouger.,
-apanageaient,fr,12,2,apanager,verb,(Histoire) Pourvoir d’un apanage.,
+mouvementées,fr,12,43362,mouvementer,verb,"Faire bouger.|(Spécialement) (Bijouterie) Bouger (la main).|(Pronominal) Se mouvementer, se donner du mouvement, un mouvement.",
+apanageaient,fr,12,2,apanager,verb,"(Histoire) Pourvoir d’un apanage.|Par extension, léguer quelque chose à un héritier non réservataire (rare).",
 inapprivoisé,fr,12,246,inapprivoisé,adjective,"Qui n’est pas apprivoisé, sauvage.",

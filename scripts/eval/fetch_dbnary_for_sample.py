@@ -127,12 +127,19 @@ def _escape(word: str) -> str:
 
 
 def query_sparql(word: str, lemma: str = "") -> tuple[str, str, str]:
-    """Return (pos, definition, synonyms_pipe_delimited). Falls back to lemma
-    when the surface form has no DBnary entry (e.g. 'sut' -> 'savoir')."""
-    pos, definition, synonyms = _lookup_one(_escape(word))
-    if not definition and lemma and lemma != word:
-        return _lookup_one(_escape(lemma))
-    return (pos, definition, synonyms)
+    """Return (pos, definition, synonyms_pipe_delimited).
+
+    The downstream pipeline clues lemmas, so look up the LEMMA's DBnary entry
+    directly (the citation-form definition) rather than the surface form.
+    For 'étés' this fetches 'été' (the noun); for 'fumes' it fetches 'fumer'
+    (the verb), avoiding the noisier surface-form senses ('Pluriel de été' /
+    "fumée d'un cigare").
+
+    Falls back to the surface form only when no lemma is provided."""
+    target = (lemma or word).strip()
+    if not target:
+        return ("", "", "")
+    return _lookup_one(_escape(target))
 
 
 def main() -> None:
