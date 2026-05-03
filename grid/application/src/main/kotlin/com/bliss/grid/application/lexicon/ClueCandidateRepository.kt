@@ -57,13 +57,9 @@ interface ClueCandidateRepository {
     fun deriveSynonymClues(language: String): Int
 
     /**
-     * Bulk lookup: for each `lemma` in [lemmas], return the `word_id` of the
-     * matching row in `words` whose `(language, word)` equals `(language, lemma)`
-     * — i.e., the word_id of the lemma's citation form.
-     *
-     * Used by `ingest-clue-candidates` to map per-lemma CSV rows (which carry
-     * lemma strings) onto `clue_candidates.word_id` (a UUID). Lemmas not in
-     * the corpus are silently absent from the returned map.
+     * Bulk lookup: for each lemma in [lemmas], return the word_id of the
+     * matching `words` row with the same (language, word). Lemmas absent
+     * from the corpus are silently omitted from the result map.
      */
     fun findLemmaWordIds(
         language: String,

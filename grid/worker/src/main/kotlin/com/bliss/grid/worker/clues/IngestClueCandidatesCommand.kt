@@ -1,11 +1,7 @@
-// `bliss-worker ingest-clue-candidates` — load LLM-generated lemma clues
-// from a CSV (typically the output of scripts/eval/generate_clues_lemma.py)
-// into the `clue_candidates` table.
-//
+// `bliss-worker ingest-clue-candidates` — loads LLM-generated lemma clues
+// from a CSV into the `clue_candidates` table.
 // Mirrors the ingest-dbnary pattern: Python upstream produces the CSV,
-// the worker upserts it into Postgres. Phase 3 of the clue-generation
-// pipeline plan ships LLM-generated clues this way rather than by porting
-// the entire Python orchestration into Kotlin.
+// the worker upserts it into Postgres.
 package com.bliss.grid.worker.clues
 
 import com.bliss.grid.application.lexicon.ClueCandidateRepository
