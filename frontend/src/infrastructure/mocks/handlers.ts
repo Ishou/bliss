@@ -3,11 +3,11 @@
 // Per ADR-0007 §5 and ADR-0009 §7, per-PR previews stay frontend-only:
 // the real Grid and Game APIs run only on `main`, so previews would
 // otherwise either point at production (data-leak risk + noise on real
-// metrics) or 404. These handlers intercept every Grid REST call, every
-// Game REST call, and every Game WebSocket connection in the browser
-// and replay the spec's contract — exactly the surface the real servers
-// will satisfy once consumed end-to-end. Reviewers see real shapes;
-// production never gets touched by preview traffic.
+// metrics) or 404. These handlers intercept every Grid REST call and
+// every Game REST call in the browser and replay the spec's contract —
+// exactly the surface the real servers will satisfy once consumed
+// end-to-end. Reviewers see real shapes; production never gets touched
+// by preview traffic.
 //
 // The grid fixture is sourced from `grid/api/examples/get-puzzle-200.json`
 // via the `virtual:grid-api-examples/*` Vite plugin (see
@@ -32,7 +32,7 @@ import type { components } from '@/infrastructure/api/grid/types';
 // `gridApiExamplesAsVirtualModule` plugin in `vite.config.ts`.
 import getPuzzleExample from 'virtual:grid-api-examples/get-puzzle-200';
 
-import { gameHandlers, gameWsHandler } from './handlers/game';
+import { gameHandlers } from './handlers/game';
 
 type Puzzle = components['schemas']['Puzzle'];
 
@@ -58,6 +58,5 @@ const gridHandlers = [
 ];
 
 // Order matters only for overlap, which we don't have: grid REST is
-// `/v1/puzzles/...`, game REST is `/v1/lobbies/...`, game WS is its own
-// dimension. The WS link handler is appended last by convention.
-export const handlers = [...gridHandlers, ...gameHandlers, gameWsHandler];
+// `/v1/puzzles/...`, game REST is `/v1/lobbies/...`.
+export const handlers = [...gridHandlers, ...gameHandlers];

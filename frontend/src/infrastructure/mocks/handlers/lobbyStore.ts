@@ -1,8 +1,8 @@
-// Module-level state shared between the MSW REST handlers and the WS
-// link handler. Lives only inside the preview bundle (per ADR-0007 §5
-// the entire `mocks/` tree is tree-shaken in production); state survives
-// page navigations but resets on full reload — exactly the contract a
-// reviewer needs for "click Create, land on /lobby/:id, see WaitingRoom".
+// Module-level state shared between the MSW REST handlers (this PR) and
+// the WS link handler (follow-up PR). Lives only inside the preview bundle
+// (per ADR-0007 §5 the entire `mocks/` tree is tree-shaken in production);
+// state survives page navigations but resets on full reload — exactly the
+// contract a reviewer needs for "click Create, land on /lobby/:id".
 //
 // The store is in-memory and intentionally never garbage-collects: a
 // preview tab opens at most a handful of lobbies during a review pass,
@@ -10,10 +10,10 @@
 // would be over-engineered for a 30-minute review.
 //
 // Why a separate file: REST creates and reads `Lobby` records; the WS
-// handler reads the same record (lookup by `lobbyId`) on connect to
-// emit a `lobbyState` snapshot, mutates it on `setGridConfig` /
-// `startGame`, then drives the bot loop off the same puzzle. Co-locating
-// the store keeps both handlers honest about the single source of truth.
+// handler (coming next PR) reads the same record on connect to emit a
+// `lobbyState` snapshot, mutates it on `setGridConfig` / `startGame`, then
+// drives the bot loop off the same puzzle. Keeping the store here means
+// both handlers share a single source of truth.
 
 import type { components } from '@/infrastructure/api/game/types';
 
