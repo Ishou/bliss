@@ -63,7 +63,7 @@ const baseStyles = css({
   alignItems: 'center',
   justifyContent: 'center',
   gap: 'sm',
-  boxShadow: '0 2px 4px rgba(27, 40, 69, 0.08)',
+  boxShadow: 'floating',
 });
 
 const connectingStyles = css({

@@ -91,6 +91,9 @@ export default defineConfig({
         black: { value: '800' },
       },
       radii: { sm: { value: '4px' }, md: { value: '8px' } },
+      shadows: {
+        floating: { value: '0 2px 4px rgba(27, 40, 69, 0.08)' },
+      },
     },
     semanticTokens: {
       colors: {
