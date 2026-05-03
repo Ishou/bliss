@@ -1,5 +1,5 @@
 import { render, fireEvent, act } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach, onTestFinished } from 'vitest';
 import type { Cell, Puzzle } from '@/domain';
 import { Grid } from '@/ui/components/grid';
 
@@ -597,7 +597,7 @@ describe('scheduleVisibleScroll', () => {
     const scrollBy = vi.spyOn(window, 'scrollBy');
     // jsdom doesn't define `window.visualViewport`; stub one in for the
     // duration of this test. Other tests in this block rely on the
-    // default `undefined`, so we restore it in afterEach.
+    // default `undefined`, so we restore it via vi.onTestFinished below.
     // CurrentCluePanel's effect attaches a listener to visualViewport,
     // so the stub needs the EventTarget surface in addition to the
     // pinch-zoom values the navigation hook reads.
@@ -607,6 +607,9 @@ describe('scheduleVisibleScroll', () => {
         addEventListener: () => {}, removeEventListener: () => {},
       },
       configurable: true,
+    });
+    onTestFinished(() => {
+      Object.defineProperty(window, 'visualViewport', { value: undefined, configurable: true });
     });
     const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
     const cell = inputAt(container, 1, 1)!;
@@ -618,8 +621,5 @@ describe('scheduleVisibleScroll', () => {
     act(() => { cell.focus(); });
     act(() => { vi.advanceTimersByTime(300); });
     expect(scrollBy).not.toHaveBeenCalled();
-    // Cleanup the stub so the other tests in this describe see the
-    // jsdom default again.
-    Object.defineProperty(window, 'visualViewport', { value: undefined, configurable: true });
   });
 });
