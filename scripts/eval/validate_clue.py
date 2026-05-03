@@ -48,14 +48,27 @@ class ValidationResult:
     head: str = ""
 
 
-def _classify_pos(tags: frozenset[str]) -> str:
+def _classify_pos_set(tags: frozenset[str]) -> set[str]:
+    """Return every content POS class present in the tag set. Many French
+    words are tagged with both nom AND adj in a single analysis (sauvage,
+    rouge, ...); the single-class view loses that overlap."""
+    classes: set[str] = set()
     for t in tags:
         if t.startswith("v") and len(t) > 1 and t[1].isdigit():
-            return "verbe"
+            classes.add("verbe")
     if "nom" in tags:
-        return "nom"
+        classes.add("nom")
     if "adj" in tags:
-        return "adj"
+        classes.add("adj")
+    return classes
+
+
+def _classify_pos(tags: frozenset[str]) -> str:
+    """Backward-compat single-POS view; first match wins."""
+    classes = _classify_pos_set(tags)
+    for pos in ("verbe", "nom", "adj"):
+        if pos in classes:
+            return pos
     return ""
 
 
@@ -92,23 +105,21 @@ def validate_lemma_clue(
 
     target_pos_norm = target_pos.lower().strip()
     if target_pos_norm not in _CONTENT_POS:
-        # Target isn't a content POS we can validate against; accept if the
-        # head is a lemma form of any content POS.
         for lemma, tags in analyses:
-            if lemma.lower() == head_lower and _classify_pos(tags) in _CONTENT_POS:
+            if lemma.lower() == head_lower and _classify_pos_set(tags) & _CONTENT_POS:
                 return ValidationResult("ok", "", head)
         return ValidationResult("head-not-lemma", f"'{head}' is not a citation form", head)
 
     saw_lemma_form = False
     saw_target_pos_inflected = False
     for lemma, tags in analyses:
-        head_pos = _classify_pos(tags)
+        head_pos_set = _classify_pos_set(tags)
         is_lemma_form = lemma.lower() == head_lower
         if is_lemma_form:
             saw_lemma_form = True
-            if head_pos == target_pos_norm:
+            if target_pos_norm in head_pos_set:
                 return ValidationResult("ok", "", head)
-        elif head_pos == target_pos_norm:
+        elif target_pos_norm in head_pos_set:
             saw_target_pos_inflected = True
 
     if saw_lemma_form:
