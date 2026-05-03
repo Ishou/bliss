@@ -133,12 +133,9 @@ function buildLookup(puzzle: Puzzle): ClueLookup {
     }
   }
   // Deterministic ordering for Tab / Enter cycling: by starting cell in
-  // row-major order (row, then col). When two clues share a start cell
-  // (the mots-fléchés stacked-clue idiom — across + down anchored at
-  // the same definition cell, ADR-0005 §3a), across comes first, then
-  // down. Position-first means Tab walks through the puzzle SPATIALLY
-  // — naturally interleaving across and down clues based on where
-  // definition cells sit, instead of cycling all-across-then-all-down.
+  // row-major order (row, then col). Across before down as a stable
+  // tiebreak when two clues share a start cell (unusual in standard
+  // grid geometry, but a safe default).
   const orderedClues: readonly Clue[] = allClues.slice().sort((a, b) => {
     const ar = a.cells[0].position, br = b.cells[0].position;
     if (ar.row !== br.row) return ar.row - br.row;

@@ -403,6 +403,7 @@ describe('Grid keyboard interactions — Tab / Enter clue cycling', () => {
   //   A (0,1) → down-1 (1,0) → B (2,2).
   it('cycle interleaves across and down by spatial position, not by direction', () => {
     const SPATIAL: Puzzle = {
+      id: 'spatial-test', title: 'spatial test', language: 'fr',
       width: 4, height: 3,
       cells: [
         // Stacked def at (0,0): across at (0,1)..(0,3) and down at (1,0)..(2,0).
