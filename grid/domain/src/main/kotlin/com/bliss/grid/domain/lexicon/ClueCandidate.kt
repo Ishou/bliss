@@ -28,9 +28,9 @@ data class ClueCandidate(
 ) {
     init {
         require(source.isNotBlank()) { "source must not be blank" }
-        val trimmedLength = clueText.length
-        require(trimmedLength in CLUE_LENGTH_RANGE) {
-            "clueText length must be in $CLUE_LENGTH_RANGE, got $trimmedLength"
+        require(clueText.isNotBlank()) { "clueText must not be blank" }
+        require(clueText.length in CLUE_LENGTH_RANGE) {
+            "clueText length must be in $CLUE_LENGTH_RANGE, got ${clueText.length}"
         }
         require(senseIndex == null || senseIndex >= 0) {
             "senseIndex must be >= 0 when set, got $senseIndex"

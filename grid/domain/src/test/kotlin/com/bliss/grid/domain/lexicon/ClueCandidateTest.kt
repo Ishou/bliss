@@ -41,6 +41,13 @@ class ClueCandidateTest {
     }
 
     @Test
+    fun `rejects blank clue text`() {
+        assertThrows<IllegalArgumentException> {
+            ClueCandidate(wordId = anyWord, source = ClueSource.CURATED, clueText = "   ")
+        }
+    }
+
+    @Test
     fun `rejects clue text longer than 80`() {
         val tooLong = "a".repeat(81)
         assertThrows<IllegalArgumentException> {
