@@ -3,9 +3,9 @@ package com.bliss.grid.infrastructure.persistence
 import com.bliss.grid.domain.lexicon.ExportRow
 import com.bliss.grid.domain.lexicon.ExportSelectionCriteria
 import com.bliss.grid.domain.lexicon.WordCorpusReader
-import java.sql.Array as SqlArray
 import java.sql.Connection
 import javax.sql.DataSource
+import java.sql.Array as SqlArray
 
 /** JDBC adapter for [WordCorpusReader]. */
 class JdbcWordCorpusReader(
