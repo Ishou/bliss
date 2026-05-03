@@ -206,6 +206,23 @@ class IngestClueCandidatesCommandIntegrationTest {
     }
 
     @Test
+    fun `ingest-clue-candidates --truncate with fully absent lemmas does not throw`() {
+        // All lemmas unresolved: candidates is empty, sources.first() would have thrown NoSuchElementException
+        val csv = tempDir.resolve("absent-truncate.csv")
+        Files.write(
+            csv,
+            """
+            lemma,clue_text,source
+            nonexistent,Some clue,mistral-nemo
+            """.trimIndent().toByteArray(StandardCharsets.UTF_8),
+        )
+        IngestClueCandidatesCommand().parse(arrayOf("--input", csv.toString(), "--truncate"))
+
+        val repo = JdbcClueCandidateRepository(Database.dataSource()!!)
+        assertThat(repo.countBySource("mistral-nemo")).isEqualTo(0L)
+    }
+
+    @Test
     fun `ingest-clue-candidates --truncate refuses heterogeneous sources in the CSV`() {
         insertWord("voiture")
         insertWord("maison")

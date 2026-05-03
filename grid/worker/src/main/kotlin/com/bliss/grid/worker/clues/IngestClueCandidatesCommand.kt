@@ -92,12 +92,15 @@ class IngestClueCandidatesCommand : CliktCommand(name = "ingest-clue-candidates"
             )
 
             if (truncate) {
-                val sources = candidates.map { it.source }.toSet()
-                require(sources.size <= 1) {
-                    "--truncate requires a single source per run; found $sources. " +
-                        "Pass --source to force one, or run without --truncate."
-                }
-                val target = sources.first()
+                val target =
+                    sourceOverride ?: run {
+                        val sources = candidates.map { it.source }.toSet()
+                        require(sources.size <= 1) {
+                            "--truncate requires a single source per run; found $sources. " +
+                                "Pass --source to force one, or run without --truncate."
+                        }
+                        sources.firstOrNull() ?: return@withCorrelationId
+                    }
                 val deleted = repository.deleteBySource(target, language)
                 log.info("ingest_clue_candidates_truncated source={} rows_deleted={}", target, deleted)
             }
