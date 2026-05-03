@@ -19,6 +19,8 @@ Règles strictes (toute violation invalide la clue):
 5. Réponds en français uniquement. Pas d'anglais.
 6. Pas de markdown, pas d'emoji, pas de numérotation, pas de guillemets.
 7. Première lettre en majuscule. Tu réponds avec la clue seule, rien d'autre.
+8. Si la définition contient [MOT], c'est le mot à deviner masqué — ne le
+   reproduis JAMAIS dans la clue, même sous une autre forme.
 
 Exemples (notez la forme citationnelle):
 
