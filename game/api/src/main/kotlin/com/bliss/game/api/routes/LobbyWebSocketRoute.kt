@@ -190,8 +190,21 @@ private suspend fun DefaultWebSocketServerSession.handleFrame(
                     sendNotJoined()
                     return memberSessionId
                 }
+            // Pseudonym.of() throws IllegalArgumentException for over-length /
+            // empty / whitespace-only input. Catching here turns the throw into
+            // a structured error frame so the UI can surface it inline; without
+            // this catch the exception used to propagate, terminate the incoming
+            // loop, and close the socket — leaving the user staring at an
+            // unchanged value with no feedback (the "renames silently fail" bug).
+            val pseudo =
+                try {
+                    Pseudonym.of(parsed.newPseudonym)
+                } catch (cause: IllegalArgumentException) {
+                    sendInvalidPseudonym(cause.message ?: "pseudonym failed validation")
+                    return memberSessionId
+                }
             dispatch(lobbyId, sessionManager) {
-                useCases.renameSelf(lobbyId, SessionId(sid), Pseudonym.of(parsed.newPseudonym))
+                useCases.renameSelf(lobbyId, SessionId(sid), pseudo)
             }
             memberSessionId
         }
@@ -283,7 +296,7 @@ private suspend fun DefaultWebSocketServerSession.dispatchJoin(
         try {
             Pseudonym.of(parsed.pseudonym)
         } catch (cause: IllegalArgumentException) {
-            sendError("Invalid pseudonym", cause.message ?: "pseudonym failed validation")
+            sendInvalidPseudonym(cause.message ?: "pseudonym failed validation")
             return null
         }
     val outcome = useCases.joinLobby(lobbyId, sid, pseudo)
@@ -352,6 +365,26 @@ private suspend fun DefaultWebSocketServerSession.sendError(
     status: Int = 400,
 ) {
     send(encode(protocolErrorFrame(title, detail, status)))
+}
+
+/**
+ * Stable error frame for "pseudonym failed [Pseudonym]'s invariants"
+ * (over `MAX_LENGTH`, empty, leading/trailing whitespace). Carries a
+ * fixed `errorType` URI so the WaitingRoom can recognize it and surface
+ * the message inline next to its inline editor instead of in the
+ * generic toast — see ADR-0003 §6 (RFC 7807) and the AsyncAPI ErrorPayload.
+ */
+private suspend fun DefaultWebSocketServerSession.sendInvalidPseudonym(detail: String) {
+    send(
+        encode(
+            ServerToClientFrame.Error(
+                errorType = "https://bliss.example/errors/invalid-pseudonym",
+                title = "Invalid pseudonym",
+                detail = detail,
+                status = 400,
+            ),
+        ),
+    )
 }
 
 /**

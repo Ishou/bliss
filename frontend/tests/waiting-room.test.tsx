@@ -126,6 +126,68 @@ describe('WaitingRoom — pseudonym editor', () => {
     fireEvent.keyDown(input, { key: 'Enter' });
     expect(onRename).toHaveBeenCalledWith('Nouveau Pseudo');
   });
+
+  it('caps the input at MAX_PSEUDONYM_LENGTH via the maxLength HTML attribute', () => {
+    // Belt-and-braces: jsdom does not enforce `maxLength` on programmatic
+    // `fireEvent.change`, so the assertion is on the attribute itself
+    // (which the browser DOES honour during real keystrokes / paste).
+    render(
+      <WaitingRoom lobby={baseLobby} currentSessionId={ownerSessionId} {...noopProps} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: new RegExp(`modifier votre pseudonyme.*${ownerPseudonym}`, 'i') }));
+    const input = screen.getByLabelText(/votre pseudonyme/i) as HTMLInputElement;
+    expect(input.maxLength).toBe(32);
+  });
+
+  it('does not fire onRename when the trimmed draft exceeds MAX_PSEUDONYM_LENGTH', () => {
+    // Defensive guard for the paste-then-Enter path: the browser's
+    // `maxLength` does NOT apply to a value set programmatically, so the
+    // editor itself must refuse to commit an over-cap value.
+    const onRename = vi.fn();
+    render(
+      <WaitingRoom lobby={baseLobby} currentSessionId={ownerSessionId} {...noopProps} onRename={onRename} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: new RegExp(`modifier votre pseudonyme.*${ownerPseudonym}`, 'i') }));
+    const input = screen.getByLabelText(/votre pseudonyme/i) as HTMLInputElement;
+    // 33 chars - one over the 32 cap.
+    const tooLong = 'a'.repeat(33);
+    fireEvent.change(input, { target: { value: tooLong } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    expect(onRename).not.toHaveBeenCalled();
+  });
+
+  it('renders the server pseudonymError inline when present', () => {
+    render(
+      <WaitingRoom
+        lobby={baseLobby}
+        currentSessionId={ownerSessionId}
+        {...noopProps}
+        pseudonymError="Pseudonym must be at most 32 chars, was 33"
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: new RegExp(`modifier votre pseudonyme.*${ownerPseudonym}`, 'i') }));
+    expect(screen.getByRole('alert')).toHaveTextContent(/at most 32 chars/i);
+  });
+
+  it('calls onClearPseudonymError when the user starts typing again', () => {
+    const onClearPseudonymError = vi.fn();
+    render(
+      <WaitingRoom
+        lobby={baseLobby}
+        currentSessionId={ownerSessionId}
+        {...noopProps}
+        pseudonymError="Pseudonym must be at most 32 chars, was 33"
+        onClearPseudonymError={onClearPseudonymError}
+      />,
+    );
+    // Open the editor (also fires the clear so the error doesn't survive
+    // the next attempt).
+    fireEvent.click(screen.getByRole('button', { name: new RegExp(`modifier votre pseudonyme.*${ownerPseudonym}`, 'i') }));
+    onClearPseudonymError.mockClear();
+    const input = screen.getByLabelText(/votre pseudonyme/i) as HTMLInputElement;
+    fireEvent.change(input, { target: { value: 'Alice' } });
+    expect(onClearPseudonymError).toHaveBeenCalled();
+  });
 });
 
 describe('WaitingRoom — grid size picker', () => {

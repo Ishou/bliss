@@ -18,6 +18,14 @@ export type SessionId = string & { readonly __brand: 'SessionId' };
 export type Pseudonym = string & { readonly __brand: 'Pseudonym' };
 export type Letter = string & { readonly __brand: 'Letter' };
 
+// Mirrors the domain invariant in `game/domain/.../Identifiers.kt`
+// (`Pseudonym.MAX_LENGTH`) and the AsyncAPI `Pseudonym` schema's
+// `maxLength: 32`. Kept here so the inline editor and any future
+// validation can share a single source of truth on the FE side; the
+// server still enforces the cap and emits `invalid-pseudonym` errors,
+// so this constant is a UX guard, not a security boundary.
+export const MAX_PSEUDONYM_LENGTH = 32;
+
 // ISO-8601 instant with timezone offset (ADR-0003 §6). Plain `string` on
 // the wire; kept aliased for documentation.
 export type Instant = string;
