@@ -254,6 +254,81 @@ class LobbyWebSocketRouteTest {
         }
 
     @Test
+    fun `renameSelf with over-length pseudonym sends an error frame to the sender only`() =
+        // Regression for the silent-failure rename bug: the sender used to see
+        // an unchanged pseudonym with no feedback because Pseudonym.of() threw
+        // an IllegalArgumentException that propagated out of the incoming-frame
+        // loop and closed the socket. The fix wraps the throw in a structured
+        // 'invalid-pseudonym' error frame addressed to the sender; observers
+        // receive nothing (the rename never happened), and the socket stays
+        // open so the user can correct and retry without a reconnect.
+        runWith { harness ->
+            val lobbyId = harness.seedLobby()
+            val observerJoined = CompletableDeferred<Unit>()
+            val observerSawPlayerRenamed = CompletableDeferred<Unit>()
+            val observerHoldOpen = CompletableDeferred<Unit>()
+            // 33 chars - one over the 32-char Pseudonym.MAX_LENGTH cap.
+            val tooLong = "a".repeat(33)
+            coroutineScope {
+                val observer =
+                    async {
+                        harness.client.webSocket("/v1/lobbies/${lobbyId.value}/ws") {
+                            receiveText() // initial snapshot
+                            sendText("""{"type":"joinLobby","sessionId":"$sessionA","pseudonym":"$pseudoA"}""")
+                            observerJoined.complete(Unit)
+                            // Drain frames until the test releases us; if a stray
+                            // playerRenamed for sessionB lands, fail the test.
+                            while (!observerHoldOpen.isCompleted) {
+                                val text =
+                                    withTimeoutOrNull(200) { receiveText() } ?: continue
+                                if (text.contains("\"type\":\"playerRenamed\"")) {
+                                    observerSawPlayerRenamed.complete(Unit)
+                                    return@webSocket
+                                }
+                            }
+                        }
+                    }
+                observerJoined.await()
+
+                harness.client.webSocket("/v1/lobbies/${lobbyId.value}/ws") {
+                    receiveText() // snapshot
+                    sendText("""{"type":"joinLobby","sessionId":"$sessionB","pseudonym":"$pseudoB"}""")
+                    sendText("""{"type":"renameSelf","newPseudonym":"$tooLong"}""")
+                    // Read until the structured error frame addressed to the sender
+                    // arrives. The previous behaviour was an unhandled exception
+                    // server-side which closed the socket — the receive would
+                    // throw with a cancelled-channel exception instead of yielding
+                    // an error frame, hence the explicit timeout assertion below.
+                    // Reaching this assertion at all proves the socket stayed open:
+                    // a closed-from-server channel surfaces as a TimeoutCancellationException
+                    // out of `receiveText`, which would fail the test before this point.
+                    val errorText =
+                        withTimeout(5_000) {
+                            var seen: String? = null
+                            while (seen == null) {
+                                val text = receiveText()
+                                if (text.contains("\"type\":\"error\"") &&
+                                    text.contains("invalid-pseudonym")
+                                ) {
+                                    seen = text
+                                }
+                            }
+                            seen
+                        }
+                    assertThat(errorText).contains("\"type\":\"error\"")
+                    assertThat(errorText).contains("invalid-pseudonym")
+                    assertThat(errorText).contains("\"status\":400")
+                }
+
+                observerHoldOpen.complete(Unit)
+                observer.await()
+                if (observerSawPlayerRenamed.isCompleted) {
+                    error("server broadcast playerRenamed for an over-length pseudonym")
+                }
+            }
+        }
+
+    @Test
     fun `disconnect emits a playerLeft frame to remaining members`() =
         runWith { harness ->
             val lobbyId = harness.seedLobby()

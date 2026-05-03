@@ -119,6 +119,16 @@ function LobbyPage() {
     modalDismissed: false,
   }));
   const [connectionState, setConnectionState] = useState<ConnectionState>('connecting');
+  // Inline pseudonym-rename error surfaced by the WaitingRoom editor.
+  // The server emits an `invalid-pseudonym` error frame when the rename
+  // payload fails the `Pseudonym` invariants (over MAX_LENGTH, empty,
+  // leading/trailing whitespace). Stored at the route level because
+  // (a) WaitingRoom is intentionally pure and (b) a successful rename
+  // arriving as `playerRenamed` clears the slate.
+  const [pseudonymError, setPseudonymError] = useState<string | null>(null);
+  const handleClearPseudonymError = useCallback(() => {
+    setPseudonymError(null);
+  }, []);
 
   // Single side effect: connect on mount, disconnect on unmount.
   // `joinLobby` is auto-sent by the adapter inside `connect` (PR #138's
@@ -129,6 +139,15 @@ function LobbyPage() {
     const { sessionId, pseudonym } = getSession();
     const unsubscribeEvents = gameClient.subscribe((event) => {
       setView((current) => applyEvent(current, event));
+      // Surface `invalid-pseudonym` errors inline next to the editor;
+      // clear the inline error once the server confirms the rename via
+      // `playerRenamed` for the local session.
+      if (event.type === 'error' &&
+        event.errorType === 'https://bliss.example/errors/invalid-pseudonym') {
+        setPseudonymError(event.detail ?? event.title);
+      } else if (event.type === 'playerRenamed' && event.sessionId === sessionId) {
+        setPseudonymError(null);
+      }
     });
     const unsubscribeConnection = gameClient.subscribeConnectionState((state) => {
       setConnectionState(state);
@@ -237,6 +256,8 @@ function LobbyPage() {
             onSetGridConfig={handleSetGridConfig}
             onStart={handleStart}
             onCopyShareUrl={handleCopyShareUrl}
+            pseudonymError={pseudonymError}
+            onClearPseudonymError={handleClearPseudonymError}
           />
         ) : null}
 

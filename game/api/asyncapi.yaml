@@ -520,7 +520,21 @@ components:
         `type` discriminator value is `error`.
       properties:
         type:      { type: string, enum: [error] }
-        errorType: { type: string, format: uri, description: Stable URI per error class (RFC 7807 `type`)., example: 'https://bliss.example/errors/lobby-full' }
+        errorType:
+          type: string
+          format: uri
+          description: |
+            Stable URI per error class (RFC 7807 `type`).
+            Known values emitted over WebSocket:
+            `https://bliss.example/errors/lobby-full`,
+            `https://bliss.example/errors/invalid-pseudonym`,
+            `https://bliss.example/errors/lobby-not-found`,
+            `https://bliss.example/errors/not-owner`,
+            `https://bliss.example/errors/invalid-state`,
+            `https://bliss.example/errors/player-not-in-lobby`,
+            `https://bliss.example/errors/invalid-argument`,
+            `https://bliss.example/errors/protocol` (generic protocol violations).
+          example: 'https://bliss.example/errors/lobby-full'
         title:     { type: string, description: Short, human-readable summary., example: Lobby is full }
         detail:    { type: string, description: Occurrence-specific explanation. }
         status:    { type: integer, minimum: 100, maximum: 599, description: HTTP-style status code, mirrored for parity with REST. }

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { css } from 'styled-system/css';
-import type { Lobby, Pseudonym, SessionId } from '@/domain/game';
+import { MAX_PSEUDONYM_LENGTH, type Lobby, type Pseudonym, type SessionId } from '@/domain/game';
 import { PlayerList, MAX_PLAYERS } from './PlayerList';
 
 // Pure prop-driven WaitingRoom rendered while `lobby.state === 'WAITING'`.
@@ -22,6 +22,19 @@ export interface WaitingRoomProps {
   readonly onSetGridConfig: (width: number, height: number) => void;
   readonly onStart: () => void;
   readonly onCopyShareUrl: () => void;
+  // Server-side rename rejection surfaced inline below the editor.
+  // The parent route subscribes to `gameClient` `error` frames with
+  // `errorType === 'https://bliss.example/errors/invalid-pseudonym'`
+  // and threads the `detail` string here. `null` (or omitted) hides
+  // the message. Defensive: the `maxLength` HTML attribute on the
+  // input is the primary UX guard, but this surfaces any drift between
+  // the client cap and the server's `Pseudonym` invariants.
+  readonly pseudonymError?: string | null;
+  // Called when the editor opens or the user types — gives the parent
+  // a hook to clear stale `pseudonymError` so a successful retry does
+  // not leave the previous failure rendered. Optional; if omitted, the
+  // error stays visible until the parent's own clearing logic fires.
+  readonly onClearPseudonymError?: () => void;
 }
 
 const styles = {
@@ -52,6 +65,12 @@ const styles = {
     border: '1px solid token(colors.border)', bg: 'surface', color: 'fg',
     fontFamily: 'body', fontSize: 'body',
   }),
+  inputError: css({
+    fontSize: 'sm', color: 'accent', marginBlockStart: 'xs',
+  }),
+  editorWrapper: css({
+    display: 'flex', flexDirection: 'column', gap: 'xs',
+  }),
   row: css({ display: 'flex', alignItems: 'center', gap: 'sm' }),
   radioGroup: css({ display: 'flex', flexWrap: 'wrap', gap: 'sm' }),
   radioLabel: css({
@@ -65,6 +84,7 @@ const styles = {
 
 export function WaitingRoom({
   lobby, currentSessionId, onRename, onSetGridConfig, onStart, onCopyShareUrl,
+  pseudonymError, onClearPseudonymError,
 }: WaitingRoomProps): React.ReactElement {
   const isOwner = lobby.ownerSessionId === currentSessionId;
   // Solo-through-the-multiplayer-flow is supported (handy while waiting for
@@ -93,7 +113,14 @@ export function WaitingRoom({
         </button>
       </div>
 
-      {me ? <PseudonymEditor currentPseudonym={me.pseudonym} onRename={onRename} /> : null}
+      {me ? (
+        <PseudonymEditor
+          currentPseudonym={me.pseudonym}
+          onRename={onRename}
+          pseudonymError={pseudonymError ?? null}
+          onClearPseudonymError={onClearPseudonymError}
+        />
+      ) : null}
 
       {isOwner ? (
         <GridSizePicker gridConfig={lobby.gridConfig} onSetGridConfig={onSetGridConfig} />
@@ -113,21 +140,30 @@ export function WaitingRoom({
 
 // Inline edit-on-click. Click the displayed pseudonym to reveal the
 // input; Enter or blur fires `onRename` and exits edit mode. Empty /
-// unchanged values are no-ops so a stray click does not wipe a name.
+// unchanged / over-cap values are no-ops so a stray click does not
+// wipe a name AND a paste of a too-long string never sends a frame the
+// server is going to reject. The `maxLength` HTML attribute prevents
+// typing past `MAX_PSEUDONYM_LENGTH` (32) in the first place — the
+// commit-time guard is belt-and-braces for the paste-then-Enter path
+// and for any future drift between the FE constant and the server cap
+// (which surfaces inline via `pseudonymError`).
 function PseudonymEditor({
-  currentPseudonym, onRename,
+  currentPseudonym, onRename, pseudonymError, onClearPseudonymError,
 }: {
   readonly currentPseudonym: Pseudonym;
   readonly onRename: (newPseudonym: Pseudonym) => void;
+  readonly pseudonymError: string | null;
+  readonly onClearPseudonymError?: () => void;
 }): React.ReactElement {
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState<string>(currentPseudonym);
 
+  const trimmed = draft.trim();
+  const isOverCap = trimmed.length > MAX_PSEUDONYM_LENGTH;
+  const isCommittable = trimmed.length > 0 && trimmed !== currentPseudonym && !isOverCap;
+
   const commit = () => {
-    const trimmed = draft.trim();
-    if (trimmed.length > 0 && trimmed !== currentPseudonym) {
-      onRename(trimmed as Pseudonym);
-    }
+    if (isCommittable) onRename(trimmed as Pseudonym);
     setIsEditing(false);
   };
 
@@ -137,7 +173,11 @@ function PseudonymEditor({
         <h2 className={styles.sectionTitle}>Votre pseudonyme</h2>
         <button
           type="button" className={styles.button}
-          onClick={() => { setDraft(currentPseudonym); setIsEditing(true); }}
+          onClick={() => {
+            setDraft(currentPseudonym);
+            onClearPseudonymError?.();
+            setIsEditing(true);
+          }}
           aria-label={`Modifier votre pseudonyme : ${currentPseudonym}`}
         >
           {currentPseudonym}
@@ -147,20 +187,36 @@ function PseudonymEditor({
   }
 
   return (
-    <div className={styles.row}>
-      <label htmlFor="pseudonym-input" className={styles.sectionTitle}>
-        Votre pseudonyme
-      </label>
-      <input
-        id="pseudonym-input" className={styles.input} type="text"
-        value={draft} onChange={(e) => setDraft(e.target.value)}
-        onBlur={commit}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') { e.preventDefault(); commit(); }
-          if (e.key === 'Escape') { setIsEditing(false); }
-        }}
-        autoFocus
-      />
+    <div className={styles.editorWrapper}>
+      <div className={styles.row}>
+        <label htmlFor="pseudonym-input" className={styles.sectionTitle}>
+          Votre pseudonyme
+        </label>
+        <input
+          id="pseudonym-input" className={styles.input} type="text"
+          value={draft}
+          maxLength={MAX_PSEUDONYM_LENGTH}
+          aria-invalid={pseudonymError != null || isOverCap || undefined}
+          aria-describedby={pseudonymError != null ? 'pseudonym-error' : undefined}
+          onChange={(e) => {
+            setDraft(e.target.value);
+            // Clear the previous server-side error as soon as the user
+            // starts editing — a fresh attempt deserves a fresh slate.
+            if (pseudonymError != null) onClearPseudonymError?.();
+          }}
+          onBlur={commit}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') { e.preventDefault(); commit(); }
+            if (e.key === 'Escape') { setIsEditing(false); }
+          }}
+          autoFocus
+        />
+      </div>
+      {pseudonymError != null ? (
+        <p id="pseudonym-error" role="alert" className={styles.inputError}>
+          {pseudonymError}
+        </p>
+      ) : null}
     </div>
   );
 }
