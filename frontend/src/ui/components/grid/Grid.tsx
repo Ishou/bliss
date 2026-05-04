@@ -65,15 +65,6 @@ const transformWrapperBaseStyle = {
 // any inline style we pass, so width here is preserved.
 const transformContentStyle = { width: '100%' };
 
-// Outer relative box: same width / max-width as the TransformWrapper so
-// the absolutely-positioned `GridZoomControls` cluster anchors to the
-// grid's visible bounds (top-right corner) rather than the page.
-const gridZoomShell = css({
-  position: 'relative',
-  width: '100%',
-  maxWidth: '480px',
-  margin: '0 auto',
-});
 
 // Lower bound on the keyboard-aware wrapper max-height. Below this
 // (a one-row peek into a 5+ row grid) the grid is too cramped to be
@@ -294,7 +285,14 @@ export function Grid({
     if (userTappedDuringGestureRef.current) return;
     const el = refsByPosition(gridFrameRef.current, target);
     if (!el || !el.isConnected) return;
-    el.focus();
+    // `preventScroll: true` is critical here: the user just panned
+    // intentionally to bring an off-center area into view; the default
+    // `focus()` behaviour scrolls the focused element back into view
+    // and undoes the pan. Native focus-snap-on-pan was the original
+    // bug the blur-on-gesture dance was meant to fix on iOS — calling
+    // focus without preventScroll re-introduces the same problem on
+    // every other browser.
+    el.focus({ preventScroll: true });
   }, []);
 
   // Reactive copies of the library's gesture state, used to drive style
@@ -311,14 +309,32 @@ export function Grid({
   }, [blurFocusedCell]);
   const handleZoomStop = useCallback(() => {
     zoomingRef.current = false;
-    const scale = transformWrapperRef.current?.state.scale ?? 1;
-    setIsZoomedIn(scale > 1.01);
-    // 0.01 epsilon mirrors the zoomed-in threshold; 4 is the
-    // `maxScale` prop on TransformWrapper below — these have to stay
-    // in sync.
-    setIsMaxZoom(scale >= 4 - 0.01);
+    // Snap-to-center when the user wheel-zooms back down to scale 1.
+    // Without this the grid stays where it was last panned to and just
+    // shrinks in place; expectation (mirroring "reset") is that scale 1
+    // means "centered & full". `centerView(1, 0)` is instant; the
+    // visible delay before applying it is one debounce tick from the
+    // library, which is acceptable.
+    const ref = transformWrapperRef.current;
+    if (ref && ref.state.scale <= 1.01) {
+      ref.centerView(1, 0);
+    }
     restoreCellFocus();
   }, [restoreCellFocus]);
+  // `onTransform` fires on every frame the library applies a transform
+  // (wheel notch, pinch step, button click animation). We use it to
+  // keep `isZoomedIn` / `isMaxZoom` in step with the live scale —
+  // `onZoomStop` alone debounces too long and the buttons' enabled
+  // state visibly lags the cursor's `grab` cue. 0.01 epsilon mirrors
+  // the threshold elsewhere; 4 is the `maxScale` prop on
+  // TransformWrapper below — must stay in sync.
+  const handleTransform = useCallback(
+    (_ref: unknown, state: { scale: number }) => {
+      setIsZoomedIn(state.scale > 1.01);
+      setIsMaxZoom(state.scale >= 4 - 0.01);
+    },
+    [],
+  );
   const handlePanningStart = useCallback(() => {
     panningRef.current = true;
     setIsPanning(true);
@@ -500,10 +516,10 @@ export function Grid({
         - `centerOnInit` — first paint puts the grid centered in the
           wrapper. Without this the library can leave a small offset from
           its bounds-padding logic on certain initial sizes.
-        - `wheel.step: 0.15` — desktop mouse wheel zooms the grid (an
-          explicit user request). The default 0.2 felt jumpy; 0.15 is a
-          smoother feel close to native trackpad pinch. To gate behind a
-          modifier (ctrl+wheel = zoom, plain wheel = page scroll) set
+        - `wheel.step: 0.05` — desktop mouse wheel zooms the grid. The
+          default 0.2 is jumpy; 0.05 (5% per notch) is smooth and close
+          to native trackpad pinch. To gate behind a modifier
+          (ctrl+wheel = zoom, plain wheel = page scroll) set
           `activationKeys: ['Control', 'Meta']`.
         - `doubleClick.disabled` — a double-tap on a cell would otherwise
           zoom-in on that cell, fighting the focus + cursor behavior we
@@ -518,14 +534,13 @@ export function Grid({
           still works. Cursor is `grab` when zoomed and `grabbing` while
           dragging (driven by `isZoomedIn` / `panningRef`).
       */}
-      <div className={gridZoomShell}>
       <TransformWrapper
         ref={transformWrapperRef}
         minScale={1}
         maxScale={4}
         initialScale={1}
         centerOnInit
-        wheel={{ step: 0.15 }}
+        wheel={{ step: 0.05 }}
         doubleClick={{ disabled: true }}
         panning={{ velocityDisabled: true, allowLeftClickPan: true }}
         // Blur-on-gesture: iOS Safari fights pinch / pan with a native
@@ -538,6 +553,7 @@ export function Grid({
         // block above for the to-restore + tap-during-gesture logic.
         onZoomStart={handleZoomStart}
         onZoomStop={handleZoomStop}
+        onTransform={handleTransform}
         onPanningStart={handlePanningStart}
         onPanningStop={handlePanningStop}
       >
@@ -624,11 +640,10 @@ export function Grid({
       <GridZoomControls
         canZoomIn={!isMaxZoom}
         canZoomOut={isZoomedIn}
-        onZoomIn={() => transformWrapperRef.current?.zoomIn()}
-        onZoomOut={() => transformWrapperRef.current?.zoomOut()}
-        onReset={() => transformWrapperRef.current?.resetTransform()}
+        onZoomIn={() => transformWrapperRef.current?.zoomIn(0.3, 150)}
+        onZoomOut={() => transformWrapperRef.current?.zoomOut(0.3, 150)}
+        onReset={() => transformWrapperRef.current?.resetTransform(0)}
       />
-      </div>
     </>
   );
 }
