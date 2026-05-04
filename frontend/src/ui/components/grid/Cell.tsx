@@ -12,9 +12,9 @@ import { FitText } from './FitText';
 // Clue text size bounds (px). Floors keep clues legible on dense grids;
 // ceilings prevent a 3-letter clue ("rai") from ballooning past the cell.
 // Stacked clues split the cell vertically, so their ceiling is lower.
-const SINGLE_MIN = 11;
+const SINGLE_MIN = 9;
 const SINGLE_MAX = 22;
-const STACK_MIN = 10;
+const STACK_MIN = 8;
 const STACK_MAX = 16;
 
 const cellBase = css({
@@ -46,11 +46,15 @@ const defCell = css({
 });
 
 // Text fills the full cell now that the arrow is outside the flow.
+// `overflow: hidden` clips clue text that won't fit even at FitText's floor —
+// without this, the cellBase `overflow: visible` (needed for arrow badges)
+// lets long clues bleed into adjacent cells.
 const defSingle = css({
   display: 'flex',
   flexDirection: 'column',
   width: '100%',
   height: '100%',
+  overflow: 'hidden',
 });
 
 // Current-clue highlight: colored border on the side opposite the arrow so it
@@ -206,6 +210,7 @@ function ArrowMark({
 
 // Stacked layout: two clues share the cell vertically.
 // Arrows are outside the flow (border-positioned), so text gets the full area.
+// `overflow: hidden` clips clue text past FitText's floor — see defSingle.
 const defStack = css({
   display: 'flex',
   flexDirection: 'column',
@@ -213,6 +218,7 @@ const defStack = css({
   height: '100%',
   gap: '1px',
   lineHeight: '1.1',
+  overflow: 'hidden',
 });
 const defStackClue = css({
   display: 'flex',
@@ -220,6 +226,7 @@ const defStackClue = css({
   justifyContent: 'center',
   flex: 1,
   minHeight: 0,
+  overflow: 'hidden',
   wordBreak: 'break-word',
   // Separator between the two stacked clues. `colors.border` is `sand`, the
   // same hue as the def cell bg, so a token-based rule was invisible — use
