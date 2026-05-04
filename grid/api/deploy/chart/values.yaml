@@ -17,7 +17,9 @@ replicaCount: 1
 resources: {}
 service:
   type: ClusterIP
-  # API listens on 8080 — grid/api/src/main/kotlin/com/bliss/grid/api/Main.kt:14.
+  # Prod listens on 8080. Local-dev default in Main.kt is 7777; the chart
+  # pins PORT=8080 explicitly via the `env:` block below so prod is stable
+  # regardless of in-app default changes.
   port: 8080
 ingress:
   enabled: true
@@ -71,6 +73,10 @@ probes:
 env:
   - name: JAVA_TOOL_OPTIONS
     value: "-XX:MaxRAMPercentage=75.0"
+  # Pin prod port. Main.kt's DEFAULT_PORT is 7777 (local-dev convenience);
+  # this keeps prod on 8080 regardless of in-app default changes.
+  - name: PORT
+    value: "8080"
 # Name of a Kubernetes Secret to envFrom into the pod. ADR-0009 §10:
 # bootstrapped via `kubectl create secret`, never committed.
 envFromSecret: ""
