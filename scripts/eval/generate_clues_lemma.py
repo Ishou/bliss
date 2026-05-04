@@ -48,12 +48,19 @@ MAX_TOKENS = 24
 MAX_ATTEMPTS = 3
 ATTEMPT_TEMPERATURES = (0.3, 0.6, 0.9)
 HTTP_TIMEOUT = 120
+# Cap per-request context. Without this, Ollama allocates KV cache for the
+# model's full default context (256k tokens for Mistral-Nemo) × OLLAMA_NUM_PARALLEL,
+# which is gigabytes per concurrent request and unusable on a laptop. Our prompts
+# (rules + few-shots + per-word slot) are well under 4k tokens.
+NUM_CTX = 4096
 
 POS_NORMALIZE = {
     "verbe": "verbe",
     "nom": "nom",
     "adjectif": "adj",
     "adj": "adj",
+    "adverbe": "adv",
+    "adv": "adv",
 }
 
 
@@ -62,11 +69,20 @@ def normalize_pos(label: str) -> str:
 
 
 def render_user_content(template: str, lemma: str, pos: str, definition: str, synonyms: str) -> str:
+    """`definition` may be a single sense or pipe-delimited multi-sense (the
+    enricher emits all clean senses now). Render single sense as-is; render
+    multiple as a numbered list so the model can pick the most cluable
+    sense instead of being anchored to sense_1."""
+    senses = [s.strip() for s in (definition or "").split("|") if s.strip()]
+    if len(senses) <= 1:
+        rendered_def = senses[0] if senses else "(aucune)"
+    else:
+        rendered_def = "\n  " + "\n  ".join(f"{i+1}. {s}" for i, s in enumerate(senses))
     return (
         template
         .replace("{lemma_upper}", lemma.upper())
         .replace("{pos}", pos or "?")
-        .replace("{dbnary_definition}", definition or "(aucune)")
+        .replace("{dbnary_definition}", rendered_def)
         .replace("{synonyms_csv}", synonyms or "(aucun)")
     )
 
@@ -116,6 +132,7 @@ def ollama_chat(host: str, model: str, user_content: str, *, temperature: float,
             "temperature": temperature,
             "top_p": TOP_P,
             "num_predict": max_tokens,
+            "num_ctx": NUM_CTX,
         },
         "stream": False,
     }).encode("utf-8")
@@ -137,12 +154,18 @@ def main() -> None:
     parser.add_argument("--host", default=DEFAULT_HOST)
     parser.add_argument("--concurrency", type=int, default=DEFAULT_CONCURRENCY)
     parser.add_argument("--limit", type=int, default=None)
+    parser.add_argument("--input", type=Path, default=None,
+                        help="enriched-sample CSV (default: data/eval/sample_100_enriched.csv)")
+    parser.add_argument("--output", type=Path, default=None,
+                        help="lemma-clues CSV (default: data/eval/lemma_clues.csv)")
+    parser.add_argument("--prompt", type=Path, default=None,
+                        help="prompt template (default: scripts/eval/prompts/clue_lemma_v0.txt)")
     args = parser.parse_args()
 
     repo_root = Path(__file__).resolve().parent.parent.parent
-    src = repo_root / "data" / "eval" / "sample_100_enriched.csv"
-    out = repo_root / "data" / "eval" / "lemma_clues.csv"
-    template_path = repo_root / "scripts" / "eval" / "prompts" / "clue_lemma_v0.txt"
+    src = args.input or (repo_root / "data" / "eval" / "sample_100_enriched.csv")
+    out = args.output or (repo_root / "data" / "eval" / "lemma_clues.csv")
+    template_path = args.prompt or (repo_root / "scripts" / "eval" / "prompts" / "clue_lemma_v0.txt")
     lexique_path = args.lexique or Path(os.path.expanduser("~/Downloads/grammalecte/lexique-grammalecte-fr-v7.7.txt"))
 
     if not src.exists():
@@ -161,11 +184,14 @@ def main() -> None:
     print(f"loading morphology index from {lexique_path}...", file=sys.stderr)
     index = MorphologyIndex.load(lexique_path)
 
+    # Resume: keep ANY row with a non-empty clue, regardless of validation
+    # flag. For long batch runs we'd rather accept a previously-produced
+    # stem-leak clue than burn 3 retry rounds again on restart.
     existing: dict[str, dict[str, str]] = {}
     if out.exists():
         with out.open(encoding="utf-8", newline="") as f:
             for row in csv.DictReader(f):
-                if row.get("lemma_clue") and row.get("validation_flag") == "ok":
+                if row.get("lemma_clue"):
                     existing[row["lemma"]] = row
 
     with src.open(encoding="utf-8", newline="") as f:
@@ -204,7 +230,26 @@ def main() -> None:
         target_pos = normalize_pos(row["pos"])
         return lemma, clue, validate_lemma_clue(clue, lemma, target_pos, index)
 
+    fieldnames = ["lemma", "pos", "definition", "synonyms",
+                  "lemma_clue", "attempts", "validation_flag", "rating"]
+
+    def flush_partial(rows_dict: dict[str, dict[str, str]]) -> None:
+        """Write all completed rows to the output file atomically. Called
+        every FLUSH_EVERY lemmas and at the end of each round so a kill
+        mid-run preserves work."""
+        out_rows = sorted(rows_dict.values(), key=lambda r: r["lemma"])
+        tmp = out.with_suffix(out.suffix + ".tmp")
+        with tmp.open("w", encoding="utf-8", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=fieldnames, lineterminator="\n")
+            writer.writeheader()
+            for r in out_rows:
+                writer.writerow({k: r.get(k, "") for k in fieldnames})
+        tmp.replace(out)  # atomic on POSIX so readers never see partial files
+
+    FLUSH_EVERY = 20  # rewrite after every N completed lemmas
+
     started = time.time()
+    since_flush = 0
     for round_idx in range(MAX_ATTEMPTS):
         if not pending:
             break
@@ -233,10 +278,28 @@ def main() -> None:
                     }
                     pending.pop(lemma)
                     marker = "OK"
+                    since_flush += 1
+                    if since_flush >= FLUSH_EVERY:
+                        flush_partial(completed)
+                        since_flush = 0
                 else:
                     marker = vr.flag
                 print(f"  [{lemma:20s} ({row_pos:10s}) "
                       f"x{attempts}] {marker:14s} -> {clue!r}")
+        # End-of-round flush so non-ok lemmas don't lose their last attempt
+        # if the next round is killed mid-flight. Unconditional update so
+        # attempt count advances when an earlier attempt was already flushed.
+        for lemma_, row_ in pending.items():
+            clue_, flag_ = last_output.get(lemma_, ("", "no-attempt"))
+            if clue_:
+                completed[lemma_] = {
+                    **row_, "lemma_clue": clue_,
+                    "attempts": str(round_idx + 1),
+                    "validation_flag": flag_,
+                    "rating": "",
+                }
+        flush_partial(completed)
+        since_flush = 0
         elapsed_round = time.time() - round_started
         print(f"  -- round of {len(round_lemmas)} took {elapsed_round:.1f}s "
               f"({len(round_lemmas)/max(elapsed_round, 0.001):.1f} clue/s)", file=sys.stderr)
@@ -251,21 +314,19 @@ def main() -> None:
             "rating": "",
         }
 
-    fieldnames = ["lemma", "pos", "definition", "synonyms",
-                  "lemma_clue", "attempts", "validation_flag", "rating"]
+    flush_partial(completed)
     out_rows = sorted(completed.values(), key=lambda r: r["lemma"])
-    with out.open("w", encoding="utf-8", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=fieldnames, lineterminator="\n")
-        writer.writeheader()
-        for r in out_rows:
-            writer.writerow({k: r.get(k, "") for k in fieldnames})
 
     counts: dict[str, int] = {}
     for r in out_rows:
         counts[r["validation_flag"]] = counts.get(r["validation_flag"], 0) + 1
     elapsed = time.time() - started
     new_count = max(len(todo), 1)
-    print(f"\nWrote {len(out_rows)} rows to {out.relative_to(repo_root)} in {elapsed:.1f}s "
+    try:
+        out_display = out.resolve().relative_to(repo_root)
+    except ValueError:
+        out_display = out
+    print(f"\nWrote {len(out_rows)} rows to {out_display} in {elapsed:.1f}s "
           f"({new_count/elapsed:.1f} new clue/s)")
     for flag, n in sorted(counts.items(), key=lambda kv: -kv[1]):
         print(f"  {flag:18s} {n}")

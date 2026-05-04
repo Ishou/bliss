@@ -11,7 +11,15 @@ build/
 # .claude/ are versioned. Ignore only the ephemeral and per-developer entries.
 .claude/worktrees/
 .claude/settings.local.json
+.claude/scheduled_tasks.lock
 
 # Python
 __pycache__/
 *.pyc
+
+# Large/ephemeral data: external dumps, training artefacts
+data/dbnary/
+data/lora/
+models/
+*.gguf
+*.safetensors

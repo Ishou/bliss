@@ -1,0 +1,81 @@
+lemma,pos,definition,synonyms,lemma_clue,attempts,validation_flag,rating
+alternatif,nom,"Qui se produit tour à tour, en parlant de deux choses.",,Option d'un choix qui s'offre,1,ok,b
+amende,nom,(Droit) Peine pécuniaire imposée par la justice.,contravention|prune|topic|lochon|contredanse,Pénalité monétaire,1,ok,y
+antan,,Autrefois.,dans le temps|autrefois|jadis|anciennement,Autrefois,1,ok,y
+apercevoir,verbe,Commencer à voir.,,Voir naître,1,ok,b
+argument,nom,"(Logique) Raisonnement construit selon certaines règles, par lequel on tire méthodiquement une conséquence d’une ou de plusieurs propositions.",,Démonstration logique,1,ok,y
+asseoir,verbe,Mettre quelqu’un sur un siège ou sur quelque chose qui tient lieu de siège.,faire sisitte,Prendre place,1,ok,y
+aurore,nom,Lueur brillante et rosée qui paraît dans le ciel avant que le soleil soit sur l’horizon.,rose d’aurore|aube|petit jour|piéride du cresson,Première lueur rosée,3,head-not-lemma,y
+autoritaire,adjectif,(Psychologie) Personne qui arrive à dominer son entourage en lui imposant sa personnalité et sa volonté.,,Dominateur et directif,1,ok,y
+avoir,nom,(Philosophie) Ce que possède un individu.,note de crédit|posséder,Possession personnelle,1,ok,y
+besoin,nom,Privation de quelque chose qui est nécessaire.,,Manque crucial,1,ok,y
+bourgeois,nom,"Celui qui n’est ni noble, ni ecclésiastique, ni militaire.",bourge|rupin|riche|richard,Membre de la classe moyenne,1,ok,y
+calice,nom,"(Catholicisme) Vase sacré dans lequel est consacré le vin, à la messe.",,Vase de consécration,1,ok,y
+changement,nom,Modification plus ou moins profonde d'une situation,métamorphose|évolution|transformation|mutation|modification|révolution,Mutation inattendue,1,ok,y
+chapelle,nom,Petit édifice religieux.,,Oratoire sacré,1,ok,y
+chercheur,nom,Personne qui cherche.,rechercheur,Chercheur infatigable,3,self-reference,n
+colloque,nom,"Conférence entre deux rois ou entre deux chefs d’État, en vue de s’entendre sur des matières politiques, religieuses, etc.",collocution,Rencontre savante,1,ok,y
+confort,nom,Bien-être matériel et moral.,,Bien-être total,1,ok,y
+confrère,nom,"Celui qui fait partie d’une compagnie, d’une société religieuse, littéraire, artistique, etc., particulièrement quand il a été admis par les autres membres à en faire partie. — Note : Dans ce sens, il s’oppose à collègue.",,Frère d'armes,1,ok,b
+consulaire,adjectif,Celui qui avait été consul.,,Ancien diplomate,1,ok,b
+contrée,nom,(Géographie) Certaine étendue de pays.,,Paysage étendu et varié,1,ok,b
+couvert,nom,"La nappe avec les serviettes, les assiettes, les couteaux, les cuillères, etc. dont on garnit une table pour un repas.",,Nappe et vaisselle,1,ok,b
+criminel,nom,(Droit) Personne convaincue de crime.,délinquant|malfaiteur|hors-la-loi|bandit|voyou|malfrat,Fautif judiciaire,2,ok,b
+cuite,nom,"Sorte de cuisson donnée à la porcelaine, aux briques, au plâtre, etc.",murge|race,Sorte de cuisson,2,ok,b
+dater,verbe,"Avoir eu lieu, ou avoir commencé d’exister à telle ou telle époque.",,Se situer dans le temps,1,ok,y
+demain,nom,Les temps à venir.,,Futur proche,1,ok,y
+destructeur,nom,Personne qui détruit.,,Agent de destruction,2,ok,n
+destruction,nom,"Action de détruire, au propre et au figuré.",démolition|désolation|ruine|holocauste|subversion|extinction|éradication|annihilation,Démolition d'un édifice,1,ok,y
+diffus,adjectif,Qui se répand dans tous les sens.,,Se propageant partout,3,head-not-lemma,b
+différent,adjectif,"(Numismatique) Marque permettant de différencier un poinçon d’atelier ou d’artisan, représentée par une lettre ou un symbole.",,Distinctif et unique,1,ok,y
+direction,nom,"Action de diriger, de régler l’exécution d’une action, d'administrer un établissement ou de conduire une personne.",axe,Axe du mouvement,1,ok,y
+doux,nom,,liquoreux|sonore|calme|soyeux|agréable|léger|modéré|suave,Vin sucré,1,ok,y
+détourner,verbe,Éloigner dans une autre direction.,divertir,Divertir ailleurs,1,ok,n
+entamer,verbe,Inciser superficiellement.,,Fendre légèrement,1,ok,y
+explicite,verbe,Ce qui est clair et évident.,,Être évident,1,ok,n
+fidèlement,adverbe,D’une manière fidèle.,,Avec loyauté,1,ok,y
+février,nom,"Deuxième mois du calendrier grégorien qui compte normalement vingt-huit jours, sauf dans les années bissextiles où il en compte vingt-neuf.",,Mois court,1,ok,y
+glas,nom,"Sonnerie d’une cloche qui tinte, annonçant l’agonie ou la mort d’une personne.",cloche des morts,Cloche funèbre,1,ok,y
+gouvernance,nom,"Manière de concevoir et d’exercer l’autorité à la tête d’une entreprise, d’une organisation, d’un État.",,Autorité dirigeante,1,ok,y
+grandeur,nom,"Étendue, taille en hauteur, en longueur, en largeur, etc.",taille|dimension,Taille imposante.,1,ok,b
+grief,nom,"Sujet ou motif de plainte, reproche, blâme.",,Cause de mécontentement,1,ok,y
+image,nom,"Représentation d’êtres ou d’objets par le dessin, la peinture, la sculpture, la gravure, la photographie, le cinéma, etc.",figuration|illustration|figure|idole|emblème|icône|dessin|symbole,Représentation visuelle,1,ok,y
+impur,nom,,libidineux|charnel|trivial|malpropre|fangeux|mauvais|bas|indécent,Vin souillé,1,ok,b
+incitation,nom,Action d’inciter.,,Action de stimuler,1,ok,y
+indubitable,adjectif,"Dont on ne peut douter, qui est certain, assuré.",,Certain et sûr,1,ok,y
+inexécution,nom,"Manque volontaire ou involontaire d’exécution, d’une chose concertée, d’un engagement, d’une mesure administrative législative, etc.",,Non-respect des règles,1,ok,y
+interpréter,verbe,"Expliquer ce qu’il y a d’obscur et d’ambigu dans un écrit, dans une loi, dans un acte.",exécuter|jouer,Exposer le sens,1,ok,y
+majorité,nom,"(Absolument) Parti qui, dans une assemblée, réunit ordinairement le plus grand nombre de suffrages.",majorité légale|âge adulte|majorité civile|pluralité,Nombre d'électeurs,1,ok,n
+maîtrise,nom,"Ensemble des contremaîtres d’un atelier, d’une usine.",,Direction de l'atelier,1,ok,y
+meurtre,nom,(Droit) (Mort) Homicide volontaire.,,Assassinat prémédité,1,ok,y
+miracle,nom,(Religion) Acte de la puissance divine contraire aux lois connues de la nature.,,Action surnaturelle,1,ok,y
+moins,nom,(Mathématiques) Signe de la soustraction ou d’un nombre négatif. - ou −.,,Symbole des nombres négatifs,1,ok,y
+monstrueux,adjectif,"Qui a une conformation contre nature, anormale.",effrayant|répugnant|incongru|anormal|abominable|odieux|atroce|effroyable,Affreux et atroce,1,ok,y
+mortalité,nom,Condition de ce qui est sujet à la mort.,,Finitude humaine,1,ok,y
+nettement,adverbe,D’une manière nette.,,Clairement et distinctement,1,ok,y
+ocre,nom,"Argile friable de couleur jaune, rouge ou brune suivant les oxydes, en particulier l’hydroxyde de fer et parfois d’oxyde de manganèse, qu’elle contient.",,Terre jaune,1,ok,y
+ouïe,nom,"Sens par lequel on perçoit les sons, les autres sens sont la vue, l’odorat, le goût, le toucher ou encore la douleur.",branchie,Sens auditif,1,ok,y
+ouïr,verbe,"(Vieilli) (Justice) Recevoir des dépositions, des déclarations publiques des différentes parties.",entendre,Recevoir les dires,1,ok,b
+ovale,adjectif,Forme ronde et oblongue analogue à celle d’un œuf.,,En forme d'oeuf,3,pos-mismatch,y
+passif,nom,"(Construction) Qui consomme peu ou pas d’énergie par rapport à ce qu’il produit, parlant de la conception d’un bâtiment ou de l’ouvrage lui-même",,Bâtiment économe en énergie,1,ok,n
+passim,adverbe,"(latin employé parfois en français avec la même signification) Çà et là, en différents endroits.",,Çà et là,1,ok,y
+plan,nom,(Mathématiques) Surface telle qu’une droite passant par deux points quelconques y soit contenue tout entière.,,Feuille de papier,2,ok,n
+pour,préposition,"Argument favorable, avantage.",,Avoir un atout,1,ok,b
+poète,nom,"Celui qui fait des vers, qui se consacre à la poésie.",amant|félibre|rimeur|trouvère|chantre|rhapsode|aède|Muses,Artiste des mots,1,ok,y
+poétique,adjectif,Traité de l’art de la poésie.,,Lyrique et évocateur,1,ok,y
+promontoire,nom,(Géographie) Cap ; pointe de terre élevée qui s’avance dans la mer.,,Pointe avancée dans l'eau,1,ok,y
+recrutement,nom,Action de recruter.,,Action d'engager,1,ok,y
+remarquer,verbe,Marquer à nouveau.,,Apercevoir distinctement,1,ok,y
+sinistre,nom,"Dommage comme un incendie, une inondation, un tremblement de terre, etc.",,Dégât majeur,1,ok,y
+soja,nom,(Agriculture) (Botanique) Légumineuse de la famille des Fabacées originaire de Papouasie-Nouvelle-Guinée.,,Fabacée papoue,3,ok,y
+soumettre,verbe,"Réduire, ranger sous la puissance, sous l’autorité, mettre dans un état de dépendance.",venir à jubé,Mettre en subordination,1,ok,y
+spontanéité,nom,Caractère de ce qui est spontané.,,Naturel et libre,1,ok,y
+statuer,verbe,Décider ; régler ; établir.,,Trancher définitivement,1,ok,y
+suprême,adjectif,(Cuisine) Blanc de poulet tendre découpé en morceaux.,,Tendre comme un blanc de poulet,1,ok,y
+tardif,adjectif,Qui tarde ; qui vient tard.,,Retardataire au rendez-vous,3,ok,b
+truchement,nom,"Porte-parole ou personne qui exprime la pensée, les intentions, d'une ou plusieurs autres personnes.",,Porte-voix humain,1,ok,y
+université,nom,"(En particulier) (Éducation) Centre d’enseignement supérieur, public ou privé, divisé en groupes appelés facultés, dont chacune délivre des grades au nom de l’État ou en son nom propre.",fac|uni|unif,Établissement d'enseignement supérieur,1,ok,y
+usurpateur,nom,"Personne qui, par violence ou par ruse, s’empare d’un bien, d’une souveraineté, d’un pouvoir, d’une dignité, d’un titre, etc., qui ne lui appartient pas.",,Preneur illégal de pouvoir,3,ok,y
+vassal,nom,(Féodalité) Personne liée par serment d’allégeance et d’hommage à un suzerain qui en retour lui reconnaît la propriété d’un fief.,vasseur|feudataire,Homme lié au seigneur,1,ok,y
+âtre,nom,"Base de la cheminée où l’on fait le feu, et autour duquel se déroulait la vie du ménage.",foyer,Foyer central,1,ok,y
+ébat,nom,Action de s’ébattre.,,Rumeur enflammée,3,ok,n
