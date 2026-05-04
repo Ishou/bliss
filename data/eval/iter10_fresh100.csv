@@ -1,0 +1,101 @@
+lemma,pos,definition,synonyms,lemma_clue,attempts,validation_flag,rating
+ameuter,,,,Rassembler la foule,1,ok,y
+amnistier,,,,Gracier officiellement,1,ok,y
+annoncer,,,,Faire savoir à tous,1,ok,y
+argus,,,,Œil vigilant,1,ok,y
+atomistique,,,,Relatif aux atomes,1,ok,y
+attaquer,,,,Prendre d'assaut,1,ok,y
+baudet,,,,Âne de bât,1,ok,y
+bidonville,,,,Quartier de fortune,1,ok,y
+binage,,,,Travail du sol,1,ok,y
+blason,,,,Écu héraldique,1,ok,y
+bourbier,,,,Marécage profond et gluant,1,ok,y
+bâcler,,,,Faire vite et mal,1,ok,y
+casting,,,,Sélection des acteurs,1,ok,y
+ceci,,,,C'est-à-dire,2,ok,n
+charivari,,,,Bruit de casseroles,1,ok,y
+chat,,,,Animal domestique,1,ok,y
+classifier,,,,Étiqueteur automatique,1,ok,b
+clou,,,,Pointu et piquant,1,ok,b
+consonance,,,,Accord parfait,1,ok,y
+contrainte,,,,Obligation imposée,1,ok,y
+courtisan,,,,Fameux prostitué,2,ok,n
+cure,,,,Remède au mal,1,ok,y
+cône,,,,Figure géométrique en forme de chapeau,1,ok,b
+dandy,,,,Élégant et raffiné,1,ok,y
+dangerosité,,,,Niveau de risque,1,ok,y
+distinguable,,,,Que l'on peut reconnaître,1,ok,y
+divinement,,,,De façon surnaturelle,1,ok,b
+décrépitude,,,,État de délabrement avancé,1,ok,y
+défi,,,,Test difficile,1,ok,y
+dégourdir,,,,Rendre agile et souple,1,ok,y
+déroulement,,,,Suite logique des événements,1,ok,y
+estampillage,,,,Marquage à chaud,1,ok,b
+exaspéré,,,,En colère et irrité,1,ok,y
+extenseur,,,,Muscle qui allonge les membres,1,ok,y
+fauteur,,,,Mauvais essaimage,3,ok,n
+ferme,,,,Laborieux et obstiné,2,ok,b
+fervent,,,,Ardent et passionné,1,ok,y
+fleur,,,,Bouquet parfumé,3,ok,b
+fronton,,,,Face avant du bâtiment,1,ok,y
+gauloiserie,,,,Blague à la française,1,ok,y
+gélatineux,,,,Pâteux et gluant,2,ok,y
+géologique,,,,En rapport avec la terre et ses couches,1,ok,y
+hanap,,,,Objet de culte,1,ok,n
+hydrure,,,,Composé chimique contenant de l'hydrogène et un autre élément,1,ok,y
+inexpiable,,,,À vie,3,ok,n
+inversement,,,,Au contraire,1,ok,y
+juil,,,,En juillet,1,ok,y
+kyrielle,,,,Suite de nombres,1,ok,n
+loir,,,,Mammifère aquatique,1,ok,n
+mail,,,,Lettres reçues,3,head-not-lemma,b
+malaisé,,,,Gêne et embarras,1,ok,n
+maternel,,,,De la mère,1,ok,y
+menuet,,,,Danse de cour en trois temps,2,ok,y
+mesureur,,,,Instrument de contrôle,1,ok,y
+monachisme,,,,Vie religieuse solitaire,1,ok,y
+muid,,,,Monnaie unique des îles,1,ok,n
+médire,,,,Dire du mal,1,ok,y
+métabolite,,,,Produit de transformation,1,ok,y
+niais,,,,Bête et innocent,1,ok,y
+perche,,,,Bâton de saut,1,ok,y
+persécuté,,,,Traité avec cruauté,1,ok,y
+pervertir,,,,Détourner du droit chemin,1,ok,y
+phosphorite,,,,Roche phosphatée,3,stem-leak,n
+photon,,,,Particule de lumière,1,ok,y
+plombifère,,,,Solide et pesant,2,ok,n
+polyclinique,,,,Centre de santé polyvalent,1,ok,y
+profès,,,,Exerce le métier de,3,head-not-lemma,n
+promeneur,,,,Accompagnateur canin,1,ok,n
+prostration,,,,Position de soumission,1,ok,b
+pâleur,,,,Blanchiment excessif,1,ok,b
+rayer,,,,Effacer une trace,1,ok,y
+renflement,,,,Élargissement local,1,ok,y
+resurchauffe,,,,Est conservé avec attention,3,ok,n
+rond,,,,En forme de cercle,1,ok,y
+routage,,,,Orientation du trafic,1,ok,y
+récessif,,,,De nature discrète,1,ok,n
+récuser,,,,Refuser catégoriquement,1,ok,y
+répartie,,,,Réplique cinglante,1,ok,y
+sauvetage,,,,Secours et délivrance,3,ok,y
+sexagénaire,,,,De soixante ans,3,head-not-lemma,y
+sole,,,,Seul et unique,1,ok,n
+soupçonneux,,,,Douteux et méfiant,1,ok,y
+soutane,,,,Vêtement ecclésiastique,1,ok,y
+sweat,,,,Transpiration abondante,1,ok,n
+sympathique,,,,Bienveillant et compréhensif,1,ok,y
+théorétique,,,,Hypothétique et abstrait,1,ok,y
+tiare,,,,Fleur polynésienne,1,ok,n
+tiers,,,,Niveau intermédiaire,1,ok,b
+tomme,,,,Fromage de Savoie,1,ok,y
+totaliser,,,,Atteindre le maximum,1,ok,n
+trompette,,,,Instrument à vent,1,ok,y
+tétanie,,,,Spasme musculaire intense,1,ok,y
+vergogne,,,,Honte profonde,1,ok,y
+veston,,,,Vêtement de dessus,1,ok,y
+volume,,,,Quantité de matière,1,ok,y
+voûte,,,,Arc en ciel architectural,1,ok,n
+vélocité,,,,Vitesse de déplacement,1,ok,y
+économe,,,,Épargnant et prudent,1,ok,y
+écouteur,,,,Casque audio,1,ok,y
+émulation,,,,Imitation poussée,1,ok,y

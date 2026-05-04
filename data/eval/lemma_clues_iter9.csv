@@ -1,0 +1,21 @@
+lemma,pos,definition,synonyms,lemma_clue,attempts,validation_flag,rating
+appeler,verbe,,,Nommer quelqu'un,1,ok,y
+biais,nom,,,Direction oblique,2,ok,y
+couper,verbe,,,Trancher net,1,ok,y
+descendre,verbe,,,La définition mots-fléchés courte pour: DESCENDRE,3,self-reference,n
+féal,nom,,,Vassal,1,ok,y
+gamma,nom,,,Rayon lumineux,1,ok,n
+historicisme,nom,,,Forme d'art et de pensée,1,ok,b
+insecte,nom,,,Animal arthropode,2,ok,y
+jaillir,verbe,,,Sauter hors de,1,ok,b
+pire,nom,,,Le plus mauvais,1,ok,y
+piété,verbe,,,Pitié,3,pos-mismatch,n
+pourriture,nom,,,Décomposition des tissus vivants,1,ok,y
+poète,nom,,,Artiste des mots,1,ok,y
+privilège,nom,,,Droit spécial,1,ok,y
+probabilité,nom,,,Chance et incertitude,2,ok,y
+présumer,verbe,,,Supposer sans preuve,1,ok,y
+sacristie,nom,,,Oratoire,1,ok,n
+truchement,nom,,,Porte-parole,1,ok,y
+témoignage,nom,,,Action d'attester,1,ok,b
+veine,verbe,,,Canaliser le sang,1,ok,n

@@ -1,0 +1,21 @@
+# iter11: rank 64 (double iter10's 32) on the same 583-pair corpus.
+# Tests whether more LoRA capacity helps with the synthetic-augmented data.
+model: "mlx-community/c4ai-command-r-08-2024-4bit"
+data: "data/lora"
+adapter_path: "models/lora-clue-v4"
+fine_tune_type: lora
+num_layers: 16
+batch_size: 4
+iters: 300            # iter10 overfit at 100; halving budget since we know the curve shape
+learning_rate: 1e-5
+steps_per_report: 10
+steps_per_eval: 25    # tighter eval cadence to catch the overfitting point
+save_every: 50
+seed: 20260504
+train: true
+test: false
+
+lora_parameters:
+  rank: 64
+  dropout: 0.0
+  scale: 20.0

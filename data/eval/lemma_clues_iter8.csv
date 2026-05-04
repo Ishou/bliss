@@ -1,0 +1,81 @@
+lemma,pos,definition,synonyms,lemma_clue,attempts,validation_flag,rating
+ag,,,,Symbole de l'argent,1,ok,y
+alternatif,nom,,,Synonyme de conventionnel,1,ok,n
+amende,nom,,,Sanction pécuniaire,1,ok,y
+amender,verbe,,,Modifier ou corriger,1,ok,y
+antan,,,,Article,1,ok,n
+ar,,,,Symbole de l'aluminium,1,ok,n
+argument,nom,,,Cause de désaccord,1,ok,b
+as,,,,Article,1,ok,n
+asseoir,verbe,,,S'asseoir confortablement,3,self-reference,n
+au,,,,Article,1,ok,n
+aurore,nom,,,Lever du jour,1,ok,y
+autoritaire,adjectif,,,Dictatorial,1,ok,y
+avoir,nom,,,Article,2,ok,n
+be,,,,Conjonction,1,ok,n
+besoin,nom,,,Nécessité impérieuse,1,ok,y
+br,,,,Symbole du bromure,1,ok,b
+ca,,,,Symbole du Canada,1,ok,n
+ce,,,,Symbole de l'euro,1,ok,n
+chapelle,nom,,,Lieu de culte,1,ok,y
+co,,,,Symbole du carbone,1,ok,n
+contrer,verbe,,,S'opposer à,1,ok,y
+couvrir,verbe,,,Recouvrir d'une surface,3,stem-leak,n
+criminel,nom,,,Auteur d'un délit,1,ok,b
+cuire,verbe,,,Faire passer de l'état de cru à celui de cuit,3,self-reference,n
+demain,nom,,,Jour suivant,1,ok,y
+destructeur,nom,,,Navire de guerre,1,ok,y
+diffus,adjectif,,,Repandre largement,3,unknown-head,n
+différent,adjectif,,,Dissemblable,2,ok,y
+direction,nom,,,Point cardinal,1,ok,b
+dr,,,,Symbole du docteur,1,ok,y
+détourner,verbe,,,Changer de direction,2,ok,y
+en,,,,Article,1,ok,n
+ene,,,,Point cardinal,1,ok,y
+entamer,verbe,,,Commencer à manger,1,ok,b
+ese,,,,Point cardinal,1,ok,y
+fe,,,,Symbole du fer,1,ok,y
+fidèlement,adverbe,,,En toute loyauté,1,ok,y
+hg,,,,Symbole du mercure,1,ok,y
+image,nom,,,Reflet visuel,1,ok,y
+incitation,nom,,,Action d'encourager,1,ok,y
+indubitable,adjectif,,,Incontestable,1,ok,y
+interpréter,verbe,,,Donner une explication,1,ok,y
+kr,,,,Symbole du potassium,1,ok,n
+la,,,,Article,1,ok,y
+ma,,,,Symbole du Massachusetts,1,ok,n
+meurtre,nom,,,Action de tuer quelqu'un,1,ok,y
+mg,,,,Symbole de la marque automobile,1,ok,n
+miracle,nom,,,Acte surnaturel,1,ok,y
+mn,,,,Symbole du Minnesota,1,ok,n
+moins,nom,,,Symbole de soustraction,1,ok,y
+mortalité,nom,,,Taux de décès,1,ok,y
+mr,,,,Titre abrege,1,ok,y
+na,,,,Symbole du sodium,1,ok,y
+nettement,adverbe,,,Franchement et sans équivoque,1,ok,y
+ono,,,,Pronom,1,ok,n
+or,,,,Conjonction,1,ok,y
+oso,,,,Symbole du soufre,1,ok,n
+ouïe,nom,,,Sens de l'audition,1,ok,y
+ouïr,verbe,,,Entendre distinctement,1,ok,y
+ovale,adjectif,,,Forme d'œuf,3,pos-mismatch,y
+pb,,,,Symbole du plomb,1,ok,y
+poète,nom,,,Auteur de vers,1,ok,y
+pr,,,,Symbole du Pays de Galles,1,ok,n
+promontoire,nom,,,Point saillant,1,ok,y
+sa,,,,Article,1,ok,n
+se,,,,Conjonction,1,ok,n
+si,,,,Conjonction,1,ok,y
+sn,,,,Symbole du sélénium,1,ok,n
+spontanéité,nom,,,Impulsivité inattendue,1,ok,b
+st,,,,Symbole du statut,1,ok,n
+ste,,,,Symbole du statut,1,ok,n
+suprême,adjectif,,,Supérieur à tous,1,ok,y
+ta,,,,Symbole du tantalum,1,ok,y
+tardif,adjectif,,,Retardé ou en retard,3,pos-mismatch,n
+ti,,,,Outil informatique,1,ok,n
+truchement,nom,,,Faux témoignage,1,ok,n
+tu,,,,Pronom,1,ok,y
+voir,,,,Percevoir avec les yeux,1,ok,y
+xe,,,,Symbole du franc suisse,1,ok,n
+zn,,,,Symbole du zinc,1,ok,y

@@ -20,6 +20,8 @@ __pycache__/
 # Large/ephemeral data: external dumps, training artefacts
 data/dbnary/
 data/lora/
+data/lora_filter/
 models/
+checkpoints/
 *.gguf
 *.safetensors

@@ -106,6 +106,9 @@ _Last evaluated: 2026-05-03 15:11 UTC_
 | iter5 | **81.2% (self)**                | + v1 prompt: anti-pattern exemplars (✗→✓ pairs from iter4 failures), POS-conditional exemplar blocks |
 | iter6 | (twins-only)                     | + frequency-aware verb-twin emission: when surface dual-tagged (noun + frequent verb), generate clues for both lemmas. User picks. |
 | iter7 | **84.4% (self), 85.6% w/ synonym best-of** | + multi-sense in prompt (numbered list of all clean DBnary senses); + stem-leak validator check (LCP ≥ 5 OR substring containment) |
+| iter8 | **72.6% (L4-L11 only) / 57.5% (all)** | LoRA fine-tune of command-r (08-2024-4bit) on 85 train pairs; iter200 adapter (best val loss); no DBnary at runtime; short prompt (no exemplars); inference at 1.2s/lemma (10× faster than iter7's command-r baseline). L2/L3 chemical-symbol entries from the curated CSV contaminated training — model learned "Symbole du X" pattern but hallucinated which element. |
+| iter9 | **67.5% (n=20)** | iter8 + drop L<4 lemmas, rank 32 (vs default 8), batch 4. 154 train pairs. Best val loss 0.741 at iter 150. Different test set than iter8 (smaller hold-out 20 vs 80) so not directly comparable; but the L2/L3 contamination is gone. |
+| iter10 | **75.0% (n=20)** | iter9 + 400 Claude-authored CC0 synthetic pairs (`data/lora/synthetic_clues.py`). 583 train pairs. Best val loss 0.815 at iter 100 (higher than iter9's because the synthetic data shifted the distribution from the 20-test set). Same 20-lemma test as iter9. **+7.5pp over iter9 from synthetic data**; qualitative wins on `descendre`, `piété`, `sacristie`, `veine` (failures fixed). |
 
 Self-rated baseline runs ~10pp stricter than the user's. The like-for-like
 self-rated comparison (iter3 = 75.6%, iter4 = 68.8%) shows iter4 **regressed**
@@ -308,6 +311,112 @@ samples (top-1000 per length, 4-11 chars, different seeds 20260601-05):
 iter7 sits robustly at the 85% ship threshold. The 2.5pp stdev confirms
 the earlier analysis: any intervention worth measuring at N=80 must
 exceed ~5pp effect to be distinguishable from noise.
+
+## iter8: LoRA fine-tune (no DBnary at inference)
+
+First fine-tuning experiment per the original plan's Phase 4. Goal:
+demonstrate the LoRA workflow end-to-end, see if a fine-tuned model
+can match iter7's quality WITHOUT DBnary at inference.
+
+### Setup
+
+- **Base**: `mlx-community/c4ai-command-r-08-2024-4bit` (32B params, ~17 GB on disk)
+- **Tooling**: mlx-lm 0.31.3, runs natively on Apple Silicon. CLI:
+  `mlx_lm.lora --train --num-layers 16 --batch-size 2 ...`
+- **Corpus**: 259 unique (lemma, clue) pairs across 220 lemmas, deduped
+  on `(lemma, lower(clue))`. Source breakdown:
+  - `data/curated/fr.csv` (CC0): 62 pairs
+  - iter3-iter7 hand-rated `y` outputs: 197 pairs (different valid
+    clues per lemma kept as separate examples — variation, not noise)
+- **License hygiene**: zero DBnary text in training data or runtime
+  prompt. Model output is independent creative work; CC0 seed is
+  unrestricted.
+- **Split**: 80 lemmas held out for test (seed 20260504). Train/valid/test
+  = 85 / 30 / 144 pairs.
+- **Training hyperparams**: rank 16, batch 2, lr 1e-5, 600 iters,
+  steps-per-eval 50, save-every 100. ~7 min wall-clock on MacBook
+  (vs my 3-4h estimate — Apple Silicon faster than expected).
+
+### Results
+
+Loss curve:
+
+| iter | train loss | val loss |
+|---:|---:|---:|
+| 5 | 4.11 | 3.56 |
+| 50 | 0.55 | 0.96 |
+| 100 | 0.53 | 0.94 |
+| **200** | 0.50 | **0.919** ← best val |
+| 300 | 0.49 | 0.93 |
+| 400 | 0.43 | 0.97 |
+| 600 | 0.30 | 0.967 |
+
+Train loss kept dropping while val plateaued/rose after iter 200 —
+classic overfitting on the small (85-pair) corpus. **Promoted iter200
+adapter as the inference checkpoint**.
+
+Acceptance (self-rated, same calibration as iter3-iter7):
+
+| length | n | y | b | n | score |
+|---:|---:|---:|---:|---:|---:|
+| 2 | 33 | 13 | 1 | 19 | 41% |
+| 3 | 5 | 2 | 0 | 3 | 40% |
+| 4 | 3 | 3 | 0 | 0 | 100% |
+| 5 | 7 | 4 | 0 | 3 | 57% |
+| 6 | 6 | 4 | 0 | 2 | 67% |
+| 7 | 8 | 5 | 1 | 2 | 69% |
+| 8 | 3 | 1 | 2 | 0 | 67% |
+| 9 | 5 | 4 | 1 | 0 | 90% |
+| 10 | 4 | 2 | 0 | 2 | 50% |
+| 11 | 6 | 5 | 1 | 0 | 92% |
+
+**All 80 lemmas: 57.5%. L4-L11 only (apples-to-apples with iter7): 72.6%**
+(vs iter7's 84.4% — 12 pp drop).
+
+### Inference performance
+
+- **1.2 sec/lemma** (vs iter7's command-r baseline at ~12 sec/lemma) —
+  10× faster. Driven by short prompt (no anti-pattern exemplars
+  needed — LoRA learned the style) and no DBnary fetch.
+
+### Failure modes specific to iter8
+
+- **L2/L3 chemical-symbol contamination**: the curated CSV had ~30
+  entries like `Hg → "Symbole du mercure"`, `Pb → "Symbole du plomb"`.
+  The LoRA learned the *pattern* `<two-letter token> → "Symbole du X"`
+  but didn't reliably learn *which X*. Output: `mg → "marque
+  automobile"` (it's magnesium), `pr → "Pays de Galles"`
+  (praseodymium), `xe → "franc suisse"` (xenon).
+- **Pattern bleed-through to longer lemmas**: e.g.,
+  `direction → "Point cardinal"` mirrors the L3 `ene → "Point
+  cardinal"` training example. Likely the same token-length-
+  conditioned generalization.
+- **Self-reference / stem-leak still occurring** even though training
+  data was filtered for them: `cuire → "Faire passer ... cuit"`
+  (self), `couvrir → "Recouvrir d'une surface"` (stem),
+  `asseoir → "S'asseoir confortablement"` (self),
+  `tardif → "Retardé ou en retard"` (stem). 85 pairs is too few to
+  internalize the no-self-leak rule — a longer prompt with the rule
+  spelled out (or DPO with `n` examples) would help.
+- **Wrong-meaning hallucinations**: `truchement → "Faux témoignage"`
+  (it's intermediary/spokesperson, not perjury), `alternatif →
+  "Synonyme de conventionnel"` (literally opposite).
+
+### Trade-off summary
+
+| metric | iter7 (no LoRA) | iter8 (LoRA) | delta |
+|---|---|---|---|
+| Acceptance (L4-L11) | 84.4% | 72.6% | -12pp |
+| Inference speed (per lemma) | ~12 s | ~1.2 s | 10× faster |
+| Prompt size | ~1500 tokens | ~30 tokens | 50× smaller |
+| Runtime DBnary dependency | yes | none | clean |
+| License profile | CC BY-SA via DBnary | CC0 + creative outputs | clean |
+
+iter8 demonstrates the LoRA workflow runs end-to-end. The 12pp
+acceptance drop reflects the small corpus (85 train pairs vs the
+plan's 5k threshold). Easily recoverable: re-rate more of the
+existing batch outputs, retrain. iter9 will explore: drop L2/L3 from
+training, rank 32, batch 4.
 
 ## Strategy: four axes for further improvement
 
