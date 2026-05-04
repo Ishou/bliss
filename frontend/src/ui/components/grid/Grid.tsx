@@ -303,47 +303,77 @@ export function Grid({
   const [isZoomedIn, setIsZoomedIn] = useState(false);
   const [isMaxZoom, setIsMaxZoom] = useState(false);
   const [isPanning, setIsPanning] = useState(false);
+  // Tracks the prior frame's scale so we can detect the "crossed back
+  // down to 1" transition exactly once and snap to centre. Lives outside
+  // React state because rapid wheel notches would otherwise create
+  // setState churn.
+  const previousScaleRef = useRef(1);
   const handleZoomStart = useCallback(() => {
     zoomingRef.current = true;
     if (cellToRestoreRef.current === null) blurFocusedCell();
   }, [blurFocusedCell]);
   const handleZoomStop = useCallback(() => {
     zoomingRef.current = false;
-    // Snap-to-center when the user wheel-zooms back down to scale 1.
-    // Without this the grid stays where it was last panned to and just
-    // shrinks in place; expectation (mirroring "reset") is that scale 1
-    // means "centered & full". `centerView(1, 0)` is instant; the
-    // visible delay before applying it is one debounce tick from the
-    // library, which is acceptable.
-    const ref = transformWrapperRef.current;
-    if (ref && ref.state.scale <= 1.01) {
-      ref.centerView(1, 0);
-    }
     restoreCellFocus();
   }, [restoreCellFocus]);
   // `onTransform` fires on every frame the library applies a transform
   // (wheel notch, pinch step, button click animation). We use it to
   // keep `isZoomedIn` / `isMaxZoom` in step with the live scale —
   // `onZoomStop` alone debounces too long and the buttons' enabled
-  // state visibly lags the cursor's `grab` cue. 0.01 epsilon mirrors
-  // the threshold elsewhere; 4 is the `maxScale` prop on
-  // TransformWrapper below — must stay in sync.
+  // state visibly lags the cursor's `grab` cue. We also snap the grid
+  // back to centre the moment scale crosses 1 on the way down: doing
+  // this here (vs in `onZoomStop`) avoids the ~1s delay before the
+  // library's debounced stop fires. Guard with a ref so we only call
+  // `centerView` once per crossing — calling it every frame would
+  // trigger a recursive transform loop. 0.01 epsilon mirrors the
+  // threshold elsewhere; 4 is the `maxScale` prop on TransformWrapper
+  // below — must stay in sync.
   const handleTransform = useCallback(
-    (_ref: unknown, state: { scale: number }) => {
+    (_ref: { state: { scale: number } }, state: { scale: number }) => {
       setIsZoomedIn(state.scale > 1.01);
       setIsMaxZoom(state.scale >= 4 - 0.01);
+      if (state.scale <= 1.01 && previousScaleRef.current > 1.01) {
+        const tw = transformWrapperRef.current;
+        // 150 ms matches the button-driven zoom animation; an instant
+        // snap (`0`) felt jarring relative to the rest of the gestures.
+        // `previousScaleRef` already records the current scale below,
+        // so we don't re-trigger this branch on subsequent frames.
+        if (tw) tw.centerView(1, 150);
+      }
+      previousScaleRef.current = state.scale;
     },
     [],
   );
-  const handlePanningStart = useCallback(() => {
-    panningRef.current = true;
-    setIsPanning(true);
-    if (cellToRestoreRef.current === null) blurFocusedCell();
-  }, [blurFocusedCell]);
+  // Tracks whether the current pan was started by a touch event (the
+  // only case where the blur+restore dance is needed — iOS Safari's
+  // native focus-snap fights the library's CSS transform). On a mouse
+  // pan we leave focus alone: the user dragged to look at a different
+  // region, restoring focus would feel like the grid "snapping back"
+  // even when preventScroll: true keeps the visual position. `null`
+  // means "no pan in progress".
+  const panTouchRef = useRef<boolean | null>(null);
+  const handlePanningStart = useCallback(
+    (_ref: unknown, event: TouchEvent | MouseEvent) => {
+      panningRef.current = true;
+      setIsPanning(true);
+      // Detect touch via `event.type` prefix (`touchstart`/`touchmove`).
+      // Idiomatic alternatives (`instanceof TouchEvent`, `'touches' in
+      // event`) fail in jsdom: the test runtime doesn't define
+      // TouchEvent the same way browsers do, and bare Event objects
+      // lack the `touches` property even when synthesised with type
+      // 'touchstart'. The `type` string is what every event-loop
+      // implementation does carry, so it's the most portable check.
+      const isTouch = event?.type?.startsWith('touch') ?? false;
+      panTouchRef.current = isTouch;
+      if (isTouch && cellToRestoreRef.current === null) blurFocusedCell();
+    },
+    [blurFocusedCell],
+  );
   const handlePanningStop = useCallback(() => {
     panningRef.current = false;
     setIsPanning(false);
-    restoreCellFocus();
+    if (panTouchRef.current === true) restoreCellFocus();
+    panTouchRef.current = null;
   }, [restoreCellFocus]);
 
   // Capture-phase focusin listener on the grid frame: if the user taps

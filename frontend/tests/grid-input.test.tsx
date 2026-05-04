@@ -8,7 +8,9 @@ import { useGridNavigation } from '@/ui/components/grid/useGridNavigation';
 type GestureCallbacks = {
   onZoomStart?: () => void;
   onZoomStop?: () => void;
-  onPanningStart?: () => void;
+  // The production handler reads `event.type` to discriminate touch vs
+  // mouse pan, so the mock must forward the event arg through.
+  onPanningStart?: (event?: { type?: string } | null) => void;
   onPanningStop?: () => void;
 };
 const capturedCb = vi.hoisted((): { current: GestureCallbacks } => ({ current: {} }));
@@ -22,7 +24,11 @@ vi.mock('react-zoom-pan-pinch', async (importActual) => {
       capturedCb.current = {
         onZoomStart: onZoomStart as (() => void) | undefined,
         onZoomStop: onZoomStop as (() => void) | undefined,
-        onPanningStart: onPanningStart as (() => void) | undefined,
+        // Production passes (ref, event); we forward the event via a
+        // 1-arg shim that matches the mock surface.
+        onPanningStart: onPanningStart
+          ? (event) => (onPanningStart as unknown as (r: unknown, e: unknown) => void)(null, event)
+          : undefined,
         onPanningStop: onPanningStop as (() => void) | undefined,
       };
       return <ActualTransformWrapper {...rest}>{children}</ActualTransformWrapper>;
@@ -881,14 +887,34 @@ describe('Grid blur-on-gesture coordination', () => {
     expect(document.activeElement).toBe(inputAt(container, 1, 1));
   });
 
-  it('blurs on panning start and restores on panning stop', () => {
+  it('blurs on panning start and restores on panning stop (touch)', () => {
+    // The blur+restore dance is iOS-specific (avoids the native
+    // focus-snap fight during a CSS-transformed pan). Mouse pan no
+    // longer blurs — we leave focus alone on desktop because the
+    // user's pan was deliberate. Pass a TouchEvent so the production
+    // signature (`(_ref, event)`) treats this as the touch path.
+    const touchEvent = { type: 'touchstart' };
     const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
     const target = inputAt(container, 1, 1)!;
     act(() => { click(target); });
-    act(() => { capturedCb.current.onPanningStart!(); });
+    act(() => { capturedCb.current.onPanningStart!(touchEvent); });
     expect(document.activeElement).not.toBe(target);
     act(() => { capturedCb.current.onPanningStop!(); });
     expect(document.activeElement).toBe(inputAt(container, 1, 1));
+  });
+
+  it('does not blur on a mouse-driven pan (desktop)', () => {
+    // Desktop pan must leave focus alone — the user dragged to look
+    // at a different region; restoring focus would feel like the
+    // grid snapping back even with `preventScroll: true`.
+    const mouseEvent = { type: 'mousedown' };
+    const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
+    const target = inputAt(container, 1, 1)!;
+    act(() => { click(target); });
+    act(() => { capturedCb.current.onPanningStart!(mouseEvent); });
+    expect(document.activeElement).toBe(target);
+    act(() => { capturedCb.current.onPanningStop!(); });
+    expect(document.activeElement).toBe(target);
   });
 
   it('does not restore focus when the user clicks a different cell during the gesture', () => {
@@ -918,15 +944,16 @@ describe('Grid blur-on-gesture coordination', () => {
     expect(document.activeElement).toBe(document.body);
   });
 
-  it('keeps the cell blurred while a panning gesture chains after a zoom (both flags must clear)', () => {
+  it('keeps the cell blurred while a touch panning gesture chains after a zoom (both flags must clear)', () => {
     // iOS can transition pinch → pan without firing onZoomStop strictly
     // before onPanningStart. Verify only the LAST stop triggers the
     // restore.
+    const touchEvent = { type: 'touchstart' };
     const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
     const target = inputAt(container, 1, 1)!;
     act(() => { click(target); });
     act(() => { capturedCb.current.onZoomStart!(); });
-    act(() => { capturedCb.current.onPanningStart!(); });
+    act(() => { capturedCb.current.onPanningStart!(touchEvent); });
     // Zoom ends but pan still active — must NOT restore yet.
     act(() => { capturedCb.current.onZoomStop!(); });
     expect(document.activeElement).not.toBe(target);
