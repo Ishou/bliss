@@ -344,37 +344,19 @@ export function Grid({
     },
     [],
   );
-  // Tracks whether the current pan was started by a touch event (the
-  // only case where the blur+restore dance is needed — iOS Safari's
-  // native focus-snap fights the library's CSS transform). On a mouse
-  // pan we leave focus alone: the user dragged to look at a different
-  // region, restoring focus would feel like the grid "snapping back"
-  // even when preventScroll: true keeps the visual position. `null`
-  // means "no pan in progress".
-  const panTouchRef = useRef<boolean | null>(null);
-  const handlePanningStart = useCallback(
-    (_ref: unknown, event: TouchEvent | MouseEvent) => {
-      panningRef.current = true;
-      setIsPanning(true);
-      // Detect touch via `event.type` prefix (`touchstart`/`touchmove`).
-      // Idiomatic alternatives (`instanceof TouchEvent`, `'touches' in
-      // event`) fail in jsdom: the test runtime doesn't define
-      // TouchEvent the same way browsers do, and bare Event objects
-      // lack the `touches` property even when synthesised with type
-      // 'touchstart'. The `type` string is what every event-loop
-      // implementation does carry, so it's the most portable check.
-      const isTouch = event?.type?.startsWith('touch') ?? false;
-      panTouchRef.current = isTouch;
-      if (isTouch && cellToRestoreRef.current === null) blurFocusedCell();
-    },
-    [blurFocusedCell],
-  );
+  // Pan never affects focus: the focused cell stays focused and stays
+  // visually highlighted throughout the gesture, and ends with no
+  // restoration logic to second-guess. iOS Safari's native focus-snap
+  // is still a risk here (it fights the library's CSS transform) but
+  // the user has explicitly chosen that we don't blur for pan.
+  const handlePanningStart = useCallback(() => {
+    panningRef.current = true;
+    setIsPanning(true);
+  }, []);
   const handlePanningStop = useCallback(() => {
     panningRef.current = false;
     setIsPanning(false);
-    if (panTouchRef.current === true) restoreCellFocus();
-    panTouchRef.current = null;
-  }, [restoreCellFocus]);
+  }, []);
 
   // Capture-phase focusin listener on the grid frame: if the user taps
   // a different cell mid-gesture, drop the to-restore intent so we
@@ -563,6 +545,10 @@ export function Grid({
           to pan" via a small movement threshold, so cell focus on click
           still works. Cursor is `grab` when zoomed and `grabbing` while
           dragging (driven by `isZoomedIn` / `panningRef`).
+        - `panning.disabled` is reactively bound to `!isZoomedIn` —
+          panning only makes sense when the grid is wider than the
+          viewport (i.e. scale > 1). At scale 1 we keep clicks for
+          cell focus and avoid any drag-as-pan ambiguity.
       */}
       <TransformWrapper
         ref={transformWrapperRef}
@@ -572,7 +558,7 @@ export function Grid({
         centerOnInit
         wheel={{ step: 0.05 }}
         doubleClick={{ disabled: true }}
-        panning={{ velocityDisabled: true, allowLeftClickPan: true }}
+        panning={{ velocityDisabled: true, allowLeftClickPan: true, disabled: !isZoomedIn }}
         // Blur-on-gesture: iOS Safari fights pinch / pan with a native
         // focus-snap (auto-scrolls / zooms to keep the focused <input>
         // visible during any layout change, including the library's
