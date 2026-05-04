@@ -71,11 +71,25 @@ class MorphologyIndex:
     def lookup_form(self, surface: str) -> list[tuple[str, frozenset[str]]]:
         return self.by_form.get(surface.lower(), [])
 
-    def inflect(self, lemma: str, target_tags: Iterable[str]) -> str | None:
+    def inflect(self, lemma: str, target_tags: Iterable[str],
+                prefer_pos: str = "") -> str | None:
+        """Look up an inflected form of `lemma` matching `target_tags`.
+
+        `prefer_pos` ("nom" / "adj" / "verbe") prefers rows with the
+        matching POS marker. For adj-target this is critical: `inflect("fin",
+        {fem, pl})` would otherwise return the noun-form `fins` (the rows
+        iterate noun-first), but `prefer_pos="adj"` prefers the adj-tagged
+        row and yields `fines`. For nom-target we prefer rows carrying the
+        `nom` tag — that's the common case (most nouns also carry `adj`
+        because they have a 4-form paradigm; the `adj` tag in grammalecte
+        marks paradigm shape, not POS).
+        """
         target = {t for t in target_tags if not _is_verb_paradigm_tag(t)}
-        # Gender: epi (epicene) entries satisfy a mas-or-fem request.
         wants_gender = target & GENDER_TOKENS
         target_no_gender = target - GENDER_TOKENS
+
+        primary: str | None = None
+        fallback: str | None = None
         for surface, tags in self.by_lemma.get(lemma.lower(), []):
             if not target_no_gender.issubset(tags):
                 continue
@@ -83,8 +97,21 @@ class MorphologyIndex:
                 tag_genders = tags & GENDER_TOKENS
                 if not (wants_gender & tag_genders or "epi" in tag_genders):
                     continue
-            return surface
-        return None
+            if prefer_pos == "adj":
+                is_primary = "adj" in tags
+            elif prefer_pos == "nom":
+                is_primary = "nom" in tags
+            elif prefer_pos == "verbe":
+                is_primary = any(_is_verb_paradigm_tag(t) for t in tags)
+            else:
+                is_primary = True
+            if is_primary:
+                if primary is None:
+                    primary = surface
+            else:
+                if fallback is None:
+                    fallback = surface
+        return primary or fallback
 
     def pos_of_form(self, surface: str) -> str:
         """Return 'verbe' / 'nom' / 'adj' / '' — the dominant POS class of the
@@ -121,6 +148,12 @@ class MorphologyIndex:
 
 
 def _classify(tags: frozenset[str]) -> str:
+    """Classify a row's primary POS. Grammalecte's `adj` tag marks the
+    4-form paradigm (mas/fem × sg/pl), and `nom` marks "can head a noun
+    phrase". A pure noun like `table` has nom only; a pure adj like
+    `barbant` has adj only; common nouns (chien, tracteur) and
+    substantivizable adjs (humain, petit) carry both. We treat presence
+    of `nom` as the dominant signal — that's why `chien` is a noun."""
     for t in tags:
         if t.startswith(POS_VERB_PREFIX) and len(t) > 1 and t[1].isdigit():
             return "verbe"
