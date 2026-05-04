@@ -1,7 +1,7 @@
 word,language,length,frequency,difficulty,clue,source,source_license,lemma
 CC,fr,2,100000,,C + C,bliss,CC0-1.0,CC
 CD,fr,2,100000,,D - C,bliss,CC0-1.0,CD
-CI,fr,2,100000,,L + LI,bliss,CC0-1.0,CI
+CI,fr,2,100000,,Adverbe de lieu proche,bliss,CC0-1.0,CI
 CL,fr,2,100000,,CC - L,bliss,CC0-1.0,CL
 CM,fr,2,100000,,M - C,bliss,CC0-1.0,CM
 CV,fr,2,100000,,CX - V,bliss,CC0-1.0,CV
@@ -26,7 +26,7 @@ MV,fr,2,100000,,MX - V,bliss,CC0-1.0,MV
 MX,fr,2,100000,,D + DX,bliss,CC0-1.0,MX
 VI,fr,2,100000,,X - IV,bliss,CC0-1.0,VI
 XC,fr,2,100000,,C - X,bliss,CC0-1.0,XC
-XI,fr,2,100000,,V + VI,bliss,CC0-1.0,XI
+XI,fr,2,100000,,Lettre grecque,bliss,CC0-1.0,XI
 XL,fr,2,100000,,L - X,bliss,CC0-1.0,XL
 XV,fr,2,100000,,XX - V,bliss,CC0-1.0,XV
 XX,fr,2,100000,,X + X,bliss,CC0-1.0,XX
@@ -46456,7 +46456,7 @@ ils,fr,3,0,,Pronom masculin pluriel,bliss,CC0-1.0,ils
 les,fr,3,0,,Article défini pluriel,bliss,CC0-1.0,les
 lu,fr,2,0,,Participe de lire,bliss,CC0-1.0,lu
 me,fr,2,0,,Pronom personnel,bliss,CC0-1.0,me
-mu,fr,2,0,,Mis en mouvement,bliss,CC0-1.0,mu
+mu,fr,2,0,,Lettre grecque,bliss,CC0-1.0,mu
 ô,fr,1,0,,Interjection lyrique,bliss,CC0-1.0,ô
 oh,fr,2,0,,Cri d'étonnement,bliss,CC0-1.0,oh
 ré,fr,2,0,,Note de musique,bliss,CC0-1.0,ré
@@ -46501,7 +46501,7 @@ cri,fr,3,0,,Vocalisation forte,bliss,CC0-1.0,cri
 cru,fr,3,0,,Vin d'un terroir,bliss,CC0-1.0,cru
 cul,fr,3,0,,Postérieur familier,bliss,CC0-1.0,cul
 dam,fr,3,0,,Préjudice subi,bliss,CC0-1.0,dam
-duc,fr,3,0,,Titre de noblesse,bliss,CC0-1.0,duc
+duc,fr,3,0,,Titre nobiliaire,bliss,CC0-1.0,duc
 dur,fr,3,0,,Solide et résistant,bliss,CC0-1.0,dur
 eau,fr,3,0,,Liquide vital,bliss,CC0-1.0,eau
 élu,fr,3,0,,Mandataire choisi,bliss,CC0-1.0,élu
@@ -46607,3 +46607,58 @@ vos,fr,3,0,,Possessif pluriel,bliss,CC0-1.0,vos
 vue,fr,3,0,,Sens visuel,bliss,CC0-1.0,vue
 yen,fr,3,0,,Monnaie japonaise,bliss,CC0-1.0,yen
 zoo,fr,3,0,,Parc animalier,bliss,CC0-1.0,zoo
+nu,fr,2,100000,,Sans vêtement ou lettre grecque,bliss,CC0-1.0,nu
+pi,fr,2,100000,,Constante mathématique grecque,bliss,CC0-1.0,pi
+bu,fr,2,100000,,Participe de boire,bliss,CC0-1.0,bu
+dé,fr,2,100000,,Cube à six faces,bliss,CC0-1.0,dé
+dû,fr,2,100000,,Ce que l'on doit,bliss,CC0-1.0,dû
+eh,fr,2,100000,,Interjection d'appel,bliss,CC0-1.0,eh
+ex,fr,2,100000,,Ancien partenaire,bliss,CC0-1.0,ex
+fa,fr,2,100000,,Note de musique,bliss,CC0-1.0,fa
+ha,fr,2,100000,,Cri d'étonnement,bliss,CC0-1.0,ha
+là,fr,2,100000,,Adverbe de lieu,bliss,CC0-1.0,là
+né,fr,2,100000,,Venu au monde,bliss,CC0-1.0,né
+où,fr,2,100000,,Adverbe de lieu interrogatif,bliss,CC0-1.0,où
+pu,fr,2,100000,,Participe de pouvoir,bliss,CC0-1.0,pu
+ra,fr,2,100000,,Dieu solaire égyptien,bliss,CC0-1.0,ra
+té,fr,2,100000,,Règle d'équerre ou note,bliss,CC0-1.0,té
+ut,fr,2,100000,,Ancienne note de musique,bliss,CC0-1.0,ut
+tau,fr,3,100000,,Lettre grecque (19e),bliss,CC0-1.0,tau
+phi,fr,3,100000,,Lettre grecque (21e),bliss,CC0-1.0,phi
+psi,fr,3,100000,,Lettre grecque (23e),bliss,CC0-1.0,psi
+rho,fr,3,100000,,Lettre grecque (17e),bliss,CC0-1.0,rho
+khi,fr,3,100000,,Lettre grecque (22e),bliss,CC0-1.0,khi
+êta,fr,3,100000,,Lettre grecque (7e),bliss,CC0-1.0,êta
+âme,fr,3,100000,,Partie immatérielle de l'être,bliss,CC0-1.0,âme
+ave,fr,3,100000,,Salutation latine,bliss,CC0-1.0,ave
+bey,fr,3,100000,,Titre ottoman,bliss,CC0-1.0,bey
+dey,fr,3,100000,,Souverain d'Alger,bliss,CC0-1.0,dey
+dom,fr,3,100000,,Titre religieux,bliss,CC0-1.0,dom
+ego,fr,3,100000,,Le moi conscient,bliss,CC0-1.0,ego
+ère,fr,3,100000,,Longue période historique,bliss,CC0-1.0,ère
+eut,fr,3,100000,,Posséda jadis,bliss,CC0-1.0,eut
+fut,fr,3,100000,,Tonneau ou verbe être,bliss,CC0-1.0,fut
+gag,fr,3,100000,,Trait comique,bliss,CC0-1.0,gag
+gin,fr,3,100000,,Alcool britannique,bliss,CC0-1.0,gin
+gnu,fr,3,100000,,Bovidé africain,bliss,CC0-1.0,gnu
+hue,fr,3,100000,,Cri pour faire avancer,bliss,CC0-1.0,hue
+ire,fr,3,100000,,Colère soutenue,bliss,CC0-1.0,ire
+lia,fr,3,100000,,Attacha jadis,bliss,CC0-1.0,lia
+mué,fr,3,100000,,Qui a changé,bliss,CC0-1.0,mué
+nia,fr,3,100000,,Refusa jadis,bliss,CC0-1.0,nia
+ode,fr,3,100000,,Poème lyrique,bliss,CC0-1.0,ode
+ohé,fr,3,100000,,Interjection d'appel,bliss,CC0-1.0,ohé
+ost,fr,3,100000,,Armée féodale,bliss,CC0-1.0,ost
+ouf,fr,3,100000,,Soupir de soulagement,bliss,CC0-1.0,ouf
+pur,fr,3,100000,,Sans mélange,bliss,CC0-1.0,pur
+rab,fr,3,100000,,Supplément servi,bliss,CC0-1.0,rab
+ria,fr,3,100000,,Estuaire breton,bliss,CC0-1.0,ria
+rio,fr,3,100000,,Rivière espagnole,bliss,CC0-1.0,rio
+ris,fr,3,100000,,Glande du veau,bliss,CC0-1.0,ris
+rob,fr,3,100000,,Sirop concentré,bliss,CC0-1.0,rob
+tao,fr,3,100000,,Doctrine chinoise,bliss,CC0-1.0,tao
+toc,fr,3,100000,,Imitation grossière,bliss,CC0-1.0,toc
+tuf,fr,3,100000,,Roche volcanique tendre,bliss,CC0-1.0,tuf
+yak,fr,3,100000,,Bovin tibétain,bliss,CC0-1.0,yak
+zen,fr,3,100000,,Calme et serein,bliss,CC0-1.0,zen
+zig,fr,3,100000,,Type d'individu,bliss,CC0-1.0,zig
