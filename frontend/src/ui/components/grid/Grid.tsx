@@ -465,9 +465,11 @@ export function Grid({
         - `centerOnInit` — first paint puts the grid centered in the
           wrapper. Without this the library can leave a small offset from
           its bounds-padding logic on certain initial sizes.
-        - `wheel.disabled` — desktop mouse wheel scrolls the page (the
-          natural expectation), not zooms the grid. Pinch on a trackpad
-          still zooms, which is the desktop equivalent of mobile pinch.
+        - `wheel.step: 0.15` — desktop mouse wheel zooms the grid (an
+          explicit user request). The default 0.2 felt jumpy; 0.15 is a
+          smoother feel close to native trackpad pinch. To gate behind a
+          modifier (ctrl+wheel = zoom, plain wheel = page scroll) set
+          `activationKeys: ['Control', 'Meta']`.
         - `doubleClick.disabled` — a double-tap on a cell would otherwise
           zoom-in on that cell, fighting the focus + cursor behavior we
           rely on for letter input. Disabled keeps taps purely about focus.
@@ -487,7 +489,7 @@ export function Grid({
         maxScale={4}
         initialScale={1}
         centerOnInit
-        wheel={{ disabled: true }}
+        wheel={{ step: 0.15 }}
         doubleClick={{ disabled: true }}
         panning={{ velocityDisabled: true, allowLeftClickPan: false }}
         // Blur-on-gesture: iOS Safari fights pinch / pan with a native
