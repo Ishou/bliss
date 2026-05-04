@@ -10,6 +10,7 @@ import type { Cell, Position, Puzzle } from '@/domain';
 import type { Player, SessionId } from '@/domain/game';
 import { BlockCellView, DefinitionCellView, LetterCellView } from './Cell';
 import { CurrentCluePanel } from './CurrentCluePanel';
+import { GridZoomControls } from './GridZoomControls';
 import { PresenceOverlay } from './PresenceOverlay';
 import { useGridNavigation, type Direction } from './useGridNavigation';
 
@@ -63,6 +64,16 @@ const transformWrapperBaseStyle = {
 // The library composes its `transform: translate3d() scale()` on top of
 // any inline style we pass, so width here is preserved.
 const transformContentStyle = { width: '100%' };
+
+// Outer relative box: same width / max-width as the TransformWrapper so
+// the absolutely-positioned `GridZoomControls` cluster anchors to the
+// grid's visible bounds (top-right corner) rather than the page.
+const gridZoomShell = css({
+  position: 'relative',
+  width: '100%',
+  maxWidth: '480px',
+  margin: '0 auto',
+});
 
 // Lower bound on the keyboard-aware wrapper max-height. Below this
 // (a one-row peek into a 5+ row grid) the grid is too cramped to be
@@ -286,12 +297,14 @@ export function Grid({
     el.focus();
   }, []);
 
-  // Reactive copy of the library's `state.scale`. Used to flip
-  // `touch-action: pan-y ↔ none` so vertical swipes scroll the page when
-  // the grid is at rest and pan the grid once the user has zoomed in.
-  // ~1.01 epsilon mirrors the threshold used elsewhere in the file for
-  // the same "is the user actively zoomed?" question.
+  // Reactive copies of the library's gesture state, used to drive style
+  // changes that need to re-render (touch-action, cursor). The refs above
+  // (`zoomingRef`, `panningRef`) stay for the gesture-blur logic that
+  // must never cause a re-render. ~1.01 scale epsilon mirrors the
+  // threshold used elsewhere in the file for "is the user zoomed?".
   const [isZoomedIn, setIsZoomedIn] = useState(false);
+  const [isMaxZoom, setIsMaxZoom] = useState(false);
+  const [isPanning, setIsPanning] = useState(false);
   const handleZoomStart = useCallback(() => {
     zoomingRef.current = true;
     if (cellToRestoreRef.current === null) blurFocusedCell();
@@ -300,14 +313,20 @@ export function Grid({
     zoomingRef.current = false;
     const scale = transformWrapperRef.current?.state.scale ?? 1;
     setIsZoomedIn(scale > 1.01);
+    // 0.01 epsilon mirrors the zoomed-in threshold; 4 is the
+    // `maxScale` prop on TransformWrapper below — these have to stay
+    // in sync.
+    setIsMaxZoom(scale >= 4 - 0.01);
     restoreCellFocus();
   }, [restoreCellFocus]);
   const handlePanningStart = useCallback(() => {
     panningRef.current = true;
+    setIsPanning(true);
     if (cellToRestoreRef.current === null) blurFocusedCell();
   }, [blurFocusedCell]);
   const handlePanningStop = useCallback(() => {
     panningRef.current = false;
+    setIsPanning(false);
     restoreCellFocus();
   }, [restoreCellFocus]);
 
@@ -413,12 +432,16 @@ export function Grid({
   const transformWrapperStyle = useMemo(
     () => {
       const touchAction = isZoomedIn ? 'none' : 'pan-y';
-      const base = { ...transformWrapperBaseStyle, touchAction } as const;
+      // Cursor telegraphs "draggable to pan" on desktop. Only meaningful
+      // once zoomed in (at scale 1 there's nothing to pan to). While the
+      // user is mid-drag, switch to `grabbing` for the closed-fist feel.
+      const cursor = isPanning ? 'grabbing' : (isZoomedIn ? 'grab' : 'auto');
+      const base = { ...transformWrapperBaseStyle, touchAction, cursor } as const;
       return wrapperMaxHeightPx === null
         ? base
         : { ...base, maxHeight: `${wrapperMaxHeightPx}px` };
     },
-    [wrapperMaxHeightPx, isZoomedIn],
+    [wrapperMaxHeightPx, isZoomedIn, isPanning],
   );
 
   // Wire the inbound multiplayer path. Stable across renders because the
@@ -488,13 +511,14 @@ export function Grid({
         - `panning.velocityDisabled` — momentum/inertia after a flick
           feels disorienting in a fixed-content puzzle (you expect the
           grid to land where your finger lifts).
-        - `panning.allowLeftClickPan: false` — prevents desktop left-click
-          drag from initiating a pan (would conflict with future
-          drag-to-select features and is unnecessary at scale 1, the
-          default desktop state). One-finger touch panning still works
-          on mobile because that flows through the touch handlers, not
-          the mouse handlers.
+        - `panning.allowLeftClickPan: true` — desktop left-click drag
+          pans the grid, mirroring one-finger touch pan on mobile. The
+          library distinguishes "click on cell" (no movement) from "drag
+          to pan" via a small movement threshold, so cell focus on click
+          still works. Cursor is `grab` when zoomed and `grabbing` while
+          dragging (driven by `isZoomedIn` / `panningRef`).
       */}
+      <div className={gridZoomShell}>
       <TransformWrapper
         ref={transformWrapperRef}
         minScale={1}
@@ -503,7 +527,7 @@ export function Grid({
         centerOnInit
         wheel={{ step: 0.15 }}
         doubleClick={{ disabled: true }}
-        panning={{ velocityDisabled: true, allowLeftClickPan: false }}
+        panning={{ velocityDisabled: true, allowLeftClickPan: true }}
         // Blur-on-gesture: iOS Safari fights pinch / pan with a native
         // focus-snap (auto-scrolls / zooms to keep the focused <input>
         // visible during any layout change, including the library's
@@ -597,6 +621,14 @@ export function Grid({
           </div>
         </TransformComponent>
       </TransformWrapper>
+      <GridZoomControls
+        canZoomIn={!isMaxZoom}
+        canZoomOut={isZoomedIn}
+        onZoomIn={() => transformWrapperRef.current?.zoomIn()}
+        onZoomOut={() => transformWrapperRef.current?.zoomOut()}
+        onReset={() => transformWrapperRef.current?.resetTransform()}
+      />
+      </div>
     </>
   );
 }
