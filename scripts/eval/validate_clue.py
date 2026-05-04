@@ -174,6 +174,16 @@ def validate_lemma_clue(
     if not clue.strip():
         return ValidationResult("no-head", "empty clue")
 
+    # Pixel-fit gate (the no-overflow contract). Loaded lazily so callers
+    # without Pillow installed don't pay an import cost; clue_metrics is
+    # cheap once loaded.
+    from clue_metrics import fits_single_cell  # noqa: PLC0415
+    if not fits_single_cell(clue.strip()):
+        return ValidationResult(
+            "too-long",
+            "clue overflows the reference single-clue cell at 0.18 ratio",
+        )
+
     head = _find_head(clue)
     if not head:
         return ValidationResult("no-head", "no content word in clue")

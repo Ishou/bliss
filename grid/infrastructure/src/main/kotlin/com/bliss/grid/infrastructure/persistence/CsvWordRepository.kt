@@ -86,6 +86,7 @@ class CsvWordRepository(
         private val REQUIRED_HEADERS =
             listOf("word", "language", "length", "frequency", "difficulty", "clue", "source", "source_license")
         private const val OPTIONAL_LEMMA_HEADER = "lemma"
+        private const val OPTIONAL_COMPACT_HEADER = "compact"
 
         /**
          * Frequency cutoff applied at load time. Drops the long tail of rare/technical
@@ -153,14 +154,16 @@ class CsvWordRepository(
             headers: List<String>,
             path: String,
         ) {
-            // Accept either the legacy 8-column header or the same 8 columns
-            // followed by `lemma`. Anything else (renamed, reordered, missing
-            // a required column) is hand-edited corruption — fail fast.
+            // Accept any of: legacy 8 cols, 8 + lemma, 8 + lemma + compact.
+            // Anything else is hand-edited corruption — fail fast.
             val matchesLegacy = headers == REQUIRED_HEADERS
             val matchesWithLemma = headers == REQUIRED_HEADERS + OPTIONAL_LEMMA_HEADER
-            require(matchesLegacy || matchesWithLemma) {
+            val matchesWithCompact =
+                headers == REQUIRED_HEADERS + OPTIONAL_LEMMA_HEADER + OPTIONAL_COMPACT_HEADER
+            require(matchesLegacy || matchesWithLemma || matchesWithCompact) {
                 "CSV $path header mismatch — expected $REQUIRED_HEADERS " +
-                    "(optionally followed by '$OPTIONAL_LEMMA_HEADER'), got $headers"
+                    "(optionally followed by '$OPTIONAL_LEMMA_HEADER', then " +
+                    "'$OPTIONAL_COMPACT_HEADER'), got $headers"
             }
         }
 
@@ -197,7 +200,20 @@ class CsvWordRepository(
                     ?.let(::foldToAscii)
                     ?.takeIf { it.all { ch -> ch in 'A'..'Z' } }
                     ?: folded
-            return Word(text = folded, definition = clue, lemma = foldedLemma) to frequency
+            // Compact column is optional; defaults to true (a missing/blank
+            // value is treated as "fits stacked" so legacy CSVs keep working).
+            // Only an explicit "false" disqualifies the clue from stacked
+            // placement — the grid generator uses this to gate two-clue cells.
+            val compact =
+                if (OPTIONAL_COMPACT_HEADER in record.parser.headerNames) {
+                    record.get(OPTIONAL_COMPACT_HEADER).trim().lowercase() != "false"
+                } else {
+                    true
+                }
+            return Word(
+                text = folded, definition = clue, lemma = foldedLemma,
+                compact = compact,
+            ) to frequency
         }
 
         private val DIACRITICS = "\\p{InCombiningDiacriticalMarks}+".toRegex()

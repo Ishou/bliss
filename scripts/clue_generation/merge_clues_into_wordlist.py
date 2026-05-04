@@ -40,16 +40,22 @@ def main() -> None:
         except ValueError:
             return False
 
-    surface_clue: dict[str, str] = {}
+    # surface_lower -> (clue_text, compact_bool_str)
+    surface_clue: dict[str, tuple[str, str]] = {}
     with args.shipped.open(encoding="utf-8", newline="") as f:
         for r in csv.DictReader(f):
             if keep(r):
-                surface_clue[r["surface"].lower()] = r["clue"]
+                surface_clue[r["surface"].lower()] = (
+                    r["clue"], r.get("compact", "false")
+                )
     if args.include_dropped:
         with args.dropped.open(encoding="utf-8", newline="") as f:
             for r in csv.DictReader(f):
                 if keep(r):
-                    surface_clue.setdefault(r["surface"].lower(), r["clue"])
+                    surface_clue.setdefault(
+                        r["surface"].lower(),
+                        (r["clue"], r.get("compact", "false")),
+                    )
     print(f"surface clues available (score >= {args.min_score}): {len(surface_clue)}")
 
     # Backup, then rewrite in place.
@@ -58,12 +64,22 @@ def main() -> None:
         rows = list(csv.DictReader(f))
         fieldnames = list(rows[0].keys())
 
+    # Add `compact` column if missing. All curated short-fr / fr / roman2
+    # entries are stamped compact=true (≤ 3 chars always fits the stacked
+    # half-cell at any reasonable font size).
+    if "compact" not in fieldnames:
+        fieldnames.append("compact")
+        for r in rows:
+            r["compact"] = "true"
+
     updated = 0
     for r in rows:
         word = r.get("word", "").strip().lower()
-        clue = surface_clue.get(word)
-        if clue:
+        entry = surface_clue.get(word)
+        if entry:
+            clue, compact = entry
             r["clue"] = clue
+            r["compact"] = compact
             updated += 1
 
     with args.wordlist.open("w", encoding="utf-8", newline="") as f:

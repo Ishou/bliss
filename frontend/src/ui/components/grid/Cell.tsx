@@ -12,10 +12,15 @@ import { FitText } from './FitText';
 // Clue text size bounds (px). Floors keep clues legible on dense grids;
 // ceilings prevent a 3-letter clue ("rai") from ballooning past the cell.
 // Stacked clues split the cell vertically, so their ceiling is lower.
-const SINGLE_MIN = 9;
-const SINGLE_MAX = 22;
-const STACK_MIN = 8;
-const STACK_MAX = 16;
+// Font-size ratios as fractions of the cell's `clientWidth`. The floor
+// (0.18) matches `scripts/eval/clue_metrics.py` — clues passing the PIL
+// validator at the reference 100 px cell fit at this ratio at any actual
+// cell size, because FitText scales font linearly with cell width
+// (zoom-invariance). Caps are tuned for the readability sweet spot.
+const SINGLE_RATIO_MIN = 0.18;
+const SINGLE_RATIO_MAX = 0.32;
+const STACK_RATIO_MIN = 0.18;
+const STACK_RATIO_MAX = 0.24;
 
 const cellBase = css({
   position: 'relative',
@@ -65,15 +70,20 @@ const defCellCurrentDown = css({ borderTop: '3px solid token(colors.leaf.700)', 
 // Single-clue text: font size is auto-fit at runtime (FitText) — the inline
 // font-size set by FitText overrides any value here. We still need flex:1 +
 // alignSelf so the span fills the cell (FitText measures clientWidth/
-// clientHeight on this very element).
+// clientHeight on this very element). `overflowWrap: break-word` lets a
+// rare long unbroken French word split as a last resort. `overflow: hidden`
+// is a safety net — with `clue_metrics.fits_single_cell` enforced upstream
+// this should never engage on shipped data, but if it does the cell stays
+// inside its borders rather than bleeding into neighbours.
 const defText = css({
   flex: 1,
   alignSelf: 'stretch',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  overflowWrap: 'normal',
+  overflowWrap: 'break-word',
   wordBreak: 'normal',
+  overflow: 'hidden',
 });
 
 // Arrow shapes — straight triangles + bent L-shapes.
@@ -230,17 +240,24 @@ const defStackClue = css({
   wordBreak: 'break-word',
   // Separator between the two stacked clues. `colors.border` is `sand`, the
   // same hue as the def cell bg, so a token-based rule was invisible — use
-  // ink at low alpha for a subtle but legible divider.
-  '&:not(:first-child)': { borderTop: '1px solid rgba(27, 40, 69, 0.25)', paddingTop: '2px' },
+  // ink at low alpha for a subtle but legible divider. No top padding —
+  // both halves share identical content boxes (1px border + flex
+  // alignItems:center is enough vertical separation), so neither clue
+  // looks shifted relative to the other.
+  '&:not(:first-child)': { borderTop: '1px solid rgba(27, 40, 69, 0.25)' },
 });
 const defStackClueCurrent = css({ color: 'leaf.700' });
+// Stacked-clue text: same overflow safety net as defText. The grid
+// generator's compact filter (Word.compact) keeps stacked half-cells fed
+// only with clues that fit in 2 lines at the floor ratio.
 const defStackText = css({
   flex: 1,
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  overflowWrap: 'normal',
+  overflowWrap: 'break-word',
   wordBreak: 'normal',
+  overflow: 'hidden',
 });
 
 const letterInput = css({
@@ -399,8 +416,9 @@ function StackedClue({ clue, isCurrent }: { clue: DefinitionClue; isCurrent: boo
     >
       <FitText
         text={clue.text}
-        min={STACK_MIN}
-        max={STACK_MAX}
+        min={STACK_RATIO_MIN}
+        max={STACK_RATIO_MAX}
+        unit="ratio"
         className={defStackText}
         title={clue.text}
       />
@@ -457,8 +475,9 @@ export const DefinitionCellView = memo(function DefinitionCellView({
         <div className={defSingle}>
           <FitText
             text={clue.text}
-            min={SINGLE_MIN}
-            max={SINGLE_MAX}
+            min={SINGLE_RATIO_MIN}
+            max={SINGLE_RATIO_MAX}
+            unit="ratio"
             className={defText}
             title={clue.text}
           />
