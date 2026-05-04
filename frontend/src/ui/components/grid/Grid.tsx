@@ -40,10 +40,12 @@ const gridFrame = css({ position: 'relative', width: '100%', overflow: 'visible'
 // The library's stylesheet defaults this box to `width: fit-content`,
 // which would collapse around `width: 100%` children — we override here
 // so the outer box drives the layout and the grid inside fills it.
-// `touchAction: 'none'` scopes native-pinch suppression to this element
-// only, keeping native browser zoom available on the clue panel and
-// page chrome (required for WCAG 1.4.4 on mobile — pinch IS browser
-// zoom on touch devices).
+// `touchAction` is dynamic per `transformWrapperStyle` below — `pan-y` when
+// the grid is at rest (scale 1) so a vertical swipe over the grid scrolls
+// the page (the natural mobile expectation), `none` once the user has
+// pinched in (scale > 1) so swipes pan the grid instead. This preserves
+// native browser zoom on the page chrome (WCAG 1.4.4) and gives the right
+// mobile UX: scroll-through at rest, pan-when-zoomed.
 //
 // `maxHeight` is layered on per render below: when the soft keyboard is
 // open we shrink the wrapper to fit above the keyboard, which lets the
@@ -55,7 +57,6 @@ const transformWrapperBaseStyle = {
   width: '100%',
   maxWidth: '480px',
   margin: '0 auto',
-  touchAction: 'none' as const,
 };
 // `transformContentStyle.width: 100%` defeats the same library default on
 // the inner (transformed) plane so the grid actually spans the wrapper.
@@ -285,12 +286,20 @@ export function Grid({
     el.focus();
   }, []);
 
+  // Reactive copy of the library's `state.scale`. Used to flip
+  // `touch-action: pan-y ↔ none` so vertical swipes scroll the page when
+  // the grid is at rest and pan the grid once the user has zoomed in.
+  // ~1.01 epsilon mirrors the threshold used elsewhere in the file for
+  // the same "is the user actively zoomed?" question.
+  const [isZoomedIn, setIsZoomedIn] = useState(false);
   const handleZoomStart = useCallback(() => {
     zoomingRef.current = true;
     if (cellToRestoreRef.current === null) blurFocusedCell();
   }, [blurFocusedCell]);
   const handleZoomStop = useCallback(() => {
     zoomingRef.current = false;
+    const scale = transformWrapperRef.current?.state.scale ?? 1;
+    setIsZoomedIn(scale > 1.01);
     restoreCellFocus();
   }, [restoreCellFocus]);
   const handlePanningStart = useCallback(() => {
@@ -402,11 +411,14 @@ export function Grid({
     };
   }, []);
   const transformWrapperStyle = useMemo(
-    () =>
-      wrapperMaxHeightPx === null
-        ? transformWrapperBaseStyle
-        : { ...transformWrapperBaseStyle, maxHeight: `${wrapperMaxHeightPx}px` },
-    [wrapperMaxHeightPx],
+    () => {
+      const touchAction = isZoomedIn ? 'none' : 'pan-y';
+      const base = { ...transformWrapperBaseStyle, touchAction } as const;
+      return wrapperMaxHeightPx === null
+        ? base
+        : { ...base, maxHeight: `${wrapperMaxHeightPx}px` };
+    },
+    [wrapperMaxHeightPx, isZoomedIn],
   );
 
   // Wire the inbound multiplayer path. Stable across renders because the
