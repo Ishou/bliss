@@ -20,7 +20,10 @@ import { FitText } from './FitText';
 const SINGLE_RATIO_MIN = 0.18;
 const SINGLE_RATIO_MAX = 0.32;
 const STACK_RATIO_MIN = 0.18;
-const STACK_RATIO_MAX = 0.24;
+// Stacked-cell max is generous: short clues like "En travers" should render
+// at a comfortable size, not be constrained because the *cell* is split.
+// FitText backs off for longer clues; the cap only governs the small cases.
+const STACK_RATIO_MAX = 0.32;
 
 const cellBase = css({
   position: 'relative',
@@ -81,6 +84,7 @@ const defText = css({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
+  textAlign: 'center',
   overflowWrap: 'break-word',
   wordBreak: 'normal',
   overflow: 'hidden',
@@ -255,6 +259,7 @@ const defStackText = css({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
+  textAlign: 'center',
   overflowWrap: 'break-word',
   wordBreak: 'normal',
   overflow: 'hidden',
