@@ -9,28 +9,35 @@ import type {
 } from '@/domain';
 import { FitText } from './FitText';
 
-// Insert at most ONE line break, placed at the space that produces
-// the most-balanced 2-line split (min of the longer line). Skipped
-// entirely when the clue has fewer than two "real words" — alphabetic
-// tokens of ≥ 2 letters — so single-token clues ("Gaz") and
-// arithmetic-style ones ("D - C", "C + C") stay on one line. The
-// explicit `\n` is rendered via the containers' `whiteSpace:
-// 'pre-line'`, which lets FitText reason about a 2-line layout from
-// the start and pick a font sized by the longer of the two lines
-// instead of the unsplit phrase.
+// Layout preprocessing for FitText. Two distinct paths:
+//
+//  - Multi-word clues (≥ 2 alphabetic tokens of length ≥ 2): insert
+//    ONE newline at the most-balanced split. Rendered via the
+//    containers' `whiteSpace: 'pre-line'`, so FitText reasons about a
+//    2-line layout from the start and picks a font sized by the
+//    longer of the two lines.
+//
+//  - Otherwise (single tokens, arithmetic-style "D - C", "C + C"):
+//    replace every regular space with ` ` (non-breaking space).
+//    This stops CSS auto-wrap from splitting "D - C" into a 2-line
+//    layout, which FitText would otherwise prefer (2 short lines fit
+//    a much bigger font than 1 unwrapped line). Result: clue stays on
+//    one line and the font is bound by width — smaller, proportional.
 //
 // Examples:
 //   "Gaz noble"           → "Gaz\nnoble"           (2 lines)
 //   "Vitesses du rythme"  → "Vitesses\ndu rythme"  (2 lines, balanced)
 //   "Carnets de notes quotidiennes" → "Carnets de notes\nquotidiennes"
-//   "D - C", "C + C"      → unchanged (no break)
-//   "à l'œil"             → unchanged (only one real word)
+//   "D - C", "C + C"      → "D - C"      (1 line, no wrap)
+//   "à l'œil"             → "à l'œil"          (1 line, only one real word)
 const REAL_WORD = /[A-Za-zÀ-ÿ]/;
 function smartLineBreak(text: string): string {
   const realWords = text
     .split(/\s+/)
     .filter((t) => t.length >= 2 && REAL_WORD.test(t));
-  if (realWords.length < 2) return text;
+  if (realWords.length < 2) {
+    return text.replace(/ /g, ' ');
+  }
   const spaces: number[] = [];
   for (let i = 0; i < text.length; i++) {
     if (text[i] === ' ') spaces.push(i);
