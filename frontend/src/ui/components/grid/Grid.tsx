@@ -211,6 +211,14 @@ export function Grid({
   // value synchronously inside its handlers.
   const panningRef = useRef(false);
   const isPanningGetter = useCallback(() => panningRef.current, []);
+  // The element that had DOM focus *before* the mousedown that started
+  // a potential pan. Captured by a capture-phase mousedown listener
+  // (below) so it's recorded before the browser's default action moves
+  // focus to the clicked input. On panning stop we revert DOM focus to
+  // this element — that single revert fires React's onFocus (or
+  // onBlur) and pulls React state back in sync.
+  const mousedownActiveRef = useRef<HTMLElement | null>(null);
+  const focusBeforePanRef = useRef<HTMLElement | null>(null);
 
   const nav = useGridNavigation(puzzle, {
     onCellChange,
@@ -275,18 +283,53 @@ export function Grid({
   const handlePanningStart = useCallback(() => {
     panningRef.current = true;
     setIsPanning(true);
+    // The capture-phase mousedown listener recorded what was focused
+    // BEFORE the browser moved focus to the clicked input. That's the
+    // pre-pan focus we want to be back to once the gesture ends.
+    focusBeforePanRef.current = mousedownActiveRef.current;
   }, []);
   const handlePanningStop = useCallback(() => {
     setIsPanning(false);
-    // The browser dispatches `click` (and any subsequent focus/blur)
-    // synchronously after `mouseup`, in the same task as the library's
-    // `onPanningStop`. If we cleared `panningRef` here, those tail
-    // events would slip through useGridNavigation's pan-gate and
-    // (re)select the wrong cell. Deferring the reset to the next
-    // animation frame keeps the gate closed across that boundary.
+    // Browser tail events (click, focusin, focusout) fire synchronously
+    // after `mouseup`, in the same task as this handler. Defer the
+    // teardown to the next animation frame so those events still see
+    // panningRef=true and stay gated by useGridNavigation.
     requestAnimationFrame(() => {
+      // Open the gate FIRST so the revert below can flow through
+      // useGridNavigation (otherwise its handleFocus would gate the
+      // reverted focusin and React state wouldn't catch up).
       panningRef.current = false;
+      const before = focusBeforePanRef.current;
+      focusBeforePanRef.current = null;
+      const active = document.activeElement;
+      if (active === before) return;
+      if (before && before.isConnected && typeof (before as HTMLElement).focus === 'function') {
+        (before as HTMLElement).focus({ preventScroll: true });
+      } else if (active instanceof HTMLElement && active.closest('[role="grid"]')) {
+        active.blur();
+      }
     });
+  }, []);
+
+  // Capture-phase mousedown / touchstart on the grid frame. Records
+  // `document.activeElement` BEFORE the browser's default action moves
+  // focus to the clicked input. The recorded value is a "candidate
+  // pre-pan focus" — `handlePanningStart` consumes it if a pan starts;
+  // on a normal click (no drag) it's discarded silently.
+  useEffect(() => {
+    const frame = gridFrameRef.current;
+    if (!frame) return;
+    const onPointerDown = () => {
+      const active = document.activeElement;
+      mousedownActiveRef.current =
+        active instanceof HTMLElement ? active : null;
+    };
+    frame.addEventListener('mousedown', onPointerDown, true);
+    frame.addEventListener('touchstart', onPointerDown, true);
+    return () => {
+      frame.removeEventListener('mousedown', onPointerDown, true);
+      frame.removeEventListener('touchstart', onPointerDown, true);
+    };
   }, []);
 
   // Soft-keyboard-aware wrapper max-height. When the on-screen keyboard
