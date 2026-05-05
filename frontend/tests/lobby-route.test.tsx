@@ -731,7 +731,7 @@ describe('Lobby route Wave H integration', () => {
     expect(panel?.textContent).toMatch(/Sélectionnez une case/i);
   });
 
-  it('keeps the WordSparrow h1 + DÉMO badge in the DOM through gameStarted (WCAG 2.4.6 landmark) and the grid is the only width-capped row', async () => {
+  it('keeps the WordSparrow h1 + DÉMO badge in the DOM through gameStarted (WCAG 2.4.6 landmark)', async () => {
     // Layout regression guard: the fullscreen-grid PR shrinks the page
     // padding and the wordmark on mobile, but the title MUST stay in
     // the DOM as an h1 so screen-reader landmark navigation still
