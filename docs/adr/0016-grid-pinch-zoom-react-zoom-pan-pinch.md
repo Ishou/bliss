@@ -88,10 +88,22 @@ other page area and the browser responds normally.
 | `minScale` | 1 | Never zoom out below 100% — the grid already fits its container |
 | `maxScale` | 4 | A single cell on a 5-col puzzle (~96 px) reaches ~384 px, enough for thumb-distance reading |
 | `centerOnInit` | true | Avoids a small offset from the library's bounds-padding logic on initial paint |
-| `wheel.disabled` | true | Desktop wheel scrolls the page, not zooms the grid |
+| `wheel.step` | 0.05 | Mouse-wheel zooms the grid at 5 % per notch — smooth and close to trackpad pinch feel. Plain-wheel chosen over modifier-gated zoom; see the 2026-05-05 amendment below. |
 | `doubleClick.disabled` | true | Prevents double-tap-to-zoom from conflicting with cell focus + cursor behavior |
 | `panning.velocityDisabled` | true | No momentum — disorienting in a fixed-content puzzle |
 | `panning.allowLeftClickPan` | false | Prevents desktop left-drag pan, which would conflict with future drag-to-select |
+
+> **Update (2026-05-05):** The original ADR set `wheel.disabled: true` so
+> desktop mouse-wheel scrolled the page rather than zooming the grid. PR #191
+> (grid pan/zoom UX) deliberately reverses this: `wheel.step: 0.05` enables
+> scroll-wheel zoom. Rationale: smooth wheel zoom is a natural complement to
+> pinch zoom; 0.05 (5 % per notch) matches trackpad pinch feel where the
+> library default of 0.2 is too coarse. The alternative — modifier-gated zoom
+> (`activationKeys: ['Control', 'Meta']`, plain wheel = page scroll) — was
+> considered and rejected: users who hover over the grid while scrolling will
+> zoom it regardless; requiring a modifier key just makes the behaviour
+> harder to discover without eliminating the conflict. Map and diagram widgets
+> universally use this trade-off and users expect it. Accepted.
 
 ## Alternatives considered
 

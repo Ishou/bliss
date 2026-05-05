@@ -4,6 +4,7 @@ import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.isNotNull
 import assertk.assertions.isNull
+import assertk.assertions.isTrue
 import com.bliss.grid.domain.model.Column
 import com.bliss.grid.domain.model.Direction
 import com.bliss.grid.domain.model.Position
@@ -173,6 +174,52 @@ class SkeletonFillerTest {
         val lemmas = result!!.map { it.word.lemma }.toSet()
         // Two distinct lemmas across the two placements — never two from "OUI".
         assertThat(lemmas.size).isEqualTo(2)
+    }
+
+    @Test
+    fun `stacked slot only accepts compact words`() {
+        // Two slots sharing the same cluePosition → stackedCluePositions contains
+        // that position → domainFor filters to compact == true only.
+        val filler =
+            SkeletonFiller(
+                ListWordRepository(
+                    listOf(
+                        Word("AIR", "Court", compact = true),
+                        Word("ARC", "Long clue that overflows", compact = false),
+                        Word("AS", "Carte", compact = true),
+                        Word("OR", "Non compact", compact = false),
+                    ),
+                ),
+            )
+        val slots =
+            listOf(
+                WordSlot(pos(0, 0), Direction.RIGHT, length = 3),
+                WordSlot(pos(0, 0), Direction.DOWN, length = 2),
+            )
+        val result = filler.fill(slots, random, future)
+        assertThat(result).isNotNull()
+        result!!.forEach { assertThat(it.word.compact).isTrue() }
+    }
+
+    @Test
+    fun `returns null when no compact words exist for stacked slot`() {
+        // Same stacked geometry but every word in the corpus is compact = false,
+        // so domainFor returns an empty list for every slot → search returns false.
+        val filler =
+            SkeletonFiller(
+                ListWordRepository(
+                    listOf(
+                        Word("AIR", "Long clue", compact = false),
+                        Word("AS", "Also long", compact = false),
+                    ),
+                ),
+            )
+        val slots =
+            listOf(
+                WordSlot(pos(0, 0), Direction.RIGHT, length = 3),
+                WordSlot(pos(0, 0), Direction.DOWN, length = 2),
+            )
+        assertThat(filler.fill(slots, random, future)).isNull()
     }
 
     private fun pos(
