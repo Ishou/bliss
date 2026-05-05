@@ -203,10 +203,20 @@ export function Grid({
     [],
   );
 
+  // Synchronous pan flag, read by `useGridNavigation` to gate
+  // focus/click slot-selection during a pan. Stays true for one frame
+  // past the library's `onPanningStop` so the post-mouseup click +
+  // focus events the browser dispatches in the same task are also
+  // gated. Ref (not state) so the navigation hook reads the latest
+  // value synchronously inside its handlers.
+  const panningRef = useRef(false);
+  const isPanningGetter = useCallback(() => panningRef.current, []);
+
   const nav = useGridNavigation(puzzle, {
     onCellChange,
     onFocusChange: onLocalFocusChange,
     getZoomScale,
+    isPanning: isPanningGetter,
   });
 
   // Ref for the positioned `gridFrame` div — the `PresenceOverlay`
@@ -217,16 +227,6 @@ export function Grid({
 
   // Blur-on-gesture coordination (iOS Safari mitigation). When an
   // `<input>` is focused, iOS Safari natively auto-scrolls / zooms to
-  // Synchronous pan flag + the focused element at the moment the pan
-  // started. The `focusin` listener below uses these to clamp focus
-  // during a pan: if the browser tries to move focus mid-gesture (e.g.
-  // mousedown on a cell focuses it before the library's preventDefault
-  // takes effect), we revert to the pre-pan focus. Refs (not state)
-  // because the focusin handler must read the latest value
-  // synchronously, before any React render commits.
-  const panningRef = useRef(false);
-  const focusBeforePanRef = useRef<HTMLElement | null>(null);
-
   // Reactive copies of the library's gesture state, used to drive style
   // changes that need to re-render (touch-action, cursor). ~1.01 scale
   // epsilon mirrors the threshold used elsewhere for "is the user zoomed?".
@@ -275,68 +275,18 @@ export function Grid({
   const handlePanningStart = useCallback(() => {
     panningRef.current = true;
     setIsPanning(true);
-    const active = document.activeElement;
-    focusBeforePanRef.current = active instanceof HTMLElement ? active : null;
   }, []);
   const handlePanningStop = useCallback(() => {
     setIsPanning(false);
-    // The browser fires `click` after `mouseup`, which focuses the
-    // input synchronously inside the same task. Library's onPanningStop
-    // runs from `mouseup` — if we cleared `panningRef` immediately the
-    // focusin watcher would miss the post-mouseup click→focus and the
-    // cell would end up focused. Deferring the reset by one animation
-    // frame keeps the watcher armed across that boundary.
+    // The browser dispatches `click` (and any subsequent focus/blur)
+    // synchronously after `mouseup`, in the same task as the library's
+    // `onPanningStop`. If we cleared `panningRef` here, those tail
+    // events would slip through useGridNavigation's pan-gate and
+    // (re)select the wrong cell. Deferring the reset to the next
+    // animation frame keeps the gate closed across that boundary.
     requestAnimationFrame(() => {
       panningRef.current = false;
-      focusBeforePanRef.current = null;
     });
-  }, []);
-
-  // While a pan is active, lock focus to whatever it was when the pan
-  // started. Two failure modes the locks counter:
-  //
-  //   1. Browsers focus inputs on mousedown synchronously, before the
-  //      library's preventDefault on the gesture-start handler runs —
-  //      so a left-click drag from a cell can transiently focus that
-  //      cell. The `focusin` watcher reverts to the snapshot.
-  //
-  //   2. After mouseup, browsers may dispatch a `click` event on the
-  //      original mousedown target. React's onClick → useGridNavigation
-  //      `handleClick` → `setDirection(...)` based on the wrong cell.
-  //      Even with focus reverted, direction would then point at a
-  //      cell that's not focused → wrong word highlight. The `click`
-  //      capture handler stops propagation so the cell handler never
-  //      fires.
-  //
-  // Both run in capture phase to observe events regardless of
-  // stopPropagation upstream.
-  useEffect(() => {
-    const onFocusIn = (event: FocusEvent) => {
-      if (!panningRef.current) return;
-      const before = focusBeforePanRef.current;
-      const target = event.target;
-      if (!(target instanceof HTMLElement)) return;
-      if (target === before) return;
-      // `preventScroll: true` keeps the user's pan visible — focusing
-      // without it would scroll the cell back into view and undo the
-      // gesture.
-      if (before && before.isConnected) {
-        before.focus({ preventScroll: true });
-      } else if (typeof target.blur === 'function') {
-        target.blur();
-      }
-    };
-    const onClickCapture = (event: MouseEvent) => {
-      if (!panningRef.current) return;
-      event.stopPropagation();
-      event.preventDefault();
-    };
-    document.addEventListener('focusin', onFocusIn, true);
-    document.addEventListener('click', onClickCapture, true);
-    return () => {
-      document.removeEventListener('focusin', onFocusIn, true);
-      document.removeEventListener('click', onClickCapture, true);
-    };
   }, []);
 
   // Soft-keyboard-aware wrapper max-height. When the on-screen keyboard

@@ -198,6 +198,16 @@ export interface UseGridNavigationOptions {
   // the library drives a JS-CSS transform — `visualViewport.scale`
   // stays at 1 throughout pinch, so the guard never fired.
   readonly getZoomScale?: () => number;
+  // Returns `true` while a pan gesture is in progress (or has just
+  // ended within the post-mouseup grace window). When set, both
+  // `handleClick` and `handleFocus` early-return — pan is the user's
+  // gesture intent, not a slot-selection. Without this guard, the
+  // browser's focus-on-mousedown + click-after-mouseup events would
+  // fire `setFocused` and `setDirection` for the wrong cell, leaving
+  // the highlighted word out of sync with the actual focused cell.
+  // Read as a getter (not a value) so the gesture state stays
+  // synchronous; useGridNavigation re-evaluates on each event.
+  readonly isPanning?: () => boolean;
 }
 
 export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOptions): GridNavigation {
@@ -219,6 +229,10 @@ export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOpt
   // churn `scheduleVisibleScroll`'s identity on every render.
   const getZoomScaleRef = useRef(options?.getZoomScale);
   getZoomScaleRef.current = options?.getZoomScale;
+  // Pan-state getter. Stashed in a ref so consumers passing an inline
+  // arrow don't churn the handler identities below.
+  const isPanningRef = useRef(options?.isPanning);
+  isPanningRef.current = options?.isPanning;
   // Tracks the per-cell normalized (uppercase) value so handleInput can
   // detect same-letter no-ops. The browser overwrites target.value with the
   // raw IME character before handleInput fires, making a simple before/after
@@ -306,6 +320,10 @@ export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOpt
 
   const handleClick = useCallback(
     (event: React.MouseEvent<HTMLDivElement>) => {
+      // A click event arriving as the tail of a pan gesture isn't a
+      // slot-selection. Bailing here keeps `direction` and
+      // `lastClickedRef` exactly as they were before the gesture.
+      if (isPanningRef.current?.() === true) return;
       const p = posOf(event.currentTarget);
       if (!p) return;
       // Read repeat-click state from `lastClickedRef` (NOT from `focused`):
@@ -360,6 +378,11 @@ export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOpt
   );
 
   const handleFocus = useCallback((event: React.FocusEvent<HTMLInputElement>) => {
+    // Mid-pan focusin from the browser's mousedown-focuses-input
+    // default. Ignore it: pan is the user's intent, not slot
+    // selection. The cell that picked up focus will be reverted by
+    // the Grid's pan-focus-lock.
+    if (isPanningRef.current?.() === true) return;
     const p = posOf(event.currentTarget);
     if (p) {
       if (!same(stateRef.current.focused, p)) setFocused(p);
