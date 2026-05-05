@@ -293,13 +293,23 @@ export function Grid({
   }, []);
 
   // While a pan is active, lock focus to whatever it was when the pan
-  // started. Browsers focus inputs on mousedown synchronously, before
-  // the library's preventDefault on the gesture-start handler runs —
-  // so a left-click drag from a cell can transiently focus that cell
-  // even though the user's intent is "pan, don't focus". We watch for
-  // any focusin while panningRef is true and revert to the snapshot.
-  // Capture phase so we observe the focus regardless of stopPropagation
-  // upstream.
+  // started. Two failure modes the locks counter:
+  //
+  //   1. Browsers focus inputs on mousedown synchronously, before the
+  //      library's preventDefault on the gesture-start handler runs —
+  //      so a left-click drag from a cell can transiently focus that
+  //      cell. The `focusin` watcher reverts to the snapshot.
+  //
+  //   2. After mouseup, browsers may dispatch a `click` event on the
+  //      original mousedown target. React's onClick → useGridNavigation
+  //      `handleClick` → `setDirection(...)` based on the wrong cell.
+  //      Even with focus reverted, direction would then point at a
+  //      cell that's not focused → wrong word highlight. The `click`
+  //      capture handler stops propagation so the cell handler never
+  //      fires.
+  //
+  // Both run in capture phase to observe events regardless of
+  // stopPropagation upstream.
   useEffect(() => {
     const onFocusIn = (event: FocusEvent) => {
       if (!panningRef.current) return;
@@ -307,18 +317,26 @@ export function Grid({
       const target = event.target;
       if (!(target instanceof HTMLElement)) return;
       if (target === before) return;
-      // Restore the pre-pan focus, or blur the new one if there was
-      // nothing focused before. `preventScroll: true` keeps the user's
-      // pan visible — focusing without it would scroll the cell back
-      // into view and undo the gesture.
+      // `preventScroll: true` keeps the user's pan visible — focusing
+      // without it would scroll the cell back into view and undo the
+      // gesture.
       if (before && before.isConnected) {
         before.focus({ preventScroll: true });
       } else if (typeof target.blur === 'function') {
         target.blur();
       }
     };
+    const onClickCapture = (event: MouseEvent) => {
+      if (!panningRef.current) return;
+      event.stopPropagation();
+      event.preventDefault();
+    };
     document.addEventListener('focusin', onFocusIn, true);
-    return () => document.removeEventListener('focusin', onFocusIn, true);
+    document.addEventListener('click', onClickCapture, true);
+    return () => {
+      document.removeEventListener('focusin', onFocusIn, true);
+      document.removeEventListener('click', onClickCapture, true);
+    };
   }, []);
 
   // Soft-keyboard-aware wrapper max-height. When the on-screen keyboard
