@@ -314,9 +314,7 @@ describe('Grid render', () => {
       const { container } = render(<Grid puzzle={SAMPLE_PUZZLE} />);
       const wrapper = container.querySelector<HTMLDivElement>('.react-transform-wrapper');
       expect(wrapper).not.toBeNull();
-      // The library composes its own inline transforms onto whatever we
-      // pass via `wrapperStyle`; the `maxWidth` override survives that
-      // merge because the library only writes `transform: …` itself.
+      // Library only writes transform:…; maxWidth from wrapperStyle survives the merge.
       expect(wrapper!.style.maxWidth).toBe(GRID_TRACK_WIDTH);
     });
 
@@ -329,18 +327,13 @@ describe('Grid render', () => {
     it('applies the shared GRID_TRACK_WIDTH cap to the sticky clue panel at rest', () => {
       render(<Grid puzzle={SAMPLE_PUZZLE} />);
       const panel = screen.getByTestId('current-clue-panel');
-      // The panel switches to `position: fixed` only when the visual
-      // viewport is pinch-zoomed; at rest the inline-style applies
-      // `maxWidth` so it tracks the grid below.
+      // At rest zoomStyle is undefined; trackWidthStyle applies the cap.
       expect(panel.style.maxWidth).toBe(GRID_TRACK_WIDTH);
     });
 
     it('keeps every letter and definition cell queryable by data-row/data-col after the layout change', () => {
       const { container } = render(<Grid puzzle={SAMPLE_PUZZLE} />);
-      // Sanity: at least one of each kind is still reachable by the
-      // contract attributes the multiplayer + presence overlay code
-      // relies on. A regression that nuked the data-row/data-col
-      // attributes would break the entire selectors layer.
+      // data-row/data-col are the selector contract the presence overlay relies on.
       for (const cell of SAMPLE_PUZZLE.cells) {
         if (cell.kind === 'block') continue;
         const found = container.querySelector(
@@ -352,14 +345,7 @@ describe('Grid render', () => {
 
     it('keeps the zoom controls keyboard-reachable with WCAG-AA-compliant 44 px touch targets', () => {
       render(<Grid puzzle={SAMPLE_PUZZLE} />);
-      // jsdom does not run layout, so we cannot read computed pixel
-      // sizes. Instead we assert the buttons exist with their accessible
-      // names, which keyboard + screen-reader users navigate by, and
-      // pin the Panda-class declaration via the rendered class name.
-      // The 44 × 44 size itself is enforced by the panda-css unit test
-      // upstream — here we cover the integration: each control is in
-      // the DOM with an accessible name and is enabled or disabled
-      // per the predictable scale-1 default.
+      // jsdom skips layout; accessible name + enabled state are the behavioral contract.
       expect(screen.getByRole('button', { name: /zoom in/i })).toBeEnabled();
       expect(screen.getByRole('button', { name: /zoom out/i })).toBeDisabled();
       expect(screen.getByRole('button', { name: /reset zoom/i })).toBeDisabled();

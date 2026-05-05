@@ -52,12 +52,7 @@ const pageStyles = css({
   bg: 'bg', color: 'fg', fontFamily: 'body', textAlign: 'center',
 });
 
-// Wordmark — mirrors `routes/index.tsx` so `/` and `/lobby/:lobbyId`
-// render the same brand title (ADR-0005 §6 amended). The lobby id stays
-// in the URL bar and surfaces via the WaitingRoom share-URL button, so
-// dropping it from the heading does not hide it from the player. Mobile
-// font collapses one step (`display` → `xl`) so the title doesn't eat
-// the vertical budget reclaimed for the grid.
+// Mirrors index.tsx wordmark — ADR-0005 §6 amended (display→xl on mobile).
 const wordmarkStyles = css({
   fontFamily: 'heading',
   fontSize: { base: 'xl', md: '2.8125rem' },
