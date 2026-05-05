@@ -45,13 +45,14 @@ class GridSmokePrintTest {
         for (r in 0 until puzzle.height) {
             val row = StringBuilder()
             for (c in 0 until puzzle.width) {
-                val ch = when (val cell = byPos[r to c]) {
-                    is BlockCellDto -> '#'
-                    is DefinitionCellDto -> '*'
-                    is LetterCellDto -> cell.letter?.firstOrNull() ?: '?'
-                    null -> '?'
-                    else -> '?'
-                }
+                val ch =
+                    when (val cell = byPos[r to c]) {
+                        is BlockCellDto -> '#'
+                        is DefinitionCellDto -> '*'
+                        is LetterCellDto -> cell.letter?.firstOrNull() ?: '?'
+                        null -> '?'
+                        else -> '?'
+                    }
                 row.append(ch).append(' ')
             }
             println(row.toString())

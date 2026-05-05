@@ -49,8 +49,11 @@ internal class SkeletonFiller(
         // text fits the stacked half-cell at the design floor — see
         // `data class Word` and `scripts/eval/clue_metrics.py`.
         val stackedCluePositions =
-            slots.groupingBy { it.cluePosition }.eachCount()
-                .filterValues { it > 1 }.keys
+            slots
+                .groupingBy { it.cluePosition }
+                .eachCount()
+                .filterValues { it > 1 }
+                .keys
         val assigned = arrayOfNulls<Word>(slots.size)
         if (!search(slots, letters, usedWords, usedLemmas, stackedCluePositions, assigned, random, deadline)) return null
         return slots.mapIndexed { i, slot ->

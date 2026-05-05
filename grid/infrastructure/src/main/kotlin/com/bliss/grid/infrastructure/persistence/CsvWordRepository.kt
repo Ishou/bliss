@@ -211,7 +211,9 @@ class CsvWordRepository(
                     true
                 }
             return Word(
-                text = folded, definition = clue, lemma = foldedLemma,
+                text = folded,
+                definition = clue,
+                lemma = foldedLemma,
                 compact = compact,
             ) to frequency
         }
