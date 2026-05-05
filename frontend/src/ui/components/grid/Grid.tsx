@@ -225,6 +225,31 @@ export function Grid({
     isPanning: isPanningGetter,
   });
 
+  // Zoom in / out centered on the currently-focused cell. When the
+  // user has a slot focused, the library's `zoomToElement` keeps that
+  // slot under their eyes as the scale changes — what they expect
+  // when they hit `+` or `−`. Falls back to plain `zoomIn` / `zoomOut`
+  // (which centre the *viewport*) if no cell is focused.
+  const zoomCenteredOnFocus = useCallback((delta: number) => {
+    const tw = transformWrapperRef.current;
+    if (!tw) return;
+    const target = tw.state.scale + delta;
+    const clamped = Math.max(1, Math.min(4, target));
+    if (Math.abs(clamped - tw.state.scale) < 0.001) return;
+    const active = document.activeElement;
+    const cell = active instanceof HTMLInputElement
+      && active.closest('[role="grid"]')
+      ? active
+      : null;
+    if (cell && clamped > 1.01) {
+      tw.zoomToElement(cell, clamped, 150);
+    } else if (delta > 0) {
+      tw.zoomIn(delta, 150);
+    } else {
+      tw.zoomOut(-delta, 150);
+    }
+  }, []);
+
   // Ref for the positioned `gridFrame` div — the `PresenceOverlay`
   // measures peer-cursor cell rectangles relative to this element so
   // its layer stays pinned to the same pixel bounds as the grid even
@@ -700,8 +725,8 @@ export function Grid({
       <GridZoomControls
         canZoomIn={!isMaxZoom}
         canZoomOut={isZoomedIn}
-        onZoomIn={() => transformWrapperRef.current?.zoomIn(0.3, 150)}
-        onZoomOut={() => transformWrapperRef.current?.zoomOut(0.3, 150)}
+        onZoomIn={() => zoomCenteredOnFocus(0.3)}
+        onZoomOut={() => zoomCenteredOnFocus(-0.3)}
         onReset={() => transformWrapperRef.current?.resetTransform(0)}
       />
     </>

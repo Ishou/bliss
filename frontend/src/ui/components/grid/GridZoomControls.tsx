@@ -62,9 +62,18 @@ export function GridZoomControls({
 }) {
   return (
     <div className={cluster} role="group" aria-label="Zoom controls">
+      {/*
+        `onMouseDown={e => e.preventDefault()}` on every button: stops
+        the browser's default mousedown→focus on the <button>, which
+        would otherwise blur the focused cell input. We still get the
+        onClick (click is dispatched after mouseup; preventDefault on
+        mousedown only suppresses default focus, not the click event
+        itself). Standard React toolbar pattern.
+      */}
       <button
         type="button"
         className={button}
+        onMouseDown={(e) => e.preventDefault()}
         onClick={onZoomIn}
         disabled={!canZoomIn}
         aria-label="Zoom in"
@@ -74,6 +83,7 @@ export function GridZoomControls({
       <button
         type="button"
         className={button}
+        onMouseDown={(e) => e.preventDefault()}
         onClick={onZoomOut}
         disabled={!canZoomOut}
         aria-label="Zoom out"
@@ -83,6 +93,7 @@ export function GridZoomControls({
       <button
         type="button"
         className={button}
+        onMouseDown={(e) => e.preventDefault()}
         onClick={onReset}
         disabled={!canZoomOut}
         aria-label="Reset zoom"
