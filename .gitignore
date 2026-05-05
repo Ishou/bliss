@@ -25,3 +25,22 @@ models/
 checkpoints/
 *.gguf
 *.safetensors
+
+# Eval-iteration scratch CSVs that historically embedded verbatim
+# DBnary glosses (CC BY-SA) in the `definition` / `synonyms` columns.
+# Per ADR-0023 §"Distribution discipline" we don't redistribute DBnary
+# text. Keep them local for offline analysis; never commit. The
+# clean per-pipeline outputs in `data/eval/production/` (LoRA-only,
+# no DBnary text) remain tracked.
+data/eval/lemma_clues.csv
+data/eval/lemma_clues.mistral-nemo.csv
+data/eval/lemma_clues_iter[2-7].csv
+data/eval/lemma_clues_run_*.csv
+data/eval/run_v0_*.csv
+data/eval/sample_100_enriched.csv
+data/eval/sample_100_with_definitions.csv
+data/eval/sample_iter[2-7]_enriched.csv
+data/eval/sample_iter2_with_definitions.csv
+data/eval/sample_run_*_enriched.csv
+data/eval/sample_run_*_with_definitions.csv
+data/eval/synonym_clues_iter[6-7].csv

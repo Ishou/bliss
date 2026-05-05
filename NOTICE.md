@@ -33,3 +33,50 @@ The version pinned at ingest time is `v7.7`, recorded in the `source`
 column of the `words` table (`source = 'grammalecte-fr-v7.7'`) for
 every row imported via `import-grammalecte`. See ADR-0014 for the
 ingest rationale.
+
+## Lexical enrichment — DBnary
+
+- **Source:** `kaiko.getalp.org/dbnary` — French Wiktionary extract
+  produced by the DBnary project (Sérasset et al., LIG/GETALP).
+- **License:** Creative Commons Attribution-ShareAlike 4.0
+  International (CC BY-SA 4.0) — inherited from Wiktionary.
+- **Canonical URL:** https://kaiko.getalp.org/about-dbnary/
+
+Per [ADR-0023](./docs/adr/0023-dbnary-lexical-data-source.md), DBnary
+is used **only** as offline pipeline scratch space — feeding sense
+disambiguation context to the local LoRA generator and providing
+positive pairs for the filter model's contrastive training.
+
+**No DBnary `definition_text` or `synonym_lemma` is distributed by
+this repository.** The runtime corpus
+(`grid/api/src/main/resources/words/words-fr.csv`) contains only
+LLM-generated clues authored by us. Per-iteration eval CSVs that
+historically embedded verbatim DBnary glosses are gitignored
+(`data/eval/lemma_clues_iter[2-7].csv`,
+`data/eval/sample_iter[2-7]_*.csv`, etc.) and stay local for
+offline analysis only. We list DBnary here as a courtesy: the
+filter model's training data and the LoRA's prompting pipeline are
+derivative of DBnary as input, even though no source text is
+shipped.
+
+## Lexical enrichment — DBnary
+
+- **Source:** `kaiko.getalp.org/dbnary` — French Wiktionary extract
+  produced by the DBnary project (Sérasset & al., LIG/GETALP).
+- **License:** Creative Commons Attribution-ShareAlike 4.0
+  International (CC BY-SA 4.0) — inherited from Wiktionary.
+- **Canonical URL:** https://kaiko.getalp.org/about-dbnary/
+
+Per [ADR-0023](./docs/adr/0023-dbnary-lexical-data-source.md), DBnary
+is used **only** as offline pipeline scratch space — feeding sense
+disambiguation context to the local LoRA generator and providing
+positive pairs for the filter model's contrastive training. **No
+DBnary `definition_text` or `synonym_lemma` is distributed by this
+repository**: the runtime word corpus
+(`grid/api/src/main/resources/words/words-fr.csv`) contains only
+LLM-generated clues authored by us, and any per-iteration eval CSVs
+that previously embedded verbatim DBnary glosses have been removed
+from version control. We list DBnary here regardless because the
+filter model's weights and the LoRA's prompting pipeline are
+derivative of DBnary as training input, and attribution is good
+practice even when no source text is shipped.
