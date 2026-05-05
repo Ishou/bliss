@@ -279,9 +279,17 @@ export function Grid({
     focusBeforePanRef.current = active instanceof HTMLElement ? active : null;
   }, []);
   const handlePanningStop = useCallback(() => {
-    panningRef.current = false;
     setIsPanning(false);
-    focusBeforePanRef.current = null;
+    // The browser fires `click` after `mouseup`, which focuses the
+    // input synchronously inside the same task. Library's onPanningStop
+    // runs from `mouseup` — if we cleared `panningRef` immediately the
+    // focusin watcher would miss the post-mouseup click→focus and the
+    // cell would end up focused. Deferring the reset by one animation
+    // frame keeps the watcher armed across that boundary.
+    requestAnimationFrame(() => {
+      panningRef.current = false;
+      focusBeforePanRef.current = null;
+    });
   }, []);
 
   // While a pan is active, lock focus to whatever it was when the pan
