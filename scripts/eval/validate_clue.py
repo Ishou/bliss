@@ -16,6 +16,8 @@ Returns (flag, reason) where flag is one of:
   unknown-head     head not in grammalecte (likely a hallucination or proper noun)
   head-not-lemma   head exists but is an inflected form, not citation form
   pos-mismatch     head is a lemma form but the POS class doesn't match the target
+  pleonasm         head verb's lemma already encodes the trailing modifier
+                   ("Associer ensemble", "Monter en haut", "Prévoir à l'avance")
 """
 
 from __future__ import annotations
@@ -165,6 +167,114 @@ def _find_stem_leak(clue: str, target_lemma: str) -> str | None:
     return None
 
 
+# Pleonasm patterns: head verb's lemma whose semantics already encode the
+# trailing modifier. "Associer ensemble" is redundant because associer ≡
+# "to bring together"; "Monter en haut" is redundant because monter ≡ "to
+# go up". Patterns are conservative — false positives kill legitimate clues
+# like "Mettre ensemble" (which is the canonical lemma definition of réunir),
+# so we only list head verbs that *intrinsically* mean the trailing token.
+#
+# Each entry: (set of head-verb lemmas, regex matching the redundant tail).
+# A pleonasm fires when the clue's head token is one of the lemmas AND the
+# rest of the clue contains the redundant tail. Verb conjugation is handled
+# by stem-prefix matching: any token that starts with the lemma stem (minus
+# the -er/-ir suffix) and shares ≥4 prefix chars counts as the head's
+# inflected form.
+_PLEONASM_RULES: tuple[tuple[frozenset[str], "re.Pattern[str]"], ...] = (
+    # X + ensemble: X already means "join / unite / bring together".
+    (frozenset({
+        "associer", "unir", "joindre", "rejoindre", "réunir",
+        "assembler", "rassembler", "regrouper",
+        "mêler",
+        "lier", "relier", "souder", "fusionner", "conjuguer",
+        "marier", "allier", "apparier", "coupler", "accoupler",
+        "fédérer", "confédérer",
+        "additionner", "ajouter",
+        "enchaîner",
+    }), re.compile(r"\bensemble\b", re.IGNORECASE)),
+    # Directional: monter/grimper/gravir + en haut / vers le haut.
+    (frozenset({"monter", "grimper", "gravir", "ascensionner", "escalader"}),
+     re.compile(r"\b(?:en|vers\s+le)\s+haut\b", re.IGNORECASE)),
+    # Directional: descendre/tomber/baisser + en bas / vers le bas.
+    (frozenset({"descendre", "tomber", "chuter", "baisser", "abaisser"}),
+     re.compile(r"\b(?:en|vers\s+le)\s+bas\b", re.IGNORECASE)),
+    # Out / in.
+    (frozenset({"sortir"}), re.compile(r"\bdehors\b", re.IGNORECASE)),
+    (frozenset({"entrer"}), re.compile(r"\bdedans\b", re.IGNORECASE)),
+    # Forward / backward.
+    (frozenset({"avancer", "progresser"}),
+     re.compile(r"\ben\s+avant\b", re.IGNORECASE)),
+    (frozenset({"reculer", "rétrograder"}),
+     re.compile(r"\ben\s+arrière\b", re.IGNORECASE)),
+    # Repetition: re-X verbs + à nouveau.
+    (frozenset({
+        "répéter", "recommencer", "refaire", "redire",
+        "reprendre", "réitérer", "réessayer", "relire", "revoir",
+    }), re.compile(r"\bà\s+nouveau\b", re.IGNORECASE)),
+    # Anticipation: anticiper/prévoir/planifier + à l'avance.
+    (frozenset({"anticiper", "prévoir", "planifier", "préméditer", "programmer"}),
+     re.compile(r"\bà\s+l[’']avance\b", re.IGNORECASE)),
+    # Reciprocity: verb already implies mutual action + mutuellement.
+    (frozenset({"entraider", "s'entraider", "coopérer", "collaborer", "s'associer"}),
+     re.compile(r"\bmutuellement\b", re.IGNORECASE)),
+    # Completeness: remplir/saturer/vider + complètement.
+    (frozenset({"remplir", "saturer", "vider"}),
+     re.compile(r"\bcomplètement\b", re.IGNORECASE)),
+)
+
+
+def _head_token_matches_lemma(head: str, lemma: str) -> bool:
+    """Return True iff `head` is `lemma` itself or a plausible inflection of it.
+
+    We don't want to thread the morphology index through here (the validator
+    already pays for one lookup elsewhere), so we use a stem-prefix rule:
+    drop the -er/-ir/-re/-oir suffix from the lemma, then accept any head
+    token that starts with the stem and shares ≥4 chars. Avoids the obvious
+    false positives ("aller" vs "alleger" share 4 chars but stems differ;
+    we anchor on the lemma's stem and require startswith)."""
+    h = head.lower()
+    l = lemma.lower()
+    if h == l:
+        return True
+    # Reflexive lemmas ("s'entraider") strip the leading "s'".
+    if l.startswith("s'") and h == l[2:]:
+        return True
+    # Strip common French verb suffixes to get the stem. Longest suffix
+    # first so "prévoir" → "prév" (not "prévo"); otherwise the passé simple
+    # forms "prévit"/"prévis" miss the prefix check.
+    stem = l
+    for suf in ("oir", "er", "ir", "re"):
+        if stem.endswith(suf) and len(stem) > len(suf) + 2:
+            stem = stem[: -len(suf)]
+            break
+    if len(stem) < 3:
+        return False
+    return h.startswith(stem) and len(h) >= len(stem)
+
+
+def _find_pleonasm(clue: str) -> str | None:
+    """Return the redundant tail token if the clue is pleonastic, else None.
+
+    A clue is pleonastic when its head verb's lemma already encodes the
+    trailing modifier — "Associer ensemble", "Monter en haut". The list
+    of patterns is the closed set in `_PLEONASM_RULES`; anything outside
+    that set is left to the human-curated rating loop.
+
+    Caller (validate_lemma_clue) will surface the leak token so the LoRA
+    candidate-picker can log which alternative tail it dropped."""
+    head = _find_head(clue)
+    if not head:
+        return None
+    head_lower = head.lower()
+    for lemmas, tail_re in _PLEONASM_RULES:
+        if not any(_head_token_matches_lemma(head_lower, l) for l in lemmas):
+            continue
+        m = tail_re.search(clue)
+        if m is not None:
+            return m.group(0)
+    return None
+
+
 def validate_lemma_clue(
     clue: str,
     target_lemma: str,
@@ -208,6 +318,21 @@ def validate_lemma_clue(
         return ValidationResult(
             "stem-leak",
             f"clue token '{stem_leak}' shares root with target lemma",
+            head,
+        )
+
+    # Pleonasm: head verb's lemma already encodes the trailing modifier.
+    # "Associer ensemble" → unir, "Monter en haut" → gravir, etc. The LoRA
+    # iter10 corpus produced 5 of these; the inflater faithfully propagated
+    # them across ~70 surface forms. Reject so the picker drops to the next
+    # candidate at generation time, and so build_surface_clues.py's
+    # `validation_flag == 'ok'` filter excludes already-shipped pleonasms
+    # from the next pipeline run.
+    pleonasm_tail = _find_pleonasm(clue)
+    if pleonasm_tail is not None:
+        return ValidationResult(
+            "pleonasm",
+            f"clue head '{head}' makes '{pleonasm_tail}' redundant",
             head,
         )
 

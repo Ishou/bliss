@@ -3,6 +3,11 @@
 Covers the reflexive/object-pronoun fix: pronominal-verb clues like
 "Se soulever contre l'autorité" must resolve to the infinitive token,
 not the leading pronoun.
+
+Also covers the pleonasm gate: clues whose head verb already encodes the
+trailing modifier ("Associer ensemble", "Monter en haut") must be flagged
+so the LoRA picker tries the next candidate rather than shipping a
+verbose tautology.
 """
 
 import sys
@@ -12,7 +17,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from validate_clue import _find_head, validate_lemma_clue  # noqa: E402
+from validate_clue import _find_head, _find_pleonasm, validate_lemma_clue  # noqa: E402
 
 
 class _StubIndex:
@@ -61,3 +66,111 @@ def test_short_clue_passes_length_gate() -> None:
 ])
 def test_find_head_skips_function_words(clue: str, expected_head: str) -> None:
     assert _find_head(clue) == expected_head
+
+
+# --- pleonasm gate ----------------------------------------------------------
+
+@pytest.mark.parametrize("clue", [
+    # "X ensemble" where X already means "join/unite/bring together".
+    # This is the wordsparrow.io regression: lemma=unir got
+    # "Associer ensemble" — pleonastic since associer ≡ unir ≡ ensemble-action.
+    "Associer ensemble",
+    "associer ensemble",
+    "Unir ensemble",
+    "Joindre ensemble",
+    "Réunir ensemble",
+    "Rassembler ensemble",
+    "Lier ensemble",
+    "Relier ensemble",
+    "Souder ensemble",
+    "Fusionner ensemble",
+    "Conjuguer ensemble",
+    "Marier ensemble",
+    "Allier ensemble",
+    "Apparier ensemble",
+    "Fédérer ensemble",
+    "Confédérer ensemble",
+    "Coupler ensemble",
+    "Accoupler ensemble",
+    "Additionner ensemble",
+    "Ajouter ensemble",     # additionner's natural lemma synonym
+    "Enchaîner ensemble",
+    # directional pleonasms
+    "Monter en haut",
+    "Grimper en haut",
+    "Gravir en haut",
+    "Monter vers le haut",
+    "Descendre en bas",
+    "Tomber en bas",
+    "Baisser en bas",
+    "Descendre vers le bas",
+    "Sortir dehors",
+    "Entrer dedans",
+    "Avancer en avant",
+    "Reculer en arrière",
+    # repetition pleonasms
+    "Répéter à nouveau",
+    "Recommencer à nouveau",
+    "Refaire à nouveau",
+    "Réitérer à nouveau",
+    # temporal pleonasms (lemma form + inflected forms — the inflater
+    # propagates the redundant tail across all conjugations, so the gate
+    # must match passé simple "Prévit"/"Prévis", imparfait "Prévoyais",
+    # etc. Stem-prefix rule handles this provided we strip the longest
+    # suffix first ("oir" before "ir").)
+    "Prévoir à l'avance",
+    "Prévit à l'avance",
+    "Prévis à l'avance",
+    "Prévoyais à l'avance",
+    "Anticiper à l'avance",
+    "Planifier à l'avance",
+    # reciprocity pleonasms (verb already implies mutual action)
+    "S'entraider mutuellement",
+    "Coopérer mutuellement",
+    "Collaborer mutuellement",
+])
+def test_find_pleonasm_flags_redundant_phrasings(clue: str) -> None:
+    """Pleonasm patterns: head verb whose lemma already encodes the trailing
+    adverb/PP. The redundant tail token is returned so callers can log it."""
+    leak = _find_pleonasm(clue)
+    assert leak is not None, f"missed pleonasm in {clue!r}"
+
+
+@pytest.mark.parametrize("clue", [
+    # "Mettre/Travailler ensemble" — head verb is generic, "ensemble" carries
+    # the meaning. These are normal French mots-fléchés clues, NOT pleonasms.
+    "Mettre ensemble",
+    "Mettent ensemble",
+    "Travailler ensemble",
+    "Vivre ensemble en paix",
+    "Former un ensemble",
+    "Part de l'ensemble",   # nominal — "ensemble" is the subject, not redundant
+    "Plan d'ensemble",
+    # legitimate clue heads happening to share substrings
+    "Aller à pied",
+    "Faire un voyage",
+    "Sortir un son",        # the user's correct ÉMET case — must NOT trip
+    "Fait sortir un son",
+])
+def test_find_pleonasm_passes_legitimate_clues(clue: str) -> None:
+    leak = _find_pleonasm(clue)
+    assert leak is None, f"false-positive pleonasm on {clue!r}: leak={leak!r}"
+
+
+def test_validate_lemma_clue_returns_pleonasm_flag() -> None:
+    """End-to-end: validator flags 'Associer ensemble' as pleonasm so the
+    LoRA picker drops it and tries the next candidate. Without this gate
+    the clue ships verbatim under lemma=unir → all 24 unir surface forms
+    inherit it."""
+    r = validate_lemma_clue("Associer ensemble", "unir", "verbe", _StubIndex())
+    assert r.flag == "pleonasm", r
+    # head is still extracted so dashboards/logs can show it.
+    assert r.head.lower() == "associer"
+
+
+def test_validate_lemma_clue_clean_verb_clue_still_passes() -> None:
+    """Sanity: a non-pleonastic verb lemma clue still passes the gate."""
+    r = validate_lemma_clue("Mettre ensemble", "réunir", "verbe", _StubIndex())
+    # The stub index has no analyses for 'mettre', so we expect head-not-lemma
+    # rather than 'pleonasm'. The point: the pleonasm gate did not trip.
+    assert r.flag != "pleonasm", r

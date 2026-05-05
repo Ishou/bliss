@@ -6877,29 +6877,6 @@ empruntée,emprunter,verbe,Prise à quelqu'un,Prendre à quelqu'un,inflected,0.7
 empruntées,emprunter,verbe,Prises à quelqu'un,Prendre à quelqu'un,inflected,0.7738,ok,true
 empruntés,emprunter,verbe,Prendre à quelqu'un,Prendre à quelqu'un,no-inflection,0.7738,ok,true
 encens,encens,nom,Parfum brûlé en offrande,Parfum brûlé en offrande,verbatim,0.6622,ok,false
-enchaîna,enchaîner,verbe,Lia ensemble,Lier ensemble,inflected,0.7182,ok,true
-enchaînai,enchaîner,verbe,Liai ensemble,Lier ensemble,inflected,0.7182,ok,true
-enchaînais,enchaîner,verbe,Liais ensemble,Lier ensemble,inflected,0.7182,ok,true
-enchaînait,enchaîner,verbe,Liait ensemble,Lier ensemble,inflected,0.7182,ok,true
-enchaînant,enchaîner,verbe,Liant ensemble,Lier ensemble,inflected,0.7182,ok,true
-enchaîne,enchaîner,verbe,Lie ensemble,Lier ensemble,inflected,0.7182,ok,true
-enchaînent,enchaîner,verbe,Lient ensemble,Lier ensemble,inflected,0.7182,ok,true
-enchaîner,enchaîner,verbe,Lier ensemble,Lier ensemble,verbatim,0.7182,ok,true
-enchaînera,enchaîner,verbe,Liera ensemble,Lier ensemble,inflected,0.7182,ok,true
-enchaînerai,enchaîner,verbe,Lierai ensemble,Lier ensemble,inflected,0.7182,ok,true
-enchaîneras,enchaîner,verbe,Lieras ensemble,Lier ensemble,inflected,0.7182,ok,true
-enchaînerez,enchaîner,verbe,Lierez ensemble,Lier ensemble,inflected,0.7182,ok,true
-enchaînes,enchaîner,verbe,Lies ensemble,Lier ensemble,inflected,0.7182,ok,true
-enchaînez,enchaîner,verbe,Liez ensemble,Lier ensemble,inflected,0.7182,ok,true
-enchaîniez,enchaîner,verbe,Liiez ensemble,Lier ensemble,inflected,0.7182,ok,true
-enchaînions,enchaîner,verbe,Liions ensemble,Lier ensemble,inflected,0.7182,ok,true
-enchaînons,enchaîner,verbe,Lions ensemble,Lier ensemble,inflected,0.7182,ok,true
-enchaînâmes,enchaîner,verbe,Liâmes ensemble,Lier ensemble,inflected,0.7182,ok,true
-enchaînât,enchaîner,verbe,Liât ensemble,Lier ensemble,inflected,0.7182,ok,true
-enchaîné,enchaîner,verbe,Lié ensemble,Lier ensemble,inflected,0.7182,ok,true
-enchaînée,enchaîner,verbe,Liée ensemble,Lier ensemble,inflected,0.7182,ok,true
-enchaînées,enchaîner,verbe,Liées ensemble,Lier ensemble,inflected,0.7182,ok,true
-enchaînés,enchaîner,verbe,Liés ensemble,Lier ensemble,inflected,0.7182,ok,true
 enclavement,enclavement,nom,Encerclement complet,Encerclement complet,verbatim,0.7451,ok,true
 enclin,enclin,adj,Prêt à agir,Prêt à agir,verbatim,0.7638,ok,true
 encline,enclin,adj,Prête à agir,Prêt à agir,inflected,0.7638,ok,true
@@ -9302,30 +9279,7 @@ graverons,graver,verbe,Inciserons profondément,Inciser profondément,inflected,
 graveront,graver,verbe,Inciseront profondément,Inciser profondément,inflected,0.7020,ok,false
 graves,grave,nom,Profondes et sombres,Profond et sombre,inflected,0.6878,ok,true
 gravez,graver,verbe,Incisez profondément,Inciser profondément,inflected,0.7020,ok,false
-gravi,gravir,verbe,Monté en haut,Monter en haut,inflected,0.7361,ok,true
-gravie,gravir,verbe,Montée en haut,Monter en haut,inflected,0.7361,ok,true
-gravies,gravir,verbe,Montées en haut,Monter en haut,inflected,0.7361,ok,true
 gravions,graver,verbe,Incisions profondément,Inciser profondément,inflected,0.7020,ok,false
-gravir,gravir,verbe,Monter en haut,Monter en haut,verbatim,0.7361,ok,true
-gravira,gravir,verbe,Montera en haut,Monter en haut,inflected,0.7361,ok,true
-gravirai,gravir,verbe,Monterai en haut,Monter en haut,inflected,0.7361,ok,true
-graviraient,gravir,verbe,Monteraient en haut,Monter en haut,inflected,0.7361,ok,true
-gravirait,gravir,verbe,Monterait en haut,Monter en haut,inflected,0.7361,ok,true
-gravirent,gravir,verbe,Montèrent en haut,Monter en haut,inflected,0.7361,ok,true
-gravirions,gravir,verbe,Monterions en haut,Monter en haut,inflected,0.7361,ok,true
-gravirons,gravir,verbe,Monterons en haut,Monter en haut,inflected,0.7361,ok,true
-graviront,gravir,verbe,Monteront en haut,Monter en haut,inflected,0.7361,ok,true
-gravis,gravir,verbe,Monter en haut,Monter en haut,no-inflection,0.7361,ok,true
-gravissais,gravir,verbe,Montais en haut,Monter en haut,inflected,0.7361,ok,true
-gravissait,gravir,verbe,Montait en haut,Monter en haut,inflected,0.7361,ok,true
-gravissant,gravir,verbe,Montant en haut,Monter en haut,inflected,0.7361,ok,true
-gravisse,gravir,verbe,Monter en haut,Monter en haut,no-inflection,0.7361,ok,true
-gravissent,gravir,verbe,Monter en haut,Monter en haut,no-inflection,0.7361,ok,true
-gravissez,gravir,verbe,Montez en haut,Monter en haut,inflected,0.7361,ok,true
-gravissiez,gravir,verbe,Monter en haut,Monter en haut,no-inflection,0.7361,ok,true
-gravissions,gravir,verbe,Monter en haut,Monter en haut,no-inflection,0.7361,ok,true
-gravissons,gravir,verbe,Montons en haut,Monter en haut,inflected,0.7361,ok,true
-gravit,gravir,verbe,Monter en haut,Monter en haut,no-inflection,0.7361,ok,true
 gravitation,gravitation,nom,Force d'attraction universelle,Force d'attraction universelle,verbatim,0.8452,ok,false
 gravure,gravure,nom,Art du dessin sur pierre,Art du dessin sur pierre,verbatim,0.7562,ok,false
 gravures,gravure,nom,Arts du dessin sur pierre,Art du dessin sur pierre,inflected,0.7562,ok,false
@@ -9335,7 +9289,6 @@ gravé,graver,verbe,Incisé profondément,Inciser profondément,inflected,0.7020
 gravée,graver,verbe,Incisée profondément,Inciser profondément,inflected,0.7020,ok,false
 gravées,graver,verbe,Incisées profondément,Inciser profondément,inflected,0.7020,ok,false
 gravés,graver,verbe,Incisés profondément,Inciser profondément,inflected,0.7020,ok,false
-gravîmes,gravir,verbe,Montâmes en haut,Monter en haut,inflected,0.7361,ok,true
 greffa,greffer,verbe,Transplanta une partie,Transplanter une partie,inflected,0.7296,ok,true
 greffaient,greffer,verbe,Transplantaient une partie,Transplanter une partie,inflected,0.7296,ok,false
 greffait,greffer,verbe,Transplantait une partie,Transplanter une partie,inflected,0.7296,ok,true
@@ -19492,8 +19445,6 @@ ultimatum,ultimatum,nom,Dernier avertissement,Dernier avertissement,verbatim,0.7
 ultimatums,ultimatum,nom,Derniers avertissements,Dernier avertissement,inflected,0.7522,ok,false
 unicité,unicité,nom,Caractère de ce qui est unique,Caractère de ce qui est unique,verbatim,0.7712,ok,false
 unicités,unicité,nom,Caractères de ce qui est unique,Caractère de ce qui est unique,inflected,0.7712,ok,false
-unie,unir,verbe,Associée ensemble,Associer ensemble,inflected,0.7220,ok,true
-unies,unir,verbe,Associées ensemble,Associer ensemble,inflected,0.7220,ok,true
 unifia,unifier,verbe,Rendit unique et cohérent,Rendre unique et cohérent,inflected,0.7623,ok,false
 unifiaient,unifier,verbe,Rendaient unique et cohérent,Rendre unique et cohérent,inflected,0.7623,ok,false
 unifiait,unifier,verbe,Rendait unique et cohérent,Rendre unique et cohérent,inflected,0.7623,ok,false
@@ -19518,27 +19469,6 @@ unilatérale,unilatéral,adj,Unique d'un côté,Unique d'un côté,inflected,0.6
 unilatéraux,unilatéral,adj,Uniques d'un côté,Unique d'un côté,inflected,0.6590,ok,true
 union,union,nom,Alliance de deux ou plusieurs parties,Alliance de deux ou plusieurs parties,verbatim,0.6790,ok,false
 unions,union,nom,Alliances de deux ou plusieurs parties,Alliance de deux ou plusieurs parties,inflected,0.6790,ok,false
-unir,unir,verbe,Associer ensemble,Associer ensemble,verbatim,0.7220,ok,true
-unira,unir,verbe,Associera ensemble,Associer ensemble,inflected,0.7220,ok,true
-unirai,unir,verbe,Associerai ensemble,Associer ensemble,inflected,0.7220,ok,true
-uniraient,unir,verbe,Associeraient ensemble,Associer ensemble,inflected,0.7220,ok,false
-unirait,unir,verbe,Associerait ensemble,Associer ensemble,inflected,0.7220,ok,true
-unirent,unir,verbe,Associèrent ensemble,Associer ensemble,inflected,0.7220,ok,true
-unirions,unir,verbe,Associerions ensemble,Associer ensemble,inflected,0.7220,ok,true
-unirons,unir,verbe,Associerons ensemble,Associer ensemble,inflected,0.7220,ok,true
-uniront,unir,verbe,Associeront ensemble,Associer ensemble,inflected,0.7220,ok,true
-unis,unir,verbe,Associer ensemble,Associer ensemble,no-inflection,0.7220,ok,true
-unissaient,unir,verbe,Associaient ensemble,Associer ensemble,inflected,0.7220,ok,true
-unissais,unir,verbe,Associais ensemble,Associer ensemble,inflected,0.7220,ok,true
-unissait,unir,verbe,Associait ensemble,Associer ensemble,inflected,0.7220,ok,true
-unissant,unir,verbe,Associant ensemble,Associer ensemble,inflected,0.7220,ok,true
-unisse,unir,verbe,Associer ensemble,Associer ensemble,no-inflection,0.7220,ok,true
-unissent,unir,verbe,Associer ensemble,Associer ensemble,no-inflection,0.7220,ok,true
-unissez,unir,verbe,Associez ensemble,Associer ensemble,inflected,0.7220,ok,true
-unissiez,unir,verbe,Associer ensemble,Associer ensemble,no-inflection,0.7220,ok,true
-unissions,unir,verbe,Associer ensemble,Associer ensemble,no-inflection,0.7220,ok,true
-unissons,unir,verbe,Associons ensemble,Associer ensemble,inflected,0.7220,ok,true
-unit,unir,verbe,Associer ensemble,Associer ensemble,no-inflection,0.7220,ok,true
 univ,univ,nom,Institution d'enseignement supérieur,Institution d'enseignement supérieur,verbatim,0.6515,ok,false
 universel,universel,adj,Planétaire et global,Planétaire et global,verbatim,0.7132,ok,true
 universelle,universel,adj,Planétaire et global,Planétaire et global,inflected,0.7132,ok,true

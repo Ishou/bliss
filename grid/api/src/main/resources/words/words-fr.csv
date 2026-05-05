@@ -1181,18 +1181,18 @@ adaptée,fr,7,1268953,0.85239285,Mise en forme,grammalecte,MPL-2.0,adapter,true
 adaptées,fr,8,882045,0.8798917,Mises en forme,grammalecte,MPL-2.0,adapter,true
 adaptés,fr,7,936467,0.85633194,Mettre en forme,grammalecte,MPL-2.0,adapter,true
 addition,fr,8,2983008,0.8644362,Somme de deux nombres,grammalecte,MPL-2.0,addition,false
-additionna,fr,10,1901,0.94147086,Ajouta ensemble,grammalecte,MPL-2.0,additionner,true
-additionnai,fr,11,4872,0.94988775,Ajoutai ensemble,grammalecte,MPL-2.0,additionner,true
-additionnas,fr,11,65,0.9548833,Ajoutas ensemble,grammalecte,MPL-2.0,additionner,true
-additionne,fr,10,55983,0.9317339,Ajoute ensemble,grammalecte,MPL-2.0,additionner,true
+additionna,fr,10,1901,0.94147086,additionna,grammalecte,MPL-2.0,additionner,true
+additionnai,fr,11,4872,0.94988775,additionnai,grammalecte,MPL-2.0,additionner,true
+additionnas,fr,11,65,0.9548833,additionnas,grammalecte,MPL-2.0,additionner,true
+additionne,fr,10,55983,0.9317339,additionne,grammalecte,MPL-2.0,additionner,true
 additionnel,fr,11,738409,0.9314942,Supplémentaire,grammalecte,MPL-2.0,additionnel,true
-additionner,fr,11,135687,0.94011337,Ajouter ensemble,grammalecte,MPL-2.0,additionner,true
-additionnes,fr,11,1095,0.9523765,Ajoutes ensemble,grammalecte,MPL-2.0,additionner,true
-additionnez,fr,11,2349,0.95122266,Ajoutez ensemble,grammalecte,MPL-2.0,additionner,true
-additionnât,fr,11,65,0.95488334,Ajoutât ensemble,grammalecte,MPL-2.0,additionner,true
-additionné,fr,10,252222,0.92453426,Ajouté ensemble,grammalecte,MPL-2.0,additionner,true
-additionnée,fr,11,213652,0.93812114,Ajoutée ensemble,grammalecte,MPL-2.0,additionner,true
-additionnés,fr,11,123091,0.940518,Ajoutés ensemble,grammalecte,MPL-2.0,additionner,true
+additionner,fr,11,135687,0.94011337,additionner,grammalecte,MPL-2.0,additionner,true
+additionnes,fr,11,1095,0.9523765,additionnes,grammalecte,MPL-2.0,additionner,true
+additionnez,fr,11,2349,0.95122266,additionnez,grammalecte,MPL-2.0,additionner,true
+additionnât,fr,11,65,0.95488334,additionnât,grammalecte,MPL-2.0,additionner,true
+additionné,fr,10,252222,0.92453426,additionné,grammalecte,MPL-2.0,additionner,true
+additionnée,fr,11,213652,0.93812114,additionnée,grammalecte,MPL-2.0,additionner,true
+additionnés,fr,11,123091,0.940518,additionnés,grammalecte,MPL-2.0,additionner,true
 additions,fr,9,782824,0.90061694,Sommes de deux nombres,grammalecte,MPL-2.0,addition,false
 adduction,fr,9,277222,0.9087229,Mouvement de rapprochement,grammalecte,MPL-2.0,adduction,false
 adductions,fr,10,39179,0.93312985,Mouvements de rapprochement,grammalecte,MPL-2.0,adduction,false
@@ -2899,29 +2899,29 @@ anthologie,fr,10,312529,0.9232879,Recueil de textes,grammalecte,MPL-2.0,antholog
 anthologies,fr,11,81297,0.94212025,Recueils de textes,grammalecte,MPL-2.0,anthologie,true
 anthracite,fr,10,159996,0.92700183,Charbon noir,grammalecte,MPL-2.0,anthracite,true
 antichambre,fr,11,411885,0.9348931,Pièce d'attente,grammalecte,MPL-2.0,antichambre,true
-anticipa,fr,8,9599,0.90982985,Prévit à l'avance,grammalecte,MPL-2.0,anticiper,true
-anticipai,fr,9,372,0.93242204,Prévis à l'avance,grammalecte,MPL-2.0,anticiper,true
-anticipais,fr,10,1165,0.9423358,Prévoyais à l'avance,grammalecte,MPL-2.0,anticiper,true
-anticipait,fr,10,25875,0.9346078,Prévoyait à l'avance,grammalecte,MPL-2.0,anticiper,true
-anticipant,fr,10,97391,0.9294016,Prévoyant à l'avance,grammalecte,MPL-2.0,anticiper,true
-anticipe,fr,8,95393,0.8983493,Prévoir à l'avance,grammalecte,MPL-2.0,anticiper,true
-anticipent,fr,10,64732,0.9311484,Prévoient à l'avance,grammalecte,MPL-2.0,anticiper,true
-anticiper,fr,9,398249,0.9061251,Prévoir à l'avance,grammalecte,MPL-2.0,anticiper,true
-anticipera,fr,10,2533,0.94090426,Prévoira à l'avance,grammalecte,MPL-2.0,anticiper,true
-anticiperai,fr,11,2119,0.9513909,Prévoirai à l'avance,grammalecte,MPL-2.0,anticiper,true
-anticiperez,fr,11,134,0.9545641,Prévoirez à l'avance,grammalecte,MPL-2.0,anticiper,true
-anticipes,fr,9,968,0.93082225,Prévoir à l'avance,grammalecte,MPL-2.0,anticiper,true
-anticipez,fr,9,1068,0.93062943,Prévoyez à l'avance,grammalecte,MPL-2.0,anticiper,true
-anticipiez,fr,10,143,0.9449989,Prévoyiez à l'avance,grammalecte,MPL-2.0,anticiper,true
-anticipions,fr,11,1025,0.9524675,Prévoyions à l'avance,grammalecte,MPL-2.0,anticiper,true
-anticipons,fr,10,28075,0.9343269,Prévoyons à l'avance,grammalecte,MPL-2.0,anticiper,true
-anticipâmes,fr,11,1,0.95540804,Prévîmes à l'avance,grammalecte,MPL-2.0,anticiper,true
-anticipât,fr,9,1012,0.93073535,Prévît à l'avance,grammalecte,MPL-2.0,anticiper,true
-anticipâtes,fr,11,302,0.95387435,Prévîtes à l'avance,grammalecte,MPL-2.0,anticiper,true
-anticipé,fr,8,325882,0.889383,Prévu à l'avance,grammalecte,MPL-2.0,anticiper,true
-anticipée,fr,9,470275,0.9048757,Prévue à l'avance,grammalecte,MPL-2.0,anticiper,true
-anticipées,fr,10,134773,0.9278481,Prévues à l'avance,grammalecte,MPL-2.0,anticiper,true
-anticipés,fr,9,106945,0.9145748,Prévus à l'avance,grammalecte,MPL-2.0,anticiper,true
+anticipa,fr,8,9599,0.90982985,anticipa,grammalecte,MPL-2.0,anticiper,true
+anticipai,fr,9,372,0.93242204,anticipai,grammalecte,MPL-2.0,anticiper,true
+anticipais,fr,10,1165,0.9423358,anticipais,grammalecte,MPL-2.0,anticiper,true
+anticipait,fr,10,25875,0.9346078,anticipait,grammalecte,MPL-2.0,anticiper,true
+anticipant,fr,10,97391,0.9294016,anticipant,grammalecte,MPL-2.0,anticiper,true
+anticipe,fr,8,95393,0.8983493,anticipe,grammalecte,MPL-2.0,anticiper,true
+anticipent,fr,10,64732,0.9311484,anticipent,grammalecte,MPL-2.0,anticiper,true
+anticiper,fr,9,398249,0.9061251,anticiper,grammalecte,MPL-2.0,anticiper,true
+anticipera,fr,10,2533,0.94090426,anticipera,grammalecte,MPL-2.0,anticiper,true
+anticiperai,fr,11,2119,0.9513909,anticiperai,grammalecte,MPL-2.0,anticiper,true
+anticiperez,fr,11,134,0.9545641,anticiperez,grammalecte,MPL-2.0,anticiper,true
+anticipes,fr,9,968,0.93082225,anticipes,grammalecte,MPL-2.0,anticiper,true
+anticipez,fr,9,1068,0.93062943,anticipez,grammalecte,MPL-2.0,anticiper,true
+anticipiez,fr,10,143,0.9449989,anticipiez,grammalecte,MPL-2.0,anticiper,true
+anticipions,fr,11,1025,0.9524675,anticipions,grammalecte,MPL-2.0,anticiper,true
+anticipons,fr,10,28075,0.9343269,anticipons,grammalecte,MPL-2.0,anticiper,true
+anticipâmes,fr,11,1,0.95540804,anticipâmes,grammalecte,MPL-2.0,anticiper,true
+anticipât,fr,9,1012,0.93073535,anticipât,grammalecte,MPL-2.0,anticiper,true
+anticipâtes,fr,11,302,0.95387435,anticipâtes,grammalecte,MPL-2.0,anticiper,true
+anticipé,fr,8,325882,0.889383,anticipé,grammalecte,MPL-2.0,anticiper,true
+anticipée,fr,9,470275,0.9048757,anticipée,grammalecte,MPL-2.0,anticiper,true
+anticipées,fr,10,134773,0.9278481,anticipées,grammalecte,MPL-2.0,anticiper,true
+anticipés,fr,9,106945,0.9145748,anticipés,grammalecte,MPL-2.0,anticiper,true
 anticlinal,fr,10,219670,0.9253058,En forme de dôme,grammalecte,MPL-2.0,anticlinal,true
 anticlinale,fr,11,36830,0.9447616,En forme de dôme,grammalecte,MPL-2.0,anticlinal,true
 anticlinaux,fr,11,72491,0.94252676,En forme de dôme,grammalecte,MPL-2.0,anticlinal,true
@@ -5086,38 +5086,38 @@ baiserons,fr,9,838,0.9310915,Ferons un câlin,grammalecte,MPL-2.0,baiser,true
 baiseront,fr,9,2762,0.92854154,Feront un câlin,grammalecte,MPL-2.0,baiser,true
 baisions,fr,8,1172,0.91633445,Faire un câlin,grammalecte,MPL-2.0,baiser,true
 baisons,fr,7,4168,0.8955377,Faisons un câlin,grammalecte,MPL-2.0,baiser,true
-baissa,fr,6,244887,0.8466235,Descendit en bas,grammalecte,MPL-2.0,baisser,true
-baissai,fr,7,17134,0.8892012,Descendis en bas,grammalecte,MPL-2.0,baisser,true
-baissaient,fr,10,47284,0.9324114,Descendaient en bas,grammalecte,MPL-2.0,baisser,true
-baissais,fr,8,7022,0.9110127,Descendais en bas,grammalecte,MPL-2.0,baisser,true
-baissait,fr,8,164652,0.8946563,Descendait en bas,grammalecte,MPL-2.0,baisser,true
-baissant,fr,8,202638,0.89311165,Descendant en bas,grammalecte,MPL-2.0,baisser,true
-baissassent,fr,11,1174,0.9522799,Descendissent en bas,grammalecte,MPL-2.0,baisser,true
+baissa,fr,6,244887,0.8466235,baissa,grammalecte,MPL-2.0,baisser,true
+baissai,fr,7,17134,0.8892012,baissai,grammalecte,MPL-2.0,baisser,true
+baissaient,fr,10,47284,0.9324114,baissaient,grammalecte,MPL-2.0,baisser,true
+baissais,fr,8,7022,0.9110127,baissais,grammalecte,MPL-2.0,baisser,true
+baissait,fr,8,164652,0.8946563,baissait,grammalecte,MPL-2.0,baisser,true
+baissant,fr,8,202638,0.89311165,baissant,grammalecte,MPL-2.0,baisser,true
+baissassent,fr,11,1174,0.9522799,baissassent,grammalecte,MPL-2.0,baisser,true
 baisse,fr,6,5352779,0.7977875,Diminution notable,grammalecte,MPL-2.0,baisse,true
-baissent,fr,8,200975,0.89317065,Descendent en bas,grammalecte,MPL-2.0,baisser,true
-baisser,fr,7,1131959,0.8539155,Descendre en bas,grammalecte,MPL-2.0,baisser,true
-baissera,fr,8,48235,0.90229464,Descendra en bas,grammalecte,MPL-2.0,baisser,true
-baisserai,fr,9,1539,0.92988646,Descendrai en bas,grammalecte,MPL-2.0,baisser,true
-baisserais,fr,10,692,0.9431531,Descendrais en bas,grammalecte,MPL-2.0,baisser,true
-baisserait,fr,10,26285,0.9345542,Descendrait en bas,grammalecte,MPL-2.0,baisser,true
-baisseras,fr,9,388,0.93235785,Descendras en bas,grammalecte,MPL-2.0,baisser,true
-baisserez,fr,9,586,0.9317028,Descendrez en bas,grammalecte,MPL-2.0,baisser,true
-baisseriez,fr,10,116,0.9451714,Descendriez en bas,grammalecte,MPL-2.0,baisser,true
-baisserions,fr,11,187,0.95430326,Descendrions en bas,grammalecte,MPL-2.0,baisser,true
-baisserons,fr,10,1022,0.9425527,Descendrons en bas,grammalecte,MPL-2.0,baisser,true
-baisseront,fr,10,21272,0.935281,Descendront en bas,grammalecte,MPL-2.0,baisser,true
+baissent,fr,8,200975,0.89317065,baissent,grammalecte,MPL-2.0,baisser,true
+baisser,fr,7,1131959,0.8539155,baisser,grammalecte,MPL-2.0,baisser,true
+baissera,fr,8,48235,0.90229464,baissera,grammalecte,MPL-2.0,baisser,true
+baisserai,fr,9,1539,0.92988646,baisserai,grammalecte,MPL-2.0,baisser,true
+baisserais,fr,10,692,0.9431531,baisserais,grammalecte,MPL-2.0,baisser,true
+baisserait,fr,10,26285,0.9345542,baisserait,grammalecte,MPL-2.0,baisser,true
+baisseras,fr,9,388,0.93235785,baisseras,grammalecte,MPL-2.0,baisser,true
+baisserez,fr,9,586,0.9317028,baisserez,grammalecte,MPL-2.0,baisser,true
+baisseriez,fr,10,116,0.9451714,baisseriez,grammalecte,MPL-2.0,baisser,true
+baisserions,fr,11,187,0.95430326,baisserions,grammalecte,MPL-2.0,baisser,true
+baisserons,fr,10,1022,0.9425527,baisserons,grammalecte,MPL-2.0,baisser,true
+baisseront,fr,10,21272,0.935281,baisseront,grammalecte,MPL-2.0,baisser,true
 baisses,fr,7,117596,0.87696344,Diminutions notables,grammalecte,MPL-2.0,baisse,true
-baissez,fr,7,6452,0.89377403,Descendez en bas,grammalecte,MPL-2.0,baisser,true
-baissiez,fr,8,615,0.91773194,Descendiez en bas,grammalecte,MPL-2.0,baisser,true
-baissions,fr,9,1861,0.92947423,Descendions en bas,grammalecte,MPL-2.0,baisser,true
-baissons,fr,8,3584,0.91329366,Descendons en bas,grammalecte,MPL-2.0,baisser,true
-baissâmes,fr,9,834,0.9310994,Descendîmes en bas,grammalecte,MPL-2.0,baisser,true
-baissât,fr,7,5788,0.89422977,Descendît en bas,grammalecte,MPL-2.0,baisser,true
-baissèrent,fr,10,44189,0.9326729,Descendirent en bas,grammalecte,MPL-2.0,baisser,true
-baissé,fr,6,830648,0.83171046,Descendu en bas,grammalecte,MPL-2.0,baisser,true
-baissée,fr,7,221055,0.87171715,Descendue en bas,grammalecte,MPL-2.0,baisser,true
-baissées,fr,8,41374,0.9031333,Descendues en bas,grammalecte,MPL-2.0,baisser,true
-baissés,fr,7,149248,0.87509865,Descendus en bas,grammalecte,MPL-2.0,baisser,true
+baissez,fr,7,6452,0.89377403,baissez,grammalecte,MPL-2.0,baisser,true
+baissiez,fr,8,615,0.91773194,baissiez,grammalecte,MPL-2.0,baisser,true
+baissions,fr,9,1861,0.92947423,baissions,grammalecte,MPL-2.0,baisser,true
+baissons,fr,8,3584,0.91329366,baissons,grammalecte,MPL-2.0,baisser,true
+baissâmes,fr,9,834,0.9310994,baissâmes,grammalecte,MPL-2.0,baisser,true
+baissât,fr,7,5788,0.89422977,baissât,grammalecte,MPL-2.0,baisser,true
+baissèrent,fr,10,44189,0.9326729,baissèrent,grammalecte,MPL-2.0,baisser,true
+baissé,fr,6,830648,0.83171046,baissé,grammalecte,MPL-2.0,baisser,true
+baissée,fr,7,221055,0.87171715,baissée,grammalecte,MPL-2.0,baisser,true
+baissées,fr,8,41374,0.9031333,baissées,grammalecte,MPL-2.0,baisser,true
+baissés,fr,7,149248,0.87509865,baissés,grammalecte,MPL-2.0,baisser,true
 baisâmes,fr,8,1084,0.91651684,Fîmes un câlin,grammalecte,MPL-2.0,baiser,true
 baisèrent,fr,9,14451,0.92353415,Firent un câlin,grammalecte,MPL-2.0,baiser,true
 baisé,fr,5,65669,0.8325006,Fait un câlin,grammalecte,MPL-2.0,baiser,true
@@ -15945,11 +15945,11 @@ enchaînait,fr,10,48485,0.93230635,Liait ensemble,grammalecte,MPL-2.0,enchaîner
 enchaînant,fr,10,56390,0.9317028,Liant ensemble,grammalecte,MPL-2.0,enchaîner,true
 enchaîne,fr,8,172107,0.89433545,Lie ensemble,grammalecte,MPL-2.0,enchaîner,true
 enchaînent,fr,10,247955,0.92464703,Lient ensemble,grammalecte,MPL-2.0,enchaîner,true
-enchaîner,fr,9,367206,0.9067478,Lier ensemble,grammalecte,MPL-2.0,enchaîner,true
-enchaînera,fr,10,9125,0.93784505,Liera ensemble,grammalecte,MPL-2.0,enchaîner,true
-enchaînerai,fr,11,583,0.9531714,Lierai ensemble,grammalecte,MPL-2.0,enchaîner,true
-enchaîneras,fr,11,164,0.95441264,Lieras ensemble,grammalecte,MPL-2.0,enchaîner,true
-enchaînerez,fr,11,888,0.9526616,Lierez ensemble,grammalecte,MPL-2.0,enchaîner,true
+enchaîner,fr,9,367206,0.9067478,enchaîner,grammalecte,MPL-2.0,enchaîner,true
+enchaînera,fr,10,9125,0.93784505,enchaînera,grammalecte,MPL-2.0,enchaîner,true
+enchaînerai,fr,11,583,0.9531714,enchaînerai,grammalecte,MPL-2.0,enchaîner,true
+enchaîneras,fr,11,164,0.95441264,enchaîneras,grammalecte,MPL-2.0,enchaîner,true
+enchaînerez,fr,11,888,0.9526616,enchaînerez,grammalecte,MPL-2.0,enchaîner,true
 enchaînes,fr,9,2244,0.92904615,Lies ensemble,grammalecte,MPL-2.0,enchaîner,true
 enchaînez,fr,9,2634,0.92865956,Liez ensemble,grammalecte,MPL-2.0,enchaîner,true
 enchaîniez,fr,10,237,0.9445039,Liiez ensemble,grammalecte,MPL-2.0,enchaîner,true
@@ -20303,32 +20303,32 @@ graveurs,fr,8,322593,0.8894675,Disques-jockey,grammalecte,MPL-2.0,graveur,true
 graveuse,fr,8,1145,0.91638947,Disque-jockey,grammalecte,MPL-2.0,graveur,true
 graveuses,fr,9,327,0.93260694,Disques-jockey,grammalecte,MPL-2.0,graveur,true
 gravez,fr,6,4596,0.8748554,Incisez profondément,grammalecte,MPL-2.0,graver,false
-gravi,fr,5,167851,0.8231399,Monté en haut,grammalecte,MPL-2.0,gravir,true
-gravie,fr,6,11301,0.8702953,Montée en haut,grammalecte,MPL-2.0,gravir,true
+gravi,fr,5,167851,0.8231399,gravi,grammalecte,MPL-2.0,gravir,true
+gravie,fr,6,11301,0.8702953,gravie,grammalecte,MPL-2.0,gravir,true
 gravier,fr,7,558505,0.86251915,Matériau de pierre,grammalecte,MPL-2.0,gravier,true
 graviers,fr,8,450456,0.8866022,Matériaux de pierre,grammalecte,MPL-2.0,gravier,true
-gravies,fr,7,5706,0.8942863,Montées en haut,grammalecte,MPL-2.0,gravir,true
+gravies,fr,7,5706,0.8942863,gravies,grammalecte,MPL-2.0,gravir,true
 gravions,fr,8,1587,0.9155996,Incisions profondément,grammalecte,MPL-2.0,graver,false
-gravir,fr,6,344791,0.84288085,Monter en haut,grammalecte,MPL-2.0,gravir,true
-gravira,fr,7,4234,0.89547926,Montera en haut,grammalecte,MPL-2.0,gravir,true
-gravirai,fr,8,750,0.91733074,Monterai en haut,grammalecte,MPL-2.0,gravir,true
-graviraient,fr,11,532,0.9532781,Monteraient en haut,grammalecte,MPL-2.0,gravir,true
-gravirait,fr,9,1640,0.929754,Monterait en haut,grammalecte,MPL-2.0,gravir,true
-gravirent,fr,9,22116,0.92191464,Montèrent en haut,grammalecte,MPL-2.0,gravir,true
-gravirions,fr,10,104,0.9452488,Monterions en haut,grammalecte,MPL-2.0,gravir,true
-gravirons,fr,9,1292,0.9302587,Monterons en haut,grammalecte,MPL-2.0,gravir,true
-graviront,fr,9,1610,0.92979234,Monteront en haut,grammalecte,MPL-2.0,gravir,true
-gravis,fr,6,17855,0.8676599,Monter en haut,grammalecte,MPL-2.0,gravir,true
-gravissais,fr,10,5125,0.9393405,Montais en haut,grammalecte,MPL-2.0,gravir,true
-gravissait,fr,10,34876,0.9335471,Montait en haut,grammalecte,MPL-2.0,gravir,true
-gravissant,fr,10,72458,0.93068635,Montant en haut,grammalecte,MPL-2.0,gravir,true
-gravisse,fr,8,1414,0.91588855,Monter en haut,grammalecte,MPL-2.0,gravir,true
-gravissent,fr,10,39587,0.9330914,Monter en haut,grammalecte,MPL-2.0,gravir,true
-gravissez,fr,9,1500,0.92994195,Montez en haut,grammalecte,MPL-2.0,gravir,true
-gravissiez,fr,10,271,0.94435817,Monter en haut,grammalecte,MPL-2.0,gravir,true
-gravissions,fr,11,6459,0.9493018,Monter en haut,grammalecte,MPL-2.0,gravir,true
-gravissons,fr,10,9622,0.9376978,Montons en haut,grammalecte,MPL-2.0,gravir,true
-gravit,fr,6,167925,0.8503992,Monter en haut,grammalecte,MPL-2.0,gravir,true
+gravir,fr,6,344791,0.84288085,gravir,grammalecte,MPL-2.0,gravir,true
+gravira,fr,7,4234,0.89547926,gravira,grammalecte,MPL-2.0,gravir,true
+gravirai,fr,8,750,0.91733074,gravirai,grammalecte,MPL-2.0,gravir,true
+graviraient,fr,11,532,0.9532781,graviraient,grammalecte,MPL-2.0,gravir,true
+gravirait,fr,9,1640,0.929754,gravirait,grammalecte,MPL-2.0,gravir,true
+gravirent,fr,9,22116,0.92191464,gravirent,grammalecte,MPL-2.0,gravir,true
+gravirions,fr,10,104,0.9452488,gravirions,grammalecte,MPL-2.0,gravir,true
+gravirons,fr,9,1292,0.9302587,gravirons,grammalecte,MPL-2.0,gravir,true
+graviront,fr,9,1610,0.92979234,graviront,grammalecte,MPL-2.0,gravir,true
+gravis,fr,6,17855,0.8676599,gravis,grammalecte,MPL-2.0,gravir,true
+gravissais,fr,10,5125,0.9393405,gravissais,grammalecte,MPL-2.0,gravir,true
+gravissait,fr,10,34876,0.9335471,gravissait,grammalecte,MPL-2.0,gravir,true
+gravissant,fr,10,72458,0.93068635,gravissant,grammalecte,MPL-2.0,gravir,true
+gravisse,fr,8,1414,0.91588855,gravisse,grammalecte,MPL-2.0,gravir,true
+gravissent,fr,10,39587,0.9330914,gravissent,grammalecte,MPL-2.0,gravir,true
+gravissez,fr,9,1500,0.92994195,gravissez,grammalecte,MPL-2.0,gravir,true
+gravissiez,fr,10,271,0.94435817,gravissiez,grammalecte,MPL-2.0,gravir,true
+gravissions,fr,11,6459,0.9493018,gravissions,grammalecte,MPL-2.0,gravir,true
+gravissons,fr,10,9622,0.9376978,gravissons,grammalecte,MPL-2.0,gravir,true
+gravit,fr,6,167925,0.8503992,gravit,grammalecte,MPL-2.0,gravir,true
 gravitation,fr,11,476463,0.9340974,Force d'attraction universelle,grammalecte,MPL-2.0,gravitation,false
 gravure,fr,7,1608989,0.8490167,Art du dessin sur pierre,grammalecte,MPL-2.0,gravure,false
 gravures,fr,8,1483454,0.8739679,Arts du dessin sur pierre,grammalecte,MPL-2.0,gravure,false
@@ -20338,7 +20338,7 @@ gravé,fr,5,921018,0.8001315,Incisé profondément,grammalecte,MPL-2.0,graver,fa
 gravée,fr,6,732134,0.8335104,Incisée profondément,grammalecte,MPL-2.0,graver,false
 gravées,fr,7,675395,0.8603576,Incisées profondément,grammalecte,MPL-2.0,graver,false
 gravés,fr,6,572123,0.8367012,Incisés profondément,grammalecte,MPL-2.0,graver,false
-gravîmes,fr,8,13535,0.9084326,Montâmes en haut,grammalecte,MPL-2.0,gravir,true
+gravîmes,fr,8,13535,0.9084326,gravîmes,grammalecte,MPL-2.0,gravir,true
 grec,fr,4,4627692,0.729638,De l'antiquité,grammalecte,MPL-2.0,grec,true
 grecque,fr,7,3387568,0.8369275,De l'antiquité,grammalecte,MPL-2.0,grec,true
 grecques,fr,8,1211725,0.87639415,De l'antiquité,grammalecte,MPL-2.0,grec,true
@@ -43219,8 +43219,8 @@ unanimité,fr,9,2703584,0.8873767,Accord général,grammalecte,MPL-2.0,unanimit�
 unanimités,fr,10,2928,0.9406048,Accords généraux,grammalecte,MPL-2.0,unanimité,true
 unicité,fr,7,376714,0.8666992,Caractère de ce qui est unique,grammalecte,MPL-2.0,unicité,false
 unicités,fr,8,633,0.91768044,Caractères de ce qui est unique,grammalecte,MPL-2.0,unicité,false
-unie,fr,4,1602212,0.75536376,Associée ensemble,grammalecte,MPL-2.0,unir,true
-unies,fr,5,1815407,0.7878887,Associées ensemble,grammalecte,MPL-2.0,unir,true
+unie,fr,4,1602212,0.75536376,unie,grammalecte,MPL-2.0,unir,true
+unies,fr,5,1815407,0.7878887,unies,grammalecte,MPL-2.0,unir,true
 unifia,fr,6,8322,0.8719357,Rendit unique et cohérent,grammalecte,MPL-2.0,unifier,false
 unifiaient,fr,10,2161,0.94122624,Rendaient unique et cohérent,grammalecte,MPL-2.0,unifier,false
 unifiait,fr,8,8018,0.91051567,Rendait unique et cohérent,grammalecte,MPL-2.0,unifier,false
@@ -43259,28 +43259,28 @@ union,fr,5,9648844,0.7470926,Alliance de deux ou plusieurs parties,grammalecte,M
 unions,fr,6,1139681,0.82705694,Alliances de deux ou plusieurs parties,grammalecte,MPL-2.0,union,false
 unique,fr,6,16018945,0.7685325,Particulier et sans égal,grammalecte,MPL-2.0,unique,true
 uniques,fr,7,607020,0.8615776,Particulier et sans égal,grammalecte,MPL-2.0,unique,true
-unir,fr,4,2023201,0.7502014,Associer ensemble,grammalecte,MPL-2.0,unir,true
-unira,fr,5,57501,0.8336871,Associera ensemble,grammalecte,MPL-2.0,unir,true
-unirai,fr,6,4248,0.8752108,Associerai ensemble,grammalecte,MPL-2.0,unir,true
-uniraient,fr,9,22765,0.9218031,Associeraient ensemble,grammalecte,MPL-2.0,unir,false
-unirait,fr,7,38820,0.8845619,Associerait ensemble,grammalecte,MPL-2.0,unir,true
-unirent,fr,7,129703,0.8761963,Associèrent ensemble,grammalecte,MPL-2.0,unir,true
-unirions,fr,8,776,0.9172631,Associerions ensemble,grammalecte,MPL-2.0,unir,true
-unirons,fr,7,5137,0.89471275,Associerons ensemble,grammalecte,MPL-2.0,unir,true
-uniront,fr,7,42591,0.88398397,Associeront ensemble,grammalecte,MPL-2.0,unir,true
-unis,fr,4,694998,0.77126044,Associer ensemble,grammalecte,MPL-2.0,unir,true
-unissaient,fr,10,252183,0.92453605,Associaient ensemble,grammalecte,MPL-2.0,unir,true
-unissais,fr,8,1541,0.9156706,Associais ensemble,grammalecte,MPL-2.0,unir,true
-unissait,fr,8,322794,0.8894601,Associait ensemble,grammalecte,MPL-2.0,unir,true
-unissant,fr,8,563880,0.88445026,Associant ensemble,grammalecte,MPL-2.0,unir,true
-unisse,fr,6,32088,0.86380345,Associer ensemble,grammalecte,MPL-2.0,unir,true
-unissent,fr,8,1188828,0.8765952,Associer ensemble,grammalecte,MPL-2.0,unir,true
-unissez,fr,7,20136,0.8883315,Associez ensemble,grammalecte,MPL-2.0,unir,true
-unissiez,fr,8,1261,0.9161697,Associer ensemble,grammalecte,MPL-2.0,unir,true
-unissions,fr,9,4501,0.92726696,Associer ensemble,grammalecte,MPL-2.0,unir,true
+unir,fr,4,2023201,0.7502014,unir,grammalecte,MPL-2.0,unir,true
+unira,fr,5,57501,0.8336871,unira,grammalecte,MPL-2.0,unir,true
+unirai,fr,6,4248,0.8752108,unirai,grammalecte,MPL-2.0,unir,true
+uniraient,fr,9,22765,0.9218031,uniraient,grammalecte,MPL-2.0,unir,false
+unirait,fr,7,38820,0.8845619,unirait,grammalecte,MPL-2.0,unir,true
+unirent,fr,7,129703,0.8761963,unirent,grammalecte,MPL-2.0,unir,true
+unirions,fr,8,776,0.9172631,unirions,grammalecte,MPL-2.0,unir,true
+unirons,fr,7,5137,0.89471275,unirons,grammalecte,MPL-2.0,unir,true
+uniront,fr,7,42591,0.88398397,uniront,grammalecte,MPL-2.0,unir,true
+unis,fr,4,694998,0.77126044,unis,grammalecte,MPL-2.0,unir,true
+unissaient,fr,10,252183,0.92453605,unissaient,grammalecte,MPL-2.0,unir,true
+unissais,fr,8,1541,0.9156706,unissais,grammalecte,MPL-2.0,unir,true
+unissait,fr,8,322794,0.8894601,unissait,grammalecte,MPL-2.0,unir,true
+unissant,fr,8,563880,0.88445026,unissant,grammalecte,MPL-2.0,unir,true
+unisse,fr,6,32088,0.86380345,unisse,grammalecte,MPL-2.0,unir,true
+unissent,fr,8,1188828,0.8765952,unissent,grammalecte,MPL-2.0,unir,true
+unissez,fr,7,20136,0.8883315,unissez,grammalecte,MPL-2.0,unir,true
+unissiez,fr,8,1261,0.9161697,unissiez,grammalecte,MPL-2.0,unir,true
+unissions,fr,9,4501,0.92726696,unissions,grammalecte,MPL-2.0,unir,true
 unisson,fr,7,357324,0.8672339,En même temps,grammalecte,MPL-2.0,unisson,true
-unissons,fr,8,21151,0.90645903,Associons ensemble,grammalecte,MPL-2.0,unisson,true
-unit,fr,4,1951029,0.7510087,Associer ensemble,grammalecte,MPL-2.0,unir,true
+unissons,fr,8,21151,0.90645903,unissons,grammalecte,MPL-2.0,unisson,true
+unit,fr,4,1951029,0.7510087,unit,grammalecte,MPL-2.0,unir,true
 unité,fr,5,20311356,0.723673,Ensemble indivisible,grammalecte,MPL-2.0,unité,true
 unités,fr,6,6507057,0.79332376,Ensembles indivisibles,grammalecte,MPL-2.0,unité,true
 univ,fr,4,137480,0.7945529,Institution d'enseignement supérieur,grammalecte,MPL-2.0,univ,false

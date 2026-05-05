@@ -166,7 +166,7 @@ adaptation,nom,,,Adaptation au changement,1,self-reference,,0.5772
 adapter,verbe,,,Mettre en forme,1,ok,,0.5817
 addition,nom,,,Somme de deux nombres,1,ok,,0.6445
 additionnel,adj,,,Supplémentaire,1,ok,,0.6445
-additionner,verbe,,,Ajouter ensemble,1,ok,,0.5634
+additionner,verbe,,,Ajouter ensemble,1,pleonasm,,0.5634
 adduction,nom,,,Mouvement de rapprochement,1,ok,,0.7058
 adepte,nom,,,Suiveur convaincu,1,ok,,0.5468
 adhérence,nom,,,Lien solide,1,ok,,0.6630
@@ -569,7 +569,7 @@ anthologie,nom,,,Recueil de textes,1,ok,,0.7947
 anthracite,adj,,,Charbon noir,1,ok,,0.6182
 anti,,,,Opposé à,1,ok,,0.3990
 antichambre,nom,,,Pièce d'attente,1,ok,,0.5945
-anticiper,verbe,,,Prévoir à l'avance,1,ok,,0.5482
+anticiper,verbe,,,Prévoir à l'avance,1,pleonasm,,0.5482
 anticlinal,adj,,,En forme de dôme,1,ok,,0.5535
 anticorps,nom,,,Proteine de défense,1,unknown-head,,0.6529
 antigène,nom,,,Substance étrangère,1,ok,,0.6505
@@ -1052,7 +1052,7 @@ bain,nom,,,Immersion dans l'eau,1,ok,,0.6522
 baise,nom,,,Coup de fouet,1,ok,,0.6537
 baiser,verbe,,,Embrasser tendrement,1,ok,,0.5348
 baisse,nom,,,Diminution notable,1,ok,,0.6667
-baisser,verbe,,,Descendre en bas,1,ok,,0.6119
+baisser,verbe,,,Descendre en bas,1,pleonasm,,0.6119
 balai,nom,,,Outil de ménage,1,ok,,0.6819
 balance,nom,,,Équilibre parfait,1,ok,,0.5907
 balancement,nom,,,Mouvement d'un côté à l'autre,1,ok,,0.5688
@@ -3580,7 +3580,7 @@ encan,nom,,,Vente publique,1,ok,,0.5274
 enceinte,nom,,,Grosse comme une baleine,1,head-not-lemma,,0.5516
 encens,nom,,,Parfum brûlé en offrande,1,ok,,0.6622
 enchanteur,nom,,,Magicien de la cour,1,ok,,0.5597
-enchaîner,verbe,,,Lier ensemble,1,ok,,0.7182
+enchaîner,verbe,,,Lier ensemble,1,pleonasm,,0.7182
 enchaîné,nom,,,Attaché et lié,1,ok,,0.6023
 enclavement,nom,,,Encerclement complet,1,ok,,0.7451
 enclin,adj,,,Prêt à agir,1,ok,,0.7638
@@ -4632,7 +4632,7 @@ gravement,,,,Très sérieusement,1,ok,,0.4405
 graver,verbe,,,Inciser profondément,1,ok,,0.7020
 graveur,nom,,,Disque-jockey,1,ok,,0.5859
 gravier,nom,,,Matériau de pierre,1,ok,,0.5940
-gravir,verbe,,,Monter en haut,1,ok,,0.7361
+gravir,verbe,,,Monter en haut,1,pleonasm,,0.7361
 gravitation,nom,,,Force d'attraction universelle,1,ok,,0.8452
 gravure,nom,,,Art du dessin sur pierre,1,ok,,0.7562
 gray,nom,,,De couleur cendrée,1,ok,,0.4403
@@ -10639,7 +10639,7 @@ unilatéral,adj,,,Unique d'un côté,1,ok,,0.6590
 union,nom,,,Alliance de deux ou plusieurs parties,1,ok,,0.6790
 unique,adj,,,Particulier et sans égal,1,ok,,0.6335
 uniquement,,,,Seul et sans partage,1,ok,,0.6365
-unir,verbe,,,Associer ensemble,1,ok,,0.7220
+unir,verbe,,,Associer ensemble,1,pleonasm,,0.7220
 unisson,nom,,,En même temps,1,ok,,0.5821
 unitaire,nom,,,Formé d'une seule partie,1,head-not-lemma,,0.6539
 unité,nom,,,Ensemble indivisible,1,ok,,0.5813

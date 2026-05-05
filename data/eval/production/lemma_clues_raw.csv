@@ -166,7 +166,7 @@ adaptation,,,,Adaptation au changement,1,self-reference,,0.5772
 adapter,,,,Mettre en forme,1,ok,,0.5817
 addition,,,,Somme de deux nombres,1,ok,,0.6445
 additionnel,,,,Supplémentaire,1,ok,,0.6445
-additionner,,,,Ajouter ensemble,1,ok,,0.5634
+additionner,,,,Ajouter ensemble,1,pleonasm,,0.5634
 adduction,,,,Mouvement de rapprochement,1,ok,,0.7058
 adepte,,,,Suiveur convaincu,1,ok,,0.5468
 adhérence,,,,Lien solide,1,ok,,0.6630
@@ -569,7 +569,7 @@ anthologie,,,,Recueil de textes,1,ok,,0.7947
 anthracite,,,,Charbon noir,1,ok,,0.6182
 anti,,,,Opposé à,1,ok,,0.3990
 antichambre,,,,Pièce d'attente,1,ok,,0.5945
-anticiper,,,,Prévoir à l'avance,1,ok,,0.5482
+anticiper,,,,Prévoir à l'avance,1,pleonasm,,0.5482
 anticlinal,,,,En forme de dôme,1,ok,,0.5535
 anticorps,,,,Proteine de défense,1,unknown-head,,0.6529
 antigène,,,,Substance étrangère,1,ok,,0.6505
@@ -1052,7 +1052,7 @@ bain,,,,Immersion dans l'eau,1,ok,,0.6522
 baise,,,,Coup de fouet,1,ok,,0.6537
 baiser,,,,Embrasser tendrement,1,ok,,0.5348
 baisse,,,,Diminution notable,1,ok,,0.6667
-baisser,,,,Descendre en bas,1,ok,,0.6119
+baisser,,,,Descendre en bas,1,pleonasm,,0.6119
 balai,,,,Outil de ménage,1,ok,,0.6819
 balance,,,,Équilibre parfait,1,ok,,0.5907
 balancement,,,,Mouvement d'un côté à l'autre,1,ok,,0.5688
@@ -3580,7 +3580,7 @@ encan,,,,Vente publique,1,ok,,0.5274
 enceinte,,,,Grosse comme une baleine,1,head-not-lemma,,0.5516
 encens,,,,Parfum brûlé en offrande,1,ok,,0.6622
 enchanteur,,,,Magicien de la cour,1,ok,,0.5597
-enchaîner,,,,Lier ensemble,1,ok,,0.7182
+enchaîner,,,,Lier ensemble,1,pleonasm,,0.7182
 enchaîné,,,,Attaché et lié,1,ok,,0.6023
 enclavement,,,,Encerclement complet,1,ok,,0.7451
 enclin,,,,Prêt à agir,1,ok,,0.7638
@@ -4632,7 +4632,7 @@ gravement,,,,Très sérieusement,1,ok,,0.4405
 graver,,,,Inciser profondément,1,ok,,0.7020
 graveur,,,,Disque-jockey,1,ok,,0.5859
 gravier,,,,Matériau de pierre,1,ok,,0.5940
-gravir,,,,Monter en haut,1,ok,,0.7361
+gravir,,,,Monter en haut,1,pleonasm,,0.7361
 gravitation,,,,Force d'attraction universelle,1,ok,,0.8452
 gravure,,,,Art du dessin sur pierre,1,ok,,0.7562
 gray,,,,De couleur cendrée,1,ok,,0.4403
@@ -10639,7 +10639,7 @@ unilatéral,,,,Unique d'un côté,1,ok,,0.6590
 union,,,,Alliance de deux ou plusieurs parties,1,ok,,0.6790
 unique,,,,Particulier et sans égal,1,ok,,0.6335
 uniquement,,,,Seul et sans partage,1,ok,,0.6365
-unir,,,,Associer ensemble,1,ok,,0.7220
+unir,,,,Associer ensemble,1,pleonasm,,0.7220
 unisson,,,,En même temps,1,ok,,0.5821
 unitaire,,,,Formé d'une seule partie,1,head-not-lemma,,0.6539
 unité,,,,Ensemble indivisible,1,ok,,0.5813
