@@ -344,18 +344,47 @@ export function Grid({
     },
     [],
   );
-  // Pan never affects focus: the focused cell stays focused and stays
-  // visually highlighted throughout the gesture, and ends with no
-  // restoration logic to second-guess. iOS Safari's native focus-snap
-  // is still a risk here (it fights the library's CSS transform) but
-  // the user has explicitly chosen that we don't blur for pan.
+  // Pan never causes a focus change. Two failure modes we have to
+  // counter:
+  //   1. mousedown on a cell focuses it (browser default), then the
+  //      library's preventDefault fires too late on Safari/iOS — the
+  //      cell is already focused. So a previously-focused cell can
+  //      visibly switch to the cell at mousedown.
+  //   2. The pan gesture itself never blurs the active element (we
+  //      don't touch focus in handlePanningStart). But (1) can sneak
+  //      a new focused element in.
+  // Solution: snapshot the active element at panning start, and on
+  // panning stop check whether focus drifted; if so, restore the
+  // snapshot (or blur, if there was none). This enforces the rule
+  // "focus state is identical before and after a pan".
+  const focusBeforePanRef = useRef<HTMLInputElement | null>(null);
   const handlePanningStart = useCallback(() => {
     panningRef.current = true;
     setIsPanning(true);
+    const active = document.activeElement;
+    focusBeforePanRef.current =
+      active instanceof HTMLInputElement && active.closest('[role="grid"]')
+        ? active
+        : null;
   }, []);
   const handlePanningStop = useCallback(() => {
     panningRef.current = false;
     setIsPanning(false);
+    const before = focusBeforePanRef.current;
+    focusBeforePanRef.current = null;
+    const active = document.activeElement;
+    const activeCell =
+      active instanceof HTMLInputElement && active.closest('[role="grid"]')
+        ? active
+        : null;
+    // If focus drifted to a different cell during the pan, undo it.
+    if (activeCell !== before) {
+      if (before && before.isConnected) {
+        before.focus({ preventScroll: true });
+      } else if (activeCell) {
+        activeCell.blur();
+      }
+    }
   }, []);
 
   // Capture-phase focusin listener on the grid frame: if the user taps
@@ -558,7 +587,16 @@ export function Grid({
         centerOnInit
         wheel={{ step: 0.05 }}
         doubleClick={{ disabled: true }}
-        panning={{ velocityDisabled: true, allowLeftClickPan: true, disabled: !isZoomedIn }}
+        panning={{
+          velocityDisabled: true,
+          // At scale 1 we BOTH disable panning movement AND opt out of
+          // left-click capture. The library's onPanningStart handler
+          // calls `preventDefault` regardless of `panning.disabled`
+          // (that flag only stops the actual move), so leaving
+          // allowLeftClickPan true at scale 1 swallows the cell click.
+          allowLeftClickPan: isZoomedIn,
+          disabled: !isZoomedIn,
+        }}
         // Blur-on-gesture: iOS Safari fights pinch / pan with a native
         // focus-snap (auto-scrolls / zooms to keep the focused <input>
         // visible during any layout change, including the library's
