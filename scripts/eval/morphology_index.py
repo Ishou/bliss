@@ -86,17 +86,42 @@ class MorphologyIndex:
         """
         target = {t for t in target_tags if not _is_verb_paradigm_tag(t)}
         wants_gender = target & GENDER_TOKENS
-        target_no_gender = target - GENDER_TOKENS
+        wants_number = target & NUMBER_TOKENS
+        # Strip gender + number; we re-check them below with `inv`/`epi`
+        # compatibility. Without that exception, an invariable past-participle
+        # like `pris` (tagged `{ppas, mas, inv}`) wouldn't match a target of
+        # `{ppas, mas, sg}` — strict subset fails because `sg ∉ {inv, ...}`.
+        # `inv` semantically means "same form for sg AND pl", so it must be
+        # accepted for either number request.
+        target_core = target - GENDER_TOKENS - NUMBER_TOKENS
 
         primary: str | None = None
         fallback: str | None = None
         for surface, tags in self.by_lemma.get(lemma.lower(), []):
-            if not target_no_gender.issubset(tags):
+            if not target_core.issubset(tags):
                 continue
+            if wants_number:
+                tag_numbers = tags & NUMBER_TOKENS
+                # `inv` on EITHER side means "either number works": an
+                # invariable target (target carries `inv`) accepts sg or pl
+                # head forms, and an invariable head form accepts any
+                # target number. Also: if the row simply doesn't carry a
+                # number tag (e.g. an infinitive), fall through silently.
+                if tag_numbers and "inv" not in wants_number and "inv" not in tag_numbers:
+                    if not (wants_number & tag_numbers):
+                        continue
             if wants_gender:
                 tag_genders = tags & GENDER_TOKENS
-                if not (wants_gender & tag_genders or "epi" in tag_genders):
-                    continue
+                # `epi` on EITHER side means "any gender works": an epicene
+                # surface (target) accepts mas or fem head forms, and an
+                # epicene head form accepts any target gender. This matters
+                # for adjectives whose source surface is epi-plural but the
+                # head only has mas/fem rows (`abominables` cluing
+                # `monstrueux et répugnant` — `monstrueux` is mas-inv,
+                # never tagged epi).
+                if "epi" not in wants_gender and "epi" not in tag_genders:
+                    if not (wants_gender & tag_genders):
+                        continue
             if prefer_pos == "adj":
                 is_primary = "adj" in tags
             elif prefer_pos == "nom":
@@ -135,11 +160,22 @@ class MorphologyIndex:
     def lemma_of_form(self, surface: str, prefer_pos: str = "") -> str | None:
         """Return the most-likely lemma for the surface form. If `prefer_pos` is
         given (verbe / nom / adj) and there's an analysis matching it, prefer
-        that one — useful when disambiguating heterogeneous forms."""
+        that one — useful when disambiguating heterogeneous forms.
+
+        For `prefer_pos="adj"` we accept any row carrying the `adj` tag
+        (including past-participle rows of verbs — grammalecte tags `prononcé`
+        as both `:Q` ppas AND `:A` adj on the verb's row). Without that, an
+        adj-target call on `prononcé` would return the unrelated NOUN lemma
+        `prononcé` and yield no fem-sg form, where the intended head is the
+        verb `prononcer` whose ppas paradigm includes `prononcée`."""
         analyses = self.lookup_form(surface)
         if not analyses:
             return None
-        if prefer_pos:
+        if prefer_pos == "adj":
+            for lemma, tags in analyses:
+                if "adj" in tags:
+                    return lemma
+        elif prefer_pos:
             for lemma, tags in analyses:
                 pos = _classify(tags)
                 if pos == prefer_pos:
