@@ -142,8 +142,9 @@ def _split_surface_clues(dry_run: bool) -> tuple[int, int]:
     # Read existing dropped tier (preserve its rows) and append.
     if SURFACE_DROPPED.exists():
         with SURFACE_DROPPED.open(encoding="utf-8", newline="") as f:
-            existing = list(csv.DictReader(f))
-            drop_fields = (csv.DictReader(open(SURFACE_DROPPED, encoding="utf-8")).fieldnames) or fieldnames
+            reader = csv.DictReader(f)
+            drop_fields = reader.fieldnames or fieldnames
+            existing = list(reader)
     else:
         existing = []
         drop_fields = fieldnames
