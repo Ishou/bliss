@@ -731,6 +731,36 @@ describe('Lobby route Wave H integration', () => {
     expect(panel?.textContent).toMatch(/Sélectionnez une case/i);
   });
 
+  it('keeps the WordSparrow h1 + DÉMO badge in the DOM through gameStarted (WCAG 2.4.6 landmark) and the grid is the only width-capped row', async () => {
+    // Layout regression guard: the fullscreen-grid PR shrinks the page
+    // padding and the wordmark on mobile, but the title MUST stay in
+    // the DOM as an h1 so screen-reader landmark navigation still
+    // surfaces the WordSparrow brand. Same for the "Démo" badge —
+    // ADR-0005 §4 puts it next to the title, and dropping it would
+    // hide the placeholder-build cue from sighted users.
+    const gameClient = makeFakeGameClient();
+    renderLobby({ gameClient });
+    await screen.findByRole('heading', { name: /WordSparrow/ });
+    act(() => {
+      gameClient.dispatch({
+        type: 'gameStarted',
+        puzzle: buildGamePuzzle(),
+        startedAt: '2026-05-02T15:30:00Z',
+      });
+    });
+    // h1 survives the WAITING → IN_PROGRESS transition.
+    const h1 = screen.getByRole('heading', { level: 1, name: /WordSparrow/ });
+    expect(h1).toBeInTheDocument();
+    // Démo badge is still next to it.
+    expect(screen.getByLabelText('version démo')).toBeInTheDocument();
+    // The lobby id is reachable via the URL bar (memory history)
+    // and via the WaitingRoom share-URL button — neither of which is
+    // unmounted by the in-game state — so the player always has a way
+    // to find or share their lobby. Sanity-check the route still renders
+    // the player-count line so the route shell is intact.
+    expect(screen.getByText(/joueur/)).toBeInTheDocument();
+  });
+
   it('forwards a typed letter to gameClient.cellUpdate with row/column/letter', async () => {
     const gameClient = makeFakeGameClient();
     const { container } = renderLobby({ gameClient });

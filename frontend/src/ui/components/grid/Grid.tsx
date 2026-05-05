@@ -11,6 +11,7 @@ import type { Player, SessionId } from '@/domain/game';
 import { BlockCellView, DefinitionCellView, LetterCellView } from './Cell';
 import { CurrentCluePanel } from './CurrentCluePanel';
 import { GridZoomControls } from './GridZoomControls';
+import { GRID_TRACK_WIDTH } from './layout';
 import { PresenceOverlay } from './PresenceOverlay';
 import { useGridNavigation, type Direction } from './useGridNavigation';
 
@@ -21,7 +22,8 @@ const gridContainer = css({
   border: '1px solid',
   borderColor: 'border',
   width: '100%',
-  // Width is bounded by the TransformComponent wrapper below (maxWidth: 480px).
+  // Width is bounded by the TransformComponent wrapper below
+  // (`transformWrapperBaseStyle.maxWidth` — a viewport-aware clamp).
   // Allow border arrows on edge cells to bleed outside the grid border box.
   overflow: 'visible',
   // Omitted: touch-action:manipulation blocked pinch/pan; user-select:none blocked iOS magnifier on clue cells.
@@ -37,10 +39,38 @@ const gridFrame = css({ position: 'relative', width: '100%', overflow: 'visible'
 
 // Base inline style for the `TransformComponent` wrapper. Makes the
 // zoom-pan viewport behave like the old raw `<div role="grid">` did:
-// full available width, capped at 480px, centered under the clue panel.
-// The library's stylesheet defaults this box to `width: fit-content`,
-// which would collapse around `width: 100%` children — we override here
-// so the outer box drives the layout and the grid inside fills it.
+// full available width, capped via a viewport-aware `clamp()` that
+// stretches the grid as far as the screen allows, centered under the
+// clue panel. The library's stylesheet defaults this box to
+// `width: fit-content`, which would collapse around `width: 100%`
+// children — we override here so the outer box drives the layout and
+// the grid inside fills it.
+//
+// Width formula (single source of truth, exported as `GRID_TRACK_WIDTH`
+// from `./layout` so the sticky `CurrentCluePanel` and the
+// `GridZoomControls` row both apply the same cap and the three rows
+// render as a single visually-aligned column at every viewport size):
+//
+//   maxWidth = min(95vw, 80vmin, 720px)
+//
+//   * `95vw`   — fills the screen width on portrait phones, leaving a
+//                small breathing margin so the grid doesn't sit flush
+//                against the edge. Beats the old hard 480px cap by
+//                roughly 70 px on a 360-wide phone.
+//   * `80vmin` — keeps the grid roughly square-friendly across portrait
+//                and landscape: on a tall phone it reuses the height
+//                budget, on a wide desktop it caps the visual area to
+//                a comfortable reading distance instead of ballooning
+//                across a 4K display. `vmin` (smaller of vw / vh) is
+//                preferred over `vh` so a portrait phone with the soft
+//                keyboard open doesn't shrink the grid more than the
+//                visualViewport-aware `maxHeight` already does.
+//   * `720px`  — absolute desktop ceiling. A 720 px grid on a 7×7 puzzle
+//                gives ~100 px cells (~5.6 mm at typical 96 dpi); larger
+//                cells make the FitText autosizer pick a font size that
+//                feels oversized and the eye has to track too far between
+//                cells to read across-clues.
+//
 // `touchAction` is dynamic per `transformWrapperStyle` below — `pan-y` when
 // the grid is at rest (scale 1) so a vertical swipe over the grid scrolls
 // the page (the natural mobile expectation), `none` once the user has
@@ -54,9 +84,28 @@ const gridFrame = css({ position: 'relative', width: '100%', overflow: 'visible'
 // underneath the keyboard with no way to reach them (the library reads
 // `wrapperComponent.offsetHeight` for every pan/zoom op, so a smaller
 // wrapper produces panable bounds even at scale 1).
+//
+// `GRID_TRACK_WIDTH` (re-exported from `./layout` so consumers can keep
+// importing from here) is the single source of truth for the track that
+// the sticky clue panel + grid wrapper + zoom controls share. The chrome
+// rows pull the value via the `style={{ maxWidth: GRID_TRACK_WIDTH }}`
+// inline-style escape hatch (Panda CSS does not statically extract
+// `min(…)` calls with viewport units the way it does for plain tokens,
+// and a shared CSS variable would have to live on a common ancestor —
+// the route's `<main>`. An inline-style on each row is simpler and
+// side-steps the cascade dance.)
+//
+// The constant lives in `./layout` (a leaf module) instead of here:
+// `Grid.tsx` imports `CurrentCluePanel` and `GridZoomControls`, and
+// those modules import `GRID_TRACK_WIDTH` to apply the same cap.
+// Putting the constant in `Grid.tsx` made the chain `Grid →
+// GridZoomControls → Grid` cyclic and the back-edge resolved to
+// `undefined` at module-init time, so React silently dropped the
+// inline-style prop. The leaf module breaks the cycle.
+export { GRID_TRACK_WIDTH };
 const transformWrapperBaseStyle = {
   width: '100%',
-  maxWidth: '480px',
+  maxWidth: GRID_TRACK_WIDTH,
   margin: '0 auto',
 };
 // `transformContentStyle.width: 100%` defeats the same library default on

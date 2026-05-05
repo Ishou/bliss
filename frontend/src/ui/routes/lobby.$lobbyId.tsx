@@ -43,23 +43,34 @@ import { Route as RootRoute } from './__root';
 // the multiplayer flag is on (ADR-0018 §10), so the context fields it
 // relies on are guaranteed present at the call site.
 
+// Tighter mobile padding mirrors `routes/index.tsx`: the wider grid
+// (capped at `min(95vw, 80vmin, 720px)`) needs room, and the lobby
+// chrome (player count line, PlayerList, Timer) stacks vertically so
+// every saved rem at the page level spreads across more rows. `100dvh`
+// (dynamic viewport units) so iOS Safari's URL-bar collapse doesn't
+// cut a row off the bottom on first paint.
 const pageStyles = css({
   minHeight: '100dvh', display: 'flex', flexDirection: 'column',
-  alignItems: 'center', gap: 'sm',
-  padding: 'lg', bg: 'bg', color: 'fg', fontFamily: 'body', textAlign: 'center',
+  alignItems: 'center', gap: { base: 'xs', md: 'sm' },
+  paddingBlock: { base: 'sm', md: 'lg' },
+  paddingInline: { base: 'sm', md: 'lg' },
+  bg: 'bg', color: 'fg', fontFamily: 'body', textAlign: 'center',
 });
 
 // Wordmark — mirrors `routes/index.tsx` so `/` and `/lobby/:lobbyId`
 // render the same brand title (ADR-0005 §6 amended). The lobby id stays
 // in the URL bar and surfaces via the WaitingRoom share-URL button, so
-// dropping it from the heading does not hide it from the player.
+// dropping it from the heading does not hide it from the player. Mobile
+// font collapses one step (`display` → `xl`) so the title doesn't eat
+// the vertical budget reclaimed for the grid.
 const wordmarkStyles = css({
   fontFamily: 'heading',
-  fontSize: { base: 'display', md: '2.8125rem' },
+  fontSize: { base: 'xl', md: '2.8125rem' },
   fontWeight: 'black',
   letterSpacing: '-0.02em',
   color: 'leaf.700',
   margin: 0,
+  lineHeight: '1.1',
 });
 
 // "DÉMO" pill — same rendering as the home route (ADR-0005 §4).

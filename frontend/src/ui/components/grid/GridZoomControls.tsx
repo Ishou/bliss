@@ -1,4 +1,5 @@
 import { css } from '../../../../styled-system/css';
+import { GRID_TRACK_WIDTH } from './layout';
 
 /**
  * Visible zoom controls for the grid: zoom-in, zoom-out, reset. Driven
@@ -20,17 +21,25 @@ const cluster = css({
   justifyContent: 'center',
   gap: '6px',
   width: '100%',
-  maxWidth: '480px',
   margin: '8px auto 0',
 });
 
+// Width cap shared with the grid wrapper + clue panel via `GRID_TRACK_WIDTH`.
+// Inline-style because Panda CSS does not statically extract the
+// `min(95vw, …)` clamp and the cap must stay in lock-step with `Grid.tsx`.
+const clusterStyle = { maxWidth: GRID_TRACK_WIDTH } as const;
+
 const button = css({
-  // Sized for both touch (≥ 36 px is comfortable on phones; WCAG 2.5.5
-  // recommends 44 but our cells run smaller and matching their footprint
-  // keeps the toolbar visually balanced) and keyboard focus.
-  minWidth: '36px',
-  height: '36px',
-  px: '8px',
+  // WCAG 2.2 AA — Success Criterion 2.5.8 "Target Size (Minimum)" requires
+  // touch targets ≥ 24 px; AAA-level Success Criterion 2.5.5 recommends
+  // 44 px. Mobile thumb research lands at 44–48 px for comfortable hits;
+  // we picked 44 px as the minimum width and height so each control is a
+  // first-class touch target (the cells next to it run smaller, but they
+  // are not standalone affordances — the player works through one focused
+  // cell at a time, while the zoom buttons are tap-anywhere triggers).
+  minWidth: '44px',
+  height: '44px',
+  px: 'sm',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
@@ -39,7 +48,7 @@ const button = css({
   border: '1px solid token(colors.border)',
   borderRadius: '4px',
   fontFamily: 'body',
-  fontSize: '16px',
+  fontSize: 'md',
   fontWeight: 'bold',
   cursor: 'pointer',
   _hover: { bg: 'leaf.50' },
@@ -61,7 +70,7 @@ export function GridZoomControls({
   onReset: () => void;
 }) {
   return (
-    <div className={cluster} role="group" aria-label="Zoom controls">
+    <div className={cluster} style={clusterStyle} role="group" aria-label="Zoom controls">
       {/*
         `onMouseDown={e => e.preventDefault()}` on every button: stops
         the browser's default mousedown→focus on the <button>, which
