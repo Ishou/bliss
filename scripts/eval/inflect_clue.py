@@ -51,6 +51,14 @@ _CONTENT_POS = {"verbe", "nom", "adj"}
 
 # Words always kept verbatim (function words / common adverbs / prepositions).
 # Keeping this list small — anything not here is allowed to be the head.
+#
+# Note: `non` is included here even though grammalecte tags it `:N:m:i`
+# (noun, masc-inv) in addition to `:G:X` (adverb). In a clue starting with
+# `Non présent`, `non` is the negation adverb and `présent` is the real
+# adj head. Without this exclusion, the head ranker would pick `non` (it's
+# leftmost and tagged as a content noun), inflate it to its sole invariable
+# form, and the downstream agreement walk would inherit the head's `inv`
+# tag — causing every adj after `non` to mis-agree.
 _FUNCTION_WORDS = {
     "le", "la", "les", "un", "une", "des", "du", "de", "d",
     "à", "au", "aux", "en", "dans", "sur", "sous", "par", "pour", "avec", "sans",
@@ -58,16 +66,89 @@ _FUNCTION_WORDS = {
     "qui", "que", "qu", "dont", "où", "quoi",
     "ce", "cet", "cette", "ces", "ceux", "celle", "celui",
     "son", "sa", "ses", "leur", "leurs", "mon", "ma", "mes", "ton", "ta", "tes",
-    "ne", "pas", "plus", "très", "trop", "peu", "bien", "mal",
+    "ne", "pas", "plus", "très", "trop", "peu", "bien", "mal", "non",
 }
 
 _TOKEN_RE = re.compile(r"[\wÀ-ÿŒœŸ]+|[^\s\wÀ-ÿ]+", re.UNICODE)
+
+# Mood preference for resolving syncretic surface forms. When grammalecte
+# emits a single row covering multiple moods or persons (e.g. `unis` is BOTH
+# 1sg/2sg ipre AND mas-pl ppas; `accompagne` is 1sg/3sg ipre + 1sg/3sg spre +
+# 2sg impe), the union of features is too tight to match against the target
+# verb's paradigm if that paradigm splits the same syncretism across separate
+# rows (e.g. `associer` has separate rows for `associe` 1sg ipre, `associes`
+# 2sg ipre, `associe` 1sg spre, etc.). We decompose the target into the
+# cartesian product of (mood, person) and try them in this preference order
+# — picking the indicative present over the subjunctive present, the past
+# participle over the imperative, etc. This matches what a French speaker
+# would render in a mots-fléchés clue.
+_MOOD_PREFERENCE = (
+    "ipre", "ppas", "ifut", "iimp", "ipsi", "cond",
+    "ppre", "spre", "simp", "impe", "infi",
+)
+# Person preference within a mood. For ambiguous syncretic forms like
+# `unis` (1sg+2sg ipre fused on one grammalecte row), 2sg is the more
+# natural mots-fléchés rendering ("Associes ensemble" reads as a direct
+# imperative-style instruction more often than "Associe ensemble").
+# 3sg also outranks 1sg because crosswords typically clue verb forms in
+# the 3rd person ("Va vite" → court).
+_PERSON_PREFERENCE = ("2sg", "3sg", "3pl", "2pl", "1pl", "1sg")
 
 
 @dataclass
 class InflectionResult:
     text: str
     flag: str  # '' | 'no-target-pos' | 'no-head' | 'no-inflection' | 'identity'
+
+
+def _decompose_targets(target: set[str]) -> list[set[str]]:
+    """Split a fused-feature target into a priority-ordered list of canonical
+    targets, each containing at most one mood and one person. The original
+    full target is yielded first (covers the simple case where the head verb's
+    paradigm row carries the same syncretic union); then progressively
+    relaxed candidates follow.
+
+    Why: grammalecte stores syncretic forms on a single row with the union
+    of features (e.g. `unis` carries `{ipre, 1sg, 2sg}` AND `{ppas, mas, pl}`,
+    or even fused as `{ipre, spre, 1sg, 3sg, impe, 2sg}` for `-er` 1sg).
+    The target verb's paradigm may split the same syncretism (irregular -re
+    verbs split ipre/spre on separate rows). Strict superset matching then
+    fails. Decomposing lets us match individual canonical features at a
+    time."""
+    moods = target & MOOD_TOKENS
+    persons = target & PERSON_TOKENS
+    rest = target - moods - persons
+
+    candidates: list[set[str]] = [set(target)]
+
+    # Single mood × single person decompositions, ordered by preference.
+    if moods or persons:
+        ordered_moods = [m for m in _MOOD_PREFERENCE if m in moods] or [None]
+        ordered_persons = [p for p in _PERSON_PREFERENCE if p in persons] or [None]
+        for m in ordered_moods:
+            for p in ordered_persons:
+                trial = set(rest)
+                if m is not None:
+                    trial.add(m)
+                if p is not None:
+                    trial.add(p)
+                if trial != target:
+                    candidates.append(trial)
+
+    # As a last resort, try with mood-only (drop person constraint). We do
+    # NOT fall back to an empty target: that would match the lemma's first
+    # row (typically the infinitive / mas-sg), which is a silent identity
+    # rather than a real conjugation, and would defeat the `no-inflection`
+    # signal callers rely on.
+    for m in [m for m in _MOOD_PREFERENCE if m in moods]:
+        candidates.append(rest | {m})
+
+    # Dedup while preserving order.
+    seen: list[set[str]] = []
+    for c in candidates:
+        if c not in seen:
+            seen.append(c)
+    return seen
 
 
 def _is_alpha_token(tok: str) -> bool:
@@ -130,13 +211,34 @@ def inflect_clue(
     # voleuse) flips correctly. Only drop the gender constraint if no
     # exact-gender form exists (Astre is intrinsically masculine — it
     # stays "Astres" even when cluing a fem surface like "étoiles").
-    inflected = index.inflect(head_lemma, target, prefer_pos=target_pos)
+    #
+    # For verb targets, the surface row may carry a syncretic union of moods
+    # / persons (`unis` is `{ipre, 1sg, 2sg}` ∪ `{ppas, mas, pl}`; `abaisse`
+    # is `{ipre, spre, 1sg, 3sg, impe, 2sg}`). The head verb's paradigm may
+    # split the same syncretism across separate rows, so a strict superset
+    # match against the union fails. `_decompose_targets` walks the cartesian
+    # product of (mood, person) in preference order and tries each — that's
+    # how `unis → Associes ensemble` resolves: the full target fails (no
+    # `associer` row carries both 1sg AND 2sg), then `{ipre, 2sg}` matches
+    # `associes`, and we ship that.
+    inflected = None
+    chosen_target = target
+    for trial in _decompose_targets(target):
+        candidate = index.inflect(head_lemma, trial, prefer_pos=target_pos)
+        if candidate:
+            inflected = candidate
+            chosen_target = trial
+            break
     if not inflected and target_pos in _RELAX_GENDER_FOR:
-        inflected = index.inflect(head_lemma, target - GENDER_TOKENS,
-                                   prefer_pos=target_pos)
-        target = target - GENDER_TOKENS
+        for trial in _decompose_targets(target - GENDER_TOKENS):
+            candidate = index.inflect(head_lemma, trial, prefer_pos=target_pos)
+            if candidate:
+                inflected = candidate
+                chosen_target = trial
+                break
     if not inflected:
         return InflectionResult(_capitalize_first(clue), "no-inflection")
+    target = chosen_target
 
     new_tokens = list(tokens)
     head_changed = inflected.lower() != tokens[head_idx].lower()
