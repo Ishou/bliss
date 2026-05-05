@@ -629,10 +629,10 @@ accordâmes,fr,10,4758,0.9395241,Donnâmes une faveur,grammalecte,MPL-2.0,accord
 accordât,fr,8,97093,0.8982334,Donnât une faveur,grammalecte,MPL-2.0,accorder,true
 accordâtes,fr,10,1018,0.94255924,Donnâtes une faveur,grammalecte,MPL-2.0,accorder,true
 accordèrent,fr,11,205922,0.93829095,Donnèrent une faveur,grammalecte,MPL-2.0,accorder,true
-accordé,fr,7,4157789,0.8331252,Donné une faveur,grammalecte,MPL-2.0,accordé,true
-accordée,fr,8,4034813,0.8596469,Donnée une faveur,grammalecte,MPL-2.0,accordé,true
-accordées,fr,9,1509533,0.8942162,Données une faveur,grammalecte,MPL-2.0,accordé,true
-accordés,fr,8,1489197,0.87392765,Donnés une faveur,grammalecte,MPL-2.0,accordé,true
+accordé,fr,7,4157789,0.8331252,Donne une faveur,grammalecte,MPL-2.0,accordé,true
+accordée,fr,8,4034813,0.8596469,Donne une faveur,grammalecte,MPL-2.0,accordé,true
+accordées,fr,9,1509533,0.8942162,Donnent une faveur,grammalecte,MPL-2.0,accordé,true
+accordés,fr,8,1489197,0.87392765,Donnent une faveur,grammalecte,MPL-2.0,accordé,true
 accoucha,fr,8,94342,0.8984221,Mit au monde un enfant,grammalecte,MPL-2.0,accoucher,false
 accouchai,fr,9,2074,0.9292265,Mis au monde un enfant,grammalecte,MPL-2.0,accoucher,false
 accouchais,fr,10,634,0.9432755,Mettais au monde un enfant,grammalecte,MPL-2.0,accoucher,false
@@ -787,10 +787,10 @@ accumulons,fr,10,3162,0.9404396,Amassons des richesses,grammalecte,MPL-2.0,accum
 accumulâmes,fr,11,3,0.95520246,Amassâmes des richesses,grammalecte,MPL-2.0,accumuler,false
 accumulât,fr,9,2470,0.92881554,Amassât des richesses,grammalecte,MPL-2.0,accumuler,false
 accumulâtes,fr,11,392,0.95361394,Amassâtes des richesses,grammalecte,MPL-2.0,accumuler,false
-accumulé,fr,8,521675,0.8852282,Amassé des richesses,grammalecte,MPL-2.0,accumuler,false
-accumulée,fr,9,294285,0.9082931,Amassée des richesses,grammalecte,MPL-2.0,accumuler,false
-accumulées,fr,10,584604,0.9192288,Amassées des richesses,grammalecte,MPL-2.0,accumuler,false
-accumulés,fr,9,573318,0.9032403,Amassés des richesses,grammalecte,MPL-2.0,accumuler,false
+accumulé,fr,8,521675,0.8852282,Amasse des richesses,grammalecte,MPL-2.0,accumuler,false
+accumulée,fr,9,294285,0.9082931,Amasse des richesses,grammalecte,MPL-2.0,accumuler,false
+accumulées,fr,10,584604,0.9192288,Amassent des richesses,grammalecte,MPL-2.0,accumuler,false
+accumulés,fr,9,573318,0.9032403,Amassent des richesses,grammalecte,MPL-2.0,accumuler,false
 accus,fr,5,18274,0.8427957,Précises et exactes,grammalecte,MPL-2.0,accu,true
 accusa,fr,6,399422,0.84117585,Mit en cause,grammalecte,MPL-2.0,accuser,true
 accusai,fr,7,6302,0.8938711,Mis en cause,grammalecte,MPL-2.0,accuser,true
@@ -1749,10 +1749,10 @@ aggravons,fr,9,1114,0.9305487,Empirons la situation,grammalecte,MPL-2.0,aggraver
 aggravât,fr,8,4401,0.9126474,Empirât la situation,grammalecte,MPL-2.0,aggraver,true
 aggravâtes,fr,10,62,0.945457,Empirâtes la situation,grammalecte,MPL-2.0,aggraver,true
 aggravèrent,fr,11,37445,0.94471633,Empirèrent la situation,grammalecte,MPL-2.0,aggraver,true
-aggravé,fr,7,386307,0.86644214,Empiré la situation,grammalecte,MPL-2.0,aggraver,true
-aggravée,fr,8,391592,0.8878168,Empirée la situation,grammalecte,MPL-2.0,aggraver,true
-aggravées,fr,9,145959,0.91280097,Empirées la situation,grammalecte,MPL-2.0,aggraver,true
-aggravés,fr,8,101806,0.89790547,Empirés la situation,grammalecte,MPL-2.0,aggraver,true
+aggravé,fr,7,386307,0.86644214,Empire la situation,grammalecte,MPL-2.0,aggraver,true
+aggravée,fr,8,391592,0.8878168,Empire la situation,grammalecte,MPL-2.0,aggraver,true
+aggravées,fr,9,145959,0.91280097,Empirent la situation,grammalecte,MPL-2.0,aggraver,true
+aggravés,fr,8,101806,0.89790547,Empirent la situation,grammalecte,MPL-2.0,aggraver,true
 agha,fr,4,43270,0.8068557,Chef turc,grammalecte,MPL-2.0,agha,true
 aghas,fr,5,11827,0.84571874,Chefs turcs,grammalecte,MPL-2.0,agha,true
 agile,fr,5,196764,0.8212971,Rapide et flexible,grammalecte,MPL-2.0,agile,true
@@ -2258,10 +2258,10 @@ allouions,fr,9,234,0.933054,Accordions une faveur,grammalecte,MPL-2.0,allouer,tr
 allouons,fr,8,1131,0.91641957,Accordons une faveur,grammalecte,MPL-2.0,allouer,true
 allouât,fr,7,1767,0.8984813,Accordât une faveur,grammalecte,MPL-2.0,allouer,true
 allouèrent,fr,10,4013,0.9399191,Accordèrent une faveur,grammalecte,MPL-2.0,allouer,true
-alloué,fr,6,483554,0.8388838,Accordé une faveur,grammalecte,MPL-2.0,allouer,true
-allouée,fr,7,392327,0.8662775,Accordée une faveur,grammalecte,MPL-2.0,allouer,true
-allouées,fr,8,320788,0.88951313,Accordées une faveur,grammalecte,MPL-2.0,allouer,true
-alloués,fr,7,399702,0.8661023,Accordés une faveur,grammalecte,MPL-2.0,allouer,true
+alloué,fr,6,483554,0.8388838,Accorde une faveur,grammalecte,MPL-2.0,allouer,true
+allouée,fr,7,392327,0.8662775,Accorde une faveur,grammalecte,MPL-2.0,allouer,true
+allouées,fr,8,320788,0.88951313,Accordent une faveur,grammalecte,MPL-2.0,allouer,true
+alloués,fr,7,399702,0.8661023,Accordent une faveur,grammalecte,MPL-2.0,allouer,true
 alluma,fr,6,216488,0.8478416,Mit le feu,grammalecte,MPL-2.0,allumer,true
 allumage,fr,8,288113,0.89039606,Mise en route,grammalecte,MPL-2.0,allumage,true
 allumages,fr,9,9417,0.9250096,Mises en route,grammalecte,MPL-2.0,allumage,true
@@ -2463,10 +2463,10 @@ amendes,fr,7,1256528,0.8525311,Sanctions pécuniaires,grammalecte,MPL-2.0,amende
 amendez,fr,7,1985,0.898107,Apportez des modifications,grammalecte,MPL-2.0,amender,false
 amendions,fr,9,234,0.93305403,Apportions des modifications,grammalecte,MPL-2.0,amender,false
 amendèrent,fr,10,9556,0.9377177,Apportèrent des modifications,grammalecte,MPL-2.0,amender,false
-amendé,fr,6,271265,0.8455094,Apporté des modifications,grammalecte,MPL-2.0,amender,false
-amendée,fr,7,144741,0.8753364,Apportée des modifications,grammalecte,MPL-2.0,amender,false
-amendées,fr,8,41254,0.9031473,Apportées des modifications,grammalecte,MPL-2.0,amender,false
-amendés,fr,7,58964,0.88188714,Apportés des modifications,grammalecte,MPL-2.0,amender,false
+amendé,fr,6,271265,0.8455094,Apporte des modifications,grammalecte,MPL-2.0,amender,false
+amendée,fr,7,144741,0.8753364,Apporte des modifications,grammalecte,MPL-2.0,amender,false
+amendées,fr,8,41254,0.9031473,Apportent des modifications,grammalecte,MPL-2.0,amender,false
+amendés,fr,7,58964,0.88188714,Apportent des modifications,grammalecte,MPL-2.0,amender,false
 amener,fr,6,5075081,0.79888123,Apporter quelque chose ou quelqu'un,grammalecte,MPL-2.0,amener,false
 amenez,fr,6,24296,0.86569697,Apportez quelque chose ou quelqu'un,grammalecte,MPL-2.0,amener,false
 ameniez,fr,7,3384,0.8962926,Apportiez quelque chose ou quelqu'un,grammalecte,MPL-2.0,amener,false
@@ -3901,10 +3901,10 @@ assignâmes,fr,10,408,0.9438699,Attribuâmes une tâche,grammalecte,MPL-2.0,assi
 assignât,fr,8,7518,0.9107643,Attribuât une tâche,grammalecte,MPL-2.0,assigner,true
 assignâtes,fr,10,248,0.9444536,Attribuâtes une tâche,grammalecte,MPL-2.0,assigner,true
 assignèrent,fr,11,26593,0.94574034,Attribuèrent une tâche,grammalecte,MPL-2.0,assigner,true
-assigné,fr,7,1113216,0.85410583,Attribué une tâche,grammalecte,MPL-2.0,assigner,true
-assignée,fr,8,581165,0.8841502,Attribuée une tâche,grammalecte,MPL-2.0,assigner,true
-assignées,fr,9,344927,0.90718675,Attribuées une tâche,grammalecte,MPL-2.0,assigner,true
-assignés,fr,8,403262,0.8875755,Attribués une tâche,grammalecte,MPL-2.0,assigner,true
+assigné,fr,7,1113216,0.85410583,Attribue une tâche,grammalecte,MPL-2.0,assigner,true
+assignée,fr,8,581165,0.8841502,Attribue une tâche,grammalecte,MPL-2.0,assigner,true
+assignées,fr,9,344927,0.90718675,Attribuent une tâche,grammalecte,MPL-2.0,assigner,true
+assignés,fr,8,403262,0.8875755,Attribuent une tâche,grammalecte,MPL-2.0,assigner,true
 assimila,fr,8,35384,0.90392596,Intégra et adopter,grammalecte,MPL-2.0,assimiler,true
 assimilai,fr,9,1120,0.9305385,Intégrai et adopter,grammalecte,MPL-2.0,assimiler,true
 assimilais,fr,10,2205,0.9411846,Intégrais et adopter,grammalecte,MPL-2.0,assimiler,true
@@ -4304,10 +4304,10 @@ attardons,fr,9,12812,0.92397034,Retardons le moment,grammalecte,MPL-2.0,attarder
 attardâmes,fr,10,1025,0.94254833,Retardâmes le moment,grammalecte,MPL-2.0,attarder,true
 attardât,fr,8,2891,0.91394514,Retardât le moment,grammalecte,MPL-2.0,attarder,true
 attardèrent,fr,11,8236,0.9487621,Retardèrent le moment,grammalecte,MPL-2.0,attarder,true
-attardé,fr,7,115442,0.8771114,Retardé le moment,grammalecte,MPL-2.0,attardé,true
-attardée,fr,8,23862,0.9058951,Retardée le moment,grammalecte,MPL-2.0,attarder,true
-attardées,fr,9,16691,0.923009,Retardées le moment,grammalecte,MPL-2.0,attarder,true
-attardés,fr,8,111324,0.8973382,Retardés le moment,grammalecte,MPL-2.0,attardé,true
+attardé,fr,7,115442,0.8771114,Retarde le moment,grammalecte,MPL-2.0,attardé,true
+attardée,fr,8,23862,0.9058951,Retarde le moment,grammalecte,MPL-2.0,attarder,true
+attardées,fr,9,16691,0.923009,Retardent le moment,grammalecte,MPL-2.0,attarder,true
+attardés,fr,8,111324,0.8973382,Retardent le moment,grammalecte,MPL-2.0,attardé,true
 atteinte,fr,8,5249133,0.85504645,Blessure physique,grammalecte,MPL-2.0,atteinte,true
 atteintes,fr,9,1256051,0.8961038,Blessures physiques,grammalecte,MPL-2.0,atteinte,true
 attend,fr,6,4300410,0.80270493,Reste en place,grammalecte,MPL-2.0,attendre,true
@@ -4487,10 +4487,10 @@ attributs,fr,9,1907729,0.89152557,Qualités propres à une personne,grammalecte,
 attribuâmes,fr,11,3475,0.95053357,Confiâmes un rôle,grammalecte,MPL-2.0,attribuer,true
 attribuât,fr,9,27552,0.921016,Confiât un rôle,grammalecte,MPL-2.0,attribuer,true
 attribuâtes,fr,11,40,0.9550594,Confiâtes un rôle,grammalecte,MPL-2.0,attribuer,true
-attribué,fr,8,2830087,0.8652297,Confié un rôle,grammalecte,MPL-2.0,attribuer,true
-attribuée,fr,9,2213486,0.8898279,Confiée un rôle,grammalecte,MPL-2.0,attribuer,true
-attribuées,fr,10,1201770,0.9136756,Confiées un rôle,grammalecte,MPL-2.0,attribuer,true
-attribués,fr,9,1374780,0.895216,Confiés un rôle,grammalecte,MPL-2.0,attribuer,true
+attribué,fr,8,2830087,0.8652297,Confie un rôle,grammalecte,MPL-2.0,attribuer,true
+attribuée,fr,9,2213486,0.8898279,Confie un rôle,grammalecte,MPL-2.0,attribuer,true
+attribuées,fr,10,1201770,0.9136756,Confient un rôle,grammalecte,MPL-2.0,attribuer,true
+attribués,fr,9,1374780,0.895216,Confient un rôle,grammalecte,MPL-2.0,attribuer,true
 atténua,fr,7,31995,0.8856861,Adoucit et réduire l'intensité,grammalecte,MPL-2.0,atténuer,false
 atténuaient,fr,11,18549,0.9467621,Adoucissaient et réduire l'intensité,grammalecte,MPL-2.0,atténuer,false
 atténuais,fr,9,299,0.93273056,Adoucissais et réduire l'intensité,grammalecte,MPL-2.0,atténuer,false
@@ -4658,10 +4658,10 @@ autorisons,fr,10,17219,0.9359754,Donnons le droit,grammalecte,MPL-2.0,autoriser,
 autorisâmes,fr,11,454,0.9534558,Donnâmes le droit,grammalecte,MPL-2.0,autoriser,true
 autorisât,fr,9,42552,0.919144,Donnât le droit,grammalecte,MPL-2.0,autoriser,true
 autorisâtes,fr,11,68,0.9548695,Donnâtes le droit,grammalecte,MPL-2.0,autoriser,true
-autorisé,fr,8,3731808,0.8608587,Donné le droit,grammalecte,MPL-2.0,autoriser,true
-autorisée,fr,9,1915402,0.89149684,Donnée le droit,grammalecte,MPL-2.0,autoriser,true
-autorisées,fr,10,1178006,0.9138591,Données le droit,grammalecte,MPL-2.0,autoriser,true
-autorisés,fr,9,2181012,0.8900012,Donnés le droit,grammalecte,MPL-2.0,autoriser,true
+autorisé,fr,8,3731808,0.8608587,Donne le droit,grammalecte,MPL-2.0,autoriser,true
+autorisée,fr,9,1915402,0.89149684,Donne le droit,grammalecte,MPL-2.0,autoriser,true
+autorisées,fr,10,1178006,0.9138591,Donnent le droit,grammalecte,MPL-2.0,autoriser,true
+autorisés,fr,9,2181012,0.8900012,Donnent le droit,grammalecte,MPL-2.0,autoriser,true
 autoritaire,fr,11,950600,0.92981356,Exercice du pouvoir sans partage,grammalecte,MPL-2.0,autoritaire,false
 autorité,fr,8,28173772,0.81804436,Pouvoir légitime,grammalecte,MPL-2.0,autorité,true
 autorités,fr,9,11264329,0.8652636,Pouvoirs légitimes,grammalecte,MPL-2.0,autorité,true
@@ -4957,10 +4957,10 @@ avéreraient,fr,11,12553,0.94777673,Confirmeraient la vérité,grammalecte,MPL-2
 avérerait,fr,9,33292,0.9202074,Confirmerait la vérité,grammalecte,MPL-2.0,avérer,true
 avéreront,fr,9,17355,0.92286247,Confirmeront la vérité,grammalecte,MPL-2.0,avérer,true
 avérèrent,fr,9,29135,0.9207795,Confirmèrent la vérité,grammalecte,MPL-2.0,avérer,true
-avéré,fr,5,541028,0.80838406,Confirmé la vérité,grammalecte,MPL-2.0,avérer,true
-avérée,fr,6,285440,0.8449659,Confirmée la vérité,grammalecte,MPL-2.0,avérer,true
-avérées,fr,7,96788,0.87846816,Confirmées la vérité,grammalecte,MPL-2.0,avérer,true
-avérés,fr,6,186442,0.84935087,Confirmés la vérité,grammalecte,MPL-2.0,avérer,true
+avéré,fr,5,541028,0.80838406,Confirme la vérité,grammalecte,MPL-2.0,avérer,true
+avérée,fr,6,285440,0.8449659,Confirme la vérité,grammalecte,MPL-2.0,avérer,true
+avérées,fr,7,96788,0.87846816,Confirment la vérité,grammalecte,MPL-2.0,avérer,true
+avérés,fr,6,186442,0.84935087,Confirment la vérité,grammalecte,MPL-2.0,avérer,true
 axial,fr,5,165334,0.8233065,En rapport avec l'axe,grammalecte,MPL-2.0,axial,true
 axiale,fr,6,248473,0.8464504,En rapport avec l'axe,grammalecte,MPL-2.0,axial,true
 axiales,fr,7,58885,0.88189733,En rapport avec l'axe,grammalecte,MPL-2.0,axial,true
@@ -5315,10 +5315,10 @@ barricades,fr,10,532164,0.91989666,Obstacles dressés pour bloquer le passage,gr
 barrière,fr,8,1863501,0.87095827,Mur protecteur,grammalecte,MPL-2.0,barrière,true
 barrières,fr,9,1536941,0.89403826,Murs protecteurs,grammalecte,MPL-2.0,barrière,true
 barrèrent,fr,9,9437,0.9250013,Tracèrent une ligne,grammalecte,MPL-2.0,barrer,true
-barré,fr,5,209336,0.820591,Tracé une ligne,grammalecte,MPL-2.0,barrer,true
-barrée,fr,6,97247,0.855404,Tracée une ligne,grammalecte,MPL-2.0,barrer,true
-barrées,fr,7,39900,0.88439584,Tracées une ligne,grammalecte,MPL-2.0,barrer,true
-barrés,fr,6,49442,0.86073714,Tracés une ligne,grammalecte,MPL-2.0,barrer,true
+barré,fr,5,209336,0.820591,Trace une ligne,grammalecte,MPL-2.0,barrer,true
+barrée,fr,6,97247,0.855404,Trace une ligne,grammalecte,MPL-2.0,barrer,true
+barrées,fr,7,39900,0.88439584,Tracent une ligne,grammalecte,MPL-2.0,barrer,true
+barrés,fr,6,49442,0.86073714,Tracent une ligne,grammalecte,MPL-2.0,barrer,true
 baryte,fr,6,560705,0.83697814,Minéral lourd,grammalecte,MPL-2.0,baryte,true
 barytes,fr,7,1687,0.898624,Minérales lourdes,grammalecte,MPL-2.0,baryte,true
 barème,fr,6,318555,0.8437479,Échelle de taxation,grammalecte,MPL-2.0,barème,true
@@ -5655,10 +5655,10 @@ blâmions,fr,8,2511,0.9143539,Recherchions un coupable,grammalecte,MPL-2.0,blâm
 blâmons,fr,7,13950,0.8902325,Recherchons un coupable,grammalecte,MPL-2.0,blâmer,false
 blâmât,fr,6,3634,0.87588274,Recherchât un coupable,grammalecte,MPL-2.0,blâmer,false
 blâmèrent,fr,9,20884,0.9221395,Recherchèrent un coupable,grammalecte,MPL-2.0,blâmer,false
-blâmé,fr,5,249168,0.8185807,Recherché un coupable,grammalecte,MPL-2.0,blâmer,false
-blâmée,fr,6,66753,0.85843766,Recherchée un coupable,grammalecte,MPL-2.0,blâmer,false
-blâmées,fr,7,16421,0.88941926,Recherchées un coupable,grammalecte,MPL-2.0,blâmer,false
-blâmés,fr,6,39076,0.8624728,Recherchés un coupable,grammalecte,MPL-2.0,blâmer,false
+blâmé,fr,5,249168,0.8185807,Recherche un coupable,grammalecte,MPL-2.0,blâmer,false
+blâmée,fr,6,66753,0.85843766,Recherche un coupable,grammalecte,MPL-2.0,blâmer,false
+blâmées,fr,7,16421,0.88941926,Recherchent un coupable,grammalecte,MPL-2.0,blâmer,false
+blâmés,fr,6,39076,0.8624728,Recherchent un coupable,grammalecte,MPL-2.0,blâmer,false
 blême,fr,5,175221,0.8226539,Remontrance sévère,grammalecte,MPL-2.0,blême,true
 blêmes,fr,6,65011,0.8586586,Remontrance sévères,grammalecte,MPL-2.0,blême,true
 bobine,fr,6,788458,0.83247674,Enroulage filaire,grammalecte,MPL-2.0,bobine,true
@@ -6915,10 +6915,10 @@ caustiques,fr,10,216992,0.92536706,Acides et corrosifs,grammalecte,MPL-2.0,caust
 causâmes,fr,8,21266,0.90643024,Provoquâmes un effet,grammalecte,MPL-2.0,causer,true
 causât,fr,6,24724,0.8655775,Provoquât un effet,grammalecte,MPL-2.0,causer,true
 causèrent,fr,9,175164,0.9116919,Provoquèrent un effet,grammalecte,MPL-2.0,causer,true
-causé,fr,5,2742234,0.77944016,Provoqué un effet,grammalecte,MPL-2.0,causer,true
-causée,fr,6,978795,0.8293539,Provoquée un effet,grammalecte,MPL-2.0,causer,true
-causées,fr,7,575163,0.86216223,Provoquées un effet,grammalecte,MPL-2.0,causer,true
-causés,fr,6,1240808,0.825751,Provoqués un effet,grammalecte,MPL-2.0,causer,true
+causé,fr,5,2742234,0.77944016,Provoque un effet,grammalecte,MPL-2.0,causer,true
+causée,fr,6,978795,0.8293539,Provoque un effet,grammalecte,MPL-2.0,causer,true
+causées,fr,7,575163,0.86216223,Provoquent un effet,grammalecte,MPL-2.0,causer,true
+causés,fr,6,1240808,0.825751,Provoquent un effet,grammalecte,MPL-2.0,causer,true
 caution,fr,7,2081251,0.84503126,Prudence et vigilance,grammalecte,MPL-2.0,caution,true
 cautions,fr,8,290955,0.89030284,Prudences et vigilance,grammalecte,MPL-2.0,caution,true
 cavalerie,fr,9,4862693,0.87935257,Corps de combattants à cheval,grammalecte,MPL-2.0,cavalerie,false
@@ -8255,7 +8255,7 @@ commerciale,fr,11,5799359,0.9138637,Publicitaire,grammalecte,MPL-2.0,commercial,
 commerciaux,fr,11,3040941,0.920537,Publicitaires,grammalecte,MPL-2.0,commercial,true
 commerciez,fr,10,163,0.94488007,Échangiez des biens,grammalecte,MPL-2.0,commercer,true
 commercions,fr,11,342,0.95375246,Échangions des biens,grammalecte,MPL-2.0,commercer,true
-commercé,fr,8,26544,0.90536314,Échangé des biens,grammalecte,MPL-2.0,commercer,true
+commercé,fr,8,26544,0.90536314,Échange des biens,grammalecte,MPL-2.0,commercer,true
 commerça,fr,8,9679,0.90979487,Échangea des biens,grammalecte,MPL-2.0,commercer,true
 commerçai,fr,9,1548,0.9298755,Échangeai des biens,grammalecte,MPL-2.0,commercer,true
 commerçais,fr,10,783,0.9429689,Échangeais des biens,grammalecte,MPL-2.0,commercer,true
@@ -8513,10 +8513,10 @@ complétions,fr,11,4061,0.95024604,Parachevions une tâche,grammalecte,MPL-2.0,c
 complétons,fr,10,15808,0.9362397,Parachevons une tâche,grammalecte,MPL-2.0,compléter,true
 complétâmes,fr,11,913,0.95262456,Parachevâmes une tâche,grammalecte,MPL-2.0,compléter,false
 complétât,fr,9,7387,0.9257929,Parachevât une tâche,grammalecte,MPL-2.0,compléter,true
-complété,fr,8,1423196,0.87448955,Parachevé une tâche,grammalecte,MPL-2.0,compléter,true
-complétée,fr,9,1028275,0.8980953,Parachevée une tâche,grammalecte,MPL-2.0,compléter,true
-complétées,fr,10,387546,0.9219826,Parachevées une tâche,grammalecte,MPL-2.0,compléter,true
-complétés,fr,9,321543,0.9076722,Parachevés une tâche,grammalecte,MPL-2.0,compléter,true
+complété,fr,8,1423196,0.87448955,Paracheve une tâche,grammalecte,MPL-2.0,compléter,true
+complétée,fr,9,1028275,0.8980953,Paracheve une tâche,grammalecte,MPL-2.0,compléter,true
+complétées,fr,10,387546,0.9219826,Parachevent une tâche,grammalecte,MPL-2.0,compléter,true
+complétés,fr,9,321543,0.9076722,Parachevent une tâche,grammalecte,MPL-2.0,compléter,true
 comporta,fr,8,88574,0.8987999,Fut constitué de,grammalecte,MPL-2.0,comporter,false
 comportai,fr,9,2185,0.9291088,Fus constitué de,grammalecte,MPL-2.0,comporter,false
 comportais,fr,10,2374,0.94104,Étais constitué de,grammalecte,MPL-2.0,comporter,false
@@ -8877,9 +8877,9 @@ concrétiser,fr,11,307945,0.9363801,Donner une forme tangible,grammalecte,MPL-2.
 concrétises,fr,11,55,0.9549402,Donnes une forme tangible,grammalecte,MPL-2.0,concrétiser,false
 concrétisez,fr,11,92,0.95478094,Donnez une forme tangible,grammalecte,MPL-2.0,concrétiser,false
 concrétisât,fr,11,395,0.953606,Donnât une forme tangible,grammalecte,MPL-2.0,concrétiser,false
-concrétisé,fr,10,89623,0.9297669,Donné une forme tangible,grammalecte,MPL-2.0,concrétiser,false
-concrétisée,fr,11,105014,0.9411468,Donnée une forme tangible,grammalecte,MPL-2.0,concrétiser,false
-concrétisés,fr,11,25461,0.9458676,Donnés une forme tangible,grammalecte,MPL-2.0,concrétiser,false
+concrétisé,fr,10,89623,0.9297669,Donne une forme tangible,grammalecte,MPL-2.0,concrétiser,false
+concrétisée,fr,11,105014,0.9411468,Donne une forme tangible,grammalecte,MPL-2.0,concrétiser,false
+concrétisés,fr,11,25461,0.9458676,Donnent une forme tangible,grammalecte,MPL-2.0,concrétiser,false
 concubinage,fr,11,209109,0.9382206,Vie maritale sans mariage,grammalecte,MPL-2.0,concubinage,false
 concurrence,fr,11,9437235,0.9078889,Lutte pour la domination,grammalecte,MPL-2.0,concurrence,false
 concurrent,fr,10,650807,0.9184869,Simultané et simultané,grammalecte,MPL-2.0,concurrent,false
@@ -8918,10 +8918,10 @@ concédons,fr,9,13882,0.92367584,Accordons un avantage,grammalecte,MPL-2.0,conc�
 concédâmes,fr,10,97,0.9452888,Accordâmes un avantage,grammalecte,MPL-2.0,concéder,false
 concédât,fr,8,4959,0.9122405,Accordât un avantage,grammalecte,MPL-2.0,concéder,true
 concédèrent,fr,11,11977,0.94789064,Accordèrent un avantage,grammalecte,MPL-2.0,concéder,false
-concédé,fr,7,519314,0.86334413,Accordé un avantage,grammalecte,MPL-2.0,concéder,true
-concédée,fr,8,272184,0.89085644,Accordée un avantage,grammalecte,MPL-2.0,concéder,false
-concédées,fr,9,297909,0.90818983,Accordées un avantage,grammalecte,MPL-2.0,concéder,false
-concédés,fr,8,384746,0.88797796,Accordés un avantage,grammalecte,MPL-2.0,concéder,false
+concédé,fr,7,519314,0.86334413,Accorde un avantage,grammalecte,MPL-2.0,concéder,true
+concédée,fr,8,272184,0.89085644,Accorde un avantage,grammalecte,MPL-2.0,concéder,false
+concédées,fr,9,297909,0.90818983,Accordent un avantage,grammalecte,MPL-2.0,concéder,false
+concédés,fr,8,384746,0.88797796,Accordent un avantage,grammalecte,MPL-2.0,concéder,false
 condamna,fr,8,414801,0.8873289,Prononça un verdict de culpabilité,grammalecte,MPL-2.0,condamner,false
 condamnable,fr,11,230380,0.93780375,Qui mérite d'être puni,grammalecte,MPL-2.0,condamnable,true
 condamnai,fr,9,4223,0.9274449,Prononçai un verdict de culpabilité,grammalecte,MPL-2.0,condamner,false
@@ -8945,10 +8945,10 @@ condamnons,fr,10,45109,0.93259865,Prononçons un verdict de culpabilité,grammal
 condamnâmes,fr,11,470,0.953417,Prononçâmes un verdict de culpabilité,grammalecte,MPL-2.0,condamner,false
 condamnât,fr,9,18501,0.92261744,Prononçât un verdict de culpabilité,grammalecte,MPL-2.0,condamner,false
 condamnâtes,fr,11,363,0.9536937,Prononçâtes un verdict de culpabilité,grammalecte,MPL-2.0,condamner,false
-condamné,fr,8,5369937,0.8546733,Prononcé un verdict de culpabilité,grammalecte,MPL-2.0,condamné,false
-condamnée,fr,9,1177471,0.8967627,Prononcée un verdict de culpabilité,grammalecte,MPL-2.0,condamné,false
-condamnées,fr,10,401415,0.92177147,Prononcées un verdict de culpabilité,grammalecte,MPL-2.0,condamné,false
-condamnés,fr,9,3258401,0.8850546,Prononcés un verdict de culpabilité,grammalecte,MPL-2.0,condamné,false
+condamné,fr,8,5369937,0.8546733,Prononce un verdict de culpabilité,grammalecte,MPL-2.0,condamné,false
+condamnée,fr,9,1177471,0.8967627,Prononce un verdict de culpabilité,grammalecte,MPL-2.0,condamné,false
+condamnées,fr,10,401415,0.92177147,Prononcent un verdict de culpabilité,grammalecte,MPL-2.0,condamné,false
+condamnés,fr,9,3258401,0.8850546,Prononcent un verdict de culpabilité,grammalecte,MPL-2.0,condamné,false
 condensa,fr,8,14105,0.90826124,Réduisit en volume,grammalecte,MPL-2.0,condenser,true
 condensai,fr,9,935,0.93088925,Réduisis en volume,grammalecte,MPL-2.0,condenser,true
 condensais,fr,10,1619,0.94176656,Réduisais en volume,grammalecte,MPL-2.0,condenser,true
@@ -9253,10 +9253,10 @@ conférâmes,fr,10,1153,0.94235367,Accordâmes un pouvoir ou un privilège,gramm
 conférât,fr,8,11378,0.90914536,Accordât un pouvoir ou un privilège,grammalecte,MPL-2.0,conférer,false
 conférâtes,fr,10,155,0.94492865,Accordâtes un pouvoir ou un privilège,grammalecte,MPL-2.0,conférer,false
 conférèrent,fr,11,23427,0.94611263,Accordèrent un pouvoir ou un privilège,grammalecte,MPL-2.0,conférer,false
-conféré,fr,7,764071,0.858939,Accordé un pouvoir ou un privilège,grammalecte,MPL-2.0,conférer,false
-conférée,fr,8,316827,0.8896077,Accordée un pouvoir ou un privilège,grammalecte,MPL-2.0,conférer,false
-conférées,fr,9,145888,0.9128057,Accordées un pouvoir ou un privilège,grammalecte,MPL-2.0,conférer,false
-conférés,fr,8,347902,0.8888554,Accordés un pouvoir ou un privilège,grammalecte,MPL-2.0,conférer,false
+conféré,fr,7,764071,0.858939,Accorde un pouvoir ou un privilège,grammalecte,MPL-2.0,conférer,false
+conférée,fr,8,316827,0.8896077,Accorde un pouvoir ou un privilège,grammalecte,MPL-2.0,conférer,false
+conférées,fr,9,145888,0.9128057,Accordent un pouvoir ou un privilège,grammalecte,MPL-2.0,conférer,false
+conférés,fr,8,347902,0.8888554,Accordent un pouvoir ou un privilège,grammalecte,MPL-2.0,conférer,false
 congestion,fr,10,711529,0.9178329,Trafic dense,grammalecte,MPL-2.0,congestion,true
 congestions,fr,11,163670,0.9393292,Trafics denses,grammalecte,MPL-2.0,congestion,true
 conglomérat,fr,11,245810,0.93749475,Groupe d'entreprises,grammalecte,MPL-2.0,conglomérat,false
@@ -9276,9 +9276,9 @@ conjecturer,fr,11,244080,0.93753064,Formuler une hypothèse,grammalecte,MPL-2.0,
 conjectures,fr,11,876401,0.93035454,Hypothèses plausibles,grammalecte,MPL-2.0,conjecture,true
 conjecturez,fr,11,347,0.95373744,Formulez une hypothèse,grammalecte,MPL-2.0,conjecturer,false
 conjecturât,fr,11,63,0.9548939,Formulât une hypothèse,grammalecte,MPL-2.0,conjecturer,false
-conjecturé,fr,10,32384,0.9338098,Formulé une hypothèse,grammalecte,MPL-2.0,conjecturer,false
-conjecturée,fr,11,3479,0.9505312,Formulée une hypothèse,grammalecte,MPL-2.0,conjecturer,false
-conjecturés,fr,11,1530,0.9518994,Formulés une hypothèse,grammalecte,MPL-2.0,conjecturer,false
+conjecturé,fr,10,32384,0.9338098,Formule une hypothèse,grammalecte,MPL-2.0,conjecturer,false
+conjecturée,fr,11,3479,0.9505312,Formule une hypothèse,grammalecte,MPL-2.0,conjecturer,false
+conjecturés,fr,11,1530,0.9518994,Formulent une hypothèse,grammalecte,MPL-2.0,conjecturer,false
 conjoint,fr,8,1586369,0.8730974,Marié(e),grammalecte,MPL-2.0,conjoint,true
 conjointe,fr,9,521227,0.904045,Mariée ( e),grammalecte,MPL-2.0,conjoint,true
 conjointes,fr,10,162129,0.926926,Mariées ( e),grammalecte,MPL-2.0,conjoint,true
@@ -9314,10 +9314,10 @@ conjurons,fr,9,19233,0.9224594,Appelons les esprits,grammalecte,MPL-2.0,conjurer
 conjurâmes,fr,10,822,0.94289637,Appelâmes les esprits,grammalecte,MPL-2.0,conjurer,true
 conjurât,fr,8,1552,0.9156531,Appelât les esprits,grammalecte,MPL-2.0,conjurer,true
 conjurèrent,fr,11,23304,0.9461292,Appelèrent les esprits,grammalecte,MPL-2.0,conjurer,true
-conjuré,fr,7,97222,0.87843096,Appelé les esprits,grammalecte,MPL-2.0,conjuré,true
-conjurée,fr,8,25533,0.9055525,Appelée les esprits,grammalecte,MPL-2.0,conjurer,true
-conjurées,fr,9,11391,0.9243655,Appelées les esprits,grammalecte,MPL-2.0,conjurer,true
-conjurés,fr,8,492162,0.88576424,Appelés les esprits,grammalecte,MPL-2.0,conjuré,true
+conjuré,fr,7,97222,0.87843096,Appele les esprits,grammalecte,MPL-2.0,conjuré,true
+conjurée,fr,8,25533,0.9055525,Appele les esprits,grammalecte,MPL-2.0,conjurer,true
+conjurées,fr,9,11391,0.9243655,Appelent les esprits,grammalecte,MPL-2.0,conjurer,true
+conjurés,fr,8,492162,0.88576424,Appelent les esprits,grammalecte,MPL-2.0,conjuré,true
 connaisseur,fr,11,304977,0.93642706,Expert averti,grammalecte,MPL-2.0,connaisseur,true
 connexe,fr,7,263838,0.87011003,En rapport avec,grammalecte,MPL-2.0,connexe,true
 connexes,fr,8,930984,0.8793038,En rapport avec,grammalecte,MPL-2.0,connexe,true
@@ -9661,10 +9661,10 @@ constituez,fr,10,10074,0.9375705,Formez un ensemble,grammalecte,MPL-2.0,constitu
 constituiez,fr,11,775,0.9528326,Formiez un ensemble,grammalecte,MPL-2.0,constituer,true
 constituons,fr,11,16913,0.9470132,Formons un ensemble,grammalecte,MPL-2.0,constituer,true
 constituât,fr,10,38038,0.93323994,Formât un ensemble,grammalecte,MPL-2.0,constituer,true
-constitué,fr,9,6216390,0.8755462,Formé un ensemble,grammalecte,MPL-2.0,constituer,true
-constituée,fr,10,3921478,0.9016269,Formée un ensemble,grammalecte,MPL-2.0,constituer,true
-constituées,fr,11,1867359,0.92478365,Formées un ensemble,grammalecte,MPL-2.0,constituer,true
-constitués,fr,10,1974245,0.9090908,Formés un ensemble,grammalecte,MPL-2.0,constituer,true
+constitué,fr,9,6216390,0.8755462,Forme un ensemble,grammalecte,MPL-2.0,constituer,true
+constituée,fr,10,3921478,0.9016269,Forme un ensemble,grammalecte,MPL-2.0,constituer,true
+constituées,fr,11,1867359,0.92478365,Forment un ensemble,grammalecte,MPL-2.0,constituer,true
+constitués,fr,10,1974245,0.9090908,Forment un ensemble,grammalecte,MPL-2.0,constituer,true
 constructif,fr,11,222045,0.9379589,Bénéfique et positif,grammalecte,MPL-2.0,constructif,true
 construira,fr,10,130573,0.9280037,Élèvera une structure,grammalecte,MPL-2.0,construire,true
 construirai,fr,11,6251,0.9493717,Élèverai une structure,grammalecte,MPL-2.0,construire,false
@@ -9959,7 +9959,7 @@ contribuez,fr,10,5500,0.9391676,Apportez son aide,grammalecte,MPL-2.0,contribuer
 contribuiez,fr,11,1921,0.95154905,Apportiez son aide,grammalecte,MPL-2.0,contribuer,true
 contribuons,fr,11,8295,0.94874597,Apportons son aide,grammalecte,MPL-2.0,contribuer,true
 contribuât,fr,10,21954,0.9351764,Apportât son aide,grammalecte,MPL-2.0,contribuer,true
-contribué,fr,9,4172752,0.8815733,Apporté son aide,grammalecte,MPL-2.0,contribuer,true
+contribué,fr,9,4172752,0.8815733,Apporte son aide,grammalecte,MPL-2.0,contribuer,true
 contrition,fr,10,147431,0.927417,Repentir sincère,grammalecte,MPL-2.0,contrition,true
 contritions,fr,11,2493,0.9511196,Repenties sincères,grammalecte,MPL-2.0,contrition,true
 controverse,fr,11,1360880,0.9273173,Débat houleux,grammalecte,MPL-2.0,controverse,true
@@ -10072,7 +10072,7 @@ conversions,fr,11,447874,0.93445134,Changements de nature,grammalecte,MPL-2.0,co
 conversons,fr,10,2380,0.9410348,Échangeons des paroles,grammalecte,MPL-2.0,converser,false
 conversâmes,fr,11,1156,0.9523004,Échangeâmes des paroles,grammalecte,MPL-2.0,converser,false
 conversât,fr,9,844,0.9310774,Échangeât des paroles,grammalecte,MPL-2.0,converser,true
-conversé,fr,8,34264,0.90409565,Échangé des paroles,grammalecte,MPL-2.0,converser,true
+conversé,fr,8,34264,0.90409565,Échange des paroles,grammalecte,MPL-2.0,converser,true
 converti,fr,8,896471,0.879747,Changé en autre chose,grammalecte,MPL-2.0,convertir,true
 convertie,fr,9,400078,0.90609485,Changée en autre chose,grammalecte,MPL-2.0,convertir,true
 converties,fr,10,233674,0.9249836,Changées en autre chose,grammalecte,MPL-2.0,convertir,false
@@ -10134,10 +10134,10 @@ convoquons,fr,10,2360,0.9410509,Rassemblons les gens,grammalecte,MPL-2.0,convoqu
 convoquâmes,fr,11,1026,0.9524666,Rassemblâmes les gens,grammalecte,MPL-2.0,convoquer,false
 convoquât,fr,9,6374,0.92624635,Rassemblât les gens,grammalecte,MPL-2.0,convoquer,true
 convoquâtes,fr,11,1,0.95545673,Rassemblâtes les gens,grammalecte,MPL-2.0,convoquer,true
-convoqué,fr,8,670166,0.8827813,Rassemblé les gens,grammalecte,MPL-2.0,convoqué,true
-convoquée,fr,9,443830,0.9053297,Rassemblée les gens,grammalecte,MPL-2.0,convoqué,true
-convoquées,fr,10,123342,0.9282814,Rassemblées les gens,grammalecte,MPL-2.0,convoqué,true
-convoqués,fr,9,502954,0.9043249,Rassemblés les gens,grammalecte,MPL-2.0,convoqué,true
+convoqué,fr,8,670166,0.8827813,Rassemble les gens,grammalecte,MPL-2.0,convoqué,true
+convoquée,fr,9,443830,0.9053297,Rassemble les gens,grammalecte,MPL-2.0,convoqué,true
+convoquées,fr,10,123342,0.9282814,Rassemblent les gens,grammalecte,MPL-2.0,convoqué,true
+convoqués,fr,9,502954,0.9043249,Rassemblent les gens,grammalecte,MPL-2.0,convoqué,true
 convulsion,fr,10,172552,0.926604,Contraction violente et involontaire,grammalecte,MPL-2.0,convulsion,false
 convulsions,fr,11,1114704,0.92871004,Contractions violentes et involontaires,grammalecte,MPL-2.0,convulsion,true
 convînmes,fr,9,36616,0.9197979,S'accordâmes mutuellement,grammalecte,MPL-2.0,convenir,false
@@ -10330,10 +10330,10 @@ corrigeât,fr,9,5901,0.92647976,Apportât des modifications,grammalecte,MPL-2.0,
 corrigiez,fr,9,1978,0.92933357,Apportiez des modifications,grammalecte,MPL-2.0,corriger,false
 corrigions,fr,10,2556,0.94088805,Apportions des modifications,grammalecte,MPL-2.0,corriger,false
 corrigèrent,fr,11,7803,0.9488883,Apportèrent des modifications,grammalecte,MPL-2.0,corriger,false
-corrigé,fr,7,511837,0.8634819,Apporté des modifications,grammalecte,MPL-2.0,corrigé,false
-corrigée,fr,8,1082364,0.8776288,Apportée des modifications,grammalecte,MPL-2.0,corriger,false
-corrigées,fr,9,272712,0.9088231,Apportées des modifications,grammalecte,MPL-2.0,corriger,false
-corrigés,fr,8,124813,0.89657,Apportés des modifications,grammalecte,MPL-2.0,corrigé,false
+corrigé,fr,7,511837,0.8634819,Apporte des modifications,grammalecte,MPL-2.0,corrigé,false
+corrigée,fr,8,1082364,0.8776288,Apporte des modifications,grammalecte,MPL-2.0,corriger,false
+corrigées,fr,9,272712,0.9088231,Apportent des modifications,grammalecte,MPL-2.0,corriger,false
+corrigés,fr,8,124813,0.89657,Apportent des modifications,grammalecte,MPL-2.0,corrigé,false
 corrobora,fr,9,5519,0.92667645,Appuya un témoignage,grammalecte,MPL-2.0,corroborer,true
 corroborai,fr,10,80,0.9453737,Appuyai un témoignage,grammalecte,MPL-2.0,corroborer,true
 corroborait,fr,11,7565,0.94895554,Appuyait un témoignage,grammalecte,MPL-2.0,corroborer,false
@@ -10346,10 +10346,10 @@ corrobores,fr,10,142,0.9450054,Appuies un témoignage,grammalecte,MPL-2.0,corrob
 corroborez,fr,10,156,0.9449227,Appuyez un témoignage,grammalecte,MPL-2.0,corroborer,true
 corroborons,fr,11,393,0.953612,Appuyons un témoignage,grammalecte,MPL-2.0,corroborer,false
 corroborât,fr,10,669,0.94320077,Appuyât un témoignage,grammalecte,MPL-2.0,corroborer,true
-corroboré,fr,9,69756,0.9168028,Appuyé un témoignage,grammalecte,MPL-2.0,corroborer,true
-corroborée,fr,10,109453,0.92885166,Appuyée un témoignage,grammalecte,MPL-2.0,corroborer,false
-corroborées,fr,11,36150,0.9448211,Appuyées un témoignage,grammalecte,MPL-2.0,corroborer,false
-corroborés,fr,10,25368,0.9346778,Appuyés un témoignage,grammalecte,MPL-2.0,corroborer,true
+corroboré,fr,9,69756,0.9168028,Appuye un témoignage,grammalecte,MPL-2.0,corroborer,true
+corroborée,fr,10,109453,0.92885166,Appuye un témoignage,grammalecte,MPL-2.0,corroborer,false
+corroborées,fr,11,36150,0.9448211,Appuyent un témoignage,grammalecte,MPL-2.0,corroborer,false
+corroborés,fr,10,25368,0.9346778,Appuyent un témoignage,grammalecte,MPL-2.0,corroborer,true
 corrompais,fr,10,475,0.9436704,Détournais du droit chemin,grammalecte,MPL-2.0,corrompre,false
 corrompait,fr,10,19734,0.93552744,Détournait du droit chemin,grammalecte,MPL-2.0,corrompre,false
 corrompant,fr,10,36204,0.93341297,Détournant du droit chemin,grammalecte,MPL-2.0,corrompre,false
@@ -11173,10 +11173,10 @@ cultivâmes,fr,10,250,0.944446,Travaillâmes la terre,grammalecte,MPL-2.0,cultiv
 cultivât,fr,8,7476,0.9107835,Travaillât la terre,grammalecte,MPL-2.0,cultiver,true
 cultivâtes,fr,10,79,0.9453774,Travaillâtes la terre,grammalecte,MPL-2.0,cultiver,true
 cultivèrent,fr,11,29896,0.9453949,Travaillèrent la terre,grammalecte,MPL-2.0,cultiver,true
-cultivé,fr,7,1472630,0.8503354,Travaillé la terre,grammalecte,MPL-2.0,cultiver,true
-cultivée,fr,8,1135132,0.877114,Travaillée la terre,grammalecte,MPL-2.0,cultiver,true
-cultivées,fr,9,1451001,0.8946305,Travaillées la terre,grammalecte,MPL-2.0,cultiver,true
-cultivés,fr,8,1111164,0.87732494,Travaillés la terre,grammalecte,MPL-2.0,cultiver,true
+cultivé,fr,7,1472630,0.8503354,Travaille la terre,grammalecte,MPL-2.0,cultiver,true
+cultivée,fr,8,1135132,0.877114,Travaille la terre,grammalecte,MPL-2.0,cultiver,true
+cultivées,fr,9,1451001,0.8946305,Travaillent la terre,grammalecte,MPL-2.0,cultiver,true
+cultivés,fr,8,1111164,0.87732494,Travaillent la terre,grammalecte,MPL-2.0,cultiver,true
 cultural,fr,8,470255,0.88621235,Relatif à la société,grammalecte,MPL-2.0,cultural,true
 culturale,fr,9,145225,0.9128343,Relative à la société,grammalecte,MPL-2.0,cultural,true
 culturales,fr,10,338572,0.9228244,Relatives à la société,grammalecte,MPL-2.0,cultural,true
@@ -11453,10 +11453,10 @@ demandâmes,fr,10,54974,0.93180996,Sollicitâmes une chose,grammalecte,MPL-2.0,d
 demandât,fr,8,99876,0.8980365,Sollicitât une chose,grammalecte,MPL-2.0,demander,true
 demandâtes,fr,10,2933,0.9406005,Sollicitâtes une chose,grammalecte,MPL-2.0,demander,true
 demandèrent,fr,11,871004,0.9303943,Sollicitèrent une chose,grammalecte,MPL-2.0,demander,true
-demandé,fr,7,8589733,0.8178579,Sollicité une chose,grammalecte,MPL-2.0,demander,true
-demandée,fr,8,1644987,0.8725874,Sollicitée une chose,grammalecte,MPL-2.0,demander,true
-demandées,fr,9,669745,0.9019532,Sollicitées une chose,grammalecte,MPL-2.0,demander,true
-demandés,fr,8,971176,0.8788831,Sollicités une chose,grammalecte,MPL-2.0,demander,true
+demandé,fr,7,8589733,0.8178579,Sollicite une chose,grammalecte,MPL-2.0,demander,true
+demandée,fr,8,1644987,0.8725874,Sollicite une chose,grammalecte,MPL-2.0,demander,true
+demandées,fr,9,669745,0.9019532,Sollicitent une chose,grammalecte,MPL-2.0,demander,true
+demandés,fr,8,971176,0.8788831,Sollicitent une chose,grammalecte,MPL-2.0,demander,true
 demeura,fr,7,1437666,0.8506632,Resta en place,grammalecte,MPL-2.0,demeurer,true
 demeurai,fr,8,92254,0.8985539,Restai en place,grammalecte,MPL-2.0,demeurer,true
 demeuraient,fr,11,531648,0.9334544,Restaient en place,grammalecte,MPL-2.0,demeurer,true
@@ -11610,10 +11610,10 @@ dessins,fr,7,3877830,0.8343332,Représentations graphiques,grammalecte,MPL-2.0,d
 dessinâmes,fr,10,388,0.94393265,Traçâmes une image,grammalecte,MPL-2.0,dessiner,true
 dessinât,fr,8,4568,0.9125219,Traçât une image,grammalecte,MPL-2.0,dessiner,true
 dessinèrent,fr,11,22750,0.9461979,Tracèrent une image,grammalecte,MPL-2.0,dessiner,true
-dessiné,fr,7,737134,0.8593658,Tracé une image,grammalecte,MPL-2.0,dessiner,true
-dessinée,fr,8,762145,0.8815155,Tracée une image,grammalecte,MPL-2.0,dessiner,true
-dessinées,fr,9,460808,0.90502506,Tracées une image,grammalecte,MPL-2.0,dessiner,true
-dessinés,fr,8,356278,0.88864183,Tracés une image,grammalecte,MPL-2.0,dessiner,true
+dessiné,fr,7,737134,0.8593658,Trace une image,grammalecte,MPL-2.0,dessiner,true
+dessinée,fr,8,762145,0.8815155,Trace une image,grammalecte,MPL-2.0,dessiner,true
+dessinées,fr,9,460808,0.90502506,Tracent une image,grammalecte,MPL-2.0,dessiner,true
+dessinés,fr,8,356278,0.88864183,Tracent une image,grammalecte,MPL-2.0,dessiner,true
 dessus,fr,6,11691604,0.7779853,Partie supérieure,grammalecte,MPL-2.0,dessus,true
 destin,fr,6,3893855,0.8047567,Sort final et inévitable,grammalecte,MPL-2.0,destin,true
 destination,fr,11,4981682,0.9154975,Point d'arrivée,grammalecte,MPL-2.0,destination,true
@@ -11730,10 +11730,10 @@ devint,fr,6,6711198,0.79259837,Passa à l'état de,grammalecte,MPL-2.0,devenir,t
 devinâmes,fr,9,1728,0.9296424,Trouvâmes la réponse,grammalecte,MPL-2.0,deviner,true
 devinât,fr,7,9447,0.8920917,Trouvât la réponse,grammalecte,MPL-2.0,deviner,true
 devinèrent,fr,10,12559,0.9369423,Trouvèrent la réponse,grammalecte,MPL-2.0,deviner,true
-deviné,fr,6,496277,0.8385322,Trouvé la réponse,grammalecte,MPL-2.0,deviner,true
-devinée,fr,7,48017,0.88322115,Trouvée la réponse,grammalecte,MPL-2.0,deviner,true
-devinées,fr,8,18961,0.90695816,Trouvées la réponse,grammalecte,MPL-2.0,deviner,true
-devinés,fr,7,20171,0.88832194,Trouvés la réponse,grammalecte,MPL-2.0,deviner,true
+deviné,fr,6,496277,0.8385322,Trouve la réponse,grammalecte,MPL-2.0,deviner,true
+devinée,fr,7,48017,0.88322115,Trouve la réponse,grammalecte,MPL-2.0,deviner,true
+devinées,fr,8,18961,0.90695816,Trouvent la réponse,grammalecte,MPL-2.0,deviner,true
+devinés,fr,7,20171,0.88832194,Trouvent la réponse,grammalecte,MPL-2.0,deviner,true
 devions,fr,7,832937,0.85784626,Tâchions à accomplir,grammalecte,MPL-2.0,devoir,true
 devis,fr,5,816015,0.8021465,Estimation chiffrée,grammalecte,MPL-2.0,devis,true
 devise,fr,6,1378797,0.8241642,Monnaie officielle,grammalecte,MPL-2.0,devise,true
@@ -12780,10 +12780,10 @@ doterons,fr,8,1097,0.9164908,Donnerons des moyens,grammalecte,MPL-2.0,doter,true
 doteront,fr,8,5173,0.91209745,Donneront des moyens,grammalecte,MPL-2.0,doter,true
 dotes,fr,5,18518,0.8426913,Donnes des moyens,grammalecte,MPL-2.0,doter,true
 dotèrent,fr,8,19552,0.9068143,Donnèrent des moyens,grammalecte,MPL-2.0,doter,true
-doté,fr,4,1135614,0.7622998,Donné des moyens,grammalecte,MPL-2.0,doter,true
-dotée,fr,5,772542,0.80307114,Donnée des moyens,grammalecte,MPL-2.0,doter,true
-dotées,fr,6,422491,0.840532,Données des moyens,grammalecte,MPL-2.0,doter,true
-dotés,fr,5,645227,0.8057552,Donnés des moyens,grammalecte,MPL-2.0,doter,true
+doté,fr,4,1135614,0.7622998,Donne des moyens,grammalecte,MPL-2.0,doter,true
+dotée,fr,5,772542,0.80307114,Donne des moyens,grammalecte,MPL-2.0,doter,true
+dotées,fr,6,422491,0.840532,Donnent des moyens,grammalecte,MPL-2.0,doter,true
+dotés,fr,5,645227,0.8057552,Donnent des moyens,grammalecte,MPL-2.0,doter,true
 douaire,fr,7,274703,0.86975724,Vêtement de cérémonie,grammalecte,MPL-2.0,douaire,false
 douaires,fr,8,16731,0.9075275,Vêtements de cérémonie,grammalecte,MPL-2.0,douaire,false
 douane,fr,6,2346006,0.81489396,Service de l'État chargé de contrôler les marchandises,grammalecte,MPL-2.0,douane,true
@@ -13243,10 +13243,10 @@ déchargez,fr,9,5266,0.9268114,Libérez du poids,grammalecte,MPL-2.0,décharger,
 déchargeât,fr,10,5149,0.9393301,Libérât du poids,grammalecte,MPL-2.0,décharger,true
 déchargiez,fr,10,421,0.94382954,Libériez du poids,grammalecte,MPL-2.0,décharger,true
 déchargions,fr,11,1083,0.95239145,Libérions du poids,grammalecte,MPL-2.0,décharger,true
-déchargé,fr,8,329186,0.88930625,Libéré du poids,grammalecte,MPL-2.0,décharger,true
-déchargée,fr,9,104487,0.9147011,Libérée du poids,grammalecte,MPL-2.0,décharger,true
-déchargées,fr,10,75188,0.930525,Libérées du poids,grammalecte,MPL-2.0,décharger,true
-déchargés,fr,9,165059,0.91205895,Libérés du poids,grammalecte,MPL-2.0,décharger,true
+déchargé,fr,8,329186,0.88930625,Libére du poids,grammalecte,MPL-2.0,décharger,true
+déchargée,fr,9,104487,0.9147011,Libére du poids,grammalecte,MPL-2.0,décharger,true
+déchargées,fr,10,75188,0.930525,Libérent du poids,grammalecte,MPL-2.0,décharger,true
+déchargés,fr,9,165059,0.91205895,Libérent du poids,grammalecte,MPL-2.0,décharger,true
 déchet,fr,6,377348,0.8418228,Matériau rejeté,grammalecte,MPL-2.0,déchet,true
 déchets,fr,7,1551583,0.8495831,Matériaux rejetés,grammalecte,MPL-2.0,déchet,true
 déchiffra,fr,9,9077,0.9251312,Décrypta un message codé,grammalecte,MPL-2.0,déchiffrer,false
@@ -14154,10 +14154,10 @@ délimitez,fr,9,289,0.9327789,Tracez une frontière,grammalecte,MPL-2.0,délimit
 délimitions,fr,11,339,0.9537621,Tracions une frontière,grammalecte,MPL-2.0,délimiter,false
 délimitons,fr,10,1436,0.9419836,Traçons une frontière,grammalecte,MPL-2.0,délimiter,true
 délimitât,fr,9,644,0.9315502,Traçât une frontière,grammalecte,MPL-2.0,délimiter,true
-délimité,fr,8,369800,0.8883333,Tracé une frontière,grammalecte,MPL-2.0,délimiter,true
-délimitée,fr,9,267033,0.9089588,Tracée une frontière,grammalecte,MPL-2.0,délimiter,true
-délimitées,fr,10,182790,0.92628926,Tracées une frontière,grammalecte,MPL-2.0,délimiter,true
-délimités,fr,9,174157,0.9117393,Tracés une frontière,grammalecte,MPL-2.0,délimiter,true
+délimité,fr,8,369800,0.8883333,Trace une frontière,grammalecte,MPL-2.0,délimiter,true
+délimitée,fr,9,267033,0.9089588,Trace une frontière,grammalecte,MPL-2.0,délimiter,true
+délimitées,fr,10,182790,0.92628926,Tracent une frontière,grammalecte,MPL-2.0,délimiter,true
+délimités,fr,9,174157,0.9117393,Tracent une frontière,grammalecte,MPL-2.0,délimiter,true
 délinquant,fr,10,526460,0.9199715,Personne qui enfreint la loi,grammalecte,MPL-2.0,délinquant,false
 délinquante,fr,11,54344,0.94351643,Personne qui enfreint la loi,grammalecte,MPL-2.0,délinquant,false
 délinquants,fr,11,735450,0.93152267,Personnes qui enfreint la loi,grammalecte,MPL-2.0,délinquant,false
@@ -14344,10 +14344,10 @@ démontrons,fr,10,14292,0.9365482,Apportons la preuve,grammalecte,MPL-2.0,démon
 démontrâmes,fr,11,844,0.95272577,Apportâmes la preuve,grammalecte,MPL-2.0,démontrer,true
 démontrât,fr,9,10115,0.92477435,Apportât la preuve,grammalecte,MPL-2.0,démontrer,true
 démontrâtes,fr,11,1,0.9554806,Apportâtes la preuve,grammalecte,MPL-2.0,démontrer,true
-démontré,fr,8,4249852,0.8587683,Apporté la preuve,grammalecte,MPL-2.0,démontrer,true
-démontrée,fr,9,1054847,0.89781183,Apportée la preuve,grammalecte,MPL-2.0,démontrer,true
-démontrées,fr,10,192154,0.9260219,Apportées la preuve,grammalecte,MPL-2.0,démontrer,true
-démontrés,fr,9,131095,0.9134222,Apportés la preuve,grammalecte,MPL-2.0,démontrer,true
+démontré,fr,8,4249852,0.8587683,Apporte la preuve,grammalecte,MPL-2.0,démontrer,true
+démontrée,fr,9,1054847,0.89781183,Apporte la preuve,grammalecte,MPL-2.0,démontrer,true
+démontrées,fr,10,192154,0.9260219,Apportent la preuve,grammalecte,MPL-2.0,démontrer,true
+démontrés,fr,9,131095,0.9134222,Apportent la preuve,grammalecte,MPL-2.0,démontrer,true
 démos,fr,5,20581,0.8419204,Par le peuples,grammalecte,MPL-2.0,démo,true
 démêla,fr,6,12952,0.8695484,Mit de l'ordre dans un embrouillement,grammalecte,MPL-2.0,démêler,true
 démêlai,fr,7,3957,0.89572984,Mis de l'ordre dans un embrouillement,grammalecte,MPL-2.0,démêler,true
@@ -14560,10 +14560,10 @@ dépensons,fr,9,10850,0.9245371,Engageons des frais,grammalecte,MPL-2.0,dépense
 dépensâmes,fr,10,568,0.94342655,Engageâmes des frais,grammalecte,MPL-2.0,dépenser,true
 dépensât,fr,8,5101,0.91214347,Engageât des frais,grammalecte,MPL-2.0,dépenser,true
 dépensèrent,fr,11,14640,0.9473836,Engagèrent des frais,grammalecte,MPL-2.0,dépenser,true
-dépensé,fr,7,748818,0.8591925,Engagé des frais,grammalecte,MPL-2.0,dépenser,true
-dépensée,fr,8,241163,0.89183384,Engagée des frais,grammalecte,MPL-2.0,dépenser,true
-dépensées,fr,9,154700,0.91246825,Engagées des frais,grammalecte,MPL-2.0,dépenser,true
-dépensés,fr,8,213885,0.89270115,Engagés des frais,grammalecte,MPL-2.0,dépenser,true
+dépensé,fr,7,748818,0.8591925,Engage des frais,grammalecte,MPL-2.0,dépenser,true
+dépensée,fr,8,241163,0.89183384,Engage des frais,grammalecte,MPL-2.0,dépenser,true
+dépensées,fr,9,154700,0.91246825,Engagent des frais,grammalecte,MPL-2.0,dépenser,true
+dépensés,fr,8,213885,0.89270115,Engagent des frais,grammalecte,MPL-2.0,dépenser,true
 déperdition,fr,11,338522,0.93591887,Perte et gaspillage,grammalecte,MPL-2.0,déperdition,true
 dépistage,fr,9,372509,0.90663195,Examen de prévention,grammalecte,MPL-2.0,dépistage,true
 dépistages,fr,10,10609,0.9374241,Examens de prévention,grammalecte,MPL-2.0,dépistage,false
@@ -14940,10 +14940,10 @@ désarmons,fr,9,1055,0.9306548,Retirons les armes,grammalecte,MPL-2.0,désarmer,
 désarmâmes,fr,10,324,0.94415015,Retirâmes les armes,grammalecte,MPL-2.0,désarmer,true
 désarmât,fr,8,4042,0.91291994,Retirât les armes,grammalecte,MPL-2.0,désarmer,true
 désarmèrent,fr,11,21455,0.94636166,Retirèrent les armes,grammalecte,MPL-2.0,désarmer,true
-désarmé,fr,7,391807,0.866296,Retiré les armes,grammalecte,MPL-2.0,désarmer,true
-désarmée,fr,8,184411,0.89382404,Retirée les armes,grammalecte,MPL-2.0,désarmer,true
-désarmées,fr,9,56051,0.9178532,Retirées les armes,grammalecte,MPL-2.0,désarmer,true
-désarmés,fr,8,272009,0.8908611,Retirés les armes,grammalecte,MPL-2.0,désarmer,true
+désarmé,fr,7,391807,0.866296,Retire les armes,grammalecte,MPL-2.0,désarmer,true
+désarmée,fr,8,184411,0.89382404,Retire les armes,grammalecte,MPL-2.0,désarmer,true
+désarmées,fr,9,56051,0.9178532,Retirent les armes,grammalecte,MPL-2.0,désarmer,true
+désarmés,fr,8,272009,0.8908611,Retirent les armes,grammalecte,MPL-2.0,désarmer,true
 désarroi,fr,8,699848,0.8823279,Profond désespoir,grammalecte,MPL-2.0,désarroi,true
 désarrois,fr,9,14076,0.92362875,Profonds désespoir,grammalecte,MPL-2.0,désarroi,true
 désastre,fr,8,1418858,0.87453043,Calamité majeure,grammalecte,MPL-2.0,désastre,true
@@ -14988,9 +14988,9 @@ déshabiller,fr,11,115107,0.9407875,Retirer les vêtements,grammalecte,MPL-2.0,d
 déshabilles,fr,11,951,0.95257115,Retires les vêtements,grammalecte,MPL-2.0,déshabiller,true
 déshabillez,fr,11,1162,0.95229334,Retirez les vêtements,grammalecte,MPL-2.0,déshabiller,true
 déshabillât,fr,11,754,0.9528659,Retirât les vêtements,grammalecte,MPL-2.0,déshabiller,true
-déshabillé,fr,10,77169,0.9304172,Retiré les vêtements,grammalecte,MPL-2.0,déshabiller,true
-déshabillée,fr,11,21503,0.94635594,Retirée les vêtements,grammalecte,MPL-2.0,déshabiller,true
-déshabillés,fr,11,17693,0.946895,Retirés les vêtements,grammalecte,MPL-2.0,déshabiller,true
+déshabillé,fr,10,77169,0.9304172,Retire les vêtements,grammalecte,MPL-2.0,déshabiller,true
+déshabillée,fr,11,21503,0.94635594,Retire les vêtements,grammalecte,MPL-2.0,déshabiller,true
+déshabillés,fr,11,17693,0.946895,Retirent les vêtements,grammalecte,MPL-2.0,déshabiller,true
 déshonora,fr,9,14669,0.9234772,Perdit son honneur,grammalecte,MPL-2.0,déshonorer,true
 déshonorai,fr,10,121,0.9451411,Perdis son honneur,grammalecte,MPL-2.0,déshonorer,true
 déshonorais,fr,11,440,0.9534917,Perdais son honneur,grammalecte,MPL-2.0,déshonorer,true
@@ -16032,10 +16032,10 @@ endommagera,fr,11,1836,0.95162076,Causera une détérioration,grammalecte,MPL-2.
 endommages,fr,10,3052,0.940516,Causes une détérioration,grammalecte,MPL-2.0,endommager,false
 endommagez,fr,10,1055,0.9425024,Causez une détérioration,grammalecte,MPL-2.0,endommager,false
 endommageât,fr,11,900,0.952644,Causât une détérioration,grammalecte,MPL-2.0,endommager,false
-endommagé,fr,9,206669,0.9106262,Causé une détérioration,grammalecte,MPL-2.0,endommager,false
-endommagée,fr,10,126547,0.92815393,Causée une détérioration,grammalecte,MPL-2.0,endommager,false
-endommagées,fr,11,130645,0.9402724,Causées une détérioration,grammalecte,MPL-2.0,endommager,false
-endommagés,fr,10,166394,0.9267908,Causés une détérioration,grammalecte,MPL-2.0,endommager,false
+endommagé,fr,9,206669,0.9106262,Cause une détérioration,grammalecte,MPL-2.0,endommager,false
+endommagée,fr,10,126547,0.92815393,Cause une détérioration,grammalecte,MPL-2.0,endommager,false
+endommagées,fr,11,130645,0.9402724,Causent une détérioration,grammalecte,MPL-2.0,endommager,false
+endommagés,fr,10,166394,0.9267908,Causent une détérioration,grammalecte,MPL-2.0,endommager,false
 endothélium,fr,11,85911,0.9419222,Tissu tapissant les vaisseaux sanguins,grammalecte,MPL-2.0,endothélium,true
 endroit,fr,7,8952813,0.816959,Lieu précis,grammalecte,MPL-2.0,endroit,true
 endroits,fr,8,5072105,0.855641,Lieux précis,grammalecte,MPL-2.0,endroit,true
@@ -16134,10 +16134,10 @@ enflammons,fr,10,473,0.9436762,Allumons un feu,grammalecte,MPL-2.0,enflammer,tru
 enflammâmes,fr,11,74,0.95484686,Allumâmes un feu,grammalecte,MPL-2.0,enflammer,true
 enflammât,fr,9,2314,0.9289723,Allumât un feu,grammalecte,MPL-2.0,enflammer,true
 enflammâtes,fr,11,3,0.9552255,Allumâtes un feu,grammalecte,MPL-2.0,enflammer,true
-enflammé,fr,8,361983,0.88852024,Allumé un feu,grammalecte,MPL-2.0,enflammer,true
-enflammée,fr,9,270725,0.9088768,Allumée un feu,grammalecte,MPL-2.0,enflammer,true
-enflammées,fr,10,186168,0.92619,Allumées un feu,grammalecte,MPL-2.0,enflammer,true
-enflammés,fr,9,235334,0.9098231,Allumés un feu,grammalecte,MPL-2.0,enflammer,true
+enflammé,fr,8,361983,0.88852024,Allume un feu,grammalecte,MPL-2.0,enflammer,true
+enflammée,fr,9,270725,0.9088768,Allume un feu,grammalecte,MPL-2.0,enflammer,true
+enflammées,fr,10,186168,0.92619,Allument un feu,grammalecte,MPL-2.0,enflammer,true
+enflammés,fr,9,235334,0.9098231,Allument un feu,grammalecte,MPL-2.0,enflammer,true
 enfonce,fr,7,380680,0.8665841,Fait entrer de force,grammalecte,MPL-2.0,enfoncer,true
 enfoncement,fr,11,327508,0.93608046,Profond sillon,grammalecte,MPL-2.0,enfoncement,true
 enfoncent,fr,9,274064,0.908793,Font entrer de force,grammalecte,MPL-2.0,enfoncer,true
@@ -16266,10 +16266,10 @@ engendrons,fr,10,1617,0.9417693,Donnons la vie,grammalecte,MPL-2.0,engendrer,tru
 engendrâmes,fr,11,1,0.9555161,Donnâmes la vie,grammalecte,MPL-2.0,engendrer,true
 engendrât,fr,9,5042,0.9269414,Donnât la vie,grammalecte,MPL-2.0,engendrer,true
 engendrâtes,fr,11,1,0.95551616,Donnâtes la vie,grammalecte,MPL-2.0,engendrer,true
-engendré,fr,8,839792,0.8804606,Donné la vie,grammalecte,MPL-2.0,engendrer,true
-engendrée,fr,9,368687,0.9067164,Donnée la vie,grammalecte,MPL-2.0,engendrer,true
-engendrées,fr,10,279738,0.92395496,Données la vie,grammalecte,MPL-2.0,engendrer,true
-engendrés,fr,9,304007,0.90804976,Donnés la vie,grammalecte,MPL-2.0,engendrer,true
+engendré,fr,8,839792,0.8804606,Donne la vie,grammalecte,MPL-2.0,engendrer,true
+engendrée,fr,9,368687,0.9067164,Donne la vie,grammalecte,MPL-2.0,engendrer,true
+engendrées,fr,10,279738,0.92395496,Donnent la vie,grammalecte,MPL-2.0,engendrer,true
+engendrés,fr,9,304007,0.90804976,Donnent la vie,grammalecte,MPL-2.0,engendrer,true
 engin,fr,5,509413,0.8092213,Machine motrice,grammalecte,MPL-2.0,engin,true
 engineering,fr,11,137154,0.9400698,Art de concevoir et de construire,grammalecte,MPL-2.0,engineering,false
 engins,fr,6,1102392,0.82752126,Machines motrices,grammalecte,MPL-2.0,engin,true
@@ -16489,10 +16489,10 @@ ensemencera,fr,11,2922,0.9508452,Sèmera des graines,grammalecte,MPL-2.0,ensemen
 ensemences,fr,10,781,0.9429731,Sèmes des graines,grammalecte,MPL-2.0,ensemencer,true
 ensemencez,fr,10,575,0.94340897,Semez des graines,grammalecte,MPL-2.0,ensemencer,true
 ensemenciez,fr,11,2,0.9553165,Semiez des graines,grammalecte,MPL-2.0,ensemencer,true
-ensemencé,fr,9,127439,0.91358685,Semé des graines,grammalecte,MPL-2.0,ensemencer,true
-ensemencée,fr,10,78367,0.9303558,Semée des graines,grammalecte,MPL-2.0,ensemencer,true
-ensemencées,fr,11,111207,0.94092584,Semées des graines,grammalecte,MPL-2.0,ensemencer,true
-ensemencés,fr,10,104617,0.9290603,Semés des graines,grammalecte,MPL-2.0,ensemencer,true
+ensemencé,fr,9,127439,0.91358685,Seme des graines,grammalecte,MPL-2.0,ensemencer,true
+ensemencée,fr,10,78367,0.9303558,Seme des graines,grammalecte,MPL-2.0,ensemencer,true
+ensemencées,fr,11,111207,0.94092584,Sement des graines,grammalecte,MPL-2.0,ensemencer,true
+ensemencés,fr,10,104617,0.9290603,Sement des graines,grammalecte,MPL-2.0,ensemencer,true
 ensemença,fr,9,4470,0.92728615,Sema des graines,grammalecte,MPL-2.0,ensemencer,true
 ensemençai,fr,10,779,0.9429771,Semai des graines,grammalecte,MPL-2.0,ensemencer,true
 ensemençais,fr,11,453,0.9534594,Semais des graines,grammalecte,MPL-2.0,ensemencer,true
@@ -16986,10 +16986,10 @@ essayâmes,fr,9,25364,0.9213532,Tentâmes une action,grammalecte,MPL-2.0,essayer
 essayât,fr,7,38690,0.8845809,Tentât une action,grammalecte,MPL-2.0,essayer,true
 essayâtes,fr,9,632,0.93158275,Tentâtes une action,grammalecte,MPL-2.0,essayer,true
 essayèrent,fr,10,358864,0.9224731,Tentèrent une action,grammalecte,MPL-2.0,essayer,true
-essayé,fr,6,3845981,0.8050525,Tenté une action,grammalecte,MPL-2.0,essayer,true
-essayée,fr,7,182294,0.87339485,Tentée une action,grammalecte,MPL-2.0,essayer,true
-essayées,fr,8,151720,0.8952523,Tentées une action,grammalecte,MPL-2.0,essayer,true
-essayés,fr,7,208927,0.8721908,Tentés une action,grammalecte,MPL-2.0,essayer,true
+essayé,fr,6,3845981,0.8050525,Tente une action,grammalecte,MPL-2.0,essayer,true
+essayée,fr,7,182294,0.87339485,Tente une action,grammalecte,MPL-2.0,essayer,true
+essayées,fr,8,151720,0.8952523,Tentent une action,grammalecte,MPL-2.0,essayer,true
+essayés,fr,7,208927,0.8721908,Tentent une action,grammalecte,MPL-2.0,essayer,true
 esse,fr,4,2014114,0.75029826,C'était,grammalecte,MPL-2.0,esse,true
 essence,fr,7,7778941,0.8204147,Substance pure,grammalecte,MPL-2.0,essence,true
 essences,fr,8,1400602,0.874714,Substances pures,grammalecte,MPL-2.0,essence,true
@@ -17027,10 +17027,10 @@ essuyons,fr,8,2617,0.9142393,Effaçons le liquide,grammalecte,MPL-2.0,essuyer,tr
 essuyâmes,fr,9,7244,0.9258551,Effaçâmes le liquide,grammalecte,MPL-2.0,essuyer,true
 essuyât,fr,7,3463,0.89621663,Effaçât le liquide,grammalecte,MPL-2.0,essuyer,true
 essuyèrent,fr,10,41769,0.9328922,Effacèrent le liquide,grammalecte,MPL-2.0,essuyer,true
-essuyé,fr,6,302956,0.84426725,Effacé le liquide,grammalecte,MPL-2.0,essuyer,true
-essuyée,fr,7,44676,0.8836904,Effacée le liquide,grammalecte,MPL-2.0,essuyer,true
-essuyées,fr,8,86419,0.8989599,Effacées le liquide,grammalecte,MPL-2.0,essuyer,true
-essuyés,fr,7,65827,0.8811435,Effacés le liquide,grammalecte,MPL-2.0,essuyer,true
+essuyé,fr,6,302956,0.84426725,Efface le liquide,grammalecte,MPL-2.0,essuyer,true
+essuyée,fr,7,44676,0.8836904,Efface le liquide,grammalecte,MPL-2.0,essuyer,true
+essuyées,fr,8,86419,0.8989599,Effacent le liquide,grammalecte,MPL-2.0,essuyer,true
+essuyés,fr,7,65827,0.8811435,Effacent le liquide,grammalecte,MPL-2.0,essuyer,true
 estampe,fr,7,298379,0.86893874,Gravure sur bois,grammalecte,MPL-2.0,estampe,true
 estampes,fr,8,547736,0.88475966,Gravures sur bois,grammalecte,MPL-2.0,estampe,true
 esthétique,fr,10,2244428,0.9078391,Art de la beauté,grammalecte,MPL-2.0,esthétique,true
@@ -17141,10 +17141,10 @@ exagérions,fr,10,2865,0.94065195,Enjolivions la réalité,grammalecte,MPL-2.0,e
 exagérons,fr,9,20267,0.92225754,Enjolivons la réalité,grammalecte,MPL-2.0,exagérer,true
 exagérât,fr,8,4159,0.91282797,Enjolivât la réalité,grammalecte,MPL-2.0,exagérer,true
 exagérèrent,fr,11,10818,0.948132,Enjolivèrent la réalité,grammalecte,MPL-2.0,exagérer,true
-exagéré,fr,7,1308031,0.8520295,Enjolivé la réalité,grammalecte,MPL-2.0,exagérer,true
-exagérée,fr,8,1050788,0.8779977,Enjolivée la réalité,grammalecte,MPL-2.0,exagérer,true
-exagérées,fr,9,516396,0.9041225,Enjolivées la réalité,grammalecte,MPL-2.0,exagérer,true
-exagérés,fr,8,385124,0.88796973,Enjolivés la réalité,grammalecte,MPL-2.0,exagérer,true
+exagéré,fr,7,1308031,0.8520295,Enjolive la réalité,grammalecte,MPL-2.0,exagérer,true
+exagérée,fr,8,1050788,0.8779977,Enjolive la réalité,grammalecte,MPL-2.0,exagérer,true
+exagérées,fr,9,516396,0.9041225,Enjolivent la réalité,grammalecte,MPL-2.0,exagérer,true
+exagérés,fr,8,385124,0.88796973,Enjolivent la réalité,grammalecte,MPL-2.0,exagérer,true
 exalta,fr,6,56066,0.8597859,Éleva au-dessus des autres,grammalecte,MPL-2.0,exalter,false
 exaltaient,fr,10,47408,0.93240035,Élevaient au-dessus des autres,grammalecte,MPL-2.0,exalter,false
 exaltais,fr,8,1952,0.91505486,Élevais au-dessus des autres,grammalecte,MPL-2.0,exalter,false
@@ -17340,10 +17340,10 @@ excusons,fr,8,21473,0.90638876,Justifions une faute,grammalecte,MPL-2.0,excuser,
 excusâmes,fr,9,588,0.9316983,Justifiâmes une faute,grammalecte,MPL-2.0,excuser,true
 excusât,fr,7,5653,0.8943223,Justifiât une faute,grammalecte,MPL-2.0,excuser,true
 excusèrent,fr,10,18841,0.935677,Justifièrent une faute,grammalecte,MPL-2.0,excuser,true
-excusé,fr,6,136365,0.8523582,Justifié une faute,grammalecte,MPL-2.0,excuser,true
-excusée,fr,7,34367,0.88527507,Justifiée une faute,grammalecte,MPL-2.0,excuser,true
-excusées,fr,8,12021,0.908936,Justifiées une faute,grammalecte,MPL-2.0,excuser,true
-excusés,fr,7,81134,0.87973094,Justifiés une faute,grammalecte,MPL-2.0,excuser,true
+excusé,fr,6,136365,0.8523582,Justifie une faute,grammalecte,MPL-2.0,excuser,true
+excusée,fr,7,34367,0.88527507,Justifie une faute,grammalecte,MPL-2.0,excuser,true
+excusées,fr,8,12021,0.908936,Justifient une faute,grammalecte,MPL-2.0,excuser,true
+excusés,fr,7,81134,0.87973094,Justifient une faute,grammalecte,MPL-2.0,excuser,true
 excès,fr,5,8728553,0.7501962,Trop plein,grammalecte,MPL-2.0,excès,true
 excédent,fr,8,1600095,0.8729787,Trop d'argent,grammalecte,MPL-2.0,excédent,true
 excédents,fr,9,600041,0.9028622,Trop d'argents,grammalecte,MPL-2.0,excédent,true
@@ -18839,7 +18839,7 @@ fonctionner,fr,11,1936370,0.9245022,Exécuter son rôle,grammalecte,MPL-2.0,fonc
 fonctionnes,fr,11,867,0.9526923,Exécutes son rôle,grammalecte,MPL-2.0,fonctionner,true
 fonctionnez,fr,11,538,0.95326406,Exécutez son rôle,grammalecte,MPL-2.0,fonctionner,true
 fonctionnât,fr,11,7443,0.9489918,Exécutât son rôle,grammalecte,MPL-2.0,fonctionner,true
-fonctionné,fr,10,448344,0.9210741,Exécuté son rôle,grammalecte,MPL-2.0,fonctionner,true
+fonctionné,fr,10,448344,0.9210741,Exécute son rôle,grammalecte,MPL-2.0,fonctionner,true
 fonctions,fr,9,20794392,0.853152,Missions précises,grammalecte,MPL-2.0,fonction,true
 fond,fr,4,28434598,0.668317,Base d'un récipient,grammalecte,MPL-2.0,fond,true
 fonda,fr,5,886820,0.8007379,S'unit en couple,grammalecte,MPL-2.0,fonder,true
@@ -19079,10 +19079,10 @@ fortunes,fr,8,1289167,0.8756788,Richesses acquises,grammalecte,MPL-2.0,fortune,t
 forum,fr,5,603947,0.8067356,Lieu de débat et d'échange,grammalecte,MPL-2.0,forum,false
 forums,fr,6,135691,0.85239905,Lieux de débat et d'échange,grammalecte,MPL-2.0,forum,false
 forèrent,fr,8,541,0.9179835,Percèrent un trou,grammalecte,MPL-2.0,forer,true
-foré,fr,4,68265,0.802335,Percé un trou,grammalecte,MPL-2.0,forer,true
-forée,fr,5,35339,0.83776754,Percée un trou,grammalecte,MPL-2.0,forer,true
-forées,fr,6,20638,0.8667359,Percées un trou,grammalecte,MPL-2.0,forer,true
-forés,fr,5,69930,0.83194953,Percés un trou,grammalecte,MPL-2.0,forer,true
+foré,fr,4,68265,0.802335,Perce un trou,grammalecte,MPL-2.0,forer,true
+forée,fr,5,35339,0.83776754,Perce un trou,grammalecte,MPL-2.0,forer,true
+forées,fr,6,20638,0.8667359,Percent un trou,grammalecte,MPL-2.0,forer,true
+forés,fr,5,69930,0.83194953,Percent un trou,grammalecte,MPL-2.0,forer,true
 forêt,fr,5,6670678,0.7579375,Bois dense et étendu,grammalecte,MPL-2.0,forêt,true
 forêts,fr,6,6070819,0.7948421,Bois dense et étendu,grammalecte,MPL-2.0,forêt,true
 fosse,fr,5,1698908,0.7891582,Trou profond et large,grammalecte,MPL-2.0,fosse,false
@@ -19303,10 +19303,10 @@ frappons,fr,8,11493,0.90910745,Donnons un coup violent,grammalecte,MPL-2.0,frapp
 frappâmes,fr,9,2947,0.92837876,Donnâmes un coup violent,grammalecte,MPL-2.0,frapper,false
 frappât,fr,7,23521,0.88747823,Donnât un coup violent,grammalecte,MPL-2.0,frapper,false
 frappèrent,fr,10,161363,0.9269482,Donnèrent un coup violent,grammalecte,MPL-2.0,frapper,false
-frappé,fr,6,4728220,0.80058616,Donné un coup violent,grammalecte,MPL-2.0,frapper,false
-frappée,fr,7,1035587,0.8551217,Donnée un coup violent,grammalecte,MPL-2.0,frapper,false
-frappées,fr,8,629357,0.88341004,Données un coup violent,grammalecte,MPL-2.0,frapper,false
-frappés,fr,7,1583343,0.84926677,Donnés un coup violent,grammalecte,MPL-2.0,frapper,false
+frappé,fr,6,4728220,0.80058616,Donne un coup violent,grammalecte,MPL-2.0,frapper,false
+frappée,fr,7,1035587,0.8551217,Donne un coup violent,grammalecte,MPL-2.0,frapper,false
+frappées,fr,8,629357,0.88341004,Donnent un coup violent,grammalecte,MPL-2.0,frapper,false
+frappés,fr,7,1583343,0.84926677,Donnent un coup violent,grammalecte,MPL-2.0,frapper,false
 fraternité,fr,10,1617900,0.91102517,Lien d'amitié,grammalecte,MPL-2.0,fraternité,true
 fraternités,fr,11,35587,0.944869,Liens d'amitié,grammalecte,MPL-2.0,fraternité,true
 fratricide,fr,10,126739,0.92814875,Tueur de frère,grammalecte,MPL-2.0,fratricide,true
@@ -19714,10 +19714,10 @@ fêtions,fr,7,4893,0.89490914,Organisions une célébration,grammalecte,MPL-2.0,
 fêtons,fr,6,8980,0.8715505,Organisons une célébration,grammalecte,MPL-2.0,fêter,false
 fêtâmes,fr,7,1425,0.8991242,Organisâmes une célébration,grammalecte,MPL-2.0,fêter,false
 fêtèrent,fr,8,8151,0.91045105,Organisèrent une célébration,grammalecte,MPL-2.0,fêter,false
-fêté,fr,4,173200,0.7917286,Organisé une célébration,grammalecte,MPL-2.0,fêter,false
-fêtée,fr,5,40172,0.83675855,Organisée une célébration,grammalecte,MPL-2.0,fêter,false
-fêtées,fr,6,7394,0.8725547,Organisées une célébration,grammalecte,MPL-2.0,fêter,false
-fêtés,fr,5,33246,0.83824843,Organisés une célébration,grammalecte,MPL-2.0,fêter,false
+fêté,fr,4,173200,0.7917286,Organise une célébration,grammalecte,MPL-2.0,fêter,false
+fêtée,fr,5,40172,0.83675855,Organise une célébration,grammalecte,MPL-2.0,fêter,false
+fêtées,fr,6,7394,0.8725547,Organisent une célébration,grammalecte,MPL-2.0,fêter,false
+fêtés,fr,5,33246,0.83824843,Organisent une célébration,grammalecte,MPL-2.0,fêter,false
 fîmes,fr,5,500567,0.8094672,Exécutâmes une action,grammalecte,MPL-2.0,faire,true
 fîtes,fr,5,50216,0.8348626,Exécutâtes une action,grammalecte,MPL-2.0,faire,true
 fûmes,fr,5,890518,0.80068165,Existâmes et exister,grammalecte,MPL-2.0,être,true
@@ -19760,10 +19760,10 @@ gagnons,fr,7,37139,0.88481283,Emportons la victoire,grammalecte,MPL-2.0,gagner,t
 gagnâmes,fr,8,28597,0.9050084,Emportâmes la victoire,grammalecte,MPL-2.0,gagner,true
 gagnât,fr,6,24025,0.86577696,Emportât la victoire,grammalecte,MPL-2.0,gagner,true
 gagnèrent,fr,9,201500,0.9107951,Emportèrent la victoire,grammalecte,MPL-2.0,gagner,true
-gagné,fr,5,2766808,0.7792511,Emporté la victoire,grammalecte,MPL-2.0,gagner,true
-gagnée,fr,6,528368,0.8377442,Emportée la victoire,grammalecte,MPL-2.0,gagner,true
-gagnées,fr,7,149647,0.87507516,Emportées la victoire,grammalecte,MPL-2.0,gagner,true
-gagnés,fr,6,268762,0.8455991,Emportés la victoire,grammalecte,MPL-2.0,gagner,true
+gagné,fr,5,2766808,0.7792511,Emporte la victoire,grammalecte,MPL-2.0,gagner,true
+gagnée,fr,6,528368,0.8377442,Emporte la victoire,grammalecte,MPL-2.0,gagner,true
+gagnées,fr,7,149647,0.87507516,Emportent la victoire,grammalecte,MPL-2.0,gagner,true
+gagnés,fr,6,268762,0.8455991,Emportent la victoire,grammalecte,MPL-2.0,gagner,true
 gaieté,fr,6,1022193,0.8287767,Joie et bonne humeur,grammalecte,MPL-2.0,gaieté,false
 gaietés,fr,7,19788,0.8884215,Joies et bonnes humeur,grammalecte,MPL-2.0,gaieté,false
 gain,fr,4,2439687,0.74599576,Prise de profit,grammalecte,MPL-2.0,gain,true
@@ -20209,10 +20209,10 @@ goûtons,fr,7,16706,0.8893283,Dégustons un mets,grammalecte,MPL-2.0,goûter,tru
 goûtâmes,fr,8,4030,0.91292894,Dégustâmes un mets,grammalecte,MPL-2.0,goûter,true
 goûtât,fr,6,4777,0.8746759,Dégustât un mets,grammalecte,MPL-2.0,goûter,true
 goûtèrent,fr,9,17280,0.9228792,Dégustèrent un mets,grammalecte,MPL-2.0,goûter,true
-goûté,fr,5,430156,0.81163484,Dégusté un mets,grammalecte,MPL-2.0,goûter,true
-goûtée,fr,6,90026,0.856038,Dégustée un mets,grammalecte,MPL-2.0,goûter,true
-goûtées,fr,7,59831,0.8817907,Dégustées un mets,grammalecte,MPL-2.0,goûter,true
-goûtés,fr,6,68835,0.85820687,Dégustés un mets,grammalecte,MPL-2.0,goûter,true
+goûté,fr,5,430156,0.81163484,Déguste un mets,grammalecte,MPL-2.0,goûter,true
+goûtée,fr,6,90026,0.856038,Déguste un mets,grammalecte,MPL-2.0,goûter,true
+goûtées,fr,7,59831,0.8817907,Dégustent un mets,grammalecte,MPL-2.0,goûter,true
+goûtés,fr,6,68835,0.85820687,Dégustent un mets,grammalecte,MPL-2.0,goûter,true
 gracieuse,fr,9,757412,0.90091807,Élégante et délicate,grammalecte,MPL-2.0,gracieux,true
 gracieuses,fr,10,333301,0.92291135,Élégantes et délicates,grammalecte,MPL-2.0,gracieux,true
 gracieux,fr,8,1043162,0.8780906,Élégant et délicat,grammalecte,MPL-2.0,gracieux,true
@@ -20363,10 +20363,10 @@ greffière,fr,9,3643,0.92783546,Secrétaire de justice,grammalecte,MPL-2.0,greff
 greffières,fr,10,244,0.94447285,Secrétaires de justice,grammalecte,MPL-2.0,greffier,true
 greffons,fr,8,66144,0.9005172,Transplantons une partie,grammalecte,MPL-2.0,greffon,false
 greffèrent,fr,10,4087,0.9398768,Transplantèrent une partie,grammalecte,MPL-2.0,greffer,false
-greffé,fr,6,169853,0.850287,Transplanté une partie,grammalecte,MPL-2.0,greffer,true
-greffée,fr,7,92295,0.8788141,Transplantée une partie,grammalecte,MPL-2.0,greffer,true
-greffées,fr,8,98663,0.89812136,Transplantées une partie,grammalecte,MPL-2.0,greffer,false
-greffés,fr,7,176303,0.87368834,Transplantés une partie,grammalecte,MPL-2.0,greffer,true
+greffé,fr,6,169853,0.850287,Transplante une partie,grammalecte,MPL-2.0,greffer,true
+greffée,fr,7,92295,0.8788141,Transplante une partie,grammalecte,MPL-2.0,greffer,true
+greffées,fr,8,98663,0.89812136,Transplantent une partie,grammalecte,MPL-2.0,greffer,false
+greffés,fr,7,176303,0.87368834,Transplantent une partie,grammalecte,MPL-2.0,greffer,true
 grenier,fr,7,756559,0.8590738,Comble d'une maison,grammalecte,MPL-2.0,grenier,false
 greniers,fr,8,545869,0.8847921,Combles d'une maison,grammalecte,MPL-2.0,grenier,false
 grenouille,fr,10,533233,0.91989,Batracien sauteur,grammalecte,MPL-2.0,grenouille,true
@@ -20540,10 +20540,10 @@ guidions,fr,8,732,0.91738105,Montrions la voie,grammalecte,MPL-2.0,guider,true
 guidons,fr,7,12062,0.8909592,Montrons la voie,grammalecte,MPL-2.0,guidon,true
 guidât,fr,6,3984,0.8754912,Montrât la voie,grammalecte,MPL-2.0,guider,true
 guidèrent,fr,9,20840,0.9221479,Montrèrent la voie,grammalecte,MPL-2.0,guider,true
-guidé,fr,5,823308,0.80198354,Montré la voie,grammalecte,MPL-2.0,guider,true
-guidée,fr,6,339028,0.84306866,Montrée la voie,grammalecte,MPL-2.0,guider,true
-guidées,fr,7,121660,0.8767075,Montrées la voie,grammalecte,MPL-2.0,guider,true
-guidés,fr,6,359764,0.8423988,Montrés la voie,grammalecte,MPL-2.0,guider,true
+guidé,fr,5,823308,0.80198354,Montre la voie,grammalecte,MPL-2.0,guider,true
+guidée,fr,6,339028,0.84306866,Montre la voie,grammalecte,MPL-2.0,guider,true
+guidées,fr,7,121660,0.8767075,Montrent la voie,grammalecte,MPL-2.0,guider,true
+guidés,fr,6,359764,0.8423988,Montrent la voie,grammalecte,MPL-2.0,guider,true
 guillotine,fr,10,382905,0.92205787,Instrument de mort,grammalecte,MPL-2.0,guillotine,true
 guillotines,fr,11,9705,0.9483885,Instruments de mort,grammalecte,MPL-2.0,guillotine,true
 guise,fr,5,1422411,0.79271823,Habit extérieur,grammalecte,MPL-2.0,guise,true
@@ -21352,9 +21352,9 @@ hypothéquas,fr,11,157,0.9544478,Engageas un bien en garantie,grammalecte,MPL-2.
 hypothéquer,fr,11,161311,0.9393912,Engager un bien en garantie,grammalecte,MPL-2.0,hypothéquer,false
 hypothéquez,fr,11,248,0.9540617,Engagez un bien en garantie,grammalecte,MPL-2.0,hypothéquer,false
 hypothéquât,fr,11,241,0.954087,Engageât un bien en garantie,grammalecte,MPL-2.0,hypothéquer,false
-hypothéqué,fr,10,146246,0.9274516,Engagé un bien en garantie,grammalecte,MPL-2.0,hypothéquer,false
-hypothéquée,fr,11,57570,0.9433166,Engagée un bien en garantie,grammalecte,MPL-2.0,hypothéquer,false
-hypothéqués,fr,11,107316,0.94106233,Engagés un bien en garantie,grammalecte,MPL-2.0,hypothéquer,false
+hypothéqué,fr,10,146246,0.9274516,Engage un bien en garantie,grammalecte,MPL-2.0,hypothéquer,false
+hypothéquée,fr,11,57570,0.9433166,Engage un bien en garantie,grammalecte,MPL-2.0,hypothéquer,false
+hypothéqués,fr,11,107316,0.94106233,Engagent un bien en garantie,grammalecte,MPL-2.0,hypothéquer,false
 hystérie,fr,8,659296,0.882952,Trouble nerveux,grammalecte,MPL-2.0,hystérie,true
 hystéries,fr,9,9030,0.92514986,Troubles nerveux,grammalecte,MPL-2.0,hystérie,true
 hystérique,fr,10,458852,0.9209065,En proie à une crise nerveuse,grammalecte,MPL-2.0,hystérique,false
@@ -21390,10 +21390,10 @@ hâtons,fr,6,68876,0.8582026,Accélérons le mouvement,grammalecte,MPL-2.0,hâte
 hâtâmes,fr,7,12187,0.8909128,Accélérâmes le mouvement,grammalecte,MPL-2.0,hâter,false
 hâtât,fr,5,12485,0.8453878,Accélérât le mouvement,grammalecte,MPL-2.0,hâter,true
 hâtèrent,fr,8,134003,0.8960861,Accélérèrent le mouvement,grammalecte,MPL-2.0,hâter,false
-hâté,fr,4,207518,0.7893417,Accéléré le mouvement,grammalecte,MPL-2.0,hâter,true
-hâtée,fr,5,57309,0.83371264,Accélérée le mouvement,grammalecte,MPL-2.0,hâter,false
-hâtées,fr,6,8743,0.871691,Accélérées le mouvement,grammalecte,MPL-2.0,hâter,false
-hâtés,fr,5,46219,0.8355969,Accélérés le mouvement,grammalecte,MPL-2.0,hâter,false
+hâté,fr,4,207518,0.7893417,Accélére le mouvement,grammalecte,MPL-2.0,hâter,true
+hâtée,fr,5,57309,0.83371264,Accélére le mouvement,grammalecte,MPL-2.0,hâter,false
+hâtées,fr,6,8743,0.871691,Accélérent le mouvement,grammalecte,MPL-2.0,hâter,false
+hâtés,fr,5,46219,0.8355969,Accélérent le mouvement,grammalecte,MPL-2.0,hâter,false
 hère,fr,4,78203,0.80096036,Algue marine,grammalecte,MPL-2.0,hère,true
 hères,fr,5,46744,0.83549434,Algues marine,grammalecte,MPL-2.0,hère,true
 hébergement,fr,11,437662,0.9345643,Logement temporaire,grammalecte,MPL-2.0,hébergement,true
@@ -21605,10 +21605,10 @@ illustrons,fr,10,5042,0.9393821,Dessinons une image,grammalecte,MPL-2.0,illustre
 illustrâmes,fr,11,1,0.95555836,Dessinâmes une image,grammalecte,MPL-2.0,illustrer,true
 illustrât,fr,9,4453,0.9272966,Dessinât une image,grammalecte,MPL-2.0,illustrer,true
 illustrâtes,fr,11,3570,0.95048475,Dessinâtes une image,grammalecte,MPL-2.0,illustrer,true
-illustré,fr,8,1273410,0.87578964,Dessiné une image,grammalecte,MPL-2.0,illustré,true
-illustrée,fr,9,792410,0.9004974,Dessinée une image,grammalecte,MPL-2.0,illustrer,true
-illustrées,fr,10,261523,0.9243325,Dessinées une image,grammalecte,MPL-2.0,illustrer,true
-illustrés,fr,9,330228,0.9074897,Dessinés une image,grammalecte,MPL-2.0,illustré,true
+illustré,fr,8,1273410,0.87578964,Dessine une image,grammalecte,MPL-2.0,illustré,true
+illustrée,fr,9,792410,0.9004974,Dessine une image,grammalecte,MPL-2.0,illustrer,true
+illustrées,fr,10,261523,0.9243325,Dessinent une image,grammalecte,MPL-2.0,illustrer,true
+illustrés,fr,9,330228,0.9074897,Dessinent une image,grammalecte,MPL-2.0,illustré,true
 illégal,fr,7,477847,0.8642597,Contre la loi,grammalecte,MPL-2.0,illégal,true
 illégale,fr,8,562199,0.8844866,Contre la loi,grammalecte,MPL-2.0,illégal,true
 illégales,fr,9,282554,0.908583,Contre la loi,grammalecte,MPL-2.0,illégal,true
@@ -21653,10 +21653,10 @@ imaginâmes,fr,10,5077,0.93936443,Créâmes une image mentale,grammalecte,MPL-2.
 imaginât,fr,8,15801,0.9077751,Créât une image mentale,grammalecte,MPL-2.0,imaginer,false
 imaginâtes,fr,10,891,0.94277483,Créâtes une image mentale,grammalecte,MPL-2.0,imaginer,false
 imaginèrent,fr,11,134901,0.94014066,Créèrent une image mentale,grammalecte,MPL-2.0,imaginer,false
-imaginé,fr,7,1784493,0.8473814,Créé une image mentale,grammalecte,MPL-2.0,imaginer,false
-imaginée,fr,8,441358,0.8867858,Créée une image mentale,grammalecte,MPL-2.0,imaginer,false
-imaginées,fr,9,234003,0.90986085,Créées une image mentale,grammalecte,MPL-2.0,imaginer,false
-imaginés,fr,8,271476,0.89087504,Créés une image mentale,grammalecte,MPL-2.0,imaginer,false
+imaginé,fr,7,1784493,0.8473814,Crée une image mentale,grammalecte,MPL-2.0,imaginer,false
+imaginée,fr,8,441358,0.8867858,Crée une image mentale,grammalecte,MPL-2.0,imaginer,false
+imaginées,fr,9,234003,0.90986085,Créent une image mentale,grammalecte,MPL-2.0,imaginer,false
+imaginés,fr,8,271476,0.89087504,Créent une image mentale,grammalecte,MPL-2.0,imaginer,false
 imago,fr,5,135610,0.82543164,Représentation mentale,grammalecte,MPL-2.0,imago,false
 imagos,fr,6,55970,0.85980326,Représentations mentales,grammalecte,MPL-2.0,imago,false
 imam,fr,4,185673,0.79080445,Chef religieux musulman,grammalecte,MPL-2.0,imam,false
@@ -22036,10 +22036,10 @@ imputions,fr,9,1297,0.93025005,Attribuions la faute,grammalecte,MPL-2.0,imputer,
 imputons,fr,8,3937,0.9130018,Attribuons la faute,grammalecte,MPL-2.0,imputer,true
 imputât,fr,7,6474,0.89375937,Attribuât la faute,grammalecte,MPL-2.0,imputer,true
 imputèrent,fr,10,6994,0.9385562,Attribuèrent la faute,grammalecte,MPL-2.0,imputer,true
-imputé,fr,6,304655,0.84421754,Attribué la faute,grammalecte,MPL-2.0,imputer,true
-imputée,fr,7,256180,0.8703849,Attribuée la faute,grammalecte,MPL-2.0,imputer,true
-imputées,fr,8,158666,0.8949368,Attribuées la faute,grammalecte,MPL-2.0,imputer,true
-imputés,fr,7,232535,0.8712951,Attribués la faute,grammalecte,MPL-2.0,imputer,true
+imputé,fr,6,304655,0.84421754,Attribue la faute,grammalecte,MPL-2.0,imputer,true
+imputée,fr,7,256180,0.8703849,Attribue la faute,grammalecte,MPL-2.0,imputer,true
+imputées,fr,8,158666,0.8949368,Attribuent la faute,grammalecte,MPL-2.0,imputer,true
+imputés,fr,7,232535,0.8712951,Attribuent la faute,grammalecte,MPL-2.0,imputer,true
 impédance,fr,9,189256,0.91119754,Résistance électrique,grammalecte,MPL-2.0,impédance,true
 impédances,fr,10,36338,0.9333985,Résistances électriques,grammalecte,MPL-2.0,impédance,true
 impératif,fr,9,1186375,0.89667684,Obligatoire et incontournable,grammalecte,MPL-2.0,impératif,false
@@ -22587,10 +22587,10 @@ infirmières,fr,11,595800,0.93277466,Soignantes qualifiées,grammalecte,MPL-2.0,
 infirmons,fr,9,272,0.9328603,Nions la véracité,grammalecte,MPL-2.0,infirmer,true
 infirmât,fr,8,1253,0.91618496,Niât la véracité,grammalecte,MPL-2.0,infirmer,true
 infirmèrent,fr,11,965,0.9525513,Nièrent la véracité,grammalecte,MPL-2.0,infirmer,true
-infirmé,fr,7,78086,0.8799944,Nié la véracité,grammalecte,MPL-2.0,infirmer,true
-infirmée,fr,8,70070,0.9001926,Niée la véracité,grammalecte,MPL-2.0,infirmer,true
-infirmées,fr,9,23785,0.921629,Niées la véracité,grammalecte,MPL-2.0,infirmer,true
-infirmés,fr,8,12682,0.9087165,Niés la véracité,grammalecte,MPL-2.0,infirmer,true
+infirmé,fr,7,78086,0.8799944,Nie la véracité,grammalecte,MPL-2.0,infirmer,true
+infirmée,fr,8,70070,0.9001926,Nie la véracité,grammalecte,MPL-2.0,infirmer,true
+infirmées,fr,9,23785,0.921629,Nient la véracité,grammalecte,MPL-2.0,infirmer,true
+infirmés,fr,8,12682,0.9087165,Nient la véracité,grammalecte,MPL-2.0,infirmer,true
 inflammable,fr,11,240898,0.937597,Facile à enflammer,grammalecte,MPL-2.0,inflammable,true
 inflation,fr,9,2244611,0.88967985,Augmentation des prix,grammalecte,MPL-2.0,inflation,true
 inflations,fr,10,14777,0.9364471,Augmentations des prix,grammalecte,MPL-2.0,inflation,true
@@ -22621,10 +22621,10 @@ infligeât,fr,9,4410,0.9273249,Causât un tort physique ou moral,grammalecte,MPL
 infligiez,fr,9,705,0.9313984,Causiez un tort physique ou moral,grammalecte,MPL-2.0,infliger,false
 infligions,fr,10,914,0.94273514,Causions un tort physique ou moral,grammalecte,MPL-2.0,infliger,false
 infligèrent,fr,11,24217,0.94601935,Causèrent un tort physique ou moral,grammalecte,MPL-2.0,infliger,false
-infligé,fr,7,303054,0.86878794,Causé un tort physique ou moral,grammalecte,MPL-2.0,infliger,false
-infligée,fr,8,340625,0.8890237,Causée un tort physique ou moral,grammalecte,MPL-2.0,infliger,false
-infligées,fr,9,285734,0.90850866,Causées un tort physique ou moral,grammalecte,MPL-2.0,infliger,false
-infligés,fr,8,143030,0.89564717,Causés un tort physique ou moral,grammalecte,MPL-2.0,infliger,false
+infligé,fr,7,303054,0.86878794,Cause un tort physique ou moral,grammalecte,MPL-2.0,infliger,false
+infligée,fr,8,340625,0.8890237,Cause un tort physique ou moral,grammalecte,MPL-2.0,infliger,false
+infligées,fr,9,285734,0.90850866,Causent un tort physique ou moral,grammalecte,MPL-2.0,infliger,false
+infligés,fr,8,143030,0.89564717,Causent un tort physique ou moral,grammalecte,MPL-2.0,infliger,false
 influa,fr,6,40931,0.8621378,Eut un impact,grammalecte,MPL-2.0,influer,true
 influaient,fr,10,18177,0.93580383,Avaient un impact,grammalecte,MPL-2.0,influer,true
 influait,fr,8,30359,0.904696,Avait un impact,grammalecte,MPL-2.0,influer,true
@@ -23129,10 +23129,10 @@ inspirâmes,fr,10,405,0.94387937,Donnâmes une impulsion créative,grammalecte,M
 inspirât,fr,8,32738,0.90431213,Donnât une impulsion créative,grammalecte,MPL-2.0,inspirer,false
 inspirâtes,fr,10,508,0.9435818,Donnâtes une impulsion créative,grammalecte,MPL-2.0,inspirer,false
 inspirèrent,fr,11,156880,0.9395206,Donnèrent une impulsion créative,grammalecte,MPL-2.0,inspirer,false
-inspiré,fr,7,2684917,0.84091765,Donné une impulsion créative,grammalecte,MPL-2.0,inspiré,false
-inspirée,fr,8,1153989,0.8769328,Donnée une impulsion créative,grammalecte,MPL-2.0,inspiré,false
-inspirées,fr,9,501069,0.90434766,Données une impulsion créative,grammalecte,MPL-2.0,inspiré,false
-inspirés,fr,8,685915,0.8825411,Donnés une impulsion créative,grammalecte,MPL-2.0,inspiré,false
+inspiré,fr,7,2684917,0.84091765,Donne une impulsion créative,grammalecte,MPL-2.0,inspiré,false
+inspirée,fr,8,1153989,0.8769328,Donne une impulsion créative,grammalecte,MPL-2.0,inspiré,false
+inspirées,fr,9,501069,0.90434766,Donnent une impulsion créative,grammalecte,MPL-2.0,inspiré,false
+inspirés,fr,8,685915,0.8825411,Donnent une impulsion créative,grammalecte,MPL-2.0,inspiré,false
 instabilité,fr,11,1401021,0.92711675,Manque de solidité,grammalecte,MPL-2.0,instabilité,true
 instable,fr,8,789891,0.88111955,Inconstant et changeant,grammalecte,MPL-2.0,instable,false
 instables,fr,9,319645,0.9077186,Inconstant et changeant,grammalecte,MPL-2.0,instable,false
@@ -23432,9 +23432,9 @@ interprétas,fr,11,172,0.95437294,Jouas un rôle,grammalecte,MPL-2.0,interpréte
 interpréter,fr,11,2639766,0.92182934,Jouer un rôle,grammalecte,MPL-2.0,interpréter,true
 interprétez,fr,11,5865,0.94950634,Jouez un rôle,grammalecte,MPL-2.0,interpréter,true
 interprétât,fr,11,7015,0.9491217,Jouât un rôle,grammalecte,MPL-2.0,interpréter,true
-interprété,fr,10,1032359,0.9149549,Joué un rôle,grammalecte,MPL-2.0,interpréter,true
-interprétée,fr,11,754377,0.93136805,Jouée un rôle,grammalecte,MPL-2.0,interpréter,true
-interprétés,fr,11,378663,0.9353253,Joués un rôle,grammalecte,MPL-2.0,interpréter,true
+interprété,fr,10,1032359,0.9149549,Joue un rôle,grammalecte,MPL-2.0,interpréter,true
+interprétée,fr,11,754377,0.93136805,Joue un rôle,grammalecte,MPL-2.0,interpréter,true
+interprétés,fr,11,378663,0.9353253,Jouent un rôle,grammalecte,MPL-2.0,interpréter,true
 interroge,fr,9,697438,0.9015936,Pose des questions,grammalecte,MPL-2.0,interroger,true
 interrogea,fr,10,246211,0.9246872,Posa des questions,grammalecte,MPL-2.0,interroger,true
 interrogeai,fr,11,32466,0.9451422,Posai des questions,grammalecte,MPL-2.0,interroger,true
@@ -24153,10 +24153,10 @@ jours,fr,5,58148568,0.6856315,Moments du temps,grammalecte,MPL-2.0,jour,true
 jouâmes,fr,7,6445,0.89377975,Exécutâmes une action,grammalecte,MPL-2.0,jouer,true
 jouât,fr,5,32310,0.8384673,Exécutât une action,grammalecte,MPL-2.0,jouer,true
 jouèrent,fr,8,236610,0.89197236,Exécutèrent une action,grammalecte,MPL-2.0,jouer,true
-joué,fr,4,4291811,0.73176223,Exécuté une action,grammalecte,MPL-2.0,jouer,true
-jouée,fr,5,255864,0.81823456,Exécutée une action,grammalecte,MPL-2.0,jouer,true
-jouées,fr,6,87386,0.8563084,Exécutées une action,grammalecte,MPL-2.0,jouer,true
-joués,fr,5,192042,0.82159406,Exécutés une action,grammalecte,MPL-2.0,jouer,true
+joué,fr,4,4291811,0.73176223,Exécute une action,grammalecte,MPL-2.0,jouer,true
+jouée,fr,5,255864,0.81823456,Exécute une action,grammalecte,MPL-2.0,jouer,true
+jouées,fr,6,87386,0.8563084,Exécutent une action,grammalecte,MPL-2.0,jouer,true
+joués,fr,5,192042,0.82159406,Exécutent une action,grammalecte,MPL-2.0,jouer,true
 jouîmes,fr,7,6264,0.8938991,Prîmes du plaisir,grammalecte,MPL-2.0,jouir,true
 jouît,fr,5,25638,0.84027356,Prît du plaisir,grammalecte,MPL-2.0,jouir,true
 joyau,fr,5,151618,0.82427824,Pierre précieuse,grammalecte,MPL-2.0,joyau,true
@@ -24200,10 +24200,10 @@ jugeâtes,fr,8,1353,0.9159983,Prononçâtes un verdict,grammalecte,MPL-2.0,juger
 jugiez,fr,6,38675,0.86254305,Prononciez un verdict,grammalecte,MPL-2.0,juger,true
 jugions,fr,7,40370,0.88431793,Prononcions un verdict,grammalecte,MPL-2.0,juger,true
 jugèrent,fr,8,214265,0.8926856,Prononcèrent un verdict,grammalecte,MPL-2.0,juger,false
-jugé,fr,4,4930424,0.7279747,Prononcé un verdict,grammalecte,MPL-2.0,juger,true
-jugée,fr,5,2335837,0.7829058,Prononcée un verdict,grammalecte,MPL-2.0,juger,true
-jugées,fr,6,1057707,0.82819533,Prononcées un verdict,grammalecte,MPL-2.0,juger,true
-jugés,fr,5,1466247,0.7921176,Prononcés un verdict,grammalecte,MPL-2.0,juger,true
+jugé,fr,4,4930424,0.7279747,Prononce un verdict,grammalecte,MPL-2.0,juger,true
+jugée,fr,5,2335837,0.7829058,Prononce un verdict,grammalecte,MPL-2.0,juger,true
+jugées,fr,6,1057707,0.82819533,Prononcent un verdict,grammalecte,MPL-2.0,juger,true
+jugés,fr,5,1466247,0.7921176,Prononcent un verdict,grammalecte,MPL-2.0,juger,true
 juif,fr,4,2320787,0.74713224,De religion hébraïque,grammalecte,MPL-2.0,juif,true
 juifs,fr,5,3182011,0.77623254,De religions hébraïques,grammalecte,MPL-2.0,juif,true
 juil,fr,4,435970,0.77893454,Mois estival,grammalecte,MPL-2.0,juil,true
@@ -25276,7 +25276,7 @@ légiférez,fr,9,261,0.9329148,Exercez le pouvoir de faire les lois,grammalecte,
 légiférions,fr,11,196,0.95426637,Exercions le pouvoir de faire les lois,grammalecte,MPL-2.0,légiférer,false
 légiférons,fr,10,913,0.9427366,Exerçons le pouvoir de faire les lois,grammalecte,MPL-2.0,légiférer,false
 légiférât,fr,9,351,0.93250275,Exerçât le pouvoir de faire les lois,grammalecte,MPL-2.0,légiférer,false
-légiféré,fr,8,27167,0.9052546,Exercé le pouvoir de faire les lois,grammalecte,MPL-2.0,légiférer,false
+légiféré,fr,8,27167,0.9052546,Exerce le pouvoir de faire les lois,grammalecte,MPL-2.0,légiférer,false
 légion,fr,6,1100518,0.827547,Troupe de soldats,grammalecte,MPL-2.0,légion,true
 légionnaire,fr,11,116142,0.9407531,Soldat romain,grammalecte,MPL-2.0,légionnaire,true
 légions,fr,7,828850,0.8579086,Troupes de soldats,grammalecte,MPL-2.0,légion,true
@@ -26501,10 +26501,10 @@ modifions,fr,9,12125,0.9241668,Apportons des changements,grammalecte,MPL-2.0,mod
 modifiâmes,fr,10,599,0.94335324,Apportâmes des changements,grammalecte,MPL-2.0,modifier,false
 modifiât,fr,8,17009,0.90745896,Apportât des changements,grammalecte,MPL-2.0,modifier,false
 modifièrent,fr,11,83967,0.94199944,Apportèrent des changements,grammalecte,MPL-2.0,modifier,false
-modifié,fr,7,4127580,0.83323765,Apporté des changements,grammalecte,MPL-2.0,modifier,false
-modifiée,fr,8,2397929,0.8675079,Apportée des changements,grammalecte,MPL-2.0,modifier,false
-modifiées,fr,9,973223,0.8985901,Apportées des changements,grammalecte,MPL-2.0,modifier,false
-modifiés,fr,8,937929,0.87921226,Apportés des changements,grammalecte,MPL-2.0,modifier,false
+modifié,fr,7,4127580,0.83323765,Apporte des changements,grammalecte,MPL-2.0,modifier,false
+modifiée,fr,8,2397929,0.8675079,Apporte des changements,grammalecte,MPL-2.0,modifier,false
+modifiées,fr,9,973223,0.8985901,Apportent des changements,grammalecte,MPL-2.0,modifier,false
+modifiés,fr,8,937929,0.87921226,Apportent des changements,grammalecte,MPL-2.0,modifier,false
 modique,fr,7,466687,0.86451334,Peu important,grammalecte,MPL-2.0,modique,true
 modiques,fr,8,146028,0.8955089,Peu important,grammalecte,MPL-2.0,modique,true
 modulation,fr,10,447266,0.92109054,Variation de l'amplitude,grammalecte,MPL-2.0,modulation,true
@@ -26579,9 +26579,9 @@ monopolises,fr,11,149,0.9544876,Exerces un contrôle total,grammalecte,MPL-2.0,m
 monopolisez,fr,11,144,0.9545132,Exercez un contrôle total,grammalecte,MPL-2.0,monopoliser,false
 monopoliste,fr,11,225086,0.9379024,Détenteur unique du marché,grammalecte,MPL-2.0,monopoliste,false
 monopolisât,fr,11,251,0.95405114,Exerçât un contrôle total,grammalecte,MPL-2.0,monopoliser,false
-monopolisé,fr,10,59860,0.9314684,Exercé un contrôle total,grammalecte,MPL-2.0,monopoliser,false
-monopolisée,fr,11,32790,0.9451112,Exercée un contrôle total,grammalecte,MPL-2.0,monopoliser,false
-monopolisés,fr,11,21427,0.9463649,Exercés un contrôle total,grammalecte,MPL-2.0,monopoliser,false
+monopolisé,fr,10,59860,0.9314684,Exerce un contrôle total,grammalecte,MPL-2.0,monopoliser,false
+monopolisée,fr,11,32790,0.9451112,Exerce un contrôle total,grammalecte,MPL-2.0,monopoliser,false
+monopolisés,fr,11,21427,0.9463649,Exercent un contrôle total,grammalecte,MPL-2.0,monopoliser,false
 monothéisme,fr,11,250759,0.93738997,Croyance en un seul Dieu,grammalecte,MPL-2.0,monothéisme,false
 monothéiste,fr,11,81022,0.94213086,Croyant en un seul dieu,grammalecte,MPL-2.0,monothéiste,false
 monotone,fr,8,740331,0.8818037,Un seul ton,grammalecte,MPL-2.0,monotone,true
@@ -26769,10 +26769,10 @@ motiveront,fr,10,5118,0.9393435,Donneront un élan,grammalecte,MPL-2.0,motiver,t
 motives,fr,7,30549,0.88596684,Donnes un élan,grammalecte,MPL-2.0,motiver,true
 motivât,fr,7,3197,0.89649814,Donnât un élan,grammalecte,MPL-2.0,motiver,true
 motivèrent,fr,10,26510,0.9345238,Donnèrent un élan,grammalecte,MPL-2.0,motiver,true
-motivé,fr,6,1073661,0.8279496,Donné un élan,grammalecte,MPL-2.0,motiver,true
-motivée,fr,7,772037,0.85883707,Donnée un élan,grammalecte,MPL-2.0,motiver,true
-motivées,fr,8,296269,0.890146,Données un élan,grammalecte,MPL-2.0,motiver,true
-motivés,fr,7,273104,0.8698062,Donnés un élan,grammalecte,MPL-2.0,motiver,true
+motivé,fr,6,1073661,0.8279496,Donne un élan,grammalecte,MPL-2.0,motiver,true
+motivée,fr,7,772037,0.85883707,Donne un élan,grammalecte,MPL-2.0,motiver,true
+motivées,fr,8,296269,0.890146,Donnent un élan,grammalecte,MPL-2.0,motiver,true
+motivés,fr,7,273104,0.8698062,Donnent un élan,grammalecte,MPL-2.0,motiver,true
 motrice,fr,7,1774205,0.84747237,Machine qui produit du mouvement,grammalecte,MPL-2.0,moteur,false
 motrices,fr,8,847430,0.8803518,Machines qui produit du mouvement,grammalecte,MPL-2.0,moteur,false
 motte,fr,5,189551,0.82174754,Monticule de terre,grammalecte,MPL-2.0,motte,true
@@ -27130,10 +27130,10 @@ méditons,fr,8,9631,0.9098146,Pratiquons la réflexion profonde,grammalecte,MPL-
 méditâmes,fr,9,247,0.932988,Pratiquâmes la réflexion profonde,grammalecte,MPL-2.0,méditer,false
 méditât,fr,7,4536,0.895212,Pratiquât la réflexion profonde,grammalecte,MPL-2.0,méditer,false
 méditèrent,fr,10,5482,0.93917507,Pratiquèrent la réflexion profonde,grammalecte,MPL-2.0,méditer,false
-médité,fr,6,330094,0.8433573,Pratiqué la réflexion profonde,grammalecte,MPL-2.0,méditer,false
-méditée,fr,7,104705,0.8778572,Pratiquée la réflexion profonde,grammalecte,MPL-2.0,méditer,false
-méditées,fr,8,57664,0.9013039,Pratiquées la réflexion profonde,grammalecte,MPL-2.0,méditer,false
-médités,fr,7,49072,0.88307244,Pratiqués la réflexion profonde,grammalecte,MPL-2.0,méditer,false
+médité,fr,6,330094,0.8433573,Pratique la réflexion profonde,grammalecte,MPL-2.0,méditer,false
+méditée,fr,7,104705,0.8778572,Pratique la réflexion profonde,grammalecte,MPL-2.0,méditer,false
+méditées,fr,8,57664,0.9013039,Pratiquent la réflexion profonde,grammalecte,MPL-2.0,méditer,false
+médités,fr,7,49072,0.88307244,Pratiquent la réflexion profonde,grammalecte,MPL-2.0,méditer,false
 médium,fr,6,461649,0.8394606,Personne qui communique avec les esprits,grammalecte,MPL-2.0,médium,true
 médiums,fr,7,96232,0.8785161,Personnes qui communique avec les esprits,grammalecte,MPL-2.0,médium,true
 médiéval,fr,8,575703,0.884244,D'une autre époque,grammalecte,MPL-2.0,médiéval,true
@@ -28030,10 +28030,10 @@ objectâmes,fr,10,456,0.9437263,Exprimâmes une opposition,grammalecte,MPL-2.0,o
 objectât,fr,8,1529,0.91569173,Exprimât une opposition,grammalecte,MPL-2.0,objecter,false
 objectâtes,fr,10,2572,0.9408752,Exprimâtes une opposition,grammalecte,MPL-2.0,objecter,false
 objectèrent,fr,11,13605,0.9475679,Exprimèrent une opposition,grammalecte,MPL-2.0,objecter,false
-objecté,fr,7,154480,0.87481815,Exprimé une opposition,grammalecte,MPL-2.0,objecter,false
-objectée,fr,8,5007,0.91221,Exprimée une opposition,grammalecte,MPL-2.0,objecter,false
-objectées,fr,9,3168,0.92819494,Exprimées une opposition,grammalecte,MPL-2.0,objecter,false
-objectés,fr,8,2956,0.91387784,Exprimés une opposition,grammalecte,MPL-2.0,objecter,false
+objecté,fr,7,154480,0.87481815,Exprime une opposition,grammalecte,MPL-2.0,objecter,false
+objectée,fr,8,5007,0.91221,Exprime une opposition,grammalecte,MPL-2.0,objecter,false
+objectées,fr,9,3168,0.92819494,Expriment une opposition,grammalecte,MPL-2.0,objecter,false
+objectés,fr,8,2956,0.91387784,Expriment une opposition,grammalecte,MPL-2.0,objecter,false
 objet,fr,5,44581464,0.6945482,Chose concrète,grammalecte,MPL-2.0,objet,true
 objets,fr,6,19990488,0.76244694,Choses concrètes,grammalecte,MPL-2.0,objet,true
 obligation,fr,10,10820087,0.88760245,Engagement à respecter,grammalecte,MPL-2.0,obligation,false
@@ -28241,9 +28241,9 @@ occasionner,fr,11,480247,0.93404686,Causer un effet,grammalecte,MPL-2.0,occasion
 occasionnes,fr,11,4807,0.94991654,Causes un effet,grammalecte,MPL-2.0,occasionner,true
 occasionnez,fr,11,478,0.9533991,Causez un effet,grammalecte,MPL-2.0,occasionner,true
 occasionnât,fr,11,6419,0.9493155,Causât un effet,grammalecte,MPL-2.0,occasionner,true
-occasionné,fr,10,579127,0.919282,Causé un effet,grammalecte,MPL-2.0,occasionner,true
-occasionnée,fr,11,300654,0.93649447,Causée un effet,grammalecte,MPL-2.0,occasionner,true
-occasionnés,fr,11,430552,0.9346601,Causés un effet,grammalecte,MPL-2.0,occasionner,true
+occasionné,fr,10,579127,0.919282,Cause un effet,grammalecte,MPL-2.0,occasionner,true
+occasionnée,fr,11,300654,0.93649447,Cause un effet,grammalecte,MPL-2.0,occasionner,true
+occasionnés,fr,11,430552,0.9346601,Causent un effet,grammalecte,MPL-2.0,occasionner,true
 occasions,fr,9,3141206,0.8854985,Moments spéciaux,grammalecte,MPL-2.0,occasion,true
 occidental,fr,10,2388324,0.90716386,De l'ouest,grammalecte,MPL-2.0,occidental,true
 occidentale,fr,11,6078280,0.91326964,De l'ouest,grammalecte,MPL-2.0,occidental,true
@@ -28320,10 +28320,10 @@ octroyons,fr,9,14423,0.92354274,Accordons un privilège ou un droit,grammalecte,
 octroyâmes,fr,10,65,0.9454434,Accordâmes un privilège ou un droit,grammalecte,MPL-2.0,octroyer,false
 octroyât,fr,8,1918,0.91510326,Accordât un privilège ou un droit,grammalecte,MPL-2.0,octroyer,false
 octroyèrent,fr,11,8107,0.94879806,Accordèrent un privilège ou un droit,grammalecte,MPL-2.0,octroyer,false
-octroyé,fr,7,282604,0.8694882,Accordé un privilège ou un droit,grammalecte,MPL-2.0,octroyer,false
-octroyée,fr,8,235855,0.89199793,Accordée un privilège ou un droit,grammalecte,MPL-2.0,octroyer,false
-octroyées,fr,9,155133,0.91245204,Accordées un privilège ou un droit,grammalecte,MPL-2.0,octroyer,false
-octroyés,fr,8,166076,0.89459634,Accordés un privilège ou un droit,grammalecte,MPL-2.0,octroyer,false
+octroyé,fr,7,282604,0.8694882,Accorde un privilège ou un droit,grammalecte,MPL-2.0,octroyer,false
+octroyée,fr,8,235855,0.89199793,Accorde un privilège ou un droit,grammalecte,MPL-2.0,octroyer,false
+octroyées,fr,9,155133,0.91245204,Accordent un privilège ou un droit,grammalecte,MPL-2.0,octroyer,false
+octroyés,fr,8,166076,0.89459634,Accordent un privilège ou un droit,grammalecte,MPL-2.0,octroyer,false
 oculaire,fr,8,528810,0.88508165,Relatif à l'œil,grammalecte,MPL-2.0,oculaire,true
 oculaires,fr,9,274157,0.9087907,Relatifs à l'œil,grammalecte,MPL-2.0,oculaire,true
 océan,fr,5,1867659,0.78736556,Mer immense,grammalecte,MPL-2.0,océan,true
@@ -28363,10 +28363,10 @@ offensives,fr,10,156301,0.9271254,Attaques hostiles,grammalecte,MPL-2.0,offensif
 offensons,fr,9,1930,0.92939144,Causons du tort,grammalecte,MPL-2.0,offenser,true
 offensât,fr,8,4898,0.9122849,Causât du tort,grammalecte,MPL-2.0,offenser,true
 offensèrent,fr,11,6603,0.94925225,Causèrent du tort,grammalecte,MPL-2.0,offenser,true
-offensé,fr,7,446890,0.8649864,Causé du tort,grammalecte,MPL-2.0,offensé,true
-offensée,fr,8,135166,0.89602685,Causée du tort,grammalecte,MPL-2.0,offensé,true
-offensées,fr,9,10008,0.9248095,Causées du tort,grammalecte,MPL-2.0,offenser,true
-offensés,fr,8,82004,0.89927024,Causés du tort,grammalecte,MPL-2.0,offensé,true
+offensé,fr,7,446890,0.8649864,Cause du tort,grammalecte,MPL-2.0,offensé,true
+offensée,fr,8,135166,0.89602685,Cause du tort,grammalecte,MPL-2.0,offensé,true
+offensées,fr,9,10008,0.9248095,Causent du tort,grammalecte,MPL-2.0,offenser,true
+offensés,fr,8,82004,0.89927024,Causent du tort,grammalecte,MPL-2.0,offensé,true
 offert,fr,6,3264780,0.80860955,Proposé un don,grammalecte,MPL-2.0,offrir,true
 offerte,fr,7,850226,0.85758436,Proposée un don,grammalecte,MPL-2.0,offerte,true
 offertes,fr,8,597081,0.883906,Proposées un don,grammalecte,MPL-2.0,offerte,true
@@ -28978,9 +28978,9 @@ outrepasser,fr,11,74329,0.9424342,Dépasser les limites,grammalecte,MPL-2.0,outr
 outrepasses,fr,11,218,0.9541774,Dépasses les limites,grammalecte,MPL-2.0,outrepasser,true
 outrepassez,fr,11,420,0.9535424,Dépassez les limites,grammalecte,MPL-2.0,outrepasser,true
 outrepassât,fr,11,738,0.95289254,Dépassât les limites,grammalecte,MPL-2.0,outrepasser,true
-outrepassé,fr,10,76858,0.93043655,Dépassé les limites,grammalecte,MPL-2.0,outrepasser,true
-outrepassée,fr,11,4798,0.9499202,Dépassée les limites,grammalecte,MPL-2.0,outrepasser,true
-outrepassés,fr,11,6160,0.9494031,Dépassés les limites,grammalecte,MPL-2.0,outrepasser,true
+outrepassé,fr,10,76858,0.93043655,Dépasse les limites,grammalecte,MPL-2.0,outrepasser,true
+outrepassée,fr,11,4798,0.9499202,Dépasse les limites,grammalecte,MPL-2.0,outrepasser,true
+outrepassés,fr,11,6160,0.9494031,Dépassent les limites,grammalecte,MPL-2.0,outrepasser,true
 outres,fr,6,109580,0.8543474,De l'autre côté,grammalecte,MPL-2.0,outre,true
 ouverture,fr,9,12573190,0.8633093,Action de commencer,grammalecte,MPL-2.0,ouverture,true
 ouvertures,fr,10,1876979,0.9095954,Actions de commencer,grammalecte,MPL-2.0,ouverture,true
@@ -29753,10 +29753,10 @@ paysannerie,fr,11,603156,0.93270564,Population rurale,grammalecte,MPL-2.0,paysan
 payâmes,fr,7,6448,0.8937778,Versâmes une somme,grammalecte,MPL-2.0,payer,true
 payât,fr,5,63661,0.8327998,Versât une somme,grammalecte,MPL-2.0,payer,true
 payèrent,fr,8,121670,0.8967486,Versèrent une somme,grammalecte,MPL-2.0,payer,true
-payé,fr,4,3985069,0.73377913,Versé une somme,grammalecte,MPL-2.0,payer,true
-payée,fr,5,1403841,0.7929681,Versée une somme,grammalecte,MPL-2.0,payer,true
-payées,fr,6,1212391,0.8261543,Versées une somme,grammalecte,MPL-2.0,payer,true
-payés,fr,5,2534561,0.7811038,Versés une somme,grammalecte,MPL-2.0,payer,true
+payé,fr,4,3985069,0.73377913,Verse une somme,grammalecte,MPL-2.0,payer,true
+payée,fr,5,1403841,0.7929681,Verse une somme,grammalecte,MPL-2.0,payer,true
+payées,fr,6,1212391,0.8261543,Versent une somme,grammalecte,MPL-2.0,payer,true
+payés,fr,5,2534561,0.7811038,Versent une somme,grammalecte,MPL-2.0,payer,true
 paît,fr,4,57404,0.80409193,Broute les herbes,grammalecte,MPL-2.0,paître,true
 paîtraient,fr,10,324,0.94415164,Brouteraient les herbes,grammalecte,MPL-2.0,paître,true
 paître,fr,6,244521,0.84663355,Brouter les herbes,grammalecte,MPL-2.0,paître,true
@@ -30243,10 +30243,10 @@ peuplez,fr,7,2155,0.89785135,Habitez un lieu,grammalecte,MPL-2.0,peupler,true
 peuplions,fr,9,332,0.9325872,Habitions un lieu,grammalecte,MPL-2.0,peupler,true
 peuplons,fr,8,1469,0.915791,Habitons un lieu,grammalecte,MPL-2.0,peupler,true
 peuplèrent,fr,10,34108,0.9336301,Habitèrent un lieu,grammalecte,MPL-2.0,peupler,true
-peuplé,fr,6,736313,0.8334348,Habité un lieu,grammalecte,MPL-2.0,peupler,true
-peuplée,fr,7,711319,0.85975987,Habitée un lieu,grammalecte,MPL-2.0,peupler,true
-peuplées,fr,8,461258,0.88637984,Habitées un lieu,grammalecte,MPL-2.0,peupler,true
-peuplés,fr,7,373705,0.8667871,Habités un lieu,grammalecte,MPL-2.0,peupler,true
+peuplé,fr,6,736313,0.8334348,Habite un lieu,grammalecte,MPL-2.0,peupler,true
+peuplée,fr,7,711319,0.85975987,Habite un lieu,grammalecte,MPL-2.0,peupler,true
+peuplées,fr,8,461258,0.88637984,Habitent un lieu,grammalecte,MPL-2.0,peupler,true
+peuplés,fr,7,373705,0.8667871,Habitent un lieu,grammalecte,MPL-2.0,peupler,true
 peur,fr,4,8994844,0.70995635,Sentiment d'angoisse,grammalecte,MPL-2.0,peur,true
 peurs,fr,5,272148,0.8175038,Sentiments d'angoisse,grammalecte,MPL-2.0,peur,true
 peut,fr,4,267424000,0.595513,Capacité d'agit,grammalecte,MPL-2.0,pouvoir,true
@@ -32429,10 +32429,10 @@ provoquons,fr,10,7237,0.9384711,Causons un effet,grammalecte,MPL-2.0,provoquer,t
 provoquâmes,fr,11,538,0.9532652,Causâmes un effet,grammalecte,MPL-2.0,provoquer,true
 provoquât,fr,9,19178,0.9224725,Causât un effet,grammalecte,MPL-2.0,provoquer,true
 provoquâtes,fr,11,41,0.9550578,Causâtes un effet,grammalecte,MPL-2.0,provoquer,true
-provoqué,fr,8,2875596,0.86498296,Causé un effet,grammalecte,MPL-2.0,provoquer,true
-provoquée,fr,9,1383093,0.8951549,Causée un effet,grammalecte,MPL-2.0,provoquer,true
-provoquées,fr,10,720843,0.9177649,Causées un effet,grammalecte,MPL-2.0,provoquer,true
-provoqués,fr,9,586194,0.9030584,Causés un effet,grammalecte,MPL-2.0,provoquer,true
+provoqué,fr,8,2875596,0.86498296,Cause un effet,grammalecte,MPL-2.0,provoquer,true
+provoquée,fr,9,1383093,0.8951549,Cause un effet,grammalecte,MPL-2.0,provoquer,true
+provoquées,fr,10,720843,0.9177649,Causent un effet,grammalecte,MPL-2.0,provoquer,true
+provoqués,fr,9,586194,0.9030584,Causent un effet,grammalecte,MPL-2.0,provoquer,true
 proéminence,fr,11,69087,0.942688,Saillie en avant,grammalecte,MPL-2.0,proéminence,true
 prudence,fr,8,4773503,0.85677683,Attention mesurée,grammalecte,MPL-2.0,prudence,true
 prudences,fr,9,32065,0.92036414,Attentions mesurées,grammalecte,MPL-2.0,prudence,true
@@ -32843,10 +32843,10 @@ présidons,fr,9,3621,0.92785186,Dirigeons une réunion,grammalecte,MPL-2.0,prés
 présidât,fr,8,11973,0.9089524,Dirigeât une réunion,grammalecte,MPL-2.0,présider,true
 présidâtes,fr,10,96,0.9452969,Dirigeâtes une réunion,grammalecte,MPL-2.0,présider,true
 présidèrent,fr,11,46943,0.9440037,Dirigèrent une réunion,grammalecte,MPL-2.0,présider,true
-présidé,fr,7,1494699,0.8501471,Dirigé une réunion,grammalecte,MPL-2.0,présider,true
-présidée,fr,8,745571,0.8817374,Dirigée une réunion,grammalecte,MPL-2.0,présider,true
-présidées,fr,9,95245,0.9152209,Dirigées une réunion,grammalecte,MPL-2.0,présider,true
-présidés,fr,8,88674,0.89879245,Dirigés une réunion,grammalecte,MPL-2.0,présider,true
+présidé,fr,7,1494699,0.8501471,Dirige une réunion,grammalecte,MPL-2.0,présider,true
+présidée,fr,8,745571,0.8817374,Dirige une réunion,grammalecte,MPL-2.0,présider,true
+présidées,fr,9,95245,0.9152209,Dirigent une réunion,grammalecte,MPL-2.0,présider,true
+présidés,fr,8,88674,0.89879245,Dirigent une réunion,grammalecte,MPL-2.0,présider,true
 présomptif,fr,10,183787,0.9262616,Hâtif et sûr de soi,grammalecte,MPL-2.0,présomptif,true
 présomptifs,fr,11,64430,0.9429321,Hâtifs et sûrs de soi,grammalecte,MPL-2.0,présomptif,true
 présomption,fr,11,1750100,0.9252789,Idée reçue,grammalecte,MPL-2.0,présomption,true
@@ -33049,10 +33049,10 @@ prêchons,fr,8,10536,0.90946454,Proclamons la parole divine,grammalecte,MPL-2.0,
 prêchâmes,fr,9,329,0.9326004,Proclamâmes la parole divine,grammalecte,MPL-2.0,prêcher,false
 prêchât,fr,7,7961,0.8928604,Proclamât la parole divine,grammalecte,MPL-2.0,prêcher,false
 prêchèrent,fr,10,27490,0.9344038,Proclamèrent la parole divine,grammalecte,MPL-2.0,prêcher,false
-prêché,fr,6,330069,0.84336036,Proclamé la parole divine,grammalecte,MPL-2.0,prêcher,false
-prêchée,fr,7,98395,0.87833184,Proclamée la parole divine,grammalecte,MPL-2.0,prêcher,false
-prêchées,fr,8,25981,0.90546465,Proclamées la parole divine,grammalecte,MPL-2.0,prêcher,false
-prêchés,fr,7,14902,0.8899099,Proclamés la parole divine,grammalecte,MPL-2.0,prêcher,false
+prêché,fr,6,330069,0.84336036,Proclame la parole divine,grammalecte,MPL-2.0,prêcher,false
+prêchée,fr,7,98395,0.87833184,Proclame la parole divine,grammalecte,MPL-2.0,prêcher,false
+prêchées,fr,8,25981,0.90546465,Proclament la parole divine,grammalecte,MPL-2.0,prêcher,false
+prêchés,fr,7,14902,0.8899099,Proclament la parole divine,grammalecte,MPL-2.0,prêcher,false
 prêt,fr,4,3325507,0.738491,Accord financier,grammalecte,MPL-2.0,prêt,true
 prête,fr,5,4204126,0.7696366,Accord financière,grammalecte,MPL-2.0,prêt,true
 prêtes,fr,6,514891,0.8380868,Accord financières,grammalecte,MPL-2.0,prêt,true
@@ -33616,10 +33616,10 @@ rabaissiez,fr,10,157,0.94491965,Diminuiez le prix,grammalecte,MPL-2.0,rabaisser,
 rabaissions,fr,11,320,0.95382136,Diminuions le prix,grammalecte,MPL-2.0,rabaisser,true
 rabaissons,fr,10,1115,0.94241285,Diminuons le prix,grammalecte,MPL-2.0,rabaisser,true
 rabaissât,fr,9,833,0.9311025,Diminuât le prix,grammalecte,MPL-2.0,rabaisser,true
-rabaissé,fr,8,44275,0.90276664,Diminué le prix,grammalecte,MPL-2.0,rabaisser,true
-rabaissée,fr,9,21337,0.92205846,Diminuée le prix,grammalecte,MPL-2.0,rabaisser,true
-rabaissées,fr,10,5238,0.93928695,Diminuées le prix,grammalecte,MPL-2.0,rabaisser,true
-rabaissés,fr,9,10429,0.92467135,Diminués le prix,grammalecte,MPL-2.0,rabaisser,true
+rabaissé,fr,8,44275,0.90276664,Diminue le prix,grammalecte,MPL-2.0,rabaisser,true
+rabaissée,fr,9,21337,0.92205846,Diminue le prix,grammalecte,MPL-2.0,rabaisser,true
+rabaissées,fr,10,5238,0.93928695,Diminuent le prix,grammalecte,MPL-2.0,rabaisser,true
+rabaissés,fr,9,10429,0.92467135,Diminuent le prix,grammalecte,MPL-2.0,rabaisser,true
 rabattement,fr,11,85984,0.9419182,Action de plier en arrière,grammalecte,MPL-2.0,rabattement,false
 rabbin,fr,6,411381,0.8408452,Chef religieux juif,grammalecte,MPL-2.0,rabbin,true
 rabbins,fr,7,265705,0.87004685,Chefs religieux juifs,grammalecte,MPL-2.0,rabbin,false
@@ -33689,10 +33689,10 @@ racontâmes,fr,10,3046,0.9405198,Narrâmes un récit,grammalecte,MPL-2.0,raconte
 racontât,fr,8,6930,0.91105884,Narrât un récit,grammalecte,MPL-2.0,raconter,true
 racontâtes,fr,10,122,0.9451369,Narrâtes un récit,grammalecte,MPL-2.0,raconter,true
 racontèrent,fr,11,58641,0.9432569,Narrèrent un récit,grammalecte,MPL-2.0,raconter,true
-raconté,fr,7,1323580,0.8519035,Narré un récit,grammalecte,MPL-2.0,raconter,true
-racontée,fr,8,426485,0.88709545,Narrée un récit,grammalecte,MPL-2.0,raconter,true
-racontées,fr,9,135244,0.9132339,Narrées un récit,grammalecte,MPL-2.0,raconter,true
-racontés,fr,8,165258,0.8946301,Narrés un récit,grammalecte,MPL-2.0,raconter,true
+raconté,fr,7,1323580,0.8519035,Narre un récit,grammalecte,MPL-2.0,raconter,true
+racontée,fr,8,426485,0.88709545,Narre un récit,grammalecte,MPL-2.0,raconter,true
+racontées,fr,9,135244,0.9132339,Narrent un récit,grammalecte,MPL-2.0,raconter,true
+racontés,fr,8,165258,0.8946301,Narrent un récit,grammalecte,MPL-2.0,raconter,true
 radar,fr,5,264202,0.8178414,Système de détection,grammalecte,MPL-2.0,radar,true
 radars,fr,6,97490,0.85538393,Systèmes de détection,grammalecte,MPL-2.0,radar,false
 rade,fr,4,1209247,0.76113147,Dernier refuge,grammalecte,MPL-2.0,rade,true
@@ -33859,10 +33859,10 @@ ramassons,fr,9,4539,0.9272433,Rassemblons des objets,grammalecte,MPL-2.0,ramasse
 ramassâmes,fr,10,3321,0.94033194,Rassemblâmes des objets,grammalecte,MPL-2.0,ramasser,false
 ramassât,fr,8,1607,0.91556644,Rassemblât des objets,grammalecte,MPL-2.0,ramasser,true
 ramassèrent,fr,11,20029,0.9465511,Rassemblèrent des objets,grammalecte,MPL-2.0,ramasser,false
-ramassé,fr,7,321439,0.868252,Rassemblé des objets,grammalecte,MPL-2.0,ramasser,true
-ramassée,fr,8,147215,0.89546216,Rassemblée des objets,grammalecte,MPL-2.0,ramasser,true
-ramassées,fr,9,112858,0.91427827,Rassemblées des objets,grammalecte,MPL-2.0,ramasser,false
-ramassés,fr,8,155318,0.8950953,Rassemblés des objets,grammalecte,MPL-2.0,ramasser,true
+ramassé,fr,7,321439,0.868252,Rassemble des objets,grammalecte,MPL-2.0,ramasser,true
+ramassée,fr,8,147215,0.89546216,Rassemble des objets,grammalecte,MPL-2.0,ramasser,true
+ramassées,fr,9,112858,0.91427827,Rassemblent des objets,grammalecte,MPL-2.0,ramasser,false
+ramassés,fr,8,155318,0.8950953,Rassemblent des objets,grammalecte,MPL-2.0,ramasser,true
 rame,fr,4,326890,0.7831647,Poutre de bois,grammalecte,MPL-2.0,rame,true
 rameau,fr,6,752306,0.8331523,Arbre généalogique musical,grammalecte,MPL-2.0,rameau,false
 rameaux,fr,7,1570360,0.84937286,Arbres généalogiques musicaux,grammalecte,MPL-2.0,rameau,false
@@ -35215,7 +35215,7 @@ remédions,fr,9,947,0.9308654,Apportons une solution,grammalecte,MPL-2.0,remédi
 remédiâmes,fr,10,200,0.94468206,Apportâmes une solution,grammalecte,MPL-2.0,remédier,false
 remédiât,fr,8,3242,0.9135982,Apportât une solution,grammalecte,MPL-2.0,remédier,false
 remédièrent,fr,11,4110,0.9502222,Apportèrent une solution,grammalecte,MPL-2.0,remédier,false
-remédié,fr,7,108734,0.87757856,Apporté une solution,grammalecte,MPL-2.0,remédier,false
+remédié,fr,7,108734,0.87757856,Apporte une solution,grammalecte,MPL-2.0,remédier,false
 remîmes,fr,7,38448,0.8846217,Restituâmes à son propriétaire,grammalecte,MPL-2.0,remettre,false
 remît,fr,5,50176,0.83486766,Restituât à son propriétaire,grammalecte,MPL-2.0,remettre,false
 renaissance,fr,11,1499571,0.9265788,Époque de renouveau culturel,grammalecte,MPL-2.0,renaissance,false
@@ -35443,10 +35443,10 @@ renseignez,fr,10,4999,0.9394022,Donnez des informations,grammalecte,MPL-2.0,rens
 renseigniez,fr,11,442,0.95348746,Donniez des informations,grammalecte,MPL-2.0,renseigner,false
 renseignons,fr,11,1535,0.95189494,Donnons des informations,grammalecte,MPL-2.0,renseigner,false
 renseignât,fr,10,2429,0.9409932,Donnât des informations,grammalecte,MPL-2.0,renseigner,false
-renseigné,fr,9,454821,0.90513015,Donné des informations,grammalecte,MPL-2.0,renseigner,false
-renseignée,fr,10,121385,0.9283616,Donnée des informations,grammalecte,MPL-2.0,renseigner,false
-renseignées,fr,11,45255,0.9441224,Données des informations,grammalecte,MPL-2.0,renseigner,false
-renseignés,fr,10,264855,0.9242555,Donnés des informations,grammalecte,MPL-2.0,renseigner,false
+renseigné,fr,9,454821,0.90513015,Donne des informations,grammalecte,MPL-2.0,renseigner,false
+renseignée,fr,10,121385,0.9283616,Donne des informations,grammalecte,MPL-2.0,renseigner,false
+renseignées,fr,11,45255,0.9441224,Donnent des informations,grammalecte,MPL-2.0,renseigner,false
+renseignés,fr,10,264855,0.9242555,Donnent des informations,grammalecte,MPL-2.0,renseigner,false
 rentabilité,fr,11,1361892,0.9273084,Bénéfice net,grammalecte,MPL-2.0,rentabilité,true
 rentable,fr,8,507188,0.88548595,Capable de rapporter un bénéfice,grammalecte,MPL-2.0,rentable,false
 rentables,fr,9,349126,0.9071038,Capables de rapporter un bénéfice,grammalecte,MPL-2.0,rentable,false
@@ -35752,9 +35752,9 @@ représentes,fr,11,20424,0.9464961,Joues un rôle,grammalecte,MPL-2.0,représent
 représentez,fr,11,49413,0.94382447,Jouez un rôle,grammalecte,MPL-2.0,représenter,true
 représentât,fr,11,46674,0.94402236,Jouât un rôle,grammalecte,MPL-2.0,représenter,true
 représentè,fr,10,117,0.9451693,Jouent un rôle,grammalecte,MPL-2.0,représenter,true
-représenté,fr,10,5040898,0.89849216,Joué un rôle,grammalecte,MPL-2.0,représenter,true
-représentée,fr,11,3437325,0.9193527,Jouée un rôle,grammalecte,MPL-2.0,représenter,true
-représentés,fr,11,2462500,0.9224602,Joués un rôle,grammalecte,MPL-2.0,représenter,true
+représenté,fr,10,5040898,0.89849216,Joue un rôle,grammalecte,MPL-2.0,représenter,true
+représentée,fr,11,3437325,0.9193527,Joue un rôle,grammalecte,MPL-2.0,représenter,true
+représentés,fr,11,2462500,0.9224602,Jouent un rôle,grammalecte,MPL-2.0,représenter,true
 repère,fr,6,1032731,0.82858706,Point de référence,grammalecte,MPL-2.0,repère,true
 repèrent,fr,8,36448,0.9037768,Trouvent et marquer un lieu précis,grammalecte,MPL-2.0,repérer,false
 repèrerait,fr,10,137,0.9450424,Trouverait et marquer un lieu précis,grammalecte,MPL-2.0,repérer,false
@@ -36120,10 +36120,10 @@ retardâmes,fr,10,190,0.94473433,Différâmes le moment,grammalecte,MPL-2.0,reta
 retardât,fr,8,9662,0.90980065,Différât le moment,grammalecte,MPL-2.0,retarder,true
 retardâtes,fr,10,168,0.9448547,Différâtes le moment,grammalecte,MPL-2.0,retarder,true
 retardèrent,fr,11,53745,0.94355375,Différèrent le moment,grammalecte,MPL-2.0,retarder,true
-retardé,fr,7,575094,0.862166,Différé le moment,grammalecte,MPL-2.0,retardé,true
-retardée,fr,8,438160,0.88684165,Différée le moment,grammalecte,MPL-2.0,retardé,true
-retardées,fr,9,45927,0.91880405,Différées le moment,grammalecte,MPL-2.0,retarder,true
-retardés,fr,8,83028,0.8991944,Différés le moment,grammalecte,MPL-2.0,retardé,true
+retardé,fr,7,575094,0.862166,Différe le moment,grammalecte,MPL-2.0,retardé,true
+retardée,fr,8,438160,0.88684165,Différe le moment,grammalecte,MPL-2.0,retardé,true
+retardées,fr,9,45927,0.91880405,Différent le moment,grammalecte,MPL-2.0,retarder,true
+retardés,fr,8,83028,0.8991944,Différent le moment,grammalecte,MPL-2.0,retardé,true
 retenaient,fr,10,181383,0.92633075,Conservaient en mémoire,grammalecte,MPL-2.0,retenir,false
 retenais,fr,8,18116,0.9071781,Conservais en mémoire,grammalecte,MPL-2.0,retenir,true
 retenait,fr,8,431108,0.88700074,Conservait en mémoire,grammalecte,MPL-2.0,retenir,true
@@ -36230,10 +36230,10 @@ retranchez,fr,10,16004,0.9362048,Enlevez une partie,grammalecte,MPL-2.0,retranch
 retranchiez,fr,11,1618,0.95181566,Enleviez une partie,grammalecte,MPL-2.0,retrancher,true
 retranchons,fr,11,12744,0.94773835,Enlevons une partie,grammalecte,MPL-2.0,retrancher,true
 retranchât,fr,10,8739,0.93796474,Enlevât une partie,grammalecte,MPL-2.0,retrancher,true
-retranché,fr,9,619433,0.9026129,Enlevé une partie,grammalecte,MPL-2.0,retrancher,true
-retranchée,fr,10,135004,0.92783916,Enlevée une partie,grammalecte,MPL-2.0,retrancher,true
-retranchées,fr,11,74599,0.9424228,Enlevées une partie,grammalecte,MPL-2.0,retrancher,true
-retranchés,fr,10,258131,0.9244075,Enlevés une partie,grammalecte,MPL-2.0,retrancher,true
+retranché,fr,9,619433,0.9026129,Enleve une partie,grammalecte,MPL-2.0,retrancher,true
+retranchée,fr,10,135004,0.92783916,Enleve une partie,grammalecte,MPL-2.0,retrancher,true
+retranchées,fr,11,74599,0.9424228,Enlevent une partie,grammalecte,MPL-2.0,retrancher,true
+retranchés,fr,10,258131,0.9244075,Enlevent une partie,grammalecte,MPL-2.0,retrancher,true
 retraça,fr,7,31271,0.88582146,Suivit le chemin parcouru,grammalecte,MPL-2.0,retracer,false
 retraçai,fr,8,1367,0.91597396,Suivis le chemin parcouru,grammalecte,MPL-2.0,retracer,false
 retraçaient,fr,11,17448,0.9469309,Suivaient le chemin parcouru,grammalecte,MPL-2.0,retracer,false
@@ -36275,9 +36275,9 @@ revalorisa,fr,10,1028,0.94254494,Donna une nouvelle valeur,grammalecte,MPL-2.0,r
 revalorise,fr,10,5992,0.93895715,Donne une nouvelle valeur,grammalecte,MPL-2.0,revaloriser,false
 revaloriser,fr,11,86692,0.941886,Donner une nouvelle valeur,grammalecte,MPL-2.0,revaloriser,false
 revalorisez,fr,11,49,0.95499307,Donnez une nouvelle valeur,grammalecte,MPL-2.0,revaloriser,false
-revalorisé,fr,10,28257,0.9343053,Donné une nouvelle valeur,grammalecte,MPL-2.0,revaloriser,false
-revalorisée,fr,11,16801,0.94702893,Donnée une nouvelle valeur,grammalecte,MPL-2.0,revaloriser,false
-revalorisés,fr,11,12772,0.9477336,Donnés une nouvelle valeur,grammalecte,MPL-2.0,revaloriser,false
+revalorisé,fr,10,28257,0.9343053,Donne une nouvelle valeur,grammalecte,MPL-2.0,revaloriser,false
+revalorisée,fr,11,16801,0.94702893,Donne une nouvelle valeur,grammalecte,MPL-2.0,revaloriser,false
+revalorisés,fr,11,12772,0.9477336,Donnent une nouvelle valeur,grammalecte,MPL-2.0,revaloriser,false
 revanche,fr,8,7816062,0.84790903,D'une autre chance,grammalecte,MPL-2.0,revanche,true
 revanches,fr,9,38399,0.9196067,D'une autres chances,grammalecte,MPL-2.0,revanche,false
 revenaient,fr,10,526618,0.91996783,Retrouvaient son chemin,grammalecte,MPL-2.0,revenir,false
@@ -37014,9 +37014,9 @@ récompenser,fr,11,789863,0.9310609,Donner un prix,grammalecte,MPL-2.0,récompen
 récompenses,fr,11,1383277,0.9272027,Prix mérité,grammalecte,MPL-2.0,récompense,true
 récompensez,fr,11,4144,0.9502074,Donnez un prix,grammalecte,MPL-2.0,récompenser,true
 récompensât,fr,11,4115,0.95022005,Donnât un prix,grammalecte,MPL-2.0,récompenser,true
-récompensé,fr,10,392177,0.92190427,Donné un prix,grammalecte,MPL-2.0,récompenser,true
-récompensée,fr,11,147237,0.9397876,Donnée un prix,grammalecte,MPL-2.0,récompenser,true
-récompensés,fr,11,227309,0.9378621,Donnés un prix,grammalecte,MPL-2.0,récompenser,true
+récompensé,fr,10,392177,0.92190427,Donne un prix,grammalecte,MPL-2.0,récompenser,true
+récompensée,fr,11,147237,0.9397876,Donne un prix,grammalecte,MPL-2.0,récompenser,true
+récompensés,fr,11,227309,0.9378621,Donnent un prix,grammalecte,MPL-2.0,récompenser,true
 réconcilia,fr,10,50900,0.93211913,Trouva un accord,grammalecte,MPL-2.0,réconcilier,true
 réconciliai,fr,11,960,0.95255923,Trouvai un accord,grammalecte,MPL-2.0,réconcilier,true
 réconcilie,fr,10,58477,0.9315624,Trouve un accord,grammalecte,MPL-2.0,réconcilier,true
@@ -37228,10 +37228,10 @@ réfutions,fr,9,1094,0.9305828,Démontrions le contraire,grammalecte,MPL-2.0,ré
 réfutons,fr,8,4328,0.9127054,Démontrons le contraire,grammalecte,MPL-2.0,réfuter,false
 réfutât,fr,7,1652,0.8986843,Démontrât le contraire,grammalecte,MPL-2.0,réfuter,true
 réfutèrent,fr,10,6026,0.9389418,Démontrèrent le contraire,grammalecte,MPL-2.0,réfuter,false
-réfuté,fr,6,210691,0.8481026,Démontré le contraire,grammalecte,MPL-2.0,réfuter,true
-réfutée,fr,7,130637,0.8761406,Démontrée le contraire,grammalecte,MPL-2.0,réfuter,true
-réfutées,fr,8,72244,0.9000262,Démontrées le contraire,grammalecte,MPL-2.0,réfuter,false
-réfutés,fr,7,43099,0.8839095,Démontrés le contraire,grammalecte,MPL-2.0,réfuter,true
+réfuté,fr,6,210691,0.8481026,Démontre le contraire,grammalecte,MPL-2.0,réfuter,true
+réfutée,fr,7,130637,0.8761406,Démontre le contraire,grammalecte,MPL-2.0,réfuter,true
+réfutées,fr,8,72244,0.9000262,Démontrent le contraire,grammalecte,MPL-2.0,réfuter,false
+réfutés,fr,7,43099,0.8839095,Démontrent le contraire,grammalecte,MPL-2.0,réfuter,true
 réfère,fr,6,798614,0.83229303,Dirige vers,grammalecte,MPL-2.0,référer,true
 réfèrent,fr,8,767307,0.88143986,Dirigent vers,grammalecte,MPL-2.0,référer,true
 réfèrera,fr,8,2520,0.91434515,Dirigera vers,grammalecte,MPL-2.0,référer,true
@@ -37347,10 +37347,10 @@ réglons,fr,7,25293,0.8870591,Apportons une solution,grammalecte,MPL-2.0,régler
 réglâmes,fr,8,2309,0.91459614,Apportâmes une solution,grammalecte,MPL-2.0,régler,false
 réglât,fr,6,20043,0.86692834,Apportât une solution,grammalecte,MPL-2.0,régler,false
 réglèrent,fr,9,37098,0.9197435,Apportèrent une solution,grammalecte,MPL-2.0,régler,false
-réglé,fr,5,2094073,0.78508335,Apporté une solution,grammalecte,MPL-2.0,régler,false
-réglée,fr,6,1708171,0.8204141,Apportée une solution,grammalecte,MPL-2.0,régler,false
-réglées,fr,7,952080,0.85615987,Apportées une solution,grammalecte,MPL-2.0,régler,false
-réglés,fr,6,813131,0.83203363,Apportés une solution,grammalecte,MPL-2.0,régler,false
+réglé,fr,5,2094073,0.78508335,Apporte une solution,grammalecte,MPL-2.0,régler,false
+réglée,fr,6,1708171,0.8204141,Apporte une solution,grammalecte,MPL-2.0,régler,false
+réglées,fr,7,952080,0.85615987,Apportent une solution,grammalecte,MPL-2.0,régler,false
+réglés,fr,6,813131,0.83203363,Apportent une solution,grammalecte,MPL-2.0,régler,false
 régna,fr,5,399665,0.81259495,Dirigea un pays,grammalecte,MPL-2.0,régner,true
 régnaient,fr,9,301508,0.90811276,Dirigeaient un pays,grammalecte,MPL-2.0,régner,true
 régnais,fr,7,3099,0.8966143,Dirigeais un pays,grammalecte,MPL-2.0,régner,true
@@ -37771,7 +37771,7 @@ résidions,fr,9,1855,0.9294828,Habitions un lieu,grammalecte,MPL-2.0,résider,tr
 résidons,fr,8,1930,0.91508627,Habitons un lieu,grammalecte,MPL-2.0,résider,true
 résidât,fr,7,12499,0.89078784,Habitât un lieu,grammalecte,MPL-2.0,résider,true
 résidèrent,fr,10,15466,0.93630874,Habitèrent un lieu,grammalecte,MPL-2.0,résider,true
-résidé,fr,6,193215,0.8489878,Habité un lieu,grammalecte,MPL-2.0,résider,true
+résidé,fr,6,193215,0.8489878,Habite un lieu,grammalecte,MPL-2.0,résider,true
 résigna,fr,7,179139,0.87354445,Apposa son nom une seconde fois,grammalecte,MPL-2.0,résigner,false
 résignai,fr,8,12416,0.9088072,Apposai son nom une seconde fois,grammalecte,MPL-2.0,résigner,true
 résignaient,fr,11,29043,0.9454821,Apposaient son nom une seconde fois,grammalecte,MPL-2.0,résigner,true
@@ -38437,10 +38437,10 @@ sanctifiez,fr,10,2859,0.94065666,Consacrez le lieu saint,grammalecte,MPL-2.0,san
 sanctifiiez,fr,11,141,0.95452917,Consacriez le lieu saint,grammalecte,MPL-2.0,sanctifier,true
 sanctifions,fr,11,841,0.95273167,Consacrons le lieu saint,grammalecte,MPL-2.0,sanctifier,true
 sanctifiât,fr,10,1165,0.9423368,Consacrât le lieu saint,grammalecte,MPL-2.0,sanctifier,true
-sanctifié,fr,9,93184,0.9153409,Consacré le lieu saint,grammalecte,MPL-2.0,sanctifié,true
-sanctifiée,fr,10,47928,0.9323542,Consacrée le lieu saint,grammalecte,MPL-2.0,sanctifié,true
-sanctifiées,fr,11,10680,0.94816417,Consacrées le lieu saint,grammalecte,MPL-2.0,sanctifié,true
-sanctifiés,fr,10,36600,0.9333695,Consacrés le lieu saint,grammalecte,MPL-2.0,sanctifié,true
+sanctifié,fr,9,93184,0.9153409,Consacre le lieu saint,grammalecte,MPL-2.0,sanctifié,true
+sanctifiée,fr,10,47928,0.9323542,Consacre le lieu saint,grammalecte,MPL-2.0,sanctifié,true
+sanctifiées,fr,11,10680,0.94816417,Consacrent le lieu saint,grammalecte,MPL-2.0,sanctifié,true
+sanctifiés,fr,10,36600,0.9333695,Consacrent le lieu saint,grammalecte,MPL-2.0,sanctifié,true
 sanction,fr,8,3023440,0.86418515,Mesure punitive,grammalecte,MPL-2.0,sanction,true
 sanctionna,fr,10,53411,0.93193203,Appliqua une punition,grammalecte,MPL-2.0,sanctionner,false
 sanctionnai,fr,11,68,0.95487285,Appliquai une punition,grammalecte,MPL-2.0,sanctionner,false
@@ -38450,9 +38450,9 @@ sanctionner,fr,11,602622,0.93271047,Appliquer une punition,grammalecte,MPL-2.0,s
 sanctionnes,fr,11,1077,0.95240057,Appliques une punition,grammalecte,MPL-2.0,sanctionner,false
 sanctionnez,fr,11,1198,0.9522537,Appliquez une punition,grammalecte,MPL-2.0,sanctionner,false
 sanctionnât,fr,11,4950,0.949854,Appliquât une punition,grammalecte,MPL-2.0,sanctionner,false
-sanctionné,fr,10,435193,0.9212608,Appliqué une punition,grammalecte,MPL-2.0,sanctionné,false
-sanctionnée,fr,11,397035,0.9350765,Appliquée une punition,grammalecte,MPL-2.0,sanctionné,false
-sanctionnés,fr,11,156195,0.93954,Appliqués une punition,grammalecte,MPL-2.0,sanctionné,false
+sanctionné,fr,10,435193,0.9212608,Applique une punition,grammalecte,MPL-2.0,sanctionné,false
+sanctionnée,fr,11,397035,0.9350765,Applique une punition,grammalecte,MPL-2.0,sanctionné,false
+sanctionnés,fr,11,156195,0.93954,Appliquent une punition,grammalecte,MPL-2.0,sanctionné,false
 sanctions,fr,9,1894927,0.8916162,Mesures punitives,grammalecte,MPL-2.0,sanction,true
 sanctuaire,fr,10,1761999,0.91015804,Lieu sacré et protégé,grammalecte,MPL-2.0,sanctuaire,true
 sanctuaires,fr,11,476445,0.9340986,Lieux sacré et protégés,grammalecte,MPL-2.0,sanctuaire,true
@@ -39345,10 +39345,10 @@ soignons,fr,8,4587,0.9125097,Apportons des soins et des remèdes,grammalecte,MPL
 soignâmes,fr,9,373,0.93242145,Apportâmes des soins et des remèdes,grammalecte,MPL-2.0,soigner,false
 soignât,fr,7,2223,0.897749,Apportât des soins et des remèdes,grammalecte,MPL-2.0,soigner,false
 soignèrent,fr,10,8764,0.9379564,Apportèrent des soins et des remèdes,grammalecte,MPL-2.0,soigner,false
-soigné,fr,6,606667,0.8359729,Apporté des soins et des remèdes,grammalecte,MPL-2.0,soigner,false
-soignée,fr,7,612021,0.86149096,Apportée des soins et des remèdes,grammalecte,MPL-2.0,soigner,false
-soignées,fr,8,197505,0.8932956,Apportées des soins et des remèdes,grammalecte,MPL-2.0,soigner,false
-soignés,fr,7,367436,0.86697817,Apportés des soins et des remèdes,grammalecte,MPL-2.0,soigner,false
+soigné,fr,6,606667,0.8359729,Apporte des soins et des remèdes,grammalecte,MPL-2.0,soigner,false
+soignée,fr,7,612021,0.86149096,Apporte des soins et des remèdes,grammalecte,MPL-2.0,soigner,false
+soignées,fr,8,197505,0.8932956,Apportent des soins et des remèdes,grammalecte,MPL-2.0,soigner,false
+soignés,fr,7,367436,0.86697817,Apportent des soins et des remèdes,grammalecte,MPL-2.0,soigner,false
 soin,fr,4,15360747,0.6918825,Attention particulière,grammalecte,MPL-2.0,soin,true
 soins,fr,5,10133099,0.745623,Attentions particulières,grammalecte,MPL-2.0,soin,false
 soir,fr,4,16295312,0.6893652,Temps du jour,grammalecte,MPL-2.0,soir,true
@@ -39636,10 +39636,10 @@ soudes,fr,6,18585,0.86739874,Métaux en fusion,grammalecte,MPL-2.0,soude,true
 soudure,fr,7,795822,0.8584374,Action de lier des pièces,grammalecte,MPL-2.0,soudure,false
 soudures,fr,8,174073,0.8942674,Actions de lier des pièces,grammalecte,MPL-2.0,soudure,false
 soudèrent,fr,9,2831,0.92848057,Assemblèrent des pièces,grammalecte,MPL-2.0,souder,false
-soudé,fr,5,221428,0.8199651,Assemblé des pièces,grammalecte,MPL-2.0,souder,true
-soudée,fr,6,167864,0.8504026,Assemblée des pièces,grammalecte,MPL-2.0,souder,true
-soudées,fr,7,240261,0.8710113,Assemblées des pièces,grammalecte,MPL-2.0,souder,false
-soudés,fr,6,319369,0.8437174,Assemblés des pièces,grammalecte,MPL-2.0,souder,true
+soudé,fr,5,221428,0.8199651,Assemble des pièces,grammalecte,MPL-2.0,souder,true
+soudée,fr,6,167864,0.8504026,Assemble des pièces,grammalecte,MPL-2.0,souder,true
+soudées,fr,7,240261,0.8710113,Assemblent des pièces,grammalecte,MPL-2.0,souder,false
+soudés,fr,6,319369,0.8437174,Assemblent des pièces,grammalecte,MPL-2.0,souder,true
 souffert,fr,8,2377984,0.8675862,Enduré une épreuve,grammalecte,MPL-2.0,souffrir,true
 soufferte,fr,9,50250,0.9183737,Endurée une épreuve,grammalecte,MPL-2.0,souffrir,false
 souffertes,fr,10,63431,0.9312378,Endurées une épreuve,grammalecte,MPL-2.0,souffrir,false
@@ -40200,10 +40200,10 @@ statut,fr,6,9421714,0.78391963,Position sociale,grammalecte,MPL-2.0,statut,true
 statuts,fr,7,4004922,0.83386046,Positions sociales,grammalecte,MPL-2.0,statut,true
 statuât,fr,7,7351,0.89321744,Prononçât un jugement,grammalecte,MPL-2.0,statuer,false
 statuèrent,fr,10,5293,0.93926144,Prononcèrent un jugement,grammalecte,MPL-2.0,statuer,false
-statué,fr,6,876207,0.830922,Prononcé un jugement,grammalecte,MPL-2.0,statuer,false
-statuée,fr,7,8998,0.8923177,Prononcée un jugement,grammalecte,MPL-2.0,statuer,false
-statuées,fr,8,10260,0.9095643,Prononcées un jugement,grammalecte,MPL-2.0,statuer,false
-statués,fr,7,2818,0.89694643,Prononcés un jugement,grammalecte,MPL-2.0,statuer,false
+statué,fr,6,876207,0.830922,Prononce un jugement,grammalecte,MPL-2.0,statuer,false
+statuée,fr,7,8998,0.8923177,Prononce un jugement,grammalecte,MPL-2.0,statuer,false
+statuées,fr,8,10260,0.9095643,Prononcent un jugement,grammalecte,MPL-2.0,statuer,false
+statués,fr,7,2818,0.89694643,Prononcent un jugement,grammalecte,MPL-2.0,statuer,false
 ste,fr,3,100000,,Titre abrege,bliss,CC0-1.0,ste,true
 step,fr,4,141858,0.7942018,Étape à suivre,grammalecte,MPL-2.0,step,true
 steps,fr,5,87395,0.8299044,Étapes à suivre,grammalecte,MPL-2.0,step,true
@@ -40625,10 +40625,10 @@ suggérâmes,fr,10,499,0.94360596,Donnâmes un conseil,grammalecte,MPL-2.0,sugg�
 suggérât,fr,8,3688,0.9132087,Donnât un conseil,grammalecte,MPL-2.0,suggérer,true
 suggérâtes,fr,10,106,0.9452394,Donnâtes un conseil,grammalecte,MPL-2.0,suggérer,true
 suggérèrent,fr,11,30051,0.9453807,Donnèrent un conseil,grammalecte,MPL-2.0,suggérer,true
-suggéré,fr,7,924232,0.85653603,Donné un conseil,grammalecte,MPL-2.0,suggérer,true
-suggérée,fr,8,425116,0.88712543,Donnée un conseil,grammalecte,MPL-2.0,suggérer,true
-suggérées,fr,9,301968,0.908097,Données un conseil,grammalecte,MPL-2.0,suggérer,true
-suggérés,fr,8,118811,0.89690447,Donnés un conseil,grammalecte,MPL-2.0,suggérer,true
+suggéré,fr,7,924232,0.85653603,Donne un conseil,grammalecte,MPL-2.0,suggérer,true
+suggérée,fr,8,425116,0.88712543,Donne un conseil,grammalecte,MPL-2.0,suggérer,true
+suggérées,fr,9,301968,0.908097,Donnent un conseil,grammalecte,MPL-2.0,suggérer,true
+suggérés,fr,8,118811,0.89690447,Donnent un conseil,grammalecte,MPL-2.0,suggérer,true
 suicide,fr,7,1816138,0.847115,Action de se donner la mort,grammalecte,MPL-2.0,suicide,false
 suicides,fr,8,320701,0.88951683,Actions de se donner la mort,grammalecte,MPL-2.0,suicide,false
 suie,fr,4,202971,0.78964686,Cendre de bois,grammalecte,MPL-2.0,suie,true
@@ -40824,10 +40824,10 @@ supports,fr,8,1200636,0.876479,Aides et assistance,grammalecte,MPL-2.0,support,t
 supportâmes,fr,11,739,0.9528909,Apportâmes son aide,grammalecte,MPL-2.0,supporter,true
 supportât,fr,9,12264,0.9241262,Apportât son aide,grammalecte,MPL-2.0,supporter,true
 supportâtes,fr,11,3,0.9552548,Apportâtes son aide,grammalecte,MPL-2.0,supporter,true
-supporté,fr,8,723539,0.88204026,Apporté son aide,grammalecte,MPL-2.0,supporter,true
-supportée,fr,9,409973,0.9059193,Apportée son aide,grammalecte,MPL-2.0,supporter,true
-supportées,fr,10,336113,0.92286277,Apportées son aide,grammalecte,MPL-2.0,supporter,true
-supportés,fr,9,390299,0.9062684,Apportés son aide,grammalecte,MPL-2.0,supporter,true
+supporté,fr,8,723539,0.88204026,Apporte son aide,grammalecte,MPL-2.0,supporter,true
+supportée,fr,9,409973,0.9059193,Apporte son aide,grammalecte,MPL-2.0,supporter,true
+supportées,fr,10,336113,0.92286277,Apportent son aide,grammalecte,MPL-2.0,supporter,true
+supportés,fr,9,390299,0.9062684,Apportent son aide,grammalecte,MPL-2.0,supporter,true
 supposa,fr,7,105291,0.87780887,Crut sans preuve,grammalecte,MPL-2.0,supposer,true
 supposai,fr,8,18069,0.9071909,Crus sans preuve,grammalecte,MPL-2.0,supposer,true
 supposaient,fr,11,120783,0.9405961,Croyaient sans preuve,grammalecte,MPL-2.0,supposer,true
@@ -40949,10 +40949,10 @@ surpassions,fr,11,584,0.9531704,Dépassions les limites,grammalecte,MPL-2.0,surp
 surpassons,fr,10,2018,0.94135433,Dépassons les limites,grammalecte,MPL-2.0,surpasser,true
 surpassâmes,fr,11,53,0.95495975,Dépassâmes les limites,grammalecte,MPL-2.0,surpasser,true
 surpassât,fr,9,10085,0.9247848,Dépassât les limites,grammalecte,MPL-2.0,surpasser,true
-surpassé,fr,8,198821,0.8932504,Dépassé les limites,grammalecte,MPL-2.0,surpasser,true
-surpassée,fr,9,56757,0.9177981,Dépassée les limites,grammalecte,MPL-2.0,surpasser,true
-surpassées,fr,10,20945,0.9353308,Dépassées les limites,grammalecte,MPL-2.0,surpasser,true
-surpassés,fr,9,45493,0.91884315,Dépassés les limites,grammalecte,MPL-2.0,surpasser,true
+surpassé,fr,8,198821,0.8932504,Dépasse les limites,grammalecte,MPL-2.0,surpasser,true
+surpassée,fr,9,56757,0.9177981,Dépasse les limites,grammalecte,MPL-2.0,surpasser,true
+surpassées,fr,10,20945,0.9353308,Dépassent les limites,grammalecte,MPL-2.0,surpasser,true
+surpassés,fr,9,45493,0.91884315,Dépassent les limites,grammalecte,MPL-2.0,surpasser,true
 surpression,fr,11,66518,0.9428192,Action de réduire le volume sonore,grammalecte,MPL-2.0,surpression,false
 surprise,fr,8,4227546,0.8588683,Étonnement soudain,grammalecte,MPL-2.0,surprise,true
 surprises,fr,9,575096,0.9032079,Étonnements soudains,grammalecte,MPL-2.0,surprise,true
@@ -41153,10 +41153,10 @@ symbolisme,fr,10,862831,0.91636086,Expression d'idées par des images,grammalect
 symbolismes,fr,11,21780,0.94631934,Expressions d'idées par des images,grammalecte,MPL-2.0,symbolisme,false
 symbolisons,fr,11,1141,0.95231986,Représentons une idée,grammalecte,MPL-2.0,symboliser,true
 symbolisât,fr,10,1083,0.9424584,Représentât une idée,grammalecte,MPL-2.0,symboliser,true
-symbolisé,fr,9,141200,0.91299826,Représenté une idée,grammalecte,MPL-2.0,symboliser,true
-symbolisée,fr,10,136842,0.9277705,Représentée une idée,grammalecte,MPL-2.0,symboliser,true
-symbolisées,fr,11,30399,0.9453422,Représentées une idée,grammalecte,MPL-2.0,symboliser,true
-symbolisés,fr,10,31763,0.93387884,Représentés une idée,grammalecte,MPL-2.0,symboliser,true
+symbolisé,fr,9,141200,0.91299826,Représente une idée,grammalecte,MPL-2.0,symboliser,true
+symbolisée,fr,10,136842,0.9277705,Représente une idée,grammalecte,MPL-2.0,symboliser,true
+symbolisées,fr,11,30399,0.9453422,Représentent une idée,grammalecte,MPL-2.0,symboliser,true
+symbolisés,fr,10,31763,0.93387884,Représentent une idée,grammalecte,MPL-2.0,symboliser,true
 sympathie,fr,9,3575145,0.88364667,Sentiment de compassion,grammalecte,MPL-2.0,sympathie,false
 sympathies,fr,10,1330497,0.9128544,Sentiments de compassion,grammalecte,MPL-2.0,sympathie,false
 sympathique,fr,11,1756959,0.92525643,Bienveillant et aimable,grammalecte,MPL-2.0,sympathique,true
@@ -41218,9 +41218,9 @@ synthétiser,fr,11,160580,0.93941563,Réaliser une composition musicale,grammale
 synthétises,fr,11,96,0.9547656,Réalises une composition musicale,grammalecte,MPL-2.0,synthétiser,false
 synthétisez,fr,11,140,0.95453477,Réalisez une composition musicale,grammalecte,MPL-2.0,synthétiser,false
 synthétisât,fr,11,138,0.95454663,Réalisât une composition musicale,grammalecte,MPL-2.0,synthétiser,false
-synthétisé,fr,10,56503,0.9316965,Réalisé une composition musicale,grammalecte,MPL-2.0,synthétiser,false
-synthétisée,fr,11,42105,0.9443502,Réalisée une composition musicale,grammalecte,MPL-2.0,synthétiser,false
-synthétisés,fr,11,46292,0.9440487,Réalisés une composition musicale,grammalecte,MPL-2.0,synthétiser,false
+synthétisé,fr,10,56503,0.9316965,Réalise une composition musicale,grammalecte,MPL-2.0,synthétiser,false
+synthétisée,fr,11,42105,0.9443502,Réalise une composition musicale,grammalecte,MPL-2.0,synthétiser,false
+synthétisés,fr,11,46292,0.9440487,Réalisent une composition musicale,grammalecte,MPL-2.0,synthétiser,false
 syphilis,fr,8,1297351,0.87561303,Maladie vénérienne,grammalecte,MPL-2.0,syphilis,true
 système,fr,7,54799444,0.7669109,Ensemble organisé,grammalecte,MPL-2.0,système,true
 systèmes,fr,8,10998594,0.8407423,Ensembles organisés,grammalecte,MPL-2.0,système,true
@@ -41630,10 +41630,10 @@ taxis,fr,5,205809,0.8207861,Véhicules de transport public,grammalecte,MPL-2.0,t
 taxon,fr,5,156925,0.8239043,Groupe d'organismes,grammalecte,MPL-2.0,taxon,false
 taxons,fr,6,48673,0.8608526,Imposons un prélèvement,grammalecte,MPL-2.0,taxon,false
 taxèrent,fr,8,8106,0.91047305,Imposèrent un prélèvement,grammalecte,MPL-2.0,taxer,false
-taxé,fr,4,330146,0.78302807,Imposé un prélèvement,grammalecte,MPL-2.0,taxer,false
-taxée,fr,5,150360,0.8243748,Imposée un prélèvement,grammalecte,MPL-2.0,taxer,false
-taxées,fr,6,139363,0.8521575,Imposées un prélèvement,grammalecte,MPL-2.0,taxer,false
-taxés,fr,5,315193,0.8156489,Imposés un prélèvement,grammalecte,MPL-2.0,taxer,false
+taxé,fr,4,330146,0.78302807,Impose un prélèvement,grammalecte,MPL-2.0,taxer,false
+taxée,fr,5,150360,0.8243748,Impose un prélèvement,grammalecte,MPL-2.0,taxer,false
+taxées,fr,6,139363,0.8521575,Imposent un prélèvement,grammalecte,MPL-2.0,taxer,false
+taxés,fr,5,315193,0.8156489,Imposent un prélèvement,grammalecte,MPL-2.0,taxer,false
 tech,fr,4,97085,0.79862976,Avancée technologique,grammalecte,MPL-2.0,tech,false
 technicien,fr,10,549827,0.9196778,Spécialiste de la maintenance,grammalecte,MPL-2.0,technicien,false
 techniciens,fr,11,1779760,0.9251531,Spécialistes de la maintenance,grammalecte,MPL-2.0,technicien,false
@@ -42216,10 +42216,10 @@ tourmentiez,fr,11,770,0.9528415,Causiez du chagrin et de la souffrance,grammalec
 tourmentons,fr,11,1709,0.9517357,Causons du chagrin et de la souffrance,grammalecte,MPL-2.0,tourmenter,false
 tourments,fr,9,524110,0.90399736,Souffrances morales,grammalecte,MPL-2.0,tourment,true
 tourmentât,fr,10,2609,0.94084734,Causât du chagrin et de la souffrance,grammalecte,MPL-2.0,tourmenter,false
-tourmenté,fr,9,509757,0.9042097,Causé du chagrin et de la souffrance,grammalecte,MPL-2.0,tourmenter,false
-tourmentée,fr,10,316981,0.9232044,Causée du chagrin et de la souffrance,grammalecte,MPL-2.0,tourmenter,false
-tourmentées,fr,11,100165,0.9413318,Causées du chagrin et de la souffrance,grammalecte,MPL-2.0,tourmenter,false
-tourmentés,fr,10,182300,0.926307,Causés du chagrin et de la souffrance,grammalecte,MPL-2.0,tourmenter,false
+tourmenté,fr,9,509757,0.9042097,Cause du chagrin et de la souffrance,grammalecte,MPL-2.0,tourmenter,false
+tourmentée,fr,10,316981,0.9232044,Cause du chagrin et de la souffrance,grammalecte,MPL-2.0,tourmenter,false
+tourmentées,fr,11,100165,0.9413318,Causent du chagrin et de la souffrance,grammalecte,MPL-2.0,tourmenter,false
+tourmentés,fr,10,182300,0.926307,Causent du chagrin et de la souffrance,grammalecte,MPL-2.0,tourmenter,false
 tournage,fr,8,312235,0.889727,Action de filmer,grammalecte,MPL-2.0,tournage,true
 tournages,fr,9,18462,0.92262614,Actions de filmer,grammalecte,MPL-2.0,tournage,true
 tournesol,fr,9,318929,0.907733,Fleur jaune et massive,grammalecte,MPL-2.0,tournesol,true
@@ -42574,10 +42574,10 @@ travailliez,fr,11,15923,0.9471707,Exerciez une activité rémunérée,grammalect
 travaillons,fr,11,121142,0.9405828,Exerçons une activité rémunérée,grammalecte,MPL-2.0,travailler,false
 travaillât,fr,10,30481,0.93402994,Exerçât une activité rémunérée,grammalecte,MPL-2.0,travailler,false
 travaillè,fr,9,351,0.9325042,Exercent une activité rémunérée,grammalecte,MPL-2.0,travailler,false
-travaillé,fr,9,2693856,0.88743234,Exercé une activité rémunérée,grammalecte,MPL-2.0,travailler,false
-travaillée,fr,10,327691,0.9230163,Exercée une activité rémunérée,grammalecte,MPL-2.0,travailler,false
-travaillées,fr,11,284861,0.93677783,Exercées une activité rémunérée,grammalecte,MPL-2.0,travailler,false
-travaillés,fr,10,313108,0.92327744,Exercés une activité rémunérée,grammalecte,MPL-2.0,travailler,false
+travaillé,fr,9,2693856,0.88743234,Exerce une activité rémunérée,grammalecte,MPL-2.0,travailler,false
+travaillée,fr,10,327691,0.9230163,Exerce une activité rémunérée,grammalecte,MPL-2.0,travailler,false
+travaillées,fr,11,284861,0.93677783,Exercent une activité rémunérée,grammalecte,MPL-2.0,travailler,false
+travaillés,fr,10,313108,0.92327744,Exercent une activité rémunérée,grammalecte,MPL-2.0,travailler,false
 travails,fr,8,3237,0.91360277,Activités rémunérées,grammalecte,MPL-2.0,travail,true
 travaux,fr,7,42065124,0.7743334,Activités rémunérées,grammalecte,MPL-2.0,travail,true
 traversa,fr,8,660980,0.88293046,Franchit un obstacle,grammalecte,MPL-2.0,traverser,true
@@ -42888,10 +42888,10 @@ troublons,fr,9,4920,0.9270099,Causons du désordre,grammalecte,MPL-2.0,troubler,
 troublâmes,fr,10,364,0.94401425,Causâmes du désordre,grammalecte,MPL-2.0,troubler,true
 troublât,fr,8,20762,0.90653735,Causât du désordre,grammalecte,MPL-2.0,troubler,true
 troublèrent,fr,11,62349,0.9430475,Causèrent du désordre,grammalecte,MPL-2.0,troubler,true
-troublé,fr,7,1188255,0.8532968,Causé du désordre,grammalecte,MPL-2.0,troubler,true
-troublée,fr,8,956550,0.8790226,Causée du désordre,grammalecte,MPL-2.0,troubler,true
-troublées,fr,9,237369,0.90977025,Causées du désordre,grammalecte,MPL-2.0,troubler,true
-troublés,fr,8,334515,0.8891763,Causés du désordre,grammalecte,MPL-2.0,troubler,true
+troublé,fr,7,1188255,0.8532968,Cause du désordre,grammalecte,MPL-2.0,troubler,true
+troublée,fr,8,956550,0.8790226,Cause du désordre,grammalecte,MPL-2.0,troubler,true
+troublées,fr,9,237369,0.90977025,Causent du désordre,grammalecte,MPL-2.0,troubler,true
+troublés,fr,8,334515,0.8891763,Causent du désordre,grammalecte,MPL-2.0,troubler,true
 troupe,fr,6,4075129,0.8039179,Groupe d'artistes,grammalecte,MPL-2.0,troupe,true
 troupeau,fr,8,1942674,0.8704143,Groupe d'animaux,grammalecte,MPL-2.0,troupeau,true
 troupeaux,fr,9,2034386,0.8908046,Groupes d'animaux,grammalecte,MPL-2.0,troupeau,true
@@ -44138,10 +44138,10 @@ visualisée,fr,10,15813,0.9362385,Représentée mentalement,grammalecte,MPL-2.0,
 visualisées,fr,11,10186,0.94827515,Représentées mentalement,grammalecte,MPL-2.0,visualiser,false
 visualisés,fr,10,9803,0.93764514,Représentés mentalement,grammalecte,MPL-2.0,visualiser,false
 visèrent,fr,8,14166,0.908241,Pointèrent une cible,grammalecte,MPL-2.0,viser,true
-visé,fr,4,1260554,0.7602767,Pointé une cible,grammalecte,MPL-2.0,viser,true
-visée,fr,5,1093467,0.79719925,Pointée une cible,grammalecte,MPL-2.0,visée,true
-visées,fr,6,1003617,0.8290274,Pointées une cible,grammalecte,MPL-2.0,visée,true
-visés,fr,5,1243868,0.7950166,Pointés une cible,grammalecte,MPL-2.0,viser,true
+visé,fr,4,1260554,0.7602767,Pointe une cible,grammalecte,MPL-2.0,viser,true
+visée,fr,5,1093467,0.79719925,Pointe une cible,grammalecte,MPL-2.0,visée,true
+visées,fr,6,1003617,0.8290274,Pointent une cible,grammalecte,MPL-2.0,visée,true
+visés,fr,5,1243868,0.7950166,Pointent une cible,grammalecte,MPL-2.0,viser,true
 vitae,fr,5,172981,0.8228049,De la vie,grammalecte,MPL-2.0,vitae,true
 vital,fr,5,1434320,0.7925176,Essentiel à la vie,grammalecte,MPL-2.0,vital,true
 vitale,fr,6,1367271,0.82428604,Essentielle à la vie,grammalecte,MPL-2.0,vital,true
@@ -45555,10 +45555,10 @@ zéros,fr,5,105047,0.8280725,Points de départ,grammalecte,MPL-2.0,zéro,true
 énumérions,fr,10,3378,0.940294,Citions un à un,grammalecte,MPL-2.0,énumérer,true
 énumérons,fr,9,9921,0.92483854,Citons un à un,grammalecte,MPL-2.0,énumérer,true
 énumérèrent,fr,11,1808,0.95164543,Citèrent un à un,grammalecte,MPL-2.0,énumérer,true
-énuméré,fr,7,150453,0.8750331,Cité un à un,grammalecte,MPL-2.0,énumérer,true
-énumérée,fr,8,10878,0.90933555,Citée un à un,grammalecte,MPL-2.0,énumérer,true
-énumérées,fr,9,578109,0.9031558,Citées un à un,grammalecte,MPL-2.0,énumérer,true
-énumérés,fr,8,634778,0.88331616,Cités un à un,grammalecte,MPL-2.0,énumérer,true
+énuméré,fr,7,150453,0.8750331,Cite un à un,grammalecte,MPL-2.0,énumérer,true
+énumérée,fr,8,10878,0.90933555,Cite un à un,grammalecte,MPL-2.0,énumérer,true
+énumérées,fr,9,578109,0.9031558,Citent un à un,grammalecte,MPL-2.0,énumérer,true
+énumérés,fr,8,634778,0.88331616,Citent un à un,grammalecte,MPL-2.0,énumérer,true
 épanchement,fr,11,617693,0.93257076,Confession complète,grammalecte,MPL-2.0,épanchement,true
 épanoui,fr,7,101611,0.8780725,Développé et fleurir,grammalecte,MPL-2.0,épanouir,true
 épanouie,fr,8,148788,0.8953943,Développée et fleurir,grammalecte,MPL-2.0,épanouir,true
@@ -45862,10 +45862,10 @@ zéros,fr,5,105047,0.8280725,Points de départ,grammalecte,MPL-2.0,zéro,true
 érigeât,fr,7,6298,0.8938749,Élevât une construction,grammalecte,MPL-2.0,ériger,false
 érigions,fr,8,910,0.91692096,Élevions une construction,grammalecte,MPL-2.0,ériger,false
 érigèrent,fr,9,38412,0.91960526,Élevèrent une construction,grammalecte,MPL-2.0,ériger,false
-érigé,fr,5,651862,0.8056209,Élevé une construction,grammalecte,MPL-2.0,ériger,false
-érigée,fr,6,524783,0.8378464,Élevée une construction,grammalecte,MPL-2.0,ériger,false
-érigées,fr,7,194147,0.87283826,Élevées une construction,grammalecte,MPL-2.0,ériger,false
-érigés,fr,6,203172,0.8484768,Élevés une construction,grammalecte,MPL-2.0,ériger,false
+érigé,fr,5,651862,0.8056209,Éleve une construction,grammalecte,MPL-2.0,ériger,false
+érigée,fr,6,524783,0.8378464,Éleve une construction,grammalecte,MPL-2.0,ériger,false
+érigées,fr,7,194147,0.87283826,Élevent une construction,grammalecte,MPL-2.0,ériger,false
+érigés,fr,6,203172,0.8484768,Élevent une construction,grammalecte,MPL-2.0,ériger,false
 érosion,fr,7,1548681,0.84962857,Usure du sol,grammalecte,MPL-2.0,érosion,true
 érosions,fr,8,153898,0.89515764,Usures du sol,grammalecte,MPL-2.0,érosion,true
 érotique,fr,8,365892,0.8884335,Sensuel et suggestif,grammalecte,MPL-2.0,érotique,true
@@ -46223,10 +46223,10 @@ zéros,fr,5,105047,0.8280725,Points de départ,grammalecte,MPL-2.0,zéro,true
 évaluât,fr,7,1804,0.8984143,Jaugeât la valeur,grammalecte,MPL-2.0,évaluer,true
 évaluâtes,fr,9,446,0.9321487,Jaugeâtes la valeur,grammalecte,MPL-2.0,évaluer,true
 évaluèrent,fr,10,6191,0.9388731,Jaugèrent la valeur,grammalecte,MPL-2.0,évaluer,true
-évalué,fr,6,987718,0.82921714,Jaugé la valeur,grammalecte,MPL-2.0,évaluer,true
-évaluée,fr,7,910156,0.8567254,Jaugée la valeur,grammalecte,MPL-2.0,évaluer,true
-évaluées,fr,8,389455,0.887861,Jaugées la valeur,grammalecte,MPL-2.0,évaluer,true
-évalués,fr,7,477880,0.86425865,Jaugés la valeur,grammalecte,MPL-2.0,évaluer,true
+évalué,fr,6,987718,0.82921714,Jauge la valeur,grammalecte,MPL-2.0,évaluer,true
+évaluée,fr,7,910156,0.8567254,Jauge la valeur,grammalecte,MPL-2.0,évaluer,true
+évaluées,fr,8,389455,0.887861,Jaugent la valeur,grammalecte,MPL-2.0,évaluer,true
+évalués,fr,7,477880,0.86425865,Jaugent la valeur,grammalecte,MPL-2.0,évaluer,true
 évangile,fr,8,712416,0.8821722,Message de salut,grammalecte,MPL-2.0,évangile,true
 évangiles,fr,9,237781,0.9097567,Messages de salut,grammalecte,MPL-2.0,évangile,true
 évangélique,fr,11,1007577,0.9294533,Chrétien fervent,grammalecte,MPL-2.0,évangélique,true

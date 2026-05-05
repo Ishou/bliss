@@ -41,6 +41,34 @@ _PRE_HEAD_ADJ_LEMMAS = {
     "long", "haut", "court", "nouveau", "saint", "vrai", "faux",
 }
 
+# Determiners and contracted forms that introduce a direct-object NP after a
+# transitive head verb. Used to detect lemma clues of the shape
+# `[head_verb] [det] [noun]` — for those clues we suppress past-participle
+# inflation, because a PP head with a stranded direct object is
+# ungrammatical: `Percer un trou` → PP `Percée un trou` is wrong (would need
+# a `de`-PP rephrase, `Percée d'un trou`, which doesn't always read well).
+# Falling through to a finite form (3sg present `Perce un trou`) is reliably
+# grammatical even if less natural than the lemma's infinitive.
+#
+# Excludes prepositions (`à`, `en`, `de`, …) — those introduce a PP-headed
+# complement, not a direct object, and PP inflation works fine for them
+# (`Mettre en relation` → `Mise en relation`).
+_DIRECT_OBJECT_DETERMINERS = {
+    "un", "une", "des", "le", "la", "les", "l",
+    "ce", "cet", "cette", "ces",
+    "son", "sa", "ses", "leur", "leurs",
+    "mon", "ma", "mes", "ton", "ta", "tes",
+    "notre", "nos", "votre", "vos",
+    # `du` is included: post-head it's predominantly the partitive article
+    # (`Causer du tort`, `Boire du vin`) and even when it's the preposition
+    # `de+le` (`Détourner du droit chemin`) the fall-through to a finite
+    # form is still grammatical. False positives are tolerated.
+    "du",
+    # NOT included: `au`, `aux` (prepositional contractions of à+le/à+les
+    # — these introduce PP complements, not direct objects, and PP
+    # inflation works correctly for them: `Mise au jour`, `Allé au marché`).
+}
+
 # In French crosswords, the clue's gender doesn't need to match the surface's
 # gender for nominal targets — "Arrêt" (mas) is a fine clue for "Halte" (fem).
 # Verbs and adjectives must keep agreement; nouns relax to number-only.
@@ -101,12 +129,21 @@ class InflectionResult:
     flag: str  # '' | 'no-target-pos' | 'no-head' | 'no-inflection' | 'identity'
 
 
-def _decompose_targets(target: set[str]) -> list[set[str]]:
+def _decompose_targets(
+    target: set[str],
+    skip_moods: frozenset[str] = frozenset(),
+) -> list[set[str]]:
     """Split a fused-feature target into a priority-ordered list of canonical
     targets, each containing at most one mood and one person. The original
     full target is yielded first (covers the simple case where the head verb's
     paradigm row carries the same syncretic union); then progressively
     relaxed candidates follow.
+
+    `skip_moods` filters out trials whose only mood is in the skip set —
+    used to suppress past-participle inflation for transitive verb+DObj
+    clues, where a PP head leaves the post-verb direct object stranded as
+    ungrammatical (`Percée un trou` instead of the finite `Perce un trou`
+    or the rephrased adjectival `Percée d'un trou`).
 
     Why: grammalecte stores syncretic forms on a single row with the union
     of features (e.g. `unis` carries `{ipre, 1sg, 2sg}` AND `{ppas, mas, pl}`,
@@ -119,11 +156,34 @@ def _decompose_targets(target: set[str]) -> list[set[str]]:
     persons = target & PERSON_TOKENS
     rest = target - moods - persons
 
-    candidates: list[set[str]] = [set(target)]
+    def _allowed(trial_moods: set[str]) -> bool:
+        # Allow if at least one mood survives the skip filter, or there are
+        # no mood constraints at all (rest-only fallback).
+        if not trial_moods:
+            return True
+        return bool(trial_moods - skip_moods)
+
+    candidates: list[set[str]] = []
+    # Full target: only keep if it carries at least one non-skipped mood
+    # (or no moods). When skipping PP and the surface is a "pure" PP row
+    # like `{ppas, fem, sg}`, the full target has only `ppas` → drop it.
+    if _allowed(moods):
+        candidates.append(set(target))
 
     # Single mood × single person decompositions, ordered by preference.
-    if moods or persons:
-        ordered_moods = [m for m in _MOOD_PREFERENCE if m in moods] or [None]
+    # If `skip_moods` filtered every mood out, suppress the cartesian walk
+    # entirely — emitting `rest`-only candidates here would leak a
+    # mood-less trial that matches the head's first paradigm row (the
+    # lemma form), defeating the skip.
+    moods_after_skip = moods - skip_moods
+    if moods_after_skip or persons:
+        ordered_moods = [m for m in _MOOD_PREFERENCE
+                         if m in moods_after_skip] or [None]
+        # When all original moods were skipped (e.g. pure PP target with
+        # `skip_moods={'ppas'}`), don't fall back to a None-mood trial: we
+        # genuinely have nothing to emit at this step.
+        if moods and not moods_after_skip:
+            ordered_moods = []
         ordered_persons = [p for p in _PERSON_PREFERENCE if p in persons] or [None]
         for m in ordered_moods:
             for p in ordered_persons:
@@ -140,7 +200,7 @@ def _decompose_targets(target: set[str]) -> list[set[str]]:
     # row (typically the infinitive / mas-sg), which is a silent identity
     # rather than a real conjugation, and would defeat the `no-inflection`
     # signal callers rely on.
-    for m in [m for m in _MOOD_PREFERENCE if m in moods]:
+    for m in [m for m in _MOOD_PREFERENCE if m in moods and m not in skip_moods]:
         candidates.append(rest | {m})
 
     # Dedup while preserving order.
@@ -153,6 +213,39 @@ def _decompose_targets(target: set[str]) -> list[set[str]]:
 
 def _is_alpha_token(tok: str) -> bool:
     return bool(re.match(r"^[\wÀ-ÿŒœŸ]+$", tok))
+
+
+def _has_direct_object_after_head(
+    tokens: list[str],
+    head_idx: int,
+    index: MorphologyIndex,
+) -> bool:
+    """True iff the lemma clue has the shape `[head_verb] [det] [noun]`.
+
+    Detects transitive verb + direct-object NP — the case where past-
+    participle inflation produces an ungrammatical surface (`Percer un trou`
+    → PP `Percée un trou`). The check is intentionally narrow: the token
+    immediately after the head must be a determiner from a small closed
+    set (article / demonstrative / possessive / partitive `du`), and the
+    next alphabetic token must admit a `nom` analysis. Prepositional
+    complements (`Mettre en relation`, `Aller au marché`) intentionally
+    don't trip it — PP inflation works for those."""
+    j = head_idx + 1
+    # Skip non-alpha glue (apostrophes around elided determiners are emitted
+    # as separate tokens by `_TOKEN_RE`).
+    while j < len(tokens) and not _is_alpha_token(tokens[j]):
+        j += 1
+    if j >= len(tokens):
+        return False
+    if tokens[j].lower() not in _DIRECT_OBJECT_DETERMINERS:
+        return False
+    # Find the next content token after the determiner; it must be a noun.
+    k = j + 1
+    while k < len(tokens) and not _is_alpha_token(tokens[k]):
+        k += 1
+    if k >= len(tokens):
+        return False
+    return "nom" in index.pos_classes_of_form(tokens[k].lower())
 
 
 def _capitalize_first(s: str) -> str:
@@ -221,21 +314,57 @@ def inflect_clue(
     # how `unis → Associes ensemble` resolves: the full target fails (no
     # `associer` row carries both 1sg AND 2sg), then `{ipre, 2sg}` matches
     # `associes`, and we ship that.
+    # Suppress past-participle inflation when the clue has a direct-object
+    # NP after the head verb. PP head + DObj is ungrammatical in French
+    # adjectival usage (`Percée un trou`); we'd need a `de`-PP rephrase
+    # (`Percée d'un trou`) which doesn't always read well, so we instead
+    # fall through to a finite form (`Perce un trou`) — reliably
+    # grammatical, and the worst case is the fallback chain bottoms out
+    # in `no-inflection` and we ship the lemma form.
+    skip_moods: frozenset[str] = frozenset()
+    pp_skipped = False
+    if (
+        target_pos == "verbe"
+        and "ppas" in target
+        and _has_direct_object_after_head(tokens, head_idx, index)
+    ):
+        skip_moods = frozenset({"ppas"})
+        pp_skipped = True
+
     inflected = None
     chosen_target = target
-    for trial in _decompose_targets(target):
+    for trial in _decompose_targets(target, skip_moods=skip_moods):
         candidate = index.inflect(head_lemma, trial, prefer_pos=target_pos)
         if candidate:
             inflected = candidate
             chosen_target = trial
             break
     if not inflected and target_pos in _RELAX_GENDER_FOR:
-        for trial in _decompose_targets(target - GENDER_TOKENS):
+        for trial in _decompose_targets(target - GENDER_TOKENS,
+                                        skip_moods=skip_moods):
             candidate = index.inflect(head_lemma, trial, prefer_pos=target_pos)
             if candidate:
                 inflected = candidate
                 chosen_target = trial
                 break
+
+    # Synthetic finite-form fallback for the PP-skip case. When the surface
+    # is a "pure" past participle (no other moods on the row, e.g.
+    # `percée → {ppas, fem, sg}`), the decomposition above yields no
+    # candidates because we filtered the only mood. Rather than bailing to
+    # the lemma form (`Percer un trou`), substitute the indicative present
+    # 3rd person matching the surface number — `Perce un trou` reads as a
+    # much more natural mots-fléchés clue than the bare infinitive. We
+    # only synthesize ipre/3sg/3pl: imperative (`Perce`) reads as a command,
+    # and 1st/2nd person rarely match a crossword answer's morphology.
+    if not inflected and pp_skipped:
+        target_number = (target & NUMBER_TOKENS) - {"inv"}
+        person = "3pl" if "pl" in target_number else "3sg"
+        synthetic = {"ipre", person}
+        candidate = index.inflect(head_lemma, synthetic, prefer_pos=target_pos)
+        if candidate:
+            inflected = candidate
+            chosen_target = synthetic
     if not inflected:
         return InflectionResult(_capitalize_first(clue), "no-inflection")
     target = chosen_target

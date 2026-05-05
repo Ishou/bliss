@@ -238,3 +238,147 @@ def test_no_inflection_when_lemma_truly_missing(index: MorphologyIndex) -> None:
     res = inflect_clue("Associer ensemble",
                        {"v2__t___zz", "ifut", "1pl"}, index)
     assert res.flag == "no-inflection"
+
+
+# --- Past-participle skip for verb + direct-object NP --------------------
+# Production bug: `forée,forer,verbe,Percée un trou,Percer un trou,inflected`
+# — PP head with a stranded direct object reads as ungrammatical French.
+# When the lemma clue is `[verb] [det] [noun]` we suppress PP inflation and
+# fall through to a finite form (3sg/3pl present), or — if the head's
+# paradigm doesn't expose the synthesized fallback — bail to lemma form
+# rather than ship the ungrammatical PP.
+
+
+def _build_pp_skip_index() -> MorphologyIndex:
+    """Index covering `percer` (full paradigm), `mettre`, and `donner` —
+    used to exercise the PP-skip + finite-form fallback path."""
+    idx = MorphologyIndex()
+    # `percer` — fully paradigmed including ipre 3sg/3pl for the synthetic
+    # fallback, plus the offending PP rows that triggered the bug.
+    _add(idx, "percer", "percer", "v1__t___zz infi")
+    _add(idx, "percer", "perce", "v1__t___zz ipre 1sg 3sg impe 2sg spre")
+    _add(idx, "percer", "percent", "v1__t___zz ipre 3pl spre")
+    _add(idx, "percer", "percé", "v1__t___zz ppas mas sg")
+    _add(idx, "percer", "percée", "v1__t___zz ppas fem sg")
+    _add(idx, "percer", "percées", "v1__t___zz ppas fem pl")
+    _add(idx, "percer", "percés", "v1__t___zz ppas mas pl")
+    _add(idx, "trou", "trou", "nom mas sg")
+    _add(idx, "trou", "trous", "nom mas pl")
+    # `mettre` — `Mettre en relation` is a PP-able lemma clue (prep complement,
+    # NOT a direct object), so PP inflation must still produce `Mise en
+    # relation` after the fix.
+    _add(idx, "mettre", "mettre", "v3__t___zz infi")
+    _add(idx, "mettre", "mis", "v3__t___zz ppas mas sg")
+    _add(idx, "mettre", "mise", "v3__t___zz ppas fem sg")
+    _add(idx, "mettre", "mises", "v3__t___zz ppas fem pl")
+    _add(idx, "relation", "relation", "nom fem sg")
+    # `donner` — `Donner une faveur` has a DObj, so PP must skip and fall
+    # through to finite (Donne / Donnent une faveur). Includes both the PP
+    # rows (which must NOT be selected) and the ipre rows (which must).
+    _add(idx, "donner", "donner", "v1__t___zz infi")
+    _add(idx, "donner", "donne", "v1__t___zz ipre 1sg 3sg impe 2sg spre")
+    _add(idx, "donner", "donnent", "v1__t___zz ipre 3pl spre")
+    _add(idx, "donner", "donné", "v1__t___zz ppas mas sg")
+    _add(idx, "donner", "donnée", "v1__t___zz ppas fem sg")
+    _add(idx, "donner", "données", "v1__t___zz ppas fem pl")
+    _add(idx, "donner", "donnés", "v1__t___zz ppas mas pl")
+    _add(idx, "faveur", "faveur", "nom fem sg")
+    return idx
+
+
+@pytest.fixture(scope="module")
+def pp_skip_index() -> MorphologyIndex:
+    return _build_pp_skip_index()
+
+
+@pytest.mark.parametrize("tags,expected", [
+    # The user-reported bug: `percée` is fem-sg PP; the lemma clue
+    # `Percer un trou` has a direct-object NP, so PP must NOT render.
+    # Synthetic fallback to ipre 3sg yields `Perce un trou`.
+    ({"v1__t___zz", "ppas", "fem", "sg"}, "Perce un trou"),
+    ({"v1__t___zz", "ppas", "mas", "sg"}, "Perce un trou"),
+    # Plural surface → fall back to ipre 3pl, agreeing with surface number.
+    ({"v1__t___zz", "ppas", "fem", "pl"}, "Percent un trou"),
+    ({"v1__t___zz", "ppas", "mas", "pl"}, "Percent un trou"),
+])
+def test_pp_skipped_for_verb_with_direct_object(
+    pp_skip_index: MorphologyIndex, tags: set[str], expected: str,
+) -> None:
+    """PP head with stranded DObj is ungrammatical (`Percée un trou`); fix
+    skips PP and synthesizes a finite ipre form matching surface number."""
+    res = inflect_clue("Percer un trou", tags, pp_skip_index)
+    assert res.flag == ""
+    assert res.text == expected
+
+
+def test_pp_kept_for_verb_with_prepositional_complement(
+    pp_skip_index: MorphologyIndex,
+) -> None:
+    """`Mettre en relation` has a prepositional complement (`en relation`),
+    NOT a direct object — PP inflation reads correctly (`Mise en relation`)
+    and must not be suppressed by the DObj skip."""
+    res = inflect_clue("Mettre en relation",
+                       {"v3__t___zz", "ppas", "fem", "sg"}, pp_skip_index)
+    assert res.flag == ""
+    assert res.text == "Mise en relation"
+
+
+def test_pp_skipped_donner_une_faveur(
+    pp_skip_index: MorphologyIndex,
+) -> None:
+    """Same regression class, different determiner (`une`). Used to verify
+    the heuristic catches the full closed set of articles."""
+    res = inflect_clue("Donner une faveur",
+                       {"v1__t___zz", "ppas", "fem", "sg"}, pp_skip_index)
+    assert res.flag == ""
+    assert res.text == "Donne une faveur"
+
+
+def test_pp_skip_falls_to_no_inflection_when_finite_unavailable() -> None:
+    """If the head's paradigm exposes only PP rows (defective verb / sparse
+    fixture), the synthetic ipre/3sg fallback also fails and we surface
+    `no-inflection`. Caller ships the lemma form — strictly worse than a
+    well-inflected finite form, strictly better than a wrong PP."""
+    idx = MorphologyIndex()
+    _add(idx, "percer", "percer", "v1__t___zz infi")
+    _add(idx, "percer", "percée", "v1__t___zz ppas fem sg")
+    _add(idx, "trou", "trou", "nom mas sg")
+    res = inflect_clue("Percer un trou",
+                       {"v1__t___zz", "ppas", "fem", "sg"}, idx)
+    assert res.flag == "no-inflection"
+    # The clue is returned verbatim (capitalized).
+    assert res.text == "Percer un trou"
+
+
+def test_pp_keeps_existing_decomposition_path(
+    index: MorphologyIndex,
+) -> None:
+    """When the surface is a SYNCRETIC PP+ipre row (`unis` carries both
+    `{ppas, mas, pl}` and `{ipre, 1sg, 2sg}`), the decomposition still
+    yields the ipre branch because there's no DObj NP in `Associer
+    ensemble`. PP-skip must NOT regress this — the test re-asserts the
+    PP-mas-pl path from PR #193."""
+    res = inflect_clue("Associer ensemble",
+                       {"v2__t___zz", "ppas", "mas", "pl"}, index)
+    assert res.flag == ""
+    assert res.text == "Associés ensemble"
+
+
+def test_pp_skip_works_for_re_verbs() -> None:
+    """The bug surfaces with -er heads in production, but the synthetic
+    ipre-3sg/3pl fallback also fires for -re heads (`Défendre une cause`
+    with surface `plaidée` PP fem-sg → `Défend une cause`). Production has
+    ~25 such rows that need a full lexique regen to materialize this fix."""
+    idx = MorphologyIndex()
+    _add(idx, "défendre", "défendre", "v3__t___zz infi")
+    _add(idx, "défendre", "défend", "v3__t___zz ipre 3sg")
+    _add(idx, "défendre", "défendent", "v3__t___zz ipre 3pl")
+    _add(idx, "défendre", "défendu", "v3__t___zz ppas mas sg")
+    _add(idx, "défendre", "défendue", "v3__t___zz ppas fem sg")
+    _add(idx, "cause", "cause", "nom fem sg")
+    sg = inflect_clue("Défendre une cause",
+                      {"v1__t___zz", "ppas", "fem", "sg"}, idx)
+    pl = inflect_clue("Défendre une cause",
+                      {"v1__t___zz", "ppas", "fem", "pl"}, idx)
+    assert sg.text == "Défend une cause"
+    assert pl.text == "Défendent une cause"
