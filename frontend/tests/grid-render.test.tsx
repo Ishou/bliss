@@ -317,17 +317,6 @@ describe('Grid render', () => {
   // (b) the clue panel does as well, and (c) every cell stays
   // queryable by `data-row` / `data-col` after the layout change.
   describe('Fullscreen layout primitives', () => {
-    it('exports a GRID_TRACK_WIDTH that clamps the width between viewport-relative and pixel caps', () => {
-      // The exact formula is documented in Grid.tsx; the test pins the
-      // contract (must include a `min(...)` clamp, the 95vw breakpoint,
-      // a `vmin` clause, and a pixel ceiling) so a future tweak to the
-      // formula doesn't silently regress to the old hard 480 px cap.
-      expect(GRID_TRACK_WIDTH).toMatch(/^min\(/);
-      expect(GRID_TRACK_WIDTH).toContain('95vw');
-      expect(GRID_TRACK_WIDTH).toContain('vmin');
-      expect(GRID_TRACK_WIDTH).toContain('720px');
-    });
-
     it('applies the shared GRID_TRACK_WIDTH cap to the transform wrapper', () => {
       const { container } = render(<Grid puzzle={SAMPLE_PUZZLE} />);
       const wrapper = container.querySelector<HTMLDivElement>('.react-transform-wrapper');

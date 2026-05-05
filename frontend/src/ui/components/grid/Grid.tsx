@@ -85,15 +85,14 @@ const gridFrame = css({ position: 'relative', width: '100%', overflow: 'visible'
 // `wrapperComponent.offsetHeight` for every pan/zoom op, so a smaller
 // wrapper produces panable bounds even at scale 1).
 //
-// `GRID_TRACK_WIDTH` (re-exported from `./layout` so consumers can keep
-// importing from here) is the single source of truth for the track that
-// the sticky clue panel + grid wrapper + zoom controls share. The chrome
-// rows pull the value via the `style={{ maxWidth: GRID_TRACK_WIDTH }}`
-// inline-style escape hatch (Panda CSS does not statically extract
-// `min(…)` calls with viewport units the way it does for plain tokens,
-// and a shared CSS variable would have to live on a common ancestor —
-// the route's `<main>`. An inline-style on each row is simpler and
-// side-steps the cascade dance.)
+// `GRID_TRACK_WIDTH` (imported from `./layout`) is the single source of
+// truth for the track that the sticky clue panel + grid wrapper + zoom
+// controls share. The chrome rows pull the value via
+// `style={{ maxWidth: GRID_TRACK_WIDTH }}` inline-style escape hatch
+// (Panda CSS does not statically extract `min(…)` calls with viewport
+// units the way it does for plain tokens, and a shared CSS variable
+// would have to live on a common ancestor — the route's `<main>`. An
+// inline-style on each row is simpler and side-steps the cascade dance.)
 //
 // The constant lives in `./layout` (a leaf module) instead of here:
 // `Grid.tsx` imports `CurrentCluePanel` and `GridZoomControls`, and
@@ -102,7 +101,6 @@ const gridFrame = css({ position: 'relative', width: '100%', overflow: 'visible'
 // GridZoomControls → Grid` cyclic and the back-edge resolved to
 // `undefined` at module-init time, so React silently dropped the
 // inline-style prop. The leaf module breaks the cycle.
-export { GRID_TRACK_WIDTH };
 const transformWrapperBaseStyle = {
   width: '100%',
   maxWidth: GRID_TRACK_WIDTH,
