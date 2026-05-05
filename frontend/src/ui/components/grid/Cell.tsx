@@ -339,6 +339,19 @@ export const LetterCellView = memo(function LetterCellView({
   //     and gets focused programmatically here. The focus call lives
   //     inside the click handler (a user-gesture context), so Android
   //     and iOS still pop the soft keyboard.
+  // Focus on mousedown (not click): without this, mousedown on a
+  // non-focusable wrapper blurs the previously-focused input — the
+  // word's highlight pulses off → on as the user holds → releases the
+  // mouse. preventDefault stops that browser default blur, then we
+  // focus the cell's input ourselves. The Grid's custom mouse-pan
+  // logic reverts this focus if the gesture turns into a pan
+  // (movement past threshold). Click still fires onClick for direction
+  // toggle on repeat-tap; the focus call there becomes a no-op since
+  // the input is already focused from mousedown.
+  const handleMouseDown = (e: MouseEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    localInputRef.current?.focus();
+  };
   const handleClick = (e: MouseEvent<HTMLDivElement>) => {
     onClick(e);
     localInputRef.current?.focus();
@@ -351,6 +364,7 @@ export const LetterCellView = memo(function LetterCellView({
       data-in-word={inWord ? 'true' : 'false'}
       data-row={cell.position.row}
       data-col={cell.position.col}
+      onMouseDown={handleMouseDown}
       onClick={handleClick}
     >
       {/*
