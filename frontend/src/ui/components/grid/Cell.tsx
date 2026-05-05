@@ -9,6 +9,20 @@ import type {
 } from '@/domain';
 import { FitText } from './FitText';
 
+// Force every word onto its own line for multi-word clues. With
+// auto-wrap (the default), FitText settles the binary search at the
+// largest font where the unwrapped clue fits horizontally — short
+// 2-word clues like "Gaz noble" then sit on a single line, leaving
+// vertical space empty. Inserting explicit newlines (rendered via the
+// containers' `whiteSpace: 'pre-line'`) makes FitText reason about a
+// multi-line layout from the start, so the font grows to fill both
+// dimensions. Single-word clues are unchanged. Title attributes
+// downstream still use the original (space-separated) text so screen
+// readers and tooltips read naturally.
+function breakOnSpaces(text: string): string {
+  return text.includes(' ') ? text.replace(/ /g, '\n') : text;
+}
+
 // Clue text size bounds (px). Floors keep clues legible on dense grids;
 // ceilings prevent a 3-letter clue ("rai") from ballooning past the cell.
 // Stacked clues split the cell vertically, so their ceiling is lower.
@@ -91,6 +105,7 @@ const defText = css({
   overflowWrap: 'break-word',
   wordBreak: 'normal',
   overflow: 'hidden',
+  whiteSpace: 'pre-line',
 });
 
 // Arrow shapes — straight triangles + bent L-shapes.
@@ -254,12 +269,11 @@ const defStackClue = css({
   '&:not(:first-child)': { borderTop: '1px solid rgba(27, 40, 69, 0.25)' },
 });
 const defStackClueCurrent = css({ color: 'leaf.700' });
-// Stacked-clue text: same overflow safety net as defText. Line-height
-// 1.0 (tighter than the cell's default 1.1) so a 2-line wrapped clue
-// like "Gaz noble" → "Gaz" / "noble" fits at a larger font size than
-// it would with the looser default. The grid generator's compact
-// filter (Word.compact) keeps stacked half-cells fed only with clues
-// that fit in 2 lines at the floor ratio anyway.
+// Stacked-clue text: same overflow safety net as defText.
+// `whiteSpace: 'pre-line'` honours the explicit newlines we insert in
+// `breakOnSpaces` (one word per line), so multi-word clues use the
+// vertical space FitText would otherwise leave empty. Line-height
+// inherits the cell's 1.1 for legibility.
 const defStackText = css({
   flex: 1,
   display: 'flex',
@@ -269,7 +283,7 @@ const defStackText = css({
   overflowWrap: 'break-word',
   wordBreak: 'normal',
   overflow: 'hidden',
-  lineHeight: '1',
+  whiteSpace: 'pre-line',
 });
 
 const letterInput = css({
@@ -443,7 +457,7 @@ function StackedClue({ clue, isCurrent }: { clue: DefinitionClue; isCurrent: boo
       data-current-clue={isCurrent ? 'true' : 'false'}
     >
       <FitText
-        text={clue.text}
+        text={breakOnSpaces(clue.text)}
         min={STACK_RATIO_MIN}
         max={STACK_RATIO_MAX}
         unit="ratio"
@@ -502,7 +516,7 @@ export const DefinitionCellView = memo(function DefinitionCellView({
       >
         <div className={defSingle}>
           <FitText
-            text={clue.text}
+            text={breakOnSpaces(clue.text)}
             min={SINGLE_RATIO_MIN}
             max={SINGLE_RATIO_MAX}
             unit="ratio"
