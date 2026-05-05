@@ -16,14 +16,17 @@ import { FitText } from './FitText';
 // (0.18) matches `scripts/eval/clue_metrics.py` — clues passing the PIL
 // validator at the reference 100 px cell fit at this ratio at any actual
 // cell size, because FitText scales font linearly with cell width
-// (zoom-invariance). Caps are tuned for the readability sweet spot.
+// (zoom-invariance).
+//
+// MAX is generous so short clues like "Gaz noble" use the full half-cell
+// (FitText automatically backs off for longer clues; the cap only
+// governs the unconstrained-by-content cases). 0.50 of cell width is
+// near the practical ceiling for a 2-line wrapped pair like "Gaz" /
+// "noble" inside a half-cell with line-height 1.0.
 const SINGLE_RATIO_MIN = 0.18;
-const SINGLE_RATIO_MAX = 0.32;
+const SINGLE_RATIO_MAX = 0.50;
 const STACK_RATIO_MIN = 0.18;
-// Stacked-cell max is generous: short clues like "En travers" should render
-// at a comfortable size, not be constrained because the *cell* is split.
-// FitText backs off for longer clues; the cap only governs the small cases.
-const STACK_RATIO_MAX = 0.32;
+const STACK_RATIO_MAX = 0.50;
 
 const cellBase = css({
   position: 'relative',
@@ -251,9 +254,12 @@ const defStackClue = css({
   '&:not(:first-child)': { borderTop: '1px solid rgba(27, 40, 69, 0.25)' },
 });
 const defStackClueCurrent = css({ color: 'leaf.700' });
-// Stacked-clue text: same overflow safety net as defText. The grid
-// generator's compact filter (Word.compact) keeps stacked half-cells fed
-// only with clues that fit in 2 lines at the floor ratio.
+// Stacked-clue text: same overflow safety net as defText. Line-height
+// 1.0 (tighter than the cell's default 1.1) so a 2-line wrapped clue
+// like "Gaz noble" → "Gaz" / "noble" fits at a larger font size than
+// it would with the looser default. The grid generator's compact
+// filter (Word.compact) keeps stacked half-cells fed only with clues
+// that fit in 2 lines at the floor ratio anyway.
 const defStackText = css({
   flex: 1,
   display: 'flex',
@@ -263,6 +269,7 @@ const defStackText = css({
   overflowWrap: 'break-word',
   wordBreak: 'normal',
   overflow: 'hidden',
+  lineHeight: '1',
 });
 
 const letterInput = css({
