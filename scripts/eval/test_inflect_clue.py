@@ -10,7 +10,9 @@ the cartesian product of (mood, person) and tries each in preference order.
 
 Also covers: `inv` and `epi` wildcard compatibility on either side; `non` not
 captured as a noun head; the head's `inv` not propagating as wildcard
-through downstream agreement.
+through downstream agreement; and the PP-only-skip path for PP-shaped
+surfaces paired with verb+DObj lemma clues (the verbal action clue is the
+wrong semantic category for an adjectival state-form answer).
 """
 from __future__ import annotations
 
@@ -243,18 +245,38 @@ def test_no_inflection_when_lemma_truly_missing(index: MorphologyIndex) -> None:
 # --- Past-participle skip for verb + direct-object NP --------------------
 # Production bug: `forée,forer,verbe,Percée un trou,Percer un trou,inflected`
 # — PP head with a stranded direct object reads as ungrammatical French.
-# When the lemma clue is `[verb] [det] [noun]` we suppress PP inflation and
-# fall through to a finite form (3sg/3pl present), or — if the head's
-# paradigm doesn't expose the synthesized fallback — bail to lemma form
-# rather than ship the ungrammatical PP.
+#
+# Earlier attempt (Option 1, removed): when the lemma clue was
+# `[verb] [det] [noun]`, suppress PP inflation and fall through to a
+# finite-form (3sg/3pl indicative-present, `Perce un trou`). That READS as
+# grammatical French, but it is the WRONG SEMANTIC CATEGORY for the answer:
+# `forée` in a mots-fléchés grid is a past participle used adjectivally
+# (state: "drilled, in the state of having been drilled"); the clue
+# `Perce un trou` describes an action (someone is drilling, present tense).
+# State-answer + action-clue is a category error.
+#
+# Current behaviour (this file's contract): when a PP-shaped surface form
+# pairs with a verb+DObj lemma clue:
+#   1. If the surface admits other moods on the same row (syncretic
+#      ipre+ppas etc.), inflate to one of those — unchanged from PR #193.
+#   2. If the surface is PP-only, return the new `pp-only-skipped` flag.
+#      `build_surface_clues.py` drops the row entirely so the runtime
+#      ships the surface placeholder (the surface form rendered as-is) —
+#      strictly better than an action-clue for a state-form answer.
+#
+# Sourcing adjectival clues for these answers is the proper long-term fix
+# and is tracked separately. This bridge stops the wrong-category ship.
 
 
 def _build_pp_skip_index() -> MorphologyIndex:
-    """Index covering `percer` (full paradigm), `mettre`, and `donner` —
-    used to exercise the PP-skip + finite-form fallback path."""
+    """Index covering `percer`, `mettre`, and `donner` — exercises both the
+    PP-only-skipped path (PP-only surface + DObj clue) and the still-valid
+    paths (prep-complement clue inflates to PP; mixed-mood surface inflates
+    to a non-PP mood)."""
     idx = MorphologyIndex()
-    # `percer` — fully paradigmed including ipre 3sg/3pl for the synthetic
-    # fallback, plus the offending PP rows that triggered the bug.
+    # `percer` — full paradigm. PP rows trigger the skip; other rows are
+    # available so the test can also assert that surfaces NOT triggering
+    # the skip (different morphology) still inflate correctly.
     _add(idx, "percer", "percer", "v1__t___zz infi")
     _add(idx, "percer", "perce", "v1__t___zz ipre 1sg 3sg impe 2sg spre")
     _add(idx, "percer", "percent", "v1__t___zz ipre 3pl spre")
@@ -266,15 +288,14 @@ def _build_pp_skip_index() -> MorphologyIndex:
     _add(idx, "trou", "trous", "nom mas pl")
     # `mettre` — `Mettre en relation` is a PP-able lemma clue (prep complement,
     # NOT a direct object), so PP inflation must still produce `Mise en
-    # relation` after the fix.
+    # relation` and the skip must NOT trip.
     _add(idx, "mettre", "mettre", "v3__t___zz infi")
     _add(idx, "mettre", "mis", "v3__t___zz ppas mas sg")
     _add(idx, "mettre", "mise", "v3__t___zz ppas fem sg")
     _add(idx, "mettre", "mises", "v3__t___zz ppas fem pl")
     _add(idx, "relation", "relation", "nom fem sg")
-    # `donner` — `Donner une faveur` has a DObj, so PP must skip and fall
-    # through to finite (Donne / Donnent une faveur). Includes both the PP
-    # rows (which must NOT be selected) and the ipre rows (which must).
+    # `donner` — `Donner une faveur` has a DObj, exercise the skip on a
+    # different determiner (`une`).
     _add(idx, "donner", "donner", "v1__t___zz infi")
     _add(idx, "donner", "donne", "v1__t___zz ipre 1sg 3sg impe 2sg spre")
     _add(idx, "donner", "donnent", "v1__t___zz ipre 3pl spre")
@@ -291,24 +312,56 @@ def pp_skip_index() -> MorphologyIndex:
     return _build_pp_skip_index()
 
 
-@pytest.mark.parametrize("tags,expected", [
-    # The user-reported bug: `percée` is fem-sg PP; the lemma clue
-    # `Percer un trou` has a direct-object NP, so PP must NOT render.
-    # Synthetic fallback to ipre 3sg yields `Perce un trou`.
-    ({"v1__t___zz", "ppas", "fem", "sg"}, "Perce un trou"),
-    ({"v1__t___zz", "ppas", "mas", "sg"}, "Perce un trou"),
-    # Plural surface → fall back to ipre 3pl, agreeing with surface number.
-    ({"v1__t___zz", "ppas", "fem", "pl"}, "Percent un trou"),
-    ({"v1__t___zz", "ppas", "mas", "pl"}, "Percent un trou"),
+@pytest.mark.parametrize("tags", [
+    # The 4 representative surfaces from the user-reported live bug. All are
+    # "pure" PP morphology (no other mood on the row), so post-fix they emit
+    # `pp-only-skipped` and the row is dropped at the build_surface_clues
+    # step — runtime ships the surface placeholder.
+    {"v1__t___zz", "ppas", "fem", "sg"},   # `forée`
+    {"v1__t___zz", "ppas", "mas", "sg"},   # `forée` mas
+    {"v1__t___zz", "ppas", "fem", "pl"},   # `forées`
+    {"v1__t___zz", "ppas", "mas", "pl"},   # `forés`
 ])
-def test_pp_skipped_for_verb_with_direct_object(
-    pp_skip_index: MorphologyIndex, tags: set[str], expected: str,
+def test_pp_only_surface_with_direct_object_emits_skip_flag(
+    pp_skip_index: MorphologyIndex, tags: set[str],
 ) -> None:
-    """PP head with stranded DObj is ungrammatical (`Percée un trou`); fix
-    skips PP and synthesizes a finite ipre form matching surface number."""
+    """Live bug: `forée → "Perce un trou"` (PR #194's fallback). State-form
+    answer with action clue is the wrong category. Post-fix: row carries
+    `pp-only-skipped` and the surface table drops it."""
     res = inflect_clue("Percer un trou", tags, pp_skip_index)
-    assert res.flag == ""
-    assert res.text == expected
+    assert res.flag == "pp-only-skipped"
+    # Text is the lemma clue, capitalized — caller ignores it (drops the row),
+    # but we lock the contract: no synthesized 3sg/3pl ship.
+    assert res.text == "Percer un trou"
+
+
+def test_pp_only_surface_donner_une_faveur_emits_skip_flag(
+    pp_skip_index: MorphologyIndex,
+) -> None:
+    """Same regression class, different determiner (`une`). Live bug:
+    `accordée → "Donne une faveur"`."""
+    res = inflect_clue("Donner une faveur",
+                       {"v1__t___zz", "ppas", "fem", "sg"}, pp_skip_index)
+    assert res.flag == "pp-only-skipped"
+    assert res.text == "Donner une faveur"
+
+
+def test_pp_only_surface_causees_emits_skip_flag() -> None:
+    """5th representative case (`causées,causer,verbe,Provoquent un effet`).
+    Locks in that the skip flag fires for the full live-grid surface set,
+    not just `forée`/`accordée`/`aggravée`. Surface is fem-pl ppas of
+    `causer`; lemma clue's head is `provoquer` — different head verb but
+    same shape (`Provoquer un effet`), still trips the DObj detection."""
+    idx = MorphologyIndex()
+    _add(idx, "provoquer", "provoquer", "v1__t___zz infi")
+    _add(idx, "provoquer", "provoque", "v1__t___zz ipre 1sg 3sg impe 2sg spre")
+    _add(idx, "provoquer", "provoquent", "v1__t___zz ipre 3pl spre")
+    _add(idx, "provoquer", "provoquée", "v1__t___zz ppas fem sg")
+    _add(idx, "provoquer", "provoquées", "v1__t___zz ppas fem pl")
+    _add(idx, "effet", "effet", "nom mas sg")
+    res = inflect_clue("Provoquer un effet",
+                       {"v1__t___zz", "ppas", "fem", "pl"}, idx)
+    assert res.flag == "pp-only-skipped"
 
 
 def test_pp_kept_for_verb_with_prepositional_complement(
@@ -323,31 +376,54 @@ def test_pp_kept_for_verb_with_prepositional_complement(
     assert res.text == "Mise en relation"
 
 
-def test_pp_skipped_donner_une_faveur(
-    pp_skip_index: MorphologyIndex,
-) -> None:
-    """Same regression class, different determiner (`une`). Used to verify
-    the heuristic catches the full closed set of articles."""
-    res = inflect_clue("Donner une faveur",
-                       {"v1__t___zz", "ppas", "fem", "sg"}, pp_skip_index)
-    assert res.flag == ""
-    assert res.text == "Donne une faveur"
+def test_pp_skip_falls_to_no_inflection_when_no_match() -> None:
+    """If the head's paradigm doesn't have ANY matching row (defective verb,
+    or pure PP-only paradigm with the only PP forms), we surface
+    `pp-only-skipped` for the PP+DObj case (caller drops the row).
 
-
-def test_pp_skip_falls_to_no_inflection_when_finite_unavailable() -> None:
-    """If the head's paradigm exposes only PP rows (defective verb / sparse
-    fixture), the synthetic ipre/3sg fallback also fails and we surface
-    `no-inflection`. Caller ships the lemma form — strictly worse than a
-    well-inflected finite form, strictly better than a wrong PP."""
+    Pre-fix this returned `no-inflection` and the runtime would ship the
+    capitalized lemma form (`Percer un trou`); post-fix the explicit skip
+    flag lets the caller drop the row uniformly with the synthesized-form
+    case, so the row falls back to the surface placeholder either way."""
     idx = MorphologyIndex()
     _add(idx, "percer", "percer", "v1__t___zz infi")
     _add(idx, "percer", "percée", "v1__t___zz ppas fem sg")
     _add(idx, "trou", "trou", "nom mas sg")
     res = inflect_clue("Percer un trou",
                        {"v1__t___zz", "ppas", "fem", "sg"}, idx)
-    assert res.flag == "no-inflection"
-    # The clue is returned verbatim (capitalized).
+    assert res.flag == "pp-only-skipped"
     assert res.text == "Percer un trou"
+
+
+def test_pp_skip_yields_to_other_mood_on_syncretic_surface() -> None:
+    """When the surface row carries BOTH `ppas` AND another mood (e.g. an
+    -er 1sg/3sg syncretic row that happens to also be tagged `ppas`), the
+    decomposition picks the non-PP mood and inflates normally. The skip
+    only triggers when the surface is PP-only."""
+    idx = MorphologyIndex()
+    _add(idx, "percer", "percer", "v1__t___zz infi")
+    # Syncretic row carrying ppas + ipre 3sg simultaneously. Decomposition
+    # walks (ipre, 3sg) before the ppas-only fallback, finds `perce`, ships.
+    _add(idx, "percer", "perce", "v1__t___zz ipre 3sg ppas mas sg")
+    _add(idx, "trou", "trou", "nom mas sg")
+    res = inflect_clue("Percer un trou",
+                       {"v1__t___zz", "ipre", "ppas", "3sg", "mas", "sg"},
+                       idx)
+    # Non-PP mood available → normal inflation, no skip flag.
+    assert res.flag == ""
+    assert res.text == "Perce un trou"
+
+
+def test_non_pp_surface_with_direct_object_inflates_normally(
+    pp_skip_index: MorphologyIndex,
+) -> None:
+    """Sanity: when the surface is a non-PP form (e.g. ipre 3pl `percent`),
+    the verb+DObj clue inflates without any skip — the skip is gated on
+    the surface being a past participle, not on the clue shape alone."""
+    res = inflect_clue("Percer un trou",
+                       {"v1__t___zz", "ipre", "3pl"}, pp_skip_index)
+    assert res.flag == ""
+    assert res.text == "Percent un trou"
 
 
 def test_pp_keeps_existing_decomposition_path(
@@ -362,23 +438,3 @@ def test_pp_keeps_existing_decomposition_path(
                        {"v2__t___zz", "ppas", "mas", "pl"}, index)
     assert res.flag == ""
     assert res.text == "Associés ensemble"
-
-
-def test_pp_skip_works_for_re_verbs() -> None:
-    """The bug surfaces with -er heads in production, but the synthetic
-    ipre-3sg/3pl fallback also fires for -re heads (`Défendre une cause`
-    with surface `plaidée` PP fem-sg → `Défend une cause`). Production has
-    ~25 such rows that need a full lexique regen to materialize this fix."""
-    idx = MorphologyIndex()
-    _add(idx, "défendre", "défendre", "v3__t___zz infi")
-    _add(idx, "défendre", "défend", "v3__t___zz ipre 3sg")
-    _add(idx, "défendre", "défendent", "v3__t___zz ipre 3pl")
-    _add(idx, "défendre", "défendu", "v3__t___zz ppas mas sg")
-    _add(idx, "défendre", "défendue", "v3__t___zz ppas fem sg")
-    _add(idx, "cause", "cause", "nom fem sg")
-    sg = inflect_clue("Défendre une cause",
-                      {"v1__t___zz", "ppas", "fem", "sg"}, idx)
-    pl = inflect_clue("Défendre une cause",
-                      {"v1__t___zz", "ppas", "fem", "pl"}, idx)
-    assert sg.text == "Défend une cause"
-    assert pl.text == "Défendent une cause"

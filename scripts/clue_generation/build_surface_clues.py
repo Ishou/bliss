@@ -19,6 +19,13 @@ inflection_status values:
   - "head-pos-mismatch"  : no clue head matches surface POS
   - "no-target-pos"      : surface POS not in {nom, adj, verbe}
   - "no-owner"           : no (lemma, pos) candidate has a clue in corpus
+  - "pp-only-skipped"    : surface is PP-only and the lemma clue has a
+                           direct-object NP after the verbal head; the
+                           verbal action clue is the wrong semantic
+                           category for an adjectival PP answer (see
+                           inflect_clue.InflectionResult). Row is DROPPED
+                           from the output entirely so the runtime ships
+                           the surface placeholder.
 """
 from __future__ import annotations
 import argparse, csv, os, sys
@@ -155,6 +162,13 @@ def main() -> None:
                 res = inflect_clue(source_clue, norm_tags, index)
                 clue = res.text
                 status = res.flag or "inflected"
+
+            # PP-only + verb+DObj clue: verbal action is the wrong semantic
+            # category for an adjectival state-form answer. Drop the row so
+            # the runtime falls back to the surface placeholder.
+            if status == "pp-only-skipped":
+                status_counter["pp-only-skipped"] += 1
+                continue
 
             # Pixel-fit gate. Inflation can lengthen ("Récit imaginaire" →
             # "Récits imaginaires" gains 2 chars), so we re-check post-inflate

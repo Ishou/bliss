@@ -213,10 +213,6 @@ accordâmes,accorder,verbe,Donnâmes une faveur,Donner une faveur,inflected,0.73
 accordât,accorder,verbe,Donnât une faveur,Donner une faveur,inflected,0.7310,ok,true
 accordâtes,accorder,verbe,Donnâtes une faveur,Donner une faveur,inflected,0.7310,ok,true
 accordèrent,accorder,verbe,Donnèrent une faveur,Donner une faveur,inflected,0.7310,ok,true
-accordé,accorder,verbe,Donne une faveur,Donner une faveur,inflected,0.7310,ok,true
-accordée,accorder,verbe,Donne une faveur,Donner une faveur,inflected,0.7310,ok,true
-accordées,accorder,verbe,Donnent une faveur,Donner une faveur,inflected,0.7310,ok,true
-accordés,accorder,verbe,Donnent une faveur,Donner une faveur,inflected,0.7310,ok,true
 accoucha,accoucher,verbe,Mit au monde un enfant,Mettre au monde un enfant,inflected,0.7436,ok,false
 accouchai,accoucher,verbe,Mis au monde un enfant,Mettre au monde un enfant,inflected,0.7436,ok,false
 accouchais,accoucher,verbe,Mettais au monde un enfant,Mettre au monde un enfant,inflected,0.7436,ok,false
@@ -310,10 +306,6 @@ accumulons,accumuler,verbe,Amassons des richesses,Amasser des richesses,inflecte
 accumulâmes,accumuler,verbe,Amassâmes des richesses,Amasser des richesses,inflected,0.7159,ok,false
 accumulât,accumuler,verbe,Amassât des richesses,Amasser des richesses,inflected,0.7159,ok,false
 accumulâtes,accumuler,verbe,Amassâtes des richesses,Amasser des richesses,inflected,0.7159,ok,false
-accumulé,accumuler,verbe,Amasse des richesses,Amasser des richesses,inflected,0.7159,ok,false
-accumulée,accumuler,verbe,Amasse des richesses,Amasser des richesses,inflected,0.7159,ok,false
-accumulées,accumuler,verbe,Amassent des richesses,Amasser des richesses,inflected,0.7159,ok,false
-accumulés,accumuler,verbe,Amassent des richesses,Amasser des richesses,inflected,0.7159,ok,false
 accusa,accuser,verbe,Mit en cause,Mettre en cause,inflected,0.6755,ok,true
 accusai,accuser,verbe,Mis en cause,Mettre en cause,inflected,0.6755,ok,true
 accusaient,accuser,verbe,Mettaient en cause,Mettre en cause,inflected,0.6755,ok,true
@@ -699,10 +691,6 @@ aggravons,aggraver,verbe,Empirons la situation,Empirer la situation,inflected,0.
 aggravât,aggraver,verbe,Empirât la situation,Empirer la situation,inflected,0.6640,ok,true
 aggravâtes,aggraver,verbe,Empirâtes la situation,Empirer la situation,inflected,0.6640,ok,true
 aggravèrent,aggraver,verbe,Empirèrent la situation,Empirer la situation,inflected,0.6640,ok,true
-aggravé,aggraver,verbe,Empire la situation,Empirer la situation,inflected,0.6640,ok,true
-aggravée,aggraver,verbe,Empire la situation,Empirer la situation,inflected,0.6640,ok,true
-aggravées,aggraver,verbe,Empirent la situation,Empirer la situation,inflected,0.6640,ok,true
-aggravés,aggraver,verbe,Empirent la situation,Empirer la situation,inflected,0.6640,ok,true
 agilité,agilité,nom,Rapidité et souplesse,Rapidité et souplesse,verbatim,0.8281,ok,true
 agilités,agilité,nom,Rapidités et souplesse,Rapidité et souplesse,inflected,0.8281,ok,true
 agir,agir,verbe,Poser un acte,Poser un acte,verbatim,0.7632,ok,true
@@ -967,10 +955,6 @@ allouions,allouer,verbe,Accordions une faveur,Accorder une faveur,inflected,0.67
 allouons,allouer,verbe,Accordons une faveur,Accorder une faveur,inflected,0.6738,ok,true
 allouât,allouer,verbe,Accordât une faveur,Accorder une faveur,inflected,0.6738,ok,true
 allouèrent,allouer,verbe,Accordèrent une faveur,Accorder une faveur,inflected,0.6738,ok,true
-alloué,allouer,verbe,Accorde une faveur,Accorder une faveur,inflected,0.6738,ok,true
-allouée,allouer,verbe,Accorde une faveur,Accorder une faveur,inflected,0.6738,ok,true
-allouées,allouer,verbe,Accordent une faveur,Accorder une faveur,inflected,0.6738,ok,true
-alloués,allouer,verbe,Accordent une faveur,Accorder une faveur,inflected,0.6738,ok,true
 alluma,allumer,verbe,Mit le feu,Mettre le feu,inflected,0.8096,ok,true
 allumage,allumage,nom,Mise en route,Mise en route,verbatim,0.6553,ok,true
 allumages,allumage,nom,Mises en route,Mise en route,inflected,0.6553,ok,true
@@ -1069,10 +1053,6 @@ amendes,amende,nom,Sanctions pécuniaires,Sanction pécuniaire,inflected,0.7055,
 amendez,amender,verbe,Apportez des modifications,Apporter des modifications,inflected,0.8193,ok,false
 amendions,amender,verbe,Apportions des modifications,Apporter des modifications,inflected,0.8193,ok,false
 amendèrent,amender,verbe,Apportèrent des modifications,Apporter des modifications,inflected,0.8193,ok,false
-amendé,amender,verbe,Apporte des modifications,Apporter des modifications,inflected,0.8193,ok,false
-amendée,amender,verbe,Apporte des modifications,Apporter des modifications,inflected,0.8193,ok,false
-amendées,amender,verbe,Apportent des modifications,Apporter des modifications,inflected,0.8193,ok,false
-amendés,amender,verbe,Apportent des modifications,Apporter des modifications,inflected,0.8193,ok,false
 amener,amener,verbe,Apporter quelque chose ou quelqu'un,Apporter quelque chose ou quelqu'un,verbatim,0.7089,ok,false
 amenez,amener,verbe,Apportez quelque chose ou quelqu'un,Apporter quelque chose ou quelqu'un,inflected,0.7089,ok,false
 ameniez,amener,verbe,Apportiez quelque chose ou quelqu'un,Apporter quelque chose ou quelqu'un,inflected,0.7089,ok,false
@@ -1787,10 +1767,6 @@ assignâmes,assigner,verbe,Attribuâmes une tâche,Attribuer une tâche,inflecte
 assignât,assigner,verbe,Attribuât une tâche,Attribuer une tâche,inflected,0.7514,ok,true
 assignâtes,assigner,verbe,Attribuâtes une tâche,Attribuer une tâche,inflected,0.7514,ok,true
 assignèrent,assigner,verbe,Attribuèrent une tâche,Attribuer une tâche,inflected,0.7514,ok,true
-assigné,assigner,verbe,Attribue une tâche,Attribuer une tâche,inflected,0.7514,ok,true
-assignée,assigner,verbe,Attribue une tâche,Attribuer une tâche,inflected,0.7514,ok,true
-assignées,assigner,verbe,Attribuent une tâche,Attribuer une tâche,inflected,0.7514,ok,true
-assignés,assigner,verbe,Attribuent une tâche,Attribuer une tâche,inflected,0.7514,ok,true
 assimila,assimiler,verbe,Intégra et adopter,Intégrer et adopter,inflected,0.7080,ok,true
 assimilai,assimiler,verbe,Intégrai et adopter,Intégrer et adopter,inflected,0.7080,ok,true
 assimilais,assimiler,verbe,Intégrais et adopter,Intégrer et adopter,inflected,0.7080,ok,true
@@ -1993,10 +1969,6 @@ attardons,attarder,verbe,Retardons le moment,Retarder le moment,inflected,0.6898
 attardâmes,attarder,verbe,Retardâmes le moment,Retarder le moment,inflected,0.6898,ok,true
 attardât,attarder,verbe,Retardât le moment,Retarder le moment,inflected,0.6898,ok,true
 attardèrent,attarder,verbe,Retardèrent le moment,Retarder le moment,inflected,0.6898,ok,true
-attardé,attarder,verbe,Retarde le moment,Retarder le moment,inflected,0.6898,ok,true
-attardée,attarder,verbe,Retarde le moment,Retarder le moment,inflected,0.6898,ok,true
-attardées,attarder,verbe,Retardent le moment,Retarder le moment,inflected,0.6898,ok,true
-attardés,attarder,verbe,Retardent le moment,Retarder le moment,inflected,0.6898,ok,true
 attend,attendre,verbe,Reste en place,Rester en place,inflected,0.6964,ok,true
 attendaient,attendre,verbe,Restaient en place,Rester en place,inflected,0.6964,ok,true
 attendais,attendre,verbe,Restais en place,Rester en place,inflected,0.6964,ok,true
@@ -2142,10 +2114,6 @@ attributs,attribut,nom,Qualités propres à une personne,Qualité propre à une 
 attribuâmes,attribuer,verbe,Confiâmes un rôle,Confier un rôle,inflected,0.7235,ok,true
 attribuât,attribuer,verbe,Confiât un rôle,Confier un rôle,inflected,0.7235,ok,true
 attribuâtes,attribuer,verbe,Confiâtes un rôle,Confier un rôle,inflected,0.7235,ok,true
-attribué,attribuer,verbe,Confie un rôle,Confier un rôle,inflected,0.7235,ok,true
-attribuée,attribuer,verbe,Confie un rôle,Confier un rôle,inflected,0.7235,ok,true
-attribuées,attribuer,verbe,Confient un rôle,Confier un rôle,inflected,0.7235,ok,true
-attribués,attribuer,verbe,Confient un rôle,Confier un rôle,inflected,0.7235,ok,true
 atténuation,atténuation,nom,Diminution de l'intensité,Diminution de l'intensité,verbatim,0.7538,ok,false
 audience,audience,nom,Public présent,Public présent,verbatim,0.6898,ok,true
 audiences,audience,nom,Publiques présentes,Public présent,inflected,0.6898,ok,true
@@ -2208,10 +2176,6 @@ autorisons,autoriser,verbe,Donnons le droit,Donner le droit,inflected,0.6691,ok,
 autorisâmes,autoriser,verbe,Donnâmes le droit,Donner le droit,inflected,0.6691,ok,true
 autorisât,autoriser,verbe,Donnât le droit,Donner le droit,inflected,0.6691,ok,true
 autorisâtes,autoriser,verbe,Donnâtes le droit,Donner le droit,inflected,0.6691,ok,true
-autorisé,autoriser,verbe,Donne le droit,Donner le droit,inflected,0.6691,ok,true
-autorisée,autoriser,verbe,Donne le droit,Donner le droit,inflected,0.6691,ok,true
-autorisées,autoriser,verbe,Donnent le droit,Donner le droit,inflected,0.6691,ok,true
-autorisés,autoriser,verbe,Donnent le droit,Donner le droit,inflected,0.6691,ok,true
 autre,autre,nom,Différent et distinct,Différent et distinct,verbatim,0.6581,ok,true
 autres,autre,nom,Différent et distinct,Différent et distinct,head-pos-mismatch,0.6581,ok,true
 autrice,auteur,nom,Créatrice d'un livre,Créateur d'un livre,inflected,0.6571,ok,true
@@ -2296,10 +2260,6 @@ avéreraient,avérer,verbe,Confirmeraient la vérité,Confirmer la vérité,infl
 avérerait,avérer,verbe,Confirmerait la vérité,Confirmer la vérité,inflected,0.8870,ok,true
 avéreront,avérer,verbe,Confirmeront la vérité,Confirmer la vérité,inflected,0.8870,ok,true
 avérèrent,avérer,verbe,Confirmèrent la vérité,Confirmer la vérité,inflected,0.8870,ok,true
-avéré,avérer,verbe,Confirme la vérité,Confirmer la vérité,inflected,0.8870,ok,true
-avérée,avérer,verbe,Confirme la vérité,Confirmer la vérité,inflected,0.8870,ok,true
-avérées,avérer,verbe,Confirment la vérité,Confirmer la vérité,inflected,0.8870,ok,true
-avérés,avérer,verbe,Confirment la vérité,Confirmer la vérité,inflected,0.8870,ok,true
 axial,axial,adj,En rapport avec l'axe,En rapport avec l'axe,verbatim,0.7555,ok,true
 axiale,axial,adj,En rapport avec l'axe,En rapport avec l'axe,head-pos-mismatch,0.7555,ok,true
 axiales,axial,adj,En rapport avec l'axe,En rapport avec l'axe,head-pos-mismatch,0.7555,ok,true
@@ -2411,10 +2371,6 @@ barrerons,barrer,verbe,Tracerons une ligne,Tracer une ligne,inflected,0.7362,ok,
 barreront,barrer,verbe,Traceront une ligne,Tracer une ligne,inflected,0.7362,ok,true
 barres,barre,nom,Lisses horizontaux,Lisse horizontale,inflected,0.6818,ok,true
 barrèrent,barrer,verbe,Tracèrent une ligne,Tracer une ligne,inflected,0.7362,ok,true
-barré,barrer,verbe,Trace une ligne,Tracer une ligne,inflected,0.7362,ok,true
-barrée,barrer,verbe,Trace une ligne,Tracer une ligne,inflected,0.7362,ok,true
-barrées,barrer,verbe,Tracent une ligne,Tracer une ligne,inflected,0.7362,ok,true
-barrés,barrer,verbe,Tracent une ligne,Tracer une ligne,inflected,0.7362,ok,true
 basalte,basalte,nom,Roche volcanique noire,Roche volcanique noire,verbatim,0.6987,ok,false
 basaltes,basalte,nom,Roches volcaniques noires,Roche volcanique noire,inflected,0.6987,ok,false
 bascula,basculer,verbe,Changea de position,Changer de position,inflected,0.6689,ok,true
@@ -2533,10 +2489,6 @@ blâmions,blâmer,verbe,Recherchions un coupable,Rechercher un coupable,inflecte
 blâmons,blâmer,verbe,Recherchons un coupable,Rechercher un coupable,inflected,0.6511,ok,false
 blâmât,blâmer,verbe,Recherchât un coupable,Rechercher un coupable,inflected,0.6511,ok,false
 blâmèrent,blâmer,verbe,Recherchèrent un coupable,Rechercher un coupable,inflected,0.6511,ok,false
-blâmé,blâmer,verbe,Recherche un coupable,Rechercher un coupable,inflected,0.6511,ok,false
-blâmée,blâmer,verbe,Recherche un coupable,Rechercher un coupable,inflected,0.6511,ok,false
-blâmées,blâmer,verbe,Recherchent un coupable,Rechercher un coupable,inflected,0.6511,ok,false
-blâmés,blâmer,verbe,Recherchent un coupable,Rechercher un coupable,inflected,0.6511,ok,false
 bocal,bocal,nom,Contenant transparent,Contenant transparent,verbatim,0.6718,ok,true
 bocaux,bocal,nom,Contenant transparent,Contenant transparent,head-pos-mismatch,0.6718,ok,true
 bodies,body,nom,Parties physiques,Partie physique,inflected,0.6701,ok,true
@@ -3019,10 +2971,6 @@ caustiques,caustique,nom,Acides et corrosifs,Acide et corrosif,inflected,0.7574,
 causâmes,causer,verbe,Provoquâmes un effet,Provoquer un effet,inflected,0.7425,ok,true
 causât,causer,verbe,Provoquât un effet,Provoquer un effet,inflected,0.7425,ok,true
 causèrent,causer,verbe,Provoquèrent un effet,Provoquer un effet,inflected,0.7425,ok,true
-causé,causer,verbe,Provoque un effet,Provoquer un effet,inflected,0.7425,ok,true
-causée,causer,verbe,Provoque un effet,Provoquer un effet,inflected,0.7425,ok,true
-causées,causer,verbe,Provoquent un effet,Provoquer un effet,inflected,0.7425,ok,true
-causés,causer,verbe,Provoquent un effet,Provoquer un effet,inflected,0.7425,ok,true
 cave,cave,nom,Abri souterrain,Abri souterrain,verbatim,0.6545,ok,true
 caverne,caverne,nom,Grotte souterraine,Grotte souterraine,verbatim,0.7693,ok,true
 cavernes,caverne,nom,Grottes souterraines,Grotte souterraine,inflected,0.7693,ok,false
@@ -3482,7 +3430,6 @@ commerciale,commercial,nom,Publicitaire,Publicitaire,inflected,0.6727,ok,true
 commerciaux,commercial,nom,Publicitaires,Publicitaire,inflected,0.6727,ok,true
 commerciez,commercer,verbe,Échangiez des biens,Échanger des biens,inflected,0.6876,ok,true
 commercions,commercer,verbe,Échangions des biens,Échanger des biens,inflected,0.6876,ok,true
-commercé,commercer,verbe,Échange des biens,Échanger des biens,inflected,0.6876,ok,true
 commerça,commercer,verbe,Échangea des biens,Échanger des biens,inflected,0.6876,ok,true
 commerçai,commercer,verbe,Échangeai des biens,Échanger des biens,inflected,0.6876,ok,true
 commerçais,commercer,verbe,Échangeais des biens,Échanger des biens,inflected,0.6876,ok,true
@@ -3640,10 +3587,6 @@ complétions,compléter,verbe,Parachevions une tâche,Parachever une tâche,infl
 complétons,compléter,verbe,Parachevons une tâche,Parachever une tâche,inflected,0.6645,ok,true
 complétâmes,compléter,verbe,Parachevâmes une tâche,Parachever une tâche,inflected,0.6645,ok,false
 complétât,compléter,verbe,Parachevât une tâche,Parachever une tâche,inflected,0.6645,ok,true
-complété,compléter,verbe,Paracheve une tâche,Parachever une tâche,inflected,0.6645,ok,true
-complétée,compléter,verbe,Paracheve une tâche,Parachever une tâche,inflected,0.6645,ok,true
-complétées,compléter,verbe,Parachevent une tâche,Parachever une tâche,inflected,0.6645,ok,true
-complétés,compléter,verbe,Parachevent une tâche,Parachever une tâche,inflected,0.6645,ok,true
 comporta,comporter,verbe,Fut constitué de,Être constitué de,inflected,0.6686,ok,false
 comportai,comporter,verbe,Fus constitué de,Être constitué de,inflected,0.6686,ok,false
 comportais,comporter,verbe,Étais constitué de,Être constitué de,inflected,0.6686,ok,false
@@ -3825,9 +3768,6 @@ concrétiser,concrétiser,verbe,Donner une forme tangible,Donner une forme tangi
 concrétises,concrétiser,verbe,Donnes une forme tangible,Donner une forme tangible,inflected,0.7075,ok,false
 concrétisez,concrétiser,verbe,Donnez une forme tangible,Donner une forme tangible,inflected,0.7075,ok,false
 concrétisât,concrétiser,verbe,Donnât une forme tangible,Donner une forme tangible,inflected,0.7075,ok,false
-concrétisé,concrétiser,verbe,Donne une forme tangible,Donner une forme tangible,inflected,0.7075,ok,false
-concrétisée,concrétiser,verbe,Donne une forme tangible,Donner une forme tangible,inflected,0.7075,ok,false
-concrétisés,concrétiser,verbe,Donnent une forme tangible,Donner une forme tangible,inflected,0.7075,ok,false
 concurrence,concurrence,nom,Lutte pour la domination,Lutte pour la domination,verbatim,0.6965,ok,false
 concurrent,concurrent,nom,Simultané et simultané,Simultané et simultané,verbatim,0.6591,ok,false
 concurrente,concurrent,nom,Simultané et simultané,Simultané et simultané,head-pos-mismatch,0.6591,ok,false
@@ -3863,10 +3803,6 @@ concédons,concéder,verbe,Accordons un avantage,Accorder un avantage,inflected,
 concédâmes,concéder,verbe,Accordâmes un avantage,Accorder un avantage,inflected,0.6657,ok,false
 concédât,concéder,verbe,Accordât un avantage,Accorder un avantage,inflected,0.6657,ok,true
 concédèrent,concéder,verbe,Accordèrent un avantage,Accorder un avantage,inflected,0.6657,ok,false
-concédé,concéder,verbe,Accorde un avantage,Accorder un avantage,inflected,0.6657,ok,true
-concédée,concéder,verbe,Accorde un avantage,Accorder un avantage,inflected,0.6657,ok,false
-concédées,concéder,verbe,Accordent un avantage,Accorder un avantage,inflected,0.6657,ok,false
-concédés,concéder,verbe,Accordent un avantage,Accorder un avantage,inflected,0.6657,ok,false
 condamna,condamner,verbe,Prononça un verdict de culpabilité,Prononcer un verdict de culpabilité,inflected,0.6866,ok,false
 condamnable,condamnable,adj,Qui mérite d'être puni,Qui mérite d'être puni,verbatim,0.6747,ok,true
 condamnai,condamner,verbe,Prononçai un verdict de culpabilité,Prononcer un verdict de culpabilité,inflected,0.6866,ok,false
@@ -3890,10 +3826,6 @@ condamnons,condamner,verbe,Prononçons un verdict de culpabilité,Prononcer un v
 condamnâmes,condamner,verbe,Prononçâmes un verdict de culpabilité,Prononcer un verdict de culpabilité,inflected,0.6866,ok,false
 condamnât,condamner,verbe,Prononçât un verdict de culpabilité,Prononcer un verdict de culpabilité,inflected,0.6866,ok,false
 condamnâtes,condamner,verbe,Prononçâtes un verdict de culpabilité,Prononcer un verdict de culpabilité,inflected,0.6866,ok,false
-condamné,condamner,verbe,Prononce un verdict de culpabilité,Prononcer un verdict de culpabilité,inflected,0.6866,ok,false
-condamnée,condamner,verbe,Prononce un verdict de culpabilité,Prononcer un verdict de culpabilité,inflected,0.6866,ok,false
-condamnées,condamner,verbe,Prononcent un verdict de culpabilité,Prononcer un verdict de culpabilité,inflected,0.6866,ok,false
-condamnés,condamner,verbe,Prononcent un verdict de culpabilité,Prononcer un verdict de culpabilité,inflected,0.6866,ok,false
 conduction,conduction,nom,Transmission de chaleur,Transmission de chaleur,verbatim,0.7018,ok,false
 conductions,conduction,nom,Transmissions de chaleur,Transmission de chaleur,inflected,0.7018,ok,false
 conduit,conduit,nom,Tuyau d'écoulement,Tuyau d'écoulement,verbatim,0.6820,ok,false
@@ -3947,10 +3879,6 @@ conférâmes,conférer,verbe,Accordâmes un pouvoir ou un privilège,Accorder un
 conférât,conférer,verbe,Accordât un pouvoir ou un privilège,Accorder un pouvoir ou un privilège,inflected,0.7175,ok,false
 conférâtes,conférer,verbe,Accordâtes un pouvoir ou un privilège,Accorder un pouvoir ou un privilège,inflected,0.7175,ok,false
 conférèrent,conférer,verbe,Accordèrent un pouvoir ou un privilège,Accorder un pouvoir ou un privilège,inflected,0.7175,ok,false
-conféré,conférer,verbe,Accorde un pouvoir ou un privilège,Accorder un pouvoir ou un privilège,inflected,0.7175,ok,false
-conférée,conférer,verbe,Accorde un pouvoir ou un privilège,Accorder un pouvoir ou un privilège,inflected,0.7175,ok,false
-conférées,conférer,verbe,Accordent un pouvoir ou un privilège,Accorder un pouvoir ou un privilège,inflected,0.7175,ok,false
-conférés,conférer,verbe,Accordent un pouvoir ou un privilège,Accorder un pouvoir ou un privilège,inflected,0.7175,ok,false
 congélation,congélation,nom,Transformation en glace,Transformation en glace,verbatim,0.6635,ok,false
 conique,conique,nom,En forme de cône,En forme de cône,verbatim,0.6598,ok,true
 coniques,conique,nom,En formes de cône,En forme de cône,inflected,0.6598,ok,true
@@ -3962,9 +3890,6 @@ conjecturer,conjecturer,verbe,Formuler une hypothèse,Formuler une hypothèse,ve
 conjectures,conjecture,nom,Hypothèses plausibles,Hypothèse plausible,inflected,0.6976,ok,true
 conjecturez,conjecturer,verbe,Formulez une hypothèse,Formuler une hypothèse,inflected,0.7190,ok,false
 conjecturât,conjecturer,verbe,Formulât une hypothèse,Formuler une hypothèse,inflected,0.7190,ok,false
-conjecturé,conjecturer,verbe,Formule une hypothèse,Formuler une hypothèse,inflected,0.7190,ok,false
-conjecturée,conjecturer,verbe,Formule une hypothèse,Formuler une hypothèse,inflected,0.7190,ok,false
-conjecturés,conjecturer,verbe,Formulent une hypothèse,Formuler une hypothèse,inflected,0.7190,ok,false
 conjonction,conjonction,nom,Mot de liaison,Mot de liaison,verbatim,0.7383,ok,true
 conjura,conjurer,verbe,Appela les esprits,Appeler les esprits,inflected,0.7026,ok,true
 conjurai,conjurer,verbe,Appelai les esprits,Appeler les esprits,inflected,0.7026,ok,true
@@ -3991,10 +3916,6 @@ conjurons,conjurer,verbe,Appelons les esprits,Appeler les esprits,inflected,0.70
 conjurâmes,conjurer,verbe,Appelâmes les esprits,Appeler les esprits,inflected,0.7026,ok,true
 conjurât,conjurer,verbe,Appelât les esprits,Appeler les esprits,inflected,0.7026,ok,true
 conjurèrent,conjurer,verbe,Appelèrent les esprits,Appeler les esprits,inflected,0.7026,ok,true
-conjuré,conjurer,verbe,Appele les esprits,Appeler les esprits,inflected,0.7026,ok,true
-conjurée,conjurer,verbe,Appele les esprits,Appeler les esprits,inflected,0.7026,ok,true
-conjurées,conjurer,verbe,Appelent les esprits,Appeler les esprits,inflected,0.7026,ok,true
-conjurés,conjurer,verbe,Appelent les esprits,Appeler les esprits,inflected,0.7026,ok,true
 connexe,connexe,adj,En rapport avec,En rapport avec,verbatim,0.7280,ok,true
 connexes,connexe,adj,En rapport avec,En rapport avec,head-pos-mismatch,0.7280,ok,true
 connexion,connexion,nom,Lien établi,Lien établi,verbatim,0.6835,ok,true
@@ -4172,10 +4093,6 @@ constituez,constituer,verbe,Formez un ensemble,Former un ensemble,inflected,0.70
 constituiez,constituer,verbe,Formiez un ensemble,Former un ensemble,inflected,0.7074,ok,true
 constituons,constituer,verbe,Formons un ensemble,Former un ensemble,inflected,0.7074,ok,true
 constituât,constituer,verbe,Formât un ensemble,Former un ensemble,inflected,0.7074,ok,true
-constitué,constituer,verbe,Forme un ensemble,Former un ensemble,inflected,0.7074,ok,true
-constituée,constituer,verbe,Forme un ensemble,Former un ensemble,inflected,0.7074,ok,true
-constituées,constituer,verbe,Forment un ensemble,Former un ensemble,inflected,0.7074,ok,true
-constitués,constituer,verbe,Forment un ensemble,Former un ensemble,inflected,0.7074,ok,true
 constructif,constructif,adj,Bénéfique et positif,Bénéfique et positif,verbatim,0.7005,ok,true
 consulta,consulter,verbe,Demanda conseil,Demander conseil,inflected,0.6981,ok,true
 consultai,consulter,verbe,Demandai conseil,Demander conseil,inflected,0.6981,ok,true
@@ -4286,7 +4203,6 @@ contribuez,contribuer,verbe,Apportez son aide,Apporter son aide,inflected,0.6570
 contribuiez,contribuer,verbe,Apportiez son aide,Apporter son aide,inflected,0.6570,ok,true
 contribuons,contribuer,verbe,Apportons son aide,Apporter son aide,inflected,0.6570,ok,true
 contribuât,contribuer,verbe,Apportât son aide,Apporter son aide,inflected,0.6570,ok,true
-contribué,contribuer,verbe,Apporte son aide,Apporter son aide,inflected,0.6570,ok,true
 contrée,contrée,nom,Pays lointain,Pays lointain,verbatim,0.6596,ok,true
 contrées,contrée,nom,Pays lointains,Pays lointain,inflected,0.6596,ok,true
 contrôlable,contrôlable,adj,Que l'on peut réguler,Que l'on peut réguler,verbatim,0.6749,ok,false
@@ -4329,7 +4245,6 @@ conversiez,converser,verbe,Échangiez des paroles,Échanger des paroles,inflecte
 conversons,converser,verbe,Échangeons des paroles,Échanger des paroles,inflected,0.8562,ok,false
 conversâmes,converser,verbe,Échangeâmes des paroles,Échanger des paroles,inflected,0.8562,ok,false
 conversât,converser,verbe,Échangeât des paroles,Échanger des paroles,inflected,0.8562,ok,true
-conversé,converser,verbe,Échange des paroles,Échanger des paroles,inflected,0.8562,ok,true
 converti,convertir,verbe,Changé en autre chose,Changer en autre chose,inflected,0.7258,ok,true
 convertie,convertir,verbe,Changée en autre chose,Changer en autre chose,inflected,0.7258,ok,true
 converties,convertir,verbe,Changées en autre chose,Changer en autre chose,inflected,0.7258,ok,false
@@ -4372,10 +4287,6 @@ convoquons,convoquer,verbe,Rassemblons les gens,Rassembler les gens,inflected,0.
 convoquâmes,convoquer,verbe,Rassemblâmes les gens,Rassembler les gens,inflected,0.6580,ok,false
 convoquât,convoquer,verbe,Rassemblât les gens,Rassembler les gens,inflected,0.6580,ok,true
 convoquâtes,convoquer,verbe,Rassemblâtes les gens,Rassembler les gens,inflected,0.6580,ok,true
-convoqué,convoquer,verbe,Rassemble les gens,Rassembler les gens,inflected,0.6580,ok,true
-convoquée,convoquer,verbe,Rassemble les gens,Rassembler les gens,inflected,0.6580,ok,true
-convoquées,convoquer,verbe,Rassemblent les gens,Rassembler les gens,inflected,0.6580,ok,true
-convoqués,convoquer,verbe,Rassemblent les gens,Rassembler les gens,inflected,0.6580,ok,true
 convulsion,convulsion,nom,Contraction violente et involontaire,Contraction violente et involontaire,verbatim,0.7649,ok,false
 cool,cool,adj,Calme et posé,Calme et posé,verbatim,0.6655,ok,true
 copain,copain,nom,Ami proche,Ami proche,verbatim,0.6922,ok,true
@@ -4433,10 +4344,6 @@ corrigeât,corriger,verbe,Apportât des modifications,Apporter des modifications
 corrigiez,corriger,verbe,Apportiez des modifications,Apporter des modifications,inflected,0.6627,ok,false
 corrigions,corriger,verbe,Apportions des modifications,Apporter des modifications,inflected,0.6627,ok,false
 corrigèrent,corriger,verbe,Apportèrent des modifications,Apporter des modifications,inflected,0.6627,ok,false
-corrigé,corriger,verbe,Apporte des modifications,Apporter des modifications,inflected,0.6627,ok,false
-corrigée,corriger,verbe,Apporte des modifications,Apporter des modifications,inflected,0.6627,ok,false
-corrigées,corriger,verbe,Apportent des modifications,Apporter des modifications,inflected,0.6627,ok,false
-corrigés,corriger,verbe,Apportent des modifications,Apporter des modifications,inflected,0.6627,ok,false
 corrobora,corroborer,verbe,Appuya un témoignage,Appuyer un témoignage,inflected,0.7382,ok,true
 corroborai,corroborer,verbe,Appuyai un témoignage,Appuyer un témoignage,inflected,0.7382,ok,true
 corroborait,corroborer,verbe,Appuyait un témoignage,Appuyer un témoignage,inflected,0.7382,ok,false
@@ -4449,10 +4356,6 @@ corrobores,corroborer,verbe,Appuies un témoignage,Appuyer un témoignage,inflec
 corroborez,corroborer,verbe,Appuyez un témoignage,Appuyer un témoignage,inflected,0.7382,ok,true
 corroborons,corroborer,verbe,Appuyons un témoignage,Appuyer un témoignage,inflected,0.7382,ok,false
 corroborât,corroborer,verbe,Appuyât un témoignage,Appuyer un témoignage,inflected,0.7382,ok,true
-corroboré,corroborer,verbe,Appuye un témoignage,Appuyer un témoignage,inflected,0.7382,ok,true
-corroborée,corroborer,verbe,Appuye un témoignage,Appuyer un témoignage,inflected,0.7382,ok,false
-corroborées,corroborer,verbe,Appuyent un témoignage,Appuyer un témoignage,inflected,0.7382,ok,false
-corroborés,corroborer,verbe,Appuyent un témoignage,Appuyer un témoignage,inflected,0.7382,ok,true
 corrompais,corrompre,verbe,Détournais du droit chemin,Détourner du droit chemin,inflected,0.6556,ok,false
 corrompait,corrompre,verbe,Détournait du droit chemin,Détourner du droit chemin,inflected,0.6556,ok,false
 corrompant,corrompre,verbe,Détournant du droit chemin,Détourner du droit chemin,inflected,0.6556,ok,false
@@ -4771,10 +4674,6 @@ cultivâmes,cultiver,verbe,Travaillâmes la terre,Travailler la terre,inflected,
 cultivât,cultiver,verbe,Travaillât la terre,Travailler la terre,inflected,0.7055,ok,true
 cultivâtes,cultiver,verbe,Travaillâtes la terre,Travailler la terre,inflected,0.7055,ok,true
 cultivèrent,cultiver,verbe,Travaillèrent la terre,Travailler la terre,inflected,0.7055,ok,true
-cultivé,cultiver,verbe,Travaille la terre,Travailler la terre,inflected,0.7055,ok,true
-cultivée,cultiver,verbe,Travaille la terre,Travailler la terre,inflected,0.7055,ok,true
-cultivées,cultiver,verbe,Travaillent la terre,Travailler la terre,inflected,0.7055,ok,true
-cultivés,cultiver,verbe,Travaillent la terre,Travailler la terre,inflected,0.7055,ok,true
 cultural,cultural,adj,Relatif à la société,Relatif à la société,verbatim,0.6745,ok,true
 culturale,cultural,adj,Relative à la société,Relatif à la société,inflected,0.6745,ok,true
 culturales,cultural,adj,Relatives à la société,Relatif à la société,inflected,0.6745,ok,true
@@ -4904,10 +4803,6 @@ demandâmes,demander,verbe,Sollicitâmes une chose,Solliciter une chose,inflecte
 demandât,demander,verbe,Sollicitât une chose,Solliciter une chose,inflected,0.7720,ok,true
 demandâtes,demander,verbe,Sollicitâtes une chose,Solliciter une chose,inflected,0.7720,ok,true
 demandèrent,demander,verbe,Sollicitèrent une chose,Solliciter une chose,inflected,0.7720,ok,true
-demandé,demander,verbe,Sollicite une chose,Solliciter une chose,inflected,0.7720,ok,true
-demandée,demander,verbe,Sollicite une chose,Solliciter une chose,inflected,0.7720,ok,true
-demandées,demander,verbe,Sollicitent une chose,Solliciter une chose,inflected,0.7720,ok,true
-demandés,demander,verbe,Sollicitent une chose,Solliciter une chose,inflected,0.7720,ok,true
 demeura,demeurer,verbe,Resta en place,Rester en place,inflected,0.6967,ok,true
 demeurai,demeurer,verbe,Restai en place,Rester en place,inflected,0.6967,ok,true
 demeuraient,demeurer,verbe,Restaient en place,Rester en place,inflected,0.6967,ok,true
@@ -5039,10 +4934,6 @@ dessins,dessin,nom,Représentations graphiques,Représentation graphique,inflect
 dessinâmes,dessiner,verbe,Traçâmes une image,Tracer une image,inflected,0.6836,ok,true
 dessinât,dessiner,verbe,Traçât une image,Tracer une image,inflected,0.6836,ok,true
 dessinèrent,dessiner,verbe,Tracèrent une image,Tracer une image,inflected,0.6836,ok,true
-dessiné,dessiner,verbe,Trace une image,Tracer une image,inflected,0.6836,ok,true
-dessinée,dessiner,verbe,Trace une image,Tracer une image,inflected,0.6836,ok,true
-dessinées,dessiner,verbe,Tracent une image,Tracer une image,inflected,0.6836,ok,true
-dessinés,dessiner,verbe,Tracent une image,Tracer une image,inflected,0.6836,ok,true
 destin,destin,nom,Sort final et inévitable,Sort final et inévitable,verbatim,0.7187,ok,true
 destination,destination,nom,Point d'arrivée,Point d'arrivée,verbatim,0.6824,ok,true
 destins,destin,nom,Sorts finals et inévitables,Sort final et inévitable,inflected,0.7187,ok,false
@@ -5088,10 +4979,6 @@ devinons,deviner,verbe,Trouvons la réponse,Trouver la réponse,inflected,0.7720
 devinâmes,deviner,verbe,Trouvâmes la réponse,Trouver la réponse,inflected,0.7720,ok,true
 devinât,deviner,verbe,Trouvât la réponse,Trouver la réponse,inflected,0.7720,ok,true
 devinèrent,deviner,verbe,Trouvèrent la réponse,Trouver la réponse,inflected,0.7720,ok,true
-deviné,deviner,verbe,Trouve la réponse,Trouver la réponse,inflected,0.7720,ok,true
-devinée,deviner,verbe,Trouve la réponse,Trouver la réponse,inflected,0.7720,ok,true
-devinées,deviner,verbe,Trouvent la réponse,Trouver la réponse,inflected,0.7720,ok,true
-devinés,deviner,verbe,Trouvent la réponse,Trouver la réponse,inflected,0.7720,ok,true
 devions,devoir,verbe,Tâchions à accomplir,Tâche à accomplir,inflected,0.6694,ok,true
 devis,devis,nom,Estimation chiffrée,Estimation chiffrée,verbatim,0.6842,ok,true
 devoir,devoir,verbe,Tâche à accomplir,Tâche à accomplir,verbatim,0.6694,ok,true
@@ -5594,10 +5481,6 @@ doterons,doter,verbe,Donnerons des moyens,Donner des moyens,inflected,0.7162,ok,
 doteront,doter,verbe,Donneront des moyens,Donner des moyens,inflected,0.7162,ok,true
 dotes,doter,verbe,Donnes des moyens,Donner des moyens,inflected,0.7162,ok,true
 dotèrent,doter,verbe,Donnèrent des moyens,Donner des moyens,inflected,0.7162,ok,true
-doté,doter,verbe,Donne des moyens,Donner des moyens,inflected,0.7162,ok,true
-dotée,doter,verbe,Donne des moyens,Donner des moyens,inflected,0.7162,ok,true
-dotées,doter,verbe,Donnent des moyens,Donner des moyens,inflected,0.7162,ok,true
-dotés,doter,verbe,Donnent des moyens,Donner des moyens,inflected,0.7162,ok,true
 douanier,douanier,nom,Percepteur des taxes,Percepteur des taxes,verbatim,0.7543,ok,true
 douaniers,douanier,nom,Percepteurs des taxes,Percepteur des taxes,inflected,0.7543,ok,true
 douanière,douanier,nom,Perceptrice des taxes,Percepteur des taxes,inflected,0.7543,ok,true
@@ -5776,10 +5659,6 @@ déchargez,décharger,verbe,Libérez du poids,Libérer du poids,inflected,0.6629
 déchargeât,décharger,verbe,Libérât du poids,Libérer du poids,inflected,0.6629,ok,true
 déchargiez,décharger,verbe,Libériez du poids,Libérer du poids,inflected,0.6629,ok,true
 déchargions,décharger,verbe,Libérions du poids,Libérer du poids,inflected,0.6629,ok,true
-déchargé,décharger,verbe,Libére du poids,Libérer du poids,inflected,0.6629,ok,true
-déchargée,décharger,verbe,Libére du poids,Libérer du poids,inflected,0.6629,ok,true
-déchargées,décharger,verbe,Libérent du poids,Libérer du poids,inflected,0.6629,ok,true
-déchargés,décharger,verbe,Libérent du poids,Libérer du poids,inflected,0.6629,ok,true
 déchira,déchirer,verbe,Arracha en deux,Arracher en deux,inflected,0.7585,ok,true
 déchirai,déchirer,verbe,Arrachai en deux,Arracher en deux,inflected,0.7585,ok,true
 déchiraient,déchirer,verbe,Arrachaient en deux,Arracher en deux,inflected,0.7585,ok,true
@@ -6131,10 +6010,6 @@ délimitez,délimiter,verbe,Tracez une frontière,Tracer une frontière,inflecte
 délimitions,délimiter,verbe,Tracions une frontière,Tracer une frontière,inflected,0.7077,ok,false
 délimitons,délimiter,verbe,Traçons une frontière,Tracer une frontière,inflected,0.7077,ok,true
 délimitât,délimiter,verbe,Traçât une frontière,Tracer une frontière,inflected,0.7077,ok,true
-délimité,délimiter,verbe,Trace une frontière,Tracer une frontière,inflected,0.7077,ok,true
-délimitée,délimiter,verbe,Trace une frontière,Tracer une frontière,inflected,0.7077,ok,true
-délimitées,délimiter,verbe,Tracent une frontière,Tracer une frontière,inflected,0.7077,ok,true
-délimités,délimiter,verbe,Tracent une frontière,Tracer une frontière,inflected,0.7077,ok,true
 délit,délit,nom,Acte illégal,Acte illégal,verbatim,0.6545,ok,true
 délits,délit,nom,Actes illégaux,Acte illégal,inflected,0.6545,ok,true
 délivra,délivrer,verbe,Porta secours,Porter secours,inflected,0.6711,ok,true
@@ -6272,10 +6147,6 @@ démontrons,démontrer,verbe,Apportons la preuve,Apporter la preuve,inflected,0.
 démontrâmes,démontrer,verbe,Apportâmes la preuve,Apporter la preuve,inflected,0.6784,ok,true
 démontrât,démontrer,verbe,Apportât la preuve,Apporter la preuve,inflected,0.6784,ok,true
 démontrâtes,démontrer,verbe,Apportâtes la preuve,Apporter la preuve,inflected,0.6784,ok,true
-démontré,démontrer,verbe,Apporte la preuve,Apporter la preuve,inflected,0.6784,ok,true
-démontrée,démontrer,verbe,Apporte la preuve,Apporter la preuve,inflected,0.6784,ok,true
-démontrées,démontrer,verbe,Apportent la preuve,Apporter la preuve,inflected,0.6784,ok,true
-démontrés,démontrer,verbe,Apportent la preuve,Apporter la preuve,inflected,0.6784,ok,true
 démos,démo,nom,Par le peuples,Par le peuple,inflected,0.6685,ok,true
 déni,déni,nom,Négation de la réalité,Négation de la réalité,verbatim,0.7127,ok,true
 dénigrement,dénigrement,nom,Attaque verbale,Attaque verbale,verbatim,0.7387,ok,true
@@ -6340,10 +6211,6 @@ dépensons,dépenser,verbe,Engageons des frais,Engager des frais,inflected,0.665
 dépensâmes,dépenser,verbe,Engageâmes des frais,Engager des frais,inflected,0.6656,ok,true
 dépensât,dépenser,verbe,Engageât des frais,Engager des frais,inflected,0.6656,ok,true
 dépensèrent,dépenser,verbe,Engagèrent des frais,Engager des frais,inflected,0.6656,ok,true
-dépensé,dépenser,verbe,Engage des frais,Engager des frais,inflected,0.6656,ok,true
-dépensée,dépenser,verbe,Engage des frais,Engager des frais,inflected,0.6656,ok,true
-dépensées,dépenser,verbe,Engagent des frais,Engager des frais,inflected,0.6656,ok,true
-dépensés,dépenser,verbe,Engagent des frais,Engager des frais,inflected,0.6656,ok,true
 dépistage,dépistage,nom,Examen de prévention,Examen de prévention,verbatim,0.6724,ok,true
 dépistages,dépistage,nom,Examens de prévention,Examen de prévention,inflected,0.6724,ok,false
 déplacé,déplacé,nom,Départ forcé,Départ forcé,verbatim,0.7181,ok,true
@@ -6447,10 +6314,6 @@ désarmons,désarmer,verbe,Retirons les armes,Retirer les armes,inflected,0.7474
 désarmâmes,désarmer,verbe,Retirâmes les armes,Retirer les armes,inflected,0.7474,ok,true
 désarmât,désarmer,verbe,Retirât les armes,Retirer les armes,inflected,0.7474,ok,true
 désarmèrent,désarmer,verbe,Retirèrent les armes,Retirer les armes,inflected,0.7474,ok,true
-désarmé,désarmer,verbe,Retire les armes,Retirer les armes,inflected,0.7474,ok,true
-désarmée,désarmer,verbe,Retire les armes,Retirer les armes,inflected,0.7474,ok,true
-désarmées,désarmer,verbe,Retirent les armes,Retirer les armes,inflected,0.7474,ok,true
-désarmés,désarmer,verbe,Retirent les armes,Retirer les armes,inflected,0.7474,ok,true
 désarroi,désarroi,nom,Profond désespoir,Profond désespoir,verbatim,0.6851,ok,true
 désarrois,désarroi,nom,Profonds désespoir,Profond désespoir,inflected,0.6851,ok,true
 désastreuse,désastreux,adj,Catastrophique et fatal,Catastrophique et fatal,inflected,0.7473,ok,true
@@ -6471,9 +6334,6 @@ déshabiller,déshabiller,verbe,Retirer les vêtements,Retirer les vêtements,ve
 déshabilles,déshabiller,verbe,Retires les vêtements,Retirer les vêtements,inflected,0.6861,ok,true
 déshabillez,déshabiller,verbe,Retirez les vêtements,Retirer les vêtements,inflected,0.6861,ok,true
 déshabillât,déshabiller,verbe,Retirât les vêtements,Retirer les vêtements,inflected,0.6861,ok,true
-déshabillé,déshabiller,verbe,Retire les vêtements,Retirer les vêtements,inflected,0.6861,ok,true
-déshabillée,déshabiller,verbe,Retire les vêtements,Retirer les vêtements,inflected,0.6861,ok,true
-déshabillés,déshabiller,verbe,Retirent les vêtements,Retirer les vêtements,inflected,0.6861,ok,true
 déshonora,déshonorer,verbe,Perdit son honneur,Perdre son honneur,inflected,0.8122,ok,true
 déshonorai,déshonorer,verbe,Perdis son honneur,Perdre son honneur,inflected,0.8122,ok,true
 déshonorais,déshonorer,verbe,Perdais son honneur,Perdre son honneur,inflected,0.8122,ok,true
@@ -6900,10 +6760,6 @@ endommagera,endommager,verbe,Causera une détérioration,Causer une détériorat
 endommages,endommager,verbe,Causes une détérioration,Causer une détérioration,inflected,0.8239,ok,false
 endommagez,endommager,verbe,Causez une détérioration,Causer une détérioration,inflected,0.8239,ok,false
 endommageât,endommager,verbe,Causât une détérioration,Causer une détérioration,inflected,0.8239,ok,false
-endommagé,endommager,verbe,Cause une détérioration,Causer une détérioration,inflected,0.8239,ok,false
-endommagée,endommager,verbe,Cause une détérioration,Causer une détérioration,inflected,0.8239,ok,false
-endommagées,endommager,verbe,Causent une détérioration,Causer une détérioration,inflected,0.8239,ok,false
-endommagés,endommager,verbe,Causent une détérioration,Causer une détérioration,inflected,0.8239,ok,false
 endroit,endroit,nom,Lieu précis,Lieu précis,verbatim,0.7950,ok,true
 endroits,endroit,nom,Lieux précis,Lieu précis,inflected,0.7950,ok,true
 enduit,enduit,nom,Revêtement appliqué sur les murs,Revêtement appliqué sur les murs,verbatim,0.7181,ok,false
@@ -6995,10 +6851,6 @@ enflammons,enflammer,verbe,Allumons un feu,Allumer un feu,inflected,0.7138,ok,tr
 enflammâmes,enflammer,verbe,Allumâmes un feu,Allumer un feu,inflected,0.7138,ok,true
 enflammât,enflammer,verbe,Allumât un feu,Allumer un feu,inflected,0.7138,ok,true
 enflammâtes,enflammer,verbe,Allumâtes un feu,Allumer un feu,inflected,0.7138,ok,true
-enflammé,enflammer,verbe,Allume un feu,Allumer un feu,inflected,0.7138,ok,true
-enflammée,enflammer,verbe,Allume un feu,Allumer un feu,inflected,0.7138,ok,true
-enflammées,enflammer,verbe,Allument un feu,Allumer un feu,inflected,0.7138,ok,true
-enflammés,enflammer,verbe,Allument un feu,Allumer un feu,inflected,0.7138,ok,true
 enfonce,enfoncer,verbe,Fait entrer de force,Faire entrer de force,inflected,0.7245,ok,true
 enfoncement,enfoncement,nom,Profond sillon,Profond sillon,verbatim,0.7438,ok,true
 enfoncent,enfoncer,verbe,Font entrer de force,Faire entrer de force,inflected,0.7245,ok,true
@@ -7125,10 +6977,6 @@ engendrons,engendrer,verbe,Donnons la vie,Donner la vie,inflected,0.7512,ok,true
 engendrâmes,engendrer,verbe,Donnâmes la vie,Donner la vie,inflected,0.7512,ok,true
 engendrât,engendrer,verbe,Donnât la vie,Donner la vie,inflected,0.7512,ok,true
 engendrâtes,engendrer,verbe,Donnâtes la vie,Donner la vie,inflected,0.7512,ok,true
-engendré,engendrer,verbe,Donne la vie,Donner la vie,inflected,0.7512,ok,true
-engendrée,engendrer,verbe,Donne la vie,Donner la vie,inflected,0.7512,ok,true
-engendrées,engendrer,verbe,Donnent la vie,Donner la vie,inflected,0.7512,ok,true
-engendrés,engendrer,verbe,Donnent la vie,Donner la vie,inflected,0.7512,ok,true
 engin,engin,nom,Machine motrice,Machine motrice,verbatim,0.6734,ok,true
 engins,engin,nom,Machines motrices,Machine motrice,inflected,0.6734,ok,true
 engloba,englober,verbe,Couvrit complètement,Couvrir complètement,inflected,0.6579,ok,false
@@ -7279,10 +7127,6 @@ ensemencera,ensemencer,verbe,Sèmera des graines,Semer des graines,inflected,0.7
 ensemences,ensemencer,verbe,Sèmes des graines,Semer des graines,inflected,0.7750,ok,true
 ensemencez,ensemencer,verbe,Semez des graines,Semer des graines,inflected,0.7750,ok,true
 ensemenciez,ensemencer,verbe,Semiez des graines,Semer des graines,inflected,0.7750,ok,true
-ensemencé,ensemencer,verbe,Seme des graines,Semer des graines,inflected,0.7750,ok,true
-ensemencée,ensemencer,verbe,Seme des graines,Semer des graines,inflected,0.7750,ok,true
-ensemencées,ensemencer,verbe,Sement des graines,Semer des graines,inflected,0.7750,ok,true
-ensemencés,ensemencer,verbe,Sement des graines,Semer des graines,inflected,0.7750,ok,true
 ensemença,ensemencer,verbe,Sema des graines,Semer des graines,inflected,0.7750,ok,true
 ensemençai,ensemencer,verbe,Semai des graines,Semer des graines,inflected,0.7750,ok,true
 ensemençais,ensemencer,verbe,Semais des graines,Semer des graines,inflected,0.7750,ok,true
@@ -7550,10 +7394,6 @@ essayâmes,essayer,verbe,Tentâmes une action,Tenter une action,inflected,0.7602
 essayât,essayer,verbe,Tentât une action,Tenter une action,inflected,0.7602,ok,true
 essayâtes,essayer,verbe,Tentâtes une action,Tenter une action,inflected,0.7602,ok,true
 essayèrent,essayer,verbe,Tentèrent une action,Tenter une action,inflected,0.7602,ok,true
-essayé,essayer,verbe,Tente une action,Tenter une action,inflected,0.7602,ok,true
-essayée,essayer,verbe,Tente une action,Tenter une action,inflected,0.7602,ok,true
-essayées,essayer,verbe,Tentent une action,Tenter une action,inflected,0.7602,ok,true
-essayés,essayer,verbe,Tentent une action,Tenter une action,inflected,0.7602,ok,true
 essence,essence,nom,Substance pure,Substance pure,verbatim,0.7485,ok,true
 essences,essence,nom,Substances pures,Substance pure,inflected,0.7485,ok,true
 essieu,essieu,nom,Axe de roue,Axe de roue,verbatim,0.7599,ok,true
@@ -7584,10 +7424,6 @@ essuyons,essuyer,verbe,Effaçons le liquide,Effacer le liquide,inflected,0.6552,
 essuyâmes,essuyer,verbe,Effaçâmes le liquide,Effacer le liquide,inflected,0.6552,ok,true
 essuyât,essuyer,verbe,Effaçât le liquide,Effacer le liquide,inflected,0.6552,ok,true
 essuyèrent,essuyer,verbe,Effacèrent le liquide,Effacer le liquide,inflected,0.6552,ok,true
-essuyé,essuyer,verbe,Efface le liquide,Effacer le liquide,inflected,0.6552,ok,true
-essuyée,essuyer,verbe,Efface le liquide,Effacer le liquide,inflected,0.6552,ok,true
-essuyées,essuyer,verbe,Effacent le liquide,Effacer le liquide,inflected,0.6552,ok,true
-essuyés,essuyer,verbe,Effacent le liquide,Effacer le liquide,inflected,0.6552,ok,true
 estampe,estampe,nom,Gravure sur bois,Gravure sur bois,verbatim,0.7103,ok,true
 estampes,estampe,nom,Gravures sur bois,Gravure sur bois,inflected,0.7103,ok,true
 esthétique,esthétique,nom,Art de la beauté,Art de la beauté,verbatim,0.7257,ok,true
@@ -7644,10 +7480,6 @@ exagérions,exagérer,verbe,Enjolivions la réalité,Enjoliver la réalité,infl
 exagérons,exagérer,verbe,Enjolivons la réalité,Enjoliver la réalité,inflected,0.6640,ok,true
 exagérât,exagérer,verbe,Enjolivât la réalité,Enjoliver la réalité,inflected,0.6640,ok,true
 exagérèrent,exagérer,verbe,Enjolivèrent la réalité,Enjoliver la réalité,inflected,0.6640,ok,true
-exagéré,exagérer,verbe,Enjolive la réalité,Enjoliver la réalité,inflected,0.6640,ok,true
-exagérée,exagérer,verbe,Enjolive la réalité,Enjoliver la réalité,inflected,0.6640,ok,true
-exagérées,exagérer,verbe,Enjolivent la réalité,Enjoliver la réalité,inflected,0.6640,ok,true
-exagérés,exagérer,verbe,Enjolivent la réalité,Enjoliver la réalité,inflected,0.6640,ok,true
 exaltation,exaltation,nom,Sentiment de joie intense,Sentiment de joie intense,verbatim,0.8117,ok,false
 exaltations,exaltation,nom,Sentiments de joie intense,Sentiment de joie intense,inflected,0.8117,ok,false
 examen,examen,nom,Contrôle écrit,Contrôle écrit,verbatim,0.6510,ok,true
@@ -7734,10 +7566,6 @@ excusons,excuser,verbe,Justifions une faute,Justifier une faute,inflected,0.7974
 excusâmes,excuser,verbe,Justifiâmes une faute,Justifier une faute,inflected,0.7974,ok,true
 excusât,excuser,verbe,Justifiât une faute,Justifier une faute,inflected,0.7974,ok,true
 excusèrent,excuser,verbe,Justifièrent une faute,Justifier une faute,inflected,0.7974,ok,true
-excusé,excuser,verbe,Justifie une faute,Justifier une faute,inflected,0.7974,ok,true
-excusée,excuser,verbe,Justifie une faute,Justifier une faute,inflected,0.7974,ok,true
-excusées,excuser,verbe,Justifient une faute,Justifier une faute,inflected,0.7974,ok,true
-excusés,excuser,verbe,Justifient une faute,Justifier une faute,inflected,0.7974,ok,true
 excès,excès,nom,Trop plein,Trop plein,verbatim,0.6665,ok,true
 excédent,excédent,nom,Trop d'argent,Trop d'argent,verbatim,0.6506,ok,true
 excédents,excédent,nom,Trop d'argents,Trop d'argent,inflected,0.6506,ok,true
@@ -8572,7 +8400,6 @@ fonctionner,fonctionner,verbe,Exécuter son rôle,Exécuter son rôle,verbatim,0
 fonctionnes,fonctionner,verbe,Exécutes son rôle,Exécuter son rôle,inflected,0.6825,ok,true
 fonctionnez,fonctionner,verbe,Exécutez son rôle,Exécuter son rôle,inflected,0.6825,ok,true
 fonctionnât,fonctionner,verbe,Exécutât son rôle,Exécuter son rôle,inflected,0.6825,ok,true
-fonctionné,fonctionner,verbe,Exécute son rôle,Exécuter son rôle,inflected,0.6825,ok,true
 fonctions,fonction,nom,Missions précises,Mission précise,inflected,0.7635,ok,true
 fond,fond,nom,Base d'un récipient,Base d'un récipient,verbatim,0.7079,ok,true
 fondamental,fondamental,adj,Essentiel et primordial,Essentiel et primordial,verbatim,0.6737,ok,true
@@ -8692,10 +8519,6 @@ fortunes,fortune,nom,Richesses acquises,Richesse acquise,inflected,0.6956,ok,tru
 forum,forum,nom,Lieu de débat et d'échange,Lieu de débat et d'échange,verbatim,0.6583,ok,false
 forums,forum,nom,Lieux de débat et d'échange,Lieu de débat et d'échange,inflected,0.6583,ok,false
 forèrent,forer,verbe,Percèrent un trou,Percer un trou,inflected,0.6603,ok,true
-foré,forer,verbe,Perce un trou,Percer un trou,inflected,0.6603,ok,true
-forée,forer,verbe,Perce un trou,Percer un trou,inflected,0.6603,ok,true
-forées,forer,verbe,Percent un trou,Percer un trou,inflected,0.6603,ok,true
-forés,forer,verbe,Percent un trou,Percer un trou,inflected,0.6603,ok,true
 forêt,forêt,nom,Bois dense et étendu,Bois dense et étendu,verbatim,0.6869,ok,true
 forêts,forêt,nom,Bois dense et étendu,Bois dense et étendu,inflected,0.6869,ok,true
 fosse,fosse,nom,Trou profond et large,Trou profond et large,verbatim,0.6936,ok,false
@@ -8824,10 +8647,6 @@ frappons,frapper,verbe,Donnons un coup violent,Donner un coup violent,inflected,
 frappâmes,frapper,verbe,Donnâmes un coup violent,Donner un coup violent,inflected,0.6559,ok,false
 frappât,frapper,verbe,Donnât un coup violent,Donner un coup violent,inflected,0.6559,ok,false
 frappèrent,frapper,verbe,Donnèrent un coup violent,Donner un coup violent,inflected,0.6559,ok,false
-frappé,frapper,verbe,Donne un coup violent,Donner un coup violent,inflected,0.6559,ok,false
-frappée,frapper,verbe,Donne un coup violent,Donner un coup violent,inflected,0.6559,ok,false
-frappées,frapper,verbe,Donnent un coup violent,Donner un coup violent,inflected,0.6559,ok,false
-frappés,frapper,verbe,Donnent un coup violent,Donner un coup violent,inflected,0.6559,ok,false
 fraternité,fraternité,nom,Lien d'amitié,Lien d'amitié,verbatim,0.6686,ok,true
 fraternités,fraternité,nom,Liens d'amitié,Lien d'amitié,inflected,0.6686,ok,true
 fraude,fraude,nom,Action illégale,Action illégale,verbatim,0.6784,ok,true
@@ -8951,10 +8770,6 @@ fêtions,fêter,verbe,Organisions une célébration,Organiser une célébration,
 fêtons,fêter,verbe,Organisons une célébration,Organiser une célébration,inflected,0.7275,ok,false
 fêtâmes,fêter,verbe,Organisâmes une célébration,Organiser une célébration,inflected,0.7275,ok,false
 fêtèrent,fêter,verbe,Organisèrent une célébration,Organiser une célébration,inflected,0.7275,ok,false
-fêté,fêter,verbe,Organise une célébration,Organiser une célébration,inflected,0.7275,ok,false
-fêtée,fêter,verbe,Organise une célébration,Organiser une célébration,inflected,0.7275,ok,false
-fêtées,fêter,verbe,Organisent une célébration,Organiser une célébration,inflected,0.7275,ok,false
-fêtés,fêter,verbe,Organisent une célébration,Organiser une célébration,inflected,0.7275,ok,false
 fîmes,faire,verbe,Exécutâmes une action,Exécuter une action,inflected,0.7956,ok,true
 fîtes,faire,verbe,Exécutâtes une action,Exécuter une action,inflected,0.7956,ok,true
 fûmes,être,verbe,Existâmes et exister,Exister et exister,inflected,0.6982,ok,true
@@ -8989,10 +8804,6 @@ gagnons,gagner,verbe,Emportons la victoire,Emporter la victoire,inflected,0.6611
 gagnâmes,gagner,verbe,Emportâmes la victoire,Emporter la victoire,inflected,0.6611,ok,true
 gagnât,gagner,verbe,Emportât la victoire,Emporter la victoire,inflected,0.6611,ok,true
 gagnèrent,gagner,verbe,Emportèrent la victoire,Emporter la victoire,inflected,0.6611,ok,true
-gagné,gagner,verbe,Emporte la victoire,Emporter la victoire,inflected,0.6611,ok,true
-gagnée,gagner,verbe,Emporte la victoire,Emporter la victoire,inflected,0.6611,ok,true
-gagnées,gagner,verbe,Emportent la victoire,Emporter la victoire,inflected,0.6611,ok,true
-gagnés,gagner,verbe,Emportent la victoire,Emporter la victoire,inflected,0.6611,ok,true
 gaieté,gaieté,nom,Joie et bonne humeur,Joie et bonne humeur,verbatim,0.6676,ok,false
 gaietés,gaieté,nom,Joies et bonnes humeur,Joie et bonne humeur,inflected,0.6676,ok,false
 gain,gain,nom,Prise de profit,Prise de profit,verbatim,0.7209,ok,true
@@ -9223,10 +9034,6 @@ goûtons,goûter,verbe,Dégustons un mets,Déguster un mets,inflected,0.6615,ok,
 goûtâmes,goûter,verbe,Dégustâmes un mets,Déguster un mets,inflected,0.6615,ok,true
 goûtât,goûter,verbe,Dégustât un mets,Déguster un mets,inflected,0.6615,ok,true
 goûtèrent,goûter,verbe,Dégustèrent un mets,Déguster un mets,inflected,0.6615,ok,true
-goûté,goûter,verbe,Déguste un mets,Déguster un mets,inflected,0.6615,ok,true
-goûtée,goûter,verbe,Déguste un mets,Déguster un mets,inflected,0.6615,ok,true
-goûtées,goûter,verbe,Dégustent un mets,Déguster un mets,inflected,0.6615,ok,true
-goûtés,goûter,verbe,Dégustent un mets,Déguster un mets,inflected,0.6615,ok,true
 grade,grade,nom,Niveau scolaire,Niveau scolaire,verbatim,0.6638,ok,true
 grades,grade,nom,Niveaux scolaires,Niveau scolaire,inflected,0.6638,ok,true
 graduation,graduation,nom,Remise des diplômes,Remise des diplômes,verbatim,0.7040,ok,true
@@ -9303,10 +9110,6 @@ grefferont,greffer,verbe,Transplanteront une partie,Transplanter une partie,infl
 greffions,greffer,verbe,Transplantions une partie,Transplanter une partie,inflected,0.7296,ok,false
 greffons,greffer,verbe,Transplantons une partie,Transplanter une partie,inflected,0.7296,ok,false
 greffèrent,greffer,verbe,Transplantèrent une partie,Transplanter une partie,inflected,0.7296,ok,false
-greffé,greffer,verbe,Transplante une partie,Transplanter une partie,inflected,0.7296,ok,true
-greffée,greffer,verbe,Transplante une partie,Transplanter une partie,inflected,0.7296,ok,true
-greffées,greffer,verbe,Transplantent une partie,Transplanter une partie,inflected,0.7296,ok,false
-greffés,greffer,verbe,Transplantent une partie,Transplanter une partie,inflected,0.7296,ok,true
 grenier,grenier,nom,Comble d'une maison,Comble d'une maison,verbatim,0.7328,ok,false
 greniers,grenier,nom,Combles d'une maison,Comble d'une maison,inflected,0.7328,ok,false
 grenu,grenu,adj,De couleur verte,De couleur verte,verbatim,0.6631,ok,true
@@ -9363,10 +9166,6 @@ guidions,guider,verbe,Montrions la voie,Montrer la voie,inflected,0.6942,ok,true
 guidons,guider,verbe,Montrons la voie,Montrer la voie,inflected,0.6942,ok,true
 guidât,guider,verbe,Montrât la voie,Montrer la voie,inflected,0.6942,ok,true
 guidèrent,guider,verbe,Montrèrent la voie,Montrer la voie,inflected,0.6942,ok,true
-guidé,guider,verbe,Montre la voie,Montrer la voie,inflected,0.6942,ok,true
-guidée,guider,verbe,Montre la voie,Montrer la voie,inflected,0.6942,ok,true
-guidées,guider,verbe,Montrent la voie,Montrer la voie,inflected,0.6942,ok,true
-guidés,guider,verbe,Montrent la voie,Montrer la voie,inflected,0.6942,ok,true
 guillotine,guillotine,nom,Instrument de mort,Instrument de mort,verbatim,0.6602,ok,true
 guillotines,guillotine,nom,Instruments de mort,Instrument de mort,inflected,0.6602,ok,true
 guise,guise,nom,Habit extérieur,Habit extérieur,verbatim,0.6903,ok,true
@@ -9752,9 +9551,6 @@ hypothéquas,hypothéquer,verbe,Engageas un bien en garantie,Engager un bien en 
 hypothéquer,hypothéquer,verbe,Engager un bien en garantie,Engager un bien en garantie,verbatim,0.6683,ok,false
 hypothéquez,hypothéquer,verbe,Engagez un bien en garantie,Engager un bien en garantie,inflected,0.6683,ok,false
 hypothéquât,hypothéquer,verbe,Engageât un bien en garantie,Engager un bien en garantie,inflected,0.6683,ok,false
-hypothéqué,hypothéquer,verbe,Engage un bien en garantie,Engager un bien en garantie,inflected,0.6683,ok,false
-hypothéquée,hypothéquer,verbe,Engage un bien en garantie,Engager un bien en garantie,inflected,0.6683,ok,false
-hypothéqués,hypothéquer,verbe,Engagent un bien en garantie,Engager un bien en garantie,inflected,0.6683,ok,false
 hystérique,hystérique,nom,En proie à une crise nerveuse,En proie à une crise nerveuse,verbatim,0.6952,ok,false
 hystériques,hystérique,nom,En proies à une crise nerveuse,En proie à une crise nerveuse,inflected,0.6952,ok,false
 hâta,hâter,verbe,Accéléra le mouvement,Accélérer le mouvement,inflected,0.6866,ok,true
@@ -9788,10 +9584,6 @@ hâtons,hâter,verbe,Accélérons le mouvement,Accélérer le mouvement,inflecte
 hâtâmes,hâter,verbe,Accélérâmes le mouvement,Accélérer le mouvement,inflected,0.6866,ok,false
 hâtât,hâter,verbe,Accélérât le mouvement,Accélérer le mouvement,inflected,0.6866,ok,true
 hâtèrent,hâter,verbe,Accélérèrent le mouvement,Accélérer le mouvement,inflected,0.6866,ok,false
-hâté,hâter,verbe,Accélére le mouvement,Accélérer le mouvement,inflected,0.6866,ok,true
-hâtée,hâter,verbe,Accélére le mouvement,Accélérer le mouvement,inflected,0.6866,ok,false
-hâtées,hâter,verbe,Accélérent le mouvement,Accélérer le mouvement,inflected,0.6866,ok,false
-hâtés,hâter,verbe,Accélérent le mouvement,Accélérer le mouvement,inflected,0.6866,ok,false
 hébergement,hébergement,nom,Logement temporaire,Logement temporaire,verbatim,0.6723,ok,true
 hégémonie,hégémonie,nom,Suprématie et domination,Suprématie et domination,verbatim,0.8163,ok,false
 hégémonies,hégémonie,nom,Suprématies et domination,Suprématie et domination,inflected,0.8163,ok,false
@@ -9903,10 +9695,6 @@ illustrons,illustrer,verbe,Dessinons une image,Dessiner une image,inflected,0.70
 illustrâmes,illustrer,verbe,Dessinâmes une image,Dessiner une image,inflected,0.7050,ok,true
 illustrât,illustrer,verbe,Dessinât une image,Dessiner une image,inflected,0.7050,ok,true
 illustrâtes,illustrer,verbe,Dessinâtes une image,Dessiner une image,inflected,0.7050,ok,true
-illustré,illustrer,verbe,Dessine une image,Dessiner une image,inflected,0.7050,ok,true
-illustrée,illustrer,verbe,Dessine une image,Dessiner une image,inflected,0.7050,ok,true
-illustrées,illustrer,verbe,Dessinent une image,Dessiner une image,inflected,0.7050,ok,true
-illustrés,illustrer,verbe,Dessinent une image,Dessiner une image,inflected,0.7050,ok,true
 imagerie,imagerie,nom,Représentation visuelle,Représentation visuelle,verbatim,0.7130,ok,true
 imageries,imagerie,nom,Représentations visuelles,Représentation visuelle,inflected,0.7130,ok,false
 imagina,imaginer,verbe,Créa une image mentale,Créer une image mentale,inflected,0.7221,ok,false
@@ -9940,10 +9728,6 @@ imaginâmes,imaginer,verbe,Créâmes une image mentale,Créer une image mentale,
 imaginât,imaginer,verbe,Créât une image mentale,Créer une image mentale,inflected,0.7221,ok,false
 imaginâtes,imaginer,verbe,Créâtes une image mentale,Créer une image mentale,inflected,0.7221,ok,false
 imaginèrent,imaginer,verbe,Créèrent une image mentale,Créer une image mentale,inflected,0.7221,ok,false
-imaginé,imaginer,verbe,Crée une image mentale,Créer une image mentale,inflected,0.7221,ok,false
-imaginée,imaginer,verbe,Crée une image mentale,Créer une image mentale,inflected,0.7221,ok,false
-imaginées,imaginer,verbe,Créent une image mentale,Créer une image mentale,inflected,0.7221,ok,false
-imaginés,imaginer,verbe,Créent une image mentale,Créer une image mentale,inflected,0.7221,ok,false
 imam,imam,nom,Chef religieux musulman,Chef religieux musulman,verbatim,0.8494,ok,false
 imams,imam,nom,Chefs religieux musulmans,Chef religieux musulman,inflected,0.8494,ok,false
 imbibition,imbibition,nom,Absorption de liquide,Absorption de liquide,verbatim,0.6689,ok,true
@@ -10151,10 +9935,6 @@ imputions,imputer,verbe,Attribuions la faute,Attribuer la faute,inflected,0.8271
 imputons,imputer,verbe,Attribuons la faute,Attribuer la faute,inflected,0.8271,ok,true
 imputât,imputer,verbe,Attribuât la faute,Attribuer la faute,inflected,0.8271,ok,true
 imputèrent,imputer,verbe,Attribuèrent la faute,Attribuer la faute,inflected,0.8271,ok,true
-imputé,imputer,verbe,Attribue la faute,Attribuer la faute,inflected,0.8271,ok,true
-imputée,imputer,verbe,Attribue la faute,Attribuer la faute,inflected,0.8271,ok,true
-imputées,imputer,verbe,Attribuent la faute,Attribuer la faute,inflected,0.8271,ok,true
-imputés,imputer,verbe,Attribuent la faute,Attribuer la faute,inflected,0.8271,ok,true
 impératrice,impératrice,nom,Dame souveraine,Dame souveraine,verbatim,0.7597,ok,true
 impérieuse,impérieux,adj,Dominante et autoritaire,Dominant et autoritaire,inflected,0.6894,ok,false
 impérieuses,impérieux,adj,Dominantes et autoritaires,Dominant et autoritaire,inflected,0.6894,ok,false
@@ -10460,10 +10240,6 @@ infirmions,infirmer,verbe,Niions la véracité,Nier la véracité,inflected,0.81
 infirmons,infirmer,verbe,Nions la véracité,Nier la véracité,inflected,0.8127,ok,true
 infirmât,infirmer,verbe,Niât la véracité,Nier la véracité,inflected,0.8127,ok,true
 infirmèrent,infirmer,verbe,Nièrent la véracité,Nier la véracité,inflected,0.8127,ok,true
-infirmé,infirmer,verbe,Nie la véracité,Nier la véracité,inflected,0.8127,ok,true
-infirmée,infirmer,verbe,Nie la véracité,Nier la véracité,inflected,0.8127,ok,true
-infirmées,infirmer,verbe,Nient la véracité,Nier la véracité,inflected,0.8127,ok,true
-infirmés,infirmer,verbe,Nient la véracité,Nier la véracité,inflected,0.8127,ok,true
 inflammable,inflammable,adj,Facile à enflammer,Facile à enflammer,verbatim,0.7313,ok,true
 inflation,inflation,nom,Augmentation des prix,Augmentation des prix,verbatim,0.7795,ok,true
 inflations,inflation,nom,Augmentations des prix,Augmentation des prix,inflected,0.7795,ok,true
@@ -10494,10 +10270,6 @@ infligeât,infliger,verbe,Causât un tort physique ou moral,Causer un tort physi
 infligiez,infliger,verbe,Causiez un tort physique ou moral,Causer un tort physique ou moral,inflected,0.7787,ok,false
 infligions,infliger,verbe,Causions un tort physique ou moral,Causer un tort physique ou moral,inflected,0.7787,ok,false
 infligèrent,infliger,verbe,Causèrent un tort physique ou moral,Causer un tort physique ou moral,inflected,0.7787,ok,false
-infligé,infliger,verbe,Cause un tort physique ou moral,Causer un tort physique ou moral,inflected,0.7787,ok,false
-infligée,infliger,verbe,Cause un tort physique ou moral,Causer un tort physique ou moral,inflected,0.7787,ok,false
-infligées,infliger,verbe,Causent un tort physique ou moral,Causer un tort physique ou moral,inflected,0.7787,ok,false
-infligés,infliger,verbe,Causent un tort physique ou moral,Causer un tort physique ou moral,inflected,0.7787,ok,false
 influa,influer,verbe,Eut un impact,Avoir un impact,inflected,0.6587,ok,true
 influaient,influer,verbe,Avaient un impact,Avoir un impact,inflected,0.6587,ok,true
 influait,influer,verbe,Avait un impact,Avoir un impact,inflected,0.6587,ok,true
@@ -10708,10 +10480,6 @@ inspirâmes,inspirer,verbe,Donnâmes une impulsion créative,Donner une impulsio
 inspirât,inspirer,verbe,Donnât une impulsion créative,Donner une impulsion créative,inflected,0.6610,ok,false
 inspirâtes,inspirer,verbe,Donnâtes une impulsion créative,Donner une impulsion créative,inflected,0.6610,ok,false
 inspirèrent,inspirer,verbe,Donnèrent une impulsion créative,Donner une impulsion créative,inflected,0.6610,ok,false
-inspiré,inspirer,verbe,Donne une impulsion créative,Donner une impulsion créative,inflected,0.6610,ok,false
-inspirée,inspirer,verbe,Donne une impulsion créative,Donner une impulsion créative,inflected,0.6610,ok,false
-inspirées,inspirer,verbe,Donnent une impulsion créative,Donner une impulsion créative,inflected,0.6610,ok,false
-inspirés,inspirer,verbe,Donnent une impulsion créative,Donner une impulsion créative,inflected,0.6610,ok,false
 instabilité,instabilité,nom,Manque de solidité,Manque de solidité,verbatim,0.6797,ok,true
 installa,installer,verbe,Mit en place,Mettre en place,inflected,0.7042,ok,true
 installai,installer,verbe,Mis en place,Mettre en place,inflected,0.7042,ok,true
@@ -10913,9 +10681,6 @@ interprétas,interpréter,verbe,Jouas un rôle,Jouer un rôle,inflected,0.7037,o
 interpréter,interpréter,verbe,Jouer un rôle,Jouer un rôle,verbatim,0.7037,ok,true
 interprétez,interpréter,verbe,Jouez un rôle,Jouer un rôle,inflected,0.7037,ok,true
 interprétât,interpréter,verbe,Jouât un rôle,Jouer un rôle,inflected,0.7037,ok,true
-interprété,interpréter,verbe,Joue un rôle,Jouer un rôle,inflected,0.7037,ok,true
-interprétée,interpréter,verbe,Joue un rôle,Jouer un rôle,inflected,0.7037,ok,true
-interprétés,interpréter,verbe,Jouent un rôle,Jouer un rôle,inflected,0.7037,ok,true
 interrompe,interrompre,verbe,Mette fin à un discours,Mettre fin à un discours,inflected,0.6927,ok,true
 interrompes,interrompre,verbe,Mettes fin à un discours,Mettre fin à un discours,inflected,0.6927,ok,true
 interrompez,interrompre,verbe,Mettez fin à un discours,Mettre fin à un discours,inflected,0.6927,ok,true
@@ -11217,10 +10982,6 @@ jours,jour,nom,Moments du temps,Moment du temps,inflected,0.7233,ok,true
 jouâmes,jouer,verbe,Exécutâmes une action,Exécuter une action,inflected,0.7953,ok,true
 jouât,jouer,verbe,Exécutât une action,Exécuter une action,inflected,0.7953,ok,true
 jouèrent,jouer,verbe,Exécutèrent une action,Exécuter une action,inflected,0.7953,ok,true
-joué,jouer,verbe,Exécute une action,Exécuter une action,inflected,0.7953,ok,true
-jouée,jouer,verbe,Exécute une action,Exécuter une action,inflected,0.7953,ok,true
-jouées,jouer,verbe,Exécutent une action,Exécuter une action,inflected,0.7953,ok,true
-joués,jouer,verbe,Exécutent une action,Exécuter une action,inflected,0.7953,ok,true
 juge,juger,verbe,Prononce un verdict,Prononcer un verdict,inflected,0.6842,ok,true
 jugea,juger,verbe,Prononça un verdict,Prononcer un verdict,inflected,0.6842,ok,true
 jugeai,juger,verbe,Prononçai un verdict,Prononcer un verdict,inflected,0.6842,ok,true
@@ -11254,10 +11015,6 @@ jugeâtes,juger,verbe,Prononçâtes un verdict,Prononcer un verdict,inflected,0.
 jugiez,juger,verbe,Prononciez un verdict,Prononcer un verdict,inflected,0.6842,ok,true
 jugions,juger,verbe,Prononcions un verdict,Prononcer un verdict,inflected,0.6842,ok,true
 jugèrent,juger,verbe,Prononcèrent un verdict,Prononcer un verdict,inflected,0.6842,ok,false
-jugé,juger,verbe,Prononce un verdict,Prononcer un verdict,inflected,0.6842,ok,true
-jugée,juger,verbe,Prononce un verdict,Prononcer un verdict,inflected,0.6842,ok,true
-jugées,juger,verbe,Prononcent un verdict,Prononcer un verdict,inflected,0.6842,ok,true
-jugés,juger,verbe,Prononcent un verdict,Prononcer un verdict,inflected,0.6842,ok,true
 juif,juif,nom,De religion hébraïque,De religion hébraïque,verbatim,0.6641,ok,true
 juifs,juif,nom,De religions hébraïques,De religion hébraïque,inflected,0.6641,ok,true
 juive,juif,nom,De religion hébraïque,De religion hébraïque,identity,0.6641,ok,true
@@ -11688,7 +11445,6 @@ légiférez,légiférer,verbe,Exercez le pouvoir de faire les lois,Exercer le po
 légiférions,légiférer,verbe,Exercions le pouvoir de faire les lois,Exercer le pouvoir de faire les lois,inflected,0.7324,ok,false
 légiférons,légiférer,verbe,Exerçons le pouvoir de faire les lois,Exercer le pouvoir de faire les lois,inflected,0.7324,ok,false
 légiférât,légiférer,verbe,Exerçât le pouvoir de faire les lois,Exercer le pouvoir de faire les lois,inflected,0.7324,ok,false
-légiféré,légiférer,verbe,Exerce le pouvoir de faire les lois,Exercer le pouvoir de faire les lois,inflected,0.7324,ok,false
 légion,légion,nom,Troupe de soldats,Troupe de soldats,verbatim,0.6613,ok,true
 légions,légion,nom,Troupes de soldats,Troupe de soldats,inflected,0.6613,ok,true
 législateur,législateur,nom,Détenu par le peuple,Détenu par le peuple,verbatim,0.7528,ok,true
@@ -12179,10 +11935,6 @@ modifions,modifier,verbe,Apportons des changements,Apporter des changements,infl
 modifiâmes,modifier,verbe,Apportâmes des changements,Apporter des changements,inflected,0.6695,ok,false
 modifiât,modifier,verbe,Apportât des changements,Apporter des changements,inflected,0.6695,ok,false
 modifièrent,modifier,verbe,Apportèrent des changements,Apporter des changements,inflected,0.6695,ok,false
-modifié,modifier,verbe,Apporte des changements,Apporter des changements,inflected,0.6695,ok,false
-modifiée,modifier,verbe,Apporte des changements,Apporter des changements,inflected,0.6695,ok,false
-modifiées,modifier,verbe,Apportent des changements,Apporter des changements,inflected,0.6695,ok,false
-modifiés,modifier,verbe,Apportent des changements,Apporter des changements,inflected,0.6695,ok,false
 modus,modus,nom,Manière d'agir,Manière d'agir,verbatim,0.6585,ok,true
 modéré,modéré,nom,Calme et mesuré,Calme et mesuré,verbatim,0.6764,ok,true
 modérée,modéré,nom,Calme et mesuré,Calme et mesuré,inflected,0.6764,ok,true
@@ -12222,9 +11974,6 @@ monopolises,monopoliser,verbe,Exerces un contrôle total,Exercer un contrôle to
 monopolisez,monopoliser,verbe,Exercez un contrôle total,Exercer un contrôle total,inflected,0.7234,ok,false
 monopoliste,monopoliste,nom,Détenteur unique du marché,Détenteur unique du marché,verbatim,0.7166,ok,false
 monopolisât,monopoliser,verbe,Exerçât un contrôle total,Exercer un contrôle total,inflected,0.7234,ok,false
-monopolisé,monopoliser,verbe,Exerce un contrôle total,Exercer un contrôle total,inflected,0.7234,ok,false
-monopolisée,monopoliser,verbe,Exerce un contrôle total,Exercer un contrôle total,inflected,0.7234,ok,false
-monopolisés,monopoliser,verbe,Exercent un contrôle total,Exercer un contrôle total,inflected,0.7234,ok,false
 monothéisme,monothéisme,nom,Croyance en un seul Dieu,Croyance en un seul Dieu,verbatim,0.7654,ok,false
 monothéiste,monothéiste,nom,Croyant en un seul dieu,Croyant en un seul dieu,verbatim,0.7580,ok,false
 monotone,monotone,adj,Un seul ton,Un seul ton,verbatim,0.6676,ok,true
@@ -12281,10 +12030,6 @@ motiveront,motiver,verbe,Donneront un élan,Donner un élan,inflected,0.6547,ok,
 motives,motiver,verbe,Donnes un élan,Donner un élan,inflected,0.6547,ok,true
 motivât,motiver,verbe,Donnât un élan,Donner un élan,inflected,0.6547,ok,true
 motivèrent,motiver,verbe,Donnèrent un élan,Donner un élan,inflected,0.6547,ok,true
-motivé,motiver,verbe,Donne un élan,Donner un élan,inflected,0.6547,ok,true
-motivée,motiver,verbe,Donne un élan,Donner un élan,inflected,0.6547,ok,true
-motivées,motiver,verbe,Donnent un élan,Donner un élan,inflected,0.6547,ok,true
-motivés,motiver,verbe,Donnent un élan,Donner un élan,inflected,0.6547,ok,true
 motrice,moteur,nom,Machine qui produit du mouvement,Machine qui produit du mouvement,inflected,0.7448,ok,false
 motrices,moteur,nom,Machines qui produit du mouvement,Machine qui produit du mouvement,inflected,0.7448,ok,false
 motte,motte,nom,Monticule de terre,Monticule de terre,verbatim,0.6586,ok,true
@@ -12477,10 +12222,6 @@ méditons,méditer,verbe,Pratiquons la réflexion profonde,Pratiquer la réflexi
 méditâmes,méditer,verbe,Pratiquâmes la réflexion profonde,Pratiquer la réflexion profonde,inflected,0.6736,ok,false
 méditât,méditer,verbe,Pratiquât la réflexion profonde,Pratiquer la réflexion profonde,inflected,0.6736,ok,false
 méditèrent,méditer,verbe,Pratiquèrent la réflexion profonde,Pratiquer la réflexion profonde,inflected,0.6736,ok,false
-médité,méditer,verbe,Pratique la réflexion profonde,Pratiquer la réflexion profonde,inflected,0.6736,ok,false
-méditée,méditer,verbe,Pratique la réflexion profonde,Pratiquer la réflexion profonde,inflected,0.6736,ok,false
-méditées,méditer,verbe,Pratiquent la réflexion profonde,Pratiquer la réflexion profonde,inflected,0.6736,ok,false
-médités,méditer,verbe,Pratiquent la réflexion profonde,Pratiquer la réflexion profonde,inflected,0.6736,ok,false
 médullaire,médullaire,nom,Cerveau central,Cerveau central,verbatim,0.7316,ok,true
 médullaires,médullaire,nom,Cerveaux centraux,Cerveau central,inflected,0.7316,ok,true
 méga,méga,nom,Très grand,Très grand,verbatim,0.6855,ok,true
@@ -12779,10 +12520,6 @@ objectâmes,objecter,verbe,Exprimâmes une opposition,Exprimer une opposition,in
 objectât,objecter,verbe,Exprimât une opposition,Exprimer une opposition,inflected,0.7590,ok,false
 objectâtes,objecter,verbe,Exprimâtes une opposition,Exprimer une opposition,inflected,0.7590,ok,false
 objectèrent,objecter,verbe,Exprimèrent une opposition,Exprimer une opposition,inflected,0.7590,ok,false
-objecté,objecter,verbe,Exprime une opposition,Exprimer une opposition,inflected,0.7590,ok,false
-objectée,objecter,verbe,Exprime une opposition,Exprimer une opposition,inflected,0.7590,ok,false
-objectées,objecter,verbe,Expriment une opposition,Exprimer une opposition,inflected,0.7590,ok,false
-objectés,objecter,verbe,Expriment une opposition,Exprimer une opposition,inflected,0.7590,ok,false
 objet,objet,nom,Chose concrète,Chose concrète,verbatim,0.7315,ok,true
 objets,objet,nom,Choses concrètes,Chose concrète,inflected,0.7315,ok,true
 oblige,obliger,verbe,Force à faire,Forcer à faire,inflected,0.7389,ok,true
@@ -12940,9 +12677,6 @@ occasionner,occasionner,verbe,Causer un effet,Causer un effet,verbatim,0.6754,ok
 occasionnes,occasionner,verbe,Causes un effet,Causer un effet,inflected,0.6754,ok,true
 occasionnez,occasionner,verbe,Causez un effet,Causer un effet,inflected,0.6754,ok,true
 occasionnât,occasionner,verbe,Causât un effet,Causer un effet,inflected,0.6754,ok,true
-occasionné,occasionner,verbe,Cause un effet,Causer un effet,inflected,0.6754,ok,true
-occasionnée,occasionner,verbe,Cause un effet,Causer un effet,inflected,0.6754,ok,true
-occasionnés,occasionner,verbe,Causent un effet,Causer un effet,inflected,0.6754,ok,true
 occupa,occuper,verbe,Prit possession,Prendre possession,inflected,0.7225,ok,true
 occupai,occuper,verbe,Pris possession,Prendre possession,inflected,0.7225,ok,true
 occupaient,occuper,verbe,Prenaient possession,Prendre possession,inflected,0.7225,ok,true
@@ -13008,10 +12742,6 @@ octroyons,octroyer,verbe,Accordons un privilège ou un droit,Accorder un privil�
 octroyâmes,octroyer,verbe,Accordâmes un privilège ou un droit,Accorder un privilège ou un droit,inflected,0.8092,ok,false
 octroyât,octroyer,verbe,Accordât un privilège ou un droit,Accorder un privilège ou un droit,inflected,0.8092,ok,false
 octroyèrent,octroyer,verbe,Accordèrent un privilège ou un droit,Accorder un privilège ou un droit,inflected,0.8092,ok,false
-octroyé,octroyer,verbe,Accorde un privilège ou un droit,Accorder un privilège ou un droit,inflected,0.8092,ok,false
-octroyée,octroyer,verbe,Accorde un privilège ou un droit,Accorder un privilège ou un droit,inflected,0.8092,ok,false
-octroyées,octroyer,verbe,Accordent un privilège ou un droit,Accorder un privilège ou un droit,inflected,0.8092,ok,false
-octroyés,octroyer,verbe,Accordent un privilège ou un droit,Accorder un privilège ou un droit,inflected,0.8092,ok,false
 oculaire,oculaire,nom,Relatif à l'œil,Relatif à l'œil,verbatim,0.8399,ok,true
 oculaires,oculaire,nom,Relatifs à l'œil,Relatif à l'œil,inflected,0.8399,ok,true
 océan,océan,nom,Mer immense,Mer immense,verbatim,0.6768,ok,true
@@ -13045,10 +12775,6 @@ offensives,offensive,nom,Attaques hostiles,Attaque hostile,inflected,0.7521,ok,t
 offensons,offenser,verbe,Causons du tort,Causer du tort,inflected,0.6709,ok,true
 offensât,offenser,verbe,Causât du tort,Causer du tort,inflected,0.6709,ok,true
 offensèrent,offenser,verbe,Causèrent du tort,Causer du tort,inflected,0.6709,ok,true
-offensé,offenser,verbe,Cause du tort,Causer du tort,inflected,0.6709,ok,true
-offensée,offenser,verbe,Cause du tort,Causer du tort,inflected,0.6709,ok,true
-offensées,offenser,verbe,Causent du tort,Causer du tort,inflected,0.6709,ok,true
-offensés,offenser,verbe,Causent du tort,Causer du tort,inflected,0.6709,ok,true
 office,office,nom,Lieu de travail administratif,Lieu de travail administratif,verbatim,0.6656,ok,false
 offices,office,nom,Lieux de travail administratif,Lieu de travail administratif,inflected,0.6656,ok,false
 offrande,offrande,nom,Don sacré,Don sacré,verbatim,0.6987,ok,true
@@ -13396,9 +13122,6 @@ outrepasser,outrepasser,verbe,Dépasser les limites,Dépasser les limites,verbat
 outrepasses,outrepasser,verbe,Dépasses les limites,Dépasser les limites,inflected,0.8150,ok,true
 outrepassez,outrepasser,verbe,Dépassez les limites,Dépasser les limites,inflected,0.8150,ok,true
 outrepassât,outrepasser,verbe,Dépassât les limites,Dépasser les limites,inflected,0.8150,ok,true
-outrepassé,outrepasser,verbe,Dépasse les limites,Dépasser les limites,inflected,0.8150,ok,true
-outrepassée,outrepasser,verbe,Dépasse les limites,Dépasser les limites,inflected,0.8150,ok,true
-outrepassés,outrepasser,verbe,Dépassent les limites,Dépasser les limites,inflected,0.8150,ok,true
 outres,outre,nom,De l'autre côté,De l'autre côté,identity,0.6742,ok,true
 ouverture,ouverture,nom,Action de commencer,Action de commencer,verbatim,0.7102,ok,true
 ouvertures,ouverture,nom,Actions de commencer,Action de commencer,inflected,0.7102,ok,true
@@ -13692,10 +13415,6 @@ paysannerie,paysannerie,nom,Population rurale,Population rurale,verbatim,0.7570,
 payâmes,payer,verbe,Versâmes une somme,Verser une somme,inflected,0.7459,ok,true
 payât,payer,verbe,Versât une somme,Verser une somme,inflected,0.7459,ok,true
 payèrent,payer,verbe,Versèrent une somme,Verser une somme,inflected,0.7459,ok,true
-payé,payer,verbe,Verse une somme,Verser une somme,inflected,0.7459,ok,true
-payée,payer,verbe,Verse une somme,Verser une somme,inflected,0.7459,ok,true
-payées,payer,verbe,Versent une somme,Verser une somme,inflected,0.7459,ok,true
-payés,payer,verbe,Versent une somme,Verser une somme,inflected,0.7459,ok,true
 païen,païen,nom,Non-chrétien,Non-chrétien,verbatim,0.6923,ok,true
 païenne,païen,nom,Non-chrétienne,Non-chrétien,inflected,0.6923,ok,true
 païennes,païen,nom,Non-chrétiennes,Non-chrétien,inflected,0.6923,ok,true
@@ -13839,10 +13558,6 @@ peuplez,peupler,verbe,Habitez un lieu,Habiter un lieu,inflected,0.7686,ok,true
 peuplions,peupler,verbe,Habitions un lieu,Habiter un lieu,inflected,0.7686,ok,true
 peuplons,peupler,verbe,Habitons un lieu,Habiter un lieu,inflected,0.7686,ok,true
 peuplèrent,peupler,verbe,Habitèrent un lieu,Habiter un lieu,inflected,0.7686,ok,true
-peuplé,peupler,verbe,Habite un lieu,Habiter un lieu,inflected,0.7686,ok,true
-peuplée,peupler,verbe,Habite un lieu,Habiter un lieu,inflected,0.7686,ok,true
-peuplées,peupler,verbe,Habitent un lieu,Habiter un lieu,inflected,0.7686,ok,true
-peuplés,peupler,verbe,Habitent un lieu,Habiter un lieu,inflected,0.7686,ok,true
 peut,pouvoir,verbe,Capacité d'agit,Capacité d'agir,inflected,0.7234,ok,true
 peuvent,pouvoir,verbe,Capacité d'agissent,Capacité d'agir,inflected,0.7234,ok,true
 peux,pouvoir,verbe,Capacité d'agis,Capacité d'agir,inflected,0.7234,ok,true
@@ -14674,10 +14389,6 @@ provoquons,provoquer,verbe,Causons un effet,Causer un effet,inflected,0.7429,ok,
 provoquâmes,provoquer,verbe,Causâmes un effet,Causer un effet,inflected,0.7429,ok,true
 provoquât,provoquer,verbe,Causât un effet,Causer un effet,inflected,0.7429,ok,true
 provoquâtes,provoquer,verbe,Causâtes un effet,Causer un effet,inflected,0.7429,ok,true
-provoqué,provoquer,verbe,Cause un effet,Causer un effet,inflected,0.7429,ok,true
-provoquée,provoquer,verbe,Cause un effet,Causer un effet,inflected,0.7429,ok,true
-provoquées,provoquer,verbe,Causent un effet,Causer un effet,inflected,0.7429,ok,true
-provoqués,provoquer,verbe,Causent un effet,Causer un effet,inflected,0.7429,ok,true
 proéminence,proéminence,nom,Saillie en avant,Saillie en avant,verbatim,0.6555,ok,true
 prudence,prudence,nom,Attention mesurée,Attention mesurée,verbatim,0.6938,ok,true
 prudences,prudence,nom,Attentions mesurées,Attention mesurée,inflected,0.6938,ok,true
@@ -14856,10 +14567,6 @@ présidons,présider,verbe,Dirigeons une réunion,Diriger une réunion,inflected
 présidât,présider,verbe,Dirigeât une réunion,Diriger une réunion,inflected,0.6782,ok,true
 présidâtes,présider,verbe,Dirigeâtes une réunion,Diriger une réunion,inflected,0.6782,ok,true
 présidèrent,présider,verbe,Dirigèrent une réunion,Diriger une réunion,inflected,0.6782,ok,true
-présidé,présider,verbe,Dirige une réunion,Diriger une réunion,inflected,0.6782,ok,true
-présidée,présider,verbe,Dirige une réunion,Diriger une réunion,inflected,0.6782,ok,true
-présidées,présider,verbe,Dirigent une réunion,Diriger une réunion,inflected,0.6782,ok,true
-présidés,présider,verbe,Dirigent une réunion,Diriger une réunion,inflected,0.6782,ok,true
 présomption,présomption,nom,Idée reçue,Idée reçue,verbatim,0.7165,ok,true
 présuma,présumer,verbe,Tint pour acquis,Tenir pour acquis,inflected,0.7367,ok,true
 présumai,présumer,verbe,Tins pour acquis,Tenir pour acquis,inflected,0.7367,ok,true
@@ -14922,10 +14629,6 @@ prêchons,prêcher,verbe,Proclamons la parole divine,Proclamer la parole divine,
 prêchâmes,prêcher,verbe,Proclamâmes la parole divine,Proclamer la parole divine,inflected,0.6832,ok,false
 prêchât,prêcher,verbe,Proclamât la parole divine,Proclamer la parole divine,inflected,0.6832,ok,false
 prêchèrent,prêcher,verbe,Proclamèrent la parole divine,Proclamer la parole divine,inflected,0.6832,ok,false
-prêché,prêcher,verbe,Proclame la parole divine,Proclamer la parole divine,inflected,0.6832,ok,false
-prêchée,prêcher,verbe,Proclame la parole divine,Proclamer la parole divine,inflected,0.6832,ok,false
-prêchées,prêcher,verbe,Proclament la parole divine,Proclamer la parole divine,inflected,0.6832,ok,false
-prêchés,prêcher,verbe,Proclament la parole divine,Proclamer la parole divine,inflected,0.6832,ok,false
 prêt,prêt,adj,Accord financier,Accord financier,verbatim,0.6788,ok,true
 prête,prêt,adj,Accord financière,Accord financier,inflected,0.6788,ok,true
 prêtes,prêt,adj,Accord financières,Accord financier,inflected,0.6788,ok,true
@@ -15203,10 +14906,6 @@ rabaissiez,rabaisser,verbe,Diminuiez le prix,Diminuer le prix,inflected,0.7064,o
 rabaissions,rabaisser,verbe,Diminuions le prix,Diminuer le prix,inflected,0.7064,ok,true
 rabaissons,rabaisser,verbe,Diminuons le prix,Diminuer le prix,inflected,0.7064,ok,true
 rabaissât,rabaisser,verbe,Diminuât le prix,Diminuer le prix,inflected,0.7064,ok,true
-rabaissé,rabaisser,verbe,Diminue le prix,Diminuer le prix,inflected,0.7064,ok,true
-rabaissée,rabaisser,verbe,Diminue le prix,Diminuer le prix,inflected,0.7064,ok,true
-rabaissées,rabaisser,verbe,Diminuent le prix,Diminuer le prix,inflected,0.7064,ok,true
-rabaissés,rabaisser,verbe,Diminuent le prix,Diminuer le prix,inflected,0.7064,ok,true
 rabattement,rabattement,nom,Action de plier en arrière,Action de plier en arrière,verbatim,0.6718,ok,false
 rabot,rabot,nom,Outil de menuiserie,Outil de menuiserie,verbatim,0.6566,ok,true
 rabots,rabot,nom,Outils de menuiserie,Outil de menuiserie,inflected,0.6566,ok,true
@@ -15245,10 +14944,6 @@ racontâmes,raconter,verbe,Narrâmes un récit,Narrer un récit,inflected,0.6500
 racontât,raconter,verbe,Narrât un récit,Narrer un récit,inflected,0.6500,ok,true
 racontâtes,raconter,verbe,Narrâtes un récit,Narrer un récit,inflected,0.6500,ok,true
 racontèrent,raconter,verbe,Narrèrent un récit,Narrer un récit,inflected,0.6500,ok,true
-raconté,raconter,verbe,Narre un récit,Narrer un récit,inflected,0.6500,ok,true
-racontée,raconter,verbe,Narre un récit,Narrer un récit,inflected,0.6500,ok,true
-racontées,raconter,verbe,Narrent un récit,Narrer un récit,inflected,0.6500,ok,true
-racontés,raconter,verbe,Narrent un récit,Narrer un récit,inflected,0.6500,ok,true
 rade,rade,nom,Dernier refuge,Dernier refuge,verbatim,0.6753,ok,true
 radeau,radeau,nom,Vaisseau flottant,Vaisseau flottant,verbatim,0.8524,ok,true
 radeaux,radeau,nom,Vaisseaux flottants,Vaisseau flottant,inflected,0.8524,ok,true
@@ -15312,10 +15007,6 @@ ramassons,ramasser,verbe,Rassemblons des objets,Rassembler des objets,inflected,
 ramassâmes,ramasser,verbe,Rassemblâmes des objets,Rassembler des objets,inflected,0.6580,ok,false
 ramassât,ramasser,verbe,Rassemblât des objets,Rassembler des objets,inflected,0.6580,ok,true
 ramassèrent,ramasser,verbe,Rassemblèrent des objets,Rassembler des objets,inflected,0.6580,ok,false
-ramassé,ramasser,verbe,Rassemble des objets,Rassembler des objets,inflected,0.6580,ok,true
-ramassée,ramasser,verbe,Rassemble des objets,Rassembler des objets,inflected,0.6580,ok,true
-ramassées,ramasser,verbe,Rassemblent des objets,Rassembler des objets,inflected,0.6580,ok,false
-ramassés,ramasser,verbe,Rassemblent des objets,Rassembler des objets,inflected,0.6580,ok,true
 rampe,rampe,nom,Pente d'accès,Pente d'accès,verbatim,0.6545,ok,true
 rampes,rampe,nom,Pentes d'accès,Pente d'accès,inflected,0.6545,ok,true
 rang,rang,nom,Échelon social,Échelon social,verbatim,0.7464,ok,true
@@ -15723,7 +15414,6 @@ remédions,remédier,verbe,Apportons une solution,Apporter une solution,inflecte
 remédiâmes,remédier,verbe,Apportâmes une solution,Apporter une solution,inflected,0.7185,ok,false
 remédiât,remédier,verbe,Apportât une solution,Apporter une solution,inflected,0.7185,ok,false
 remédièrent,remédier,verbe,Apportèrent une solution,Apporter une solution,inflected,0.7185,ok,false
-remédié,remédier,verbe,Apporte une solution,Apporter une solution,inflected,0.7185,ok,false
 renard,renard,nom,Animal rusé et agile,Animal rusé et agile,verbatim,0.6600,ok,true
 renarde,renard,nom,Animale rusé et agile,Animal rusé et agile,inflected,0.6600,ok,false
 renardes,renard,nom,Animales rusé et agiles,Animal rusé et agile,inflected,0.6600,ok,false
@@ -15858,10 +15548,6 @@ renseignez,renseigner,verbe,Donnez des informations,Donner des informations,infl
 renseigniez,renseigner,verbe,Donniez des informations,Donner des informations,inflected,0.7427,ok,false
 renseignons,renseigner,verbe,Donnons des informations,Donner des informations,inflected,0.7427,ok,false
 renseignât,renseigner,verbe,Donnât des informations,Donner des informations,inflected,0.7427,ok,false
-renseigné,renseigner,verbe,Donne des informations,Donner des informations,inflected,0.7427,ok,false
-renseignée,renseigner,verbe,Donne des informations,Donner des informations,inflected,0.7427,ok,false
-renseignées,renseigner,verbe,Donnent des informations,Donner des informations,inflected,0.7427,ok,false
-renseignés,renseigner,verbe,Donnent des informations,Donner des informations,inflected,0.7427,ok,false
 rentabilité,rentabilité,nom,Bénéfice net,Bénéfice net,verbatim,0.7740,ok,true
 rentable,rentable,adj,Capable de rapporter un bénéfice,Capable de rapporter un bénéfice,verbatim,0.7622,ok,false
 rentables,rentable,adj,Capables de rapporter un bénéfice,Capable de rapporter un bénéfice,inflected,0.7622,ok,false
@@ -16044,9 +15730,6 @@ représentes,représenter,verbe,Joues un rôle,Jouer un rôle,inflected,0.7036,o
 représentez,représenter,verbe,Jouez un rôle,Jouer un rôle,inflected,0.7036,ok,true
 représentât,représenter,verbe,Jouât un rôle,Jouer un rôle,inflected,0.7036,ok,true
 représentè,représenter,verbe,Jouent un rôle,Jouer un rôle,inflected,0.7036,ok,true
-représenté,représenter,verbe,Joue un rôle,Jouer un rôle,inflected,0.7036,ok,true
-représentée,représenter,verbe,Joue un rôle,Jouer un rôle,inflected,0.7036,ok,true
-représentés,représenter,verbe,Jouent un rôle,Jouer un rôle,inflected,0.7036,ok,true
 repère,repère,nom,Point de référence,Point de référence,verbatim,0.6842,ok,true
 repèrent,repérer,verbe,Trouvent et marquer un lieu précis,Trouver et marquer un lieu précis,inflected,0.6693,ok,false
 repèrerait,repérer,verbe,Trouverait et marquer un lieu précis,Trouver et marquer un lieu précis,inflected,0.6693,ok,false
@@ -16201,10 +15884,6 @@ retardâmes,retarder,verbe,Différâmes le moment,Différer le moment,inflected,
 retardât,retarder,verbe,Différât le moment,Différer le moment,inflected,0.6813,ok,true
 retardâtes,retarder,verbe,Différâtes le moment,Différer le moment,inflected,0.6813,ok,true
 retardèrent,retarder,verbe,Différèrent le moment,Différer le moment,inflected,0.6813,ok,true
-retardé,retarder,verbe,Différe le moment,Différer le moment,inflected,0.6813,ok,true
-retardée,retarder,verbe,Différe le moment,Différer le moment,inflected,0.6813,ok,true
-retardées,retarder,verbe,Différent le moment,Différer le moment,inflected,0.6813,ok,true
-retardés,retarder,verbe,Différent le moment,Différer le moment,inflected,0.6813,ok,true
 retenti,retentir,verbe,Écho sonore,Écho sonore,head-pos-mismatch,0.6812,ok,true
 retentir,retentir,verbe,Écho sonore,Écho sonore,verbatim,0.6812,ok,true
 retentira,retentir,verbe,Écho sonore,Écho sonore,head-pos-mismatch,0.6812,ok,true
@@ -16233,17 +15912,10 @@ retranchez,retrancher,verbe,Enlevez une partie,Enlever une partie,inflected,0.84
 retranchiez,retrancher,verbe,Enleviez une partie,Enlever une partie,inflected,0.8450,ok,true
 retranchons,retrancher,verbe,Enlevons une partie,Enlever une partie,inflected,0.8450,ok,true
 retranchât,retrancher,verbe,Enlevât une partie,Enlever une partie,inflected,0.8450,ok,true
-retranché,retrancher,verbe,Enleve une partie,Enlever une partie,inflected,0.8450,ok,true
-retranchée,retrancher,verbe,Enleve une partie,Enlever une partie,inflected,0.8450,ok,true
-retranchées,retrancher,verbe,Enlevent une partie,Enlever une partie,inflected,0.8450,ok,true
-retranchés,retrancher,verbe,Enlevent une partie,Enlever une partie,inflected,0.8450,ok,true
 revalorisa,revaloriser,verbe,Donna une nouvelle valeur,Donner une nouvelle valeur,inflected,0.6852,ok,false
 revalorise,revaloriser,verbe,Donne une nouvelle valeur,Donner une nouvelle valeur,inflected,0.6852,ok,false
 revaloriser,revaloriser,verbe,Donner une nouvelle valeur,Donner une nouvelle valeur,verbatim,0.6852,ok,false
 revalorisez,revaloriser,verbe,Donnez une nouvelle valeur,Donner une nouvelle valeur,inflected,0.6852,ok,false
-revalorisé,revaloriser,verbe,Donne une nouvelle valeur,Donner une nouvelle valeur,inflected,0.6852,ok,false
-revalorisée,revaloriser,verbe,Donne une nouvelle valeur,Donner une nouvelle valeur,inflected,0.6852,ok,false
-revalorisés,revaloriser,verbe,Donnent une nouvelle valeur,Donner une nouvelle valeur,inflected,0.6852,ok,false
 revendiqua,revendiquer,verbe,Défendit une cause,Défendre une cause,inflected,0.6887,ok,true
 revendiquai,revendiquer,verbe,Défendis une cause,Défendre une cause,inflected,0.6887,ok,true
 revendique,revendiquer,verbe,Défend une cause,Défendre une cause,inflected,0.6887,ok,true
@@ -16503,9 +16175,6 @@ récompenser,récompenser,verbe,Donner un prix,Donner un prix,verbatim,0.6607,ok
 récompenses,récompense,nom,Prix mérité,Prix mérité,inflected,0.6616,ok,true
 récompensez,récompenser,verbe,Donnez un prix,Donner un prix,inflected,0.6607,ok,true
 récompensât,récompenser,verbe,Donnât un prix,Donner un prix,inflected,0.6607,ok,true
-récompensé,récompenser,verbe,Donne un prix,Donner un prix,inflected,0.6607,ok,true
-récompensée,récompenser,verbe,Donne un prix,Donner un prix,inflected,0.6607,ok,true
-récompensés,récompenser,verbe,Donnent un prix,Donner un prix,inflected,0.6607,ok,true
 réconfort,réconfort,nom,Apaisement et soutien,Apaisement et soutien,verbatim,0.6623,ok,true
 réconforts,réconfort,nom,Apaisements et soutien,Apaisement et soutien,inflected,0.6623,ok,false
 récréation,récréation,nom,Temps de jeu et détente,Temps de jeu et détente,verbatim,0.8441,ok,false
@@ -16564,10 +16233,6 @@ réfutions,réfuter,verbe,Démontrions le contraire,Démontrer le contraire,infl
 réfutons,réfuter,verbe,Démontrons le contraire,Démontrer le contraire,inflected,0.6567,ok,false
 réfutât,réfuter,verbe,Démontrât le contraire,Démontrer le contraire,inflected,0.6567,ok,true
 réfutèrent,réfuter,verbe,Démontrèrent le contraire,Démontrer le contraire,inflected,0.6567,ok,false
-réfuté,réfuter,verbe,Démontre le contraire,Démontrer le contraire,inflected,0.6567,ok,true
-réfutée,réfuter,verbe,Démontre le contraire,Démontrer le contraire,inflected,0.6567,ok,true
-réfutées,réfuter,verbe,Démontrent le contraire,Démontrer le contraire,inflected,0.6567,ok,false
-réfutés,réfuter,verbe,Démontrent le contraire,Démontrer le contraire,inflected,0.6567,ok,true
 référence,référence,nom,Point de repère,Point de repère,verbatim,0.6892,ok,true
 références,référence,nom,Points de repère,Point de repère,inflected,0.6892,ok,true
 référendum,référendum,nom,Vote populaire,Vote populaire,verbatim,0.6668,ok,true
@@ -16633,10 +16298,6 @@ réglons,régler,verbe,Apportons une solution,Apporter une solution,inflected,0.
 réglâmes,régler,verbe,Apportâmes une solution,Apporter une solution,inflected,0.7185,ok,false
 réglât,régler,verbe,Apportât une solution,Apporter une solution,inflected,0.7185,ok,false
 réglèrent,régler,verbe,Apportèrent une solution,Apporter une solution,inflected,0.7185,ok,false
-réglé,régler,verbe,Apporte une solution,Apporter une solution,inflected,0.7185,ok,false
-réglée,régler,verbe,Apporte une solution,Apporter une solution,inflected,0.7185,ok,false
-réglées,régler,verbe,Apportent une solution,Apporter une solution,inflected,0.7185,ok,false
-réglés,régler,verbe,Apportent une solution,Apporter une solution,inflected,0.7185,ok,false
 régulation,régulation,nom,Action de contrôler et d'ajuster,Action de contrôler et d'ajuster,verbatim,0.6860,ok,false
 régulations,régulation,nom,Actions de contrôler et d'ajuster,Action de contrôler et d'ajuster,inflected,0.6860,ok,false
 régénère,régénérer,verbe,Redonne vie et force,Redonner vie et force,inflected,0.7126,ok,true
@@ -16822,7 +16483,6 @@ résidions,résider,verbe,Habitions un lieu,Habiter un lieu,inflected,0.7209,ok,
 résidons,résider,verbe,Habitons un lieu,Habiter un lieu,inflected,0.7209,ok,true
 résidât,résider,verbe,Habitât un lieu,Habiter un lieu,inflected,0.7209,ok,true
 résidèrent,résider,verbe,Habitèrent un lieu,Habiter un lieu,inflected,0.7209,ok,true
-résidé,résider,verbe,Habite un lieu,Habiter un lieu,inflected,0.7209,ok,true
 résignation,résignation,nom,Acceptation du sort,Acceptation du sort,verbatim,0.7457,ok,true
 résiliation,résiliation,nom,Annulation d'un contrat,Annulation d'un contrat,verbatim,0.6773,ok,true
 résine,résine,nom,Substance visqueuse,Substance visqueuse,verbatim,0.7954,ok,true
@@ -17065,10 +16725,6 @@ sanctifiez,sanctifier,verbe,Consacrez le lieu saint,Consacrer le lieu saint,infl
 sanctifiiez,sanctifier,verbe,Consacriez le lieu saint,Consacrer le lieu saint,inflected,0.7348,ok,true
 sanctifions,sanctifier,verbe,Consacrons le lieu saint,Consacrer le lieu saint,inflected,0.7348,ok,true
 sanctifiât,sanctifier,verbe,Consacrât le lieu saint,Consacrer le lieu saint,inflected,0.7348,ok,true
-sanctifié,sanctifier,verbe,Consacre le lieu saint,Consacrer le lieu saint,inflected,0.7348,ok,true
-sanctifiée,sanctifier,verbe,Consacre le lieu saint,Consacrer le lieu saint,inflected,0.7348,ok,true
-sanctifiées,sanctifier,verbe,Consacrent le lieu saint,Consacrer le lieu saint,inflected,0.7348,ok,true
-sanctifiés,sanctifier,verbe,Consacrent le lieu saint,Consacrer le lieu saint,inflected,0.7348,ok,true
 sanction,sanction,nom,Mesure punitive,Mesure punitive,verbatim,0.7148,ok,true
 sanctionna,sanctionner,verbe,Appliqua une punition,Appliquer une punition,inflected,0.7447,ok,false
 sanctionnai,sanctionner,verbe,Appliquai une punition,Appliquer une punition,inflected,0.7447,ok,false
@@ -17078,9 +16734,6 @@ sanctionner,sanctionner,verbe,Appliquer une punition,Appliquer une punition,verb
 sanctionnes,sanctionner,verbe,Appliques une punition,Appliquer une punition,inflected,0.7447,ok,false
 sanctionnez,sanctionner,verbe,Appliquez une punition,Appliquer une punition,inflected,0.7447,ok,false
 sanctionnât,sanctionner,verbe,Appliquât une punition,Appliquer une punition,inflected,0.7447,ok,false
-sanctionné,sanctionner,verbe,Applique une punition,Appliquer une punition,inflected,0.7447,ok,false
-sanctionnée,sanctionner,verbe,Applique une punition,Appliquer une punition,inflected,0.7447,ok,false
-sanctionnés,sanctionner,verbe,Appliquent une punition,Appliquer une punition,inflected,0.7447,ok,false
 sanctions,sanction,nom,Mesures punitives,Mesure punitive,inflected,0.7148,ok,true
 sang,sang,nom,Liquide vital,Liquide vital,verbatim,0.7396,ok,true
 sangs,sang,nom,Liquides vitaux,Liquide vital,inflected,0.7396,ok,true
@@ -17445,10 +17098,6 @@ soignons,soigner,verbe,Apportons des soins et des remèdes,Apporter des soins et
 soignâmes,soigner,verbe,Apportâmes des soins et des remèdes,Apporter des soins et des remèdes,inflected,0.7070,ok,false
 soignât,soigner,verbe,Apportât des soins et des remèdes,Apporter des soins et des remèdes,inflected,0.7070,ok,false
 soignèrent,soigner,verbe,Apportèrent des soins et des remèdes,Apporter des soins et des remèdes,inflected,0.7070,ok,false
-soigné,soigner,verbe,Apporte des soins et des remèdes,Apporter des soins et des remèdes,inflected,0.7070,ok,false
-soignée,soigner,verbe,Apporte des soins et des remèdes,Apporter des soins et des remèdes,inflected,0.7070,ok,false
-soignées,soigner,verbe,Apportent des soins et des remèdes,Apporter des soins et des remèdes,inflected,0.7070,ok,false
-soignés,soigner,verbe,Apportent des soins et des remèdes,Apporter des soins et des remèdes,inflected,0.7070,ok,false
 soir,soir,nom,Temps du jour,Temps du jour,verbatim,0.6525,ok,true
 soirs,soir,nom,Temps du jour,Temps du jour,inflected,0.6525,ok,true
 soirée,soirée,nom,Moment de la journée,Moment de la journée,verbatim,0.6861,ok,true
@@ -17615,10 +17264,6 @@ souderait,souder,verbe,Assemblerait des pièces,Assembler des pièces,inflected,
 souderont,souder,verbe,Assembleront des pièces,Assembler des pièces,inflected,0.7381,ok,false
 soudes,soude,nom,Métaux en fusion,Métal en fusion,inflected,0.6946,ok,true
 soudèrent,souder,verbe,Assemblèrent des pièces,Assembler des pièces,inflected,0.7381,ok,false
-soudé,souder,verbe,Assemble des pièces,Assembler des pièces,inflected,0.7381,ok,true
-soudée,souder,verbe,Assemble des pièces,Assembler des pièces,inflected,0.7381,ok,true
-soudées,souder,verbe,Assemblent des pièces,Assembler des pièces,inflected,0.7381,ok,false
-soudés,souder,verbe,Assemblent des pièces,Assembler des pièces,inflected,0.7381,ok,true
 souffert,souffrir,verbe,Enduré une épreuve,Endurer une épreuve,inflected,0.6686,ok,true
 soufferte,souffrir,verbe,Endurée une épreuve,Endurer une épreuve,inflected,0.6686,ok,false
 souffertes,souffrir,verbe,Endurées une épreuve,Endurer une épreuve,inflected,0.6686,ok,false
@@ -17815,10 +17460,6 @@ statut,statut,nom,Position sociale,Position sociale,verbatim,0.6764,ok,true
 statuts,statut,nom,Positions sociales,Position sociale,inflected,0.6764,ok,true
 statuât,statuer,verbe,Prononçât un jugement,Prononcer un jugement,inflected,0.6843,ok,false
 statuèrent,statuer,verbe,Prononcèrent un jugement,Prononcer un jugement,inflected,0.6843,ok,false
-statué,statuer,verbe,Prononce un jugement,Prononcer un jugement,inflected,0.6843,ok,false
-statuée,statuer,verbe,Prononce un jugement,Prononcer un jugement,inflected,0.6843,ok,false
-statuées,statuer,verbe,Prononcent un jugement,Prononcer un jugement,inflected,0.6843,ok,false
-statués,statuer,verbe,Prononcent un jugement,Prononcer un jugement,inflected,0.6843,ok,false
 stimula,stimuler,verbe,Donna de l'énergie,Donner de l'énergie,inflected,0.6803,ok,true
 stimulai,stimuler,verbe,Donnai de l'énergie,Donner de l'énergie,inflected,0.6803,ok,true
 stimulaient,stimuler,verbe,Donnaient de l'énergie,Donner de l'énergie,inflected,0.6803,ok,true
@@ -18077,10 +17718,6 @@ suggérâmes,suggérer,verbe,Donnâmes un conseil,Donner un conseil,inflected,0.
 suggérât,suggérer,verbe,Donnât un conseil,Donner un conseil,inflected,0.6922,ok,true
 suggérâtes,suggérer,verbe,Donnâtes un conseil,Donner un conseil,inflected,0.6922,ok,true
 suggérèrent,suggérer,verbe,Donnèrent un conseil,Donner un conseil,inflected,0.6922,ok,true
-suggéré,suggérer,verbe,Donne un conseil,Donner un conseil,inflected,0.6922,ok,true
-suggérée,suggérer,verbe,Donne un conseil,Donner un conseil,inflected,0.6922,ok,true
-suggérées,suggérer,verbe,Donnent un conseil,Donner un conseil,inflected,0.6922,ok,true
-suggérés,suggérer,verbe,Donnent un conseil,Donner un conseil,inflected,0.6922,ok,true
 suicide,suicide,nom,Action de se donner la mort,Action de se donner la mort,verbatim,0.7090,ok,false
 suicides,suicide,nom,Actions de se donner la mort,Action de se donner la mort,inflected,0.7090,ok,false
 suie,suie,nom,Cendre de bois,Cendre de bois,verbatim,0.6583,ok,true
@@ -18210,10 +17847,6 @@ supports,support,nom,Aides et assistance,Aide et assistance,inflected,0.7205,ok,
 supportâmes,supporter,verbe,Apportâmes son aide,Apporter son aide,inflected,0.6567,ok,true
 supportât,supporter,verbe,Apportât son aide,Apporter son aide,inflected,0.6567,ok,true
 supportâtes,supporter,verbe,Apportâtes son aide,Apporter son aide,inflected,0.6567,ok,true
-supporté,supporter,verbe,Apporte son aide,Apporter son aide,inflected,0.6567,ok,true
-supportée,supporter,verbe,Apporte son aide,Apporter son aide,inflected,0.6567,ok,true
-supportées,supporter,verbe,Apportent son aide,Apporter son aide,inflected,0.6567,ok,true
-supportés,supporter,verbe,Apportent son aide,Apporter son aide,inflected,0.6567,ok,true
 supposition,supposition,nom,Hypothèse probable,Hypothèse probable,verbatim,0.6737,ok,true
 suppression,suppression,nom,Action d'éliminer,Action d'éliminer,verbatim,0.6697,ok,true
 supérieur,supérieur,nom,Au-dessus dans l'espace,Au-dessus dans l'espace,verbatim,0.6833,ok,false
@@ -18275,10 +17908,6 @@ surpassions,surpasser,verbe,Dépassions les limites,Dépasser les limites,inflec
 surpassons,surpasser,verbe,Dépassons les limites,Dépasser les limites,inflected,0.7963,ok,true
 surpassâmes,surpasser,verbe,Dépassâmes les limites,Dépasser les limites,inflected,0.7963,ok,true
 surpassât,surpasser,verbe,Dépassât les limites,Dépasser les limites,inflected,0.7963,ok,true
-surpassé,surpasser,verbe,Dépasse les limites,Dépasser les limites,inflected,0.7963,ok,true
-surpassée,surpasser,verbe,Dépasse les limites,Dépasser les limites,inflected,0.7963,ok,true
-surpassées,surpasser,verbe,Dépassent les limites,Dépasser les limites,inflected,0.7963,ok,true
-surpassés,surpasser,verbe,Dépassent les limites,Dépasser les limites,inflected,0.7963,ok,true
 surpression,surpression,nom,Action de réduire le volume sonore,Action de réduire le volume sonore,verbatim,0.6551,ok,false
 surprise,surprise,nom,Étonnement soudain,Étonnement soudain,verbatim,0.6644,ok,true
 surprises,surprise,nom,Étonnements soudains,Étonnement soudain,inflected,0.6644,ok,true
@@ -18394,10 +18023,6 @@ symbolisme,symbolisme,nom,Expression d'idées par des images,Expression d'idées
 symbolismes,symbolisme,nom,Expressions d'idées par des images,Expression d'idées par des images,inflected,0.7736,ok,false
 symbolisons,symboliser,verbe,Représentons une idée,Représenter une idée,inflected,0.7543,ok,true
 symbolisât,symboliser,verbe,Représentât une idée,Représenter une idée,inflected,0.7543,ok,true
-symbolisé,symboliser,verbe,Représente une idée,Représenter une idée,inflected,0.7543,ok,true
-symbolisée,symboliser,verbe,Représente une idée,Représenter une idée,inflected,0.7543,ok,true
-symbolisées,symboliser,verbe,Représentent une idée,Représenter une idée,inflected,0.7543,ok,true
-symbolisés,symboliser,verbe,Représentent une idée,Représenter une idée,inflected,0.7543,ok,true
 symphonie,symphonie,nom,Composition musicale ample,Composition musicale ample,verbatim,0.7056,ok,false
 symphonies,symphonie,nom,Compositions musicales amples,Composition musicale ample,inflected,0.7056,ok,false
 symposia,symposium,nom,Rencontres savantes,Rencontre savante,inflected,0.6803,ok,true
@@ -18433,9 +18058,6 @@ synthétiser,synthétiser,verbe,Réaliser une composition musicale,Réaliser une
 synthétises,synthétiser,verbe,Réalises une composition musicale,Réaliser une composition musicale,inflected,0.6719,ok,false
 synthétisez,synthétiser,verbe,Réalisez une composition musicale,Réaliser une composition musicale,inflected,0.6719,ok,false
 synthétisât,synthétiser,verbe,Réalisât une composition musicale,Réaliser une composition musicale,inflected,0.6719,ok,false
-synthétisé,synthétiser,verbe,Réalise une composition musicale,Réaliser une composition musicale,inflected,0.6719,ok,false
-synthétisée,synthétiser,verbe,Réalise une composition musicale,Réaliser une composition musicale,inflected,0.6719,ok,false
-synthétisés,synthétiser,verbe,Réalisent une composition musicale,Réaliser une composition musicale,inflected,0.6719,ok,false
 syphilis,syphilis,nom,Maladie vénérienne,Maladie vénérienne,verbatim,0.6635,ok,true
 système,système,nom,Ensemble organisé,Ensemble organisé,verbatim,0.6958,ok,true
 systèmes,système,nom,Ensembles organisés,Ensemble organisé,inflected,0.6958,ok,true
@@ -18633,10 +18255,6 @@ taxes,taxe,nom,Impôts prélevés par l'État,Impôt prélevé par l'État,infle
 taxon,taxon,nom,Groupe d'organismes,Groupe d'organismes,verbatim,0.7012,ok,false
 taxons,taxer,verbe,Imposons un prélèvement,Imposer un prélèvement,inflected,0.6841,ok,false
 taxèrent,taxer,verbe,Imposèrent un prélèvement,Imposer un prélèvement,inflected,0.6841,ok,false
-taxé,taxer,verbe,Impose un prélèvement,Imposer un prélèvement,inflected,0.6841,ok,false
-taxée,taxer,verbe,Impose un prélèvement,Imposer un prélèvement,inflected,0.6841,ok,false
-taxées,taxer,verbe,Imposent un prélèvement,Imposer un prélèvement,inflected,0.6841,ok,false
-taxés,taxer,verbe,Imposent un prélèvement,Imposer un prélèvement,inflected,0.6841,ok,false
 tech,tech,nom,Avancée technologique,Avancée technologique,verbatim,0.6776,ok,false
 technicien,technicien,nom,Spécialiste de la maintenance,Spécialiste de la maintenance,verbatim,0.6826,ok,false
 techniciens,technicien,nom,Spécialistes de la maintenance,Spécialiste de la maintenance,inflected,0.6826,ok,false
@@ -18871,10 +18489,6 @@ tourmentiez,tourmenter,verbe,Causiez du chagrin et de la souffrance,Causer du ch
 tourmentons,tourmenter,verbe,Causons du chagrin et de la souffrance,Causer du chagrin et de la souffrance,inflected,0.7032,ok,false
 tourments,tourment,nom,Souffrances morales,Souffrance morale,inflected,0.7293,ok,true
 tourmentât,tourmenter,verbe,Causât du chagrin et de la souffrance,Causer du chagrin et de la souffrance,inflected,0.7032,ok,false
-tourmenté,tourmenter,verbe,Cause du chagrin et de la souffrance,Causer du chagrin et de la souffrance,inflected,0.7032,ok,false
-tourmentée,tourmenter,verbe,Cause du chagrin et de la souffrance,Causer du chagrin et de la souffrance,inflected,0.7032,ok,false
-tourmentées,tourmenter,verbe,Causent du chagrin et de la souffrance,Causer du chagrin et de la souffrance,inflected,0.7032,ok,false
-tourmentés,tourmenter,verbe,Causent du chagrin et de la souffrance,Causer du chagrin et de la souffrance,inflected,0.7032,ok,false
 tournage,tournage,nom,Action de filmer,Action de filmer,verbatim,0.7122,ok,true
 tournages,tournage,nom,Actions de filmer,Action de filmer,inflected,0.7122,ok,true
 tournesol,tournesol,nom,Fleur jaune et massive,Fleur jaune et massive,verbatim,0.7132,ok,true
@@ -19110,10 +18724,6 @@ travailliez,travailler,verbe,Exerciez une activité rémunérée,Exercer une act
 travaillons,travailler,verbe,Exerçons une activité rémunérée,Exercer une activité rémunérée,inflected,0.6554,ok,false
 travaillât,travailler,verbe,Exerçât une activité rémunérée,Exercer une activité rémunérée,inflected,0.6554,ok,false
 travaillè,travailler,verbe,Exercent une activité rémunérée,Exercer une activité rémunérée,inflected,0.6554,ok,false
-travaillé,travailler,verbe,Exerce une activité rémunérée,Exercer une activité rémunérée,inflected,0.6554,ok,false
-travaillée,travailler,verbe,Exerce une activité rémunérée,Exercer une activité rémunérée,inflected,0.6554,ok,false
-travaillées,travailler,verbe,Exercent une activité rémunérée,Exercer une activité rémunérée,inflected,0.6554,ok,false
-travaillés,travailler,verbe,Exercent une activité rémunérée,Exercer une activité rémunérée,inflected,0.6554,ok,false
 traça,tracer,verbe,Suivit un chemin,Suivre un chemin,inflected,0.7108,ok,true
 traçai,tracer,verbe,Suivis un chemin,Suivre un chemin,inflected,0.7108,ok,true
 traçaient,tracer,verbe,Suivaient un chemin,Suivre un chemin,inflected,0.7108,ok,true
@@ -19251,10 +18861,6 @@ troublons,troubler,verbe,Causons du désordre,Causer du désordre,inflected,0.72
 troublâmes,troubler,verbe,Causâmes du désordre,Causer du désordre,inflected,0.7264,ok,true
 troublât,troubler,verbe,Causât du désordre,Causer du désordre,inflected,0.7264,ok,true
 troublèrent,troubler,verbe,Causèrent du désordre,Causer du désordre,inflected,0.7264,ok,true
-troublé,troubler,verbe,Cause du désordre,Causer du désordre,inflected,0.7264,ok,true
-troublée,troubler,verbe,Cause du désordre,Causer du désordre,inflected,0.7264,ok,true
-troublées,troubler,verbe,Causent du désordre,Causer du désordre,inflected,0.7264,ok,true
-troublés,troubler,verbe,Causent du désordre,Causer du désordre,inflected,0.7264,ok,true
 troupe,troupe,nom,Groupe d'artistes,Groupe d'artistes,verbatim,0.6587,ok,true
 troupeau,troupeau,nom,Groupe d'animaux,Groupe d'animaux,verbatim,0.6719,ok,true
 troupeaux,troupeau,nom,Groupes d'animaux,Groupe d'animaux,inflected,0.6719,ok,true
@@ -19822,10 +19428,6 @@ visualisée,visualiser,verbe,Représentée mentalement,Représenter mentalement,
 visualisées,visualiser,verbe,Représentées mentalement,Représenter mentalement,inflected,0.7396,ok,false
 visualisés,visualiser,verbe,Représentés mentalement,Représenter mentalement,inflected,0.7396,ok,false
 visèrent,viser,verbe,Pointèrent une cible,Pointer une cible,inflected,0.7110,ok,true
-visé,viser,verbe,Pointe une cible,Pointer une cible,inflected,0.7110,ok,true
-visée,viser,verbe,Pointe une cible,Pointer une cible,inflected,0.7110,ok,true
-visées,viser,verbe,Pointent une cible,Pointer une cible,inflected,0.7110,ok,true
-visés,viser,verbe,Pointent une cible,Pointer une cible,inflected,0.7110,ok,true
 vital,vital,adj,Essentiel à la vie,Essentiel à la vie,verbatim,0.7125,ok,true
 vitale,vital,adj,Essentielle à la vie,Essentiel à la vie,inflected,0.7125,ok,true
 vitales,vital,adj,Essentielles à la vie,Essentiel à la vie,inflected,0.7125,ok,true
@@ -20374,10 +19976,6 @@ zéros,zéro,nom,Points de départ,Point de départ,inflected,0.7013,ok,true
 énumérions,énumérer,verbe,Citions un à un,Citer un à un,inflected,0.7695,ok,true
 énumérons,énumérer,verbe,Citons un à un,Citer un à un,inflected,0.7695,ok,true
 énumérèrent,énumérer,verbe,Citèrent un à un,Citer un à un,inflected,0.7695,ok,true
-énuméré,énumérer,verbe,Cite un à un,Citer un à un,inflected,0.7695,ok,true
-énumérée,énumérer,verbe,Cite un à un,Citer un à un,inflected,0.7695,ok,true
-énumérées,énumérer,verbe,Citent un à un,Citer un à un,inflected,0.7695,ok,true
-énumérés,énumérer,verbe,Citent un à un,Citer un à un,inflected,0.7695,ok,true
 épanoui,épanouir,verbe,Développé et fleurir,Développer et fleurir,inflected,0.6559,ok,true
 épanouie,épanouir,verbe,Développée et fleurir,Développer et fleurir,inflected,0.6559,ok,true
 épanouies,épanouir,verbe,Développées et fleurir,Développer et fleurir,inflected,0.6559,ok,true
@@ -20514,10 +20112,6 @@ zéros,zéro,nom,Points de départ,Point de départ,inflected,0.7013,ok,true
 érigeât,ériger,verbe,Élevât une construction,Élever une construction,inflected,0.8193,ok,false
 érigions,ériger,verbe,Élevions une construction,Élever une construction,inflected,0.8193,ok,false
 érigèrent,ériger,verbe,Élevèrent une construction,Élever une construction,inflected,0.8193,ok,false
-érigé,ériger,verbe,Éleve une construction,Élever une construction,inflected,0.8193,ok,false
-érigée,ériger,verbe,Éleve une construction,Élever une construction,inflected,0.8193,ok,false
-érigées,ériger,verbe,Élevent une construction,Élever une construction,inflected,0.8193,ok,false
-érigés,ériger,verbe,Élevent une construction,Élever une construction,inflected,0.8193,ok,false
 érosion,érosion,nom,Usure du sol,Usure du sol,verbatim,0.7388,ok,true
 érosions,érosion,nom,Usures du sol,Usure du sol,inflected,0.7388,ok,true
 érotique,érotique,adj,Sensuel et suggestif,Sensuel et suggestif,verbatim,0.7143,ok,true
@@ -20714,10 +20308,6 @@ zéros,zéro,nom,Points de départ,Point de départ,inflected,0.7013,ok,true
 évaluât,évaluer,verbe,Jaugeât la valeur,Jauger la valeur,inflected,0.6850,ok,true
 évaluâtes,évaluer,verbe,Jaugeâtes la valeur,Jauger la valeur,inflected,0.6850,ok,true
 évaluèrent,évaluer,verbe,Jaugèrent la valeur,Jauger la valeur,inflected,0.6850,ok,true
-évalué,évaluer,verbe,Jauge la valeur,Jauger la valeur,inflected,0.6850,ok,true
-évaluée,évaluer,verbe,Jauge la valeur,Jauger la valeur,inflected,0.6850,ok,true
-évaluées,évaluer,verbe,Jaugent la valeur,Jauger la valeur,inflected,0.6850,ok,true
-évalués,évaluer,verbe,Jaugent la valeur,Jauger la valeur,inflected,0.6850,ok,true
 évangile,évangile,nom,Message de salut,Message de salut,verbatim,0.6779,ok,true
 évangiles,évangile,nom,Messages de salut,Message de salut,inflected,0.6779,ok,true
 évapora,évaporer,verbe,Se transforma en vapeur,Se transformer en vapeur,inflected,0.6539,ok,false

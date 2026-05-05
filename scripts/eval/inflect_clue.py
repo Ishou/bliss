@@ -43,12 +43,24 @@ _PRE_HEAD_ADJ_LEMMAS = {
 
 # Determiners and contracted forms that introduce a direct-object NP after a
 # transitive head verb. Used to detect lemma clues of the shape
-# `[head_verb] [det] [noun]` — for those clues we suppress past-participle
-# inflation, because a PP head with a stranded direct object is
-# ungrammatical: `Percer un trou` → PP `Percée un trou` is wrong (would need
-# a `de`-PP rephrase, `Percée d'un trou`, which doesn't always read well).
-# Falling through to a finite form (3sg present `Perce un trou`) is reliably
-# grammatical even if less natural than the lemma's infinitive.
+# `[head_verb] [det] [noun]` — for those clues past-participle inflation is
+# unsafe, because a PP head with a stranded direct object is ungrammatical:
+# `Percer un trou` → PP `Percée un trou` is wrong (would need a `de`-PP
+# rephrase, `Percée d'un trou`, which doesn't always read well).
+#
+# When the surface form admits non-PP moods on the same row, we fall through
+# to one of those (e.g. a syncretic `{ipre, ppas}` row inflates to ipre).
+# When the surface is PP-only, we cannot ship the verbal lemma clue at all:
+# the synthesized 3sg/3pl indicative-present (`Perce un trou`) describes an
+# action, but the answer in the grid is the past participle as an adjective
+# describing a state. Action-clue for state-form answer is the wrong category
+# (mots-fléchés convention is that `forée` is clued by something glossing
+# "drilled, in the state of having been drilled", not "drills").
+#
+# Adjectival-clue sourcing for these answers is the proper long-term fix and
+# is tracked separately. Until then we drop the row from the surface clues
+# table, letting the runtime placeholder (the surface form rendered as-is)
+# ship in its place — strictly better than a semantically wrong action clue.
 #
 # Excludes prepositions (`à`, `en`, `de`, …) — those introduce a PP-headed
 # complement, not a direct object, and PP inflation works fine for them
@@ -126,7 +138,17 @@ _PERSON_PREFERENCE = ("2sg", "3sg", "3pl", "2pl", "1pl", "1sg")
 @dataclass
 class InflectionResult:
     text: str
-    flag: str  # '' | 'no-target-pos' | 'no-head' | 'no-inflection' | 'identity'
+    # '' | 'no-target-pos' | 'no-head' | 'no-inflection' | 'identity'
+    # | 'pp-only-skipped'
+    #
+    # `pp-only-skipped`: surface is PP-only AND the lemma clue has the shape
+    # `[verb] [det] [noun]` (transitive head + direct-object NP). Inflating
+    # to PP would strand the direct object (`Percée un trou`), and falling
+    # back to a finite form (`Perce un trou`) is the wrong semantic category
+    # — past participles in mots-fléchés expect an adjectival clue describing
+    # a state ("drilled", not "drills"). Caller is expected to drop the row
+    # so the runtime ships the surface placeholder instead.
+    flag: str
 
 
 def _decompose_targets(
@@ -316,11 +338,15 @@ def inflect_clue(
     # `associes`, and we ship that.
     # Suppress past-participle inflation when the clue has a direct-object
     # NP after the head verb. PP head + DObj is ungrammatical in French
-    # adjectival usage (`Percée un trou`); we'd need a `de`-PP rephrase
-    # (`Percée d'un trou`) which doesn't always read well, so we instead
-    # fall through to a finite form (`Perce un trou`) — reliably
-    # grammatical, and the worst case is the fallback chain bottoms out
-    # in `no-inflection` and we ship the lemma form.
+    # adjectival usage (`Percée un trou`); a `de`-PP rephrase
+    # (`Percée d'un trou`) doesn't always read well either.
+    #
+    # If the surface admits non-PP moods on the same row (syncretic
+    # ipre+ppas etc.), the decomposition picks one of those and we proceed
+    # normally. If the surface is PP-only, we surface `pp-only-skipped` so
+    # the caller can drop the row entirely — see the InflectionResult.flag
+    # docstring for the rationale (semantic category mismatch: action clue
+    # for a state-form answer).
     skip_moods: frozenset[str] = frozenset()
     pp_skipped = False
     if (
@@ -348,24 +374,11 @@ def inflect_clue(
                 chosen_target = trial
                 break
 
-    # Synthetic finite-form fallback for the PP-skip case. When the surface
-    # is a "pure" past participle (no other moods on the row, e.g.
-    # `percée → {ppas, fem, sg}`), the decomposition above yields no
-    # candidates because we filtered the only mood. Rather than bailing to
-    # the lemma form (`Percer un trou`), substitute the indicative present
-    # 3rd person matching the surface number — `Perce un trou` reads as a
-    # much more natural mots-fléchés clue than the bare infinitive. We
-    # only synthesize ipre/3sg/3pl: imperative (`Perce`) reads as a command,
-    # and 1st/2nd person rarely match a crossword answer's morphology.
-    if not inflected and pp_skipped:
-        target_number = (target & NUMBER_TOKENS) - {"inv"}
-        person = "3pl" if "pl" in target_number else "3sg"
-        synthetic = {"ipre", person}
-        candidate = index.inflect(head_lemma, synthetic, prefer_pos=target_pos)
-        if candidate:
-            inflected = candidate
-            chosen_target = synthetic
     if not inflected:
+        # PP-only surface + DObj clue: the verbal lemma is the wrong category
+        # for the answer's state-form semantics. Drop the row.
+        if pp_skipped:
+            return InflectionResult(_capitalize_first(clue), "pp-only-skipped")
         return InflectionResult(_capitalize_first(clue), "no-inflection")
     target = chosen_target
 

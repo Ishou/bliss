@@ -25175,3 +25175,413 @@ unissiez,unir,verbe,Associer ensemble,Associer ensemble,no-inflection,0.7220,ple
 unissions,unir,verbe,Associer ensemble,Associer ensemble,no-inflection,0.7220,pleonasm,true
 unissons,unir,verbe,Associons ensemble,Associer ensemble,inflected,0.7220,pleonasm,true
 unit,unir,verbe,Associer ensemble,Associer ensemble,no-inflection,0.7220,pleonasm,true
+accordé,accorder,verbe,Donne une faveur,Donner une faveur,pp-only-skipped,0.7310,ok,true
+accordée,accorder,verbe,Donne une faveur,Donner une faveur,pp-only-skipped,0.7310,ok,true
+accordées,accorder,verbe,Donnent une faveur,Donner une faveur,pp-only-skipped,0.7310,ok,true
+accordés,accorder,verbe,Donnent une faveur,Donner une faveur,pp-only-skipped,0.7310,ok,true
+accumulé,accumuler,verbe,Amasse des richesses,Amasser des richesses,pp-only-skipped,0.7159,ok,false
+accumulée,accumuler,verbe,Amasse des richesses,Amasser des richesses,pp-only-skipped,0.7159,ok,false
+accumulées,accumuler,verbe,Amassent des richesses,Amasser des richesses,pp-only-skipped,0.7159,ok,false
+accumulés,accumuler,verbe,Amassent des richesses,Amasser des richesses,pp-only-skipped,0.7159,ok,false
+aggravé,aggraver,verbe,Empire la situation,Empirer la situation,pp-only-skipped,0.6640,ok,true
+aggravée,aggraver,verbe,Empire la situation,Empirer la situation,pp-only-skipped,0.6640,ok,true
+aggravées,aggraver,verbe,Empirent la situation,Empirer la situation,pp-only-skipped,0.6640,ok,true
+aggravés,aggraver,verbe,Empirent la situation,Empirer la situation,pp-only-skipped,0.6640,ok,true
+alloué,allouer,verbe,Accorde une faveur,Accorder une faveur,pp-only-skipped,0.6738,ok,true
+allouée,allouer,verbe,Accorde une faveur,Accorder une faveur,pp-only-skipped,0.6738,ok,true
+allouées,allouer,verbe,Accordent une faveur,Accorder une faveur,pp-only-skipped,0.6738,ok,true
+alloués,allouer,verbe,Accordent une faveur,Accorder une faveur,pp-only-skipped,0.6738,ok,true
+amendé,amender,verbe,Apporte des modifications,Apporter des modifications,pp-only-skipped,0.8193,ok,false
+amendée,amender,verbe,Apporte des modifications,Apporter des modifications,pp-only-skipped,0.8193,ok,false
+amendées,amender,verbe,Apportent des modifications,Apporter des modifications,pp-only-skipped,0.8193,ok,false
+amendés,amender,verbe,Apportent des modifications,Apporter des modifications,pp-only-skipped,0.8193,ok,false
+assigné,assigner,verbe,Attribue une tâche,Attribuer une tâche,pp-only-skipped,0.7514,ok,true
+assignée,assigner,verbe,Attribue une tâche,Attribuer une tâche,pp-only-skipped,0.7514,ok,true
+assignées,assigner,verbe,Attribuent une tâche,Attribuer une tâche,pp-only-skipped,0.7514,ok,true
+assignés,assigner,verbe,Attribuent une tâche,Attribuer une tâche,pp-only-skipped,0.7514,ok,true
+attardé,attarder,verbe,Retarde le moment,Retarder le moment,pp-only-skipped,0.6898,ok,true
+attardée,attarder,verbe,Retarde le moment,Retarder le moment,pp-only-skipped,0.6898,ok,true
+attardées,attarder,verbe,Retardent le moment,Retarder le moment,pp-only-skipped,0.6898,ok,true
+attardés,attarder,verbe,Retardent le moment,Retarder le moment,pp-only-skipped,0.6898,ok,true
+attribué,attribuer,verbe,Confie un rôle,Confier un rôle,pp-only-skipped,0.7235,ok,true
+attribuée,attribuer,verbe,Confie un rôle,Confier un rôle,pp-only-skipped,0.7235,ok,true
+attribuées,attribuer,verbe,Confient un rôle,Confier un rôle,pp-only-skipped,0.7235,ok,true
+attribués,attribuer,verbe,Confient un rôle,Confier un rôle,pp-only-skipped,0.7235,ok,true
+autorisé,autoriser,verbe,Donne le droit,Donner le droit,pp-only-skipped,0.6691,ok,true
+autorisée,autoriser,verbe,Donne le droit,Donner le droit,pp-only-skipped,0.6691,ok,true
+autorisées,autoriser,verbe,Donnent le droit,Donner le droit,pp-only-skipped,0.6691,ok,true
+autorisés,autoriser,verbe,Donnent le droit,Donner le droit,pp-only-skipped,0.6691,ok,true
+avéré,avérer,verbe,Confirme la vérité,Confirmer la vérité,pp-only-skipped,0.8870,ok,true
+avérée,avérer,verbe,Confirme la vérité,Confirmer la vérité,pp-only-skipped,0.8870,ok,true
+avérées,avérer,verbe,Confirment la vérité,Confirmer la vérité,pp-only-skipped,0.8870,ok,true
+avérés,avérer,verbe,Confirment la vérité,Confirmer la vérité,pp-only-skipped,0.8870,ok,true
+barré,barrer,verbe,Trace une ligne,Tracer une ligne,pp-only-skipped,0.7362,ok,true
+barrée,barrer,verbe,Trace une ligne,Tracer une ligne,pp-only-skipped,0.7362,ok,true
+barrées,barrer,verbe,Tracent une ligne,Tracer une ligne,pp-only-skipped,0.7362,ok,true
+barrés,barrer,verbe,Tracent une ligne,Tracer une ligne,pp-only-skipped,0.7362,ok,true
+blâmé,blâmer,verbe,Recherche un coupable,Rechercher un coupable,pp-only-skipped,0.6511,ok,false
+blâmée,blâmer,verbe,Recherche un coupable,Rechercher un coupable,pp-only-skipped,0.6511,ok,false
+blâmées,blâmer,verbe,Recherchent un coupable,Rechercher un coupable,pp-only-skipped,0.6511,ok,false
+blâmés,blâmer,verbe,Recherchent un coupable,Rechercher un coupable,pp-only-skipped,0.6511,ok,false
+causé,causer,verbe,Provoque un effet,Provoquer un effet,pp-only-skipped,0.7425,ok,true
+causée,causer,verbe,Provoque un effet,Provoquer un effet,pp-only-skipped,0.7425,ok,true
+causées,causer,verbe,Provoquent un effet,Provoquer un effet,pp-only-skipped,0.7425,ok,true
+causés,causer,verbe,Provoquent un effet,Provoquer un effet,pp-only-skipped,0.7425,ok,true
+commercé,commercer,verbe,Échange des biens,Échanger des biens,pp-only-skipped,0.6876,ok,true
+complété,compléter,verbe,Paracheve une tâche,Parachever une tâche,pp-only-skipped,0.6645,ok,true
+complétée,compléter,verbe,Paracheve une tâche,Parachever une tâche,pp-only-skipped,0.6645,ok,true
+complétées,compléter,verbe,Parachevent une tâche,Parachever une tâche,pp-only-skipped,0.6645,ok,true
+complétés,compléter,verbe,Parachevent une tâche,Parachever une tâche,pp-only-skipped,0.6645,ok,true
+concrétisé,concrétiser,verbe,Donne une forme tangible,Donner une forme tangible,pp-only-skipped,0.7075,ok,false
+concrétisée,concrétiser,verbe,Donne une forme tangible,Donner une forme tangible,pp-only-skipped,0.7075,ok,false
+concrétisés,concrétiser,verbe,Donnent une forme tangible,Donner une forme tangible,pp-only-skipped,0.7075,ok,false
+concédé,concéder,verbe,Accorde un avantage,Accorder un avantage,pp-only-skipped,0.6657,ok,true
+concédée,concéder,verbe,Accorde un avantage,Accorder un avantage,pp-only-skipped,0.6657,ok,false
+concédées,concéder,verbe,Accordent un avantage,Accorder un avantage,pp-only-skipped,0.6657,ok,false
+concédés,concéder,verbe,Accordent un avantage,Accorder un avantage,pp-only-skipped,0.6657,ok,false
+condamné,condamner,verbe,Prononce un verdict de culpabilité,Prononcer un verdict de culpabilité,pp-only-skipped,0.6866,ok,false
+condamnée,condamner,verbe,Prononce un verdict de culpabilité,Prononcer un verdict de culpabilité,pp-only-skipped,0.6866,ok,false
+condamnées,condamner,verbe,Prononcent un verdict de culpabilité,Prononcer un verdict de culpabilité,pp-only-skipped,0.6866,ok,false
+condamnés,condamner,verbe,Prononcent un verdict de culpabilité,Prononcer un verdict de culpabilité,pp-only-skipped,0.6866,ok,false
+conféré,conférer,verbe,Accorde un pouvoir ou un privilège,Accorder un pouvoir ou un privilège,pp-only-skipped,0.7175,ok,false
+conférée,conférer,verbe,Accorde un pouvoir ou un privilège,Accorder un pouvoir ou un privilège,pp-only-skipped,0.7175,ok,false
+conférées,conférer,verbe,Accordent un pouvoir ou un privilège,Accorder un pouvoir ou un privilège,pp-only-skipped,0.7175,ok,false
+conférés,conférer,verbe,Accordent un pouvoir ou un privilège,Accorder un pouvoir ou un privilège,pp-only-skipped,0.7175,ok,false
+conjecturé,conjecturer,verbe,Formule une hypothèse,Formuler une hypothèse,pp-only-skipped,0.7190,ok,false
+conjecturée,conjecturer,verbe,Formule une hypothèse,Formuler une hypothèse,pp-only-skipped,0.7190,ok,false
+conjecturés,conjecturer,verbe,Formulent une hypothèse,Formuler une hypothèse,pp-only-skipped,0.7190,ok,false
+conjuré,conjurer,verbe,Appele les esprits,Appeler les esprits,pp-only-skipped,0.7026,ok,true
+conjurée,conjurer,verbe,Appele les esprits,Appeler les esprits,pp-only-skipped,0.7026,ok,true
+conjurées,conjurer,verbe,Appelent les esprits,Appeler les esprits,pp-only-skipped,0.7026,ok,true
+conjurés,conjurer,verbe,Appelent les esprits,Appeler les esprits,pp-only-skipped,0.7026,ok,true
+constitué,constituer,verbe,Forme un ensemble,Former un ensemble,pp-only-skipped,0.7074,ok,true
+constituée,constituer,verbe,Forme un ensemble,Former un ensemble,pp-only-skipped,0.7074,ok,true
+constituées,constituer,verbe,Forment un ensemble,Former un ensemble,pp-only-skipped,0.7074,ok,true
+constitués,constituer,verbe,Forment un ensemble,Former un ensemble,pp-only-skipped,0.7074,ok,true
+contribué,contribuer,verbe,Apporte son aide,Apporter son aide,pp-only-skipped,0.6570,ok,true
+conversé,converser,verbe,Échange des paroles,Échanger des paroles,pp-only-skipped,0.8562,ok,true
+convoqué,convoquer,verbe,Rassemble les gens,Rassembler les gens,pp-only-skipped,0.6580,ok,true
+convoquée,convoquer,verbe,Rassemble les gens,Rassembler les gens,pp-only-skipped,0.6580,ok,true
+convoquées,convoquer,verbe,Rassemblent les gens,Rassembler les gens,pp-only-skipped,0.6580,ok,true
+convoqués,convoquer,verbe,Rassemblent les gens,Rassembler les gens,pp-only-skipped,0.6580,ok,true
+corrigé,corriger,verbe,Apporte des modifications,Apporter des modifications,pp-only-skipped,0.6627,ok,false
+corrigée,corriger,verbe,Apporte des modifications,Apporter des modifications,pp-only-skipped,0.6627,ok,false
+corrigées,corriger,verbe,Apportent des modifications,Apporter des modifications,pp-only-skipped,0.6627,ok,false
+corrigés,corriger,verbe,Apportent des modifications,Apporter des modifications,pp-only-skipped,0.6627,ok,false
+corroboré,corroborer,verbe,Appuye un témoignage,Appuyer un témoignage,pp-only-skipped,0.7382,ok,true
+corroborée,corroborer,verbe,Appuye un témoignage,Appuyer un témoignage,pp-only-skipped,0.7382,ok,false
+corroborées,corroborer,verbe,Appuyent un témoignage,Appuyer un témoignage,pp-only-skipped,0.7382,ok,false
+corroborés,corroborer,verbe,Appuyent un témoignage,Appuyer un témoignage,pp-only-skipped,0.7382,ok,true
+cultivé,cultiver,verbe,Travaille la terre,Travailler la terre,pp-only-skipped,0.7055,ok,true
+cultivée,cultiver,verbe,Travaille la terre,Travailler la terre,pp-only-skipped,0.7055,ok,true
+cultivées,cultiver,verbe,Travaillent la terre,Travailler la terre,pp-only-skipped,0.7055,ok,true
+cultivés,cultiver,verbe,Travaillent la terre,Travailler la terre,pp-only-skipped,0.7055,ok,true
+demandé,demander,verbe,Sollicite une chose,Solliciter une chose,pp-only-skipped,0.7720,ok,true
+demandée,demander,verbe,Sollicite une chose,Solliciter une chose,pp-only-skipped,0.7720,ok,true
+demandées,demander,verbe,Sollicitent une chose,Solliciter une chose,pp-only-skipped,0.7720,ok,true
+demandés,demander,verbe,Sollicitent une chose,Solliciter une chose,pp-only-skipped,0.7720,ok,true
+dessiné,dessiner,verbe,Trace une image,Tracer une image,pp-only-skipped,0.6836,ok,true
+dessinée,dessiner,verbe,Trace une image,Tracer une image,pp-only-skipped,0.6836,ok,true
+dessinées,dessiner,verbe,Tracent une image,Tracer une image,pp-only-skipped,0.6836,ok,true
+dessinés,dessiner,verbe,Tracent une image,Tracer une image,pp-only-skipped,0.6836,ok,true
+deviné,deviner,verbe,Trouve la réponse,Trouver la réponse,pp-only-skipped,0.7720,ok,true
+devinée,deviner,verbe,Trouve la réponse,Trouver la réponse,pp-only-skipped,0.7720,ok,true
+devinées,deviner,verbe,Trouvent la réponse,Trouver la réponse,pp-only-skipped,0.7720,ok,true
+devinés,deviner,verbe,Trouvent la réponse,Trouver la réponse,pp-only-skipped,0.7720,ok,true
+doté,doter,verbe,Donne des moyens,Donner des moyens,pp-only-skipped,0.7162,ok,true
+dotée,doter,verbe,Donne des moyens,Donner des moyens,pp-only-skipped,0.7162,ok,true
+dotées,doter,verbe,Donnent des moyens,Donner des moyens,pp-only-skipped,0.7162,ok,true
+dotés,doter,verbe,Donnent des moyens,Donner des moyens,pp-only-skipped,0.7162,ok,true
+déchargé,décharger,verbe,Libére du poids,Libérer du poids,pp-only-skipped,0.6629,ok,true
+déchargée,décharger,verbe,Libére du poids,Libérer du poids,pp-only-skipped,0.6629,ok,true
+déchargées,décharger,verbe,Libérent du poids,Libérer du poids,pp-only-skipped,0.6629,ok,true
+déchargés,décharger,verbe,Libérent du poids,Libérer du poids,pp-only-skipped,0.6629,ok,true
+délimité,délimiter,verbe,Trace une frontière,Tracer une frontière,pp-only-skipped,0.7077,ok,true
+délimitée,délimiter,verbe,Trace une frontière,Tracer une frontière,pp-only-skipped,0.7077,ok,true
+délimitées,délimiter,verbe,Tracent une frontière,Tracer une frontière,pp-only-skipped,0.7077,ok,true
+délimités,délimiter,verbe,Tracent une frontière,Tracer une frontière,pp-only-skipped,0.7077,ok,true
+démontré,démontrer,verbe,Apporte la preuve,Apporter la preuve,pp-only-skipped,0.6784,ok,true
+démontrée,démontrer,verbe,Apporte la preuve,Apporter la preuve,pp-only-skipped,0.6784,ok,true
+démontrées,démontrer,verbe,Apportent la preuve,Apporter la preuve,pp-only-skipped,0.6784,ok,true
+démontrés,démontrer,verbe,Apportent la preuve,Apporter la preuve,pp-only-skipped,0.6784,ok,true
+dépensé,dépenser,verbe,Engage des frais,Engager des frais,pp-only-skipped,0.6656,ok,true
+dépensée,dépenser,verbe,Engage des frais,Engager des frais,pp-only-skipped,0.6656,ok,true
+dépensées,dépenser,verbe,Engagent des frais,Engager des frais,pp-only-skipped,0.6656,ok,true
+dépensés,dépenser,verbe,Engagent des frais,Engager des frais,pp-only-skipped,0.6656,ok,true
+désarmé,désarmer,verbe,Retire les armes,Retirer les armes,pp-only-skipped,0.7474,ok,true
+désarmée,désarmer,verbe,Retire les armes,Retirer les armes,pp-only-skipped,0.7474,ok,true
+désarmées,désarmer,verbe,Retirent les armes,Retirer les armes,pp-only-skipped,0.7474,ok,true
+désarmés,désarmer,verbe,Retirent les armes,Retirer les armes,pp-only-skipped,0.7474,ok,true
+déshabillé,déshabiller,verbe,Retire les vêtements,Retirer les vêtements,pp-only-skipped,0.6861,ok,true
+déshabillée,déshabiller,verbe,Retire les vêtements,Retirer les vêtements,pp-only-skipped,0.6861,ok,true
+déshabillés,déshabiller,verbe,Retirent les vêtements,Retirer les vêtements,pp-only-skipped,0.6861,ok,true
+endommagé,endommager,verbe,Cause une détérioration,Causer une détérioration,pp-only-skipped,0.8239,ok,false
+endommagée,endommager,verbe,Cause une détérioration,Causer une détérioration,pp-only-skipped,0.8239,ok,false
+endommagées,endommager,verbe,Causent une détérioration,Causer une détérioration,pp-only-skipped,0.8239,ok,false
+endommagés,endommager,verbe,Causent une détérioration,Causer une détérioration,pp-only-skipped,0.8239,ok,false
+enflammé,enflammer,verbe,Allume un feu,Allumer un feu,pp-only-skipped,0.7138,ok,true
+enflammée,enflammer,verbe,Allume un feu,Allumer un feu,pp-only-skipped,0.7138,ok,true
+enflammées,enflammer,verbe,Allument un feu,Allumer un feu,pp-only-skipped,0.7138,ok,true
+enflammés,enflammer,verbe,Allument un feu,Allumer un feu,pp-only-skipped,0.7138,ok,true
+engendré,engendrer,verbe,Donne la vie,Donner la vie,pp-only-skipped,0.7512,ok,true
+engendrée,engendrer,verbe,Donne la vie,Donner la vie,pp-only-skipped,0.7512,ok,true
+engendrées,engendrer,verbe,Donnent la vie,Donner la vie,pp-only-skipped,0.7512,ok,true
+engendrés,engendrer,verbe,Donnent la vie,Donner la vie,pp-only-skipped,0.7512,ok,true
+ensemencé,ensemencer,verbe,Seme des graines,Semer des graines,pp-only-skipped,0.7750,ok,true
+ensemencée,ensemencer,verbe,Seme des graines,Semer des graines,pp-only-skipped,0.7750,ok,true
+ensemencées,ensemencer,verbe,Sement des graines,Semer des graines,pp-only-skipped,0.7750,ok,true
+ensemencés,ensemencer,verbe,Sement des graines,Semer des graines,pp-only-skipped,0.7750,ok,true
+essayé,essayer,verbe,Tente une action,Tenter une action,pp-only-skipped,0.7602,ok,true
+essayée,essayer,verbe,Tente une action,Tenter une action,pp-only-skipped,0.7602,ok,true
+essayées,essayer,verbe,Tentent une action,Tenter une action,pp-only-skipped,0.7602,ok,true
+essayés,essayer,verbe,Tentent une action,Tenter une action,pp-only-skipped,0.7602,ok,true
+essuyé,essuyer,verbe,Efface le liquide,Effacer le liquide,pp-only-skipped,0.6552,ok,true
+essuyée,essuyer,verbe,Efface le liquide,Effacer le liquide,pp-only-skipped,0.6552,ok,true
+essuyées,essuyer,verbe,Effacent le liquide,Effacer le liquide,pp-only-skipped,0.6552,ok,true
+essuyés,essuyer,verbe,Effacent le liquide,Effacer le liquide,pp-only-skipped,0.6552,ok,true
+exagéré,exagérer,verbe,Enjolive la réalité,Enjoliver la réalité,pp-only-skipped,0.6640,ok,true
+exagérée,exagérer,verbe,Enjolive la réalité,Enjoliver la réalité,pp-only-skipped,0.6640,ok,true
+exagérées,exagérer,verbe,Enjolivent la réalité,Enjoliver la réalité,pp-only-skipped,0.6640,ok,true
+exagérés,exagérer,verbe,Enjolivent la réalité,Enjoliver la réalité,pp-only-skipped,0.6640,ok,true
+excusé,excuser,verbe,Justifie une faute,Justifier une faute,pp-only-skipped,0.7974,ok,true
+excusée,excuser,verbe,Justifie une faute,Justifier une faute,pp-only-skipped,0.7974,ok,true
+excusées,excuser,verbe,Justifient une faute,Justifier une faute,pp-only-skipped,0.7974,ok,true
+excusés,excuser,verbe,Justifient une faute,Justifier une faute,pp-only-skipped,0.7974,ok,true
+fonctionné,fonctionner,verbe,Exécute son rôle,Exécuter son rôle,pp-only-skipped,0.6825,ok,true
+foré,forer,verbe,Perce un trou,Percer un trou,pp-only-skipped,0.6603,ok,true
+forée,forer,verbe,Perce un trou,Percer un trou,pp-only-skipped,0.6603,ok,true
+forées,forer,verbe,Percent un trou,Percer un trou,pp-only-skipped,0.6603,ok,true
+forés,forer,verbe,Percent un trou,Percer un trou,pp-only-skipped,0.6603,ok,true
+frappé,frapper,verbe,Donne un coup violent,Donner un coup violent,pp-only-skipped,0.6559,ok,false
+frappée,frapper,verbe,Donne un coup violent,Donner un coup violent,pp-only-skipped,0.6559,ok,false
+frappées,frapper,verbe,Donnent un coup violent,Donner un coup violent,pp-only-skipped,0.6559,ok,false
+frappés,frapper,verbe,Donnent un coup violent,Donner un coup violent,pp-only-skipped,0.6559,ok,false
+fêté,fêter,verbe,Organise une célébration,Organiser une célébration,pp-only-skipped,0.7275,ok,false
+fêtée,fêter,verbe,Organise une célébration,Organiser une célébration,pp-only-skipped,0.7275,ok,false
+fêtées,fêter,verbe,Organisent une célébration,Organiser une célébration,pp-only-skipped,0.7275,ok,false
+fêtés,fêter,verbe,Organisent une célébration,Organiser une célébration,pp-only-skipped,0.7275,ok,false
+gagné,gagner,verbe,Emporte la victoire,Emporter la victoire,pp-only-skipped,0.6611,ok,true
+gagnée,gagner,verbe,Emporte la victoire,Emporter la victoire,pp-only-skipped,0.6611,ok,true
+gagnées,gagner,verbe,Emportent la victoire,Emporter la victoire,pp-only-skipped,0.6611,ok,true
+gagnés,gagner,verbe,Emportent la victoire,Emporter la victoire,pp-only-skipped,0.6611,ok,true
+goûté,goûter,verbe,Déguste un mets,Déguster un mets,pp-only-skipped,0.6615,ok,true
+goûtée,goûter,verbe,Déguste un mets,Déguster un mets,pp-only-skipped,0.6615,ok,true
+goûtées,goûter,verbe,Dégustent un mets,Déguster un mets,pp-only-skipped,0.6615,ok,true
+goûtés,goûter,verbe,Dégustent un mets,Déguster un mets,pp-only-skipped,0.6615,ok,true
+greffé,greffer,verbe,Transplante une partie,Transplanter une partie,pp-only-skipped,0.7296,ok,true
+greffée,greffer,verbe,Transplante une partie,Transplanter une partie,pp-only-skipped,0.7296,ok,true
+greffées,greffer,verbe,Transplantent une partie,Transplanter une partie,pp-only-skipped,0.7296,ok,false
+greffés,greffer,verbe,Transplantent une partie,Transplanter une partie,pp-only-skipped,0.7296,ok,true
+guidé,guider,verbe,Montre la voie,Montrer la voie,pp-only-skipped,0.6942,ok,true
+guidée,guider,verbe,Montre la voie,Montrer la voie,pp-only-skipped,0.6942,ok,true
+guidées,guider,verbe,Montrent la voie,Montrer la voie,pp-only-skipped,0.6942,ok,true
+guidés,guider,verbe,Montrent la voie,Montrer la voie,pp-only-skipped,0.6942,ok,true
+hypothéqué,hypothéquer,verbe,Engage un bien en garantie,Engager un bien en garantie,pp-only-skipped,0.6683,ok,false
+hypothéquée,hypothéquer,verbe,Engage un bien en garantie,Engager un bien en garantie,pp-only-skipped,0.6683,ok,false
+hypothéqués,hypothéquer,verbe,Engagent un bien en garantie,Engager un bien en garantie,pp-only-skipped,0.6683,ok,false
+hâté,hâter,verbe,Accélére le mouvement,Accélérer le mouvement,pp-only-skipped,0.6866,ok,true
+hâtée,hâter,verbe,Accélére le mouvement,Accélérer le mouvement,pp-only-skipped,0.6866,ok,false
+hâtées,hâter,verbe,Accélérent le mouvement,Accélérer le mouvement,pp-only-skipped,0.6866,ok,false
+hâtés,hâter,verbe,Accélérent le mouvement,Accélérer le mouvement,pp-only-skipped,0.6866,ok,false
+illustré,illustrer,verbe,Dessine une image,Dessiner une image,pp-only-skipped,0.7050,ok,true
+illustrée,illustrer,verbe,Dessine une image,Dessiner une image,pp-only-skipped,0.7050,ok,true
+illustrées,illustrer,verbe,Dessinent une image,Dessiner une image,pp-only-skipped,0.7050,ok,true
+illustrés,illustrer,verbe,Dessinent une image,Dessiner une image,pp-only-skipped,0.7050,ok,true
+imaginé,imaginer,verbe,Crée une image mentale,Créer une image mentale,pp-only-skipped,0.7221,ok,false
+imaginée,imaginer,verbe,Crée une image mentale,Créer une image mentale,pp-only-skipped,0.7221,ok,false
+imaginées,imaginer,verbe,Créent une image mentale,Créer une image mentale,pp-only-skipped,0.7221,ok,false
+imaginés,imaginer,verbe,Créent une image mentale,Créer une image mentale,pp-only-skipped,0.7221,ok,false
+imputé,imputer,verbe,Attribue la faute,Attribuer la faute,pp-only-skipped,0.8271,ok,true
+imputée,imputer,verbe,Attribue la faute,Attribuer la faute,pp-only-skipped,0.8271,ok,true
+imputées,imputer,verbe,Attribuent la faute,Attribuer la faute,pp-only-skipped,0.8271,ok,true
+imputés,imputer,verbe,Attribuent la faute,Attribuer la faute,pp-only-skipped,0.8271,ok,true
+infirmé,infirmer,verbe,Nie la véracité,Nier la véracité,pp-only-skipped,0.8127,ok,true
+infirmée,infirmer,verbe,Nie la véracité,Nier la véracité,pp-only-skipped,0.8127,ok,true
+infirmées,infirmer,verbe,Nient la véracité,Nier la véracité,pp-only-skipped,0.8127,ok,true
+infirmés,infirmer,verbe,Nient la véracité,Nier la véracité,pp-only-skipped,0.8127,ok,true
+infligé,infliger,verbe,Cause un tort physique ou moral,Causer un tort physique ou moral,pp-only-skipped,0.7787,ok,false
+infligée,infliger,verbe,Cause un tort physique ou moral,Causer un tort physique ou moral,pp-only-skipped,0.7787,ok,false
+infligées,infliger,verbe,Causent un tort physique ou moral,Causer un tort physique ou moral,pp-only-skipped,0.7787,ok,false
+infligés,infliger,verbe,Causent un tort physique ou moral,Causer un tort physique ou moral,pp-only-skipped,0.7787,ok,false
+inspiré,inspirer,verbe,Donne une impulsion créative,Donner une impulsion créative,pp-only-skipped,0.6610,ok,false
+inspirée,inspirer,verbe,Donne une impulsion créative,Donner une impulsion créative,pp-only-skipped,0.6610,ok,false
+inspirées,inspirer,verbe,Donnent une impulsion créative,Donner une impulsion créative,pp-only-skipped,0.6610,ok,false
+inspirés,inspirer,verbe,Donnent une impulsion créative,Donner une impulsion créative,pp-only-skipped,0.6610,ok,false
+interprété,interpréter,verbe,Joue un rôle,Jouer un rôle,pp-only-skipped,0.7037,ok,true
+interprétée,interpréter,verbe,Joue un rôle,Jouer un rôle,pp-only-skipped,0.7037,ok,true
+interprétés,interpréter,verbe,Jouent un rôle,Jouer un rôle,pp-only-skipped,0.7037,ok,true
+joué,jouer,verbe,Exécute une action,Exécuter une action,pp-only-skipped,0.7953,ok,true
+jouée,jouer,verbe,Exécute une action,Exécuter une action,pp-only-skipped,0.7953,ok,true
+jouées,jouer,verbe,Exécutent une action,Exécuter une action,pp-only-skipped,0.7953,ok,true
+joués,jouer,verbe,Exécutent une action,Exécuter une action,pp-only-skipped,0.7953,ok,true
+jugé,juger,verbe,Prononce un verdict,Prononcer un verdict,pp-only-skipped,0.6842,ok,true
+jugée,juger,verbe,Prononce un verdict,Prononcer un verdict,pp-only-skipped,0.6842,ok,true
+jugées,juger,verbe,Prononcent un verdict,Prononcer un verdict,pp-only-skipped,0.6842,ok,true
+jugés,juger,verbe,Prononcent un verdict,Prononcer un verdict,pp-only-skipped,0.6842,ok,true
+légiféré,légiférer,verbe,Exerce le pouvoir de faire les lois,Exercer le pouvoir de faire les lois,pp-only-skipped,0.7324,ok,false
+modifié,modifier,verbe,Apporte des changements,Apporter des changements,pp-only-skipped,0.6695,ok,false
+modifiée,modifier,verbe,Apporte des changements,Apporter des changements,pp-only-skipped,0.6695,ok,false
+modifiées,modifier,verbe,Apportent des changements,Apporter des changements,pp-only-skipped,0.6695,ok,false
+modifiés,modifier,verbe,Apportent des changements,Apporter des changements,pp-only-skipped,0.6695,ok,false
+monopolisé,monopoliser,verbe,Exerce un contrôle total,Exercer un contrôle total,pp-only-skipped,0.7234,ok,false
+monopolisée,monopoliser,verbe,Exerce un contrôle total,Exercer un contrôle total,pp-only-skipped,0.7234,ok,false
+monopolisés,monopoliser,verbe,Exercent un contrôle total,Exercer un contrôle total,pp-only-skipped,0.7234,ok,false
+motivé,motiver,verbe,Donne un élan,Donner un élan,pp-only-skipped,0.6547,ok,true
+motivée,motiver,verbe,Donne un élan,Donner un élan,pp-only-skipped,0.6547,ok,true
+motivées,motiver,verbe,Donnent un élan,Donner un élan,pp-only-skipped,0.6547,ok,true
+motivés,motiver,verbe,Donnent un élan,Donner un élan,pp-only-skipped,0.6547,ok,true
+médité,méditer,verbe,Pratique la réflexion profonde,Pratiquer la réflexion profonde,pp-only-skipped,0.6736,ok,false
+méditée,méditer,verbe,Pratique la réflexion profonde,Pratiquer la réflexion profonde,pp-only-skipped,0.6736,ok,false
+méditées,méditer,verbe,Pratiquent la réflexion profonde,Pratiquer la réflexion profonde,pp-only-skipped,0.6736,ok,false
+médités,méditer,verbe,Pratiquent la réflexion profonde,Pratiquer la réflexion profonde,pp-only-skipped,0.6736,ok,false
+objecté,objecter,verbe,Exprime une opposition,Exprimer une opposition,pp-only-skipped,0.7590,ok,false
+objectée,objecter,verbe,Exprime une opposition,Exprimer une opposition,pp-only-skipped,0.7590,ok,false
+objectées,objecter,verbe,Expriment une opposition,Exprimer une opposition,pp-only-skipped,0.7590,ok,false
+objectés,objecter,verbe,Expriment une opposition,Exprimer une opposition,pp-only-skipped,0.7590,ok,false
+occasionné,occasionner,verbe,Cause un effet,Causer un effet,pp-only-skipped,0.6754,ok,true
+occasionnée,occasionner,verbe,Cause un effet,Causer un effet,pp-only-skipped,0.6754,ok,true
+occasionnés,occasionner,verbe,Causent un effet,Causer un effet,pp-only-skipped,0.6754,ok,true
+octroyé,octroyer,verbe,Accorde un privilège ou un droit,Accorder un privilège ou un droit,pp-only-skipped,0.8092,ok,false
+octroyée,octroyer,verbe,Accorde un privilège ou un droit,Accorder un privilège ou un droit,pp-only-skipped,0.8092,ok,false
+octroyées,octroyer,verbe,Accordent un privilège ou un droit,Accorder un privilège ou un droit,pp-only-skipped,0.8092,ok,false
+octroyés,octroyer,verbe,Accordent un privilège ou un droit,Accorder un privilège ou un droit,pp-only-skipped,0.8092,ok,false
+offensé,offenser,verbe,Cause du tort,Causer du tort,pp-only-skipped,0.6709,ok,true
+offensée,offenser,verbe,Cause du tort,Causer du tort,pp-only-skipped,0.6709,ok,true
+offensées,offenser,verbe,Causent du tort,Causer du tort,pp-only-skipped,0.6709,ok,true
+offensés,offenser,verbe,Causent du tort,Causer du tort,pp-only-skipped,0.6709,ok,true
+outrepassé,outrepasser,verbe,Dépasse les limites,Dépasser les limites,pp-only-skipped,0.8150,ok,true
+outrepassée,outrepasser,verbe,Dépasse les limites,Dépasser les limites,pp-only-skipped,0.8150,ok,true
+outrepassés,outrepasser,verbe,Dépassent les limites,Dépasser les limites,pp-only-skipped,0.8150,ok,true
+payé,payer,verbe,Verse une somme,Verser une somme,pp-only-skipped,0.7459,ok,true
+payée,payer,verbe,Verse une somme,Verser une somme,pp-only-skipped,0.7459,ok,true
+payées,payer,verbe,Versent une somme,Verser une somme,pp-only-skipped,0.7459,ok,true
+payés,payer,verbe,Versent une somme,Verser une somme,pp-only-skipped,0.7459,ok,true
+peuplé,peupler,verbe,Habite un lieu,Habiter un lieu,pp-only-skipped,0.7686,ok,true
+peuplée,peupler,verbe,Habite un lieu,Habiter un lieu,pp-only-skipped,0.7686,ok,true
+peuplées,peupler,verbe,Habitent un lieu,Habiter un lieu,pp-only-skipped,0.7686,ok,true
+peuplés,peupler,verbe,Habitent un lieu,Habiter un lieu,pp-only-skipped,0.7686,ok,true
+provoqué,provoquer,verbe,Cause un effet,Causer un effet,pp-only-skipped,0.7429,ok,true
+provoquée,provoquer,verbe,Cause un effet,Causer un effet,pp-only-skipped,0.7429,ok,true
+provoquées,provoquer,verbe,Causent un effet,Causer un effet,pp-only-skipped,0.7429,ok,true
+provoqués,provoquer,verbe,Causent un effet,Causer un effet,pp-only-skipped,0.7429,ok,true
+présidé,présider,verbe,Dirige une réunion,Diriger une réunion,pp-only-skipped,0.6782,ok,true
+présidée,présider,verbe,Dirige une réunion,Diriger une réunion,pp-only-skipped,0.6782,ok,true
+présidées,présider,verbe,Dirigent une réunion,Diriger une réunion,pp-only-skipped,0.6782,ok,true
+présidés,présider,verbe,Dirigent une réunion,Diriger une réunion,pp-only-skipped,0.6782,ok,true
+prêché,prêcher,verbe,Proclame la parole divine,Proclamer la parole divine,pp-only-skipped,0.6832,ok,false
+prêchée,prêcher,verbe,Proclame la parole divine,Proclamer la parole divine,pp-only-skipped,0.6832,ok,false
+prêchées,prêcher,verbe,Proclament la parole divine,Proclamer la parole divine,pp-only-skipped,0.6832,ok,false
+prêchés,prêcher,verbe,Proclament la parole divine,Proclamer la parole divine,pp-only-skipped,0.6832,ok,false
+rabaissé,rabaisser,verbe,Diminue le prix,Diminuer le prix,pp-only-skipped,0.7064,ok,true
+rabaissée,rabaisser,verbe,Diminue le prix,Diminuer le prix,pp-only-skipped,0.7064,ok,true
+rabaissées,rabaisser,verbe,Diminuent le prix,Diminuer le prix,pp-only-skipped,0.7064,ok,true
+rabaissés,rabaisser,verbe,Diminuent le prix,Diminuer le prix,pp-only-skipped,0.7064,ok,true
+raconté,raconter,verbe,Narre un récit,Narrer un récit,pp-only-skipped,0.6500,ok,true
+racontée,raconter,verbe,Narre un récit,Narrer un récit,pp-only-skipped,0.6500,ok,true
+racontées,raconter,verbe,Narrent un récit,Narrer un récit,pp-only-skipped,0.6500,ok,true
+racontés,raconter,verbe,Narrent un récit,Narrer un récit,pp-only-skipped,0.6500,ok,true
+ramassé,ramasser,verbe,Rassemble des objets,Rassembler des objets,pp-only-skipped,0.6580,ok,true
+ramassée,ramasser,verbe,Rassemble des objets,Rassembler des objets,pp-only-skipped,0.6580,ok,true
+ramassées,ramasser,verbe,Rassemblent des objets,Rassembler des objets,pp-only-skipped,0.6580,ok,false
+ramassés,ramasser,verbe,Rassemblent des objets,Rassembler des objets,pp-only-skipped,0.6580,ok,true
+remédié,remédier,verbe,Apporte une solution,Apporter une solution,pp-only-skipped,0.7185,ok,false
+renseigné,renseigner,verbe,Donne des informations,Donner des informations,pp-only-skipped,0.7427,ok,false
+renseignée,renseigner,verbe,Donne des informations,Donner des informations,pp-only-skipped,0.7427,ok,false
+renseignées,renseigner,verbe,Donnent des informations,Donner des informations,pp-only-skipped,0.7427,ok,false
+renseignés,renseigner,verbe,Donnent des informations,Donner des informations,pp-only-skipped,0.7427,ok,false
+représenté,représenter,verbe,Joue un rôle,Jouer un rôle,pp-only-skipped,0.7036,ok,true
+représentée,représenter,verbe,Joue un rôle,Jouer un rôle,pp-only-skipped,0.7036,ok,true
+représentés,représenter,verbe,Jouent un rôle,Jouer un rôle,pp-only-skipped,0.7036,ok,true
+retardé,retarder,verbe,Différe le moment,Différer le moment,pp-only-skipped,0.6813,ok,true
+retardée,retarder,verbe,Différe le moment,Différer le moment,pp-only-skipped,0.6813,ok,true
+retardées,retarder,verbe,Différent le moment,Différer le moment,pp-only-skipped,0.6813,ok,true
+retardés,retarder,verbe,Différent le moment,Différer le moment,pp-only-skipped,0.6813,ok,true
+retranché,retrancher,verbe,Enleve une partie,Enlever une partie,pp-only-skipped,0.8450,ok,true
+retranchée,retrancher,verbe,Enleve une partie,Enlever une partie,pp-only-skipped,0.8450,ok,true
+retranchées,retrancher,verbe,Enlevent une partie,Enlever une partie,pp-only-skipped,0.8450,ok,true
+retranchés,retrancher,verbe,Enlevent une partie,Enlever une partie,pp-only-skipped,0.8450,ok,true
+revalorisé,revaloriser,verbe,Donne une nouvelle valeur,Donner une nouvelle valeur,pp-only-skipped,0.6852,ok,false
+revalorisée,revaloriser,verbe,Donne une nouvelle valeur,Donner une nouvelle valeur,pp-only-skipped,0.6852,ok,false
+revalorisés,revaloriser,verbe,Donnent une nouvelle valeur,Donner une nouvelle valeur,pp-only-skipped,0.6852,ok,false
+récompensé,récompenser,verbe,Donne un prix,Donner un prix,pp-only-skipped,0.6607,ok,true
+récompensée,récompenser,verbe,Donne un prix,Donner un prix,pp-only-skipped,0.6607,ok,true
+récompensés,récompenser,verbe,Donnent un prix,Donner un prix,pp-only-skipped,0.6607,ok,true
+réfuté,réfuter,verbe,Démontre le contraire,Démontrer le contraire,pp-only-skipped,0.6567,ok,true
+réfutée,réfuter,verbe,Démontre le contraire,Démontrer le contraire,pp-only-skipped,0.6567,ok,true
+réfutées,réfuter,verbe,Démontrent le contraire,Démontrer le contraire,pp-only-skipped,0.6567,ok,false
+réfutés,réfuter,verbe,Démontrent le contraire,Démontrer le contraire,pp-only-skipped,0.6567,ok,true
+réglé,régler,verbe,Apporte une solution,Apporter une solution,pp-only-skipped,0.7185,ok,false
+réglée,régler,verbe,Apporte une solution,Apporter une solution,pp-only-skipped,0.7185,ok,false
+réglées,régler,verbe,Apportent une solution,Apporter une solution,pp-only-skipped,0.7185,ok,false
+réglés,régler,verbe,Apportent une solution,Apporter une solution,pp-only-skipped,0.7185,ok,false
+résidé,résider,verbe,Habite un lieu,Habiter un lieu,pp-only-skipped,0.7209,ok,true
+sanctifié,sanctifier,verbe,Consacre le lieu saint,Consacrer le lieu saint,pp-only-skipped,0.7348,ok,true
+sanctifiée,sanctifier,verbe,Consacre le lieu saint,Consacrer le lieu saint,pp-only-skipped,0.7348,ok,true
+sanctifiées,sanctifier,verbe,Consacrent le lieu saint,Consacrer le lieu saint,pp-only-skipped,0.7348,ok,true
+sanctifiés,sanctifier,verbe,Consacrent le lieu saint,Consacrer le lieu saint,pp-only-skipped,0.7348,ok,true
+sanctionné,sanctionner,verbe,Applique une punition,Appliquer une punition,pp-only-skipped,0.7447,ok,false
+sanctionnée,sanctionner,verbe,Applique une punition,Appliquer une punition,pp-only-skipped,0.7447,ok,false
+sanctionnés,sanctionner,verbe,Appliquent une punition,Appliquer une punition,pp-only-skipped,0.7447,ok,false
+soigné,soigner,verbe,Apporte des soins et des remèdes,Apporter des soins et des remèdes,pp-only-skipped,0.7070,ok,false
+soignée,soigner,verbe,Apporte des soins et des remèdes,Apporter des soins et des remèdes,pp-only-skipped,0.7070,ok,false
+soignées,soigner,verbe,Apportent des soins et des remèdes,Apporter des soins et des remèdes,pp-only-skipped,0.7070,ok,false
+soignés,soigner,verbe,Apportent des soins et des remèdes,Apporter des soins et des remèdes,pp-only-skipped,0.7070,ok,false
+soudé,souder,verbe,Assemble des pièces,Assembler des pièces,pp-only-skipped,0.7381,ok,true
+soudée,souder,verbe,Assemble des pièces,Assembler des pièces,pp-only-skipped,0.7381,ok,true
+soudées,souder,verbe,Assemblent des pièces,Assembler des pièces,pp-only-skipped,0.7381,ok,false
+soudés,souder,verbe,Assemblent des pièces,Assembler des pièces,pp-only-skipped,0.7381,ok,true
+statué,statuer,verbe,Prononce un jugement,Prononcer un jugement,pp-only-skipped,0.6843,ok,false
+statuée,statuer,verbe,Prononce un jugement,Prononcer un jugement,pp-only-skipped,0.6843,ok,false
+statuées,statuer,verbe,Prononcent un jugement,Prononcer un jugement,pp-only-skipped,0.6843,ok,false
+statués,statuer,verbe,Prononcent un jugement,Prononcer un jugement,pp-only-skipped,0.6843,ok,false
+suggéré,suggérer,verbe,Donne un conseil,Donner un conseil,pp-only-skipped,0.6922,ok,true
+suggérée,suggérer,verbe,Donne un conseil,Donner un conseil,pp-only-skipped,0.6922,ok,true
+suggérées,suggérer,verbe,Donnent un conseil,Donner un conseil,pp-only-skipped,0.6922,ok,true
+suggérés,suggérer,verbe,Donnent un conseil,Donner un conseil,pp-only-skipped,0.6922,ok,true
+supporté,supporter,verbe,Apporte son aide,Apporter son aide,pp-only-skipped,0.6567,ok,true
+supportée,supporter,verbe,Apporte son aide,Apporter son aide,pp-only-skipped,0.6567,ok,true
+supportées,supporter,verbe,Apportent son aide,Apporter son aide,pp-only-skipped,0.6567,ok,true
+supportés,supporter,verbe,Apportent son aide,Apporter son aide,pp-only-skipped,0.6567,ok,true
+surpassé,surpasser,verbe,Dépasse les limites,Dépasser les limites,pp-only-skipped,0.7963,ok,true
+surpassée,surpasser,verbe,Dépasse les limites,Dépasser les limites,pp-only-skipped,0.7963,ok,true
+surpassées,surpasser,verbe,Dépassent les limites,Dépasser les limites,pp-only-skipped,0.7963,ok,true
+surpassés,surpasser,verbe,Dépassent les limites,Dépasser les limites,pp-only-skipped,0.7963,ok,true
+symbolisé,symboliser,verbe,Représente une idée,Représenter une idée,pp-only-skipped,0.7543,ok,true
+symbolisée,symboliser,verbe,Représente une idée,Représenter une idée,pp-only-skipped,0.7543,ok,true
+symbolisées,symboliser,verbe,Représentent une idée,Représenter une idée,pp-only-skipped,0.7543,ok,true
+symbolisés,symboliser,verbe,Représentent une idée,Représenter une idée,pp-only-skipped,0.7543,ok,true
+synthétisé,synthétiser,verbe,Réalise une composition musicale,Réaliser une composition musicale,pp-only-skipped,0.6719,ok,false
+synthétisée,synthétiser,verbe,Réalise une composition musicale,Réaliser une composition musicale,pp-only-skipped,0.6719,ok,false
+synthétisés,synthétiser,verbe,Réalisent une composition musicale,Réaliser une composition musicale,pp-only-skipped,0.6719,ok,false
+taxé,taxer,verbe,Impose un prélèvement,Imposer un prélèvement,pp-only-skipped,0.6841,ok,false
+taxée,taxer,verbe,Impose un prélèvement,Imposer un prélèvement,pp-only-skipped,0.6841,ok,false
+taxées,taxer,verbe,Imposent un prélèvement,Imposer un prélèvement,pp-only-skipped,0.6841,ok,false
+taxés,taxer,verbe,Imposent un prélèvement,Imposer un prélèvement,pp-only-skipped,0.6841,ok,false
+tourmenté,tourmenter,verbe,Cause du chagrin et de la souffrance,Causer du chagrin et de la souffrance,pp-only-skipped,0.7032,ok,false
+tourmentée,tourmenter,verbe,Cause du chagrin et de la souffrance,Causer du chagrin et de la souffrance,pp-only-skipped,0.7032,ok,false
+tourmentées,tourmenter,verbe,Causent du chagrin et de la souffrance,Causer du chagrin et de la souffrance,pp-only-skipped,0.7032,ok,false
+tourmentés,tourmenter,verbe,Causent du chagrin et de la souffrance,Causer du chagrin et de la souffrance,pp-only-skipped,0.7032,ok,false
+travaillé,travailler,verbe,Exerce une activité rémunérée,Exercer une activité rémunérée,pp-only-skipped,0.6554,ok,false
+travaillée,travailler,verbe,Exerce une activité rémunérée,Exercer une activité rémunérée,pp-only-skipped,0.6554,ok,false
+travaillées,travailler,verbe,Exercent une activité rémunérée,Exercer une activité rémunérée,pp-only-skipped,0.6554,ok,false
+travaillés,travailler,verbe,Exercent une activité rémunérée,Exercer une activité rémunérée,pp-only-skipped,0.6554,ok,false
+troublé,troubler,verbe,Cause du désordre,Causer du désordre,pp-only-skipped,0.7264,ok,true
+troublée,troubler,verbe,Cause du désordre,Causer du désordre,pp-only-skipped,0.7264,ok,true
+troublées,troubler,verbe,Causent du désordre,Causer du désordre,pp-only-skipped,0.7264,ok,true
+troublés,troubler,verbe,Causent du désordre,Causer du désordre,pp-only-skipped,0.7264,ok,true
+visé,viser,verbe,Pointe une cible,Pointer une cible,pp-only-skipped,0.7110,ok,true
+visée,viser,verbe,Pointe une cible,Pointer une cible,pp-only-skipped,0.7110,ok,true
+visées,viser,verbe,Pointent une cible,Pointer une cible,pp-only-skipped,0.7110,ok,true
+visés,viser,verbe,Pointent une cible,Pointer une cible,pp-only-skipped,0.7110,ok,true
+énuméré,énumérer,verbe,Cite un à un,Citer un à un,pp-only-skipped,0.7695,ok,true
+énumérée,énumérer,verbe,Cite un à un,Citer un à un,pp-only-skipped,0.7695,ok,true
+énumérées,énumérer,verbe,Citent un à un,Citer un à un,pp-only-skipped,0.7695,ok,true
+énumérés,énumérer,verbe,Citent un à un,Citer un à un,pp-only-skipped,0.7695,ok,true
+érigé,ériger,verbe,Éleve une construction,Élever une construction,pp-only-skipped,0.8193,ok,false
+érigée,ériger,verbe,Éleve une construction,Élever une construction,pp-only-skipped,0.8193,ok,false
+érigées,ériger,verbe,Élevent une construction,Élever une construction,pp-only-skipped,0.8193,ok,false
+érigés,ériger,verbe,Élevent une construction,Élever une construction,pp-only-skipped,0.8193,ok,false
+évalué,évaluer,verbe,Jauge la valeur,Jauger la valeur,pp-only-skipped,0.6850,ok,true
+évaluée,évaluer,verbe,Jauge la valeur,Jauger la valeur,pp-only-skipped,0.6850,ok,true
+évaluées,évaluer,verbe,Jaugent la valeur,Jauger la valeur,pp-only-skipped,0.6850,ok,true
+évalués,évaluer,verbe,Jaugent la valeur,Jauger la valeur,pp-only-skipped,0.6850,ok,true
