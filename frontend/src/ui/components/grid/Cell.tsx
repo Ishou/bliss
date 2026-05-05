@@ -9,18 +9,45 @@ import type {
 } from '@/domain';
 import { FitText } from './FitText';
 
-// Force every word onto its own line for multi-word clues. With
-// auto-wrap (the default), FitText settles the binary search at the
-// largest font where the unwrapped clue fits horizontally — short
-// 2-word clues like "Gaz noble" then sit on a single line, leaving
-// vertical space empty. Inserting explicit newlines (rendered via the
-// containers' `whiteSpace: 'pre-line'`) makes FitText reason about a
-// multi-line layout from the start, so the font grows to fill both
-// dimensions. Single-word clues are unchanged. Title attributes
-// downstream still use the original (space-separated) text so screen
-// readers and tooltips read naturally.
-function breakOnSpaces(text: string): string {
-  return text.includes(' ') ? text.replace(/ /g, '\n') : text;
+// Insert at most ONE line break, placed at the space that produces
+// the most-balanced 2-line split (min of the longer line). Skipped
+// entirely when the clue has fewer than two "real words" — alphabetic
+// tokens of ≥ 2 letters — so single-token clues ("Gaz") and
+// arithmetic-style ones ("D - C", "C + C") stay on one line. The
+// explicit `\n` is rendered via the containers' `whiteSpace:
+// 'pre-line'`, which lets FitText reason about a 2-line layout from
+// the start and pick a font sized by the longer of the two lines
+// instead of the unsplit phrase.
+//
+// Examples:
+//   "Gaz noble"           → "Gaz\nnoble"           (2 lines)
+//   "Vitesses du rythme"  → "Vitesses\ndu rythme"  (2 lines, balanced)
+//   "Carnets de notes quotidiennes" → "Carnets de notes\nquotidiennes"
+//   "D - C", "C + C"      → unchanged (no break)
+//   "à l'œil"             → unchanged (only one real word)
+const REAL_WORD = /[A-Za-zÀ-ÿ]/;
+function smartLineBreak(text: string): string {
+  const realWords = text
+    .split(/\s+/)
+    .filter((t) => t.length >= 2 && REAL_WORD.test(t));
+  if (realWords.length < 2) return text;
+  const spaces: number[] = [];
+  for (let i = 0; i < text.length; i++) {
+    if (text[i] === ' ') spaces.push(i);
+  }
+  let bestIdx = -1;
+  let bestMax = Infinity;
+  for (const i of spaces) {
+    const leftLen = i;
+    const rightLen = text.length - i - 1;
+    const longer = Math.max(leftLen, rightLen);
+    if (longer < bestMax) {
+      bestMax = longer;
+      bestIdx = i;
+    }
+  }
+  if (bestIdx < 0) return text;
+  return text.slice(0, bestIdx) + '\n' + text.slice(bestIdx + 1);
 }
 
 // Clue text size bounds (px). Floors keep clues legible on dense grids;
@@ -270,10 +297,10 @@ const defStackClue = css({
 });
 const defStackClueCurrent = css({ color: 'leaf.700' });
 // Stacked-clue text: same overflow safety net as defText.
-// `whiteSpace: 'pre-line'` honours the explicit newlines we insert in
-// `breakOnSpaces` (one word per line), so multi-word clues use the
-// vertical space FitText would otherwise leave empty. Line-height
-// inherits the cell's 1.1 for legibility.
+// `whiteSpace: 'pre-line'` honours the explicit `\n` inserted by
+// `smartLineBreak` (one balanced split for multi-word clues), so
+// multi-word clues use the vertical space FitText would otherwise
+// leave empty. Line-height inherits the cell's 1.1 for legibility.
 const defStackText = css({
   flex: 1,
   display: 'flex',
@@ -457,7 +484,7 @@ function StackedClue({ clue, isCurrent }: { clue: DefinitionClue; isCurrent: boo
       data-current-clue={isCurrent ? 'true' : 'false'}
     >
       <FitText
-        text={breakOnSpaces(clue.text)}
+        text={smartLineBreak(clue.text)}
         min={STACK_RATIO_MIN}
         max={STACK_RATIO_MAX}
         unit="ratio"
@@ -516,7 +543,7 @@ export const DefinitionCellView = memo(function DefinitionCellView({
       >
         <div className={defSingle}>
           <FitText
-            text={breakOnSpaces(clue.text)}
+            text={smartLineBreak(clue.text)}
             min={SINGLE_RATIO_MIN}
             max={SINGLE_RATIO_MAX}
             unit="ratio"
