@@ -865,73 +865,39 @@ describe('Grid keyboard-aware wrapper sizing', () => {
 // restoring focus on gesture end — Android Chrome doesn't do the snap
 // as aggressively, but the same blur is a no-op there (and is
 // platform-independent, simpler than UA-sniffing).
-describe('Grid blur-on-gesture coordination', () => {
-  it('blurs the focused cell on zoom start and restores on zoom stop', () => {
+describe('Grid pan/zoom does not touch focus', () => {
+  // Rule: gestures and focus state are independent. A zoom or pan
+  // never causes a focus change. The previous blur+restore dance
+  // around iOS pinch-zoom was removed because it caused user-visible
+  // flicker on desktop.
+  it('zoom start does not blur', () => {
     const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
     const target = inputAt(container, 1, 1)!;
     act(() => { click(target); });
+    act(() => { capturedCb.current.onZoomStart!(); });
     expect(document.activeElement).toBe(target);
-    expect(capturedCb.current.onZoomStart).toBeTypeOf('function');
-    expect(capturedCb.current.onZoomStop).toBeTypeOf('function');
-    // Pinch start: cell loses focus.
-    act(() => { capturedCb.current.onZoomStart!(); });
-    expect(document.activeElement).not.toBe(target);
-    // Pinch end: focus restored to the same cell.
-    act(() => { capturedCb.current.onZoomStop!(); });
-    expect(document.activeElement).toBe(inputAt(container, 1, 1));
   });
-
-  it('blurs on panning start and restores on panning stop', () => {
-    const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
-    const target = inputAt(container, 1, 1)!;
-    act(() => { click(target); });
-    act(() => { capturedCb.current.onPanningStart!(); });
-    expect(document.activeElement).not.toBe(target);
-    act(() => { capturedCb.current.onPanningStop!(); });
-    expect(document.activeElement).toBe(inputAt(container, 1, 1));
-  });
-
-  it('does not restore focus when the user clicks a different cell during the gesture', () => {
-    const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
-    const original = inputAt(container, 1, 1)!;
-    act(() => { click(original); });
-    // Gesture starts: original cell blurs.
-    act(() => { capturedCb.current.onZoomStart!(); });
-    expect(document.activeElement).not.toBe(original);
-    // User taps a different cell mid-gesture (the click handler on the
-    // Cell wrapper focuses the input synchronously).
-    const other = inputAt(container, 2, 2)!;
-    act(() => { click(other); });
-    expect(document.activeElement).toBe(other);
-    // Gesture ends: must NOT yank focus back to (1,1).
-    act(() => { capturedCb.current.onZoomStop!(); });
-    expect(document.activeElement).toBe(other);
-  });
-
-  it('is a no-op when no cell was focused at gesture start', () => {
-    render(<Grid puzzle={TEST_PUZZLE} />);
-    // Pre-condition: nothing focused (just rendered).
-    expect(document.activeElement).toBe(document.body);
-    act(() => { capturedCb.current.onZoomStart!(); });
-    act(() => { capturedCb.current.onZoomStop!(); });
-    // Still nothing focused — no spurious cell focused via restore.
-    expect(document.activeElement).toBe(document.body);
-  });
-
-  it('keeps the cell blurred while a panning gesture chains after a zoom (both flags must clear)', () => {
-    // iOS can transition pinch → pan without firing onZoomStop strictly
-    // before onPanningStart. Verify only the LAST stop triggers the
-    // restore.
+  it('zoom stop does not restore', () => {
     const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
     const target = inputAt(container, 1, 1)!;
     act(() => { click(target); });
     act(() => { capturedCb.current.onZoomStart!(); });
-    act(() => { capturedCb.current.onPanningStart!(); });
-    // Zoom ends but pan still active — must NOT restore yet.
     act(() => { capturedCb.current.onZoomStop!(); });
-    expect(document.activeElement).not.toBe(target);
-    // Pan ends — now restore.
+    expect(document.activeElement).toBe(target);
+  });
+  it('pan start does not blur', () => {
+    const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
+    const target = inputAt(container, 1, 1)!;
+    act(() => { click(target); });
+    act(() => { capturedCb.current.onPanningStart!(); });
+    expect(document.activeElement).toBe(target);
+  });
+  it('pan stop does not restore or blur', () => {
+    const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
+    const target = inputAt(container, 1, 1)!;
+    act(() => { click(target); });
+    act(() => { capturedCb.current.onPanningStart!(); });
     act(() => { capturedCb.current.onPanningStop!(); });
-    expect(document.activeElement).toBe(inputAt(container, 1, 1));
+    expect(document.activeElement).toBe(target);
   });
 });

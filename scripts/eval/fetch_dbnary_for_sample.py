@@ -15,12 +15,14 @@ Network failures on a single word are logged and the row is written with empty
 fields; re-run to retry only those rows.
 """
 
+import argparse
 import csv
 import re
 import sys
 import time
 import urllib.parse
 import urllib.request
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 ENDPOINT = "http://kaiko.getalp.org/sparql"
@@ -204,9 +206,16 @@ def query_sparql(word: str, lemma: str = "") -> tuple[str, str, str]:
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--input", type=Path, default=None)
+    parser.add_argument("--output", type=Path, default=None)
+    parser.add_argument("--workers", type=int, default=8,
+                        help="parallel SPARQL workers (default 8; bump if endpoint is responsive)")
+    args = parser.parse_args()
+
     repo_root = Path(__file__).resolve().parent.parent.parent
-    src = repo_root / "data" / "eval" / "sample_100.csv"
-    out = repo_root / "data" / "eval" / "sample_100_with_definitions.csv"
+    src = args.input or (repo_root / "data" / "eval" / "sample_100.csv")
+    out = args.output or (repo_root / "data" / "eval" / "sample_100_with_definitions.csv")
 
     if not src.exists():
         print(f"missing {src} - run scripts/eval/sample_eval_words.py first", file=sys.stderr)
@@ -223,23 +232,33 @@ def main() -> None:
         rows = list(csv.DictReader(f))
 
     fieldnames = ["word", "language", "length", "frequency", "lemma", "pos", "definition", "synonyms"]
-    enriched: list[dict[str, str]] = []
+    enriched_by_word: dict[str, dict[str, str]] = dict(existing)
     misses = 0
-    for i, row in enumerate(rows, 1):
-        word = row["word"]
-        if word in existing:
-            enriched.append(existing[word])
-            continue
+    todo = [r for r in rows if r["word"] not in existing]
+
+    def fetch(row: dict[str, str]) -> tuple[dict[str, str], str, str, str]:
         try:
-            pos, definition, synonyms = query_sparql(word, row.get("lemma", ""))
+            pos, definition, synonyms = query_sparql(row["word"], row.get("lemma", ""))
         except Exception as e:
-            print(f"  [{i:3d}/{len(rows)}] {word}: ERROR {e}", file=sys.stderr)
-            pos, definition, synonyms = ("", "", "")
-        if not definition:
-            misses += 1
-        print(f"  [{i:3d}/{len(rows)}] {word:15s} pos={pos:20s} def={definition[:60]!r}")
-        enriched.append({**row, "pos": pos, "definition": definition, "synonyms": synonyms})
-        time.sleep(SLEEP_BETWEEN_QUERIES)
+            return (row, "", "", f"ERROR {e}")
+        return (row, pos, definition, synonyms)
+
+    started = time.time()
+    if todo:
+        with ThreadPoolExecutor(max_workers=args.workers) as pool:
+            futures = {pool.submit(fetch, r): r for r in todo}
+            for i, fut in enumerate(as_completed(futures), 1):
+                row, pos, definition, synonyms = fut.result()
+                word = row["word"]
+                if not definition:
+                    misses += 1
+                print(f"  [{i:4d}/{len(todo)}] {word:18s} pos={pos:12s} def={definition[:60]!r}")
+                enriched_by_word[word] = {
+                    **row, "pos": pos, "definition": definition, "synonyms": synonyms,
+                }
+
+    # Preserve input order in the output CSV.
+    enriched = [enriched_by_word[r["word"]] for r in rows if r["word"] in enriched_by_word]
 
     with out.open("w", encoding="utf-8", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames, lineterminator="\n")
@@ -247,7 +266,13 @@ def main() -> None:
         for r in enriched:
             writer.writerow({k: r.get(k, "") for k in fieldnames})
 
-    print(f"\nWrote {len(enriched)} rows to {out.relative_to(repo_root)} ({misses} misses)")
+    elapsed = time.time() - started
+    try:
+        out_disp = out.resolve().relative_to(repo_root)
+    except ValueError:
+        out_disp = out
+    print(f"\nWrote {len(enriched)} rows to {out_disp} in {elapsed:.1f}s "
+          f"({misses} misses, {len(todo)} new, {len(existing)} cached)")
 
 
 if __name__ == "__main__":

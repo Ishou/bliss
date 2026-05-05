@@ -43,8 +43,19 @@ internal class SkeletonFiller(
         // For corpora that don't carry lemma data, Word.lemma defaults to
         // Word.text and this set is functionally identical to usedWords.
         val usedLemmas = HashSet<String>()
+        // A clue position shared by two slots means those slots will render
+        // as a stacked def cell (two clues in one half-cell each). Words
+        // placed in those slots must have `compact == true` so their clue
+        // text fits the stacked half-cell at the design floor — see
+        // `data class Word` and `scripts/eval/clue_metrics.py`.
+        val stackedCluePositions =
+            slots
+                .groupingBy { it.cluePosition }
+                .eachCount()
+                .filterValues { it > 1 }
+                .keys
         val assigned = arrayOfNulls<Word>(slots.size)
-        if (!search(slots, letters, usedWords, usedLemmas, assigned, random, deadline)) return null
+        if (!search(slots, letters, usedWords, usedLemmas, stackedCluePositions, assigned, random, deadline)) return null
         return slots.mapIndexed { i, slot ->
             WordPlacement(assigned[i]!!, slot.cluePosition, slot.direction)
         }
@@ -55,6 +66,7 @@ internal class SkeletonFiller(
         letters: HashMap<Position, Char>,
         usedWords: HashSet<String>,
         usedLemmas: HashSet<String>,
+        stackedCluePositions: Set<Position>,
         assigned: Array<Word?>,
         random: Random,
         deadline: Long,
@@ -68,7 +80,8 @@ internal class SkeletonFiller(
         var bestSize = Int.MAX_VALUE
         for (i in slots.indices) {
             if (assigned[i] != null) continue
-            val domain = domainFor(slots[i], letters, usedWords, usedLemmas)
+            val needsCompact = slots[i].cluePosition in stackedCluePositions
+            val domain = domainFor(slots[i], letters, usedWords, usedLemmas, needsCompact)
             if (domain.size < bestSize) {
                 bestSize = domain.size
                 bestIdx = i
@@ -94,7 +107,7 @@ internal class SkeletonFiller(
                 }
             }
 
-            if (search(slots, letters, usedWords, usedLemmas, assigned, random, deadline)) return true
+            if (search(slots, letters, usedWords, usedLemmas, stackedCluePositions, assigned, random, deadline)) return true
 
             // Undo.
             for (pos in newlyPlaced) letters.remove(pos)
@@ -115,6 +128,7 @@ internal class SkeletonFiller(
         letters: Map<Position, Char>,
         usedWords: Set<String>,
         usedLemmas: Set<String>,
+        needsCompact: Boolean,
     ): List<Word> {
         val pattern = HashMap<Int, Char>(slot.length)
         slot.letterPositions().forEachIndexed { i, pos ->
@@ -122,10 +136,12 @@ internal class SkeletonFiller(
         }
         val matches = repository.findByLengthAndPattern(slot.length, pattern)
         // Filter used last — keeps the cheap path (no allocation) when nothing's used yet.
-        return if (usedWords.isEmpty() && usedLemmas.isEmpty()) {
-            matches
-        } else {
-            matches.filter { it.text !in usedWords && it.lemma !in usedLemmas }
+        val nothingUsed = usedWords.isEmpty() && usedLemmas.isEmpty()
+        return when {
+            nothingUsed && !needsCompact -> matches
+            !needsCompact -> matches.filter { it.text !in usedWords && it.lemma !in usedLemmas }
+            nothingUsed -> matches.filter { it.compact }
+            else -> matches.filter { it.compact && it.text !in usedWords && it.lemma !in usedLemmas }
         }
     }
 

@@ -1,0 +1,240 @@
+word,language,length,frequency,difficulty,clue,source,source_license,lemma
+ai,fr,2,100000,,Forme du verbe avoir,bliss,CC0-1.0,ai
+ail,fr,3,100000,,Bulbe à gousses,bliss,CC0-1.0,ail
+air,fr,3,100000,,Mélange respirable,bliss,CC0-1.0,air
+ami,fr,3,100000,,Compagnon de confiance,bliss,CC0-1.0,ami
+an,fr,2,100000,,Période de douze mois,bliss,CC0-1.0,an
+ans,fr,3,100000,,Mesure de la durée d'une vie,bliss,CC0-1.0,ans
+arc,fr,3,100000,,Arme à corde tendue,bliss,CC0-1.0,arc
+are,fr,3,100000,,Cent mètres carrés,bliss,CC0-1.0,are
+art,fr,3,100000,,Création esthétique,bliss,CC0-1.0,art
+as,fr,2,100000,,Carte maîtresse,bliss,CC0-1.0,as
+au,fr,2,100000,,Article contracté,bliss,CC0-1.0,au
+axe,fr,3,100000,,Ligne droite centrale,bliss,CC0-1.0,axe
+aïe,fr,3,100000,,Cri de douleur,bliss,CC0-1.0,aïe
+bac,fr,3,100000,,Cuve ou ferry,bliss,CC0-1.0,bac
+bal,fr,3,100000,,Soirée dansante,bliss,CC0-1.0,bal
+ban,fr,3,100000,,Décret public,bliss,CC0-1.0,ban
+bar,fr,3,100000,,Établissement à boire,bliss,CC0-1.0,bar
+bas,fr,3,100000,,Vêtement de jambe,bliss,CC0-1.0,bas
+bec,fr,3,100000,,Pointe d'oiseau,bliss,CC0-1.0,bec
+bis,fr,3,100000,,Encore une fois,bliss,CC0-1.0,bis
+blé,fr,3,100000,,Céréale dorée,bliss,CC0-1.0,blé
+bol,fr,3,100000,,Récipient creux,bliss,CC0-1.0,bol
+bon,fr,3,100000,,Coupon ou agréable,bliss,CC0-1.0,bon
+bus,fr,3,100000,,Transport en commun,bliss,CC0-1.0,bus
+but,fr,3,100000,,Objectif à atteindre,bliss,CC0-1.0,but
+cap,fr,3,100000,,Pointe rocheuse,bliss,CC0-1.0,cap
+car,fr,3,100000,,Bus interurbain,bliss,CC0-1.0,car
+cas,fr,3,100000,,Situation particulière,bliss,CC0-1.0,cas
+ce,fr,2,100000,,Démonstratif neutre,bliss,CC0-1.0,ce
+cep,fr,3,100000,,Pied de vigne,bliss,CC0-1.0,cep
+cet,fr,3,100000,,Démonstratif masculin,bliss,CC0-1.0,cet
+cil,fr,3,100000,,Poil de paupière,bliss,CC0-1.0,cil
+clé,fr,3,100000,,Outil de serrure,bliss,CC0-1.0,clé
+col,fr,3,100000,,Passage de montagne,bliss,CC0-1.0,col
+coq,fr,3,100000,,Mâle de la poule,bliss,CC0-1.0,coq
+cor,fr,3,100000,,Instrument à vent,bliss,CC0-1.0,cor
+cou,fr,3,100000,,Lien tête-tronc,bliss,CC0-1.0,cou
+cri,fr,3,100000,,Vocalisation forte,bliss,CC0-1.0,cri
+cru,fr,3,100000,,Vin d'un terroir,bliss,CC0-1.0,cru
+cul,fr,3,100000,,Postérieur familier,bliss,CC0-1.0,cul
+dam,fr,3,100000,,Préjudice subi,bliss,CC0-1.0,dam
+de,fr,2,100000,,Préposition d'origine,bliss,CC0-1.0,de
+du,fr,2,100000,,Article contracté masculin,bliss,CC0-1.0,du
+duc,fr,3,100000,,Titre nobiliaire,bliss,CC0-1.0,duc
+dur,fr,3,100000,,Solide et résistant,bliss,CC0-1.0,dur
+eau,fr,3,100000,,Liquide vital,bliss,CC0-1.0,eau
+en,fr,2,100000,,Préposition de lieu,bliss,CC0-1.0,en
+es,fr,2,100000,,Verbe être à la 2e personne,bliss,CC0-1.0,es
+est,fr,3,100000,,Point cardinal du levant,bliss,CC0-1.0,est
+et,fr,2,100000,,Conjonction de coordination,bliss,CC0-1.0,et
+eu,fr,2,100000,,Participe du verbe avoir,bliss,CC0-1.0,eu
+eux,fr,3,100000,,Pronom pluriel masculin,bliss,CC0-1.0,eux
+fan,fr,3,100000,,Admirateur passionné,bliss,CC0-1.0,fan
+fer,fr,3,100000,,Métal magnétique,bliss,CC0-1.0,fer
+feu,fr,3,100000,,Combustion vive,bliss,CC0-1.0,feu
+fil,fr,3,100000,,Brin allongé,bliss,CC0-1.0,fil
+foi,fr,3,100000,,Croyance profonde,bliss,CC0-1.0,foi
+fou,fr,3,100000,,Privé de raison,bliss,CC0-1.0,fou
+gaz,fr,3,100000,,État de la matière,bliss,CC0-1.0,gaz
+gel,fr,3,100000,,Eau solidifiée,bliss,CC0-1.0,gel
+gré,fr,3,100000,,Volonté ou consentement,bliss,CC0-1.0,gré
+ici,fr,3,100000,,En ce lieu,bliss,CC0-1.0,ici
+if,fr,2,100000,,Arbre à baies rouges,bliss,CC0-1.0,if
+il,fr,2,100000,,Pronom masculin singulier,bliss,CC0-1.0,il
+ils,fr,3,100000,,Pronom masculin pluriel,bliss,CC0-1.0,ils
+jeu,fr,3,100000,,Activité ludique,bliss,CC0-1.0,jeu
+kit,fr,3,100000,,Ensemble à monter,bliss,CC0-1.0,kit
+la,fr,2,100000,,Article féminin ou note,bliss,CC0-1.0,la
+lac,fr,3,100000,,Étendue d'eau intérieure,bliss,CC0-1.0,lac
+las,fr,3,100000,,Las et fatigué,bliss,CC0-1.0,las
+le,fr,2,100000,,Article masculin,bliss,CC0-1.0,le
+les,fr,3,100000,,Article défini pluriel,bliss,CC0-1.0,les
+lie,fr,3,100000,,Dépôt au fond du fût,bliss,CC0-1.0,lie
+lin,fr,3,100000,,Plante textile,bliss,CC0-1.0,lin
+lis,fr,3,100000,,Fleur royale,bliss,CC0-1.0,lis
+lit,fr,3,100000,,Meuble pour dormir,bliss,CC0-1.0,lit
+loi,fr,3,100000,,Règle obligatoire,bliss,CC0-1.0,loi
+lot,fr,3,100000,,Part attribuée,bliss,CC0-1.0,lot
+lu,fr,2,100000,,Participe de lire,bliss,CC0-1.0,lu
+lui,fr,3,100000,,Pronom de la 3e personne,bliss,CC0-1.0,lui
+lys,fr,3,100000,,Fleur héraldique,bliss,CC0-1.0,lys
+ma,fr,2,100000,,Possessif féminin singulier,bliss,CC0-1.0,ma
+mal,fr,3,100000,,Souffrance,bliss,CC0-1.0,mal
+mas,fr,3,100000,,Maison provençale,bliss,CC0-1.0,mas
+mat,fr,3,100000,,Sans éclat,bliss,CC0-1.0,mat
+me,fr,2,100000,,Pronom personnel,bliss,CC0-1.0,me
+mer,fr,3,100000,,Vaste étendue salée,bliss,CC0-1.0,mer
+mi,fr,2,100000,,Note de musique,bliss,CC0-1.0,mi
+mie,fr,3,100000,,Partie tendre du pain,bliss,CC0-1.0,mie
+mil,fr,3,100000,,Céréale africaine,bliss,CC0-1.0,mil
+mou,fr,3,100000,,Sans fermeté,bliss,CC0-1.0,mou
+mu,fr,2,100000,,Lettre grecque,bliss,CC0-1.0,mu
+mur,fr,3,100000,,Cloison verticale,bliss,CC0-1.0,mur
+ne,fr,2,100000,,Particule de négation,bliss,CC0-1.0,ne
+nef,fr,3,100000,,Vaisseau d'église,bliss,CC0-1.0,nef
+nez,fr,3,100000,,Organe de l'odorat,bliss,CC0-1.0,nez
+ni,fr,2,100000,,Conjonction de négation,bliss,CC0-1.0,ni
+nid,fr,3,100000,,Abri d'oiseau,bliss,CC0-1.0,nid
+nom,fr,3,100000,,Mot qui désigne,bliss,CC0-1.0,nom
+non,fr,3,100000,,Refus net,bliss,CC0-1.0,non
+nos,fr,3,100000,,Possessif pluriel,bliss,CC0-1.0,nos
+nul,fr,3,100000,,Aucun et inutile,bliss,CC0-1.0,nul
+oh,fr,2,100000,,Cri d'étonnement,bliss,CC0-1.0,oh
+oie,fr,3,100000,,Oiseau aquatique blanc,bliss,CC0-1.0,oie
+on,fr,2,100000,,Pronom indéfini,bliss,CC0-1.0,on
+ont,fr,3,100000,,Possèdent au présent,bliss,CC0-1.0,ont
+ose,fr,3,100000,,Risque ou sucre simple,bliss,CC0-1.0,ose
+ou,fr,2,100000,,Conjonction d'alternative,bliss,CC0-1.0,ou
+oui,fr,3,100000,,Affirmation,bliss,CC0-1.0,oui
+pal,fr,3,100000,,Pieu pointu,bliss,CC0-1.0,pal
+pan,fr,3,100000,,Côté ou chute,bliss,CC0-1.0,pan
+par,fr,3,100000,,Préposition d'agent,bliss,CC0-1.0,par
+pas,fr,3,100000,,Mouvement ou négation,bliss,CC0-1.0,pas
+pic,fr,3,100000,,Sommet escarpé,bliss,CC0-1.0,pic
+pie,fr,3,100000,,Oiseau noir et blanc,bliss,CC0-1.0,pie
+pin,fr,3,100000,,Conifère résineux,bliss,CC0-1.0,pin
+pis,fr,3,100000,,Mamelle ou pire,bliss,CC0-1.0,pis
+pli,fr,3,100000,,Marque de couture,bliss,CC0-1.0,pli
+pou,fr,3,100000,,Insecte parasite,bliss,CC0-1.0,pou
+pré,fr,3,100000,,Terrain herbeux,bliss,CC0-1.0,pré
+pus,fr,3,100000,,Liquide d'infection,bliss,CC0-1.0,pus
+qui,fr,3,100000,,Pronom interrogatif,bliss,CC0-1.0,qui
+rai,fr,3,100000,,Rayon lumineux,bliss,CC0-1.0,rai
+ras,fr,3,100000,,Coupe très courte,bliss,CC0-1.0,ras
+rat,fr,3,100000,,Petit rongeur gris,bliss,CC0-1.0,rat
+raz,fr,3,100000,,Courant marin,bliss,CC0-1.0,raz
+riz,fr,3,100000,,Céréale asiatique,bliss,CC0-1.0,riz
+roc,fr,3,100000,,Pierre dure,bliss,CC0-1.0,roc
+roi,fr,3,100000,,Souverain monarque,bliss,CC0-1.0,roi
+rot,fr,3,100000,,Renvoi gastrique,bliss,CC0-1.0,rot
+rue,fr,3,100000,,Voie urbaine,bliss,CC0-1.0,rue
+ré,fr,2,100000,,Note de musique,bliss,CC0-1.0,ré
+sa,fr,2,100000,,Possessif féminin,bliss,CC0-1.0,sa
+sac,fr,3,100000,,Contenant souple,bliss,CC0-1.0,sac
+sas,fr,3,100000,,Pièce de transition,bliss,CC0-1.0,sas
+se,fr,2,100000,,Pronom réfléchi,bliss,CC0-1.0,se
+sec,fr,3,100000,,Sans humidité,bliss,CC0-1.0,sec
+ses,fr,3,100000,,Possessif pluriel,bliss,CC0-1.0,ses
+si,fr,2,100000,,Conjonction de condition,bliss,CC0-1.0,si
+ski,fr,3,100000,,Glisse sur neige,bliss,CC0-1.0,ski
+soi,fr,3,100000,,Pronom réfléchi,bliss,CC0-1.0,soi
+sol,fr,3,100000,,Plancher ou note,bliss,CC0-1.0,sol
+son,fr,3,100000,,Possessif ou bruit,bliss,CC0-1.0,son
+sou,fr,3,100000,,Petite monnaie ancienne,bliss,CC0-1.0,sou
+su,fr,2,100000,,Connu et appris,bliss,CC0-1.0,su
+sud,fr,3,100000,,Point cardinal du midi,bliss,CC0-1.0,sud
+sur,fr,3,100000,,Préposition de position,bliss,CC0-1.0,sur
+ta,fr,2,100000,,Possessif féminin,bliss,CC0-1.0,ta
+tas,fr,3,100000,,Amas désordonné,bliss,CC0-1.0,tas
+te,fr,2,100000,,Pronom personnel,bliss,CC0-1.0,te
+ter,fr,3,100000,,Trois fois,bliss,CC0-1.0,ter
+thé,fr,3,100000,,Infusion chaude,bliss,CC0-1.0,thé
+tic,fr,3,100000,,Geste involontaire,bliss,CC0-1.0,tic
+tir,fr,3,100000,,Action de viser,bliss,CC0-1.0,tir
+toi,fr,3,100000,,Pronom de la 2e personne,bliss,CC0-1.0,toi
+ton,fr,3,100000,,Possessif ou hauteur,bliss,CC0-1.0,ton
+top,fr,3,100000,,Sommet ou signal,bliss,CC0-1.0,top
+tri,fr,3,100000,,Sélection ordonnée,bliss,CC0-1.0,tri
+tu,fr,2,100000,,Pronom de la 2e personne,bliss,CC0-1.0,tu
+tué,fr,3,100000,,Mort violemment,bliss,CC0-1.0,tué
+tôt,fr,3,100000,,En avance,bliss,CC0-1.0,tôt
+un,fr,2,100000,,Article ou chiffre,bliss,CC0-1.0,un
+une,fr,3,100000,,Article féminin,bliss,CC0-1.0,une
+us,fr,2,100000,,Coutumes anciennes,bliss,CC0-1.0,us
+usa,fr,3,100000,,Utilisa jadis,bliss,CC0-1.0,usa
+va,fr,2,100000,,Verbe aller,bliss,CC0-1.0,va
+van,fr,3,100000,,Tamis ou camionnette,bliss,CC0-1.0,van
+vif,fr,3,100000,,Plein de vie,bliss,CC0-1.0,vif
+vil,fr,3,100000,,Méprisable,bliss,CC0-1.0,vil
+vin,fr,3,100000,,Boisson du raisin,bliss,CC0-1.0,vin
+vis,fr,3,100000,,Tige filetée,bliss,CC0-1.0,vis
+vol,fr,3,100000,,Larcin ou trajet aérien,bliss,CC0-1.0,vol
+vos,fr,3,100000,,Possessif pluriel,bliss,CC0-1.0,vos
+vu,fr,2,100000,,Constaté de ses yeux,bliss,CC0-1.0,vu
+vue,fr,3,100000,,Sens visuel,bliss,CC0-1.0,vue
+yen,fr,3,100000,,Monnaie japonaise,bliss,CC0-1.0,yen
+zoo,fr,3,100000,,Parc animalier,bliss,CC0-1.0,zoo
+âge,fr,3,100000,,Période de la vie,bliss,CC0-1.0,âge
+élu,fr,3,100000,,Mandataire choisi,bliss,CC0-1.0,élu
+été,fr,3,100000,,Saison la plus chaude,bliss,CC0-1.0,été
+île,fr,3,100000,,Terre entourée d'eau,bliss,CC0-1.0,île
+œil,fr,3,100000,,Organe de la vue,bliss,CC0-1.0,œil
+nu,fr,2,100000,,Sans vêtement ou lettre grecque,bliss,CC0-1.0,nu
+pi,fr,2,100000,,Constante mathématique grecque,bliss,CC0-1.0,pi
+xi,fr,2,100000,,Lettre grecque,bliss,CC0-1.0,xi
+bu,fr,2,100000,,Participe de boire,bliss,CC0-1.0,bu
+ci,fr,2,100000,,Adverbe de lieu proche,bliss,CC0-1.0,ci
+dé,fr,2,100000,,Cube à six faces,bliss,CC0-1.0,dé
+dû,fr,2,100000,,Ce que l'on doit,bliss,CC0-1.0,dû
+eh,fr,2,100000,,Interjection d'appel,bliss,CC0-1.0,eh
+ex,fr,2,100000,,Ancien partenaire,bliss,CC0-1.0,ex
+fa,fr,2,100000,,Note de musique,bliss,CC0-1.0,fa
+ha,fr,2,100000,,Cri d'étonnement,bliss,CC0-1.0,ha
+là,fr,2,100000,,Adverbe de lieu,bliss,CC0-1.0,là
+né,fr,2,100000,,Venu au monde,bliss,CC0-1.0,né
+où,fr,2,100000,,Adverbe de lieu interrogatif,bliss,CC0-1.0,où
+pu,fr,2,100000,,Participe de pouvoir,bliss,CC0-1.0,pu
+ra,fr,2,100000,,Dieu solaire égyptien,bliss,CC0-1.0,ra
+té,fr,2,100000,,Règle d'équerre ou note,bliss,CC0-1.0,té
+ut,fr,2,100000,,Ancienne note de musique,bliss,CC0-1.0,ut
+tau,fr,3,100000,,Lettre grecque (19e),bliss,CC0-1.0,tau
+phi,fr,3,100000,,Lettre grecque (21e),bliss,CC0-1.0,phi
+psi,fr,3,100000,,Lettre grecque (23e),bliss,CC0-1.0,psi
+rho,fr,3,100000,,Lettre grecque (17e),bliss,CC0-1.0,rho
+khi,fr,3,100000,,Lettre grecque (22e),bliss,CC0-1.0,khi
+êta,fr,3,100000,,Lettre grecque (7e),bliss,CC0-1.0,êta
+âme,fr,3,100000,,Partie immatérielle de l'être,bliss,CC0-1.0,âme
+ave,fr,3,100000,,Salutation latine,bliss,CC0-1.0,ave
+bey,fr,3,100000,,Titre ottoman,bliss,CC0-1.0,bey
+dey,fr,3,100000,,Souverain d'Alger,bliss,CC0-1.0,dey
+dom,fr,3,100000,,Titre religieux,bliss,CC0-1.0,dom
+ego,fr,3,100000,,Le moi conscient,bliss,CC0-1.0,ego
+ère,fr,3,100000,,Longue période historique,bliss,CC0-1.0,ère
+eut,fr,3,100000,,Posséda jadis,bliss,CC0-1.0,eut
+fut,fr,3,100000,,Tonneau ou verbe être,bliss,CC0-1.0,fut
+gag,fr,3,100000,,Trait comique,bliss,CC0-1.0,gag
+gin,fr,3,100000,,Alcool britannique,bliss,CC0-1.0,gin
+gnu,fr,3,100000,,Bovidé africain,bliss,CC0-1.0,gnu
+hue,fr,3,100000,,Cri pour faire avancer,bliss,CC0-1.0,hue
+ire,fr,3,100000,,Colère soutenue,bliss,CC0-1.0,ire
+lia,fr,3,100000,,Attacha jadis,bliss,CC0-1.0,lia
+mué,fr,3,100000,,Qui a changé,bliss,CC0-1.0,mué
+nia,fr,3,100000,,Refusa jadis,bliss,CC0-1.0,nia
+ode,fr,3,100000,,Poème lyrique,bliss,CC0-1.0,ode
+ohé,fr,3,100000,,Interjection d'appel,bliss,CC0-1.0,ohé
+ost,fr,3,100000,,Armée féodale,bliss,CC0-1.0,ost
+ouf,fr,3,100000,,Soupir de soulagement,bliss,CC0-1.0,ouf
+pur,fr,3,100000,,Sans mélange,bliss,CC0-1.0,pur
+rab,fr,3,100000,,Supplément servi,bliss,CC0-1.0,rab
+ria,fr,3,100000,,Estuaire breton,bliss,CC0-1.0,ria
+rio,fr,3,100000,,Rivière espagnole,bliss,CC0-1.0,rio
+ris,fr,3,100000,,Glande du veau,bliss,CC0-1.0,ris
+rob,fr,3,100000,,Sirop concentré,bliss,CC0-1.0,rob
+tao,fr,3,100000,,Doctrine chinoise,bliss,CC0-1.0,tao
+toc,fr,3,100000,,Imitation grossière,bliss,CC0-1.0,toc
+tuf,fr,3,100000,,Roche volcanique tendre,bliss,CC0-1.0,tuf
+yak,fr,3,100000,,Bovin tibétain,bliss,CC0-1.0,yak
+zen,fr,3,100000,,Calme et serein,bliss,CC0-1.0,zen
+zig,fr,3,100000,,Type d'individu,bliss,CC0-1.0,zig

@@ -26,7 +26,7 @@ from dataclasses import dataclass
 from morphology_index import MorphologyIndex
 
 
-_CONTENT_POS = {"verbe", "nom", "adj"}
+_CONTENT_POS = {"verbe", "nom", "adj", "adv"}
 
 _FUNCTION_WORDS = {
     # articles + determiners
@@ -75,6 +75,8 @@ def _classify_pos_set(tags: frozenset[str]) -> set[str]:
         classes.add("nom")
     if "adj" in tags:
         classes.add("adj")
+    if "adv" in tags:
+        classes.add("adv")
     return classes
 
 
@@ -95,6 +97,74 @@ def _find_head(clue: str) -> str:
     return ""
 
 
+def _find_lemma_family_leak(
+    clue: str,
+    target_lemma: str,
+    index: MorphologyIndex,
+) -> str | None:
+    """Return the offending token if any clue token (not just the head) belongs
+    to the target lemma's grammalecte inflection family. None when clean.
+
+    Catches non-head self-references like:
+      impur → 'Matière impure'   ('impure' is fem-sg of impur)
+      asseoir → "Faire s'asseoir" ('asseoir' is the lemma itself)
+    """
+    target = target_lemma.lower().strip()
+    if not target:
+        return None
+    family = {target}
+    for surface, _tags in index.by_lemma.get(target, []):
+        family.add(surface)
+    if len(family) <= 1:
+        return None
+    for tok in _TOKEN_RE.findall(clue):
+        tl = tok.lower()
+        if tl in family:
+            return tok
+    return None
+
+
+# Minimum overlap length for the stem-leak check. Below 5, common French
+# affixes (de-, re-, -er, -ier) generate too many false positives. At 5+,
+# overlaps are strongly indicative of shared root.
+_STEM_LEAK_MIN = 5
+
+
+def _longest_common_prefix(a: str, b: str) -> int:
+    n = min(len(a), len(b))
+    for i in range(n):
+        if a[i] != b[i]:
+            return i
+    return n
+
+
+def _find_stem_leak(clue: str, target_lemma: str) -> str | None:
+    """Return the offending token if any clue token shares ≥5 chars of stem
+    with the target lemma. Catches:
+      destructeur → 'Agent de destruction' (LCP "destruct" = 8 chars)
+      ébattre     → 'Battre joyeusement'   (battre is substring of ébattre)
+      chapelle    → 'Petit chapelet'       (LCP "chapel" = 6 chars)
+
+    Two checks: longest-common-prefix ≥ 5, OR substring containment when
+    both forms are ≥ 5 chars. Short targets (< 5 chars) skip the check
+    entirely — French has too many short words to draw stem boundaries
+    reliably below that length."""
+    target = target_lemma.lower().strip()
+    if len(target) < _STEM_LEAK_MIN:
+        return None
+    for tok in _TOKEN_RE.findall(clue):
+        tl = tok.lower()
+        if tl in _FUNCTION_WORDS or len(tl) < _STEM_LEAK_MIN:
+            continue
+        if tl == target:
+            continue  # exact match is handled by the family-leak check
+        if _longest_common_prefix(target, tl) >= _STEM_LEAK_MIN:
+            return tok
+        if tl in target or target in tl:
+            return tok
+    return None
+
+
 def validate_lemma_clue(
     clue: str,
     target_lemma: str,
@@ -104,9 +174,42 @@ def validate_lemma_clue(
     if not clue.strip():
         return ValidationResult("no-head", "empty clue")
 
+    # Pixel-fit gate (the no-overflow contract). Loaded lazily so callers
+    # without Pillow installed don't pay an import cost; clue_metrics is
+    # cheap once loaded.
+    from clue_metrics import fits_single_cell  # noqa: PLC0415
+    if not fits_single_cell(clue.strip()):
+        return ValidationResult(
+            "too-long",
+            "clue overflows the reference single-clue cell at 0.18 ratio",
+        )
+
     head = _find_head(clue)
     if not head:
         return ValidationResult("no-head", "no content word in clue")
+
+    # Whole-clue self-reference: any token (not just head) that belongs to the
+    # target lemma's inflection family is a leak. Catches "Matière impure" for
+    # impur and "Faire s'asseoir" for asseoir.
+    leak = _find_lemma_family_leak(clue, target_lemma, index)
+    if leak is not None:
+        return ValidationResult(
+            "self-reference",
+            f"clue contains '{leak}' from target lemma's inflection family",
+            head,
+        )
+
+    # Stem leak: any token sharing ≥5 chars of prefix or substring with the
+    # target lemma indicates a derivational/etymological relationship that
+    # the inflection-family check misses (different lemmas, same root).
+    # Catches destructeur → 'destruction', ébattre → 'battre'.
+    stem_leak = _find_stem_leak(clue, target_lemma)
+    if stem_leak is not None:
+        return ValidationResult(
+            "stem-leak",
+            f"clue token '{stem_leak}' shares root with target lemma",
+            head,
+        )
 
     head_lower = head.lower()
     target_lower = target_lemma.lower().strip()
@@ -127,6 +230,7 @@ def validate_lemma_clue(
 
     saw_lemma_form = False
     saw_target_pos_inflected = False
+    adv_phrasal_match = False  # adverb targets accept phrasal heads (En -ant, Avec X, ...)
     for lemma, tags in analyses:
         head_pos_set = _classify_pos_set(tags)
         is_lemma_form = lemma.lower() == head_lower
@@ -134,8 +238,16 @@ def validate_lemma_clue(
             saw_lemma_form = True
             if target_pos_norm in head_pos_set:
                 return ValidationResult("ok", "", head)
+            # French adverbs are routinely clued by phrasal heads:
+            # 'En souriant' (gérondif), 'Avec sagesse' (nom), 'De manière brusque' (adj).
+            # Accept any content-POS citation-form head when target is adv.
+            if target_pos_norm == "adv" and head_pos_set & _CONTENT_POS:
+                adv_phrasal_match = True
         elif target_pos_norm in head_pos_set:
             saw_target_pos_inflected = True
+
+    if adv_phrasal_match:
+        return ValidationResult("ok", "", head)
 
     if saw_lemma_form:
         return ValidationResult(

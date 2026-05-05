@@ -1,0 +1,21 @@
+lemma,pos,definition,synonyms,lemma_clue,attempts,validation_flag,rating
+appeler,verbe,,,Solliciter quelqu'un,1,ok,y
+biais,nom,,,Parti pris,1,ok,y
+couper,verbe,,,Trancher net,1,ok,y
+descendre,verbe,,,Aller vers le bas,1,ok,y
+féal,nom,,,Vassal loyal,1,ok,y
+gamma,nom,,,Rayon de lumière,1,ok,n
+historicisme,nom,,,Tendance à considérer le passé comme une réalité en soi,1,ok,b
+insecte,nom,,,Petit animal rampant,1,ok,b
+jaillir,verbe,,,Surgir brusquement,1,ok,y
+pire,nom,,,Plus mauvais,1,ok,y
+piété,verbe,,,Compassion profonde,3,pos-mismatch,n
+pourriture,nom,,,Décomposition avancée,1,ok,y
+poète,nom,,,Écrit des vers,1,ok,b
+privilège,nom,,,Droit spécial,1,ok,y
+probabilité,nom,,,Chance d'un événement,1,ok,y
+présumer,verbe,,,Tenir pour acquis,1,ok,y
+sacristie,nom,,,Pièce du temple,1,ok,n
+truchement,nom,,,Action de truquer,1,ok,n
+témoignage,nom,,,Récit d'un événement vécu,1,ok,y
+veine,verbe,,,Canal naturel,3,pos-mismatch,b

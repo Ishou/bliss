@@ -10,6 +10,7 @@ import type { Cell, Position, Puzzle } from '@/domain';
 import type { Player, SessionId } from '@/domain/game';
 import { BlockCellView, DefinitionCellView, LetterCellView } from './Cell';
 import { CurrentCluePanel } from './CurrentCluePanel';
+import { GridZoomControls } from './GridZoomControls';
 import { PresenceOverlay } from './PresenceOverlay';
 import { useGridNavigation, type Direction } from './useGridNavigation';
 
@@ -40,10 +41,12 @@ const gridFrame = css({ position: 'relative', width: '100%', overflow: 'visible'
 // The library's stylesheet defaults this box to `width: fit-content`,
 // which would collapse around `width: 100%` children — we override here
 // so the outer box drives the layout and the grid inside fills it.
-// `touchAction: 'none'` scopes native-pinch suppression to this element
-// only, keeping native browser zoom available on the clue panel and
-// page chrome (required for WCAG 1.4.4 on mobile — pinch IS browser
-// zoom on touch devices).
+// `touchAction` is dynamic per `transformWrapperStyle` below — `pan-y` when
+// the grid is at rest (scale 1) so a vertical swipe over the grid scrolls
+// the page (the natural mobile expectation), `none` once the user has
+// pinched in (scale > 1) so swipes pan the grid instead. This preserves
+// native browser zoom on the page chrome (WCAG 1.4.4) and gives the right
+// mobile UX: scroll-through at rest, pan-when-zoomed.
 //
 // `maxHeight` is layered on per render below: when the soft keyboard is
 // open we shrink the wrapper to fit above the keyboard, which lets the
@@ -55,13 +58,13 @@ const transformWrapperBaseStyle = {
   width: '100%',
   maxWidth: '480px',
   margin: '0 auto',
-  touchAction: 'none' as const,
 };
 // `transformContentStyle.width: 100%` defeats the same library default on
 // the inner (transformed) plane so the grid actually spans the wrapper.
 // The library composes its `transform: translate3d() scale()` on top of
 // any inline style we pass, so width here is preserved.
 const transformContentStyle = { width: '100%' };
+
 
 // Lower bound on the keyboard-aware wrapper max-height. Below this
 // (a one-row peek into a 5+ row grid) the grid is too cramped to be
@@ -79,26 +82,6 @@ const WRAPPER_BOTTOM_MARGIN_PX = 8;
 const rowStyles = css({ display: 'contents' });
 
 const positionKey = (p: Position) => `${p.row},${p.col}`;
-
-const posOf = (el: Element): Position | null => {
-  const rowAttr = el.getAttribute('data-row');
-  const colAttr = el.getAttribute('data-col');
-  if (rowAttr === null || colAttr === null) return null;
-  const row = Number(rowAttr);
-  const col = Number(colAttr);
-  if (!Number.isFinite(row) || !Number.isFinite(col)) return null;
-  return { row, col };
-};
-
-const refsByPosition = (
-  frame: HTMLDivElement | null,
-  position: Position,
-): HTMLInputElement | null => {
-  if (!frame) return null;
-  return frame.querySelector<HTMLInputElement>(
-    `input[data-cell-kind="letter"][data-row="${position.row}"][data-col="${position.col}"]`,
-  );
-};
 
 // v1 interactive grid. Letter inputs are uncontrolled (ADR-0002 §4).
 // `useGridNavigation` orchestrates focus, direction, and highlighting
@@ -220,11 +203,52 @@ export function Grid({
     [],
   );
 
+  // Synchronous pan flag, read by `useGridNavigation` to gate
+  // focus/click slot-selection during a pan. Stays true for one frame
+  // past the library's `onPanningStop` so the post-mouseup click +
+  // focus events the browser dispatches in the same task are also
+  // gated. Ref (not state) so the navigation hook reads the latest
+  // value synchronously inside its handlers.
+  const panningRef = useRef(false);
+  const isPanningGetter = useCallback(() => panningRef.current, []);
+  // The element that had DOM focus *before* a pan-initiating gesture
+  // moved it. Captured by the custom mouse pan handler (below) on
+  // mousedown in capture phase, or by `handlePanningStart` on touch.
+  // On panning stop we revert DOM focus to this element — the revert
+  // fires React's onFocus / onBlur and pulls React state back in sync.
+  const focusBeforePanRef = useRef<HTMLElement | null>(null);
+
   const nav = useGridNavigation(puzzle, {
     onCellChange,
     onFocusChange: onLocalFocusChange,
     getZoomScale,
+    isPanning: isPanningGetter,
   });
+
+  // Zoom in / out centered on the currently-focused cell. When the
+  // user has a slot focused, the library's `zoomToElement` keeps that
+  // slot under their eyes as the scale changes — what they expect
+  // when they hit `+` or `−`. Falls back to plain `zoomIn` / `zoomOut`
+  // (which centre the *viewport*) if no cell is focused.
+  const zoomCenteredOnFocus = useCallback((delta: number) => {
+    const tw = transformWrapperRef.current;
+    if (!tw) return;
+    const target = tw.state.scale + delta;
+    const clamped = Math.max(1, Math.min(4, target));
+    if (Math.abs(clamped - tw.state.scale) < 0.001) return;
+    const active = document.activeElement;
+    const cell = active instanceof HTMLInputElement
+      && active.closest('[role="grid"]')
+      ? active
+      : null;
+    if (cell && clamped > 1.01) {
+      tw.zoomToElement(cell, clamped, 150);
+    } else if (delta > 0) {
+      tw.zoomIn(delta, 150);
+    } else {
+      tw.zoomOut(-delta, 150);
+    }
+  }, []);
 
   // Ref for the positioned `gridFrame` div — the `PresenceOverlay`
   // measures peer-cursor cell rectangles relative to this element so
@@ -234,100 +258,192 @@ export function Grid({
 
   // Blur-on-gesture coordination (iOS Safari mitigation). When an
   // `<input>` is focused, iOS Safari natively auto-scrolls / zooms to
-  // keep it in the viewport during ANY layout change — including the
-  // JS-driven CSS transform that `react-zoom-pan-pinch` applies during
-  // a pinch / pan. The browser fights the gesture with its focus-snap.
-  // Mitigation: blur the focused cell when a gesture starts, restore
-  // focus when ALL gestures end. No focused input ⇒ nothing for iOS
-  // to track ⇒ smooth gesture; on gesture end the keyboard reopens
-  // (the user is done gesturing and can resume typing). Android Chrome
-  // doesn't trigger the same focus-snap, but the same blur is a no-op
-  // there — simpler than UA-sniffing.
-  //
-  // Refs (not state) — gestures fire at high frequency and any state
-  // update would trigger a render in the path. The cell-to-restore
-  // identity is just (row, col), so we record it as a `Position` ref
-  // and resolve to the live DOM input via a querySelector at restore
-  // time. `userTappedDuringGestureRef` is set by a capture-phase
-  // `focusin` listener on the grid frame: if focus lands on a
-  // different cell during the gesture window (e.g. user tapped
-  // elsewhere), we drop the to-restore intent so we don't yank focus
-  // away from the user's new target.
-  const cellToRestoreRef = useRef<Position | null>(null);
-  const userTappedDuringGestureRef = useRef(false);
-  // Tracks whether each gesture kind is currently active. Either flag
-  // being true keeps the focused cell blurred; both clear before we
-  // restore. This handles the iOS case where a pinch can transition
-  // into a pan without `onZoomStop` firing strictly before
-  // `onPanningStart`.
-  const zoomingRef = useRef(false);
-  const panningRef = useRef(false);
-
-  const blurFocusedCell = useCallback(() => {
-    const active = document.activeElement;
-    if (!(active instanceof HTMLInputElement)) return;
-    if (!active.closest('[role="grid"]')) return;
-    const p = posOf(active);
-    if (!p) return;
-    cellToRestoreRef.current = p;
-    userTappedDuringGestureRef.current = false;
-    active.blur();
-  }, []);
-
-  const restoreCellFocus = useCallback(() => {
-    if (zoomingRef.current || panningRef.current) return;
-    const target = cellToRestoreRef.current;
-    cellToRestoreRef.current = null;
-    if (!target) return;
-    if (userTappedDuringGestureRef.current) return;
-    const el = refsByPosition(gridFrameRef.current, target);
-    if (!el || !el.isConnected) return;
-    el.focus();
-  }, []);
-
-  const handleZoomStart = useCallback(() => {
-    zoomingRef.current = true;
-    if (cellToRestoreRef.current === null) blurFocusedCell();
-  }, [blurFocusedCell]);
-  const handleZoomStop = useCallback(() => {
-    zoomingRef.current = false;
-    restoreCellFocus();
-  }, [restoreCellFocus]);
+  // Reactive copies of the library's gesture state, used to drive style
+  // changes that need to re-render (touch-action, cursor). ~1.01 scale
+  // epsilon mirrors the threshold used elsewhere for "is the user zoomed?".
+  const [isZoomedIn, setIsZoomedIn] = useState(false);
+  const [isMaxZoom, setIsMaxZoom] = useState(false);
+  const [isPanning, setIsPanning] = useState(false);
+  // Tracks the prior frame's scale so we can detect the "crossed back
+  // down to 1" transition exactly once and snap to centre. Lives outside
+  // React state because rapid wheel notches would otherwise create
+  // setState churn.
+  const previousScaleRef = useRef(1);
+  // No focus side-effects during zoom or pan: gestures and focus state
+  // are independent. To enforce that, the panning handlers snapshot the
+  // current focus on start and the focusin listener (below) reverts any
+  // mid-gesture focus drift.
+  // `onTransform` fires on every frame the library applies a transform
+  // (wheel notch, pinch step, button click animation). We use it to
+  // keep `isZoomedIn` / `isMaxZoom` in step with the live scale —
+  // `onZoomStop` alone debounces too long and the buttons' enabled
+  // state visibly lags the cursor's `grab` cue. We also snap the grid
+  // back to centre the moment scale crosses 1 on the way down: doing
+  // this here (vs in `onZoomStop`) avoids the ~1s delay before the
+  // library's debounced stop fires. Guard with a ref so we only call
+  // `centerView` once per crossing — calling it every frame would
+  // trigger a recursive transform loop. 0.01 epsilon mirrors the
+  // threshold elsewhere; 4 is the `maxScale` prop on TransformWrapper
+  // below — must stay in sync.
+  const handleTransform = useCallback(
+    (_ref: { state: { scale: number } }, state: { scale: number }) => {
+      setIsZoomedIn(state.scale > 1.01);
+      setIsMaxZoom(state.scale >= 4 - 0.01);
+      if (state.scale <= 1.01 && previousScaleRef.current > 1.01) {
+        const tw = transformWrapperRef.current;
+        // 150 ms matches the button-driven zoom animation; an instant
+        // snap (`0`) felt jarring relative to the rest of the gestures.
+        // `previousScaleRef` already records the current scale below,
+        // so we don't re-trigger this branch on subsequent frames.
+        if (tw) tw.centerView(1, 150);
+      }
+      previousScaleRef.current = state.scale;
+    },
+    [],
+  );
+  const handleZoomStart = useCallback(() => {}, []);
+  const handleZoomStop = useCallback(() => {}, []);
+  // Library-driven path (touch). For touch, the library calls
+  // `onPanningStart` on touchstart, before the browser would synthesise
+  // any focus change (touch focus happens on touchend → click). So
+  // `document.activeElement` at this point is the pre-touch focus —
+  // good enough to snapshot for the revert. The custom mouse handler
+  // below sets `focusBeforePanRef` on its own, so we leave it alone if
+  // already populated.
   const handlePanningStart = useCallback(() => {
     panningRef.current = true;
-    if (cellToRestoreRef.current === null) blurFocusedCell();
-  }, [blurFocusedCell]);
+    setIsPanning(true);
+    if (focusBeforePanRef.current === null) {
+      const active = document.activeElement;
+      focusBeforePanRef.current =
+        active instanceof HTMLElement ? active : null;
+    }
+  }, []);
   const handlePanningStop = useCallback(() => {
-    panningRef.current = false;
-    restoreCellFocus();
-  }, [restoreCellFocus]);
+    setIsPanning(false);
+    // Browser tail events (click, focusin, focusout) fire synchronously
+    // after `mouseup`, in the same task as this handler. Defer the
+    // teardown to the next animation frame so those events still see
+    // panningRef=true and stay gated by useGridNavigation.
+    requestAnimationFrame(() => {
+      // Open the gate FIRST so the revert below can flow through
+      // useGridNavigation (otherwise its handleFocus would gate the
+      // reverted focusin and React state wouldn't catch up).
+      panningRef.current = false;
+      const before = focusBeforePanRef.current;
+      focusBeforePanRef.current = null;
+      const active = document.activeElement;
+      if (active === before) return;
+      if (before && before.isConnected && typeof (before as HTMLElement).focus === 'function') {
+        (before as HTMLElement).focus({ preventScroll: true });
+      } else if (active instanceof HTMLElement && active.closest('[role="grid"]')) {
+        active.blur();
+      }
+    });
+  }, []);
 
-  // Capture-phase focusin listener on the grid frame: if the user taps
-  // a different cell mid-gesture, drop the to-restore intent so we
-  // don't override the user's new focus when the gesture ends. Capture
-  // phase so we observe the focus regardless of stopPropagation
-  // upstream.
+  // Custom mouse pan with a movement threshold. The library's mouse
+  // pan path preventDefaults every mousedown, blocking cell focus on a
+  // click without drag. We disable that (`allowLeftClickPan: false`)
+  // and re-implement pan via direct `setTransform` calls when movement
+  // exceeds THRESHOLD_PX. Below the threshold the click flows
+  // unimpeded and the cell focuses naturally.
+  //
+  // Touch is unchanged — the library handles touch panning, and
+  // touch click→focus already works because the browser only
+  // synthesises a click on touchend with low movement.
   useEffect(() => {
     const frame = gridFrameRef.current;
     if (!frame) return;
-    const onFocusIn = (event: FocusEvent) => {
-      // Only count focusin while a gesture is in progress; outside of
-      // the gesture window the focused cell is the steady-state user
-      // intent — we want to remember it and restore it on the next
-      // gesture, not clear the (currently empty) ref.
-      if (!zoomingRef.current && !panningRef.current) return;
-      const target = event.target;
-      if (!(target instanceof HTMLInputElement)) return;
-      const p = posOf(target);
-      if (!p) return;
-      // If the new focus is the same cell we're trying to restore
-      // (e.g. iOS re-focused it on its own), keep the to-restore ref.
-      const restore = cellToRestoreRef.current;
-      if (restore && restore.row === p.row && restore.col === p.col) return;
-      userTappedDuringGestureRef.current = true;
+    const THRESHOLD_PX = 4;
+    let drag: {
+      startX: number;
+      startY: number;
+      baseX: number;
+      baseY: number;
+      baseScale: number;
+      preFocus: HTMLElement | null;
+      started: boolean;
+    } | null = null;
+
+    const onMouseDown = (event: MouseEvent) => {
+      if (event.button !== 0) return; // only left button
+      const tw = transformWrapperRef.current;
+      if (!tw || tw.state.scale <= 1.01) return; // nothing to pan
+      // Capture phase fires before the browser moves focus to the
+      // clicked input — `document.activeElement` here is the pre-
+      // mousedown focus, the snapshot we want to revert to if a pan
+      // happens.
+      const active = document.activeElement;
+      drag = {
+        startX: event.clientX,
+        startY: event.clientY,
+        baseX: tw.state.positionX,
+        baseY: tw.state.positionY,
+        baseScale: tw.state.scale,
+        preFocus: active instanceof HTMLElement ? active : null,
+        started: false,
+      };
     };
-    frame.addEventListener('focusin', onFocusIn, true);
-    return () => frame.removeEventListener('focusin', onFocusIn, true);
+
+    const onMouseMove = (event: MouseEvent) => {
+      if (!drag) return;
+      const dx = event.clientX - drag.startX;
+      const dy = event.clientY - drag.startY;
+      if (!drag.started) {
+        if (dx * dx + dy * dy < THRESHOLD_PX * THRESHOLD_PX) return;
+        drag.started = true;
+        // Promote to a pan: arm the gates and snapshot focus.
+        panningRef.current = true;
+        setIsPanning(true);
+        focusBeforePanRef.current = drag.preFocus;
+      }
+      const tw = transformWrapperRef.current;
+      if (tw) {
+        tw.setTransform(
+          drag.baseX + dx,
+          drag.baseY + dy,
+          drag.baseScale,
+          0,
+        );
+      }
+    };
+
+    const onMouseUp = () => {
+      const local = drag;
+      drag = null;
+      if (!local || !local.started) return;
+      // End the pan: same revert flow as `handlePanningStop`.
+      setIsPanning(false);
+      requestAnimationFrame(() => {
+        panningRef.current = false;
+        const before = focusBeforePanRef.current;
+        focusBeforePanRef.current = null;
+        const active = document.activeElement;
+        if (active === before) return;
+        if (
+          before instanceof HTMLElement &&
+          before !== document.body &&
+          before.isConnected
+        ) {
+          before.focus({ preventScroll: true });
+        } else if (
+          active instanceof HTMLElement &&
+          active.closest('[role="grid"]')
+        ) {
+          active.blur();
+        }
+      });
+    };
+
+    frame.addEventListener('mousedown', onMouseDown, true);
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+    return () => {
+      frame.removeEventListener('mousedown', onMouseDown, true);
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+    };
   }, []);
 
   // Soft-keyboard-aware wrapper max-height. When the on-screen keyboard
@@ -402,11 +518,18 @@ export function Grid({
     };
   }, []);
   const transformWrapperStyle = useMemo(
-    () =>
-      wrapperMaxHeightPx === null
-        ? transformWrapperBaseStyle
-        : { ...transformWrapperBaseStyle, maxHeight: `${wrapperMaxHeightPx}px` },
-    [wrapperMaxHeightPx],
+    () => {
+      const touchAction = isZoomedIn ? 'none' : 'pan-y';
+      // Cursor telegraphs "draggable to pan" on desktop. Only meaningful
+      // once zoomed in (at scale 1 there's nothing to pan to). While the
+      // user is mid-drag, switch to `grabbing` for the closed-fist feel.
+      const cursor = isPanning ? 'grabbing' : (isZoomedIn ? 'grab' : 'auto');
+      const base = { ...transformWrapperBaseStyle, touchAction, cursor } as const;
+      return wrapperMaxHeightPx === null
+        ? base
+        : { ...base, maxHeight: `${wrapperMaxHeightPx}px` };
+    },
+    [wrapperMaxHeightPx, isZoomedIn, isPanning],
   );
 
   // Wire the inbound multiplayer path. Stable across renders because the
@@ -465,21 +588,26 @@ export function Grid({
         - `centerOnInit` — first paint puts the grid centered in the
           wrapper. Without this the library can leave a small offset from
           its bounds-padding logic on certain initial sizes.
-        - `wheel.disabled` — desktop mouse wheel scrolls the page (the
-          natural expectation), not zooms the grid. Pinch on a trackpad
-          still zooms, which is the desktop equivalent of mobile pinch.
+        - `wheel.step: 0.05` — desktop mouse wheel zooms the grid. The
+          default 0.2 is jumpy; 0.05 (5% per notch) is smooth and close
+          to native trackpad pinch. To gate behind a modifier
+          (ctrl+wheel = zoom, plain wheel = page scroll) set
+          `activationKeys: ['Control', 'Meta']`.
         - `doubleClick.disabled` — a double-tap on a cell would otherwise
           zoom-in on that cell, fighting the focus + cursor behavior we
           rely on for letter input. Disabled keeps taps purely about focus.
         - `panning.velocityDisabled` — momentum/inertia after a flick
           feels disorienting in a fixed-content puzzle (you expect the
           grid to land where your finger lifts).
-        - `panning.allowLeftClickPan: false` — prevents desktop left-click
-          drag from initiating a pan (would conflict with future
-          drag-to-select features and is unnecessary at scale 1, the
-          default desktop state). One-finger touch panning still works
-          on mobile because that flows through the touch handlers, not
-          the mouse handlers.
+        - `panning.allowLeftClickPan: false` — the library's mouse-pan
+          path calls `event.preventDefault()` on EVERY mousedown that
+          would start a pan, blocking the browser's default cell-focus
+          behavior even on a click-without-drag. We re-implement mouse
+          pan ourselves below (see `useEffect` with `mousedown` /
+          `mousemove` / `mouseup` listeners) with a movement threshold
+          so a real click still falls through to focus the cell.
+        - `panning.disabled` is reactively bound to `!isZoomedIn` —
+          gates touch panning (still library-driven) at scale 1.
       */}
       <TransformWrapper
         ref={transformWrapperRef}
@@ -487,9 +615,19 @@ export function Grid({
         maxScale={4}
         initialScale={1}
         centerOnInit
-        wheel={{ disabled: true }}
+        wheel={{ step: 0.05 }}
         doubleClick={{ disabled: true }}
-        panning={{ velocityDisabled: true, allowLeftClickPan: false }}
+        panning={{
+          velocityDisabled: true,
+          // Left-click mouse pan is implemented by the custom mouse
+          // handlers below (movement-threshold), NOT the library —
+          // see the rationale block above.
+          allowLeftClickPan: false,
+          // Touch panning still flows through the library; at scale 1
+          // there's nothing to pan, so disable to keep one-finger
+          // vertical scroll passing through to the page.
+          disabled: !isZoomedIn,
+        }}
         // Blur-on-gesture: iOS Safari fights pinch / pan with a native
         // focus-snap (auto-scrolls / zooms to keep the focused <input>
         // visible during any layout change, including the library's
@@ -500,6 +638,7 @@ export function Grid({
         // block above for the to-restore + tap-during-gesture logic.
         onZoomStart={handleZoomStart}
         onZoomStop={handleZoomStop}
+        onTransform={handleTransform}
         onPanningStart={handlePanningStart}
         onPanningStop={handlePanningStop}
       >
@@ -583,6 +722,13 @@ export function Grid({
           </div>
         </TransformComponent>
       </TransformWrapper>
+      <GridZoomControls
+        canZoomIn={!isMaxZoom}
+        canZoomOut={isZoomedIn}
+        onZoomIn={() => zoomCenteredOnFocus(0.3)}
+        onZoomOut={() => zoomCenteredOnFocus(-0.3)}
+        onReset={() => transformWrapperRef.current?.resetTransform(0)}
+      />
     </>
   );
 }

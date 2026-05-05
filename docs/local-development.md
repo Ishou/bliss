@@ -122,11 +122,11 @@ This starts three processes in parallel (Ctrl+C stops all):
 | Process                          | Port  | What it does                                       |
 | -------------------------------- | ----- | -------------------------------------------------- |
 | `gradlew -t :grid:api:classes`   | —     | Continuous compilation — recompiles on every save   |
-| `gradlew :grid:api:run`          | 8080  | Ktor server with auto-reload (detects class changes)|
+| `gradlew :grid:api:run`          | 7777  | Ktor server with auto-reload (detects class changes)|
 | `pnpm dev` (frontend)            | 5173  | Vite dev server with HMR                           |
 
 The frontend's `.env.development` points `VITE_GRID_API_URL` at
-`http://localhost:8080`, so everything connects automatically.
+`http://localhost:7777`, so everything connects automatically.
 
 Use `make deploy-local` when you need to test inside the full k3d
 cluster (ingress, TLS, Postgres). Use `make dev` for everything else.

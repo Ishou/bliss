@@ -9,13 +9,72 @@ import type {
 } from '@/domain';
 import { FitText } from './FitText';
 
+// Layout preprocessing for FitText. Two distinct paths:
+//
+//  - Multi-word clues (≥ 2 alphabetic tokens of length ≥ 2): insert
+//    ONE newline at the most-balanced split. Rendered via the
+//    containers' `whiteSpace: 'pre-line'`, so FitText reasons about a
+//    2-line layout from the start and picks a font sized by the
+//    longer of the two lines.
+//
+//  - Otherwise (single tokens, arithmetic-style "D - C", "C + C"):
+//    replace every regular space with ` ` (non-breaking space).
+//    This stops CSS auto-wrap from splitting "D - C" into a 2-line
+//    layout, which FitText would otherwise prefer (2 short lines fit
+//    a much bigger font than 1 unwrapped line). Result: clue stays on
+//    one line and the font is bound by width — smaller, proportional.
+//
+// Examples:
+//   "Gaz noble"           → "Gaz\nnoble"           (2 lines)
+//   "Vitesses du rythme"  → "Vitesses\ndu rythme"  (2 lines, balanced)
+//   "Carnets de notes quotidiennes" → "Carnets de notes\nquotidiennes"
+//   "D - C", "C + C"      → "D - C"      (1 line, no wrap)
+//   "à l'œil"             → "à l'œil"          (1 line, only one real word)
+const REAL_WORD = /[A-Za-zÀ-ÿ]/;
+function smartLineBreak(text: string): string {
+  const realWords = text
+    .split(/\s+/)
+    .filter((t) => t.length >= 2 && REAL_WORD.test(t));
+  if (realWords.length < 2) {
+    return text.replace(/ /g, ' ');
+  }
+  const spaces: number[] = [];
+  for (let i = 0; i < text.length; i++) {
+    if (text[i] === ' ') spaces.push(i);
+  }
+  let bestIdx = -1;
+  let bestMax = Infinity;
+  for (const i of spaces) {
+    const leftLen = i;
+    const rightLen = text.length - i - 1;
+    const longer = Math.max(leftLen, rightLen);
+    if (longer < bestMax) {
+      bestMax = longer;
+      bestIdx = i;
+    }
+  }
+  if (bestIdx < 0) return text;
+  return text.slice(0, bestIdx) + '\n' + text.slice(bestIdx + 1);
+}
+
 // Clue text size bounds (px). Floors keep clues legible on dense grids;
 // ceilings prevent a 3-letter clue ("rai") from ballooning past the cell.
 // Stacked clues split the cell vertically, so their ceiling is lower.
-const SINGLE_MIN = 11;
-const SINGLE_MAX = 22;
-const STACK_MIN = 10;
-const STACK_MAX = 16;
+// Font-size ratios as fractions of the cell's `clientWidth`. The floor
+// (0.18) matches `scripts/eval/clue_metrics.py` — clues passing the PIL
+// validator at the reference 100 px cell fit at this ratio at any actual
+// cell size, because FitText scales font linearly with cell width
+// (zoom-invariance).
+//
+// MAX is generous so short clues like "Gaz noble" use the full half-cell
+// (FitText automatically backs off for longer clues; the cap only
+// governs the unconstrained-by-content cases). 0.50 of cell width is
+// near the practical ceiling for a 2-line wrapped pair like "Gaz" /
+// "noble" inside a half-cell with line-height 1.0.
+const SINGLE_RATIO_MIN = 0.18;
+const SINGLE_RATIO_MAX = 0.50;
+const STACK_RATIO_MIN = 0.18;
+const STACK_RATIO_MAX = 0.50;
 
 const cellBase = css({
   position: 'relative',
@@ -46,11 +105,15 @@ const defCell = css({
 });
 
 // Text fills the full cell now that the arrow is outside the flow.
+// `overflow: hidden` clips clue text that won't fit even at FitText's floor —
+// without this, the cellBase `overflow: visible` (needed for arrow badges)
+// lets long clues bleed into adjacent cells.
 const defSingle = css({
   display: 'flex',
   flexDirection: 'column',
   width: '100%',
   height: '100%',
+  overflow: 'hidden',
 });
 
 // Current-clue highlight: colored border on the side opposite the arrow so it
@@ -61,15 +124,22 @@ const defCellCurrentDown = css({ borderTop: '3px solid token(colors.leaf.700)', 
 // Single-clue text: font size is auto-fit at runtime (FitText) — the inline
 // font-size set by FitText overrides any value here. We still need flex:1 +
 // alignSelf so the span fills the cell (FitText measures clientWidth/
-// clientHeight on this very element).
+// clientHeight on this very element). `overflowWrap: break-word` lets a
+// rare long unbroken French word split as a last resort. `overflow: hidden`
+// is a safety net — with `clue_metrics.fits_single_cell` enforced upstream
+// this should never engage on shipped data, but if it does the cell stays
+// inside its borders rather than bleeding into neighbours.
 const defText = css({
   flex: 1,
   alignSelf: 'stretch',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  overflowWrap: 'normal',
+  textAlign: 'center',
+  overflowWrap: 'break-word',
   wordBreak: 'normal',
+  overflow: 'hidden',
+  whiteSpace: 'pre-line',
 });
 
 // Arrow shapes — straight triangles + bent L-shapes.
@@ -206,6 +276,7 @@ function ArrowMark({
 
 // Stacked layout: two clues share the cell vertically.
 // Arrows are outside the flow (border-positioned), so text gets the full area.
+// `overflow: hidden` clips clue text past FitText's floor — see defSingle.
 const defStack = css({
   display: 'flex',
   flexDirection: 'column',
@@ -213,6 +284,7 @@ const defStack = css({
   height: '100%',
   gap: '1px',
   lineHeight: '1.1',
+  overflow: 'hidden',
 });
 const defStackClue = css({
   display: 'flex',
@@ -220,20 +292,32 @@ const defStackClue = css({
   justifyContent: 'center',
   flex: 1,
   minHeight: 0,
+  overflow: 'hidden',
   wordBreak: 'break-word',
   // Separator between the two stacked clues. `colors.border` is `sand`, the
   // same hue as the def cell bg, so a token-based rule was invisible — use
-  // ink at low alpha for a subtle but legible divider.
-  '&:not(:first-child)': { borderTop: '1px solid rgba(27, 40, 69, 0.25)', paddingTop: '2px' },
+  // ink at low alpha for a subtle but legible divider. No top padding —
+  // both halves share identical content boxes (1px border + flex
+  // alignItems:center is enough vertical separation), so neither clue
+  // looks shifted relative to the other.
+  '&:not(:first-child)': { borderTop: '1px solid rgba(27, 40, 69, 0.25)' },
 });
 const defStackClueCurrent = css({ color: 'leaf.700' });
+// Stacked-clue text: same overflow safety net as defText.
+// `whiteSpace: 'pre-line'` honours the explicit `\n` inserted by
+// `smartLineBreak` (one balanced split for multi-word clues), so
+// multi-word clues use the vertical space FitText would otherwise
+// leave empty. Line-height inherits the cell's 1.1 for legibility.
 const defStackText = css({
   flex: 1,
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  overflowWrap: 'normal',
+  textAlign: 'center',
+  overflowWrap: 'break-word',
   wordBreak: 'normal',
+  overflow: 'hidden',
+  whiteSpace: 'pre-line',
 });
 
 const letterInput = css({
@@ -310,9 +394,24 @@ export const LetterCellView = memo(function LetterCellView({
   //     and gets focused programmatically here. The focus call lives
   //     inside the click handler (a user-gesture context), so Android
   //     and iOS still pop the soft keyboard.
+  // mousedown.preventDefault stops the browser's default blur of the
+  // currently-focused input when the user presses on a non-focusable
+  // wrapper. We deliberately do NOT call focus() here: focusing on
+  // mousedown would briefly highlight the drag-from cell's word
+  // before the pan-end revert undoes it (the user-visible "wrong
+  // word focus during pan" flicker). Focus moves on click instead —
+  // the browser only synthesises click for click-without-drag, so
+  // click is the right "no pan happened" signal.
+  const handleMouseDown = (e: MouseEvent<HTMLDivElement>) => {
+    e.preventDefault();
+  };
+  // onClick wires through to useGridNavigation.handleClick which
+  // applies the isPanning gate AND does the focus call. Cell.tsx no
+  // longer calls focus directly — the gate must wrap both setDirection
+  // and the focus side-effect, otherwise a tail-of-pan synthesised
+  // click would still focus the wrong cell.
   const handleClick = (e: MouseEvent<HTMLDivElement>) => {
     onClick(e);
-    localInputRef.current?.focus();
   };
 
   return (
@@ -322,6 +421,7 @@ export const LetterCellView = memo(function LetterCellView({
       data-in-word={inWord ? 'true' : 'false'}
       data-row={cell.position.row}
       data-col={cell.position.col}
+      onMouseDown={handleMouseDown}
       onClick={handleClick}
     >
       {/*
@@ -391,9 +491,10 @@ function StackedClue({ clue, isCurrent }: { clue: DefinitionClue; isCurrent: boo
       data-current-clue={isCurrent ? 'true' : 'false'}
     >
       <FitText
-        text={clue.text}
-        min={STACK_MIN}
-        max={STACK_MAX}
+        text={smartLineBreak(clue.text)}
+        min={STACK_RATIO_MIN}
+        max={STACK_RATIO_MAX}
+        unit="ratio"
         className={defStackText}
         title={clue.text}
       />
@@ -449,9 +550,10 @@ export const DefinitionCellView = memo(function DefinitionCellView({
       >
         <div className={defSingle}>
           <FitText
-            text={clue.text}
-            min={SINGLE_MIN}
-            max={SINGLE_MAX}
+            text={smartLineBreak(clue.text)}
+            min={SINGLE_RATIO_MIN}
+            max={SINGLE_RATIO_MAX}
+            unit="ratio"
             className={defText}
             title={clue.text}
           />
