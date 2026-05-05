@@ -86,10 +86,20 @@ const errorActionsStyles = css({
   display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'md',
 });
 
+// Nested flex column inside `<main>` (also flex column) so the
+// PlayerList / Timer take their natural height and the Grid's flex
+// shell can absorb the remaining vertical space and stay square. The
+// `flex: 1 1 0` + `minHeight: 0` here matches the contract `<main>`
+// uses on `pageStyles`, propagating the leftover-height-for-the-grid
+// chain down two levels: <main> → this layout div → `gridShellStyles`
+// inside `Grid`. Without it the Grid's flex shell has no height to
+// grow into and the post-PR-#195 desktop scrollbar comes back.
 const inGameLayoutStyles = css({
   display: 'flex', flexDirection: 'column',
   alignItems: 'center', gap: 'md',
   width: '100%',
+  flex: '1 1 0',
+  minHeight: 0,
 });
 
 const LobbyShell = ({ children }: { children: React.ReactNode }) => (
