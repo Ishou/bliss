@@ -234,6 +234,12 @@ covers the playful brief, ships in one self-hosted file, and avoids the
   text-safe shade. `leaf.700` on `cream` is 6.6:1 (passes AA at
   display sizes) and is the same shade §4 already specifies for
   brand-text-on-light-surfaces.
+
+  **Amendment (PR #195, 2026-05-05).** Mobile wordmark collapses to
+  `xl` (1.875 rem) on `base` breakpoints to reclaim grid real-estate;
+  desktop `2.8125 rem` is unchanged. The `<h1>` element remains in the
+  DOM so screen-reader landmark navigation per WCAG 2.4.6 is
+  preserved.
 - **Wordmark variants:** none in v1. No icon-only mark, no monochrome
   variant, no animated form.
 - **Designer commission:** queued for after first 100 paying users (or
