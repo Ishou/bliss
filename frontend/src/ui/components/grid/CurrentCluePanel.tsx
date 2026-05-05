@@ -175,20 +175,11 @@ function useVisualViewportZoom(): ZoomedStyle | undefined {
   return style;
 }
 
-// Width-cap inline style. Shared with the grid wrapper and zoom controls
-// so the three rows render as a single visually-aligned column. Spread
-// alongside (or merged into) the visual-viewport-zoomed override when
-// the user is pinch-zoomed; the override sets `position: fixed` and a
-// transform, neither of which conflicts with `maxWidth`.
 const trackWidthStyle = { maxWidth: GRID_TRACK_WIDTH } as const;
 
 export function CurrentCluePanel({ clue }: { clue: Clue | null }) {
   const zoomStyle = useVisualViewportZoom();
-  // When pinch-zoomed the panel becomes `position: fixed; left/right: 0`,
-  // so a max-width cap there would re-introduce the centering gap the
-  // zoom branch is specifically designed to close (panel must span the
-  // visible width edge-to-edge at zoom). Apply the cap only on the
-  // sticky branch.
+  // Zoomed branch sets position:fixed left/right:0 (full-bleed); maxWidth there would re-introduce the centering gap.
   const inlineStyle = zoomStyle ?? trackWidthStyle;
   if (!clue) {
     return (

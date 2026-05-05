@@ -7,14 +7,7 @@ import { Grid } from '@/ui/components/grid';
 import { Button } from '@/ui/components/primitives';
 import { Route as RootRoute } from './__root';
 
-// Tighter mobile padding (`sm` ≈ 0.5rem) reclaims ~3rem of horizontal
-// real-estate for the grid on phone widths; desktop keeps the original
-// `lg` for visual breathing room around the centered grid (ADR-0005 §6).
-// `gap: sm` mobile / `md` desktop tightens the chrome stack so the
-// grid's `min(95vw, 80vmin, 720px)` cap pays off — every saved row of
-// chrome turns into a bigger grid cell. `100dvh` (dynamic viewport
-// units) so the page shrinks/grows in lock-step with iOS Safari's
-// URL bar.
+// 100dvh: height tracks iOS Safari's visible viewport as the URL bar collapses.
 const pageStyles = css({
   minHeight: '100dvh',
   display: 'flex',
@@ -34,12 +27,6 @@ const pageStyles = css({
 // size, weight 800, color `leaf.700`, letter-spacing slightly tightened.
 // `leaf.700` on `cream` is 6.6:1 (passes AA at display sizes); see the
 // ADR's amendment note for why this changed from `ink`.
-//
-// Mobile font collapses one step from `display` (2.5rem) to `xl`
-// (1.875rem) so the brand still reads on landing without eating the
-// vertical budget the bigger grid is reclaiming. Desktop is unchanged
-// at `2.8125rem`. The `h1` element stays in the DOM regardless, so
-// screen-reader landmark navigation per WCAG 2.4.6 is preserved.
 const wordmarkStyles = css({
   fontFamily: 'heading',
   fontSize: { base: 'xl', md: '2.8125rem' },

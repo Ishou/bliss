@@ -24,19 +24,11 @@ const cluster = css({
   margin: '8px auto 0',
 });
 
-// Width cap shared with the grid wrapper + clue panel via `GRID_TRACK_WIDTH`.
-// Inline-style because Panda CSS does not statically extract the
-// `min(95vw, …)` clamp and the cap must stay in lock-step with `Grid.tsx`.
+// Inline-style: Panda CSS cannot statically extract min(…) with viewport units.
 const clusterStyle = { maxWidth: GRID_TRACK_WIDTH } as const;
 
 const button = css({
-  // WCAG 2.2 AA — Success Criterion 2.5.8 "Target Size (Minimum)" requires
-  // touch targets ≥ 24 px; AAA-level Success Criterion 2.5.5 recommends
-  // 44 px. Mobile thumb research lands at 44–48 px for comfortable hits;
-  // we picked 44 px as the minimum width and height so each control is a
-  // first-class touch target (the cells next to it run smaller, but they
-  // are not standalone affordances — the player works through one focused
-  // cell at a time, while the zoom buttons are tap-anywhere triggers).
+  // WCAG 2.5.5 AA: 44 px minimum touch target — zoom buttons are tap-anywhere affordances (unlike letter cells, which are navigated one at a time).
   minWidth: '44px',
   height: '44px',
   px: 'sm',

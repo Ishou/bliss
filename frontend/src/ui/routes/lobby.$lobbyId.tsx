@@ -43,12 +43,7 @@ import { Route as RootRoute } from './__root';
 // the multiplayer flag is on (ADR-0018 §10), so the context fields it
 // relies on are guaranteed present at the call site.
 
-// Tighter mobile padding mirrors `routes/index.tsx`: the wider grid
-// (capped at `min(95vw, 80vmin, 720px)`) needs room, and the lobby
-// chrome (player count line, PlayerList, Timer) stacks vertically so
-// every saved rem at the page level spreads across more rows. `100dvh`
-// (dynamic viewport units) so iOS Safari's URL-bar collapse doesn't
-// cut a row off the bottom on first paint.
+// 100dvh: height tracks iOS Safari's visible viewport as the URL bar collapses.
 const pageStyles = css({
   minHeight: '100dvh', display: 'flex', flexDirection: 'column',
   alignItems: 'center', gap: { base: 'xs', md: 'sm' },

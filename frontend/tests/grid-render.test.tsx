@@ -309,13 +309,6 @@ describe('Grid render', () => {
   // arrow at rightTop next to it. Earlier regressions silently dropped
   // the second clue or mis-labeled it by axis; this test pins both
   // clues' presence and the API-order rendering.
-  // Layout: the grid wrapper, sticky clue panel, and zoom controls all
-  // share a single CSS `clamp()` (`min(95vw, 80vmin, 720px)`) exported
-  // as `GRID_TRACK_WIDTH` from Grid.tsx, so the three rows render as a
-  // single visually-aligned column. Tests below pin (a) the wrapper
-  // and the zoom-controls cluster carry the inline `maxWidth` style,
-  // (b) the clue panel does as well, and (c) every cell stays
-  // queryable by `data-row` / `data-col` after the layout change.
   describe('Fullscreen layout primitives', () => {
     it('applies the shared GRID_TRACK_WIDTH cap to the transform wrapper', () => {
       const { container } = render(<Grid puzzle={SAMPLE_PUZZLE} />);
