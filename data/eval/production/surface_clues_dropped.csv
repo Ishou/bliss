@@ -25105,3 +25105,73 @@ zébus,zébu,nom,Bovins d'Asie,Bovin d'Asie,inflected,0.5594,ok,true
 œuvrons,œuvrer,verbe,Travaillons avec soin,Travailler avec soin,inflected,0.5727,ok,true
 œuvrèrent,œuvrer,verbe,Travaillèrent avec soin,Travailler avec soin,inflected,0.5727,ok,true
 œuvré,œuvrer,verbe,Travailler avec soin,Travailler avec soin,no-inflection,0.5727,ok,true
+enchaîna,enchaîner,verbe,Lia ensemble,Lier ensemble,inflected,0.7182,pleonasm,true
+enchaînai,enchaîner,verbe,Liai ensemble,Lier ensemble,inflected,0.7182,pleonasm,true
+enchaînais,enchaîner,verbe,Liais ensemble,Lier ensemble,inflected,0.7182,pleonasm,true
+enchaînait,enchaîner,verbe,Liait ensemble,Lier ensemble,inflected,0.7182,pleonasm,true
+enchaînant,enchaîner,verbe,Liant ensemble,Lier ensemble,inflected,0.7182,pleonasm,true
+enchaîne,enchaîner,verbe,Lie ensemble,Lier ensemble,inflected,0.7182,pleonasm,true
+enchaînent,enchaîner,verbe,Lient ensemble,Lier ensemble,inflected,0.7182,pleonasm,true
+enchaîner,enchaîner,verbe,Lier ensemble,Lier ensemble,verbatim,0.7182,pleonasm,true
+enchaînera,enchaîner,verbe,Liera ensemble,Lier ensemble,inflected,0.7182,pleonasm,true
+enchaînerai,enchaîner,verbe,Lierai ensemble,Lier ensemble,inflected,0.7182,pleonasm,true
+enchaîneras,enchaîner,verbe,Lieras ensemble,Lier ensemble,inflected,0.7182,pleonasm,true
+enchaînerez,enchaîner,verbe,Lierez ensemble,Lier ensemble,inflected,0.7182,pleonasm,true
+enchaînes,enchaîner,verbe,Lies ensemble,Lier ensemble,inflected,0.7182,pleonasm,true
+enchaînez,enchaîner,verbe,Liez ensemble,Lier ensemble,inflected,0.7182,pleonasm,true
+enchaîniez,enchaîner,verbe,Liiez ensemble,Lier ensemble,inflected,0.7182,pleonasm,true
+enchaînions,enchaîner,verbe,Liions ensemble,Lier ensemble,inflected,0.7182,pleonasm,true
+enchaînons,enchaîner,verbe,Lions ensemble,Lier ensemble,inflected,0.7182,pleonasm,true
+enchaînâmes,enchaîner,verbe,Liâmes ensemble,Lier ensemble,inflected,0.7182,pleonasm,true
+enchaînât,enchaîner,verbe,Liât ensemble,Lier ensemble,inflected,0.7182,pleonasm,true
+enchaîné,enchaîner,verbe,Lié ensemble,Lier ensemble,inflected,0.7182,pleonasm,true
+enchaînée,enchaîner,verbe,Liée ensemble,Lier ensemble,inflected,0.7182,pleonasm,true
+enchaînées,enchaîner,verbe,Liées ensemble,Lier ensemble,inflected,0.7182,pleonasm,true
+enchaînés,enchaîner,verbe,Liés ensemble,Lier ensemble,inflected,0.7182,pleonasm,true
+gravi,gravir,verbe,Monté en haut,Monter en haut,inflected,0.7361,pleonasm,true
+gravie,gravir,verbe,Montée en haut,Monter en haut,inflected,0.7361,pleonasm,true
+gravies,gravir,verbe,Montées en haut,Monter en haut,inflected,0.7361,pleonasm,true
+gravir,gravir,verbe,Monter en haut,Monter en haut,verbatim,0.7361,pleonasm,true
+gravira,gravir,verbe,Montera en haut,Monter en haut,inflected,0.7361,pleonasm,true
+gravirai,gravir,verbe,Monterai en haut,Monter en haut,inflected,0.7361,pleonasm,true
+graviraient,gravir,verbe,Monteraient en haut,Monter en haut,inflected,0.7361,pleonasm,true
+gravirait,gravir,verbe,Monterait en haut,Monter en haut,inflected,0.7361,pleonasm,true
+gravirent,gravir,verbe,Montèrent en haut,Monter en haut,inflected,0.7361,pleonasm,true
+gravirions,gravir,verbe,Monterions en haut,Monter en haut,inflected,0.7361,pleonasm,true
+gravirons,gravir,verbe,Monterons en haut,Monter en haut,inflected,0.7361,pleonasm,true
+graviront,gravir,verbe,Monteront en haut,Monter en haut,inflected,0.7361,pleonasm,true
+gravis,gravir,verbe,Monter en haut,Monter en haut,no-inflection,0.7361,pleonasm,true
+gravissais,gravir,verbe,Montais en haut,Monter en haut,inflected,0.7361,pleonasm,true
+gravissait,gravir,verbe,Montait en haut,Monter en haut,inflected,0.7361,pleonasm,true
+gravissant,gravir,verbe,Montant en haut,Monter en haut,inflected,0.7361,pleonasm,true
+gravisse,gravir,verbe,Monter en haut,Monter en haut,no-inflection,0.7361,pleonasm,true
+gravissent,gravir,verbe,Monter en haut,Monter en haut,no-inflection,0.7361,pleonasm,true
+gravissez,gravir,verbe,Montez en haut,Monter en haut,inflected,0.7361,pleonasm,true
+gravissiez,gravir,verbe,Monter en haut,Monter en haut,no-inflection,0.7361,pleonasm,true
+gravissions,gravir,verbe,Monter en haut,Monter en haut,no-inflection,0.7361,pleonasm,true
+gravissons,gravir,verbe,Montons en haut,Monter en haut,inflected,0.7361,pleonasm,true
+gravit,gravir,verbe,Monter en haut,Monter en haut,no-inflection,0.7361,pleonasm,true
+gravîmes,gravir,verbe,Montâmes en haut,Monter en haut,inflected,0.7361,pleonasm,true
+unie,unir,verbe,Associée ensemble,Associer ensemble,inflected,0.7220,pleonasm,true
+unies,unir,verbe,Associées ensemble,Associer ensemble,inflected,0.7220,pleonasm,true
+unir,unir,verbe,Associer ensemble,Associer ensemble,verbatim,0.7220,pleonasm,true
+unira,unir,verbe,Associera ensemble,Associer ensemble,inflected,0.7220,pleonasm,true
+unirai,unir,verbe,Associerai ensemble,Associer ensemble,inflected,0.7220,pleonasm,true
+uniraient,unir,verbe,Associeraient ensemble,Associer ensemble,inflected,0.7220,pleonasm,false
+unirait,unir,verbe,Associerait ensemble,Associer ensemble,inflected,0.7220,pleonasm,true
+unirent,unir,verbe,Associèrent ensemble,Associer ensemble,inflected,0.7220,pleonasm,true
+unirions,unir,verbe,Associerions ensemble,Associer ensemble,inflected,0.7220,pleonasm,true
+unirons,unir,verbe,Associerons ensemble,Associer ensemble,inflected,0.7220,pleonasm,true
+uniront,unir,verbe,Associeront ensemble,Associer ensemble,inflected,0.7220,pleonasm,true
+unis,unir,verbe,Associer ensemble,Associer ensemble,no-inflection,0.7220,pleonasm,true
+unissaient,unir,verbe,Associaient ensemble,Associer ensemble,inflected,0.7220,pleonasm,true
+unissais,unir,verbe,Associais ensemble,Associer ensemble,inflected,0.7220,pleonasm,true
+unissait,unir,verbe,Associait ensemble,Associer ensemble,inflected,0.7220,pleonasm,true
+unissant,unir,verbe,Associant ensemble,Associer ensemble,inflected,0.7220,pleonasm,true
+unisse,unir,verbe,Associer ensemble,Associer ensemble,no-inflection,0.7220,pleonasm,true
+unissent,unir,verbe,Associer ensemble,Associer ensemble,no-inflection,0.7220,pleonasm,true
+unissez,unir,verbe,Associez ensemble,Associer ensemble,inflected,0.7220,pleonasm,true
+unissiez,unir,verbe,Associer ensemble,Associer ensemble,no-inflection,0.7220,pleonasm,true
+unissions,unir,verbe,Associer ensemble,Associer ensemble,no-inflection,0.7220,pleonasm,true
+unissons,unir,verbe,Associons ensemble,Associer ensemble,inflected,0.7220,pleonasm,true
+unit,unir,verbe,Associer ensemble,Associer ensemble,no-inflection,0.7220,pleonasm,true

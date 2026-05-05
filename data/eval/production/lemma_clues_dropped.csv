@@ -97,7 +97,7 @@ adaptation,,,,Adaptation au changement,1,self-reference,,0.5772
 adapter,,,,Mettre en forme,1,ok,,0.5817
 addition,,,,Somme de deux nombres,1,ok,,0.6445
 additionnel,,,,Supplémentaire,1,ok,,0.6445
-additionner,,,,Ajouter ensemble,1,ok,,0.5634
+additionner,,,,Ajouter ensemble,1,pleonasm,,0.5634
 adepte,,,,Suiveur convaincu,1,ok,,0.5468
 adhérent,,,,Appartenant à un groupe,1,head-not-lemma,,0.6289
 adhérer,,,,Se joindre à un groupe,1,ok,,0.5919
@@ -345,7 +345,7 @@ ante,,,,Avant l'action,1,ok,,0.5601
 anthracite,,,,Charbon noir,1,ok,,0.6182
 anti,,,,Opposé à,1,ok,,0.3990
 antichambre,,,,Pièce d'attente,1,ok,,0.5945
-anticiper,,,,Prévoir à l'avance,1,ok,,0.5482
+anticiper,,,,Prévoir à l'avance,1,pleonasm,,0.5482
 anticlinal,,,,En forme de dôme,1,ok,,0.5535
 anticorps,,,,Proteine de défense,1,unknown-head,,0.6529
 antimoine,,,,Métal gris argenté,1,ok,,0.4585
@@ -642,7 +642,7 @@ baigner,,,,Tremper dans l'eau,1,ok,,0.6491
 bailli,,,,Chef de justice,1,ok,,0.4679
 bailliage,,,,Circonscription judiciaire,1,ok,,0.5493
 baiser,,,,Embrasser tendrement,1,ok,,0.5348
-baisser,,,,Descendre en bas,1,ok,,0.6119
+baisser,,,,Descendre en bas,1,pleonasm,,0.6119
 balance,,,,Équilibre parfait,1,ok,,0.5907
 balancement,,,,Mouvement d'un côté à l'autre,1,ok,,0.5688
 balancer,,,,Faire pencher d'un côté,1,ok,,0.5729
@@ -7089,3 +7089,6 @@ zélé,,,,Dévoué et ardent,1,head-not-lemma,,0.6698
 œcuménique,,,,Universel et global,1,ok,,0.4833
 œuvre,,,,Production artistique,1,ok,,0.6125
 œuvrer,,,,Travailler avec soin,1,ok,,0.5727
+enchaîner,,,,Lier ensemble,1,pleonasm,,0.7182
+gravir,,,,Monter en haut,1,pleonasm,,0.7361
+unir,,,,Associer ensemble,1,pleonasm,,0.7220
