@@ -211,13 +211,11 @@ export function Grid({
   // value synchronously inside its handlers.
   const panningRef = useRef(false);
   const isPanningGetter = useCallback(() => panningRef.current, []);
-  // The element that had DOM focus *before* the mousedown that started
-  // a potential pan. Captured by a capture-phase mousedown listener
-  // (below) so it's recorded before the browser's default action moves
-  // focus to the clicked input. On panning stop we revert DOM focus to
-  // this element — that single revert fires React's onFocus (or
-  // onBlur) and pulls React state back in sync.
-  const mousedownActiveRef = useRef<HTMLElement | null>(null);
+  // The element that had DOM focus *before* a pan-initiating gesture
+  // moved it. Captured by the custom mouse pan handler (below) on
+  // mousedown in capture phase, or by `handlePanningStart` on touch.
+  // On panning stop we revert DOM focus to this element — the revert
+  // fires React's onFocus / onBlur and pulls React state back in sync.
   const focusBeforePanRef = useRef<HTMLElement | null>(null);
 
   const nav = useGridNavigation(puzzle, {
@@ -280,13 +278,21 @@ export function Grid({
   );
   const handleZoomStart = useCallback(() => {}, []);
   const handleZoomStop = useCallback(() => {}, []);
+  // Library-driven path (touch). For touch, the library calls
+  // `onPanningStart` on touchstart, before the browser would synthesise
+  // any focus change (touch focus happens on touchend → click). So
+  // `document.activeElement` at this point is the pre-touch focus —
+  // good enough to snapshot for the revert. The custom mouse handler
+  // below sets `focusBeforePanRef` on its own, so we leave it alone if
+  // already populated.
   const handlePanningStart = useCallback(() => {
     panningRef.current = true;
     setIsPanning(true);
-    // The capture-phase mousedown listener recorded what was focused
-    // BEFORE the browser moved focus to the clicked input. That's the
-    // pre-pan focus we want to be back to once the gesture ends.
-    focusBeforePanRef.current = mousedownActiveRef.current;
+    if (focusBeforePanRef.current === null) {
+      const active = document.activeElement;
+      focusBeforePanRef.current =
+        active instanceof HTMLElement ? active : null;
+    }
   }, []);
   const handlePanningStop = useCallback(() => {
     setIsPanning(false);
@@ -311,24 +317,107 @@ export function Grid({
     });
   }, []);
 
-  // Capture-phase mousedown / touchstart on the grid frame. Records
-  // `document.activeElement` BEFORE the browser's default action moves
-  // focus to the clicked input. The recorded value is a "candidate
-  // pre-pan focus" — `handlePanningStart` consumes it if a pan starts;
-  // on a normal click (no drag) it's discarded silently.
+  // Custom mouse pan with a movement threshold. The library's mouse
+  // pan path preventDefaults every mousedown, blocking cell focus on a
+  // click without drag. We disable that (`allowLeftClickPan: false`)
+  // and re-implement pan via direct `setTransform` calls when movement
+  // exceeds THRESHOLD_PX. Below the threshold the click flows
+  // unimpeded and the cell focuses naturally.
+  //
+  // Touch is unchanged — the library handles touch panning, and
+  // touch click→focus already works because the browser only
+  // synthesises a click on touchend with low movement.
   useEffect(() => {
     const frame = gridFrameRef.current;
     if (!frame) return;
-    const onPointerDown = () => {
+    const THRESHOLD_PX = 4;
+    let drag: {
+      startX: number;
+      startY: number;
+      baseX: number;
+      baseY: number;
+      baseScale: number;
+      preFocus: HTMLElement | null;
+      started: boolean;
+    } | null = null;
+
+    const onMouseDown = (event: MouseEvent) => {
+      if (event.button !== 0) return; // only left button
+      const tw = transformWrapperRef.current;
+      if (!tw || tw.state.scale <= 1.01) return; // nothing to pan
+      // Capture phase fires before the browser moves focus to the
+      // clicked input — `document.activeElement` here is the pre-
+      // mousedown focus, the snapshot we want to revert to if a pan
+      // happens.
       const active = document.activeElement;
-      mousedownActiveRef.current =
-        active instanceof HTMLElement ? active : null;
+      drag = {
+        startX: event.clientX,
+        startY: event.clientY,
+        baseX: tw.state.positionX,
+        baseY: tw.state.positionY,
+        baseScale: tw.state.scale,
+        preFocus: active instanceof HTMLElement ? active : null,
+        started: false,
+      };
     };
-    frame.addEventListener('mousedown', onPointerDown, true);
-    frame.addEventListener('touchstart', onPointerDown, true);
+
+    const onMouseMove = (event: MouseEvent) => {
+      if (!drag) return;
+      const dx = event.clientX - drag.startX;
+      const dy = event.clientY - drag.startY;
+      if (!drag.started) {
+        if (dx * dx + dy * dy < THRESHOLD_PX * THRESHOLD_PX) return;
+        drag.started = true;
+        // Promote to a pan: arm the gates and snapshot focus.
+        panningRef.current = true;
+        setIsPanning(true);
+        focusBeforePanRef.current = drag.preFocus;
+      }
+      const tw = transformWrapperRef.current;
+      if (tw) {
+        tw.setTransform(
+          drag.baseX + dx,
+          drag.baseY + dy,
+          drag.baseScale,
+          0,
+        );
+      }
+    };
+
+    const onMouseUp = () => {
+      const local = drag;
+      drag = null;
+      if (!local || !local.started) return;
+      // End the pan: same revert flow as `handlePanningStop`.
+      setIsPanning(false);
+      requestAnimationFrame(() => {
+        panningRef.current = false;
+        const before = focusBeforePanRef.current;
+        focusBeforePanRef.current = null;
+        const active = document.activeElement;
+        if (active === before) return;
+        if (
+          before instanceof HTMLElement &&
+          before !== document.body &&
+          before.isConnected
+        ) {
+          before.focus({ preventScroll: true });
+        } else if (
+          active instanceof HTMLElement &&
+          active.closest('[role="grid"]')
+        ) {
+          active.blur();
+        }
+      });
+    };
+
+    frame.addEventListener('mousedown', onMouseDown, true);
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
     return () => {
-      frame.removeEventListener('mousedown', onPointerDown, true);
-      frame.removeEventListener('touchstart', onPointerDown, true);
+      frame.removeEventListener('mousedown', onMouseDown, true);
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
     };
   }, []);
 
@@ -485,16 +574,15 @@ export function Grid({
         - `panning.velocityDisabled` — momentum/inertia after a flick
           feels disorienting in a fixed-content puzzle (you expect the
           grid to land where your finger lifts).
-        - `panning.allowLeftClickPan: true` — desktop left-click drag
-          pans the grid, mirroring one-finger touch pan on mobile. The
-          library distinguishes "click on cell" (no movement) from "drag
-          to pan" via a small movement threshold, so cell focus on click
-          still works. Cursor is `grab` when zoomed and `grabbing` while
-          dragging (driven by `isZoomedIn` / `panningRef`).
+        - `panning.allowLeftClickPan: false` — the library's mouse-pan
+          path calls `event.preventDefault()` on EVERY mousedown that
+          would start a pan, blocking the browser's default cell-focus
+          behavior even on a click-without-drag. We re-implement mouse
+          pan ourselves below (see `useEffect` with `mousedown` /
+          `mousemove` / `mouseup` listeners) with a movement threshold
+          so a real click still falls through to focus the cell.
         - `panning.disabled` is reactively bound to `!isZoomedIn` —
-          panning only makes sense when the grid is wider than the
-          viewport (i.e. scale > 1). At scale 1 we keep clicks for
-          cell focus and avoid any drag-as-pan ambiguity.
+          gates touch panning (still library-driven) at scale 1.
       */}
       <TransformWrapper
         ref={transformWrapperRef}
@@ -506,12 +594,13 @@ export function Grid({
         doubleClick={{ disabled: true }}
         panning={{
           velocityDisabled: true,
-          // At scale 1 we BOTH disable panning movement AND opt out of
-          // left-click capture. The library's onPanningStart handler
-          // calls `preventDefault` regardless of `panning.disabled`
-          // (that flag only stops the actual move), so leaving
-          // allowLeftClickPan true at scale 1 swallows the cell click.
-          allowLeftClickPan: isZoomedIn,
+          // Left-click mouse pan is implemented by the custom mouse
+          // handlers below (movement-threshold), NOT the library —
+          // see the rationale block above.
+          allowLeftClickPan: false,
+          // Touch panning still flows through the library; at scale 1
+          // there's nothing to pan, so disable to keep one-finger
+          // vertical scroll passing through to the page.
           disabled: !isZoomedIn,
         }}
         // Blur-on-gesture: iOS Safari fights pinch / pan with a native
