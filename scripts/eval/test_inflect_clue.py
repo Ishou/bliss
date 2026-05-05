@@ -143,21 +143,21 @@ def test_unir_to_associer(index: MorphologyIndex, tags: set[str],
 
 
 @pytest.mark.parametrize("clue,tags,expected_prefix", [
-    # `abaisse` → `Rendre plus bas`. Surface fuses ipre+spre+impe; `rendre`
-    # splits ipre/spre on separate rows. Decomposition picks (ipre, 2sg).
+    # `abaisse` is 3sg ipre/spre (2sg would be `abaisses`). `rendre` splits
+    # ipre/spre on separate rows; decomposition picks (ipre, 3sg).
     ("Rendre plus bas",
-     {"v1__t___zz", "ipre", "spre", "1sg", "3sg", "impe", "2sg"},
-     "Rends plus bas"),
+     {"v1__t___zz", "ipre", "3sg"},
+     "Rend plus bas"),
     # `associes` → `Mettre en relation`. Surface is fused ipre+spre 2sg;
     # `mettre` splits ipre/spre.
     ("Mettre en relation",
      {"v1__t___zz", "ipre", "spre", "2sg"},
      "Mets en relation"),
-    # `accompagne` → `Être avec quelqu'un`. Suppletive `être` — every
-    # person/mood on its own row.
+    # `accompagne` is 3sg ipre/spre (2sg would be `accompagnes`). Suppletive
+    # `être` has every person/mood on its own row.
     ("Être avec quelqu'un",
-     {"v1__t___zz", "ipre", "spre", "1sg", "3sg", "impe", "2sg"},
-     "Es avec quelqu'un"),
+     {"v1__t___zz", "ipre", "3sg"},
+     "Est avec quelqu'un"),
 ])
 def test_decomposition_unblocks_irregular_head(
     index: MorphologyIndex, clue: str, tags: set[str], expected_prefix: str,
