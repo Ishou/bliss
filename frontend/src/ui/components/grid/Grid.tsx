@@ -217,6 +217,16 @@ export function Grid({
 
   // Blur-on-gesture coordination (iOS Safari mitigation). When an
   // `<input>` is focused, iOS Safari natively auto-scrolls / zooms to
+  // Synchronous pan flag + the focused element at the moment the pan
+  // started. The `focusin` listener below uses these to clamp focus
+  // during a pan: if the browser tries to move focus mid-gesture (e.g.
+  // mousedown on a cell focuses it before the library's preventDefault
+  // takes effect), we revert to the pre-pan focus. Refs (not state)
+  // because the focusin handler must read the latest value
+  // synchronously, before any React render commits.
+  const panningRef = useRef(false);
+  const focusBeforePanRef = useRef<HTMLElement | null>(null);
+
   // Reactive copies of the library's gesture state, used to drive style
   // changes that need to re-render (touch-action, cursor). ~1.01 scale
   // epsilon mirrors the threshold used elsewhere for "is the user zoomed?".
@@ -228,8 +238,10 @@ export function Grid({
   // React state because rapid wheel notches would otherwise create
   // setState churn.
   const previousScaleRef = useRef(1);
-  // No focus side-effects during zoom or pan. Gestures and focus state
-  // are independent: a gesture never causes a focus change.
+  // No focus side-effects during zoom or pan: gestures and focus state
+  // are independent. To enforce that, the panning handlers snapshot the
+  // current focus on start and the focusin listener (below) reverts any
+  // mid-gesture focus drift.
   // `onTransform` fires on every frame the library applies a transform
   // (wheel notch, pinch step, button click animation). We use it to
   // keep `isZoomedIn` / `isMaxZoom` in step with the live scale —
@@ -261,10 +273,44 @@ export function Grid({
   const handleZoomStart = useCallback(() => {}, []);
   const handleZoomStop = useCallback(() => {}, []);
   const handlePanningStart = useCallback(() => {
+    panningRef.current = true;
     setIsPanning(true);
+    const active = document.activeElement;
+    focusBeforePanRef.current = active instanceof HTMLElement ? active : null;
   }, []);
   const handlePanningStop = useCallback(() => {
+    panningRef.current = false;
     setIsPanning(false);
+    focusBeforePanRef.current = null;
+  }, []);
+
+  // While a pan is active, lock focus to whatever it was when the pan
+  // started. Browsers focus inputs on mousedown synchronously, before
+  // the library's preventDefault on the gesture-start handler runs —
+  // so a left-click drag from a cell can transiently focus that cell
+  // even though the user's intent is "pan, don't focus". We watch for
+  // any focusin while panningRef is true and revert to the snapshot.
+  // Capture phase so we observe the focus regardless of stopPropagation
+  // upstream.
+  useEffect(() => {
+    const onFocusIn = (event: FocusEvent) => {
+      if (!panningRef.current) return;
+      const before = focusBeforePanRef.current;
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) return;
+      if (target === before) return;
+      // Restore the pre-pan focus, or blur the new one if there was
+      // nothing focused before. `preventScroll: true` keeps the user's
+      // pan visible — focusing without it would scroll the cell back
+      // into view and undo the gesture.
+      if (before && before.isConnected) {
+        before.focus({ preventScroll: true });
+      } else if (typeof target.blur === 'function') {
+        target.blur();
+      }
+    };
+    document.addEventListener('focusin', onFocusIn, true);
+    return () => document.removeEventListener('focusin', onFocusIn, true);
   }, []);
 
   // Soft-keyboard-aware wrapper max-height. When the on-screen keyboard
