@@ -378,11 +378,6 @@ export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOpt
   );
 
   const handleFocus = useCallback((event: React.FocusEvent<HTMLInputElement>) => {
-    // Mid-pan focusin from the browser's mousedown-focuses-input
-    // default. Ignore it: pan is the user's intent, not slot
-    // selection. The cell that picked up focus will be reverted by
-    // the Grid's pan-focus-lock.
-    if (isPanningRef.current?.() === true) return;
     const p = posOf(event.currentTarget);
     if (p) {
       if (!same(stateRef.current.focused, p)) setFocused(p);
