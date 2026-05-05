@@ -83,26 +83,6 @@ const rowStyles = css({ display: 'contents' });
 
 const positionKey = (p: Position) => `${p.row},${p.col}`;
 
-const posOf = (el: Element): Position | null => {
-  const rowAttr = el.getAttribute('data-row');
-  const colAttr = el.getAttribute('data-col');
-  if (rowAttr === null || colAttr === null) return null;
-  const row = Number(rowAttr);
-  const col = Number(colAttr);
-  if (!Number.isFinite(row) || !Number.isFinite(col)) return null;
-  return { row, col };
-};
-
-const refsByPosition = (
-  frame: HTMLDivElement | null,
-  position: Position,
-): HTMLInputElement | null => {
-  if (!frame) return null;
-  return frame.querySelector<HTMLInputElement>(
-    `input[data-cell-kind="letter"][data-row="${position.row}"][data-col="${position.col}"]`,
-  );
-};
-
 // v1 interactive grid. Letter inputs are uncontrolled (ADR-0002 §4).
 // `useGridNavigation` orchestrates focus, direction, and highlighting
 // via stable handlers that read row/col from data attributes.
@@ -237,69 +217,9 @@ export function Grid({
 
   // Blur-on-gesture coordination (iOS Safari mitigation). When an
   // `<input>` is focused, iOS Safari natively auto-scrolls / zooms to
-  // keep it in the viewport during ANY layout change — including the
-  // JS-driven CSS transform that `react-zoom-pan-pinch` applies during
-  // a pinch / pan. The browser fights the gesture with its focus-snap.
-  // Mitigation: blur the focused cell when a gesture starts, restore
-  // focus when ALL gestures end. No focused input ⇒ nothing for iOS
-  // to track ⇒ smooth gesture; on gesture end the keyboard reopens
-  // (the user is done gesturing and can resume typing). Android Chrome
-  // doesn't trigger the same focus-snap, but the same blur is a no-op
-  // there — simpler than UA-sniffing.
-  //
-  // Refs (not state) — gestures fire at high frequency and any state
-  // update would trigger a render in the path. The cell-to-restore
-  // identity is just (row, col), so we record it as a `Position` ref
-  // and resolve to the live DOM input via a querySelector at restore
-  // time. `userTappedDuringGestureRef` is set by a capture-phase
-  // `focusin` listener on the grid frame: if focus lands on a
-  // different cell during the gesture window (e.g. user tapped
-  // elsewhere), we drop the to-restore intent so we don't yank focus
-  // away from the user's new target.
-  const cellToRestoreRef = useRef<Position | null>(null);
-  const userTappedDuringGestureRef = useRef(false);
-  // Tracks whether each gesture kind is currently active. Either flag
-  // being true keeps the focused cell blurred; both clear before we
-  // restore. This handles the iOS case where a pinch can transition
-  // into a pan without `onZoomStop` firing strictly before
-  // `onPanningStart`.
-  const zoomingRef = useRef(false);
-  const panningRef = useRef(false);
-
-  const blurFocusedCell = useCallback(() => {
-    const active = document.activeElement;
-    if (!(active instanceof HTMLInputElement)) return;
-    if (!active.closest('[role="grid"]')) return;
-    const p = posOf(active);
-    if (!p) return;
-    cellToRestoreRef.current = p;
-    userTappedDuringGestureRef.current = false;
-    active.blur();
-  }, []);
-
-  const restoreCellFocus = useCallback(() => {
-    if (zoomingRef.current || panningRef.current) return;
-    const target = cellToRestoreRef.current;
-    cellToRestoreRef.current = null;
-    if (!target) return;
-    if (userTappedDuringGestureRef.current) return;
-    const el = refsByPosition(gridFrameRef.current, target);
-    if (!el || !el.isConnected) return;
-    // `preventScroll: true` is critical here: the user just panned
-    // intentionally to bring an off-center area into view; the default
-    // `focus()` behaviour scrolls the focused element back into view
-    // and undoes the pan. Native focus-snap-on-pan was the original
-    // bug the blur-on-gesture dance was meant to fix on iOS — calling
-    // focus without preventScroll re-introduces the same problem on
-    // every other browser.
-    el.focus({ preventScroll: true });
-  }, []);
-
   // Reactive copies of the library's gesture state, used to drive style
-  // changes that need to re-render (touch-action, cursor). The refs above
-  // (`zoomingRef`, `panningRef`) stay for the gesture-blur logic that
-  // must never cause a re-render. ~1.01 scale epsilon mirrors the
-  // threshold used elsewhere in the file for "is the user zoomed?".
+  // changes that need to re-render (touch-action, cursor). ~1.01 scale
+  // epsilon mirrors the threshold used elsewhere for "is the user zoomed?".
   const [isZoomedIn, setIsZoomedIn] = useState(false);
   const [isMaxZoom, setIsMaxZoom] = useState(false);
   const [isPanning, setIsPanning] = useState(false);
@@ -308,14 +228,8 @@ export function Grid({
   // React state because rapid wheel notches would otherwise create
   // setState churn.
   const previousScaleRef = useRef(1);
-  const handleZoomStart = useCallback(() => {
-    zoomingRef.current = true;
-    if (cellToRestoreRef.current === null) blurFocusedCell();
-  }, [blurFocusedCell]);
-  const handleZoomStop = useCallback(() => {
-    zoomingRef.current = false;
-    restoreCellFocus();
-  }, [restoreCellFocus]);
+  // No focus side-effects during zoom or pan. Gestures and focus state
+  // are independent: a gesture never causes a focus change.
   // `onTransform` fires on every frame the library applies a transform
   // (wheel notch, pinch step, button click animation). We use it to
   // keep `isZoomedIn` / `isMaxZoom` in step with the live scale —
@@ -344,75 +258,13 @@ export function Grid({
     },
     [],
   );
-  // Pan never causes a focus change. Two failure modes we have to
-  // counter:
-  //   1. mousedown on a cell focuses it (browser default), then the
-  //      library's preventDefault fires too late on Safari/iOS — the
-  //      cell is already focused. So a previously-focused cell can
-  //      visibly switch to the cell at mousedown.
-  //   2. The pan gesture itself never blurs the active element (we
-  //      don't touch focus in handlePanningStart). But (1) can sneak
-  //      a new focused element in.
-  // Solution: snapshot the active element at panning start, and on
-  // panning stop check whether focus drifted; if so, restore the
-  // snapshot (or blur, if there was none). This enforces the rule
-  // "focus state is identical before and after a pan".
-  const focusBeforePanRef = useRef<HTMLInputElement | null>(null);
+  const handleZoomStart = useCallback(() => {}, []);
+  const handleZoomStop = useCallback(() => {}, []);
   const handlePanningStart = useCallback(() => {
-    panningRef.current = true;
     setIsPanning(true);
-    const active = document.activeElement;
-    focusBeforePanRef.current =
-      active instanceof HTMLInputElement && active.closest('[role="grid"]')
-        ? active
-        : null;
   }, []);
   const handlePanningStop = useCallback(() => {
-    panningRef.current = false;
     setIsPanning(false);
-    const before = focusBeforePanRef.current;
-    focusBeforePanRef.current = null;
-    const active = document.activeElement;
-    const activeCell =
-      active instanceof HTMLInputElement && active.closest('[role="grid"]')
-        ? active
-        : null;
-    // If focus drifted to a different cell during the pan, undo it.
-    if (activeCell !== before) {
-      if (before && before.isConnected) {
-        before.focus({ preventScroll: true });
-      } else if (activeCell) {
-        activeCell.blur();
-      }
-    }
-  }, []);
-
-  // Capture-phase focusin listener on the grid frame: if the user taps
-  // a different cell mid-gesture, drop the to-restore intent so we
-  // don't override the user's new focus when the gesture ends. Capture
-  // phase so we observe the focus regardless of stopPropagation
-  // upstream.
-  useEffect(() => {
-    const frame = gridFrameRef.current;
-    if (!frame) return;
-    const onFocusIn = (event: FocusEvent) => {
-      // Only count focusin while a gesture is in progress; outside of
-      // the gesture window the focused cell is the steady-state user
-      // intent — we want to remember it and restore it on the next
-      // gesture, not clear the (currently empty) ref.
-      if (!zoomingRef.current && !panningRef.current) return;
-      const target = event.target;
-      if (!(target instanceof HTMLInputElement)) return;
-      const p = posOf(target);
-      if (!p) return;
-      // If the new focus is the same cell we're trying to restore
-      // (e.g. iOS re-focused it on its own), keep the to-restore ref.
-      const restore = cellToRestoreRef.current;
-      if (restore && restore.row === p.row && restore.col === p.col) return;
-      userTappedDuringGestureRef.current = true;
-    };
-    frame.addEventListener('focusin', onFocusIn, true);
-    return () => frame.removeEventListener('focusin', onFocusIn, true);
   }, []);
 
   // Soft-keyboard-aware wrapper max-height. When the on-screen keyboard

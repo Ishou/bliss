@@ -865,87 +865,39 @@ describe('Grid keyboard-aware wrapper sizing', () => {
 // restoring focus on gesture end — Android Chrome doesn't do the snap
 // as aggressively, but the same blur is a no-op there (and is
 // platform-independent, simpler than UA-sniffing).
-describe('Grid blur-on-gesture coordination', () => {
-  it('blurs the focused cell on zoom start and restores on zoom stop', () => {
+describe('Grid pan/zoom does not touch focus', () => {
+  // Rule: gestures and focus state are independent. A zoom or pan
+  // never causes a focus change. The previous blur+restore dance
+  // around iOS pinch-zoom was removed because it caused user-visible
+  // flicker on desktop.
+  it('zoom start does not blur', () => {
     const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
     const target = inputAt(container, 1, 1)!;
     act(() => { click(target); });
-    expect(document.activeElement).toBe(target);
-    expect(capturedCb.current.onZoomStart).toBeTypeOf('function');
-    expect(capturedCb.current.onZoomStop).toBeTypeOf('function');
-    // Pinch start: cell loses focus.
     act(() => { capturedCb.current.onZoomStart!(); });
-    expect(document.activeElement).not.toBe(target);
-    // Pinch end: focus restored to the same cell.
-    act(() => { capturedCb.current.onZoomStop!(); });
-    expect(document.activeElement).toBe(inputAt(container, 1, 1));
+    expect(document.activeElement).toBe(target);
   });
-
-  it('pan never affects focus (start)', () => {
-    // Rule: focused cell stays focused throughout a pan. No blur on
-    // start, no restore on stop. Applies to both desktop and touch.
+  it('zoom stop does not restore', () => {
+    const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
+    const target = inputAt(container, 1, 1)!;
+    act(() => { click(target); });
+    act(() => { capturedCb.current.onZoomStart!(); });
+    act(() => { capturedCb.current.onZoomStop!(); });
+    expect(document.activeElement).toBe(target);
+  });
+  it('pan start does not blur', () => {
     const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
     const target = inputAt(container, 1, 1)!;
     act(() => { click(target); });
     act(() => { capturedCb.current.onPanningStart!(); });
     expect(document.activeElement).toBe(target);
   });
-
-  it('pan never affects focus (stop)', () => {
+  it('pan stop does not restore or blur', () => {
     const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
     const target = inputAt(container, 1, 1)!;
     act(() => { click(target); });
     act(() => { capturedCb.current.onPanningStart!(); });
     act(() => { capturedCb.current.onPanningStop!(); });
     expect(document.activeElement).toBe(target);
-  });
-
-  it('does not restore focus when the user clicks a different cell during the gesture', () => {
-    const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
-    const original = inputAt(container, 1, 1)!;
-    act(() => { click(original); });
-    // Gesture starts: original cell blurs.
-    act(() => { capturedCb.current.onZoomStart!(); });
-    expect(document.activeElement).not.toBe(original);
-    // User taps a different cell mid-gesture (the click handler on the
-    // Cell wrapper focuses the input synchronously).
-    const other = inputAt(container, 2, 2)!;
-    act(() => { click(other); });
-    expect(document.activeElement).toBe(other);
-    // Gesture ends: must NOT yank focus back to (1,1).
-    act(() => { capturedCb.current.onZoomStop!(); });
-    expect(document.activeElement).toBe(other);
-  });
-
-  it('is a no-op when no cell was focused at gesture start', () => {
-    render(<Grid puzzle={TEST_PUZZLE} />);
-    // Pre-condition: nothing focused (just rendered).
-    expect(document.activeElement).toBe(document.body);
-    act(() => { capturedCb.current.onZoomStart!(); });
-    act(() => { capturedCb.current.onZoomStop!(); });
-    // Still nothing focused — no spurious cell focused via restore.
-    expect(document.activeElement).toBe(document.body);
-  });
-
-  it('zoom→pan chain: focus restores on the LAST stop (zoom-only blur path)', () => {
-    // Zoom blurs+restores (iOS pinch-zoom focus-snap workaround). Pan
-    // never touches focus. So the chain is: zoom blurs → pan starts
-    // (no-op on focus) → zoom ends (still panning, do not restore yet)
-    // → pan ends (no-op) → focus is restored on the next zoom-stop
-    // boundary. We verify the safety: focus returns once both flags
-    // have cleared.
-    const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
-    const target = inputAt(container, 1, 1)!;
-    act(() => { click(target); });
-    act(() => { capturedCb.current.onZoomStart!(); });
-    act(() => { capturedCb.current.onPanningStart!(); });
-    act(() => { capturedCb.current.onZoomStop!(); });
-    // pan still active, zoom-flag had blurred → should not have restored yet.
-    expect(document.activeElement).not.toBe(target);
-    act(() => { capturedCb.current.onPanningStop!(); });
-    // After both flags clear we don't auto-restore (pan has no
-    // restore). The user can re-tap. This codifies the "pan does not
-    // affect focus" rule in the chain case too.
-    expect(document.activeElement).not.toBe(target);
   });
 });
