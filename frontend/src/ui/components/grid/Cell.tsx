@@ -339,22 +339,24 @@ export const LetterCellView = memo(function LetterCellView({
   //     and gets focused programmatically here. The focus call lives
   //     inside the click handler (a user-gesture context), so Android
   //     and iOS still pop the soft keyboard.
-  // Focus on mousedown (not click): without this, mousedown on a
-  // non-focusable wrapper blurs the previously-focused input — the
-  // word's highlight pulses off → on as the user holds → releases the
-  // mouse. preventDefault stops that browser default blur, then we
-  // focus the cell's input ourselves. The Grid's custom mouse-pan
-  // logic reverts this focus if the gesture turns into a pan
-  // (movement past threshold). Click still fires onClick for direction
-  // toggle on repeat-tap; the focus call there becomes a no-op since
-  // the input is already focused from mousedown.
+  // mousedown.preventDefault stops the browser's default blur of the
+  // currently-focused input when the user presses on a non-focusable
+  // wrapper. We deliberately do NOT call focus() here: focusing on
+  // mousedown would briefly highlight the drag-from cell's word
+  // before the pan-end revert undoes it (the user-visible "wrong
+  // word focus during pan" flicker). Focus moves on click instead —
+  // the browser only synthesises click for click-without-drag, so
+  // click is the right "no pan happened" signal.
   const handleMouseDown = (e: MouseEvent<HTMLDivElement>) => {
     e.preventDefault();
-    localInputRef.current?.focus();
   };
+  // onClick wires through to useGridNavigation.handleClick which
+  // applies the isPanning gate AND does the focus call. Cell.tsx no
+  // longer calls focus directly — the gate must wrap both setDirection
+  // and the focus side-effect, otherwise a tail-of-pan synthesised
+  // click would still focus the wrong cell.
   const handleClick = (e: MouseEvent<HTMLDivElement>) => {
     onClick(e);
-    localInputRef.current?.focus();
   };
 
   return (

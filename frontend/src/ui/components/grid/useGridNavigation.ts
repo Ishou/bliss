@@ -367,12 +367,14 @@ export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOpt
         }
       }
       setDirection(next);
-      // Don't call `focusCell` here — the browser focuses the input itself
-      // when the click lands on it. Calling `el.focus()` mid-click handler
-      // suppresses the soft keyboard on Android Chrome / iOS Safari, which
-      // gate the keyboard on the click event reaching its default action
-      // intact. `handleFocus` picks up the resulting native focus event
-      // and syncs React state.
+      // Focus the cell's input. The cell wrapper's mousedown handler
+      // calls `event.preventDefault()` to stop the browser's default
+      // blur of the active element, which also stops the default focus
+      // path — so the input would never gain focus without this call.
+      // Doing it here (and not on mousedown) means the focus only
+      // moves on a real click (no drag), and the isPanning gate above
+      // covers the synthesised post-pan click.
+      refs.current.get(key(p))?.focus();
     },
     [lookup],
   );
