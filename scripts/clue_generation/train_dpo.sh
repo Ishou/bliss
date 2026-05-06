@@ -18,4 +18,10 @@ REPO="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$REPO"
 
 PY="${PY:-.venv/bin/python}"
-exec "$PY" -u -m mlx_lm_lora.train "$@"
+# `nice -n 15` deprioritizes CPU/IO scheduling for this process so the
+# foreground apps stay responsive while training. Metal GPU still runs at
+# full speed (nice doesn't apply to GPU work), but CPU/IO/memory
+# contention drops noticeably. Override with NICE=0 if you need maximum
+# throughput.
+NICE_LEVEL="${NICE:-15}"
+exec nice -n "$NICE_LEVEL" "$PY" -u -m mlx_lm_lora.train "$@"

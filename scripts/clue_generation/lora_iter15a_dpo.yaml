@@ -1,0 +1,38 @@
+# iter15a: clean retrain from v3 SFT base with the iter14 corpus
+# *minus* the 673 noisy n_clue rows (PP_BRIDGE 436 + VERB_VERB 178 +
+# VERB_ADV 58 + SHORT_OK 1). Tests the hypothesis "remove noise → cleaner
+# DPO signal → higher acceptance" without re-authoring 436 rows.
+#
+# Corpus: data/lora_dpo_iter15a_combined
+#   train: 261 (clean iter14 foils only) + 308 (iter12 + iter13 themed) = 569
+#   valid: 33 + 36 = 69
+#   test:  33 + 36 = 69
+#
+# Iters: 400 (smaller corpus → fewer iters needed than iter14's 600).
+# Rest of hyperparameters identical to iter14 (lr 1e-6, β 0.1, sigmoid,
+# rank 32, 16 layers, batch 2). Output: models/lora-clue-v8a.
+model: "mlx-community/c4ai-command-r-08-2024-4bit"
+data: "data/lora_dpo_iter15a_combined"
+adapter_path: "models/lora-clue-v8a"
+train_type: lora
+train_mode: dpo
+num_layers: 16
+batch_size: 2
+iters: 400
+learning_rate: 1e-6
+steps_per_report: 5
+steps_per_eval: 50
+save_every: 50
+seed: 20260506
+train: true
+fuse: false
+
+beta: 0.1
+dpo_cpo_loss_type: sigmoid
+
+resume_adapter_file: "models/lora-clue-v3/adapters.safetensors"
+
+lora_parameters:
+  rank: 32
+  dropout: 0.0
+  scale: 20.0

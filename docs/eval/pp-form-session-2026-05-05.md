@@ -128,6 +128,34 @@ SFT base is the clean form.
 - After merge, runtime guard `pytest scripts/eval/test_runtime_csv_pleonasms.py`
   must pass before opening PR-B.
 
+### iter15 corpus-correction experiments — 2026-05-06 (all regressed; iter14 stays winner)
+
+Post-iter14 audit (`scripts/eval/audit_iter14_corpus.py`) found 436/1000
+n_clues (43.6%) were `PP_BRIDGE` shape (`Mettre en X` etc.) — i.e.
+*PP-friendly framings* miscategorized as bad foils. Three correction
+attempts:
+
+- **iter15a (drop noisy):** 569 train (327 clean iter14 + 308 themed).
+  16 layers, 400 iters. Result: **87.8%**, ↓ 2.3pp vs iter14. Verb
+  coverage drop (1000 → 327) hurt more than foil cleanliness helped.
+- **iter15b (replace noisy → self-ref):** 1108 train, all 673 noisy
+  rejected replaced with `lemma.capitalize()`. **12 layers** (throttled
+  for system responsiveness), 600 iters. Result: ~78%, ↓↓. Self-ref
+  overweighting (67% of foils) caused **verbose paraphrase regression**
+  (20 too-long outputs) — model elongated to differ from lemma; reduced
+  num_layers couldn't override SFT-learned brevity.
+- **iter15c (same corpus, full 64-layer LoRA, 100 iters):** Diagnostic.
+  Result: 80.8%. Brevity restored (single-word synonyms) but **semantic
+  drift** (model picks wrong-meaning synonyms to maximize lemma-distance:
+  `entremettre → Troublée`, `relever → Surmontée`, `dériver → Égarée`,
+  `mouvoir → Ébranlée`). Confirms the corpus is the root cause; layer
+  reduction in 15b was secondary.
+
+Lesson: PP_BRIDGE foils, while imperfect, contribute positive
+verb-coverage signal. A real iter15 would author categorically-bad foils
+that *preserve meaning anchoring* — `verb + DObj` using meaning-related
+nouns, not random self-reference. Logged as Theme 5 followup.
+
 ### Worker change (dbnary-synonym retirement) — 2026-05-06 07:50
 
 - `grid/worker/.../ExportWordsCommand.kt` `DEFAULT_CANDIDATE_PRIORITY`

@@ -1,0 +1,33 @@
+# iter15c: same corpus as iter15b (1108 train with 673 PP_BRIDGE/etc.
+# rejected replaced by lemma self-ref) but FULL LoRA depth (num_layers: 64)
+# and 100 iters only. Tests whether iter15b's verbose-output regression
+# was caused by the num_layers=12 truncation (limited brevity-enforcement
+# capacity) vs the corpus's self-ref overweighting.
+#
+# Short run (100 iters) keeps wall-time down. No nice; prioritize
+# throughput. Output: models/lora-clue-v8c.
+model: "mlx-community/c4ai-command-r-08-2024-4bit"
+data: "data/lora_dpo_iter15b_combined"
+adapter_path: "models/lora-clue-v8c"
+train_type: lora
+train_mode: dpo
+num_layers: 64
+batch_size: 2
+iters: 100
+learning_rate: 1e-6
+steps_per_report: 5
+steps_per_eval: 25
+save_every: 25
+seed: 20260506
+train: true
+fuse: false
+
+beta: 0.1
+dpo_cpo_loss_type: sigmoid
+
+resume_adapter_file: "models/lora-clue-v3/adapters.safetensors"
+
+lora_parameters:
+  rank: 32
+  dropout: 0.0
+  scale: 20.0
