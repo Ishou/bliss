@@ -34,6 +34,7 @@ internal class SkeletonFiller(
         slots: List<WordSlot>,
         random: Random,
         deadline: Long,
+        metrics: GenerationMetrics? = null,
     ): List<WordPlacement>? {
         if (slots.isEmpty()) return emptyList()
         val letters = HashMap<Position, Char>()
@@ -55,7 +56,7 @@ internal class SkeletonFiller(
                 .filterValues { it > 1 }
                 .keys
         val assigned = arrayOfNulls<Word>(slots.size)
-        if (!search(slots, letters, usedWords, usedLemmas, stackedCluePositions, assigned, random, deadline)) return null
+        if (!search(slots, letters, usedWords, usedLemmas, stackedCluePositions, assigned, random, deadline, metrics)) return null
         return slots.mapIndexed { i, slot ->
             WordPlacement(assigned[i]!!, slot.cluePosition, slot.direction)
         }
@@ -70,6 +71,7 @@ internal class SkeletonFiller(
         assigned: Array<Word?>,
         random: Random,
         deadline: Long,
+        metrics: GenerationMetrics?,
     ): Boolean {
         if (System.currentTimeMillis() > deadline) return false
 
@@ -81,7 +83,7 @@ internal class SkeletonFiller(
         for (i in slots.indices) {
             if (assigned[i] != null) continue
             val needsCompact = slots[i].cluePosition in stackedCluePositions
-            val domain = domainFor(slots[i], letters, usedWords, usedLemmas, needsCompact)
+            val domain = domainFor(slots[i], letters, usedWords, usedLemmas, needsCompact, metrics)
             if (domain.size < bestSize) {
                 bestSize = domain.size
                 bestIdx = i
@@ -90,6 +92,13 @@ internal class SkeletonFiller(
             }
         }
         if (bestIdx == -1) return true // every slot assigned
+
+        // Capture the root-of-search domain size — useful for diagnosing "is the
+        // first slot too wide?" without running a profiler. Only set on the
+        // first slot, identified by all-unassigned state at entry.
+        if (metrics != null && metrics.fillFirstSlotDomainSize == -1) {
+            metrics.fillFirstSlotDomainSize = bestSize
+        }
 
         val slot = slots[bestIdx]
         val ordering = headShuffle(bestDomain!!, random)
@@ -107,13 +116,14 @@ internal class SkeletonFiller(
                 }
             }
 
-            if (search(slots, letters, usedWords, usedLemmas, stackedCluePositions, assigned, random, deadline)) return true
+            if (search(slots, letters, usedWords, usedLemmas, stackedCluePositions, assigned, random, deadline, metrics)) return true
 
             // Undo.
             for (pos in newlyPlaced) letters.remove(pos)
             usedWords -= word.text
             usedLemmas -= word.lemma
             assigned[bestIdx] = null
+            metrics?.let { it.fillBacktracks++ }
         }
         return false
     }
@@ -129,11 +139,13 @@ internal class SkeletonFiller(
         usedWords: Set<String>,
         usedLemmas: Set<String>,
         needsCompact: Boolean,
+        metrics: GenerationMetrics?,
     ): List<Word> {
         val pattern = HashMap<Int, Char>(slot.length)
         slot.letterPositions().forEachIndexed { i, pos ->
             letters[pos]?.let { pattern[i] = it }
         }
+        metrics?.let { it.fillRepoCalls++ }
         val matches = repository.findByLengthAndPattern(slot.length, pattern)
         // Filter used last — keeps the cheap path (no allocation) when nothing's used yet.
         val nothingUsed = usedWords.isEmpty() && usedLemmas.isEmpty()
