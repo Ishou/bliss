@@ -216,6 +216,34 @@ internal class PlanState(
     }
 
     /**
+     * Cheap mid-search feasibility probe: does any clue cell have all of its
+     * arrows DEACTIVATED with none MATERIALIZED? Such a cell is a permanent
+     * dead-end — no future move can revive a deactivated arrow, so the
+     * surrounding [solveVariable] branch can be pruned immediately instead
+     * of recursing all the way to [validate] at depth N.
+     *
+     * Only catches the dead-clue invariant; does NOT check orphan letters
+     * (those depend on which pending arrows still cover them and would
+     * require walking PENDING arrows' reach — too expensive for the hot
+     * path). Conservative: false-positives are not possible (we only flag
+     * cells that are *already* dead per the final [validate] criterion).
+     *
+     * O(clue cells) per call. Slot-planner calls it after each successful
+     * `materialize` to fail-fast on configurations that are already
+     * unrecoverable.
+     */
+    fun hasDeadCluesNow(): Boolean {
+        for ((_, dirs) in arrowState) {
+            if (dirs.values.none { it == ArrowState.MATERIALIZED } &&
+                dirs.values.none { it == ArrowState.PENDING }
+            ) {
+                return true
+            }
+        }
+        return false
+    }
+
+    /**
      * Validate the final plan:
      * - every clue cell has ≥1 MATERIALIZED arrow
      * - every letter cell belongs to ≥1 slot

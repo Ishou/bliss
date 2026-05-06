@@ -140,7 +140,11 @@ object SlotPlanner {
         val ordering = orderForBias(candidates, random)
         for (length in ordering) {
             val cp = state.checkpoint()
-            if (state.materialize(next, length)) {
+            if (state.materialize(next, length) && !state.hasDeadCluesNow()) {
+                // Forward-check: skip lengths that immediately leave a clue cell
+                // with no recoverable arrow (all DEACTIVATED, none MATERIALIZED
+                // or PENDING). Cuts the search tree before we recurse another
+                // ~20 arrows deep just to discover the same dead-end.
                 val result = solveVariable(state, random, deadline, metrics)
                 if (result != null) return result
             }
