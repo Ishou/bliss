@@ -1,0 +1,101 @@
+lemma,lemma_clue,validation_flag,pp_surface,inflected_clue,inflection_status,rating
+entremettre,Intercaler,ok,entremise,Intercalée,inflected,y
+trembler,Éprouver des secousses,ok,tremblé,Éprouver des secousses,pp-only-skipped,
+anéantir,Rayer de la surface de la terre,ok,anéantie,Rayée de la surface de la terre,inflected,y
+schématiser,Représenter simplement,ok,schématisée,Représentée simplement,inflected,y
+effacer,Rayer,ok,effacée,Rayée,inflected,y
+ratifier,Confirmer et approuver,ok,ratifiée,Confirmée et approuver,inflected,b
+peser,Avoir du poids,ok,pesée,Avoir du poids,pp-only-skipped,
+investir,Engager des fonds,ok,investie,Engager des fonds,pp-only-skipped,
+bouger,Changer de place,ok,bougée,Changée de place,inflected,y
+remarquer,Discerner distinctement,ok,remarquée,Discernée distinctement,inflected,y
+boucher,Tueur d'animaux,pos-mismatch,bouchée,,inflected,
+intimider,Écraser,ok,intimidée,Écrasée,inflected,b
+subir,Endurer,ok,subie,Endurée,inflected,y
+interpeller,Sommer,ok,interpellée,Sommée,inflected,y
+communier,Partager le pain et le vin,ok,communié,Partager le pain et le vin,pp-only-skipped,
+relever,S'élever,ok,relevée,S'élevée,inflected,n
+affecter,Influencer,ok,affectée,Influencée,inflected,y
+enfreindre,Violer,ok,enfreinte,Violée,inflected,y
+consigner,Remettre officiellement,ok,consignée,Remise officiellement,inflected,y
+manger,Consommer,ok,mangée,Consommée,inflected,y
+recourir,avoir,ok,recourue,Eue,inflected,n
+concerner,Relatif à,pos-mismatch,concernée,,inflected,
+surmonter,Dominer et vaincre,ok,surmontée,Dominée et vaincre,inflected,b
+signaler,Denoncer,unknown-head,signalée,,inflected,
+munir,Équiper,ok,munie,Équipée,inflected,y
+déférer,Remettre à plus tard,ok,déférée,Remise à plus tard,inflected,n
+changer,Muter,ok,changée,Mutée,inflected,y
+dériver,Provenir,ok,dérivée,Provenue,inflected,b
+abandonner,Quitter,ok,abandonnée,Quittée,inflected,y
+trancher,Couper net,ok,tranchée,Coupée nette,inflected,y
+dépourvoir,Privé de,pos-mismatch,dépourvue,,inflected,
+commenter,Énoncer son avis,ok,commentée,Énoncer son avis,pp-only-skipped,
+équiper,Doter et préparer,ok,équipée,Dotée et préparer,inflected,b
+réinstaller,Implanter de nouveau,ok,réinstallée,Implantée de nouveau,inflected,y
+guider,Orienter,ok,guidée,Orientée,inflected,y
+exploiter,Tirer profit de,ok,exploitée,Tirée profit de,inflected,b
+évaluer,Jauger,ok,évaluée,Jaugée,inflected,y
+exister,Être,ok,existé,Été,inflected,n
+vouer,Condamner,ok,vouée,Condamnée,inflected,y
+concrétiser,Matérialiser,ok,concrétisée,Matérialisée,inflected,y
+divertir,Amuser,ok,divertie,Amusée,inflected,y
+exciter,Stimuler,ok,excitée,Stimulée,inflected,y
+expliquer,Détailler,ok,expliquée,Détaillée,inflected,y
+décomposer,Analyser en éléments simples,ok,décomposée,Analysée en éléments simples,inflected,y
+conférer,Octroyer,ok,conférée,Octroyée,inflected,y
+reporter,Transmettre,ok,reportée,Transmise,inflected,y
+goûter,Déguster,ok,goûtée,Dégustée,inflected,y
+évaporer,Disperser en vapeur,ok,évaporée,Dispersée en vapeur,inflected,y
+convenir,Correspondre,ok,convenue,Correspondu,inflected,n
+mentionner,Évoquer,ok,mentionnée,Évoquée,inflected,y
+dévorer,Consumér,unknown-head,dévorée,,inflected,
+cantonner,Rattacher,ok,cantonnée,Rattachée,inflected,b
+promener,Conduire en balade,ok,promenée,Conduite en balade,inflected,y
+dégager,Libérer,ok,dégagée,Libérée,inflected,y
+accoucher,Mettre au monde,ok,accouchée,Mise au monde,inflected,y
+vulgariser,Rendre accessible au grand public,ok,vulgarisée,Rendue accessible au grand public,inflected,y
+visualiser,Représenter mentalement,ok,visualisée,Représentée mentalement,inflected,y
+embarrasser,Mettre dans l'embarras,stem-leak,embarrassée,,inflected,
+superposer,Couvrir partiellement,ok,superposée,Couverte partiellement,inflected,b
+mouvoir,Se déplacer,ok,mue,Se déplacée,inflected,n
+grever,Immobiliser,ok,grevée,Immobilisée,inflected,b
+éclore,Sortir de,ok,éclose,Sortie de,inflected,b
+traverser,Franchir,ok,traversée,Franchie,inflected,y
+généraliser,Étendre à l'ensemble,ok,généralisée,Étendue à l'ensemble,inflected,y
+exiger,Imposer,ok,exigée,Imposée,inflected,y
+hypothéquer,Engager,ok,hypothéquée,Engagée,inflected,y
+succéder,Suivre,ok,succédé,Suivie,inflected,n
+mourir,Cesser de vivre,ok,morte,Cessée de vivre,inflected,y
+innover,Apporter du neuf,ok,innovée,Apporter du neuf,pp-only-skipped,
+frire,Cuire à l'huile,ok,frite,Cuite à l'huile,inflected,y
+maudire,Damner,ok,maudite,Damnée,inflected,y
+aérer,Ventiler,ok,aérée,Ventilée,inflected,y
+briller,Éclater,ok,brillé,Éclaté,inflected,n
+exclure,Écarté,head-not-lemma,exclue,,inflected,
+confisquer,Saisir et garder,ok,confisquée,Saisie et garder,inflected,b
+insister,Persévérer avec force,ok,insisté,Persévéré avec force,inflected,b
+ruiner,Détruire,ok,ruinée,Détruite,inflected,y
+tirer,Extraire,ok,tirée,Extraite,inflected,y
+frémir,Vibrer légèrement,ok,frémi,Vibré légèrement,inflected,b
+embarquer,Monter à bord,ok,embarquée,Montée à bord,inflected,y
+accomplir,Exécuter,ok,accomplie,Exécutée,inflected,y
+abstraire,Éloigner du concret,ok,abstraite,Éloigner du concret,pp-only-skipped,
+certifier,Attester,ok,certifiée,Attestée,inflected,y
+rompre,Déchirer,ok,rompue,Déchirée,inflected,y
+déroger,Ne pas être assujetti à une règle,ok,dérogé,Ne pas été assujetti à une règle,inflected,n
+étouffer,Suffoquer,ok,étouffée,Suffoquée,inflected,y
+poigner,Serrer,ok,poignée,Serrée,inflected,n
+retrouver,Recouvrir,ok,retrouvée,Recouverte,inflected,y
+bannir,Exclure,ok,bannie,Exclue,inflected,y
+mimer,Imiter,ok,mimée,Imitée,inflected,y
+propager,Diffuser largement,ok,propagée,Diffusée largement,inflected,y
+consommer,Ingérer,ok,consommée,Ingérée,inflected,y
+grouper,Rassembler,ok,groupée,Rassemblée,inflected,y
+abréger,Raccourcir,ok,abrégée,Raccourcie,inflected,y
+réaffirmer,Renforcer,ok,réaffirmée,Renforcée,inflected,b
+conjurer,Invoquer,ok,conjurée,Invoquée,inflected,b
+gérer,Contrôler et diriger,ok,gérée,Contrôlée et diriger,inflected,b
+déboucher,Libérer,ok,débouchée,Libérée,inflected,y
+tomber,Déchiffrer,ok,tombée,Déchiffrée,inflected,n
+réfuter,Contredire,ok,réfutée,Contredite,inflected,y

@@ -1,0 +1,42 @@
+# iter14: DPO on the full hand-authored 1000-verb corpus + iter12 + iter13
+# themed pairs. Resume from v3 SFT base; same hyperparameters as iter13.2
+# (which we know cleared the 80% gate). The big change is corpus volume:
+# 1108 train pairs vs iter13.2's 324.
+#
+# Corpus (data/lora_dpo_iter14_combined): 1108 train / 136 valid / 136 test.
+# Promote best-val-loss adapter to models/lora-clue-v7.
+#
+# Iters: 600. ~3.5× iter13.2's 340 to match the ~3.4× corpus growth so each
+# pair sees similar coverage. Save every 50 → 12 checkpoints to probe.
+#
+# Run via the wrapper (forces -u for mid-train val flush):
+#   bash scripts/clue_generation/train_dpo.sh \
+#       --config scripts/clue_generation/lora_iter14_dpo.yaml \
+#       --train --train-mode dpo \
+#       --beta 0.1 --dpo-cpo-loss-type sigmoid \
+#       2>&1 | tee /tmp/iter14_train.log
+model: "mlx-community/c4ai-command-r-08-2024-4bit"
+data: "data/lora_dpo_iter14_combined"
+adapter_path: "models/lora-clue-v7"
+train_type: lora
+train_mode: dpo
+num_layers: 16
+batch_size: 2
+iters: 600
+learning_rate: 1e-6
+steps_per_report: 5
+steps_per_eval: 50
+save_every: 50
+seed: 20260506
+train: true
+fuse: false
+
+beta: 0.1
+dpo_cpo_loss_type: sigmoid
+
+resume_adapter_file: "models/lora-clue-v3/adapters.safetensors"
+
+lora_parameters:
+  rank: 32
+  dropout: 0.0
+  scale: 20.0

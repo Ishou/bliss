@@ -95,10 +95,74 @@ _MOOD_PREFERENCE = (
 _PERSON_PREFERENCE = ("2sg", "3sg", "3pl", "2pl", "1pl", "1sg")
 
 
+# Determiners that mark a direct-object NP when they immediately follow
+# the head verb. `de la` / `de l'` partitives are excluded because they
+# wear `de` first, which serves as the bridge that *would* license a
+# PP-state reading ("Couvert de lait" → "Couverte de lait").
+_DOBJ_DETERMINERS = {
+    "le", "la", "les", "l",
+    "un", "une", "des",
+    "du",  # masc-sg partitive — `du pain` is DObj, not a `de` bridge.
+    "ce", "cet", "cette", "ces",
+    "son", "sa", "ses",
+    "mon", "ma", "mes", "ton", "ta", "tes",
+    "leur", "leurs", "notre", "nos", "votre", "vos",
+}
+
+# Prepositions that, when they sit between the head verb and a following
+# determiner, license a PP-state reading. `Munir d'un trou` PP-inflates to
+# `Munie d'un trou`; `Mettre en ordre` to `Mise en ordre`. The verb still
+# takes a complement, but the complement is prepositional and survives the
+# participial shift.
+_PP_BRIDGE_PREPS = {"de", "d", "à", "au", "aux", "en", "dans", "sur",
+                    "sous", "par", "pour", "avec", "sans"}
+
+
 @dataclass
 class InflectionResult:
     text: str
     flag: str  # '' | 'no-target-pos' | 'no-head' | 'no-inflection' | 'identity'
+               # | 'head-pos-mismatch' | 'pp-only-skipped'
+               # | 'pp-reflexive-skipped' | 'empty'
+
+
+def _has_reflexive_head(tokens: list[str]) -> bool:
+    """True iff the clue's first alphabetic token is the reflexive pronoun
+    `Se` / `S'`. A reflexive clue head is a perfectly valid mots-fléchés
+    pattern (`S'esclaffer → Rire`); it only breaks for PP-as-adjective
+    surfaces, where PP-inflating the head produces ungrammatical text
+    like `*S'élevée` (the pronoun stranded against a participial reading).
+    Non-PP targets keep the reflexive clue intact.
+    """
+    for tok in tokens:
+        if not _is_alpha_token(tok) and tok not in ("'",):
+            continue
+        norm = tok.lower().rstrip("'")
+        return norm in ("se", "s")
+    return False
+
+
+def _has_verb_dobj_frame(tokens: list[str], head_idx: int) -> bool:
+    """True iff the clue is shaped `[head_verb] [det] [N]` — verb + direct
+    object — without a prepositional bridge between the verb and the
+    determiner. Such clues do not PP-inflate to a grammatical state-clue:
+    `Percer un trou` cannot become `*Percée un trou` (the direct-object
+    slot is not licensed by the past-participle adjectival reading).
+
+    A `de` / `à` / `en` etc. between the head and the determiner moves
+    the clue into a PP-friendly shape (`Munir d'un trou` → `Munie d'un
+    trou`); those return False.
+    """
+    n = len(tokens)
+    j = head_idx + 1
+    while j < n and not _is_alpha_token(tokens[j]):
+        j += 1
+    if j >= n:
+        return False
+    nxt = tokens[j].lower().rstrip("'")
+    if nxt in _PP_BRIDGE_PREPS:
+        return False
+    return nxt in _DOBJ_DETERMINERS
 
 
 def _decompose_targets(target: set[str]) -> list[set[str]]:
@@ -205,6 +269,28 @@ def inflect_clue(
         # the surface morphology (e.g. surface is a verb but the clue head is
         # a noun, like "Astre du jour" cluing a verb form). Leave verbatim.
         return InflectionResult(_capitalize_first(clue), "head-pos-mismatch")
+
+    # PP+DObj guard: when the surface is a past participle adjectival use
+    # (`forée`, `accordée`) and the lemma clue is shaped `verb + DObj`
+    # (`Percer un trou`, `Donner une faveur`), participial inflation strands
+    # the direct object (`*Percée un trou`). Iter13's DPO corpus reduces this
+    # frame in LoRA output, but residual cases still arrive here. Returning
+    # a structural flag (rather than a broken inflate or a 3sg/3pl-fallback
+    # action-clue) lets `build_surface_clues.py` route the row to dropped
+    # so the runtime keeps the placeholder.
+    if (target_pos == "verbe" and "ppas" in target
+            and _has_verb_dobj_frame(tokens, head_idx)):
+        return InflectionResult(_capitalize_first(clue), "pp-only-skipped")
+
+    # PP+Reflexive guard: a reflexive lemma clue (`Se déplacer`, `S'élever`)
+    # is a valid mots-fléchés pattern for verb-form answers (`S'esclaffer →
+    # Rire`), but PP-inflating it for a past-participle adjectival surface
+    # produces stranded-pronoun text (`*Se déplacée`, `*S'élevée`). Skip
+    # to placeholder; the corpus-side preference (DPO theme 1) reduces the
+    # rate at which this fires, but the inflater stays defensive in case.
+    if (target_pos == "verbe" and "ppas" in target
+            and _has_reflexive_head(tokens)):
+        return InflectionResult(_capitalize_first(clue), "pp-reflexive-skipped")
 
     # For nominal targets, gender relaxation is best-effort: try strict
     # gender first so a paradigm with both masc and fem forms (voleur →

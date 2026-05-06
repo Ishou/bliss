@@ -238,3 +238,127 @@ def test_no_inflection_when_lemma_truly_missing(index: MorphologyIndex) -> None:
     res = inflect_clue("Associer ensemble",
                        {"v2__t___zz", "ifut", "1pl"}, index)
     assert res.flag == "no-inflection"
+
+
+# --- PP+DObj guard ------------------------------------------------------
+
+
+def _build_pp_index() -> MorphologyIndex:
+    """Index for forer / munir / mettre — three frames the PP+DObj guard
+    must distinguish."""
+    idx = MorphologyIndex()
+    # forer: verb+DObj clue ("Percer un trou") doesn't PP-inflate.
+    _add(idx, "forer", "forer", "v1__t___zz infi")
+    _add(idx, "forer", "forée", "v1__t___zz ppas fem sg")
+    _add(idx, "forer", "forés", "v1__t___zz ppas mas pl")
+    _add(idx, "percer", "percer", "v1__t___zz infi")
+    _add(idx, "percer", "percée", "v1__t___zz ppas fem sg")
+    _add(idx, "percer", "percées", "v1__t___zz ppas fem pl")
+    _add(idx, "trou", "trou", "nom mas sg")
+    _add(idx, "trou", "trous", "nom mas pl")
+    # munir: verb+de+N reframing PP-inflates.
+    _add(idx, "munir", "munir", "v2__t___zz infi")
+    _add(idx, "munir", "munie", "v2__t___zz ppas fem sg")
+    _add(idx, "munir", "munies", "v2__t___zz ppas fem pl")
+    # mettre: verb+en+N also PP-friendly.
+    _add(idx, "mettre", "mettre", "v3__t___zz infi")
+    _add(idx, "mettre", "mise", "v3__t___zz ppas fem sg")
+    _add(idx, "ordre", "ordre", "nom mas sg")
+    return idx
+
+
+def test_pp_dobj_skip_for_verb_dobj_frame() -> None:
+    """`Percer un trou` + ppas-fem-sg surface → pp-only-skipped. The frame
+    can't be PP-inflected and the inflater must not invent a `*Percée un
+    trou` or fall back to a 3sg-action-clue."""
+    idx = _build_pp_index()
+    res = inflect_clue("Percer un trou",
+                       {"v1__t___zz", "ppas", "fem", "sg"}, idx)
+    assert res.flag == "pp-only-skipped", res
+    assert res.text == "Percer un trou"  # original clue preserved verbatim
+
+
+def test_pp_de_complement_inflates_normally() -> None:
+    """`Munir d'un trou` + ppas-fem-sg → `Munie d'un trou`. The `de` bridge
+    licenses the participial state-clue."""
+    idx = _build_pp_index()
+    res = inflect_clue("Munir d'un trou",
+                       {"v2__t___zz", "ppas", "fem", "sg"}, idx)
+    assert res.flag == "", res
+    assert res.text.lower().startswith("munie d"), res
+
+
+def test_pp_en_complement_inflates_normally() -> None:
+    """`Mettre en ordre` + ppas-fem-sg → `Mise en ordre`. `en` is a
+    PP-friendly bridge."""
+    idx = _build_pp_index()
+    res = inflect_clue("Mettre en ordre",
+                       {"v3__t___zz", "ppas", "fem", "sg"}, idx)
+    assert res.flag == "", res
+    assert res.text.lower().startswith("mise en"), res
+
+
+def test_pp_dobj_skip_does_not_fire_on_non_pp_targets() -> None:
+    """The guard is gated on `ppas in target`. An ipre-3sg target on the
+    same `Percer un trou` clue must inflate normally to `Perce un trou`,
+    not get the skip."""
+    idx = _build_pp_index()
+    res = inflect_clue("Percer un trou",
+                       {"v1__t___zz", "ipre", "3sg"}, idx)
+    # Either inflated or no-inflection, but NOT pp-only-skipped.
+    assert res.flag != "pp-only-skipped", res
+
+
+# --- PP+Reflexive guard -------------------------------------------------
+
+
+def _build_reflexive_index() -> MorphologyIndex:
+    """Index for relever / soulever — reflexive vs non-reflexive heads."""
+    idx = MorphologyIndex()
+    _add(idx, "relever", "relever", "v1__t___zz infi")
+    _add(idx, "relever", "relevée", "v1__t___zz ppas fem sg")
+    _add(idx, "élever", "élever", "v1__t___zz infi")
+    _add(idx, "élever", "élevée", "v1__t___zz ppas fem sg")
+    _add(idx, "soulever", "soulever", "v1__t___zz infi")
+    _add(idx, "soulever", "soulevée", "v1__t___zz ppas fem sg")
+    return idx
+
+
+def test_pp_reflexive_skip_for_se_apostrophe_head() -> None:
+    """`S'élever` + ppas-fem-sg → pp-reflexive-skipped. PP-inflating
+    a reflexive head produces stranded-pronoun text (`*S'élevée`)."""
+    idx = _build_reflexive_index()
+    res = inflect_clue("S'élever",
+                       {"v1__t___zz", "ppas", "fem", "sg"}, idx)
+    assert res.flag == "pp-reflexive-skipped", res
+
+
+def test_pp_reflexive_skip_for_se_space_head() -> None:
+    """`Se déplacer` + ppas-fem-sg → pp-reflexive-skipped. Same shape
+    with a space-separated `Se` instead of `S'`."""
+    idx = MorphologyIndex()
+    _add(idx, "déplacer", "déplacer", "v1__t___zz infi")
+    _add(idx, "déplacer", "déplacée", "v1__t___zz ppas fem sg")
+    res = inflect_clue("Se déplacer",
+                       {"v1__t___zz", "ppas", "fem", "sg"}, idx)
+    assert res.flag == "pp-reflexive-skipped", res
+
+
+def test_pp_reflexive_skip_does_not_fire_on_non_pp_targets() -> None:
+    """The guard is gated on `ppas in target`. A reflexive clue cluing
+    a verb-form answer (e.g. ipre-3sg) is a perfectly legal pattern
+    (`S'esclaffer → Rire`) and must NOT be skipped."""
+    idx = _build_reflexive_index()
+    res = inflect_clue("S'élever",
+                       {"v1__t___zz", "ipre", "3sg"}, idx)
+    assert res.flag != "pp-reflexive-skipped", res
+
+
+def test_non_reflexive_head_inflates_normally() -> None:
+    """`Soulever` + ppas-fem-sg → `Soulevée`. Non-reflexive infinitive,
+    no skip. Sanity check — make sure the guard doesn't false-positive."""
+    idx = _build_reflexive_index()
+    res = inflect_clue("Soulever",
+                       {"v1__t___zz", "ppas", "fem", "sg"}, idx)
+    assert res.flag == "", res
+    assert res.text.lower().startswith("soulevée"), res

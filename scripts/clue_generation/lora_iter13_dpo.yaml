@@ -1,0 +1,44 @@
+# iter13: DPO on top of iter10's SFT adapter (rank 32, 583-pair corpus),
+# combining iter12's 180 preference pairs (stem-leak / self-reference /
+# wrong-meaning fixes) with 160 NEW pairs that target the PP-form clue
+# mismatch — verbs whose past-participle adjectival surface forms (forée,
+# accordée, aggravée) currently get a verb+DObj clue ("Percer un trou")
+# which is not PP-inflectable, instead of a single-word lemma synonym
+# ("Trouer" → "Trouée") or verb+de+N reframing ("Munir d'un trou" → "Munie
+# d'un trou"). See docs/superpowers/specs/2026-05-05-pp-form-corpus-reframing-design.md.
+#
+# Diff vs iter12:
+#   - data: data/lora_dpo_iter13_combined  (308 train / 36 valid / 36 test pairs;
+#                                            iter12 + iter13 corpora concatenated)
+#   - adapter_path: models/lora-clue-v6    (was v5)
+#   - iters: 320                            (was 200; ~70% larger corpus)
+#   - everything else identical (lr 1e-6, β 0.1, sigmoid, rank 32, num_layers 16).
+#
+# Resume base is unchanged — v3 (SFT). DPO refinements are not stacked on each
+# other; both iter12 and iter13 preferences refine the same SFT distribution
+# in a single combined run, producing v6.
+model: "mlx-community/c4ai-command-r-08-2024-4bit"
+data: "data/lora_dpo_iter13_combined"
+adapter_path: "models/lora-clue-v6"
+train_type: lora
+train_mode: dpo
+num_layers: 16
+batch_size: 2
+iters: 320
+learning_rate: 1e-6
+steps_per_report: 5
+steps_per_eval: 25
+save_every: 50
+seed: 20260505
+train: true
+fuse: false  # mlx-lm-lora 2.1.0 default is true; we promote best-val-loss manually
+
+beta: 0.1
+dpo_cpo_loss_type: sigmoid
+
+resume_adapter_file: "models/lora-clue-v3/adapters.safetensors"
+
+lora_parameters:
+  rank: 32
+  dropout: 0.0
+  scale: 20.0

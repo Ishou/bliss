@@ -1,0 +1,39 @@
+# iter13.2: clean retrain from v3 SFT base with the full theme-augmented
+# corpus. Replaces iter13 + iter13.1 — both flagged as transitional.
+#
+# Corpus (data/lora_dpo_iter13_2_combined): 324 train / 38 valid / 38 test
+#   = 180 iter12 + 128 iter13 + 8 theme-1 (reflexive) + 8 theme-2 (POS).
+#
+# Diff vs iter13:
+#   - +16 train pairs covering reflexive avoidance and POS adherence
+#     (themes that emerged from the iter13 + iter13.1 eval rounds).
+#   - same hyperparameters (lr 1e-6, β 0.1, sigmoid, 16 layers, batch 2).
+#   - iters: 340 (slightly higher than iter13's 320 to match the bigger
+#     corpus; train/val ratio matches iter13's regime).
+#   - resume_adapter_file: v3 SFT base (NOT v6/iter13). Avoids the
+#     DPO-on-DPO compound drift that bit iter13.1.
+model: "mlx-community/c4ai-command-r-08-2024-4bit"
+data: "data/lora_dpo_iter13_2_combined"
+adapter_path: "models/lora-clue-v6_2"
+train_type: lora
+train_mode: dpo
+num_layers: 16
+batch_size: 2
+iters: 340
+learning_rate: 1e-6
+steps_per_report: 5
+steps_per_eval: 25
+save_every: 50
+seed: 20260505
+train: true
+fuse: false
+
+beta: 0.1
+dpo_cpo_loss_type: sigmoid
+
+resume_adapter_file: "models/lora-clue-v3/adapters.safetensors"
+
+lora_parameters:
+  rank: 32
+  dropout: 0.0
+  scale: 20.0

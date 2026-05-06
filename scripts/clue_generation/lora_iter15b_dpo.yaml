@@ -1,0 +1,36 @@
+# iter15b: replace 673 noisy rejected clues with the lemma capitalized
+# (categorical self-reference foils). Same volume as iter14 but with
+# cleaner DPO signal. Volume = 1108 train / 136 valid / 136 test.
+#
+# Tradeoff vs iter15a (drop-noisy):
+#   - 15a is signal-clean but verb coverage drops (327 verbs trained vs 1000).
+#   - 15b keeps verb coverage but overweights self-reference signal
+#     (673 of 1000 = 67% self-ref foils).
+#
+# Run only if iter15a doesn't clear iter14's 90.1% — comparing isolates
+# whether the lift comes from cleaner foils or richer foils.
+model: "mlx-community/c4ai-command-r-08-2024-4bit"
+data: "data/lora_dpo_iter15b_combined"
+adapter_path: "models/lora-clue-v8b"
+train_type: lora
+train_mode: dpo
+num_layers: 12  # lighter than iter14's 16; user-machine throttle
+batch_size: 2
+iters: 600
+learning_rate: 1e-6
+steps_per_report: 5
+steps_per_eval: 50
+save_every: 50
+seed: 20260506
+train: true
+fuse: false
+
+beta: 0.1
+dpo_cpo_loss_type: sigmoid
+
+resume_adapter_file: "models/lora-clue-v3/adapters.safetensors"
+
+lora_parameters:
+  rank: 32
+  dropout: 0.0
+  scale: 20.0
