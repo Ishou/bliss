@@ -182,18 +182,17 @@ CLAUDE.md mandates <400-line PRs. The fixes split naturally:
 
 Re-running the same 200-puzzle benchmark after each PR landed:
 
-| metric              | base | + slot-plan FC | + fill FC |
-|---------------------|-----:|---------------:|----------:|
-| success rate        | 82.5% | 83.5%         | **84.5%** |
-| total p50           | 118ms | 55ms          | **46ms**  |
-| total p75           | 1194ms | 213ms        | **174ms** |
-| total p95           | 5000ms | 5000ms       | 5002ms    |
-| total p99           | 5000ms | 5000ms       | 5004ms    |
-| slot-plan p95       | 439ms | 22ms          | 22ms      |
-| slot-plan max       | 5000ms | 85ms         | 84ms      |
-| slot-plan bks p99   | 5.76M | 286k          | 286k      |
-| fill p50            | 62ms  | 49ms          | 36ms      |
-| fill bks p50        | 941   | 941           | 784       |
+| metric              | base | + slot-plan FC | + fill FC | + self-calibrating retry |
+|---------------------|-----:|---------------:|----------:|-------------------------:|
+| success rate        | 82.5% | 83.5%         | 84.5%     | **100%**                |
+| total p50           | 118ms | 55ms          | 46ms      | 54ms                    |
+| total p75           | 1194ms | 213ms        | 174ms     | 268ms                   |
+| total p95           | 5000ms | 5000ms       | 5002ms    | **783ms**               |
+| total p99           | 5000ms | 5000ms       | 5004ms    | **1259ms**              |
+| total max           | 5000ms | 5011ms       | 5011ms    | **2024ms**              |
+| slot-plan p95       | 439ms | 22ms          | 22ms      | n/a (per-attempt)        |
+| slot-plan bks p99   | 5.76M | 286k          | 286k      | 286k                     |
+| fill p50            | 62ms  | 49ms          | 36ms      | n/a (per-attempt)        |
 
 **Goal review against §2:**
 
@@ -210,21 +209,25 @@ slot-plan or fill backtracking — those are now fast. They're from
 puzzles where *no valid fill exists* (or only an exotic one) given the
 fixed slot lengths the planner produced.
 
-That's the user's original intuition: the *configuration* is the
-bottleneck, not the search speed. Fix paths from here:
+**PR-C (self-calibrating retry) cracks the tail by sidestepping the
+hard puzzles**: a hard puzzle's *configuration* is unfortunate, but
+the next random seed produces a different (often easy) configuration.
+Early-abandon at 10× recent-success median + retry up to 10 times
+takes the worst case from 5000ms → 2024ms and the success rate from
+84.5% → 100%.
+
+The cutoff multiplier (10×) is machine-independent — slow hosts have
+proportionally higher medians, so cutoff scales. No per-machine
+tuning needed.
+
+Future levers (still relevant for further improvement):
 
 1. **Inflectional-flex slot resizing** (the user-flagged design): let
    the fill phase grow/shrink slot lengths within an inflection
-   family. Expands the solution space — would actually help the
-   currently-infeasible 15.5%.
-2. **Restart-on-deadend with reseed**: cheap, may unstick the worst
-   cases by trying a different slot-plan even when the first looks
-   feasible.
-3. **Domain memoization**: probably cheap perf win, won't help the
-   tail.
-
-Recommendation: ship PR-A + PR-B as the perf foundation; pursue the
-inflectional-flex redesign as the next algorithmic iter.
+   family. Would expand the solution space and reduce the per-seed
+   failure rate, lowering retry counts further.
+2. **Domain memoization**: probably cheap perf win on the typical
+   case (median).
 
 ## 12. Spec self-review notes
 
