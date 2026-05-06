@@ -11,7 +11,7 @@ dependencies {
     implementation(project(":grid:domain"))
 
     // Postgres pool + migrations — shared between grid-api and grid-worker.
-    implementation("org.postgresql:postgresql:42.7.10")
+    implementation("org.postgresql:postgresql:42.7.11")
     implementation("com.zaxxer:HikariCP:7.0.2")
     implementation("org.flywaydb:flyway-core:11.10.4")
     implementation("org.flywaydb:flyway-database-postgresql:11.10.4")

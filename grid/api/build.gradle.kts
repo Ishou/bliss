@@ -27,7 +27,7 @@ val javaUuidGeneratorVersion = "4.3.0"
 val junitVersion = "5.11.4"
 val assertkVersion = "0.28.1"
 val konsistVersion = "0.17.3"
-val postgresqlJdbcVersion = "42.7.10"
+val postgresqlJdbcVersion = "42.7.11"
 val hikariVersion = "7.0.2"
 // Flyway 12.x auto-loads callbacks from `classpath:db/callback` inside
 // `Flyway.<init>()` — see ClassicConfiguration.loadCallbackLocation. In our
