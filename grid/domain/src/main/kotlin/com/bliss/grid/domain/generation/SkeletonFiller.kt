@@ -61,7 +61,21 @@ internal class SkeletonFiller(
         // intersect the just-placed slot can have their domain shrink, so we re-evaluate just
         // those. O(slots²) precompute amortizes over millions of search nodes.
         val intersections = computeIntersections(slots)
-        if (!search(slots, letters, usedWords, usedLemmas, stackedCluePositions, assigned, intersections, random, deadline, metrics)) return null
+        if (!search(
+                slots,
+                letters,
+                usedWords,
+                usedLemmas,
+                stackedCluePositions,
+                assigned,
+                intersections,
+                random,
+                deadline,
+                metrics,
+            )
+        ) {
+            return null
+        }
         return slots.mapIndexed { i, slot ->
             WordPlacement(assigned[i]!!, slot.cluePosition, slot.direction)
         }
@@ -146,15 +160,16 @@ internal class SkeletonFiller(
             // are unchanged). Re-evaluate just those; if any went empty, skip
             // recursion — the next MRV scan would have discovered the same
             // dead-end at greater cost.
-            val placementOk = run {
-                for (otherIdx in intersections[bestIdx]) {
-                    if (assigned[otherIdx] != null) continue
-                    val needsCompactOther = slots[otherIdx].cluePosition in stackedCluePositions
-                    val otherDomain = domainFor(slots[otherIdx], letters, usedWords, usedLemmas, needsCompactOther, metrics)
-                    if (otherDomain.isEmpty()) return@run false
+            val placementOk =
+                run {
+                    for (otherIdx in intersections[bestIdx]) {
+                        if (assigned[otherIdx] != null) continue
+                        val needsCompactOther = slots[otherIdx].cluePosition in stackedCluePositions
+                        val otherDomain = domainFor(slots[otherIdx], letters, usedWords, usedLemmas, needsCompactOther, metrics)
+                        if (otherDomain.isEmpty()) return@run false
+                    }
+                    true
                 }
-                true
-            }
 
             if (placementOk &&
                 search(slots, letters, usedWords, usedLemmas, stackedCluePositions, assigned, intersections, random, deadline, metrics)

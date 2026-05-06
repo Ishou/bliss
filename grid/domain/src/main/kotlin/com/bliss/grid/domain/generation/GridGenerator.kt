@@ -42,18 +42,20 @@ class GridGenerator(
         metrics?.skeletonMs = (System.nanoTime() - skeletonStart) / 1_000_000
 
         val slotPlanStart = System.nanoTime()
-        val slots = SlotPlanner.planVariable(arrows, w, h, random, deadline, metrics) ?: run {
-            metrics?.slotPlanMs = (System.nanoTime() - slotPlanStart) / 1_000_000
-            return null
-        }
+        val slots =
+            SlotPlanner.planVariable(arrows, w, h, random, deadline, metrics) ?: run {
+                metrics?.slotPlanMs = (System.nanoTime() - slotPlanStart) / 1_000_000
+                return null
+            }
         metrics?.slotPlanMs = (System.nanoTime() - slotPlanStart) / 1_000_000
         if (slots.any { it.length < constraints.minWordLength }) return null
 
         val fillStart = System.nanoTime()
-        val placements = SkeletonFiller(repository).fill(slots, random, deadline, metrics) ?: run {
-            metrics?.fillMs = (System.nanoTime() - fillStart) / 1_000_000
-            return null
-        }
+        val placements =
+            SkeletonFiller(repository).fill(slots, random, deadline, metrics) ?: run {
+                metrics?.fillMs = (System.nanoTime() - fillStart) / 1_000_000
+                return null
+            }
         metrics?.fillMs = (System.nanoTime() - fillStart) / 1_000_000
         // The planner + filler enforce the invariants `Grid.fromPlacements` checks
         // (in-bounds, no duplicate words, no clue/letter overlap, consistent crossings).

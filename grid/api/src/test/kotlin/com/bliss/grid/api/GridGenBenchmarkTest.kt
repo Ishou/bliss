@@ -56,6 +56,7 @@ class GridGenBenchmarkTest {
         val timeoutCount = n - successCount
 
         fun List<Long>.p(pct: Int) = this[(pct * (size - 1)) / 100]
+
         fun List<Long>.fmt() = "min=${first()} p50=${p(50)} p75=${p(75)} p95=${p(95)} p99=${p(99)} max=${last()}"
 
         println(
