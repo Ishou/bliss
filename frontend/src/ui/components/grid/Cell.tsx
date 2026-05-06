@@ -57,34 +57,7 @@ function smartLineBreak(text: string): string {
   return text.slice(0, bestIdx) + '\n' + text.slice(bestIdx + 1);
 }
 
-// Clue text size bounds, expressed as a fraction of the cell's
-// `clientWidth`. FitText scales font linearly with cell width, so a
-// clue that fits at one cell size fits at every cell size
-// (zoom-invariance — validated against `scripts/eval/clue_metrics.py`).
-//
-// Tightened post-PR-#195: the wide range (0.18–0.50) inherited from
-// the small-cell era produced jarring per-cell variance once cells
-// were ~80–100 px each — short clues like "déco" ballooned to 50 % of
-// cell width while long ones like "psycho" / "gagnée" / "posta" had to
-// drop to FitText's `ABSOLUTE_MIN_PX` floor (formerly 6 px) because
-// the ratio floor was already too aggressive for stacked half-cells.
-// Tighter bands narrow the visual delta:
-//
-//   SINGLE 0.22–0.32 — single-clue cells have full vertical space, so
-//     they tolerate a slightly higher floor (0.22 ≈ 22 px on a 100 px
-//     cell) and a moderate ceiling (0.32 ≈ 32 px) that's still visibly
-//     bigger than the floor without dwarfing neighbours.
-//   STACK 0.20–0.28 — stacked half-cells have only ~½ the height of a
-//     single-clue cell, so both ends drop a notch: lower ceiling so
-//     the short top half doesn't shout over the bottom half, slightly
-//     lower floor because two-line stacked text fitting at 0.20 is
-//     already legible (and FitText's absolute floor catches the worst
-//     cases).
-//
-// FitText's `ABSOLUTE_MIN_PX` (also raised in the same PR — 6 → 11) is
-// the hard floor for clues too long for the comfortable range —
-// clipping past it via `overflow: hidden` is preferable to
-// sub-readable text.
+// Tighter bands (vs 0.18–0.50) narrow per-cell size variance on the wider post-#195 cells.
 const SINGLE_RATIO_MIN = 0.22;
 const SINGLE_RATIO_MAX = 0.32;
 const STACK_RATIO_MIN = 0.20;

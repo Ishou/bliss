@@ -314,25 +314,13 @@ describe('Grid render', () => {
       const { container } = render(<Grid puzzle={SAMPLE_PUZZLE} />);
       const wrapper = container.querySelector<HTMLDivElement>('.react-transform-wrapper');
       expect(wrapper).not.toBeNull();
-      // Post-#195 fix: the wrapper auto-squares against the flex shell
-      // via container queries (`100cqw` / `100cqh`) capped at 720 px,
-      // replacing the height-blind `min(95vw, 80vmin, 720px)` clamp.
-      // The library only writes transform:… inline; width/height from
-      // `wrapperStyle` survive the merge.
+      // Library only writes transform:…; width/height from wrapperStyle survive the merge.
       expect(wrapper!.style.width).toBe('min(100cqw, 100cqh, 720px)');
       expect(wrapper!.style.height).toBe('min(100cqw, 100cqh, 720px)');
     });
 
     it('wraps the transform wrapper in a flex shell that absorbs leftover viewport height', () => {
-      // The shell takes the slack between page chrome (wordmark / DÉMO
-      // pill / clue panel / zoom row / lobby button) and the bottom of
-      // the visible viewport, so the page never produces a vertical
-      // scrollbar. We assert the structural contract — the shell is
-      // the immediate parent of the library's `.react-transform-wrapper`
-      // element — because vitest config has `css: false` (Panda rules
-      // aren't loaded into jsdom), so computed-style assertions on
-      // `flex: 1 1 0` / `min-height: 0` would always read empty. The
-      // class identity + parent relation is the testable invariant.
+      // css:false in vitest; DOM structure (shell→wrapper parent relation) is the only testable invariant for the flex contract.
       const { container } = render(<Grid puzzle={SAMPLE_PUZZLE} />);
       const shell = container.querySelector<HTMLDivElement>('[data-testid="grid-shell"]');
       expect(shell).not.toBeNull();

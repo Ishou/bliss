@@ -21,9 +21,7 @@ const gridContainer = css({
   border: '1px solid',
   borderColor: 'border',
   width: '100%',
-  // Width is bounded by the TransformComponent wrapper below
-  // (`transformWrapperBaseStyle.width` — a `min(100cqw, 100cqh, 720px)`
-  // clamp against the flex shell's container box).
+  // Width bounded by the TransformWrapper's min(100cqw,100cqh,720px) clamp.
   // Allow border arrows on edge cells to bleed outside the grid border box.
   overflow: 'visible',
   // Omitted: touch-action:manipulation blocked pinch/pan; user-select:none blocked iOS magnifier on clue cells.
@@ -37,30 +35,7 @@ const gridContainer = css({
 // float above the top row cells aren't clipped.
 const gridFrame = css({ position: 'relative', width: '100%', overflow: 'visible' });
 
-// Flex shell that wraps the `TransformComponent`. Two jobs:
-//
-// 1. Absorb leftover vertical space inside the route's flex column
-//    (`flex: 1 1 0; min-height: 0`) so the page exactly fills `100dvh`
-//    and never produces a vertical scrollbar. The chrome above (wordmark,
-//    DÉMO badge, subtitle, sticky clue panel) and below (zoom controls,
-//    "Créer une partie multijoueur" button) take their natural heights;
-//    the grid uses what's left. Replaces PR #195's height-blind
-//    `min(95vw, 80vmin, 720px)` clamp which let the grid be 720 px tall
-//    on a 1080 p laptop after ~280 px of chrome had already stacked.
-//
-// 2. Establish a `container-type: size` so the wrapper inside can size
-//    itself by `min(100cqw, 100cqh, 720px)` — i.e. the smaller of
-//    available width and available height, capped at the design ceiling.
-//    Container queries are the cleanest way to make a square box
-//    auto-square inside a flex slot whose width and height are
-//    independently constrained; an `aspect-ratio` + max-width /
-//    max-height combo breaks down when a flex slot is wider than tall
-//    (or vice versa) because the browser ignores `aspect-ratio` when
-//    both dimensions are explicit.
-//
-// `align-items: center; justify-content: center` so the (possibly
-// smaller) square is centered inside the shell when one axis is binding
-// and the other has slack.
+// flex:1 + container-type:size: shell absorbs leftover dvh so the inner wrapper can auto-square via min(100cqw,100cqh,720px).
 const gridShellStyles = css({
   flex: '1 1 0',
   minHeight: 0,
@@ -72,30 +47,8 @@ const gridShellStyles = css({
   containerType: 'size',
 });
 
-// Base inline style for the `TransformComponent` wrapper. The wrapper
-// is a square sized by `min(100cqw, 100cqh, 720px)` against the
-// `gridShell` container above — fits whichever axis is smaller. The
-// library's stylesheet defaults this box to `width: fit-content`,
-// which would collapse around `width: 100%` children; the explicit
-// width here keeps the outer box driving layout and the grid inside
-// fills it.
-//
-// `touchAction` is dynamic per `transformWrapperStyle` below — `pan-y` when
-// the grid is at rest (scale 1) so a vertical swipe over the grid scrolls
-// the page (the natural mobile expectation), `none` once the user has
-// pinched in (scale > 1) so swipes pan the grid instead. This preserves
-// native browser zoom on the page chrome (WCAG 1.4.4) and gives the right
-// mobile UX: scroll-through at rest, pan-when-zoomed.
-//
-// Soft-keyboard avoidance is now expressed by shrinking the *shell*
-// (see `shellInlineStyle` below) rather than the wrapper. The wrapper
-// follows automatically because both its width and height are
-// expressed in container-query units against the shell — keeping the
-// grid square as the keyboard collapses the visual viewport.
+// width=height=min(100cqw,100cqh,720px): square auto-sized to the shell's smaller axis; library defaults to fit-content without this.
 const transformWrapperBaseStyle = {
-  // Square box auto-sized to fit the flex slot's smaller axis, capped
-  // at 720 px so it never gets uselessly large on 4K displays. The
-  // height = width clamp expresses an aspect-ratio of 1 implicitly.
   width: 'min(100cqw, 100cqh, 720px)',
   height: 'min(100cqw, 100cqh, 720px)',
   margin: '0 auto',
@@ -494,19 +447,7 @@ export function Grid({
     };
   }, []);
 
-  // Soft-keyboard-aware shell max-height. When the on-screen keyboard
-  // shrinks `window.visualViewport`, the shell's natural flex-grow
-  // height (a slice of `100dvh`) stays the same on browsers that don't
-  // refresh `dvh` for the keyboard — but the bottom rows now sit
-  // underneath the keyboard with no way for the player to reach them
-  // (at scale 1 the library's bounds collapse to zero, so panning
-  // doesn't help). We measure the shell's distance from the visible
-  // viewport top and shrink its `maxHeight` to fit the remaining
-  // space; because the inner wrapper is sized via
-  // `min(100cqw, 100cqh, 720px)` against the shell, that shrink
-  // propagates to both the wrapper's width and height in lockstep —
-  // keeping the grid square. `null` = no override (the shell takes its
-  // natural flex-grow height).
+  // null = no override; keyboard-avoidance shrinks the shell so container queries propagate the collapse to the wrapper square.
   const [shellMaxHeightPx, setShellMaxHeightPx] = useState<number | null>(null);
   useEffect(() => {
     if (typeof window === 'undefined' || !window.visualViewport) return;

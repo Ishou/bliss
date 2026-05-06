@@ -24,15 +24,7 @@ import { useLayoutEffect, useRef, useState } from 'react';
 // render is "tiny but contained", never "huge and bleeding".
 const INITIAL_PX = 8;
 
-// Absolute minimum font size in pixels. Raised post-PR-#195 from 6 → 11:
-// at 6 px even high-DPR displays produce text that's literally
-// unreadable on dense crossword cells (the user's screenshot showed
-// "psycho" / "gagnée" sitting at ~6–8 px next to short clues like
-// "déco" rendering at the comfortable ceiling — visually jarring and
-// worse than honest clipping). 11 px is one notch below the typical
-// readability floor for non-elderly eyes (~12 px); we prefer
-// `overflow: hidden` clipping past this point because clipped text is
-// still recognizable in shape, while sub-readable text is just noise.
+// 11 px: clipped text at the readability floor beats sub-readable text (raised from 6 post-#195 visual regression).
 const ABSOLUTE_MIN_PX = 11;
 
 export function FitText({
