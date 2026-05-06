@@ -123,12 +123,17 @@ class ExportWordsCommand(
 
         private val DEFAULT_CURATED_DIR: Path = Path.of("data/curated")
 
-        // Default priority: curated wins over DBnary-derived synonyms; lower
-        // tiers (model-generated, legacy) are added at the user's discretion
-        // via --candidate-priority. ADR-0024 sets `dbnary-synonym` below LLM
-        // sources by default — this is the LLM-free baseline; once Phase 3
-        // ships, `--candidate-priority "curated,mistral-nemo,dbnary-synonym"`.
-        private const val DEFAULT_CANDIDATE_PRIORITY: String = "curated,dbnary-synonym"
+        // Default priority: curated wins over LoRA-generated; the
+        // `dbnary-synonym` lane is deprecated as of iter13 (see
+        // docs/eval/clue-gen-v0.md and the iter13 design doc) — DBnary
+        // text is now training-only-input for the filter; no DBnary
+        // string lands in `clue_text` via the export path. The lane's
+        // SQL derivation and worker subcommand stay in place for
+        // ad-hoc revival, but they are no longer in the production
+        // priority by default. The LoRA source label tracks the
+        // promoted adapter — bump on each iter promotion.
+        private const val DEFAULT_CANDIDATE_PRIORITY: String =
+            "curated,command-r-lora-v7-iter14"
 
         // Length-2 grammalecte rows are dominated by junk (`ck, cp, mv, qi, …`) that
         // looks frequent in raw text but isn't crossword-valid; rely on the curated

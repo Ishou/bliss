@@ -1,0 +1,101 @@
+lemma,lemma_clue,validation_flag,pp_surface,inflected_clue,inflection_status,rating
+entremettre,Intercaler,ok,entremise,Intercalée,inflected,y
+trembler,Éprouver des secousses,ok,tremblé,Éprouver des secousses,pp-only-skipped,
+anéantir,Rayer de la surface de la terre,ok,anéantie,Rayée de la surface de la terre,inflected,y
+schématiser,Représenter simplement,ok,schématisée,Représentée simplement,inflected,y
+effacer,Rayer,ok,effacée,Rayée,inflected,y
+ratifier,Confirmer et approuver,ok,ratifiée,Confirmée et approuver,inflected,b
+peser,Avoirdesu,unknown-head,pesée,,inflected,
+investir,Engager des fonds,ok,investie,Engager des fonds,pp-only-skipped,
+bouger,Évoluer,ok,bougée,Évolué,inflected,b
+remarquer,Discerner distinctement,ok,remarquée,Discernée distinctement,inflected,y
+boucher,Tranchant,pos-mismatch,bouchée,,inflected,
+intimider,Écraser,ok,intimidée,Écrasée,inflected,b
+subir,Endurer,ok,subie,Endurée,inflected,y
+interpeller,Sommer,ok,interpellée,Sommée,inflected,y
+communier,Partager le sacrement,ok,communié,Partager le sacrement,pp-only-skipped,
+relever,Soulever,ok,relevée,Soulevée,inflected,y
+affecter,Imprégner,ok,affectée,Imprégnée,inflected,y
+enfreindre,Violer,ok,enfreinte,Violée,inflected,y
+consigner,Remettre officiellement,ok,consignée,Remise officiellement,inflected,y
+manger,Consommer,ok,mangée,Consommée,inflected,y
+recourir,Frapper à,ok,recourue,Frappée à,inflected,b
+concerner,Relatif à,pos-mismatch,concernée,,inflected,
+surmonter,Dominer,ok,surmontée,Dominée,inflected,y
+signaler,Denoncer,unknown-head,signalée,,inflected,
+munir,Équiper,ok,munie,Équipée,inflected,y
+déférer,Soumettre,ok,déférée,Soumise,inflected,y
+changer,Muter,ok,changée,Mutée,inflected,y
+dériver,Provenir,ok,dérivée,Provenue,inflected,b
+abandonner,Déserter,ok,abandonnée,Désertée,inflected,y
+trancher,Couper net,ok,tranchée,Coupée nette,inflected,y
+dépourvoir,Privé d'autorité,pos-mismatch,dépourvue,,inflected,
+commenter,Évoquer,ok,commentée,Évoquée,inflected,y
+équiper,Doter et armer,ok,équipée,Dotée et armer,inflected,b
+réinstaller,Implanter de nouveau,ok,réinstallée,Implantée de nouveau,inflected,y
+guider,Orienter,ok,guidée,Orientée,inflected,y
+exploiter,Tirer profit,ok,exploitée,Tirée profit,inflected,b
+évaluer,Jauger,ok,évaluée,Jaugée,inflected,y
+exister,Être,ok,existé,Été,inflected,n
+vouer,Condamner,ok,vouée,Condamnée,inflected,y
+concrétiser,Matérialiser,ok,concrétisée,Matérialisée,inflected,y
+divertir,Amuser,ok,divertie,Amusée,inflected,y
+exciter,Stimuler,ok,excitée,Stimulée,inflected,y
+expliquer,Détailler,ok,expliquée,Détaillée,inflected,y
+décomposer,Scinder,ok,décomposée,Scindée,inflected,y
+conférer,Octroyer,ok,conférée,Octroyée,inflected,y
+reporter,Transmettre,ok,reportée,Transmise,inflected,y
+goûter,Déguster,ok,goûtée,Dégustée,inflected,y
+évaporer,Disperser en vapeur,ok,évaporée,Dispersée en vapeur,inflected,y
+convenir,Correspondre,ok,convenue,Correspondu,inflected,n
+mentionner,Évoquer,ok,mentionnée,Évoquée,inflected,y
+dévorer,Ingurgiter goulûment,ok,dévorée,Ingurgitée goulûment,inflected,y
+cantonner,Rattacher,ok,cantonnée,Rattachée,inflected,b
+promener,Conduire en balade,ok,promenée,Conduite en balade,inflected,y
+dégager,Libérer,ok,dégagée,Libérée,inflected,y
+accoucher,Mettre au monde,ok,accouchée,Mise au monde,inflected,y
+vulgariser,Rendre commun et accessible,ok,vulgarisée,Rendue commune et accessible,inflected,y
+visualiser,Représenter mentalement,ok,visualisée,Représentée mentalement,inflected,y
+embarrasser,Déshonorer,ok,embarrassée,Déshonorée,inflected,y
+superposer,Couvrir,ok,superposée,Couverte,inflected,y
+mouvoir,Déplacer légèrement,ok,mue,Déplacée légèrement,inflected,y
+grever,Immobiliser,ok,grevée,Immobilisée,inflected,b
+éclore,Sort du coquillage,pos-mismatch,éclose,,inflected,
+traverser,Franchir,ok,traversée,Franchie,inflected,y
+généraliser,Étendre à l'ensemble,ok,généralisée,Étendue à l'ensemble,inflected,y
+exiger,Imposer,ok,exigée,Imposée,inflected,y
+hypothéquer,Engager,ok,hypothéquée,Engagée,inflected,y
+succéder,Remplacer,ok,succédé,Remplacé,inflected,y
+mourir,Cesser de vivre,ok,morte,Cessée de vivre,inflected,y
+innover,Apporter du neuf,ok,innovée,Apporter du neuf,pp-only-skipped,
+frire,Cuire à l'huile,ok,frite,Cuite à l'huile,inflected,y
+maudire,Damner,ok,maudite,Damnée,inflected,y
+aérer,Ventiler,ok,aérée,Ventilée,inflected,y
+briller,Éclater,ok,brillé,Éclaté,inflected,n
+exclure,Écarté,head-not-lemma,exclue,,inflected,
+confisquer,Saisir,ok,confisquée,Saisie,inflected,y
+insister,Persévérer avec force,ok,insisté,Persévéré avec force,inflected,b
+ruiner,Dévaster,ok,ruinée,Dévastée,inflected,y
+tirer,Extirper,ok,tirée,Extirpée,inflected,y
+frémir,Vibrer légèrement,ok,frémi,Vibré légèrement,inflected,b
+embarquer,Prendre place,ok,embarquée,Prise place,inflected,n
+accomplir,Exécuter,ok,accomplie,Exécutée,inflected,y
+abstraire,Éloigner du concret,ok,abstraite,Éloigner du concret,pp-only-skipped,
+certifier,Attester,ok,certifiée,Attestée,inflected,y
+rompre,Désunir,ok,rompue,Désunie,inflected,y
+déroger,Échapper à la règle,ok,dérogé,Échappé à la règle,inflected,b
+étouffer,Oppresser,ok,étouffée,Oppressée,inflected,y
+poigner,Transpercer,ok,poignée,Transpercée,inflected,b
+retrouver,Recouvrer,ok,retrouvée,Recouvrée,inflected,y
+bannir,Exclure,ok,bannie,Exclue,inflected,y
+mimer,Imiter,ok,mimée,Imitée,inflected,y
+propager,Diffuser,ok,propagée,Diffusée,inflected,y
+consommer,Ingérer,ok,consommée,Ingérée,inflected,y
+grouper,Poisson d'avril,pos-mismatch,groupée,,inflected,
+abréger,Raccourcir,ok,abrégée,Raccourcie,inflected,y
+réaffirmer,Renforcer,ok,réaffirmée,Renforcée,inflected,b
+conjurer,Invoquer,ok,conjurée,Invoquée,inflected,b
+gérer,Administrer,ok,gérée,Administrée,inflected,y
+déboucher,Nettoyer et libérer,ok,débouchée,Nettoyée et libérer,inflected,b
+tomber,Déchiffrer,ok,tombée,Déchiffrée,inflected,n
+réfuter,Contredire,ok,réfutée,Contredite,inflected,y

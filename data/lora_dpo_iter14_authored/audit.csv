@@ -1,0 +1,1001 @@
+lemma,chosen,rejected,n_category
+armer,Équiper,Donner des armes,DOBJ
+écrire,Rédiger,Tracer des lettres,DOBJ
+entreprendre,Lancer,Mettre en chantier,PP_BRIDGE
+traiter,Soigner,Donner un traitement,DOBJ
+conduire,Mener,Tenir le volant,DOBJ
+élever,Hisser,Faire grandir,VERB_VERB
+charger,Lester,Mettre une charge,DOBJ
+porter,Soutenir,Avoir sur soi,PP_BRIDGE
+trouver,Dénicher,Mettre la main dessus,DOBJ
+rendre,Restituer,Faire un retour,DOBJ
+établir,Instaurer,Mettre en place,PP_BRIDGE
+priver,Démunir,Retirer un droit,DOBJ
+employer,Engager,Donner du travail,DOBJ
+nécessiter,Exiger,Demander un effort,DOBJ
+placer,Disposer,Mettre en position,PP_BRIDGE
+considérer,Examiner,Tenir pour vrai,PP_BRIDGE
+obtenir,Décrocher,Avoir un résultat,DOBJ
+citer,Mentionner,Donner en exemple,PP_BRIDGE
+nommer,Désigner,Donner un nom,DOBJ
+présenter,Exposer,Faire connaître,VERB_VERB
+former,Façonner,Donner une forme,DOBJ
+recevoir,Accueillir,Prendre livraison,VERB_VERB
+soumettre,Subjuguer,Mettre sous pression,PP_BRIDGE
+composer,Élaborer,Mettre ensemble,VERB_ADV
+assembler,Réunir,Joindre ensemble,PLEONASM
+fonder,Bâtir,Mettre en place,PP_BRIDGE
+déterminer,Définir,Fixer un point,DOBJ
+découvrir,Dénicher,Mettre au jour,PP_BRIDGE
+mettre,Poser,Faire entrer,VERB_VERB
+appeler,Convoquer,Donner un nom,DOBJ
+exposer,Étaler,Mettre à la vue,PP_BRIDGE
+utiliser,Manier,Faire usage de,VERB_VERB
+perdre,Égarer,Ne plus avoir,VERB_ADV
+créer,Concevoir,Mettre au monde,PP_BRIDGE
+permettre,Autoriser,Donner le droit,DOBJ
+obliger,Contraindre,Forcer une action,DOBJ
+consacrer,Vouer,Donner du temps,DOBJ
+contenir,Renfermer,Avoir à l'intérieur,PP_BRIDGE
+comprendre,Saisir,Avoir une idée claire,DOBJ
+prévoir,Anticiper,Voir à l'avance,PP_BRIDGE
+proposer,Suggérer,Mettre en avant,PP_BRIDGE
+réaliser,Accomplir,Mettre en œuvre,PP_BRIDGE
+constituer,Composer,Faire partie de,VERB_VERB
+adopter,Choisir,Prendre pour sien,PP_BRIDGE
+destiner,Vouer,Mettre de côté,PP_BRIDGE
+observer,Scruter,Garder un œil,DOBJ
+acquérir,Conquérir,Devenir propriétaire,VERB_VERB
+indiquer,Signaler,Faire un signe,DOBJ
+marquer,Imprégner,Faire une marque,DOBJ
+lier,Attacher,Faire un nœud,DOBJ
+garantir,Assurer,Donner sa parole,DOBJ
+occuper,Investir,Prendre une place,DOBJ
+appliquer,Apposer,Mettre une couche,DOBJ
+conserver,Préserver,Garder en stock,PP_BRIDGE
+limiter,Borner,Mettre une borne,DOBJ
+organiser,Agencer,Mettre en ordre,PP_BRIDGE
+étudier,Analyser,Faire un examen,DOBJ
+développer,Étoffer,Faire grandir,VERB_VERB
+opposer,Confronter,Mettre face à face,VERB_VERB
+attacher,Lier,Mettre un lien,DOBJ
+effectuer,Accomplir,Mener à bien,PP_BRIDGE
+séparer,Disjoindre,Mettre à l'écart,PP_BRIDGE
+forer,Trouer,Percer un trou,DOBJ
+accorder,Octroyer,Donner une faveur,DOBJ
+aggraver,Détériorer,Empirer la situation,DOBJ
+ratifier,Confirmer,Approbation formelle,VERB_VERB
+traverser,Franchir,Franc-tireur,VERB_VERB
+bouger,Déplacer,Changements d'emplacement,PP_BRIDGE
+vouer,Dédier,Engagement total,VERB_VERB
+effacer,Rayer,Suppression définitive,VERB_VERB
+brûler,Calciner,Combustion totale,VERB_VERB
+attribuer,Octroyer,Distribution,SHORT_OK
+décider,Statuer,Choix tranché,VERB_VERB
+relever,Soulever,S'élever,REFLEXIVE
+mouvoir,Bouger,Se déplacer,REFLEXIVE
+baigner,Tremper,Se baigner,REFLEXIVE
+coucher,Étendre,Se coucher,REFLEXIVE
+réveiller,Tirer du sommeil,Se réveiller,REFLEXIVE
+cacher,Dissimuler,Se cacher,REFLEXIVE
+enfuir,Fuir,S'enfuir,REFLEXIVE
+blesser,Meurtrir,Faire une blessure,DOBJ
+salir,Souiller,Faire une tache,DOBJ
+renforcer,Consolider,Donner de la force,PP_BRIDGE
+polir,Lustrer,Donner un éclat,DOBJ
+dorer,Auréoler,Mettre de l'or,PP_BRIDGE
+vernir,Lustrer,Mettre une couche,DOBJ
+ouvrir,Déboucher,Faire un passage,DOBJ
+fermer,Boucler,Mettre un obstacle,DOBJ
+vider,Évacuer,Faire le vide,DOBJ
+remplir,Combler,Mettre un contenu,DOBJ
+nettoyer,Récurer,Enlever la saleté,DOBJ
+geler,Solidifier,Mettre dans le froid,PP_BRIDGE
+démolir,Détruire,Faire une ruine,DOBJ
+éclairer,Illuminer,Donner de la lumière,PP_BRIDGE
+lever,Hausser,Se lever,REFLEXIVE
+plier,Courber,Donner une courbe,DOBJ
+hacher,Émincer,Couper en morceaux,PP_BRIDGE
+tailler,Sculpter,Couper à la forme,PP_BRIDGE
+clouer,Fixer,Mettre un clou,DOBJ
+piquer,Percer,Donner un coup,DOBJ
+rincer,Nettoyer,Passer à l'eau,PP_BRIDGE
+colorer,Teindre,Donner une couleur,DOBJ
+graver,Buriner,Faire une marque,DOBJ
+tisser,Tramer,Faire un tissu,DOBJ
+faire,Exécuter,Mettre en œuvre,PP_BRIDGE
+donner,Offrir,Faire cadeau,VERB_VERB
+produire,Élaborer,Faire naître,VERB_VERB
+penser,Réfléchir,Avoir une idée,DOBJ
+prendre,Saisir,Mettre la main,DOBJ
+traire,Soutirer,Tirer le lait,DOBJ
+suivre,Talonner,Aller derrière,VERB_VERB
+entendre,Percevoir,Saisir au son,PP_BRIDGE
+entrer,Pénétrer,Faire son entrée,DOBJ
+reconnaitre,Identifier,Mettre un nom,DOBJ
+députer,Mandater,Envoyer en mission,PP_BRIDGE
+laisser,Abandonner,Mettre de côté,PP_BRIDGE
+dire,Énoncer,Faire savoir,VERB_VERB
+sortir,Extraire,Faire sortir,VERB_VERB
+rester,Demeurer,Ne pas partir,VERB_VERB
+demander,Solliciter,Poser une question,DOBJ
+représenter,Symboliser,Faire l'image,DOBJ
+parler,S'exprimer,Faire un discours,DOBJ
+craindre,Redouter,Avoir peur,VERB_VERB
+choisir,Élire,Faire un choix,DOBJ
+couvrir,Voiler,Mettre une couche,DOBJ
+associer,Réunir,Mettre ensemble,VERB_ADV
+tirer,Extraire,Faire jaillir,VERB_VERB
+prononcer,Énoncer,Faire un discours,DOBJ
+condamner,Sanctionner,Mettre en prison,PP_BRIDGE
+déclarer,Proclamer,Faire savoir,VERB_VERB
+adresser,Envoyer,Mettre à la poste,PP_BRIDGE
+diriger,Piloter,Mener à bien,PP_BRIDGE
+revoir,Réexaminer,Mettre à jour,PP_BRIDGE
+commencer,Initier,Mettre en route,PP_BRIDGE
+fournir,Approvisionner,Faire un envoi,DOBJ
+réunir,Rassembler,Mettre ensemble,VERB_ADV
+commettre,Perpétrer,Faire une faute,DOBJ
+juger,Statuer,Donner un avis,DOBJ
+assurer,Garantir,Donner une garantie,DOBJ
+signer,Parapher,Mettre son nom,DOBJ
+décrire,Dépeindre,Faire un portrait,DOBJ
+éloigner,Repousser,Mettre à distance,PP_BRIDGE
+intéresser,Captiver,Mettre en avant,PP_BRIDGE
+définir,Cerner,Donner un sens,DOBJ
+inscrire,Enregistrer,Mettre par écrit,PP_BRIDGE
+disposer,Agencer,Mettre en ordre,PP_BRIDGE
+réserver,Garder,Mettre de côté,PP_BRIDGE
+payer,Régler,Donner de l'argent,PP_BRIDGE
+isoler,Cantonner,Mettre à part,PP_BRIDGE
+désigner,Indiquer,Donner un nom,DOBJ
+autoriser,Permettre,Donner le droit,DOBJ
+constater,Observer,Faire le compte,DOBJ
+extraire,Soustraire,Tirer un élément,DOBJ
+construire,Édifier,Mettre debout,VERB_VERB
+apporter,Fournir,Faire parvenir,VERB_VERB
+allier,Unir,Mettre ensemble,VERB_ADV
+engager,Recruter,Donner du travail,DOBJ
+accompagner,Escorter,Aller avec,PP_BRIDGE
+abandonner,Quitter,Laisser tomber,VERB_VERB
+modifier,Altérer,Faire un changement,DOBJ
+exprimer,Énoncer,Faire passer,VERB_VERB
+exécuter,Réaliser,Mettre à exécution,PP_BRIDGE
+concevoir,Imaginer,Mettre au point,PP_BRIDGE
+amener,Conduire,Faire venir,VERB_VERB
+avancer,Progresser,Aller plus loin,VERB_ADV
+préparer,Apprêter,Mettre au point,PP_BRIDGE
+signaler,Indiquer,Faire un signe,DOBJ
+saisir,Empoigner,Mettre la main,DOBJ
+terminer,Achever,Mettre un point final,DOBJ
+retenir,Garder,Mettre en mémoire,PP_BRIDGE
+déléguer,Mandater,Donner pouvoir,VERB_VERB
+soutenir,Étayer,Donner son appui,DOBJ
+frapper,Battre,Donner un coup,DOBJ
+carrer,Élargir,Donner forme carrée,VERB_VERB
+contraindre,Forcer,Mettre sous pression,PP_BRIDGE
+exercer,Pratiquer,Faire un métier,DOBJ
+pousser,Inciter,Faire avancer,VERB_VERB
+salarier,Rémunérer,Donner un salaire,DOBJ
+introduire,Insérer,Faire entrer,VERB_VERB
+varier,Diversifier,Donner du choix,DOBJ
+accepter,Approuver,Donner son accord,DOBJ
+tenter,Essayer,Faire un essai,DOBJ
+pourvoir,Doter,Mettre en possession,PP_BRIDGE
+confier,Remettre,Mettre entre les mains,VERB_VERB
+diviser,Scinder,Mettre en parts,PP_BRIDGE
+rencontrer,Croiser,Tomber sur,PP_BRIDGE
+joindre,Unir,Mettre ensemble,VERB_ADV
+répandre,Diffuser,Faire connaître,VERB_VERB
+réussir,Triompher,Mener à bien,PP_BRIDGE
+contrer,Riposter,Faire obstacle,VERB_VERB
+déposer,Lâcher,Mettre par terre,PP_BRIDGE
+résoudre,Trancher,Mettre au clair,PP_BRIDGE
+augmenter,Croître,Donner du volume,DOBJ
+tracer,Dessiner,Faire une marque,DOBJ
+maintenir,Préserver,Garder en place,PP_BRIDGE
+résumer,Synthétiser,Faire court,VERB_VERB
+rapporter,Relater,Faire savoir,VERB_VERB
+subir,Endurer,Faire face,VERB_VERB
+accuser,Incriminer,Mettre en cause,PP_BRIDGE
+atteindre,Toucher,Mettre la main,DOBJ
+imprimer,Tirer,Faire passer à la presse,VERB_VERB
+prétendre,Affirmer,Faire valoir,VERB_VERB
+pratiquer,Exercer,Mettre en pratique,PP_BRIDGE
+mener,Conduire,Faire avancer,VERB_VERB
+curer,Nettoyer,Mettre au propre,PP_BRIDGE
+accomplir,Réaliser,Mettre à bien,PP_BRIDGE
+mentionner,Évoquer,Faire référence,VERB_VERB
+livrer,Remettre,Faire parvenir,VERB_VERB
+offrir,Donner,Mettre à disposition,PP_BRIDGE
+comparer,Confronter,Mettre en regard,PP_BRIDGE
+recueillir,Collecter,Mettre en lieu sûr,PP_BRIDGE
+ordonner,Décréter,Donner un ordre,DOBJ
+traduire,Transposer,Mettre en langue,PP_BRIDGE
+remettre,Redonner,Mettre à neuf,PP_BRIDGE
+distinguer,Discerner,Mettre à part,PP_BRIDGE
+entourer,Encercler,Mettre autour,VERB_VERB
+installer,Implanter,Mettre en place,PP_BRIDGE
+convaincre,Persuader,Faire admettre,VERB_VERB
+énoncer,Articuler,Mettre en mots,PP_BRIDGE
+ajouter,Adjoindre,Mettre en plus,PP_BRIDGE
+démontrer,Prouver,Mettre en évidence,PP_BRIDGE
+régler,Résoudre,Mettre au point,PP_BRIDGE
+provoquer,Susciter,Mettre le feu,DOBJ
+causer,Engendrer,Donner lieu,VERB_VERB
+chercher,Quérir,Mettre la main dessus,DOBJ
+examiner,Scruter,Mettre à l'épreuve,PP_BRIDGE
+issir,Émerger,Sortir de,PP_BRIDGE
+muser,Flâner,Perdre son temps,DOBJ
+attaquer,Assaillir,Donner l'assaut,DOBJ
+précéder,Devancer,Aller devant,VERB_VERB
+poursuivre,Continuer,Aller plus avant,VERB_ADV
+cultiver,Travailler,Faire pousser,VERB_VERB
+rédiger,Composer,Mettre par écrit,PP_BRIDGE
+détailler,Énumérer,Mettre en détail,PP_BRIDGE
+confirmer,Corroborer,Donner sa confirmation,DOBJ
+inspirer,Insuffler,Donner le ton,DOBJ
+élire,Choisir,Donner sa voix,DOBJ
+refuser,Décliner,Dire non,VERB_VERB
+qualifier,Caractériser,Donner un nom,DOBJ
+entraîner,Drainer,Mener vers,VERB_VERB
+remarquer,Noter,Mettre en lumière,PP_BRIDGE
+achever,Terminer,Mettre un terme,DOBJ
+vendre,Céder,Mettre en vente,PP_BRIDGE
+partager,Diviser,Mettre en commun,PP_BRIDGE
+calculer,Compter,Faire le calcul,DOBJ
+conclure,Achever,Mettre un point final,DOBJ
+jouer,Interpréter,Faire semblant,VERB_VERB
+intituler,Titrer,Donner un titre,DOBJ
+marier,Unir,Mettre en couple,PP_BRIDGE
+surprendre,Étonner,Mettre en émoi,PP_BRIDGE
+privilégier,Favoriser,Mettre en avant,PP_BRIDGE
+baser,Fonder,Mettre en assise,PP_BRIDGE
+estimer,Évaluer,Donner une valeur,DOBJ
+animer,Vivifier,Mettre en vie,PP_BRIDGE
+prolonger,Étendre,Faire durer,VERB_VERB
+dresser,Ériger,Mettre debout,VERB_VERB
+éprouver,Ressentir,Mettre à l'épreuve,PP_BRIDGE
+répéter,Réitérer,Dire encore,VERB_VERB
+menacer,Intimider,Faire peur,VERB_VERB
+percevoir,Discerner,Saisir au son,PP_BRIDGE
+mêler,Brasser,Mettre ensemble,VERB_ADV
+défendre,Protéger,Mettre à l'abri,PP_BRIDGE
+enlever,Ôter,Mettre à part,PP_BRIDGE
+viser,Cibler,Mettre en joue,PP_BRIDGE
+consulter,Interroger,Demander avis,VERB_VERB
+adapter,Ajuster,Mettre en accord,PP_BRIDGE
+suspendre,Interrompre,Mettre en attente,PP_BRIDGE
+annoncer,Proclamer,Faire savoir,VERB_VERB
+oublier,Omettre,Sortir de l'esprit,PP_BRIDGE
+retrouver,Récupérer,Mettre la main dessus,DOBJ
+modérer,Tempérer,Mettre un frein,DOBJ
+commander,Ordonner,Donner un ordre,DOBJ
+prouver,Démontrer,Faire la preuve,DOBJ
+essayer,Tenter,Mettre à l'essai,PP_BRIDGE
+garder,Conserver,Mettre de côté,PP_BRIDGE
+opérer,Manœuvrer,Mettre en marche,PP_BRIDGE
+requérir,Réclamer,Mettre en demande,PP_BRIDGE
+toucher,Effleurer,Mettre la main,DOBJ
+révéler,Dévoiler,Mettre au jour,PP_BRIDGE
+emprunter,Recourir,Mettre la main,DOBJ
+couper,Trancher,Mettre en morceaux,PP_BRIDGE
+jeter,Lancer,Mettre dehors,VERB_ADV
+affecter,Toucher,Faire impression,VERB_VERB
+plaindre,Compatir,Avoir pitié,VERB_VERB
+monter,Hisser,Faire grimper,VERB_VERB
+adjoindre,Annexer,Mettre à côté,PP_BRIDGE
+prescrire,Ordonner,Donner une consigne,DOBJ
+préjuger,Présumer,Avoir un avis,DOBJ
+défaire,Détruire,Mettre en désordre,PP_BRIDGE
+vaincre,Surmonter,Mettre KO,VERB_VERB
+unir,Fusionner,Mettre ensemble,VERB_ADV
+dépourvoir,Démunir,Priver d'un bien,PP_BRIDGE
+quitter,Délaisser,Mettre les voiles,DOBJ
+approuver,Entériner,Donner son accord,DOBJ
+délivrer,Libérer,Sortir des chaînes,DOBJ
+compliquer,Embrouiller,Rendre difficile,VERB_VERB
+apercevoir,Distinguer,Mettre en vue,PP_BRIDGE
+voter,Élire,Donner sa voix,DOBJ
+promettre,Engager,Donner sa parole,DOBJ
+protéger,Préserver,Mettre à l'abri,PP_BRIDGE
+voir,Apercevoir,Mettre en vue,PP_BRIDGE
+justifier,Légitimer,Donner raison,VERB_VERB
+restreindre,Limiter,Mettre des bornes,DOBJ
+instituer,Établir,Mettre en place,PP_BRIDGE
+supposer,Présumer,Tenir pour vrai,PP_BRIDGE
+appuyer,Soutenir,Donner son aide,DOBJ
+lancer,Projeter,Mettre en route,PP_BRIDGE
+inviter,Convier,Faire venir,VERB_VERB
+reproduire,Copier,Faire à l'identique,PP_BRIDGE
+convenir,Harmoniser,Mettre d'accord,PP_BRIDGE
+manquer,Faillir,Ne pas être présent,VERB_VERB
+exiger,Réclamer,Mettre une condition,DOBJ
+élaborer,Concevoir,Mettre au point,PP_BRIDGE
+aimer,Chérir,Avoir un faible,DOBJ
+formuler,Articuler,Mettre en mots,PP_BRIDGE
+regarder,Observer,Mettre en vue,PP_BRIDGE
+spécialiser,Affecter,Mettre en domaine,PP_BRIDGE
+communiquer,Transmettre,Faire savoir,VERB_VERB
+gagner,Conquérir,Mettre la main,DOBJ
+assoir,Stabiliser,Mettre en place,PP_BRIDGE
+mesurer,Évaluer,Donner la taille,DOBJ
+satisfaire,Combler,Donner satisfaction,VERB_VERB
+dépasser,Surclasser,Mettre derrière,VERB_VERB
+ranger,Classer,Mettre en ordre,PP_BRIDGE
+informer,Renseigner,Faire savoir,VERB_VERB
+classer,Trier,Mettre en ordre,PP_BRIDGE
+réfugier,Abriter,Mettre à l'abri,PP_BRIDGE
+travailler,Œuvrer,Faire un effort,DOBJ
+épuiser,Tarir,Mettre à plat,PP_BRIDGE
+peindre,Colorer,Faire un tableau,DOBJ
+évoquer,Mentionner,Faire allusion,VERB_VERB
+devoir,Falloir,Avoir une obligation,DOBJ
+détenir,Posséder,Avoir en sa possession,PP_BRIDGE
+apprendre,Étudier,Mettre en mémoire,PP_BRIDGE
+chausser,Enfiler,Mettre aux pieds,PP_BRIDGE
+soulever,Élever,Mettre en l'air,PP_BRIDGE
+expliquer,Détailler,Faire comprendre,VERB_VERB
+négliger,Délaisser,Mettre de côté,PP_BRIDGE
+distribuer,Répartir,Donner à chacun,PP_BRIDGE
+prévenir,Avertir,Faire savoir,VERB_VERB
+dater,Marquer,Mettre une date,DOBJ
+bâtir,Édifier,Mettre debout,VERB_VERB
+favoriser,Avantager,Mettre en avant,PP_BRIDGE
+enregistrer,Consigner,Mettre sur bande,PP_BRIDGE
+acheter,Acquérir,Faire emplette,VERB_VERB
+compromettre,Risquer,Mettre en danger,PP_BRIDGE
+trancher,Couper,Mettre fin,VERB_VERB
+instruire,Former,Faire savoir,VERB_VERB
+dériver,Découler,Tirer son origine,DOBJ
+accueillir,Recevoir,Faire bon accueil,VERB_VERB
+manifester,Témoigner,Mettre en évidence,PP_BRIDGE
+détacher,Séparer,Mettre à part,PP_BRIDGE
+transmettre,Communiquer,Faire passer,VERB_VERB
+persuader,Convaincre,Faire admettre,VERB_VERB
+renouveler,Régénérer,Donner un renouveau,DOBJ
+combiner,Mêler,Mettre ensemble,VERB_ADV
+transporter,Acheminer,Faire passer,VERB_VERB
+continuer,Persister,Aller plus loin,VERB_ADV
+écarter,Repousser,Mettre à distance,PP_BRIDGE
+relier,Connecter,Mettre en liaison,PP_BRIDGE
+insérer,Intercaler,Mettre dedans,VERB_ADV
+exagérer,Amplifier,En faire trop,VERB_VERB
+concentrer,Focaliser,Mettre au point,PP_BRIDGE
+rentrer,Revenir,Mettre dedans,VERB_ADV
+émettre,Diffuser,Faire entendre,VERB_VERB
+tendre,Étirer,Mettre sous tension,PP_BRIDGE
+orner,Embellir,Mettre en valeur,PP_BRIDGE
+respecter,Vénérer,Avoir des égards,DOBJ
+empreindre,Imprégner,Donner une marque,DOBJ
+libérer,Affranchir,Mettre dehors,VERB_ADV
+compléter,Parachever,Donner la dernière touche,DOBJ
+tromper,Duper,Donner le change,DOBJ
+régir,Gouverner,Mettre des règles,DOBJ
+briser,Fracasser,Mettre en miettes,PP_BRIDGE
+précipiter,Hâter,Faire arriver vite,VERB_VERB
+intégrer,Inclure,Faire entrer,VERB_VERB
+contracter,Resserrer,Mettre sous tension,PP_BRIDGE
+excepter,Exclure,Mettre à part,PP_BRIDGE
+apprécier,Estimer,Avoir du goût,DOBJ
+dégager,Libérer,Mettre en évidence,PP_BRIDGE
+confondre,Mélanger,Prendre l'un pour l'autre,DOBJ
+conjoindre,Unir,Mettre ensemble,VERB_ADV
+teindre,Colorer,Donner une couleur,DOBJ
+fumer,Vapoter,Faire de la fumée,PP_BRIDGE
+battre,Vaincre,Donner une raclée,DOBJ
+subordonner,Asservir,Mettre sous tutelle,PP_BRIDGE
+exclure,Bannir,Mettre dehors,VERB_ADV
+doter,Pourvoir,Donner en dot,PP_BRIDGE
+noter,Constater,Mettre par écrit,PP_BRIDGE
+assister,Aider,Donner un coup de main,DOBJ
+préférer,Privilégier,Mettre en premier,PP_BRIDGE
+fabriquer,Confectionner,Mettre au point,PP_BRIDGE
+entretenir,Maintenir,Mettre en état,PP_BRIDGE
+attendre,Patienter,Faire le pied de grue,DOBJ
+pénétrer,Entrer,Mettre dedans,VERB_ADV
+ramener,Rapporter,Faire revenir,VERB_VERB
+empêcher,Interdire,Mettre obstacle,VERB_VERB
+intervenir,Agir,Mettre son grain,DOBJ
+consentir,Accepter,Donner son accord,DOBJ
+rassembler,Regrouper,Mettre ensemble,VERB_ADV
+souligner,Accentuer,Mettre en évidence,PP_BRIDGE
+absorber,Engloutir,Faire disparaître,VERB_VERB
+croiser,Recouper,Mettre en travers,PP_BRIDGE
+parcourir,Sillonner,Faire le tour,DOBJ
+exploiter,Tirer parti,Mettre à profit,PP_BRIDGE
+borner,Limiter,Mettre une limite,DOBJ
+répartir,Distribuer,Mettre en parts,PP_BRIDGE
+approfondir,Creuser,Aller au fond,PP_BRIDGE
+évaluer,Estimer,Donner une mesure,DOBJ
+importer,Compter,Avoir de l'importance,PP_BRIDGE
+contester,Discuter,Mettre en doute,PP_BRIDGE
+aider,Assister,Donner un coup de main,DOBJ
+imaginer,Concevoir,Voir en pensée,PP_BRIDGE
+orienter,Diriger,Donner une direction,DOBJ
+troubler,Perturber,Mettre en émoi,PP_BRIDGE
+allonger,Étendre,Faire long,VERB_VERB
+emporter,Subtiliser,Faire disparaître,VERB_VERB
+échapper,Fuir,Mettre les voiles,DOBJ
+analyser,Décomposer,Faire un examen,DOBJ
+repousser,Refuser,Mettre à l'écart,PP_BRIDGE
+affirmer,Soutenir,Faire valoir,VERB_VERB
+illustrer,Imager,Donner un exemple,DOBJ
+interrompre,Stopper,Mettre un coup d'arrêt,DOBJ
+renverser,Culbuter,Mettre à terre,PP_BRIDGE
+déboucher,Désobstruer,Faire passer,VERB_VERB
+conquérir,Soumettre,Mettre la main,DOBJ
+compter,Énumérer,Faire le compte,DOBJ
+disperser,Éparpiller,Mettre en désordre,PP_BRIDGE
+projeter,Lancer,Mettre en avant,PP_BRIDGE
+souffrir,Pâtir,Avoir mal,VERB_ADV
+figurer,Représenter,Avoir une place,DOBJ
+assimiler,Intégrer,Mettre au même rang,PP_BRIDGE
+punir,Sanctionner,Mettre en peine,PP_BRIDGE
+habituer,Accoutumer,Mettre dans le bain,PP_BRIDGE
+habiter,Loger,Avoir son domicile,DOBJ
+rompre,Briser,Mettre fin,VERB_VERB
+altérer,Détériorer,Mettre à mal,PP_BRIDGE
+annexer,Joindre,Mettre à la suite,PP_BRIDGE
+enfermer,Cloîtrer,Mettre sous clé,PP_BRIDGE
+contrôler,Vérifier,Mettre à l'épreuve,PP_BRIDGE
+proclamer,Déclarer,Faire savoir,VERB_VERB
+réfléchir,Méditer,Avoir une pensée,DOBJ
+presser,Hâter,Mettre la pression,DOBJ
+percer,Trouer,Faire un trou,DOBJ
+rappeler,Évoquer,Faire revenir,VERB_VERB
+désirer,Convoiter,Avoir envie,VERB_VERB
+assigner,Attribuer,Donner en partage,PP_BRIDGE
+présider,Diriger,Mettre en tête,PP_BRIDGE
+jurer,Promettre,Donner sa parole,DOBJ
+motiver,Inciter,Donner une raison,DOBJ
+inventer,Imaginer,Mettre au monde,PP_BRIDGE
+réclamer,Exiger,Mettre en demande,PP_BRIDGE
+entrevoir,Soupçonner,Avoir un aperçu,DOBJ
+coordonner,Harmoniser,Mettre en accord,PP_BRIDGE
+préciser,Spécifier,Mettre les points,DOBJ
+garnir,Décorer,Mettre des ornements,DOBJ
+investir,Placer,Mettre du capital,DOBJ
+rétablir,Restaurer,Remettre en place,PP_BRIDGE
+dessiner,Tracer,Faire une esquisse,DOBJ
+éteindre,Souffler,Faire taire,VERB_VERB
+induire,Mener,Faire conclure,VERB_VERB
+peupler,Habiter,Mettre des habitants,DOBJ
+susciter,Provoquer,Faire naître,VERB_VERB
+planter,Enraciner,Mettre en terre,PP_BRIDGE
+incliner,Pencher,Mettre de travers,PP_BRIDGE
+tuer,Abattre,Mettre à mort,PP_BRIDGE
+vêtir,Habiller,Mettre des habits,DOBJ
+dépouiller,Déposséder,Mettre à nu,PP_BRIDGE
+visiter,Parcourir,Faire le tour,DOBJ
+nourrir,Sustenter,Donner à manger,PP_BRIDGE
+grouper,Rassembler,Mettre ensemble,VERB_ADV
+aborder,Approcher,Aller vers,VERB_VERB
+ignorer,Méconnaître,Faire abstraction,VERB_VERB
+fatiguer,Lasser,Mettre à plat,PP_BRIDGE
+sauver,Secourir,Tirer d'affaire,PP_BRIDGE
+agiter,Remuer,Mettre en mouvement,PP_BRIDGE
+dissoudre,Diluer,Mettre en solution,PP_BRIDGE
+dominer,Surplomber,Mettre sous contrôle,PP_BRIDGE
+interpréter,Décrypter,Donner un sens,DOBJ
+creuser,Forer,Faire un trou,DOBJ
+plonger,Immerger,Mettre dans l'eau,PP_BRIDGE
+préoccuper,Soucier,Donner du souci,DOBJ
+recommander,Conseiller,Donner un conseil,DOBJ
+accoutumer,Habituer,Mettre dans l'habitude,PP_BRIDGE
+identifier,Reconnaître,Mettre un nom,DOBJ
+abattre,Anéantir,Mettre à terre,PP_BRIDGE
+renvoyer,Reporter,Mettre à plus tard,PP_BRIDGE
+améliorer,Bonifier,Rendre meilleur,VERB_VERB
+enseigner,Inculquer,Faire savoir,VERB_VERB
+généraliser,Étendre,Mettre partout,VERB_VERB
+raconter,Narrer,Faire le récit,DOBJ
+accentuer,Renforcer,Mettre en relief,PP_BRIDGE
+invoquer,Citer,Faire appel,VERB_VERB
+confronter,Comparer,Mettre face à face,VERB_VERB
+vérifier,Contrôler,Mettre à l'épreuve,PP_BRIDGE
+envahir,Déferler,Mettre la main,DOBJ
+solliciter,Implorer,Faire la demande,DOBJ
+avertir,Prévenir,Donner un signal,DOBJ
+corriger,Amender,Mettre au point,PP_BRIDGE
+administrer,Gérer,Mettre en ordre,PP_BRIDGE
+abstraire,Isoler,Mettre à part,PP_BRIDGE
+accumuler,Amasser,Mettre en tas,PP_BRIDGE
+comprimer,Compacter,Mettre sous pression,PP_BRIDGE
+doubler,Multiplier,Mettre en double,PP_BRIDGE
+déduire,Inférer,Tirer une conclusion,DOBJ
+élargir,Étendre,Mettre plus large,VERB_ADV
+substituer,Remplacer,Mettre à la place,PP_BRIDGE
+descendre,Dévaler,Aller vers le bas,VERB_VERB
+ressentir,Éprouver,Avoir un sentiment,DOBJ
+supporter,Endurer,Tenir le coup,DOBJ
+transférer,Déplacer,Faire passer,VERB_VERB
+changer,Modifier,Faire un changement,DOBJ
+munir,Doter,Mettre en possession,PP_BRIDGE
+consommer,Ingérer,Mettre dans l'estomac,PP_BRIDGE
+surmonter,Vaincre,Mettre KO,VERB_VERB
+reculer,Régresser,Aller en arrière,PP_BRIDGE
+expédier,Envoyer,Mettre en route,PP_BRIDGE
+impliquer,Englober,Mettre en cause,PP_BRIDGE
+célébrer,Glorifier,Faire la fête,DOBJ
+influencer,Affecter,Mettre la pression,DOBJ
+concerner,Toucher,Avoir un rapport,DOBJ
+localiser,Repérer,Mettre la main,DOBJ
+dicter,Imposer,Mettre par écrit,PP_BRIDGE
+convertir,Transformer,Faire changer,VERB_VERB
+engendrer,Provoquer,Donner naissance,VERB_VERB
+décorer,Embellir,Mettre des ornements,DOBJ
+renoncer,Abdiquer,Mettre fin,VERB_VERB
+avouer,Confesser,Faire un aveu,DOBJ
+soigner,Médicamenter,Donner des soins,DOBJ
+suggérer,Insinuer,Faire entendre,VERB_VERB
+encourager,Stimuler,Donner courage,VERB_VERB
+désespérer,Décourager,Avoir perdu espoir,VERB_VERB
+éditer,Publier,Mettre en presse,PP_BRIDGE
+convoquer,Mander,Faire venir,VERB_VERB
+équiper,Munir,Donner les outils,DOBJ
+gouverner,Régner,Mettre en tête,PP_BRIDGE
+affaiblir,Diminuer,Mettre à mal,PP_BRIDGE
+méconnaitre,Ignorer,Ne pas reconnaître,VERB_VERB
+voler,Dérober,Mettre la main,DOBJ
+loger,Héberger,Donner un toit,DOBJ
+souhaiter,Espérer,Faire un vœu,DOBJ
+ruiner,Anéantir,Mettre à sac,PP_BRIDGE
+semer,Disséminer,Mettre en terre,PP_BRIDGE
+consigner,Noter,Mettre par écrit,PP_BRIDGE
+guider,Conduire,Donner la direction,DOBJ
+puiser,Tirer,Prendre dans,PP_BRIDGE
+honorer,Vénérer,Donner l'estime,DOBJ
+stipuler,Préciser,Mettre par contrat,PP_BRIDGE
+affranchir,Libérer,Mettre dehors,VERB_ADV
+renfermer,Contenir,Avoir à l'intérieur,PP_BRIDGE
+présumer,Supposer,Tenir pour acquis,PP_BRIDGE
+clicher,Photographier,Faire une photo,DOBJ
+fortifier,Renforcer,Donner de la force,PP_BRIDGE
+déployer,Étaler,Mettre en place,PP_BRIDGE
+allouer,Octroyer,Mettre à disposition,PP_BRIDGE
+initier,Lancer,Mettre en route,PP_BRIDGE
+poigner,Saisir,Donner un coup,DOBJ
+franchir,Traverser,Aller de l'autre côté,PP_BRIDGE
+signifier,Vouloir dire,Faire savoir,VERB_VERB
+prélever,Soustraire,Tirer un échantillon,DOBJ
+conférer,Octroyer,Donner en partage,PP_BRIDGE
+ériger,Édifier,Mettre debout,VERB_VERB
+abolir,Supprimer,Mettre fin,VERB_VERB
+détourner,Dévier,Mettre de côté,PP_BRIDGE
+préposer,Affecter,Mettre en poste,PP_BRIDGE
+violer,Enfreindre,Faire violence,VERB_VERB
+chauffer,Tiédir,Donner de la chaleur,PP_BRIDGE
+fréquenter,Côtoyer,Avoir des liens,DOBJ
+prier,Implorer,Faire une demande,DOBJ
+couler,Sombrer,Aller au fond,PP_BRIDGE
+dispenser,Exempter,Mettre à part,PP_BRIDGE
+aboutir,Réussir,Mener à bien,PP_BRIDGE
+accélérer,Précipiter,Aller plus vite,VERB_ADV
+exiler,Bannir,Mettre dehors,VERB_ADV
+effrayer,Terrifier,Faire peur,VERB_VERB
+concéder,Octroyer,Donner en concession,PP_BRIDGE
+exciter,Stimuler,Mettre en émoi,PP_BRIDGE
+déchirer,Lacérer,Mettre en pièces,PP_BRIDGE
+échouer,Rater,Mener à mal,PP_BRIDGE
+articuler,Énoncer,Faire entendre,VERB_VERB
+ligner,Ranger,Mettre en ligne,PP_BRIDGE
+éviter,Esquiver,Mettre à distance,PP_BRIDGE
+éliminer,Supprimer,Mettre dehors,VERB_ADV
+alimenter,Nourrir,Donner à manger,PP_BRIDGE
+casser,Briser,Mettre en miettes,PP_BRIDGE
+tempérer,Modérer,Mettre un frein,DOBJ
+embarrasser,Gêner,Mettre dans l'embarras,PP_BRIDGE
+incorporer,Inclure,Mettre dedans,VERB_ADV
+délibérer,Réfléchir,Tenir conseil,VERB_VERB
+combler,Remplir,Mettre à ras bord,PP_BRIDGE
+border,Encadrer,Mettre en bordure,PP_BRIDGE
+retourner,Renvoyer,Faire revenir,VERB_VERB
+emparer,Saisir,Mettre la main,DOBJ
+corrompre,Soudoyer,Mettre à mal,PP_BRIDGE
+paver,Daller,Mettre des pavés,DOBJ
+énumérer,Lister,Faire le compte,DOBJ
+décerner,Octroyer,Donner en honneur,PP_BRIDGE
+épargner,Économiser,Mettre de côté,PP_BRIDGE
+attester,Certifier,Faire la preuve,DOBJ
+acharner,Persévérer,Mettre du cœur,DOBJ
+dépenser,Débourser,Mettre la main au porte-monnaie,DOBJ
+ébranler,Secouer,Mettre en cause,PP_BRIDGE
+imprégner,Pénétrer,Faire passer dedans,VERB_VERB
+chanter,Vocaliser,Faire entendre une mélodie,VERB_VERB
+exporter,Vendre à l'étranger,Faire passer la frontière,VERB_VERB
+interroger,Questionner,Faire passer un examen,VERB_VERB
+rejoindre,Retrouver,Aller à la rencontre,PP_BRIDGE
+gêner,Embarrasser,Mettre mal à l'aise,VERB_ADV
+aviser,Notifier,Faire savoir,VERB_VERB
+assassiner,Tuer,Mettre à mort,PP_BRIDGE
+abréger,Raccourcir,Faire court,VERB_VERB
+compenser,Équilibrer,Mettre en équilibre,PP_BRIDGE
+occasionner,Provoquer,Donner lieu,VERB_VERB
+égarer,Perdre,Ne plus trouver,VERB_ADV
+raisonner,Réfléchir,Avoir une pensée,DOBJ
+fiancer,Promettre,Donner sa parole,DOBJ
+démentir,Réfuter,Mettre en doute,PP_BRIDGE
+agréer,Accepter,Donner son accord,DOBJ
+épouser,Marier,Prendre pour conjoint,PP_BRIDGE
+afficher,Annoncer,Mettre en évidence,PP_BRIDGE
+encadrer,Border,Mettre dans un cadre,PP_BRIDGE
+conseiller,Recommander,Donner un avis,DOBJ
+mouiller,Tremper,Mettre dans l'eau,PP_BRIDGE
+irriter,Agacer,Mettre en colère,PP_BRIDGE
+laver,Nettoyer,Passer à l'eau,PP_BRIDGE
+baisser,Diminuer,Mettre plus bas,VERB_ADV
+procurer,Fournir,Faire avoir,VERB_VERB
+acquitter,Régler,Mettre à jour,PP_BRIDGE
+critiquer,Censurer,Donner un avis négatif,DOBJ
+superposer,Empiler,Mettre l'un sur l'autre,DOBJ
+inaugurer,Lancer,Mettre en route,PP_BRIDGE
+révolter,Indigner,Mettre en colère,PP_BRIDGE
+remporter,Gagner,Mettre la main,DOBJ
+ménager,Préserver,Mettre à l'abri,PP_BRIDGE
+entamer,Commencer,Mettre en route,PP_BRIDGE
+opprimer,Tyranniser,Mettre sous le joug,PP_BRIDGE
+atténuer,Modérer,Mettre une sourdine,DOBJ
+manger,Avaler,Mettre dans l'estomac,PP_BRIDGE
+abonner,Inscrire,Mettre sur la liste,PP_BRIDGE
+féliciter,Congratuler,Donner ses félicitations,DOBJ
+baptiser,Nommer,Donner un nom,DOBJ
+promulguer,Édicter,Mettre en loi,PP_BRIDGE
+résulter,Découler,Avoir pour conséquence,PP_BRIDGE
+accabler,Submerger,Mettre à terre,PP_BRIDGE
+retarder,Différer,Mettre à plus tard,PP_BRIDGE
+licencier,Renvoyer,Mettre dehors,VERB_ADV
+approcher,Avoisiner,Aller près,VERB_ADV
+infecter,Contaminer,Mettre en contact,PP_BRIDGE
+déguiser,Travestir,Faire passer pour autre,VERB_VERB
+anéantir,Pulvériser,Mettre à mal,PP_BRIDGE
+contenter,Satisfaire,Donner satisfaction,VERB_VERB
+noyer,Submerger,Mettre sous l'eau,PP_BRIDGE
+éclater,Exploser,Mettre en pièces,PP_BRIDGE
+soupçonner,Suspecter,Avoir des doutes,DOBJ
+financer,Subventionner,Donner des fonds,DOBJ
+assiéger,Cerner,Mettre le siège,DOBJ
+simplifier,Faciliter,Rendre plus simple,VERB_ADV
+avérer,Confirmer,Mettre en évidence,PP_BRIDGE
+tourmenter,Harceler,Mettre en peine,PP_BRIDGE
+mobiliser,Rassembler,Mettre en marche,PP_BRIDGE
+habiller,Vêtir,Mettre des habits,DOBJ
+déporter,Bannir,Mettre en exil,PP_BRIDGE
+transformer,Métamorphoser,Faire changer,VERB_VERB
+saigner,Verser,Perdre du sang,DOBJ
+gérer,Administrer,Mettre en ordre,PP_BRIDGE
+croire,Penser,Avoir foi,VERB_VERB
+retrancher,Soustraire,Mettre à part,PP_BRIDGE
+récolter,Moissonner,Faire la cueillette,DOBJ
+peser,Évaluer,Avoir du poids,DOBJ
+inclure,Englober,Mettre dedans,VERB_ADV
+commenter,Annoter,Donner son avis,DOBJ
+infliger,Imposer,Donner en peine,PP_BRIDGE
+bloquer,Stopper,Mettre un frein,DOBJ
+structurer,Organiser,Mettre en forme,PP_BRIDGE
+enflammer,Embraser,Mettre le feu,DOBJ
+léguer,Transmettre,Donner en héritage,PP_BRIDGE
+chérir,Adorer,Avoir de l'affection,PP_BRIDGE
+imiter,Singer,Faire pareil,VERB_VERB
+étouffer,Suffoquer,Mettre à bout de souffle,PP_BRIDGE
+maudire,Damner,Donner sa malédiction,DOBJ
+traîner,Tracter,Tirer derrière,VERB_VERB
+anticiper,Prévoir,Voir avant,VERB_ADV
+enfoncer,Plonger,Mettre dedans,VERB_ADV
+regretter,Déplorer,Avoir des remords,DOBJ
+embarquer,Charger,Mettre à bord,PP_BRIDGE
+allumer,Enflammer,Mettre le feu,DOBJ
+mutiler,Estropier,Mettre en morceaux,PP_BRIDGE
+dissimuler,Cacher,Mettre à l'abri des regards,PP_BRIDGE
+découper,Trancher,Faire des morceaux,DOBJ
+trahir,Tromper,Donner aux ennemis,PP_BRIDGE
+tolérer,Permettre,Donner son accord,DOBJ
+bouleverser,Chambouler,Mettre sens dessus dessous,VERB_VERB
+recruter,Embaucher,Donner du travail,DOBJ
+spécifier,Détailler,Mettre en clair,PP_BRIDGE
+ravir,Enlever,Mettre la main,DOBJ
+expulser,Bannir,Mettre dehors,VERB_ADV
+forger,Marteler,Donner forme au métal,VERB_VERB
+décomposer,Scinder,Mettre en morceaux,PP_BRIDGE
+délimiter,Borner,Mettre des limites,DOBJ
+injecter,Inoculer,Mettre dedans,VERB_ADV
+reporter,Différer,Mettre à plus tard,PP_BRIDGE
+sanctionner,Punir,Donner une peine,DOBJ
+inculper,Accuser,Mettre en cause,PP_BRIDGE
+délaisser,Abandonner,Mettre de côté,PP_BRIDGE
+refouler,Repousser,Mettre dehors,VERB_ADV
+abaisser,Humilier,Mettre plus bas,VERB_ADV
+rêver,Songer,Avoir une vision,DOBJ
+tremper,Mouiller,Mettre dans l'eau,PP_BRIDGE
+corner,Klaxonner,Faire un signal sonore,DOBJ
+admirer,Vénérer,Avoir de l'estime,PP_BRIDGE
+souscrire,Adhérer,Donner son accord,DOBJ
+consolider,Renforcer,Donner de la solidité,PP_BRIDGE
+évacuer,Vider,Mettre dehors,VERB_ADV
+imputer,Attribuer,Mettre sur le compte,PP_BRIDGE
+espérer,Souhaiter,Avoir l'espoir,DOBJ
+souder,Joindre,Mettre en un tout,PP_BRIDGE
+exalter,Glorifier,Mettre en valeur,PP_BRIDGE
+figer,Glacer,Mettre en arrêt,PP_BRIDGE
+bouillir,Cuire,Mettre à ébullition,PP_BRIDGE
+nuancer,Tempérer,Mettre des nuances,DOBJ
+posséder,Détenir,Avoir en propre,PP_BRIDGE
+éveiller,Stimuler,Faire sortir du sommeil,VERB_VERB
+enduire,Recouvrir,Mettre une couche,DOBJ
+taxer,Imposer,Mettre une taxe,DOBJ
+voiler,Cacher,Mettre un voile,DOBJ
+préserver,Protéger,Mettre à l'abri,PP_BRIDGE
+sécher,Tarir,Mettre au soleil,PP_BRIDGE
+promouvoir,Avancer,Faire monter en grade,VERB_VERB
+témoigner,Attester,Faire la preuve,DOBJ
+assumer,Endosser,Prendre en charge,PP_BRIDGE
+rembourser,Restituer,Donner en retour,PP_BRIDGE
+soustraire,Retrancher,Mettre à part,PP_BRIDGE
+seconder,Aider,Donner main forte,VERB_VERB
+dissiper,Disperser,Mettre en l'air,PP_BRIDGE
+courir,Galoper,Aller vite,VERB_ADV
+séduire,Charmer,Faire fondre,VERB_VERB
+désarmer,Démunir,Enlever les armes,DOBJ
+remonter,Réajuster,Mettre en place,PP_BRIDGE
+unifier,Joindre,Mettre en un tout,PP_BRIDGE
+statuer,Décider,Donner un verdict,DOBJ
+survenir,Advenir,Faire son apparition,DOBJ
+restituer,Rendre,Mettre en place,PP_BRIDGE
+bannir,Exiler,Mettre dehors,VERB_ADV
+roser,Teinter,Donner couleur rose,VERB_VERB
+explorer,Sonder,Faire le tour,DOBJ
+renseigner,Informer,Mettre au courant,PP_BRIDGE
+encourir,Risquer,Mettre en péril,PP_BRIDGE
+rayer,Effacer,Mettre une marque,DOBJ
+notifier,Aviser,Faire savoir,VERB_VERB
+embrasser,Étreindre,Donner un baiser,DOBJ
+enclore,Entourer,Mettre une clôture,DOBJ
+débarquer,Décharger,Mettre à terre,PP_BRIDGE
+pendre,Accrocher,Mettre en l'air,PP_BRIDGE
+réparer,Restaurer,Mettre en état,PP_BRIDGE
+ralentir,Modérer,Aller moins vite,VERB_ADV
+paralyser,Figer,Mettre en arrêt,PP_BRIDGE
+parer,Esquiver,Mettre à distance,PP_BRIDGE
+coller,Adhérer,Mettre en contact,PP_BRIDGE
+arroser,Mouiller,Mettre de l'eau,PP_BRIDGE
+confisquer,Saisir,Mettre la main,DOBJ
+octroyer,Accorder,Donner en partage,PP_BRIDGE
+émouvoir,Toucher,Faire vibrer,VERB_VERB
+étaler,Disposer,Mettre à plat,PP_BRIDGE
+condenser,Concentrer,Mettre en peu,PP_BRIDGE
+arriérer,Différer,Mettre à plus tard,PP_BRIDGE
+négocier,Discuter,Mettre d'accord,PP_BRIDGE
+modeler,Façonner,Donner une forme,DOBJ
+apposer,Coller,Mettre en place,PP_BRIDGE
+fleurir,Éclore,Donner des fleurs,DOBJ
+indigner,Scandaliser,Mettre en colère,PP_BRIDGE
+copier,Reproduire,Faire pareil,VERB_VERB
+resserrer,Comprimer,Mettre plus près,VERB_ADV
+accréditer,Reconnaître,Donner crédit,VERB_VERB
+incarner,Personnifier,Mettre en chair,PP_BRIDGE
+persécuter,Tourmenter,Mettre à l'épreuve,PP_BRIDGE
+astreindre,Contraindre,Mettre sous obligation,PP_BRIDGE
+accrocher,Suspendre,Mettre au mur,PP_BRIDGE
+façonner,Modeler,Donner une forme,DOBJ
+arranger,Disposer,Mettre en ordre,PP_BRIDGE
+centraliser,Concentrer,Mettre au centre,PP_BRIDGE
+dérouler,Étendre,Mettre à plat,PP_BRIDGE
+grever,Charger,Mettre une charge,DOBJ
+bénir,Sacrer,Donner sa bénédiction,DOBJ
+ouïr,Entendre,Faire entendre,VERB_VERB
+massacrer,Décimer,Mettre à mort,PP_BRIDGE
+esquisser,Ébaucher,Faire un croquis,DOBJ
+récompenser,Gratifier,Donner une médaille,DOBJ
+saluer,Acclamer,Donner le bonjour,DOBJ
+déclencher,Provoquer,Mettre en route,PP_BRIDGE
+dévorer,Engloutir,Manger vite,VERB_ADV
+improviser,Inventer,Faire à la volée,PP_BRIDGE
+débattre,Discuter,Mettre en discussion,PP_BRIDGE
+amorcer,Commencer,Mettre en route,PP_BRIDGE
+refroidir,Frigorifier,Mettre au froid,PP_BRIDGE
+rassurer,Apaiser,Mettre en confiance,PP_BRIDGE
+alléguer,Prétexter,Mettre en avant,PP_BRIDGE
+enchaîner,Lier,Mettre aux fers,PP_BRIDGE
+glisser,Patiner,Aller en dérapant,PP_BRIDGE
+professer,Enseigner,Faire profession,VERB_VERB
+vieillir,Décrépir,Avoir des années,DOBJ
+chiffrer,Codifier,Mettre en code,PP_BRIDGE
+ramasser,Recueillir,Mettre en tas,PP_BRIDGE
+ensevelir,Enterrer,Mettre sous terre,PP_BRIDGE
+abriter,Loger,Mettre à l'abri,PP_BRIDGE
+nuer,Teinter,Donner des nuances,DOBJ
+instaurer,Établir,Mettre en place,PP_BRIDGE
+redouter,Craindre,Avoir peur,VERB_VERB
+abuser,Tromper,Faire trop,VERB_ADV
+documenter,Renseigner,Mettre par écrit,PP_BRIDGE
+inquiéter,Soucier,Mettre en alerte,PP_BRIDGE
+dérober,Voler,Mettre la main,DOBJ
+piller,Saccager,Mettre à sac,PP_BRIDGE
+raccourcir,Réduire,Faire plus court,VERB_ADV
+dégénérer,Pourrir,Aller à la ruine,PP_BRIDGE
+intimer,Sommer,Donner l'ordre,DOBJ
+révoquer,Annuler,Mettre fin,VERB_VERB
+omettre,Oublier,Sortir de l'esprit,PP_BRIDGE
+affamer,Priver,Donner faim,VERB_VERB
+fouiller,Inspecter,Faire une recherche,DOBJ
+filtrer,Cribler,Mettre au crible,PP_BRIDGE
+repérer,Localiser,Mettre la main,DOBJ
+applaudir,Acclamer,Donner des applaudissements,DOBJ
+certifier,Attester,Faire la preuve,DOBJ
+heurter,Cogner,Donner un choc,DOBJ
+transcrire,Recopier,Mettre par écrit,PP_BRIDGE
+offenser,Insulter,Mettre en cause,PP_BRIDGE
+décharger,Vider,Mettre à plat,PP_BRIDGE
+desservir,Pénaliser,Faire du tort,DOBJ
+réprimer,Étouffer,Mettre fin,VERB_VERB
+ajourner,Différer,Mettre à plus tard,PP_BRIDGE
+distraire,Amuser,Faire passer le temps,VERB_VERB
+flatter,Cajoler,Donner du miel,DOBJ
+inonder,Noyer,Mettre sous l'eau,PP_BRIDGE
+interposer,Insérer,Mettre au milieu,PP_BRIDGE
+résigner,Soumettre,Mettre les bras,DOBJ
+endommager,Abîmer,Mettre à mal,PP_BRIDGE
+fouler,Piétiner,Mettre les pieds,DOBJ
+conjurer,Implorer,Donner sa parole,DOBJ
+ajuster,Caler,Mettre au point,PP_BRIDGE
+revendiquer,Réclamer,Mettre en demande,PP_BRIDGE
+cantonner,Confiner,Mettre à part,PP_BRIDGE
+prodiguer,Distribuer,Donner sans compter,PP_BRIDGE
+redevenir,Repasser,Faire retour,VERB_VERB
+emmener,Conduire,Faire venir,VERB_VERB
+prévaloir,Dominer,Tenir le haut,DOBJ
+obéir,Suivre,Donner suite,VERB_VERB
+référer,Renvoyer,Mettre en rapport,PP_BRIDGE
+recouvrer,Récupérer,Mettre la main,DOBJ
+récupérer,Reprendre,Mettre la main,DOBJ
+gâter,Pourrir,Mettre à mal,PP_BRIDGE
+demeurer,Habiter,Avoir résidence,VERB_VERB
+cuirasser,Blinder,Mettre une cuirasse,DOBJ
+rallier,Réunir,Mettre ensemble,VERB_ADV
+raser,Tondre,Donner un coup de rasoir,DOBJ
+risquer,Hasarder,Mettre en jeu,PP_BRIDGE
+additionner,Cumuler,Mettre ensemble,VERB_ADV
+disputer,Contester,Mettre en cause,PP_BRIDGE
+propager,Diffuser,Faire connaître,VERB_VERB
+deviner,Pressentir,Avoir une intuition,DOBJ
+rectifier,Corriger,Mettre au point,PP_BRIDGE
+stimuler,Activer,Donner du tonus,DOBJ
+valider,Approuver,Donner son accord,DOBJ
+secouer,Agiter,Mettre en mouvement,PP_BRIDGE
+réglementer,Régir,Mettre des règles,DOBJ
+expirer,Décéder,Rendre l'âme,DOBJ
+inciter,Encourager,Donner envie,VERB_VERB
+méditer,Songer,Avoir une réflexion,DOBJ
+incriminer,Accuser,Mettre en cause,PP_BRIDGE
+escompter,Espérer,Mettre en compte,PP_BRIDGE
+greffer,Implanter,Mettre en place,PP_BRIDGE
+émanciper,Affranchir,Mettre dehors,VERB_ADV
+fausser,Altérer,Mettre de travers,PP_BRIDGE
+délier,Détacher,Mettre en liberté,PP_BRIDGE
+féconder,Polliniser,Mettre en germe,PP_BRIDGE
+déposséder,Spolier,Mettre dehors,VERB_ADV
+broyer,Pulvériser,Mettre en miettes,PP_BRIDGE
+amender,Corriger,Mettre au point,PP_BRIDGE
+choquer,Heurter,Donner un coup,DOBJ
+asservir,Soumettre,Mettre sous le joug,PP_BRIDGE
+fendre,Cliver,Mettre en deux,PP_BRIDGE
+maîtriser,Dominer,Mettre sous contrôle,PP_BRIDGE
+pressentir,Soupçonner,Avoir une intuition,DOBJ
+perturber,Troubler,Mettre en désordre,PP_BRIDGE
+essuyer,Sécher,Passer le chiffon,DOBJ
+épurer,Purger,Mettre au propre,PP_BRIDGE
+soulager,Apaiser,Donner du répit,DOBJ
+dévoiler,Révéler,Mettre au jour,PP_BRIDGE
+camper,Bivouaquer,Faire halte,VERB_VERB
+dédaigner,Mépriser,Faire la fine bouche,DOBJ
+flétrir,Faner,Mettre à mal,PP_BRIDGE
+stabiliser,Asseoir,Mettre en équilibre,PP_BRIDGE
+amuser,Distraire,Faire rire,VERB_VERB
+déborder,Submerger,Mettre à profit,PP_BRIDGE
+dissocier,Séparer,Mettre à part,PP_BRIDGE
+déranger,Importuner,Mettre en désordre,PP_BRIDGE
+ressusciter,Renaître,Sortir du tombeau,DOBJ
+prédire,Augurer,Mettre en garde,PP_BRIDGE
+adorer,Idolâtrer,Avoir en admiration,PP_BRIDGE
+prêcher,Évangéliser,Donner la parole,DOBJ
+intercaler,Insérer,Mettre au milieu,PP_BRIDGE
+étreindre,Enserrer,Donner une étreinte,DOBJ
+discipliner,Dompter,Mettre sous contrôle,PP_BRIDGE
+démêler,Élucider,Mettre au clair,PP_BRIDGE
+solder,Liquider,Mettre en vente,PP_BRIDGE
+cerner,Encadrer,Mettre des limites,DOBJ
+adoucir,Atténuer,Mettre en douceur,PP_BRIDGE
+assaillir,Attaquer,Donner l'assaut,DOBJ
+adonner,Vouer,Donner du temps,DOBJ
+concourir,Rivaliser,Mettre en compétition,PP_BRIDGE
+crier,Hurler,Faire du bruit,DOBJ
+réfuter,Contredire,Mettre en doute,PP_BRIDGE
+libeller,Énoncer,Mettre par écrit,PP_BRIDGE
+activer,Lancer,Mettre en marche,PP_BRIDGE
+appréhender,Saisir,Mettre la main,DOBJ
+surseoir,Différer,Mettre à plus tard,PP_BRIDGE
+débiter,Couper,Mettre en morceaux,PP_BRIDGE
+secourir,Aider,Donner main forte,VERB_VERB
+redresser,Relever,Mettre debout,VERB_VERB
+générer,Engendrer,Donner naissance,VERB_VERB
+habiliter,Autoriser,Donner pouvoir,VERB_VERB
+lire,Déchiffrer,Faire la lecture,DOBJ
+fléchir,Plier,Mettre en angle,PP_BRIDGE
+devancer,Précéder,Mettre en avant,PP_BRIDGE
+calmer,Tranquilliser,Mettre au repos,PP_BRIDGE
+rater,Manquer,Mettre à côté,PP_BRIDGE
+déceler,Détecter,Mettre en lumière,PP_BRIDGE
+ensemencer,Semer,Mettre des graines,DOBJ
+simuler,Feindre,Faire semblant,VERB_VERB
+tester,Éprouver,Mettre à l'épreuve,PP_BRIDGE
+étrangler,Suffoquer,Mettre à mort,PP_BRIDGE
+remercier,Congratuler,Donner ses remerciements,DOBJ
+brouiller,Mélanger,Mettre en désordre,PP_BRIDGE
+régénérer,Renouveler,Donner une vie nouvelle,DOBJ
+valoriser,Mettre en avant,Donner de la valeur,PP_BRIDGE
+éclaircir,Clarifier,Mettre au clair,PP_BRIDGE
+surgir,Apparaître,Sortir de l'ombre,PP_BRIDGE
+évaporer,Disperser,Mettre en vapeur,PP_BRIDGE
+retracer,Reconstituer,Faire le récit,DOBJ
+amoindrir,Diminuer,Mettre à mal,PP_BRIDGE
+redoubler,Renforcer,Mettre en double,PP_BRIDGE
+dépeindre,Décrire,Faire un portrait,DOBJ
+remuer,Agiter,Mettre en mouvement,PP_BRIDGE
+barrer,Obstruer,Mettre un barrage,DOBJ
+lasser,Fatiguer,Mettre à plat,PP_BRIDGE
+hasarder,Risquer,Mettre en jeu,PP_BRIDGE
+balancer,Bercer,Mettre en mouvement,PP_BRIDGE
+engloutir,Avaler,Mettre dans le ventre,PP_BRIDGE
+indemniser,Dédommager,Donner une compensation,DOBJ
+replacer,Reposer,Mettre en place,PP_BRIDGE
+amortir,Atténuer,Mettre un coussin,DOBJ
+amputer,Retrancher,Mettre à part,PP_BRIDGE
+affermir,Consolider,Donner de la fermeté,PP_BRIDGE
+rougir,Empourprer,Avoir le sang,DOBJ
+comporter,Inclure,Avoir en soi,PP_BRIDGE
+blâmer,Réprouver,Mettre en cause,PP_BRIDGE
+transposer,Adapter,Mettre en forme,PP_BRIDGE
+accoucher,Enfanter,Donner naissance,VERB_VERB
+tâcher,Tenter,Faire un essai,DOBJ
+pleurer,Sangloter,Verser des larmes,DOBJ
+défricher,Préparer,Mettre en culture,PP_BRIDGE
+fourrer,Bourrer,Mettre dedans,VERB_ADV
+expliciter,Détailler,Mettre au clair,PP_BRIDGE
+réintégrer,Reprendre,Mettre en place,PP_BRIDGE
+obséder,Hanter,Avoir en tête,PP_BRIDGE
+subjuguer,Captiver,Mettre sous le charme,PP_BRIDGE
+attendrir,Émouvoir,Mettre les larmes,DOBJ
+épanouir,Fleurir,Sortir en pleine forme,PP_BRIDGE
+émerveiller,Ravir,Faire émerveiller,VERB_VERB
+détériorer,Dégrader,Mettre à mal,PP_BRIDGE
+obscurcir,Assombrir,Mettre en ombre,PP_BRIDGE
+insulter,Injurier,Donner un nom,DOBJ
+collaborer,Coopérer,Donner main forte,VERB_VERB
+trouer,Percer,Faire un trou,DOBJ
+saler,Assaisonner,Mettre du sel,DOBJ
+symboliser,Représenter,Faire image,VERB_VERB
+légitimer,Justifier,Donner raison,VERB_VERB
+englober,Inclure,Mettre ensemble,VERB_ADV
+perpétuer,Pérenniser,Faire durer,VERB_VERB
+labourer,Cultiver,Mettre en culture,PP_BRIDGE
+déshonorer,Discréditer,Mettre à mal,PP_BRIDGE
+actualiser,Moderniser,Mettre à jour,PP_BRIDGE
+venger,Punir,Donner une revanche,DOBJ
+mûrir,Évoluer,Avoir des années,DOBJ
+tarir,Sécher,Mettre à sec,PP_BRIDGE
+cueillir,Récolter,Faire la récolte,DOBJ
+réorganiser,Restructurer,Mettre en ordre,PP_BRIDGE
+coudre,Suturer,Mettre des points,DOBJ
+affronter,Braver,Faire face,VERB_VERB
+surpasser,Dépasser,Aller plus loin,VERB_ADV
+rehausser,Élever,Mettre plus haut,VERB_ADV
+avilir,Dégrader,Mettre plus bas,VERB_ADV
+aspirer,Inhaler,Tirer vers soi,VERB_VERB
+imposer,Dicter,Mettre une obligation,DOBJ
+ourdir,Tramer,Mettre au point,PP_BRIDGE
+démarrer,Lancer,Mettre en route,PP_BRIDGE
+escroquer,Arnaquer,Mettre la main,DOBJ
+trier,Classer,Mettre en ordre,PP_BRIDGE
+vouvoyer,Respecter,Donner du vous,DOBJ
+tatouer,Marquer,Donner une empreinte,DOBJ
+flamber,Embraser,Mettre le feu,DOBJ

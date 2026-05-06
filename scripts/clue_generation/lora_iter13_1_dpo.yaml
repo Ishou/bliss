@@ -1,0 +1,38 @@
+# iter13.1: theme-1 (reflexive) addition on top of iter13 (v6).
+#
+# Diff vs lora_iter13_dpo.yaml:
+#   - data: data/lora_dpo_iter13_1_combined  (316 train; iter12 + iter13 +
+#                                              theme-1 reflexive pairs)
+#   - resume_adapter_file: models/lora-clue-v6/adapters.safetensors
+#     (continue from iter13's promoted adapter — not from v3 SFT base)
+#   - adapter_path: models/lora-clue-v6_1
+#   - iters: 100  (small refinement; the 8 new train pairs need ~6 epochs at
+#                  batch 2 to actually fire — anything >150 risks overfitting
+#                  on the addition)
+#   - lower lr: 5e-7 (half iter13's 1e-6 — DPO-on-DPO compounds, halve to
+#                     keep the step small).
+model: "mlx-community/c4ai-command-r-08-2024-4bit"
+data: "data/lora_dpo_iter13_1_combined"
+adapter_path: "models/lora-clue-v6_1"
+train_type: lora
+train_mode: dpo
+num_layers: 16
+batch_size: 2
+iters: 100
+learning_rate: 5e-7
+steps_per_report: 5
+steps_per_eval: 25
+save_every: 25
+seed: 20260505
+train: true
+fuse: false
+
+beta: 0.1
+dpo_cpo_loss_type: sigmoid
+
+resume_adapter_file: "models/lora-clue-v6/adapters.safetensors"
+
+lora_parameters:
+  rank: 32
+  dropout: 0.0
+  scale: 20.0

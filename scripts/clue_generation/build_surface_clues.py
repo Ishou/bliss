@@ -186,7 +186,18 @@ def main() -> None:
             s = float(r["filter_score"] or 0)
         except ValueError:
             s = 0.0
-        (shipped if s >= args.threshold else dropped).append(r)
+        # `pp-only-skipped` and `pp-reflexive-skipped` rows always go to
+        # dropped: in both cases the lemma clue cannot PP-inflect cleanly
+        # (verb+DObj strands the object; reflexive head strands the pronoun)
+        # and shipping would land a broken adjectival reading in the runtime
+        # CSV. Filter score is irrelevant — these are structural skips.
+        skipped = r.get("inflection_status") in (
+            "pp-only-skipped", "pp-reflexive-skipped",
+        )
+        if skipped or s < args.threshold:
+            dropped.append(r)
+        else:
+            shipped.append(r)
 
     def write(path: Path, rows: list[dict]) -> None:
         with path.open("w", encoding="utf-8", newline="") as f:
