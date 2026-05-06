@@ -91,6 +91,7 @@ object SlotPlanner {
         height: Int,
         random: kotlin.random.Random,
         deadline: Long,
+        metrics: GenerationMetrics? = null,
     ): List<WordSlot>? {
         require(width >= 2 && height >= 2) { "grid must be at least 2×2, was $width×$height" }
         val state = PlanState(width, height)
@@ -98,13 +99,14 @@ object SlotPlanner {
             state.addClueCell(arrow.cluePosition)
             state.addArrow(arrow.cluePosition, arrow.direction)
         }
-        return solveVariable(state, random, deadline)
+        return solveVariable(state, random, deadline, metrics)
     }
 
     private fun solveVariable(
         state: PlanState,
         random: kotlin.random.Random,
         deadline: Long,
+        metrics: GenerationMetrics?,
     ): List<WordSlot>? {
         if (System.currentTimeMillis() > deadline) return null
 
@@ -120,9 +122,10 @@ object SlotPlanner {
         if (available < 2) {
             val cp = state.checkpoint()
             state.deactivate(next.cluePosition, next.direction)
-            val result = solveVariable(state, random, deadline)
+            val result = solveVariable(state, random, deadline, metrics)
             if (result != null) return result
             state.rollback(cp)
+            metrics?.let { it.slotPlanBacktracks++ }
             return null
         }
 
@@ -137,11 +140,16 @@ object SlotPlanner {
         val ordering = orderForBias(candidates, random)
         for (length in ordering) {
             val cp = state.checkpoint()
-            if (state.materialize(next, length)) {
-                val result = solveVariable(state, random, deadline)
+            if (state.materialize(next, length) && !state.hasDeadCluesNow()) {
+                // Forward-check: skip lengths that immediately leave a clue cell
+                // with no recoverable arrow (all DEACTIVATED, none MATERIALIZED
+                // or PENDING). Cuts the search tree before we recurse another
+                // ~20 arrows deep just to discover the same dead-end.
+                val result = solveVariable(state, random, deadline, metrics)
                 if (result != null) return result
             }
             state.rollback(cp)
+            metrics?.let { it.slotPlanBacktracks++ }
         }
         return null
     }

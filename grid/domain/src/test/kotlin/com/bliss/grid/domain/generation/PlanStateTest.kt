@@ -156,6 +156,33 @@ class PlanStateTest {
         assertThat(state.nextPending()).isNull()
     }
 
+    @Test
+    fun `hasDeadCluesNow returns true when all arrows are deactivated`() {
+        val state = PlanState(4, 4)
+        state.addClueCell(pos(0, 0))
+        state.addArrow(pos(0, 0), Direction.DOWN_RIGHT)
+        state.deactivate(pos(0, 0), Direction.DOWN_RIGHT)
+        assertThat(state.hasDeadCluesNow()).isTrue()
+    }
+
+    @Test
+    fun `hasDeadCluesNow returns false when at least one arrow is materialized`() {
+        val state = PlanState(6, 6)
+        state.addClueCell(pos(0, 0))
+        state.addArrow(pos(0, 0), Direction.DOWN_RIGHT)
+        state.materialize(ClueArrow(pos(0, 0), Direction.DOWN_RIGHT), 4)
+        assertThat(state.hasDeadCluesNow()).isFalse()
+    }
+
+    @Test
+    fun `hasDeadCluesNow returns false when at least one arrow is still pending`() {
+        val state = PlanState(4, 4)
+        state.addClueCell(pos(0, 0))
+        state.addArrow(pos(0, 0), Direction.DOWN_RIGHT)
+        // Arrow stays PENDING - not materialized, not deactivated.
+        assertThat(state.hasDeadCluesNow()).isFalse()
+    }
+
     private fun pos(
         row: Int,
         col: Int,
