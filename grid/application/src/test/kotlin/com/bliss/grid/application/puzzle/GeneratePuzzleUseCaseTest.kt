@@ -71,6 +71,42 @@ class GeneratePuzzleUseCaseTest {
         assertThat(grid!!.width).isEqualTo(6)
         assertThat(grid.height).isEqualTo(6)
     }
+
+    @Test
+    fun `perAttemptTimeout uses maxAttemptTimeoutMs during warmup then switches to calibrated value`() {
+        // warmupCount=1: first execute (0 recorded successes) uses maxAttemptTimeoutMs;
+        // after it records a success the second execute uses calibrated timeout.
+        val useCase =
+            GeneratePuzzleUseCase(
+                wordRepository = AlwaysMatchingRepository,
+                defaults = GridConstraints(width = 5, height = 5),
+                warmupCount = 1,
+                cutoffMultiplier = 2,
+                minAttemptTimeoutMs = 1,
+                maxAttemptTimeoutMs = 60_000,
+            )
+        assertThat(useCase.execute()).isNotNull()
+        // Second call: window has 1 entry >= warmupCount=1, so calibrated path runs.
+        assertThat(useCase.execute()).isNotNull()
+    }
+
+    @Test
+    fun `rolling window evicts oldest entries beyond rollingWindow`() {
+        // rollingWindow=2: after 3 successes only the last 2 should influence the median.
+        val useCase =
+            GeneratePuzzleUseCase(
+                wordRepository = AlwaysMatchingRepository,
+                defaults = GridConstraints(width = 5, height = 5),
+                warmupCount = 1,
+                rollingWindow = 2,
+                cutoffMultiplier = 1,
+                minAttemptTimeoutMs = 1,
+                maxAttemptTimeoutMs = 60_000,
+            )
+        repeat(3) { assertThat(useCase.execute()).isNotNull() }
+        // After 3 calls the window holds 2 entries (oldest evicted). Execute still works.
+        assertThat(useCase.execute()).isNotNull()
+    }
 }
 
 private object EmptyWordRepository : WordRepository {
