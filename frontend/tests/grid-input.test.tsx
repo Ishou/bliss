@@ -681,7 +681,7 @@ describe('scheduleVisibleScroll', () => {
   });
 });
 
-describe('Grid keyboard-aware wrapper sizing', () => {
+describe('Grid keyboard-aware shell sizing', () => {
   // Stash & restore visualViewport across tests — jsdom doesn't ship
   // it, so we attach a stub and tear it down explicitly to keep this
   // test from leaking into the others (mirrors PR #175's
@@ -740,10 +740,19 @@ describe('Grid keyboard-aware wrapper sizing', () => {
   // the rAF tick on every CI runner observed here.
   const flushRaf = () => new Promise((r) => setTimeout(r, 20));
 
-  it('keeps the wrapper at its natural flow height when no keyboard is open', async () => {
+  // Post-PR-#195 fix: the keyboard-avoidance maxHeight is now applied
+  // to the flex shell (`[data-testid="grid-shell"]`), NOT the inner
+  // TransformWrapper. The inner wrapper is sized via container queries
+  // (`min(100cqw, 100cqh, 720px)`) against the shell, so shrinking the
+  // shell shrinks the wrapper's square edge automatically — width and
+  // height stay locked together when the visualViewport collapses.
+  const queryShell = (container: HTMLElement) =>
+    container.querySelector<HTMLDivElement>('[data-testid="grid-shell"]');
+
+  it('keeps the shell at its natural flex-grow height when no keyboard is open', async () => {
     const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
-    const wrapperEl = container.querySelector<HTMLDivElement>('.react-transform-wrapper');
-    expect(wrapperEl).toBeTruthy();
+    const shellEl = queryShell(container);
+    expect(shellEl).toBeTruthy();
     // The mount-time synchronous measurement runs before this assertion,
     // so we don't strictly need a flushRaf — but we run one for safety
     // in case the library schedules its own initial transform via rAF.
@@ -751,16 +760,16 @@ describe('Grid keyboard-aware wrapper sizing', () => {
     // visualViewport.height === window.innerHeight ⇒ no keyboard
     // detected ⇒ no maxHeight override ⇒ inline style.maxHeight is
     // empty (falls through to the panda class which sets none).
-    expect(wrapperEl!.style.maxHeight).toBe('');
+    expect(shellEl!.style.maxHeight).toBe('');
   });
 
-  it('shrinks the wrapper max-height when the soft keyboard reduces visualViewport.height', async () => {
+  it('shrinks the shell max-height when the soft keyboard reduces visualViewport.height', async () => {
     const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
-    const wrapperEl = container.querySelector<HTMLDivElement>('.react-transform-wrapper');
-    expect(wrapperEl).toBeTruthy();
-    // Pin a deterministic getBoundingClientRect for the wrapper so
+    const shellEl = queryShell(container);
+    expect(shellEl).toBeTruthy();
+    // Pin a deterministic getBoundingClientRect for the shell so
     // the math doesn't depend on jsdom's default zero-rect.
-    vi.spyOn(wrapperEl as HTMLDivElement, 'getBoundingClientRect').mockReturnValue({
+    vi.spyOn(shellEl as HTMLDivElement, 'getBoundingClientRect').mockReturnValue({
       top: 200, bottom: 600, left: 0, right: 480, width: 480, height: 400,
       x: 0, y: 200, toJSON: () => ({}),
     } as DOMRect);
@@ -770,53 +779,53 @@ describe('Grid keyboard-aware wrapper sizing', () => {
     await act(async () => { fire('resize'); await flushRaf(); });
     // available = (offsetTop + height) - rect.top - WRAPPER_BOTTOM_MARGIN_PX
     //           = (0 + 400) - 200 - 8 = 192
-    expect(wrapperEl!.style.maxHeight).toBe('192px');
+    expect(shellEl!.style.maxHeight).toBe('192px');
   });
 
   it('clamps the max-height to the floor when available space goes negative (rect.top below keyboard top)', async () => {
     const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
-    const wrapperEl = container.querySelector<HTMLDivElement>('.react-transform-wrapper');
-    vi.spyOn(wrapperEl as HTMLDivElement, 'getBoundingClientRect').mockReturnValue({
+    const shellEl = queryShell(container);
+    vi.spyOn(shellEl as HTMLDivElement, 'getBoundingClientRect').mockReturnValue({
       top: 700, bottom: 1100, left: 0, right: 480, width: 480, height: 400,
       x: 0, y: 700, toJSON: () => ({}),
     } as DOMRect);
     (stub as { height: number }).height = 400;
     await act(async () => { fire('resize'); await flushRaf(); });
     // available = 400 - 700 - 8 = -308 ⇒ clamped to MIN_WRAPPER_HEIGHT_PX (140).
-    expect(wrapperEl!.style.maxHeight).toBe('140px');
+    expect(shellEl!.style.maxHeight).toBe('140px');
   });
 
   it('clears the override when the keyboard closes again', async () => {
     const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
-    const wrapperEl = container.querySelector<HTMLDivElement>('.react-transform-wrapper');
-    vi.spyOn(wrapperEl as HTMLDivElement, 'getBoundingClientRect').mockReturnValue({
+    const shellEl = queryShell(container);
+    vi.spyOn(shellEl as HTMLDivElement, 'getBoundingClientRect').mockReturnValue({
       top: 200, bottom: 600, left: 0, right: 480, width: 480, height: 400,
       x: 0, y: 200, toJSON: () => ({}),
     } as DOMRect);
     (stub as { height: number }).height = 400;
     await act(async () => { fire('resize'); await flushRaf(); });
-    expect(wrapperEl!.style.maxHeight).toBe('192px');
+    expect(shellEl!.style.maxHeight).toBe('192px');
     // Keyboard closes — visualViewport.height returns to layout
     // viewport height. The effect re-runs and clears the override.
     (stub as { height: number }).height = 768; // jsdom default innerHeight
     await act(async () => { fire('resize'); await flushRaf(); });
-    expect(wrapperEl!.style.maxHeight).toBe('');
+    expect(shellEl!.style.maxHeight).toBe('');
   });
 
   it('coalesces multiple visualViewport resize events into a single measurement per frame', async () => {
     const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
-    const wrapperEl = container.querySelector<HTMLDivElement>('.react-transform-wrapper');
-    expect(wrapperEl).toBeTruthy();
-    const rectSpy = vi.spyOn(wrapperEl as HTMLDivElement, 'getBoundingClientRect').mockReturnValue({
+    const shellEl = queryShell(container);
+    expect(shellEl).toBeTruthy();
+    const rectSpy = vi.spyOn(shellEl as HTMLDivElement, 'getBoundingClientRect').mockReturnValue({
       top: 200, bottom: 600, left: 0, right: 480, width: 480, height: 400,
       x: 0, y: 200, toJSON: () => ({}),
     } as DOMRect);
     // Keyboard-open precondition so the listener actually runs the
     // rect read (otherwise it bails before the spy).
     (stub as { height: number }).height = 400;
-    // Sample baseline immediately before the burst — the library's own
-    // internal `getBoundingClientRect` reads on the wrapper get caught
-    // by this spy too, so we count only calls AFTER this point.
+    // Sample baseline immediately before the burst — anything else in
+    // the tree that calls `getBoundingClientRect` on the shell gets
+    // caught by this spy too, so we count only calls AFTER this point.
     const callsBefore = rectSpy.mock.calls.length;
     // Dispatch 5 resize events in the same synchronous tick — should
     // schedule exactly ONE rAF, not five.
@@ -838,9 +847,9 @@ describe('Grid keyboard-aware wrapper sizing', () => {
 
   it('cancels a pending rAF on unmount so the measurement does not run on a torn-down component', async () => {
     const { container, unmount } = render(<Grid puzzle={TEST_PUZZLE} />);
-    const wrapperEl = container.querySelector<HTMLDivElement>('.react-transform-wrapper');
-    expect(wrapperEl).toBeTruthy();
-    const rectSpy = vi.spyOn(wrapperEl as HTMLDivElement, 'getBoundingClientRect').mockReturnValue({
+    const shellEl = queryShell(container);
+    expect(shellEl).toBeTruthy();
+    const rectSpy = vi.spyOn(shellEl as HTMLDivElement, 'getBoundingClientRect').mockReturnValue({
       top: 200, bottom: 600, left: 0, right: 480, width: 480, height: 400,
       x: 0, y: 200, toJSON: () => ({}),
     } as DOMRect);

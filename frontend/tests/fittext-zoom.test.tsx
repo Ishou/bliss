@@ -95,13 +95,15 @@ describe('FitText ratio mode is zoom-invariant', () => {
   }
 
   it('produces font-to-cell ratios within rounding tolerance across cell sizes', () => {
-    // A 10-char text in a square cell, RATIO_MIN=0.18, RATIO_MAX=0.32.
-    // Scroll width mock = font × 0.6 × 10 = 6×font, so it fits at
-    // font ≤ cw/6. Capped at max(cw × 0.32). For cw=100, max font=32,
-    // fit-cap from text = 16, so settled = 16.
-    const r50 = settle('abcdefghij', 0.18, 0.32, 50, 100);
-    const r100 = settle('abcdefghij', 0.18, 0.32, 100, 200);
-    const r200 = settle('abcdefghij', 0.18, 0.32, 200, 400);
+    // 4-char text in a square cell, RATIO_MIN=0.22, RATIO_MAX=0.32.
+    // Scroll width mock = font × 0.6 × 4 = 2.4×font, fits at
+    // font ≤ cw/2.4. Picked to keep the comfortable range
+    // [0.22cw, 0.32cw] entirely fitting at every cw under test, so
+    // FitText settles at hi0 (= floor(0.32 × cw)) and the ratio is
+    // identical across cell sizes (rounding aside).
+    const r50 = settle('abcd', 0.22, 0.32, 50, 100);
+    const r100 = settle('abcd', 0.22, 0.32, 100, 200);
+    const r200 = settle('abcd', 0.22, 0.32, 200, 400);
 
     // The ratio settled-font / cell-width should be (approximately) the
     // same across the three cell sizes — that's zoom invariance.
@@ -111,21 +113,18 @@ describe('FitText ratio mode is zoom-invariant', () => {
     expect(Math.abs(ratio(r100, 100) - ratio(r200, 200))).toBeLessThan(tol);
   });
 
-  it('falls below the ratio floor rather than clipping when content forces it', () => {
+  it('clamps long-clue rendered font-size at the 11 px ABSOLUTE_MIN floor', () => {
     // A 30-char text with scroll mock = font × 0.6 × 30 = 18 × font.
-    // At cw=100 the comfortable range is [18, 32] px, none of which fit
-    // (all yield scrollWidth ≥ 18 × 18 = 324 > 100). The implementation
-    // must drop below the floor (18) to whatever does fit, all the way
-    // down to 6 px (ABSOLUTE_MIN_PX) if needed. Better small-but-readable
-    // than clipped-and-invisible.
+    // At cw=100 the comfortable range is [22, 32] px, none of which
+    // fit (all yield scrollWidth ≥ 22 × 18 = 396 > 100). The
+    // implementation drops below the floor (22) but DOES NOT go below
+    // `ABSOLUTE_MIN_PX = 11` — the cell's `overflow: hidden` clips
+    // past 11 px. Sub-readable text below the ~12 px readability floor
+    // is worse UX than honest clipping (see `FitText.tsx` for the
+    // rationale + the post-PR-#195 fix that raised the floor from 6).
     const cw = 100;
-    const settled = settle('M'.repeat(30), 0.18, 0.32, cw, 100);
-    // At cw=100 with the mock, font ≤ 100 / (0.6 × 30) = 5.55, so the
-    // largest fitting integer is 5. Phase 2 floors at 6 — so we never
-    // drop below 6, even if 6 also doesn't fit (the "tiny but contained"
-    // safety, since CSS overflow:hidden on the cell wrappers handles the
-    // hard contain).
-    expect(settled).toBeLessThanOrEqual(Math.floor(0.18 * cw));
-    expect(settled).toBeGreaterThanOrEqual(6);
+    const settled = settle('M'.repeat(30), 0.22, 0.32, cw, 100);
+    expect(settled).toBeLessThanOrEqual(Math.floor(0.22 * cw));
+    expect(settled).toBeGreaterThanOrEqual(11);
   });
 });
