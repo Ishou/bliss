@@ -178,7 +178,55 @@ CLAUDE.md mandates <400-line PRs. The fixes split naturally:
 - Restart-on-dead-end. Tiny cost, small expected win, easy to add later.
 - JMH-class microbenchmark. Current bench-test is enough for this scope.
 
-## 11. Spec self-review notes
+## 11. Iter log — actual measured results
+
+Re-running the same 200-puzzle benchmark after each PR landed:
+
+| metric              | base | + slot-plan FC | + fill FC |
+|---------------------|-----:|---------------:|----------:|
+| success rate        | 82.5% | 83.5%         | **84.5%** |
+| total p50           | 118ms | 55ms          | **46ms**  |
+| total p75           | 1194ms | 213ms        | **174ms** |
+| total p95           | 5000ms | 5000ms       | 5002ms    |
+| total p99           | 5000ms | 5000ms       | 5004ms    |
+| slot-plan p95       | 439ms | 22ms          | 22ms      |
+| slot-plan max       | 5000ms | 85ms         | 84ms      |
+| slot-plan bks p99   | 5.76M | 286k          | 286k      |
+| fill p50            | 62ms  | 49ms          | 36ms      |
+| fill bks p50        | 941   | 941           | 784       |
+
+**Goal review against §2:**
+
+| target | spec goal | actual |
+|---|---|---|
+| total p95 ≤ 1500ms | yes | **NO** — still hits 5000ms wall |
+| total p99 ≤ 3000ms | yes | NO — 5004ms |
+| success ≥ 95% | yes | NO — 84.5% |
+| no median regression (≤ p50 + 50ms) | yes | YES — p50 dropped 72ms |
+
+**Honest assessment:** PR-A + PR-B nailed median + p75 (huge wins) but
+**did not move the hard tail.** The p95 5s timeouts are not from
+slot-plan or fill backtracking — those are now fast. They're from
+puzzles where *no valid fill exists* (or only an exotic one) given the
+fixed slot lengths the planner produced.
+
+That's the user's original intuition: the *configuration* is the
+bottleneck, not the search speed. Fix paths from here:
+
+1. **Inflectional-flex slot resizing** (the user-flagged design): let
+   the fill phase grow/shrink slot lengths within an inflection
+   family. Expands the solution space — would actually help the
+   currently-infeasible 15.5%.
+2. **Restart-on-deadend with reseed**: cheap, may unstick the worst
+   cases by trying a different slot-plan even when the first looks
+   feasible.
+3. **Domain memoization**: probably cheap perf win, won't help the
+   tail.
+
+Recommendation: ship PR-A + PR-B as the perf foundation; pursue the
+inflectional-flex redesign as the next algorithmic iter.
+
+## 12. Spec self-review notes
 
 Placeholder scan: no TBD/TODO. Internal consistency: §4.1 estimates "p99
 backtracks 5.7M → ~1-5k" — that's a hand-wavy reduction factor; actual
