@@ -133,6 +133,7 @@ class GridGenBenchmarkTest {
             if (grid != null) successCount++
         }
         val sorted = totalMs.sortedArray()
+
         fun LongArray.p(pct: Int) = this[(pct * (size - 1)) / 100]
         println(
             """
@@ -144,4 +145,3 @@ class GridGenBenchmarkTest {
         )
     }
 }
-
