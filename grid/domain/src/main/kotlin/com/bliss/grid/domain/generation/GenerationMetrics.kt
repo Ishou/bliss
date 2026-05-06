@@ -50,4 +50,11 @@ class GenerationMetrics {
 
     /** Total grids attempted by the caller (only set by callers that retry). */
     var attempts: Int = 1
+
+    /**
+     * Number of times the fill phase's forward-check pruned a placement
+     * before recursing. High count vs [fillBacktracks] is the FC working —
+     * each skip is a recursion-tree branch we didn't have to explore.
+     */
+    var fillForwardCheckSkips: Int = 0
 }

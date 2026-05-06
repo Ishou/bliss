@@ -56,9 +56,33 @@ internal class SkeletonFiller(
                 .filterValues { it > 1 }
                 .keys
         val assigned = arrayOfNulls<Word>(slots.size)
-        if (!search(slots, letters, usedWords, usedLemmas, stackedCluePositions, assigned, random, deadline, metrics)) return null
+        // Precompute the intersection graph: slot i shares ≥1 cell with slots[intersections[i]].
+        // Used by the fill-phase forward-check — after placing a word, only the slots that
+        // intersect the just-placed slot can have their domain shrink, so we re-evaluate just
+        // those. O(slots²) precompute amortizes over millions of search nodes.
+        val intersections = computeIntersections(slots)
+        if (!search(slots, letters, usedWords, usedLemmas, stackedCluePositions, assigned, intersections, random, deadline, metrics)) return null
         return slots.mapIndexed { i, slot ->
             WordPlacement(assigned[i]!!, slot.cluePosition, slot.direction)
+        }
+    }
+
+    private fun computeIntersections(slots: List<WordSlot>): Array<IntArray> {
+        val byPosition = HashMap<Position, MutableList<Int>>()
+        for ((idx, slot) in slots.withIndex()) {
+            for (pos in slot.letterPositions()) {
+                byPosition.getOrPut(pos) { ArrayList() }.add(idx)
+            }
+        }
+        // For each slot, collect the set of OTHER slot indices it shares a cell with.
+        return Array(slots.size) { i ->
+            val neighbors = HashSet<Int>()
+            for (pos in slots[i].letterPositions()) {
+                for (other in byPosition[pos] ?: continue) {
+                    if (other != i) neighbors.add(other)
+                }
+            }
+            neighbors.toIntArray()
         }
     }
 
@@ -69,6 +93,7 @@ internal class SkeletonFiller(
         usedLemmas: HashSet<String>,
         stackedCluePositions: Set<Position>,
         assigned: Array<Word?>,
+        intersections: Array<IntArray>,
         random: Random,
         deadline: Long,
         metrics: GenerationMetrics?,
@@ -116,7 +141,27 @@ internal class SkeletonFiller(
                 }
             }
 
-            if (search(slots, letters, usedWords, usedLemmas, stackedCluePositions, assigned, random, deadline, metrics)) return true
+            // Forward-check: only the slots that intersect bestIdx can have their
+            // domain shrink from this placement (other unassigned slots' patterns
+            // are unchanged). Re-evaluate just those; if any went empty, skip
+            // recursion — the next MRV scan would have discovered the same
+            // dead-end at greater cost.
+            val placementOk = run {
+                for (otherIdx in intersections[bestIdx]) {
+                    if (assigned[otherIdx] != null) continue
+                    val needsCompactOther = slots[otherIdx].cluePosition in stackedCluePositions
+                    val otherDomain = domainFor(slots[otherIdx], letters, usedWords, usedLemmas, needsCompactOther, metrics)
+                    if (otherDomain.isEmpty()) return@run false
+                }
+                true
+            }
+
+            if (placementOk &&
+                search(slots, letters, usedWords, usedLemmas, stackedCluePositions, assigned, intersections, random, deadline, metrics)
+            ) {
+                return true
+            }
+            if (!placementOk) metrics?.let { it.fillForwardCheckSkips++ }
 
             // Undo.
             for (pos in newlyPlaced) letters.remove(pos)
