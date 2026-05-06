@@ -3,7 +3,14 @@ package com.bliss.grid.domain.generation
 import com.bliss.grid.domain.model.Grid
 import kotlin.random.Random
 
-private const val GENERATION_TIMEOUT_MS = 5_000L
+/**
+ * Default per-attempt deadline. The outer retry loop in
+ * `GeneratePuzzleUseCase` retries on failure with a fresh seed, so a tight
+ * per-attempt budget paired with retries is usually faster than one long
+ * attempt — the pathological 5s-tail puzzles abandon quickly and the next
+ * seed often succeeds in <100ms.
+ */
+const val DEFAULT_GENERATION_TIMEOUT_MS = 5_000L
 
 class GridGenerator(
     private val repository: WordRepository,
@@ -12,7 +19,8 @@ class GridGenerator(
         constraints: GridConstraints,
         random: Random = Random.Default,
         metrics: GenerationMetrics? = null,
-    ): Grid? = generateInterlocked(constraints, random, metrics)
+        timeoutMs: Long = DEFAULT_GENERATION_TIMEOUT_MS,
+    ): Grid? = generateInterlocked(constraints, random, metrics, timeoutMs)
 
     /**
      * Generates a fully interlocked grid via the skeleton pipeline:
@@ -31,11 +39,12 @@ class GridGenerator(
         constraints: GridConstraints,
         random: Random,
         metrics: GenerationMetrics?,
+        timeoutMs: Long,
     ): Grid? {
         val w = constraints.width
         val h = constraints.height
         if (w < 2 || h < 2) return null
-        val deadline = System.currentTimeMillis() + GENERATION_TIMEOUT_MS
+        val deadline = System.currentTimeMillis() + timeoutMs
 
         val skeletonStart = System.nanoTime()
         val arrows = Skeleton.arrows(w, h)

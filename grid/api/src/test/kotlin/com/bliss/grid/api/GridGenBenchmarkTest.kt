@@ -1,5 +1,6 @@
 package com.bliss.grid.api
 
+import com.bliss.grid.application.puzzle.GeneratePuzzleUseCase
 import com.bliss.grid.application.puzzle.defaultPuzzleConstraints
 import com.bliss.grid.domain.generation.GenerationMetrics
 import com.bliss.grid.domain.generation.GridGenerator
@@ -101,4 +102,46 @@ class GridGenBenchmarkTest {
         }
         println("[bench] CSV: $outFile (${results.size} rows)")
     }
+
+    /**
+     * Same 200-puzzle eval but routed through [GeneratePuzzleUseCase],
+     * which has a self-calibrating per-attempt timeout (= 10× recent
+     * successful-attempt median, clamped 200ms..5000ms) and retry up to
+     * maxAttempts. Cold start uses the full 5s timeout; once a few
+     * successes are captured the cutoff tightens automatically.
+     *
+     * The "total wall time per puzzle" is the production-relevant metric:
+     * what the user sees when they hit refresh. We measure it without any
+     * tunable that needs per-machine setting — the strategy adapts.
+     */
+    @Test
+    fun `200 puzzles via self-calibrating GeneratePuzzleUseCase`() {
+        val repo = CsvWordRepository.frenchFromClasspath()
+        val constraints = defaultPuzzleConstraints()
+        val useCase = GeneratePuzzleUseCase(repo, constraints)
+
+        // JIT warm-up.
+        repeat(5) { useCase.execute() }
+
+        val n = 200
+        val totalMs = LongArray(n)
+        var successCount = 0
+        for (i in 0 until n) {
+            val start = System.currentTimeMillis()
+            val grid = useCase.execute()
+            totalMs[i] = System.currentTimeMillis() - start
+            if (grid != null) successCount++
+        }
+        val sorted = totalMs.sortedArray()
+        fun LongArray.p(pct: Int) = this[(pct * (size - 1)) / 100]
+        println(
+            """
+            |=== Self-calibrating use-case (cutoff = 10× recent-success median) ===
+            |success: $successCount/$n  (${"%.1f".format(100.0 * successCount / n)}%)
+            |Total wall time per puzzle (ms):
+            |  min=${sorted.first()} p50=${sorted.p(50)} p75=${sorted.p(75)} p95=${sorted.p(95)} p99=${sorted.p(99)} max=${sorted.last()}
+            """.trimMargin(),
+        )
+    }
 }
+
