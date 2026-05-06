@@ -43,23 +43,24 @@ import { Route as RootRoute } from './__root';
 // the multiplayer flag is on (ADR-0018 §10), so the context fields it
 // relies on are guaranteed present at the call site.
 
+// 100dvh: height tracks iOS Safari's visible viewport as the URL bar collapses.
 const pageStyles = css({
   minHeight: '100dvh', display: 'flex', flexDirection: 'column',
-  alignItems: 'center', gap: 'sm',
-  padding: 'lg', bg: 'bg', color: 'fg', fontFamily: 'body', textAlign: 'center',
+  alignItems: 'center', gap: { base: 'xs', md: 'sm' },
+  paddingBlock: { base: 'sm', md: 'lg' },
+  paddingInline: { base: 'sm', md: 'lg' },
+  bg: 'bg', color: 'fg', fontFamily: 'body', textAlign: 'center',
 });
 
-// Wordmark — mirrors `routes/index.tsx` so `/` and `/lobby/:lobbyId`
-// render the same brand title (ADR-0005 §6 amended). The lobby id stays
-// in the URL bar and surfaces via the WaitingRoom share-URL button, so
-// dropping it from the heading does not hide it from the player.
+// Mirrors index.tsx wordmark — ADR-0005 §6 amended (display→xl on mobile).
 const wordmarkStyles = css({
   fontFamily: 'heading',
-  fontSize: { base: 'display', md: '2.8125rem' },
+  fontSize: { base: 'xl', md: '2.8125rem' },
   fontWeight: 'black',
   letterSpacing: '-0.02em',
   color: 'leaf.700',
   margin: 0,
+  lineHeight: '1.1',
 });
 
 // "DÉMO" pill — same rendering as the home route (ADR-0005 §4).
@@ -85,10 +86,20 @@ const errorActionsStyles = css({
   display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'md',
 });
 
+// Nested flex column inside `<main>` (also flex column) so the
+// PlayerList / Timer take their natural height and the Grid's flex
+// shell can absorb the remaining vertical space and stay square. The
+// `flex: 1 1 0` + `minHeight: 0` here matches the contract `<main>`
+// uses on `pageStyles`, propagating the leftover-height-for-the-grid
+// chain down two levels: <main> → this layout div → `gridShellStyles`
+// inside `Grid`. Without it the Grid's flex shell has no height to
+// grow into and the post-PR-#195 desktop scrollbar comes back.
 const inGameLayoutStyles = css({
   display: 'flex', flexDirection: 'column',
   alignItems: 'center', gap: 'md',
   width: '100%',
+  flex: '1 1 0',
+  minHeight: 0,
 });
 
 const LobbyShell = ({ children }: { children: React.ReactNode }) => (

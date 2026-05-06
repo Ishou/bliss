@@ -1,18 +1,20 @@
 import { useEffect, useState } from 'react';
 import { css } from 'styled-system/css';
 import type { ArrowDirection } from '@/domain';
+import { GRID_TRACK_WIDTH } from './layout';
 import type { Clue } from './useGridNavigation';
 
 // Sticky-pinned to the top of the page-level scroll. The panel is rendered
 // as a direct child of `<main>` (Grid returns a fragment, not a wrapping
 // div) so its containing block is the page itself — taller than the
 // viewport, so sticky has room to stick. Width matches the grid below
-// (100% / 480px-cap / centered) so the two align horizontally on every
-// breakpoint, instead of the panel spanning a wider area than the grid.
+// (100% / shared `GRID_TRACK_WIDTH` cap / centered) so the two align
+// horizontally on every breakpoint, instead of the panel spanning a
+// wider area than the grid.
 //
 // Mobile (`base`): full available width inside `<main>`'s padding, slightly
 // larger font for thumb-distance reading.
-// Desktop (`md`): capped at 480px (same as grid), font reverts to body.
+// Desktop (`md`): capped at the shared `GRID_TRACK_WIDTH`, font reverts to body.
 //
 // Why this is plain sticky and NOT visual-viewport tracked: the grid's
 // `TransformWrapper` sets `touch-action: none` on that element only (see
@@ -28,7 +30,6 @@ const panel = css({
   top: 0,
   zIndex: 10,
   width: '100%',
-  maxWidth: '480px',
   margin: '0 auto',
   paddingBlock: 'sm',
   paddingInline: 'sm',
@@ -174,8 +175,12 @@ function useVisualViewportZoom(): ZoomedStyle | undefined {
   return style;
 }
 
+const trackWidthStyle = { maxWidth: GRID_TRACK_WIDTH } as const;
+
 export function CurrentCluePanel({ clue }: { clue: Clue | null }) {
-  const inlineStyle = useVisualViewportZoom();
+  const zoomStyle = useVisualViewportZoom();
+  // Zoomed branch sets position:fixed left/right:0 (full-bleed); maxWidth there would re-introduce the centering gap.
+  const inlineStyle = zoomStyle ?? trackWidthStyle;
   if (!clue) {
     return (
       <div

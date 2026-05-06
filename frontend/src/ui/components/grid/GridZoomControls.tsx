@@ -1,4 +1,5 @@
 import { css } from '../../../../styled-system/css';
+import { GRID_TRACK_WIDTH } from './layout';
 
 /**
  * Visible zoom controls for the grid: zoom-in, zoom-out, reset. Driven
@@ -20,17 +21,17 @@ const cluster = css({
   justifyContent: 'center',
   gap: '6px',
   width: '100%',
-  maxWidth: '480px',
   margin: '8px auto 0',
 });
 
+// Inline-style: Panda CSS cannot statically extract min(…) with viewport units.
+const clusterStyle = { maxWidth: GRID_TRACK_WIDTH } as const;
+
 const button = css({
-  // Sized for both touch (≥ 36 px is comfortable on phones; WCAG 2.5.5
-  // recommends 44 but our cells run smaller and matching their footprint
-  // keeps the toolbar visually balanced) and keyboard focus.
-  minWidth: '36px',
-  height: '36px',
-  px: '8px',
+  // WCAG 2.5.5 AA: 44 px minimum touch target — zoom buttons are tap-anywhere affordances (unlike letter cells, which are navigated one at a time).
+  minWidth: '44px',
+  height: '44px',
+  px: 'sm',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
@@ -39,7 +40,7 @@ const button = css({
   border: '1px solid token(colors.border)',
   borderRadius: '4px',
   fontFamily: 'body',
-  fontSize: '16px',
+  fontSize: 'md',
   fontWeight: 'bold',
   cursor: 'pointer',
   _hover: { bg: 'leaf.50' },
@@ -61,7 +62,7 @@ export function GridZoomControls({
   onReset: () => void;
 }) {
   return (
-    <div className={cluster} role="group" aria-label="Zoom controls">
+    <div className={cluster} style={clusterStyle} role="group" aria-label="Zoom controls">
       {/*
         `onMouseDown={e => e.preventDefault()}` on every button: stops
         the browser's default mousedown→focus on the <button>, which

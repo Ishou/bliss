@@ -7,14 +7,16 @@ import { Grid } from '@/ui/components/grid';
 import { Button } from '@/ui/components/primitives';
 import { Route as RootRoute } from './__root';
 
+// 100dvh: height tracks iOS Safari's visible viewport as the URL bar collapses.
 const pageStyles = css({
   minHeight: '100dvh',
   display: 'flex',
   flexDirection: 'column',
   alignItems: 'center',
   justifyContent: 'flex-start',
-  gap: 'md',
-  padding: 'lg',
+  gap: { base: 'sm', md: 'md' },
+  paddingBlock: { base: 'sm', md: 'lg' },
+  paddingInline: { base: 'sm', md: 'lg' },
   bg: 'bg',
   color: 'fg',
   fontFamily: 'body',
@@ -27,11 +29,12 @@ const pageStyles = css({
 // ADR's amendment note for why this changed from `ink`.
 const wordmarkStyles = css({
   fontFamily: 'heading',
-  fontSize: { base: 'display', md: '2.8125rem' },
+  fontSize: { base: 'xl', md: '2.8125rem' },
   fontWeight: 'black',
   letterSpacing: '-0.02em',
   color: 'leaf.700',
   margin: 0,
+  lineHeight: '1.1',
 });
 
 const subtitleStyles = css({

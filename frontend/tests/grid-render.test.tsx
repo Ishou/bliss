@@ -10,6 +10,7 @@ import type {
 } from '@/domain';
 import { Grid } from '@/ui/components/grid';
 import { DefinitionCellView } from '@/ui/components/grid/Cell';
+import { GRID_TRACK_WIDTH } from '@/ui/components/grid/layout';
 
 // Walks the answer path of one clue inside a definition cell: starting
 // from the cell adjacent to the def (per arrow direction) and continuing
@@ -308,6 +309,70 @@ describe('Grid render', () => {
   // arrow at rightTop next to it. Earlier regressions silently dropped
   // the second clue or mis-labeled it by axis; this test pins both
   // clues' presence and the API-order rendering.
+  describe('Fullscreen layout primitives', () => {
+    it('sizes the transform wrapper as the smaller of available width / height / 720 px', () => {
+      const { container } = render(<Grid puzzle={SAMPLE_PUZZLE} />);
+      const wrapper = container.querySelector<HTMLDivElement>('.react-transform-wrapper');
+      expect(wrapper).not.toBeNull();
+      // Post-#195 fix: the wrapper auto-squares against the flex shell
+      // via container queries (`100cqw` / `100cqh`) capped at 720 px,
+      // replacing the height-blind `min(95vw, 80vmin, 720px)` clamp.
+      // The library only writes transform:… inline; width/height from
+      // `wrapperStyle` survive the merge.
+      expect(wrapper!.style.width).toBe('min(100cqw, 100cqh, 720px)');
+      expect(wrapper!.style.height).toBe('min(100cqw, 100cqh, 720px)');
+    });
+
+    it('wraps the transform wrapper in a flex shell that absorbs leftover viewport height', () => {
+      // The shell takes the slack between page chrome (wordmark / DÉMO
+      // pill / clue panel / zoom row / lobby button) and the bottom of
+      // the visible viewport, so the page never produces a vertical
+      // scrollbar. We assert the structural contract — the shell is
+      // the immediate parent of the library's `.react-transform-wrapper`
+      // element — because vitest config has `css: false` (Panda rules
+      // aren't loaded into jsdom), so computed-style assertions on
+      // `flex: 1 1 0` / `min-height: 0` would always read empty. The
+      // class identity + parent relation is the testable invariant.
+      const { container } = render(<Grid puzzle={SAMPLE_PUZZLE} />);
+      const shell = container.querySelector<HTMLDivElement>('[data-testid="grid-shell"]');
+      expect(shell).not.toBeNull();
+      expect(shell!.querySelector('.react-transform-wrapper')).not.toBeNull();
+    });
+
+    it('applies the shared GRID_TRACK_WIDTH cap to the zoom controls cluster', () => {
+      render(<Grid puzzle={SAMPLE_PUZZLE} />);
+      const cluster = screen.getByRole('group', { name: /zoom controls/i });
+      expect(cluster.style.maxWidth).toBe(GRID_TRACK_WIDTH);
+    });
+
+    it('applies the shared GRID_TRACK_WIDTH cap to the sticky clue panel at rest', () => {
+      render(<Grid puzzle={SAMPLE_PUZZLE} />);
+      const panel = screen.getByTestId('current-clue-panel');
+      // At rest zoomStyle is undefined; trackWidthStyle applies the cap.
+      expect(panel.style.maxWidth).toBe(GRID_TRACK_WIDTH);
+    });
+
+    it('keeps every letter and definition cell queryable by data-row/data-col after the layout change', () => {
+      const { container } = render(<Grid puzzle={SAMPLE_PUZZLE} />);
+      // data-row/data-col are the selector contract the presence overlay relies on.
+      for (const cell of SAMPLE_PUZZLE.cells) {
+        if (cell.kind === 'block') continue;
+        const found = container.querySelector(
+          `[data-cell-kind="${cell.kind}"][data-row="${cell.position.row}"][data-col="${cell.position.col}"]`,
+        );
+        expect(found).not.toBeNull();
+      }
+    });
+
+    it('keeps the zoom controls keyboard-reachable with WCAG-AA-compliant 44 px touch targets', () => {
+      render(<Grid puzzle={SAMPLE_PUZZLE} />);
+      // jsdom skips layout; accessible name + enabled state are the behavioral contract.
+      expect(screen.getByRole('button', { name: /zoom in/i })).toBeEnabled();
+      expect(screen.getByRole('button', { name: /zoom out/i })).toBeDisabled();
+      expect(screen.getByRole('button', { name: /reset zoom/i })).toBeDisabled();
+    });
+  });
+
   it('renders two-clue text in cell.clues order (clues[0] on top)', () => {
     const cell: DefinitionCell = {
       kind: 'definition',
