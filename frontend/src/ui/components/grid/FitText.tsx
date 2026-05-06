@@ -52,10 +52,39 @@ export function FitText({
     const el = ref.current;
     if (!el) return;
 
+    // Convergence guard against a measure-then-resize feedback loop.
+    //
+    // The ancestor flex shell is `container-type: size` (see Grid.tsx
+    // `gridShell`) and the grid wrapper is sized by `min(100cqw, 100cqh,
+    // 720px)`. When FitText writes `el.style.fontSize = …`, the rendered
+    // text height/width changes, which can nudge the cell's content box
+    // (and therefore the cqi/cqw values it computes against) by a
+    // sub-pixel amount, which fires the ResizeObserver, which re-runs
+    // `fit`, which may pick a slightly different "best" because the new
+    // clientWidth changed by 1 px, which writes a new font, ad infinitum.
+    // On mobile cells (small enough that integer-px font choices straddle
+    // the comfortable range) this oscillates between two adjacent sizes —
+    // the visible "flicker".
+    //
+    // We break the loop with two pieces of state preserved across calls:
+    //   * `lastBest`: the font size last applied to the DOM. If the new
+    //     `best` equals it, the algorithm converged — skip the final
+    //     style write AND the setState, so the ResizeObserver has no
+    //     reason to fire again from FitText's own activity.
+    //   * `lastDims`: the container dimensions that produced `lastBest`.
+    //     If a ResizeObserver fire reports the same `cw`/`ch`, skip the
+    //     binary search entirely. This also avoids the binary search's
+    //     intermediate `style.fontSize` writes, which themselves perturb
+    //     layout and could feed the loop on a slow re-converge.
+    let lastBest = -1;
+    let lastCw = -1;
+    let lastCh = -1;
+
     const fit = () => {
       const cw = el.clientWidth;
       const ch = el.clientHeight;
       if (cw === 0 || ch === 0) return;
+      if (cw === lastCw && ch === lastCh && lastBest !== -1) return;
 
       // Resolve ratios → integer px relative to the current container width.
       // `Math.max(1, …)` guards against degenerate sizes during the first
@@ -102,7 +131,16 @@ export function FitText({
         best = phase2Best;
       }
 
+      lastCw = cw;
+      lastCh = ch;
+      // Restore the inline font-size — `fitsAt` may have left it at an
+      // intermediate binary-search value. If the converged size equals
+      // the last applied size, skip the setState: no state update means
+      // no React re-render and no new commit-time mutation that could
+      // feed the resize loop.
       el.style.fontSize = `${best}px`;
+      if (best === lastBest) return;
+      lastBest = best;
       setSize(best);
     };
 
