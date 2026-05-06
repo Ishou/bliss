@@ -864,6 +864,56 @@ describe('Grid keyboard-aware shell sizing', () => {
     // and warned in the console).
     expect(rectSpy.mock.calls.length).toBe(callsBefore);
   });
+
+  // Regression test for the second-pass flicker bug (after PR #198 broke
+  // FitText's INNER measure-then-resize loop): the OUTER cascade survived.
+  // iOS Safari with the keyboard open fires `visualViewport.scroll` every
+  // frame and `vv.offsetTop` / `rect.top` jitter sub-pixel values, so each
+  // rAF tick computed an `available` that differed from the previous by
+  // ≤ 1 px. Without an ε guard, every tick called `setShellMaxHeightPx`
+  // ⇒ shell `maxHeight` mutated by 1 px ⇒ container-query units re-resolved
+  // ⇒ each cell's ResizeObserver fired with new `cw`/`ch` ⇒ FitText re-ran
+  // and on boundary-text cells alternated between two adjacent font sizes —
+  // the visible flicker. Mirror of PR #198's pattern up the tree: bail in
+  // `commit(...)` when the new value is within ε (1 px) of the last applied.
+  it('does not re-write the shell maxHeight on sub-pixel visualViewport jitter (post-#198 outer-loop guard)', async () => {
+    const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
+    const shellEl = queryShell(container);
+    expect(shellEl).toBeTruthy();
+    // Pin a deterministic rect so `available` math is stable across calls.
+    vi.spyOn(shellEl as HTMLDivElement, 'getBoundingClientRect').mockReturnValue({
+      top: 200, bottom: 600, left: 0, right: 480, width: 480, height: 400,
+      x: 0, y: 200, toJSON: () => ({}),
+    } as DOMRect);
+    // Open the keyboard and let the first measurement settle the
+    // baseline maxHeight (192 px on these stubs).
+    (stub as { height: number }).height = 400;
+    await act(async () => { fire('resize'); await flushRaf(); });
+    expect(shellEl!.style.maxHeight).toBe('192px');
+
+    // Now simulate iOS sub-pixel jitter: each frame, vv.height differs
+    // by ≤ 1 px. With the outer-loop guard, the inline maxHeight stays
+    // pinned at 192px because the new `available` (192 ± 1) is within
+    // ε of the previously committed value.
+    const jitter = [400.4, 399.6, 400.2, 399.8, 400.7];
+    for (const h of jitter) {
+      (stub as { height: number }).height = h;
+      await act(async () => { fire('scroll'); await flushRaf(); });
+    }
+    // The DOM-committed value MUST still be the original 192px — the
+    // sub-pixel jitter never propagated to the shell. (Without the
+    // guard, the inline value would have ratcheted to '193px' or
+    // '191px' and back across the burst, each re-render resizing
+    // every cell and re-firing every FitText below.)
+    expect(shellEl!.style.maxHeight).toBe('192px');
+
+    // Sanity: a real keyboard close STILL clears the override —
+    // ε-guard only suppresses sub-pixel updates, not legitimate
+    // changes that exceed the threshold.
+    (stub as { height: number }).height = 768;
+    await act(async () => { fire('resize'); await flushRaf(); });
+    expect(shellEl!.style.maxHeight).toBe('');
+  });
 });
 
 // Blur-on-gesture coordination. iOS Safari fights pinch / pan

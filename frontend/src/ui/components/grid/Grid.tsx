@@ -508,6 +508,11 @@ export function Grid({
   // keeping the grid square. `null` = no override (the shell takes its
   // natural flex-grow height).
   const [shellMaxHeightPx, setShellMaxHeightPx] = useState<number | null>(null);
+  // Ref-mirror of the latest committed `shellMaxHeightPx`, read by the
+  // sub-pixel guard below without re-subscribing the effect on every
+  // value change. Kept in sync with the state setter (one place writes
+  // both).
+  const shellMaxHeightRef = useRef<number | null>(null);
   useEffect(() => {
     if (typeof window === 'undefined' || !window.visualViewport) return;
     const vv = window.visualViewport;
@@ -521,6 +526,34 @@ export function Grid({
     // frame so a stale callback doesn't run after unmount and call
     // `setState` on a torn-down component.
     let rafId: number | null = null;
+    // Sub-pixel jitter tolerance for the shell's `maxHeight`. iOS
+    // Safari with the soft keyboard open fires `visualViewport.scroll`
+    // every frame as the address bar / accessory bar settles; each
+    // frame's `vv.offsetTop + vv.height - rect.top` differs by ≤ 1 px
+    // from the last (sub-pixel viewport math). PR #198 broke FitText's
+    // INNER measure-then-resize loop with a `lastCw`/`lastCh` guard,
+    // but the OUTER cascade survived: every frame of jittery
+    // visualViewport ⇒ new `setShellMaxHeightPx` ⇒ shell's inline
+    // `maxHeight` mutates by 1 px ⇒ container-query units re-resolve
+    // ⇒ each cell's ResizeObserver fires with new `cw`/`ch` ⇒ FitText
+    // re-runs the binary search ⇒ on cells whose clue text straddles
+    // the integer-px font choice the new "best" alternates between
+    // two adjacent values ⇒ visible flicker. The fix mirrors PR
+    // #198's pattern up the tree: bail out of `setShellMaxHeightPx`
+    // when the new value is within ε of the last applied one. ε = 1 px
+    // is enough to absorb the observed jitter while still reacting to
+    // a real keyboard open / close (which moves the available height
+    // by ~250 px on phones — three orders of magnitude above ε).
+    const SHELL_MAX_HEIGHT_EPSILON_PX = 1;
+    const commit = (next: number | null) => {
+      const prev = shellMaxHeightRef.current;
+      if (prev === next) return; // null === null or identical scalar
+      if (prev !== null && next !== null && Math.abs(next - prev) <= SHELL_MAX_HEIGHT_EPSILON_PX) {
+        return;
+      }
+      shellMaxHeightRef.current = next;
+      setShellMaxHeightPx(next);
+    };
     const measure = () => {
       rafId = null;
       const shell = gridShellRef.current;
@@ -531,7 +564,7 @@ export function Grid({
       // that briefly shrink visualViewport without a keyboard open.
       const keyboardOpen = vv.height < window.innerHeight - 24;
       if (!keyboardOpen) {
-        setShellMaxHeightPx(null);
+        commit(null);
         return;
       }
       const rect = shell.getBoundingClientRect();
@@ -541,7 +574,7 @@ export function Grid({
       // layout-px coordinates (the same coords `rect.top` lives in).
       const visibleBottom = vv.offsetTop + vv.height;
       const available = visibleBottom - rect.top - WRAPPER_BOTTOM_MARGIN_PX;
-      setShellMaxHeightPx(Math.max(MIN_WRAPPER_HEIGHT_PX, available));
+      commit(Math.max(MIN_WRAPPER_HEIGHT_PX, available));
     };
     const onViewportChange = () => {
       if (rafId !== null) return; // measurement already scheduled this frame
