@@ -111,7 +111,7 @@ def main() -> None:
 
     pct = updated / len(rows) * 100
     print(f"updated {updated}/{len(rows)} rows ({pct:.1f}%)")
-    print(f"reset to placeholder (stale clue scrub): {reset}")
+    print(f"blanked to empty-clue convention (stale clue scrub): {reset}")
     print(f"backup: {args.backup}")
 
 
