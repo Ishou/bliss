@@ -199,7 +199,7 @@ class CsvWordRepository(
          * Reads each `(theme, path)` overlay from the classpath and returns a
          * map keyed by folded-uppercase word text. Each entry's `Word.theme`
          * field is set to the overlay's theme constant. Missing overlay files
-         * are tolerated (logged via stderr) so a partial deploy doesn't
+         * are tolerated (silently skipped) so a partial deploy doesn't
          * brick the repository.
          */
         private fun loadThemeOverlays(paths: List<Pair<String, String>>): Map<String, Word> {
