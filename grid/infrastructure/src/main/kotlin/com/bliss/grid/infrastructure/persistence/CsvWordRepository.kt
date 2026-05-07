@@ -28,9 +28,11 @@ import java.text.Normalizer
  * "courait") within a single grid; when absent, lemma defaults to the word
  * itself and dedup degenerates to surface-form-only (legacy behavior).
  *
- * Rows are required to carry a non-blank `clue` — `export-words` never emits
- * empty clues, so an empty `clue` here means hand-edited corruption and
- * fails fast at parse time.
+ * Rows with a blank `clue` are silently dropped from the usable corpus —
+ * they represent surfaces the current clue-generation iteration has not
+ * yet covered. The `export-words` pipeline sets these to empty (empty-clue
+ * convention) rather than a placeholder; `toWordWithFreq` returns `null`
+ * and the grid generator never sees unclueable words.
  */
 class CsvWordRepository(
     words: List<Word>,
@@ -131,10 +133,8 @@ class CsvWordRepository(
         /**
          * Loads the bundled French CSV corpus from the JVM classpath.
          *
-         * Fails fast at startup if the file is missing, the header row is
-         * malformed, or any row carries a blank `clue` (the API requires
-         * one clue per word — `export-words` guarantees this invariant
-         * on emit).
+         * Fails fast at startup if the file is missing or the header row is
+         * malformed.
          */
         fun frenchFromClasspath(): CsvWordRepository = fromClasspath(FRENCH_RESOURCE_PATH, FRENCH_THEMED_OVERLAY_PATHS)
 
@@ -262,9 +262,11 @@ class CsvWordRepository(
             val frequency = record.get("frequency").toLongOrNull() ?: 0L
             if (frequency < MIN_FREQUENCY) return null
             val clue = record.get("clue")
-            require(clue.isNotBlank()) {
-                "CSV $path row ${record.recordNumber} ('$text'): empty clue (export-words guarantees non-null)"
-            }
+            // Blank clue means "no clue available" — silently drop the row from
+            // the usable corpus. The grid generator can't place an unclued
+            // word anyway, and forcing the loader to fail would block the
+            // entire corpus on any single missing entry.
+            if (clue.isBlank()) return null
             // Mots fléchés convention: grid cells are unaccented uppercase ASCII (Word's A-Z
             // invariant in domain). The clue keeps the original accented form for display.
             val folded = foldToAscii(text)
