@@ -136,10 +136,10 @@ export function PresenceOverlay({
   // hasn't joined yet is dropped silently).
   readonly playersBySessionId: ReadonlyMap<SessionId, Player>;
   // The local player's sessionId. Their own presenceUpdated frames are
-  // filtered out — the local "current word" highlight (leaf.50 background
-  // on `letterCellInWord` cells) plus the DOM caret already show where
-  // they are, and stacking the overlay's hue on top of leaf.50 muddies
-  // the visual without adding information.
+  // filtered out — the local "current word" highlight (`accentBg`
+  // background on `letterCellInWord` cells) plus the DOM caret
+  // already show where they are, and stacking the overlay's hue on
+  // top of accentBg muddies the visual without adding information.
   readonly currentSessionId: SessionId;
 }) {
   // Insertion-ordered list. A fresh presence overwrites the previous

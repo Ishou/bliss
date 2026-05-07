@@ -35,9 +35,9 @@ const panel = css({
   paddingInline: 'sm',
   border: '1px solid token(colors.border)',
   borderRadius: 'sm',
-  // Constant elevation — visible once it sticks against the cream page bg.
+  // Constant elevation — visible once it sticks against the page bg.
   boxShadow: '0 2px 6px -2px rgba(0, 0, 0, 0.08)',
-  bg: 'definition',
+  bg: 'surfaceVariant',
   color: 'fg',
   textAlign: 'left',
   fontFamily: 'body',
@@ -72,7 +72,7 @@ const arrow = css({
 const text = css({
   flex: 1,
   fontWeight: 'bold',
-  color: 'leaf.700',
+  color: 'accent',
   overflowWrap: 'break-word',
   wordBreak: 'normal',
 });

@@ -2,16 +2,38 @@ import { defineConfig } from '@pandacss/dev';
 
 // Panda CSS — ADR-0002 §3 + ADR-0005 (WordSparrow brand).
 //
-// Six brand primitives from ADR-0005 §4 (`leaf`, `blossom`, `cream`,
-// `sand`, `ink`, `breath`). The `leaf`/`blossom` pair gets a 50–900 ramp
-// so the WCAG escape hatches in ADR-0005 §4 are usable: `.700` shades
-// for brand-colored text on light surfaces, `.50` shades for tinted
-// backgrounds. Other primitives ship as single tokens because they are
-// surface/foreground anchors, not gradient sources.
+// Three-tier color system:
 //
-// Accessibility: per ADR-0005 §4, foreground text on a `leaf` or
-// `blossom` background must be `ink`, never `breath`/white. Brand-
-// colored text on a light surface uses the `.700` ramp shade.
+//   1. **Ramps** (`tokens.colors`): three 50–900 tonal scales.
+//      - `primary`   — brand green (lime-leaf family).
+//      - `secondary` — brand pink (dusty rose / sakura family).
+//      - `neutral`   — surface tonal ramp; powers all dark surfaces and
+//                      text. Slight pink tint at .500–.700 transitions
+//                      to neutral gray at .800–.900 (intentional;
+//                      "page background is hue-less" is a brand brief).
+//
+//   2. **Semantic role tokens** (`semanticTokens.colors`): every UI role
+//      maps to a ramp shade here. Components reference these names, not
+//      ramp shades directly — that's the whole indirection point.
+//      Adding a new role is one line below; theme-swapping is changing
+//      this file ONLY.
+//
+//   3. **Components**: reference role tokens (`bg: 'surface'`, `color:
+//      'accent'`) or, when a state derivation needs a specific shade
+//      (`_hover: { bg: 'primary.800' }`), the renamed ramp.
+//
+// Theme-swap workflow:
+//   1. Re-tune ramps for the new palette (primary / secondary / neutral).
+//   2. If the new theme inverts dark↔light, re-map semantic roles to
+//      different ramp shades (e.g. `accentText: primary.400` on dark
+//      becomes `primary.700` on light; `bg: neutral.800` becomes
+//      `neutral.50`). No component code changes required.
+//
+// Accessibility: WCAG AA contrast is verified at every brand-color
+// usage site in the components that consume the role tokens. The
+// `accent` / `accentText` / `accentBg` family is calibrated for
+// readable text on dark surfaces; if the theme inverts, the calibration
+// must be re-run (see ADR-0005 §4).
 export default defineConfig({
   preflight: true,
   include: ['./src/**/*.{ts,tsx}'],
@@ -21,12 +43,12 @@ export default defineConfig({
   theme: {
     tokens: {
       colors: {
-        // Leaf ramp anchored on the brand-supplied lime-leaf greens:
-        //   .400 = #A2D481 (vivid soft leaf — primary accent)
-        //   .600 = #70985E (deeper sage — secondary accent / hover)
-        // Was emerald (#10B981 family). Neighbors interpolate for a
-        // smooth 50 → 900 ramp.
-        leaf: {
+        // Primary ramp — brand green (lime-leaf family). Anchors:
+        //   .400 = #A2D481 (vivid soft leaf — was leaf.400)
+        //   .600 = #70985E (deeper sage — was leaf.600)
+        // Was named `leaf`. Renamed to `primary` so theme-swap can
+        // change the brand hue without touching component code.
+        primary: {
           50: { value: '#ECFDF5' },
           100: { value: '#DBF3D5' },
           200: { value: '#C4E8B7' },
@@ -38,12 +60,13 @@ export default defineConfig({
           800: { value: '#406038' },
           900: { value: '#2A4226' },
         },
-        // Blossom ramp anchored on the brand-supplied pinks:
-        //   .300 = #F2C2C4 (light dusty pink)
-        //   .500 = #DC88B1 (saturated rose-pink, slight purple lean)
-        // .400 keeps the prior #E8A5B0 (sits naturally between the
-        // two anchors).
-        blossom: {
+        // Secondary ramp — brand pink (sakura / dusty rose family).
+        // Anchors:
+        //   .300 = #F2C2C4 (light dusty pink — was blossom.300)
+        //   .500 = #DC88B1 (saturated rose-pink — was blossom.500)
+        // Was named `blossom`. Renamed to `secondary` for the same
+        // reason as primary.
+        secondary: {
           50: { value: '#FBF1F2' },
           100: { value: '#F8E4E7' },
           200: { value: '#F4D5D8' },
@@ -55,34 +78,29 @@ export default defineConfig({
           800: { value: '#783A5C' },
           900: { value: '#4F2440' },
         },
-        // Twilight palette (ADR-0005 §4 amendment, 2026-05-07): dark-
-        // theme pivot. Replaces the prior warm cream/sand/ink/breath
-        // set. Single theme — no light-mode toggle.
+        // Neutral ramp — surface tonal scale. Replaces the prior named
+        // primitives (aubergine / plum / mauve / bramble / pitch /
+        // petal) with a single 50–900 scale. Anchors at .500–.700 are
+        // the existing sakura-twilight surface colours; .800 (page bg)
+        // intentionally drops the pink tint to neutral gray per the
+        // brand brief ("page background recedes, no hue"); .900 is the
+        // near-black void / block fill.
         //
-        // Layout: the **page** is a neutral dark gray (no hue) that
-        // recedes; the **grid surfaces** carry all the brand pink, in
-        // a sakura-rose family (hsl ≈ 325°, slightly cooler than the
-        // warmer dusky-rose `blossom` ramp at 345°). Letter cells
-        // (`plum`) sit one notch lighter than definition cells
-        // (`mauve`) so the slot a player types into pops above the
-        // clue surrounding it. Block cells (`pitch`) are the darkest
-        // fill, near-black neutral — the inert "void" square. Text
-        // (`petal`) is a warm pink-white that picks up the surface
-        // hue at AA contrast on every surface.
-        //
-        // The cooler hue (vs the prior 345° rose) gives surfaces a
-        // sakura-twilight feel — petal-pink with a hint of lavender
-        // — instead of the wine/burgundy reading of warmer rose.
-        //
-        // (Primitive names predate the dark-theme pivot and are kept
-        // as abstract handles; their values are what the palette
-        // delivers.)
-        aubergine: { value: '#1B1B1F' }, // page background — neutral dark gray
-        plum: { value: '#5E3450' },      // letter cells — lifted sakura twilight
-        mauve: { value: '#4A2A40' },     // definition cells — medium sakura twilight
-        bramble: { value: '#6E3D55' },   // borders + grid lines — sakura rule
-        pitch: { value: '#0A0A0C' },     // inert-cell fill — near-black neutral
-        petal: { value: '#F5EAEC' },     // foreground text — warm pink-white
+        // .100–.400 are interpolated padding stops — currently unused
+        // by any component; available for future hover / disabled /
+        // muted states without needing new primitives.
+        neutral: {
+          50:  { value: '#F5EAEC' }, // was `petal`     — fg text
+          100: { value: '#D8C0CB' }, // interpolated
+          200: { value: '#B894A4' }, // interpolated
+          300: { value: '#90697E' }, // interpolated
+          400: { value: '#7A5266' }, // interpolated
+          500: { value: '#6E3D55' }, // was `bramble`   — borders, grid lines
+          600: { value: '#5E3450' }, // was `plum`      — letter cell ("slot")
+          700: { value: '#4A2A40' }, // was `mauve`     — def cell ("clue")
+          800: { value: '#1B1B1F' }, // was `aubergine` — page bg (hue-shift to neutral)
+          900: { value: '#0A0A0C' }, // was `pitch`     — block / inert-cell void
+        },
       },
       spacing: {
         xs: { value: '0.25rem' },
@@ -134,40 +152,64 @@ export default defineConfig({
       },
       radii: { sm: { value: '4px' }, md: { value: '8px' } },
       shadows: {
-        // Pitch-based shadow for the dark palette — subtle near-black
-        // glow under floating surfaces (toggle, dialog, dropdown).
-        // Was ink-tinted for the prior light palette.
+        // Subtle near-black glow under floating surfaces (toggle,
+        // dialog, dropdown). The rgba is intentionally not bound to
+        // a token — it's a shadow tint, not a theme-swap dimension;
+        // shadows on dark surfaces always want this near-black-with-
+        // a-touch-of-warmth, regardless of brand hue.
         floating: { value: '0 2px 4px rgba(10, 10, 12, 0.6)' },
       },
     },
     semanticTokens: {
       colors: {
-        // Surfaces and foregrounds — twilight palette (dark-only).
-        bg: { value: '{colors.aubergine}' },
-        fg: { value: '{colors.petal}' },
-        // Brand-coloured text and CTAs lift to leaf.400 from the prior
-        // .700 — on the dark page .700 (#0B815A) sits below the WCAG
-        // AA threshold, while .400 (#34D399) renders ~7:1 contrast and
-        // matches the "vibrant green pop" the brand wants.
-        accent: { value: '{colors.leaf.400}' },
-        // Grid surfaces. `surface` is the letter-cell input bg (lifted
-        // sakura, so typed letters pop above the clue surface);
-        // `definition` is the clue-cell bg (medium sakura, one notch
-        // darker); `block` is the inert-square fill (deepest pitch —
-        // the "void" square in mots-fléchés); `border` separates
-        // lobby/primitive UI.
-        surface: { value: '{colors.plum}' },
-        definition: { value: '{colors.mauve}' },
-        block: { value: '{colors.pitch}' },
-        border: { value: '{colors.bramble}' },
-        muted: { value: '{colors.bramble}' },
-        // Grid line — used for both the cell perimeter and the dual-clue
-        // half-cell divider. Solid bramble (sakura rule lifted from the
-        // surface family). Single source of truth so cell outlines and
-        // stack dividers always match exactly. The grid container's
-        // `gap: 1px` + `bg: gridLine` paints internal lines; the same
-        // colour edges the perimeter.
-        gridLine: { value: '{colors.bramble}' },
+        // ── Surfaces ────────────────────────────────────────────────
+        bg:             { value: '{colors.neutral.800}' },  // page background
+        surface:        { value: '{colors.neutral.600}' },  // letter cell ("slot")
+        surfaceVariant: { value: '{colors.neutral.700}' },  // def cell ("clue") + elevated panels
+        surfaceMuted:   { value: '{colors.neutral.900}' },  // block / inert-cell void
+
+        // ── Foreground ──────────────────────────────────────────────
+        fg:             { value: '{colors.neutral.50}' },   // primary text
+        fgMuted:        { value: '{colors.neutral.300}' },  // de-emphasized text (currently unused; available)
+
+        // ── Lines ───────────────────────────────────────────────────
+        border:         { value: '{colors.neutral.500}' },  // UI borders (lobby, primitives)
+        gridLine:       { value: '{colors.neutral.500}' },  // grid cell perimeter + stack divider
+        muted:          { value: '{colors.neutral.500}' },  // legacy alias of border (used by some lobby code)
+
+        // ── Brand · primary ─────────────────────────────────────────
+        // `accent` / `accentText` are aliases — same value, different
+        // semantic intent at the call site (one reads as "the brand
+        // colour", the other as "the colour for branded text").
+        accent:         { value: '{colors.primary.400}' },  // current-clue marker, branded text
+        accentText:     { value: '{colors.primary.400}' },  // alias for clarity
+        accentBg:       { value: '{colors.primary.700}' },  // soft brand-tint bg (letter-in-word, hover bg)
+        accentHover:    { value: '{colors.primary.800}' },  // hover state of solid primary CTAs
+
+        // ── Brand · secondary ───────────────────────────────────────
+        secondaryAccent:{ value: '{colors.secondary.500}' },
+        secondaryText:  { value: '{colors.secondary.300}' },
+        secondaryBg:    { value: '{colors.secondary.800}' },
+
+        // ── Status ─────────────────────────────────────────────────
+        // Currently aliased onto the brand ramps (success ≈ primary,
+        // error ≈ secondary). A future palette swap can re-map these
+        // to a dedicated `signal` ramp without touching components —
+        // ADR-0005 §4 reserves space for that.
+        success:        { value: '{colors.primary.400}' },
+        successBg:      { value: '{colors.primary.800}' },
+        successText:    { value: '{colors.primary.300}' },
+        error:          { value: '{colors.secondary.500}' },
+        errorBg:        { value: '{colors.secondary.800}' },
+        errorText:      { value: '{colors.secondary.300}' },
+
+        // ── On-bg foregrounds ───────────────────────────────────────
+        // Text colors paired with specific solid backgrounds.
+        onAccent:       { value: '{colors.neutral.900}' },  // text on bright primary bg (focused-cell letter)
+        onSecondary:    { value: '{colors.neutral.50}' },   // text on solid secondary bg
+
+        // ── Focus ───────────────────────────────────────────────────
+        focusRing:      { value: '{colors.primary.500}' },  // focus-visible outline
       },
     },
   },

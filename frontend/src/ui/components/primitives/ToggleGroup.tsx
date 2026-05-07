@@ -19,14 +19,15 @@ import { css, cx } from 'styled-system/css';
 // Arrow-key navigation between options is handled by Ark.
 //
 // Visual layer is owned by Bliss (ADR-0002 §2): active item uses the
-// `leaf.700` fill that matches the primary `Button`; inactive items follow
-// the `ghost` Button rhythm. ToggleGroup has no form-name semantics, so the
-// `name` prop is purely an id prefix for `aria-labelledby` wiring.
+// `accentHover` fill that matches the primary `Button`; inactive items
+// follow the `ghost` Button rhythm. ToggleGroup has no form-name
+// semantics, so the `name` prop is purely an id prefix for
+// `aria-labelledby` wiring.
 
 const labelStyles = css({
   fontSize: 'md',
   fontWeight: 'bold',
-  color: 'leaf.700',
+  color: 'accent',
   margin: 0,
   display: 'block',
   marginBottom: 'xs',
@@ -56,17 +57,17 @@ const itemStyles = css({
   // Highlight the pressed option so the picker reads at a glance.
   // Ark sets `data-state="on"` on the selected (pressed) item.
   '&[data-state="on"]': {
-    bg: 'leaf.800',
-    borderColor: 'leaf.800',
-    color: 'petal',
+    bg: 'accentHover',
+    borderColor: 'accentHover',
+    color: 'fg',
   },
   _focusVisible: {
-    outline: '3px solid token(colors.leaf.500)',
+    outline: '3px solid token(colors.focusRing)',
     outlineOffset: '2px',
   },
-  _hover: { bg: 'leaf.50' },
+  _hover: { bg: 'primary.50' },
   // The hover token must not erase the selected fill.
-  '&[data-state="on"]:hover': { bg: 'leaf.900' },
+  '&[data-state="on"]:hover': { bg: 'primary.900' },
   _disabled: { opacity: 0.5, cursor: 'not-allowed' },
 });
 

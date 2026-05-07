@@ -12,8 +12,9 @@ import { Button, Dialog, DialogDescription } from '@/ui/components/primitives';
 // `@zag-js/dialog` — see `ui/components/primitives/Dialog.tsx` for the
 // full prop surface.
 //
-// Color contrast: leaf.700 / blossom.700 on cream surfaces ≥ 4.5:1
-// (cf. ADR-0005 §4 escape-hatch ramp shades).
+// Color contrast: branded text + button colours go through the role
+// tokens (`accent`, `accentBg`) — calibrated for AA on the dark
+// twilight surfaces. See ADR-0005 §4.
 
 export interface EndGameModalProps {
   readonly durationMs: number;

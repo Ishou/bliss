@@ -99,21 +99,20 @@ const cellBase = css({
   overflow: 'visible',
 });
 const letterCell = css({ bg: 'surface' });
-// Letters belonging to the active word/clue. `leaf.700` (medium-dark
-// sage) reads as a clear green-tint variant of the regular plum
-// letter cell on the dark twilight palette — distinct without being
-// jarring. The previous `leaf.50` (#ECFDF5 pale mint) made highlighted
-// cells flash near-white on dark surfaces. petal text on leaf.700
+// Letters belonging to the active word/clue. `accentBg` is the brand-
+// tint background role (= primary.700, medium-dark sage) — reads as a
+// clear green-tint variant of the regular surface letter cell on the
+// dark theme, distinct without being jarring. `fg` text on `accentBg`
 // hits ~4.1:1 — passes AA for large text (cell token = 24 px / bold;
 // threshold is 3:1). Do not use this pairing at body sizes — it falls
 // below the 4.5:1 normal-text bar.
-const letterCellInWord = css({ bg: 'leaf.700' });
-const blockCell = css({ bg: 'block' });
+const letterCellInWord = css({ bg: 'accentBg' });
+const blockCell = css({ bg: 'surfaceMuted' });
 
 // Definition cell: container-type so child cqi values resolve against cell width.
 // zIndex:1 ensures the absolutely-positioned border arrows render above adjacent cells.
 const defCell = css({
-  bg: 'definition',
+  bg: 'surfaceVariant',
   color: 'fg',
   containerType: 'inline-size',
   lineHeight: '1.05',
@@ -134,13 +133,12 @@ const defSingle = css({
   overflow: 'hidden',
 });
 
-// Current-clue highlight: colored border on the side opposite the arrow so it
-// doesn't compete with the arrow badge. `leaf.400` (#A2D481, vivid soft
-// leaf) on the mauve def-cell bg ≈ 6:1 contrast (WCAG AA at body
-// sizes). The prior `leaf.700` was correct on the cream/sand light
-// palette but reads as medium-dark green on dark mauve — fails AA.
-const defCellCurrentRight = css({ borderLeft: '3px solid token(colors.leaf.400)', color: 'leaf.400' });
-const defCellCurrentDown = css({ borderTop: '3px solid token(colors.leaf.400)', color: 'leaf.400' });
+// Current-clue highlight: colored border on the side opposite the arrow
+// so it doesn't compete with the arrow badge. `accent` (= primary.400,
+// vivid soft leaf #A2D481) on the surfaceVariant def-cell bg ≈ 6:1
+// contrast (WCAG AA at body sizes).
+const defCellCurrentRight = css({ borderLeft: '3px solid token(colors.accent)', color: 'accent' });
+const defCellCurrentDown = css({ borderTop: '3px solid token(colors.accent)', color: 'accent' });
 
 // Single-clue text: font size is auto-fit at runtime (FitText) — the inline
 // font-size set by FitText overrides any value here. We still need flex:1 +
@@ -248,7 +246,7 @@ const arrowStraightBase = css({
   position: 'absolute',
   width: '10cqi',
   height: '10cqi',
-  bg: 'leaf.700',
+  bg: 'primary.700',
   pointerEvents: 'none',
   zIndex: 2,
 });
@@ -268,7 +266,7 @@ const arrowBentBase = css({
   position: 'absolute',
   width: '30cqi',
   height: '30cqi',
-  color: 'leaf.700',
+  color: 'primary.700',
   pointerEvents: 'none',
   zIndex: 2,
 });
@@ -355,7 +353,7 @@ const defStackClue = css({
   // gridLine token — matches cell border so stack divider reads as one continuous grid line.
   '&:not(:first-child)': { borderTop: '1px solid token(colors.gridLine)' },
 });
-const defStackClueCurrent = css({ color: 'leaf.700' });
+const defStackClueCurrent = css({ color: 'primary.700' });
 // Stacked-clue text: same wrap policy as defText. `hyphens: auto`
 // (lang="fr" inherited) is even more important on stacked half-cells
 // because they're vertically tight — without syllabic breaks, long
@@ -413,7 +411,7 @@ const letterInput = css({
   caretColor: 'transparent',
   userSelect: 'none',
   padding: 0,
-  _focus: { bg: 'leaf.500', color: 'pitch' },
+  _focus: { bg: 'focusRing', color: 'onAccent' },
   // type="search" exposes a webkit clear-X button on focus + a search-results
   // decoration affordance. Hide both — the cell is a single-character input,
   // not a real search box. (See `<input type="search">` below for why we use

@@ -23,16 +23,15 @@ const pageStyles = css({
   textAlign: 'center',
 });
 
-// Wordmark — ADR-0005 §6 (amended). Nunito Variable at the `display`
-// size, weight 800, color `leaf.700`, letter-spacing slightly tightened.
-// `leaf.700` on `cream` is 6.6:1 (passes AA at display sizes); see the
-// ADR's amendment note for why this changed from `ink`.
+// Wordmark — ADR-0005 §6. Nunito Variable at the `display` size,
+// weight 800, color `accent` (= primary.400 in the dark twilight
+// theme), letter-spacing slightly tightened.
 const wordmarkStyles = css({
   fontFamily: 'heading',
   fontSize: { base: 'xl', md: '2.8125rem' },
   fontWeight: 'black',
   letterSpacing: '-0.02em',
-  color: 'leaf.700',
+  color: 'accent',
   margin: 0,
   lineHeight: '1.1',
 });
@@ -44,17 +43,19 @@ const subtitleStyles = css({
   color: 'accent',
 });
 
-// "DÉMO" pill — ADR-0005 §4: the only place `blossom` shows up in v1
-// (until win states / badges accumulate). `blossom.700` foreground on a
-// soft `blossom.50` background gives ≥ 4.5:1 contrast and signals
-// "this is a placeholder build" without competing with the wordmark.
+// "DÉMO" pill — uses the secondary brand colour (was `blossom`) for
+// the only visual splash that isn't `accent` on the home page. Direct
+// ramp shades (rather than the `secondary*` semantic tokens) so the
+// pill keeps its current light-pink-on-pink visual under the dark
+// twilight palette; the semantic `secondaryBg` resolves to a deeper
+// surface that wouldn't pop the same way.
 const demoBadgeStyles = css({
   fontSize: 'xs',
   fontWeight: 'bold',
   letterSpacing: '0.08em',
   textTransform: 'uppercase',
-  color: 'blossom.700',
-  bg: 'blossom.50',
+  color: 'secondary.700',
+  bg: 'secondary.50',
   paddingInline: 'sm',
   paddingBlock: 'xs',
   borderRadius: '9999px',
@@ -68,8 +69,8 @@ const statusStyles = css({
 });
 
 // Multiplayer call-to-action — only mounted when
-// `VITE_FEATURE_MULTIPLAYER === 'true'` (ADR-0018 §10). Solid `leaf.700`
-// `Button` (primary variant) keeps the brand primary in line with the
+// `VITE_FEATURE_MULTIPLAYER === 'true'` (ADR-0018 §10). Solid primary
+// `Button` (primary variant) keeps the brand colour in line with the
 // other call sites; the wider `paddingInline` matches the legacy
 // `lg` padding so the CTA still reads as the page's hero affordance.
 const createLobbyButtonStyles = css({
@@ -79,7 +80,7 @@ const createLobbyButtonStyles = css({
 const createLobbyErrorStyles = css({
   fontSize: 'body',
   margin: 0,
-  color: 'blossom.700',
+  color: 'errorText',
 });
 
 // Hard-coded UUID v7 for v1: the Grid API is stateless (per the §404

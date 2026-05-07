@@ -13,8 +13,8 @@ import { css, cx } from 'styled-system/css';
 // Variants map to the existing ad-hoc styles found in `EndGameModal`,
 // `WaitingRoom`, and `routes/index.tsx`:
 //
-//   * primary   — solid `leaf.800` fill, `petal` text. Brand CTA.
-//   * secondary — `leaf.700` outline + transparent fill. Modal "Fermer",
+//   * primary   — solid brand-tinted fill, `fg` text. Brand CTA.
+//   * secondary — branded outline + transparent fill. Modal "Fermer",
 //                 the WaitingRoom share button.
 //   * ghost     — minimal styling for affordances like the inline
 //                 pseudonym-edit trigger; visible border but `surface`
@@ -34,32 +34,32 @@ const baseStyles = css({
   fontFamily: 'body',
   fontWeight: 'bold',
   cursor: 'pointer',
-  // Shared focus ring — `leaf.500` at 3px / 2px offset matches the
-  // legacy modal focus ring so screen readers + keyboard users see the
-  // same affordance everywhere.
-  _focusVisible: { outline: '3px solid token(colors.leaf.500)', outlineOffset: '2px' },
+  // Shared focus ring — `focusRing` (= primary.500) at 3px / 2px offset
+  // matches the legacy modal focus ring so screen readers + keyboard
+  // users see the same affordance everywhere.
+  _focusVisible: { outline: '3px solid token(colors.focusRing)', outlineOffset: '2px' },
   _disabled: { opacity: 0.5, cursor: 'not-allowed' },
 });
 
 const variantStyles = {
   primary: css({
-    bg: 'leaf.800',
-    color: 'petal',
+    bg: 'primary.800',
+    color: 'fg',
     border: 'none',
-    _hover: { bg: 'leaf.900' },
+    _hover: { bg: 'primary.900' },
   }),
   secondary: css({
     bg: 'transparent',
-    color: 'leaf.700',
-    border: '1px solid token(colors.leaf.700)',
-    _hover: { bg: 'leaf.50' },
+    color: 'accent',
+    border: '1px solid token(colors.accent)',
+    _hover: { bg: 'primary.50' },
   }),
   ghost: css({
     bg: 'surface',
     color: 'fg',
     border: '1px solid token(colors.border)',
     fontWeight: 'semibold',
-    _hover: { bg: 'leaf.50' },
+    _hover: { bg: 'primary.50' },
   }),
 } as const;
 

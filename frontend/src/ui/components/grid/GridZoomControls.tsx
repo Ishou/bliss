@@ -43,8 +43,8 @@ const button = css({
   fontSize: 'md',
   fontWeight: 'bold',
   cursor: 'pointer',
-  _hover: { bg: 'leaf.50' },
-  _focusVisible: { outline: '2px solid token(colors.leaf.700)', outlineOffset: '1px' },
+  _hover: { bg: 'primary.50' },
+  _focusVisible: { outline: '2px solid token(colors.focusRing)', outlineOffset: '1px' },
   _disabled: { opacity: 0.4, cursor: 'not-allowed' },
 });
 

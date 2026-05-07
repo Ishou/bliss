@@ -25,7 +25,7 @@ import { css, cx } from 'styled-system/css';
 const labelStyles = css({
   fontSize: 'md',
   fontWeight: 'bold',
-  color: 'leaf.700',
+  color: 'accent',
   margin: 0,
   display: 'block',
   marginBottom: 'xs',
@@ -51,9 +51,9 @@ const itemStyles = css({
   // Highlight the selected option so the picker reads at a glance.
   // Ark sets `data-state="checked"` on the matching item.
   '&[data-state="checked"]': {
-    borderColor: 'leaf.700',
-    bg: 'leaf.50',
-    color: 'leaf.700',
+    borderColor: 'accent',
+    bg: 'primary.50',
+    color: 'accent',
     fontWeight: 'bold',
   },
   _disabled: { opacity: 0.5, cursor: 'not-allowed' },

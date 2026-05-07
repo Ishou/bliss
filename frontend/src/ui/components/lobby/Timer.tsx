@@ -67,7 +67,7 @@ const timerStyles = css({
   fontVariantNumeric: 'tabular-nums',
   fontSize: 'lg',
   fontWeight: 'bold',
-  color: 'leaf.700',
+  color: 'accent',
   letterSpacing: '0.02em',
 });
 

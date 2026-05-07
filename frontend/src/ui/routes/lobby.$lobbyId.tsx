@@ -58,7 +58,7 @@ const wordmarkStyles = css({
   fontSize: { base: 'xl', md: '2.8125rem' },
   fontWeight: 'black',
   letterSpacing: '-0.02em',
-  color: 'leaf.700',
+  color: 'accent',
   margin: 0,
   lineHeight: '1.1',
 });
@@ -69,8 +69,8 @@ const demoBadgeStyles = css({
   fontWeight: 'bold',
   letterSpacing: '0.08em',
   textTransform: 'uppercase',
-  color: 'blossom.700',
-  bg: 'blossom.50',
+  color: 'secondary.700',
+  bg: 'secondary.50',
   paddingInline: 'sm',
   paddingBlock: 'xs',
   borderRadius: '9999px',
@@ -583,7 +583,7 @@ function gameArrowToArrow(arrow: GameArrowDirection): ArrowDirection {
 // that drops them back on `/` so they can spin up a new lobby (or join
 // another one). Uses `useNavigate` + a `Button` rather than a TanStack
 // `<Link>` because the visual treatment matches the rest of the app's
-// CTAs (solid `leaf.700`); a text link would read as secondary.
+// CTAs (solid primary `Button`); a text link would read as secondary.
 function BackHomeButton() {
   const navigate = useNavigate();
   return (

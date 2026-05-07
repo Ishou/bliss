@@ -219,6 +219,37 @@ The surface and foreground primitives (`cream`, `sand`, `ink`, `breath`) are sup
 
 **Accessibility constraint (WCAG AA) — updated:** `petal` (#F5EAEC, L≈0.843) passes AA on all grid surfaces (on `plum` ~7.4:1, on `mauve` ~9.1:1, on `pitch` ~18.8:1). Brand-colored text on dark backgrounds uses `leaf.400` (#A2D481, ~10:1 on `aubergine`); `leaf.700` falls below AA on `aubergine` and must not be used as text in the twilight theme. Primary button fill uses `leaf.800` (#406038) with `petal` text (~5.6:1, passes AA); `leaf.700` with `petal` is ~4.15:1 and is excluded as a text-over-fill pairing.
 
+#### Amendment (2026-05-08): Role-based token model + theme-swap foundation
+
+The brand-specific primitive names from the prior amendments (`leaf`, `blossom`, `aubergine`, `plum`, `mauve`, `bramble`, `pitch`, `petal`) are replaced by a three-tier role-based token model. **Components no longer reference brand-specific names**; a future palette swap (light theme, alternative brand colours) is now a single-file edit in `panda.config.ts` with zero component touches.
+
+**Tier 1 — Ramps** (in `tokens.colors`):
+- `primary.50–900` — brand-coloured ramp (was `leaf`).
+- `secondary.50–900` — accent ramp (was `blossom`).
+- `neutral.50–900` — surface tonal scale (replaces `aubergine`/`plum`/`mauve`/`bramble`/`pitch`/`petal`). The `.500–.700` stops carry a sakura-rose tint; `.800–.900` (page bg + void) drop the tint to neutral gray per the brand brief.
+
+**Tier 2 — Semantic role tokens** (in `semanticTokens.colors`):
+
+| Role group | Tokens |
+|---|---|
+| Surfaces | `bg`, `surface`, `surfaceVariant`, `surfaceMuted` |
+| Foreground | `fg`, `fgMuted`, `onAccent`, `onSecondary` |
+| Lines | `border`, `gridLine`, `muted` (legacy alias) |
+| Brand · primary | `accent`, `accentText`, `accentBg`, `accentHover` |
+| Brand · secondary | `secondaryAccent`, `secondaryText`, `secondaryBg` |
+| Status | `success`, `successBg`, `successText`, `error`, `errorBg`, `errorText` |
+| Focus | `focusRing` |
+
+Each role maps to a ramp shade in the panda config. The mapping is the only place a theme-swap touches.
+
+**Tier 3 — Components**: reference role tokens (`bg: 'surface'`, `color: 'accent'`) by default. Specific shade access via the renamed ramps (`_hover: { bg: 'primary.800' }`) is allowed for state derivations.
+
+**Status tokens** (`success` / `error`) are now first-class semantic tokens, currently aliased onto the brand ramps (`success → primary.400`, `error → secondary.500`). The `signal` palette reserved earlier in this section can land later by re-mapping just these tokens — no component edit required.
+
+**WCAG AA accountability** stays calibrated against the current twilight palette through the role-token mappings. A future palette swap re-runs the calibration when re-mapping the `accent*`/`onAccent` family.
+
+**Source of truth.** `frontend/panda.config.ts` is the canonical token definition. The hex values in the tables above are historical references showing what the *current* twilight theme resolves to; the names of the role tokens (Tier 2) are stable across themes.
+
 ### 5. Typography
 
 Single typeface for v1:

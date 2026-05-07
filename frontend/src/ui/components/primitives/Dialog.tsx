@@ -54,14 +54,14 @@ const contentStyles = css({
   fontFamily: 'body',
   outline: 'none',
   _focusVisible: {
-    boxShadow: '0 12px 40px -8px rgba(0, 0, 0, 0.35), 0 0 0 3px token(colors.leaf.500)',
+    boxShadow: '0 12px 40px -8px rgba(0, 0, 0, 0.35), 0 0 0 3px token(colors.focusRing)',
   },
 });
 
 const titleStyles = css({
   fontSize: 'xl',
   fontWeight: 'bold',
-  color: 'leaf.700',
+  color: 'accent',
   margin: 0,
 });
 
