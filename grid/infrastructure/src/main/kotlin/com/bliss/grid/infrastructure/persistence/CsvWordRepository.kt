@@ -28,9 +28,11 @@ import java.text.Normalizer
  * "courait") within a single grid; when absent, lemma defaults to the word
  * itself and dedup degenerates to surface-form-only (legacy behavior).
  *
- * Rows are required to carry a non-blank `clue` — `export-words` never emits
- * empty clues, so an empty `clue` here means hand-edited corruption and
- * fails fast at parse time.
+ * Rows with a blank `clue` are silently dropped from the usable corpus —
+ * they represent surfaces the current clue-generation iteration has not
+ * yet covered. The `export-words` pipeline sets these to empty (empty-clue
+ * convention) rather than a placeholder; `toWordWithFreq` returns `null`
+ * and the grid generator never sees unclueable words.
  */
 class CsvWordRepository(
     words: List<Word>,
@@ -110,10 +112,8 @@ class CsvWordRepository(
         /**
          * Loads the bundled French CSV corpus from the JVM classpath.
          *
-         * Fails fast at startup if the file is missing, the header row is
-         * malformed, or any row carries a blank `clue` (the API requires
-         * one clue per word — `export-words` guarantees this invariant
-         * on emit).
+         * Fails fast at startup if the file is missing or the header row is
+         * malformed.
          */
         fun frenchFromClasspath(): CsvWordRepository = fromClasspath(FRENCH_RESOURCE_PATH)
 
