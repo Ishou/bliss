@@ -1,6 +1,8 @@
 // grid/worker — Kotlin CLI module (ADR-0013 §7). Sibling to grid/api;
 // does not depend on grid/api (CLAUDE.md bounded-context rule).
-// Sub-commands: import-words (PR2), generate-clues (PR3), export-words (PR4 — ADR-0013 §7, §8).
+// Sub-commands: import-words / ingest-dbnary / derive-synonym-clues /
+// ingest-clue-candidates / export-words. The clue-generation lane is
+// fully local (mlx-lm + LoRA), see scripts/clue_generation/.
 // shadowJar: build/libs/grid-worker-<version>-all.jar.
 // Local-dev tool only — no Dockerfile / image / k8s manifest (ADR-0013 §8).
 
@@ -28,9 +30,7 @@ val hikariVersion = "7.0.2"
 val flywayVersion = "12.4.0"
 val testcontainersVersion = "1.21.4"
 val kotestPropertyVersion = "5.9.1"
-val anthropicSdkVersion = "2.17.0"
 val coroutinesVersion = "1.8.0"
-val wiremockVersion = "3.10.0"
 val opentelemetryVersion = "1.40.0"
 val commonsCsvVersion = "1.12.0"
 
@@ -55,13 +55,6 @@ dependencies {
     implementation("ch.qos.logback:logback-classic:$logbackVersion")
     implementation("net.logstash.logback:logstash-logback-encoder:$logstashEncoderVersion")
 
-    // ADR-0013 §5: Claude API client for clue generation. Pinned model + prompt live in
-    // `clues/CluePrompt.kt`; changing either is an ADR-class change.
-    implementation("com.anthropic:anthropic-java:$anthropicSdkVersion")
-    // generate-clues fans out per-row Anthropic calls bounded by a Semaphore.
-    // PR84 added kotlinx-coroutines as a test-only dep; production code now needs it too.
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
-
     // OTel API only — SDK/exporter wiring defers to the Dockerfile PR (ADR-0013 §7).
     // GlobalOpenTelemetry returns a no-op tracer until the SDK is initialised at runtime.
     implementation("io.opentelemetry:opentelemetry-api:$opentelemetryVersion")
@@ -83,8 +76,7 @@ dependencies {
 
     // kotest-property's `checkAll` is a `suspend fun`; runBlocking comes from kotlinx-coroutines.
     testImplementation("io.kotest:kotest-property-jvm:$kotestPropertyVersion")
-    // generate-clues integration test stubs the Anthropic /v1/messages endpoint.
-    testImplementation("org.wiremock:wiremock-standalone:$wiremockVersion")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
 }
 
 tasks.test {
