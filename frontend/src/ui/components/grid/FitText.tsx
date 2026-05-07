@@ -27,13 +27,19 @@ import { useLayoutEffect, useRef } from 'react';
 // render is "tiny but contained", never "huge and bleeding".
 const INITIAL_PX = 8;
 
-// Absolute minimum font size in pixels. Raised post-PR-#195 from 6 → 11:
-// at 6 px even high-DPR displays produce text that's literally
-// unreadable on dense crossword cells. 11 px is one notch below the
-// typical readability floor for non-elderly eyes (~12 px); we prefer
-// `overflow: hidden` clipping past this point because clipped text is
-// still recognizable in shape, while sub-readable text is just noise.
-const ABSOLUTE_MIN_PX = 11;
+// No absolute pixel floor. The prior `ABSOLUTE_MIN_PX = 11` (and its
+// PR-#195 ancestor at 6) capped how small the text could shrink — but
+// that is an *absolute* unit in a *ratio* world, and it broke
+// zoom-invariance below ~55 px cells: the font stayed pinned at 11 px
+// while the cell kept shrinking, so the effective font/cell ratio grew
+// and on small mobile cells the text overflowed.
+//
+// With monospace + the offline `clue_metrics` gate (calibrated against
+// the same comfortable floor the runtime searches), every shipped clue
+// is guaranteed to fit at the floor ratio at any cell size. The Phase 2
+// fallback is therefore unnecessary — Phase 1 always finds a fit. The
+// runtime now scales the entire grid (cells + text) as a single
+// unit across screen sizes, identical layout regardless of scale.
 
 // Bisection convergence target. The search stops when the candidate
 // window shrinks below this. 0.25 px is below sub-pixel rendering
@@ -156,12 +162,12 @@ export function FitText({
       const lo0 = unit === 'ratio' ? Math.max(1, min * cw) : min;
       const hi0 = unit === 'ratio' ? Math.max(lo0, max * cw) : max;
 
-      // Phase 1: bisect [lo0, hi0] until the window is below epsilon.
+      // Bisect [lo0, hi0]. Probe the ceiling first — if hi0 already
+      // fits, the search is done.
       let lo = lo0;
       let hi = hi0;
-      let best = -1;
+      let best = lo0;
       let iter = 0;
-      // Probe the ceiling first — if hi0 already fits, the search is done.
       if (fitsAt(hi0, cw, ch)) {
         best = hi0;
       } else {
@@ -175,34 +181,12 @@ export function FitText({
           }
         }
       }
-
-      // Phase 2: if nothing in [lo0, hi0] fit, drop below the
-      // comfortable floor down to ABSOLUTE_MIN_PX. Same fractional
-      // bisection. If even ABSOLUTE_MIN_PX overflows, we accept it
-      // and the cell's `overflow: hidden` clips — readability beats
-      // sub-readability per PR-195.
-      if (best < 0) {
-        let lo2 = ABSOLUTE_MIN_PX;
-        let hi2 = lo0;
-        if (fitsAt(lo2, cw, ch)) {
-          best = lo2;
-          // Try to grow back toward lo0.
-          iter = 0;
-          while (hi2 - lo2 > FIT_EPSILON_PX && iter++ < MAX_ITERATIONS) {
-            const mid = (lo2 + hi2) / 2;
-            if (fitsAt(mid, cw, ch)) {
-              best = mid;
-              lo2 = mid;
-            } else {
-              hi2 = mid;
-            }
-          }
-        } else {
-          // Even the absolute floor overflows; commit it anyway and
-          // let overflow:hidden clip.
-          best = ABSOLUTE_MIN_PX;
-        }
-      }
+      // If even `lo0` doesn't fit at this measurement, that's a gate
+      // failure — the offline `clue_metrics` should have caught it.
+      // Commit `lo0` anyway: overflow:hidden + hyphens:auto handle the
+      // visible result, and the gate's CI would surface the underlying
+      // data bug. (No fallback to a smaller absolute floor: doing so
+      // would re-break zoom-invariance the way ABSOLUTE_MIN_PX did.)
 
       lastCw = cw;
       lastCh = ch;

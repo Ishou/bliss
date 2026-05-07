@@ -62,32 +62,28 @@ function smartLineBreak(text: string): string {
 // clue that fits at one cell size fits at every cell size
 // (zoom-invariance — validated against `scripts/eval/clue_metrics.py`).
 //
-// Tightened post-PR-#195: the wide range (0.18–0.50) inherited from
-// the small-cell era produced jarring per-cell variance once cells
-// were ~80–100 px each — short clues like "déco" ballooned to 50 % of
-// cell width while long ones like "psycho" / "gagnée" / "posta" had to
-// drop to FitText's `ABSOLUTE_MIN_PX` floor (formerly 6 px) because
-// the ratio floor was already too aggressive for stacked half-cells.
-// Tighter bands narrow the visual delta:
+// MIN ratios match the offline gate's `GATE_RATIO_FLOOR = 0.18`: the
+// gate guarantees every shipped clue fits at this ratio, so FitText's
+// search always finds a fit at the floor or above. The prior absolute
+// pixel floor (`ABSOLUTE_MIN_PX = 11`) broke zoom-invariance below
+// ~55 px cells — font stayed pinned at 11 px while the cell kept
+// shrinking, so the effective ratio grew and clue text overflowed
+// small mobile cells. Removing it (in tandem with the gate-aligned
+// MIN here) restores the contract: identical visual layout at any
+// screen size.
 //
-//   SINGLE 0.22–0.32 — single-clue cells have full vertical space, so
-//     they tolerate a slightly higher floor (0.22 ≈ 22 px on a 100 px
-//     cell) and a moderate ceiling (0.32 ≈ 32 px) that's still visibly
-//     bigger than the floor without dwarfing neighbours.
-//   STACK 0.20–0.28 — stacked half-cells have only ~½ the height of a
-//     single-clue cell, so both ends drop a notch: lower ceiling so
-//     the short top half doesn't shout over the bottom half, slightly
-//     lower floor because two-line stacked text fitting at 0.20 is
-//     already legible (and FitText's absolute floor catches the worst
-//     cases).
+// MAX ratios are the visual ceiling for short clues. SINGLE 0.32 and
+// STACK 0.28 keep "déco"-class one-word clues from ballooning past
+// their neighbours; STACK is one notch lower because stacked half-
+// cells have ~½ the vertical room and a 0.32-of-width font would
+// crowd the top/bottom edges.
 //
-// FitText's `ABSOLUTE_MIN_PX` (also raised in the same PR — 6 → 11) is
-// the hard floor for clues too long for the comfortable range —
-// clipping past it via `overflow: hidden` is preferable to
-// sub-readable text.
-const SINGLE_RATIO_MIN = 0.22;
+// Visual delta inside a single grid widens to 0.32 / 0.18 ≈ 1.78×
+// (vs PR-#195's tighter 0.22–0.32 band). Trade accepted in exchange
+// for full zoom-invariance.
+const SINGLE_RATIO_MIN = 0.18;
 const SINGLE_RATIO_MAX = 0.32;
-const STACK_RATIO_MIN = 0.20;
+const STACK_RATIO_MIN = 0.18;
 const STACK_RATIO_MAX = 0.28;
 
 const cellBase = css({
