@@ -1,8 +1,8 @@
 # Themed word categories — corpus enrichment + grid generation cap
 
 Date: 2026-05-06
-Status: Draft (auto-mode authored)
-Branch: `feat/grid-themed-words` (to be created)
+Status: Implemented
+Branch: `feat/grid-themed-words`
 Author: Claude (autonomous session)
 
 ## 1. Problem
@@ -16,9 +16,10 @@ shapes but low-quality solver experience.
 
 ## 2. Goal
 
-1. Tag each `Word` with at most one theme drawn from a closed set of ~8
+1. Tag each `Word` with at most one theme drawn from a closed set of ~9
    categories (Roman numerals, chemical symbols, title abbreviations,
-   country codes, interjections, musical notes, units, single letters).
+   country codes, interjections, musical notes, units, single letters,
+   compass bearings).
 2. Add per-grid theme caps (e.g. "at most 1 Roman numeral per grid")
    enforced during the CSP fill.
 3. Expand the curated corpus with categories that don't yet have entries
@@ -33,31 +34,42 @@ diverse short-word categories overall.
 
 - **No multi-valued themes per word.** Real conflicts (e.g. `LA` = note
   vs determiner) are <5 edge cases; pick the more user-recognizable one.
+- **No auto-detection.** The user explicitly rejected a detector — themes
+  apply only to **hand-curated** entries authored as themed lists. We do
+  not infer themes from word shape, regex, or closed-set membership at
+  load time. A word ships with a theme iff it appears in a per-theme
+  curated CSV.
 - **No per-API theme cap override** initially. Defaults are baked into
-  `defaultPuzzleConstraints()`; lobby owners get whatever defaults ship.
-  Surface as override later if there's demand.
+  `GridConstraints.DEFAULT_THEME_LIMITS`; lobby owners get whatever
+  defaults ship. Surface as override later if there's demand.
 - **No proper-noun themes** (cities, people, mythology). Those need real
-  hand-curation and aren't auto-detectable; defer to a future iter.
+  hand-curation and aren't in scope here; defer to a future iter.
 - **No retroactive cap enforcement on existing committed grids.** Caps
   apply only to future generations.
 
 ## 4. Architecture
 
-### 4.1 Theme set (closed)
+### 4.1 Theme set + per-theme CSVs
 
-| theme | matcher | examples | typical-grid cap |
+Each theme is one curated CSV under `data/curated/themed/<theme>.csv`.
+Same schema as the main `data/curated/fr.csv` (no `theme` column in the
+schema — the file path *is* the theme). The repository overlays the
+theme onto the matching word at load time.
+
+| theme | curated file | examples | typical-grid cap |
 |---|---|---|---|
-| `roman` | regex `^[IVXLCDM]+$` and value parses | II, IV, XII | 1 |
-| `chem` | closed list of ~118 IUPAC symbols (uppercased) | AG, AU, FE, NA | 2 |
-| `abbrev` | closed list of ~30 French title abbreviations | DR, MR, MME, PR, PROF | 2 |
-| `country` | closed list of ~250 ISO-3166-1 alpha-2 + alpha-3 codes | FR, US, ITA, DEU | 1 |
-| `interjection` | closed list of ~25 French interjections | AH, OH, EH, BAH, FI | 1 |
-| `note` | fixed 7 entries | DO, RE, MI, FA, SOL, LA, SI | 1 |
-| `unit` | closed list of ~30 SI / common units | KG, KM, KO, GO, CV, MWH | 1 |
-| `letter` | regex `^[A-Z]$` (single-letter words) | A, B, … Z | 1 |
+| `roman` | `roman.csv` | II, III, IV, VI, …, XV, XX, XXX | 1 |
+| `chem` | `chem.csv` | AG, AU, FE, NA, HG, … | 2 |
+| `abbrev` | `abbrev.csv` | DR, MR, PR, ST, MME, MLLE, PROF | 2 |
+| `country` | `country.csv` | FR, US, UK, ITA, DEU, CAN, … | 1 |
+| `interjection` | `interjection.csv` | AH, OH, EH, BAH, ZUT, OUF | 1 |
+| `note` | `note.csv` | DO, RE, MI, FA, SOL, UT | 1 |
+| `unit` | `unit.csv` | KG, KM, KO, GO, CV, MWH, KWH | 1 |
+| `compass` | `compass.csv` | NE, NO, SO, ENE, NNO, SSE, … | 2 |
+| `letter` | (not curated yet) | A, B, …, Z | 1 |
 
-The closed lists live in a single Kotlin file
-(`grid/domain/.../ThemeCatalog.kt`) — pure data, no runtime deps.
+Constants for theme keys live in `ThemeCatalog.kt` (`Themes` object) so
+callers reference `Themes.ROMAN` rather than the raw `"roman"` string.
 
 ### 4.2 Domain: `Word.theme: String?`
 
@@ -76,34 +88,7 @@ data class Word private constructor(
 )
 ```
 
-Equality / hashCode generated from `data class` semantics; theme
-participates in equality, which means dedup keyed on `(text, lemma)`
-needs to ignore theme (handled in dedup sets, not at object equality).
-
-### 4.3 Theme detection — `ThemeDetector`
-
-```kotlin
-object ThemeDetector {
-    fun detect(text: String): String? = when {
-        text in chemSymbols -> "chem"
-        text in countryCodes -> "country"
-        text in titleAbbreviations -> "abbrev"
-        text in interjections -> "interjection"
-        text in notes -> "note"
-        text in unitSymbols -> "unit"
-        text.length == 1 && text.first() in 'A'..'Z' -> "letter"
-        text.matches(romanRegex) -> "roman"
-        else -> null
-    }
-}
-```
-
-Order matters when categories overlap: more specific first
-(`chem` before `letter` for words like `H`, `O`, `K`, `S`, `B`, `Y`,
-`U`, `V`, `W`, `I` — chem symbol wins; the cap on `chem` is what we
-care about). Curated rows with explicit theme override the detector.
-
-### 4.4 Domain: `GridConstraints.themeLimits`
+### 4.3 Domain: `GridConstraints.themeLimits`
 
 ```kotlin
 data class GridConstraints(
@@ -114,119 +99,90 @@ data class GridConstraints(
 )
 
 val DEFAULT_THEME_LIMITS: Map<String, Int> = mapOf(
-    "roman" to 1,
-    "chem" to 2,
-    "abbrev" to 2,
-    "country" to 1,
-    "interjection" to 1,
-    "note" to 1,
-    "unit" to 1,
-    "letter" to 1,
+    Themes.ROMAN to 1,
+    Themes.CHEM to 2,
+    Themes.ABBREV to 2,
+    Themes.COUNTRY to 1,
+    Themes.INTERJECTION to 1,
+    Themes.NOTE to 1,
+    Themes.UNIT to 1,
+    Themes.LETTER to 1,
+    Themes.COMPASS to 2,
 )
 ```
 
-A theme not present in the map = uncapped. A theme with cap 0 = banned
-(not a typical use case but the data type allows it).
+A theme not present in the map = uncapped. A theme with cap 0 = banned.
+The map is the **only** runtime configuration surface for caps; callers
+override per-grid by passing a custom map (e.g. `DEFAULT_THEME_LIMITS +
+mapOf(Themes.CHEM to 0)` to ban chem entirely for one grid).
 
-### 4.5 `SkeletonFiller` cap enforcement
+### 4.4 `SkeletonFiller` cap enforcement
 
-The fill phase tracks per-theme counts during search. After the existing
-intersection forward-check, before recursion:
+`fill()` initialises a `themeUsed: HashMap<String, Int>` shared across the
+backtracking search. `domainFor()` filters cap-busted candidates out of
+each slot's domain (so MRV doesn't pick a slot whose only candidates are
+all cap-busted). `search()` increments `themeUsed[theme]` on placement
+and decrements on backtrack — symmetric with `usedWords` / `usedLemmas`.
 
-```kotlin
-// New: theme-cap check.
-val theme = word.theme
-if (theme != null) {
-    val cap = themeLimits[theme] ?: Int.MAX_VALUE
-    if ((themeUsed[theme] ?: 0) >= cap) {
-        // Try next word; this one violates the cap.
-        // (Counted as a constraint-driven skip, not a backtrack.)
-        continue@wordLoop
-    }
-}
-```
+Cost: O(1) per word at filter time, O(1) per placement/backtrack. Fits
+the existing structure.
 
-Increment `themeUsed[theme]` on placement, decrement on backtrack
-(symmetric with `usedWords` / `usedLemmas`). The check is O(1) per word
-and fits the existing structure.
+### 4.5 `CsvWordRepository` change
 
-**Important:** cap-violations should be filtered earlier — at
-`domainFor` — so MRV doesn't pick a slot whose only candidates are all
-cap-busted. Do the filter inside `domainFor`'s post-find filter chain
-(adjacent to `usedWords` / `compact` filters).
+The repository's `frenchFromClasspath()` factory now:
 
-### 4.6 Curated CSV schema change
+1. Loads the main `words/words-fr.csv` as before.
+2. For each `(theme, path)` in `FRENCH_THEMED_OVERLAY_PATHS`, loads the
+   themed CSV and **overlays** the theme onto matching words. A match is
+   `(text, lemma)` equality. Overlay-only words (themed entries not
+   present in the main CSV) are appended to the tail.
+3. Returns the merged list.
 
-`data/curated/fr.csv` gains a `theme` column (added between
-`source_license` and `lemma` to keep `lemma` as the trailing existing
-column). Existing 64 rows backfilled — most rows have a clear theme
-(`AG → chem`, `AL → chem`, `AN → unit` — `Année`).
-
-New curated rows added (~50-100 total) for the missing categories:
-- ~30 country codes that aren't already covered (FR, US, etc. — already in?
-  let me check; if not, add them)
-- ~10 interjections (AH, OH, EH, BAH, FI, NA, GUE, …)
-- 7 notes (DO, RE, MI, FA, SOL, LA, SI)
-- ~20 units (KG, KM, KO, GO, CV, MO, NO, OZ, MWH, KWH, etc.)
-- A few more abbreviations to round out coverage.
-
-### 4.7 Runtime CSV (`words-fr.csv`)
-
-Schema gets a new column `theme` between `compact` and (if last) end.
-Existing rows: `theme` is empty (= no theme). At export time
-(`bliss-worker export-words`), `ThemeDetector.detect` runs over the
-output and fills theme for rows where the curated source didn't supply
-one. Existing `compact`-style migration pattern handles backward compat.
-
-### 4.8 `CsvWordRepository` change
-
-The repository reads the `theme` column when present (defaults to `null`
-for older CSVs). Theme passes through into the indexed `Word` objects.
 The `byLengthPosLetter` index is unchanged — theme isn't part of the
 slot-pattern lookup; it's a post-find filter at fill time.
 
-## 5. Components (~ size estimate)
+The main `words-fr.csv` schema is **not** changed. Themes live entirely
+in the per-theme overlays.
 
-- `grid/domain/.../ThemeCatalog.kt` — closed lists + the detector.
-  ~100 lines (mostly data).
-- `grid/domain/.../Word.kt` — add field. ~5 lines.
-- `grid/domain/.../GridConstraints.kt` — add field + default. ~15 lines.
-- `grid/domain/.../SkeletonFiller.kt` — theme-cap check in `domainFor` +
-  themeUsed tracking in `search`. ~25 lines.
-- `grid/domain/.../GenerationMetrics.kt` — optional: count cap-driven
-  skips for the perf bench. ~5 lines.
-- `grid/infrastructure/.../CsvWordRepository.kt` — read theme column.
-  ~10 lines.
-- `grid/worker/.../ExportWordsCommand.kt` — write theme column;
-  call `ThemeDetector.detect` for rows without explicit theme. ~10 lines.
-- `data/curated/fr.csv` — schema change + new rows. ~80 lines (50-100 new
-  rows + the 64 backfilled existing rows get a theme column).
-- Tests: `ThemeDetectorTest.kt` (~30 lines), `SkeletonFillerThemeTest.kt`
-  (~80 lines).
+## 5. Components
 
-Total: ~350-400 lines of code + ~80 CSV lines.
+- `grid/domain/.../ThemeCatalog.kt` — `Themes` constants object only
+  (no detector). ~30 lines.
+- `grid/domain/.../Word.kt` — add `theme: String?` field. ~5 lines.
+- `grid/domain/.../GridConstraints.kt` — add `themeLimits` + default
+  map. ~15 lines.
+- `grid/domain/.../SkeletonFiller.kt` — `themeUsed` map + filter in
+  `domainFor` + symmetric inc/dec in `search`. ~25 lines.
+- `grid/domain/.../GridGenerator.kt` — pass `constraints.themeLimits`
+  to `SkeletonFiller.fill`. 1 line.
+- `grid/infrastructure/.../CsvWordRepository.kt` — `loadThemeOverlays`
+  + `FRENCH_THEMED_OVERLAY_PATHS` + overlay merge in
+  `frenchFromClasspath`. ~50 lines.
+- `data/curated/themed/{roman,chem,abbrev,country,interjection,note,unit,compass}.csv`
+  — 8 new files. ~120 rows total.
+- `grid/api/src/main/resources/words/themed/*.csv` — classpath copies of
+  the same 8 files (production lookup path).
+- Tests: `SkeletonFillerThemeTest.kt` (4 cases: cap-of-1 forces
+  alternative, cap-of-0 bans, missing-theme-uncapped, backtrack-symmetric).
+
+Total: ~150 lines of code + ~120 CSV rows × 2 (data + classpath copy).
 
 ## 6. Data flow
 
 ```
-data/curated/fr.csv (theme column, hand-curated)
+data/curated/themed/<theme>.csv  (hand-curated, per theme)
                           │
                           ▼
-worker import → clue_candidates (theme passes through if available)
+classpath: /words/themed/<theme>.csv
                           │
                           ▼
-worker export-words →   for each row:
-                          if curated theme: keep
-                          else: ThemeDetector.detect(word.text)
-                        →
-words-fr.csv (theme column populated)
-                          │
-                          ▼
-CsvWordRepository       reads theme into Word.theme
+CsvWordRepository.frenchFromClasspath
+   - load main words-fr.csv
+   - for each (theme, path) overlay: tag matching words, append extras
                           │
                           ▼
 GridGenerator           SkeletonFiller filters domain by cap;
-                        usedThemes tracks per-grid counts
+                        themeUsed tracks per-grid counts
                           │
                           ▼
 generated grid          respects the per-theme caps
@@ -235,43 +191,42 @@ generated grid          respects the per-theme caps
 ## 7. Tests
 
 **New:**
-- `ThemeDetectorTest` — every theme has positive examples; collisions
-  resolved per spec ordering; `null` for arbitrary strings.
-- `SkeletonFillerThemeTest` — small in-memory repository with exactly N
-  words at theme T, build a skeleton with M slots (M > cap_T), assert
-  that no more than cap_T slots get the T-themed words; assert
-  backtracking still works (cap is reversible).
-- `WordRepositoryTest` — CsvWordRepository round-trips theme column;
-  rows without theme get `null` (not empty string).
+- `SkeletonFillerThemeTest` — 4 cases on tiny hand-built slot graphs +
+  in-memory `ListWordRepository`:
+  - cap of 1 forces the second slot off the themed candidate
+  - cap of 0 with only themed candidates fails the fill
+  - theme without an entry in limits map is uncapped
+  - theme counter symmetric across backtracks
 
-**Existing tests that need updating:**
-- `WordTest` (if any) — new field with default `null` shouldn't break
-  existing constructor calls thanks to the default.
-- `GridGeneratorPropertyTest` — should still pass; default theme limits
-  shouldn't make any test grid infeasible.
+Slots in these tests are non-intersecting parallel `DOWN_RIGHT` slots so
+the tiny candidate set doesn't have to agree on cross-letters.
+
+**Existing tests:**
+- `Word` constructor calls keep working thanks to `theme = null` default.
+- `GridGeneratorPropertyTest` — still passes; default theme limits don't
+  make any test grid infeasible.
 
 ## 8. Rollout — single PR
 
-This is small enough for one PR (~400 lines code + 80 CSV). Branch
-`feat/grid-themed-words`. Title: `feat(grid-lexicon): theme-tagged
-words + per-grid theme caps`.
-
-Tests in the same PR.
+Branch `feat/grid-themed-words`. Title: `feat(grid-lexicon): theme-tagged
+words + per-grid theme caps`. Tests in the same PR.
 
 ## 9. Risks
 
 | Risk | Mitigation |
 |---|---|
-| Theme cap makes some grids infeasible (no valid fill exists) | Caps interact with the early-abandon retry from PR #201 — a cap-blocked attempt fails fast and the next seed retries. Worst case: the success rate drops slightly. Run the bench before/after to quantify. |
-| Auto-detection mis-tags a word (e.g. `MI` flagged as note when intended as adj) | The hand-curated row's explicit theme overrides the detector. For the LoRA-generated lemma corpus, mis-tags are tolerable — they just impose an unwarranted cap that's mostly invisible. |
-| Schema change breaks production runtime CSV | The new `theme` column is appended (backward compat); rows missing it parse as `null`. Existing API consumers don't touch the column. |
-| Curation work is heavier than estimated | Drop the 4.6 corpus expansion to a follow-up PR; ship the mechanism first, expand later. |
+| Theme cap makes some grids infeasible | Caps interact with the early-abandon retry from PR #201 — a cap-blocked attempt fails fast and the next seed retries. Worst case: success rate drops slightly. Run the bench before/after to quantify. |
+| Curated theme list mis-classifies an entry (e.g. `LA` could be note or determiner) | Per-theme files are hand-authored; if a string is ambiguous, leave it off the themed list and it stays uncapped. The relevance is editorial, not algorithmic. |
+| Per-theme CSVs drift from main `fr.csv` (a themed entry has different definition than the main row) | Repository overlay is by `(text, lemma)`; on match it sets the theme but does not overwrite definition. Overlay-only entries (no main-CSV match) ship with the themed CSV's definition. |
+| Schema change to main CSV | None. The main `words-fr.csv` schema is unchanged; themes live entirely in the per-theme overlays. |
 
-## 10. Spec self-review
+## 10. Pivot history
 
-Placeholder scan: no TBD / TODO. Internal consistency: §4.4's
-`themeLimits: Map<String, Int>` matches §4.5's lookup. Scope: 400 LOC +
-80 CSV is tight for a single PR; if the curation work blows up, split
-the corpus expansion into a follow-up. Ambiguity: §4.3 spells out
-detection precedence (chem before letter). §4.4 says "theme not in map
-= uncapped"; explicit, no surprise.
+The first iteration of this design (sections 4.3–4.7 in the previous
+revision) included an auto-detector (`ThemeDetector`) that classified
+words by closed-list membership at load time, with curated rows able to
+override the detector. The user rejected this approach during
+implementation: themes should apply **only** to hand-curated entries
+explicitly placed in per-theme CSVs. The detector and the
+`words-fr.csv`-side schema change were removed; this revision documents
+the implemented design.

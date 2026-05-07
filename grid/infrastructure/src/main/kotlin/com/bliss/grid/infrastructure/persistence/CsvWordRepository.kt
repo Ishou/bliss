@@ -83,10 +83,31 @@ class CsvWordRepository(
     companion object {
         private const val FRENCH_RESOURCE_PATH = "/words/words-fr.csv"
 
+        /**
+         * Per-theme overlay files shipped alongside the main French corpus.
+         * Each entry pairs a [com.bliss.grid.domain.generation.Themes]
+         * constant with a classpath path. The repository merges these at
+         * load time so curated themed entries propagate to runtime without
+         * requiring a separate pipeline step. Missing files are tolerated
+         * (silently skipped) so a partial deploy doesn't fail the load.
+         */
+        private val FRENCH_THEMED_OVERLAY_PATHS: List<Pair<String, String>> =
+            listOf(
+                com.bliss.grid.domain.generation.Themes.ROMAN to "/words/themed/roman.csv",
+                com.bliss.grid.domain.generation.Themes.CHEM to "/words/themed/chem.csv",
+                com.bliss.grid.domain.generation.Themes.ABBREV to "/words/themed/abbrev.csv",
+                com.bliss.grid.domain.generation.Themes.COMPASS to "/words/themed/compass.csv",
+                com.bliss.grid.domain.generation.Themes.COUNTRY to "/words/themed/country.csv",
+                com.bliss.grid.domain.generation.Themes.NOTE to "/words/themed/note.csv",
+                com.bliss.grid.domain.generation.Themes.UNIT to "/words/themed/unit.csv",
+                com.bliss.grid.domain.generation.Themes.INTERJECTION to "/words/themed/interjection.csv",
+            )
+
         private val REQUIRED_HEADERS =
             listOf("word", "language", "length", "frequency", "difficulty", "clue", "source", "source_license")
         private const val OPTIONAL_LEMMA_HEADER = "lemma"
         private const val OPTIONAL_COMPACT_HEADER = "compact"
+        private const val OPTIONAL_THEME_HEADER = "theme"
 
         /**
          * Frequency cutoff applied at load time. Drops the long tail of rare/technical
@@ -115,9 +136,20 @@ class CsvWordRepository(
          * one clue per word — `export-words` guarantees this invariant
          * on emit).
          */
-        fun frenchFromClasspath(): CsvWordRepository = fromClasspath(FRENCH_RESOURCE_PATH)
+        fun frenchFromClasspath(): CsvWordRepository = fromClasspath(FRENCH_RESOURCE_PATH, FRENCH_THEMED_OVERLAY_PATHS)
 
-        fun fromClasspath(path: String): CsvWordRepository {
+        fun fromClasspath(
+            path: String,
+            themedOverlayPaths: List<Pair<String, String>> = emptyList(),
+        ): CsvWordRepository {
+            // Load theme overlays first so we can apply them while parsing the
+            // main CSV. Each overlay is `(theme, classpath-path)` — the CSV
+            // there carries the same schema as the main words file, but every
+            // word listed gets stamped with the overlay's theme. Curated rows
+            // are the source of truth; if a word appears in two overlays
+            // (shouldn't happen in well-formed data), the LATER overlay wins.
+            val overlay = loadThemeOverlays(themedOverlayPaths)
+
             val stream =
                 CsvWordRepository::class.java.getResourceAsStream(path)
                     ?: error("Word CSV not found on classpath: $path")
@@ -139,31 +171,81 @@ class CsvWordRepository(
                         // The grid renders A-Z cells; anything else can't be placed.
                         // Sort by frequency descending so downstream callers (the CSP solver)
                         // iterate common words first — fewer backtracks when the head matches.
-                        val words =
+                        val mainWords =
                             parser.records
                                 .mapNotNull { record -> toWordWithFreq(record, path) }
                                 .sortedByDescending { it.second }
                                 .map { it.first }
-                        CsvWordRepository(words)
+                        // Merge: for each main word, apply overlay theme if present.
+                        // Words in overlays that aren't in the main CSV are added at
+                        // the tail (they were curated for theme purposes — should be
+                        // available even if the LoRA pipeline didn't emit them).
+                        val byText = HashMap<String, Word>(mainWords.size + overlay.size)
+                        for (w in mainWords) {
+                            val themed = overlay[w.text]
+                            byText[w.text] =
+                                if (themed != null) w.copy(theme = themed.theme) else w
+                        }
+                        for ((text, themedWord) in overlay) {
+                            byText.getOrPut(text) { themedWord }
+                        }
+                        CsvWordRepository(byText.values.toList())
                     }
                 }
             }
+        }
+
+        /**
+         * Reads each `(theme, path)` overlay from the classpath and returns a
+         * map keyed by folded-uppercase word text. Each entry's `Word.theme`
+         * field is set to the overlay's theme constant. Missing overlay files
+         * are tolerated (logged via stderr) so a partial deploy doesn't
+         * brick the repository.
+         */
+        private fun loadThemeOverlays(paths: List<Pair<String, String>>): Map<String, Word> {
+            if (paths.isEmpty()) return emptyMap()
+            val out = HashMap<String, Word>()
+            for ((theme, path) in paths) {
+                val stream = CsvWordRepository::class.java.getResourceAsStream(path) ?: continue
+                stream.use { input ->
+                    InputStreamReader(input, StandardCharsets.UTF_8).use { reader ->
+                        val format =
+                            CSVFormat.RFC4180
+                                .builder()
+                                .setHeader()
+                                .setSkipHeaderRecord(true)
+                                .build()
+                        CSVParser.parse(reader, format).use { parser ->
+                            for (record in parser.records) {
+                                val pair = toWordWithFreq(record, path) ?: continue
+                                val withTheme = pair.first.copy(theme = theme)
+                                out[withTheme.text] = withTheme
+                            }
+                        }
+                    }
+                }
+            }
+            return out
         }
 
         private fun validateHeader(
             headers: List<String>,
             path: String,
         ) {
-            // Accept any of: legacy 8 cols, 8 + lemma, 8 + lemma + compact.
-            // Anything else is hand-edited corruption — fail fast.
+            // Accept any of: legacy 8 cols, 8 + lemma, 8 + lemma + compact,
+            // 8 + lemma + compact + theme. Anything else is hand-edited
+            // corruption — fail fast.
             val matchesLegacy = headers == REQUIRED_HEADERS
             val matchesWithLemma = headers == REQUIRED_HEADERS + OPTIONAL_LEMMA_HEADER
             val matchesWithCompact =
                 headers == REQUIRED_HEADERS + OPTIONAL_LEMMA_HEADER + OPTIONAL_COMPACT_HEADER
-            require(matchesLegacy || matchesWithLemma || matchesWithCompact) {
+            val matchesWithTheme =
+                headers ==
+                    REQUIRED_HEADERS + OPTIONAL_LEMMA_HEADER + OPTIONAL_COMPACT_HEADER + OPTIONAL_THEME_HEADER
+            require(matchesLegacy || matchesWithLemma || matchesWithCompact || matchesWithTheme) {
                 "CSV $path header mismatch — expected $REQUIRED_HEADERS " +
                     "(optionally followed by '$OPTIONAL_LEMMA_HEADER', then " +
-                    "'$OPTIONAL_COMPACT_HEADER'), got $headers"
+                    "'$OPTIONAL_COMPACT_HEADER', then '$OPTIONAL_THEME_HEADER'), got $headers"
             }
         }
 
@@ -210,11 +292,24 @@ class CsvWordRepository(
                 } else {
                     true
                 }
+            // Theme: read explicit column value if present; otherwise null
+            // (= no theme, uncapped). The runtime overlays per-theme curated
+            // files at load time (see [loadThemeOverlays]) — those are the
+            // source of truth for theme assignment. The CSV's `theme` column
+            // is a fallback that lets the corpus carry pre-tagged rows
+            // without re-running the overlay pipeline.
+            val theme =
+                if (OPTIONAL_THEME_HEADER in record.parser.headerNames) {
+                    record.get(OPTIONAL_THEME_HEADER).takeIf { it.isNotBlank() }
+                } else {
+                    null
+                }
             return Word(
                 text = folded,
                 definition = clue,
                 lemma = foldedLemma,
                 compact = compact,
+                theme = theme,
             ) to frequency
         }
 

@@ -20,6 +20,16 @@ data class Word private constructor(
      * for legacy rows missing the column.
      */
     val compact: Boolean = true,
+    /**
+     * Theme tag — a closed-set category drawn from
+     * [com.bliss.grid.domain.generation.ThemeCatalog]. `null` means the
+     * word doesn't belong to any tracked theme (the common case). Used by
+     * the grid filler to enforce per-grid caps (e.g. "at most 1 Roman
+     * numeral per grid"). Curation lives in `data/curated/fr.csv`'s
+     * `theme` column; auto-detection covers regex/closed-set patterns
+     * for words without an explicit tag.
+     */
+    val theme: String? = null,
 ) {
     init {
         require(text.isNotEmpty()) { "Word text must not be empty" }
@@ -34,9 +44,10 @@ data class Word private constructor(
             definition: String,
             lemma: String? = null,
             compact: Boolean = true,
+            theme: String? = null,
         ): Word {
             val foldedText = text.uppercase()
-            return Word(foldedText, definition, lemma?.uppercase() ?: foldedText, compact)
+            return Word(foldedText, definition, lemma?.uppercase() ?: foldedText, compact, theme)
         }
     }
 }
