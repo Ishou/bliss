@@ -39,4 +39,5 @@ val DEFAULT_THEME_LIMITS: Map<String, Int> =
         Themes.UNIT to 1,
         Themes.COMPASS to 1,
         Themes.GREEK to 2,
+        Themes.SIGLE to 2,
     )
