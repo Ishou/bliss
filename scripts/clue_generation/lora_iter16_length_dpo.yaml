@@ -3,10 +3,10 @@
 #   A. length-only contrast (61 pairs): both clues ≤25 chars, chosen is
 #      meaningfully shorter. Teaches "shorter equivalent is preferred even
 #      when both fit".
-#   B. cap-violation contrast (50 pairs): chosen ≤25 chars, rejected >25
+#   B. cap-violation contrast (49 pairs): chosen ≤25 chars, rejected >25
 #      chars (won't ship). Teaches "stay under the cap when an equally-good
 #      shorter exists".
-#   C. preamble-strip contrast (60 pairs): rejected wraps content in
+#   C. preamble-strip contrast (61 pairs): rejected wraps content in
 #      formulaic noun-phrase scaffolding ("Action de", "Pratique de",
 #      "Personne qui", "État de", "Caractère de", "Manière de"); chosen
 #      is the bare equivalent. Teaches "drop the boilerplate".

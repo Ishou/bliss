@@ -39,7 +39,7 @@ from morphology_index import MorphologyIndex  # noqa: E402
 from validate_clue import validate_lemma_clue  # noqa: E402
 
 
-# --- CATEGORY A: length-only contrasts (60) -----------------------------
+# --- CATEGORY A: length-only contrasts (61) -----------------------------
 # Both clues are ≤25 chars and structurally valid; chosen is shorter.
 # Both have lemma-form heads matching the target POS — that's the
 # validator's contract on LoRA output.
@@ -111,7 +111,7 @@ A_PAIRS: list[tuple[str, str, str, str]] = [
     ("ricaner",     "verbe", "Glousser",            "Glousser méchamment"),
 ]
 
-# --- CATEGORY B: cap-violation contrasts (50) --------------------------
+# --- CATEGORY B: cap-violation contrasts (49) --------------------------
 # chosen ≤25 chars, rejected >25 chars. Same sense; rejected just wordy.
 B_PAIRS: list[tuple[str, str, str, str]] = [
     ("ascèse",      "nom",   "Privation",                 "Pratique d'une discipline morale rigoureuse"),
@@ -167,7 +167,7 @@ B_PAIRS: list[tuple[str, str, str, str]] = [
     ("rabrouer",    "verbe", "Rembarrer",                 "Repousser quelqu'un avec des paroles dures"),
 ]
 
-# --- CATEGORY C: preamble-strip contrasts (60) --------------------------
+# --- CATEGORY C: preamble-strip contrasts (61) --------------------------
 # chosen is a bare clue; rejected wraps the same content in formulaic
 # scaffolding (Action de / Pratique de / Personne qui / État de / Caractère
 # de / Manière de). Restricted to NOUN targets — only nouns can have a
