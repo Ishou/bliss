@@ -37,7 +37,11 @@ const panel = css({
   borderRadius: 'sm',
   // Constant elevation — visible once it sticks against the page bg.
   boxShadow: '0 2px 6px -2px rgba(0, 0, 0, 0.08)',
-  bg: 'surfaceVariant',
+  // `surfaceElevated` is a lifted charcoal (neutral.600), distinct
+  // from `surface` (the letter-cell bg) and `surfaceVariant` (the
+  // light-pink clue surface, where sage `accent` text would fail AA).
+  // Reads as "elevated panel" without taking the def-cell pink hue.
+  bg: 'surfaceElevated',
   color: 'fg',
   textAlign: 'left',
   fontFamily: 'body',

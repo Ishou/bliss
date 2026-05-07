@@ -101,14 +101,14 @@ export default defineConfig({
           800: { value: '#17181D' },
           900: { value: '#0E0F12' },
         },
-        // Active letter-cell bg — escapes the ramps because it's a
-        // surface + secondary-tint blend. Used in the focus state
-        // (Cell.tsx) so the focused cell reads as warmer than its
-        // charcoal neighbours; the inset pink ring (focusRing)
-        // provides the actual visual signal. Worth a literal token
-        // because the value isn't derivable from any single ramp
-        // shade and other themes might not want this exact treatment.
-        focusBg: { value: '#2A1C22' },
+        // (Note: `focusBg` is defined as a *semantic* token only —
+        // see `semanticTokens.colors` below. We don't ship a
+        // matching primitive because Panda's variable graph emits
+        // duplicate atomic classes when a semantic-token name
+        // collides with a primitive name, which silently broke the
+        // focused-cell bg when both were named `focusBg`. If the
+        // theme grows enough to want `focusBg.50`/.900 ramp stops,
+        // pick a different family name like `interaction` first.)
       },
       spacing: {
         xs: { value: '0.25rem' },
@@ -229,10 +229,13 @@ export default defineConfig({
         onSecondary:    { value: '{colors.neutral.50}' },   // text on solid secondary bg
 
         // ── Focus ───────────────────────────────────────────────────
-        // The focused letter cell uses the warm `focusBg` primitive
-        // for its background and an inset 1.5 px `focusRing` (pink)
-        // for the visual signal — see Cell.tsx letterInput `_focus`.
-        focusBg:        { value: '{colors.focusBg}' },
+        // The focused letter cell uses `focusBg` for its background
+        // and an inset 1.5 px `focusRing` (pink) for the visual
+        // signal — see Cell.tsx letterInput `_focus`. `focusBg` is a
+        // literal hex (the warm charcoal-with-pink-hint that escapes
+        // the ramps); a future theme can replace the value here
+        // without touching components.
+        focusBg:        { value: '#2A1C22' },
         focusRing:      { value: '{colors.secondary.400}' },
       },
     },
