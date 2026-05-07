@@ -93,7 +93,12 @@ const cellBase = css({
   // `gridLine` matches the dual-clue half-cell divider in `defStackClue`
   // below — same ink-at-25%-alpha so cell outlines and stack dividers
   // read as one continuous grid line. Defined in `panda.config.ts`.
-  border: '1px solid token(colors.gridLine)',
+  // 0.5 px on DPR ≥ 1 displays renders as a true hairline (one
+  // device pixel); on DPR 1 it falls back to 1 px or is invisible
+  // per browser. Acceptable trade — the grid is a retina-class
+  // designed surface and the heavier 1 px line read as crowded
+  // inside dense puzzles.
+  border: '0.5px solid token(colors.gridLine)',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
@@ -352,7 +357,7 @@ const defStackClue = css({
   // both halves share identical content boxes (1px border + flex
   // safe-center alignment is enough vertical separation), so neither
   // clue looks shifted relative to the other.
-  '&:not(:first-child)': { borderTop: '1px solid token(colors.gridLine)' },
+  '&:not(:first-child)': { borderTop: '0.5px solid token(colors.gridLine)' },
 });
 const defStackClueCurrent = css({ color: 'leaf.700' });
 // Stacked-clue text: same wrap policy as defText. `hyphens: auto`
