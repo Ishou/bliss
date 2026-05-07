@@ -232,13 +232,13 @@ The brand-specific primitive names from the prior amendments (`leaf`, `blossom`,
 
 | Role group | Tokens |
 |---|---|
-| Surfaces | `bg`, `surface`, `surfaceVariant`, `surfaceMuted` |
-| Foreground | `fg`, `fgMuted`, `onAccent`, `onSecondary` |
+| Surfaces | `bg`, `surface`, `surfaceVariant`, `surfaceMuted`, `surfaceElevated` |
+| Foreground | `fg`, `fgMuted`, `onAccent`, `onSecondary`, `onSurfaceVariant` |
 | Lines | `border`, `gridLine`, `muted` (legacy alias) |
 | Brand · primary | `accent`, `accentText`, `accentBg`, `accentHover` |
 | Brand · secondary | `secondaryAccent`, `secondaryText`, `secondaryBg` |
 | Status | `success`, `successBg`, `successText`, `error`, `errorBg`, `errorText` |
-| Focus | `focusRing` |
+| Focus | `focusRing`, `focusBg` |
 
 Each role maps to a ramp shade in the panda config. The mapping is the only place a theme-swap touches.
 

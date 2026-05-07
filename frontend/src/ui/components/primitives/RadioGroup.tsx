@@ -52,8 +52,8 @@ const itemStyles = css({
   // Ark sets `data-state="checked"` on the matching item.
   '&[data-state="checked"]': {
     borderColor: 'accent',
-    bg: 'primary.50',
-    color: 'accent',
+    bg: 'accentBg',
+    color: 'fg',
     fontWeight: 'bold',
   },
   _disabled: { opacity: 0.5, cursor: 'not-allowed' },

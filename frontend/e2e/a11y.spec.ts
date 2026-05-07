@@ -2,11 +2,14 @@
  * WCAG 2.1 A + AA accessibility scan.
  *
  * Runs axe-core (via `@axe-core/playwright`) against the home route
- * (the puzzle grid) and the lobby route at one representative
- * viewport. Asserts zero violations of the `wcag2a` and `wcag2aa`
- * tag groups — the bar the project commits to in `MANIFESTO.md`
- * (Ethics: "Accessibility is a requirement (WCAG AA minimum), not
- * a follow-up ticket").
+ * (the puzzle grid) at one representative viewport. Asserts zero
+ * violations of the `wcag2a` and `wcag2aa` tag groups — the bar the
+ * project commits to in `MANIFESTO.md` (Ethics: "Accessibility is a
+ * requirement (WCAG AA minimum), not a follow-up ticket").
+ *
+ * Lobby route (ConnectionBanner, PlayerList, WaitingRoom, EndGameModal)
+ * is not scanned here because it requires mocking a live WebSocket
+ * connection; tracked for a follow-up workstream.
  *
  * Why one viewport (desktop) per route, not all four:
  *   - colour-contrast violations are viewport-independent (axe reads

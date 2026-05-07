@@ -52,14 +52,14 @@ const variantStyles = {
     bg: 'transparent',
     color: 'accent',
     border: '1px solid token(colors.accent)',
-    _hover: { bg: 'primary.50' },
+    _hover: { bg: 'accentBg' },
   }),
   ghost: css({
     bg: 'surface',
     color: 'fg',
     border: '1px solid token(colors.border)',
     fontWeight: 'semibold',
-    _hover: { bg: 'primary.50' },
+    _hover: { bg: 'accentBg' },
   }),
 } as const;
 

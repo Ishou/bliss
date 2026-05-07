@@ -65,7 +65,7 @@ const itemStyles = css({
     outline: '3px solid token(colors.focusRing)',
     outlineOffset: '2px',
   },
-  _hover: { bg: 'primary.50' },
+  _hover: { bg: 'accentBg' },
   // The hover token must not erase the selected fill.
   '&[data-state="on"]:hover': { bg: 'primary.900' },
   _disabled: { opacity: 0.5, cursor: 'not-allowed' },
