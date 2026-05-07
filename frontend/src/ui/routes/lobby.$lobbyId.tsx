@@ -26,11 +26,15 @@ import type {
   Pseudonym,
   SessionId,
 } from '@/domain/game';
-import { Grid } from '@/ui/components/grid';
+import { Grid, useValidation } from '@/ui/components/grid';
+import {
+  AppHeader,
+  ProgressBar,
+  PuzzleToolbar,
+} from '@/ui/components/layout';
 import { ConnectionBanner } from '@/ui/components/lobby/ConnectionBanner';
 import { EndGameModal } from '@/ui/components/lobby/EndGameModal';
 import { PlayerList } from '@/ui/components/lobby/PlayerList';
-import { Timer } from '@/ui/components/lobby/Timer';
 import { WaitingRoom } from '@/ui/components/lobby/WaitingRoom';
 import { Button } from '@/ui/components/primitives';
 import { Route as RootRoute } from './__root';
@@ -43,67 +47,116 @@ import { Route as RootRoute } from './__root';
 // the multiplayer flag is on (ADR-0018 §10), so the context fields it
 // relies on are guaranteed present at the call site.
 
-// 100dvh: height tracks iOS Safari's visible viewport as the URL bar collapses.
+// Lobby route now shares the home route's chrome (AppHeader + main +
+// 720 px content column, charbon panel behind the grid). The styles
+// below mirror `routes/index.tsx` — kept inline rather than extracted
+// to a shared module because both routes are tiny and the inline copy
+// reads cleaner alongside their respective state machines.
+//
+// 100 dvh tracks iOS Safari's visible viewport as the URL bar collapses.
 const pageStyles = css({
-  minHeight: '100dvh', display: 'flex', flexDirection: 'column',
-  alignItems: 'center', gap: { base: 'xs', md: 'sm' },
-  paddingBlock: { base: 'sm', md: 'lg' },
-  paddingInline: { base: 'sm', md: 'lg' },
-  bg: 'bg', color: 'fg', fontFamily: 'body', textAlign: 'center',
+  minHeight: '100dvh',
+  display: 'flex',
+  flexDirection: 'column',
+  color: 'fg',
+  fontFamily: 'body',
 });
 
-// Mirrors index.tsx wordmark — ADR-0005 §6 amended (display→xl on mobile).
-const wordmarkStyles = css({
-  fontFamily: 'heading',
-  fontSize: { base: 'xl', md: '2.8125rem' },
-  fontWeight: 'black',
-  letterSpacing: '-0.02em',
-  color: 'accent',
-  margin: 0,
-  lineHeight: '1.1',
-});
-
-// "DÉMO" pill — same rendering as the home route (ADR-0005 §4).
-const demoBadgeStyles = css({
-  fontSize: 'xs',
-  fontWeight: 'bold',
-  letterSpacing: '0.08em',
-  textTransform: 'uppercase',
-  color: 'secondary.700',
-  bg: 'secondary.50',
-  paddingInline: 'sm',
-  paddingBlock: 'xs',
-  borderRadius: '9999px',
-  margin: 0,
-});
-
-const detailStyles = css({ fontSize: 'body', margin: 0, color: 'accent' });
-
-// Stack the alert copy on top of the back-home CTA so the user always
-// has a one-click exit when the lobby fails to load. Centered to match
-// the surrounding `LobbyShell` layout.
-const errorActionsStyles = css({
-  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'md',
-});
-
-// Nested flex column inside `<main>` (also flex column) so the
-// PlayerList / Timer take their natural height and the Grid's flex
-// shell can absorb the remaining vertical space and stay square. The
-// `flex: 1 1 0` + `minHeight: 0` here matches the contract `<main>`
-// uses on `pageStyles`, propagating the leftover-height-for-the-grid
-// chain down two levels: <main> → this layout div → `gridShellStyles`
-// inside `Grid`. Without it the Grid's flex shell has no height to
-// grow into and the post-PR-#195 desktop scrollbar comes back.
-const inGameLayoutStyles = css({
-  display: 'flex', flexDirection: 'column',
-  alignItems: 'center', gap: 'md',
+const mainStyles = css({
+  flex: '1 1 0',
+  minHeight: 0,
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
   width: '100%',
+  bg: 'bg',
+});
+
+const contentStyles = css({
+  width: '100%',
+  maxWidth: '720px',
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  margin: '0 auto',
+  paddingInline: { base: '16px', md: '20px' },
+  paddingBlock: { base: '12px', md: '20px' },
+  gap: { base: '12px', md: '18px' },
   flex: '1 1 0',
   minHeight: 0,
 });
 
+// Lighter charcoal panel behind the grid — same role-token + radius
+// + padding as the solo route's panel.
+const gridPanelStyles = css({
+  width: '100%',
+  flex: '1 1 0',
+  minHeight: 0,
+  display: 'flex',
+  flexDirection: 'column',
+  bg: 'surfaceElevated',
+  borderRadius: '12px',
+  padding: { base: '4px', md: '12px' },
+});
+
+// Bottom row groups the progress bar and the Vérifier CTA — solo and
+// multiplayer share this layout.
+const bottomRowStyles = css({
+  display: 'flex',
+  width: '100%',
+  alignItems: { base: 'stretch', md: 'flex-end' },
+  flexDirection: { base: 'column', md: 'row' },
+  gap: { base: '12px', md: '20px' },
+});
+
+const progressSlotStyles = css({ flex: 1, minWidth: 0 });
+
+const verifyButtonStyles = css({
+  width: { base: '100%', md: 'auto' },
+  paddingInline: '28px',
+  paddingBlock: '12px',
+});
+
+// Visually-hidden h1 for the heading-hierarchy contract — matches
+// the solo route's pattern. The visible brand mark is the styled
+// Lockup inside `AppHeader`.
+const srOnly = css({
+  position: 'absolute',
+  width: '1px',
+  height: '1px',
+  padding: 0,
+  margin: '-1px',
+  overflow: 'hidden',
+  clip: 'rect(0, 0, 0, 0)',
+  whiteSpace: 'nowrap',
+  border: 0,
+});
+
+const detailStyles = css({
+  fontSize: 'body',
+  margin: 0,
+  color: 'accent',
+  textAlign: 'center',
+});
+
+// Stack the alert copy on top of the back-home CTA so the user
+// always has a one-click exit when the lobby fails to load.
+const errorActionsStyles = css({
+  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'md',
+});
+
 const LobbyShell = ({ children }: { children: React.ReactNode }) => (
-  <main className={pageStyles}>{children}</main>
+  <div className={pageStyles}>
+    <AppHeader activeNavId="grilles" />
+    <main className={mainStyles}>
+      <div className={contentStyles}>
+        <h1 lang="en" className={srOnly}>
+          WordSparrow
+        </h1>
+        {children}
+      </div>
+    </main>
+  </div>
 );
 
 const LobbyStatus = ({ role, text }: { role: 'status' | 'alert'; text: string }) => (
@@ -344,65 +397,43 @@ function LobbyPage() {
     <>
       <ConnectionBanner state={connectionState} />
       <LobbyShell>
-        <h1 lang="en" className={wordmarkStyles}>WordSparrow</h1>
-        <span className={demoBadgeStyles} aria-label="version démo">Démo</span>
-        <p className={detailStyles}>
-          {lobby.players.length} {lobby.players.length === 1 ? 'joueur' : 'joueurs'}
-        </p>
-
         {lobby.state === 'WAITING' ? (
-          <WaitingRoom
-            lobby={lobby}
-            currentSessionId={sessionId}
-            onRename={handleRename}
-            onSetGridConfig={handleSetGridConfig}
-            onStart={handleStart}
-            onCopyShareUrl={handleCopyShareUrl}
-            pseudonymError={pseudonymError}
-            onClearPseudonymError={handleClearPseudonymError}
-            isStarting={isStarting}
+          <>
+            <p className={detailStyles}>
+              {lobby.players.length} {lobby.players.length === 1 ? 'joueur' : 'joueurs'}
+            </p>
+            <WaitingRoom
+              lobby={lobby}
+              currentSessionId={sessionId}
+              onRename={handleRename}
+              onSetGridConfig={handleSetGridConfig}
+              onStart={handleStart}
+              onCopyShareUrl={handleCopyShareUrl}
+              pseudonymError={pseudonymError}
+              onClearPseudonymError={handleClearPseudonymError}
+              isStarting={isStarting}
+            />
+          </>
+        ) : null}
+
+        {(lobby.state === 'IN_PROGRESS' || lobby.state === 'COMPLETED')
+          && lobby.game
+          && gridPuzzle ? (
+          <InGameView
+            puzzle={gridPuzzle}
+            startedAt={lobby.game.startedAt}
+            frozenAtMs={lobby.state === 'COMPLETED' ? view.durationMs ?? 0 : undefined}
+            isCompleted={lobby.state === 'COMPLETED'}
+            sessionId={sessionId}
+            players={lobby.players}
+            ownerSessionId={lobby.ownerSessionId}
+            initialEntries={initialEntries}
+            onCellChange={handleCellChange}
+            subscribeToRemoteCellUpdates={subscribeToRemoteCellUpdates}
+            onLocalFocusChange={handleLocalFocusChange}
+            subscribeToRemotePresence={subscribeToRemotePresence}
+            playersBySessionId={playersBySessionId}
           />
-        ) : null}
-
-        {lobby.state === 'IN_PROGRESS' && lobby.game && gridPuzzle ? (
-          <div className={inGameLayoutStyles}>
-            <PlayerList
-              players={lobby.players}
-              ownerSessionId={lobby.ownerSessionId}
-              currentSessionId={sessionId}
-              variant="inline"
-            />
-            <Timer startedAt={lobby.game.startedAt} />
-            <Grid
-              puzzle={gridPuzzle}
-              onCellChange={handleCellChange}
-              subscribeToRemoteCellUpdates={subscribeToRemoteCellUpdates}
-              initialEntries={initialEntries}
-              onLocalFocusChange={handleLocalFocusChange}
-              subscribeToRemotePresence={subscribeToRemotePresence}
-              playersBySessionId={playersBySessionId}
-              currentSessionId={sessionId}
-            />
-          </div>
-        ) : null}
-
-        {lobby.state === 'COMPLETED' && lobby.game ? (
-          <div className={inGameLayoutStyles}>
-            <PlayerList
-              players={lobby.players}
-              ownerSessionId={lobby.ownerSessionId}
-              currentSessionId={sessionId}
-              variant="inline"
-            />
-            <Timer startedAt={lobby.game.startedAt} frozenAtMs={view.durationMs ?? 0} />
-            {gridPuzzle ? (
-              <Grid
-                puzzle={gridPuzzle}
-                subscribeToRemoteCellUpdates={subscribeToRemoteCellUpdates}
-                initialEntries={initialEntries}
-              />
-            ) : null}
-          </div>
         ) : null}
       </LobbyShell>
 
@@ -413,6 +444,117 @@ function LobbyPage() {
           onClose={handleCloseModal}
         />
       ) : null}
+    </>
+  );
+}
+
+// In-game view shared by `IN_PROGRESS` and `COMPLETED`. Mirrors the
+// solo route's chrome (toolbar → grid panel → progress + Vérifier)
+// plus the inline player roster on top. Validation is local: the
+// authoritative win lives in the server's `gameSolved` event, but
+// the local `useValidation` hook surfaces per-player progress and
+// auto-locks completed words for the player who solved them, same
+// behaviour as the solo flow.
+interface InGameViewProps {
+  readonly puzzle: Puzzle;
+  readonly startedAt: string;
+  readonly frozenAtMs?: number;
+  readonly isCompleted: boolean;
+  readonly sessionId: SessionId;
+  readonly players: Lobby['players'];
+  readonly ownerSessionId: SessionId;
+  readonly initialEntries: ReadonlyArray<{ row: number; column: number; letter: string }>;
+  readonly onCellChange: (row: number, col: number, letter: string | null) => void;
+  readonly subscribeToRemoteCellUpdates: (handler: (event: GameEvent) => void) => () => void;
+  readonly onLocalFocusChange: (
+    position: Position | null,
+    direction: 'across' | 'down' | null,
+  ) => void;
+  readonly subscribeToRemotePresence: (handler: (event: GameEvent) => void) => () => void;
+  readonly playersBySessionId: ReadonlyMap<SessionId, Player>;
+}
+
+function InGameView({
+  puzzle,
+  startedAt,
+  frozenAtMs,
+  isCompleted,
+  sessionId,
+  players,
+  ownerSessionId,
+  initialEntries,
+  onCellChange,
+  subscribeToRemoteCellUpdates,
+  onLocalFocusChange,
+  subscribeToRemotePresence,
+  playersBySessionId,
+}: InGameViewProps) {
+  const validation = useValidation(puzzle);
+  const verify = validation.verify;
+
+  // Auto-trigger validation after every cell write — the server's
+  // `cellUpdated` broadcast goes through `onCellChange` already, so
+  // we hook in alongside it. Microtask defers the verify pass past
+  // the navigation handler so focus + direction settle first.
+  const handleCellChange = useCallback(
+    (row: number, col: number, letter: string | null) => {
+      onCellChange(row, col, letter);
+      queueMicrotask(verify);
+    },
+    [onCellChange, verify],
+  );
+
+  const isComplete =
+    validation.totalLetterCells > 0 &&
+    validation.validated.size === validation.totalLetterCells;
+
+  return (
+    <>
+      <PlayerList
+        players={players}
+        ownerSessionId={ownerSessionId}
+        currentSessionId={sessionId}
+        variant="inline"
+      />
+      <PuzzleToolbar
+        metadata={`Partie multijoueur · ${players.length} ${players.length === 1 ? 'joueur' : 'joueurs'}`}
+        timerStartedAt={startedAt}
+        timerFrozenAtMs={frozenAtMs}
+      />
+      <div className={gridPanelStyles}>
+        <Grid
+          puzzle={puzzle}
+          validatedPositions={validation.validated}
+          errorPositions={validation.errors}
+          onCellChange={isCompleted ? undefined : handleCellChange}
+          subscribeToRemoteCellUpdates={subscribeToRemoteCellUpdates}
+          initialEntries={initialEntries}
+          onLocalFocusChange={isCompleted ? undefined : onLocalFocusChange}
+          subscribeToRemotePresence={subscribeToRemotePresence}
+          playersBySessionId={playersBySessionId}
+          currentSessionId={sessionId}
+        />
+      </div>
+      <div className={bottomRowStyles}>
+        <div className={progressSlotStyles}>
+          <ProgressBar
+            value={validation.validated.size}
+            total={validation.totalLetterCells}
+          />
+        </div>
+        <Button
+          variant="primary"
+          className={verifyButtonStyles}
+          onClick={validation.verify}
+          disabled={isCompleted || isComplete}
+          aria-label="Vérifier la grille"
+        >
+          Vérifier
+        </Button>
+      </div>
+      <p className={srOnly} role="status" aria-live="polite">
+        {validation.announce}
+      </p>
     </>
   );
 }

@@ -182,7 +182,9 @@ describe('Lobby route loader', () => {
     renderLobby({ lobbyClient: { getLobby: vi.fn().mockRejectedValue(notFound) } });
     const alert = await screen.findByRole('alert');
     expect(alert).toHaveTextContent('Salon introuvable.');
-    expect(screen.queryByRole('heading', { name: /WordSparrow/ })).toBeNull();
+    // Note: the brand h1 + AppHeader are now present on every lobby
+    // state (matching the solo route's chrome), so we no longer assert
+    // their absence on the error path.
   });
 
   it('renders "Serveur indisponible" when the lobby client throws kind=upstream-unavailable', async () => {
@@ -731,7 +733,7 @@ describe('Lobby route Wave H integration', () => {
     expect(panel?.textContent).toMatch(/Sélectionnez une case/i);
   });
 
-  it('keeps the WordSparrow h1 + DÉMO badge in the DOM through gameStarted (WCAG 2.4.6 landmark)', async () => {
+  it('keeps the WordSparrow h1 in the DOM through gameStarted (WCAG 2.4.6 landmark)', async () => {
     const gameClient = makeFakeGameClient();
     renderLobby({ gameClient });
     await screen.findByRole('heading', { name: /WordSparrow/ });
@@ -745,9 +747,10 @@ describe('Lobby route Wave H integration', () => {
     // h1 survives the WAITING → IN_PROGRESS transition.
     const h1 = screen.getByRole('heading', { level: 1, name: /WordSparrow/ });
     expect(h1).toBeInTheDocument();
-    // Démo badge is still next to it.
-    expect(screen.getByLabelText('version démo')).toBeInTheDocument();
-    // Lobby id persists in the URL bar; this sanity-checks the route shell is intact.
+    // The "Partie multijoueur · N joueurs" metadata in the puzzle
+    // toolbar replaces the old standalone player count; the joueur
+    // string must persist across the WAITING → IN_PROGRESS swap so
+    // the player still sees how many peers are at the table.
     expect(screen.getByText(/joueur/)).toBeInTheDocument();
   });
 

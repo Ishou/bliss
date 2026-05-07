@@ -7,8 +7,7 @@ import { playerColorVars } from '@/ui/lib/playerColor';
 //     WaitingRoom while `lobby.state === 'WAITING'`.
 //   - `inline`:  horizontal pill row with no empty slots, mounted by the
 //     lobby route during `IN_PROGRESS` / `COMPLETED` so players keep
-//     visibility on who they are playing with without eating the
-//     vertical real-estate the Grid + Timer need.
+//     visibility on who they are playing with without eating grid real estate.
 //
 // Owns no network, no router context, no localStorage — every variant
 // stays trivially unit-testable. The eight-player cap (game/api
