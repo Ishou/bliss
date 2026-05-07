@@ -5,25 +5,45 @@
  * binary-searches a font size that fits the cell. The offline
  * `scripts/eval/clue_metrics.py` gate filters the dataset so every
  * shipped clue is supposed to fit at the comfortable floor — but
- * sub-pixel rounding, font-metric drift, and FitText's Phase-2 fallback
- * can still produce visible overflow.
+ * sub-pixel rounding, font-metric drift, and historical absolute-pixel
+ * floors have been known to produce visible overflow.
  *
- * This test loads the puzzle (with MSW returning the spec fixture) at
- * a few representative viewport sizes and asserts that every clue
- * inside a definition cell stays within its container box. If the
- * gate or the runtime regress, this fails before users see clipped
- * text.
+ * This test loads the puzzle, REWRITES the API response so each
+ * definition cell carries a realistic-length clue text (the MSW
+ * fixture's own texts are trivially short — "psycho", "déco" — and
+ * would never stress the layout), and asserts that no clue overflows
+ * its FitText span at any of four viewport sizes spanning narrow
+ * mobile to wide desktop.
  *
- * Why three viewports: FitText scales font with cell width, so the
- * answer is supposed to be zoom-invariant — but rendering rounds
- * differently at integer cell sizes (e.g. cell = 47.4 vs 48.6 px),
- * which is exactly where the historical "fits at one window size,
- * overflows at another" bugs lived. Three sizes catches that without
- * being slow.
+ * The four viewport sizes catch the historical "fits at one window
+ * size, overflows at another" bugs that lived at sub-pixel boundaries
+ * (cell = 47.4 vs 48.6 px rounds differently). Four widths covers
+ * the integer-cell-size regimes without being slow.
  */
 import { expect, test } from '@playwright/test';
 
+// Realistic clue corpus — pulled from `data/eval/production/surface_clues.csv`
+// to exercise the full range of layout pressure: short single-word,
+// medium two-word, long three-word, and pathological multi-word with
+// embedded parens (the unbreakable "(22e)"-style tokens that historically
+// blew through hyphens:auto). If FitText + the gate both behave
+// correctly, every entry below renders inside its cell at every
+// viewport size.
+const STRESS_CLUES = [
+  'Mutation notable',                 // 16 chars, 2 words
+  'Petit chien',                      // 11 chars, 2 words
+  'Carte maîtresse',                  // 15 chars
+  'Tenue pour vrai',                  // 15 chars, 3 words → 2-line balanced
+  'Mammifère carnivore',              // 19 chars, 2 words → 1+2-line wrap
+  'Constante mathématique grecque',   // 30 chars
+  'Tressages serrés',                 // 16 chars
+  'Vassal loyal',                     // 12 chars
+  'Note de musique',                  // 15 chars
+  'Conjonction',                      // 11 chars (unbreakable)
+];
+
 const VIEWPORTS = [
+  { name: 'mobile-tiny',   width: 320, height: 568 },
   { name: 'mobile-narrow', width: 360, height: 740 },
   { name: 'tablet',        width: 820, height: 1180 },
   { name: 'desktop',       width: 1440, height: 900 },
@@ -52,6 +72,34 @@ for (const vp of VIEWPORTS) {
     page,
   }) => {
     await page.setViewportSize({ width: vp.width, height: vp.height });
+
+    // Rewrite the puzzle response so each definition cell gets a
+    // realistic-length clue from STRESS_CLUES. The MSW fixture's own
+    // texts are short single words; without this rewrite the test
+    // gives false confidence (any FitText would fit "déco" trivially).
+    await page.route(/\/v1\/puzzles\//, async (route) => {
+      const resp = await route.fetch();
+      const body = await resp.text();
+      try {
+        const puzzle = JSON.parse(body);
+        let i = 0;
+        for (const cell of puzzle.cells ?? []) {
+          if (cell.kind === 'definition') {
+            cell.text = STRESS_CLUES[i % STRESS_CLUES.length];
+            i++;
+          }
+        }
+        await route.fulfill({
+          status: resp.status(),
+          headers: resp.headers(),
+          contentType: 'application/json',
+          body: JSON.stringify(puzzle),
+        });
+      } catch {
+        await route.continue();
+      }
+    });
+
     await page.goto('/');
 
     // Wait for the grid to render and FitText's first layout pass to
@@ -68,13 +116,19 @@ for (const vp of VIEWPORTS) {
       const results: OverflowReport[] = [];
       const cells = document.querySelectorAll('[data-cell-kind="definition"]');
       for (const cell of cells) {
-        // Each definition cell contains 1 or 2 FitText spans. The span
-        // is the element FitText writes inline `font-size` to and
-        // measures clientWidth/Height on, so it's the right thing to
-        // check for overflow.
+        // Each definition cell contains 1 or 2 FitText spans.
         const spans = cell.querySelectorAll('span[style*="font-size"]');
         for (const s of spans) {
           const el = s as HTMLElement;
+          // Box-level overflow on the FitText span itself. With our
+          // chain of `overflow: hidden` (span → defStackClue/defSingle
+          // → defStack), any leak past the span's clientWidth/Height
+          // is what the user sees as a "demi-word at the cell edge":
+          // the last line is partially clipped, showing only the
+          // upper halves of the glyphs. We do NOT also check Range
+          // bbox against parent — Range ignores `overflow: hidden`
+          // and would flag invisible-because-clipped overflow as a
+          // failure, which doesn't match what the user sees.
           const widthOver = el.scrollWidth - el.clientWidth;
           const heightOver = el.scrollHeight - el.clientHeight;
           if (widthOver > tolerance || heightOver > tolerance) {
@@ -96,12 +150,19 @@ for (const vp of VIEWPORTS) {
     }, OVERFLOW_TOLERANCE_PX);
 
     if (overflows.length > 0) {
+      // Capture a screenshot so the failure has a visual artifact
+      // attached. Playwright's HTML reporter surfaces test attachments.
+      const screenshot = await page.screenshot({ fullPage: false });
+      await test.info().attach(`grid-${vp.name}.png`, {
+        body: screenshot,
+        contentType: 'image/png',
+      });
       const detail = overflows
         .map(
           (o) =>
-            `  - (r${o.row}, c${o.col}, ${o.cellKind ?? '?'} clues) "${o.text}" `
-            + `@ ${o.fontSize}: scroll=${o.scrollW}×${o.scrollH} `
-            + `client=${o.clientW}×${o.clientH}`,
+            `  - (r${o.row}, c${o.col}, ${o.cellKind ?? '?'} clues) `
+            + `"${o.text}" @ ${o.fontSize}: `
+            + `scroll=${o.scrollW}×${o.scrollH} client=${o.clientW}×${o.clientH}`,
         )
         .join('\n');
       throw new Error(

@@ -155,8 +155,17 @@ const defText = css({
   flex: 1,
   alignSelf: 'stretch',
   display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
+  // `safe center` keeps centered text aligned to the start of the
+  // axis when content is taller/wider than the container, instead of
+  // the default `center` which symmetrically overflows past both edges
+  // of the box and leaks visually past `overflow: hidden` ancestors
+  // (defStack contains both halves, so a top-stacked clue's symmetric
+  // bottom-leak would paint into the bottom-stack's space). With
+  // `safe`: short text stays centered; tall text top-aligns and clips
+  // honestly at the bottom. Browser support: Chrome 87+, Firefox 63+,
+  // Safari 16+ — covered by the project's modern-browsers stance.
+  alignItems: 'safe center',
+  justifyContent: 'safe center',
   textAlign: 'center',
   // `fontFamily: 'mono'` (Lekton) is the load-bearing piece of the
   // gate-decoupling refactor: Lekton's constant glyph advance lets
@@ -320,8 +329,13 @@ const defStack = css({
 });
 const defStackClue = css({
   display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
+  // Default `alignItems: stretch` (cross-axis) on purpose — the
+  // FitText span inside (defStackText) needs to fill the half-cell
+  // vertically so its OWN `overflow: hidden` clips text taller than
+  // the half. If we centered the span here, it would shrink to
+  // content size and a multi-line clue's overflow would paint into
+  // the sibling half-cell's slot via defStack's shared overflow box.
+  // Inner text centering (safe) lives on defStackText.
   flex: 1,
   minHeight: 0,
   overflow: 'hidden',
@@ -347,8 +361,18 @@ const defStackClueCurrent = css({ color: 'leaf.700' });
 const defStackText = css({
   flex: 1,
   display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
+  // `safe center` — see defText for rationale.
+  alignItems: 'safe center',
+  justifyContent: 'safe center',
+  // Flex items default to `min-height: auto` (i.e. content-sized),
+  // which lets a multi-line span stretch *beyond* its flex parent's
+  // allotted height — defeating the half-cell's overflow:hidden by
+  // making the span itself the leaking element. `minHeight: 0` opts
+  // out so the span shrinks to its parent's height regardless of
+  // content; overflow:hidden then clips the excess inside the span,
+  // invisibly. Same trick lives on defStackClue's `minHeight: 0`.
+  minHeight: 0,
+  minWidth: 0,
   textAlign: 'center',
   // Same monospace + bold rationale as `defText` — see comment there
   // and ADR-0005 §5 amendment.
