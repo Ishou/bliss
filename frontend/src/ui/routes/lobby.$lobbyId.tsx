@@ -26,12 +26,8 @@ import type {
   Pseudonym,
   SessionId,
 } from '@/domain/game';
-import { Grid, useValidation } from '@/ui/components/grid';
-import {
-  AppHeader,
-  ProgressBar,
-  PuzzleToolbar,
-} from '@/ui/components/layout';
+import { Grid } from '@/ui/components/grid';
+import { AppHeader, PuzzleToolbar } from '@/ui/components/layout';
 import { ConnectionBanner } from '@/ui/components/lobby/ConnectionBanner';
 import { EndGameModal } from '@/ui/components/lobby/EndGameModal';
 import { PlayerList } from '@/ui/components/lobby/PlayerList';
@@ -97,24 +93,6 @@ const gridPanelStyles = css({
   bg: 'surfaceElevated',
   borderRadius: '12px',
   padding: { base: '4px', md: '12px' },
-});
-
-// Bottom row groups the progress bar and the Vérifier CTA — solo and
-// multiplayer share this layout.
-const bottomRowStyles = css({
-  display: 'flex',
-  width: '100%',
-  alignItems: { base: 'stretch', md: 'flex-end' },
-  flexDirection: { base: 'column', md: 'row' },
-  gap: { base: '12px', md: '20px' },
-});
-
-const progressSlotStyles = css({ flex: 1, minWidth: 0 });
-
-const verifyButtonStyles = css({
-  width: { base: '100%', md: 'auto' },
-  paddingInline: '28px',
-  paddingBlock: '12px',
 });
 
 // Visually-hidden h1 for the heading-hierarchy contract — matches
@@ -449,12 +427,16 @@ function LobbyPage() {
 }
 
 // In-game view shared by `IN_PROGRESS` and `COMPLETED`. Mirrors the
-// solo route's chrome (toolbar → grid panel → progress + Vérifier)
-// plus the inline player roster on top. Validation is local: the
-// authoritative win lives in the server's `gameSolved` event, but
-// the local `useValidation` hook surfaces per-player progress and
-// auto-locks completed words for the player who solved them, same
-// behaviour as the solo flow.
+// solo route's chrome (player roster + toolbar → grid panel) but
+// drops the local validation flow: per AsyncAPI's `GameLetterCell`,
+// the server intentionally omits the canonical answer from every
+// puzzle frame (it would let any client cheat). `useValidation`
+// would therefore see `cell.answer === undefined` everywhere and
+// silently no-op — leaving Vérifier + progress as broken affordances.
+//
+// Authoritative win = the server's `gameSolved` event. When that
+// arrives the route flips `isCompleted` and we paint EVERY letter
+// cell validated so the grid lights up sage to match the modal.
 interface InGameViewProps {
   readonly puzzle: Puzzle;
   readonly startedAt: string;
@@ -489,24 +471,22 @@ function InGameView({
   subscribeToRemotePresence,
   playersBySessionId,
 }: InGameViewProps) {
-  const validation = useValidation(puzzle);
-  const verify = validation.verify;
-
-  // Auto-trigger validation after every cell write — the server's
-  // `cellUpdated` broadcast goes through `onCellChange` already, so
-  // we hook in alongside it. Microtask defers the verify pass past
-  // the navigation handler so focus + direction settle first.
-  const handleCellChange = useCallback(
-    (row: number, col: number, letter: string | null) => {
-      onCellChange(row, col, letter);
-      queueMicrotask(verify);
-    },
-    [onCellChange, verify],
-  );
-
-  const isComplete =
-    validation.totalLetterCells > 0 &&
-    validation.validated.size === validation.totalLetterCells;
+  // Server-driven win cue: when `gameSolved` flips the route into
+  // COMPLETED, the entire grid is correct by definition (the server
+  // wouldn't have fired the event otherwise). Mark every letter
+  // cell validated so the cells turn sage and lock — gives the
+  // multiplayer "you finished" view the same visual the solo flow
+  // gets at the end of a puzzle, without any client-side validation.
+  const validatedPositions = useMemo<ReadonlySet<string>>(() => {
+    if (!isCompleted) return new Set();
+    const all = new Set<string>();
+    for (const cell of puzzle.cells) {
+      if (cell.kind === 'letter') {
+        all.add(`${cell.position.row},${cell.position.col}`);
+      }
+    }
+    return all;
+  }, [isCompleted, puzzle.cells]);
 
   return (
     <>
@@ -524,9 +504,8 @@ function InGameView({
       <div className={gridPanelStyles}>
         <Grid
           puzzle={puzzle}
-          validatedPositions={validation.validated}
-          errorPositions={validation.errors}
-          onCellChange={isCompleted ? undefined : handleCellChange}
+          validatedPositions={validatedPositions}
+          onCellChange={isCompleted ? undefined : onCellChange}
           subscribeToRemoteCellUpdates={subscribeToRemoteCellUpdates}
           initialEntries={initialEntries}
           onLocalFocusChange={isCompleted ? undefined : onLocalFocusChange}
@@ -535,26 +514,6 @@ function InGameView({
           currentSessionId={sessionId}
         />
       </div>
-      <div className={bottomRowStyles}>
-        <div className={progressSlotStyles}>
-          <ProgressBar
-            value={validation.validated.size}
-            total={validation.totalLetterCells}
-          />
-        </div>
-        <Button
-          variant="primary"
-          className={verifyButtonStyles}
-          onClick={validation.verify}
-          disabled={isCompleted || isComplete}
-          aria-label="Vérifier la grille"
-        >
-          Vérifier
-        </Button>
-      </div>
-      <p className={srOnly} role="status" aria-live="polite">
-        {validation.announce}
-      </p>
     </>
   );
 }
