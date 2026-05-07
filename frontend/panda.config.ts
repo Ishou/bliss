@@ -43,64 +43,72 @@ export default defineConfig({
   theme: {
     tokens: {
       colors: {
-        // Primary ramp — brand green (lime-leaf family). Anchors:
-        //   .400 = #A2D481 (vivid soft leaf — was leaf.400)
-        //   .600 = #70985E (deeper sage — was leaf.600)
-        // Was named `leaf`. Renamed to `primary` so theme-swap can
-        // change the brand hue without touching component code.
+        // Primary ramp — brand sage (validation, CTA, accent). The
+        // "charbon + sage" palette uses sage as both the brand colour
+        // AND the success/validation signal — they share the same
+        // visual language ("you completed something", "this is the
+        // primary action"). Anchors:
+        //   .500 = #A0B394 (sage main — solid CTA, timer, accent text)
+        //   .800 = #1F2820 (dark sage tint — validated cell bg)
+        //   .900 = #1A2218 (very dark sage — text on solid sage)
         primary: {
-          50: { value: '#ECFDF5' },
-          100: { value: '#DBF3D5' },
-          200: { value: '#C4E8B7' },
-          300: { value: '#B3DD9A' },
-          400: { value: '#A2D481' },
-          500: { value: '#89B670' },
-          600: { value: '#70985E' },
-          700: { value: '#587C4B' },
-          800: { value: '#406038' },
-          900: { value: '#2A4226' },
+          50:  { value: '#ECF1E8' },
+          100: { value: '#DBE3D2' },
+          200: { value: '#C5D2B7' },
+          300: { value: '#B3C2A4' },
+          400: { value: '#ABBC9D' },
+          500: { value: '#A0B394' },
+          600: { value: '#88A07A' },
+          700: { value: '#5A6B52' },
+          800: { value: '#1F2820' },
+          900: { value: '#1A2218' },
         },
-        // Secondary ramp — brand pink (sakura / dusty rose family).
+        // Secondary ramp — clue pink (def-cell surface + focus ring).
         // Anchors:
-        //   .300 = #F2C2C4 (light dusty pink — was blossom.300)
-        //   .500 = #DC88B1 (saturated rose-pink — was blossom.500)
-        // Was named `blossom`. Renamed to `secondary` for the same
-        // reason as primary.
+        //   .400 = #E8A3B3 (clue cell surface — light dusty pink)
+        //   .900 = #3A141E (text on clue cells — dark plum)
         secondary: {
-          50: { value: '#FBF1F2' },
+          50:  { value: '#FBF1F2' },
           100: { value: '#F8E4E7' },
-          200: { value: '#F4D5D8' },
-          300: { value: '#F2C2C4' },
-          400: { value: '#E8A5B0' },
-          500: { value: '#DC88B1' },
-          600: { value: '#C46894' },
-          700: { value: '#A04D78' },
-          800: { value: '#783A5C' },
-          900: { value: '#4F2440' },
+          200: { value: '#F2C6CC' },
+          300: { value: '#ECB5BE' },
+          400: { value: '#E8A3B3' },
+          500: { value: '#DC88A1' },
+          600: { value: '#C46A87' },
+          700: { value: '#985166' },
+          800: { value: '#5C2B3A' },
+          900: { value: '#3A141E' },
         },
-        // Neutral ramp — surface tonal scale. Replaces the prior named
-        // primitives (aubergine / plum / mauve / bramble / pitch /
-        // petal) with a single 50–900 scale. Anchors at .500–.700 are
-        // the existing sakura-twilight surface colours; .800 (page bg)
-        // intentionally drops the pink tint to neutral gray per the
-        // brand brief ("page background recedes, no hue"); .900 is the
-        // near-black void / block fill.
-        //
-        // .100–.400 are interpolated padding stops — currently unused
-        // by any component; available for future hover / disabled /
-        // muted states without needing new primitives.
+        // Neutral ramp — charbon (cool charcoal grays). Anchors:
+        //   .50  = #E8E8EB (text)
+        //   .300 = #80818B (muted text)
+        //   .500 = #30323D (line / border)
+        //   .600 = #292B34 (surface-2, elevated panels, progress bg)
+        //   .700 = #21222A (letter-cell surface)
+        //   .800 = #17181D (page bg)
+        //   .900 = #0E0F12 (block / void)
+        // Slight cool-blue lean (vs warm-pink in prior twilight ramp)
+        // is intentional — keeps the cool-and-pink contrast crisp.
         neutral: {
-          50:  { value: '#F5EAEC' }, // was `petal`     — fg text
-          100: { value: '#D8C0CB' }, // interpolated
-          200: { value: '#B894A4' }, // interpolated
-          300: { value: '#90697E' }, // interpolated
-          400: { value: '#7A5266' }, // interpolated
-          500: { value: '#6E3D55' }, // was `bramble`   — borders, grid lines
-          600: { value: '#5E3450' }, // was `plum`      — letter cell ("slot")
-          700: { value: '#4A2A40' }, // was `mauve`     — def cell ("clue")
-          800: { value: '#1B1B1F' }, // was `aubergine` — page bg (hue-shift to neutral)
-          900: { value: '#0A0A0C' }, // was `pitch`     — block / inert-cell void
+          50:  { value: '#E8E8EB' },
+          100: { value: '#C0C0C5' },
+          200: { value: '#9A9BA3' },
+          300: { value: '#80818B' },
+          400: { value: '#5E5F69' },
+          500: { value: '#30323D' },
+          600: { value: '#292B34' },
+          700: { value: '#21222A' },
+          800: { value: '#17181D' },
+          900: { value: '#0E0F12' },
         },
+        // Active letter-cell bg — escapes the ramps because it's a
+        // surface + secondary-tint blend. Used in the focus state
+        // (Cell.tsx) so the focused cell reads as warmer than its
+        // charcoal neighbours; the inset pink ring (focusRing)
+        // provides the actual visual signal. Worth a literal token
+        // because the value isn't derivable from any single ramp
+        // shade and other themes might not want this exact treatment.
+        focusBg: { value: '#2A1C22' },
       },
       spacing: {
         xs: { value: '0.25rem' },
@@ -163,53 +171,69 @@ export default defineConfig({
     semanticTokens: {
       colors: {
         // ── Surfaces ────────────────────────────────────────────────
-        bg:             { value: '{colors.neutral.800}' },  // page background
-        surface:        { value: '{colors.neutral.600}' },  // letter cell ("slot")
-        surfaceVariant: { value: '{colors.neutral.700}' },  // def cell ("clue") + elevated panels
-        surfaceMuted:   { value: '{colors.neutral.900}' },  // block / inert-cell void
+        bg:             { value: '{colors.neutral.800}' },  // page background (charbon)
+        surface:        { value: '{colors.neutral.700}' },  // letter cell ("slot") — neutral charcoal
+        // `surfaceVariant` is the def-cell ("clue") surface. In the
+        // charbon-and-sage palette this INVERTS from a darker neutral
+        // to a LIGHT secondary tint — clue cells are the eye-catching
+        // pink rectangles in the grid. Text on this surface needs the
+        // dark `onSurfaceVariant` for AA contrast.
+        surfaceVariant: { value: '{colors.secondary.400}' }, // def cell — light dusty pink
+        surfaceMuted:   { value: '{colors.neutral.900}' },   // block / inert-cell void
+        // Elevated charcoal surface (e.g. progress-bar track behind a
+        // sage fill). Useful when a secondary surface is needed without
+        // taking on the pink clue colour.
+        surfaceElevated:{ value: '{colors.neutral.600}' },
 
         // ── Foreground ──────────────────────────────────────────────
-        fg:             { value: '{colors.neutral.50}' },   // primary text
-        fgMuted:        { value: '{colors.neutral.300}' },  // de-emphasized text (currently unused; available)
+        fg:                 { value: '{colors.neutral.50}' },   // primary text on charcoal surfaces
+        fgMuted:            { value: '{colors.neutral.300}' },  // de-emphasized text (timer label, "Grille n°")
+        // Text colour for the inverted (light-pink) clue surface. AA
+        // requires a dark hue — secondary.900 is the brand-coherent
+        // dark plum (~7:1 on `surfaceVariant`).
+        onSurfaceVariant:   { value: '{colors.secondary.900}' },
 
         // ── Lines ───────────────────────────────────────────────────
         border:         { value: '{colors.neutral.500}' },  // UI borders (lobby, primitives)
         gridLine:       { value: '{colors.neutral.500}' },  // grid cell perimeter + stack divider
         muted:          { value: '{colors.neutral.500}' },  // legacy alias of border (used by some lobby code)
 
-        // ── Brand · primary ─────────────────────────────────────────
+        // ── Brand · primary (sage — also the success colour) ────────
         // `accent` / `accentText` are aliases — same value, different
         // semantic intent at the call site (one reads as "the brand
         // colour", the other as "the colour for branded text").
-        accent:         { value: '{colors.primary.400}' },  // current-clue marker, branded text
-        accentText:     { value: '{colors.primary.400}' },  // alias for clarity
-        accentBg:       { value: '{colors.primary.700}' },  // soft brand-tint bg (letter-in-word, hover bg)
-        accentHover:    { value: '{colors.primary.800}' },  // hover state of solid primary CTAs
+        accent:         { value: '{colors.primary.500}' },  // sage — wordmark, current-clue, timer
+        accentText:     { value: '{colors.primary.500}' },  // alias for clarity
+        accentBg:       { value: '{colors.primary.800}' },  // dark-sage tint (letter-in-word bg, validated cell bg)
+        accentHover:    { value: '{colors.primary.700}' },  // hover state of solid primary CTAs
 
-        // ── Brand · secondary ───────────────────────────────────────
+        // ── Brand · secondary (pink — clue surface + focus ring) ────
         secondaryAccent:{ value: '{colors.secondary.500}' },
         secondaryText:  { value: '{colors.secondary.300}' },
         secondaryBg:    { value: '{colors.secondary.800}' },
 
         // ── Status ─────────────────────────────────────────────────
-        // Currently aliased onto the brand ramps (success ≈ primary,
-        // error ≈ secondary). A future palette swap can re-map these
-        // to a dedicated `signal` ramp without touching components —
-        // ADR-0005 §4 reserves space for that.
-        success:        { value: '{colors.primary.400}' },
+        // `success` aliased onto sage primary (validation cells,
+        // progress, timer). `error` keeps secondary (pink) for now;
+        // could move to a dedicated signal ramp later.
+        success:        { value: '{colors.primary.500}' },
         successBg:      { value: '{colors.primary.800}' },
-        successText:    { value: '{colors.primary.300}' },
+        successText:    { value: '{colors.primary.500}' },
         error:          { value: '{colors.secondary.500}' },
         errorBg:        { value: '{colors.secondary.800}' },
         errorText:      { value: '{colors.secondary.300}' },
 
         // ── On-bg foregrounds ───────────────────────────────────────
         // Text colors paired with specific solid backgrounds.
-        onAccent:       { value: '{colors.neutral.900}' },  // text on bright primary bg (focused-cell letter)
+        onAccent:       { value: '{colors.primary.900}' },  // text on solid sage CTA / "Vérifier" button
         onSecondary:    { value: '{colors.neutral.50}' },   // text on solid secondary bg
 
         // ── Focus ───────────────────────────────────────────────────
-        focusRing:      { value: '{colors.primary.500}' },  // focus-visible outline
+        // The focused letter cell uses the warm `focusBg` primitive
+        // for its background and an inset 1.5 px `focusRing` (pink)
+        // for the visual signal — see Cell.tsx letterInput `_focus`.
+        focusBg:        { value: '{colors.focusBg}' },
+        focusRing:      { value: '{colors.secondary.400}' },
       },
     },
   },
