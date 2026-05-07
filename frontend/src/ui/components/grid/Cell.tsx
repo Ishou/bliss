@@ -104,7 +104,9 @@ const letterCell = css({ bg: 'surface' });
 // letter cell on the dark twilight palette — distinct without being
 // jarring. The previous `leaf.50` (#ECFDF5 pale mint) made highlighted
 // cells flash near-white on dark surfaces. petal text on leaf.700
-// hits ~7:1 contrast (AA at body sizes).
+// hits ~4.1:1 — passes AA for large text (cell token = 24 px / bold;
+// threshold is 3:1). Do not use this pairing at body sizes — it falls
+// below the 4.5:1 normal-text bar.
 const letterCellInWord = css({ bg: 'leaf.700' });
 const blockCell = css({ bg: 'block' });
 

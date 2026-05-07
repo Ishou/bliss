@@ -56,8 +56,8 @@ const itemStyles = css({
   // Highlight the pressed option so the picker reads at a glance.
   // Ark sets `data-state="on"` on the selected (pressed) item.
   '&[data-state="on"]': {
-    bg: 'leaf.700',
-    borderColor: 'leaf.700',
+    bg: 'leaf.800',
+    borderColor: 'leaf.800',
     color: 'petal',
   },
   _focusVisible: {
@@ -66,7 +66,7 @@ const itemStyles = css({
   },
   _hover: { bg: 'leaf.50' },
   // The hover token must not erase the selected fill.
-  '&[data-state="on"]:hover': { bg: 'leaf.800' },
+  '&[data-state="on"]:hover': { bg: 'leaf.900' },
   _disabled: { opacity: 0.5, cursor: 'not-allowed' },
 });
 
