@@ -85,6 +85,18 @@ Reference points: Duolingo, NYT Games (the warmer recent direction),
 Wordscapes — adapted to a French *mots fléchés* sensibility (less
 cartoon, no mascot animations in v1).
 
+#### Amendment (PR #207, 2026-05-07): Twilight dark-theme pivot
+
+The visual mood pivots from warm-cream playful to **dark and focused**:
+
+- Neutral dark gray page (`aubergine` #1B1B1F) — recedes so the grid commands the eye.
+- Sakura-rose grid surfaces: letter cells (`plum` #5E3450) sit one notch lighter than definition cells (`mauve` #4A2A40), so the input slot pops above the clue.
+- Near-black block squares (`pitch` #0A0A0C) — the "void" square.
+- Warm pink-white foreground text (`petal` #F5EAEC) — picks up the surface hue; passes AA on every grid surface.
+- Brand green (`leaf`) remains primary; accent text shifts to `leaf.400` (#34D399, ~7:1 on `aubergine`) since `leaf.700` falls below AA on dark backgrounds.
+
+Warm-cream surfaces (`cream`, `sand`), pure-white fills (`breath`), and navy body text (`ink`) are superseded by the twilight primitives. **Dark mode is now the single visual theme for v1.** The §8 hold on dark mode is lifted; this pivot is the implementation.
+
 ### 3a. Definition cells: one or two clues per cell (amendment)
 
 The first interactive grid (PR #21) simplified definition cells to **one
@@ -191,6 +203,21 @@ direction is harder to translate to dark surfaces without losing
 character, and the manifesto's "Right-sized infra" / "no premature
 features" applies to design too. Revisit when a real user requests it
 or when night-time-puzzle telemetry justifies it.
+
+#### Amendment (PR #207, 2026-05-07): Twilight palette tokens
+
+The surface and foreground primitives (`cream`, `sand`, `ink`, `breath`) are superseded. The `leaf` and `blossom` ramps are retained unchanged. Six new primitives replace the four surface anchors:
+
+| Token | Hex | Role |
+|---|---|---|
+| `aubergine` (page bg) | `#1B1B1F` | Page background — neutral dark gray, recedes |
+| `plum` (surface) | `#5E3450` | Letter cells — lifted sakura twilight |
+| `mauve` (definition) | `#4A2A40` | Definition cells — medium sakura twilight |
+| `bramble` (border) | `#6E3D55` | Borders + grid lines — sakura rule |
+| `pitch` (block) | `#0A0A0C` | Inert-cell fill — near-black neutral |
+| `petal` (fg) | `#F5EAEC` | Foreground text — warm pink-white |
+
+**Accessibility constraint (WCAG AA) — updated:** `petal` (#F5EAEC, L≈0.843) passes AA on all grid surfaces (on `plum` ~7.4:1, on `mauve` ~9.1:1, on `pitch` ~18.8:1). Brand-colored text on dark backgrounds uses `leaf.400` (#34D399, ~7:1 on `aubergine}`); `leaf.700` falls below AA on `aubergine` and must not be used as text in the twilight theme. Primary button fill uses `leaf.800` (#076244) with `petal` text (~6.3:1, passes AA); `leaf.700` with `petal` is ~4.15:1 and is excluded as a text-over-fill pairing.
 
 ### 5. Typography
 
