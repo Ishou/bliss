@@ -2,14 +2,18 @@ import { useEffect, useState } from 'react';
 import { css } from 'styled-system/css';
 import { ClockIcon } from '@/ui/components/icons';
 
-// Solo-mode toolbar timer pill — ADR-0005 §6.
+// Toolbar timer pill — ADR-0005 §6. Sage at 12 % alpha background +
+// sage text, clock icon, tabular numerals, pill-shaped.
 //
-// Sage at 12% alpha background + sage text, clock icon, tabular numerals,
-// pill-shaped. Format mirrors `lobby/Timer.tsx` (MM:SS or HH:MM:SS) but
-// the data path is local: ticks from the moment this component mounts.
-// The lobby timer is server-driven (`gameStarted` event); this one is
-// client-driven and intentionally trivial — it has no role in scoring,
-// it's a UI affordance for the solo flow.
+// Three data modes, picked by the props passed:
+//   * No props          — solo flow. Ticks from the mount instant.
+//   * `startedAt`       — multiplayer flow. Ticks against the
+//                         server-emitted `gameStarted.startedAt` ISO
+//                         string so every client converges on the
+//                         same elapsed value.
+//   * `frozenAtMs`      — game ended. Renders the fixed duration and
+//                         stops ticking.
+//   * `fixedElapsedMs`  — storybook / deterministic tests.
 
 const HOUR_MS = 60 * 60 * 1000;
 const MINUTE_MS = 60 * 1000;
@@ -59,28 +63,48 @@ const pillStyles = css({
 });
 
 export interface TimerPillProps {
-  // Optional override — primarily for storybook / visual tests so the
-  // displayed time is deterministic. When omitted, the pill ticks from
-  // the mount instant.
+  // Server-emitted `gameStarted.startedAt` ISO timestamp. Drives the
+  // multiplayer pill so every client converges on the same elapsed
+  // value. Omit on solo to fall back to "tick from mount".
+  readonly startedAt?: string;
+  // Frozen duration in ms (multiplayer `gameSolved`). Renders a fixed
+  // time and stops ticking.
+  readonly frozenAtMs?: number;
+  // Storybook / visual-test override. When set, displayed time is
+  // deterministic regardless of mount instant or `startedAt`.
   readonly fixedElapsedMs?: number;
 }
 
-export function TimerPill({ fixedElapsedMs }: TimerPillProps) {
-  const [elapsedMs, setElapsedMs] = useState<number>(() => fixedElapsedMs ?? 0);
+export function TimerPill({ startedAt, frozenAtMs, fixedElapsedMs }: TimerPillProps) {
+  const [elapsedMs, setElapsedMs] = useState<number>(() => {
+    if (fixedElapsedMs !== undefined) return fixedElapsedMs;
+    if (frozenAtMs !== undefined) return frozenAtMs;
+    if (startedAt !== undefined) return Date.now() - new Date(startedAt).getTime();
+    return 0;
+  });
 
   useEffect(() => {
     if (fixedElapsedMs !== undefined) {
       setElapsedMs(fixedElapsedMs);
       return;
     }
-    const startMs = Date.now();
+    if (frozenAtMs !== undefined) {
+      setElapsedMs(frozenAtMs);
+      return;
+    }
+    // The two live-tick modes share the same interval — only the
+    // `startMs` reference differs. Solo: mount instant. Multiplayer:
+    // server-emitted ISO timestamp.
+    const startMs =
+      startedAt !== undefined ? new Date(startedAt).getTime() : Date.now();
+    setElapsedMs(Date.now() - startMs);
     const id = setInterval(() => {
       setElapsedMs(Date.now() - startMs);
     }, SECOND_MS);
     return () => {
       clearInterval(id);
     };
-  }, [fixedElapsedMs]);
+  }, [startedAt, frozenAtMs, fixedElapsedMs]);
 
   return (
     <span

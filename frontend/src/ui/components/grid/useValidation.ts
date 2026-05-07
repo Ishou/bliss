@@ -34,8 +34,21 @@ const ERROR_REVERT_MS = 200;
 
 const positionKey = (row: number, col: number): string => `${row},${col}`;
 
+// Letter cells accept A–Z input only; the soft keyboard / hardware
+// keyboard rarely surfaces accented French letters and most players
+// type the un-accented form even when the answer's canonical text
+// carries diacritics ("ETE" for "ÉTÉ", "DEJA" for "DÉJÀ"). The
+// validator therefore compares with accents stripped — `NFD` splits
+// each accented glyph into a base letter + combining mark, then the
+// regex removes the marks. Keeps the comparison robust for the full
+// French diacritic set (acute, grave, circumflex, diaeresis, cedilla,
+// tilde) without per-character special-casing.
 function normalize(letter: string | null | undefined): string {
-  return (letter ?? '').trim().toUpperCase();
+  return (letter ?? '')
+    .trim()
+    .toUpperCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '');
 }
 
 export interface ValidationState {

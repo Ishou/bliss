@@ -52,17 +52,26 @@ export interface PuzzleToolbarProps {
   readonly metadata: string;
   readonly onRefresh?: () => void;
   readonly onOpenSettings?: () => void;
+  // Optional server-driven timer parameters. Multiplayer passes
+  // `timerStartedAt` (ISO string from `gameStarted.startedAt`) so the
+  // pill ticks against the server clock; `timerFrozenAtMs` freezes
+  // the display once the game ends. Solo omits both — `TimerPill`
+  // falls back to its mount-instant tick.
+  readonly timerStartedAt?: string;
+  readonly timerFrozenAtMs?: number;
 }
 
 export function PuzzleToolbar({
   metadata,
   onRefresh,
   onOpenSettings,
+  timerStartedAt,
+  timerFrozenAtMs,
 }: PuzzleToolbarProps) {
   return (
     <div className={toolbarStyles} role="toolbar" aria-label="Outils de la grille">
       <div className={leftSlotStyles}>
-        <TimerPill />
+        <TimerPill startedAt={timerStartedAt} frozenAtMs={timerFrozenAtMs} />
       </div>
       <div className={centerSlotStyles} aria-label="Informations de la grille">
         {metadata}
