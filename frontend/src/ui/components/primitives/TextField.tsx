@@ -20,7 +20,7 @@ const rootStyles = css({
 const labelStyles = css({
   fontSize: 'md',
   fontWeight: 'bold',
-  color: 'leaf.700',
+  color: 'accent',
   margin: 0,
 });
 
@@ -35,14 +35,14 @@ const inputStyles = css({
   fontFamily: 'body',
   fontSize: 'body',
   _focusVisible: {
-    outline: '3px solid token(colors.leaf.500)',
+    outline: '3px solid token(colors.focusRing)',
     outlineOffset: '2px',
   },
 });
 
 const errorStyles = css({
   fontSize: 'sm',
-  color: 'blossom.700',
+  color: 'errorText',
   margin: 0,
 });
 

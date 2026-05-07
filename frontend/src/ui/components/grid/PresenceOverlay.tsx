@@ -85,14 +85,15 @@ const chipEl = css({
   fontSize: 'xxs',
   fontWeight: 'medium',
   color: 'var(--player-text-color)',
-  bg: 'breath',
+  bg: 'surface',
   border: '1px solid var(--player-color)',
   borderRadius: '9999px',
   whiteSpace: 'nowrap',
   pointerEvents: 'none',
   zIndex: 4,
-  // Slight shadow to lift the chip off the grid surface.
-  boxShadow: '0 1px 3px rgba(27, 40, 69, 0.15)',
+  // Slight shadow to lift the chip off the grid surface. On the dark
+  // twilight palette a near-black pitch shadow reads as depth.
+  boxShadow: '0 1px 3px rgba(10, 10, 12, 0.5)',
 });
 
 const chipDot = css({
@@ -135,10 +136,10 @@ export function PresenceOverlay({
   // hasn't joined yet is dropped silently).
   readonly playersBySessionId: ReadonlyMap<SessionId, Player>;
   // The local player's sessionId. Their own presenceUpdated frames are
-  // filtered out — the local "current word" highlight (leaf.50 background
-  // on `letterCellInWord` cells) plus the DOM caret already show where
-  // they are, and stacking the overlay's hue on top of leaf.50 muddies
-  // the visual without adding information.
+  // filtered out — the local "current word" highlight (`accentBg`
+  // background on `letterCellInWord` cells) plus the DOM caret
+  // already show where they are, and stacking the overlay's hue on
+  // top of accentBg muddies the visual without adding information.
   readonly currentSessionId: SessionId;
 }) {
   // Insertion-ordered list. A fresh presence overwrites the previous

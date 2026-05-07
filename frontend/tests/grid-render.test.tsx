@@ -181,27 +181,33 @@ describe('Grid render', () => {
     // Arrow direction is conveyed via the StackedClue group labels (tested above).
   });
 
-  it('renders long single-clue text in full (no clamp) plus arrow', () => {
-    const longClue: DefinitionCell = {
-      kind: 'definition',
-      position: { row: 0, col: 0 },
-      clues: [
+  it('renders long single-clue text in full (no clamp); arrow rendered on receiving letter cell', () => {
+    const puzzle: Puzzle = {
+      id: 'long', title: 'long', language: 'fr', width: 2, height: 1,
+      cells: [
         {
-          text: "Mammifère carnivore aquatique d'Amérique du Sud",
-          arrow: 'right',
+          kind: 'definition',
+          position: { row: 0, col: 0 },
+          clues: [
+            {
+              text: "Mammifère carnivore aquatique d'Amérique du Sud",
+              arrow: 'right',
+            },
+          ],
         },
+        { kind: 'letter', position: { row: 0, col: 1 }, answer: 'A', entry: '' },
       ],
     };
-    render(<DefinitionCellView cell={longClue} currentArrow={null} />);
-    // Full clue text is rendered, not truncated. The cell uses a tiny
-    // font (xxs) and wraps freely; CurrentCluePanel handles legibility.
-    expect(
-      screen.getByText("Mammifère carnivore aquatique d'Amérique du Sud"),
-    ).toBeInTheDocument();
+    const { container } = render(<Grid puzzle={puzzle} />);
     expect(
       screen.getByTitle("Mammifère carnivore aquatique d'Amérique du Sud"),
     ).toBeInTheDocument();
-    expect(screen.getByRole('img', { name: 'définition horizontale' })).toBeInTheDocument();
+    // Arrows now live on the receiving letter cell (ADR-0005 §6
+    // follow-up). Per `Grid.tsx#computeIncomingArrows`, a `right`
+    // clue at (0,0) writes an arrow at the LEFT edge of (0,1).
+    expect(
+      container.querySelector('[data-row="0"][data-col="1"] [data-arrow="right"][data-incoming-edge="left"]'),
+    ).not.toBeNull();
   });
 
   it('keeps both clues visible in stacked cells, each with its own title and arrow', () => {
@@ -222,85 +228,91 @@ describe('Grid render', () => {
     expect(screen.getByTitle('Tracer des mots')).toBeInTheDocument();
   });
 
-  // Bent arrows. `right-down` and `down-right` ORIGINATE at the same
-  // border as `right` / `down` respectively (the arrow ENTERS the right
-  // / bottom neighbour and bends inside that neighbour). Earlier code
-  // placed bent arrows by *flow* axis, putting them on the wrong border.
-  // The tests below pin two invariants per bent type:
-  //   1. The arrow mark exists with `data-arrow={arrow}` set.
-  //   2. The marker is rendered as an SVG (bent shape) — not a clip-path
-  //      span — so the L-bend is visible.
-  it('renders right-down as a bent arrow rooted at the right border', () => {
-    const cell: DefinitionCell = {
-      kind: 'definition',
-      position: { row: 0, col: 0 },
-      clues: [{ text: 'Plante grimpante', arrow: 'right-down' }],
+  // Arrows live on the receiving letter cell (ADR-0005 §6 follow-up).
+  // The bent variants `right-down` / `down-right` share the receiving
+  // cell with their straight equivalents (`right` / `down`) — the
+  // bend happens inside the answer path, not at the entry. Tests
+  // assert the data-arrow surface (preserves the bent type for AT)
+  // and the edge.
+  it('places `right-down` arrow on the receiving cell\'s left edge', () => {
+    const puzzle: Puzzle = {
+      id: 'rd', title: 'rd', language: 'fr', width: 2, height: 2,
+      cells: [
+        { kind: 'definition', position: { row: 0, col: 0 }, clues: [{ text: 'Plante grimpante', arrow: 'right-down' }] },
+        { kind: 'letter', position: { row: 0, col: 1 }, answer: 'A', entry: '' },
+        { kind: 'letter', position: { row: 1, col: 1 }, answer: 'B', entry: '' },
+      ],
     };
-    const { container } = render(<DefinitionCellView cell={cell} currentArrow={null} />);
-    const mark = container.querySelector('[data-arrow="right-down"]');
+    const { container } = render(<Grid puzzle={puzzle} />);
+    const mark = container.querySelector(
+      '[data-row="0"][data-col="1"] [data-arrow="right-down"][data-incoming-edge="left"]',
+    );
     expect(mark).not.toBeNull();
-    // Bent arrows render as <svg> children; straight arrows are plain spans.
-    expect(mark?.querySelector('svg')).not.toBeNull();
-    // aria-label uses flow-axis French ("verticale" for `right-down`'s
-    // downward flow) — assistive tech announces what the answer DOES,
-    // not which border the arrow originates from.
     expect(mark).toHaveAttribute('aria-label', 'définition verticale');
   });
 
-  it('renders down-right as a bent arrow rooted at the bottom border', () => {
-    const cell: DefinitionCell = {
-      kind: 'definition',
-      position: { row: 0, col: 0 },
-      clues: [{ text: 'Mot de passe', arrow: 'down-right' }],
+  it('places `down-right` arrow on the receiving cell\'s top edge', () => {
+    const puzzle: Puzzle = {
+      id: 'dr', title: 'dr', language: 'fr', width: 2, height: 2,
+      cells: [
+        { kind: 'definition', position: { row: 0, col: 0 }, clues: [{ text: 'Mot de passe', arrow: 'down-right' }] },
+        { kind: 'letter', position: { row: 1, col: 0 }, answer: 'A', entry: '' },
+        { kind: 'letter', position: { row: 1, col: 1 }, answer: 'B', entry: '' },
+      ],
     };
-    const { container } = render(<DefinitionCellView cell={cell} currentArrow={null} />);
-    const mark = container.querySelector('[data-arrow="down-right"]');
+    const { container } = render(<Grid puzzle={puzzle} />);
+    const mark = container.querySelector(
+      '[data-row="1"][data-col="0"] [data-arrow="down-right"][data-incoming-edge="top"]',
+    );
     expect(mark).not.toBeNull();
-    expect(mark?.querySelector('svg')).not.toBeNull();
     expect(mark).toHaveAttribute('aria-label', 'définition horizontale');
   });
 
-  // Same-origin two-clue cell: both clues' arrows ENTER through the same
-  // border (right or bottom) but with different shapes. The renderer
-  // must show TWO arrow marks on that border, one per clue, with the
-  // correct shape per arrow direction.
-  //
-  // Scenario: a left-column inner skeleton cell carries DOWN_RIGHT +
-  // RIGHT (two horizontal-flow clues, both bottom-origin / both
-  // right-origin respectively per `arrowOriginOf`). Today's data this
-  // exercises the same-origin branch; the previous renderer would silently
-  // mis-position the second arrow.
-  it('renders both arrows on the right border for [right + right-down] pair', () => {
-    const cell: DefinitionCell = {
-      kind: 'definition',
-      position: { row: 0, col: 0 },
-      clues: [
-        { text: 'Première', arrow: 'right' },
-        { text: 'Deuxième', arrow: 'right-down' },
+  // Same-origin pair — both arrows enter the SAME receiving letter
+  // cell. Per `Grid.tsx#computeIncomingArrows`, the two arrows split
+  // the receiving edge into q1 (28 %) + q3 (72 %).
+  it('renders both arrows on the receiving cell for a [right + right-down] pair', () => {
+    const puzzle: Puzzle = {
+      id: 'rr', title: 'rr', language: 'fr', width: 2, height: 2,
+      cells: [
+        {
+          kind: 'definition',
+          position: { row: 0, col: 0 },
+          clues: [
+            { text: 'Première', arrow: 'right' },
+            { text: 'Deuxième', arrow: 'right-down' },
+          ],
+        },
+        { kind: 'letter', position: { row: 0, col: 1 }, answer: 'A', entry: '' },
+        { kind: 'letter', position: { row: 1, col: 1 }, answer: 'B', entry: '' },
       ],
     };
-    const { container } = render(<DefinitionCellView cell={cell} currentArrow={null} />);
-    expect(container.querySelector('[data-arrow="right"]')).not.toBeNull();
-    expect(container.querySelector('[data-arrow="right-down"]')).not.toBeNull();
-    // Both arrows are present, each rendered as the appropriate shape.
-    expect(container.querySelector('[data-arrow="right"] svg')).toBeNull(); // straight
-    expect(container.querySelector('[data-arrow="right-down"] svg')).not.toBeNull(); // bent
+    const { container } = render(<Grid puzzle={puzzle} />);
+    const recv = container.querySelector('[data-row="0"][data-col="1"]');
+    expect(recv?.querySelector('[data-arrow="right"][data-incoming-edge="left"]')).not.toBeNull();
+    expect(recv?.querySelector('[data-arrow="right-down"][data-incoming-edge="left"]')).not.toBeNull();
   });
 
-  it('renders both arrows on the bottom border for [down + down-right] pair', () => {
-    const cell: DefinitionCell = {
-      kind: 'definition',
-      position: { row: 0, col: 0 },
-      clues: [
-        { text: 'Première', arrow: 'down' },
-        { text: 'Deuxième', arrow: 'down-right' },
+  it('renders both arrows on the receiving cell for a [down + down-right] pair', () => {
+    const puzzle: Puzzle = {
+      id: 'dd', title: 'dd', language: 'fr', width: 2, height: 2,
+      cells: [
+        {
+          kind: 'definition',
+          position: { row: 0, col: 0 },
+          clues: [
+            { text: 'Première', arrow: 'down' },
+            { text: 'Deuxième', arrow: 'down-right' },
+          ],
+        },
+        { kind: 'letter', position: { row: 1, col: 0 }, answer: 'A', entry: '' },
+        { kind: 'letter', position: { row: 1, col: 1 }, answer: 'B', entry: '' },
       ],
     };
-    const { container } = render(<DefinitionCellView cell={cell} currentArrow={null} />);
-    expect(container.querySelector('[data-arrow="down"]')).not.toBeNull();
-    expect(container.querySelector('[data-arrow="down-right"]')).not.toBeNull();
-    expect(container.querySelector('[data-arrow="down"] svg')).toBeNull();
-    expect(container.querySelector('[data-arrow="down-right"] svg')).not.toBeNull();
+    const { container } = render(<Grid puzzle={puzzle} />);
+    const recv = container.querySelector('[data-row="1"][data-col="0"]');
+    expect(recv?.querySelector('[data-arrow="down"][data-incoming-edge="top"]')).not.toBeNull();
+    expect(recv?.querySelector('[data-arrow="down-right"][data-incoming-edge="top"]')).not.toBeNull();
   });
 
   // Two-clue cells render the visual stack in cell.clues order — the

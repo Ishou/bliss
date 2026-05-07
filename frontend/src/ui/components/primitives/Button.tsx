@@ -13,8 +13,8 @@ import { css, cx } from 'styled-system/css';
 // Variants map to the existing ad-hoc styles found in `EndGameModal`,
 // `WaitingRoom`, and `routes/index.tsx`:
 //
-//   * primary   — solid `leaf.700` fill, `breath` text. Brand CTA.
-//   * secondary — `leaf.700` outline + transparent fill. Modal "Fermer",
+//   * primary   — solid brand-tinted fill, `fg` text. Brand CTA.
+//   * secondary — branded outline + transparent fill. Modal "Fermer",
 //                 the WaitingRoom share button.
 //   * ghost     — minimal styling for affordances like the inline
 //                 pseudonym-edit trigger; visible border but `surface`
@@ -27,39 +27,50 @@ const baseStyles = css({
   display: 'inline-flex',
   alignItems: 'center',
   justifyContent: 'center',
-  borderRadius: 'sm',
+  borderRadius: '6px',
   paddingInline: 'md',
   paddingBlock: 'sm',
   fontSize: 'body',
   fontFamily: 'body',
-  fontWeight: 'bold',
+  // Brand brief allows weights 400 / 500 only (ADR-0005 §5). The CTA
+  // earns the heavier of the two — the previous `bold` (700) was
+  // outside the type system and broke the brand's "two-weight" rule.
+  fontWeight: 'medium',
   cursor: 'pointer',
-  // Shared focus ring — `leaf.500` at 3px / 2px offset matches the
-  // legacy modal focus ring so screen readers + keyboard users see the
-  // same affordance everywhere.
-  _focusVisible: { outline: '3px solid token(colors.leaf.500)', outlineOffset: '2px' },
+  transition: 'background-color 120ms ease-out, color 120ms ease-out, opacity 120ms ease-out, border-color 120ms ease-out',
+  // Shared focus ring — `focusRing` (= secondary.400, the rose) at
+  // 2px / 2px offset. Brief §8 mandates a visible focus state on every
+  // interactive surface; rose-on-CTA-edge keeps the affordance crisp
+  // against the sage fill.
+  _focusVisible: { outline: '2px solid token(colors.focusRing)', outlineOffset: '2px' },
   _disabled: { opacity: 0.5, cursor: 'not-allowed' },
 });
 
 const variantStyles = {
+  // Spec primary CTA (ADR-0005 §6): solid sage with dark sage-on text,
+  // no border. Hover lifts to the next-warmer sage shade rather than
+  // dimming, matching the brief's "hover lifts the brightness" rule.
   primary: css({
-    bg: 'leaf.700',
-    color: 'breath',
+    bg: 'accent',
+    color: 'onAccent',
     border: 'none',
-    _hover: { bg: 'leaf.800' },
+    _hover: { bg: 'primary.400' },
   }),
   secondary: css({
     bg: 'transparent',
-    color: 'leaf.700',
-    border: '1px solid token(colors.leaf.700)',
-    _hover: { bg: 'leaf.50' },
+    color: 'accent',
+    border: '1px solid token(colors.accent)',
+    _hover: { bg: 'accentBg' },
   }),
   ghost: css({
     bg: 'surface',
     color: 'fg',
     border: '1px solid token(colors.border)',
-    fontWeight: 'semibold',
-    _hover: { bg: 'leaf.50' },
+    // Hover bg is the dark sage `accentBg`, not `primary.50` (the
+    // upstream WCAG-AA fix); my branch dropped the legacy
+    // `fontWeight: 'semibold'` because the brand brief (ADR-0005 §3)
+    // caps the type system at weights 400 / 500.
+    _hover: { bg: 'accentBg' },
   }),
 } as const;
 

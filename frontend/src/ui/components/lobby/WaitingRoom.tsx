@@ -61,7 +61,7 @@ const styles = {
     padding: 'md', bg: 'bg', color: 'fg', fontFamily: 'body',
   }),
   sectionTitle: css({
-    fontSize: 'md', fontWeight: 'bold', color: 'leaf.700', margin: 0,
+    fontSize: 'md', fontWeight: 'bold', color: 'accent', margin: 0,
   }),
   row: css({ display: 'flex', alignItems: 'center', gap: 'sm' }),
   inlineField: css({ flex: 1 }),
@@ -69,7 +69,7 @@ const styles = {
   // successful clipboard write. `role="status"` + `aria-live="polite"`
   // so screen readers announce the change without stealing focus.
   copyFeedback: css({
-    fontSize: 'sm', color: 'leaf.700', fontWeight: 'medium',
+    fontSize: 'sm', color: 'accent', fontWeight: 'medium',
   }),
 };
 

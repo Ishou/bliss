@@ -85,6 +85,18 @@ Reference points: Duolingo, NYT Games (the warmer recent direction),
 Wordscapes — adapted to a French *mots fléchés* sensibility (less
 cartoon, no mascot animations in v1).
 
+#### Amendment (PR #207, 2026-05-07): Twilight dark-theme pivot
+
+The visual mood pivots from warm-cream playful to **dark and focused**:
+
+- Neutral dark gray page (`aubergine` #1B1B1F) — recedes so the grid commands the eye.
+- Sakura-rose grid surfaces: letter cells (`plum` #5E3450) sit one notch lighter than definition cells (`mauve` #4A2A40), so the input slot pops above the clue.
+- Near-black block squares (`pitch` #0A0A0C) — the "void" square.
+- Warm pink-white foreground text (`petal` #F5EAEC) — picks up the surface hue; passes AA on every grid surface.
+- Brand green (`leaf`) remains primary; accent text shifts to `leaf.400` (#A2D481, ~10:1 on `aubergine`) since `leaf.700` falls below AA on dark backgrounds.
+
+Warm-cream surfaces (`cream`, `sand`), pure-white fills (`breath`), and navy body text (`ink`) are superseded by the twilight primitives. **Dark mode is now the single visual theme for v1.** The §8 hold on dark mode is lifted; this pivot is the implementation.
+
 ### 3a. Definition cells: one or two clues per cell (amendment)
 
 The first interactive grid (PR #21) simplified definition cells to **one
@@ -191,6 +203,52 @@ direction is harder to translate to dark surfaces without losing
 character, and the manifesto's "Right-sized infra" / "no premature
 features" applies to design too. Revisit when a real user requests it
 or when night-time-puzzle telemetry justifies it.
+
+#### Amendment (PR #207, 2026-05-07): Twilight palette tokens
+
+The surface and foreground primitives (`cream`, `sand`, `ink`, `breath`) are superseded. The `leaf` and `blossom` ramps are retained unchanged. Six new primitives replace the four surface anchors:
+
+| Token | Hex | Role |
+|---|---|---|
+| `aubergine` (page bg) | `#1B1B1F` | Page background — neutral dark gray, recedes |
+| `plum` (surface) | `#5E3450` | Letter cells — lifted sakura twilight |
+| `mauve` (definition) | `#4A2A40` | Definition cells — medium sakura twilight |
+| `bramble` (border) | `#6E3D55` | Borders + grid lines — sakura rule |
+| `pitch` (block) | `#0A0A0C` | Inert-cell fill — near-black neutral |
+| `petal` (fg) | `#F5EAEC` | Foreground text — warm pink-white |
+
+**Accessibility constraint (WCAG AA) — updated:** `petal` (#F5EAEC, L≈0.843) passes AA on all grid surfaces (on `plum` ~7.4:1, on `mauve` ~9.1:1, on `pitch` ~18.8:1). Brand-colored text on dark backgrounds uses `leaf.400` (#A2D481, ~10:1 on `aubergine`); `leaf.700` falls below AA on `aubergine` and must not be used as text in the twilight theme. Primary button fill uses `leaf.800` (#406038) with `petal` text (~5.6:1, passes AA); `leaf.700` with `petal` is ~4.15:1 and is excluded as a text-over-fill pairing.
+
+#### Amendment (2026-05-08): Role-based token model + theme-swap foundation
+
+The brand-specific primitive names from the prior amendments (`leaf`, `blossom`, `aubergine`, `plum`, `mauve`, `bramble`, `pitch`, `petal`) are replaced by a three-tier role-based token model. **Components no longer reference brand-specific names**; a future palette swap (light theme, alternative brand colours) is now a single-file edit in `panda.config.ts` with zero component touches.
+
+**Tier 1 — Ramps** (in `tokens.colors`):
+- `primary.50–900` — brand-coloured ramp (was `leaf`).
+- `secondary.50–900` — accent ramp (was `blossom`).
+- `neutral.50–900` — surface tonal scale (replaces `aubergine`/`plum`/`mauve`/`bramble`/`pitch`/`petal`). The `.500–.700` stops carry a sakura-rose tint; `.800–.900` (page bg + void) drop the tint to neutral gray per the brand brief.
+
+**Tier 2 — Semantic role tokens** (in `semanticTokens.colors`):
+
+| Role group | Tokens |
+|---|---|
+| Surfaces | `bg`, `surface`, `surfaceVariant`, `surfaceMuted`, `surfaceElevated` |
+| Foreground | `fg`, `fgMuted`, `onAccent`, `onSecondary`, `onSurfaceVariant` |
+| Lines | `border`, `gridLine`, `muted` (legacy alias) |
+| Brand · primary | `accent`, `accentText`, `accentBg`, `accentHover` |
+| Brand · secondary | `secondaryAccent`, `secondaryText`, `secondaryBg` |
+| Status | `success`, `successBg`, `successText`, `error`, `errorBg`, `errorText` |
+| Focus | `focusRing`, `focusBg` |
+
+Each role maps to a ramp shade in the panda config. The mapping is the only place a theme-swap touches.
+
+**Tier 3 — Components**: reference role tokens (`bg: 'surface'`, `color: 'accent'`) by default. Specific shade access via the renamed ramps (`_hover: { bg: 'primary.800' }`) is allowed for state derivations.
+
+**Status tokens** (`success` / `error`) are now first-class semantic tokens, currently aliased onto the brand ramps (`success → primary.400`, `error → secondary.500`). The `signal` palette reserved earlier in this section can land later by re-mapping just these tokens — no component edit required.
+
+**WCAG AA accountability** stays calibrated against the current twilight palette through the role-token mappings. A future palette swap re-runs the calibration when re-mapping the `accent*`/`onAccent` family.
+
+**Source of truth.** `frontend/panda.config.ts` is the canonical token definition. The hex values in the tables above are historical references showing what the *current* twilight theme resolves to; the names of the role tokens (Tier 2) are stable across themes.
 
 ### 5. Typography
 

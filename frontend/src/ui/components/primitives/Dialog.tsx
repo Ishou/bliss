@@ -24,9 +24,9 @@ import { css, cx } from 'styled-system/css';
 const backdropStyles = css({
   position: 'fixed',
   inset: 0,
-  // Translucent ink scrim — keeps the page visible underneath while
-  // dimming it enough for the dialog surface to read as elevated.
-  bg: 'rgba(27, 40, 69, 0.6)',
+  // Translucent pitch scrim — keeps the page visible underneath
+  // while dimming it enough for the dialog surface to read as elevated.
+  bg: 'rgba(10, 10, 12, 0.7)',
   zIndex: 1000,
 });
 
@@ -41,7 +41,7 @@ const positionerStyles = css({
 });
 
 const contentStyles = css({
-  bg: 'cream',
+  bg: 'surface',
   color: 'fg',
   borderRadius: 'md',
   padding: 'lg',
@@ -54,14 +54,14 @@ const contentStyles = css({
   fontFamily: 'body',
   outline: 'none',
   _focusVisible: {
-    boxShadow: '0 12px 40px -8px rgba(0, 0, 0, 0.35), 0 0 0 3px token(colors.leaf.500)',
+    boxShadow: '0 12px 40px -8px rgba(0, 0, 0, 0.35), 0 0 0 3px token(colors.focusRing)',
   },
 });
 
 const titleStyles = css({
   fontSize: 'xl',
   fontWeight: 'bold',
-  color: 'leaf.700',
+  color: 'accent',
   margin: 0,
 });
 

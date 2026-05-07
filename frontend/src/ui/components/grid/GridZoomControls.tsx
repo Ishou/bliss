@@ -27,25 +27,32 @@ const cluster = css({
 // Inline-style: Panda CSS cannot statically extract min(…) with viewport units.
 const clusterStyle = { maxWidth: GRID_TRACK_WIDTH } as const;
 
+// Same visual rhythm as the toolbar `IconButton` primitive (subtle
+// border, muted icon, hover brightens, press scales) — the previous
+// `bg: surface` + `_hover: primary.50` looked out of palette next to
+// the new toolbar buttons. Touch target stays at 44 px (WCAG 2.5.5 AA)
+// so we keep the larger size; the IconButton's 28×28 is desktop-only
+// for the toolbar.
 const button = css({
-  // WCAG 2.5.5 AA: 44 px minimum touch target — zoom buttons are tap-anywhere affordances (unlike letter cells, which are navigated one at a time).
   minWidth: '44px',
   height: '44px',
   px: 'sm',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  bg: 'surface',
-  color: 'fg',
+  bg: 'transparent',
+  color: 'fgMuted',
   border: '1px solid token(colors.border)',
-  borderRadius: '4px',
+  borderRadius: '6px',
   fontFamily: 'body',
-  fontSize: 'md',
-  fontWeight: 'bold',
+  fontSize: 'body',
+  fontWeight: 'medium',
   cursor: 'pointer',
-  _hover: { bg: 'leaf.50' },
-  _focusVisible: { outline: '2px solid token(colors.leaf.700)', outlineOffset: '1px' },
-  _disabled: { opacity: 0.4, cursor: 'not-allowed' },
+  transition: 'background-color 120ms ease-out, border-color 120ms ease-out, color 120ms ease-out, transform 120ms ease-out',
+  _hover: { borderColor: 'fg', color: 'fg' },
+  _active: { transform: 'scale(0.96)' },
+  _focusVisible: { outline: '2px solid token(colors.focusRing)', outlineOffset: '2px' },
+  _disabled: { opacity: 0.5, cursor: 'not-allowed' },
 });
 
 export function GridZoomControls({
@@ -75,16 +82,6 @@ export function GridZoomControls({
         type="button"
         className={button}
         onMouseDown={(e) => e.preventDefault()}
-        onClick={onZoomIn}
-        disabled={!canZoomIn}
-        aria-label="Zoom in"
-      >
-        +
-      </button>
-      <button
-        type="button"
-        className={button}
-        onMouseDown={(e) => e.preventDefault()}
         onClick={onZoomOut}
         disabled={!canZoomOut}
         aria-label="Zoom out"
@@ -101,6 +98,16 @@ export function GridZoomControls({
         title="Reset zoom"
       >
         1:1
+      </button>
+      <button
+        type="button"
+        className={button}
+        onMouseDown={(e) => e.preventDefault()}
+        onClick={onZoomIn}
+        disabled={!canZoomIn}
+        aria-label="Zoom in"
+      >
+        +
       </button>
     </div>
   );

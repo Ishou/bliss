@@ -85,12 +85,12 @@ const styles = {
   badge: css({
     fontSize: 'xs', fontWeight: 'bold', letterSpacing: '0.06em',
     textTransform: 'uppercase', paddingInline: 'sm', paddingBlock: 'xs',
-    borderRadius: '9999px', bg: 'leaf.50', color: 'leaf.700',
+    borderRadius: '9999px', bg: 'primary.50', color: 'primary.700',
   }),
   ownerBadge: css({
     fontSize: 'xs', fontWeight: 'bold', letterSpacing: '0.06em',
     textTransform: 'uppercase', paddingInline: 'sm', paddingBlock: 'xs',
-    borderRadius: '9999px', bg: 'blossom.50', color: 'blossom.700',
+    borderRadius: '9999px', bg: 'secondary.50', color: 'secondary.700',
   }),
 };
 

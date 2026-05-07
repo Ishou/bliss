@@ -41,6 +41,26 @@ export interface GridNavigation {
   // Surfaced so the grid container can render the full clue text in a
   // panel outside the grid (cells truncate the prose at small font sizes).
   readonly currentClue: Clue | null;
+  // Position of the focused cell within the active clue's `cells` array
+  // (0-based) — the panel renders this as the "2 / 5" progress count.
+  // Null whenever `currentClue` is null.
+  readonly currentClueIndex: number | null;
+  // The OTHER clue at the focused intersection (the one the user could
+  // switch to with space / a tap). Null when the cell sits on only one
+  // clue path. Drives the alt-clue chip in the current-clue panel
+  // (ADR-0005 §6 redesign — cell-at-intersection state).
+  readonly alternateClue: Clue | null;
+  // Flips the active solving direction at the focused cell. Surfaced
+  // for the panel's alt-clue button — clicking it should switch
+  // direction without touching focus, same effect as a re-tap on an
+  // intersection cell.
+  readonly toggleDirection: () => void;
+  // Reads the player's current letter at (row, col) — '' when the cell
+  // is empty. The callback identity changes whenever any letter
+  // changes (per the version counter inside the hook), so React
+  // re-renders consumers of the panel's letter previews on every
+  // typed / cleared character.
+  readonly getEntryAt: (row: number, col: number) => string;
   // Inbound multiplayer write — apply a remote `cellUpdated` event to the
   // uncontrolled <input> at (row, col). Writes `letter ?? ''` directly to
   // `el.value` (per ADR-0002 §4: cell values live in the DOM), updates
@@ -238,6 +258,14 @@ export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOpt
   // raw IME character before handleInput fires, making a simple before/after
   // check on target.value unreliable for the Android insertText path.
   const cellValuesRef = useRef(new Map<string, string>());
+  // `entriesVersion` is bumped on every write to `cellValuesRef`. The
+  // hook's `getEntryAt` selector is memoized on the version so consumers
+  // (the current-clue panel's letter previews) re-render when typed
+  // letters change. Without this seam typed values would be stale on
+  // the panel until the next focus event — fine for auto-advance words
+  // but visibly broken on the last cell of a clue where focus stays.
+  const [entriesVersion, setEntriesVersion] = useState(0);
+  const bumpEntries = useCallback(() => setEntriesVersion((v) => v + 1), []);
   // State mirror so stable callbacks see the latest values.
   const stateRef = useRef({ focused, direction });
   stateRef.current = { focused, direction };
@@ -407,6 +435,36 @@ export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOpt
     [focused, direction, lookup],
   );
 
+  // Cell-within-word index for the panel's "X / N" progress count.
+  const currentClueIndex = useMemo<number | null>(() => {
+    if (!focused || !currentClue) return null;
+    const idx = currentClue.cells.findIndex((c) => same(c.position, focused));
+    return idx >= 0 ? idx : null;
+  }, [focused, currentClue]);
+
+  // Alternate-direction clue at the same intersection, when present.
+  // The lookup is direction-keyed so we just flip and re-query — same
+  // path the keyboard space-bar / re-tap direction toggle takes.
+  const alternateClue = useMemo<Clue | null>(() => {
+    if (!focused) return null;
+    const altDirection: Direction = direction === 'across' ? 'down' : 'across';
+    return lookup.clueAt(focused.row, focused.col, altDirection) ?? null;
+  }, [focused, direction, lookup]);
+
+  const toggleDirection = useCallback(() => {
+    setDirection((prev) => (prev === 'across' ? 'down' : 'across'));
+  }, []);
+
+  const getEntryAt = useCallback(
+    (row: number, col: number): string =>
+      cellValuesRef.current.get(key({ row, col })) ?? '',
+    // The version counter is the load-bearing dep — it shifts on every
+    // write to `cellValuesRef`, so the callback identity changes and
+    // memo'd consumers (the clue panel) re-render with fresh letters.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [entriesVersion],
+  );
+
   // Fire the presence-focus callback on every (focused, direction)
   // transition. The transport-layer adapter (`WebSocketGameClient`) is
   // the single source of truth for the 200 ms debounce — this hook
@@ -500,11 +558,20 @@ export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOpt
         const el = refs.current.get(key(f));
         const letter = k.toUpperCase();
         if (el) {
-          const before = el.value;
-          el.value = letter;
-          if (before !== letter) {
-            cellValuesRef.current.set(key(f), letter);
-            onCellChangeRef.current?.(f.row, f.col, letter);
+          // Validated cells render with `readOnly` (see LetterCellView)
+          // — typing should not overwrite a locked-in correct letter.
+          // The browser already swallows native input on readOnly, but
+          // this manual write path runs from `keydown`, so we have to
+          // gate it explicitly. We still advance focus so the player's
+          // typing flow continues across a partially-solved word.
+          if (!el.readOnly) {
+            const before = el.value;
+            el.value = letter;
+            if (before !== letter) {
+              cellValuesRef.current.set(key(f), letter);
+              bumpEntries();
+              onCellChangeRef.current?.(f.row, f.col, letter);
+            }
           }
         }
         const clue = lookup.clueAt(f.row, f.col, dir);
@@ -514,6 +581,17 @@ export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOpt
         return;
       }
       switch (k) {
+        // Space — flip solving direction at the current intersection
+        // (matches NYT crossword + most French puzzle apps; the panel's
+        // "Espace" kbd chip exposes the same shortcut visually).
+        case ' ':
+        case 'Spacebar': {
+          event.preventDefault();
+          const here = lookup.cluesAt(f.row, f.col);
+          if (here.length < 2) return;
+          setDirection((prev) => (prev === 'across' ? 'down' : 'across'));
+          return;
+        }
         case 'ArrowRight':
         case 'ArrowLeft':
           event.preventDefault();
@@ -529,9 +607,15 @@ export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOpt
         case 'Backspace': {
           event.preventDefault();
           const el = refs.current.get(key(f));
-          if (el && el.value !== '') {
+          // Validated cells are locked — Backspace must not erase a
+          // correct letter. Still walk back through the word so a
+          // player who's typing forward and overshoots can recover
+          // by chaining backspaces (the previous editable cell will
+          // get cleared, and focus lands there).
+          if (el && el.value !== '' && !el.readOnly) {
             el.value = '';
             cellValuesRef.current.delete(key(f));
+            bumpEntries();
             onCellChangeRef.current?.(f.row, f.col, null);
             return;
           }
@@ -541,11 +625,12 @@ export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOpt
           if (idx <= 0) return;
           const prev = clue.cells[idx - 1].position;
           const prevEl = refs.current.get(key(prev));
-          if (prevEl) {
+          if (prevEl && !prevEl.readOnly) {
             const before = prevEl.value;
             prevEl.value = '';
             if (before !== '') {
               cellValuesRef.current.delete(key(prev));
+              bumpEntries();
               onCellChangeRef.current?.(prev.row, prev.col, null);
             }
           }
@@ -554,13 +639,18 @@ export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOpt
         }
       }
     },
-    [focusCell, lookup, moveByVector],
+    [bumpEntries, focusCell, lookup, moveByVector],
   );
 
   const handleInput = useCallback(
     (event: React.FormEvent<HTMLInputElement>) => {
       const inputEvent = event.nativeEvent as InputEvent;
       const target = event.currentTarget;
+      // Validated cells are read-only. Browsers block native input
+      // here, but Android soft keyboards have been observed to bypass
+      // readOnly via composition events — mirror the keydown path's
+      // guard so a typed letter never lands on a locked cell.
+      if (target.readOnly) return;
       // insertText = typed character; backspace arrives on keydown with key==="Backspace" reliably.
       if (inputEvent.inputType !== 'insertText') {
         // paste/autocorrect: blank if multi-char or non-letter so cells stay clean.
@@ -569,6 +659,7 @@ export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOpt
           const p = posOf(target);
           if (p) {
             cellValuesRef.current.delete(key(p));
+            bumpEntries();
             onCellChangeRef.current?.(p.row, p.col, null);
           }
         }
@@ -582,6 +673,7 @@ export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOpt
           const p = posOf(target);
           if (p) {
             cellValuesRef.current.delete(key(p));
+            bumpEntries();
             onCellChangeRef.current?.(p.row, p.col, null);
           }
         }
@@ -594,6 +686,7 @@ export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOpt
       const prevLetter = cellValuesRef.current.get(key(f)) ?? '';
       if (prevLetter !== letter) {
         cellValuesRef.current.set(key(f), letter);
+        bumpEntries();
         onCellChangeRef.current?.(f.row, f.col, letter);
       }
       const clue = lookup.clueAt(f.row, f.col, dir);
@@ -601,7 +694,7 @@ export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOpt
       const idx = clue.cells.findIndex((c) => same(c.position, f));
       if (idx >= 0 && idx < clue.cells.length - 1) focusCell(clue.cells[idx + 1].position);
     },
-    [focusCell, lookup],
+    [bumpEntries, focusCell, lookup],
   );
 
   const highlightFor = useCallback(
@@ -634,7 +727,8 @@ export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOpt
     el.value = value;
     if (value === '') cellValuesRef.current.delete(k);
     else cellValuesRef.current.set(k, value);
-  }, []);
+    bumpEntries();
+  }, [bumpEntries]);
 
   return {
     registerCellRef,
@@ -645,6 +739,10 @@ export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOpt
     handleKeyDown,
     handleInput,
     currentClue,
+    currentClueIndex,
+    alternateClue,
+    toggleDirection,
+    getEntryAt,
     applyRemoteCellUpdate,
   };
 }

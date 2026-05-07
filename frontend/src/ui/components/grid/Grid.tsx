@@ -8,7 +8,12 @@ import { css } from 'styled-system/css';
 import type { GameEvent, Unsubscribe } from '@/application/game';
 import type { Cell, Position, Puzzle } from '@/domain';
 import type { Player, SessionId } from '@/domain/game';
-import { BlockCellView, DefinitionCellView, LetterCellView } from './Cell';
+import {
+  BlockCellView,
+  DefinitionCellView,
+  LetterCellView,
+  type IncomingArrow,
+} from './Cell';
 import { CurrentCluePanel } from './CurrentCluePanel';
 import { GridZoomControls } from './GridZoomControls';
 import { PresenceOverlay } from './PresenceOverlay';
@@ -195,6 +200,8 @@ export function Grid({
   subscribeToRemotePresence,
   playersBySessionId,
   currentSessionId,
+  validatedPositions,
+  errorPositions,
 }: {
   puzzle: Puzzle;
   onCellChange?: (row: number, col: number, letter: string | null) => void;
@@ -212,12 +219,83 @@ export function Grid({
   // where they are; rendering the overlay's hue on top muddies the
   // base highlight without adding information).
   currentSessionId?: SessionId;
+  // Validation result from the parent's `Vérifier` flow. Each entry is
+  // a "row,col" position key; cells in the set render as locked sage.
+  // The set is owned by the parent (the puzzle route) so a future
+  // route — e.g. multiplayer — can wire it to a server-side check.
+  validatedPositions?: ReadonlySet<string>;
+  // Transient set of mis-typed cells. Renders the shake animation +
+  // error ring; the parent clears the set after the animation finishes.
+  errorPositions?: ReadonlySet<string>;
 }) {
   const cellByPosition = useMemo(() => {
     const m = new Map<string, Cell>();
     for (const c of puzzle.cells) m.set(positionKey(c.position), c);
     return m;
   }, [puzzle.cells]);
+
+  // Incoming-arrow map: for each LETTER cell that receives an entry
+  // arrow from a neighbouring def cell, the arrow rendering metadata.
+  // ADR-0005 §6 follow-up: arrows live on the receiving letter cell.
+  // Rules:
+  //   * `right` / `right-down` clue at (r, c) → arrow on the LEFT
+  //     edge of (r, c+1). The receiving cell is the same regardless
+  //     of straight vs bent.
+  //   * `down` / `down-right` clue at (r, c) → arrow on the TOP edge
+  //     of (r+1, c).
+  //   * Single-clue source → arrow at the edge centre.
+  //   * Two-clue source, mixed-origin (one right + one down) → both
+  //     arrows at q1 (28 %), per the spec's quarter-positioning trick.
+  //   * Two-clue source, same-origin → the two clues split the
+  //     receiving edge into q1 (28 %) + q3 (72 %); domain order maps
+  //     to the visual stack (clue 0 on top half, clue 1 on bottom).
+  // Receiving cells that aren't letter cells are skipped silently —
+  // a malformed puzzle (def → block, def → def) shouldn't blow up.
+  const incomingArrowsByLetter = useMemo(() => {
+    const m = new Map<string, IncomingArrow[]>();
+    for (const cell of puzzle.cells) {
+      if (cell.kind !== 'definition') continue;
+      const clues = cell.clues;
+      const isMulti = clues.length === 2;
+      // Pre-compute origin (right-edge vs bottom-edge) for both clues
+      // so the offset rule below is a single comparison.
+      const origins = clues.map((q) =>
+        q.arrow === 'right' || q.arrow === 'right-down' ? 'right' : 'bottom',
+      );
+      const sameOrigin = isMulti && origins[0] === origins[1];
+      clues.forEach((q, idx) => {
+        const goesRight = origins[idx] === 'right';
+        const target = goesRight
+          ? { row: cell.position.row, col: cell.position.col + 1 }
+          : { row: cell.position.row + 1, col: cell.position.col };
+        const targetCell = cellByPosition.get(positionKey(target));
+        if (!targetCell || targetCell.kind !== 'letter') return;
+        let offset: IncomingArrow['offset'] = 'center';
+        if (isMulti) {
+          if (sameOrigin) {
+            offset = idx === 0 ? 'q1' : 'q3';
+          } else {
+            // Mixed-origin pair: spec aligns BOTH arrows to the
+            // first-quarter — the right-arrow into the right neighbour
+            // sits at top:28 % and the down-arrow into the bottom
+            // neighbour sits at left:28 %. Visually pairs the two
+            // entry arrows without crowding the cell centres.
+            offset = 'q1';
+          }
+        }
+        const entry: IncomingArrow = {
+          edge: goesRight ? 'left' : 'top',
+          offset,
+          arrow: q.arrow,
+        };
+        const key = positionKey(target);
+        const existing = m.get(key);
+        if (existing) existing.push(entry);
+        else m.set(key, [entry]);
+      });
+    }
+    return m;
+  }, [cellByPosition, puzzle.cells]);
 
   const templateStyle = useMemo(
     () => ({
@@ -660,7 +738,13 @@ export function Grid({
 
   return (
     <>
-      <CurrentCluePanel clue={nav.currentClue} />
+      <CurrentCluePanel
+        clue={nav.currentClue}
+        cellIndex={nav.currentClueIndex}
+        alternateClue={nav.alternateClue}
+        onSwitchDirection={nav.toggleDirection}
+        getEntryAt={nav.getEntryAt}
+      />
       {/*
         TransformWrapper config rationale:
         - `minScale={1}` — never zoom out below 100%, so the grid always
@@ -768,12 +852,18 @@ export function Grid({
                     switch (cell.kind) {
                       case 'letter': {
                         const highlight = nav.highlightFor(cell.position);
+                        const validated = validatedPositions?.has(key) ?? false;
+                        const error = errorPositions?.has(key) ?? false;
+                        const incomingArrows = incomingArrowsByLetter.get(key);
                         return (
                           <LetterCellView
                             key={key}
                             cell={cell}
                             ariaLabel={`Case ligne ${cell.position.row + 1}, colonne ${cell.position.col + 1}`}
                             inWord={highlight.currentWord}
+                            validated={validated}
+                            error={error}
+                            incomingArrows={incomingArrows}
                             inputRef={nav.registerCellRef}
                             onClick={nav.handleClick}
                             onFocus={nav.handleFocus}

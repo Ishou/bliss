@@ -8,3 +8,24 @@
 
 @layer reset, base, tokens, recipes, utilities;
 
+/* Shake animation for the cell error state — ADR-0005 §6 component
+ * spec: 200 ms total, three small oscillations of about 4 px. Defined
+ * outside Panda's layers because the animation name is referenced from
+ * a Panda `css({ animation: '...' })` rule which expects the keyframes
+ * to exist in the global stylesheet. Reduced-motion users get the
+ * end-state immediately (no oscillation). */
+@keyframes wordsparrow-cell-shake {
+  0%, 100% { transform: translateX(0); }
+  16% { transform: translateX(-4px); }
+  33% { transform: translateX(4px); }
+  50% { transform: translateX(-3px); }
+  66% { transform: translateX(3px); }
+  83% { transform: translateX(-2px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  @keyframes wordsparrow-cell-shake {
+    0%, 100% { transform: translateX(0); }
+  }
+}
+
