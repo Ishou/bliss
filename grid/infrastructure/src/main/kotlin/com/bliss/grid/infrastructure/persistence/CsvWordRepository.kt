@@ -103,6 +103,7 @@ class CsvWordRepository(
                 com.bliss.grid.domain.generation.Themes.NOTE to "/words/themed/note.csv",
                 com.bliss.grid.domain.generation.Themes.UNIT to "/words/themed/unit.csv",
                 com.bliss.grid.domain.generation.Themes.INTERJECTION to "/words/themed/interjection.csv",
+                com.bliss.grid.domain.generation.Themes.GREEK to "/words/themed/greek.csv",
             )
 
         private val REQUIRED_HEADERS =

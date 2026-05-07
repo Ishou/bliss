@@ -1,4 +1,8 @@
 word,language,length,frequency,difficulty,clue,source,source_license,lemma
+est,fr,3,100000,,Point cardinal,bliss,CC0-1.0,
+nord,fr,4,100000,,Point cardinal,bliss,CC0-1.0,
+ouest,fr,5,100000,,Point cardinal,bliss,CC0-1.0,
+sud,fr,3,100000,,Point cardinal,bliss,CC0-1.0,
 ne,fr,2,100000,,Point cardinal,bliss,CC0-1.0,
 no,fr,2,100000,,Point cardinal,bliss,CC0-1.0,
 so,fr,2,100000,,Point cardinal,bliss,CC0-1.0,
