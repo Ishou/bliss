@@ -45,10 +45,34 @@ export default defineConfig({
           800: { value: '#683E48' },
           900: { value: '#42272D' },
         },
-        cream: { value: '#FFFAF3' },
-        sand: { value: '#E5DCC6' },
-        ink: { value: '#1B2845' },
-        breath: { value: '#FFFFFF' },
+        // Twilight palette (ADR-0005 §4 amendment, 2026-05-07): dark-
+        // theme pivot. Replaces the prior warm cream/sand/ink/breath
+        // set. Single theme — no light-mode toggle.
+        //
+        // Layout: the **page** is a neutral dark gray (no hue) that
+        // recedes; the **grid surfaces** carry all the brand pink, in
+        // a sakura-rose family (hsl ≈ 325°, slightly cooler than the
+        // warmer dusky-rose `blossom` ramp at 345°). Letter cells
+        // (`plum`) sit one notch lighter than definition cells
+        // (`mauve`) so the slot a player types into pops above the
+        // clue surrounding it. Block cells (`pitch`) are the darkest
+        // fill, near-black neutral — the inert "void" square. Text
+        // (`petal`) is a warm pink-white that picks up the surface
+        // hue at AA contrast on every surface.
+        //
+        // The cooler hue (vs the prior 345° rose) gives surfaces a
+        // sakura-twilight feel — petal-pink with a hint of lavender
+        // — instead of the wine/burgundy reading of warmer rose.
+        //
+        // (Primitive names predate the dark-theme pivot and are kept
+        // as abstract handles; their values are what the palette
+        // delivers.)
+        aubergine: { value: '#1B1B1F' }, // page background — neutral dark gray
+        plum: { value: '#5E3450' },      // letter cells — lifted sakura twilight
+        mauve: { value: '#4A2A40' },     // definition cells — medium sakura twilight
+        bramble: { value: '#6E3D55' },   // borders + grid lines — sakura rule
+        pitch: { value: '#0A0A0C' },     // inert-cell fill — near-black neutral
+        petal: { value: '#F5EAEC' },     // foreground text — warm pink-white
       },
       spacing: {
         xs: { value: '0.25rem' },
@@ -100,29 +124,40 @@ export default defineConfig({
       },
       radii: { sm: { value: '4px' }, md: { value: '8px' } },
       shadows: {
-        floating: { value: '0 2px 4px rgba(27, 40, 69, 0.08)' },
+        // Pitch-based shadow for the dark palette — subtle near-black
+        // glow under floating surfaces (toggle, dialog, dropdown).
+        // Was ink-tinted for the prior light palette.
+        floating: { value: '0 2px 4px rgba(10, 10, 12, 0.6)' },
       },
     },
     semanticTokens: {
       colors: {
-        // Surfaces and foregrounds — paper-like cream canvas, deep-navy ink.
-        bg: { value: '{colors.cream}' },
-        fg: { value: '{colors.ink}' },
-        // Brand-colored text on light surfaces uses the .700 ramp shade
-        // (ADR-0005 §4) so contrast meets WCAG AA at body sizes.
-        accent: { value: '{colors.leaf.700}' },
-        // Grid surfaces. `surface` is the letter-cell input background
-        // (the paper-like white where the player types); `definition` is
-        // the clue-cell background (warm sand to recede); `block` is the
-        // inert-square fill (deeper sand for separation); `border`
-        // separates lobby/primitive UI elements.
-        surface: { value: '{colors.breath}' },
-        definition: { value: '{colors.sand}' },
-        block: { value: '{colors.ink}' },
-        border: { value: '{colors.sand}' },
-        muted: { value: '{colors.ink}' },
-        // ink at 25% alpha — legible on both cream (letter) and sand (def) cell backgrounds.
-        gridLine: { value: 'color-mix(in srgb, {colors.ink} 25%, transparent)' },
+        // Surfaces and foregrounds — twilight palette (dark-only).
+        bg: { value: '{colors.aubergine}' },
+        fg: { value: '{colors.petal}' },
+        // Brand-coloured text and CTAs lift to leaf.400 from the prior
+        // .700 — on the dark page .700 (#0B815A) sits below the WCAG
+        // AA threshold, while .400 (#34D399) renders ~7:1 contrast and
+        // matches the "vibrant green pop" the brand wants.
+        accent: { value: '{colors.leaf.400}' },
+        // Grid surfaces. `surface` is the letter-cell input bg (lifted
+        // sakura, so typed letters pop above the clue surface);
+        // `definition` is the clue-cell bg (medium sakura, one notch
+        // darker); `block` is the inert-square fill (deepest pitch —
+        // the "void" square in mots-fléchés); `border` separates
+        // lobby/primitive UI.
+        surface: { value: '{colors.plum}' },
+        definition: { value: '{colors.mauve}' },
+        block: { value: '{colors.pitch}' },
+        border: { value: '{colors.bramble}' },
+        muted: { value: '{colors.bramble}' },
+        // Grid line — used for both the cell perimeter and the dual-clue
+        // half-cell divider. Solid bramble (sakura rule lifted from the
+        // surface family). Single source of truth so cell outlines and
+        // stack dividers always match exactly. The grid container's
+        // `gap: 1px` + `bg: gridLine` paints internal lines; the same
+        // colour edges the perimeter.
+        gridLine: { value: '{colors.bramble}' },
       },
     },
   },

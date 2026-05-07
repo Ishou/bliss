@@ -58,7 +58,7 @@ const itemStyles = css({
   '&[data-state="on"]': {
     bg: 'leaf.700',
     borderColor: 'leaf.700',
-    color: 'breath',
+    color: 'petal',
   },
   _focusVisible: {
     outline: '3px solid token(colors.leaf.500)',

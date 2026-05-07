@@ -85,14 +85,15 @@ const chipEl = css({
   fontSize: 'xxs',
   fontWeight: 'medium',
   color: 'var(--player-text-color)',
-  bg: 'breath',
+  bg: 'surface',
   border: '1px solid var(--player-color)',
   borderRadius: '9999px',
   whiteSpace: 'nowrap',
   pointerEvents: 'none',
   zIndex: 4,
-  // Slight shadow to lift the chip off the grid surface.
-  boxShadow: '0 1px 3px rgba(27, 40, 69, 0.15)',
+  // Slight shadow to lift the chip off the grid surface. On the dark
+  // twilight palette a near-black pitch shadow reads as depth.
+  boxShadow: '0 1px 3px rgba(10, 10, 12, 0.5)',
 });
 
 const chipDot = css({

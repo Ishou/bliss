@@ -79,7 +79,7 @@ const disconnectedStyles = css({
 });
 
 const reconnectingStyles = css({
-  bg: 'sand',
+  bg: 'mauve',
   color: 'fg',
   borderBottom: '1px solid token(colors.border)',
 });

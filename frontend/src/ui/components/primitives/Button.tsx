@@ -44,7 +44,7 @@ const baseStyles = css({
 const variantStyles = {
   primary: css({
     bg: 'leaf.700',
-    color: 'breath',
+    color: 'petal',
     border: 'none',
     _hover: { bg: 'leaf.800' },
   }),
