@@ -98,24 +98,34 @@ export function FitText({
     let lastCh = -1;
     let cancelled = false;
 
-    // Available content box. Prefer the parent's BCR (fractional) so
-    // that 1-px integer-rounding boundaries during continuous resize
-    // don't produce visible font-size jumps. Falls back to the
-    // element's integer clientWidth/Height when BCR is unavailable
-    // (jsdom returns 0×0; existing tests stub clientWidth/Height on
-    // the span itself to drive the algorithm).
+    // Available content box.
     //
-    // The span fills the parent's content box via `flex: 1;
-    // alignSelf: stretch` (see Cell.tsx defText/defStackText), and
-    // neither the parent nor the span have padding or border, so
-    // BCR.width === content-box width. If that ever changes, this
-    // function needs to subtract padding/border via getComputedStyle.
+    // Width: parent BCR (fractional) — sub-pixel precision matters
+    // here because `clientWidth` integer-rounds and that produces
+    // 1-px fontSize jumps as the cell crosses integer boundaries
+    // during continuous resize.
+    //
+    // Height: parent `clientHeight` (integer). MUST match the unit
+    // of `el.scrollHeight` used inside fitsAt, which is also integer
+    // and rounds *up* from fractional content. Mixing fractional
+    // BCR.height with integer scrollHeight produces a silent
+    // off-by-one — e.g. BCR.height=21.72 vs scrollHeight=22 makes
+    // the comparison `22 <= 21.72` always false even when content
+    // visually fits. That bug dropped every Phase-1 candidate to
+    // Phase 2's floor. Integer-vs-integer is the right pairing.
+    //
+    // The span fills the parent's content box via `flex: 1` (and
+    // either `alignSelf: stretch` for defText or the parent's
+    // `alignItems: stretch` default for defStackText), and neither
+    // box has padding or border, so BCR.width === content-box width
+    // and clientHeight === content-box height. If that ever changes,
+    // this function needs to subtract padding/border via getComputedStyle.
     const measureAvailable = (): { w: number; h: number } => {
       const parent = el.parentElement;
       if (parent) {
         const bcr = parent.getBoundingClientRect();
         if (bcr.width > 0 && bcr.height > 0) {
-          return { w: bcr.width, h: bcr.height };
+          return { w: bcr.width, h: parent.clientHeight };
         }
       }
       return { w: el.clientWidth, h: el.clientHeight };
