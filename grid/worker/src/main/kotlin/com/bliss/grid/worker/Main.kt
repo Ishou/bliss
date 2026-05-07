@@ -1,9 +1,9 @@
 // `bliss-worker` CLI (ADR-0013 §7).
-// Sub-commands: import-words (PR2), generate-clues (PR3), export-words (PR4 — ADR-0013 §7, §8).
+// The clue-generation lane is fully local (mlx-lm + LoRA, see scripts/clue_generation/).
+// The worker handles ingestion, DBnary derivation, and the runtime CSV export only.
 package com.bliss.grid.worker
 
 import com.bliss.grid.worker.clues.DeriveSynonymCluesCommand
-import com.bliss.grid.worker.clues.GenerateCluesCommand
 import com.bliss.grid.worker.clues.IngestClueCandidatesCommand
 import com.bliss.grid.worker.dbnary.IngestDbnaryCommand
 import com.bliss.grid.worker.exporter.ExportWordsCommand
@@ -27,6 +27,5 @@ fun main(args: Array<String>) =
             IngestDbnaryCommand(),
             DeriveSynonymCluesCommand(),
             IngestClueCandidatesCommand(),
-            GenerateCluesCommand(),
             ExportWordsCommand(),
         ).main(args)

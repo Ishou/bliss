@@ -9,8 +9,6 @@ kotlin {
 dependencies {
     implementation(project(":grid:domain"))
     implementation("org.slf4j:slf4j-api:2.0.16")
-    // generate-clues use case fans out per-row provider calls bounded by a Semaphore.
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.0")
 
     testImplementation(platform("org.junit:junit-bom:5.11.4"))
     testImplementation("org.junit.jupiter:junit-jupiter")

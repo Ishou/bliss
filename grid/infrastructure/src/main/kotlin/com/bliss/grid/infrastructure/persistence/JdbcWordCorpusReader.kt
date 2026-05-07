@@ -69,8 +69,8 @@ class JdbcWordCorpusReader(
 
     companion object {
         // ORDER BY language, word for stable git diffs (ADR-0013 §7).
-        // LEFT JOIN propagates a lemma's clue to every inflected form
-        // (generate-clues only targets lemmas by default — see ADR-0013 §5 amendment).
+        // LEFT JOIN propagates a lemma's clue to every inflected form so all
+        // surface forms of a word share the same clue in the exported CSV.
         //
         // The LATERAL JOIN against clue_candidates implements Phase 2 §4 +
         // Phase 3 §B of the clue-generation pipeline plan:
