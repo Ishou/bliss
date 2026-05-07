@@ -34,6 +34,7 @@ internal class SkeletonFiller(
         slots: List<WordSlot>,
         random: Random,
         deadline: Long,
+        themeLimits: Map<String, Int> = emptyMap(),
         metrics: GenerationMetrics? = null,
     ): List<WordPlacement>? {
         if (slots.isEmpty()) return emptyList()
@@ -44,6 +45,10 @@ internal class SkeletonFiller(
         // For corpora that don't carry lemma data, Word.lemma defaults to
         // Word.text and this set is functionally identical to usedWords.
         val usedLemmas = HashSet<String>()
+        // Theme-cap counter: per-grid count of placed themed words. Caps
+        // come from [GridConstraints.themeLimits]. Words with `theme = null`
+        // never touch this map.
+        val themeUsed = HashMap<String, Int>()
         // A clue position shared by two slots means those slots will render
         // as a stacked def cell (two clues in one half-cell each). Words
         // placed in those slots must have `compact == true` so their clue
@@ -66,6 +71,8 @@ internal class SkeletonFiller(
                 letters,
                 usedWords,
                 usedLemmas,
+                themeUsed,
+                themeLimits,
                 stackedCluePositions,
                 assigned,
                 intersections,
@@ -105,6 +112,8 @@ internal class SkeletonFiller(
         letters: HashMap<Position, Char>,
         usedWords: HashSet<String>,
         usedLemmas: HashSet<String>,
+        themeUsed: HashMap<String, Int>,
+        themeLimits: Map<String, Int>,
         stackedCluePositions: Set<Position>,
         assigned: Array<Word?>,
         intersections: Array<IntArray>,
@@ -122,7 +131,7 @@ internal class SkeletonFiller(
         for (i in slots.indices) {
             if (assigned[i] != null) continue
             val needsCompact = slots[i].cluePosition in stackedCluePositions
-            val domain = domainFor(slots[i], letters, usedWords, usedLemmas, needsCompact, metrics)
+            val domain = domainFor(slots[i], letters, usedWords, usedLemmas, themeUsed, themeLimits, needsCompact, metrics)
             if (domain.size < bestSize) {
                 bestSize = domain.size
                 bestIdx = i
@@ -147,6 +156,8 @@ internal class SkeletonFiller(
             assigned[bestIdx] = word
             usedWords += word.text
             usedLemmas += word.lemma
+            val theme = word.theme
+            if (theme != null) themeUsed[theme] = (themeUsed[theme] ?: 0) + 1
             val newlyPlaced = ArrayList<Position>(positions.size)
             for ((i, pos) in positions.withIndex()) {
                 if (pos !in letters) {
@@ -165,14 +176,28 @@ internal class SkeletonFiller(
                     for (otherIdx in intersections[bestIdx]) {
                         if (assigned[otherIdx] != null) continue
                         val needsCompactOther = slots[otherIdx].cluePosition in stackedCluePositions
-                        val otherDomain = domainFor(slots[otherIdx], letters, usedWords, usedLemmas, needsCompactOther, metrics)
+                        val otherDomain =
+                            domainFor(slots[otherIdx], letters, usedWords, usedLemmas, themeUsed, themeLimits, needsCompactOther, metrics)
                         if (otherDomain.isEmpty()) return@run false
                     }
                     true
                 }
 
             if (placementOk &&
-                search(slots, letters, usedWords, usedLemmas, stackedCluePositions, assigned, intersections, random, deadline, metrics)
+                search(
+                    slots,
+                    letters,
+                    usedWords,
+                    usedLemmas,
+                    themeUsed,
+                    themeLimits,
+                    stackedCluePositions,
+                    assigned,
+                    intersections,
+                    random,
+                    deadline,
+                    metrics,
+                )
             ) {
                 return true
             }
@@ -182,6 +207,10 @@ internal class SkeletonFiller(
             for (pos in newlyPlaced) letters.remove(pos)
             usedWords -= word.text
             usedLemmas -= word.lemma
+            if (theme != null) {
+                val prev = themeUsed.getValue(theme)
+                if (prev <= 1) themeUsed.remove(theme) else themeUsed[theme] = prev - 1
+            }
             assigned[bestIdx] = null
             metrics?.let { it.fillBacktracks++ }
         }
@@ -190,14 +219,17 @@ internal class SkeletonFiller(
 
     /**
      * Candidates for [slot] consistent with currently placed [letters], excluding both
-     * [usedWords] (surface-form dedup) and [usedLemmas] (lemma-level dedup).
-     * The pattern at each fixed position prunes via the repository's position-letter index.
+     * [usedWords] (surface-form dedup) and [usedLemmas] (lemma-level dedup), and dropping
+     * candidates whose theme is already at its per-grid cap. The pattern at each fixed
+     * position prunes via the repository's position-letter index.
      */
     private fun domainFor(
         slot: WordSlot,
         letters: Map<Position, Char>,
         usedWords: Set<String>,
         usedLemmas: Set<String>,
+        themeUsed: Map<String, Int>,
+        themeLimits: Map<String, Int>,
         needsCompact: Boolean,
         metrics: GenerationMetrics?,
     ): List<Word> {
@@ -207,14 +239,35 @@ internal class SkeletonFiller(
         }
         metrics?.let { it.fillRepoCalls++ }
         val matches = repository.findByLengthAndPattern(slot.length, pattern)
-        // Filter used last — keeps the cheap path (no allocation) when nothing's used yet.
         val nothingUsed = usedWords.isEmpty() && usedLemmas.isEmpty()
+        // Themes only kick in when at least one cap is configured; the empty-map
+        // case keeps the existing cheap path.
+        val themeActive = themeLimits.isNotEmpty()
         return when {
-            nothingUsed && !needsCompact -> matches
-            !needsCompact -> matches.filter { it.text !in usedWords && it.lemma !in usedLemmas }
-            nothingUsed -> matches.filter { it.compact }
-            else -> matches.filter { it.compact && it.text !in usedWords && it.lemma !in usedLemmas }
+            nothingUsed && !needsCompact && !themeActive -> matches
+            !themeActive ->
+                matches.filter {
+                    (!needsCompact || it.compact) &&
+                        (nothingUsed || (it.text !in usedWords && it.lemma !in usedLemmas))
+                }
+            else ->
+                matches.filter {
+                    (!needsCompact || it.compact) &&
+                        (nothingUsed || (it.text !in usedWords && it.lemma !in usedLemmas)) &&
+                        themeAllowed(it.theme, themeUsed, themeLimits)
+                }
         }
+    }
+
+    /** True iff placing a word with [theme] would not exceed its per-grid cap. */
+    private fun themeAllowed(
+        theme: String?,
+        themeUsed: Map<String, Int>,
+        themeLimits: Map<String, Int>,
+    ): Boolean {
+        if (theme == null) return true
+        val cap = themeLimits[theme] ?: return true
+        return (themeUsed[theme] ?: 0) < cap
     }
 
     /**

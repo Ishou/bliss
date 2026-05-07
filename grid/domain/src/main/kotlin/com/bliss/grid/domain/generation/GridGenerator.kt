@@ -61,7 +61,7 @@ class GridGenerator(
 
         val fillStart = System.nanoTime()
         val placements =
-            SkeletonFiller(repository).fill(slots, random, deadline, metrics) ?: run {
+            SkeletonFiller(repository).fill(slots, random, deadline, constraints.themeLimits, metrics) ?: run {
                 metrics?.fillMs = (System.nanoTime() - fillStart) / 1_000_000
                 return null
             }
