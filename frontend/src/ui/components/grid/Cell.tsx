@@ -18,7 +18,7 @@ import { FitText } from './FitText';
 //    longer of the two lines.
 //
 //  - Otherwise (single tokens, arithmetic-style "D - C", "C + C"):
-//    replace every regular space with ` ` (non-breaking space).
+//    replace every regular space with ` ` (non-breaking space).
 //    This stops CSS auto-wrap from splitting "D - C" into a 2-line
 //    layout, which FitText would otherwise prefer (2 short lines fit
 //    a much bigger font than 1 unwrapped line). Result: clue stays on
@@ -28,15 +28,15 @@ import { FitText } from './FitText';
 //   "Gaz noble"           → "Gaz\nnoble"           (2 lines)
 //   "Vitesses du rythme"  → "Vitesses\ndu rythme"  (2 lines, balanced)
 //   "Carnets de notes quotidiennes" → "Carnets de notes\nquotidiennes"
-//   "D - C", "C + C"      → "D - C"      (1 line, no wrap)
-//   "à l'œil"             → "à l'œil"          (1 line, only one real word)
+//   "D - C", "C + C"      → "D - C"      (1 line, no wrap)
+//   "à l'œil"             → "à l'œil"          (1 line, only one real word)
 const REAL_WORD = /[A-Za-zÀ-ÿ]/;
 function smartLineBreak(text: string): string {
   const realWords = text
     .split(/\s+/)
     .filter((t) => t.length >= 2 && REAL_WORD.test(t));
   if (realWords.length < 2) {
-    return text.replace(/ /g, ' ');
+    return text.replace(/ /g, '\u00a0');
   }
   const spaces: number[] = [];
   for (let i = 0; i < text.length; i++) {
@@ -150,7 +150,8 @@ const defCellCurrentDown = css({ borderTop: '3px solid token(colors.leaf.700)', 
 // `overflowWrap: break-word` is kept as a last-ditch fallback for
 // content that has no hyphenation points (e.g. unusual proper nouns
 // or all-caps acronyms). `overflow: hidden` clips honestly when even
-// hyphenation can't make it fit at ABSOLUTE_MIN_PX.
+// Phase-2 bisection (floor = min × PHASE2_FLOOR_FACTOR × cellWidth)
+// can't make it fit.
 const defText = css({
   flex: 1,
   alignSelf: 'stretch',
