@@ -246,7 +246,7 @@ const arrowStraightBase = css({
   position: 'absolute',
   width: '10cqi',
   height: '10cqi',
-  bg: 'primary.700',
+  bg: 'accentBg',
   pointerEvents: 'none',
   zIndex: 2,
 });
@@ -266,7 +266,7 @@ const arrowBentBase = css({
   position: 'absolute',
   width: '30cqi',
   height: '30cqi',
-  color: 'primary.700',
+  color: 'accentBg',
   pointerEvents: 'none',
   zIndex: 2,
 });
@@ -353,7 +353,7 @@ const defStackClue = css({
   // gridLine token — matches cell border so stack divider reads as one continuous grid line.
   '&:not(:first-child)': { borderTop: '1px solid token(colors.gridLine)' },
 });
-const defStackClueCurrent = css({ color: 'primary.700' });
+const defStackClueCurrent = css({ color: 'accentBg' });
 // Stacked-clue text: same wrap policy as defText. `hyphens: auto`
 // (lang="fr" inherited) is even more important on stacked half-cells
 // because they're vertically tight — without syllabic breaks, long

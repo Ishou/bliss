@@ -85,7 +85,7 @@ const styles = {
   badge: css({
     fontSize: 'xs', fontWeight: 'bold', letterSpacing: '0.06em',
     textTransform: 'uppercase', paddingInline: 'sm', paddingBlock: 'xs',
-    borderRadius: '9999px', bg: 'primary.50', color: 'primary.700',
+    borderRadius: '9999px', bg: 'primary.50', color: 'accentBg',
   }),
   ownerBadge: css({
     fontSize: 'xs', fontWeight: 'bold', letterSpacing: '0.06em',
