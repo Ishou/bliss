@@ -90,7 +90,7 @@ const cellBase = css({
   position: 'relative',
   width: '100%',
   aspectRatio: '1 / 1',
-  border: '1px solid token(colors.border)',
+  // No border here — gap: 1px + bg: gridLine on the container paints every grid line (no double-up at shared edges).
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
@@ -341,13 +341,8 @@ const defStackClue = css({
   minHeight: 0,
   overflow: 'hidden',
   wordBreak: 'break-word',
-  // Separator between the two stacked clues. `colors.border` is `sand`, the
-  // same hue as the def cell bg, so a token-based rule was invisible — use
-  // ink at low alpha for a subtle but legible divider. No top padding —
-  // both halves share identical content boxes (1px border + flex
-  // alignItems:center is enough vertical separation), so neither clue
-  // looks shifted relative to the other.
-  '&:not(:first-child)': { borderTop: '1px solid rgba(27, 40, 69, 0.25)' },
+  // gridLine token — matches cell border so stack divider reads as one continuous grid line.
+  '&:not(:first-child)': { borderTop: '1px solid token(colors.gridLine)' },
 });
 const defStackClueCurrent = css({ color: 'leaf.700' });
 // Stacked-clue text: same wrap policy as defText. `hyphens: auto`

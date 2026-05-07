@@ -115,12 +115,14 @@ export default defineConfig({
         // (the paper-like white where the player types); `definition` is
         // the clue-cell background (warm sand to recede); `block` is the
         // inert-square fill (deeper sand for separation); `border`
-        // separates cells.
+        // separates lobby/primitive UI elements.
         surface: { value: '{colors.breath}' },
         definition: { value: '{colors.sand}' },
         block: { value: '{colors.ink}' },
         border: { value: '{colors.sand}' },
         muted: { value: '{colors.ink}' },
+        // ink at 25% alpha — legible on both cream (letter) and sand (def) cell backgrounds.
+        gridLine: { value: 'color-mix(in srgb, {colors.ink} 25%, transparent)' },
       },
     },
   },

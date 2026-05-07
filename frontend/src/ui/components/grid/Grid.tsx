@@ -16,10 +16,11 @@ import { useGridNavigation, type Direction } from './useGridNavigation';
 
 const gridContainer = css({
   display: 'grid',
-  gap: '0',
-  bg: 'border',
+  // gap-as-grid-line — bg shows in 1 px gap between borderless cells; no edge-doubling.
+  gap: '1px',
+  bg: 'gridLine',
   border: '1px solid',
-  borderColor: 'border',
+  borderColor: 'gridLine',
   width: '100%',
   // Width is bounded by the TransformComponent wrapper below
   // (`transformWrapperBaseStyle.width` — a `min(100cqw, 100cqh, 720px)`
