@@ -13,7 +13,7 @@ import { css, cx } from 'styled-system/css';
 // Variants map to the existing ad-hoc styles found in `EndGameModal`,
 // `WaitingRoom`, and `routes/index.tsx`:
 //
-//   * primary   — solid `leaf.700` fill, `breath` text. Brand CTA.
+//   * primary   — solid `leaf.800` fill, `petal` text. Brand CTA.
 //   * secondary — `leaf.700` outline + transparent fill. Modal "Fermer",
 //                 the WaitingRoom share button.
 //   * ghost     — minimal styling for affordances like the inline
@@ -43,10 +43,10 @@ const baseStyles = css({
 
 const variantStyles = {
   primary: css({
-    bg: 'leaf.700',
+    bg: 'leaf.800',
     color: 'petal',
     border: 'none',
-    _hover: { bg: 'leaf.800' },
+    _hover: { bg: 'leaf.900' },
   }),
   secondary: css({
     bg: 'transparent',
