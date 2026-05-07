@@ -90,7 +90,10 @@ const cellBase = css({
   position: 'relative',
   width: '100%',
   aspectRatio: '1 / 1',
-  border: '1px solid token(colors.border)',
+  // `gridLine` matches the dual-clue half-cell divider in `defStackClue`
+  // below — same ink-at-25%-alpha so cell outlines and stack dividers
+  // read as one continuous grid line. Defined in `panda.config.ts`.
+  border: '1px solid token(colors.gridLine)',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
@@ -341,13 +344,15 @@ const defStackClue = css({
   minHeight: 0,
   overflow: 'hidden',
   wordBreak: 'break-word',
-  // Separator between the two stacked clues. `colors.border` is `sand`, the
-  // same hue as the def cell bg, so a token-based rule was invisible — use
-  // ink at low alpha for a subtle but legible divider. No top padding —
+  // Separator between the two stacked clues. Uses `gridLine`
+  // (ink at ~25% alpha) — the same token that draws the cell border
+  // in `cellBase`, so cell outlines and stack dividers read as one
+  // continuous grid line. The earlier `colors.border` (= sand) was
+  // invisible against the def-cell sand background. No top padding —
   // both halves share identical content boxes (1px border + flex
-  // alignItems:center is enough vertical separation), so neither clue
-  // looks shifted relative to the other.
-  '&:not(:first-child)': { borderTop: '1px solid rgba(27, 40, 69, 0.25)' },
+  // safe-center alignment is enough vertical separation), so neither
+  // clue looks shifted relative to the other.
+  '&:not(:first-child)': { borderTop: '1px solid token(colors.gridLine)' },
 });
 const defStackClueCurrent = css({ color: 'leaf.700' });
 // Stacked-clue text: same wrap policy as defText. `hyphens: auto`
