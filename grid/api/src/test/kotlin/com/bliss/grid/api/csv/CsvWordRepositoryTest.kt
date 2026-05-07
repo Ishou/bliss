@@ -1,6 +1,8 @@
 package com.bliss.grid.api.csv
 
 import assertk.assertThat
+import assertk.assertions.contains
+import assertk.assertions.doesNotContain
 import assertk.assertions.isEqualTo
 import assertk.assertions.isGreaterThanOrEqualTo
 import assertk.assertions.isNotEmpty
@@ -51,10 +53,14 @@ class CsvWordRepositoryTest {
     }
 
     @Test
-    fun `fromClasspath throws when a row has a blank clue`() {
-        assertThrows<IllegalArgumentException> {
-            CsvWordRepository.fromClasspath("/words/blank-clue-test.csv")
-        }
+    fun `fromClasspath silently drops rows with a blank clue`() {
+        // Blank clue means "no clue available" — the row is filtered out
+        // of the usable corpus rather than failing the load. The grid
+        // generator can't place an unclued word anyway.
+        val repo = CsvWordRepository.fromClasspath("/words/blank-clue-test.csv")
+        // CHAT has a clue and survives; AIR has a blank clue and is dropped.
+        assertThat(repo.findByLength(4).map { it.text }).contains("CHAT")
+        assertThat(repo.findByLength(3).map { it.text }).doesNotContain("AIR")
     }
 
     @Test

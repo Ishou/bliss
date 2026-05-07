@@ -180,9 +180,11 @@ class CsvWordRepository(
             val frequency = record.get("frequency").toLongOrNull() ?: 0L
             if (frequency < MIN_FREQUENCY) return null
             val clue = record.get("clue")
-            require(clue.isNotBlank()) {
-                "CSV $path row ${record.recordNumber} ('$text'): empty clue (export-words guarantees non-null)"
-            }
+            // Blank clue means "no clue available" — silently drop the row from
+            // the usable corpus. The grid generator can't place an unclued
+            // word anyway, and forcing the loader to fail would block the
+            // entire corpus on any single missing entry.
+            if (clue.isBlank()) return null
             // Mots fléchés convention: grid cells are unaccented uppercase ASCII (Word's A-Z
             // invariant in domain). The clue keeps the original accented form for display.
             val folded = foldToAscii(text)

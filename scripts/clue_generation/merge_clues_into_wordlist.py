@@ -73,14 +73,33 @@ def main() -> None:
             r["compact"] = "true"
 
     updated = 0
+    reset = 0
     for r in rows:
-        word = r.get("word", "").strip().lower()
-        entry = surface_clue.get(word)
+        word = r.get("word", "").strip()
+        entry = surface_clue.get(word.lower())
         if entry:
             clue, compact = entry
             r["clue"] = clue
             r["compact"] = compact
             updated += 1
+        elif r.get("source") == "grammalecte":
+            # Blank the clue for rows whose word came from the
+            # LoRA-eligible grammalecte universe but have no shipped
+            # clue. Blank-clue rows are filtered out of the usable
+            # corpus by the loader (CsvWordRepository.toWordWithFreq
+            # returns null on blank clue), so they're invisible to the
+            # grid generator. Without this scrub, surfaces dropped by
+            # a later iter (filter_score below threshold) silently
+            # retain clues from earlier iters — the leak that surfaced
+            # compliqué → "Ajouté de la difficulté" after v7 dropped
+            # compliquer's lemma clue.
+            #
+            # source=bliss rows (curated short-fr / roman numerals)
+            # are left alone: they hold hand-authored CC0 clues that
+            # don't go through the LoRA pipeline.
+            if r.get("clue"):
+                r["clue"] = ""
+                reset += 1
 
     with args.wordlist.open("w", encoding="utf-8", newline="") as f:
         w = csv.DictWriter(f, fieldnames=fieldnames, lineterminator="\n")
@@ -90,6 +109,7 @@ def main() -> None:
 
     pct = updated / len(rows) * 100
     print(f"updated {updated}/{len(rows)} rows ({pct:.1f}%)")
+    print(f"reset to placeholder (stale clue scrub): {reset}")
     print(f"backup: {args.backup}")
 
 
