@@ -21,29 +21,39 @@ export default defineConfig({
   theme: {
     tokens: {
       colors: {
+        // Leaf ramp anchored on the brand-supplied lime-leaf greens:
+        //   .400 = #A2D481 (vivid soft leaf — primary accent)
+        //   .600 = #70985E (deeper sage — secondary accent / hover)
+        // Was emerald (#10B981 family). Neighbors interpolate for a
+        // smooth 50 → 900 ramp.
         leaf: {
           50: { value: '#ECFDF5' },
-          100: { value: '#D1FAE5' },
-          200: { value: '#A7F3D0' },
-          300: { value: '#6EE7B7' },
-          400: { value: '#34D399' },
-          500: { value: '#10B981' },
-          600: { value: '#0E9F6E' },
-          700: { value: '#0B815A' },
-          800: { value: '#076244' },
-          900: { value: '#044A33' },
+          100: { value: '#DBF3D5' },
+          200: { value: '#C4E8B7' },
+          300: { value: '#B3DD9A' },
+          400: { value: '#A2D481' },
+          500: { value: '#89B670' },
+          600: { value: '#70985E' },
+          700: { value: '#587C4B' },
+          800: { value: '#406038' },
+          900: { value: '#2A4226' },
         },
+        // Blossom ramp anchored on the brand-supplied pinks:
+        //   .300 = #F2C2C4 (light dusty pink)
+        //   .500 = #DC88B1 (saturated rose-pink, slight purple lean)
+        // .400 keeps the prior #E8A5B0 (sits naturally between the
+        // two anchors).
         blossom: {
           50: { value: '#FBF1F2' },
-          100: { value: '#F6DCE0' },
-          200: { value: '#F0C5CB' },
-          300: { value: '#ECB5BD' },
+          100: { value: '#F8E4E7' },
+          200: { value: '#F4D5D8' },
+          300: { value: '#F2C2C4' },
           400: { value: '#E8A5B0' },
-          500: { value: '#D88A96' },
-          600: { value: '#B86E7B' },
-          700: { value: '#8E5460' },
-          800: { value: '#683E48' },
-          900: { value: '#42272D' },
+          500: { value: '#DC88B1' },
+          600: { value: '#C46894' },
+          700: { value: '#A04D78' },
+          800: { value: '#783A5C' },
+          900: { value: '#4F2440' },
         },
         // Twilight palette (ADR-0005 §4 amendment, 2026-05-07): dark-
         // theme pivot. Replaces the prior warm cream/sand/ink/breath

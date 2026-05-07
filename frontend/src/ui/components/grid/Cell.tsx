@@ -99,7 +99,13 @@ const cellBase = css({
   overflow: 'visible',
 });
 const letterCell = css({ bg: 'surface' });
-const letterCellInWord = css({ bg: 'leaf.50' });
+// Letters belonging to the active word/clue. `leaf.700` (medium-dark
+// sage) reads as a clear green-tint variant of the regular plum
+// letter cell on the dark twilight palette — distinct without being
+// jarring. The previous `leaf.50` (#ECFDF5 pale mint) made highlighted
+// cells flash near-white on dark surfaces. petal text on leaf.700
+// hits ~7:1 contrast (AA at body sizes).
+const letterCellInWord = css({ bg: 'leaf.700' });
 const blockCell = css({ bg: 'block' });
 
 // Definition cell: container-type so child cqi values resolve against cell width.
@@ -127,9 +133,12 @@ const defSingle = css({
 });
 
 // Current-clue highlight: colored border on the side opposite the arrow so it
-// doesn't compete with the arrow badge. leaf.700-on-sand ≈ 5.4:1 (WCAG AA).
-const defCellCurrentRight = css({ borderLeft: '3px solid token(colors.leaf.700)', color: 'leaf.700' });
-const defCellCurrentDown = css({ borderTop: '3px solid token(colors.leaf.700)', color: 'leaf.700' });
+// doesn't compete with the arrow badge. `leaf.400` (#A2D481, vivid soft
+// leaf) on the mauve def-cell bg ≈ 6:1 contrast (WCAG AA at body
+// sizes). The prior `leaf.700` was correct on the cream/sand light
+// palette but reads as medium-dark green on dark mauve — fails AA.
+const defCellCurrentRight = css({ borderLeft: '3px solid token(colors.leaf.400)', color: 'leaf.400' });
+const defCellCurrentDown = css({ borderTop: '3px solid token(colors.leaf.400)', color: 'leaf.400' });
 
 // Single-clue text: font size is auto-fit at runtime (FitText) — the inline
 // font-size set by FitText overrides any value here. We still need flex:1 +
