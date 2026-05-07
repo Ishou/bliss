@@ -51,10 +51,11 @@ import path from 'node:path';
 
 import { expect, test } from '@playwright/test';
 
+// Same fixture MSW serves in dev/preview — see
+// `frontend/src/infrastructure/mocks/handlers.ts`.
 const STRESS_FIXTURE_PATH = path.join(
   path.dirname(fileURLToPath(import.meta.url)),
-  'fixtures',
-  'puzzle-stress.json',
+  '..', 'src', 'infrastructure', 'mocks', 'fixtures', 'puzzle.json',
 );
 const STRESS_FIXTURE = JSON.parse(
   readFileSync(STRESS_FIXTURE_PATH, 'utf-8'),

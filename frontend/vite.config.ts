@@ -139,5 +139,10 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./vitest.setup.ts'],
     css: false,
+    // Vitest's default discovery globs `**/*.{test,spec}.ts`, which
+    // would pick up `frontend/e2e/*.spec.ts` (Playwright tests, no
+    // jsdom, no vitest globals). Exclude e2e/ — Playwright's own
+    // runner handles them via `pnpm e2e`.
+    exclude: ['**/node_modules/**', '**/dist/**', 'e2e/**'],
   },
 });

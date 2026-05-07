@@ -9,14 +9,19 @@
 // will satisfy once consumed end-to-end. Reviewers see real shapes;
 // production never gets touched by preview traffic.
 //
-// The grid fixture is sourced from `grid/api/examples/get-puzzle-200.json`
-// via the `virtual:grid-api-examples/*` Vite plugin (see
-// `vite.config.ts`). The game/lobby surface is hand-built in
+// The grid fixture is sourced from `./fixtures/puzzle.json`, a 10×10
+// French mots-fléchés grid with realistic clue text — this is what
+// the dev/preview reviewer sees, and what the e2e harness loads to
+// stress-test the FitText layout. The same JSON powers both, so any
+// "looks fine in preview, breaks in e2e" drift is impossible.
+// (The OpenAPI spec example at `grid/api/examples/get-puzzle-200.json`
+// is still the contract source for `tests/http-puzzle-repository.test.ts`
+// via the `virtual:grid-api-examples/*` Vite plugin; preview's display
+// fixture is intentionally separate so we can swap clue corpora without
+// touching the spec.) The game/lobby surface is hand-built in
 // `handlers/game.ts` because the game/api spec doesn't ship `examples/`
 // payloads yet — the generated TS types are the contract, the WS frames
-// mirror `game/api/asyncapi.yaml`. ADR-0003 §9's "replay the spec's
-// examples" pattern is honored where examples exist; where they don't,
-// the wire shapes still match the spec byte-for-byte.
+// mirror `game/api/asyncapi.yaml`.
 //
 // This module is reached only from `main.tsx` and only when
 // `import.meta.env.VITE_USE_MOCK_API === 'true'` (preview builds). Vite
@@ -28,18 +33,17 @@
 import { http, HttpResponse } from 'msw';
 
 import type { components } from '@/infrastructure/api/grid/types';
-// `virtual:grid-api-examples/*` is resolved by the
-// `gridApiExamplesAsVirtualModule` plugin in `vite.config.ts`.
-import getPuzzleExample from 'virtual:grid-api-examples/get-puzzle-200';
+import puzzleFixtureJson from './fixtures/puzzle.json';
 
 import { gameHandlers, gameWsHandler } from './handlers/game';
 
 type Puzzle = components['schemas']['Puzzle'];
 
-// The fixture is the spec example as JSON. Cast through `unknown`
-// because the virtual module loader returns `any` JSON; the cast
-// is checked by `pnpm api:check` (regen-and-diff against the spec).
-const puzzleFixture = getPuzzleExample as unknown as Puzzle;
+// Cast through `unknown` because Vite's JSON import returns the
+// inferred literal type; the cast is structurally validated at runtime
+// by MSW returning it through the Grid API client (which has spec-
+// generated types).
+const puzzleFixture = puzzleFixtureJson as unknown as Puzzle;
 
 /**
  * Handlers for every Grid API operation declared in

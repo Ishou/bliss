@@ -35,10 +35,13 @@ import { expect, test } from '@playwright/test';
 // cases ("Lettre grecque (19e)", "Longue période historique",
 // "Règle d'équerre ou note") that exercise hyphenation, multi-line
 // stacking, and unbreakable-token wrap.
+// Same fixture MSW serves in dev/preview — see
+// `frontend/src/infrastructure/mocks/handlers.ts`. Loading from the
+// shared location guarantees "what the test sees" === "what the
+// reviewer sees in preview".
 const STRESS_FIXTURE_PATH = path.join(
   path.dirname(fileURLToPath(import.meta.url)),
-  'fixtures',
-  'puzzle-stress.json',
+  '..', 'src', 'infrastructure', 'mocks', 'fixtures', 'puzzle.json',
 );
 const STRESS_FIXTURE = JSON.parse(
   readFileSync(STRESS_FIXTURE_PATH, 'utf-8'),
