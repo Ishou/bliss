@@ -137,3 +137,5 @@
 {"prompt": "Génère une définition mots-fléchés courte pour: BÊTISE [nom]", "chosen": "Sottise", "rejected": "Caractère de sottise"}
 {"prompt": "Génère une définition mots-fléchés courte pour: ACHAT [nom]", "chosen": "Emplette", "rejected": "Action d'acheter"}
 {"prompt": "Génère une définition mots-fléchés courte pour: IVROGNE [nom]", "chosen": "Soûlard", "rejected": "Personne qui s'enivre"}
+{"prompt": "Génère une définition mots-fléchés courte pour: CANE [nom]", "chosen": "Femelle du canard", "rejected": "Bâton"}
+{"prompt": "Génère une définition mots-fléchés courte pour: TÊTU [nom]", "chosen": "Obstiné", "rejected": "Gay"}

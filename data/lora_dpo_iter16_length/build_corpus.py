@@ -241,17 +241,34 @@ C_PAIRS: list[tuple[str, str, str, str]] = [
     ("nonchalance", "nom",   "Indolence",             "Manière indolente"),
 ]
 
+# --- CATEGORY D: wrong-sense corrections (seed) ------------------------
+# Each pair: chosen is the semantically-correct clue; rejected is a
+# concrete v9 mis-clue observed in production. Filter false-positives
+# the CamemBERT v5 didn't catch — bilingual contamination, magazine /
+# cultural-reference associations. These are seed examples; the
+# category is intended to grow as more wrong-sense outputs are
+# surfaced from grid play.
+D_PAIRS: list[tuple[str, str, str, str]] = [
+    # Bilingual: 'cane' (FR: female duck) ≠ 'cane' (EN: walking stick).
+    # The LoRA emitted "Bâton" via the English-French homograph.
+    ("cane",        "nom",   "Femelle du canard",     "Bâton"),
+    # Cultural reference: Têtu is a French LGBT magazine. The LoRA
+    # treated the magazine title as the canonical clue for 'gay'.
+    ("têtu",        "nom",   "Obstiné",               "Gay"),
+]
+
 
 ALL_PAIRS: list[tuple[str, str, str, str, str]] = (
     [(l, p, c, r, "A") for l, p, c, r in A_PAIRS]
     + [(l, p, c, r, "B") for l, p, c, r in B_PAIRS]
     + [(l, p, c, r, "C") for l, p, c, r in C_PAIRS]
+    + [(l, p, c, r, "D") for l, p, c, r in D_PAIRS]
 )
 
 
 def main() -> None:
-    print(f"loaded {len(A_PAIRS)} A + {len(B_PAIRS)} B + {len(C_PAIRS)} C = "
-          f"{len(ALL_PAIRS)} candidate pairs")
+    print(f"loaded {len(A_PAIRS)} A + {len(B_PAIRS)} B + {len(C_PAIRS)} C + "
+          f"{len(D_PAIRS)} D = {len(ALL_PAIRS)} candidate pairs")
 
     # Validate via grammalecte morphology + validate_lemma_clue.
     lex = Path.home() / "Downloads/grammalecte/lexique-grammalecte-fr-v7.7.txt"
@@ -281,9 +298,10 @@ def main() -> None:
             # clue actually fits, the contrast collapses to category A.
             # Reclassify to category A rather than dropping.
             cat = "A"
-        if cat != "B" and r_res.flag == "too-long":
+        if cat not in ("B", "D") and r_res.flag == "too-long":
             # Category A/C expects rejected to fit — if it doesn't,
             # promote to category B (the contrast is still meaningful).
+            # Category D is wrong-sense — length is irrelevant.
             cat = "B"
         accepted.append((lemma, pos, chosen, reject, cat))
 
@@ -296,17 +314,24 @@ def main() -> None:
         print(f"  ... ({len(rejected) - 25} more)")
 
     # Stratified split: 80/10/10 per category, then concatenate.
+    # Category D is small (seed-only); for sub-10 entries we route them
+    # all to train rather than splitting (no statistical signal in a
+    # 1-row eval set, and the training-time signal matters most for
+    # this rare-class category).
     rng = random.Random(20260507)
-    by_cat: dict[str, list[tuple[str, str, str, str, str]]] = {"A": [], "B": [], "C": []}
+    by_cat: dict[str, list[tuple[str, str, str, str, str]]] = {"A": [], "B": [], "C": [], "D": []}
     for entry in accepted:
         by_cat[entry[4]].append(entry)
 
     train: list[tuple] = []
     valid: list[tuple] = []
     test: list[tuple] = []
-    for cat in ("A", "B", "C"):
+    for cat in ("A", "B", "C", "D"):
         rows = by_cat[cat]
         rng.shuffle(rows)
+        if len(rows) < 10:
+            train += rows
+            continue
         n_test = max(1, len(rows) // 10)
         n_valid = max(1, len(rows) // 10)
         test += rows[:n_test]
@@ -316,10 +341,11 @@ def main() -> None:
     print(f"\nsplits: train={len(train)} valid={len(valid)} test={len(test)}")
     print(f"category distribution per split:")
     for split_name, split in [("train", train), ("valid", valid), ("test", test)]:
-        counts = {"A": 0, "B": 0, "C": 0}
+        counts = {"A": 0, "B": 0, "C": 0, "D": 0}
         for e in split:
             counts[e[4]] += 1
-        print(f"  {split_name:5s}: A={counts['A']:3d}  B={counts['B']:3d}  C={counts['C']:3d}")
+        print(f"  {split_name:5s}: A={counts['A']:3d}  B={counts['B']:3d}  "
+              f"C={counts['C']:3d}  D={counts['D']:3d}")
 
     out_dir = Path(__file__).resolve().parent
     for name, rows in (("train", train), ("valid", valid), ("test", test)):
