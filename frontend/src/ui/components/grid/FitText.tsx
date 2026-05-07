@@ -1,19 +1,22 @@
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useLayoutEffect, useRef } from 'react';
 
-// Auto-fit text: binary-search the largest integer pixel font size at which
-// the text fits its container without overflow.
+// Auto-fit text: bisect the largest fractional font size at which the
+// text fits its container without overflow.
 //
 // `min` and `max` are interpreted per the `unit` prop:
 //   * `unit="px"` — absolute pixel font sizes (legacy mode).
-//   * `unit="ratio"` — fractions of the container's clientWidth, computed at
-//     fit time. This makes the fit *zoom-invariant*: a clue that fits at one
-//     cell size fits at every cell size, because both font and cell scale
-//     linearly together. The zoom-invariance contract is what
-//     `scripts/eval/clue_metrics.py` validates against offline at the
-//     reference cell size.
+//   * `unit="ratio"` — fractions of the container's measured width,
+//     computed at fit time. This makes the fit *zoom-invariant*: a clue
+//     that fits at one cell size fits at every cell size, because both
+//     font and cell scale linearly together. The zoom-invariance contract
+//     is what `scripts/eval/clue_metrics.py` validates against offline at
+//     the reference cell size.
 //
 // Recomputes whenever the container resizes (grid responds to viewport /
-// pinch-zoom) or the text changes.
+// pinch-zoom), the text changes, or web fonts finish loading after the
+// initial paint. RO callbacks are rAF-coalesced — multiple resize fires
+// within one frame trigger at most one fit.
+
 // Safe initial pixel font size. The first render happens BEFORE the
 // container has a measured width, so the binary search inside
 // useLayoutEffect bails out on `clientWidth === 0` and the inline size
@@ -26,14 +29,33 @@ const INITIAL_PX = 8;
 
 // Absolute minimum font size in pixels. Raised post-PR-#195 from 6 → 11:
 // at 6 px even high-DPR displays produce text that's literally
-// unreadable on dense crossword cells (the user's screenshot showed
-// "psycho" / "gagnée" sitting at ~6–8 px next to short clues like
-// "déco" rendering at the comfortable ceiling — visually jarring and
-// worse than honest clipping). 11 px is one notch below the typical
-// readability floor for non-elderly eyes (~12 px); we prefer
+// unreadable on dense crossword cells. 11 px is one notch below the
+// typical readability floor for non-elderly eyes (~12 px); we prefer
 // `overflow: hidden` clipping past this point because clipped text is
 // still recognizable in shape, while sub-readable text is just noise.
 const ABSOLUTE_MIN_PX = 11;
+
+// Bisection convergence target. The search stops when the candidate
+// window shrinks below this. 0.25 px is below sub-pixel rendering
+// granularity on every realistic DPR, so the residual error is
+// invisible. Lower values just burn more iterations without changing
+// what the user sees.
+const FIT_EPSILON_PX = 0.25;
+
+// Width-axis slop on the fits-test. Even with fractional content
+// measurement (Range.getBoundingClientRect) and fractional container
+// measurement (Element.getBoundingClientRect), there's residual noise
+// at sub-half-pixel boundaries from glyph hinting and DPR rounding.
+// 0.5 px absorbs that without permitting visible overflow — it's
+// below the threshold of perception on any realistic display, and
+// the cell's `overflow: hidden` eats this much invisibly.
+const SLOP_PX = 0.5;
+
+// Hard cap on bisection iterations. log2((hi-lo)/EPSILON) is ~7 for
+// typical ranges, so 30 is comfortably above what the algorithm needs
+// even in pathological cases. Catches a runaway loop from a
+// measurement bug (e.g. a stub returning NaN) instead of hanging.
+const MAX_ITERATIONS = 30;
 
 export function FitText({
   text, min, max, className, title, unit = 'px',
@@ -46,108 +68,196 @@ export function FitText({
   unit?: 'px' | 'ratio';
 }) {
   const ref = useRef<HTMLSpanElement>(null);
-  const [size, setSize] = useState(INITIAL_PX);
 
   useLayoutEffect(() => {
     const el = ref.current;
     if (!el) return;
 
-    // Convergence guard against a measure-then-resize feedback loop.
-    //
-    // The ancestor flex shell is `container-type: size` (see Grid.tsx
-    // `gridShell`) and the grid wrapper is sized by `min(100cqw, 100cqh,
-    // 720px)`. When FitText writes `el.style.fontSize = …`, the rendered
-    // text height/width changes, which can nudge the cell's content box
-    // (and therefore the cqi/cqw values it computes against) by a
-    // sub-pixel amount, which fires the ResizeObserver, which re-runs
-    // `fit`, which may pick a slightly different "best" because the new
-    // clientWidth changed by 1 px, which writes a new font, ad infinitum.
-    // On mobile cells (small enough that integer-px font choices straddle
-    // the comfortable range) this oscillates between two adjacent sizes —
-    // the visible "flicker".
-    //
-    // We break the loop with two pieces of state preserved across calls:
-    //   * `lastBest`: the font size last applied to the DOM. If the new
-    //     `best` equals it, the algorithm converged — skip the final
-    //     style write AND the setState, so the ResizeObserver has no
-    //     reason to fire again from FitText's own activity.
-    //   * `lastDims`: the container dimensions that produced `lastBest`.
-    //     If a ResizeObserver fire reports the same `cw`/`ch`, skip the
-    //     binary search entirely. This also avoids the binary search's
-    //     intermediate `style.fontSize` writes, which themselves perturb
-    //     layout and could feed the loop on a slow re-converge.
+    // Convergence guard against measurement-then-resize feedback. The
+    // ancestor flex shell uses `container-type: size`, so font-size
+    // writes that change `el`'s rendered box could in principle
+    // perturb cqw values upstream. Two layers of defence:
+    //   * `lastCw / lastCh`: if dimensions haven't changed
+    //     significantly since the last converged fit, skip the search
+    //     AND the DOM write — no mutation means no perturbation.
+    //   * Observing the PARENT instead of `el`: parent's box is
+    //     determined by the cell, not by FitText's content, so font-
+    //     size writes can't fire the observer in the first place.
     let lastBest = -1;
     let lastCw = -1;
     let lastCh = -1;
+    let cancelled = false;
+
+    // Available content box. Prefer the parent's BCR (fractional) so
+    // that 1-px integer-rounding boundaries during continuous resize
+    // don't produce visible font-size jumps. Falls back to the
+    // element's integer clientWidth/Height when BCR is unavailable
+    // (jsdom returns 0×0; existing tests stub clientWidth/Height on
+    // the span itself to drive the algorithm).
+    //
+    // The span fills the parent's content box via `flex: 1;
+    // alignSelf: stretch` (see Cell.tsx defText/defStackText), and
+    // neither the parent nor the span have padding or border, so
+    // BCR.width === content-box width. If that ever changes, this
+    // function needs to subtract padding/border via getComputedStyle.
+    const measureAvailable = (): { w: number; h: number } => {
+      const parent = el.parentElement;
+      if (parent) {
+        const bcr = parent.getBoundingClientRect();
+        if (bcr.width > 0 && bcr.height > 0) {
+          return { w: bcr.width, h: bcr.height };
+        }
+      }
+      return { w: el.clientWidth, h: el.clientHeight };
+    };
+
+    // Width: sub-pixel precision via Range.getBoundingClientRect().
+    // jsdom does not compute layout; its Range stubs lack the method.
+    // Fall back to scrollWidth so dimension-stubbed tests keep working.
+    const measureContentWidth = (): number => {
+      const range = document.createRange();
+      range.selectNodeContents(el);
+      const rect = typeof range.getBoundingClientRect === 'function'
+        ? range.getBoundingClientRect()
+        : null;
+      if (!rect || rect.width === 0) return el.scrollWidth;
+      return rect.width;
+    };
+
+    // Height: scrollHeight, NOT Range. Range height is browser-
+    // inconsistent — Safari returns the glyph bbox, missing the
+    // half-leading from line-height: 1.1, which under-reports
+    // rendered height by ~10 % per line and lets the fits-test
+    // approve sizes that overflow vertically. scrollHeight is
+    // layout-engine-reported, includes the full line box, and rounds
+    // up so it errs on the safe side.
+    const fitsAt = (font: number, cw: number, ch: number): boolean => {
+      el.style.fontSize = `${font}px`;
+      const w = measureContentWidth();
+      const h = el.scrollHeight;
+      return w <= cw + SLOP_PX && h <= ch;
+    };
 
     const fit = () => {
-      const cw = el.clientWidth;
-      const ch = el.clientHeight;
-      if (cw === 0 || ch === 0) return;
-      if (cw === lastCw && ch === lastCh && lastBest !== -1) return;
+      if (cancelled) return;
+      const { w: cw, h: ch } = measureAvailable();
+      if (cw <= 0 || ch <= 0) return;
+      if (
+        Math.abs(cw - lastCw) < FIT_EPSILON_PX
+        && Math.abs(ch - lastCh) < FIT_EPSILON_PX
+        && lastBest > 0
+      ) return;
 
-      // Resolve ratios → integer px relative to the current container width.
-      // `Math.max(1, …)` guards against degenerate sizes during the first
-      // pre-layout render where clientWidth can briefly be 0 or 1.
-      const lo0 = unit === 'ratio' ? Math.max(1, Math.floor(min * cw)) : min;
-      const hi0 = unit === 'ratio' ? Math.max(lo0, Math.floor(max * cw)) : max;
+      // Comfortable range, fractional. Prior versions floored to
+      // integers; that produces 1-px font jumps when the cell width
+      // crosses an integer boundary during a smooth resize, which the
+      // user reads as flicker. Keeping the bounds fractional lets the
+      // bisection produce smoothly varying fits.
+      const lo0 = unit === 'ratio' ? Math.max(1, min * cw) : min;
+      const hi0 = unit === 'ratio' ? Math.max(lo0, max * cw) : max;
 
-      // Test whether `font` fits the container without scrolling.
-      const fitsAt = (font: number): boolean => {
-        el.style.fontSize = `${font}px`;
-        return el.scrollWidth <= cw && el.scrollHeight <= ch;
-      };
-
-      // Phase 1: binary-search the comfortable range [lo0, hi0]. Best
-      // result, if any size in the range fits.
+      // Phase 1: bisect [lo0, hi0] until the window is below epsilon.
       let lo = lo0;
       let hi = hi0;
       let best = -1;
-      while (lo <= hi) {
-        const mid = (lo + hi) >> 1;
-        if (fitsAt(mid)) {
-          best = mid;
-          lo = mid + 1;
-        } else {
-          hi = mid - 1;
+      let iter = 0;
+      // Probe the ceiling first — if hi0 already fits, the search is done.
+      if (fitsAt(hi0, cw, ch)) {
+        best = hi0;
+      } else {
+        while (hi - lo > FIT_EPSILON_PX && iter++ < MAX_ITERATIONS) {
+          const mid = (lo + hi) / 2;
+          if (fitsAt(mid, cw, ch)) {
+            best = mid;
+            lo = mid;
+          } else {
+            hi = mid;
+          }
         }
       }
 
-      // Phase 2: if nothing in the comfortable range fit, the clue is too
-      // long for the current cell size — drop below lo0 to ABSOLUTE_MIN
-      // (6 px, smallest readable on typical DPRs) and pick the largest
-      // size that fits. This means the legibility floor (lo0) is a target,
-      // not a hard minimum: we'd rather render small-but-complete than
-      // clipped. With the offline `clue_metrics.fits_single_cell` gate
-      // upstream, this fallback rarely fires on shipped data.
-      if (best === -1) {
-        let phase2Best = ABSOLUTE_MIN_PX;
-        for (let f = lo0 - 1; f >= ABSOLUTE_MIN_PX; f--) {
-          if (fitsAt(f)) {
-            phase2Best = f;
-            break;
+      // Phase 2: if nothing in [lo0, hi0] fit, drop below the
+      // comfortable floor down to ABSOLUTE_MIN_PX. Same fractional
+      // bisection. If even ABSOLUTE_MIN_PX overflows, we accept it
+      // and the cell's `overflow: hidden` clips — readability beats
+      // sub-readability per PR-195.
+      if (best < 0) {
+        let lo2 = ABSOLUTE_MIN_PX;
+        let hi2 = lo0;
+        if (fitsAt(lo2, cw, ch)) {
+          best = lo2;
+          // Try to grow back toward lo0.
+          iter = 0;
+          while (hi2 - lo2 > FIT_EPSILON_PX && iter++ < MAX_ITERATIONS) {
+            const mid = (lo2 + hi2) / 2;
+            if (fitsAt(mid, cw, ch)) {
+              best = mid;
+              lo2 = mid;
+            } else {
+              hi2 = mid;
+            }
           }
+        } else {
+          // Even the absolute floor overflows; commit it anyway and
+          // let overflow:hidden clip.
+          best = ABSOLUTE_MIN_PX;
         }
-        best = phase2Best;
       }
 
       lastCw = cw;
       lastCh = ch;
-      // Restore the inline font-size — `fitsAt` may have left it at an
-      // intermediate binary-search value. If the converged size equals
-      // the last applied size, skip the setState: no state update means
-      // no React re-render and no new commit-time mutation that could
-      // feed the resize loop.
-      el.style.fontSize = `${best}px`;
-      if (best === lastBest) return;
       lastBest = best;
-      setSize(best);
+      // Restore the inline font-size — fitsAt may have left it at an
+      // intermediate bisection value. Direct DOM write (no setState)
+      // because rendering 100+ cells through React per RO fire was
+      // the bulk of the resize-cascade cost.
+      el.style.fontSize = `${best}px`;
     };
 
+    // Initial synchronous fit so the first paint shows the right size.
     fit();
-    const ro = new ResizeObserver(fit);
-    ro.observe(el);
-    return () => ro.disconnect();
+
+    // Web fonts may swap in after first paint; their metrics differ
+    // from the fallback's, which silently invalidates the first fit.
+    // Re-fit when fonts settle, but only if they were actually loading
+    // at mount time — warm reloads and jsdom skip the refit, which
+    // keeps the convergence-guard tests deterministic.
+    const fonts = document.fonts;
+    if (fonts && fonts.status === 'loading') {
+      fonts.ready.then(() => {
+        if (cancelled) return;
+        lastCw = -1;
+        lastCh = -1;
+        fit();
+      });
+    }
+
+    // rAF-coalesce RO callbacks. During a continuous resize the
+    // browser fires the observer aligned to frames, sometimes
+    // multiple times per frame. Without coalescing, each fire runs
+    // the full bisection and may pick a slightly different best; the
+    // user reads the rapid-fire 1-px font shifts as flicker.
+    // Coalescing means at most one fit per frame.
+    let rafId: number | null = null;
+    const scheduleFit = () => {
+      if (rafId !== null) return;
+      rafId = requestAnimationFrame(() => {
+        rafId = null;
+        fit();
+      });
+    };
+
+    // Observe the parent. Our font-size writes change `el` but cannot
+    // change the parent's box, so the observer can't fire on its own
+    // writes — the lastCw/lastCh guard becomes belt-and-suspenders
+    // for the parent's own sub-pixel noise.
+    const ro = new ResizeObserver(scheduleFit);
+    ro.observe(el.parentElement ?? el);
+    return () => {
+      cancelled = true;
+      if (rafId !== null) cancelAnimationFrame(rafId);
+      ro.disconnect();
+    };
   }, [text, min, max, unit]);
 
   return (
@@ -155,7 +265,7 @@ export function FitText({
       ref={ref}
       className={className}
       title={title}
-      style={{ fontSize: `${size}px` }}
+      style={{ fontSize: `${INITIAL_PX}px` }}
     >
       {text}
     </span>

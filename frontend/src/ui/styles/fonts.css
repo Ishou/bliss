@@ -72,3 +72,36 @@
   src: url('@fontsource-variable/nunito/files/nunito-latin-wght-normal.woff2') format('woff2-variations');
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
+
+/* Lekton — monospace for def-cell clue text only (Cell.tsx defText/
+ * defStackText). Per ADR-0005 §5 amendment: Lekton's constant glyph
+ * advance lets the offline `clue_metrics` gate be a pure char-count
+ * predicate, decoupling the gate from runtime font metrics. Latin
+ * partition covers French accents (é/è/à/ç/etc.); latin-ext covers
+ * Latin Extended-A (œ/ƒ/etc.).
+ *
+ * Bold (700) only — clue text is set in bold to read distinctly
+ * against the def-cell background and stay legible at small fontSizes
+ * on dense grids. Bold has the same 0.5 em advance as regular (verified
+ * against the shipped woff2), so `LEKTON_ADVANCE_RATIO = 0.5` in
+ * `scripts/eval/clue_metrics.py` is unaffected by the weight choice. */
+
+/* lekton-latin-ext-700-normal */
+@font-face {
+  font-family: 'Lekton';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 700;
+  src: url('@fontsource/lekton/files/lekton-latin-ext-700-normal.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+/* lekton-latin-700-normal */
+@font-face {
+  font-family: 'Lekton';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 700;
+  src: url('@fontsource/lekton/files/lekton-latin-700-normal.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}

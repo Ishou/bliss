@@ -19,6 +19,9 @@ importers:
       '@fontsource-variable/nunito':
         specifier: ^5.2.7
         version: 5.2.7
+      '@fontsource/lekton':
+        specifier: ^5.2.8
+        version: 5.2.8
       '@tanstack/react-router':
         specifier: ^1.95.0
         version: 1.168.24(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
@@ -488,6 +491,9 @@ packages:
 
   '@fontsource-variable/nunito@5.2.7':
     resolution: {integrity: sha512-2N8QhatkyKgSUbAGZO2FYLioxA32+RyI1EplVLawbpkGjUeui9Qg9VMrpkCaik1ydjFjfLV+kzQ0cGEsMrMenQ==}
+
+  '@fontsource/lekton@5.2.8':
+    resolution: {integrity: sha512-mZgkUKbS5COQnyIPeHuWrak8z4NGb+DJI9kF5xnfiN7wgavI0WQeIrZ65FmHehz3wJvywAhNmb131W18vT5PEA==}
 
   '@humanfs/core@0.19.2':
     resolution: {integrity: sha512-UhXNm+CFMWcbChXywFwkmhqjs3PRCmcSa/hfBgLIb7oQ5HNb1wS0icWsGtSAUNgefHeI+eBrA8I1fxmbHsGdvA==}
@@ -3786,6 +3792,8 @@ snapshots:
   '@floating-ui/utils@0.2.11': {}
 
   '@fontsource-variable/nunito@5.2.7': {}
+
+  '@fontsource/lekton@5.2.8': {}
 
   '@humanfs/core@0.19.2':
     dependencies:

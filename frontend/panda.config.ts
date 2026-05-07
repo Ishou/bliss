@@ -69,6 +69,14 @@ export default defineConfig({
         // ever absent (e.g., during dev or in a stale-cache PWA).
         body: { value: '"Nunito Variable", "Nunito Variable fallback", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif' },
         heading: { value: '"Nunito Variable", "Nunito Variable fallback", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif' },
+        // Monospace — used ONLY for def-cell clue text (Cell.tsx
+        // defText/defStackText). Lekton's constant glyph advance is what
+        // lets the offline `scripts/eval/clue_metrics.py` gate be a pure
+        // char-count predicate (no PIL/font-metric coupling). ADR-0005
+        // §5 amendment documents the exception to the single-typeface
+        // rule. Letter-input cells, headings, lobby surfaces, and the
+        // CurrentCluePanel stay on the Nunito `body` token.
+        mono: { value: '"Lekton", ui-monospace, "SFMono-Regular", Menlo, "Cascadia Code", monospace' },
       },
       // Type scale — ADR-0005 §5. Mobile-first sizes; the `md` breakpoint
       // bumps each by 1.125× via the `md` conditional in route styles.

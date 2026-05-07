@@ -112,7 +112,7 @@ const defCell = css({
   bg: 'definition',
   color: 'fg',
   containerType: 'inline-size',
-  lineHeight: '1.1',
+  lineHeight: '1.05',
   padding: '3px',
   textAlign: 'center',
   zIndex: 1,
@@ -138,11 +138,23 @@ const defCellCurrentDown = css({ borderTop: '3px solid token(colors.leaf.700)', 
 // Single-clue text: font size is auto-fit at runtime (FitText) — the inline
 // font-size set by FitText overrides any value here. We still need flex:1 +
 // alignSelf so the span fills the cell (FitText measures clientWidth/
-// clientHeight on this very element). `overflowWrap: break-word` lets a
-// rare long unbroken French word split as a last resort. `overflow: hidden`
-// is a safety net — with `clue_metrics.fits_single_cell` enforced upstream
-// this should never engage on shipped data, but if it does the cell stays
-// inside its borders rather than bleeding into neighbours.
+// clientHeight on this very element).
+//
+// `hyphens: auto` enables CLDR-pattern French syllabic hyphenation
+// ("pré-sen-ter", "syl-la-bique"), inherited from the `lang="fr"` set
+// on `<html>` and on the grid root. With hyphenation the fits-test
+// passes at larger fontSize than it would otherwise (a word that
+// wouldn't fit on a line gets a syllabic break instead of being
+// rejected), so the algorithm trades fewer hyphens for bigger text
+// only when no hyphenated layout fits at the current size. Preferred
+// over the older "shrink to fit" path that produced microscopic text;
+// preferred over `overflowWrap: break-word` which breaks at arbitrary
+// character boundaries (no awareness of syllables).
+//
+// `overflowWrap: break-word` is kept as a last-ditch fallback for
+// content that has no hyphenation points (e.g. unusual proper nouns
+// or all-caps acronyms). `overflow: hidden` clips honestly when even
+// hyphenation can't make it fit at ABSOLUTE_MIN_PX.
 const defText = css({
   flex: 1,
   alignSelf: 'stretch',
@@ -150,6 +162,16 @@ const defText = css({
   alignItems: 'center',
   justifyContent: 'center',
   textAlign: 'center',
+  // `fontFamily: 'mono'` (Lekton) is the load-bearing piece of the
+  // gate-decoupling refactor: Lekton's constant glyph advance lets
+  // `scripts/eval/clue_metrics.py` be a deterministic predicate on
+  // `len(clue)` rather than mirroring the browser's PIL/Nunito layout.
+  // See ADR-0005 §5 amendment. Bold (700) is the only Lekton weight
+  // loaded — clues read more distinctly bold at the small fontSizes
+  // dense grids force.
+  fontFamily: 'mono',
+  fontWeight: 700,
+  hyphens: 'auto',
   overflowWrap: 'break-word',
   wordBreak: 'normal',
   overflow: 'hidden',
@@ -297,7 +319,7 @@ const defStack = css({
   width: '100%',
   height: '100%',
   gap: '1px',
-  lineHeight: '1.1',
+  lineHeight: '1.05',
   overflow: 'hidden',
 });
 const defStackClue = css({
@@ -317,9 +339,13 @@ const defStackClue = css({
   '&:not(:first-child)': { borderTop: '1px solid rgba(27, 40, 69, 0.25)' },
 });
 const defStackClueCurrent = css({ color: 'leaf.700' });
-// Stacked-clue text: same overflow safety net as defText.
-// `whiteSpace: 'pre-line'` honours the explicit `\n` inserted by
-// `smartLineBreak` (one balanced split for multi-word clues), so
+// Stacked-clue text: same wrap policy as defText. `hyphens: auto`
+// (lang="fr" inherited) is even more important on stacked half-cells
+// because they're vertically tight — without syllabic breaks, long
+// words like "quotidiennes" or "présentation" force the algorithm to
+// drop near ABSOLUTE_MIN_PX even when there's plenty of horizontal
+// room. `whiteSpace: 'pre-line'` honours the explicit `\n` inserted
+// by `smartLineBreak` (one balanced split for multi-word clues), so
 // multi-word clues use the vertical space FitText would otherwise
 // leave empty. Line-height inherits the cell's 1.1 for legibility.
 const defStackText = css({
@@ -328,6 +354,11 @@ const defStackText = css({
   alignItems: 'center',
   justifyContent: 'center',
   textAlign: 'center',
+  // Same monospace + bold rationale as `defText` — see comment there
+  // and ADR-0005 §5 amendment.
+  fontFamily: 'mono',
+  fontWeight: 700,
+  hyphens: 'auto',
   overflowWrap: 'break-word',
   wordBreak: 'normal',
   overflow: 'hidden',
