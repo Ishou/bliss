@@ -41,12 +41,19 @@ PADDING = 3
 REFERENCE_CELL = 100
 LINE_H = 1.05
 
-# Universal legibility floor for the gate, matching the original
-# `RATIO = 0.18` semantics. This sits between FitText's `ABSOLUTE_MIN`
-# (~0.11 on a 100 px cell) and the per-cell comfortable floors
-# (`SINGLE_RATIO_MIN = 0.22`, `STACK_RATIO_MIN = 0.20` in Cell.tsx) —
-# so the gate accepts any clue that the runtime can render at least
-# at 0.18, slightly below the comfortable band but well above clipping.
+# Universal legibility floor for the gate. Matches FitText's
+# `SINGLE_RATIO_MIN`/`STACK_RATIO_MIN` in Cell.tsx (both 0.14) so the
+# gate's pass-at-floor verdict and the runtime's Phase-1 floor are the
+# same ratio: every accepted clue's longest line fits Phase 1.
+#
+# Why 0.14: with Lekton's 0.5 em monospace advance, the chars-per-line
+# cap at the floor is `1 / (ratio × 0.5)`. At 0.14, that's
+# 14.3 chars/line — wide enough to accept common French long words
+# like "informatique" / "présentation" / "historique" on a single
+# line, so they don't trip Phase 1 and force the runtime into Phase
+# 2's smaller ratios. The previous 0.18 floor (chars/line cap of
+# 11.1) failed those words and made most clues land in Phase 2,
+# producing visibly-too-small text in the common case.
 #
 # Crucially, both fits_single_cell and fits_stacked_cell use the SAME
 # floor: differentiating per cell-type would introduce an inversion
@@ -55,7 +62,7 @@ LINE_H = 1.05
 # drops anything that fails fits_single before checking compactness.
 # A single floor preserves the historical contract:
 # fits_single_cell ⊇ fits_stacked_cell.
-GATE_RATIO_FLOOR = 0.18
+GATE_RATIO_FLOOR = 0.14
 
 # Lekton glyph advance / em — see the calibration block in the module
 # docstring. Exact for every Latin / Latin-Extended-A character (the

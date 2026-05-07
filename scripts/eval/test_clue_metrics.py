@@ -63,11 +63,11 @@ def test_short_realworld_clues_fit_both(text: str) -> None:
 
 
 @pytest.mark.parametrize("text", [
-    # 3-word clue with one inner space inside the longer half: greedy
-    # word-wrap produces 3 rendered lines → fits single (max 4) but
-    # overflows stacked (max 2).
-    "Mammifère carnivore aquatique",
+    # Multi-word clues whose greedy-wrap rendering needs 4+ lines —
+    # fits single (max 6 lines at 0.14 floor) but overflows stacked
+    # (max 3 lines).
     "Soutien et assistance apportés à autrui",
+    "La couleur du ciel au coucher du soleil",
 ])
 def test_medium_clues_fit_single_not_stacked(text: str) -> None:
     assert fits_single_cell(text)
@@ -98,8 +98,10 @@ def test_monospace_symmetry() -> None:
 
 
 def test_extreme_overflow_rejected() -> None:
-    """Long descriptive clue overflows even single."""
-    text = "Arts de négocier et de traiter avec les nations étrangères"
+    """A clue with an unbreakable single word longer than the chars-
+    per-line cap is rejected even from single cells (no space to wrap
+    at, and the gate doesn't model hyphens:auto)."""
+    text = "Anticonstitutionnellement vôtre"  # 25-char single word > 14 cap
     assert not fits_single_cell(text)
 
 

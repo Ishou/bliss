@@ -62,15 +62,22 @@ function smartLineBreak(text: string): string {
 // clue that fits at one cell size fits at every cell size
 // (zoom-invariance — validated against `scripts/eval/clue_metrics.py`).
 //
-// MIN ratios match the offline gate's `GATE_RATIO_FLOOR = 0.18`: the
+// MIN ratios match the offline gate's `GATE_RATIO_FLOOR = 0.14`: the
 // gate guarantees every shipped clue fits at this ratio, so FitText's
-// search always finds a fit at the floor or above. The prior absolute
-// pixel floor (`ABSOLUTE_MIN_PX = 11`) broke zoom-invariance below
-// ~55 px cells — font stayed pinned at 11 px while the cell kept
-// shrinking, so the effective ratio grew and clue text overflowed
-// small mobile cells. Removing it (in tandem with the gate-aligned
-// MIN here) restores the contract: identical visual layout at any
-// screen size.
+// Phase 1 search always finds a fit at the floor or above and Phase 2
+// rarely fires.
+//
+// Why 0.14 and not 0.18 (the previous floor): with Lekton's 0.5 em
+// monospace advance, the chars-per-line cap at the floor is
+// `1 / (ratio × 0.5)`:
+//   * 0.18 → 11.1 chars/line (single longest word ≤ 11 chars)
+//   * 0.14 → 14.3 chars/line (single longest word ≤ 14 chars)
+// Real French clue text routinely has 12+-char single words —
+// "informatique", "présentation", "historique", "d'étonnement" — so
+// at 0.18 these clues fail Phase 1 (no breakable space) and drop into
+// Phase 2's smaller ratio. Net effect: most clues rendered too small.
+// Lifting the cap to 14 chars covers nearly every common French long
+// word so Phase 1 succeeds for the typical case.
 //
 // MAX ratios are the visual ceiling for short clues. SINGLE 0.32 and
 // STACK 0.28 keep "déco"-class one-word clues from ballooning past
@@ -78,12 +85,14 @@ function smartLineBreak(text: string): string {
 // cells have ~½ the vertical room and a 0.32-of-width font would
 // crowd the top/bottom edges.
 //
-// Visual delta inside a single grid widens to 0.32 / 0.18 ≈ 1.78×
-// (vs PR-#195's tighter 0.22–0.32 band). Trade accepted in exchange
-// for full zoom-invariance.
-const SINGLE_RATIO_MIN = 0.18;
+// Visual delta inside a single grid widens to 0.32 / 0.14 ≈ 2.3×
+// (vs PR-#195's tight 0.22–0.32 band, vs the previous 0.18–0.32).
+// Trade accepted in exchange for Phase 1 succeeding on almost every
+// clue — a flatter visual delta is moot if "tiny Phase 2" is the
+// common case.
+const SINGLE_RATIO_MIN = 0.14;
 const SINGLE_RATIO_MAX = 0.32;
-const STACK_RATIO_MIN = 0.18;
+const STACK_RATIO_MIN = 0.14;
 const STACK_RATIO_MAX = 0.28;
 
 const cellBase = css({
