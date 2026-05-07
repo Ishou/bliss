@@ -16,10 +16,9 @@ shapes but low-quality solver experience.
 
 ## 2. Goal
 
-1. Tag each `Word` with at most one theme drawn from a closed set of ~9
+1. Tag each `Word` with at most one theme drawn from a closed set of 8
    categories (Roman numerals, chemical symbols, title abbreviations,
-   country codes, interjections, musical notes, units, single letters,
-   compass bearings).
+   country codes, interjections, musical notes, units, compass bearings).
 2. Add per-grid theme caps (e.g. "at most 1 Roman numeral per grid")
    enforced during the CSP fill.
 3. Expand the curated corpus with categories that don't yet have entries
@@ -51,10 +50,12 @@ diverse short-word categories overall.
 
 ### 4.1 Theme set + per-theme CSVs
 
-Each theme is one curated CSV under `data/curated/themed/<theme>.csv`.
-Same schema as the main `data/curated/fr.csv` (no `theme` column in the
-schema — the file path *is* the theme). The repository overlays the
-theme onto the matching word at load time.
+Each theme is one curated CSV under
+`grid/api/src/main/resources/words/themed/<theme>.csv` — the classpath
+path is the canonical editorial location. Same schema as the main
+`data/curated/fr.csv` (no `theme` column in the schema — the file path
+*is* the theme). The repository overlays the theme onto the matching word
+at load time.
 
 | theme | curated file | examples | typical-grid cap |
 |---|---|---|---|
@@ -65,10 +66,9 @@ theme onto the matching word at load time.
 | `interjection` | `interjection.csv` | AH, OH, EH, BAH, ZUT, OUF | 1 |
 | `note` | `note.csv` | DO, RE, MI, FA, SOL, UT | 1 |
 | `unit` | `unit.csv` | KG, KM, KO, GO, CV, MWH, KWH | 1 |
-| `compass` | `compass.csv` | NE, NO, SO, ENE, NNO, SSE, … | 2 |
-| `letter` | (not curated yet) | A, B, …, Z | 1 |
+| `compass` | `compass.csv` | NE, NO, SO, ENE, NNO, SSE, … | 1 |
 
-Constants for theme keys live in `ThemeCatalog.kt` (`Themes` object) so
+Constants for theme keys live in `Themes.kt` (`Themes` object) so
 callers reference `Themes.ROMAN` rather than the raw `"roman"` string.
 
 ### 4.2 Domain: `Word.theme: String?`
@@ -106,8 +106,7 @@ val DEFAULT_THEME_LIMITS: Map<String, Int> = mapOf(
     Themes.INTERJECTION to 1,
     Themes.NOTE to 1,
     Themes.UNIT to 1,
-    Themes.LETTER to 1,
-    Themes.COMPASS to 2,
+    Themes.COMPASS to 1,
 )
 ```
 
@@ -146,7 +145,7 @@ in the per-theme overlays.
 
 ## 5. Components
 
-- `grid/domain/.../ThemeCatalog.kt` — `Themes` constants object only
+- `grid/domain/.../Themes.kt` — `Themes` constants object only
   (no detector). ~30 lines.
 - `grid/domain/.../Word.kt` — add `theme: String?` field. ~5 lines.
 - `grid/domain/.../GridConstraints.kt` — add `themeLimits` + default
@@ -158,22 +157,18 @@ in the per-theme overlays.
 - `grid/infrastructure/.../CsvWordRepository.kt` — `loadThemeOverlays`
   + `FRENCH_THEMED_OVERLAY_PATHS` + overlay merge in
   `frenchFromClasspath`. ~50 lines.
-- `data/curated/themed/{roman,chem,abbrev,country,interjection,note,unit,compass}.csv`
-  — 8 new files. ~120 rows total.
-- `grid/api/src/main/resources/words/themed/*.csv` — classpath copies of
-  the same 8 files (production lookup path).
+- `grid/api/src/main/resources/words/themed/{roman,chem,abbrev,country,interjection,note,unit,compass}.csv`
+  — 8 new files, ~120 rows total. This directory is the canonical editorial
+  location; curators edit here directly.
 - Tests: `SkeletonFillerThemeTest.kt` (4 cases: cap-of-1 forces
   alternative, cap-of-0 bans, missing-theme-uncapped, backtrack-symmetric).
 
-Total: ~150 lines of code + ~120 CSV rows × 2 (data + classpath copy).
+Total: ~150 lines of code + ~120 CSV rows.
 
 ## 6. Data flow
 
 ```
-data/curated/themed/<theme>.csv  (hand-curated, per theme)
-                          │
-                          ▼
-classpath: /words/themed/<theme>.csv
+grid/api/src/main/resources/words/themed/<theme>.csv  (hand-curated, canonical)
                           │
                           ▼
 CsvWordRepository.frenchFromClasspath

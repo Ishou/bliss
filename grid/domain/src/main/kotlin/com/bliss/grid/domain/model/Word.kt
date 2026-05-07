@@ -22,12 +22,12 @@ data class Word private constructor(
     val compact: Boolean = true,
     /**
      * Theme tag — a closed-set category drawn from
-     * [com.bliss.grid.domain.generation.ThemeCatalog]. `null` means the
+     * [com.bliss.grid.domain.generation.Themes]. `null` means the
      * word doesn't belong to any tracked theme (the common case). Used by
      * the grid filler to enforce per-grid caps (e.g. "at most 1 Roman
-     * numeral per grid"). Curation lives in `data/curated/fr.csv`'s
-     * `theme` column; auto-detection covers regex/closed-set patterns
-     * for words without an explicit tag.
+     * numeral per grid"). Curation lives in per-theme CSV overlays under
+     * `grid/api/src/main/resources/words/themed/<theme>.csv`; words absent
+     * from those files carry no theme.
      */
     val theme: String? = null,
 ) {

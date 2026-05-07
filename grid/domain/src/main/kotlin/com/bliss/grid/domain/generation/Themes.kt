@@ -35,9 +35,6 @@ object Themes {
     /** Common SI / metric units written as letter sequences (KG, KM, KO, …). */
     const val UNIT: String = "unit"
 
-    /** Single-letter answers (A, B, C, …) when used as crossword answers. */
-    const val LETTER: String = "letter"
-
     /**
      * French cardinal/ordinal compass points (NE, NO, SO, ENE, ESE, …).
      * Heavily represented in the curated corpus thanks to mots-fléchés

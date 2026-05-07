@@ -37,6 +37,5 @@ val DEFAULT_THEME_LIMITS: Map<String, Int> =
         Themes.INTERJECTION to 1,
         Themes.NOTE to 1,
         Themes.UNIT to 1,
-        Themes.LETTER to 1,
         Themes.COMPASS to 1,
     )

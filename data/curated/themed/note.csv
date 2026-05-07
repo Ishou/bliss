@@ -1,7 +1,0 @@
-word,language,length,frequency,difficulty,clue,source,source_license,lemma
-do,fr,2,100000,,Note de musique,bliss,CC0-1.0,
-re,fr,2,100000,,Note de musique,bliss,CC0-1.0,
-mi,fr,2,100000,,Note de musique,bliss,CC0-1.0,
-fa,fr,2,100000,,Note de musique,bliss,CC0-1.0,
-sol,fr,3,100000,,Note de musique,bliss,CC0-1.0,
-ut,fr,2,100000,,Note de musique (ancien nom),bliss,CC0-1.0,
