@@ -42,22 +42,18 @@ def main() -> None:
         except ValueError:
             return False
 
-    # surface_lower -> (clue_text, compact_bool_str)
-    surface_clue: dict[str, tuple[str, str]] = {}
+    # surface_lower -> clue_text. The compact column has been retired
+    # (MAX_CLUE_CHARS = 25 makes the single/stacked distinction moot).
+    surface_clue: dict[str, str] = {}
     with args.shipped.open(encoding="utf-8", newline="") as f:
         for r in csv.DictReader(f):
             if keep(r):
-                surface_clue[r["surface"].lower()] = (
-                    r["clue"], r.get("compact", "false")
-                )
+                surface_clue[r["surface"].lower()] = r["clue"]
     if args.include_dropped:
         with args.dropped.open(encoding="utf-8", newline="") as f:
             for r in csv.DictReader(f):
                 if keep(r):
-                    surface_clue.setdefault(
-                        r["surface"].lower(),
-                        (r["clue"], r.get("compact", "false")),
-                    )
+                    surface_clue.setdefault(r["surface"].lower(), r["clue"])
     print(f"surface clues available (score >= {args.min_score}): {len(surface_clue)}")
 
     # Backup, then rewrite in place.
@@ -66,23 +62,21 @@ def main() -> None:
         rows = list(csv.DictReader(f))
         fieldnames = list(rows[0].keys())
 
-    # Add `compact` column if missing. All curated short-fr / fr / roman2
-    # entries are stamped compact=true (≤ 3 chars always fits the stacked
-    # half-cell at any reasonable font size).
-    if "compact" not in fieldnames:
-        fieldnames.append("compact")
+    # Drop the `compact` column from the runtime CSV if it's still there
+    # from an older merge run. The column was retired alongside the
+    # MAX_CLUE_CHARS = 25 cap; it no longer serves a purpose.
+    if "compact" in fieldnames:
+        fieldnames.remove("compact")
         for r in rows:
-            r["compact"] = "true"
+            r.pop("compact", None)
 
     updated = 0
     reset = 0
     for r in rows:
         word = r.get("word", "").strip()
-        entry = surface_clue.get(word.lower())
-        if entry:
-            clue, compact = entry
+        clue = surface_clue.get(word.lower())
+        if clue is not None:
             r["clue"] = clue
-            r["compact"] = compact
             updated += 1
         elif r.get("source") == "grammalecte":
             # Blank the clue for rows whose word came from the

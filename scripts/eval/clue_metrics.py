@@ -1,21 +1,21 @@
 """Char-count gate for mots-fléchés clue cells.
 
-Replaces the prior PIL/Nunito pixel-fit gate. The frontend now renders
-def-cell clue text (`Cell.tsx defText`/`defStackText`) in **Lekton**, a
-monospace whose every Latin / Latin-Extended-A glyph has advance =
-0.5 em (verified against the shipped woff2 — see calibration note
-below). Width is therefore exactly:
+The frontend renders def-cell clue text (`Cell.tsx defText`) in **Lekton**,
+a monospace whose every Latin / Latin-Extended-A glyph has advance =
+0.5 em. Width is therefore exactly:
 
     line_width_px = chars_per_line × font_size × LEKTON_ADVANCE_RATIO
 
-and the gate becomes a deterministic predicate on `len(clue)` plus
-the runtime's `smartLineBreak` line-balancing — no font-metric
-measurement, no PIL, no drift when frontend layout constants move
-(we only need to recalibrate when the *clue font* changes).
+so the gate is a deterministic predicate on `len(clue)` plus the
+runtime's `smartLineBreak` line-balancing — no font-metric measurement,
+no PIL, no drift when frontend layout constants move.
 
-Public API preserved (`fits_single_cell` / `fits_stacked_cell`) so
-that `scripts/clue_generation/build_surface_clues.py` does not need
-a code change — only a re-run.
+The pipeline applies a **single hard cap** of `MAX_CLUE_CHARS = 25`
+chars: clues longer than that are dropped at build time regardless of
+how they wrap. The previous `compact` distinction (clue fits stacked
+half-cell) has been retired — at 25 chars Lekton always fits both the
+single cell and the stacked half-cell at the legibility floor, so the
+extra column was complicating the schema for no win.
 
 Calibration of LEKTON_ADVANCE_RATIO
 -----------------------------------
@@ -41,27 +41,23 @@ PADDING = 3
 REFERENCE_CELL = 100
 LINE_H = 1.05
 
+# Hard upper bound on clue length, in characters. Anything beyond this
+# is dropped at build time. 25 was chosen as the largest cap at which
+# Lekton clues still fit both single cells and stacked half-cells at
+# the legibility floor, eliminating the need for a per-clue compact flag.
+MAX_CLUE_CHARS = 25
+
 # Universal legibility floor for the gate. Intentionally below the
-# runtime's Phase-1 floor (`SINGLE_RATIO_MIN`/`STACK_RATIO_MIN = 0.18`
-# in Cell.tsx): clues whose longest line needs ratio 0.14–0.17 pass the
-# gate and are rendered by Phase-2 bisection at runtime — not Phase 1.
+# runtime's Phase-1 floor (`SINGLE_RATIO_MIN = 0.18` in Cell.tsx):
+# clues whose longest line needs ratio 0.14–0.17 pass the gate and
+# are rendered by Phase-2 bisection at runtime — not Phase 1.
 #
 # Why 0.14: with Lekton's 0.5 em monospace advance, the chars-per-line
 # cap at the floor is `1 / (ratio × 0.5)`. At 0.14, that's
 # 14.3 chars/line — wide enough to accept common French long words
 # like "informatique" / "présentation" / "historique" on a single
 # line, so they don't trip Phase 1 and force the runtime into Phase
-# 2's smaller ratios. The previous 0.18 floor (chars/line cap of
-# 11.1) failed those words and made most clues land in Phase 2,
-# producing visibly-too-small text in the common case.
-#
-# Crucially, both fits_single_cell and fits_stacked_cell use the SAME
-# floor: differentiating per cell-type would introduce an inversion
-# where a stacked-eligible clue fails single (because single's higher
-# floor demands fewer chars per line), and `build_surface_clues.py`
-# drops anything that fails fits_single before checking compactness.
-# A single floor preserves the historical contract:
-# fits_single_cell ⊇ fits_stacked_cell.
+# 2's smaller ratios.
 GATE_RATIO_FLOOR = 0.14
 
 # Lekton glyph advance / em — see the calibration block in the module
@@ -71,8 +67,6 @@ LEKTON_ADVANCE_RATIO = 0.5
 
 SINGLE_W = REFERENCE_CELL - 2 * PADDING        # 94
 SINGLE_H = REFERENCE_CELL - 2 * PADDING        # 94
-STACK_W = REFERENCE_CELL - 2 * PADDING         # 94
-STACK_H = REFERENCE_CELL // 2 - PADDING - 1    # 46
 
 
 def smart_line_break(text: str) -> list[str]:
@@ -157,11 +151,11 @@ def fits(text: str, w: int, h: int, ratio_floor: float) -> bool:
 
 
 def fits_single_cell(text: str) -> bool:
+    """True iff `text` is within the hard char cap and fits a single
+    def-cell at the legibility floor."""
+    if len(text) > MAX_CLUE_CHARS:
+        return False
     return fits(text, SINGLE_W, SINGLE_H, GATE_RATIO_FLOOR)
-
-
-def fits_stacked_cell(text: str) -> bool:
-    return fits(text, STACK_W, STACK_H, GATE_RATIO_FLOOR)
 
 
 def chars_per_line_at_floor(ratio_floor: float, w: int = SINGLE_W) -> float:
@@ -172,10 +166,10 @@ def chars_per_line_at_floor(ratio_floor: float, w: int = SINGLE_W) -> float:
 if __name__ == "__main__":
     cap = chars_per_line_at_floor(GATE_RATIO_FLOOR, SINGLE_W)
     print(f"chars/line @ floor ({GATE_RATIO_FLOOR}): {cap:.2f}")
+    print(f"hard char cap: {MAX_CLUE_CHARS}")
     floor_font_px = GATE_RATIO_FLOOR * REFERENCE_CELL
     line_h = floor_font_px * LINE_H
     print(f"max lines @ single ({SINGLE_H}px): {SINGLE_H // line_h:.0f}")
-    print(f"max lines @ stack  ({STACK_H}px): {STACK_H // line_h:.0f}")
     samples = [
         "Mutation notable",
         "Mammifère carnivore aquatique",
@@ -186,8 +180,7 @@ if __name__ == "__main__":
         "Tenue pour vrai",
         "Carnets de notes quotidiennes",
     ]
-    print(f"\n{'clue':45s} single  stacked  len  lines")
+    print(f"\n{'clue':45s} single  len  lines")
     for s in samples:
         ls = smart_line_break(s)
-        print(f"  {s!r:43s} {str(fits_single_cell(s)):6s}  "
-              f"{str(fits_stacked_cell(s)):7s} {len(s):3d}  {len(ls)}")
+        print(f"  {s!r:43s} {str(fits_single_cell(s)):6s} {len(s):3d}  {len(ls)}")

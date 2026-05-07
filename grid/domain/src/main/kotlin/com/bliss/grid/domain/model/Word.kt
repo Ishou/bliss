@@ -13,14 +13,6 @@ data class Word private constructor(
      */
     val lemma: String,
     /**
-     * `true` when the clue is short enough to fit in a stacked half-cell (two
-     * clues sharing one definition cell). Computed offline by `clue_metrics.py`
-     * at corpus-build time; `false` means the clue can only be placed in a
-     * single-clue cell. Defaults to `true` for hand-curated short words and
-     * for legacy rows missing the column.
-     */
-    val compact: Boolean = true,
-    /**
      * Theme tag — a closed-set category drawn from
      * [com.bliss.grid.domain.generation.Themes]. `null` means the
      * word doesn't belong to any tracked theme (the common case). Used by
@@ -43,11 +35,10 @@ data class Word private constructor(
             text: String,
             definition: String,
             lemma: String? = null,
-            compact: Boolean = true,
             theme: String? = null,
         ): Word {
             val foldedText = text.uppercase()
-            return Word(foldedText, definition, lemma?.uppercase() ?: foldedText, compact, theme)
+            return Word(foldedText, definition, lemma?.uppercase() ?: foldedText, theme)
         }
     }
 }

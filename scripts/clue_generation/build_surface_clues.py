@@ -29,7 +29,7 @@ REPO = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(REPO / "scripts" / "eval"))
 from morphology_index import MorphologyIndex, _classify, normalize_tag  # noqa: E402
 from inflect_clue import inflect_clue  # noqa: E402  (pre-head adj heuristic baked in)
-from clue_metrics import fits_single_cell, fits_stacked_cell  # noqa: E402
+from clue_metrics import MAX_CLUE_CHARS, fits_single_cell  # noqa: E402
 
 POS_PRECEDENCE = {"nom": 0, "adj": 1, "adv": 2, "verbe": 3}
 
@@ -156,13 +156,14 @@ def main() -> None:
                 clue = res.text
                 status = res.flag or "inflected"
 
-            # Pixel-fit gate. Inflation can lengthen ("Récit imaginaire" →
-            # "Récits imaginaires" gains 2 chars), so we re-check post-inflate
-            # rather than trusting the lemma-level validator alone.
+            # Char-cap + wrap gate. Inflation can lengthen ("Récit imaginaire"
+            # → "Récits imaginaires" gains 2 chars), so we re-check
+            # post-inflate rather than trusting the lemma-level validator
+            # alone. fits_single_cell enforces both MAX_CLUE_CHARS and the
+            # Lekton wrap predicate.
             if not fits_single_cell(clue):
                 status_counter["too-long"] += 1
                 continue
-            compact = fits_stacked_cell(clue)
 
             status_counter[status] += 1
             out_rows.append({
@@ -174,12 +175,10 @@ def main() -> None:
                 "inflection_status": status,
                 "filter_score": row.get("filter_score", ""),
                 "validation_flag": row.get("validation_flag", ""),
-                "compact": "true" if compact else "false",
             })
 
     fieldnames = ["surface", "lemma", "pos", "clue", "source_clue",
-                  "inflection_status", "filter_score", "validation_flag",
-                  "compact"]
+                  "inflection_status", "filter_score", "validation_flag"]
     shipped, dropped = [], []
     for r in out_rows:
         try:
@@ -212,10 +211,6 @@ def main() -> None:
     print(f"\nwrote {args.dst}: {len(shipped)} rows")
     print(f"wrote {drop_path}: {len(dropped)} rows")
     print(f"  inflection_status: {dict(status_counter)}")
-    compact_n = sum(1 for r in shipped if r.get("compact") == "true")
-    if shipped:
-        print(f"  compact-eligible (≤ stacked half-cell): "
-              f"{compact_n}/{len(shipped)} ({compact_n/len(shipped)*100:.1f}%)")
 
 
 if __name__ == "__main__":
