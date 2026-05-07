@@ -121,12 +121,7 @@ export default defineConfig({
         block: { value: '{colors.ink}' },
         border: { value: '{colors.sand}' },
         muted: { value: '{colors.ink}' },
-        // Grid line — used for both the cell border and the dual-clue
-        // half-cell divider. ink at low alpha (~25 %): subtle on the
-        // letter-cell surface (white), still legible on the def-cell
-        // sand background where `border` (= sand) is invisible. Single
-        // source of truth so cell outlines and stack dividers always
-        // match exactly.
+        // ink at 25% alpha — legible on both cream (letter) and sand (def) cell backgrounds.
         gridLine: { value: 'color-mix(in srgb, {colors.ink} 25%, transparent)' },
       },
     },

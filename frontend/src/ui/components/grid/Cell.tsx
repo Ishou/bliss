@@ -341,14 +341,7 @@ const defStackClue = css({
   minHeight: 0,
   overflow: 'hidden',
   wordBreak: 'break-word',
-  // Separator between the two stacked clues. Uses `gridLine`
-  // (ink at ~25% alpha) — the same token that draws the cell border
-  // in `cellBase`, so cell outlines and stack dividers read as one
-  // continuous grid line. The earlier `colors.border` (= sand) was
-  // invisible against the def-cell sand background. No top padding —
-  // both halves share identical content boxes (1px border + flex
-  // safe-center alignment is enough vertical separation), so neither
-  // clue looks shifted relative to the other.
+  // gridLine token — matches cell border so stack divider reads as one continuous grid line.
   '&:not(:first-child)': { borderTop: '1px solid token(colors.gridLine)' },
 });
 const defStackClueCurrent = css({ color: 'leaf.700' });

@@ -16,14 +16,7 @@ import { useGridNavigation, type Direction } from './useGridNavigation';
 
 const gridContainer = css({
   display: 'grid',
-  // 1 px gap + container bg = `gridLine` paints every internal grid
-  // line. Cells are border-less; the bg shows in the 1 px gap between
-  // them. Equivalent to a `<table border-collapse: collapse>` without
-  // the table semantics — single 1 px line everywhere, no doubling
-  // where adjacent cell borders would otherwise stack to 2 px.
-  // Outer border (also 1 px gridLine) frames the perimeter; the
-  // dual-clue half-cell divider in `defStackClue` uses the same token
-  // for visual continuity.
+  // gap-as-grid-line — bg shows in 1 px gap between borderless cells; no edge-doubling.
   gap: '1px',
   bg: 'gridLine',
   border: '1px solid',
