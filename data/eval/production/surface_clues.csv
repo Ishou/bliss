@@ -2804,8 +2804,8 @@ canard,canard,nom,Palmipède aquatique,Palmipède aquatique,verbatim,0.6618,ok
 canards,canard,nom,Palmipèdes aquatiques,Palmipède aquatique,inflected,0.6618,ok
 canaux,canal,nom,Voies d'eau,Voie d'eau,inflected,0.6798,ok
 candidature,candidature,nom,Postulation,Postulation,verbatim,0.7574,ok
-cane,cane,nom,Bâton,Bâton,verbatim,0.6889,ok
-canes,cane,nom,Bâtons,Bâton,inflected,0.6889,ok
+cane,cane,nom,Femelle du canard,Femelle du canard,verbatim,0.6889,ok
+canes,cane,nom,Femelles du canard,Femelle du canard,inflected,0.6889,ok
 cantonal,cantonal,adj,Local,Local,verbatim,0.9998,ok
 cantonale,cantonal,adj,Locale,Local,inflected,0.9998,ok
 cantonales,cantonal,adj,Locales,Local,inflected,0.9998,ok
@@ -18298,10 +18298,10 @@ ténébreux,ténébreux,nom,Sombre et obscur,Sombre et obscur,verbatim,0.7575,ok
 térawatts,watt,nom,Unités de puissance,Unité de puissance,inflected,0.7619,ok
 tête,tête,nom,Sommet,Sommet,verbatim,1.0000,ok
 têtes,tête,nom,Sommets,Sommet,inflected,1.0000,ok
-têtu,têtu,nom,Gay,Gay,verbatim,0.9999,ok
-têtue,têtu,nom,Gay,Gay,inflected,0.9999,ok
-têtues,têtu,nom,Gays,Gay,inflected,0.9999,ok
-têtus,têtu,nom,Gays,Gay,inflected,0.9999,ok
+têtu,têtu,nom,Obstiné,Obstiné,verbatim,0.9999,ok
+têtue,têtu,nom,Obstinée,Obstiné,inflected,0.9999,ok
+têtues,têtu,nom,Obstinées,Obstiné,inflected,0.9999,ok
+têtus,têtu,nom,Obstinés,Obstiné,inflected,0.9999,ok
 ultimatum,ultimatum,nom,Dernier avertissement,Dernier avertissement,verbatim,0.7522,ok
 ultime,ultime,adj,Dernier,Dernier,verbatim,1.0000,ok
 ultimes,ultime,adj,Derniers,Dernier,inflected,1.0000,ok

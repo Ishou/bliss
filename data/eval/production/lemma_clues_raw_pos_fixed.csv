@@ -1537,7 +1537,7 @@ cancéreux,nom,,,Malin,1,ok,,0.4001
 candeur,nom,,,Sincérité,1,ok,,0.5744
 candidat,nom,,,Pretendant,1,unknown-head,,0.6682
 candidature,nom,,,Postulation,1,ok,,0.7574
-cane,nom,,,Bâton,1,ok,,0.6889
+cane,nom,,,Femelle du canard,1,ok,,0.6889
 canevas,nom,,,Tissu de base,1,ok,,0.6365
 canif,nom,,,Couteau de poche,1,ok,,0.5233
 canine,nom,,,D'un chien,1,ok,,0.5080
@@ -10615,7 +10615,7 @@ ténu,adj,,,Maintenu,1,head-not-lemma,,0.4952
 ténébreux,nom,,,Sombre et obscur,1,ok,,0.7575
 tétanos,nom,,,Maladie grave,1,ok,,0.5116
 tête,nom,,,Sommet,1,ok,,1.0000
-têtu,nom,,,Gay,1,ok,,0.9999
+têtu,nom,,,Obstiné,1,ok,,0.9999
 tôle,nom,,,Feuille de métal,1,ok,,0.6307
 ukase,nom,,,Décret russe,1,ok,,0.5468
 ulcère,nom,,,Plaie,1,ok,,0.5407
