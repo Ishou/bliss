@@ -3,8 +3,8 @@
 // synonyms scratch tables (ADR-0023).
 //
 // CC BY-SA constraint reminder (ADR-0023): the populated tables stay
-// local-dev / offline-pipeline scratch space. They feed `generate-clues`
-// prompts but no DBnary text reaches the API or the exported CSV.
+// local-dev / offline-pipeline scratch space. They feed `derive-synonym-clues`
+// and `ingest-clue-candidates` but no DBnary text reaches the API or the exported CSV.
 package com.bliss.grid.worker.dbnary
 
 import com.bliss.grid.application.lexicon.IngestDbnaryUseCase

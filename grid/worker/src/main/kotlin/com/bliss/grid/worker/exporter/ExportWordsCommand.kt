@@ -22,7 +22,7 @@ import javax.sql.DataSource
  * Exports the locally-reviewed `words` table to a committed CSV (ADR-0013 §8).
  *
  * The CSV is the production source of truth for `grid-api`; the DB is a
- * local-dev scratch space for the `import-words` → `generate-clues` →
+ * local-dev scratch space for the `import-words` → `ingest-clue-candidates` →
  * review → `export-words` pipeline.
  */
 class ExportWordsCommand(
