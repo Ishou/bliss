@@ -40,8 +40,8 @@ const STRESS_FIXTURE = JSON.parse(
 const PALETTE = {
   bg:               'rgb(23, 24, 29)',     // #17181D — page bg (neutral.800)
   surface:          'rgb(33, 34, 42)',     // #21222A — letter cell (neutral.700)
-  surfaceVariant:   'rgb(232, 163, 179)',  // #E8A3B3 — clue cell (secondary.400)
-  onSurfaceVariant: 'rgb(58, 20, 30)',     // #3A141E — text on clue (secondary.900)
+  surfaceVariant:   'rgb(58, 20, 30)',     // #3A141E — clue cell (secondary.900, dark plum)
+  onSurfaceVariant: 'rgb(232, 163, 179)',  // #E8A3B3 — text on clue (secondary.400, light dusty pink)
   fg:               'rgb(232, 232, 235)',  // #E8E8EB — text on charcoal (neutral.50)
   accent:           'rgb(160, 179, 148)',  // #A0B394 — sage (primary.500)
   border:           'rgb(48, 50, 61)',     // #30323D — border / gridLine (neutral.500)
@@ -102,8 +102,8 @@ test.describe('charbon + sage theme palette', () => {
 
     expect(pageBg, 'page <main> bg = neutral.800').toBe(PALETTE.bg);
     expect(letterCellBg, 'letter cell bg = surface (neutral.700)').toBe(PALETTE.surface);
-    expect(defCellBg, 'def cell bg = surfaceVariant (secondary.400 light pink)').toBe(PALETTE.surfaceVariant);
-    expect(defCellText, 'def cell text = onSurfaceVariant (secondary.900 dark plum)').toBe(PALETTE.onSurfaceVariant);
+    expect(defCellBg, 'def cell bg = surfaceVariant (secondary.900 dark plum)').toBe(PALETTE.surfaceVariant);
+    expect(defCellText, 'def cell text = onSurfaceVariant (secondary.400 light dusty pink)').toBe(PALETTE.onSurfaceVariant);
   });
 
   test('grid container background is the gridLine token (paints internal lines)', async ({ page }) => {
@@ -144,11 +144,19 @@ test.describe('charbon + sage theme palette', () => {
     expect(focused!.boxShadow, 'focused-cell ring colour = focusRing (light pink)').toContain(PALETTE.focusRingPink);
   });
 
-  test('wordmark + branded text resolve to sage `accent`', async ({ page }) => {
+  test('wordmark `Sparrow` half resolves to sage `accent`', async ({ page }) => {
     await bootstrap(page);
 
-    // Wordmark on the home route — first <h1> on the page.
-    const h1Color = await computedColor(page, 'h1', 'color');
-    expect(h1Color, 'wordmark text = accent (sage primary.500)').toBe(PALETTE.accent);
+    // ADR-0005 §6: the wordmark is bicolor — `Word` in primary fg,
+    // `Sparrow` in sage. The sage span carries `data-testid="wordmark-
+    // sage"`; we only assert that half here (the `Word` half inherits
+    // its colour from the parent span's `fg` and is exercised by the
+    // surface-text contrast tests below).
+    const sparrowColor = await computedColor(
+      page,
+      '[data-testid="wordmark-sage"]',
+      'color',
+    );
+    expect(sparrowColor, '"Sparrow" half = accent (sage primary.500)').toBe(PALETTE.accent);
   });
 });

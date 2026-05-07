@@ -4,8 +4,8 @@
   "description": "WordSparrow — mots fléchés, the puzzle game.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#FFFAF3",
-  "theme_color": "#10B981",
+  "background_color": "#17181d",
+  "theme_color": "#17181d",
   "icons": [
     {
       "src": "/favicon.svg",

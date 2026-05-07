@@ -27,26 +27,34 @@ const baseStyles = css({
   display: 'inline-flex',
   alignItems: 'center',
   justifyContent: 'center',
-  borderRadius: 'sm',
+  borderRadius: '6px',
   paddingInline: 'md',
   paddingBlock: 'sm',
   fontSize: 'body',
   fontFamily: 'body',
-  fontWeight: 'bold',
+  // Brand brief allows weights 400 / 500 only (ADR-0005 §5). The CTA
+  // earns the heavier of the two — the previous `bold` (700) was
+  // outside the type system and broke the brand's "two-weight" rule.
+  fontWeight: 'medium',
   cursor: 'pointer',
-  // Shared focus ring — `focusRing` (= primary.500) at 3px / 2px offset
-  // matches the legacy modal focus ring so screen readers + keyboard
-  // users see the same affordance everywhere.
-  _focusVisible: { outline: '3px solid token(colors.focusRing)', outlineOffset: '2px' },
+  transition: 'background-color 120ms ease-out, color 120ms ease-out, opacity 120ms ease-out, border-color 120ms ease-out',
+  // Shared focus ring — `focusRing` (= secondary.400, the rose) at
+  // 2px / 2px offset. Brief §8 mandates a visible focus state on every
+  // interactive surface; rose-on-CTA-edge keeps the affordance crisp
+  // against the sage fill.
+  _focusVisible: { outline: '2px solid token(colors.focusRing)', outlineOffset: '2px' },
   _disabled: { opacity: 0.5, cursor: 'not-allowed' },
 });
 
 const variantStyles = {
+  // Spec primary CTA (ADR-0005 §6): solid sage with dark sage-on text,
+  // no border. Hover lifts to the next-warmer sage shade rather than
+  // dimming, matching the brief's "hover lifts the brightness" rule.
   primary: css({
-    bg: 'primary.800',
-    color: 'fg',
+    bg: 'accent',
+    color: 'onAccent',
     border: 'none',
-    _hover: { bg: 'primary.900' },
+    _hover: { bg: 'primary.400' },
   }),
   secondary: css({
     bg: 'transparent',
@@ -58,7 +66,10 @@ const variantStyles = {
     bg: 'surface',
     color: 'fg',
     border: '1px solid token(colors.border)',
-    fontWeight: 'semibold',
+    // Hover bg is the dark sage `accentBg`, not `primary.50` (the
+    // upstream WCAG-AA fix); my branch dropped the legacy
+    // `fontWeight: 'semibold'` because the brand brief (ADR-0005 §3)
+    // caps the type system at weights 400 / 500.
     _hover: { bg: 'accentBg' },
   }),
 } as const;

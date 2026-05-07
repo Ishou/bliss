@@ -1,78 +1,118 @@
-import { createRoute, useNavigate } from '@tanstack/react-router';
-import { useState } from 'react';
+import { createRoute, useNavigate, useRouter } from '@tanstack/react-router';
+import { useCallback, useState } from 'react';
 import { css } from 'styled-system/css';
 import type { Puzzle } from '@/domain';
 import { LobbyClientError } from '@/application/game';
-import { Grid } from '@/ui/components/grid';
+import { Grid, useValidation } from '@/ui/components/grid';
 import { Button } from '@/ui/components/primitives';
+import {
+  AppHeader,
+  ProgressBar,
+  PuzzleToolbar,
+} from '@/ui/components/layout';
 import { Route as RootRoute } from './__root';
 
-// 100dvh: height tracks iOS Safari's visible viewport as the URL bar collapses.
+// Top-level page shell. The header sits above the puzzle area, the
+// puzzle area takes the remaining viewport (`flex: 1 1 0; minHeight: 0`
+// so the inner grid shell can absorb leftover height — see Grid.tsx for
+// the rationale).
 const pageStyles = css({
   minHeight: '100dvh',
   display: 'flex',
   flexDirection: 'column',
-  alignItems: 'center',
-  justifyContent: 'flex-start',
-  gap: { base: 'sm', md: 'md' },
-  paddingBlock: { base: 'sm', md: 'lg' },
-  paddingInline: { base: 'sm', md: 'lg' },
-  bg: 'bg',
   color: 'fg',
   fontFamily: 'body',
-  textAlign: 'center',
 });
 
-// Wordmark — ADR-0005 §6. Nunito Variable at the `display` size,
-// weight 800, color `accent` (= primary.400 in the dark twilight
-// theme), letter-spacing slightly tightened.
-const wordmarkStyles = css({
-  fontFamily: 'heading',
-  fontSize: { base: 'xl', md: '2.8125rem' },
-  fontWeight: 'black',
-  letterSpacing: '-0.02em',
-  color: 'accent',
-  margin: 0,
-  lineHeight: '1.1',
+// `<main>` carries the charbon background so e2e probes of the page bg
+// (`getComputedStyle(main).backgroundColor`) resolve through the
+// semantic role token, not the parent shell's inheritance. The header
+// (above) sets its own `bg: 'bg'`, so the whole viewport reads
+// charbon-on-charbon without depending on body / html paint.
+const mainStyles = css({
+  flex: '1 1 0',
+  minHeight: 0,
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  width: '100%',
+  bg: 'bg',
 });
 
-const subtitleStyles = css({
-  fontSize: 'body',
-  fontWeight: 'regular',
-  margin: 0,
-  color: 'accent',
+// Inner content column — bounds the toolbar / grid / progress row to
+// the brief's 720 px desktop ceiling without putting the cap on
+// `<main>` itself (which has to span the full viewport so the bg
+// paints edge-to-edge).
+const contentStyles = css({
+  width: '100%',
+  maxWidth: '720px',
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  margin: '0 auto',
+  paddingInline: { base: '16px', md: '20px' },
+  paddingBlock: { base: '12px', md: '20px' },
+  gap: { base: '12px', md: '18px' },
+  flex: '1 1 0',
+  minHeight: 0,
 });
 
-// "DÉMO" pill — uses the secondary brand colour (was `blossom`) for
-// the only visual splash that isn't `accent` on the home page. Direct
-// ramp shades (rather than the `secondary*` semantic tokens) so the
-// pill keeps its current light-pink-on-pink visual under the dark
-// twilight palette; the semantic `secondaryBg` resolves to a deeper
-// surface that wouldn't pop the same way.
-const demoBadgeStyles = css({
-  fontSize: 'xs',
-  fontWeight: 'bold',
-  letterSpacing: '0.08em',
-  textTransform: 'uppercase',
-  color: 'secondary.700',
-  bg: 'secondary.50',
-  paddingInline: 'sm',
-  paddingBlock: 'xs',
-  borderRadius: '9999px',
-  margin: 0,
+// Lighter charcoal panel behind the grid — mockup §5 shows the grid
+// sitting inside an elevated dark surface that visually separates the
+// puzzle from the page background. `surfaceElevated` (= neutral.600)
+// is the brand's pre-defined raised-surface role; padding keeps the
+// grid off the panel edge without colliding with the grid's own
+// container-query sizing (the inner Grid still squares against
+// `min(100cqw, 100cqh, …)` of THIS box).
+const gridPanelStyles = css({
+  width: '100%',
+  flex: '1 1 0',
+  minHeight: 0,
+  display: 'flex',
+  flexDirection: 'column',
+  bg: 'surfaceElevated',
+  borderRadius: '12px',
+  // Mobile padding stays minimal so the grid doesn't lose any cell
+  // width — the FitText algorithm (Cell.tsx) needs every pixel on
+  // mobile-tiny viewports to keep clue ratios above the e2e gate.
+  padding: { base: '4px', md: '12px' },
 });
 
-const statusStyles = css({
-  fontSize: 'body',
-  margin: 0,
-  color: 'accent',
+// Bottom row groups the progress bar and the Vérifier CTA. On mobile
+// the brief makes the button full-width and stacks it under the bar; on
+// desktop the bar takes the available width and the button sits inline
+// to its right.
+const bottomRowStyles = css({
+  display: 'flex',
+  width: '100%',
+  alignItems: { base: 'stretch', md: 'flex-end' },
+  flexDirection: { base: 'column', md: 'row' },
+  gap: { base: '12px', md: '20px' },
 });
 
-// Multiplayer call-to-action — only mounted when
-// `VITE_FEATURE_MULTIPLAYER === 'true'` (ADR-0018 §10). Solid primary
-// `Button` (primary variant) keeps the brand colour in line with the
-// other call sites; the wider `paddingInline` matches the legacy
-// `lg` padding so the CTA still reads as the page's hero affordance.
+const progressSlotStyles = css({ flex: 1, minWidth: 0 });
+
+const verifyButtonStyles = css({
+  width: { base: '100%', md: 'auto' },
+  paddingInline: '28px',
+  paddingBlock: '12px',
+});
+
+// Shared visually-hidden style — used by the page-level h1 (the visible
+// brand mark is the styled Lockup in the header; the h1 keeps the WCAG
+// heading hierarchy a real one) and the aria-live status region.
+const srOnly = css({
+  position: 'absolute',
+  width: '1px',
+  height: '1px',
+  padding: 0,
+  margin: '-1px',
+  overflow: 'hidden',
+  clip: 'rect(0, 0, 0, 0)',
+  whiteSpace: 'nowrap',
+  border: 0,
+});
+
 const createLobbyButtonStyles = css({
   paddingInline: 'lg',
 });
@@ -97,28 +137,89 @@ const DEFAULT_PUZZLE_ID = '0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6b';
 const isMultiplayerEnabled = (): boolean =>
   import.meta.env.VITE_FEATURE_MULTIPLAYER === 'true';
 
-function HomeShell({ children }: { children: React.ReactNode }) {
+function PageShell({ children }: { children: React.ReactNode }) {
   return (
-    <main className={pageStyles}>
-      <h1 lang="en" className={wordmarkStyles}>
-        WordSparrow
-      </h1>
-      <span className={demoBadgeStyles} aria-label="version démo">
-        Démo
-      </span>
-      {children}
-    </main>
+    <div className={pageStyles}>
+      <AppHeader activeNavId="grilles" />
+      <main className={mainStyles}>
+        <div className={contentStyles}>{children}</div>
+      </main>
+    </div>
   );
 }
 
 function HomePage() {
   const puzzle = Route.useLoaderData() as Puzzle;
+  const router = useRouter();
+  const validation = useValidation(puzzle);
+  // Refresh counter — bumped on every refresh and used as Grid's `key`
+  // so React remounts the cell tree. Letter cells are uncontrolled
+  // (ADR-0002 §4: values live in the DOM), so a re-render alone leaves
+  // the player's typed letters in place. Remounting via key forces a
+  // fresh `defaultValue={cell.entry}` pass on each `<input>`, which is
+  // the only seam that clears the DOM.
+  const [refreshCount, setRefreshCount] = useState(0);
+  const handleRefresh = useCallback(() => {
+    setRefreshCount((n) => n + 1);
+    // The Grid API is stateless (per the §404 note in
+    // `grid/api/openapi.yaml`) — invalidating refetches and yields a
+    // fresh puzzle. Remount + new puzzle in one beat.
+    void router.invalidate();
+  }, [router]);
+
+  const isComplete =
+    validation.totalLetterCells > 0 &&
+    validation.validated.size === validation.totalLetterCells;
+
+  // Auto-trigger validation after every cell write so a word locks
+  // (or shakes) the moment the player completes its last letter — no
+  // explicit `Vérifier` click needed. The `onCellChange` fires from
+  // useGridNavigation after the DOM input value is already updated,
+  // so `verify()`'s DOM reads see the just-typed letter. Wrapped in
+  // a microtask to keep the navigation handler synchronous (focus +
+  // direction changes finish before validation runs).
+  const verify = validation.verify;
+  const handleCellChange = useCallback(() => {
+    queueMicrotask(verify);
+  }, [verify]);
+
   return (
-    <HomeShell>
-      <p className={subtitleStyles}>{puzzle.title}</p>
-      <Grid puzzle={puzzle} />
+    <PageShell>
+      <h1 lang="en" className={srOnly}>
+        WordSparrow
+      </h1>
+      <PuzzleToolbar metadata={puzzle.title} onRefresh={handleRefresh} />
+      <div className={gridPanelStyles}>
+        <Grid
+          key={refreshCount}
+          puzzle={puzzle}
+          validatedPositions={validation.validated}
+          errorPositions={validation.errors}
+          onCellChange={handleCellChange}
+        />
+      </div>
+      <div className={bottomRowStyles}>
+        <div className={progressSlotStyles}>
+          <ProgressBar
+            value={validation.validated.size}
+            total={validation.totalLetterCells}
+          />
+        </div>
+        <Button
+          variant="primary"
+          className={verifyButtonStyles}
+          onClick={validation.verify}
+          disabled={isComplete}
+          aria-label="Vérifier la grille"
+        >
+          Vérifier
+        </Button>
+      </div>
+      <p className={srOnly} role="status" aria-live="polite">
+        {validation.announce}
+      </p>
       {isMultiplayerEnabled() ? <CreateLobbyButton /> : null}
-    </HomeShell>
+    </PageShell>
   );
 }
 
@@ -193,10 +294,17 @@ function messageForError(err: unknown): string {
   return 'Une erreur est survenue. Réessayez.';
 }
 
+const HomeStatusStyles = css({
+  fontSize: 'body',
+  margin: 0,
+  color: 'accent',
+  textAlign: 'center',
+});
+
 const HomeStatus = ({ role, text }: { role: 'status' | 'alert'; text: string }) => (
-  <HomeShell>
-    <p className={statusStyles} role={role}>{text}</p>
-  </HomeShell>
+  <PageShell>
+    <p className={HomeStatusStyles} role={role}>{text}</p>
+  </PageShell>
 );
 
 export const Route = createRoute({

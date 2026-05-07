@@ -6,6 +6,11 @@
 // than hand-rolling the same `css({...})` rhythm. The grid-cell `<input>`
 // is the explicit exception (ADR-0002 §4 uncontrolled-input fast path).
 export { Button, type ButtonProps, type ButtonVariant } from './Button';
+export {
+  IconButton,
+  type IconButtonProps,
+  type IconButtonTone,
+} from './IconButton';
 export { TextField, type TextFieldProps } from './TextField';
 export { Dialog, DialogDescription, type DialogProps } from './Dialog';
 export {

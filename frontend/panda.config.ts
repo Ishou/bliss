@@ -173,25 +173,26 @@ export default defineConfig({
         // ── Surfaces ────────────────────────────────────────────────
         bg:             { value: '{colors.neutral.800}' },  // page background (charbon)
         surface:        { value: '{colors.neutral.700}' },  // letter cell ("slot") — neutral charcoal
-        // `surfaceVariant` is the def-cell ("clue") surface. In the
-        // charbon-and-sage palette this INVERTS from a darker neutral
-        // to a LIGHT secondary tint — clue cells are the eye-catching
-        // pink rectangles in the grid. Text on this surface needs the
-        // dark `onSurfaceVariant` for AA contrast.
-        surfaceVariant: { value: '{colors.secondary.400}' }, // def cell — light dusty pink
+        // `surfaceVariant` is the def-cell ("clue") surface. The charbon
+        // palette pairs a DARK plum surface with a LIGHT dusty-pink
+        // text — the inverse of the spec's "rose bg / dark-rose text"
+        // initial cut, picked after a side-by-side review preferred the
+        // dark plum reading on the charbon page. Both halves stay in
+        // the secondary ramp so the clue surface keeps its rose family.
+        surfaceVariant: { value: '{colors.secondary.900}' }, // def cell — dark plum
         surfaceMuted:   { value: '{colors.neutral.900}' },   // block / inert-cell void
         // Elevated charcoal surface (e.g. progress-bar track behind a
         // sage fill). Useful when a secondary surface is needed without
-        // taking on the pink clue colour.
+        // taking on the rose clue colour.
         surfaceElevated:{ value: '{colors.neutral.600}' },
 
         // ── Foreground ──────────────────────────────────────────────
         fg:                 { value: '{colors.neutral.50}' },   // primary text on charcoal surfaces
         fgMuted:            { value: '{colors.neutral.300}' },  // de-emphasized text (timer label, "Grille n°")
-        // Text colour for the inverted (light-pink) clue surface. AA
-        // requires a dark hue — secondary.900 is the brand-coherent
-        // dark plum (~7:1 on `surfaceVariant`).
-        onSurfaceVariant:   { value: '{colors.secondary.900}' },
+        // Text colour on the dark-plum clue surface. `secondary.400`
+        // (the light dusty pink that USED to be the surface) gives a
+        // ~7:1 contrast on `surfaceVariant`'s plum — well clear of AA.
+        onSurfaceVariant:   { value: '{colors.secondary.400}' },
 
         // ── Lines ───────────────────────────────────────────────────
         border:         { value: '{colors.neutral.500}' },  // UI borders (lobby, primitives)

@@ -1,97 +1,251 @@
 import { useEffect, useState } from 'react';
 import { css } from 'styled-system/css';
-import type { ArrowDirection } from '@/domain';
+import type { ArrowDirection, LetterCell } from '@/domain';
 import { GRID_TRACK_WIDTH } from './layout';
 import type { Clue } from './useGridNavigation';
 
-// Sticky-pinned to the top of the page-level scroll. The panel is rendered
-// as a direct child of `<main>` (Grid returns a fragment, not a wrapping
-// div) so its containing block is the page itself — taller than the
-// viewport, so sticky has room to stick. Width matches the grid below
-// (100% / shared `GRID_TRACK_WIDTH` cap / centered) so the two align
-// horizontally on every breakpoint, instead of the panel spanning a
-// wider area than the grid.
+// Sticky-pinned to the top of the page-level scroll. Three visual states
+// (ADR-0005 §6 redesign):
 //
-// Mobile (`base`): full available width inside `<main>`'s padding, slightly
-// larger font for thumb-distance reading.
-// Desktop (`md`): capped at the shared `GRID_TRACK_WIDTH`, font reverts to body.
+//   1. Empty — pointer-icon banner prompting the player to tap a cell.
+//   2. Single direction — rose chip + clue text + a per-cell letter
+//      preview (uppercase letter for filled cells, "·" for empty;
+//      focused cell is underlined in rose).
+//   3. Intersection — adds the alternate-direction sub-block plus a
+//      "kbd-styled" Espace chip (clear that this is a keyboard hint,
+//      not a clickable affordance — though the chip remains tappable
+//      for parity with the keyboard).
 //
-// Why this is plain sticky and NOT visual-viewport tracked: the grid's
-// `TransformWrapper` sets `touch-action: none` on that element only (see
-// Grid.tsx `transformWrapperStyle`). Pinch gestures originating on the grid
-// are captured by react-zoom-pan-pinch before the browser can treat them as
-// native zoom, so the visual viewport does not diverge from the layout
-// viewport during grid interactions. Native browser zoom is intentionally
-// preserved for non-grid content (WCAG 1.4.4 — see ADR-0016 §2–3). Earlier
-// revisions hand-rolled a rAF loop reading `window.visualViewport`; scoping
-// zoom to the grid element removed the need.
-const panel = css({
+// Responsive behaviour: the inner content wraps to a second line when
+// the active clue + letter preview + alt block exceed the panel width.
+// The chip stays anchored to the start; everything else flows.
+
+// Shared sticky chrome — both empty and active panels share top / zIndex
+// / centring. Per-state visual differences (height, fill, padding) are
+// applied on top of this base.
+const panelBase = css({
   position: 'sticky',
   top: 0,
   zIndex: 10,
   width: '100%',
   margin: '0 auto',
-  paddingBlock: 'sm',
-  paddingInline: 'sm',
-  border: '1px solid token(colors.border)',
-  borderRadius: 'sm',
-  // Constant elevation — visible once it sticks against the page bg.
-  boxShadow: '0 2px 6px -2px rgba(0, 0, 0, 0.08)',
-  // `surfaceElevated` is a lifted charcoal (neutral.600), distinct
-  // from `surface` (the letter-cell bg) and `surfaceVariant` (the
-  // light-pink clue surface, where sage `accent` text would fail AA).
-  // Reads as "elevated panel" without taking the def-cell pink hue.
   bg: 'surfaceElevated',
   color: 'fg',
   textAlign: 'left',
   fontFamily: 'body',
-  // `md` (1.125rem) on phones gives better thumb-distance readability than
-  // `body` (1rem); desktop reverts to body so the panel doesn't dominate.
-  fontSize: { base: 'md', md: 'body' },
-  lineHeight: '1.3',
+  borderRadius: '12px',
   display: 'flex',
   alignItems: 'center',
-  gap: 'sm',
-  // Reserve enough vertical space for two lines of body text + padding so
-  // the panel's height is stable across content changes. The placeholder
-  // ("Sélectionnez une case pour afficher la définition.", ~47 chars)
-  // wraps to two lines on phone widths; clue text varies between one and
-  // two-plus lines depending on the puzzle. Without a 2-line reserve, the
-  // panel grew/shrunk between placeholder and clue selections, which made
-  // the grid below jitter (the panel sits in flow above the grid).
-  //
-  // Mobile font is `md` (1.125rem) × line-height 1.3 → ~1.46rem per line;
-  // two lines ≈ 2.93rem; plus paddingBlock sm × 2 (1rem) and a small
-  // buffer for the arrow's `lg` (1.5rem) line-box on the clue branch
-  // → 4.25rem. Desktop reverts to `body` (1rem) so the same 4.25rem value
-  // also covers two lines comfortably with a touch of breathing room.
-  minHeight: '4.25rem',
-});
-const arrow = css({
-  fontSize: 'lg',
-  color: 'accent',
-  flexShrink: 0,
-  lineHeight: 1,
-});
-const text = css({
-  flex: 1,
-  fontWeight: 'bold',
-  color: 'accent',
-  overflowWrap: 'break-word',
-  wordBreak: 'normal',
-});
-const placeholder = css({
-  flex: 1,
-  fontStyle: 'italic',
-  color: 'accent',
 });
 
-const arrowGlyph: Record<ArrowDirection, string> = {
-  right: '→',
-  down: '↓',
-  'down-right': '↳',
-  'right-down': '↴',
+const emptyPanel = css({
+  paddingInline: { base: '14px', md: '16px' },
+  gap: '10px',
+  // Single, fixed mini height — the empty banner reads as a label.
+  minHeight: '52px',
+  color: 'neutral.200',
+  fontSize: 'sm',
+});
+
+// Active panel — variable height. Single-line on wide viewports, wraps
+// to two lines when the active clue + alt clue + Espace chip exceed
+// the available width (per the brief: "when clue & word are too long
+// → 2 lines").
+const activePanel = css({
+  paddingInline: { base: '8px', md: '12px' },
+  paddingBlock: '8px',
+  gap: '12px',
+  minHeight: '52px',
+  flexWrap: 'wrap',
+});
+
+// Rose chip on the left — light-rose tint at 18 % alpha (the brief's
+// exact `rgba(232,163,179,0.18)`) with the same `#e8a3b3` rose driving
+// the arrow glyph. `color-mix` keeps the alpha math at the CSS layer.
+const arrowChip = css({
+  flexShrink: 0,
+  width: '28px',
+  height: '28px',
+  borderRadius: '6px',
+  bg: 'color-mix(in srgb, token(colors.secondary.400) 18%, transparent)',
+  color: 'secondary.400',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  '& svg': { width: '14px', height: '14px' },
+});
+
+// `clueGroup` ties the chip + clue text + letter preview together so
+// they wrap as one unit when the panel reflows to two lines.
+const clueGroup = css({
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: '10px',
+  minWidth: 0,
+  // Allows the group to grow past its natural content width on wide
+  // viewports while still wrapping cleanly on narrow ones.
+  flex: '0 1 auto',
+});
+
+const clueText = css({
+  fontSize: '15px',
+  fontWeight: 'medium',
+  color: 'fg',
+  lineHeight: '1.3',
+  whiteSpace: 'nowrap',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  // Cap the clue text width per group so very long clues clip with
+  // ellipsis rather than push the letter preview off-screen.
+  maxWidth: { base: '180px', md: '260px' },
+});
+
+// Subdued style for the alt clue text — the player's eye is on the
+// active group; the alt is just a reminder that another path exists.
+const altClueText = css({
+  fontSize: '15px',
+  fontWeight: 'medium',
+  color: 'fgMuted',
+  lineHeight: '1.3',
+  whiteSpace: 'nowrap',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  maxWidth: { base: '140px', md: '200px' },
+});
+
+// Letter preview row — one cell per letter slot. Filled letters paint
+// in the active group's fg; empty slots show a centered dot. The
+// focused cell underlines its letter (or dot) in rose to mirror the
+// grid's active-cell ring.
+const letterRow = css({
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: '6px',
+  fontFamily: 'body',
+  fontSize: '14px',
+  fontWeight: 'medium',
+  fontVariantNumeric: 'tabular-nums',
+  color: 'fg',
+  flexShrink: 0,
+});
+
+const letterRowMuted = css({ color: 'fgMuted' });
+
+const letterSlot = css({
+  display: 'inline-block',
+  minWidth: '8px',
+  textAlign: 'center',
+});
+
+const letterDot = css({
+  // Slightly dimmer dot — empty slots read as placeholders, not letters.
+  color: 'neutral.400',
+});
+
+const letterFocused = css({
+  borderBottom: '2px solid token(colors.secondary.400)',
+  paddingBottom: '1px',
+  color: 'fg',
+});
+
+// Alt block — direction arrow + alt clue text + alt letter preview.
+// `flex: 1 0 auto` lets it claim the remaining row width on a single-
+// line panel and naturally wrap to its own row when content overflows.
+const altGroup = css({
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: '10px',
+  minWidth: 0,
+  flex: '0 1 auto',
+});
+
+const altDirectionGlyph = css({
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  width: '20px',
+  height: '20px',
+  color: 'fgMuted',
+  flexShrink: 0,
+  '& svg': { width: '14px', height: '14px' },
+});
+
+// Pushes the kbd chip to the row's far end on wide layouts, leaves it
+// trailing on wrapped layouts (where the alt block flows to row 2 and
+// the chip can sit beside it).
+const spacer = css({ flex: 1, minWidth: '8px' });
+
+// kbd-styled chip — small bordered rectangle with the keyboard label.
+// Tappable for parity with mouse users (calls `onSwitchDirection`),
+// but presented as a key, not a button — matches the brief's "clear
+// it's a key, not a button" note.
+const kbdChip = css({
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  flexShrink: 0,
+  paddingInline: '8px',
+  height: '24px',
+  borderRadius: '4px',
+  border: '1px solid token(colors.border)',
+  bg: 'transparent',
+  color: 'fgMuted',
+  fontFamily: 'body',
+  fontSize: '12px',
+  fontWeight: 'medium',
+  cursor: 'pointer',
+  transition: 'border-color 120ms ease-out, color 120ms ease-out, transform 120ms ease-out',
+  _hover: { borderColor: 'fg', color: 'fg' },
+  _active: { transform: 'scale(0.96)' },
+  _focusVisible: {
+    outline: '2px solid token(colors.focusRing)',
+    outlineOffset: '2px',
+  },
+});
+
+// Small inline-SVG arrow glyphs — same stroke vocabulary as the grid
+// arrows in `Cell.tsx`, scaled down for chip size.
+const ARROW_PATHS: Record<ArrowDirection, string> = {
+  right: 'M3 12h17 M14 7l6 5-6 5',
+  down: 'M12 3v17 M7 14l5 6 5-6',
+  'right-down': 'M3 7h14v13 M12 15l5 5 5-5',
+  'down-right': 'M7 3v14h13 M15 12l5 5-5 5',
 };
+
+function ArrowIcon({ arrow }: { arrow: ArrowDirection }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d={ARROW_PATHS[arrow]} />
+    </svg>
+  );
+}
+
+function PointerIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width={18}
+      height={18}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.6}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M5 4l5 14 2-6 6-2z" />
+    </svg>
+  );
+}
+
 const arrowLabel: Record<ArrowDirection, string> = {
   right: 'horizontale',
   down: 'verticale',
@@ -99,37 +253,53 @@ const arrowLabel: Record<ArrowDirection, string> = {
   'right-down': 'verticale',
 };
 
-// Tracks `window.visualViewport`. When the user pinch-zooms (`scale > 1`),
-// returns the inline-style overrides that pin the panel to the top of the
-// VISIBLE visual viewport at a constant on-screen size; otherwise returns
-// `undefined` and the Panda `panel` class's `position: sticky` runs natively.
-//
-// Why we override `position` to `fixed` when zoomed (not just transform):
-// `position: sticky` keeps the panel at its natural flow position UNTIL the
-// user has scrolled past it, then sticks it at top:0 of the layout viewport.
-// On first load (or when content above the panel — wordmark, badge — is
-// still visible), the natural flow position is BELOW the layout viewport
-// top by `naturalY` CSS px. A pure transform of `translate(0, offsetTop)`
-// only compensates for the visual-viewport pan, so the panel ends up at
-// device y = naturalY × scale — mid-screen at scale 2. Switching to
-// `position: fixed; top: 0` when zoomed re-anchors the panel to layout
-// viewport top regardless of natural flow, so the translate then does
-// reach the visible top.
-//
-// Math: at zoom N, every CSS px renders as N device px. With `position:
-// fixed; top: 0; left: 0; right: 0` the panel's layout box is at layout
-// viewport top-left, full viewport width. `translate(offsetLeft, offsetTop)`
-// shifts to visual viewport top-left (in layout coords). `scale(1/N)` with
-// `transform-origin: top left` shrinks rendered CSS size to 1/N of layout —
-// device size = (layoutWidth/N) × N = layoutWidth, same device size as
-// un-zoomed. Panel always fits the visible width edge-to-edge with text at
-// its un-zoomed readable size.
-//
-// Trade-off: zooming in causes a small layout shift (sticky panel had a
-// flow box, fixed panel doesn't). Brief and only during the pinch gesture.
-//
-// Co-located here (~30 lines) to match `useGridNavigation.ts`'s
-// component-adjacent-hook style; not worth a `hooks/` folder for this.
+// Letter preview row builder — one slot per cell in the clue. The
+// `focusedRow`/`focusedCol` pair flags the slot that should carry the
+// rose underline. Cells whose entry is empty show a centred dot.
+function LetterPreview({
+  cells,
+  focusedPosition,
+  getEntryAt,
+  muted,
+}: {
+  cells: readonly LetterCell[];
+  focusedPosition: { row: number; col: number } | null;
+  getEntryAt: (row: number, col: number) => string;
+  muted?: boolean;
+}) {
+  return (
+    <span className={muted ? `${letterRow} ${letterRowMuted}` : letterRow} aria-hidden>
+      {cells.map((c) => {
+        const entry = getEntryAt(c.position.row, c.position.col);
+        const isFocused =
+          focusedPosition !== null &&
+          c.position.row === focusedPosition.row &&
+          c.position.col === focusedPosition.col;
+        const filled = entry !== '';
+        return (
+          <span
+            key={`${c.position.row},${c.position.col}`}
+            className={
+              isFocused
+                ? `${letterSlot} ${letterFocused}`
+                : filled
+                ? letterSlot
+                : `${letterSlot} ${letterDot}`
+            }
+          >
+            {filled ? entry.toUpperCase() : '·'}
+          </span>
+        );
+      })}
+    </span>
+  );
+}
+
+// See module header for why we override `position` to `fixed` when the
+// page is pinch-zoomed. Math: at zoom N, every CSS px renders as N
+// device px. `position: fixed; top: 0; left: 0; right: 0` re-anchors
+// to the layout viewport top; `translate(offsetLeft, offsetTop)` shifts
+// to visual viewport top-left; `scale(1/N)` keeps device size constant.
 type ZoomedStyle = {
   position: 'fixed';
   top: 0;
@@ -147,8 +317,6 @@ function useVisualViewportZoom(): ZoomedStyle | undefined {
     let raf = 0;
     const update = () => {
       raf = 0;
-      // Tolerance — pinch gestures sometimes leave scale at 1.0001 or so.
-      // Below that we treat the user as not zoomed and let CSS sticky run.
       if (vv.scale > 1.001) {
         setStyle({
           position: 'fixed',
@@ -163,8 +331,6 @@ function useVisualViewportZoom(): ZoomedStyle | undefined {
       }
     };
     const schedule = () => {
-      // visualViewport.scroll fires every frame during a pinch-pan; rAF
-      // coalesces. Listeners are passive by spec, no { passive: true } needed.
       if (!raf) raf = requestAnimationFrame(update);
     };
     vv.addEventListener('scroll', schedule);
@@ -181,37 +347,109 @@ function useVisualViewportZoom(): ZoomedStyle | undefined {
 
 const trackWidthStyle = { maxWidth: GRID_TRACK_WIDTH } as const;
 
-export function CurrentCluePanel({ clue }: { clue: Clue | null }) {
+export interface CurrentCluePanelProps {
+  readonly clue: Clue | null;
+  readonly cellIndex?: number | null;
+  readonly alternateClue?: Clue | null;
+  readonly onSwitchDirection?: () => void;
+  readonly getEntryAt?: (row: number, col: number) => string;
+}
+
+const noEntries = () => '';
+
+export function CurrentCluePanel({
+  clue,
+  cellIndex = null,
+  alternateClue = null,
+  onSwitchDirection,
+  getEntryAt = noEntries,
+}: CurrentCluePanelProps) {
   const zoomStyle = useVisualViewportZoom();
-  // Zoomed branch sets position:fixed left/right:0 (full-bleed); maxWidth there would re-introduce the centering gap.
   const inlineStyle = zoomStyle ?? trackWidthStyle;
+
   if (!clue) {
     return (
       <div
-        className={panel}
+        className={`${panelBase} ${emptyPanel}`}
         style={inlineStyle}
         role="status"
         aria-live="polite"
         data-testid="current-clue-panel"
       >
-        <span className={placeholder}>
-          Sélectionnez une case pour afficher la définition.
-        </span>
+        <PointerIcon />
+        <span>Sélectionnez une case pour afficher la définition</span>
       </div>
     );
   }
+
+  // The focused position is wherever the active clue's `cellIndex`
+  // points — already validated by the nav hook before the panel sees
+  // it. The alt clue's letter preview shares the same focused position
+  // (the player is sitting at an intersection by definition).
+  const focusedPosition =
+    cellIndex !== null && clue.cells[cellIndex] !== undefined
+      ? clue.cells[cellIndex].position
+      : null;
+
   return (
     <div
-      className={panel}
+      className={`${panelBase} ${activePanel}`}
       style={inlineStyle}
       role="status"
       aria-live="polite"
       data-testid="current-clue-panel"
     >
-      <span className={arrow} aria-label={`définition ${arrowLabel[clue.clue.arrow]}`}>
-        {arrowGlyph[clue.clue.arrow]}
+      <span className={clueGroup}>
+        <span
+          className={arrowChip}
+          aria-label={`définition ${arrowLabel[clue.clue.arrow]}`}
+          role="img"
+        >
+          <ArrowIcon arrow={clue.clue.arrow} />
+        </span>
+        <span className={clueText} title={clue.clue.text}>
+          {clue.clue.text}
+        </span>
+        <LetterPreview
+          cells={clue.cells}
+          focusedPosition={focusedPosition}
+          getEntryAt={getEntryAt}
+        />
       </span>
-      <span className={text}>{clue.clue.text}</span>
+      {alternateClue ? (
+        <>
+          <span className={spacer} aria-hidden />
+          <span className={altGroup}>
+            <span
+              className={altDirectionGlyph}
+              aria-label={`alternative : définition ${arrowLabel[alternateClue.clue.arrow]}`}
+              role="img"
+            >
+              <ArrowIcon arrow={alternateClue.clue.arrow} />
+            </span>
+            <span className={altClueText} title={alternateClue.clue.text}>
+              {alternateClue.clue.text}
+            </span>
+            <LetterPreview
+              cells={alternateClue.cells}
+              focusedPosition={focusedPosition}
+              getEntryAt={getEntryAt}
+              muted
+            />
+          </span>
+          <button
+            type="button"
+            className={kbdChip}
+            onClick={onSwitchDirection}
+            aria-label={`Basculer sur la définition ${arrowLabel[alternateClue.clue.arrow]} (raccourci : Espace)`}
+            // mousedown.preventDefault keeps the focused cell focused so
+            // typing can resume immediately after the toggle.
+            onMouseDown={(e) => e.preventDefault()}
+          >
+            Espace
+          </button>
+        </>
+      ) : null}
     </div>
   );
 }

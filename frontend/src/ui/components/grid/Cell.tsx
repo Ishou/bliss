@@ -38,23 +38,20 @@ function smartLineBreak(text: string): string {
   if (realWords.length < 2) {
     return text.replace(/ /g, '\u00a0');
   }
-  const spaces: number[] = [];
-  for (let i = 0; i < text.length; i++) {
-    if (text[i] === ' ') spaces.push(i);
+  if (realWords.length > 2) {
+    // 3+-word clues: leave wrapping to CSS. The previous "single
+    // balanced \n" rule produced awkward 3-/4-line stairs ("Pronom
+    // de la / 2e personne" \u2192 "Pronom de / la / 2e / personne") when
+    // the chosen FitText fontSize couldn't fit the longer half on
+    // one line; CSS then secondarily wrapped that half. Letting CSS
+    // own the wrap means every break lands at a real word boundary.
+    return text;
   }
-  let bestIdx = -1;
-  let bestMax = Infinity;
-  for (const i of spaces) {
-    const leftLen = i;
-    const rightLen = text.length - i - 1;
-    const longer = Math.max(leftLen, rightLen);
-    if (longer < bestMax) {
-      bestMax = longer;
-      bestIdx = i;
-    }
-  }
-  if (bestIdx < 0) return text;
-  return text.slice(0, bestIdx) + '\n' + text.slice(bestIdx + 1);
+  // Two-word case: split at the only meaningful space so FitText can
+  // size the longer of the two halves.
+  const firstSpace = text.indexOf(' ');
+  if (firstSpace < 0) return text;
+  return text.slice(0, firstSpace) + '\n' + text.slice(firstSpace + 1);
 }
 
 // Clue text size bounds, expressed as a fraction of the cell's
@@ -81,10 +78,19 @@ function smartLineBreak(text: string): string {
 // Visual delta inside a single grid widens to 0.32 / 0.18 ≈ 1.78×
 // (vs PR-#195's tighter 0.22–0.32 band). Trade accepted in exchange
 // for full zoom-invariance.
-const SINGLE_RATIO_MIN = 0.18;
-const SINGLE_RATIO_MAX = 0.32;
-const STACK_RATIO_MIN = 0.18;
-const STACK_RATIO_MAX = 0.28;
+// Floor lowered with the ceiling so short clues don't all sit at the
+// max — same visual rhythm but tighter overall.
+const SINGLE_RATIO_MIN = 0.16;
+// Lowered iteratively from the original 0.32 → 0.26 → 0.22 at the
+// player's request: the prior ceilings let one-word clues like "déco"
+// balloon past their neighbours; this cap keeps the grid's rhythm
+// calm while still giving short clues a touch more weight than long
+// ones. Visual delta inside a single grid is ~1.38× (0.22 / 0.16)
+// for single and ~1.19× for stack — well within FitText's
+// zoom-invariance contract.
+const SINGLE_RATIO_MAX = 0.22;
+const STACK_RATIO_MIN = 0.16;
+const STACK_RATIO_MAX = 0.19;
 
 const cellBase = css({
   position: 'relative',
@@ -99,14 +105,47 @@ const cellBase = css({
   overflow: 'visible',
 });
 const letterCell = css({ bg: 'surface' });
-// Letters belonging to the active word/clue. `accentBg` is the brand-
-// tint background role (= primary.700, medium-dark sage) — reads as a
-// clear green-tint variant of the regular surface letter cell on the
-// dark theme, distinct without being jarring. `fg` text on `accentBg`
-// hits ~4.1:1 — passes AA for large text (cell token = 24 px / bold;
-// threshold is 3:1). Do not use this pairing at body sizes — it falls
-// below the 4.5:1 normal-text bar.
-const letterCellInWord = css({ bg: 'accentBg' });
+// Letters belonging to the active word/clue carry a ROSE tint — same
+// family as the focused cell's `focusBg` (#2A1C22) but applied as a
+// flat fill (no inset ring) so the actively-focused cell still
+// stands out via its 1.5 px rose ring on top. The previous tint
+// (`accentBg` = sage) was visually identical to the validated state,
+// which made the "you're solving this word" cue indistinguishable
+// from "this letter is locked in".
+const letterCellInWord = css({ bg: 'focusBg' });
+// Validated cell — locked, sage-on-sage. Spec §6: bg `primary.800`
+// (`successBg`), letter `primary.500` (`accent`). The `successBg`
+// semantic alias is identical to `accentBg` in the current palette but
+// the role-token graph keeps the two intents distinct should a future
+// theme split them.
+const letterCellValidated = css({
+  bg: 'successBg',
+  '& input': {
+    color: 'success',
+    // Validated cells become read-only but a focused validated cell
+    // still gets the rose inset ring — it tells the player "you're
+    // here" even though they cannot edit. The previous full-neutral
+    // override made focus invisible on validated cells, which made
+    // arrow-key navigation through a partly-solved word feel broken.
+    _focus: {
+      bg: 'successBg',
+      color: 'success',
+      boxShadow: 'inset 0 0 0 1.5px token(colors.focusRing)',
+      outline: 'none',
+    },
+  },
+});
+// Error cell — wrong letter detected by `Vérifier`. The brief says shake
+// 200 ms then revert to filled, with a 1.5 px error-coloured inset ring
+// during the shake. Letter colour also flips to error so colour is one
+// of two signals (the second being the shake itself, per §8).
+const letterCellError = css({
+  '& input': {
+    color: 'errorText',
+    boxShadow: 'inset 0 0 0 1.5px token(colors.error)',
+    animation: 'wordsparrow-cell-shake 200ms ease-out',
+  },
+});
 const blockCell = css({ bg: 'surfaceMuted' });
 
 // Definition cell: container-type so child cqi values resolve against cell width.
@@ -120,9 +159,23 @@ const defCell = css({
   color: 'onSurfaceVariant',
   containerType: 'inline-size',
   lineHeight: '1.05',
-  padding: '3px',
-  textAlign: 'center',
-  zIndex: 1,
+  // Slightly larger padding now that the arrows have moved off the
+  // def cell — the freed-up real estate goes to breathing room
+  // around the clue text rather than back into FitText's font sizing.
+  // Mobile-tiny (320 px viewport) cells are ~25 px wide; a 6 px
+  // padding swallowed the stack-cell half-text and dragged the
+  // measured clue ratio under 0.10. 4 px is the largest value that
+  // keeps the e2e clue-ratio gate green at all four breakpoints.
+  padding: '4px',
+  // Top-left text alignment cascades to FitText's spans below
+  // (ADR-0005 §6 "Text sits top-left").
+  textAlign: 'left',
+  // No `zIndex` — the spec relies on DOM order (letter cells render
+  // after their preceding clue cells, so the arrow children of the
+  // letter cell naturally paint above the clue surface). A previous
+  // revision set `zIndex: 1` here for the now-removed border-spanning
+  // arrows on the def cell; that elevated stacking context defeated
+  // the source-order trick and clipped the new letter-cell arrows.
 });
 
 // Text fills the full cell now that the arrow is outside the flow.
@@ -137,18 +190,12 @@ const defSingle = css({
   overflow: 'hidden',
 });
 
-// Current-clue highlight: a 3 px coloured border on the side opposite
-// the arrow does the visual signal; text stays `onSurfaceVariant`
-// (dark plum) for AA on the light-pink clue surface — `accent`-on-
-// `surfaceVariant` (sage on pink) is sub-AA at body sizes.
-const defCellCurrentRight = css({
-  borderLeft: '3px solid token(colors.accent)',
-  color: 'onSurfaceVariant',
-});
-const defCellCurrentDown = css({
-  borderTop: '3px solid token(colors.accent)',
-  color: 'onSurfaceVariant',
-});
+// Current-clue highlight: per the player's preference, the active clue
+// recolours its TEXT + ARROW to sage (accent) instead of carrying a
+// border stripe. Cascades through `color`, so the inline arrow SVG
+// (which paints `currentColor`) picks up the same hue without needing
+// its own state class.
+const defCellCurrent = css({ color: 'accent' });
 
 // Single-clue text: font size is auto-fit at runtime (FitText) — the inline
 // font-size set by FitText overrides any value here. We still need flex:1 +
@@ -175,18 +222,13 @@ const defText = css({
   flex: 1,
   alignSelf: 'stretch',
   display: 'flex',
-  // `safe center` keeps centered text aligned to the start of the
-  // axis when content is taller/wider than the container, instead of
-  // the default `center` which symmetrically overflows past both edges
-  // of the box and leaks visually past `overflow: hidden` ancestors
-  // (defStack contains both halves, so a top-stacked clue's symmetric
-  // bottom-leak would paint into the bottom-stack's space). With
-  // `safe`: short text stays centered; tall text top-aligns and clips
-  // honestly at the bottom. Browser support: Chrome 87+, Firefox 63+,
-  // Safari 16+ — covered by the project's modern-browsers stance.
-  alignItems: 'safe center',
-  justifyContent: 'safe center',
-  textAlign: 'center',
+  // ADR-0005 §6: "Text sits top-left; the arrow sits bottom-right."
+  // Text anchors to the top-left corner of the cell. `safe` qualifier
+  // keeps the start-edge alignment honest when content overflows past
+  // the available box (Chrome 87+ / Firefox 63+ / Safari 16+).
+  alignItems: 'safe flex-start',
+  justifyContent: 'safe flex-start',
+  textAlign: 'left',
   // `fontFamily: 'mono'` (Lekton) is the load-bearing piece of the
   // gate-decoupling refactor: Lekton's constant glyph advance lets
   // `scripts/eval/clue_metrics.py` be a deterministic predicate on
@@ -228,112 +270,169 @@ type ArrowOrigin = 'right' | 'bottom';
 const arrowOriginOf = (a: ArrowDirection): ArrowOrigin =>
   a === 'right' || a === 'right-down' ? 'right' : 'bottom';
 
-// Slot = which physical position on a def cell's border an arrow occupies.
-// Single-clue cells use `*Center`. Two-clue cells use `*Top`/`*Bottom`
-// (right border) or `*Left`/`*Right` (bottom border) when both clues
-// share an origin, or `*Top` (right) + `*Center` (bottom) for mixed
-// origins (matches the existing visual: horizontal-flow text on top
-// with right-arrow at top half; vertical-flow text on bottom with
-// down-arrow centered).
-type ArrowSlot =
-  | 'rightCenter' | 'rightTop' | 'rightBottom'
-  | 'bottomCenter' | 'bottomLeft' | 'bottomRight';
-
-const SLOT_POSITION: Record<ArrowSlot, React.CSSProperties> = {
-  rightCenter:  { right: 0, top: '50%', transform: 'translate(100%, -50%)' },
-  rightTop:     { right: 0, top: '25%', transform: 'translate(100%, -50%)' },
-  rightBottom:  { right: 0, top: '75%', transform: 'translate(100%, -50%)' },
-  bottomCenter: { bottom: 0, left: '50%', transform: 'translate(-50%, 100%)' },
-  bottomLeft:   { bottom: 0, left: '25%', transform: 'translate(-50%, 100%)' },
-  bottomRight:  { bottom: 0, left: '75%', transform: 'translate(-50%, 100%)' },
+// French direction label per arrow type — surfaced via aria-label on
+// every arrow render site (def cells, stacked clues, and the new
+// letter-cell arrows). Hoisted above `LetterArrow` because the latter
+// references it.
+const arrowLabel: Record<ArrowDirection, string> = {
+  right: 'horizontale',
+  down: 'verticale',
+  'down-right': 'horizontale',
+  'right-down': 'verticale',
 };
 
-// Straight (10cqi × 10cqi) triangles whose BASE sits exactly on the cell
-// border, tip pointing into the adjacent answer cell. pointer-events:none
-// so clicks reach the adjacent letter cell. zIndex:2 renders above the
-// defCell's z-index:1 stacking context.
-const arrowStraightBase = css({
-  position: 'absolute',
-  width: '10cqi',
-  height: '10cqi',
-  bg: 'onSurfaceVariant',
-  pointerEvents: 'none',
-  zIndex: 2,
-});
-const triangleRightClip = css({ clipPath: 'polygon(0 0, 100% 50%, 0 100%)' });
-const triangleDownClip = css({ clipPath: 'polygon(0 0, 100% 0, 50% 100%)' });
-
-// Bent L-arrows are rendered as SVG paths inside a 30cqi × 30cqi box
-// anchored at the same slot position (entry point at the box's left edge
-// for right-origin, top edge for bottom-origin). The path traces the
-// vertical stroke + horizontal stroke + triangle tip as a single polygon
-// so the fill produces a single solid shape with no seams.
+// ADR-0005 §6 follow-up: arrows live ON THE LETTER CELL, not the clue
+// cell. A small SVG with `position: absolute` and `left: -7px` (for
+// incoming →) or `top: -7px` (for incoming ↓) straddles the 1 px grid
+// gap — half on the wine clue surface, half on the dark letter cell.
 //
-// The 30cqi size is enough to push the bend partway into the entry
-// neighbour and keep the triangle tip clear of the def cell border.
-// Smaller boxes hide the L; larger boxes intrude on the next neighbour.
-const arrowBentBase = css({
-  position: 'absolute',
-  width: '30cqi',
-  height: '30cqi',
-  color: 'onSurfaceVariant',
-  pointerEvents: 'none',
-  zIndex: 2,
-});
-// `right-down`: stroke goes RIGHT from the box's left-center, then bends
-// DOWN inside the entry neighbour. Triangle tip points DOWN.
-// 100×100 viewBox; entry is at (0, 50) — the box's left-center.
-const PATH_RIGHT_DOWN = 'M 0 42 L 65 42 L 65 75 L 75 75 L 58 95 L 40 75 L 50 75 L 50 58 L 0 58 Z';
-// `down-right`: stroke goes DOWN from the box's top-center, then bends
-// RIGHT inside the entry neighbour. Triangle tip points RIGHT.
-// 100×100 viewBox; entry is at (50, 0) — the box's top-center.
-const PATH_DOWN_RIGHT = 'M 42 0 L 58 0 L 58 50 L 75 50 L 75 40 L 95 58 L 75 75 L 75 65 L 42 65 Z';
+// Why on the letter cell? Source order. Cells render in DOM order, so
+// the letter cell paints AFTER the clue cell — its absolute children
+// naturally render above the clue cell's territory. No `z-index`
+// gymnastics needed.
+//
+// The shape is a classic mots-fléchés glyph: a short rectangular stem
+// plus a triangular head. Colour is `#f0bac4` (half a step lighter
+// than the clue text) so it stays visible against both the wine clue
+// surface and the dark letter cell. See `IncomingArrow` and
+// `LetterCellArrows` below.
 
-// One-stop arrow renderer. Picks the right shape (straight triangle or
-// bent SVG L) and the right border position (slot) for a given arrow
-// direction. Single source of truth — both single-clue and two-clue
-// branches go through it so the rendering rules stay consistent.
-function ArrowMark({
-  arrow, slot, ariaLabel, ariaHidden = false,
-}: {
-  arrow: ArrowDirection;
-  slot: ArrowSlot;
-  ariaLabel?: string;
-  ariaHidden?: boolean;
-}) {
-  const positionStyle = SLOT_POSITION[slot];
-  const isBent = arrow === 'right-down' || arrow === 'down-right';
-  if (isBent) {
-    return (
-      <span
-        className={arrowBentBase}
-        style={positionStyle}
-        role={ariaHidden ? undefined : 'img'}
-        aria-hidden={ariaHidden || undefined}
-        aria-label={ariaHidden ? undefined : ariaLabel}
-        data-arrow={arrow}
-      >
-        <svg viewBox="0 0 100 100" preserveAspectRatio="none" width="100%" height="100%">
-          <path
-            d={arrow === 'right-down' ? PATH_RIGHT_DOWN : PATH_DOWN_RIGHT}
-            fill="currentColor"
-          />
-        </svg>
-      </span>
-    );
-  }
-  const clipClass = arrow === 'right' ? triangleRightClip : triangleDownClip;
+export type IncomingArrowEdge = 'left' | 'top';
+// Cross-axis position on the receiving edge. `center` for 1-clue
+// source cells; `q1` (28 %) and `q3` (72 %) for the two slots a 2-
+// clue source paints — see `Grid.tsx#computeIncomingArrows` for the
+// rules. Mixed-origin pairs use `q1` for both arrows (per the spec
+// "left:28% / top:28%" alignment).
+export type IncomingArrowOffset = 'center' | 'q1' | 'q3';
+
+export interface IncomingArrow {
+  readonly edge: IncomingArrowEdge;
+  readonly offset: IncomingArrowOffset;
+  // The original clue arrow (`right` / `down` / bent). Surfaced for
+  // tests and aria-label so we don't lose the bent variants from the
+  // domain layer; the visual glyph itself stays simple (→ / ↓).
+  readonly arrow: ArrowDirection;
+}
+
+const ARROW_COLOR = '#f0bac4';
+
+const letterArrowBase = css({
+  position: 'absolute',
+  pointerEvents: 'none',
+  color: ARROW_COLOR,
+  // Defensive z-index — the spec ("no z-index needed") relies on
+  // letter cells rendering after their adjacent clue cell in DOM
+  // order, but the explicit elevation guards against future
+  // siblings with their own positioned children.
+  zIndex: 3,
+  // SVG colour drives both stem rect and head triangle.
+  '& svg': { display: 'block', width: '100%', height: '100%' },
+});
+
+// Straight `right` arrow — viewBox 11 × 9 (1:1 with rendered px so
+// the stem thickness stays independent of the stem's length). The
+// 6 px shaft + 5 px head keeps the arrow's overall length close to
+// the original ~11 px while letting the stem run thicker (2 px) than
+// the prior aspect-locked version (~1.2 px).
+const ARROW_RIGHT_PATH = 'M0 3.5 L6 3.5 L6 1.5 L11 4.5 L6 7.5 L6 5.5 L0 5.5 Z';
+// Straight `down` arrow — viewBox 9 × 11 (mirrors the right arrow on
+// the perpendicular axis).
+const ARROW_DOWN_PATH = 'M3.5 0 L5.5 0 L5.5 6 L7.5 6 L4.5 11 L1.5 6 L3.5 6 Z';
+// Bent `right-down` — viewBox 18 × 22. Enters from the LEFT edge
+// at the box's vertical centre (y ≈ 11), runs RIGHT inside the
+// receiving cell, BENDS DOWN at the inner edge, exits with a
+// triangular head pointing DOWN. Mirrors the classic mots-fléchés
+// L-arrow for an answer that enters then turns downward.
+const ARROW_RIGHT_DOWN_PATH = 'M0 10 L12 10 L12 16 L16 16 L11 22 L6 16 L10 16 L10 12 L0 12 Z';
+// Bent `down-right` — viewBox 22 × 18. Enters from the TOP edge
+// at the box's horizontal centre (x ≈ 11), runs DOWN inside the
+// receiving cell, BENDS RIGHT, exits with a triangular head
+// pointing RIGHT.
+const ARROW_DOWN_RIGHT_PATH = 'M10 0 L12 0 L12 10 L16 10 L16 6 L22 11 L16 16 L16 12 L10 12 Z';
+
+const ARROW_SIZE_PX = 14;
+// Half of the arrow size — used to translate the centred edge anchor
+// back into a centred glyph (cross-axis only).
+const ARROW_HALF_PX = ARROW_SIZE_PX / 2;
+// Slightly past the spec's `-7 px` half-and-half straddle — the
+// arrow leans into the receiving letter cell so the head reads as
+// "this letter is the clue's first letter". With a 14 px glyph
+// the box extends from -4 to +10 of the cell edge: ~4 px on the
+// clue surface, ~10 px on the letter cell.
+const EDGE_OFFSET_PX = -4;
+
+// Per-arrow visual descriptor. Bent variants ride taller / wider boxes
+// because they fit a corner + head as well as the entry stem.
+interface ArrowGlyph {
+  readonly viewBox: string;
+  readonly width: number;
+  readonly height: number;
+  readonly path: string;
+}
+
+// Straight arrows render at their viewBox 1:1 — 6 px stem + 5 px
+// head, 11 px length × 9 px thickness-axis. Bent variants stay at
+// the larger ~75 % scale so the L corner + head are still legible.
+const GLYPH_BY_ARROW: Record<ArrowDirection, ArrowGlyph> = {
+  right:        { viewBox: '0 0 11 9',  width: 11, height: 9,  path: ARROW_RIGHT_PATH },
+  down:         { viewBox: '0 0 9 11',  width: 9,  height: 11, path: ARROW_DOWN_PATH },
+  'right-down': { viewBox: '0 0 18 22', width: 14, height: 17, path: ARROW_RIGHT_DOWN_PATH },
+  'down-right': { viewBox: '0 0 22 18', width: 17, height: 14, path: ARROW_DOWN_RIGHT_PATH },
+};
+
+function leftEdgeStyle(
+  offset: IncomingArrowOffset,
+  glyph: ArrowGlyph,
+): React.CSSProperties {
+  const cross =
+    offset === 'center' ? '50%' : offset === 'q1' ? '28%' : '72%';
+  return {
+    left: `${EDGE_OFFSET_PX}px`,
+    top: cross,
+    transform: 'translateY(-50%)',
+    width: `${glyph.width}px`,
+    height: `${glyph.height}px`,
+  };
+}
+
+function topEdgeStyle(
+  offset: IncomingArrowOffset,
+  glyph: ArrowGlyph,
+): React.CSSProperties {
+  const cross =
+    offset === 'center' ? '50%' : offset === 'q1' ? '28%' : '72%';
+  return {
+    top: `${EDGE_OFFSET_PX}px`,
+    left: cross,
+    transform: 'translateX(-50%)',
+    width: `${glyph.width}px`,
+    height: `${glyph.height}px`,
+  };
+}
+
+function LetterArrow({ arrow }: { arrow: IncomingArrow }) {
+  const glyph = GLYPH_BY_ARROW[arrow.arrow];
+  const style =
+    arrow.edge === 'left'
+      ? leftEdgeStyle(arrow.offset, glyph)
+      : topEdgeStyle(arrow.offset, glyph);
   return (
     <span
-      className={`${arrowStraightBase} ${clipClass}`}
-      style={positionStyle}
-      role={ariaHidden ? undefined : 'img'}
-      aria-hidden={ariaHidden || undefined}
-      aria-label={ariaHidden ? undefined : ariaLabel}
-      data-arrow={arrow}
-    />
+      className={letterArrowBase}
+      style={style}
+      data-arrow={arrow.arrow}
+      data-incoming-edge={arrow.edge}
+      role="img"
+      aria-label={`définition ${arrowLabel[arrow.arrow]}`}
+    >
+      <svg viewBox={glyph.viewBox} aria-hidden focusable="false">
+        <path d={glyph.path} fill="currentColor" />
+      </svg>
+    </span>
   );
 }
+
+void ARROW_HALF_PX; // referenced only via transform; kept for clarity.
 
 // Stacked layout: two clues share the cell vertically.
 // Arrows are outside the flow (border-positioned), so text gets the full area.
@@ -360,14 +459,20 @@ const defStackClue = css({
   minHeight: 0,
   overflow: 'hidden',
   wordBreak: 'break-word',
-  // gridLine token — matches cell border so stack divider reads as one continuous grid line.
-  '&:not(:first-child)': { borderTop: '1px solid token(colors.gridLine)' },
+  // Hairline rose divider between stacked clues — replaces the prior
+  // `gridLine` neutral so the split reads as part of the rose clue
+  // surface rather than a continuation of the charcoal grid line. A
+  // light tint (1 px @ ~25 % alpha) is enough to part the two halves
+  // without competing visually with the clue text.
+  '&:not(:first-child)': {
+    borderTop: '1px solid color-mix(in srgb, token(colors.secondary.400) 25%, transparent)',
+  },
 });
-// Stack-clue current marker: deep sage `primary.800` on the light-pink
-// clue surface gives ~9:1 contrast (AA at body) and reads as the
-// brand's "this clue is selected" colour without breaking the dark-
-// plum readability of unselected clue text.
-const defStackClueCurrent = css({ color: 'primary.800' });
+// Stack-clue current marker: same sage `accent` as the single-clue
+// path so the half-cell's text and arrow read as a single recoloured
+// unit. Aesthetic preference over the previous deep-sage primary.800
+// — see ADR-0005 §6 follow-up note on the brand state cue.
+const defStackClueCurrent = css({ color: 'accent' });
 // Stacked-clue text: same wrap policy as defText. `hyphens: auto`
 // (lang="fr" inherited) is even more important on stacked half-cells
 // because they're vertically tight — without syllabic breaks, long
@@ -380,9 +485,9 @@ const defStackClueCurrent = css({ color: 'primary.800' });
 const defStackText = css({
   flex: 1,
   display: 'flex',
-  // `safe center` — see defText for rationale.
-  alignItems: 'safe center',
-  justifyContent: 'safe center',
+  // Top-left, per ADR-0005 §6 — see `defText` for rationale.
+  alignItems: 'safe flex-start',
+  justifyContent: 'safe flex-start',
   // Flex items default to `min-height: auto` (i.e. content-sized),
   // which lets a multi-line span stretch *beyond* its flex parent's
   // allotted height — defeating the half-cell's overflow:hidden by
@@ -392,7 +497,7 @@ const defStackText = css({
   // invisibly. Same trick lives on defStackClue's `minHeight: 0`.
   minHeight: 0,
   minWidth: 0,
-  textAlign: 'center',
+  textAlign: 'left',
   // Same monospace + bold rationale as `defText` — see comment there
   // and ADR-0005 §5 amendment.
   fontFamily: 'mono',
@@ -414,8 +519,16 @@ const letterInput = css({
   textAlign: 'center',
   textTransform: 'uppercase',
   fontFamily: 'body',
-  fontWeight: 'bold',
-  fontSize: 'cell',
+  // Brand brief §3 caps the type system at weights 400 / 500 — letters
+  // sit at `medium` (500). The previous `bold` (700) was a holdover
+  // from the pre-charbon palette.
+  fontWeight: 'medium',
+  // 19 px desktop / 16 px mobile, per the brief. Using literal values
+  // here rather than the `cell` token because the spec's two sizes
+  // straddle the project's existing scale stops (`body` 16 / `md` 18 /
+  // `lg` 24); a token with two breakpoint values would only be
+  // referenced from this single site.
+  fontSize: { base: '16px', md: '19px' },
   // The wrapping <div> is the touch target — see LetterCellView below for
   // why. The input itself is `pointer-events: none` so taps fall through
   // to the div, and the `caretColor: transparent` + `userSelect: none`
@@ -444,14 +557,27 @@ const letterInput = css({
   '&::-webkit-search-results-button': { display: 'none' },
 });
 
-const arrowLabel: Record<ArrowDirection, string> = { right: 'horizontale', down: 'verticale', 'down-right': 'horizontale', 'right-down': 'verticale' };
+// `arrowLabel` is hoisted above `LetterArrow` (search for it earlier
+// in this file) so both call sites share the single declaration.
 
 export const LetterCellView = memo(function LetterCellView({
-  cell, ariaLabel, inWord, inputRef, onClick, onKeyDown, onFocus, onBlur, onInput,
+  cell, ariaLabel, inWord, validated, error, incomingArrows, inputRef, onClick, onKeyDown, onFocus, onBlur, onInput,
 }: {
   cell: LetterCell;
   ariaLabel: string;
   inWord: boolean;
+  // Validated state takes precedence over `inWord` for backgrounds —
+  // a locked correct cell stays sage-tinted regardless of which word
+  // the player is currently solving.
+  validated: boolean;
+  // Transient error state set by `Vérifier`; the parent flips it back
+  // off once the shake animation finishes (see PuzzlePage).
+  error: boolean;
+  // Arrows pointing INTO this letter cell from neighbouring def cells
+  // (ADR-0005 §6 follow-up). Empty/undefined when the cell sits
+  // mid-word and has no entry arrows. Computed once at the Grid layer
+  // — see `Grid.tsx#computeIncomingArrows`.
+  incomingArrows?: readonly IncomingArrow[];
   inputRef: Ref<HTMLInputElement>;
   onClick: (e: MouseEvent<HTMLDivElement>) => void;
   onKeyDown: (e: KeyboardEvent<HTMLInputElement>) => void;
@@ -507,11 +633,25 @@ export const LetterCellView = memo(function LetterCellView({
     onClick(e);
   };
 
+  // Class precedence: validated > error > inWord > default. Validated
+  // is terminal (the cell is locked); error is transient and only
+  // composes with the regular surface so the shake reads against the
+  // unhighlighted background.
+  const stateClass = validated
+    ? letterCellValidated
+    : error
+    ? `${letterCell} ${letterCellError}`
+    : inWord
+    ? letterCellInWord
+    : letterCell;
+
   return (
     <div
       role="gridcell"
-      className={`${cellBase} ${inWord ? letterCellInWord : letterCell}`}
+      className={`${cellBase} ${stateClass}`}
       data-in-word={inWord ? 'true' : 'false'}
+      data-validated={validated ? 'true' : undefined}
+      data-error={error ? 'true' : undefined}
       data-row={cell.position.row}
       data-col={cell.position.col}
       onMouseDown={handleMouseDown}
@@ -557,6 +697,14 @@ export const LetterCellView = memo(function LetterCellView({
         data-form-type="other"
         aria-label={ariaLabel}
         defaultValue={cell.entry}
+        // Validated cells become read-only — the spec locks them as
+        // soon as `Vérifier` confirms the letter. The visual state
+        // already reads as "done" via `letterCellValidated`; readOnly
+        // hardens the contract against keyboard input. We deliberately
+        // keep the input mounted (vs unmounted text) so focus management
+        // and arrow-key navigation stay consistent across states.
+        readOnly={validated}
+        aria-readonly={validated || undefined}
         className={letterInput}
         // Belt-and-braces against any browser still routing touch to a
         // focused input via legacy paths (iOS caret-drag, etc).
@@ -569,11 +717,21 @@ export const LetterCellView = memo(function LetterCellView({
         onBlur={onBlur}
         onInput={onInput}
       />
+      {incomingArrows?.map((a) => (
+        <LetterArrow
+          key={`${a.edge}-${a.offset}-${a.arrow}`}
+          arrow={a}
+        />
+      ))}
     </div>
   );
 });
 
-// Stacked clue: text only — the arrow badge is rendered at the cell level.
+// Stacked clue: text only. The arrow lives on the receiving letter
+// cell (per ADR-0005 §6 follow-up) — the def cell only carries the
+// label. The hairline divider between halves uses a rose tint so the
+// stacked-clue split reads as part of the rose surface, not the
+// charcoal grid line.
 function StackedClue({ clue, isCurrent }: { clue: DefinitionClue; isCurrent: boolean }) {
   return (
     <div
@@ -595,42 +753,16 @@ function StackedClue({ clue, isCurrent }: { clue: DefinitionClue; isCurrent: boo
   );
 }
 
-// Picks the arrow slots for a two-clue cell, given the arrows in *visual*
-// stack order (top first, bottom second). Each arrow is placed at the
-// position on its own border that sits next to its own text:
-//   * right-origin + top text  → rightTop
-//   * right-origin + bottom text → rightBottom
-//   * bottom-origin → bottomCenter (one position per edge in mixed cases)
-// Same-border pairs split that border (both rightTop/rightBottom or
-// bottomLeft/bottomRight) so the two arrows don't overlap.
-function twoClueSlots(
-  top: ArrowDirection,
-  bottom: ArrowDirection,
-): { slotA: ArrowSlot; slotB: ArrowSlot } {
-  const ot = arrowOriginOf(top);
-  const ob = arrowOriginOf(bottom);
-  if (ot === 'right' && ob === 'right') return { slotA: 'rightTop', slotB: 'rightBottom' };
-  if (ot === 'bottom' && ob === 'bottom') return { slotA: 'bottomLeft', slotB: 'bottomRight' };
-  return {
-    slotA: ot === 'right' ? 'rightTop' : 'bottomCenter',
-    slotB: ob === 'right' ? 'rightBottom' : 'bottomCenter',
-  };
-}
-
 export const DefinitionCellView = memo(function DefinitionCellView({
   cell, currentArrow,
 }: { cell: DefinitionCell; currentArrow: ArrowDirection | null }) {
   if (cell.clues.length === 1) {
     const clue = cell.clues[0];
     const isCurrent = currentArrow === clue.arrow;
-    // Highlight stripe on the side OPPOSITE the arrow so it doesn't
-    // compete with the arrow badge. Origin border drives the choice
-    // (matches `right-down` → right border → left-side stripe, and
-    // `down-right` → bottom border → top stripe).
-    const origin = arrowOriginOf(clue.arrow);
-    const currentClass = isCurrent
-      ? origin === 'right' ? defCellCurrentRight : defCellCurrentDown
-      : '';
+    // The active clue recolours its text + arrow to sage (accent) via
+    // `defCellCurrent`'s single `color` declaration; the SVG glyph
+    // picks the new hue up through `currentColor`.
+    const currentClass = isCurrent ? defCellCurrent : '';
     return (
       <div
         role="gridcell"
@@ -651,32 +783,22 @@ export const DefinitionCellView = memo(function DefinitionCellView({
             title={clue.text}
           />
         </div>
-        <ArrowMark
-          arrow={clue.arrow}
-          slot={origin === 'right' ? 'rightCenter' : 'bottomCenter'}
-          ariaLabel={`définition ${arrowLabel[clue.arrow]}`}
-        />
       </div>
     );
   }
 
-  // Two-clue branch. The visual stack pairs each clue with its arrow:
-  //   * mixed-origin pairs → right-origin clue on top (its arrow lives
-  //     at the right edge, naturally near top text), bottom-origin
-  //     clue on bottom (its arrow lives at the bottom edge, naturally
-  //     near bottom text). Without this the bent-arrow combos
-  //     (e.g. clues[0]=down-right + clues[1]=right-down) end up with
-  //     BOTH arrows in the bottom half of the cell.
-  //   * same-origin pairs → keep API order; their arrows split the
-  //     shared edge (rightTop/rightBottom or bottomLeft/bottomRight).
-  // Domain order is untouched (ADR-0005 §3a) — this is purely visual.
+  // Two-clue branch. The visual stack pairs each clue with its arrow
+  // *inside* its own half-cell — see `StackedClue` and
+  // `defStackClue`'s `position: relative`. Visual order: right-origin
+  // clue on top when origins differ (so the top half's arrow sits in
+  // the natural corner adjacent to the entry letter), otherwise keep
+  // API order. Domain order is untouched (ADR-0005 §3a).
   const [domFirst, domSecond] = cell.clues;
   const o1 = arrowOriginOf(domFirst.arrow);
   const o2 = arrowOriginOf(domSecond.arrow);
   const sameOrigin = o1 === o2;
   const topClue = sameOrigin || o1 === 'right' ? domFirst : domSecond;
   const bottomClue = sameOrigin || o1 === 'right' ? domSecond : domFirst;
-  const { slotA, slotB } = twoClueSlots(topClue.arrow, bottomClue.arrow);
   return (
     <div
       role="gridcell"
@@ -691,8 +813,6 @@ export const DefinitionCellView = memo(function DefinitionCellView({
         <StackedClue clue={topClue} isCurrent={currentArrow === topClue.arrow} />
         <StackedClue clue={bottomClue} isCurrent={currentArrow === bottomClue.arrow} />
       </div>
-      <ArrowMark arrow={topClue.arrow} slot={slotA} ariaHidden />
-      <ArrowMark arrow={bottomClue.arrow} slot={slotB} ariaHidden />
     </div>
   );
 });
