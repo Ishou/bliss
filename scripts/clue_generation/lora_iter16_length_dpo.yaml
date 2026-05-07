@@ -1,0 +1,61 @@
+# iter16: DPO on top of iter14's v7 SFT-then-DPO adapter, adding 171 NEW
+# preference pairs that target length verbosity. Three flavours:
+#   A. length-only contrast (61 pairs): both clues ≤25 chars, chosen is
+#      meaningfully shorter. Teaches "shorter equivalent is preferred even
+#      when both fit".
+#   B. cap-violation contrast (49 pairs): chosen ≤25 chars, rejected >25
+#      chars (won't ship). Teaches "stay under the cap when an equally-good
+#      shorter exists".
+#   C. preamble-strip contrast (61 pairs): rejected wraps content in
+#      formulaic noun-phrase scaffolding ("Action de", "Pratique de",
+#      "Personne qui", "État de", "Caractère de", "Manière de"); chosen
+#      is the bare equivalent. Teaches "drop the boilerplate".
+#
+# The corpus is concatenated with iter13_combined (iter12 PP-frame + iter13
+# stem-leak / self-reference / wrong-meaning fixes) so iter16 doesn't
+# catastrophically forget those preferences. Combined size:
+#   447 train / 52 valid / 52 test.
+#
+# Diff vs iter14 (v7):
+#   - data: data/lora_dpo_iter16_length_combined  (was iter13_combined)
+#   - adapter_path: models/lora-clue-v9           (was v7; v8a/b/c were
+#                                                  iter15 experiments)
+#   - resume_adapter_file: models/lora-clue-v3    (UNCHANGED — DPO refines
+#                                                  SFT, not stacked on prior
+#                                                  DPO; same convention as
+#                                                  iter13).
+#   - iters: 400                                   (was 320; ~45% larger
+#                                                  corpus, allow more passes)
+#   - everything else identical (lr 1e-6, β 0.1, sigmoid, rank 32,
+#     num_layers 16).
+#
+# Eval methodology: hold out the test split (52 pairs) for length-pref
+# acceptance measurement; run the standard 200-lemma N=3 best-of-3 pipeline
+# at the production threshold to confirm semantic acceptance hasn't
+# regressed (the danger with a length-pref iter is the model trades sense
+# accuracy for brevity).
+model: "mlx-community/c4ai-command-r-08-2024-4bit"
+data: "data/lora_dpo_iter16_length_combined"
+adapter_path: "models/lora-clue-v9"
+train_type: lora
+train_mode: dpo
+num_layers: 16
+batch_size: 2
+iters: 400
+learning_rate: 1e-6
+steps_per_report: 5
+steps_per_eval: 25
+save_every: 50
+seed: 20260507
+train: true
+fuse: false  # promote best-val-loss manually after training.
+
+beta: 0.1
+dpo_cpo_loss_type: sigmoid
+
+resume_adapter_file: "models/lora-clue-v3/adapters.safetensors"
+
+lora_parameters:
+  rank: 32
+  dropout: 0.0
+  scale: 20.0
