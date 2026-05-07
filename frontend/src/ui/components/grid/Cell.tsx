@@ -90,13 +90,7 @@ const cellBase = css({
   position: 'relative',
   width: '100%',
   aspectRatio: '1 / 1',
-  // No border on the cell itself — the grid container's `gap: 1px` +
-  // `bg: gridLine` (see Grid.tsx) paints every internal grid line and
-  // the container's outer border draws the perimeter. Equivalent to
-  // table `border-collapse: collapse`: a single 1 px line everywhere,
-  // no double-up where adjacent cell borders would otherwise stack.
-  // The dual-clue half-cell divider lives on `defStackClue` below and
-  // uses the same `gridLine` token so all rules match exactly.
+  // No border here — gap: 1px + bg: gridLine on the container paints every grid line (no double-up at shared edges).
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',

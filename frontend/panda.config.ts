@@ -127,7 +127,7 @@ export default defineConfig({
         // sand background where `border` (= sand) is invisible. Single
         // source of truth so cell outlines and stack dividers always
         // match exactly.
-        gridLine: { value: 'rgba(27, 40, 69, 0.25)' },
+        gridLine: { value: 'color-mix(in srgb, {colors.ink} 25%, transparent)' },
       },
     },
   },
