@@ -20,27 +20,29 @@
  * (cell = 47.4 vs 48.6 px rounds differently). Four widths covers
  * the integer-cell-size regimes without being slow.
  */
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import path from 'node:path';
+
 import { expect, test } from '@playwright/test';
 
-// Realistic clue corpus — pulled from `data/eval/production/surface_clues.csv`
-// to exercise the full range of layout pressure: short single-word,
-// medium two-word, long three-word, and pathological multi-word with
-// embedded parens (the unbreakable "(22e)"-style tokens that historically
-// blew through hyphens:auto). If FitText + the gate both behave
-// correctly, every entry below renders inside its cell at every
-// viewport size.
-const STRESS_CLUES = [
-  'Mutation notable',                 // 16 chars, 2 words
-  'Petit chien',                      // 11 chars, 2 words
-  'Carte maîtresse',                  // 15 chars
-  'Tenue pour vrai',                  // 15 chars, 3 words → 2-line balanced
-  'Mammifère carnivore',              // 19 chars, 2 words → 1+2-line wrap
-  'Constante mathématique grecque',   // 30 chars
-  'Tressages serrés',                 // 16 chars
-  'Vassal loyal',                     // 12 chars
-  'Note de musique',                  // 15 chars
-  'Conjonction',                      // 11 chars (unbreakable)
-];
+// Stress fixture — a real 10×10 grid the user observed overflowing in
+// their parallel session. Lives next to the test rather than under
+// `grid/api/examples/` because it's frontend-test-only data: the API
+// fixture (`get-puzzle-200.json`) carries trivial single-word clue
+// texts that no layout would ever fail, so the e2e test was passing
+// vacuously. This fixture has 28 long clues including pathological
+// cases ("Lettre grecque (19e)", "Longue période historique",
+// "Règle d'équerre ou note") that exercise hyphenation, multi-line
+// stacking, and unbreakable-token wrap.
+const STRESS_FIXTURE_PATH = path.join(
+  path.dirname(fileURLToPath(import.meta.url)),
+  'fixtures',
+  'puzzle-stress.json',
+);
+const STRESS_FIXTURE = JSON.parse(
+  readFileSync(STRESS_FIXTURE_PATH, 'utf-8'),
+) as Record<string, unknown>;
 
 const VIEWPORTS = [
   { name: 'mobile-tiny',   width: 320, height: 568 },
@@ -73,31 +75,16 @@ for (const vp of VIEWPORTS) {
   }) => {
     await page.setViewportSize({ width: vp.width, height: vp.height });
 
-    // Rewrite the puzzle response so each definition cell gets a
-    // realistic-length clue from STRESS_CLUES. The MSW fixture's own
-    // texts are short single words; without this rewrite the test
-    // gives false confidence (any FitText would fit "déco" trivially).
+    // Replace the puzzle response with the stress fixture — a real
+    // 10×10 grid the user observed overflowing. The default MSW
+    // fixture has trivially short clue texts that no layout would
+    // ever fail, so the e2e test would pass vacuously without this.
     await page.route(/\/v1\/puzzles\//, async (route) => {
-      const resp = await route.fetch();
-      const body = await resp.text();
-      try {
-        const puzzle = JSON.parse(body);
-        let i = 0;
-        for (const cell of puzzle.cells ?? []) {
-          if (cell.kind === 'definition') {
-            cell.text = STRESS_CLUES[i % STRESS_CLUES.length];
-            i++;
-          }
-        }
-        await route.fulfill({
-          status: resp.status(),
-          headers: resp.headers(),
-          contentType: 'application/json',
-          body: JSON.stringify(puzzle),
-        });
-      } catch {
-        await route.continue();
-      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(STRESS_FIXTURE),
+      });
     });
 
     await page.goto('/');

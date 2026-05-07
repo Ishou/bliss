@@ -27,19 +27,23 @@ import { useLayoutEffect, useRef } from 'react';
 // render is "tiny but contained", never "huge and bleeding".
 const INITIAL_PX = 8;
 
-// No absolute pixel floor. The prior `ABSOLUTE_MIN_PX = 11` (and its
-// PR-#195 ancestor at 6) capped how small the text could shrink — but
-// that is an *absolute* unit in a *ratio* world, and it broke
-// zoom-invariance below ~55 px cells: the font stayed pinned at 11 px
-// while the cell kept shrinking, so the effective font/cell ratio grew
-// and on small mobile cells the text overflowed.
+// No absolute pixel floor — the prior `ABSOLUTE_MIN_PX = 11` broke
+// zoom-invariance below ~55 px cells. Phase 2's fallback is now a
+// RATIO multiple of `min` (`PHASE2_FLOOR_FACTOR`), so a clue that
+// can't fit in [min, max] drops to a smaller ratio that still scales
+// linearly with cell size. Per-clue zoom-invariance is preserved:
+// the same clue renders at the same font/cell ratio at every screen
+// size, just at a smaller ratio than the comfortable floor.
 //
-// With monospace + the offline `clue_metrics` gate (calibrated against
-// the same comfortable floor the runtime searches), every shipped clue
-// is guaranteed to fit at the floor ratio at any cell size. The Phase 2
-// fallback is therefore unnecessary — Phase 1 always finds a fit. The
-// runtime now scales the entire grid (cells + text) as a single
-// unit across screen sizes, identical layout regardless of scale.
+// Phase 2 exists for cases the offline gate didn't catch (e.g. stale
+// runtime data, or clue text added after the gate ran): rather than
+// committing the comfortable floor and visibly clipping the text, we
+// shrink further — preserving the user-stated preference of
+// "syllabic word-break / smaller-but-readable text > overflow".
+// 0.5 is a generous range (e.g. min=0.18 → Phase 2 floor 0.09 — at a
+// 100 px cell that's 9 px, near the legibility limit but with full
+// content visible).
+const PHASE2_FLOOR_FACTOR = 0.5;
 
 // Bisection convergence target. The search stops when the candidate
 // window shrinks below this. 0.25 px is below sub-pixel rendering
@@ -162,11 +166,11 @@ export function FitText({
       const lo0 = unit === 'ratio' ? Math.max(1, min * cw) : min;
       const hi0 = unit === 'ratio' ? Math.max(lo0, max * cw) : max;
 
-      // Bisect [lo0, hi0]. Probe the ceiling first — if hi0 already
-      // fits, the search is done.
+      // Phase 1: bisect [lo0, hi0]. Probe the ceiling first — if hi0
+      // already fits, the search is done.
       let lo = lo0;
       let hi = hi0;
-      let best = lo0;
+      let best = -1;
       let iter = 0;
       if (fitsAt(hi0, cw, ch)) {
         best = hi0;
@@ -181,12 +185,37 @@ export function FitText({
           }
         }
       }
-      // If even `lo0` doesn't fit at this measurement, that's a gate
-      // failure — the offline `clue_metrics` should have caught it.
-      // Commit `lo0` anyway: overflow:hidden + hyphens:auto handle the
-      // visible result, and the gate's CI would surface the underlying
-      // data bug. (No fallback to a smaller absolute floor: doing so
-      // would re-break zoom-invariance the way ABSOLUTE_MIN_PX did.)
+      // Phase 2: if nothing in [lo0, hi0] fit, drop below the
+      // comfortable floor down to `lo0 × PHASE2_FLOOR_FACTOR`. Same
+      // fractional bisection. The floor is a RATIO multiple, not an
+      // absolute pixel value — that's what keeps per-clue zoom-
+      // invariance: the same clue renders at the same font/cell
+      // ratio at every screen size, just smaller than `min`.
+      //
+      // Commits the floor regardless if even that doesn't fit; the
+      // cell's overflow:hidden clips and the offline gate's CI surfaces
+      // the bad data. We never commit a fontSize larger than what fits
+      // (best stays at the largest verified-fitting size).
+      if (best < 0) {
+        const phase2Floor = lo0 * PHASE2_FLOOR_FACTOR;
+        let lo2 = phase2Floor;
+        let hi2 = lo0;
+        if (fitsAt(lo2, cw, ch)) {
+          best = lo2;
+          iter = 0;
+          while (hi2 - lo2 > FIT_EPSILON_PX && iter++ < MAX_ITERATIONS) {
+            const mid = (lo2 + hi2) / 2;
+            if (fitsAt(mid, cw, ch)) {
+              best = mid;
+              lo2 = mid;
+            } else {
+              hi2 = mid;
+            }
+          }
+        } else {
+          best = phase2Floor;
+        }
+      }
 
       lastCw = cw;
       lastCh = ch;
