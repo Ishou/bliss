@@ -22,10 +22,10 @@
  * specificity dance to whatever order the codegen emits. */
 :root {
   color-scheme: dark;
-  background-color: #17181d;
+  background-color: var(--colors-bg);
 }
 html, body {
-  background-color: #17181d;
+  background-color: var(--colors-bg);
 }
 
 /* Shake animation for the cell error state — ADR-0005 §6 component
