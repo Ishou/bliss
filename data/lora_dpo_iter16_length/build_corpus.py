@@ -326,7 +326,7 @@ def main() -> None:
         path = out_dir / f"{name}.jsonl"
         with path.open("w", encoding="utf-8") as f:
             for lemma, pos, chosen, reject, cat in rows:
-                # Match iter13's prompt format. POS is upper-case in tag.
+                # Match iter13's prompt format (lemma uppercased, POS lowercase tag).
                 pos_tag = pos
                 prompt = f"Génère une définition mots-fléchés courte pour: {lemma.upper()} [{pos_tag}]"
                 f.write(json.dumps(
