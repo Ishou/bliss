@@ -62,15 +62,15 @@ function smartLineBreak(text: string): string {
 // clue that fits at one cell size fits at every cell size
 // (zoom-invariance — validated against `scripts/eval/clue_metrics.py`).
 //
-// MIN ratios match the offline gate's `GATE_RATIO_FLOOR = 0.18`: the
-// gate guarantees every shipped clue fits at this ratio, so FitText's
-// search always finds a fit at the floor or above. The prior absolute
-// pixel floor (`ABSOLUTE_MIN_PX = 11`) broke zoom-invariance below
-// ~55 px cells — font stayed pinned at 11 px while the cell kept
+// MIN ratios (0.18) are the Phase-1 search floor. The offline gate uses
+// a lower floor (`GATE_RATIO_FLOOR = 0.14` in clue_metrics.py), so
+// clues needing ratio 0.14–0.17 pass the gate and fall through to
+// Phase-2 bisection at runtime — they do not fit Phase 1. The prior
+// absolute pixel floor (`ABSOLUTE_MIN_PX = 11`) broke zoom-invariance
+// below ~55 px cells — font stayed pinned at 11 px while the cell kept
 // shrinking, so the effective ratio grew and clue text overflowed
-// small mobile cells. Removing it (in tandem with the gate-aligned
-// MIN here) restores the contract: identical visual layout at any
-// screen size.
+// small mobile cells. Removing it restores the contract: identical
+// visual layout at any screen size.
 //
 // MAX ratios are the visual ceiling for short clues. SINGLE 0.32 and
 // STACK 0.28 keep "déco"-class one-word clues from ballooning past

@@ -41,10 +41,10 @@ PADDING = 3
 REFERENCE_CELL = 100
 LINE_H = 1.05
 
-# Universal legibility floor for the gate. Matches FitText's
-# `SINGLE_RATIO_MIN`/`STACK_RATIO_MIN` in Cell.tsx (both 0.14) so the
-# gate's pass-at-floor verdict and the runtime's Phase-1 floor are the
-# same ratio: every accepted clue's longest line fits Phase 1.
+# Universal legibility floor for the gate. Intentionally below the
+# runtime's Phase-1 floor (`SINGLE_RATIO_MIN`/`STACK_RATIO_MIN = 0.18`
+# in Cell.tsx): clues whose longest line needs ratio 0.14–0.17 pass the
+# gate and are rendered by Phase-2 bisection at runtime — not Phase 1.
 #
 # Why 0.14: with Lekton's 0.5 em monospace advance, the chars-per-line
 # cap at the floor is `1 / (ratio × 0.5)`. At 0.14, that's
