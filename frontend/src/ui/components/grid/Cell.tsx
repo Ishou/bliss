@@ -411,7 +411,7 @@ const letterInput = css({
   caretColor: 'transparent',
   userSelect: 'none',
   padding: 0,
-  _focus: { bg: 'focusRing', color: 'onAccent' },
+  _focus: { bg: 'letterFocusBg', color: 'onAccent' },
   // type="search" exposes a webkit clear-X button on focus + a search-results
   // decoration affordance. Hide both — the cell is a single-character input,
   // not a real search box. (See `<input type="search">` below for why we use

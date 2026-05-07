@@ -43,10 +43,10 @@ const baseStyles = css({
 
 const variantStyles = {
   primary: css({
-    bg: 'primary.800',
+    bg: 'accentHover',
     color: 'fg',
     border: 'none',
-    _hover: { bg: 'primary.900' },
+    _hover: { bg: 'accentPressed' },
   }),
   secondary: css({
     bg: 'transparent',

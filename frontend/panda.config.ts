@@ -184,7 +184,8 @@ export default defineConfig({
         accent:         { value: '{colors.primary.400}' },  // current-clue marker, branded text
         accentText:     { value: '{colors.primary.400}' },  // alias for clarity
         accentBg:       { value: '{colors.primary.700}' },  // soft brand-tint bg (letter-in-word, hover bg)
-        accentHover:    { value: '{colors.primary.800}' },  // hover state of solid primary CTAs
+        accentHover:    { value: '{colors.primary.800}' },  // normal fill of solid primary CTAs
+        accentPressed:  { value: '{colors.primary.900}' },  // hover / active fill of solid primary CTAs
 
         // ── Brand · secondary ───────────────────────────────────────
         secondaryAccent:{ value: '{colors.secondary.500}' },
@@ -210,6 +211,7 @@ export default defineConfig({
 
         // ── Focus ───────────────────────────────────────────────────
         focusRing:      { value: '{colors.primary.500}' },  // focus-visible outline
+        letterFocusBg:  { value: '{colors.primary.500}' },  // focused-cell background fill
       },
     },
   },
