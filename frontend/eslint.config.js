@@ -18,6 +18,13 @@ export default tseslint.config(
       '*.config.{js,cjs,ts}',
       'vitest.setup.ts',
       'public/**',
+      // Playwright e2e tests use a separate tsconfig with Playwright
+      // globals (not jest-dom / vitest); skip the source-tree lint
+      // rules to avoid false positives.
+      'e2e/**',
+      'playwright.config.ts',
+      'playwright-report/**',
+      'test-results/**',
     ],
   },
   js.configs.recommended,

@@ -223,6 +223,45 @@ A second typeface is **not** introduced in v1. Reasoning: a single face
 covers the playful brief, ships in one self-hosted file, and avoids the
 "two-font contrast" trap that often makes brands feel busy.
 
+#### Amendment (2026-05-07): Lekton for definition-cell clue text
+
+A second typeface is permitted in **one** narrow surface: the clue text
+inside definition cells (`Cell.tsx defText` / `defStackText`).
+
+- **Lekton** (Google Fonts, OFL license, self-hosted via
+  `@fontsource/lekton`).
+  - Single weight, **700 bold** — clue text reads more distinctly
+    against the def-cell background, and stays legible at the small
+    `fontSize` values dense grids force. Italic is not loaded.
+  - Latin + Latin-Extended-A partitions (~14 KB woff2 total) cover all
+    French diacritics (`œ`, `ç`, `é`, `à`, `ê`, etc.).
+  - Humanist monospace — every glyph in the loaded ranges has advance
+    = 0.5 em (verified against the shipped woff2). Visually less
+    "terminal" than fixed-width design fonts; close enough to Nunito's
+    proportions to read as the same family at a glance.
+
+**Why the exception.** The offline `scripts/eval/clue_metrics.py` gate
+that decides whether each clue is `compact` (eligible for stacked
+half-cells, consumed by Kotlin `SkeletonFiller` at grid-generation time)
+previously mirrored the browser's Nunito layout in PIL. Every time a
+frontend layout constant moved (`lineHeight`, `padding`, ratios, line
+wrap behaviour) the gate silently drifted. Lekton's constant glyph
+advance lets the gate become a deterministic predicate on `len(clue)`
++ `smart_line_break` + greedy word-wrap — no font-metric measurement,
+no PIL dependency, no drift unless the *clue font itself* changes
+(captured by a single calibrated constant `LEKTON_ADVANCE_RATIO`).
+
+**Scope.** Letter-input cells, headings, lobby surfaces, the
+`CurrentCluePanel`, and the `WordSparrow` wordmark all remain in
+Nunito. The exception is strictly the two def-cell text spans.
+
+**Brand integrity.** Two-typeface contrast is normally avoided per the
+"busy brand" reasoning above; here the contrast is intentional and
+functional — clue text is information-dense, the monospace shift
+reads as "this is the puzzle's question, distinct from the answer
+field". The single-weight constraint and the OFL self-hosted policy
+match Nunito's, so the typographic system stays coherent.
+
 ### 6. Logo: type-only wordmark, designer commission deferred
 
 - **v1 logo:** the word `WordSparrow` set in Nunito Variable at the

@@ -18,7 +18,7 @@ import { FitText } from './FitText';
 //    longer of the two lines.
 //
 //  - Otherwise (single tokens, arithmetic-style "D - C", "C + C"):
-//    replace every regular space with ` ` (non-breaking space).
+//    replace every regular space with ` ` (non-breaking space).
 //    This stops CSS auto-wrap from splitting "D - C" into a 2-line
 //    layout, which FitText would otherwise prefer (2 short lines fit
 //    a much bigger font than 1 unwrapped line). Result: clue stays on
@@ -28,15 +28,15 @@ import { FitText } from './FitText';
 //   "Gaz noble"           → "Gaz\nnoble"           (2 lines)
 //   "Vitesses du rythme"  → "Vitesses\ndu rythme"  (2 lines, balanced)
 //   "Carnets de notes quotidiennes" → "Carnets de notes\nquotidiennes"
-//   "D - C", "C + C"      → "D - C"      (1 line, no wrap)
-//   "à l'œil"             → "à l'œil"          (1 line, only one real word)
+//   "D - C", "C + C"      → "D - C"      (1 line, no wrap)
+//   "à l'œil"             → "à l'œil"          (1 line, only one real word)
 const REAL_WORD = /[A-Za-zÀ-ÿ]/;
 function smartLineBreak(text: string): string {
   const realWords = text
     .split(/\s+/)
     .filter((t) => t.length >= 2 && REAL_WORD.test(t));
   if (realWords.length < 2) {
-    return text.replace(/ /g, ' ');
+    return text.replace(/ /g, '\u00a0');
   }
   const spaces: number[] = [];
   for (let i = 0; i < text.length; i++) {
@@ -62,32 +62,28 @@ function smartLineBreak(text: string): string {
 // clue that fits at one cell size fits at every cell size
 // (zoom-invariance — validated against `scripts/eval/clue_metrics.py`).
 //
-// Tightened post-PR-#195: the wide range (0.18–0.50) inherited from
-// the small-cell era produced jarring per-cell variance once cells
-// were ~80–100 px each — short clues like "déco" ballooned to 50 % of
-// cell width while long ones like "psycho" / "gagnée" / "posta" had to
-// drop to FitText's `ABSOLUTE_MIN_PX` floor (formerly 6 px) because
-// the ratio floor was already too aggressive for stacked half-cells.
-// Tighter bands narrow the visual delta:
+// MIN ratios (0.18) are the Phase-1 search floor. The offline gate uses
+// a lower floor (`GATE_RATIO_FLOOR = 0.14` in clue_metrics.py), so
+// clues needing ratio 0.14–0.17 pass the gate and fall through to
+// Phase-2 bisection at runtime — they do not fit Phase 1. The prior
+// absolute pixel floor (`ABSOLUTE_MIN_PX = 11`) broke zoom-invariance
+// below ~55 px cells — font stayed pinned at 11 px while the cell kept
+// shrinking, so the effective ratio grew and clue text overflowed
+// small mobile cells. Removing it restores the contract: identical
+// visual layout at any screen size.
 //
-//   SINGLE 0.22–0.32 — single-clue cells have full vertical space, so
-//     they tolerate a slightly higher floor (0.22 ≈ 22 px on a 100 px
-//     cell) and a moderate ceiling (0.32 ≈ 32 px) that's still visibly
-//     bigger than the floor without dwarfing neighbours.
-//   STACK 0.20–0.28 — stacked half-cells have only ~½ the height of a
-//     single-clue cell, so both ends drop a notch: lower ceiling so
-//     the short top half doesn't shout over the bottom half, slightly
-//     lower floor because two-line stacked text fitting at 0.20 is
-//     already legible (and FitText's absolute floor catches the worst
-//     cases).
+// MAX ratios are the visual ceiling for short clues. SINGLE 0.32 and
+// STACK 0.28 keep "déco"-class one-word clues from ballooning past
+// their neighbours; STACK is one notch lower because stacked half-
+// cells have ~½ the vertical room and a 0.32-of-width font would
+// crowd the top/bottom edges.
 //
-// FitText's `ABSOLUTE_MIN_PX` (also raised in the same PR — 6 → 11) is
-// the hard floor for clues too long for the comfortable range —
-// clipping past it via `overflow: hidden` is preferable to
-// sub-readable text.
-const SINGLE_RATIO_MIN = 0.22;
+// Visual delta inside a single grid widens to 0.32 / 0.18 ≈ 1.78×
+// (vs PR-#195's tighter 0.22–0.32 band). Trade accepted in exchange
+// for full zoom-invariance.
+const SINGLE_RATIO_MIN = 0.18;
 const SINGLE_RATIO_MAX = 0.32;
-const STACK_RATIO_MIN = 0.20;
+const STACK_RATIO_MIN = 0.18;
 const STACK_RATIO_MAX = 0.28;
 
 const cellBase = css({
@@ -112,7 +108,7 @@ const defCell = css({
   bg: 'definition',
   color: 'fg',
   containerType: 'inline-size',
-  lineHeight: '1.1',
+  lineHeight: '1.05',
   padding: '3px',
   textAlign: 'center',
   zIndex: 1,
@@ -138,18 +134,50 @@ const defCellCurrentDown = css({ borderTop: '3px solid token(colors.leaf.700)', 
 // Single-clue text: font size is auto-fit at runtime (FitText) — the inline
 // font-size set by FitText overrides any value here. We still need flex:1 +
 // alignSelf so the span fills the cell (FitText measures clientWidth/
-// clientHeight on this very element). `overflowWrap: break-word` lets a
-// rare long unbroken French word split as a last resort. `overflow: hidden`
-// is a safety net — with `clue_metrics.fits_single_cell` enforced upstream
-// this should never engage on shipped data, but if it does the cell stays
-// inside its borders rather than bleeding into neighbours.
+// clientHeight on this very element).
+//
+// `hyphens: auto` enables CLDR-pattern French syllabic hyphenation
+// ("pré-sen-ter", "syl-la-bique"), inherited from the `lang="fr"` set
+// on `<html>` and on the grid root. With hyphenation the fits-test
+// passes at larger fontSize than it would otherwise (a word that
+// wouldn't fit on a line gets a syllabic break instead of being
+// rejected), so the algorithm trades fewer hyphens for bigger text
+// only when no hyphenated layout fits at the current size. Preferred
+// over the older "shrink to fit" path that produced microscopic text;
+// preferred over `overflowWrap: break-word` which breaks at arbitrary
+// character boundaries (no awareness of syllables).
+//
+// `overflowWrap: break-word` is kept as a last-ditch fallback for
+// content that has no hyphenation points (e.g. unusual proper nouns
+// or all-caps acronyms). `overflow: hidden` clips honestly when even
+// Phase-2 bisection (floor = min × PHASE2_FLOOR_FACTOR × cellWidth)
+// can't make it fit.
 const defText = css({
   flex: 1,
   alignSelf: 'stretch',
   display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
+  // `safe center` keeps centered text aligned to the start of the
+  // axis when content is taller/wider than the container, instead of
+  // the default `center` which symmetrically overflows past both edges
+  // of the box and leaks visually past `overflow: hidden` ancestors
+  // (defStack contains both halves, so a top-stacked clue's symmetric
+  // bottom-leak would paint into the bottom-stack's space). With
+  // `safe`: short text stays centered; tall text top-aligns and clips
+  // honestly at the bottom. Browser support: Chrome 87+, Firefox 63+,
+  // Safari 16+ — covered by the project's modern-browsers stance.
+  alignItems: 'safe center',
+  justifyContent: 'safe center',
   textAlign: 'center',
+  // `fontFamily: 'mono'` (Lekton) is the load-bearing piece of the
+  // gate-decoupling refactor: Lekton's constant glyph advance lets
+  // `scripts/eval/clue_metrics.py` be a deterministic predicate on
+  // `len(clue)` rather than mirroring the browser's PIL/Nunito layout.
+  // See ADR-0005 §5 amendment. Bold (700) is the only Lekton weight
+  // loaded — clues read more distinctly bold at the small fontSizes
+  // dense grids force.
+  fontFamily: 'mono',
+  fontWeight: 700,
+  hyphens: 'auto',
   overflowWrap: 'break-word',
   wordBreak: 'normal',
   overflow: 'hidden',
@@ -297,13 +325,18 @@ const defStack = css({
   width: '100%',
   height: '100%',
   gap: '1px',
-  lineHeight: '1.1',
+  lineHeight: '1.05',
   overflow: 'hidden',
 });
 const defStackClue = css({
   display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
+  // Default `alignItems: stretch` (cross-axis) on purpose — the
+  // FitText span inside (defStackText) needs to fill the half-cell
+  // vertically so its OWN `overflow: hidden` clips text taller than
+  // the half. If we centered the span here, it would shrink to
+  // content size and a multi-line clue's overflow would paint into
+  // the sibling half-cell's slot via defStack's shared overflow box.
+  // Inner text centering (safe) lives on defStackText.
   flex: 1,
   minHeight: 0,
   overflow: 'hidden',
@@ -317,17 +350,36 @@ const defStackClue = css({
   '&:not(:first-child)': { borderTop: '1px solid rgba(27, 40, 69, 0.25)' },
 });
 const defStackClueCurrent = css({ color: 'leaf.700' });
-// Stacked-clue text: same overflow safety net as defText.
-// `whiteSpace: 'pre-line'` honours the explicit `\n` inserted by
-// `smartLineBreak` (one balanced split for multi-word clues), so
+// Stacked-clue text: same wrap policy as defText. `hyphens: auto`
+// (lang="fr" inherited) is even more important on stacked half-cells
+// because they're vertically tight — without syllabic breaks, long
+// words like "quotidiennes" or "présentation" force the algorithm to
+// drop near ABSOLUTE_MIN_PX even when there's plenty of horizontal
+// room. `whiteSpace: 'pre-line'` honours the explicit `\n` inserted
+// by `smartLineBreak` (one balanced split for multi-word clues), so
 // multi-word clues use the vertical space FitText would otherwise
 // leave empty. Line-height inherits the cell's 1.1 for legibility.
 const defStackText = css({
   flex: 1,
   display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
+  // `safe center` — see defText for rationale.
+  alignItems: 'safe center',
+  justifyContent: 'safe center',
+  // Flex items default to `min-height: auto` (i.e. content-sized),
+  // which lets a multi-line span stretch *beyond* its flex parent's
+  // allotted height — defeating the half-cell's overflow:hidden by
+  // making the span itself the leaking element. `minHeight: 0` opts
+  // out so the span shrinks to its parent's height regardless of
+  // content; overflow:hidden then clips the excess inside the span,
+  // invisibly. Same trick lives on defStackClue's `minHeight: 0`.
+  minHeight: 0,
+  minWidth: 0,
   textAlign: 'center',
+  // Same monospace + bold rationale as `defText` — see comment there
+  // and ADR-0005 §5 amendment.
+  fontFamily: 'mono',
+  fontWeight: 700,
+  hyphens: 'auto',
   overflowWrap: 'break-word',
   wordBreak: 'normal',
   overflow: 'hidden',
