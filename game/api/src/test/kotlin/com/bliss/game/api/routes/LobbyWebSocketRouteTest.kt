@@ -766,9 +766,7 @@ class LobbyWebSocketRouteTest {
             val lobbyId = harness.seedLobby()
             harness.startGame(lobbyId)
 
-            // Part 1: cellUpdate -> recordKeystroke -> Typing(true) emitted.
-            // Re-joining the owner (already in the lobby) produces no playerJoined event, so we
-            // rely on cellUpdated as the sync point instead.
+            // Part 1: cellUpdate -> recordKeystroke -> Typing(true); no playerJoined on re-join, so cellUpdated is the sync point.
             coroutineScope {
                 harness.client.webSocket("/v1/lobbies/${lobbyId.value}/ws") {
                     receiveText() // initial snapshot
@@ -780,8 +778,7 @@ class LobbyWebSocketRouteTest {
                     assertThat(broadcaster.eventsOfType<LobbyEvent.Typing>())
                         .contains(LobbyEvent.Typing(SessionId(sessionA), typing = true))
 
-                    // Part 2: cellFocus -> recordFocus -> clears idle state (Idle(false) emitted).
-                    // Advance the presence clock past both thresholds and tick to drive idle state.
+                    // Part 2: cellFocus -> recordFocus -> Idle(false); tick to drive idle state first.
                     presenceClock.advance(java.time.Duration.ofMillis(100))
                     aggregator.tickOnce()
                     broadcaster.clear()
@@ -796,15 +793,13 @@ class LobbyWebSocketRouteTest {
                 }
             }
 
-            // Part 3: socket close -> recordDisconnect -> ConnectionLost emitted.
-            // Clear any events from Part 1/2's socket close before starting the next assertion.
+            // Part 3: close triggers recordDisconnect -> ConnectionLost; Part 1/2 events cleared above.
             broadcaster.clear()
             coroutineScope {
                 harness.client.webSocket("/v1/lobbies/${lobbyId.value}/ws") {
                     receiveText() // initial snapshot
                     sendText("""{"type":"joinLobby","sessionId":"$sessionA","pseudonym":"$pseudoA"}""")
-                    // Use cellFocus as a sync point: presenceUpdated confirms the server processed
-                    // joinLobby (session bound) before we exit and trigger the finally block.
+                    // cellFocus sync: presenceUpdated confirms session is bound before the finally fires.
                     sendText("""{"type":"cellFocus","row":0,"column":0,"direction":"across"}""")
                     drainUntil("presenceUpdated")
                     // Exit block - socket closes, finally fires recordDisconnect.
@@ -951,8 +946,7 @@ class LobbyWebSocketRouteTest {
                         repo,
                         presenceAggregator = presenceAggregator,
                         backgroundScope = backgroundScope,
-                        // Long grace keeps the lobby alive between Part 1/2 and Part 3; the timer
-                        // is cancelled by backgroundJob.cancel() before it fires.
+                        // 30s grace: keeps lobby alive across parts; cancelled by backgroundJob.cancel().
                         reconnectGrace = 30.seconds,
                     )
                 }

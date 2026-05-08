@@ -149,11 +149,7 @@ sealed class ServerToClientFrame {
         val direction: String?,
     ) : ServerToClientFrame()
 
-    /**
-     * Boolean state edge — peer started ([typing] = true) or stopped ([typing] =
-     * false) receiving keystrokes. Mirrors `TypingPayload` in
-     * `game/api/asyncapi.yaml`. Ephemeral; carries no domain meaning.
-     */
+    /** Boolean typing-edge for a peer; [typing]=true on keystroke, false when the trailing-edge gap expires. */
     @Serializable
     @SerialName("typing")
     data class Typing(
@@ -161,11 +157,7 @@ sealed class ServerToClientFrame {
         val typing: Boolean,
     ) : ServerToClientFrame()
 
-    /**
-     * Boolean state edge — peer crossed the inactivity threshold ([idle] =
-     * true) or returned to activity ([idle] = false). Mirrors `IdlePayload`
-     * in `game/api/asyncapi.yaml`. Independent of [ConnectionLost].
-     */
+    /** Idle-edge for a peer; independent of [ConnectionLost]. */
     @Serializable
     @SerialName("idle")
     data class Idle(
@@ -173,25 +165,14 @@ sealed class ServerToClientFrame {
         val idle: Boolean,
     ) : ServerToClientFrame()
 
-    /**
-     * Graceful disconnect — peer's WebSocket closed but the slot is held
-     * during the server-side grace window before any `playerLeft` follows.
-     * Mirrors `ConnectionLostPayload`. Distinct from [PlayerLeft]: clients
-     * grey-out the roster pill on this event without removing the slot.
-     */
+    /** Peer's WebSocket closed; slot held during grace window. Distinct from [PlayerLeft] — clients grey-out, don't remove. */
     @Serializable
     @SerialName("connectionLost")
     data class ConnectionLost(
         val sessionId: String,
     ) : ServerToClientFrame()
 
-    /**
-     * Server-authoritative cursor relocation. Emitted when an answer
-     * validation locked cells under a peer's cursor; clients apply
-     * unconditionally. Mirrors `CursorBumpedPayload`. `direction` is the
-     * raw wire enum value (`across` | `down`); kept as a String here so
-     * this DTO file stays free of domain imports.
-     */
+    /** Server-authoritative cursor bump. direction kept as String to avoid domain imports in this DTO file. */
     @Serializable
     @SerialName("cursorBumped")
     data class CursorBumped(
