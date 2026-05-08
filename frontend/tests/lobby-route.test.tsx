@@ -164,6 +164,11 @@ const renderLobby = (overrides: RenderLobbyOverrides) => {
         getSessionId: () => 'test-session-id',
         clearLocalSession: () => {},
       },
+      soloEntriesStore: {
+        load: () => [],
+        save: () => {},
+        clearForPuzzle: () => {},
+      },
       lobbyClient,
       gameClient,
       getSession: () => ({ sessionId, pseudonym }),

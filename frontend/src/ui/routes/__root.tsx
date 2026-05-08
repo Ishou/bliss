@@ -3,6 +3,7 @@ import { css } from 'styled-system/css';
 import type { PuzzleRepository, PuzzleSolver } from '@/application';
 import type { GameClient, LobbyClient } from '@/application/game';
 import type { SessionClient } from '@/application/session/SessionClient';
+import type { SoloEntriesStore } from '@/application/solo/SoloEntriesStore';
 import type { Pseudonym, SessionId } from '@/domain/game';
 
 // Router context surface — every route loader receives this object as
@@ -30,6 +31,7 @@ export interface AppRouterContext {
   readonly puzzleRepository: PuzzleRepository;
   readonly puzzleSolver: PuzzleSolver;
   readonly sessionClient: SessionClient;
+  readonly soloEntriesStore: SoloEntriesStore;
   readonly lobbyClient?: LobbyClient;
   readonly gameClient?: GameClient;
   readonly getSession?: () => AppSession;

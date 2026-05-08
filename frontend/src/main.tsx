@@ -22,6 +22,13 @@ import {
   getPseudonym,
   setPseudonym,
 } from '@/infrastructure/session/localStorageSession';
+import {
+  clearAllSoloEntries,
+  clearSoloEntriesForPuzzle,
+  loadSoloEntries,
+  saveSoloLetter,
+} from '@/infrastructure/session/localStorageSolo';
+import type { SoloEntriesStore } from '@/application/solo/SoloEntriesStore';
 import type { SessionClient } from '@/application/session/SessionClient';
 import { registerServiceWorker } from '@/infrastructure/pwa';
 import type { Pseudonym, SessionId } from '@/domain/game';
@@ -84,7 +91,19 @@ enableMocks()
     const sessionClient: SessionClient = {
       ...createHttpSessionClient({ baseUrl: gridApiBaseUrl }),
       getSessionId: getOrCreateSessionId,
-      clearLocalSession: clearSession,
+      clearLocalSession: () => {
+        clearSession();
+        clearAllSoloEntries();
+      },
+    };
+
+    // Solo-mode letter persistence (v1) — closures bind the localStorage
+    // helpers behind the application-layer port so `ui/` never touches
+    // `infrastructure/` directly (boundary rule per ADR-0002 §7).
+    const soloEntriesStore: SoloEntriesStore = {
+      load: loadSoloEntries,
+      save: saveSoloLetter,
+      clearForPuzzle: clearSoloEntriesForPuzzle,
     };
 
     // Cookieless Matomo tracker (ADR-0025). No-op when env vars are unset
@@ -120,13 +139,14 @@ enableMocks()
             puzzleRepository,
             puzzleSolver,
             sessionClient,
+            soloEntriesStore,
             lobbyClient,
             gameClient,
             getSession,
             setPseudonym: setPersistedPseudonym,
           };
         })()
-      : { puzzleRepository, puzzleSolver, sessionClient };
+      : { puzzleRepository, puzzleSolver, sessionClient, soloEntriesStore };
     const router = createAppRouter({ context, multiplayer });
 
     // Track page views on every route resolution. `onResolved` fires after

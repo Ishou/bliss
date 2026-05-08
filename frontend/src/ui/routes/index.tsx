@@ -1,5 +1,5 @@
 import { createRoute, useNavigate, useRouter } from '@tanstack/react-router';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { css } from 'styled-system/css';
 import { normalizeAnswerLetter, type Position, type Puzzle } from '@/domain';
 import { LobbyClientError } from '@/application/game';
@@ -161,7 +161,7 @@ function PageShell({ children }: { children: React.ReactNode }) {
 function HomePage() {
   const puzzle = Route.useLoaderData() as Puzzle;
   const router = useRouter();
-  const { puzzleSolver } = Route.useRouteContext();
+  const { puzzleSolver, soloEntriesStore } = Route.useRouteContext();
   const validation = usePuzzleValidation(puzzle, puzzleSolver);
   const hint = useHintRequest(puzzle.id, puzzle.hintsAllowed, puzzleSolver);
 
@@ -188,12 +188,32 @@ function HomePage() {
   // the only seam that clears the DOM.
   const [refreshCount, setRefreshCount] = useState(0);
   const handleRefresh = useCallback(() => {
+    // Reset the saved entries for the current puzzle BEFORE bumping the
+    // remount key — the new `initialEntries` memo reads from storage on
+    // the next render, so storage must already be cleared by then.
+    soloEntriesStore.clearForPuzzle(puzzle.id);
     setRefreshCount((n) => n + 1);
-    // The Grid API is stateless (per the §404 note in
-    // `grid/api/openapi.yaml`) — invalidating refetches and yields a
-    // fresh puzzle. Remount + new puzzle in one beat.
     void router.invalidate();
-  }, [router]);
+  }, [router, soloEntriesStore, puzzle.id]);
+
+  // Hydrate the Grid from the previous solo session. The `void
+  // refreshCount` reference forces a fresh storage read after the
+  // "Actualiser" CTA bumps the counter (and clears the entries),
+  // without making the body actually depend on the value.
+  const initialEntries = useMemo(() => {
+    void refreshCount;
+    return soloEntriesStore.load(puzzle.id);
+  }, [puzzle.id, refreshCount, soloEntriesStore]);
+
+  // Persist every cell change. The Grid hook normalizes keystrokes
+  // before firing this callback (single uppercase letter or null on
+  // delete), so the storage adapter receives clean values.
+  const handleCellChange = useCallback(
+    (row: number, col: number, letter: string | null) => {
+      soloEntriesStore.save(puzzle.id, row, col, letter);
+    },
+    [soloEntriesStore, puzzle.id],
+  );
 
   const isComplete =
     validation.totalLetterCells > 0 &&
@@ -248,6 +268,8 @@ function HomePage() {
           validatedPositions={validation.validated}
           errorPositions={validation.errors}
           onLocalFocusChange={handleLocalFocusChange}
+          initialEntries={initialEntries}
+          onCellChange={handleCellChange}
         />
       </div>
       <div className={bottomRowStyles}>
