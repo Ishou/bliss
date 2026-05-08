@@ -34,5 +34,11 @@ ingress:
     cert-manager.io/cluster-issuer: "letsencrypt-prod"
     external-dns.alpha.kubernetes.io/hostname: "game.wordsparrow.io"
     external-dns.alpha.kubernetes.io/target: "178.105.38.131"
+    # Per-IP rate limiting at the ingress (leaky-bucket). REST is light
+    # (lobby create/get); WebSockets are long-lived so `limit-connections`
+    # is sized to allow several browser tabs but cap abuse. Tunable.
+    nginx.ingress.kubernetes.io/limit-rps: "5"
+    nginx.ingress.kubernetes.io/limit-burst-multiplier: "5"
+    nginx.ingress.kubernetes.io/limit-connections: "30"
 # Bootstrapped via `kubectl create secret generic bliss-game-api-env ...` (ADR-0009 §10).
 envFromSecret: "bliss-game-api-env"
