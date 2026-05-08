@@ -30,3 +30,10 @@ ingress:
   annotations:
     cert-manager.io/cluster-issuer: "letsencrypt-prod"
     external-dns.alpha.kubernetes.io/hostname: "analytics.wordsparrow.io"
+    # Per repo rule (`docs/deploy.md` §"Floating IP / DNS records"): every
+    # Ingress sets the target annotation explicitly to the Hetzner floating IP.
+    # Without it, external-dns reads the Ingress's
+    # `.status.loadBalancer.ingress[0].ip` — which is the ingress-nginx Service
+    # ClusterIP (10.43.x.x) on this cluster — and publishes that internal IP
+    # to Cloudflare. The hostname then resolves to an unroutable IP.
+    external-dns.alpha.kubernetes.io/target: "178.105.38.131"

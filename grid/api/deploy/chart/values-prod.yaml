@@ -15,6 +15,13 @@ ingress:
   annotations:
     cert-manager.io/cluster-issuer: "letsencrypt-prod"
     external-dns.alpha.kubernetes.io/hostname: "api.wordsparrow.io"
+    # Per repo rule (`docs/deploy.md` §"Floating IP / DNS records"): every
+    # Ingress in this repo sets `target` explicitly to the Hetzner floating
+    # IP. Currently works without it because the platform chart was upgraded
+    # with `--set ingress-nginx.controller.extraArgs.publish-status-address=...`,
+    # but that's brittle — a future re-install without the override silently
+    # publishes a ClusterIP. Pinning per-Ingress removes the dependency.
+    external-dns.alpha.kubernetes.io/target: "178.105.38.131"
 postgres:
   cluster:
     # HA per ADR-0009 §3 + docs/local-development.md divergence table.

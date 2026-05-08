@@ -410,14 +410,84 @@ Both `--set` flags are required:
 - `ingress-nginx.controller.extraArgs.publish-status-address` — the
   Hetzner Floating IP that ingress-nginx writes back into each
   Ingress's `.status.loadBalancer.ingress[0].ip`. external-dns reads
-  that field to decide which DNS A record to publish, so pinning the
-  status address to the floating IP is what makes external-dns
-  auto-target it without per-Ingress
-  `external-dns.alpha.kubernetes.io/target` annotations. The value
-  isn't known until `tofu apply` reserves the IP, so the chart cannot
-  carry it as a static default; passing it at install time keeps the
-  values file generic. Re-run the same `helm upgrade` whenever the
-  floating IP rotates.
+  that field to decide which DNS A record to publish. **This is a
+  fallback only.** The actual rule is in §"Floating IP / DNS records"
+  below: every Ingress sets the target annotation explicitly. The
+  install-time `--set` here is belt-and-braces in case someone
+  forgets the annotation; if you ever drop the per-Ingress annotation
+  pattern, you must re-run this `helm upgrade` whenever the floating
+  IP rotates.
+
+### Floating IP / DNS records
+
+> **Rule.** Every `Ingress` resource in this repo MUST carry
+> `external-dns.alpha.kubernetes.io/target: <floating-ip>` on its
+> annotations.
+
+This trap has bitten three deploys (`grid/api` initially, `game/api`,
+and `infra/matomo/`). Each time the symptom is the same: the public
+hostname (`api.wordsparrow.io`, `game.wordsparrow.io`,
+`analytics.wordsparrow.io`) resolves to a Kubernetes ClusterIP
+(`10.43.x.x`) — unroutable from the internet — and the URL times
+out. Each time the diagnosis is identical: external-dns reads the
+Ingress's `.status.loadBalancer.ingress[0].ip`, ingress-nginx wrote
+its own Service ClusterIP into that field (because
+`publish-status-address` wasn't set or was forgotten on a
+re-install), and external-dns dutifully published the wrong record
+to Cloudflare.
+
+The fix:
+
+```yaml
+# In values-prod.yaml of every API / app chart that exposes an Ingress.
+ingress:
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    external-dns.alpha.kubernetes.io/hostname: "<host>.wordsparrow.io"
+    external-dns.alpha.kubernetes.io/target: "178.105.38.131"  # Hetzner floating IP
+```
+
+The `target` annotation overrides whatever ingress-nginx wrote into
+the status field. external-dns uses the annotation directly. The
+chart is then independent of platform-chart configuration drift.
+
+Find the floating IP:
+
+```sh
+tofu -chdir=terraform/k8s/ output -raw ingress_floating_ip
+# or
+hcloud floating-ip list
+```
+
+If the floating IP rotates (it shouldn't — it survives node
+replacement per ADR-0012), update every chart's `values-prod.yaml`
+in the same PR. There is currently one floating IP shared across all
+three contexts; the value is **not secret** (it appears in DNS
+records anyway).
+
+**Diagnosing the wrong-IP failure:**
+
+```sh
+dig +short <host>.wordsparrow.io
+# expected: the floating IP (178.105.38.131 today)
+# wrong:   a 10.43.x.x ClusterIP
+
+kubectl -n <ns> get ingress <name>
+# ADDRESS column shows what external-dns will publish.
+# Should be the floating IP.
+
+kubectl -n platform logs deploy/external-dns --tail=50 | grep <host>
+# external-dns should log "CREATE" for the right IP.
+```
+
+**Why we don't bake it into the chart as a hardcoded default:** the
+floating IP is provisioner-specific. The current Hetzner setup uses
+178.105.38.131; an alternate provider would have a different value.
+Keeping it in `values-prod.yaml` makes the env-specific override
+explicit. **But** the requireness is enforced — every chart in this
+repo carries the annotation in its prod values today. If you ship
+a new chart without it, you will hit this trap; reviewers should
+flag the omission.
 
 ### 3. Verify
 

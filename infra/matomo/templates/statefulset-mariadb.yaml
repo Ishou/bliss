@@ -18,13 +18,29 @@ spec:
         app.kubernetes.io/component: mariadb
     spec:
       securityContext:
-        # mariadb image runs as uid 999.
+        # mariadb image runs as uid 999. fsGroup ensures the PV is group-writable.
         fsGroup: 999
+        # K8s sets the volume's GID at mount time so the entrypoint never needs
+        # chown. Cheaper than recursive chmod on every restart.
+        fsGroupChangePolicy: OnRootMismatch
       containers:
         - name: mariadb
           image: {{ include "matomo.mariadb.image" . | quote }}
           imagePullPolicy: {{ .Values.mariadb.image.pullPolicy }}
-          securityContext: {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+          # mariadb's entrypoint, when started as root, calls
+          # `find /var/lib/mysql ! -user mysql -exec chown mysql {} +`. With
+          # `capabilities: drop: [ALL]` from the shared containerSecurityContext,
+          # CAP_CHOWN is gone and the entrypoint crashes (Operation not
+          # permitted). Running as uid 999 directly skips the chown branch
+          # entirely; fsGroup above ensures the volume is already writable.
+          securityContext:
+            runAsUser: 999
+            runAsGroup: 999
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+            readOnlyRootFilesystem: false
           ports:
             - {name: mysql, containerPort: 3306, protocol: TCP}
           {{- with .Values.mariadb.envFromSecret }}
