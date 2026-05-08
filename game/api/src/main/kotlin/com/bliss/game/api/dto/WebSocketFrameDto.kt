@@ -149,6 +149,58 @@ sealed class ServerToClientFrame {
         val direction: String?,
     ) : ServerToClientFrame()
 
+    /**
+     * Boolean state edge — peer started ([typing] = true) or stopped ([typing] =
+     * false) receiving keystrokes. Mirrors `TypingPayload` in
+     * `game/api/asyncapi.yaml`. Ephemeral; carries no domain meaning.
+     */
+    @Serializable
+    @SerialName("typing")
+    data class Typing(
+        val sessionId: String,
+        val typing: Boolean,
+    ) : ServerToClientFrame()
+
+    /**
+     * Boolean state edge — peer crossed the inactivity threshold ([idle] =
+     * true) or returned to activity ([idle] = false). Mirrors `IdlePayload`
+     * in `game/api/asyncapi.yaml`. Independent of [ConnectionLost].
+     */
+    @Serializable
+    @SerialName("idle")
+    data class Idle(
+        val sessionId: String,
+        val idle: Boolean,
+    ) : ServerToClientFrame()
+
+    /**
+     * Graceful disconnect — peer's WebSocket closed but the slot is held
+     * during the server-side grace window before any `playerLeft` follows.
+     * Mirrors `ConnectionLostPayload`. Distinct from [PlayerLeft]: clients
+     * grey-out the roster pill on this event without removing the slot.
+     */
+    @Serializable
+    @SerialName("connectionLost")
+    data class ConnectionLost(
+        val sessionId: String,
+    ) : ServerToClientFrame()
+
+    /**
+     * Server-authoritative cursor relocation. Emitted when an answer
+     * validation locked cells under a peer's cursor; clients apply
+     * unconditionally. Mirrors `CursorBumpedPayload`. `direction` is the
+     * raw wire enum value (`across` | `down`); kept as a String here so
+     * this DTO file stays free of domain imports.
+     */
+    @Serializable
+    @SerialName("cursorBumped")
+    data class CursorBumped(
+        val sessionId: String,
+        val row: Int,
+        val column: Int,
+        val direction: String,
+    ) : ServerToClientFrame()
+
     @Serializable
     @SerialName("gameSolved")
     data class GameSolved(

@@ -7,6 +7,7 @@ import com.bliss.game.api.dto.ClientToServerFrame
 import com.bliss.game.api.dto.ServerToClientFrame
 import com.bliss.game.application.ports.LobbyEvent
 import com.bliss.game.application.ports.LobbyRepository
+import com.bliss.game.application.usecases.PresenceAggregator
 import com.bliss.game.application.usecases.UseCaseOutcome
 import com.bliss.game.domain.GridConfig
 import com.bliss.game.domain.Letter
@@ -83,6 +84,7 @@ fun Route.lobbyWebSocketRoute(
     sessionManager: SessionManager,
     useCases: LobbyUseCases,
     repo: LobbyRepository,
+    presenceAggregator: PresenceAggregator? = null,
     backgroundScope: CoroutineScope = defaultBackgroundScope,
     reconnectGrace: Duration = DEFAULT_RECONNECT_GRACE,
 ) {
@@ -118,11 +120,25 @@ fun Route.lobbyWebSocketRoute(
                 if (frame !is Frame.Text) continue
                 val parsed = parseFrameOrError(frame.readText()) ?: continue
                 memberSessionId =
-                    handleFrame(parsed, lobbyId, useCases, sessionManager, this, memberSessionId)
+                    handleFrame(
+                        parsed,
+                        lobbyId,
+                        useCases,
+                        sessionManager,
+                        this,
+                        memberSessionId,
+                        presenceAggregator,
+                    )
             }
         } finally {
             val boundSessionId = sessionManager.unregister(lobbyId, this) ?: memberSessionId
             if (boundSessionId != null) {
+                // Tell the presence aggregator the socket is gone. Fires a
+                // `connectionLost` event immediately; the session is held in
+                // the aggregator for the grace window, after which `tickOnce`
+                // forgets it. Distinct from `playerLeft`, which the
+                // reconnect-grace coroutine below schedules separately.
+                presenceAggregator?.recordDisconnect(lobbyId, SessionId(boundSessionId))
                 scheduleReconnectGrace(
                     backgroundScope = backgroundScope,
                     sessionManager = sessionManager,
@@ -181,6 +197,7 @@ private suspend fun DefaultWebSocketServerSession.handleFrame(
     sessionManager: SessionManager,
     session: DefaultWebSocketServerSession,
     memberSessionId: String?,
+    presenceAggregator: PresenceAggregator?,
 ): String? {
     val effectiveId =
         if (memberSessionId.isNullOrEmpty()) null else memberSessionId
@@ -258,6 +275,10 @@ private suspend fun DefaultWebSocketServerSession.handleFrame(
                     letter,
                 )
             }
+            // Keystroke fires the rising typing edge once per burst; the
+            // trailing edge fires from PresenceAggregator.tickOnce after the
+            // configured idle gap. Also clears any pending idle / disconnect.
+            presenceAggregator?.recordKeystroke(lobbyId, SessionId(sid))
             memberSessionId
         }
         is ClientToServerFrame.CellFocus -> {
@@ -283,6 +304,9 @@ private suspend fun DefaultWebSocketServerSession.handleFrame(
                     direction = parsed.direction,
                 ),
             )
+            // Focus is activity for the idle timer (and clears disconnect
+            // grace) but does NOT fire a typing edge — pure presence signal.
+            presenceAggregator?.recordFocus(lobbyId, SessionId(sid))
             memberSessionId
         }
         ClientToServerFrame.LeaveLobby -> {

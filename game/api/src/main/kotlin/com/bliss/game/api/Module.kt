@@ -8,6 +8,7 @@ import com.bliss.game.application.usecases.CreateLobbyUseCase
 import com.bliss.game.application.usecases.JoinLobbyUseCase
 import com.bliss.game.application.usecases.LeaveLobbyUseCase
 import com.bliss.game.application.usecases.LobbyGarbageCollector
+import com.bliss.game.application.usecases.PresenceAggregator
 import com.bliss.game.application.usecases.RenameSelfUseCase
 import com.bliss.game.application.usecases.SetGridConfigUseCase
 import com.bliss.game.application.usecases.StartGameUseCase
@@ -181,9 +182,25 @@ fun Application.module() {
     val gcJob = gc.run(this)
     monitor.subscribe(ApplicationStopped) { gcJob.cancel() }
 
+    // Presence aggregator (multiplayer-highlights wave). Edge events
+    // (`typing`, `idle`, `connectionLost`, `cursorBumped`) flow through the
+    // WebSocket-backed broadcaster directly into `SessionManager.broadcast`,
+    // mirroring the existing fan-out path used by every other server frame.
+    // The 1s tick cadence is the resolution at which the trailing typing
+    // edge (~1.5s default) and the idle threshold (~30s) are observable;
+    // sub-second jitter on the tick has no visible UX impact on either.
+    val presenceBroadcaster = WebSocketPresenceBroadcaster(sessionManager)
+    val presenceAggregator =
+        PresenceAggregator(
+            clock = SystemClock,
+            broadcaster = presenceBroadcaster,
+        )
+    val presenceJob = presenceAggregator.run(this, tickInterval = Duration.ofSeconds(1))
+    monitor.subscribe(ApplicationStopped) { presenceJob.cancel() }
+
     routing {
         health(APP_VERSION)
         lobbies(createLobby = useCases.createLobby, repo = lobbyRepository, sessionManager = sessionManager)
-        lobbyWebSocketRoute(sessionManager, useCases, lobbyRepository)
+        lobbyWebSocketRoute(sessionManager, useCases, lobbyRepository, presenceAggregator)
     }
 }

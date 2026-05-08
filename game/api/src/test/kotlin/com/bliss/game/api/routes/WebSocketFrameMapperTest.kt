@@ -4,7 +4,10 @@ import assertk.assertThat
 import assertk.assertions.containsExactly
 import assertk.assertions.isEqualTo
 import assertk.assertions.isNotNull
+import com.bliss.game.api.dto.ServerToClientFrame
+import com.bliss.game.application.ports.LobbyEvent
 import com.bliss.game.domain.CellEntry
+import com.bliss.game.domain.GameClueDirection
 import com.bliss.game.domain.GamePuzzle
 import com.bliss.game.domain.GameSession
 import com.bliss.game.domain.GridConfig
@@ -72,6 +75,61 @@ class WebSocketFrameMapperTest {
         val game = frame.game
         assertThat(game).isNotNull()
         assertThat(game!!.entries).isEqualTo(emptyList<Any>())
+    }
+
+    @Test
+    fun `LobbyEvent Typing maps to ServerToClientFrame Typing with the same boolean`() {
+        val frame = LobbyEvent.Typing(ownerId, typing = true).toFrameOrNull()
+        assertThat(frame).isNotNull()
+        val typed = frame as ServerToClientFrame.Typing
+        assertThat(typed.sessionId).isEqualTo(ownerId.value)
+        assertThat(typed.typing).isEqualTo(true)
+    }
+
+    @Test
+    fun `LobbyEvent Idle maps to ServerToClientFrame Idle with the same boolean`() {
+        val frame = LobbyEvent.Idle(ownerId, idle = false).toFrameOrNull()
+        assertThat(frame).isNotNull()
+        val typed = frame as ServerToClientFrame.Idle
+        assertThat(typed.sessionId).isEqualTo(ownerId.value)
+        assertThat(typed.idle).isEqualTo(false)
+    }
+
+    @Test
+    fun `LobbyEvent ConnectionLost maps to ServerToClientFrame ConnectionLost`() {
+        val frame = LobbyEvent.ConnectionLost(ownerId).toFrameOrNull()
+        assertThat(frame).isNotNull()
+        assertThat((frame as ServerToClientFrame.ConnectionLost).sessionId).isEqualTo(ownerId.value)
+    }
+
+    @Test
+    fun `LobbyEvent CursorBumped maps direction enum to wire string`() {
+        val acrossFrame =
+            LobbyEvent
+                .CursorBumped(
+                    ownerId,
+                    Position(2, 0),
+                    GameClueDirection.ACROSS,
+                ).toFrameOrNull()
+        val downFrame =
+            LobbyEvent
+                .CursorBumped(
+                    ownerId,
+                    Position(0, 2),
+                    GameClueDirection.DOWN,
+                ).toFrameOrNull()
+
+        assertThat(acrossFrame).isNotNull()
+        val across = acrossFrame as ServerToClientFrame.CursorBumped
+        assertThat(across.row).isEqualTo(2)
+        assertThat(across.column).isEqualTo(0)
+        assertThat(across.direction).isEqualTo("across")
+
+        assertThat(downFrame).isNotNull()
+        val down = downFrame as ServerToClientFrame.CursorBumped
+        assertThat(down.row).isEqualTo(0)
+        assertThat(down.column).isEqualTo(2)
+        assertThat(down.direction).isEqualTo("down")
     }
 
     private fun inProgressLobby(entries: Map<Position, CellEntry>): Lobby =
