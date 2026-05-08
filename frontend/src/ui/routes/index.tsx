@@ -149,7 +149,7 @@ const isMultiplayerEnabled = (): boolean =>
 function PageShell({ children }: { children: React.ReactNode }) {
   return (
     <div className={pageStyles}>
-      <AppHeader activeNavId="grilles" />
+      <AppHeader />
       <main className={mainStyles}>
         <div className={contentStyles}>{children}</div>
       </main>
