@@ -1,29 +1,8 @@
-// Per-puzzle solo-mode letter persistence (v1).
-//
-// Stores the player's typed letters in `localStorage` keyed by puzzle id
-// so a page reload restores them. `LoadOrGeneratePuzzleUseCase` caches
-// generated puzzles by id (via `PuzzleRepository.getOrCompute`), so the
-// same id resolves to the same grid layout — saved entries always line
-// up with the live cells. The "Actualiser" CTA clears the entries for
-// the current puzzle, giving the player a fresh start without leaving
-// stale rows behind in storage.
-//
-// Wire shape: a single `bliss.solo.entries` JSON object that maps each
-// puzzle id to a flat list of `{r, c, l}` triples. One key keeps the
-// GDPR erase flow trivial (drop one localStorage key) and avoids the
-// per-puzzle keys accumulating without bound; all entries clear at
-// once when the player taps "Effacer mes données".
-//
-// Storage failures (private mode, disabled, sandboxed iframe) are
-// non-fatal — every helper degrades to a no-op rather than throw.
+// storage failures are non-fatal — every helper degrades to a no-op rather than throw.
+
+import type { SoloEntry } from '@/application/solo/SoloEntriesStore';
 
 const SOLO_ENTRIES_KEY = 'bliss.solo.entries';
-
-export interface PersistedSoloEntry {
-  readonly row: number;
-  readonly column: number;
-  readonly letter: string;
-}
 
 interface StoredEntry {
   r: number;
@@ -59,7 +38,7 @@ function writeStore(store: SoloStore): void {
 }
 
 /** Load the persisted entries for a puzzle, or `[]` if none. */
-export function loadSoloEntries(puzzleId: string): PersistedSoloEntry[] {
+export function loadSoloEntries(puzzleId: string): SoloEntry[] {
   const store = readStore();
   const entries = store[puzzleId];
   if (!entries || !Array.isArray(entries)) return [];
@@ -73,11 +52,7 @@ export function loadSoloEntries(puzzleId: string): PersistedSoloEntry[] {
     .map((e) => ({ row: e.r, column: e.c, letter: e.l }));
 }
 
-/**
- * Upsert a single cell. Passing `null` (or empty) for `letter` removes
- * the entry. Mirrors the Grid `onCellChange` callback shape so the
- * route can wire it directly.
- */
+// null or '' for letter removes the entry.
 export function saveSoloLetter(
   puzzleId: string,
   row: number,

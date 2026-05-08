@@ -188,26 +188,18 @@ function HomePage() {
   // the only seam that clears the DOM.
   const [refreshCount, setRefreshCount] = useState(0);
   const handleRefresh = useCallback(() => {
-    // Reset the saved entries for the current puzzle BEFORE bumping the
-    // remount key — the new `initialEntries` memo reads from storage on
-    // the next render, so storage must already be cleared by then.
+    // Must clear before bumping refreshCount — initialEntries reads storage on the next render.
     soloEntriesStore.clearForPuzzle(puzzle.id);
     setRefreshCount((n) => n + 1);
     void router.invalidate();
   }, [router, soloEntriesStore, puzzle.id]);
 
-  // Hydrate the Grid from the previous solo session. The `void
-  // refreshCount` reference forces a fresh storage read after the
-  // "Actualiser" CTA bumps the counter (and clears the entries),
-  // without making the body actually depend on the value.
+  // void refreshCount forces a storage re-read after "Actualiser" clears — without depending on the value.
   const initialEntries = useMemo(() => {
     void refreshCount;
     return soloEntriesStore.load(puzzle.id);
   }, [puzzle.id, refreshCount, soloEntriesStore]);
 
-  // Persist every cell change. The Grid hook normalizes keystrokes
-  // before firing this callback (single uppercase letter or null on
-  // delete), so the storage adapter receives clean values.
   const handleCellChange = useCallback(
     (row: number, col: number, letter: string | null) => {
       soloEntriesStore.save(puzzle.id, row, col, letter);

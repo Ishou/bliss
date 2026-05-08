@@ -97,9 +97,7 @@ enableMocks()
       },
     };
 
-    // Solo-mode letter persistence (v1) — closures bind the localStorage
-    // helpers behind the application-layer port so `ui/` never touches
-    // `infrastructure/` directly (boundary rule per ADR-0002 §7).
+    // Adapts localStorage helpers to the SoloEntriesStore port; ui/ must not import infrastructure/ directly.
     const soloEntriesStore: SoloEntriesStore = {
       load: loadSoloEntries,
       save: saveSoloLetter,
