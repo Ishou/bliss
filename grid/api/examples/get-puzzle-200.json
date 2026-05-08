@@ -30,8 +30,7 @@
       "position": {
         "row": 0,
         "column": 1
-      },
-      "letter": "P"
+      }
     },
     {
       "kind": "definition",
@@ -58,8 +57,7 @@
       "position": {
         "row": 0,
         "column": 3
-      },
-      "letter": "G"
+      }
     },
     {
       "kind": "definition",
@@ -86,8 +84,7 @@
       "position": {
         "row": 0,
         "column": 5
-      },
-      "letter": "S"
+      }
     },
     {
       "kind": "definition",
@@ -104,8 +101,7 @@
       "position": {
         "row": 0,
         "column": 7
-      },
-      "letter": "D"
+      }
     },
     {
       "kind": "definition",
@@ -132,56 +128,49 @@
       "position": {
         "row": 0,
         "column": 9
-      },
-      "letter": "P"
+      }
     },
     {
       "kind": "letter",
       "position": {
         "row": 1,
         "column": 0
-      },
-      "letter": "E"
+      }
     },
     {
       "kind": "letter",
       "position": {
         "row": 1,
         "column": 1
-      },
-      "letter": "S"
+      }
     },
     {
       "kind": "letter",
       "position": {
         "row": 1,
         "column": 2
-      },
-      "letter": "P"
+      }
     },
     {
       "kind": "letter",
       "position": {
         "row": 1,
         "column": 3
-      },
-      "letter": "A"
+      }
     },
     {
       "kind": "letter",
       "position": {
         "row": 1,
         "column": 4
-      },
-      "letter": "C"
+      }
     },
     {
       "kind": "letter",
       "position": {
         "row": 1,
         "column": 5
-      },
-      "letter": "E"
+      }
     },
     {
       "kind": "definition",
@@ -198,24 +187,21 @@
       "position": {
         "row": 1,
         "column": 7
-      },
-      "letter": "E"
+      }
     },
     {
       "kind": "letter",
       "position": {
         "row": 1,
         "column": 8
-      },
-      "letter": "G"
+      }
     },
     {
       "kind": "letter",
       "position": {
         "row": 1,
         "column": 9
-      },
-      "letter": "O"
+      }
     },
     {
       "kind": "definition",
@@ -242,40 +228,35 @@
       "position": {
         "row": 2,
         "column": 1
-      },
-      "letter": "Y"
+      }
     },
     {
       "kind": "letter",
       "position": {
         "row": 2,
         "column": 2
-      },
-      "letter": "O"
+      }
     },
     {
       "kind": "letter",
       "position": {
         "row": 2,
         "column": 3
-      },
-      "letter": "G"
+      }
     },
     {
       "kind": "letter",
       "position": {
         "row": 2,
         "column": 4
-      },
-      "letter": "I"
+      }
     },
     {
       "kind": "letter",
       "position": {
         "row": 2,
         "column": 5
-      },
-      "letter": "S"
+      }
     },
     {
       "kind": "definition",
@@ -292,64 +273,56 @@
       "position": {
         "row": 2,
         "column": 7
-      },
-      "letter": "C"
+      }
     },
     {
       "kind": "letter",
       "position": {
         "row": 2,
         "column": 8
-      },
-      "letter": "E"
+      }
     },
     {
       "kind": "letter",
       "position": {
         "row": 2,
         "column": 9
-      },
-      "letter": "S"
+      }
     },
     {
       "kind": "letter",
       "position": {
         "row": 3,
         "column": 0
-      },
-      "letter": "S"
+      }
     },
     {
       "kind": "letter",
       "position": {
         "row": 3,
         "column": 1
-      },
-      "letter": "C"
+      }
     },
     {
       "kind": "letter",
       "position": {
         "row": 3,
         "column": 2
-      },
-      "letter": "E"
+      }
     },
     {
       "kind": "letter",
       "position": {
         "row": 3,
         "column": 3
-      },
-      "letter": "N"
+      }
     },
     {
       "kind": "letter",
       "position": {
         "row": 3,
         "column": 4
-      },
-      "letter": "E"
+      }
     },
     {
       "kind": "definition",
@@ -376,32 +349,28 @@
       "position": {
         "row": 3,
         "column": 6
-      },
-      "letter": "B"
+      }
     },
     {
       "kind": "letter",
       "position": {
         "row": 3,
         "column": 7
-      },
-      "letter": "O"
+      }
     },
     {
       "kind": "letter",
       "position": {
         "row": 3,
         "column": 8
-      },
-      "letter": "R"
+      }
     },
     {
       "kind": "letter",
       "position": {
         "row": 3,
         "column": 9
-      },
-      "letter": "T"
+      }
     },
     {
       "kind": "definition",
@@ -418,8 +387,7 @@
       "position": {
         "row": 4,
         "column": 1
-      },
-      "letter": "H"
+      }
     },
     {
       "kind": "definition",
@@ -446,24 +414,21 @@
       "position": {
         "row": 4,
         "column": 3
-      },
-      "letter": "E"
+      }
     },
     {
       "kind": "letter",
       "position": {
         "row": 4,
         "column": 4
-      },
-      "letter": "L"
+      }
     },
     {
       "kind": "letter",
       "position": {
         "row": 4,
         "column": 5
-      },
-      "letter": "U"
+      }
     },
     {
       "kind": "definition",
@@ -500,48 +465,42 @@
       "position": {
         "row": 4,
         "column": 8
-      },
-      "letter": "M"
+      }
     },
     {
       "kind": "letter",
       "position": {
         "row": 4,
         "column": 9
-      },
-      "letter": "A"
+      }
     },
     {
       "kind": "letter",
       "position": {
         "row": 5,
         "column": 0
-      },
-      "letter": "P"
+      }
     },
     {
       "kind": "letter",
       "position": {
         "row": 5,
         "column": 1
-      },
-      "letter": "O"
+      }
     },
     {
       "kind": "letter",
       "position": {
         "row": 5,
         "column": 2
-      },
-      "letter": "S"
+      }
     },
     {
       "kind": "letter",
       "position": {
         "row": 5,
         "column": 3
-      },
-      "letter": "E"
+      }
     },
     {
       "kind": "definition",
@@ -568,32 +527,28 @@
       "position": {
         "row": 5,
         "column": 5
-      },
-      "letter": "R"
+      }
     },
     {
       "kind": "letter",
       "position": {
         "row": 5,
         "column": 6
-      },
-      "letter": "A"
+      }
     },
     {
       "kind": "letter",
       "position": {
         "row": 5,
         "column": 7
-      },
-      "letter": "V"
+      }
     },
     {
       "kind": "letter",
       "position": {
         "row": 5,
         "column": 8
-      },
-      "letter": "E"
+      }
     },
     {
       "kind": "definition",
@@ -630,8 +585,7 @@
       "position": {
         "row": 6,
         "column": 2
-      },
-      "letter": "E"
+      }
     },
     {
       "kind": "definition",
@@ -648,32 +602,28 @@
       "position": {
         "row": 6,
         "column": 4
-      },
-      "letter": "D"
+      }
     },
     {
       "kind": "letter",
       "position": {
         "row": 6,
         "column": 5
-      },
-      "letter": "E"
+      }
     },
     {
       "kind": "letter",
       "position": {
         "row": 6,
         "column": 6
-      },
-      "letter": "N"
+      }
     },
     {
       "kind": "letter",
       "position": {
         "row": 6,
         "column": 7
-      },
-      "letter": "I"
+      }
     },
     {
       "kind": "definition",
@@ -690,32 +640,28 @@
       "position": {
         "row": 6,
         "column": 9
-      },
-      "letter": "J"
+      }
     },
     {
       "kind": "letter",
       "position": {
         "row": 7,
         "column": 0
-      },
-      "letter": "B"
+      }
     },
     {
       "kind": "letter",
       "position": {
         "row": 7,
         "column": 1
-      },
-      "letter": "A"
+      }
     },
     {
       "kind": "letter",
       "position": {
         "row": 7,
         "column": 2
-      },
-      "letter": "N"
+      }
     },
     {
       "kind": "definition",
@@ -742,48 +688,42 @@
       "position": {
         "row": 7,
         "column": 4
-      },
-      "letter": "O"
+      }
     },
     {
       "kind": "letter",
       "position": {
         "row": 7,
         "column": 5
-      },
-      "letter": "E"
+      }
     },
     {
       "kind": "letter",
       "position": {
         "row": 7,
         "column": 6
-      },
-      "letter": "U"
+      }
     },
     {
       "kind": "letter",
       "position": {
         "row": 7,
         "column": 7
-      },
-      "letter": "V"
+      }
     },
     {
       "kind": "letter",
       "position": {
         "row": 7,
         "column": 8
-      },
-      "letter": "R"
+      }
     },
     {
       "kind": "letter",
       "position": {
         "row": 7,
         "column": 9
-      },
-      "letter": "E"
+      }
     },
     {
       "kind": "definition",
@@ -810,32 +750,28 @@
       "position": {
         "row": 8,
         "column": 1
-      },
-      "letter": "V"
+      }
     },
     {
       "kind": "letter",
       "position": {
         "row": 8,
         "column": 2
-      },
-      "letter": "O"
+      }
     },
     {
       "kind": "letter",
       "position": {
         "row": 8,
         "column": 3
-      },
-      "letter": "N"
+      }
     },
     {
       "kind": "letter",
       "position": {
         "row": 8,
         "column": 4
-      },
-      "letter": "T"
+      }
     },
     {
       "kind": "definition",
@@ -852,80 +788,70 @@
       "position": {
         "row": 8,
         "column": 6
-      },
-      "letter": "S"
+      }
     },
     {
       "kind": "letter",
       "position": {
         "row": 8,
         "column": 7
-      },
-      "letter": "E"
+      }
     },
     {
       "kind": "letter",
       "position": {
         "row": 8,
         "column": 8
-      },
-      "letter": "A"
+      }
     },
     {
       "kind": "letter",
       "position": {
         "row": 8,
         "column": 9
-      },
-      "letter": "U"
+      }
     },
     {
       "kind": "letter",
       "position": {
         "row": 9,
         "column": 0
-      },
-      "letter": "I"
+      }
     },
     {
       "kind": "letter",
       "position": {
         "row": 9,
         "column": 1
-      },
-      "letter": "R"
+      }
     },
     {
       "kind": "letter",
       "position": {
         "row": 9,
         "column": 2
-      },
-      "letter": "R"
+      }
     },
     {
       "kind": "letter",
       "position": {
         "row": 9,
         "column": 3
-      },
-      "letter": "E"
+      }
     },
     {
       "kind": "letter",
       "position": {
         "row": 9,
         "column": 4
-      },
-      "letter": "E"
+      }
     },
     {
       "kind": "letter",
       "position": {
         "row": 9,
         "column": 5
-      },
-      "letter": "L"
+      }
     },
     {
       "kind": "definition",
@@ -942,24 +868,21 @@
       "position": {
         "row": 9,
         "column": 7
-      },
-      "letter": "S"
+      }
     },
     {
       "kind": "letter",
       "position": {
         "row": 9,
         "column": 8
-      },
-      "letter": "I"
+      }
     },
     {
       "kind": "letter",
       "position": {
         "row": 9,
         "column": 9
-      },
-      "letter": "N"
+      }
     }
   ],
   "clues": [
@@ -1304,5 +1227,6 @@
       "text": "anus"
     }
   ],
+  "hintsAllowed": 3,
   "createdAt": "2026-04-30T06:46:14.109690902Z"
 }

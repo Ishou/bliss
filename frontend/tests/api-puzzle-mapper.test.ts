@@ -6,6 +6,7 @@ type ApiPuzzle = components['schemas']['Puzzle'];
 const baseHeader: Omit<ApiPuzzle, 'width' | 'height' | 'cells'> = {
   id: '0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6b',
   title: 't', language: 'fr',
+  hintsAllowed: 3,
   createdAt: '2026-04-24T15:30:00Z',
   clues: [],
 };
@@ -20,8 +21,8 @@ describe('apiPuzzleToDomain', () => {
           kind: 'definition', position: { row: 0, column: 1 },
           clueId: 'c1', text: 'Capitale', arrow: 'right',
         },
-        { kind: 'letter', position: { row: 0, column: 2 }, letter: 'A' },
-        { kind: 'letter', position: { row: 0, column: 3 }, letter: null },
+        { kind: 'letter', position: { row: 0, column: 2 } },
+        { kind: 'letter', position: { row: 0, column: 3 } },
       ],
     };
 
@@ -31,7 +32,7 @@ describe('apiPuzzleToDomain', () => {
         kind: 'definition', position: { row: 0, col: 1 },
         clues: [{ text: 'Capitale', arrow: 'right' }],
       },
-      { kind: 'letter', position: { row: 0, col: 2 }, answer: 'A', entry: '' },
+      { kind: 'letter', position: { row: 0, col: 2 }, entry: '' },
       { kind: 'letter', position: { row: 0, col: 3 }, entry: '' },
     ]);
   });

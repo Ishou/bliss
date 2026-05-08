@@ -26,6 +26,67 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/puzzles/{puzzleId}/hints": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Spend a hint to check whether a word exists in the corpus.
+         * @description Per-puzzle hint mechanism. The client submits a candidate word; the
+         *     server reports whether it is a known lemma in the French corpus and
+         *     decrements the puzzle's hint budget. Each answered lookup (200 or
+         *     400/404 — anything that consumes a server-side dictionary check)
+         *     costs one hint; once the budget is exhausted the server responds
+         *     with 429 and the client UI SHOULD disable the affordance.
+         *
+         *     Framing as "hint" rather than free corpus lookup is intentional: it
+         *     caps unauthenticated clients to `Puzzle.hintsAllowed` calls per
+         *     puzzle and prevents the endpoint being used as a dictionary scrape.
+         *     Identification of the calling player (cookie, session token,
+         *     IP+UA fingerprint) is a server concern and not part of this wire
+         *     contract.
+         */
+        post: operations["requestWordHint"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/puzzles/{puzzleId}/validate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Verify a filled grid against the canonical solution.
+         * @description Compares submitted cells against the server's canonical solution.
+         *     Returns whether the grid is solved and, if not, the positions of
+         *     mismatched or unfilled cells — never the canonical letter. The
+         *     response cannot be used to reconstruct the solution in a single
+         *     call; brute-force letter extraction would require
+         *     `O(width × height × 26)` legal calls and is mitigated by edge rate
+         *     limiting (ops concern, out of scope for this schema).
+         *
+         *     Stateless: any client holding a `puzzleId` may call. Cleared cells
+         *     are absent from the request — do NOT send `letter: null`.
+         */
+        post: operations["validatePuzzle"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -78,6 +139,14 @@ export interface components {
              */
             clues: components["schemas"]["Clue"][];
             /**
+             * @description Hint budget for this puzzle. The client may call
+             *     `POST /v1/puzzles/{puzzleId}/hints` up to this many times before
+             *     the server returns 429. The budget scope (per puzzle, per player)
+             *     is server-defined; the wire contract only carries the cap.
+             * @example 3
+             */
+            hintsAllowed: number;
+            /**
              * Format: date-time
              * @description ISO-8601 instant with timezone offset.
              * @example 2026-04-24T15:30:00Z
@@ -98,7 +167,12 @@ export interface components {
          * @enum {string}
          */
         CellKind: "letter" | "definition" | "block";
-        /** @description Answer cell, optionally pre-filled. */
+        /**
+         * @description Player-fillable answer cell. Geometry only — the canonical solution
+         *     is server-private and never appears on the wire. Distinguished from
+         *     `BlockCell` by `kind`. Clients submit filled cells to
+         *     `POST /v1/puzzles/{puzzleId}/validate` for verification.
+         */
         LetterCell: {
             /**
              * @description discriminator enum property added by openapi-typescript
@@ -106,12 +180,6 @@ export interface components {
              */
             kind: "letter";
             position: components["schemas"]["Position"];
-            /**
-             * @description Uppercase A-Z if pre-filled; absent or `null` for a blank cell.
-             *     `null` and absence are distinct: `null` = explicitly empty in the
-             *     canonical solution; absence = no constraint declared.
-             */
-            letter?: string | null;
         };
         /**
          * @description Mots-fléchés definition cell. Holds the clue text and an arrow
@@ -187,6 +255,116 @@ export interface components {
              *     cheap on a 225-cell grid and spares clients a join.
              */
             text: string;
+        };
+        /** @description Request body for `POST /v1/puzzles/{puzzleId}/hints`. */
+        WordHintRequest: {
+            /**
+             * @description Candidate French word. Server normalizes case and Unicode (NFC)
+             *     before lookup; clients SHOULD send lowercase.
+             * @example forêt
+             */
+            word: string;
+        };
+        /**
+         * @description Response body for `POST /v1/puzzles/{puzzleId}/hints` on a 200. The
+         *     server-normalized form is echoed so the client can highlight the
+         *     match it actually evaluated.
+         */
+        WordHintResult: {
+            /**
+             * @description Server-normalized form (NFC, lowercase).
+             * @example forêt
+             */
+            word: string;
+            /**
+             * @description True iff the word is a known lemma in the corpus.
+             * @example true
+             */
+            exists: boolean;
+            /**
+             * @description Hints left after this call. `0` means the next call will return
+             *     a 429 with `type` `https://bliss.example/errors/hint-budget-exhausted`.
+             * @example 2
+             */
+            hintsRemaining: number;
+        };
+        /**
+         * @description Request body for `POST /v1/puzzles/{puzzleId}/validate`. Carries the
+         *     cells the client wants to verify. Cleared / unfilled letter cells are
+         *     absent — do NOT send `letter: null`. Order is irrelevant; the server
+         *     keys by `(row, column)`. Duplicate `(row, column)` entries are a 400.
+         * @example {
+         *       "filledCells": [
+         *         {
+         *           "row": 0,
+         *           "column": 1,
+         *           "letter": "P"
+         *         },
+         *         {
+         *           "row": 0,
+         *           "column": 3,
+         *           "letter": "G"
+         *         },
+         *         {
+         *           "row": 0,
+         *           "column": 5,
+         *           "letter": "S"
+         *         }
+         *       ]
+         *     }
+         */
+        ValidatePuzzleRequest: {
+            /**
+             * @description Submitted letters. `maxItems` matches the protocol-level upper
+             *     bound on letter cells in a `Puzzle` (`width × height` with
+             *     `width`, `height` ≤ 50).
+             */
+            filledCells: components["schemas"]["FilledCell"][];
+        };
+        /**
+         * @description A single client-submitted letter for a letter cell. `(row, column)`
+         *     must point at a `letter`-kind cell in the puzzle; pointing at a
+         *     definition or block cell is a 400.
+         */
+        FilledCell: {
+            /** @example 0 */
+            row: number;
+            /** @example 1 */
+            column: number;
+            /**
+             * @description Single uppercase A-Z code point. Diacritics are normalized
+             *     client-side before submission.
+             * @example P
+             */
+            letter: string;
+        };
+        /**
+         * @description Validation outcome. The server intentionally returns positions only,
+         *     never the canonical letter, so the response cannot be used to
+         *     reconstruct the solution in a single call.
+         */
+        ValidatePuzzleResult: {
+            /**
+             * @description True iff every letter cell is filled and matches the canonical
+             *     solution.
+             * @example false
+             */
+            solved: boolean;
+            /**
+             * @description Positions where the submitted letter is wrong OR the letter cell
+             *     was not filled by the client. Empty iff `solved` is true.
+             * @example [
+             *       {
+             *         "row": 4,
+             *         "column": 1
+             *       },
+             *       {
+             *         "row": 6,
+             *         "column": 9
+             *       }
+             *     ]
+             */
+            incorrectCells: components["schemas"]["Position"][];
         };
         /**
          * @description RFC 7807 error envelope (ADR-0003 §6). Additional members per
@@ -313,6 +491,130 @@ export interface operations {
              *     `type` is `https://bliss.example/errors/puzzle-generation-failed`.
              */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    requestWordHint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description UUID v7 identifier of the puzzle. */
+                puzzleId: components["parameters"]["PuzzleId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WordHintRequest"];
+            };
+        };
+        responses: {
+            /**
+             * @description Hint consumed. Body reports whether the word exists in the
+             *     corpus and the remaining budget for this `(puzzle, player)`.
+             */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WordHintResult"];
+                };
+            };
+            /**
+             * @description Request body invalid — `word` violates length / character class.
+             *     RFC 7807; `type` is `https://bliss.example/errors/invalid-word`.
+             */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /**
+             * @description No puzzle with this id. RFC 7807;
+             *     `type` is `https://bliss.example/errors/puzzle-not-found`.
+             */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /**
+             * @description Hint budget exhausted for this `(puzzle, player)`. RFC 7807;
+             *     `type` is `https://bliss.example/errors/hint-budget-exhausted`.
+             *     The body's `detail` SHOULD echo `hintsRemaining: 0`.
+             */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    validatePuzzle: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description UUID v7 identifier of the puzzle. */
+                puzzleId: components["parameters"]["PuzzleId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ValidatePuzzleRequest"];
+            };
+        };
+        responses: {
+            /**
+             * @description Validation completed. `incorrectCells` is empty iff `solved` is
+             *     true. Cells the client did not fill appear in `incorrectCells`
+             *     alongside cells whose submitted letter is wrong.
+             */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ValidatePuzzleResult"];
+                };
+            };
+            /**
+             * @description Request invalid: position out of range, position pointing at a
+             *     non-letter cell, `letter` not a single uppercase A-Z, or
+             *     duplicate `(row, column)`. RFC 7807;
+             *     `type` is `https://bliss.example/errors/invalid-validate-request`.
+             */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /**
+             * @description No puzzle with this id. RFC 7807;
+             *     `type` is `https://bliss.example/errors/puzzle-not-found`.
+             */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -16,7 +16,6 @@ const positionKey = (row: number, column: number): string => `${row},${column}`;
 const toLetter = (cell: ApiLetterCell): Cell => ({
   kind: 'letter',
   position: { row: cell.position.row, col: cell.position.column },
-  ...(cell.letter == null ? {} : { answer: cell.letter }),
   entry: '',
 });
 

@@ -150,6 +150,12 @@ export interface components {
             /** @description Cells in row-major order; look up by position.row/position.column. */
             cells: components["schemas"]["GameCell"][];
             clues: components["schemas"]["GameClue"][];
+            /**
+             * @description Hint budget for this puzzle. Mirrors `Puzzle.hintsAllowed` in
+             *     `grid/api/openapi.yaml`; forwarded verbatim from grid/ on startGame.
+             * @example 3
+             */
+            hintsAllowed: number;
             createdAt: components["schemas"]["Instant"];
         };
         /**
@@ -166,13 +172,13 @@ export interface components {
          */
         GameCellKind: "letter" | "definition" | "block";
         /**
-         * @description Player-fillable answer cell. The `letter` slot exists for the pre-filled
-         *     / placeholder use case; in v1 the server ALWAYS emits `null` here. The
-         *     canonical solution is domain-private until the puzzle is solved (see the
-         *     AsyncAPI `gameSolved.finalEntries` payload); player input is broadcast
-         *     over the WebSocket via `cellUpdated`. Sending the answer here would
-         *     render every grid pre-solved on the client. Mirrors `GameLetterCell` in
-         *     `game/api/asyncapi.yaml`; keep in sync.
+         * @description Player-fillable answer cell. The canonical solution is server-private
+         *     and never carried on the wire. Player input flows in via the
+         *     `cellUpdate` WebSocket frame and is rebroadcast as `cellUpdated`. On
+         *     solve, `gameSolved.finalEntries` carries the full solved grid — the
+         *     only post-completion broadcast of canonical letters. Mirrors
+         *     `GameLetterCell` in `game/api/asyncapi.yaml`; keep in sync per
+         *     ADR-0001 §1 (no cross-context $ref).
          */
         GameLetterCell: {
             /**
@@ -181,8 +187,6 @@ export interface components {
              */
             kind: "letter";
             position: components["schemas"]["GamePosition"];
-            /** @description Always `null` in v1. The slot is reserved for a future pre-filled / replay use case. */
-            letter: string | null;
         };
         /**
          * @description Mots-fleches definition cell. Carries 1 clue (the common case) or 2

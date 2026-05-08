@@ -221,16 +221,17 @@ components:
         needs to render and play. Owned by game/ — not a $ref into grid/
         (ADR-0001 §1 forbids cross-context file dependencies). The server
         fetches from grid/ on startGame and forwards the document verbatim.
-      required: [id, title, language, width, height, cells, clues, createdAt]
+      required: [id, title, language, width, height, cells, clues, hintsAllowed, createdAt]
       properties:
-        id:        { type: string, format: uuid, description: UUID v7 puzzle identifier., example: 0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6c }
-        title:     { type: string, minLength: 1, maxLength: 200, example: Petite grille du mardi }
-        language:  { type: string, pattern: '^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$', description: BCP-47 tag., example: fr }
-        width:     { type: integer, minimum: 1, maximum: 50, description: Number of columns., example: 5 }
-        height:    { type: integer, minimum: 1, maximum: 50, description: Number of rows., example: 5 }
-        cells:     { type: array, items: { $ref: '#/components/schemas/GameCell' }, description: Cells in row-major order; look up by position.row/position.column. }
-        clues:     { type: array, items: { $ref: '#/components/schemas/GameClue' } }
-        createdAt: { $ref: '#/components/schemas/Instant' }
+        id:           { type: string, format: uuid, description: UUID v7 puzzle identifier., example: 0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6c }
+        title:        { type: string, minLength: 1, maxLength: 200, example: Petite grille du mardi }
+        language:     { type: string, pattern: '^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$', description: BCP-47 tag., example: fr }
+        width:        { type: integer, minimum: 1, maximum: 50, description: Number of columns., example: 5 }
+        height:       { type: integer, minimum: 1, maximum: 50, description: Number of rows., example: 5 }
+        cells:        { type: array, items: { $ref: '#/components/schemas/GameCell' }, description: Cells in row-major order; look up by position.row/position.column. }
+        clues:        { type: array, items: { $ref: '#/components/schemas/GameClue' } }
+        hintsAllowed: { type: integer, minimum: 0, description: "Hint budget for this puzzle. Mirrors Puzzle.hintsAllowed in grid/api/openapi.yaml; forwarded verbatim from grid/ on startGame.", example: 3 }
+        createdAt:    { $ref: '#/components/schemas/Instant' }
     GameCell:
       type: object
       required: [kind, position]
@@ -249,18 +250,14 @@ components:
       x-enum-varnames: [LETTER, DEFINITION, BLOCK]
     GameLetterCell:
       type: object
-      required: [kind, position, letter]
+      required: [kind, position]
       description: |
-        Player-fillable answer cell. The `letter` slot exists for the pre-filled
-        / placeholder use case; in v1 the server ALWAYS emits `null` here. The
-        canonical solution is domain-private until the puzzle is solved (see
-        `gameSolved.finalEntries`); player input is broadcast separately via
-        `cellUpdated` events keyed by sessionId. Sending the answer here would
-        render every grid pre-solved on the client.
+        Player-fillable answer cell. Solution is server-private; not carried
+        on snapshot or update messages. Player input flows in via `cellUpdate`
+        and is rebroadcast as `cellUpdated`. Mirrors the OpenAPI definition.
       properties:
         kind:     { type: string, enum: [letter] }
         position: { $ref: '#/components/schemas/GamePosition' }
-        letter:   { type: string, minLength: 1, maxLength: 1, pattern: '^[A-Z]$', nullable: true, description: Always `null` in v1. The slot is reserved for a future pre-filled / replay use case. Absence is a protocol error (field is always present). }
     GameDefinitionCell:
       type: object
       required: [kind, position, clues]
@@ -431,7 +428,7 @@ components:
         state: IN_PROGRESS
         gridConfig: { width: 7, height: 7 }
         game:
-          puzzle: { id: 0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6c, title: Petite grille du mardi, language: fr, width: 5, height: 5, cells: [], clues: [], createdAt: '2026-04-24T15:30:00Z' }
+          puzzle: { id: 0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6c, title: Petite grille du mardi, language: fr, width: 5, height: 5, cells: [], clues: [], hintsAllowed: 3, createdAt: '2026-04-24T15:30:00Z' }
           entries:
             - { sessionId: 0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6b, row: 0, column: 3, letter: P, writtenAt: '2026-05-02T15:35:42Z' }
             - { sessionId: 0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6b, row: 0, column: 4, letter: A, writtenAt: '2026-05-02T15:35:43Z' }
@@ -469,7 +466,7 @@ components:
         type:      { type: string, enum: [gameStarted] }
         puzzle:    { $ref: '#/components/schemas/GamePuzzle' }
         startedAt: { $ref: '#/components/schemas/Instant' }
-      example: { type: gameStarted, startedAt: '2026-05-02T15:35:00Z', puzzle: { id: 0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6c, title: Petite grille du mardi, language: fr, width: 5, height: 5, cells: [], clues: [], createdAt: '2026-04-24T15:30:00Z' } }
+      example: { type: gameStarted, startedAt: '2026-05-02T15:35:00Z', puzzle: { id: 0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6c, title: Petite grille du mardi, language: fr, width: 5, height: 5, cells: [], clues: [], hintsAllowed: 3, createdAt: '2026-04-24T15:30:00Z' } }
     CellUpdatedPayload:
       type: object
       required: [type, sessionId, row, column, letter, writtenAt]
