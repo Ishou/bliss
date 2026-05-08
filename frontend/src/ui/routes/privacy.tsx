@@ -2,19 +2,34 @@
 // The French version is canonical; any divergence is a bug.
 
 import { createRoute } from '@tanstack/react-router';
+import { css } from 'styled-system/css';
 import { PrivacyNotice } from '@/ui/components/PrivacyNotice';
+import { AppHeader, Footer } from '@/ui/components/layout';
 import { Route as RootRoute } from './__root';
+
+const pageStyles = css({
+  minHeight: '100dvh',
+  display: 'flex',
+  flexDirection: 'column',
+  bg: 'bg',
+});
+
+const contentSlotStyles = css({
+  flex: '1 1 auto',
+  display: 'flex',
+  flexDirection: 'column',
+});
 
 export const Route = createRoute({
   getParentRoute: () => RootRoute,
   path: '/privacy',
   head: () => ({
     meta: [
-      { title: 'Privacy — Bliss' },
+      { title: 'Privacy — WordSparrow' },
       {
         name: 'description',
         content:
-          'Bliss privacy policy: minimal data collection, anonymized audience measurement, right to erasure.',
+          'WordSparrow privacy policy: minimal data collection, anonymized audience measurement, right to erasure.',
       },
     ],
   }),
@@ -23,5 +38,13 @@ export const Route = createRoute({
 
 function PrivacyRoute() {
   const { sessionClient } = Route.useRouteContext();
-  return <PrivacyNotice lang="en" sessionClient={sessionClient} />;
+  return (
+    <div className={pageStyles}>
+      <AppHeader />
+      <div className={contentSlotStyles}>
+        <PrivacyNotice lang="en" sessionClient={sessionClient} />
+      </div>
+      <Footer />
+    </div>
+  );
 }
