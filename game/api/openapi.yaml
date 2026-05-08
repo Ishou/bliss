@@ -225,7 +225,7 @@ components:
         (ADR-0001 §1 forbids cross-context file dependencies). The server
         fetches from grid/ on startGame and forwards the document verbatim.
         Mirrors `GamePuzzle` in `game/api/asyncapi.yaml`; keep in sync.
-      required: [id, title, language, width, height, cells, clues, createdAt]
+      required: [id, title, language, width, height, cells, clues, hintsAllowed, createdAt]
       properties:
         id:
           type: string
@@ -263,6 +263,13 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/GameClue'
+        hintsAllowed:
+          type: integer
+          minimum: 0
+          description: |
+            Hint budget for this puzzle. Mirrors `Puzzle.hintsAllowed` in
+            `grid/api/openapi.yaml`; forwarded verbatim from grid/ on startGame.
+          example: 3
         createdAt:
           $ref: '#/components/schemas/Instant'
 

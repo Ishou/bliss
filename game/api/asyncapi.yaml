@@ -221,16 +221,17 @@ components:
         needs to render and play. Owned by game/ — not a $ref into grid/
         (ADR-0001 §1 forbids cross-context file dependencies). The server
         fetches from grid/ on startGame and forwards the document verbatim.
-      required: [id, title, language, width, height, cells, clues, createdAt]
+      required: [id, title, language, width, height, cells, clues, hintsAllowed, createdAt]
       properties:
-        id:        { type: string, format: uuid, description: UUID v7 puzzle identifier., example: 0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6c }
-        title:     { type: string, minLength: 1, maxLength: 200, example: Petite grille du mardi }
-        language:  { type: string, pattern: '^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$', description: BCP-47 tag., example: fr }
-        width:     { type: integer, minimum: 1, maximum: 50, description: Number of columns., example: 5 }
-        height:    { type: integer, minimum: 1, maximum: 50, description: Number of rows., example: 5 }
-        cells:     { type: array, items: { $ref: '#/components/schemas/GameCell' }, description: Cells in row-major order; look up by position.row/position.column. }
-        clues:     { type: array, items: { $ref: '#/components/schemas/GameClue' } }
-        createdAt: { $ref: '#/components/schemas/Instant' }
+        id:           { type: string, format: uuid, description: UUID v7 puzzle identifier., example: 0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6c }
+        title:        { type: string, minLength: 1, maxLength: 200, example: Petite grille du mardi }
+        language:     { type: string, pattern: '^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$', description: BCP-47 tag., example: fr }
+        width:        { type: integer, minimum: 1, maximum: 50, description: Number of columns., example: 5 }
+        height:       { type: integer, minimum: 1, maximum: 50, description: Number of rows., example: 5 }
+        cells:        { type: array, items: { $ref: '#/components/schemas/GameCell' }, description: Cells in row-major order; look up by position.row/position.column. }
+        clues:        { type: array, items: { $ref: '#/components/schemas/GameClue' } }
+        hintsAllowed: { type: integer, minimum: 0, description: "Hint budget for this puzzle. Mirrors Puzzle.hintsAllowed in grid/api/openapi.yaml; forwarded verbatim from grid/ on startGame.", example: 3 }
+        createdAt:    { $ref: '#/components/schemas/Instant' }
     GameCell:
       type: object
       required: [kind, position]

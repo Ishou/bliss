@@ -150,6 +150,12 @@ export interface components {
             /** @description Cells in row-major order; look up by position.row/position.column. */
             cells: components["schemas"]["GameCell"][];
             clues: components["schemas"]["GameClue"][];
+            /**
+             * @description Hint budget for this puzzle. Mirrors `Puzzle.hintsAllowed` in
+             *     `grid/api/openapi.yaml`; forwarded verbatim from grid/ on startGame.
+             * @example 3
+             */
+            hintsAllowed: number;
             createdAt: components["schemas"]["Instant"];
         };
         /**
