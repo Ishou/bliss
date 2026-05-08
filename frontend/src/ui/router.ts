@@ -3,6 +3,8 @@ import type { AppRouterContext } from './routes/__root';
 import { Route as RootRoute } from './routes/__root';
 import { Route as IndexRoute } from './routes/index';
 import { Route as LobbyRoute } from './routes/lobby.$lobbyId';
+import { Route as ConfidentialiteRoute } from './routes/confidentialite';
+import { Route as PrivacyRoute } from './routes/privacy';
 
 // Composition root supplies `context`. Keeping `createAppRouter` a
 // factory means `ui/` never instantiates `infrastructure/` directly
@@ -15,7 +17,8 @@ export interface CreateAppRouterOptions {
 }
 
 export function createAppRouter({ context, multiplayer }: CreateAppRouterOptions) {
-  const children = multiplayer ? [IndexRoute, LobbyRoute] : [IndexRoute];
+  const baseChildren = [IndexRoute, ConfidentialiteRoute, PrivacyRoute];
+  const children = multiplayer ? [...baseChildren, LobbyRoute] : baseChildren;
   const routeTree = RootRoute.addChildren(children);
   return createRouter({ routeTree, context });
 }

@@ -24,7 +24,15 @@ const renderWith = (repository: PuzzleRepository) => {
     history: createMemoryHistory({ initialEntries: ['/'] }),
     // Multiplayer context fields are unused on `/` and remain absent
     // here, mirroring the production root when the flag is off.
-    context: { puzzleRepository: repository, puzzleSolver: stubSolver },
+    context: {
+      puzzleRepository: repository,
+      puzzleSolver: stubSolver,
+      sessionClient: {
+        eraseSession: () => Promise.resolve({ deleted: 0 }),
+        getSessionId: () => 'test-session-id',
+        clearLocalSession: () => {},
+      },
+    },
   });
   return render(<RouterProvider router={router} />);
 };

@@ -99,6 +99,23 @@ const rightSlotStyles = css({
   alignItems: 'center',
 });
 
+const privacyLinkStyles = css({
+  fontFamily: 'body',
+  fontSize: 'xs',
+  fontWeight: 'medium',
+  color: 'fgMuted',
+  textDecoration: 'none',
+  // Mobile: hide to keep the header tight at 44 px. Desktop reveals it
+  // in the right slot.
+  display: { base: 'none', md: 'inline-flex' },
+  _hover: { color: 'fg' },
+  _focusVisible: {
+    outline: '2px solid token(colors.focusRing)',
+    outlineOffset: '2px',
+    borderRadius: '2px',
+  },
+});
+
 export interface AppHeaderProps {
   // The id of the active nav link. Defaults to `grilles` since the
   // current routes only mount the puzzle page; future routes can pass
@@ -148,7 +165,11 @@ export function AppHeader({ activeNavId = 'grilles' }: AppHeaderProps) {
           );
         })}
       </nav>
-        <div className={rightSlotStyles} />
+        <div className={rightSlotStyles}>
+          <a href="/confidentialite" className={privacyLinkStyles} aria-label="Politique de confidentialité">
+            Confidentialité
+          </a>
+        </div>
       </div>
     </header>
   );
