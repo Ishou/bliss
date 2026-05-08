@@ -201,6 +201,7 @@ export function Grid({
   currentSessionId,
   validatedPositions,
   errorPositions,
+  typingSessionIds,
 }: {
   puzzle: Puzzle;
   onCellChange?: (row: number, col: number, letter: string | null) => void;
@@ -226,6 +227,10 @@ export function Grid({
   // Transient set of mis-typed cells. Renders the shake animation +
   // error ring; the parent clears the set after the animation finishes.
   errorPositions?: ReadonlySet<string>;
+  // Set of remote session ids whose typing pulse should currently
+  // animate. Threaded into `buildCellPresenceMap` so each peer's badge
+  // gets `data-typing="true"` when their session is in the set.
+  typingSessionIds?: ReadonlySet<SessionId>;
 }) {
   const cellByPosition = useMemo(() => {
     const m = new Map<string, Cell>();
@@ -379,6 +384,7 @@ export function Grid({
       playersBySessionId,
       currentSessionId,
       validatedPositions: validatedPositions ?? new Set(),
+      typingSessionIds,
     });
   }, [
     subscribeToRemotePresence,
@@ -388,6 +394,7 @@ export function Grid({
     puzzle,
     remotePresences,
     validatedPositions,
+    typingSessionIds,
   ]);
 
   // Zoom in / out centered on the currently-focused cell. When the

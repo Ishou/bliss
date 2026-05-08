@@ -27,14 +27,25 @@ export interface PlayerListProps {
    */
   readonly variant: 'stacked' | 'inline';
   /**
-   * Optional set of session ids whose owner is currently typing.
-   * Backend signals this through the `typing` presence event (Step 8 of
-   * the multiplayer-highlights wave). When a session id is in the set,
-   * the row's typing-dot animates with the `wordsparrow-presence-pulse`
-   * keyframe; absent or omitted, the dot is not rendered.
+   * Optional set of session ids whose owner is currently typing. The
+   * row's typing-dot animates with the `wordsparrow-presence-pulse`
+   * keyframe when the session is in the set.
    * Inline variant only — the stacked (waiting-room) variant ignores it.
    */
   readonly typingSessionIds?: ReadonlySet<SessionId>;
+  /**
+   * Optional set of session ids whose owner crossed the inactivity
+   * threshold. The row gets `data-idle="true"` so the avatar /
+   * pseudonym desaturate. Cleared on the server's falling `idle` edge.
+   */
+  readonly idleSessionIds?: ReadonlySet<SessionId>;
+  /**
+   * Optional set of session ids whose WebSocket dropped (graceful
+   * disconnect) and the slot has not yet been removed by `playerLeft`.
+   * The row gets `data-disconnecting="true"` so the pill greys out
+   * while the server's reconnect grace runs.
+   */
+  readonly disconnectingSessionIds?: ReadonlySet<SessionId>;
 }
 
 const styles = {
@@ -92,12 +103,25 @@ const styles = {
     borderRadius: '999px',
     fontSize: '12px',
     color: 'fgMuted',
+    transition: 'filter 200ms ease-out, opacity 200ms ease-out',
     '&[data-you="true"]': {
       background:
         'color-mix(in srgb, var(--player-color) 10%, transparent)',
       borderColor:
         'color-mix(in srgb, var(--player-color) 20%, transparent)',
       color: 'fg',
+    },
+    // Idle (>30s of no activity from this peer): drop chroma 40 % so
+    // the avatar reads as "still here, not active".
+    '&[data-idle="true"]': {
+      filter: 'saturate(0.6)',
+    },
+    // Graceful disconnect: greyscale + half opacity until either a
+    // `presenceUpdated` brings the session back (clears `data-disconnecting`)
+    // or `playerLeft` removes the row entirely.
+    '&[data-disconnecting="true"]': {
+      filter: 'grayscale(1)',
+      opacity: 0.5,
     },
   }),
   inlineAvatar: css({
@@ -131,7 +155,8 @@ const styles = {
 };
 
 export function PlayerList({
-  players, ownerSessionId, currentSessionId, variant, typingSessionIds,
+  players, ownerSessionId, currentSessionId, variant,
+  typingSessionIds, idleSessionIds, disconnectingSessionIds,
 }: PlayerListProps): React.ReactElement {
   if (variant === 'inline') {
     return (
@@ -139,11 +164,16 @@ export function PlayerList({
         {players.map((player) => {
           const isYou = player.sessionId === currentSessionId;
           const isTyping = typingSessionIds?.has(player.sessionId) ?? false;
+          const isIdle = idleSessionIds?.has(player.sessionId) ?? false;
+          const isDisconnecting =
+            disconnectingSessionIds?.has(player.sessionId) ?? false;
           const ariaLabel = [
             player.pseudonym,
             isYou ? 'vous' : null,
             player.sessionId === ownerSessionId ? 'propriétaire' : null,
             isTyping ? 'en train d\'écrire' : null,
+            isIdle ? 'inactif' : null,
+            isDisconnecting ? 'déconnecté' : null,
           ]
             .filter(Boolean)
             .join(' — ');
@@ -156,6 +186,8 @@ export function PlayerList({
               data-session-id={player.sessionId}
               data-you={isYou ? 'true' : undefined}
               data-typing={isTyping ? 'true' : undefined}
+              data-idle={isIdle ? 'true' : undefined}
+              data-disconnecting={isDisconnecting ? 'true' : undefined}
               aria-label={ariaLabel}
             >
               <span className={styles.inlineAvatar} aria-hidden="true">

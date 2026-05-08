@@ -87,6 +87,13 @@ export function buildCellPresenceMap(args: {
   readonly playersBySessionId: ReadonlyMap<SessionId, Player>;
   readonly currentSessionId: SessionId | undefined;
   readonly validatedPositions: ReadonlySet<string>;
+  /**
+   * Optional set of sessionIds whose typing pulse should animate. When a
+   * sessionId is in this set, the badge on that peer's active cell is
+   * marked `typing=true` so the keyframe activates. Local sessions and
+   * sessions not currently active on a cell are unaffected.
+   */
+  readonly typingSessionIds?: ReadonlySet<SessionId>;
 }): Map<string, CellPresence> {
   const {
     puzzle,
@@ -95,6 +102,7 @@ export function buildCellPresenceMap(args: {
     playersBySessionId,
     currentSessionId,
     validatedPositions,
+    typingSessionIds,
   } = args;
 
   const result = new Map<string, CellPresence>();
@@ -134,7 +142,11 @@ export function buildCellPresenceMap(args: {
     if (validatedPositions.has(key)) return;
     const existing = result.get(key);
     if (existing && existing.role === 'active' && role === 'word') return;
-    result.set(key, { vars: ensureVars(sessionId), role, badge });
+    const typing =
+      role === 'active' && typingSessionIds?.has(sessionId) === true
+        ? true
+        : undefined;
+    result.set(key, { vars: ensureVars(sessionId), role, badge, typing });
   };
 
   // Step 1: layer remote presences in arrival order. Word cells first,

@@ -152,6 +152,45 @@ export interface PresenceUpdatedEvent {
   readonly direction: 'across' | 'down' | null;
 }
 
+// Boolean state edge — peer started ([typing] = true) or stopped (false)
+// receiving keystrokes. Server emits one frame per transition; clients
+// SHOULD treat the dot as a hint, not a guarantee, since rate-limiting
+// and reordering can drop the trailing `false` edge.
+export interface TypingEvent {
+  readonly type: 'typing';
+  readonly sessionId: SessionId;
+  readonly typing: boolean;
+}
+
+// Boolean state edge for the 30s inactivity threshold. Independent of
+// `connectionLost` — a connected-but-idle peer is still subscribed.
+export interface IdleEvent {
+  readonly type: 'idle';
+  readonly sessionId: SessionId;
+  readonly idle: boolean;
+}
+
+// Graceful disconnect — peer's WebSocket closed but the slot is held
+// during the server's grace window. Distinct from `playerLeft`: the
+// roster pill should grey-out on this event and only be removed when
+// (or if) `playerLeft` follows.
+export interface ConnectionLostEvent {
+  readonly type: 'connectionLost';
+  readonly sessionId: SessionId;
+}
+
+// Server-authoritative cursor relocation when an answer that contained a
+// peer's cursor was validated. Clients apply unconditionally
+// (last-write-wins) and re-render the named session's cursor at the
+// bumped position. Mirrors AsyncAPI `cursorBumped`.
+export interface CursorBumpedEvent {
+  readonly type: 'cursorBumped';
+  readonly sessionId: SessionId;
+  readonly row: number;
+  readonly column: number;
+  readonly direction: 'across' | 'down';
+}
+
 export interface GameSolvedEvent {
   readonly type: 'gameSolved';
   readonly durationMs: number;
@@ -176,5 +215,9 @@ export type GameEvent =
   | GameStartedEvent
   | CellUpdatedEvent
   | PresenceUpdatedEvent
+  | TypingEvent
+  | IdleEvent
+  | ConnectionLostEvent
+  | CursorBumpedEvent
   | GameSolvedEvent
   | GameErrorEvent;
