@@ -166,7 +166,12 @@ fun Application.module() {
     // the WebSocket route (PR #138) so a lobby created via POST /v1/lobbies
     // is visible to a subsequent WebSocket connection on the same process.
     val lobbyRepository = InMemoryLobbyRepository()
-    val gridBaseUrl = System.getenv("GRID_BASE_URL") ?: "http://grid-api:8080"
+    // Local-dev default: grid-api on the host's loopback (paired with
+    // grid/api's DEFAULT_PORT=7777). Prod chart pins GRID_BASE_URL
+    // explicitly via the deployment env block, so the cluster routes
+    // through the in-cluster Kubernetes Service DNS regardless of the
+    // local default. Mirrors the PORT pattern in `Main.kt`.
+    val gridBaseUrl = System.getenv("GRID_BASE_URL") ?: "http://localhost:7777"
     val puzzleProvider = HttpPuzzleProvider(HttpClient(), gridBaseUrl)
 
     // Fire-and-forget analytics scope (ADR-0025). Cancelled on app stop so in-flight

@@ -88,6 +88,12 @@ env:
   # this keeps prod on 8081 regardless of in-app default changes.
   - name: PORT
     value: "8081"
+  # Pin the grid-api host. Module.kt's default is http://localhost:7777
+  # (local-dev convenience, paired with grid/api's DEFAULT_PORT). In the
+  # cluster, grid-api lives at the Kubernetes Service DNS name on its
+  # service port (8080 per grid/api/deploy/chart/values.yaml).
+  - name: GRID_BASE_URL
+    value: "http://grid-api:8080"
 # Name of a Kubernetes Secret to envFrom into the pod. ADR-0009 §10:
 # bootstrapped via `kubectl create secret`, never committed.
 envFromSecret: ""
