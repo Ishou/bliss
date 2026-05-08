@@ -149,6 +149,39 @@ sealed class ServerToClientFrame {
         val direction: String?,
     ) : ServerToClientFrame()
 
+    /** Boolean typing-edge for a peer; [typing]=true on keystroke, false when the trailing-edge gap expires. */
+    @Serializable
+    @SerialName("typing")
+    data class Typing(
+        val sessionId: String,
+        val typing: Boolean,
+    ) : ServerToClientFrame()
+
+    /** Idle-edge for a peer; independent of [ConnectionLost]. */
+    @Serializable
+    @SerialName("idle")
+    data class Idle(
+        val sessionId: String,
+        val idle: Boolean,
+    ) : ServerToClientFrame()
+
+    /** Peer's WebSocket closed; slot held during grace window. Distinct from [PlayerLeft] — clients grey-out, don't remove. */
+    @Serializable
+    @SerialName("connectionLost")
+    data class ConnectionLost(
+        val sessionId: String,
+    ) : ServerToClientFrame()
+
+    /** Server-authoritative cursor bump. direction kept as String to avoid domain imports in this DTO file. */
+    @Serializable
+    @SerialName("cursorBumped")
+    data class CursorBumped(
+        val sessionId: String,
+        val row: Int,
+        val column: Int,
+        val direction: String,
+    ) : ServerToClientFrame()
+
     @Serializable
     @SerialName("gameSolved")
     data class GameSolved(

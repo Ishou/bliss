@@ -7,6 +7,7 @@ import com.bliss.game.api.dto.ClientToServerFrame
 import com.bliss.game.api.dto.ServerToClientFrame
 import com.bliss.game.application.ports.LobbyEvent
 import com.bliss.game.application.ports.LobbyRepository
+import com.bliss.game.application.usecases.PresenceAggregator
 import com.bliss.game.application.usecases.UseCaseOutcome
 import com.bliss.game.domain.GridConfig
 import com.bliss.game.domain.Letter
@@ -83,6 +84,7 @@ fun Route.lobbyWebSocketRoute(
     sessionManager: SessionManager,
     useCases: LobbyUseCases,
     repo: LobbyRepository,
+    presenceAggregator: PresenceAggregator? = null,
     backgroundScope: CoroutineScope = defaultBackgroundScope,
     reconnectGrace: Duration = DEFAULT_RECONNECT_GRACE,
 ) {
@@ -118,11 +120,21 @@ fun Route.lobbyWebSocketRoute(
                 if (frame !is Frame.Text) continue
                 val parsed = parseFrameOrError(frame.readText()) ?: continue
                 memberSessionId =
-                    handleFrame(parsed, lobbyId, useCases, sessionManager, this, memberSessionId)
+                    handleFrame(
+                        parsed,
+                        lobbyId,
+                        useCases,
+                        sessionManager,
+                        this,
+                        memberSessionId,
+                        presenceAggregator,
+                    )
             }
         } finally {
             val boundSessionId = sessionManager.unregister(lobbyId, this) ?: memberSessionId
             if (boundSessionId != null) {
+                // connectionLost fires here; playerLeft is scheduled by the grace coroutine.
+                presenceAggregator?.recordDisconnect(lobbyId, SessionId(boundSessionId))
                 scheduleReconnectGrace(
                     backgroundScope = backgroundScope,
                     sessionManager = sessionManager,
@@ -181,6 +193,7 @@ private suspend fun DefaultWebSocketServerSession.handleFrame(
     sessionManager: SessionManager,
     session: DefaultWebSocketServerSession,
     memberSessionId: String?,
+    presenceAggregator: PresenceAggregator?,
 ): String? {
     val effectiveId =
         if (memberSessionId.isNullOrEmpty()) null else memberSessionId
@@ -258,6 +271,8 @@ private suspend fun DefaultWebSocketServerSession.handleFrame(
                     letter,
                 )
             }
+            // rising typing edge; trailing edge fires from tickOnce after the configured gap.
+            presenceAggregator?.recordKeystroke(lobbyId, SessionId(sid))
             memberSessionId
         }
         is ClientToServerFrame.CellFocus -> {
@@ -283,6 +298,8 @@ private suspend fun DefaultWebSocketServerSession.handleFrame(
                     direction = parsed.direction,
                 ),
             )
+            // focus is activity for the idle timer but does not fire a typing edge.
+            presenceAggregator?.recordFocus(lobbyId, SessionId(sid))
             memberSessionId
         }
         ClientToServerFrame.LeaveLobby -> {

@@ -8,6 +8,7 @@ import com.bliss.game.application.usecases.CreateLobbyUseCase
 import com.bliss.game.application.usecases.JoinLobbyUseCase
 import com.bliss.game.application.usecases.LeaveLobbyUseCase
 import com.bliss.game.application.usecases.LobbyGarbageCollector
+import com.bliss.game.application.usecases.PresenceAggregator
 import com.bliss.game.application.usecases.RenameSelfUseCase
 import com.bliss.game.application.usecases.SetGridConfigUseCase
 import com.bliss.game.application.usecases.StartGameUseCase
@@ -181,9 +182,19 @@ fun Application.module() {
     val gcJob = gc.run(this)
     monitor.subscribe(ApplicationStopped) { gcJob.cancel() }
 
+    // 1s tick: coarser than the ~1.5s typing-edge gap; sub-second jitter has no UX impact.
+    val presenceBroadcaster = WebSocketPresenceBroadcaster(sessionManager)
+    val presenceAggregator =
+        PresenceAggregator(
+            clock = SystemClock,
+            broadcaster = presenceBroadcaster,
+        )
+    val presenceJob = presenceAggregator.run(this, tickInterval = Duration.ofSeconds(1))
+    monitor.subscribe(ApplicationStopped) { presenceJob.cancel() }
+
     routing {
         health(APP_VERSION)
         lobbies(createLobby = useCases.createLobby, repo = lobbyRepository, sessionManager = sessionManager)
-        lobbyWebSocketRoute(sessionManager, useCases, lobbyRepository)
+        lobbyWebSocketRoute(sessionManager, useCases, lobbyRepository, presenceAggregator)
     }
 }
