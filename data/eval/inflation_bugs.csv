@@ -1,0 +1,2 @@
+surface,lemma,pos,clue,reason,notes
+tira,tirer,verbe,Extraire,faute_de_français,Surface is 3sg passé simple but clue stayed at infinitive — likely an inflater agreement gap on finite-tense verb surfaces (lemma clue itself is fine: tirer→Extraire is rated y in iter13).
