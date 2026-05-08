@@ -124,5 +124,16 @@ tasks.test {
 tasks.shadowJar {
     archiveBaseName.set("grid-api")
     archiveClassifier.set("all")
+    // Shadow 9.4.1's mergeServiceFiles() does NOT actually concatenate the
+    // META-INF/services/org.flywaydb.core.extensibility.Plugin files from
+    // flyway-core and flyway-database-postgresql — only the latter survives
+    // in the fat jar. Without flyway-core's `CoreResourceTypeProvider` entry
+    // Flyway can't recognise `.sql` as a migration extension, so Flyway
+    // boots, connects, and silently scans zero files (prod symptom:
+    // `target_schema_version=none migrations_executed=0`). We work around
+    // by shipping our own copy of the SPI file at
+    // grid/api/src/main/resources/META-INF/services/... — local resources
+    // always win the merge, so the file with the full plugin list ends up
+    // in the shadow jar regardless of how the transformer behaves.
     mergeServiceFiles()
 }
