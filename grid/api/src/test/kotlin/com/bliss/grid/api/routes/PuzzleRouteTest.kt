@@ -11,11 +11,16 @@ import assertk.assertions.startsWith
 import com.bliss.grid.api.dto.PuzzleResponse
 import com.bliss.grid.api.module
 import com.bliss.grid.application.puzzle.GeneratePuzzleUseCase
+import com.bliss.grid.application.puzzle.LoadOrGeneratePuzzleUseCase
 import com.bliss.grid.application.puzzle.PUZZLE_HEIGHT
 import com.bliss.grid.application.puzzle.PUZZLE_WIDTH
+import com.bliss.grid.application.puzzle.RequestWordHintUseCase
+import com.bliss.grid.application.puzzle.ValidatePuzzleUseCase
 import com.bliss.grid.application.puzzle.defaultPuzzleConstraints
 import com.bliss.grid.domain.generation.WordRepository
 import com.bliss.grid.domain.model.Word
+import com.bliss.grid.infrastructure.persistence.InMemoryHintUsageRepository
+import com.bliss.grid.infrastructure.persistence.InMemoryPuzzleRepository
 import io.ktor.client.request.get
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.HttpStatusCode
@@ -116,7 +121,7 @@ class PuzzleRouteTest {
         }
 
     @Test
-    fun `consecutive GETs produce different cell layouts - randomness end-to-end`() =
+    fun `distinct puzzleIds produce different cell layouts - generator randomness`() =
         testApplication {
             application { module() }
 
@@ -138,6 +143,64 @@ class PuzzleRouteTest {
                     .toString()
 
             assertThat(firstCells).isNotEqualTo(secondCells)
+        }
+
+    @Test
+    fun `consecutive GETs on the same puzzleId return the same canonical layout`() =
+        testApplication {
+            application { module() }
+
+            val first = Json.parseToJsonElement(client.get("/v1/puzzles/$validId").bodyAsText()).jsonObject
+            val second = Json.parseToJsonElement(client.get("/v1/puzzles/$validId").bodyAsText()).jsonObject
+
+            // Stable canonical layout: same dimensions, same letter-cell
+            // positions. The puzzle store wired up by Module is doing its
+            // job — the validate endpoint depends on this stability.
+            // (Wire-level clueIds re-roll across calls because the mapper
+            // uses a time-based UUID v7 generator; clueId stability is a
+            // separate concern not promised by the OpenAPI today.)
+            assertThat(first["width"]!!.jsonPrimitive.content).isEqualTo(second["width"]!!.jsonPrimitive.content)
+            assertThat(first["height"]!!.jsonPrimitive.content).isEqualTo(second["height"]!!.jsonPrimitive.content)
+            val firstLetters = letterPositions(first)
+            val secondLetters = letterPositions(second)
+            assertThat(firstLetters).isEqualTo(secondLetters)
+        }
+
+    private fun letterPositions(puzzleJson: JsonObject): List<Pair<Int, Int>> =
+        puzzleJson["cells"]!!
+            .jsonArray
+            .map { it.jsonObject }
+            .filter { it["kind"]?.jsonPrimitive?.content == "letter" }
+            .map {
+                val pos = it["position"]!!.jsonObject
+                pos["row"]!!.jsonPrimitive.content.toInt() to pos["column"]!!.jsonPrimitive.content.toInt()
+            }
+
+    @Test
+    fun `responds 200 with hintsAllowed in the body`() =
+        testApplication {
+            application { module() }
+
+            val body = client.get("/v1/puzzles/$validId").bodyAsText()
+            val json = Json.parseToJsonElement(body).jsonObject
+
+            assertThat(json["hintsAllowed"]!!.jsonPrimitive.content.toInt()).isEqualTo(3)
+        }
+
+    @Test
+    fun `LetterCells in the response carry no canonical letter`() =
+        testApplication {
+            application { module() }
+
+            val body = client.get("/v1/puzzles/$validId").bodyAsText()
+            val cells = Json.parseToJsonElement(body).jsonObject["cells"]!!.jsonArray
+
+            cells
+                .map { it.jsonObject }
+                .filter { it["kind"]?.jsonPrimitive?.content == "letter" }
+                .forEach { letterCell ->
+                    assertThat(letterCell.containsKey("letter")).isEqualTo(false)
+                }
         }
 
     @Test
@@ -211,9 +274,18 @@ class PuzzleRouteTest {
                             length: Int,
                             pattern: Map<Int, Char>,
                         ): List<Word> = emptyList()
+
+                        override fun containsLemma(text: String): Boolean = false
                     }
+                val gen = GeneratePuzzleUseCase(emptyRepo, defaultPuzzleConstraints())
+                val puzzleRepo = InMemoryPuzzleRepository()
+                val hintUsageRepo = InMemoryHintUsageRepository()
                 routing {
-                    puzzles(GeneratePuzzleUseCase(emptyRepo, defaultPuzzleConstraints()))
+                    puzzles(
+                        loadOrGenerate = LoadOrGeneratePuzzleUseCase(puzzleRepo, gen),
+                        requestWordHint = RequestWordHintUseCase(puzzleRepo, hintUsageRepo, emptyRepo),
+                        validatePuzzle = ValidatePuzzleUseCase(puzzleRepo),
+                    )
                 }
             }
 

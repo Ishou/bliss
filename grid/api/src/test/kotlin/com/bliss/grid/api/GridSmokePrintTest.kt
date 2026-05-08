@@ -36,7 +36,7 @@ class GridSmokePrintTest {
         }
         println("=== generation: ${if (grid != null) "OK" else "FAIL"} after $attempts seed(s); used seed=$usedSeed ===")
         check(grid != null) { "grid generation failed across 50 seeds" }
-        val puzzle = mapper.toApi(grid, UUID.randomUUID(), Instant.now())
+        val puzzle = mapper.toApi(grid, UUID.randomUUID(), Instant.now(), hintsAllowed = 3)
         val seed = usedSeed
 
         val byPos = puzzle.cells.associateBy { it.position.row to it.position.column }
@@ -49,7 +49,7 @@ class GridSmokePrintTest {
                     when (val cell = byPos[r to c]) {
                         is BlockCellDto -> '#'
                         is DefinitionCellDto -> '*'
-                        is LetterCellDto -> cell.letter?.firstOrNull() ?: '?'
+                        is LetterCellDto -> '_' // wire shape no longer carries the canonical letter
                         null -> '?'
                         else -> '?'
                     }

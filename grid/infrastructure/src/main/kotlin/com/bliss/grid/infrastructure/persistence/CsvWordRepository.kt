@@ -57,6 +57,15 @@ class CsvWordRepository(
             }
         }
 
+    /**
+     * Set of every surface form and lemma in the corpus, folded to grid-cell
+     * uppercase ASCII (the same form as `Word.text` / `Word.lemma`). Backs
+     * [containsLemma]'s O(1) lookup. Memory: ~2× word count strings; tiny
+     * compared to the corpus already in heap.
+     */
+    private val knownTokens: Set<String> =
+        words.flatMap { setOf(it.text, it.lemma) }.toSet()
+
     override fun findByLength(length: Int): List<Word> = byLength[length].orEmpty()
 
     override fun findByLengthAndPattern(
@@ -80,6 +89,13 @@ class CsvWordRepository(
         // Preserve the input ordering of `byLength[length]` so frequency-based ordering
         // (when present) is respected by callers that iterate in order.
         return sorted[0].filter { it in seed }
+    }
+
+    override fun containsLemma(text: String): Boolean {
+        if (text.isBlank()) return false
+        val folded = foldToAscii(text)
+        if (folded.isEmpty() || folded.any { it !in 'A'..'Z' }) return false
+        return folded in knownTokens
     }
 
     companion object {

@@ -30,7 +30,7 @@ class GenerationInspectionTest {
         for (seed in 0L until 100L) {
             val grid = generator.generate(constraints, Random(seed)) ?: continue
             generated++
-            val puzzle = mapper.toApi(grid, UUID.randomUUID(), Instant.now())
+            val puzzle = mapper.toApi(grid, UUID.randomUUID(), Instant.now(), hintsAllowed = 3)
             val blocks = puzzle.cells.count { it is BlockCellDto }
             if (blocks > 0) {
                 withBlocks++
@@ -72,7 +72,7 @@ class GenerationInspectionTest {
 
         for (seed in 0L until 5L) {
             val grid = generator.generate(constraints, Random(seed)) ?: continue
-            val puzzle = mapper.toApi(grid, UUID.randomUUID(), Instant.now())
+            val puzzle = mapper.toApi(grid, UUID.randomUUID(), Instant.now(), hintsAllowed = 3)
             val area = puzzle.width * puzzle.height
             val letterPositions =
                 puzzle.cells
@@ -116,7 +116,7 @@ class GenerationInspectionTest {
         for (seed in 0L until 30L) {
             val grid = generator.generate(constraints, Random(seed)) ?: continue
             generated++
-            val puzzle = mapper.toApi(grid, UUID.randomUUID(), Instant.now())
+            val puzzle = mapper.toApi(grid, UUID.randomUUID(), Instant.now(), hintsAllowed = 3)
 
             val byPos = puzzle.cells.associate { (it.position.row to it.position.column) to it }
             val letterPositions =

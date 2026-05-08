@@ -5,8 +5,17 @@ import com.bliss.grid.api.infrastructure.Database
 import com.bliss.grid.api.routes.health
 import com.bliss.grid.api.routes.puzzles
 import com.bliss.grid.application.puzzle.GeneratePuzzleUseCase
+import com.bliss.grid.application.puzzle.HintUsageRepository
+import com.bliss.grid.application.puzzle.LoadOrGeneratePuzzleUseCase
+import com.bliss.grid.application.puzzle.PuzzleRepository
+import com.bliss.grid.application.puzzle.RequestWordHintUseCase
+import com.bliss.grid.application.puzzle.ValidatePuzzleUseCase
 import com.bliss.grid.application.puzzle.defaultPuzzleConstraints
 import com.bliss.grid.infrastructure.persistence.CsvWordRepository
+import com.bliss.grid.infrastructure.persistence.InMemoryHintUsageRepository
+import com.bliss.grid.infrastructure.persistence.InMemoryPuzzleRepository
+import com.bliss.grid.infrastructure.persistence.PostgresHintUsageRepository
+import com.bliss.grid.infrastructure.persistence.PostgresPuzzleRepository
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
@@ -96,8 +105,21 @@ fun Application.module() {
     val wordRepository = CsvWordRepository.frenchFromClasspath()
     val generatePuzzle = GeneratePuzzleUseCase(wordRepository, defaultPuzzleConstraints())
 
+    // Pick adapters on the live DataSource: production has DATABASE_URL set
+    // (Helm chart guarantees it) and gets the durable Postgres path. Local
+    // dev / route tests run without a DB and use the in-memory pair so the
+    // wire path stays exercisable without spinning up Testcontainers.
+    val (puzzleRepository, hintUsageRepository) =
+        when (val ds = Database.dataSource()) {
+            null -> InMemoryPuzzleRepository() as PuzzleRepository to InMemoryHintUsageRepository() as HintUsageRepository
+            else -> PostgresPuzzleRepository(ds) as PuzzleRepository to PostgresHintUsageRepository(ds) as HintUsageRepository
+        }
+    val loadOrGenerate = LoadOrGeneratePuzzleUseCase(puzzleRepository, generatePuzzle)
+    val requestWordHint = RequestWordHintUseCase(puzzleRepository, hintUsageRepository, wordRepository)
+    val validatePuzzle = ValidatePuzzleUseCase(puzzleRepository)
+
     routing {
         health(version)
-        puzzles(generatePuzzle)
+        puzzles(loadOrGenerate, requestWordHint, validatePuzzle)
     }
 }

@@ -38,6 +38,7 @@ class GridToPuzzleMapper {
         grid: Grid,
         puzzleId: UUID,
         createdAt: Instant,
+        hintsAllowed: Int,
         title: String = "Grille du jour",
         language: String = "fr",
     ): PuzzleResponse {
@@ -65,6 +66,7 @@ class GridToPuzzleMapper {
             height = grid.height,
             cells = cells,
             clues = clues,
+            hintsAllowed = hintsAllowed,
             createdAt = DateTimeFormatter.ISO_INSTANT.format(createdAt),
         )
     }
@@ -80,7 +82,7 @@ class GridToPuzzleMapper {
                 val dto = pos.toDto()
                 when (val cell = grid.cells[pos]) {
                     null, EmptyCell -> cells += BlockCellDto(position = dto)
-                    is LetterCell -> cells += LetterCellDto(position = dto, letter = cell.letter.toString())
+                    is LetterCell -> cells += LetterCellDto(position = dto)
                     is ClueCell -> {
                         cell.clues.forEach { clue ->
                             val placement =
