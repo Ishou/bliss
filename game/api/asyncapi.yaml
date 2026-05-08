@@ -39,6 +39,19 @@ info:
       emits one such cell per clue at the same position, and the game
       bounded context now bundles them into a single cell with a list of
       clues. Resolves the limitation flagged in PR #132's review.
+    - Added four server→client presence-state events backing the
+      multiplayer-highlights redesign (PR #226 frontend): `typing`,
+      `idle`, `connectionLost`, `cursorBumped`. All four are ephemeral
+      (carry no domain meaning, not persisted, dropped on
+      WAITING/COMPLETED transitions like `presenceUpdated`).
+      `typing`/`idle` are boolean state-edge events the server emits on
+      each transition so a single message shape covers both directions.
+      `connectionLost` is distinct from `playerLeft`: a graceful
+      disconnect with a server-side grace window — clients SHOULD
+      grey-out the roster pill for ~2s and only remove the slot if
+      `playerLeft` follows. `cursorBumped` is the server-authoritative
+      cursor relocation when an answer that contained a peer's cursor
+      is validated; clients apply it unconditionally (last-write-wins).
   contact: { name: Bliss maintainers, url: https://github.com/Ishou/bliss, email: noreply@bliss.example }
   license: { name: FSL-1.1-MIT, url: https://github.com/Ishou/bliss/blob/main/LICENSE }
 
@@ -107,6 +120,10 @@ channels:
           - { $ref: '#/components/messages/GameStarted' }
           - { $ref: '#/components/messages/CellUpdated' }
           - { $ref: '#/components/messages/PresenceUpdated' }
+          - { $ref: '#/components/messages/Typing' }
+          - { $ref: '#/components/messages/Idle' }
+          - { $ref: '#/components/messages/ConnectionLost' }
+          - { $ref: '#/components/messages/CursorBumped' }
           - { $ref: '#/components/messages/GameSolved' }
           - { $ref: '#/components/messages/Error' }
 
@@ -126,6 +143,10 @@ components:
     GameStarted:    { name: gameStarted,    title: Game started,                       summary: Server fetched a puzzle and transitioned to IN_PROGRESS.,                                          payload: { $ref: '#/components/schemas/GameStartedPayload' } }
     CellUpdated:    { name: cellUpdated,    title: Canonical cell update,              summary: Server-stamped broadcast of an accepted `cellUpdate`.,                                             payload: { $ref: '#/components/schemas/CellUpdatedPayload' },   description: Last-write-wins per ADR-0018; clients apply unconditionally. }
     PresenceUpdated: { name: presenceUpdated, title: Peer presence update,              summary: Broadcast of a peer's `cellFocus`; ephemeral cursor position.,                                     payload: { $ref: '#/components/schemas/PresenceUpdatedPayload' }, description: Ephemeral; carries no domain meaning and is not persisted. Cleared on `WAITING`/`COMPLETED` transitions. }
+    Typing:         { name: typing,         title: Peer typing state edge,             summary: Server-emitted boolean transition — peer started or stopped receiving keystrokes.,                payload: { $ref: '#/components/schemas/TypingPayload' },          description: "Ephemeral. Server tracks each session's last `cellUpdate` and emits the rising edge (typing=true) on the first keystroke after a quiet gap, the falling edge (typing=false) after ~1.5s of input idle. Rate-limited server-side; clients SHOULD treat it as a hint, not a guarantee." }
+    Idle:           { name: idle,           title: Peer idle state edge,               summary: Server-emitted boolean transition — peer crossed the 30s no-input threshold or returned to activity.,  payload: { $ref: '#/components/schemas/IdlePayload' },            description: "Ephemeral. Server timer per session; emits the rising edge (idle=true) after ~30s of no `cellFocus`/`cellUpdate`, the falling edge (idle=false) on the next activity. Independent of `connectionLost`." }
+    ConnectionLost: { name: connectionLost, title: Peer disconnected (graceful),       summary: Peer's WebSocket closed; the slot is held during a server-side grace window before a playerLeft follows.,        payload: { $ref: '#/components/schemas/ConnectionLostPayload' },  description: Ephemeral. Distinct from `playerLeft` — clients SHOULD grey-out the roster pill on this event and only remove the slot when (or if) `playerLeft` arrives. If the same `sessionId` reconnects within the grace window, the server emits `presenceUpdated` (or no event) instead of `playerLeft`. }
+    CursorBumped:   { name: cursorBumped,   title: Server-authoritative cursor relocation, summary: Peer's cursor was on a now-validated answer; server moves it to the next clue.,                  payload: { $ref: '#/components/schemas/CursorBumpedPayload' },    description: Ephemeral. Emitted when an answer-validation flow locks cells that contained a peer's cursor; clients apply unconditionally (last-write-wins) and re-render the named session's cursor at the bumped position. }
     GameSolved:     { name: gameSolved,     title: Game solved,                        summary: All cells match the canonical solution; lobby is COMPLETED.,                                       payload: { $ref: '#/components/schemas/GameSolvedPayload' } }
     Error:          { name: error,          title: Error frame,                        summary: RFC 7807 problem document for a rejected client frame.,                                            payload: { $ref: '#/components/schemas/ErrorPayload' },         description: Mirrors the REST error envelope. Closing the socket is at the server's discretion. }
 
@@ -494,6 +515,70 @@ components:
         column:    { type: integer, minimum: 0, nullable: true, description: Zero-indexed column of the focused cell; `null` when the peer has no cell focused. }
         direction: { $ref: '#/components/schemas/GameClueDirection', nullable: true, description: Direction the peer is currently solving; `null` when no cell is focused. }
       example: { type: presenceUpdated, sessionId: 0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6b, row: 0, column: 3, direction: across }
+    TypingPayload:
+      type: object
+      required: [type, sessionId, typing]
+      description: |
+        Boolean state edge — peer started (`typing: true`) or stopped
+        (`typing: false`) receiving keystrokes. Server tracks per-session
+        last-keystroke timestamps and emits the edge events; clients SHOULD
+        treat the dot as a hint, not a guarantee, since rate-limiting and
+        network reordering can drop the trailing `false` edge. Carries no
+        domain meaning; not persisted.
+      properties:
+        type:      { type: string, enum: [typing] }
+        sessionId: { $ref: '#/components/schemas/SessionId' }
+        typing:    { type: boolean, description: True when the peer began typing; false on the trailing idle edge. }
+      example: { type: typing, sessionId: 0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6b, typing: true }
+    IdlePayload:
+      type: object
+      required: [type, sessionId, idle]
+      description: |
+        Boolean state edge — peer crossed the 30s inactivity threshold
+        (`idle: true`) or returned to activity (`idle: false`). The
+        threshold is server-side; clients render the transition (e.g.
+        desaturated badge / roster pill) without re-deriving timeouts.
+        Independent of `connectionLost`: a connected-but-idle peer is
+        still subscribed to the lobby. Ephemeral; not persisted.
+      properties:
+        type:      { type: string, enum: [idle] }
+        sessionId: { $ref: '#/components/schemas/SessionId' }
+        idle:      { type: boolean, description: True when the peer crossed the inactivity threshold; false on the next activity. }
+      example: { type: idle, sessionId: 0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6b, idle: true }
+    ConnectionLostPayload:
+      type: object
+      required: [type, sessionId]
+      description: |
+        Graceful disconnect signal. Distinct from `playerLeft`: the slot
+        is held during a server-side grace window (currently ~30s).
+        Clients SHOULD grey-out the roster pill on receipt and remove
+        the slot only when (or if) `playerLeft` follows. If the same
+        `sessionId` reconnects within the grace window, the server may
+        emit a fresh `presenceUpdated` instead of `playerLeft`; clients
+        SHOULD restore the pill on activity for that session.
+      properties:
+        type:      { type: string, enum: [connectionLost] }
+        sessionId: { $ref: '#/components/schemas/SessionId' }
+      example: { type: connectionLost, sessionId: 0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6b }
+    CursorBumpedPayload:
+      type: object
+      required: [type, sessionId, row, column, direction]
+      description: |
+        Server-authoritative cursor relocation. Emitted when an
+        answer-validation flow locks cells that contained a peer's
+        cursor — the server moves the named session's cursor to the
+        next clue's first letter cell so the peer is not stranded on a
+        sage cell. Clients apply unconditionally (last-write-wins) and
+        re-render the cursor at the bumped position. The frame mirrors
+        a `presenceUpdated` shape but is non-nullable on row/column/
+        direction (a bump always has a target).
+      properties:
+        type:      { type: string, enum: [cursorBumped] }
+        sessionId: { $ref: '#/components/schemas/SessionId' }
+        row:       { type: integer, minimum: 0, description: Zero-indexed row of the bumped-to cell. }
+        column:    { type: integer, minimum: 0, description: Zero-indexed column of the bumped-to cell. }
+        direction: { $ref: '#/components/schemas/GameClueDirection', description: Solving direction at the bumped-to cell. }
+      example: { type: cursorBumped, sessionId: 0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6b, row: 2, column: 0, direction: down }
     GameSolvedPayload:
       type: object
       required: [type, durationMs, finalEntries]
