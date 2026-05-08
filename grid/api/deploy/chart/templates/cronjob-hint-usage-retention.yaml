@@ -35,7 +35,7 @@ spec:
             runAsUser: 65532
           containers:
             - name: psql
-              image: {{ .Values.retention.hintUsage.image | quote }}
+              image: {{ include "wordsparrow-api.retentionImage" . | quote }}
               imagePullPolicy: IfNotPresent
               securityContext:
                 allowPrivilegeEscalation: false

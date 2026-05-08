@@ -89,5 +89,9 @@ retention:
     schedule: "30 3 * * *"
     # Days from `updated_at` to keep rows.
     days: 90
-    # Tiny image with `psql` only. Pin to a digest in prod.
-    image: "postgres:16-alpine"
+    image:
+      repository: postgres
+      tag: "16-alpine"
+      digest: ""
+      # When true, helm install/upgrade fails fast if digest is empty (mirrors main image guard).
+      requireDigest: false

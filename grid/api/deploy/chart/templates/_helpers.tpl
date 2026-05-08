@@ -41,6 +41,17 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- printf "%s-pg" (include "wordsparrow-api.fullname" .) | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 {{/* Image ref: digest-pinned when set (manifesto), tag fallback otherwise. */}}
+{{- define "wordsparrow-api.retentionImage" -}}
+{{- $img := .Values.retention.hintUsage.image -}}
+{{- if and (not $img.digest) $img.requireDigest -}}
+{{- fail "retention.hintUsage.image.digest must be set for production — MANIFESTO reproducible builds" -}}
+{{- end -}}
+{{- if $img.digest -}}
+{{- printf "%s@%s" $img.repository $img.digest -}}
+{{- else -}}
+{{- printf "%s:%s" $img.repository $img.tag -}}
+{{- end -}}
+{{- end -}}
 {{- define "wordsparrow-api.image" -}}
 {{- if and (not .Values.image.digest) .Values.image.requireDigest -}}
 {{- fail "image.digest must be set for production — MANIFESTO reproducible builds" -}}

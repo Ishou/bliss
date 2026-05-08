@@ -30,3 +30,7 @@ envFromSecret: "wordsparrow-api-env"
 retention:
   hintUsage:
     enabled: true
+    image:
+      requireDigest: true
+      # Set at deploy time via --set retention.hintUsage.image.digest=sha256:...
+      digest: ""
