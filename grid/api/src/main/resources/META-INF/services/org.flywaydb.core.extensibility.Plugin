@@ -1,3 +1,12 @@
+# Derived from flyway-core:11.10.4 + flyway-database-postgresql:11.10.4.
+# MUST be re-derived when flywayVersion changes in build.gradle.kts.
+# Shadow 9.4.1 mergeServiceFiles() drops flyway-core entries; see build.gradle.kts comment.
+# To regenerate:
+#   unzip -p ~/.gradle/caches/.../flyway-core-<ver>.jar \
+#     META-INF/services/org.flywaydb.core.extensibility.Plugin > /tmp/core.txt
+#   unzip -p ~/.gradle/caches/.../flyway-database-postgresql-<ver>.jar \
+#     META-INF/services/org.flywaydb.core.extensibility.Plugin > /tmp/pg.txt
+#   cat /tmp/core.txt /tmp/pg.txt | sort -u
 org.flywaydb.core.internal.database.h2.H2DatabaseType
 org.flywaydb.core.internal.database.sqlite.SQLiteDatabaseType
 org.flywaydb.core.internal.database.base.TestContainersDatabaseType
