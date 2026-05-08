@@ -68,7 +68,7 @@ const VIEWPORTS = [
   { name: 'desktop',       width: 1440, height: 900 },
 ] as const;
 
-// Lower bound on fontSize / cell-width ratio. Anything below this is
+// Lower bound on fontSize / wrap-width ratio. Anything below this is
 // visually "too tiny" — the symptom we're trying to catch. Currently
 // matches FitText's Phase-2 floor (`min × PHASE2_FLOOR_FACTOR`):
 // `min = 0.18`, factor `0.5` → effective floor `0.09`. Setting the
@@ -77,6 +77,14 @@ const VIEWPORTS = [
 // (e.g. to 0.12 or 0.14) to enforce a stricter "no clue is ever this
 // small" contract; the test will then surface the cells we'd need to
 // retune for.
+//
+// Why wrap-relative, not cell-relative: stacked-clue cells render two
+// clues side-by-side, each in a half-cell wrap. Measuring `font /
+// fullCell` doubly-penalises stacked clues (their wrap is half the
+// cell, so `font / fullCell` is structurally ~half their wrap-relative
+// readability). The visually meaningful question — "is the text too
+// small for the box it sits in?" — is `font / wrap`, which collapses
+// to `font / cell` for single-clue cells where wrap ≈ cell.
 const MIN_RATIO = 0.10;
 
 interface RatioReport {
@@ -138,7 +146,7 @@ for (const vp of VIEWPORTS) {
 
     // Distribution summary — printed every run so the test output
     // doubles as a diagnostic for tuning MIN_RATIO / Phase-2 floors.
-    const ratios = reports.map((r) => r.ratioVsCell).sort((a, b) => a - b);
+    const ratios = reports.map((r) => r.ratioVsWrap).sort((a, b) => a - b);
     const min = ratios[0];
     const max = ratios[ratios.length - 1];
     const median = ratios[Math.floor(ratios.length / 2)];
@@ -156,7 +164,7 @@ for (const vp of VIEWPORTS) {
       else buckets['≥ 0.28']++;
     }
     console.log(
-      `[${vp.name}] ratioVsCell n=${ratios.length} `
+      `[${vp.name}] ratioVsWrap n=${ratios.length} `
       + `min=${min} median=${median} mean=${mean.toFixed(3)} max=${max}`,
     );
     console.log(
@@ -164,13 +172,13 @@ for (const vp of VIEWPORTS) {
       + Object.entries(buckets).map(([k, v]) => `${k}=${v}`).join(' '),
     );
 
-    const tooTiny = reports.filter((r) => r.ratioVsCell < MIN_RATIO);
+    const tooTiny = reports.filter((r) => r.ratioVsWrap < MIN_RATIO);
     if (tooTiny.length) {
       console.log(`  ${tooTiny.length} below MIN_RATIO=${MIN_RATIO}:`);
       for (const r of tooTiny) {
         console.log(
           `    r${r.row}c${r.col} (${r.cellKind} clue${r.cellKind === '1' ? '' : 's'}): `
-          + `"${r.text}" font=${r.fontSize}px cell=${r.cellWidth}px ratio=${r.ratioVsCell}`,
+          + `"${r.text}" font=${r.fontSize}px wrap=${r.wrapWidth}px ratio=${r.ratioVsWrap}`,
         );
       }
     }

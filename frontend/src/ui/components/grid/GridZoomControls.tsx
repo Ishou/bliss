@@ -15,8 +15,14 @@ import { GRID_TRACK_WIDTH } from './layout';
  *   started zooming.
  * - At max scale, "Zoom in" disables.
  */
+// Hidden below `md` (768 px) — touch devices have native pinch-zoom,
+// so the buttons are redundant there AND they steal ~52 px of vertical
+// space inside the grid panel (a button row + its top margin). On
+// mobile-tiny that squashed cells from ~24 px to ~17 px and pushed
+// stacked-clue text below the e2e visibility gate (clue-ratio.spec).
+// Desktop / tablet keep the cluster for keyboard + motor a11y.
 const cluster = css({
-  display: 'flex',
+  display: { base: 'none', md: 'flex' },
   flexDirection: 'row',
   justifyContent: 'center',
   gap: '6px',
