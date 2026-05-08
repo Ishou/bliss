@@ -124,5 +124,22 @@ tasks.test {
 tasks.shadowJar {
     archiveBaseName.set("grid-api")
     archiveClassifier.set("all")
+    // Shadow 9.x defaults `duplicatesStrategy` to EXCLUDE on the shadow jar
+    // task. EXCLUDE drops same-path duplicates BEFORE they reach the
+    // transformer chain, so `mergeServiceFiles()` only ever sees one of
+    // each `META-INF/services/<name>` file across the input jars and the
+    // others are silently lost. Documented in shadow's source (see
+    // ShadowJar.kt's duplicatesStrategy KDoc) and on
+    // https://gradleup.com/shadow/configuration/merging/#handling-duplicates-strategy
+    //
+    // The concrete prod blast radius for grid-api: flyway-core ships 28
+    // entries in `META-INF/services/org.flywaydb.core.extensibility.Plugin`
+    // (including `CoreResourceTypeProvider`, the SPI registration that
+    // tells Flyway `.sql` is a migration extension), flyway-database-
+    // postgresql ships its own 3-entry copy at the same path, and EXCLUDE
+    // kept only postgresql's. Flyway then booted, connected fine, scanned
+    // db/migration/, and rejected every .sql because no resource-type
+    // provider claimed the extension — silent zero-migration boot.
+    duplicatesStrategy = org.gradle.api.file.DuplicatesStrategy.INCLUDE
     mergeServiceFiles()
 }
