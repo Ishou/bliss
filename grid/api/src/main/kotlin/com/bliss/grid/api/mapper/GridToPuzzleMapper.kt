@@ -51,7 +51,7 @@ class GridToPuzzleMapper {
                     direction = placement.direction.toApiClueDirection(),
                     start = placement.startPosition().toDto(),
                     length = placement.word.text.length,
-                    text = placement.word.definition,
+                    text = placement.chosenClue.text,
                 )
             }
 

@@ -2,6 +2,7 @@ package com.bliss.grid.domain.generation
 
 import com.bliss.grid.domain.model.Position
 import com.bliss.grid.domain.model.Word
+import com.bliss.grid.domain.model.WordClue
 import com.bliss.grid.domain.model.WordPlacement
 import kotlin.random.Random
 
@@ -49,7 +50,7 @@ internal class SkeletonFiller(
         // come from [GridConstraints.themeLimits]. Words with `theme = null`
         // never touch this map.
         val themeUsed = HashMap<String, Int>()
-        val assigned = arrayOfNulls<Word>(slots.size)
+        val assigned = arrayOfNulls<WordPlacement>(slots.size)
         // Precompute the intersection graph: slot i shares ≥1 cell with slots[intersections[i]].
         // Used by the fill-phase forward-check — after placing a word, only the slots that
         // intersect the just-placed slot can have their domain shrink, so we re-evaluate just
@@ -71,9 +72,7 @@ internal class SkeletonFiller(
         ) {
             return null
         }
-        return slots.mapIndexed { i, slot ->
-            WordPlacement(assigned[i]!!, slot.cluePosition, slot.direction)
-        }
+        return slots.mapIndexed { i, _ -> assigned[i]!! }
     }
 
     private fun computeIntersections(slots: List<WordSlot>): Array<IntArray> {
@@ -102,7 +101,7 @@ internal class SkeletonFiller(
         usedLemmas: HashSet<String>,
         themeUsed: HashMap<String, Int>,
         themeLimits: Map<String, Int>,
-        assigned: Array<Word?>,
+        assigned: Array<WordPlacement?>,
         intersections: Array<IntArray>,
         random: Random,
         deadline: Long,
@@ -139,10 +138,17 @@ internal class SkeletonFiller(
         val positions = slot.letterPositions()
 
         for (word in ordering) {
-            assigned[bestIdx] = word
+            // Pick which clue to show now that we know the live theme-cap state.
+            // Prefer non-themed clues so themed slots stay free for words whose
+            // only candidate is themed (e.g. NE has compass-only). When all
+            // remaining clues would exceed caps, fall back to the word's first
+            // clue — domainFor only put the word here because *some* clue fit,
+            // so this branch indicates a stale state and is recovered by undo.
+            val chosenClue = pickClue(word, themeUsed, themeLimits, random)
+            assigned[bestIdx] = WordPlacement(word, slot.cluePosition, slot.direction, chosenClue)
             usedWords += word.text
             usedLemmas += word.lemma
-            val theme = word.theme
+            val theme = chosenClue.theme
             if (theme != null) themeUsed[theme] = (themeUsed[theme] ?: 0) + 1
             val newlyPlaced = ArrayList<Position>(positions.size)
             for ((i, pos) in positions.withIndex()) {
@@ -204,8 +210,13 @@ internal class SkeletonFiller(
     /**
      * Candidates for [slot] consistent with currently placed [letters], excluding both
      * [usedWords] (surface-form dedup) and [usedLemmas] (lemma-level dedup), and dropping
-     * candidates whose theme is already at its per-grid cap. The pattern at each fixed
-     * position prunes via the repository's position-letter index.
+     * words for which *every* candidate clue would exceed its per-grid cap. The pattern
+     * at each fixed position prunes via the repository's position-letter index.
+     *
+     * Note on theme cap semantics: caps are evaluated against the chosen *clue's* theme
+     * at placement time (see `pickClue`), not against the word's set of possible themes.
+     * A word with multiple clues — e.g. EST = [verb (no theme), compass] — stays in the
+     * domain even when the compass cap is exhausted, because the verb clue still fits.
      */
     private fun domainFor(
         slot: WordSlot,
@@ -235,12 +246,42 @@ internal class SkeletonFiller(
             else ->
                 matches.filter {
                     (nothingUsed || (it.text !in usedWords && it.lemma !in usedLemmas)) &&
-                        themeAllowed(it.theme, themeUsed, themeLimits)
+                        wordHasFittingClue(it, themeUsed, themeLimits)
                 }
         }
     }
 
-    /** True iff placing a word with [theme] would not exceed its per-grid cap. */
+    /** True iff [word] has at least one clue whose theme fits the live caps. */
+    private fun wordHasFittingClue(
+        word: Word,
+        themeUsed: Map<String, Int>,
+        themeLimits: Map<String, Int>,
+    ): Boolean = word.clues.any { themeAllowed(it.theme, themeUsed, themeLimits) }
+
+    /**
+     * Pick which of [word]'s clues to render at placement time. Prefer clues whose
+     * theme is `null` so themed slots stay free for words whose only candidate is
+     * themed (e.g. NE has compass-only). Among clues that fit current caps, pick
+     * uniformly at random for variety; if none fit (shouldn't happen — domainFor
+     * filters), fall back to the word's first clue.
+     */
+    private fun pickClue(
+        word: Word,
+        themeUsed: Map<String, Int>,
+        themeLimits: Map<String, Int>,
+        random: Random,
+    ): WordClue {
+        if (word.clues.size == 1) return word.clues.first()
+        val fitting = word.clues.filter { themeAllowed(it.theme, themeUsed, themeLimits) }
+        val nonThemed = fitting.filter { it.theme == null }
+        return when {
+            nonThemed.isNotEmpty() -> nonThemed.random(random)
+            fitting.isNotEmpty() -> fitting.random(random)
+            else -> word.clues.first()
+        }
+    }
+
+    /** True iff placing a clue with [theme] would not exceed its per-grid cap. */
     private fun themeAllowed(
         theme: String?,
         themeUsed: Map<String, Int>,

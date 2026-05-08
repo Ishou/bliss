@@ -22,7 +22,7 @@ class Grid internal constructor(
                 requireInBounds(placement.cluePosition, width, height)
                 clues
                     .getOrPut(placement.cluePosition) { mutableListOf() }
-                    .add(Clue(placement.word.definition, placement.direction))
+                    .add(Clue(placement.chosenClue.text, placement.direction))
 
                 for ((pos, ch) in placement.letterPositions()) {
                     requireInBounds(pos, width, height)
