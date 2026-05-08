@@ -122,6 +122,7 @@ export interface GamePuzzle {
   readonly language: string;
   readonly width: number;
   readonly height: number;
+  readonly hintsAllowed: number;
   readonly cells: readonly GameCell[];
   readonly clues: readonly GameDefinitionClue[];
   readonly createdAt: Instant;

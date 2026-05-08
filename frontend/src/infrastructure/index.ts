@@ -16,6 +16,10 @@ export {
   type HttpPuzzleRepositoryOptions,
 } from './api/grid/HttpPuzzleRepository';
 export {
+  createHttpPuzzleSolver,
+  type HttpPuzzleSolverOptions,
+} from './api/grid/HttpPuzzleSolver';
+export {
   createGameApiClient,
   type GameApiClient,
   type GameApiClientOptions,

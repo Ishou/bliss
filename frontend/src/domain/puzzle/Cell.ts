@@ -7,15 +7,17 @@ import type { Position } from './Position';
 // way to fit two clues into a single cell.
 export type ArrowDirection = 'right' | 'down' | 'down-right' | 'right-down';
 
-// A cell where the player types one letter. `answer` is the canonical
-// solution kept for future "check / reveal" features; `entry` is the
-// player's current input (empty string when blank). Both are uppercase
-// French letters in v1; locale-specific normalization is the application
-// layer's job.
+// A cell where the player types one letter. The canonical solution is no
+// longer carried by the domain model — `GET /v1/puzzles/{id}` stopped
+// shipping `LetterCell.letter` per PR #218 to keep the answer key off the
+// wire. `entry` is the player's current input (empty string when blank);
+// uppercase French letters in v1, with locale-specific normalization
+// performed by the application layer (`normalizeAnswerLetter`).
+// Validation is now an authoritative server round-trip via the
+// `PuzzleSolver` port.
 export interface LetterCell {
   readonly kind: 'letter';
   readonly position: Position;
-  readonly answer?: string;
   readonly entry: string;
 }
 

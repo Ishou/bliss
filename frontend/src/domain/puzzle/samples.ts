@@ -56,8 +56,12 @@ import type { Puzzle } from './Puzzle';
 //
 //   17 letter cells. 7 definition cells (2 stacked, 5 single). 1 block
 //   at (1,1) — the dead corner left by stacking S₂ inside the grid.
-const L = (row: number, col: number, answer: string): Cell =>
-  ({ kind: 'letter', position: { row, col }, answer, entry: '' });
+// Canonical letter is no longer carried by the domain (PR #218 stripped
+// it from the wire). The cell constructor keeps the same shape it had
+// in v1 minus the `answer` field; the row layouts in the comment block
+// above still document which letter belongs in each slot.
+const L = (row: number, col: number): Cell =>
+  ({ kind: 'letter', position: { row, col }, entry: '' });
 const D1 = (row: number, col: number, text: string, arrow: ArrowDirection): Cell =>
   ({ kind: 'definition', position: { row, col }, clues: [{ text, arrow }] });
 const D2 = (row: number, col: number, right: string, down: string): Cell => ({
@@ -74,23 +78,23 @@ const B = (row: number, col: number): Cell =>
 const cells: readonly Cell[] = [
   // Row 0 — stacked corner clue + MAIS letters
   D2(0, 0, 'Conjonction d’opposition', 'Verbe avoir, 2ᵉ pers.'),
-  L(0, 1, 'M'), L(0, 2, 'A'), L(0, 3, 'I'), L(0, 4, 'S'),
+  L(0, 1), L(0, 2), L(0, 3), L(0, 4),
   // Row 1 — col-0 letter (A) + a block at (1,1) + three vertical clues
-  L(1, 0, 'A'),
+  L(1, 0),
   B(1, 1),
   D1(1, 2, 'Récipient en terre cuite', 'down'),
   D1(1, 3, 'Se sert de, emploie', 'down'),
   D1(1, 4, 'Pluriel de « son »', 'down'),
   // Row 2 — col-0 letter (S), interior stacked clue, PUS letters
-  L(2, 0, 'S'),
+  L(2, 0),
   D2(2, 1, 'Liquide d’une plaie infectée', 'Préposition d’appartenance'),
-  L(2, 2, 'P'), L(2, 3, 'U'), L(2, 4, 'S'),
+  L(2, 2), L(2, 3), L(2, 4),
   // Row 3 — single right clue + DOSE letters
   D1(3, 0, 'Quantité de médicament', 'right'),
-  L(3, 1, 'D'), L(3, 2, 'O'), L(3, 3, 'S'), L(3, 4, 'E'),
+  L(3, 1), L(3, 2), L(3, 3), L(3, 4),
   // Row 4 — single right clue + ETES letters
   D1(4, 0, 'Verbe être, 2ᵉ pers. pl.', 'right'),
-  L(4, 1, 'E'), L(4, 2, 'T'), L(4, 3, 'E'), L(4, 4, 'S'),
+  L(4, 1), L(4, 2), L(4, 3), L(4, 4),
 ];
 
 export const SAMPLE_PUZZLE: Puzzle = {
@@ -99,5 +103,6 @@ export const SAMPLE_PUZZLE: Puzzle = {
   language: 'fr',
   width: 5,
   height: 5,
+  hintsAllowed: 3,
   cells,
 };
