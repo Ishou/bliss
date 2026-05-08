@@ -349,19 +349,30 @@ class UpdateCellUseCase(
                 .toSet()
         if (newLocks.isEmpty()) return success(updated, events).withSolved(solved)
 
-        // Step 3: re-enter the mutator to commit the locks. A concurrent write
-        // could have changed entries; locks are monotonically additive so the
-        // worst case is locking a position whose live letter no longer matches
-        // — at that point the cell already holds the correct letter though
-        // (peers can't see it changed), so the visible UX stays consistent.
+        // Step 3: re-enter the mutator to commit the locks. Filter to positions
+        // whose live letter still matches what was validated — a concurrent
+        // UpdateCellUseCase may have written a different letter between step 1
+        // and here. That write was already broadcast via cellUpdated, so locking
+        // a position with a stale letter would show peers a sage cell with the
+        // wrong letter. Leaving it unlocked lets the correct-letter player
+        // retype to retrigger the lock.
+        var actualLocks = emptySet<Position>()
         repo.mutate(lobbyId) { lobby ->
             val s = lobby.game ?: return@mutate lobby
+            val stillCorrect =
+                newLocks
+                    .filter { pos ->
+                        s.entries[pos]?.letter == entriesAfter[pos]?.letter
+                    }.toSet()
+            if (stillCorrect.isEmpty()) return@mutate lobby
+            actualLocks = stillCorrect
             lobby.copy(
-                game = s.copy(lockedPositions = s.lockedPositions + newLocks),
+                game = s.copy(lockedPositions = s.lockedPositions + stillCorrect),
                 lastActivityAt = stamp,
             )
         }
-        events += LobbyEvent.WordLocked(newLocks, stamp)
+        if (actualLocks.isEmpty()) return success(updated, events).withSolved(solved)
+        events += LobbyEvent.WordLocked(actualLocks, stamp)
         val finalLobby = repo.findById(lobbyId) ?: updated
         return success(finalLobby, events).withSolved(solved)
     }
