@@ -91,13 +91,6 @@ class BlissDatabase(
                 .configure()
                 .dataSource(ds)
                 .locations("classpath:db/migration")
-                // Tolerate applied-but-not-on-disk rows in flyway_schema_history.
-                // Production carries V1..V7 entries from the deleted worker-staging
-                // migrations (PR #221 dropped the source files; CNPG keeps the rows).
-                // Without this, validate() fails boot with "Detected applied migration
-                // not resolved locally". Forward-only is preserved: we still refuse
-                // checksum mismatches and out-of-order inserts.
-                .ignoreMigrationPatterns("*:missing")
                 .load()
                 .migrate()
         log.info(
