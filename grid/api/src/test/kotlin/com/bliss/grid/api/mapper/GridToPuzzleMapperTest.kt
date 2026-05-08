@@ -50,7 +50,7 @@ class GridToPuzzleMapperTest {
         val puzzleId = UUID.fromString("0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6b")
         val createdAt = Instant.parse("2026-04-24T15:30:00Z")
 
-        val response = mapper.toApi(grid = grid, puzzleId = puzzleId, createdAt = createdAt)
+        val response = mapper.toApi(grid = grid, puzzleId = puzzleId, createdAt = createdAt, hintsAllowed = 3)
 
         assertThat(response.id).isEqualTo(puzzleId.toString())
         assertThat(response.width).isEqualTo(6)
@@ -75,11 +75,12 @@ class GridToPuzzleMapperTest {
                     ),
             )
 
-        val response = mapper.toApi(grid, UUID.randomUUID(), Instant.now())
+        val response = mapper.toApi(grid, UUID.randomUUID(), Instant.now(), hintsAllowed = 3)
 
-        // 1 ClueCell + 2 LetterCells + 6 EmptyCells = 9.
-        assertThat(response.cells.filterIsInstance<LetterCellDto>().map { it.letter })
-            .containsExactlyInAnyOrder("O", "R")
+        // 1 ClueCell + 2 LetterCells + 6 EmptyCells = 9. Letters intentionally
+        // not on the wire (schema PR #218); presence of two LetterCellDtos at
+        // the OR positions is the contract.
+        assertThat(response.cells.filterIsInstance<LetterCellDto>()).hasSize(2)
         val defs = response.cells.filterIsInstance<DefinitionCellDto>()
         assertThat(defs).hasSize(1)
         assertThat(defs.single().text).isEqualTo("metal precieux")
@@ -100,7 +101,7 @@ class GridToPuzzleMapperTest {
                     ),
             )
 
-        val response = mapper.toApi(grid, UUID.randomUUID(), Instant.now())
+        val response = mapper.toApi(grid, UUID.randomUUID(), Instant.now(), hintsAllowed = 3)
 
         val defsAtOrigin =
             response.cells
@@ -126,7 +127,7 @@ class GridToPuzzleMapperTest {
                     ),
             )
 
-        val response = mapper.toApi(grid, UUID.randomUUID(), Instant.now())
+        val response = mapper.toApi(grid, UUID.randomUUID(), Instant.now(), hintsAllowed = 3)
 
         assertThat(response.clues).hasSize(2)
         response.clues.forEach { clue ->

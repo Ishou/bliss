@@ -17,4 +17,9 @@ class ListWordRepository(
         words.filter { word ->
             word.text.length == length && pattern.all { (i, ch) -> word.text[i] == ch }
         }
+
+    override fun containsLemma(text: String): Boolean {
+        val upper = text.trim().uppercase()
+        return words.any { it.text == upper || it.lemma == upper }
+    }
 }

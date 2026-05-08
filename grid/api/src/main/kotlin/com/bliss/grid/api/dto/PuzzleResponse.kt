@@ -19,6 +19,7 @@ data class PuzzleResponse(
     val height: Int,
     val cells: List<CellDto>,
     val clues: List<ClueDto>,
+    val hintsAllowed: Int,
     val createdAt: String,
 )
 
@@ -43,7 +44,6 @@ sealed interface CellDto {
 @SerialName("letter")
 data class LetterCellDto(
     override val position: CellDto.PositionDto,
-    val letter: String? = null,
 ) : CellDto
 
 @Serializable

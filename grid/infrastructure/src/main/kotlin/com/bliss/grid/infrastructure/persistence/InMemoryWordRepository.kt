@@ -6,6 +6,9 @@ import com.bliss.grid.domain.model.Word
 class InMemoryWordRepository(
     private val words: List<Word>,
 ) : WordRepository {
+    private val knownTokens: Set<String> =
+        words.flatMap { setOf(it.text, it.lemma) }.toSet()
+
     override fun findByLength(length: Int): List<Word> = words.filter { it.text.length == length }
 
     override fun findByLengthAndPattern(
@@ -15,6 +18,8 @@ class InMemoryWordRepository(
         words.filter { word ->
             word.text.length == length && pattern.all { (i, ch) -> word.text[i] == ch }
         }
+
+    override fun containsLemma(text: String): Boolean = text.trim().uppercase() in knownTokens
 
     companion object {
         fun defaultFrench(): InMemoryWordRepository = InMemoryWordRepository(DEFAULT_FRENCH_WORDS)

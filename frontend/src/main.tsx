@@ -62,7 +62,14 @@ enableMocks()
     const puzzleRepository = createHttpPuzzleRepository({
       baseUrl: gridApiBaseUrl,
     });
-    const puzzleSolver = createHttpPuzzleSolver({ baseUrl: gridApiBaseUrl });
+    // Solo + multiplayer both need a stable session id for the hints
+    // endpoint's X-Session-Id header. Generated client-side and persisted
+    // in localStorage on first visit.
+    const sessionId = getOrCreateSessionId();
+    const puzzleSolver = createHttpPuzzleSolver({
+      baseUrl: gridApiBaseUrl,
+      sessionId,
+    });
     // ADR-0018 §10 — multiplayer ships dark. The lobby route, its
     // adapters, and the session accessor are only instantiated when
     // the runtime flag is on. Production flips this to `'true'` after
@@ -83,7 +90,7 @@ enableMocks()
           // is the write-side counterpart used by the lobby route's
           // `onRename` callback so a chosen pseudonym survives reload.
           const getSession = () => ({
-            sessionId: getOrCreateSessionId() as SessionId,
+            sessionId: sessionId as SessionId,
             pseudonym: getPseudonym() as Pseudonym,
           });
           const setPersistedPseudonym = (pseudonym: Pseudonym) => {

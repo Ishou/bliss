@@ -116,6 +116,8 @@ private object EmptyWordRepository : WordRepository {
         length: Int,
         pattern: Map<Int, Char>,
     ): List<Word> = emptyList()
+
+    override fun containsLemma(text: String): Boolean = false
 }
 
 /**
@@ -135,6 +137,8 @@ private object AlwaysMatchingRepository : WordRepository {
         length: Int,
         pattern: Map<Int, Char>,
     ): List<Word> = candidates(length, pattern)
+
+    override fun containsLemma(text: String): Boolean = true
 
     private fun candidates(
         length: Int,
