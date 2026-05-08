@@ -111,6 +111,16 @@ internal fun LobbyEvent.toFrameOrNull(): ServerToClientFrame? =
                 column = position.column,
                 direction = direction.toWire(),
             )
+        is LobbyEvent.WordLocked ->
+            ServerToClientFrame.WordLocked(
+                // Stable order = sort by (row, column) so two structurally-equal
+                // events serialize byte-identically and clients can diff cheaply.
+                positions =
+                    positions
+                        .sortedWith(compareBy({ it.row }, { it.column }))
+                        .map { it.toDto() },
+                lockedAt = lockedAt.toIsoString(),
+            )
     }
 
 internal fun UseCaseError.toErrorFrame(): ServerToClientFrame.Error =
@@ -186,6 +196,11 @@ private fun GameSession.toDto(presence: Map<String, PresencePosition>): GameSess
             entries.entries
                 .sortedWith(compareBy({ it.key.row }, { it.key.column }))
                 .map { (pos, entry) -> entry.toDto(pos) },
+        // Same sort posture as entries: snapshot is diff-friendly across reconnects.
+        lockedPositions =
+            lockedPositions
+                .sortedWith(compareBy({ it.row }, { it.column }))
+                .map { it.toDto() },
         startedAt = startedAt.toIsoString(),
         completedAt = completedAt?.toIsoString(),
         // Presence is unordered in [SessionManager]'s map; sort by sessionId

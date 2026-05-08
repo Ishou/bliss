@@ -263,15 +263,25 @@ export interface components {
          *     (server-authoritative) so a client refreshing the page in mid-game
          *     rehydrates the grid from the REST snapshot before the WebSocket
          *     opens. Cleared cells are absent from the list; entries are sorted
-         *     by row then column for stable rendering. `presence` is the
-         *     ephemeral cursor map for currently-connected players; optional
-         *     and absent or empty when state is WAITING/COMPLETED. Mirrors
-         *     `GameSession` in `game/api/asyncapi.yaml`; keep in sync.
+         *     by row then column for stable rendering. `lockedPositions` mirrors
+         *     the cumulative server-locked cells (every word validated correct
+         *     so far) so the same refresh path renders read-only cells without
+         *     waiting for a WebSocket replay; always emitted (empty list when
+         *     no word has been locked). `presence` is the ephemeral cursor map
+         *     for currently-connected players; optional and absent or empty
+         *     when state is WAITING/COMPLETED. Mirrors `GameSession` in
+         *     `game/api/asyncapi.yaml`; keep in sync.
          */
         GameSession: {
             puzzle: components["schemas"]["GamePuzzle"];
             /** @description Every cell typed so far. Empty list when no player has typed yet. */
             entries: components["schemas"]["CellEntry"][];
+            /**
+             * @description Cumulative cells locked by server-side word validation. Order is
+             *     row then column for diff-friendly snapshots. Empty list when no
+             *     word has been locked.
+             */
+            lockedPositions: components["schemas"]["GamePosition"][];
             startedAt: components["schemas"]["Instant"];
             /** @description Set once the lobby reaches COMPLETED; `null` while IN_PROGRESS. */
             completedAt: components["schemas"]["Instant"] | null;

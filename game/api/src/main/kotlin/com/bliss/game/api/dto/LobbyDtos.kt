@@ -39,14 +39,18 @@ data class GridConfigDto(
  * `entries` lists every cell typed so far (server-authoritative, sorted by
  * row then column) so a refreshing client rehydrates the grid state from
  * this snapshot instead of receiving an empty grid. Cleared cells are
- * absent from the list. `presence` is the ephemeral cursor map for
- * currently-connected players; defaults to empty so existing call sites
- * stay source-compatible. Sorted by `sessionId` for deterministic JSON.
+ * absent from the list. `lockedPositions` mirrors the cumulative
+ * server-locked cells (sorted by row then column for diff-friendly JSON);
+ * defaults to empty so existing call sites stay source-compatible.
+ * `presence` is the ephemeral cursor map for currently-connected players;
+ * defaults to empty so existing call sites stay source-compatible.
+ * Sorted by `sessionId` for deterministic JSON.
  */
 @Serializable
 data class GameSessionDto(
     val puzzle: GamePuzzleDto,
     val entries: List<CellEntryDto>,
+    val lockedPositions: List<GamePositionDto> = emptyList(),
     val startedAt: String,
     val completedAt: String?,
     val presence: List<PresenceEntryDto> = emptyList(),
