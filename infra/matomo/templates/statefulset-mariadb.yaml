@@ -33,12 +33,12 @@ spec:
           {{- end }}
           livenessProbe:
             exec:
-              command: [mariadb-admin, ping, -uroot, -p"$MARIADB_ROOT_PASSWORD"]
+              command: ["/bin/sh", "-c", "mariadb-admin ping -uroot -p\"$MARIADB_ROOT_PASSWORD\""]
             initialDelaySeconds: 30
             periodSeconds: 30
           readinessProbe:
             exec:
-              command: [mariadb-admin, ping, -uroot, -p"$MARIADB_ROOT_PASSWORD"]
+              command: ["/bin/sh", "-c", "mariadb-admin ping -uroot -p\"$MARIADB_ROOT_PASSWORD\""]
             initialDelaySeconds: 10
             periodSeconds: 10
           {{- with .Values.mariadb.resources }}
