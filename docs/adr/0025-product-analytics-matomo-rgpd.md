@@ -109,8 +109,9 @@ identifiers:
 
 ### 4. Architecture
 
-- A new `AnalyticsEventSink` port in `game/domain` and `grid/domain`
-  (the project convention is that ports live in domain).
+- A new `AnalyticsEventSink` port in `game/application/ports` and
+  `grid/application/ports` (consistent with all existing output ports:
+  `LobbyRepository`, `PuzzleProvider`, `Clock`, `PresenceBroadcaster`).
 - Sealed `AnalyticsEvent` hierarchy in domain, version-suffixed names.
 - A `MatomoAnalyticsAdapter` in each context's `infrastructure` layer
   forwards events to Matomo's HTTP Tracking API. Fire-and-forget on a
@@ -137,8 +138,12 @@ processing activity makes them blockers:
   Online GmbH (hosting), Cloudflare Inc. (DNS, CDN). No Matomo Cloud.
 - **Erasure endpoint**: `DELETE /v1/sessions/{sessionId}` on `grid/api`
   removes hint-usage rows and triggers `Live.deleteVisits` in Matomo for
-  the corresponding rotated hash. Frontend exposes "Effacer mes données"
-  in settings.
+  the **current day's** rotated hash. Only today's visits are deletable;
+  visits from prior days were recorded under a different hash (daily
+  rotation) and cannot be matched or retrieved — they are already
+  non-attributable to any individual by design. This limitation is
+  disclosed to users in the privacy notice. Frontend exposes "Effacer mes
+  données" in settings.
 
 ### 6. Out of scope
 
