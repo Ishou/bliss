@@ -4,17 +4,21 @@
 // `infrastructure/` (Wave E PR #134, follow-up PR for HttpLobbyClient).
 export type {
   CellUpdatedEvent,
+  ConnectionLostEvent,
   ConnectionState,
+  CursorBumpedEvent,
   GameClient,
   GameErrorEvent,
   GameEvent,
   GameSolvedEvent,
   GameStartedEvent,
+  IdleEvent,
   LobbyStateEvent,
   PlayerJoinedEvent,
   PlayerLeftEvent,
   PlayerRenamedEvent,
   PresenceUpdatedEvent,
+  TypingEvent,
   Unsubscribe,
 } from './GameClient';
 export {

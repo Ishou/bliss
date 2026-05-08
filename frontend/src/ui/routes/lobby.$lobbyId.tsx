@@ -27,6 +27,7 @@ import type {
   SessionId,
 } from '@/domain/game';
 import { Grid } from '@/ui/components/grid';
+import { usePresenceState } from '@/ui/components/grid/usePresenceState';
 import { AppHeader, PuzzleToolbar } from '@/ui/components/layout';
 import { ConnectionBanner } from '@/ui/components/lobby/ConnectionBanner';
 import { EndGameModal } from '@/ui/components/lobby/EndGameModal';
@@ -488,6 +489,34 @@ function InGameView({
     return all;
   }, [isCompleted, puzzle.cells]);
 
+  // Multiplayer presence-state derived from the typing / idle /
+  // connectionLost / presenceUpdated event stream. One subscription owns
+  // the aggregation; both the roster pill (`typingSessionIds` /
+  // `idleSessionIds` / `disconnectingSessionIds`) and the grid (which
+  // merges typing into per-cell badges) consume the same map.
+  const presenceState = usePresenceState(subscribeToRemotePresence, sessionId);
+  const typingSessionIds = useMemo(() => {
+    const set = new Set<SessionId>();
+    for (const [sid, st] of presenceState) {
+      if (st.typing) set.add(sid);
+    }
+    return set;
+  }, [presenceState]);
+  const idleSessionIds = useMemo(() => {
+    const set = new Set<SessionId>();
+    for (const [sid, st] of presenceState) {
+      if (st.idle) set.add(sid);
+    }
+    return set;
+  }, [presenceState]);
+  const disconnectingSessionIds = useMemo(() => {
+    const set = new Set<SessionId>();
+    for (const [sid, st] of presenceState) {
+      if (st.connectionLost) set.add(sid);
+    }
+    return set;
+  }, [presenceState]);
+
   return (
     <>
       <PlayerList
@@ -495,6 +524,9 @@ function InGameView({
         ownerSessionId={ownerSessionId}
         currentSessionId={sessionId}
         variant="inline"
+        typingSessionIds={typingSessionIds}
+        idleSessionIds={idleSessionIds}
+        disconnectingSessionIds={disconnectingSessionIds}
       />
       <PuzzleToolbar
         metadata={`Partie multijoueur · ${players.length} ${players.length === 1 ? 'joueur' : 'joueurs'}`}
@@ -512,6 +544,7 @@ function InGameView({
           subscribeToRemotePresence={subscribeToRemotePresence}
           playersBySessionId={playersBySessionId}
           currentSessionId={sessionId}
+          typingSessionIds={typingSessionIds}
         />
       </div>
     </>

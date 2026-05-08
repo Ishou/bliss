@@ -43,7 +43,9 @@ const WS_OPEN = 1;
 // types per the spec's subscribe description).
 const SERVER_EVENT_TYPES = new Set<GameEvent['type']>([
   'lobbyState', 'playerJoined', 'playerLeft', 'playerRenamed',
-  'gameStarted', 'cellUpdated', 'presenceUpdated', 'gameSolved', 'error',
+  'gameStarted', 'cellUpdated', 'presenceUpdated',
+  'typing', 'idle', 'connectionLost', 'cursorBumped',
+  'gameSolved', 'error',
 ]);
 
 // Outbound `cellFocus` debounce window. ADR-0018 §"Presence" pins the
