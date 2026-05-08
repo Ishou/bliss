@@ -7,7 +7,7 @@ package com.bliss.grid.domain.model
  *
  * The clue actually shown for a placed word is chosen by the grid
  * filler at placement time, prioritising clues whose theme respects
- * the per-grid theme caps. See `SkeletonFiller.pickClueForPlacement`.
+ * the per-grid theme caps. See `SkeletonFiller.pickClue`.
  *
  * Distinct from [Clue] (which represents an *already placed* clue at
  * a specific grid position with a direction); `WordClue` is the

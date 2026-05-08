@@ -5,8 +5,10 @@ data class Word private constructor(
     /**
      * One or more candidate clues. The list is non-empty by invariant;
      * exactly which clue is shown for a placed word is decided by the
-     * grid filler at placement time (it picks the first clue whose
-     * theme respects the active theme caps, see `SkeletonFiller`).
+     * grid filler at placement time: it prefers non-themed clues so
+     * themed slots stay free for words whose only candidate is themed,
+     * then picks uniformly at random among remaining fitting clues.
+     * See `SkeletonFiller.pickClue`.
      *
      * Most words have a single clue (LoRA-generated); a few — like
      * `est` — carry both a verb-form clue from the main corpus and a
