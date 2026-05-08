@@ -773,8 +773,14 @@ class LobbyWebSocketRouteTest {
                     sendText("""{"type":"joinLobby","sessionId":"$sessionA","pseudonym":"$pseudoA"}""")
                     sendText("""{"type":"cellUpdate","row":0,"column":3,"letter":"P"}""")
                     drainUntil("cellUpdated") // confirms joinLobby + cellUpdate were processed
-                    // recordKeystroke is called after broadcast; yield so the handler can complete.
-                    delay(200.milliseconds)
+                    withTimeout(5_000) {
+                        while (broadcaster
+                                .eventsOfType<LobbyEvent.Typing>()
+                                .none { it == LobbyEvent.Typing(SessionId(sessionA), typing = true) }
+                        ) {
+                            delay(50)
+                        }
+                    }
                     assertThat(broadcaster.eventsOfType<LobbyEvent.Typing>())
                         .contains(LobbyEvent.Typing(SessionId(sessionA), typing = true))
 
@@ -785,8 +791,14 @@ class LobbyWebSocketRouteTest {
 
                     sendText("""{"type":"cellFocus","row":0,"column":0,"direction":"across"}""")
                     drainUntil("presenceUpdated")
-                    // recordFocus is called after broadcast in the handler; yield for it to complete.
-                    delay(200.milliseconds)
+                    withTimeout(5_000) {
+                        while (broadcaster
+                                .eventsOfType<LobbyEvent.Idle>()
+                                .none { it == LobbyEvent.Idle(SessionId(sessionA), idle = false) }
+                        ) {
+                            delay(50)
+                        }
+                    }
                     assertThat(broadcaster.eventsOfType<LobbyEvent.Idle>())
                         .contains(LobbyEvent.Idle(SessionId(sessionA), idle = false))
                     broadcaster.clear()
