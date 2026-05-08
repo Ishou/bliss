@@ -1,0 +1,3 @@
+surface,lemma,pos,clue,reason,severity,rater_id,found_at,source_iter,grid_id,notes
+tira,tirer,verbe,Extraire,faute_de_français,1,manual:colin,2026-05-08,,,Surface is 3sg passé simple but clue stayed at infinitive — likely an inflater agreement gap on finite-tense verb surfaces (lemma clue itself is fine: tirer→Extraire is rated y in iter13).
+aidé,aider,verbe,Prêté main forte,trop_facile,1,manual:colin,2026-05-08,,,Past-participle synonym — both forms agree grammatically; reads as too direct rather than wrong.

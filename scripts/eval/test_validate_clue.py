@@ -174,3 +174,68 @@ def test_validate_lemma_clue_clean_verb_clue_still_passes() -> None:
     # The stub index has no analyses for 'mettre', so we expect head-not-lemma
     # rather than 'pleonasm'. The point: the pleonasm gate did not trip.
     assert r.flag != "pleonasm", r
+
+
+# --- blocklist gate ---------------------------------------------------------
+#
+# `inapproprié` runtime feedback writes the offending clue text to
+# `data/eval/blocklist_clues.csv`. The validator consults that set on every
+# call and short-circuits with `blocklisted` so a single rude/offensive clue
+# can never re-ship via a future model run, even if all other gates pass.
+
+from validate_clue import load_blocklist  # noqa: E402
+
+
+def test_blocklisted_clue_is_flagged() -> None:
+    blocklist = frozenset({"clue inappropriée"})
+    r = validate_lemma_clue("Clue inappropriée", "lemma", "nom", _StubIndex(),
+                            blocklist=blocklist)
+    assert r.flag == "blocklisted", r
+
+
+def test_blocklist_normalises_case_and_whitespace() -> None:
+    """Blocklist matching is case- and whitespace-insensitive — the file
+    might hold the canonical form but the clue arrives with capitalisation
+    or trailing spaces from the LoRA output."""
+    blocklist = frozenset({"clue inappropriée"})
+    r = validate_lemma_clue("  CLUE   Inappropriée  ", "lemma", "nom",
+                            _StubIndex(), blocklist=blocklist)
+    assert r.flag == "blocklisted", r
+
+
+def test_blocklist_takes_priority_over_other_flags() -> None:
+    """A blocklisted clue that would also trip pleonasm must surface as
+    blocklisted, not pleonasm. The blocklist is the highest-priority gate."""
+    blocklist = frozenset({"associer ensemble"})
+    r = validate_lemma_clue("Associer ensemble", "unir", "verbe", _StubIndex(),
+                            blocklist=blocklist)
+    assert r.flag == "blocklisted", r
+
+
+def test_no_blocklist_still_works() -> None:
+    """The blocklist param is optional; existing call sites that pass no
+    blocklist must continue to work unchanged."""
+    r = validate_lemma_clue("Mettre ensemble", "réunir", "verbe", _StubIndex())
+    assert r.flag != "blocklisted", r
+
+
+def test_load_blocklist_reads_csv(tmp_path) -> None:
+    """load_blocklist reads `clue` column, lowercases + strips, ignores
+    empty rows and comment lines. Returns frozenset for cheap membership."""
+    p = tmp_path / "blocklist.csv"
+    p.write_text(
+        "clue,reason,added_at\n"
+        "Clue Inappropriée,inapproprié,2026-05-08\n"
+        "  Autre Mauvaise Clue  ,inapproprié,2026-05-08\n"
+        ",,\n",
+        encoding="utf-8",
+    )
+    bl = load_blocklist(p)
+    assert "clue inappropriée" in bl
+    assert "autre mauvaise clue" in bl
+    assert "" not in bl
+
+
+def test_load_blocklist_missing_file_returns_empty(tmp_path) -> None:
+    bl = load_blocklist(tmp_path / "does-not-exist.csv")
+    assert bl == frozenset()
