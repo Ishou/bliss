@@ -4,6 +4,7 @@ import path from 'node:path';
 import { readFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import { FontaineTransform } from 'fontaine';
+import { VitePWA } from 'vite-plugin-pwa';
 
 // Vite + React 19 config for the Bliss frontend bounded context.
 // See ADR-0002 for the stack rationale.
@@ -127,6 +128,57 @@ export default defineConfig({
     }),
     preloadLatinNunito(),
     gridApiExamplesAsVirtualModule(),
+    // PWA + offline cache. Workbox precaches the app shell so a reload
+    // works without network, and applies a NetworkFirst strategy to the
+    // grid API so the last-loaded puzzle stays playable offline. The
+    // existing `manifest.webmanifest` is the source of truth — we set
+    // `manifest: false` so the plugin does not generate a competing one.
+    // `registerType: 'autoUpdate'` flips active SWs as soon as a new
+    // version is precached; the `pwa.ts` adapter wraps registration so
+    // the rest of the app stays unaware.
+    VitePWA({
+      registerType: 'autoUpdate',
+      injectRegister: false,
+      filename: 'sw.js',
+      manifest: false,
+      includeAssets: [
+        'favicon.svg',
+        'icon-180.png',
+        'icon-192.png',
+        'icon-512.png',
+        'manifest.webmanifest',
+      ],
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,svg,png,woff2,webmanifest}'],
+        navigateFallback: '/index.html',
+        navigateFallbackDenylist: [/^\/v1\//],
+        cleanupOutdatedCaches: true,
+        runtimeCaching: [
+          {
+            // Grid API: serve fresh when online, fall back to cache when
+            // offline. 5s network timeout means a flaky link reverts to
+            // the cached puzzle quickly. 1-week TTL is well under any
+            // realistic puzzle-content rotation.
+            urlPattern: ({ url }) =>
+              url.hostname === 'api.wordsparrow.io' &&
+              url.pathname.startsWith('/v1/puzzles/'),
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'grid-api-puzzles',
+              networkTimeoutSeconds: 5,
+              expiration: {
+                maxEntries: 32,
+                maxAgeSeconds: 7 * 24 * 60 * 60,
+              },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+        ],
+      },
+      devOptions: {
+        enabled: false,
+      },
+    }),
   ],
   resolve: {
     alias: {
