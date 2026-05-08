@@ -16,7 +16,7 @@ import {
 } from './Cell';
 import { CurrentCluePanel } from './CurrentCluePanel';
 import { GridZoomControls } from './GridZoomControls';
-import { PresenceOverlay } from './PresenceOverlay';
+import { buildCellPresenceMap, useRemotePresences } from './PresenceOverlay';
 import { useGridNavigation, type Direction } from './useGridNavigation';
 
 const gridContainer = css({
@@ -35,12 +35,11 @@ const gridContainer = css({
   // Omitted: touch-action:manipulation blocked pinch/pan; user-select:none blocked iOS magnifier on clue cells.
 });
 
-// Positioning frame for the optional `<PresenceOverlay>` sibling. The
-// overlay is `position: absolute; inset: 0`, so it needs a positioned
-// ancestor — and that ancestor must be the same box that wraps the
-// `<div role="grid">` so the overlay's coordinate system shares the
-// grid's pixel bounds. `overflow: visible` so pseudonym chips that
-// float above the top row cells aren't clipped.
+// Positioning frame for the grid. Kept as a positioned ancestor so the
+// custom mouse-pan handler can attach mousedown listeners to a stable
+// box (see the `useEffect` below). `overflow: visible` so cell-edge
+// arrow glyphs that straddle the grid border bleed out without being
+// clipped.
 const gridFrame = css({ position: 'relative', width: '100%', overflow: 'visible' });
 
 // Flex shell that wraps the `TransformComponent`. Two jobs:
@@ -344,6 +343,52 @@ export function Grid({
     getZoomScale,
     isPanning: isPanningGetter,
   });
+
+  // Multiplayer presence map. The hook subscribes to `presenceUpdated`
+  // events (returns an empty list in solo where `subscribeToRemotePresence`
+  // is undefined). The builder composes the per-cell render plan from
+  // remote presences + the local cursor; validated cells are subtracted
+  // here so sage cells never carry a player hue.
+  const remotePresences = useRemotePresences(
+    subscribeToRemotePresence,
+    currentSessionId,
+  );
+  const presenceMap = useMemo(() => {
+    // Only compose the map in multiplayer mode — solo callers omit the
+    // presence props and the legacy `letterCellInWord` rose tint paints
+    // via the `inWord` prop instead. Keeps solo's focused-word visual
+    // unchanged after this refactor.
+    if (
+      !subscribeToRemotePresence ||
+      !playersBySessionId ||
+      !currentSessionId
+    ) {
+      return null;
+    }
+    const localCursor = nav.localCursor
+      ? {
+          sessionId: currentSessionId,
+          position: nav.localCursor.position,
+          direction: nav.localCursor.direction,
+        }
+      : null;
+    return buildCellPresenceMap({
+      puzzle,
+      remotePresences,
+      localCursor,
+      playersBySessionId,
+      currentSessionId,
+      validatedPositions: validatedPositions ?? new Set(),
+    });
+  }, [
+    subscribeToRemotePresence,
+    playersBySessionId,
+    currentSessionId,
+    nav.localCursor,
+    puzzle,
+    remotePresences,
+    validatedPositions,
+  ]);
 
   // Zoom in / out centered on the currently-focused cell. When the
   // user has a slot focused, the library's `zoomToElement` keeps that
@@ -821,13 +866,10 @@ export function Grid({
           contentStyle={transformContentStyle}
         >
           {/*
-            `gridFrame` is the positioning ancestor for the optional
-            `<PresenceOverlay>` sibling. The overlay anchors its rects
-            to this box's coordinate system so cursor / word-tint /
-            chip layers track the grid's pixel bounds even under
-            pinch-zoom transforms applied by the wrapper above. Solo
-            mode (no presence props) renders only the grid div — the
-            extra `<div>` is harmless layout chrome.
+            `gridFrame` wraps `<div role="grid">` to provide a positioned
+            box for the custom mouse-pan handlers. Multiplayer presence
+            visuals now live inside each `LetterCellView` (no overlay
+            sibling) — the wrapper stays for the pan-listener stability.
           */}
           <div ref={gridFrameRef} className={gridFrame}>
             <div
@@ -855,6 +897,7 @@ export function Grid({
                         const validated = validatedPositions?.has(key) ?? false;
                         const error = errorPositions?.has(key) ?? false;
                         const incomingArrows = incomingArrowsByLetter.get(key);
+                        const presence = presenceMap?.get(key);
                         return (
                           <LetterCellView
                             key={key}
@@ -863,6 +906,7 @@ export function Grid({
                             inWord={highlight.currentWord}
                             validated={validated}
                             error={error}
+                            presence={presence}
                             incomingArrows={incomingArrows}
                             inputRef={nav.registerCellRef}
                             onClick={nav.handleClick}
@@ -890,15 +934,6 @@ export function Grid({
                 </div>
               ))}
             </div>
-            {subscribeToRemotePresence && playersBySessionId && currentSessionId ? (
-              <PresenceOverlay
-                containerRef={gridFrameRef}
-                puzzle={puzzle}
-                subscribe={subscribeToRemotePresence}
-                playersBySessionId={playersBySessionId}
-                currentSessionId={currentSessionId}
-              />
-            ) : null}
           </div>
         </TransformComponent>
       </TransformWrapper>

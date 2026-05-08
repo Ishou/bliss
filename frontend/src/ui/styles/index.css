@@ -49,3 +49,50 @@ html, body {
   }
 }
 
+/* Active-cell badge pulse for remote players actively typing. The badge
+ * grows ~12 % and gains a 2 px translucent ring at 50 % so the pulse
+ * reads at small sizes (13 px circle) without bleeding into adjacent
+ * cells. Mirrors the roster-pill typing-dot pulse below — a player who
+ * is typing is signalled in BOTH places at once. Reduced-motion users
+ * see a static badge. */
+@keyframes wordsparrow-badge-pulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 transparent;
+  }
+  50% {
+    transform: scale(1.12);
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.08);
+  }
+}
+
+/* Roster-pill typing-dot pulse — opacity + scale rather than the badge's
+ * box-shadow ring because the dot is too small (6 px) for a perceptible
+ * outer ring. Same 1.4 s cadence as the badge so the two signals stay
+ * synchronised. */
+@keyframes wordsparrow-presence-pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.45;
+    transform: scale(1.4);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  @keyframes wordsparrow-badge-pulse {
+    0%, 100% {
+      transform: scale(1);
+      box-shadow: 0 0 0 0 transparent;
+    }
+  }
+  @keyframes wordsparrow-presence-pulse {
+    0%, 100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+}
+

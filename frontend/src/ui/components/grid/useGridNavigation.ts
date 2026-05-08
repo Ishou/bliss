@@ -61,6 +61,14 @@ export interface GridNavigation {
   // re-renders consumers of the panel's letter previews on every
   // typed / cleared character.
   readonly getEntryAt: (row: number, col: number) => string;
+  // The local user's current cursor — `null` when nothing is focused.
+  // Mirrors the data the outbound `onLocalFocusChange` callback already
+  // emits, but synchronously available for local rendering (presence map
+  // composition, the multiplayer cursor highlight pipeline, etc).
+  readonly localCursor: {
+    readonly position: Position;
+    readonly direction: Direction;
+  } | null;
   // Inbound multiplayer write — apply a remote `cellUpdated` event to the
   // uncontrolled <input> at (row, col). Writes `letter ?? ''` directly to
   // `el.value` (per ADR-0002 §4: cell values live in the DOM), updates
@@ -730,6 +738,10 @@ export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOpt
     bumpEntries();
   }, [bumpEntries]);
 
+  const localCursor = focused
+    ? { position: focused, direction }
+    : null;
+
   return {
     registerCellRef,
     highlightFor,
@@ -743,6 +755,7 @@ export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOpt
     alternateClue,
     toggleDirection,
     getEntryAt,
+    localCursor,
     applyRemoteCellUpdate,
   };
 }

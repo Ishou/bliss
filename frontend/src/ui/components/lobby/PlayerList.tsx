@@ -1,6 +1,6 @@
 import { css } from 'styled-system/css';
 import type { Lobby, SessionId } from '@/domain/game';
-import { playerColorVars } from '@/ui/lib/playerColor';
+import { playerColorVars, playerInitial } from '@/ui/lib/playerColor';
 
 // Pure prop-driven roster. Used in two layouts:
 //   - `stacked`: vertical list with empty-slot placeholders, mounted by
@@ -26,6 +26,15 @@ export interface PlayerListProps {
    * placeholders (in-game layout).
    */
   readonly variant: 'stacked' | 'inline';
+  /**
+   * Optional set of session ids whose owner is currently typing.
+   * Backend signals this through the `typing` presence event (Step 8 of
+   * the multiplayer-highlights wave). When a session id is in the set,
+   * the row's typing-dot animates with the `wordsparrow-presence-pulse`
+   * keyframe; absent or omitted, the dot is not rendered.
+   * Inline variant only — the stacked (waiting-room) variant ignores it.
+   */
+  readonly typingSessionIds?: ReadonlySet<SessionId>;
 }
 
 const styles = {
@@ -64,23 +73,51 @@ const styles = {
   }),
   inlineList: css({
     display: 'flex', flexDirection: 'row', flexWrap: 'wrap',
-    alignItems: 'center', justifyContent: 'center', gap: 'sm',
+    alignItems: 'center', justifyContent: 'center', gap: '8px',
     listStyle: 'none', padding: 0, margin: 0,
     width: '100%',
   }),
+  // Pill design (in-game roster). Very low-chrome pill: hairline border
+  // and 2.5 % white wash so the chip floats over the page background
+  // without competing with the grid. The local player's pill is tinted
+  // with their own `--player-color` (10 % alpha bg, 20 % alpha border)
+  // so a glance at the roster confirms which pill is "you" without
+  // reading the pseudonym. Pseudonym colour stays muted by default and
+  // brightens on the local pill for legibility on the tinted bg.
   inlineRow: css({
-    display: 'inline-flex', alignItems: 'center', gap: 'xs',
-    paddingBlock: 'xs', paddingInline: 'sm',
-    border: '1px solid token(colors.border)', borderRadius: '9999px',
-    // Per-player colour accent: a 3 px left stripe via inline-style
-    // `--player-color`. Same hue the in-game cursor uses, so the
-    // pill chip in the roster matches the cursor on the grid at a
-    // glance. Decorative — no contrast requirement (the stripe
-    // doesn't carry semantic content).
-    borderLeft: '3px solid var(--player-color, token(colors.border))',
-    bg: 'surface', fontSize: 'sm',
+    display: 'inline-flex', alignItems: 'center', gap: '6px',
+    paddingBlock: '3px', paddingInlineStart: '3px', paddingInlineEnd: '10px',
+    background: 'rgba(255, 255, 255, 0.025)',
+    border: '0.5px solid rgba(255, 255, 255, 0.05)',
+    borderRadius: '999px',
+    fontSize: '12px',
+    color: 'fgMuted',
+    '&[data-you="true"]': {
+      background:
+        'color-mix(in srgb, var(--player-color) 10%, transparent)',
+      borderColor:
+        'color-mix(in srgb, var(--player-color) 20%, transparent)',
+      color: 'fg',
+    },
   }),
-  inlinePseudonym: css({ fontWeight: 'medium', color: 'fg' }),
+  inlineAvatar: css({
+    width: '22px', height: '22px', borderRadius: '50%',
+    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+    fontSize: '11px', fontWeight: 600,
+    background: 'var(--player-color)', color: 'var(--player-on)',
+    flexShrink: 0,
+  }),
+  inlinePseudonym: css({ fontWeight: 'medium' }),
+  // Typing-pulse dot. Visible only when the row's `data-typing="true"`
+  // — set by the inline list when the player's sessionId is in the
+  // `typingSessionIds` prop. Mirrors the cell-badge pulse so a player
+  // who is typing pulses in BOTH places.
+  inlineTypingDot: css({
+    width: '6px', height: '6px', borderRadius: '50%',
+    backgroundColor: 'var(--player-color)',
+    animation: 'wordsparrow-presence-pulse 1.4s ease-in-out infinite',
+    flexShrink: 0,
+  }),
   badge: css({
     fontSize: 'xs', fontWeight: 'bold', letterSpacing: '0.06em',
     textTransform: 'uppercase', paddingInline: 'sm', paddingBlock: 'xs',
@@ -94,26 +131,47 @@ const styles = {
 };
 
 export function PlayerList({
-  players, ownerSessionId, currentSessionId, variant,
+  players, ownerSessionId, currentSessionId, variant, typingSessionIds,
 }: PlayerListProps): React.ReactElement {
   if (variant === 'inline') {
     return (
       <ul className={styles.inlineList} aria-label="Liste des joueurs">
-        {players.map((player) => (
-          <li
-            key={player.sessionId}
-            className={styles.inlineRow}
-            style={playerColorVars(player.sessionId)}
-            data-testid="player-row"
-            data-session-id={player.sessionId}
-          >
-            <span className={styles.inlinePseudonym}>{player.pseudonym}</span>
-            {player.sessionId === currentSessionId
-              ? <span className={styles.badge}>vous</span> : null}
-            {player.sessionId === ownerSessionId
-              ? <span className={styles.ownerBadge}>propriétaire</span> : null}
-          </li>
-        ))}
+        {players.map((player) => {
+          const isYou = player.sessionId === currentSessionId;
+          const isTyping = typingSessionIds?.has(player.sessionId) ?? false;
+          const ariaLabel = [
+            player.pseudonym,
+            isYou ? 'vous' : null,
+            player.sessionId === ownerSessionId ? 'propriétaire' : null,
+            isTyping ? 'en train d\'écrire' : null,
+          ]
+            .filter(Boolean)
+            .join(' — ');
+          return (
+            <li
+              key={player.sessionId}
+              className={styles.inlineRow}
+              style={playerColorVars(player.sessionId)}
+              data-testid="player-row"
+              data-session-id={player.sessionId}
+              data-you={isYou ? 'true' : undefined}
+              data-typing={isTyping ? 'true' : undefined}
+              aria-label={ariaLabel}
+            >
+              <span className={styles.inlineAvatar} aria-hidden="true">
+                {playerInitial(player.pseudonym)}
+              </span>
+              <span className={styles.inlinePseudonym}>{player.pseudonym}</span>
+              {isTyping ? (
+                <span
+                  className={styles.inlineTypingDot}
+                  aria-hidden="true"
+                  data-testid="player-typing-dot"
+                />
+              ) : null}
+            </li>
+          );
+        })}
       </ul>
     );
   }

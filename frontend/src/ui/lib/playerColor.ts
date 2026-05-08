@@ -1,18 +1,18 @@
 // Per-session colour utility. Derives a stable hue (0–360) by hashing
 // the SessionId so each player has a distinct colour across reloads and
 // across peers (no server round-trip). Used by:
-//   - the grid's `PresenceOverlay` (cursor rings, word tint, chip dot)
-//   - `PlayerList` (per-row left-border accent)
-//   - the future per-author cell-tint feature (out of scope here).
+//   - the grid's `Cell` (active ring, word tint, badge)
+//   - `PresenceOverlay` (state computer wires the vars onto cells)
+//   - `PlayerList` (per-row pill accent + avatar dot)
 //
 // ADR-0018 §"Presence" promises stable distinct colours; this is the
 // single derivation.
 //
-// On the charbon palette the player hues paint at 65 % lightness so
-// they read clearly against the dark surfaces. The text-on-chip
-// variant blends toward `fg` (off-white) for AA contrast — the
-// previous cream-page blend toward deep-navy ink would land near-
-// black on a dark background and fail readability badly.
+// The four returned tones are the recipe extracted from the rose / blue /
+// amber / violet reference palette: ring + on-color sit at higher
+// chroma+lightness, while active-bg and word-bg drop to the same near-
+// black tone-on-tone the design uses to prevent the grid from looking
+// like a dashboard.
 
 import type { SessionId } from '@/domain/game';
 
@@ -34,9 +34,6 @@ import type { SessionId } from '@/domain/game';
 export function sessionIdToHue(sessionId: SessionId): number {
   const text = String(sessionId);
   if (text.length === 0) return 0;
-  // FNV-1a 32-bit. `Math.imul` keeps the multiplication in int32
-  // territory so the hash stays a positive 32-bit value when xored
-  // back into `>>> 0` at the end.
   let hash = 0x811c9dc5;
   for (let i = 0; i < text.length; i++) {
     hash ^= text.charCodeAt(i);
@@ -45,22 +42,25 @@ export function sessionIdToHue(sessionId: SessionId): number {
   return (hash >>> 0) % 360;
 }
 
+// Recipe constants. Reverse-engineered from the four reference colours
+// (rose #e8a3b3, blue #8ab4d8, amber #d4b878, violet #b89cd0) by averaging
+// the saturation/lightness of each tone family. Documented here so the
+// numbers don't drift on a future refactor.
+const RECIPE = {
+  color: { s: 50, l: 72 }, // ring stroke, badge fill, roster avatar
+  activeBg: { s: 22, l: 14 }, // active-cell background under the ring
+  wordBg: { s: 15, l: 14 }, // word-tint background for non-active cells
+  on: { s: 48, l: 16 }, // text colour on player backgrounds (badges)
+} as const;
+
 // CSS custom-property bundle for a single session. Apply via inline
 // `style={...}` at the call site so the variables are scoped to that
-// element (no global leakage across players). Consumers reference the
-// vars from regular Panda CSS classes via `var(--player-color)` etc.
+// element (no global leakage across players).
 //
-// `--player-hue`        — raw hue 0–360, used by callers that want to
-//                         reconstruct their own hsl/color-mix expression.
-// `--player-color`      — opaque accent hsl, suitable for borders /
-//                         chip backgrounds (NOT for foreground text on
-//                         cream — see `--player-text-color`).
-// `--player-color-soft` — translucent accent (~18% alpha), suitable for
-//                         word-tint backgrounds inside the overlay.
-//                         Stacks well via `mix-blend-mode: multiply`.
-// `--player-text-color` — accent blended toward `ink` for ≥ 4.5:1
-//                         contrast against the cream page background.
-//                         Used by the pseudonym chip label.
+// `--player-color`     — accent stroke / fill (badge, roster avatar, ring)
+// `--player-active-bg` — background of the active cell (under the ring)
+// `--player-word-bg`   — background of the other cells in the active word
+// `--player-on`        — text on `--player-color` backgrounds (badges)
 //
 // Returns a `Record<string, string>` because the CSSStyleDeclaration
 // typings reject custom properties that start with `--`; React passes
@@ -68,21 +68,20 @@ export function sessionIdToHue(sessionId: SessionId): number {
 export function playerColorVars(sessionId: SessionId): Record<string, string> {
   const hue = sessionIdToHue(sessionId);
   return {
-    '--player-hue': String(hue),
-    // Saturated bright hsl — the "brand" colour for the player.
-    // 70 % saturation reads as vibrant without being neon; 65 %
-    // lightness pops on the charbon palette without washing out
-    // (the prior 45 % was tuned for the cream page and looked
-    // muddy on the new dark surfaces).
-    '--player-color': `hsl(${hue} 70% 65%)`,
-    // Same hue, low alpha for word-tint backgrounds.
-    '--player-color-soft': `hsla(${hue}, 70%, 65%, 0.18)`,
-    // Foreground text on the chip. Blend the raw hue toward `fg`
-    // (off-white #E8E8EB) so the resulting colour reads clearly
-    // against `surfaceElevated` / `surface` charcoal backgrounds.
-    // 80 % hue / 20 % fg keeps the colour identity while lifting the
-    // luminance enough to clear AA at body text size (~5:1+ in
-    // measured worst-case hues).
-    '--player-text-color': `color-mix(in srgb, hsl(${hue} 70% 65%) 80%, #E8E8EB)`,
+    '--player-color': `hsl(${hue} ${RECIPE.color.s}% ${RECIPE.color.l}%)`,
+    '--player-active-bg': `hsl(${hue} ${RECIPE.activeBg.s}% ${RECIPE.activeBg.l}%)`,
+    '--player-word-bg': `hsl(${hue} ${RECIPE.wordBg.s}% ${RECIPE.wordBg.l}%)`,
+    '--player-on': `hsl(${hue} ${RECIPE.on.s}% ${RECIPE.on.l}%)`,
   };
+}
+
+// Single-uppercase initial for badges and roster avatars. Strips
+// diacritics so "Élodie" → "E" and "Łukasz" → "L". Empty input returns
+// "?" so the badge always has something to render.
+export function playerInitial(pseudonym: string): string {
+  const trimmed = pseudonym.trim();
+  if (trimmed.length === 0) return '?';
+  const stripped = trimmed.normalize('NFD').replace(/\p{M}/gu, '');
+  const first = stripped.charAt(0);
+  return first.toUpperCase();
 }

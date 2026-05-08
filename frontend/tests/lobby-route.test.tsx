@@ -557,7 +557,7 @@ describe('Lobby route Wave H integration', () => {
     expect(screen.getByTestId('connection-banner')).toHaveAttribute('data-state', 'reconnecting');
   });
 
-  it('renders the player roster during IN_PROGRESS with vous + propriétaire badges on the right rows', async () => {
+  it('renders the player roster during IN_PROGRESS marking the local row with data-you and exposing vous/propriétaire via aria-label', async () => {
     const gameClient = makeFakeGameClient();
     renderLobby({ gameClient });
     await screen.findByRole('heading', { name: /WordSparrow/ });
@@ -569,22 +569,25 @@ describe('Lobby route Wave H integration', () => {
       });
     });
 
-    // The roster is mounted alongside the Grid+Timer. Both names appear.
     const roster = screen.getByRole('list', { name: /Liste des joueurs/i });
     expect(roster).toBeInTheDocument();
     expect(roster).toHaveTextContent('Joueur 1234');
     expect(roster).toHaveTextContent('Joueur 5678');
 
-    // Owner row (current session is the owner in baseLobby) carries
-    // both badges; the other player carries neither.
+    // Inline pill design: the "vous" / "propriétaire" labels are no
+    // longer rendered as visible badge chips. The local player's row
+    // is identified by `data-you="true"` and the aria-label carries
+    // the full role description for assistive tech.
     const rows = roster.querySelectorAll('li');
     expect(rows).toHaveLength(2);
     expect(rows[0]).toHaveTextContent('Joueur 1234');
-    expect(rows[0]).toHaveTextContent('vous');
-    expect(rows[0]).toHaveTextContent('propriétaire');
+    expect(rows[0]?.getAttribute('data-you')).toBe('true');
+    expect(rows[0]?.getAttribute('aria-label')).toContain('vous');
+    expect(rows[0]?.getAttribute('aria-label')).toContain('propriétaire');
     expect(rows[1]).toHaveTextContent('Joueur 5678');
-    expect(rows[1]).not.toHaveTextContent('vous');
-    expect(rows[1]).not.toHaveTextContent('propriétaire');
+    expect(rows[1]?.getAttribute('data-you')).toBeNull();
+    expect(rows[1]?.getAttribute('aria-label') ?? '').not.toContain('vous');
+    expect(rows[1]?.getAttribute('aria-label') ?? '').not.toContain('propriétaire');
   });
 
   it('updates the roster on playerJoined / playerLeft fired during IN_PROGRESS', async () => {
@@ -811,7 +814,7 @@ describe('Lobby route Wave H integration', () => {
     expect(last.direction).toBe('across');
   });
 
-  it('renders a peer presence chip after a presenceUpdated dispatch during IN_PROGRESS', async () => {
+  it('marks the peer\'s active cell with data-player-active and renders the badge with their initial after a presenceUpdated dispatch', async () => {
     const gameClient = makeFakeGameClient();
     const peerSessionId = '0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6c' as SessionId;
     const { container } = renderLobby({ gameClient });
@@ -832,11 +835,17 @@ describe('Lobby route Wave H integration', () => {
         direction: 'across',
       });
     });
-    const chip = container.querySelector('[data-testid="presence-chip"]');
-    expect(chip).not.toBeNull();
-    // The fake's session 5678 player is in baseLobby.players; the chip
-    // text is the matching pseudonym.
-    expect(chip?.textContent).toContain('Joueur 5678');
+    // Per-cell visuals replace the legacy overlay chip. The peer's
+    // active cell carries `data-player-active="true"` and the badge
+    // shows the first letter of the peer's pseudonym ("Joueur 5678" →
+    // "J").
+    const cell = container.querySelector(
+      '[role="gridcell"][data-row="0"][data-col="1"]',
+    );
+    expect(cell?.getAttribute('data-player-active')).toBe('true');
+    const badges = container.querySelectorAll('[data-player-badge="true"]');
+    expect(badges).toHaveLength(1);
+    expect(badges[0]?.textContent).toBe('J');
   });
 });
 
