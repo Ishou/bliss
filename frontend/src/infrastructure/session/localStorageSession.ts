@@ -6,7 +6,8 @@
 //                                  can reattach a reconnecting client to
 //                                  its slot inside the 30 s window.
 //   - `bliss.session.pseudonym` — a freely editable display name; default
-//                                  is `Joueur ${random4digits}`.
+//                                  is a random French animal name +
+//                                  3-digit suffix (e.g. `Renard 423`).
 //
 // This module is the *infrastructure* adapter for that storage. The
 // hexagonal-layering rule (CLAUDE.md "Architecture") forbids domain or
@@ -67,11 +68,25 @@ function removeKey(key: string): void {
   }
 }
 
+// French animal names — all selected so that adjective-free agreement
+// is a non-issue and pronunciation reads naturally to a French speaker.
+// Order is irrelevant; uniqueness matters because the per-render pick
+// is uniform random.
+const ANIMAL_NAMES = [
+  'Renard', 'Hibou', 'Loup', 'Lynx', 'Faucon', 'Cerf', 'Lapin',
+  'Écureuil', 'Castor', 'Blaireau', 'Hérisson', 'Sanglier',
+  'Aigle', 'Corbeau', 'Marmotte', 'Élan', 'Chevreuil', 'Goéland',
+  'Guépard', 'Panda', 'Koala', 'Tigre', 'Phoque', 'Otarie',
+] as const;
+
 function generateDefaultPseudonym(): string {
-  // 1000–9999 keeps the suffix exactly 4 digits without leading-zero
-  // padding, matching the ADR's `Joueur 1234` example.
-  const suffix = 1000 + Math.floor(Math.random() * 9000);
-  return `Joueur ${suffix}`;
+  const animal = ANIMAL_NAMES[Math.floor(Math.random() * ANIMAL_NAMES.length)];
+  // 100–999 keeps total length comfortably under the 32-char Pseudonym
+  // ceiling for every entry in ANIMAL_NAMES while giving enough spread
+  // (≈900 × 24 = ~21k combinations) that two anonymous players in the
+  // same lobby almost never collide on the default.
+  const suffix = 100 + Math.floor(Math.random() * 900);
+  return `${animal} ${suffix}`;
 }
 
 /**
@@ -89,7 +104,7 @@ export function getOrCreateSessionId(): string {
 
 /**
  * Returns the persisted pseudonym, or generates and persists a default
- * `Joueur ${random4digits}` on first call.
+ * `<AnimalName> ${random3digits}` (e.g. `Renard 423`) on first call.
  */
 export function getPseudonym(): string {
   const existing = readKey(PSEUDONYM_KEY);
