@@ -5,9 +5,11 @@ import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
 
 /**
- * Entrypoint. PORT defaults to 8081 — grid/api owns 8080 in the cluster
- * (ADR-0007 §3, ADR-0009), so the two services can co-exist on a single
- * node without a port collision. Env override for local dev / tests.
+ * Entrypoint. Local-dev default 7778 (paired with grid/api's 7777 so
+ * `make dev` can run both services on the host without a port clash).
+ * Prod chart pins PORT=8081 explicitly via the deployment env block, so
+ * the cluster routing in ADR-0007 §3 / ADR-0009 stays unchanged
+ * regardless of the in-app default.
  */
 fun main() {
     val port = System.getenv("PORT")?.toIntOrNull() ?: DEFAULT_PORT
@@ -15,4 +17,4 @@ fun main() {
         .start(wait = true)
 }
 
-internal const val DEFAULT_PORT: Int = 8081
+internal const val DEFAULT_PORT: Int = 7778

@@ -73,6 +73,10 @@ private fun GameSession.toDto(presence: Map<String, PresencePosition>) =
             entries.entries
                 .sortedWith(compareBy({ it.key.row }, { it.key.column }))
                 .map { (pos, entry) -> entry.toDto(pos) },
+        lockedPositions =
+            lockedPositions
+                .sortedWith(compareBy({ it.row }, { it.column }))
+                .map { GamePositionDto(row = it.row, column = it.column) },
         startedAt = ISO.format(startedAt),
         completedAt = completedAt?.let(ISO::format),
         // Sort by sessionId for deterministic JSON, mirroring `entries` above.

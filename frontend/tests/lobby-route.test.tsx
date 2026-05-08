@@ -492,6 +492,90 @@ describe('Lobby route Wave H integration', () => {
     ).not.toBeNull();
   });
 
+  it('marks the cells of a wordLocked event read-only and visually validated', async () => {
+    const gameClient = makeFakeGameClient();
+    const { container } = renderLobby({ gameClient });
+    await screen.findByRole('heading', { name: /WordSparrow/ });
+
+    act(() => {
+      gameClient.dispatch({
+        type: 'gameStarted',
+        puzzle: buildGamePuzzle(),
+        startedAt: '2026-05-02T15:30:00Z',
+      });
+    });
+
+    // Lock the across word at row 0 — positions (0,1) and (0,2) per the
+    // 3x3 fixture's single across clue.
+    act(() => {
+      gameClient.dispatch({
+        type: 'wordLocked',
+        positions: [
+          { row: 0, column: 1 },
+          { row: 0, column: 2 },
+        ],
+        lockedAt: '2026-05-02T15:30:30Z',
+      });
+    });
+
+    const cell01 = container.querySelector<HTMLInputElement>(
+      'input[data-cell-kind="letter"][data-row="0"][data-col="1"]',
+    );
+    const cell02 = container.querySelector<HTMLInputElement>(
+      'input[data-cell-kind="letter"][data-row="0"][data-col="2"]',
+    );
+    expect(cell01).not.toBeNull();
+    expect(cell02).not.toBeNull();
+    expect(cell01!.readOnly).toBe(true);
+    expect(cell02!.readOnly).toBe(true);
+
+    // An unlocked cell on the same row stays editable.
+    const cell10 = container.querySelector<HTMLInputElement>(
+      'input[data-cell-kind="letter"][data-row="1"][data-col="0"]',
+    );
+    expect(cell10).not.toBeNull();
+    expect(cell10!.readOnly).toBe(false);
+  });
+
+  it('seeds locked cells from the lobbyState snapshot for late-joiners', async () => {
+    const gameClient = makeFakeGameClient();
+    const { container } = renderLobby({ gameClient });
+    await screen.findByRole('heading', { name: /WordSparrow/ });
+
+    act(() => {
+      gameClient.dispatch({
+        type: 'lobbyState',
+        players: [
+          { sessionId, pseudonym, joinedAt: '2026-05-02T15:30:00Z' },
+        ],
+        ownerSessionId: sessionId,
+        state: 'IN_PROGRESS',
+        gridConfig: { width: 3, height: 3 },
+        game: {
+          puzzle: buildGamePuzzle(),
+          entries: [],
+          lockedPositions: [
+            { row: 0, column: 1 },
+            { row: 0, column: 2 },
+          ],
+          startedAt: '2026-05-02T15:30:00Z',
+          completedAt: null,
+        },
+      });
+    });
+
+    const cell01 = container.querySelector<HTMLInputElement>(
+      'input[data-cell-kind="letter"][data-row="0"][data-col="1"]',
+    );
+    const cell02 = container.querySelector<HTMLInputElement>(
+      'input[data-cell-kind="letter"][data-row="0"][data-col="2"]',
+    );
+    expect(cell01).not.toBeNull();
+    expect(cell02).not.toBeNull();
+    expect(cell01!.readOnly).toBe(true);
+    expect(cell02!.readOnly).toBe(true);
+  });
+
   it('freezes the Timer and opens EndGameModal on gameSolved', async () => {
     const gameClient = makeFakeGameClient();
     const { container } = renderLobby({ gameClient });
@@ -707,6 +791,7 @@ describe('Lobby route Wave H integration', () => {
       game: {
         puzzle: buildGamePuzzle(),
         entries,
+        lockedPositions: [],
         startedAt: '2026-05-02T15:30:00Z',
         completedAt: null,
       },

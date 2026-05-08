@@ -94,4 +94,23 @@ class GameSessionTest {
             gameSession(startedAt = later, completedAt = now)
         }.messageContains("before startedAt")
     }
+
+    @Test
+    fun `lockedPositions defaults to empty`() {
+        assertThat(gameSession().lockedPositions).isEqualTo(emptySet<Position>())
+    }
+
+    @Test
+    fun `lockedPositions roundtrips when set`() {
+        val locks = setOf(pPos, aPos)
+        val s =
+            GameSession(
+                puzzle = gameSession().puzzle,
+                entries = emptyMap(),
+                lockedPositions = locks,
+                startedAt = now,
+                completedAt = null,
+            )
+        assertThat(s.lockedPositions).isEqualTo(locks)
+    }
 }

@@ -5,6 +5,7 @@ import com.bliss.game.application.ports.Clock
 import com.bliss.game.application.ports.LobbyEvent
 import com.bliss.game.application.ports.LobbyRepository
 import com.bliss.game.application.ports.PuzzleProvider
+import com.bliss.game.application.ports.WordValidator
 import com.bliss.game.domain.CellEntry
 import com.bliss.game.domain.GameSession
 import com.bliss.game.domain.GridConfig
@@ -17,6 +18,8 @@ import com.bliss.game.domain.Position
 import com.bliss.game.domain.Pseudonym
 import com.bliss.game.domain.SessionId
 import com.bliss.game.domain.analytics.AnalyticsEvent
+import com.bliss.game.domain.wordsContaining
+import kotlinx.coroutines.CancellationException
 import java.time.Duration
 import java.time.Instant
 
@@ -244,10 +247,19 @@ class LeaveLobbyUseCase(
  * Records a single cell write under last-write-wins (ADR-0018 §"Conflict policy"). When the new
  * write transitions the puzzle to fully solved, the lobby moves to COMPLETED and a [LobbyEvent.GameSolved]
  * event is appended. Lobby must be IN_PROGRESS and the player must be a member.
+ *
+ * Word lock detection: per the v1 wire (grid/api/openapi.yaml `LetterCell`),
+ * the canonical letter is stripped from `GET /v1/puzzles/{id}` so the
+ * client (and game-api) never see the solution. To know whether a fill
+ * just completed a correct word, this use case delegates to
+ * [WordValidator] (HTTP adapter calls grid's `POST /validate`). The
+ * validator is queried OUTSIDE the per-lobby mutator so the lock is not
+ * held across an HTTP call.
  */
 class UpdateCellUseCase(
     private val repo: LobbyRepository,
     private val clock: Clock,
+    private val wordValidator: WordValidator,
     private val analyticsEventSink: AnalyticsEventSink = AnalyticsEventSink.Noop,
 ) {
     suspend operator fun invoke(
@@ -256,13 +268,22 @@ class UpdateCellUseCase(
         position: Position,
         letter: Letter?,
     ): UseCaseOutcome<Lobby> {
-        var solved: Pair<Long, Map<Position, CellEntry>>? = null
+        // Step 1: write the cell entry (or clear) and capture the post-state
+        // we'll need to drive lock detection. Locked-cell writes short-circuit
+        // here. We also evaluate isSolved() inside the mutator so a fully-
+        // correct grid still emits GameSolved + transitions to COMPLETED on
+        // the same write — the lock detection in step 2 is independent.
         var writtenAt: Instant? = null
+        var entriesAfter: Map<Position, CellEntry> = emptyMap()
+        var solved: Pair<Long, Map<Position, CellEntry>>? = null
         val updated =
             repo.mutate(lobbyId) { lobby ->
                 if (lobby.state != LobbyLifecycleState.IN_PROGRESS) return@mutate lobby
                 if (!lobby.hasJoined(sessionId)) return@mutate lobby
                 val session = lobby.game ?: return@mutate lobby
+                // Locked cells silently ignore writes — no event, no broadcast, no lastActivityAt
+                // bump (so peers' idle timers do not reset on attempts to overwrite a sage cell).
+                if (position in session.lockedPositions) return@mutate lobby
                 val now = clock.now().also { writtenAt = it }
                 val entries =
                     if (letter == null) {
@@ -270,38 +291,141 @@ class UpdateCellUseCase(
                     } else {
                         session.entries + (position to CellEntry(sessionId, letter, now))
                     }
+                entriesAfter = entries
                 val nextSession = session.copy(entries = entries)
                 if (nextSession.isSolved() && session.completedAt == null) {
-                    val completed = nextSession.copy(completedAt = now)
-                    solved = Duration.between(session.startedAt, now).toMillis() to entries
-                    lobby.copy(state = LobbyLifecycleState.COMPLETED, game = completed, lastActivityAt = now)
+                    val durationMs = Duration.between(session.startedAt, now).toMillis()
+                    solved = durationMs to entries
+                    analyticsEventSink.record(
+                        AnalyticsEvent.GameSolved(
+                            gridSize = lobby.gridConfig.toLabel(),
+                            playerCount = lobby.players.size,
+                            durationMs = durationMs,
+                        ),
+                        sessionId,
+                    )
+                    lobby.copy(
+                        state = LobbyLifecycleState.COMPLETED,
+                        game = nextSession.copy(completedAt = now),
+                        lastActivityAt = now,
+                    )
                 } else {
                     lobby.copy(game = nextSession, lastActivityAt = now)
                 }
             } ?: return failure(UseCaseError.LobbyNotFound)
-        // Validate post-conditions (writtenAt is null only if mutator short-circuited).
-        val stamp = writtenAt ?: return reasonFor(updated, sessionId)
+        // writtenAt is null when the mutator short-circuited (player not in lobby, not IN_PROGRESS,
+        // or position already locked). The locked-no-op case must surface as success-with-no-events.
+        val stamp = writtenAt ?: return passthroughOrFailure(updated, sessionId)
+
         val events = mutableListOf<LobbyEvent>(LobbyEvent.CellUpdated(sessionId, position, letter, stamp))
-        solved?.let { (durationMs, finalEntries) ->
-            events += LobbyEvent.GameSolved(durationMs, finalEntries)
-            analyticsEventSink.record(
-                AnalyticsEvent.GameSolved(
-                    gridSize = updated.gridConfig.toLabel(),
-                    playerCount = updated.players.size,
-                    durationMs = durationMs,
-                ),
-                sessionId,
+
+        // Step 2: only ask grid about the words that contain the just-written
+        // position. If none of them are fully filled, skip the HTTP call.
+        val session = updated.game ?: return success(updated, events).withSolved(solved)
+        val candidateWords = candidateWordsToCheck(session, position, entriesAfter)
+        if (candidateWords.isEmpty() || letter == null) {
+            return success(updated, events).withSolved(solved)
+        }
+
+        val incorrect =
+            try {
+                wordValidator.incorrectPositions(session.puzzle.id, lettersOf(entriesAfter))
+            } catch (cause: CancellationException) {
+                throw cause
+            } catch (cause: Exception) {
+                // Validator failure must NOT take down the cellUpdate. The cell
+                // entry is already committed; the player will still see their
+                // letter. The lock just won't fire on this keystroke.
+                return success(updated, events).withSolved(solved)
+            }
+        // Positions that just transitioned to locked. Words crossing an
+        // already-locked word reuse its cells — those cells are already
+        // sage on every client, so we emit only the freshly-locked ones.
+        // The WordLocked event payload becomes the diff, not the union;
+        // re-broadcasting an already-locked position would be wire noise.
+        val newLocks =
+            candidateWords
+                .asSequence()
+                .filter { word -> word.none { it in incorrect } }
+                .flatMap { it.asSequence() }
+                .filter { it !in session.lockedPositions }
+                .toSet()
+        if (newLocks.isEmpty()) return success(updated, events).withSolved(solved)
+
+        // Step 3: re-enter the mutator to commit the locks. Filter to positions
+        // whose live letter still matches what was validated — a concurrent
+        // UpdateCellUseCase may have written a different letter between step 1
+        // and here. That write was already broadcast via cellUpdated, so locking
+        // a position with a stale letter would show peers a sage cell with the
+        // wrong letter. Leaving it unlocked lets the correct-letter player
+        // retype to retrigger the lock.
+        var actualLocks = emptySet<Position>()
+        repo.mutate(lobbyId) { lobby ->
+            val s = lobby.game ?: return@mutate lobby
+            val stillCorrect =
+                newLocks
+                    .filter { pos ->
+                        s.entries[pos]?.letter == entriesAfter[pos]?.letter
+                    }.toSet()
+            if (stillCorrect.isEmpty()) return@mutate lobby
+            actualLocks = stillCorrect
+            lobby.copy(
+                game = s.copy(lockedPositions = s.lockedPositions + stillCorrect),
+                lastActivityAt = stamp,
             )
         }
-        return success(updated, events)
+        if (actualLocks.isEmpty()) return success(updated, events).withSolved(solved)
+        events += LobbyEvent.WordLocked(actualLocks, stamp)
+        val finalLobby = repo.findById(lobbyId) ?: updated
+        return success(finalLobby, events).withSolved(solved)
     }
 
-    private fun reasonFor(
+    private fun UseCaseOutcome<Lobby>.withSolved(solved: Pair<Long, Map<Position, CellEntry>>?): UseCaseOutcome<Lobby> =
+        if (solved == null) {
+            this
+        } else {
+            when (this) {
+                is UseCaseOutcome.Success ->
+                    success(
+                        result.value,
+                        result.events + LobbyEvent.GameSolved(solved.first, solved.second),
+                    )
+                is UseCaseOutcome.Failure -> this
+            }
+        }
+
+    /**
+     * Returns the words containing [justWritten] that are now fully filled and not yet
+     * locked. We only ask the validator about these — the request is bounded by the
+     * candidate-word count (1 or 2 per cell, matching across × down), not by grid size.
+     */
+    private fun candidateWordsToCheck(
+        session: GameSession,
+        justWritten: Position,
+        entries: Map<Position, CellEntry>,
+    ): List<List<Position>> {
+        val candidates = mutableListOf<List<Position>>()
+        for (word in session.puzzle.wordsContaining(justWritten)) {
+            // Skip only if the entire word is already locked — a perpendicular
+            // word crossing a locked one reuses one cell but its other cells
+            // still need to be validated. Skipping on `any` (the previous
+            // behavior) silently dropped every word that crossed a lock.
+            if (word.all { it in session.lockedPositions }) continue
+            if (word.all { entries[it] != null }) candidates += word
+        }
+        return candidates
+    }
+
+    private fun lettersOf(entries: Map<Position, CellEntry>): Map<Position, Letter> = entries.mapValues { (_, entry) -> entry.letter }
+
+    private fun passthroughOrFailure(
         lobby: Lobby,
         sessionId: SessionId,
     ): UseCaseOutcome<Lobby> =
         when {
+            lobby.state != LobbyLifecycleState.IN_PROGRESS -> failure(UseCaseError.InvalidState)
             !lobby.hasJoined(sessionId) -> failure(UseCaseError.PlayerNotInLobby)
-            else -> failure(UseCaseError.InvalidState)
+            // Otherwise the short-circuit was a locked-cell no-op: success with no events.
+            else -> success(lobby, emptyList())
         }
 }

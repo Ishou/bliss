@@ -37,8 +37,8 @@ info:
 servers:
   - url: https://game.wordsparrow.io
     description: Production. URL stabilizes when the game-api Helm chart lands (ADR-0018).
-  - url: http://localhost:8081
-    description: Local dev (Ktor `embeddedServer`). Port 8081 per ADR-0007 §3.
+  - url: http://localhost:7778
+    description: Local dev (Ktor `embeddedServer`). Paired with grid-api's 7777 in `make dev`; prod chart pins PORT=8081 explicitly per ADR-0007 §3.
 
 tags:
   - name: lobbies
@@ -421,7 +421,7 @@ components:
 
     GameSession:
       type: object
-      required: [puzzle, entries, startedAt, completedAt]
+      required: [puzzle, entries, lockedPositions, startedAt, completedAt]
       description: |
         Active game embedded in `Lobby.game` while IN_PROGRESS or COMPLETED.
         `completedAt` is in `required` because the field is always present on
@@ -430,10 +430,14 @@ components:
         (server-authoritative) so a client refreshing the page in mid-game
         rehydrates the grid from the REST snapshot before the WebSocket
         opens. Cleared cells are absent from the list; entries are sorted
-        by row then column for stable rendering. `presence` is the
-        ephemeral cursor map for currently-connected players; optional
-        and absent or empty when state is WAITING/COMPLETED. Mirrors
-        `GameSession` in `game/api/asyncapi.yaml`; keep in sync.
+        by row then column for stable rendering. `lockedPositions` mirrors
+        the cumulative server-locked cells (every word validated correct
+        so far) so the same refresh path renders read-only cells without
+        waiting for a WebSocket replay; always emitted (empty list when
+        no word has been locked). `presence` is the ephemeral cursor map
+        for currently-connected players; optional and absent or empty
+        when state is WAITING/COMPLETED. Mirrors `GameSession` in
+        `game/api/asyncapi.yaml`; keep in sync.
       properties:
         puzzle:
           $ref: '#/components/schemas/GamePuzzle'
@@ -442,6 +446,14 @@ components:
           items:
             $ref: '#/components/schemas/CellEntry'
           description: Every cell typed so far. Empty list when no player has typed yet.
+        lockedPositions:
+          type: array
+          items:
+            $ref: '#/components/schemas/GamePosition'
+          description: |
+            Cumulative cells locked by server-side word validation. Order is
+            row then column for diff-friendly snapshots. Empty list when no
+            word has been locked.
         startedAt:
           $ref: '#/components/schemas/Instant'
         completedAt:

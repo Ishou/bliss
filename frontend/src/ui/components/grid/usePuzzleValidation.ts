@@ -117,6 +117,26 @@ export function usePuzzleValidation(
           nextErrors.add(positionKey(pos.row, pos.column));
         }
         setErrors(nextErrors);
+        // Lock cells the user submitted that did NOT come back in
+        // incorrectCells — those are correct. Without this, Vérifier
+        // shakes the wrong cells and leaves the typed-correctly cells
+        // in a neutral state, which is what the user sees as "the
+        // word I typed correctly is still not green". The merge with
+        // `prev` preserves anything previously locked (auto-validation
+        // from useWordAutoValidation, an earlier Vérifier, etc.).
+        setValidated((prev) => {
+          let changed = false;
+          const next = new Set(prev);
+          for (const cell of filled) {
+            const key = positionKey(cell.row, cell.column);
+            if (nextErrors.has(key)) continue;
+            if (!next.has(key)) {
+              next.add(key);
+              changed = true;
+            }
+          }
+          return changed ? next : prev;
+        });
         setAnnounce(
           nextErrors.size === 1
             ? '1 case à corriger'

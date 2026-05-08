@@ -121,6 +121,19 @@ export function buildMockPuzzle(): GamePuzzle {
   };
 }
 
+// Hardcoded answers for the mock puzzle, used by the WS handler to
+// validate filled words and emit `wordLocked`. Solutions are normally
+// server-private (the AsyncAPI `GameLetterCell.letter` is null in v1) so
+// this map is a preview-only stand-in for what the real game/api
+// `UpdateCellUseCase` knows from `LetterCell.answer`.
+export const MOCK_ANSWERS: ReadonlyMap<string, string> = new Map([
+  // Across "DEMO" at (0,1)..(0,4) — matches the single clue in `buildMockPuzzle`.
+  ['0,1', 'D'],
+  ['0,2', 'E'],
+  ['0,3', 'M'],
+  ['0,4', 'O'],
+]);
+
 // Returns a fresh, never-completed `GameSession` wrapping the mock puzzle.
 // Used by the WS handler when the owner sends `startGame` so the lobby
 // state mutation and the broadcast frame stay in lockstep.
@@ -130,5 +143,6 @@ export function buildGameSession(): GameSession {
     startedAt: new Date().toISOString(),
     completedAt: null,
     entries: [],
+    lockedPositions: [],
   };
 }

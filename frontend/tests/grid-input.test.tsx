@@ -561,6 +561,24 @@ describe('Grid keyboard interactions — onCellChange callback', () => {
     expect(onCellChange).not.toHaveBeenCalled();
   });
 
+  it('fires onCellFilled on desktop letter typing (the keydown path, not just the Android insertText path)', () => {
+    // Reproduces the user-reported "no network at all when I type" in
+    // solo: on desktop, typing a letter goes through `handleKeyDown`'s
+    // printable-letter branch, which preventDefaults the event and
+    // writes the value manually. The `input` event never fires, so
+    // `handleInput` (and the `onCellFilled` it carries) was unreachable
+    // on every desktop keystroke. The fix must fire `onCellFilled` from
+    // the keydown path too — otherwise auto-validation only fires on
+    // Android soft-keyboards.
+    const onCellFilled = vi.fn();
+    const { container } = render(<Grid puzzle={TEST_PUZZLE} onCellFilled={onCellFilled} />);
+    const start = inputAt(container, 1, 1)!;
+    click(start);
+    typeChar(start, 'l');
+    expect(onCellFilled).toHaveBeenCalledTimes(1);
+    expect(onCellFilled.mock.calls[0]![0]).toEqual({ row: 1, col: 1 });
+  });
+
   it('fires (row, col, null) when defensive paste-blanking clears the cell', () => {
     const onCellChange = vi.fn();
     const { container } = render(<Grid puzzle={TEST_PUZZLE} onCellChange={onCellChange} />);

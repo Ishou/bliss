@@ -103,6 +103,45 @@ class WebSocketFrameMapperTest {
     }
 
     @Test
+    fun `LobbyEvent WordLocked sorts positions by row then column on the wire`() {
+        // Cross-positions deliberately listed out of (row, column) order so the
+        // mapper has to sort them — we want a stable wire shape regardless of
+        // how the use case happens to enumerate the words.
+        val event =
+            LobbyEvent.WordLocked(
+                positions = setOf(Position(2, 3), Position(0, 4), Position(0, 3), Position(1, 3)),
+                lockedAt = writtenAt2,
+            )
+        val frame = event.toFrameOrNull() as ServerToClientFrame.WordLocked
+        assertThat(frame.positions.map { it.row to it.column })
+            .containsExactly(0 to 3, 0 to 4, 1 to 3, 2 to 3)
+        assertThat(frame.lockedAt).isEqualTo(writtenAt2.toString())
+    }
+
+    @Test
+    fun `lobbyState snapshot serializes lockedPositions sorted by row then column`() {
+        val locks = setOf(Position(2, 0), Position(0, 1), Position(0, 0))
+        val lobby = inProgressLobby(emptyMap(), lockedPositions = locks)
+
+        val frame = lobby.toLobbyStateFrame()
+        val game = frame.game
+        assertThat(game).isNotNull()
+        assertThat(game!!.lockedPositions.map { it.row to it.column })
+            .containsExactly(0 to 0, 0 to 1, 2 to 0)
+    }
+
+    @Test
+    fun `lobbyState snapshot emits an empty lockedPositions array on a fresh session`() {
+        // Required-on-the-wire field; empty list, never absent.
+        val lobby = inProgressLobby(emptyMap())
+
+        val frame = lobby.toLobbyStateFrame()
+        val game = frame.game
+        assertThat(game).isNotNull()
+        assertThat(game!!.lockedPositions).isEqualTo(emptyList<Any>())
+    }
+
+    @Test
     fun `LobbyEvent CursorBumped maps direction enum to wire string`() {
         val acrossFrame =
             LobbyEvent
@@ -132,7 +171,10 @@ class WebSocketFrameMapperTest {
         assertThat(down.direction).isEqualTo("down")
     }
 
-    private fun inProgressLobby(entries: Map<Position, CellEntry>): Lobby =
+    private fun inProgressLobby(
+        entries: Map<Position, CellEntry>,
+        lockedPositions: Set<Position> = emptySet(),
+    ): Lobby =
         Lobby(
             id = LobbyId.generate(),
             ownerSessionId = ownerId,
@@ -145,6 +187,7 @@ class WebSocketFrameMapperTest {
                     entries = entries,
                     startedAt = startedAt,
                     completedAt = null,
+                    lockedPositions = lockedPositions,
                 ),
             lastActivityAt = startedAt,
         )

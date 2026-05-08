@@ -5,6 +5,10 @@ export {
   type PuzzleValidationState,
 } from './usePuzzleValidation';
 export {
+  useWordAutoValidation,
+  type WordAutoValidationState,
+} from './useWordAutoValidation';
+export {
   useHintRequest,
   type HintLastResult,
   type HintRequestState,

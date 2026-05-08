@@ -22,6 +22,7 @@ import type {
   Lobby,
   LobbyId,
   Player,
+  Position as GamePosition,
   PresenceEntry,
   Pseudonym,
   SessionId,
@@ -407,6 +408,7 @@ function LobbyPage() {
             players={lobby.players}
             ownerSessionId={lobby.ownerSessionId}
             initialEntries={initialEntries}
+            lockedPositions={lobby.game.lockedPositions}
             onCellChange={handleCellChange}
             subscribeToRemoteCellUpdates={subscribeToRemoteCellUpdates}
             onLocalFocusChange={handleLocalFocusChange}
@@ -447,6 +449,7 @@ interface InGameViewProps {
   readonly players: Lobby['players'];
   readonly ownerSessionId: SessionId;
   readonly initialEntries: ReadonlyArray<{ row: number; column: number; letter: string }>;
+  readonly lockedPositions: ReadonlyArray<GamePosition>;
   readonly onCellChange: (row: number, col: number, letter: string | null) => void;
   readonly subscribeToRemoteCellUpdates: (handler: (event: GameEvent) => void) => () => void;
   readonly onLocalFocusChange: (
@@ -466,28 +469,30 @@ function InGameView({
   players,
   ownerSessionId,
   initialEntries,
+  lockedPositions,
   onCellChange,
   subscribeToRemoteCellUpdates,
   onLocalFocusChange,
   subscribeToRemotePresence,
   playersBySessionId,
 }: InGameViewProps) {
-  // Server-driven win cue: when `gameSolved` flips the route into
-  // COMPLETED, the entire grid is correct by definition (the server
-  // wouldn't have fired the event otherwise). Mark every letter
-  // cell validated so the cells turn sage and lock — gives the
-  // multiplayer "you finished" view the same visual the solo flow
-  // gets at the end of a puzzle, without any client-side validation.
+  // Auto-locked cells from server `wordLocked` events (and the snapshot
+  // seed for late joiners) merged with the COMPLETED-end-game cue: when
+  // `gameSolved` arrives the entire grid is correct by definition (the
+  // server wouldn't have fired the event otherwise) and we paint every
+  // letter cell validated. Until then, only the per-word locks are sage.
   const validatedPositions = useMemo<ReadonlySet<string>>(() => {
-    if (!isCompleted) return new Set();
-    const all = new Set<string>();
-    for (const cell of puzzle.cells) {
-      if (cell.kind === 'letter') {
-        all.add(`${cell.position.row},${cell.position.col}`);
+    const set = new Set<string>();
+    for (const p of lockedPositions) set.add(`${p.row},${p.column}`);
+    if (isCompleted) {
+      for (const cell of puzzle.cells) {
+        if (cell.kind === 'letter') {
+          set.add(`${cell.position.row},${cell.position.col}`);
+        }
       }
     }
-    return all;
-  }, [isCompleted, puzzle.cells]);
+    return set;
+  }, [isCompleted, lockedPositions, puzzle.cells]);
 
   // Multiplayer presence-state derived from the typing / idle /
   // connectionLost / presenceUpdated event stream. One subscription owns
@@ -606,15 +611,47 @@ function applyEvent(current: LobbyView, event: GameEvent): LobbyView {
           state: 'IN_PROGRESS',
           // Fresh game = no entries yet. The list grows as `cellUpdated`
           // frames arrive (and any reconnect-time `lobbyState` snapshot
-          // carries the authoritative server-side set).
+          // carries the authoritative server-side set). Same posture for
+          // `lockedPositions`: empty until the first correct word fills.
           game: {
             puzzle: event.puzzle,
             entries: [],
+            lockedPositions: [],
             startedAt: event.startedAt,
             completedAt: null,
           },
         },
       };
+    case 'wordLocked': {
+      // Append the just-locked positions to the cumulative set on the
+      // active session. Dedupe so a stray duplicate from a server
+      // re-broadcast never inflates the array (the `validatedPositions`
+      // memo is keyed by string already, but keeping the source-of-truth
+      // unique is still cheaper than keeping it dirty).
+      const game = current.lobby.game;
+      if (!game) return current;
+      const seen = new Set<string>();
+      const merged: GamePosition[] = [];
+      for (const p of game.lockedPositions) {
+        const key = `${p.row},${p.column}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        merged.push(p);
+      }
+      for (const p of event.positions) {
+        const key = `${p.row},${p.column}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        merged.push(p);
+      }
+      return {
+        ...current,
+        lobby: {
+          ...current.lobby,
+          game: { ...game, lockedPositions: merged },
+        },
+      };
+    }
     case 'gameSolved':
       return {
         ...current,

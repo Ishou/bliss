@@ -56,6 +56,17 @@ sealed interface LobbyEvent {
     ) : LobbyEvent
 
     /**
+     * Server broadcast: every position in [positions] is now locked because its containing word
+     * was just completed correctly. Emitted alongside the [CellUpdated] that closed the word; a
+     * crossing fill that closes two words at once produces a single event with the union. Wire
+     * mapping: `wordLocked` AsyncAPI message.
+     */
+    data class WordLocked(
+        val positions: Set<Position>,
+        val lockedAt: Instant,
+    ) : LobbyEvent
+
+    /**
      * Wire mapping: the API layer sends a WebSocket close frame (no `lobbyClosed` broadcast to
      * remaining members — there are none). No `lobbyClosed` entry is needed in `asyncapi.yaml`.
      */

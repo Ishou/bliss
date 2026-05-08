@@ -202,6 +202,16 @@ export interface UseGridNavigationOptions {
   // cleared. Solo callers omit this; multiplayer callers wire it to the
   // WebSocket cellUpdate broadcast (Wave H · PR #19, see ADR-0018).
   readonly onCellChange?: (row: number, col: number, letter: string | null) => void;
+  // Fires after a letter is written into a cell (post-normalization).
+  // Solo's auto-validation hook reads this to detect "word just completed
+  // its last letter", call POST /v1/puzzles/:id/validate, and lock the
+  // word's cells if every letter was correct. Multiplayer callers omit
+  // this — the server drives validation and broadcasts `wordLocked`. Not
+  // fired on cell clears (auto-validation has nothing to do with deletes).
+  readonly onCellFilled?: (
+    position: Position,
+    direction: 'across' | 'down',
+  ) => void;
   // Fires whenever the focused cell or solving direction changes. The
   // multiplayer route wires this to `gameClient.cellFocus(...)` so peers
   // can render a coloured cursor + word tint at the focused position
@@ -247,6 +257,10 @@ export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOpt
   // (and so consumers passing an inline function don't churn handlers).
   const onCellChangeRef = useRef(options?.onCellChange);
   onCellChangeRef.current = options?.onCellChange;
+  // Same ref pattern as `onCellChange` so an inline arrow at the call
+  // site doesn't churn handler identities below.
+  const onCellFilledRef = useRef(options?.onCellFilled);
+  onCellFilledRef.current = options?.onCellFilled;
   // Same pattern for the presence-focus callback: refs keep handlers
   // stable so consumers passing inline functions don't trigger a fresh
   // mounting effect every render.
@@ -580,6 +594,13 @@ export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOpt
               bumpEntries();
               onCellChangeRef.current?.(f.row, f.col, letter);
             }
+            // The `input` event never fires on this branch (we
+            // preventDefault'd the keydown), so handleInput's
+            // `onCellFilled` path is unreachable from desktop typing.
+            // Fire it here so solo auto-validation runs on every
+            // keystroke regardless of platform — the Android soft-
+            // keyboard path covers the same callback in handleInput.
+            if (!el.readOnly) onCellFilledRef.current?.(f, dir);
           }
         }
         const clue = lookup.clueAt(f.row, f.col, dir);
@@ -697,6 +718,13 @@ export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOpt
         bumpEntries();
         onCellChangeRef.current?.(f.row, f.col, letter);
       }
+      // Auto-validation seam: announce that a letter was placed at
+      // (f, dir). The hook's consumer (solo route's
+      // `useWordAutoValidation`) decides whether the fill closed a word.
+      // Fired on every keystroke that lands a letter, even when the
+      // letter was already the same — re-typing the last letter of a
+      // correct word should still trigger the lock check.
+      onCellFilledRef.current?.(f, dir);
       const clue = lookup.clueAt(f.row, f.col, dir);
       if (!clue) return;
       const idx = clue.cells.findIndex((c) => same(c.position, f));

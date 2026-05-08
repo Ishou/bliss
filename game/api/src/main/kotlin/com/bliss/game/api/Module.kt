@@ -15,6 +15,7 @@ import com.bliss.game.application.usecases.SetGridConfigUseCase
 import com.bliss.game.application.usecases.StartGameUseCase
 import com.bliss.game.application.usecases.UpdateCellUseCase
 import com.bliss.game.infrastructure.HttpPuzzleProvider
+import com.bliss.game.infrastructure.HttpWordValidator
 import com.bliss.game.infrastructure.InMemoryLobbyRepository
 import com.bliss.game.infrastructure.analytics.MatomoAnalyticsAdapter
 import com.bliss.game.infrastructure.analytics.NoopAnalyticsAdapter
@@ -166,8 +167,15 @@ fun Application.module() {
     // the WebSocket route (PR #138) so a lobby created via POST /v1/lobbies
     // is visible to a subsequent WebSocket connection on the same process.
     val lobbyRepository = InMemoryLobbyRepository()
-    val gridBaseUrl = System.getenv("GRID_BASE_URL") ?: "http://grid-api:8080"
-    val puzzleProvider = HttpPuzzleProvider(HttpClient(), gridBaseUrl)
+    // Local-dev default: grid-api on the host's loopback (paired with
+    // grid/api's DEFAULT_PORT=7777). Prod chart pins GRID_BASE_URL
+    // explicitly via the deployment env block, so the cluster routes
+    // through the in-cluster Kubernetes Service DNS regardless of the
+    // local default. Mirrors the PORT pattern in `Main.kt`.
+    val gridBaseUrl = System.getenv("GRID_BASE_URL") ?: "http://localhost:7777"
+    val sharedHttpClient = HttpClient()
+    val puzzleProvider = HttpPuzzleProvider(sharedHttpClient, gridBaseUrl)
+    val wordValidator = HttpWordValidator(sharedHttpClient, gridBaseUrl)
 
     // Fire-and-forget analytics scope (ADR-0025). Cancelled on app stop so in-flight
     // posts don't outlive the JVM. Adapter falls back to a no-op when the three
@@ -183,7 +191,7 @@ fun Application.module() {
             renameSelf = RenameSelfUseCase(lobbyRepository, SystemClock, analyticsEventSink = analyticsEventSink),
             setGridConfig = SetGridConfigUseCase(lobbyRepository, SystemClock),
             startGame = StartGameUseCase(lobbyRepository, puzzleProvider, SystemClock, analyticsEventSink = analyticsEventSink),
-            updateCell = UpdateCellUseCase(lobbyRepository, SystemClock, analyticsEventSink = analyticsEventSink),
+            updateCell = UpdateCellUseCase(lobbyRepository, SystemClock, wordValidator, analyticsEventSink = analyticsEventSink),
             leaveLobby = LeaveLobbyUseCase(lobbyRepository, SystemClock, analyticsEventSink = analyticsEventSink),
         )
     val sessionManager = SessionManager()

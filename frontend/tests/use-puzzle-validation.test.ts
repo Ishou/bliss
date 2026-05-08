@@ -102,13 +102,48 @@ describe('usePuzzleValidation', () => {
     });
 
     expect(result.current.errors.has('0,2')).toBe(true);
-    expect(result.current.validated.size).toBe(0);
+    // The other typed-correctly cells are now marked validated alongside
+    // the error, instead of staying neutral — so a partial-grid Vérifier
+    // both shakes the wrong cells AND locks the right ones.
+    expect(result.current.validated.has('0,1')).toBe(true);
+    expect(result.current.validated.has('0,3')).toBe(true);
+    expect(result.current.validated.has('0,2')).toBe(false);
 
     await act(async () => {
       vi.advanceTimersByTime(250);
     });
 
     expect(result.current.errors.size).toBe(0);
+    // Validation set persists past the error-shake interval — locks are
+    // permanent, errors are transient.
+    expect(result.current.validated.has('0,1')).toBe(true);
+  });
+
+  it('locks the correctly-typed cells in green even when the rest of the grid is wrong', async () => {
+    // The user-reported "Vérifier shakes the whole grid except the word I
+    // typed correctly, but that word is still not green". The grid validate
+    // endpoint reports every wrong-letter AND every unfilled letter cell as
+    // `incorrectCells`. Cells absent from that list are correct — Vérifier
+    // must mark them validated regardless of whether the WHOLE grid is solved.
+    mountInput(0, 1, 'A'); // correct
+    mountInput(0, 2, 'B'); // correct
+    mountInput(0, 3, 'X'); // wrong
+    const solver = makeSolver({
+      solved: false,
+      incorrectCells: [{ row: 0, column: 3 }],
+    });
+    const { result } = renderHook(() => usePuzzleValidation(puzzle, solver));
+
+    await act(async () => {
+      result.current.verify();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(result.current.validated.has('0,1')).toBe(true);
+    expect(result.current.validated.has('0,2')).toBe(true);
+    expect(result.current.validated.has('0,3')).toBe(false);
+    expect(result.current.errors.has('0,3')).toBe(true);
   });
 
   it('announces an unrecoverable failure on a network error', async () => {

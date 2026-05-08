@@ -94,6 +94,29 @@ describe('HttpLobbyClient.createLobby', () => {
       { kind: 'validation', status: 400, messageMatch: /ownerPseudonym must not be blank/, type: problem.type },
     );
   });
+
+  it('treats a non-RFC-7807 response (e.g., a wrong service occupying the port) as upstream-unavailable', async () => {
+    // Mimics the local-dev failure mode: something is bound to
+    // localhost:8081 but it isn't game-api — a gunicorn HTML 404
+    // sitting where the Bliss service should be. The bare HTTP body
+    // doesn't carry `type` / `title` / `status`, so the adapter must
+    // surface it as `upstream-unavailable` rather than `not-found`
+    // (which would render "Une erreur est survenue" instead of the
+    // correct "Service indisponible").
+    server.use(
+      http.post(`${BASE_URL}/v1/lobbies`, () =>
+        new HttpResponse('<html>404 Not Found</html>', {
+          status: 404,
+          headers: { 'content-type': 'text/html; charset=utf-8' },
+        }),
+      ),
+    );
+
+    await expectError(
+      makeClient().createLobby({ ownerSessionId: sessionId, ownerPseudonym: pseudonym }),
+      { kind: 'upstream-unavailable', status: 404 },
+    );
+  });
 });
 
 describe('HttpLobbyClient.getLobby', () => {

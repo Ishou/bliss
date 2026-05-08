@@ -65,9 +65,9 @@ servers:
     protocol: wss
     description: Placeholder host; canonical URL stabilizes when the game-api Helm chart lands (ADR-0018).
   local:
-    url: localhost:8081
+    url: localhost:7778
     protocol: ws
-    description: Local dev server (Ktor `embeddedServer`).
+    description: Local dev server (Ktor `embeddedServer`). Paired with grid-api's 7777 in `make dev`; prod pins PORT=8081 via Helm.
 
 defaultContentType: application/json
 
@@ -124,6 +124,7 @@ channels:
           - { $ref: '#/components/messages/Idle' }
           - { $ref: '#/components/messages/ConnectionLost' }
           - { $ref: '#/components/messages/CursorBumped' }
+          - { $ref: '#/components/messages/WordLocked' }
           - { $ref: '#/components/messages/GameSolved' }
           - { $ref: '#/components/messages/Error' }
 
@@ -147,6 +148,7 @@ components:
     Idle:           { name: idle,           title: Peer idle state edge,               summary: Server-emitted boolean transition — peer crossed the 30s no-input threshold or returned to activity.,  payload: { $ref: '#/components/schemas/IdlePayload' },            description: "Ephemeral. Server timer per session; emits the rising edge (idle=true) after ~30s of no `cellFocus`/`cellUpdate`, the falling edge (idle=false) on the next activity. Independent of `connectionLost`." }
     ConnectionLost: { name: connectionLost, title: Peer disconnected (graceful),       summary: Peer's WebSocket closed; the slot is held during a server-side grace window before a playerLeft follows.,        payload: { $ref: '#/components/schemas/ConnectionLostPayload' },  description: Ephemeral. Distinct from `playerLeft` — clients SHOULD grey-out the roster pill on this event and only remove the slot when (or if) `playerLeft` arrives. If the same `sessionId` reconnects within the grace window, the server emits `presenceUpdated` (or no event) instead of `playerLeft`. }
     CursorBumped:   { name: cursorBumped,   title: Server-authoritative cursor relocation, summary: Peer's cursor was on a now-validated answer; server moves it to the next clue.,                  payload: { $ref: '#/components/schemas/CursorBumpedPayload' },    description: Ephemeral. Emitted when an answer-validation flow locks cells that contained a peer's cursor; clients apply unconditionally (last-write-wins) and re-render the named session's cursor at the bumped position. }
+    WordLocked:     { name: wordLocked,     title: Word validated and locked,          summary: Server-authoritative lock for cells whose containing word was just completed correctly., payload: { $ref: '#/components/schemas/WordLockedPayload' },      description: "Emitted when the last letter of a word is filled and every cell in that word matches the canonical solution. Locked positions are server-enforced — subsequent `cellUpdate` frames targeting any of them are silently ignored (no `cellUpdated` rebroadcast). Locks are monotonically additive within a game session and are surfaced on snapshot via `lobbyState.game.lockedPositions`. Incorrect completions emit no event (intentional: wrong answers are indistinguishable from in-progress ones)." }
     GameSolved:     { name: gameSolved,     title: Game solved,                        summary: All cells match the canonical solution; lobby is COMPLETED.,                                       payload: { $ref: '#/components/schemas/GameSolvedPayload' } }
     Error:          { name: error,          title: Error frame,                        summary: RFC 7807 problem document for a rejected client frame.,                                            payload: { $ref: '#/components/schemas/ErrorPayload' },         description: Mirrors the REST error envelope. Closing the socket is at the server's discretion. }
 
@@ -339,7 +341,7 @@ components:
       description: Direction a clue's answer is written.
     GameSession:
       type: object
-      required: [puzzle, entries, startedAt, completedAt]
+      required: [puzzle, entries, lockedPositions, startedAt, completedAt]
       description: |
         Active game embedded in `lobbyState` while IN_PROGRESS or COMPLETED.
         `entries` carries every letter typed so far (server-authoritative,
@@ -347,15 +349,27 @@ components:
         client receives the current grid state in its first frame instead
         of an empty grid. Cleared cells are absent from the list. The
         server emits entries sorted by row then column for stable rendering.
-        `presence` is the ephemeral cursor map for currently-connected
-        players; it is optional and absent (or empty) outside `IN_PROGRESS`,
-        and is cleared on `WAITING`/`COMPLETED` transitions.
+        `lockedPositions` mirrors the cumulative set of cells whose
+        containing word was validated correct (see `wordLocked`); it lets a
+        late-joining or reconnecting client render already-locked cells
+        immediately, before any incremental events arrive. Always emitted
+        (empty list when no word has been locked yet). `presence` is the
+        ephemeral cursor map for currently-connected players; it is
+        optional and absent (or empty) outside `IN_PROGRESS`, and is
+        cleared on `WAITING`/`COMPLETED` transitions.
       properties:
         puzzle:      { $ref: '#/components/schemas/GamePuzzle' }
         entries:
           type: array
           items: { $ref: '#/components/schemas/CellEntry' }
           description: Every cell typed so far. Empty list when no player has typed yet.
+        lockedPositions:
+          type: array
+          items: { $ref: '#/components/schemas/GamePosition' }
+          description: |
+            Cumulative set of cells the server has locked. Order is row,
+            then column (stable for diff-friendly snapshots). Empty list
+            when no word has been validated yet.
         startedAt:   { $ref: '#/components/schemas/Instant' }
         completedAt: { $ref: '#/components/schemas/Instant', nullable: true, description: Set once the lobby reaches COMPLETED. }
         presence:
@@ -453,6 +467,7 @@ components:
           entries:
             - { sessionId: 0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6b, row: 0, column: 3, letter: P, writtenAt: '2026-05-02T15:35:42Z' }
             - { sessionId: 0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6b, row: 0, column: 4, letter: A, writtenAt: '2026-05-02T15:35:43Z' }
+          lockedPositions: []
           startedAt: '2026-05-02T15:35:00Z'
           completedAt: null
     PlayerJoinedPayload:
@@ -579,6 +594,34 @@ components:
         column:    { type: integer, minimum: 0, description: Zero-indexed column of the bumped-to cell. }
         direction: { $ref: '#/components/schemas/GameClueDirection', description: Solving direction at the bumped-to cell. }
       example: { type: cursorBumped, sessionId: 0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6b, row: 2, column: 0, direction: down }
+    WordLockedPayload:
+      type: object
+      required: [type, positions, lockedAt]
+      description: |
+        Server broadcast: every position in `positions` is now locked. The
+        positions belong to one or more words whose last letter was just
+        filled and whose every letter matched the canonical solution. The
+        server stops accepting `cellUpdate` writes targeting these cells
+        (silent no-op — no `cellUpdated` rebroadcast). Locks are
+        monotonically additive within a game session and are surfaced on
+        `lobbyState.game.lockedPositions` for late-joiners. Two words may
+        lock simultaneously when the just-filled cell is a crossing — the
+        server merges their positions into a single frame.
+      properties:
+        type:      { type: string, enum: [wordLocked] }
+        positions:
+          type: array
+          minItems: 1
+          items: { $ref: '#/components/schemas/GamePosition' }
+          description: One or more cells whose containing word was just validated correct. Order is row then column.
+        lockedAt:  { $ref: '#/components/schemas/Instant' }
+      example:
+        type: wordLocked
+        positions:
+          - { row: 0, column: 1 }
+          - { row: 0, column: 2 }
+          - { row: 0, column: 3 }
+        lockedAt: '2026-05-02T15:36:10Z'
     GameSolvedPayload:
       type: object
       required: [type, durationMs, finalEntries]
