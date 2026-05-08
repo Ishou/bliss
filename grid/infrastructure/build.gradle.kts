@@ -8,6 +8,7 @@ kotlin {
 }
 
 val testcontainersVersion = "1.21.4"
+val ktorVersion = "3.4.3"
 
 dependencies {
     implementation(project(":grid:application"))
@@ -19,6 +20,13 @@ dependencies {
     implementation("org.flywaydb:flyway-core:11.10.4")
     implementation("org.flywaydb:flyway-database-postgresql:11.10.4")
     implementation("org.slf4j:slf4j-api:2.0.16")
+
+    // Ktor client + CIO engine — used by MatomoAnalyticsAdapter to POST events
+    // to the self-hosted Matomo server (ADR-0025). Mirrors :game:infrastructure's
+    // Ktor stack for consistency.
+    implementation("io.ktor:ktor-client-core:$ktorVersion")
+    implementation("io.ktor:ktor-client-cio:$ktorVersion")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.0")
 
     // kotlinx-serialization — JSONB encoding for the puzzles.payload column.
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
@@ -35,6 +43,10 @@ dependencies {
     testImplementation("org.testcontainers:testcontainers:$testcontainersVersion")
     testImplementation("org.testcontainers:junit-jupiter:$testcontainersVersion")
     testImplementation("org.testcontainers:postgresql:$testcontainersVersion")
+
+    // MockEngine + coroutines-test — fake transport for MatomoAnalyticsAdapterTest.
+    testImplementation("io.ktor:ktor-client-mock:$ktorVersion")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.0")
 }
 
 tasks.test {

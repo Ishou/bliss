@@ -81,3 +81,22 @@ interface PresenceBroadcaster {
         event: LobbyEvent,
     )
 }
+
+/**
+ * Out-bound port for product analytics events ([AnalyticsEvent] subtypes). Adapters
+ * (Matomo in production, Noop in dev/tests) live in `:game:infrastructure`.
+ *
+ * Implementations MUST be fire-and-forget: a call to [record] never blocks the
+ * caller, never propagates a failure, and never throws. If the analytics backend
+ * is unreachable or returns an error, the implementation logs and drops the event.
+ *
+ * `sessionId` is optional. When present, the adapter computes a daily-rotated
+ * salted hash (ADR-0025 §3) so the visitor is identifiable within a day but not
+ * across days. The raw `SessionId` is never sent to the analytics backend.
+ */
+interface AnalyticsEventSink {
+    suspend fun record(
+        event: AnalyticsEvent,
+        sessionId: SessionId? = null,
+    )
+}

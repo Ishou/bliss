@@ -1,0 +1,18 @@
+package com.bliss.game.infrastructure.analytics
+
+import com.bliss.game.application.ports.AnalyticsEvent
+import com.bliss.game.application.ports.AnalyticsEventSink
+import com.bliss.game.domain.SessionId
+
+/**
+ * No-op sink for dev environments and tests where Matomo is not configured.
+ * Events are silently dropped — no logging, no allocations beyond the call frame.
+ */
+class NoopAnalyticsAdapter : AnalyticsEventSink {
+    override suspend fun record(
+        event: AnalyticsEvent,
+        sessionId: SessionId?,
+    ) {
+        // intentionally empty
+    }
+}

@@ -1,0 +1,18 @@
+package com.bliss.grid.infrastructure.analytics
+
+import com.bliss.grid.application.analytics.AnalyticsEvent
+import com.bliss.grid.application.analytics.AnalyticsEventSink
+import java.util.UUID
+
+/**
+ * No-op sink for dev environments and tests where Matomo is not configured.
+ * Events are silently dropped — no logging, no allocations beyond the call frame.
+ */
+class NoopAnalyticsAdapter : AnalyticsEventSink {
+    override suspend fun record(
+        event: AnalyticsEvent,
+        sessionId: UUID?,
+    ) {
+        // intentionally empty
+    }
+}
