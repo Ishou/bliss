@@ -68,7 +68,11 @@ Vous disposez des droits prévus par le RGPD :
 - **Droit à l'effacement** (article 17) : utilisez le bouton "Effacer
   mes données" dans les paramètres. L'identifiant de session, le
   pseudonyme et l'historique d'indices sont supprimés immédiatement, et
-  les visites Matomo correspondantes sont effacées.
+  les visites Matomo du **jour en cours** sont effacées. Les visites
+  des jours précédents sont déjà non-attribuables (le hachage rotatif
+  quotidien empêche tout recoupement inter-journalier) ; elles ne peuvent
+  pas être activement supprimées mais restent soumises à la fenêtre de
+  conservation de 13 mois.
 - **Droit d'opposition** : vous pouvez désactiver la mesure d'audience
   via le réglage `Do Not Track` de votre navigateur ; Matomo le
   respecte automatiquement.
@@ -158,7 +162,10 @@ GDPR rights:
   history, contact the address above.
 - **Erasure** (Article 17): use the "Erase my data" button in settings.
   Session ID, pseudonym, and hint history are deleted immediately;
-  matching Matomo visits are removed.
+  **today's** Matomo visits are removed. Visits from prior days are
+  already non-attributable (the hash rotates daily; cross-day linkage is
+  impossible by design) and cannot be actively deleted; they remain
+  subject to the 13-month retention window.
 - **Opt-out**: enable your browser's `Do Not Track` setting; Matomo
   honours it automatically.
 - **Complaints**: you may file a complaint with the CNIL (cnil.fr) if

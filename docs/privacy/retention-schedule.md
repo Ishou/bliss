@@ -29,7 +29,9 @@ happen in one HTTP request:
 2. Backend: `DELETE /v1/sessions/{sessionId}` on `grid/api` removes all
    `puzzle_hint_usage` rows for that session.
 3. Backend: same handler calls Matomo's `Live.deleteVisits` filtered by
-   the day's rotated hash for the session.
+   the **current day's** rotated hash. Only today's visits are deletable;
+   visits from prior days were recorded under a different hash and are
+   already non-attributable by design (cross-day linkage impossible).
 
 Aggregate Matomo data (e.g. "10 grids solved on 2026-05-08") remains
 because it cannot be attributed to an individual visitor; this is
