@@ -232,12 +232,63 @@ def test_non_negation_does_not_capture_head() -> None:
 # --- Negative paths preserved -------------------------------------------
 
 
-def test_no_inflection_when_lemma_truly_missing(index: MorphologyIndex) -> None:
-    """Decomposition relaxes the strict superset rule but does NOT fabricate
-    forms. A future tense not in the head's paradigm still bails."""
+def test_no_inflection_finite_when_finite_form_missing(index: MorphologyIndex) -> None:
+    """Defective verb at finite tense → `no-inflection-finite`, not the
+    plain `no-inflection`. The distinction matters: shipping the lemma-form
+    infinitive on a finite-tense surface (e.g. `tira` clued as `Extraire`)
+    reads as a tense disagreement, so build_surface_clues drops these
+    rows and the runtime keeps the placeholder. For non-finite targets
+    (ppas/nominal/adj), the lemma fallback is still acceptable.
+
+    Decomposition relaxes the strict superset rule but does NOT fabricate
+    forms. A future tense not in the head's paradigm bails to
+    no-inflection-finite."""
     res = inflect_clue("Associer ensemble",
                        {"v2__t___zz", "ifut", "1pl"}, index)
+    assert res.flag == "no-inflection-finite"
+
+
+def test_no_inflection_for_defective_ppas_keeps_lemma_fallback() -> None:
+    """ppas-target inflation that fails returns plain `no-inflection`. The
+    lemma form is acceptable as a clue for a past-participle adjectival
+    surface (the head still reads as a synonym noun phrase), so the
+    fallback policy stays. Distinguishes from the finite-verb case."""
+    idx = MorphologyIndex()
+    # A verb whose paradigm is entirely missing ppas — mimics a verb the
+    # LoRA proposed but whose ppas fem-sg form isn't in grammalecte.
+    _add(idx, "manquer", "manquer", "v1__t___zz infi")
+    _add(idx, "manquer", "manque", "v1__t___zz ipre 3sg")
+    res = inflect_clue("Manquer", {"v1__t___zz", "ppas", "fem", "sg"}, idx)
     assert res.flag == "no-inflection"
+
+
+def test_no_inflection_for_defective_nominal_keeps_lemma_fallback() -> None:
+    """Nominal-target inflation that fails returns plain `no-inflection`.
+    Lemma fallback (singular noun for a plural surface) is the documented
+    policy for these — the reader still gets a meaningful clue."""
+    idx = MorphologyIndex()
+    # Hand-crafted defective noun: no plural form at all.
+    _add(idx, "chose", "chose", "nom fem sg")
+    res = inflect_clue("Chose", {"nom", "fem", "pl"}, idx)
+    assert res.flag == "no-inflection"
+
+
+def test_no_inflection_finite_at_passé_simple_for_defective_head() -> None:
+    """The user-reported case: surface is finite passé simple and the head
+    verb's paradigm has NO ipsi row at all. This is the exact shape of
+    `tira` (tirer 3sg ipsi) clued by `Extraire` (extraire is defective at
+    ipsi in grammalecte). Must surface as `no-inflection-finite` so the
+    build step can drop it.
+
+    The simulated `extraire` index here mirrors grammalecte's actual
+    coverage of extraire: many tenses present, but no ipsi/simp rows."""
+    idx = MorphologyIndex()
+    _add(idx, "extraire", "extraire", "v3_itxq__a infi")
+    _add(idx, "extraire", "extrait", "v3_itxq__a ppas adj mas sg")
+    _add(idx, "extraire", "extraira", "v3_itxq__a ifut 3sg")
+    # ...no ipsi/simp rows added — just like grammalecte v7.7.
+    res = inflect_clue("Extraire", {"v3_itxq__a", "ipsi", "3sg"}, idx)
+    assert res.flag == "no-inflection-finite"
 
 
 # --- PP+DObj guard ------------------------------------------------------

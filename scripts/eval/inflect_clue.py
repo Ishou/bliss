@@ -121,9 +121,20 @@ _PP_BRIDGE_PREPS = {"de", "d", "à", "au", "aux", "en", "dans", "sur",
 @dataclass
 class InflectionResult:
     text: str
-    flag: str  # '' | 'no-target-pos' | 'no-head' | 'no-inflection' | 'identity'
-               # | 'head-pos-mismatch' | 'pp-only-skipped'
-               # | 'pp-reflexive-skipped' | 'empty'
+    flag: str  # '' | 'no-target-pos' | 'no-head' | 'no-inflection'
+               # | 'no-inflection-finite' | 'identity' | 'head-pos-mismatch'
+               # | 'pp-only-skipped' | 'pp-reflexive-skipped' | 'empty'
+               #
+               # `no-inflection-finite` is a stricter sibling of `no-inflection`
+               # for finite-verb targets (no `ppas` in target tags). When the
+               # head verb is defective at the requested tense (extraire and
+               # soustraire have no passé simple / subjonctif imparfait rows
+               # in grammalecte), shipping the lemma-form infinitive on a
+               # finite-tense surface reads as a tense disagreement (see
+               # data/eval/inflation_bugs.csv: tira → "Extraire"). The build
+               # step routes these to dropped so the runtime keeps the
+               # placeholder. Non-finite defective targets (ppas/nominal/adj)
+               # still emit plain `no-inflection` and ship the lemma form.
 
 
 def _has_reflexive_head(tokens: list[str]) -> bool:
@@ -323,6 +334,13 @@ def inflect_clue(
                 chosen_target = trial
                 break
     if not inflected:
+        # Finite-verb targets where the head paradigm has no matching tense
+        # row are not safely fallback-able — the lemma-form infinitive on a
+        # finite-tense surface reads as a tense disagreement. Distinguish
+        # from non-finite no-inflection (ppas/nominal/adj) where the lemma
+        # form remains an acceptable clue.
+        if target_pos == "verbe" and "ppas" not in target:
+            return InflectionResult(_capitalize_first(clue), "no-inflection-finite")
         return InflectionResult(_capitalize_first(clue), "no-inflection")
     target = chosen_target
 

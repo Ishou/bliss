@@ -1,6 +1,6 @@
 surface,lemma,pos,clue,source_clue,inflection_status,filter_score,validation_flag
 abandon,abandon,nom,Lâcher prise,Lâcher prise,verbatim,0.5546,ok
-abandons,abandon,nom,Lâchers prises,Lâcher prise,inflected,0.5546,ok
+abandons,abandon,nom,Lâchers pris,Lâcher prise,inflected,0.5546,ok
 abattage,abattage,nom,Tuer,Tuer,verbatim,0.5362,ok
 abattages,abattage,nom,Tuer,Tuer,head-pos-mismatch,0.5362,ok
 abbatiale,abbatiale,nom,Relatif à l'abbaye,Relatif à l'abbaye,verbatim,0.6166,ok
@@ -47,7 +47,7 @@ abritée,abriter,verbe,Protégée,Protéger,inflected,0.6340,ok
 abritées,abriter,verbe,Protégées,Protéger,inflected,0.6340,ok
 abrités,abriter,verbe,Protégés,Protéger,inflected,0.6340,ok
 abscisse,abscisse,nom,Axe horizontal,Axe horizontal,verbatim,0.5922,ok
-abscisses,abscisse,nom,Axes horizontales,Axe horizontal,inflected,0.5922,ok
+abscisses,abscisse,nom,Axes horizontaux,Axe horizontal,inflected,0.5922,ok
 absentéisme,absentéisme,nom,Tendance à manquer,Tendance à manquer,verbatim,0.5398,ok
 abside,abside,nom,Châsse,Châsse,verbatim,0.5085,ok
 absides,abside,nom,Châsses,Châsse,inflected,0.5085,ok
@@ -929,7 +929,7 @@ allies,allier,verbe,Rassembles,Rassembler,inflected,0.5003,ok
 alliât,allier,verbe,Rassemblât,Rassembler,inflected,0.5003,ok
 allièrent,allier,verbe,Rassemblèrent,Rassembler,inflected,0.5003,ok
 allocution,allocution,nom,Discours officiel,Discours officiel,verbatim,0.6379,ok
-allocutions,allocution,nom,Discours officiels,Discours officiel,inflected,0.6379,ok
+allocutions,allocution,nom,Discours officiel,Discours officiel,inflected,0.6379,ok
 allongement,allongement,nom,Étirement,Étirement,verbatim,0.4686,ok
 alluma,allumer,verbe,Mit en marche,Mettre en marche,inflected,0.5582,ok
 allumai,allumer,verbe,Mis en marche,Mettre en marche,inflected,0.5582,ok
@@ -1155,7 +1155,7 @@ anglais,anglais,nom,Langue du Royaume-Uni,Langue du Royaume-Uni,verbatim,0.4174,
 anglaise,anglais,nom,Langue du Royaume-Uni,Langue du Royaume-Uni,inflected,0.4174,ok
 anglaises,anglais,nom,Langues du Royaume-Uni,Langue du Royaume-Uni,inflected,0.4174,ok
 anglophone,anglophone,nom,De langue anglaise,De langue anglaise,verbatim,0.4827,ok
-anglophones,anglophone,nom,De langues anglais,De langue anglaise,inflected,0.4827,ok
+anglophones,anglophone,nom,De langues anglaises,De langue anglaise,inflected,0.4827,ok
 aniline,aniline,nom,Amine aromatique,Amine aromatique,verbatim,0.6357,ok
 anilines,aniline,nom,Amines aromatiques,Amine aromatique,inflected,0.6357,ok
 animal,animal,nom,Être vivant,Être vivant,verbatim,0.5925,ok
@@ -1424,32 +1424,32 @@ approuvé,approuver,verbe,Sanctionné,Sanctionner,inflected,0.6113,ok
 approuvée,approuver,verbe,Sanctionnée,Sanctionner,inflected,0.6113,ok
 approuvées,approuver,verbe,Sanctionnées,Sanctionner,inflected,0.6113,ok
 approuvés,approuver,verbe,Sanctionnés,Sanctionner,inflected,0.6113,ok
-apprécia,apprécier,verbe,Sut goûta,Savoir goûter,inflected,0.5940,ok
+apprécia,apprécier,verbe,Sut goûter,Savoir goûter,inflected,0.5940,ok
 appréciable,appréciable,adj,Sensible,Sensible,verbatim,0.5854,ok
-appréciai,apprécier,verbe,Sus goûtai,Savoir goûter,inflected,0.5940,ok
-appréciais,apprécier,verbe,Savais goûtais,Savoir goûter,inflected,0.5940,ok
-appréciait,apprécier,verbe,Savait goûtait,Savoir goûter,inflected,0.5940,ok
-appréciant,apprécier,verbe,Sachant goûtant,Savoir goûter,inflected,0.5940,ok
-apprécias,apprécier,verbe,Sus goûtas,Savoir goûter,inflected,0.5940,ok
-apprécie,apprécier,verbe,Sait goûte,Savoir goûter,inflected,0.5940,ok
-apprécient,apprécier,verbe,Savent goûtent,Savoir goûter,inflected,0.5940,ok
+appréciai,apprécier,verbe,Sus goûter,Savoir goûter,inflected,0.5940,ok
+appréciais,apprécier,verbe,Savais goûter,Savoir goûter,inflected,0.5940,ok
+appréciait,apprécier,verbe,Savait goûter,Savoir goûter,inflected,0.5940,ok
+appréciant,apprécier,verbe,Sachant goûter,Savoir goûter,inflected,0.5940,ok
+apprécias,apprécier,verbe,Sus goûter,Savoir goûter,inflected,0.5940,ok
+apprécie,apprécier,verbe,Sait goûter,Savoir goûter,inflected,0.5940,ok
+apprécient,apprécier,verbe,Savent goûter,Savoir goûter,inflected,0.5940,ok
 apprécier,apprécier,verbe,Savoir goûter,Savoir goûter,verbatim,0.5940,ok
-appréciera,apprécier,verbe,Saura goûtera,Savoir goûter,inflected,0.5940,ok
-apprécierai,apprécier,verbe,Saurai goûterai,Savoir goûter,inflected,0.5940,ok
-apprécieras,apprécier,verbe,Sauras goûteras,Savoir goûter,inflected,0.5940,ok
-apprécierez,apprécier,verbe,Saurez goûterez,Savoir goûter,inflected,0.5940,ok
-apprécies,apprécier,verbe,Sais goûtes,Savoir goûter,inflected,0.5940,ok
-appréciez,apprécier,verbe,Savez goûtez,Savoir goûter,inflected,0.5940,ok
-appréciiez,apprécier,verbe,Saviez goûtiez,Savoir goûter,inflected,0.5940,ok
-appréciions,apprécier,verbe,Savions goûtions,Savoir goûter,inflected,0.5940,ok
-apprécions,apprécier,verbe,Savons goûtons,Savoir goûter,inflected,0.5940,ok
-appréciâmes,apprécier,verbe,Sûmes goûtâmes,Savoir goûter,inflected,0.5940,ok
-appréciât,apprécier,verbe,Sût goûtât,Savoir goûter,inflected,0.5940,ok
-appréciâtes,apprécier,verbe,Sûtes goûtâtes,Savoir goûter,inflected,0.5940,ok
-apprécié,apprécier,verbe,Su goûté,Savoir goûter,inflected,0.5940,ok
-appréciée,apprécier,verbe,Sue goûtée,Savoir goûter,inflected,0.5940,ok
-appréciées,apprécier,verbe,Sues goûtées,Savoir goûter,inflected,0.5940,ok
-appréciés,apprécier,verbe,Sus goûtés,Savoir goûter,inflected,0.5940,ok
+appréciera,apprécier,verbe,Saura goûter,Savoir goûter,inflected,0.5940,ok
+apprécierai,apprécier,verbe,Saurai goûter,Savoir goûter,inflected,0.5940,ok
+apprécieras,apprécier,verbe,Sauras goûter,Savoir goûter,inflected,0.5940,ok
+apprécierez,apprécier,verbe,Saurez goûter,Savoir goûter,inflected,0.5940,ok
+apprécies,apprécier,verbe,Sais goûter,Savoir goûter,inflected,0.5940,ok
+appréciez,apprécier,verbe,Savez goûter,Savoir goûter,inflected,0.5940,ok
+appréciiez,apprécier,verbe,Saviez goûter,Savoir goûter,inflected,0.5940,ok
+appréciions,apprécier,verbe,Savions goûter,Savoir goûter,inflected,0.5940,ok
+apprécions,apprécier,verbe,Savons goûter,Savoir goûter,inflected,0.5940,ok
+appréciâmes,apprécier,verbe,Sûmes goûter,Savoir goûter,inflected,0.5940,ok
+appréciât,apprécier,verbe,Sût goûter,Savoir goûter,inflected,0.5940,ok
+appréciâtes,apprécier,verbe,Sûtes goûter,Savoir goûter,inflected,0.5940,ok
+apprécié,apprécier,verbe,Su goûter,Savoir goûter,inflected,0.5940,ok
+appréciée,apprécier,verbe,Sue goûter,Savoir goûter,inflected,0.5940,ok
+appréciées,apprécier,verbe,Sues goûter,Savoir goûter,inflected,0.5940,ok
+appréciés,apprécier,verbe,Sus goûter,Savoir goûter,inflected,0.5940,ok
 appuie,appuyer,verbe,Soutient,Soutenir,inflected,0.5949,ok
 appuient,appuyer,verbe,Soutiennent,Soutenir,inflected,0.5949,ok
 appuiera,appuyer,verbe,Soutiendra,Soutenir,inflected,0.5949,ok
@@ -1535,7 +1535,7 @@ armoires,armoire,nom,Meubles de rangement,Meuble de rangement,inflected,0.6265,o
 armée,armée,nom,Corps organisé,Corps organisé,verbatim,0.6205,ok
 armées,armée,nom,Corps organisé,Corps organisé,inflected,0.6205,ok
 arpent,arpent,nom,Mesure ancienne,Mesure ancienne,verbatim,0.6086,ok
-arpents,arpent,nom,Mesures anciens,Mesure ancienne,inflected,0.6086,ok
+arpents,arpent,nom,Mesures anciennes,Mesure ancienne,inflected,0.6086,ok
 arriération,arriération,nom,Retard,Retard,verbatim,0.5652,ok
 arriéré,arriéré,nom,En retard,En retard,verbatim,0.6496,ok
 arriérés,arriéré,nom,En retards,En retard,inflected,0.6496,ok
@@ -1627,7 +1627,7 @@ assaillîmes,assaillir,verbe,Attaquâmes violemment,Attaquer violemment,inflecte
 assassin,assassin,nom,Tueur à gages,Tueur à gages,verbatim,0.5287,ok
 assassins,assassin,nom,Tueurs à gages,Tueur à gages,inflected,0.5287,ok
 assesseur,assesseur,nom,Expert évaluateur,Expert évaluateur,verbatim,0.6120,ok
-assesseurs,assesseur,nom,Experts évaluateurs,Expert évaluateur,inflected,0.6120,ok
+assesseurs,assesseur,nom,Experts évaluateur,Expert évaluateur,inflected,0.6120,ok
 assidu,assidu,nom,Régulier,Régulier,verbatim,0.6090,ok
 assidue,assidu,nom,Régulière,Régulier,inflected,0.6090,ok
 assidues,assidu,nom,Régulières,Régulier,inflected,0.6090,ok
@@ -1747,7 +1747,7 @@ asymétrique,asymétrique,adj,Déséquilibré,Déséquilibré,verbatim,0.5314,ok
 atlantique,atlantique,nom,Océan,Océan,verbatim,0.6303,ok
 atlas,atlas,nom,Carte-monde,Carte-monde,verbatim,0.5690,ok
 atout,atout,nom,Carte maîtresse,Carte maîtresse,verbatim,0.6047,ok
-atouts,atout,nom,Cartes maîtres,Carte maîtresse,inflected,0.6047,ok
+atouts,atout,nom,Cartes maîtresses,Carte maîtresse,inflected,0.6047,ok
 atroce,atroce,adj,Douloureux,Douloureux,verbatim,0.6437,ok
 atroces,atroce,adj,Douloureux,Douloureux,inflected,0.6437,ok
 attacha,attacher,verbe,Fixa,Fixe,inflected,0.6438,ok
@@ -1978,8 +1978,8 @@ auguste,auguste,nom,Empereur romain,Empereur romain,verbatim,0.5224,ok
 augustes,auguste,nom,Empereurs romains,Empereur romain,inflected,0.5224,ok
 aumônier,aumônier,nom,Dignitaire religieux,Dignitaire religieux,verbatim,0.6460,ok
 aumôniers,aumônier,nom,Dignitaires religieux,Dignitaire religieux,inflected,0.6460,ok
-aumônière,aumônier,nom,Dignitaire religieuse,Dignitaire religieux,inflected,0.6460,ok
-aumônières,aumônier,nom,Dignitaires religieuses,Dignitaire religieux,inflected,0.6460,ok
+aumônière,aumônier,nom,Dignitaire religieux,Dignitaire religieux,inflected,0.6460,ok
+aumônières,aumônier,nom,Dignitaires religieux,Dignitaire religieux,inflected,0.6460,ok
 aune,aune,nom,Mesure antique,Mesure antique,verbatim,0.5330,ok
 aunes,aune,nom,Mesures antiques,Mesure antique,inflected,0.5330,ok
 aura,avoir,verbe,Possédera,Posséder,inflected,0.5340,ok
@@ -2000,7 +2000,7 @@ austères,austère,adj,Sévères,Sévère,inflected,0.5944,ok
 austérité,austérité,nom,Rigueur,Rigueur,verbatim,0.5032,ok
 austérités,austérité,nom,Rigueurs,Rigueur,inflected,0.5032,ok
 autocratie,autocratie,nom,Pouvoir absolu,Pouvoir absolu,verbatim,0.6283,ok
-autocraties,autocratie,nom,Pu absolues,Pouvoir absolu,inflected,0.6283,ok
+autocraties,autocratie,nom,Pu absolu,Pouvoir absolu,inflected,0.6283,ok
 autodéfense,autodéfense,nom,Protection personnelle,Protection personnelle,verbatim,0.5929,ok
 autographe,autographe,nom,Signature personnelle,Signature personnelle,verbatim,0.5047,ok
 autographes,autographe,nom,Signatures personnelles,Signature personnelle,inflected,0.5047,ok
@@ -2426,7 +2426,7 @@ baptisée,baptiser,verbe,Immergée dans l'eau,Immerger dans l'eau,inflected,0.61
 baptisées,baptiser,verbe,Immergées dans l'eau,Immerger dans l'eau,inflected,0.6175,ok
 baptisés,baptiser,verbe,Immergés dans l'eau,Immerger dans l'eau,inflected,0.6175,ok
 baptême,baptême,nom,Cérémonie religieuse,Cérémonie religieuse,verbatim,0.6010,ok
-baptêmes,baptême,nom,Cérémonies religieux,Cérémonie religieuse,inflected,0.6010,ok
+baptêmes,baptême,nom,Cérémonies religieuses,Cérémonie religieuse,inflected,0.6010,ok
 barbarie,barbarie,nom,Cruauté et sauvagerie,Cruauté et sauvagerie,verbatim,0.6220,ok
 barbaries,barbarie,nom,Cruautés et sauvageries,Cruauté et sauvagerie,inflected,0.6220,ok
 barbe,barbe,nom,Poil facial,Poil facial,verbatim,0.5802,ok
@@ -2529,7 +2529,7 @@ bergères,berger,nom,Pasteur,Pasteur,inflected,0.4601,ok
 beurre,beurre,nom,Produit laitier,Produit laitier,verbatim,0.5231,ok
 beurres,beurre,nom,Produits laitiers,Produit laitier,inflected,0.5231,ok
 bible,bible,nom,Livre sacré,Livre sacré,verbatim,0.6347,ok
-bibles,bible,nom,Livres sacré,Livre sacré,inflected,0.6347,ok
+bibles,bible,nom,Livres sacrés,Livre sacré,inflected,0.6347,ok
 bibliogr,bibliogr,nom,Liste des sources,Liste des sources,verbatim,0.5965,ok
 biblique,biblique,adj,Relatif à la Bible,Relatif à la Bible,verbatim,0.3830,ok
 bibliques,biblique,adj,Relatives à la Bible,Relatif à la Bible,inflected,0.3830,ok
@@ -2612,7 +2612,7 @@ blessés,blesser,verbe,Frappés,Frapper,inflected,0.6342,ok
 bleu,bleu,nom,Sauce française,Sauce française,verbatim,0.5427,ok
 bleue,bleu,nom,Sauce française,Sauce française,inflected,0.5427,ok
 bleues,bleu,nom,Sauces françaises,Sauce française,inflected,0.5427,ok
-bleus,bleu,nom,Sauces français,Sauce française,inflected,0.5427,ok
+bleus,bleu,nom,Sauces françaises,Sauce française,inflected,0.5427,ok
 blouse,blouse,nom,Haut ample,Haut ample,verbatim,0.6078,ok
 blouses,blouse,nom,Hautes amples,Haut ample,inflected,0.6078,ok
 blâmé,blâmer,verbe,Rechercher un coupable,Rechercher un coupable,pp-only-skipped,0.6511,ok
@@ -2834,7 +2834,7 @@ breaks,break,nom,Pauses,Pause,inflected,0.5351,ok
 brevet,brevet,nom,Diplôme officiel,Diplôme officiel,verbatim,0.6187,ok
 brevets,brevet,nom,Diplômes officiels,Diplôme officiel,inflected,0.6187,ok
 brick,brick,nom,Bloc de terre cuite,Bloc de terre cuite,verbatim,0.5759,ok
-bricks,brick,nom,Blocs de terre cuites,Bloc de terre cuite,inflected,0.5759,ok
+bricks,brick,nom,Blocs de terre cuite,Bloc de terre cuite,inflected,0.5759,ok
 brigade,brigade,nom,Unité militaire,Unité militaire,verbatim,0.5807,ok
 brigades,brigade,nom,Unités militaires,Unité militaire,inflected,0.5807,ok
 brigadier,brigadier,nom,Chef militaire,Chef militaire,verbatim,0.6427,ok
@@ -2867,7 +2867,7 @@ brillèrent,briller,verbe,Éclatèrent,Éclater,inflected,0.5244,ok
 brillé,briller,verbe,Éclaté,Éclater,inflected,0.5244,ok
 brio,brio,nom,Élan,Élan,verbatim,0.5431,ok
 brique,brique,nom,Bloc de terre cuite,Bloc de terre cuite,verbatim,0.6415,ok
-briques,brique,nom,Blocs de terre cuites,Bloc de terre cuite,inflected,0.6415,ok
+briques,brique,nom,Blocs de terre cuite,Bloc de terre cuite,inflected,0.6415,ok
 broc,broc,nom,Légume,Légume,verbatim,0.5475,ok
 brochure,brochure,nom,Document publicitaire,Document publicitaire,verbatim,0.5572,ok
 brochures,brochure,nom,Documents publicitaires,Document publicitaire,inflected,0.5572,ok
@@ -3574,8 +3574,8 @@ chevalerie,chevalerie,nom,Noblesse,Noblesse,verbatim,0.5852,ok
 chevaleries,chevalerie,nom,Noblesses,Noblesse,inflected,0.5852,ok
 chevalier,chevalier,nom,Noble guerrier,Noble guerrier,verbatim,0.5729,ok
 chevaliers,chevalier,nom,Nobles guerriers,Noble guerrier,inflected,0.5729,ok
-chevalière,chevalier,nom,Noble guerrière,Noble guerrier,inflected,0.5729,ok
-chevalières,chevalier,nom,Nobles guerrières,Noble guerrier,inflected,0.5729,ok
+chevalière,chevalier,nom,Noble guerrier,Noble guerrier,inflected,0.5729,ok
+chevalières,chevalier,nom,Nobles guerriers,Noble guerrier,inflected,0.5729,ok
 chevaux,cheval,nom,Animaux nobles,Animal noble,inflected,0.6465,ok
 chevet,chevet,nom,Tête de lit,Tête de lit,verbatim,0.5727,ok
 chevets,chevet,nom,Têtes de lit,Tête de lit,inflected,0.5727,ok
@@ -3780,7 +3780,7 @@ cire,cire,nom,Produit de protection,Produit de protection,verbatim,0.6158,ok
 cires,cire,nom,Produits de protection,Produit de protection,inflected,0.6158,ok
 cita,citer,verbe,Énonça,Énoncer,inflected,0.6299,ok
 citadelle,citadelle,nom,Place forte,Place forte,verbatim,0.5678,ok
-citadelles,citadelle,nom,Places forte,Place forte,inflected,0.5678,ok
+citadelles,citadelle,nom,Places fortes,Place forte,inflected,0.5678,ok
 citai,citer,verbe,Énonçai,Énoncer,inflected,0.6299,ok
 citaient,citer,verbe,Énonçaient,Énoncer,inflected,0.6299,ok
 citais,citer,verbe,Énonçais,Énoncer,inflected,0.6299,ok
@@ -3873,7 +3873,7 @@ classée,classer,verbe,Rangée par ordre,Ranger par ordre,inflected,0.5827,ok
 classées,classer,verbe,Rangées par ordre,Ranger par ordre,inflected,0.5827,ok
 classés,classer,verbe,Rangés par ordre,Ranger par ordre,inflected,0.5827,ok
 clavicule,clavicule,nom,Os horizontal,Os horizontal,verbatim,0.4924,ok
-clavicules,clavicule,nom,Os horizontales,Os horizontal,inflected,0.4924,ok
+clavicules,clavicule,nom,Os horizontal,Os horizontal,inflected,0.4924,ok
 clef,clef,nom,Instrument de musique,Instrument de musique,verbatim,0.5793,ok
 clefs,clef,nom,Instruments de musique,Instrument de musique,inflected,0.5793,ok
 clerc,clerc,nom,Assistant du prêtre,Assistant du prêtre,verbatim,0.6361,ok
@@ -4153,7 +4153,7 @@ commissiez,commettre,verbe,Perpétrassiez,Perpétrer,inflected,0.5406,ok
 commissions,commettre,verbe,Perpétrassions,Perpétrer,inflected,0.5406,ok
 commit,commettre,verbe,Perpétra,Perpétrer,inflected,0.5406,ok
 commotion,commotion,nom,Trouble cérébral,Trouble cérébral,verbatim,0.5959,ok
-commotions,commotion,nom,Troubles cérébrales,Trouble cérébral,inflected,0.5959,ok
+commotions,commotion,nom,Troubles cérébraux,Trouble cérébral,inflected,0.5959,ok
 communauté,communauté,nom,Groupe uni,Groupe uni,verbatim,0.5449,ok
 communautés,communauté,nom,Groupes unis,Groupe uni,inflected,0.5449,ok
 communia,communier,verbe,Partagea,Partager,inflected,0.6090,ok
@@ -4330,7 +4330,7 @@ concernée,concerner,verbe,Relatif à,Relatif à,head-pos-mismatch,0.4611,ok
 concernées,concerner,verbe,Relatif à,Relatif à,head-pos-mismatch,0.4611,ok
 concernés,concerner,verbe,Relatif à,Relatif à,head-pos-mismatch,0.4611,ok
 concession,concession,nom,Privilège accordé,Privilège accordé,verbatim,0.6119,ok
-concessions,concession,nom,Privilèges accordées,Privilège accordé,inflected,0.6119,ok
+concessions,concession,nom,Privilèges accordés,Privilège accordé,inflected,0.6119,ok
 concierge,concierge,nom,Intendant,Intendant,verbatim,0.6174,ok
 concierges,concierge,nom,Intendant,Intendant,head-pos-mismatch,0.6174,ok
 concile,concile,nom,Assemblée ecclésiale,Assemblée ecclésiale,verbatim,0.6297,ok
@@ -4772,7 +4772,7 @@ consommée,consommer,verbe,Ingérée,Ingérer,inflected,0.6074,ok
 consommées,consommer,verbe,Ingérées,Ingérer,inflected,0.6074,ok
 consommés,consommer,verbe,Ingérés,Ingérer,inflected,0.6074,ok
 consonne,consonne,nom,Lettre non vocalique,Lettre non vocalique,verbatim,0.6013,ok
-consonnes,consonne,nom,Lettres non vocaliques,Lettre non vocalique,inflected,0.6013,ok
+consonnes,consonne,nom,Lettres non vocalique,Lettre non vocalique,inflected,0.6013,ok
 consortium,consortium,nom,Groupe d'alliés,Groupe d'alliés,verbatim,0.6156,ok
 consortiums,consortium,nom,Groupes d'alliés,Groupe d'alliés,inflected,0.6156,ok
 constance,constance,nom,Fermeté,Fermeté,verbatim,0.5913,ok
@@ -5331,7 +5331,7 @@ couriez,courir,verbe,S'élanciez,S'élancer,inflected,0.5877,ok
 courions,courir,verbe,S'élancions,S'élancer,inflected,0.5877,ok
 courir,courir,verbe,S'élancer,S'élancer,verbatim,0.5877,ok
 couronne,couronne,nom,Diadème royal,Diadème royal,verbatim,0.5476,ok
-couronnes,couronne,nom,Diadèmes royales,Diadème royal,inflected,0.5476,ok
+couronnes,couronne,nom,Diadèmes royaux,Diadème royal,inflected,0.5476,ok
 courons,courir,verbe,S'élançons,S'élancer,inflected,0.5877,ok
 courra,courir,verbe,S'élancera,S'élancer,inflected,0.5877,ok
 courrai,courir,verbe,S'élancerai,S'élancer,inflected,0.5877,ok
@@ -5611,7 +5611,7 @@ crémaillère,crémaillère,nom,Dentelure,Dentelure,verbatim,0.5030,ok
 créole,créole,nom,Langage mixte,Langage mixte,verbatim,0.5257,ok
 créoles,créole,nom,Langages mixtes,Langage mixte,inflected,0.5257,ok
 crêpe,crêpe,nom,Pâtisserie fine,Pâtisserie fine,verbatim,0.6011,ok
-crêpes,crêpe,nom,Pâtisseries fins,Pâtisserie fine,inflected,0.6011,ok
+crêpes,crêpe,nom,Pâtisseries fines,Pâtisserie fine,inflected,0.6011,ok
 crûmes,croire,verbe,Tendîmes vers,Tendre vers,inflected,0.6468,ok
 crûrent,croître,verbe,Augmentèrent,Augmenter,inflected,0.4456,ok
 crût,croire,verbe,Tendît vers,Tendre vers,inflected,0.6468,ok
@@ -5636,39 +5636,39 @@ culasse,culasse,nom,Couvercle supérieur,Couvercle supérieur,verbatim,0.5400,ok
 culasses,culasse,nom,Couvercles supérieurs,Couvercle supérieur,inflected,0.5400,ok
 culotte,culotte,nom,Vêtement du bas,Vêtement du bas,verbatim,0.5460,ok
 culottes,culotte,nom,Vêtements du bas,Vêtement du bas,inflected,0.5460,ok
-cultiva,cultiver,verbe,Fit poussa,Faire pousser,inflected,0.4898,ok
-cultivai,cultiver,verbe,Fis poussai,Faire pousser,inflected,0.4898,ok
-cultivaient,cultiver,verbe,Faisaient poussaient,Faire pousser,inflected,0.4898,ok
-cultivais,cultiver,verbe,Faisais poussais,Faire pousser,inflected,0.4898,ok
-cultivait,cultiver,verbe,Faisait poussait,Faire pousser,inflected,0.4898,ok
-cultivant,cultiver,verbe,Faisant poussant,Faire pousser,inflected,0.4898,ok
-cultivas,cultiver,verbe,Fis poussas,Faire pousser,inflected,0.4898,ok
-cultivasse,cultiver,verbe,Fisse poussasse,Faire pousser,inflected,0.4898,ok
-cultive,cultiver,verbe,Fait pousse,Faire pousser,inflected,0.4898,ok
-cultivent,cultiver,verbe,Font poussent,Faire pousser,inflected,0.4898,ok
+cultiva,cultiver,verbe,Fit pousser,Faire pousser,inflected,0.4898,ok
+cultivai,cultiver,verbe,Fis pousser,Faire pousser,inflected,0.4898,ok
+cultivaient,cultiver,verbe,Faisaient pousser,Faire pousser,inflected,0.4898,ok
+cultivais,cultiver,verbe,Faisais pousser,Faire pousser,inflected,0.4898,ok
+cultivait,cultiver,verbe,Faisait pousser,Faire pousser,inflected,0.4898,ok
+cultivant,cultiver,verbe,Faisant pousser,Faire pousser,inflected,0.4898,ok
+cultivas,cultiver,verbe,Fis pousser,Faire pousser,inflected,0.4898,ok
+cultivasse,cultiver,verbe,Fisse pousser,Faire pousser,inflected,0.4898,ok
+cultive,cultiver,verbe,Fait pousser,Faire pousser,inflected,0.4898,ok
+cultivent,cultiver,verbe,Font pousser,Faire pousser,inflected,0.4898,ok
 cultiver,cultiver,verbe,Faire pousser,Faire pousser,verbatim,0.4898,ok
-cultivera,cultiver,verbe,Fera poussera,Faire pousser,inflected,0.4898,ok
-cultiverai,cultiver,verbe,Ferai pousserai,Faire pousser,inflected,0.4898,ok
-cultiverais,cultiver,verbe,Ferais pousserais,Faire pousser,inflected,0.4898,ok
-cultiverait,cultiver,verbe,Ferait pousserait,Faire pousser,inflected,0.4898,ok
-cultiveras,cultiver,verbe,Feras pousseras,Faire pousser,inflected,0.4898,ok
-cultiverez,cultiver,verbe,Ferez pousserez,Faire pousser,inflected,0.4898,ok
-cultiveriez,cultiver,verbe,Feriez pousseriez,Faire pousser,inflected,0.4898,ok
-cultiverons,cultiver,verbe,Ferons pousserons,Faire pousser,inflected,0.4898,ok
-cultiveront,cultiver,verbe,Feront pousseront,Faire pousser,inflected,0.4898,ok
-cultives,cultiver,verbe,Fais pousses,Faire pousser,inflected,0.4898,ok
-cultivez,cultiver,verbe,Faites poussez,Faire pousser,inflected,0.4898,ok
-cultiviez,cultiver,verbe,Faisiez poussiez,Faire pousser,inflected,0.4898,ok
-cultivions,cultiver,verbe,Faisions poussions,Faire pousser,inflected,0.4898,ok
-cultivons,cultiver,verbe,Faisons poussons,Faire pousser,inflected,0.4898,ok
-cultivâmes,cultiver,verbe,Fîmes poussâmes,Faire pousser,inflected,0.4898,ok
-cultivât,cultiver,verbe,Fît poussât,Faire pousser,inflected,0.4898,ok
-cultivâtes,cultiver,verbe,Fîtes poussâtes,Faire pousser,inflected,0.4898,ok
-cultivèrent,cultiver,verbe,Firent poussèrent,Faire pousser,inflected,0.4898,ok
-cultivé,cultiver,verbe,Fait poussé,Faire pousser,inflected,0.4898,ok
-cultivée,cultiver,verbe,Faite poussée,Faire pousser,inflected,0.4898,ok
-cultivées,cultiver,verbe,Faites poussées,Faire pousser,inflected,0.4898,ok
-cultivés,cultiver,verbe,Faits poussés,Faire pousser,inflected,0.4898,ok
+cultivera,cultiver,verbe,Fera pousser,Faire pousser,inflected,0.4898,ok
+cultiverai,cultiver,verbe,Ferai pousser,Faire pousser,inflected,0.4898,ok
+cultiverais,cultiver,verbe,Ferais pousser,Faire pousser,inflected,0.4898,ok
+cultiverait,cultiver,verbe,Ferait pousser,Faire pousser,inflected,0.4898,ok
+cultiveras,cultiver,verbe,Feras pousser,Faire pousser,inflected,0.4898,ok
+cultiverez,cultiver,verbe,Ferez pousser,Faire pousser,inflected,0.4898,ok
+cultiveriez,cultiver,verbe,Feriez pousser,Faire pousser,inflected,0.4898,ok
+cultiverons,cultiver,verbe,Ferons pousser,Faire pousser,inflected,0.4898,ok
+cultiveront,cultiver,verbe,Feront pousser,Faire pousser,inflected,0.4898,ok
+cultives,cultiver,verbe,Fais pousser,Faire pousser,inflected,0.4898,ok
+cultivez,cultiver,verbe,Faites pousser,Faire pousser,inflected,0.4898,ok
+cultiviez,cultiver,verbe,Faisiez pousser,Faire pousser,inflected,0.4898,ok
+cultivions,cultiver,verbe,Faisions pousser,Faire pousser,inflected,0.4898,ok
+cultivons,cultiver,verbe,Faisons pousser,Faire pousser,inflected,0.4898,ok
+cultivâmes,cultiver,verbe,Fîmes pousser,Faire pousser,inflected,0.4898,ok
+cultivât,cultiver,verbe,Fît pousser,Faire pousser,inflected,0.4898,ok
+cultivâtes,cultiver,verbe,Fîtes pousser,Faire pousser,inflected,0.4898,ok
+cultivèrent,cultiver,verbe,Firent pousser,Faire pousser,inflected,0.4898,ok
+cultivé,cultiver,verbe,Fait pousser,Faire pousser,inflected,0.4898,ok
+cultivée,cultiver,verbe,Faite pousser,Faire pousser,inflected,0.4898,ok
+cultivées,cultiver,verbe,Faites pousser,Faire pousser,inflected,0.4898,ok
+cultivés,cultiver,verbe,Faits pousser,Faire pousser,inflected,0.4898,ok
 culée,culée,nom,Pilier de soutien,Pilier de soutien,verbatim,0.6013,ok
 culées,culée,nom,Piliers de soutien,Pilier de soutien,inflected,0.6013,ok
 cupidité,cupidité,nom,Avarice,Avarice,verbatim,0.4572,ok
@@ -5716,7 +5716,7 @@ cérémonies,cérémonie,nom,Rites solennels,Rite solennel,inflected,0.5445,ok
 côté,côté,nom,Flanc,Flanc,verbatim,0.5884,ok
 côtés,côté,nom,Flancs,Flanc,inflected,0.5884,ok
 dague,dague,nom,Poignard oriental,Poignard oriental,verbatim,0.6130,ok
-dagues,dague,nom,Poignards orientales,Poignard oriental,inflected,0.6130,ok
+dagues,dague,nom,Poignards orientaux,Poignard oriental,inflected,0.6130,ok
 daim,daim,nom,Biche,Biche,verbatim,0.5892,ok
 daims,daim,nom,Biches,Biche,inflected,0.5892,ok
 danger,danger,nom,Risque,Risque,verbatim,0.5644,ok
@@ -6116,7 +6116,7 @@ discriminés,discriminer,verbe,Traités différemment,Traiter différemment,infl
 discrédit,discrédit,nom,Déshonneur,Déshonneur,verbatim,0.6379,ok
 discrédits,discrédit,nom,Déshonneurs,Déshonneur,inflected,0.6379,ok
 discrétion,discrétion,nom,Bon sens,Bon sens,verbatim,0.6395,ok
-discrétions,discrétion,nom,Bonnes sens,Bon sens,inflected,0.6395,ok
+discrétions,discrétion,nom,Bon sens,Bon sens,identity,0.6395,ok
 discutable,discutable,adj,Douteux,Douteux,verbatim,0.6078,ok
 discutables,discutable,adj,Douteux,Douteux,inflected,0.6078,ok
 dise,dire,verbe,Énonce,Énoncer,inflected,0.6301,ok
@@ -6346,7 +6346,7 @@ dogmes,dogme,nom,Principes intangibles,Principe intangible,inflected,0.4921,ok
 doigt,doigt,nom,Extrémité,Extrémité,verbatim,0.5478,ok
 doigts,doigt,nom,Extrémités,Extrémité,inflected,0.5478,ok
 dollar,dollar,nom,Monnaie américaine,Monnaie américaine,verbatim,0.5281,ok
-dollars,dollar,nom,Monnaies américains,Monnaie américaine,inflected,0.5281,ok
+dollars,dollar,nom,Monnaies américaines,Monnaie américaine,inflected,0.5281,ok
 dolmen,dolmen,nom,Monument mégalithique,Monument mégalithique,verbatim,0.5343,ok
 dolmens,dolmen,nom,Monuments mégalithiques,Monument mégalithique,inflected,0.5343,ok
 domestiqua,domestiquer,verbe,Apprivoisa,Apprivoiser,inflected,0.6127,ok
@@ -6486,14 +6486,14 @@ ducale,ducal,adj,Princière,Princier,inflected,0.5101,ok
 ducales,ducal,adj,Princières,Princier,inflected,0.5101,ok
 ducaux,ducal,adj,Princiers,Princier,inflected,0.5101,ok
 duchesse,duchesse,nom,Dame de haut rang,Dame de haut rang,verbatim,0.5992,ok
-duchesses,duchesse,nom,Dames de haut rangs,Dame de haut rang,inflected,0.5992,ok
+duchesses,duchesse,nom,Dames de haut rang,Dame de haut rang,inflected,0.5992,ok
 duit,duit,nom,Vêtement traditionnel,Vêtement traditionnel,verbatim,0.4964,ok
 duits,duit,nom,Vêtements traditionnels,Vêtement traditionnel,inflected,0.4964,ok
 dupe,dupe,nom,Tromper,Tromper,verbatim,0.5996,ok
 dupes,dupe,nom,Tromper,Tromper,head-pos-mismatch,0.5996,ok
 duplication,duplication,nom,Copie conforme,Copie conforme,verbatim,0.5754,ok
 duplicité,duplicité,nom,Double jeu,Double jeu,verbatim,0.5523,ok
-duplicités,duplicité,nom,Doubles jeux,Double jeu,inflected,0.5523,ok
+duplicités,duplicité,nom,Doubles jeu,Double jeu,inflected,0.5523,ok
 dura,durer,verbe,Persista,Persister,inflected,0.6125,ok
 durabilité,durabilité,nom,Longévité,Longévité,verbatim,0.5576,ok
 durabilités,durabilité,nom,Longévités,Longévité,inflected,0.5576,ok
@@ -6691,7 +6691,7 @@ déchéances,déchéance,nom,Pertes de valeur,Perte de valeur,inflected,0.5409,o
 déci,déci,nom,Dixième,Dixième,verbatim,0.6107,ok
 décis,déci,nom,Dixièmes,Dixième,inflected,0.6107,ok
 décision,décision,nom,Choix arrêté,Choix arrêté,verbatim,0.6126,ok
-décisions,décision,nom,Choix arrêtés,Choix arrêté,inflected,0.6126,ok
+décisions,décision,nom,Choix arrêté,Choix arrêté,inflected,0.6126,ok
 déclara,déclarer,verbe,Proclama officiellement,Proclamer officiellement,inflected,0.5074,ok
 déclarai,déclarer,verbe,Proclamai officiellement,Proclamer officiellement,inflected,0.5074,ok
 déclarais,déclarer,verbe,Proclamais officiellement,Proclamer officiellement,inflected,0.5074,ok
@@ -7243,40 +7243,40 @@ dépassé,dépasser,verbe,Allé au-delà,Aller au-delà,inflected,0.5597,ok
 dépassée,dépasser,verbe,Allée au-delà,Aller au-delà,inflected,0.5597,ok
 dépassées,dépasser,verbe,Allées au-delà,Aller au-delà,inflected,0.5597,ok
 dépassés,dépasser,verbe,Allés au-delà,Aller au-delà,inflected,0.5597,ok
-dépend,dépendre,verbe,Est lie,Être lié,inflected,0.5504,ok
-dépendaient,dépendre,verbe,Étaient liaient,Être lié,inflected,0.5504,ok
-dépendais,dépendre,verbe,Étais liais,Être lié,inflected,0.5504,ok
-dépendait,dépendre,verbe,Était liait,Être lié,inflected,0.5504,ok
+dépend,dépendre,verbe,Est lié,Être lié,inflected,0.5504,ok
+dépendaient,dépendre,verbe,Étaient lié,Être lié,inflected,0.5504,ok
+dépendais,dépendre,verbe,Étais lié,Être lié,inflected,0.5504,ok
+dépendait,dépendre,verbe,Était lié,Être lié,inflected,0.5504,ok
 dépendance,dépendance,nom,Assujettissement,Assujettissement,verbatim,0.6074,ok
 dépendances,dépendance,nom,Assujettissements,Assujettissement,inflected,0.6074,ok
-dépendant,dépendre,verbe,Étant liant,Être lié,inflected,0.5504,ok
-dépende,dépendre,verbe,Soit lie,Être lié,inflected,0.5504,ok
-dépendent,dépendre,verbe,Sont lient,Être lié,inflected,0.5504,ok
-dépendes,dépendre,verbe,Sois lies,Être lié,inflected,0.5504,ok
-dépendez,dépendre,verbe,Êtes liez,Être lié,inflected,0.5504,ok
-dépendiez,dépendre,verbe,Étiez liiez,Être lié,inflected,0.5504,ok
-dépendions,dépendre,verbe,Étions liions,Être lié,inflected,0.5504,ok
-dépendirent,dépendre,verbe,Furent lièrent,Être lié,inflected,0.5504,ok
-dépendisse,dépendre,verbe,Fusse liasse,Être lié,inflected,0.5504,ok
-dépendit,dépendre,verbe,Fut lia,Être lié,inflected,0.5504,ok
-dépendons,dépendre,verbe,Sommes lions,Être lié,inflected,0.5504,ok
-dépendra,dépendre,verbe,Sera liera,Être lié,inflected,0.5504,ok
-dépendrai,dépendre,verbe,Serai lierai,Être lié,inflected,0.5504,ok
-dépendrais,dépendre,verbe,Serais lierais,Être lié,inflected,0.5504,ok
-dépendrait,dépendre,verbe,Serait lierait,Être lié,inflected,0.5504,ok
-dépendras,dépendre,verbe,Seras lieras,Être lié,inflected,0.5504,ok
+dépendant,dépendre,verbe,Étant lié,Être lié,inflected,0.5504,ok
+dépende,dépendre,verbe,Soit lié,Être lié,inflected,0.5504,ok
+dépendent,dépendre,verbe,Sont lié,Être lié,inflected,0.5504,ok
+dépendes,dépendre,verbe,Sois lié,Être lié,inflected,0.5504,ok
+dépendez,dépendre,verbe,Êtes lié,Être lié,inflected,0.5504,ok
+dépendiez,dépendre,verbe,Étiez lié,Être lié,inflected,0.5504,ok
+dépendions,dépendre,verbe,Étions lié,Être lié,inflected,0.5504,ok
+dépendirent,dépendre,verbe,Furent lié,Être lié,inflected,0.5504,ok
+dépendisse,dépendre,verbe,Fusse lié,Être lié,inflected,0.5504,ok
+dépendit,dépendre,verbe,Fut lié,Être lié,inflected,0.5504,ok
+dépendons,dépendre,verbe,Sommes lié,Être lié,inflected,0.5504,ok
+dépendra,dépendre,verbe,Sera lié,Être lié,inflected,0.5504,ok
+dépendrai,dépendre,verbe,Serai lié,Être lié,inflected,0.5504,ok
+dépendrais,dépendre,verbe,Serais lié,Être lié,inflected,0.5504,ok
+dépendrait,dépendre,verbe,Serait lié,Être lié,inflected,0.5504,ok
+dépendras,dépendre,verbe,Seras lié,Être lié,inflected,0.5504,ok
 dépendre,dépendre,verbe,Être lié,Être lié,verbatim,0.5504,ok
-dépendrez,dépendre,verbe,Serez lierez,Être lié,inflected,0.5504,ok
-dépendrions,dépendre,verbe,Serions lierions,Être lié,inflected,0.5504,ok
-dépendrons,dépendre,verbe,Serons lierons,Être lié,inflected,0.5504,ok
-dépendront,dépendre,verbe,Seront lieront,Être lié,inflected,0.5504,ok
-dépends,dépendre,verbe,Es lies,Être lié,inflected,0.5504,ok
+dépendrez,dépendre,verbe,Serez lié,Être lié,inflected,0.5504,ok
+dépendrions,dépendre,verbe,Serions lié,Être lié,inflected,0.5504,ok
+dépendrons,dépendre,verbe,Serons lié,Être lié,inflected,0.5504,ok
+dépendront,dépendre,verbe,Seront lié,Être lié,inflected,0.5504,ok
+dépends,dépendre,verbe,Es lié,Être lié,inflected,0.5504,ok
 dépendu,dépendre,verbe,Été lié,Être lié,inflected,0.5504,ok
-dépendue,dépendre,verbe,Été liée,Être lié,inflected,0.5504,ok
-dépendues,dépendre,verbe,Été liées,Être lié,inflected,0.5504,ok
-dépendus,dépendre,verbe,Été liés,Être lié,inflected,0.5504,ok
-dépendîmes,dépendre,verbe,Fûmes liâmes,Être lié,inflected,0.5504,ok
-dépendît,dépendre,verbe,Fût liât,Être lié,inflected,0.5504,ok
+dépendue,dépendre,verbe,Été lié,Être lié,inflected,0.5504,ok
+dépendues,dépendre,verbe,Été lié,Être lié,inflected,0.5504,ok
+dépendus,dépendre,verbe,Été lié,Être lié,inflected,0.5504,ok
+dépendîmes,dépendre,verbe,Fûmes lié,Être lié,inflected,0.5504,ok
+dépendît,dépendre,verbe,Fût lié,Être lié,inflected,0.5504,ok
 dépense,dépense,nom,Engouement,Engouement,verbatim,0.5506,ok
 dépenses,dépense,nom,Engouements,Engouement,inflected,0.5506,ok
 dépensé,dépenser,verbe,Engager des frais,Engager des frais,pp-only-skipped,0.6656,ok
@@ -7404,6 +7404,12 @@ dérangées,déranger,verbe,Troublées,Troubler,inflected,0.5824,ok
 dérangés,déranger,verbe,Troublés,Troubler,inflected,0.5824,ok
 dérision,dérision,nom,Moquerie,Moquerie,verbatim,0.4884,ok
 dérisions,dérision,nom,Moqueries,Moquerie,inflected,0.4884,ok
+déroba,dérober,verbe,Soustraire,Soustraire,no-inflection-finite,0.6613,ok
+dérobai,dérober,verbe,Soustraire,Soustraire,no-inflection-finite,0.6613,ok
+dérobasse,dérober,verbe,Soustraire,Soustraire,no-inflection-finite,0.6613,ok
+dérobassent,dérober,verbe,Soustraire,Soustraire,no-inflection-finite,0.6613,ok
+dérobât,dérober,verbe,Soustraire,Soustraire,no-inflection-finite,0.6613,ok
+dérobèrent,dérober,verbe,Soustraire,Soustraire,no-inflection-finite,0.6613,ok
 déroge,déroger,verbe,Ne pas respecte,Ne pas respecter,inflected,0.5893,ok
 dérogea,déroger,verbe,Ne pas respecta,Ne pas respecter,inflected,0.5893,ok
 dérogeaient,déroger,verbe,Ne pas respectaient,Ne pas respecter,inflected,0.5893,ok
@@ -8092,14 +8098,14 @@ endurée,endurer,verbe,Supportée,Supporter,inflected,0.6030,ok
 endurées,endurer,verbe,Supportées,Supporter,inflected,0.6030,ok
 endurés,endurer,verbe,Supportés,Supporter,inflected,0.6030,ok
 enfer,enfer,nom,Abîme,Abîme,verbatim,0.6420,ok
-enferma,enfermer,verbe,Clore,Clore,no-inflection,0.5661,ok
-enfermai,enfermer,verbe,Clore,Clore,no-inflection,0.5661,ok
-enfermaient,enfermer,verbe,Clore,Clore,no-inflection,0.5661,ok
-enfermais,enfermer,verbe,Clore,Clore,no-inflection,0.5661,ok
-enfermait,enfermer,verbe,Clore,Clore,no-inflection,0.5661,ok
+enferma,enfermer,verbe,Clore,Clore,no-inflection-finite,0.5661,ok
+enfermai,enfermer,verbe,Clore,Clore,no-inflection-finite,0.5661,ok
+enfermaient,enfermer,verbe,Clore,Clore,no-inflection-finite,0.5661,ok
+enfermais,enfermer,verbe,Clore,Clore,no-inflection-finite,0.5661,ok
+enfermait,enfermer,verbe,Clore,Clore,no-inflection-finite,0.5661,ok
 enfermant,enfermer,verbe,Closant,Clore,inflected,0.5661,ok
-enfermas,enfermer,verbe,Clore,Clore,no-inflection,0.5661,ok
-enfermasse,enfermer,verbe,Clore,Clore,no-inflection,0.5661,ok
+enfermas,enfermer,verbe,Clore,Clore,no-inflection-finite,0.5661,ok
+enfermasse,enfermer,verbe,Clore,Clore,no-inflection-finite,0.5661,ok
 enferme,enfermer,verbe,Clôt,Clore,inflected,0.5661,ok
 enferment,enfermer,verbe,Closent,Clore,inflected,0.5661,ok
 enfermer,enfermer,verbe,Clore,Clore,verbatim,0.5661,ok
@@ -8117,9 +8123,9 @@ enfermez,enfermer,verbe,Closez,Clore,inflected,0.5661,ok
 enfermiez,enfermer,verbe,Closiez,Clore,inflected,0.5661,ok
 enfermions,enfermer,verbe,Closions,Clore,inflected,0.5661,ok
 enfermons,enfermer,verbe,Closons,Clore,inflected,0.5661,ok
-enfermâmes,enfermer,verbe,Clore,Clore,no-inflection,0.5661,ok
-enfermât,enfermer,verbe,Clore,Clore,no-inflection,0.5661,ok
-enfermèrent,enfermer,verbe,Clore,Clore,no-inflection,0.5661,ok
+enfermâmes,enfermer,verbe,Clore,Clore,no-inflection-finite,0.5661,ok
+enfermât,enfermer,verbe,Clore,Clore,no-inflection-finite,0.5661,ok
+enfermèrent,enfermer,verbe,Clore,Clore,no-inflection-finite,0.5661,ok
 enfermé,enfermer,verbe,Clos,Clore,inflected,0.5661,ok
 enfermée,enfermer,verbe,Close,Clore,inflected,0.5661,ok
 enfermées,enfermer,verbe,Closes,Clore,inflected,0.5661,ok
@@ -8462,7 +8468,6 @@ escomptés,escompter,verbe,Anticipés,Anticiper,inflected,0.5013,ok
 escroquerie,escroquerie,nom,Arnaque,Arnaque,verbatim,0.5989,ok
 espion,espion,nom,Agent secret,Agent secret,verbatim,0.5233,ok
 espionnage,espionnage,nom,Surveillance clandestine,Surveillance clandestine,verbatim,0.6352,ok
-espionnages,espionnage,nom,Surveillances clandestins,Surveillance clandestine,inflected,0.6352,ok
 espionne,espion,nom,Agente secrète,Agent secret,inflected,0.5233,ok
 espionnes,espion,nom,Agentes secrètes,Agent secret,inflected,0.5233,ok
 espions,espion,nom,Agents secrets,Agent secret,inflected,0.5233,ok
@@ -8584,7 +8589,7 @@ estimés,estimer,verbe,Évalués,Évaluer,inflected,0.5829,ok
 estrade,estrade,nom,Scène surélevée,Scène surélevée,verbatim,0.5669,ok
 estrades,estrade,nom,Scènes surélevées,Scène surélevée,inflected,0.5669,ok
 ethnie,ethnie,nom,Groupe humain,Groupe humain,verbatim,0.5513,ok
-ethnies,ethnie,nom,Groupes humaines,Groupe humain,inflected,0.5513,ok
+ethnies,ethnie,nom,Groupes humains,Groupe humain,inflected,0.5513,ok
 ethnique,ethnique,adj,Propre à une race,Propre à une race,verbatim,0.6186,ok
 ethniques,ethnique,adj,Propres à une race,Propre à une race,inflected,0.6186,ok
 ethnographe,ethnographe,nom,Spécialiste des cultures,Spécialiste des cultures,verbatim,0.5171,ok
@@ -8690,7 +8695,7 @@ exceptes,excepter,verbe,Hors,Hors,head-pos-mismatch,0.5721,ok
 exceptez,excepter,verbe,Hors,Hors,head-pos-mismatch,0.5721,ok
 exceptiez,excepter,verbe,Hors,Hors,head-pos-mismatch,0.5721,ok
 exception,exception,nom,Cas particulier,Cas particulier,verbatim,0.6164,ok
-exceptions,exception,nom,Cas particuliers,Cas particulier,inflected,0.6164,ok
+exceptions,exception,nom,Cas particulier,Cas particulier,inflected,0.6164,ok
 exceptons,excepter,verbe,Hors,Hors,head-pos-mismatch,0.5721,ok
 exceptât,excepter,verbe,Hors,Hors,head-pos-mismatch,0.5721,ok
 exceptèrent,excepter,verbe,Hors,Hors,head-pos-mismatch,0.5721,ok
@@ -9253,37 +9258,37 @@ favorisée,favoriser,verbe,Privilégiée,Privilégier,inflected,0.4980,ok
 favorisées,favoriser,verbe,Privilégiées,Privilégier,inflected,0.4980,ok
 favorisés,favoriser,verbe,Privilégiés,Privilégier,inflected,0.4980,ok
 façade,façade,nom,Face avant,Face avant,verbatim,0.6187,ok
-façades,façade,nom,Faces avants,Face avant,inflected,0.6187,ok
+façades,façade,nom,Faces avant,Face avant,inflected,0.6187,ok
 façon,façon,nom,Manière,Manière,verbatim,0.6496,ok
-façonna,façonner,verbe,Donna forma,Donner forme,inflected,0.5718,ok
-façonnaient,façonner,verbe,Donnaient formaient,Donner forme,inflected,0.5718,ok
-façonnais,façonner,verbe,Donnais formais,Donner forme,inflected,0.5718,ok
-façonnait,façonner,verbe,Donnait formait,Donner forme,inflected,0.5718,ok
-façonnant,façonner,verbe,Donnant formant,Donner forme,inflected,0.5718,ok
+façonna,façonner,verbe,Donna forme,Donner forme,inflected,0.5718,ok
+façonnaient,façonner,verbe,Donnaient forme,Donner forme,inflected,0.5718,ok
+façonnais,façonner,verbe,Donnais forme,Donner forme,inflected,0.5718,ok
+façonnait,façonner,verbe,Donnait forme,Donner forme,inflected,0.5718,ok
+façonnant,façonner,verbe,Donnant forme,Donner forme,inflected,0.5718,ok
 façonne,façonner,verbe,Donne forme,Donner forme,inflected,0.5718,ok
-façonnent,façonner,verbe,Donnent forment,Donner forme,inflected,0.5718,ok
+façonnent,façonner,verbe,Donnent forme,Donner forme,inflected,0.5718,ok
 façonner,façonner,verbe,Donner forme,Donner forme,verbatim,0.5718,ok
-façonnera,façonner,verbe,Donnera formera,Donner forme,inflected,0.5718,ok
-façonnerai,façonner,verbe,Donnerai formerai,Donner forme,inflected,0.5718,ok
-façonnerais,façonner,verbe,Donnerais formerais,Donner forme,inflected,0.5718,ok
-façonnerait,façonner,verbe,Donnerait formerait,Donner forme,inflected,0.5718,ok
-façonneras,façonner,verbe,Donneras formeras,Donner forme,inflected,0.5718,ok
-façonnerez,façonner,verbe,Donnerez formerez,Donner forme,inflected,0.5718,ok
-façonnerons,façonner,verbe,Donnerons formerons,Donner forme,inflected,0.5718,ok
-façonneront,façonner,verbe,Donneront formeront,Donner forme,inflected,0.5718,ok
-façonnes,façonner,verbe,Donnes formes,Donner forme,inflected,0.5718,ok
-façonnez,façonner,verbe,Donnez formez,Donner forme,inflected,0.5718,ok
-façonnions,façonner,verbe,Donnions formions,Donner forme,inflected,0.5718,ok
-façonnons,façonner,verbe,Donnons formons,Donner forme,inflected,0.5718,ok
-façonnât,façonner,verbe,Donnât formât,Donner forme,inflected,0.5718,ok
-façonnèrent,façonner,verbe,Donnèrent formèrent,Donner forme,inflected,0.5718,ok
-façonné,façonner,verbe,Donné formé,Donner forme,inflected,0.5718,ok
-façonnée,façonner,verbe,Donnée formée,Donner forme,inflected,0.5718,ok
-façonnées,façonner,verbe,Données formées,Donner forme,inflected,0.5718,ok
-façonnés,façonner,verbe,Donnés formés,Donner forme,inflected,0.5718,ok
+façonnera,façonner,verbe,Donnera forme,Donner forme,inflected,0.5718,ok
+façonnerai,façonner,verbe,Donnerai forme,Donner forme,inflected,0.5718,ok
+façonnerais,façonner,verbe,Donnerais forme,Donner forme,inflected,0.5718,ok
+façonnerait,façonner,verbe,Donnerait forme,Donner forme,inflected,0.5718,ok
+façonneras,façonner,verbe,Donneras forme,Donner forme,inflected,0.5718,ok
+façonnerez,façonner,verbe,Donnerez forme,Donner forme,inflected,0.5718,ok
+façonnerons,façonner,verbe,Donnerons forme,Donner forme,inflected,0.5718,ok
+façonneront,façonner,verbe,Donneront forme,Donner forme,inflected,0.5718,ok
+façonnes,façonner,verbe,Donnes forme,Donner forme,inflected,0.5718,ok
+façonnez,façonner,verbe,Donnez forme,Donner forme,inflected,0.5718,ok
+façonnions,façonner,verbe,Donnions forme,Donner forme,inflected,0.5718,ok
+façonnons,façonner,verbe,Donnons forme,Donner forme,inflected,0.5718,ok
+façonnât,façonner,verbe,Donnât forme,Donner forme,inflected,0.5718,ok
+façonnèrent,façonner,verbe,Donnèrent forme,Donner forme,inflected,0.5718,ok
+façonné,façonner,verbe,Donné forme,Donner forme,inflected,0.5718,ok
+façonnée,façonner,verbe,Donnée forme,Donner forme,inflected,0.5718,ok
+façonnées,façonner,verbe,Données forme,Donner forme,inflected,0.5718,ok
+façonnés,façonner,verbe,Donnés forme,Donner forme,inflected,0.5718,ok
 façons,façon,nom,Manières,Manière,inflected,0.6496,ok
 faïence,faïence,nom,Céramique fine,Céramique fine,verbatim,0.5230,ok
-faïences,faïence,nom,Céramiques fins,Céramique fine,inflected,0.5230,ok
+faïences,faïence,nom,Céramiques fines,Céramique fine,inflected,0.5230,ok
 feldspath,feldspath,nom,Minéral commun,Minéral commun,verbatim,0.5650,ok
 feldspaths,feldspath,nom,Minéraux communs,Minéral commun,inflected,0.5650,ok
 femelle,femelle,nom,Du sexe opposé,Du sexe opposé,verbatim,0.5187,ok
@@ -9416,7 +9421,7 @@ figées,figer,verbe,Rendues immobiles,Rendre immobile,inflected,0.6417,ok
 figés,figer,verbe,Rendus immobiles,Rendre immobile,inflected,0.6417,ok
 fiions,fier,verbe,Digne,Digne,head-pos-mismatch,0.5910,ok
 filet,filet,nom,Tranche fine,Tranche fine,verbatim,0.6075,ok
-filets,filet,nom,Tranches fins,Tranche fine,inflected,0.6075,ok
+filets,filet,nom,Tranches fines,Tranche fine,inflected,0.6075,ok
 filigrane,filigrane,nom,Motif décoratif,Motif décoratif,verbatim,0.5831,ok
 filigranes,filigrane,nom,Motifs décoratifs,Motif décoratif,inflected,0.5831,ok
 fille,fille,nom,Jeune femme,Jeune femme,verbatim,0.5700,ok
@@ -9736,7 +9741,7 @@ franche,franche,adj,Sincère et direct,Sincère et direct,verbatim,0.5883,ok
 franches,franche,adj,Sincères et directes,Sincère et direct,inflected,0.5883,ok
 franciscain,franciscain,nom,Ordre mendiant,Ordre mendiant,verbatim,0.6490,ok
 francophone,francophone,nom,Utilisateur du français,Utilisateur du français,verbatim,0.5355,ok
-francs,franc,nom,Monnaies français,Monnaie française,inflected,0.5552,ok
+francs,franc,nom,Monnaies françaises,Monnaie française,inflected,0.5552,ok
 frange,frange,nom,Lisière,Lisière,verbatim,0.6029,ok
 franges,frange,nom,Lisières,Lisière,inflected,0.6029,ok
 français,français,nom,Langue de Molière,Langue de Molière,verbatim,0.5576,ok
@@ -9853,7 +9858,7 @@ front,front,nom,Avant-garde,Avant-garde,verbatim,0.6193,ok
 frontière,frontière,nom,Lime,Lime,verbatim,0.6117,ok
 frontières,frontière,nom,Limes,Lime,inflected,0.6117,ok
 fronton,fronton,nom,Face avant,Face avant,verbatim,0.4386,ok
-frontons,fronton,nom,Faces avants,Face avant,inflected,0.4386,ok
+frontons,fronton,nom,Faces avant,Face avant,inflected,0.4386,ok
 fronts,front,nom,Avants-garde,Avant-garde,inflected,0.6193,ok
 fructidor,fructidor,nom,Mois de vendanges,Mois de vendanges,verbatim,0.5384,ok
 fructifia,fructifier,verbe,Porta du fruit,Porter du fruit,inflected,0.5598,ok
@@ -9907,26 +9912,26 @@ frénésies,frénésie,nom,Toute choses,Toute chose,inflected,0.4734,ok
 fréquence,fréquence,nom,Rythme,Rythme,verbatim,0.5837,ok
 fréquences,fréquence,nom,Rythmes,Rythme,inflected,0.5837,ok
 fréquent,fréquent,adj,Régulier,Régulier,verbatim,0.6083,ok
-fréquenta,fréquenter,verbe,Rendit visita,Rendre visite,inflected,0.6313,ok
-fréquentai,fréquenter,verbe,Rendis visitai,Rendre visite,inflected,0.6313,ok
-fréquentais,fréquenter,verbe,Rendais visitais,Rendre visite,inflected,0.6313,ok
-fréquentait,fréquenter,verbe,Rendait visitait,Rendre visite,inflected,0.6313,ok
-fréquentant,fréquenter,verbe,Rendant visitant,Rendre visite,inflected,0.6313,ok
-fréquentas,fréquenter,verbe,Rendis visitas,Rendre visite,inflected,0.6313,ok
+fréquenta,fréquenter,verbe,Rendit visite,Rendre visite,inflected,0.6313,ok
+fréquentai,fréquenter,verbe,Rendis visite,Rendre visite,inflected,0.6313,ok
+fréquentais,fréquenter,verbe,Rendais visite,Rendre visite,inflected,0.6313,ok
+fréquentait,fréquenter,verbe,Rendait visite,Rendre visite,inflected,0.6313,ok
+fréquentant,fréquenter,verbe,Rendant visite,Rendre visite,inflected,0.6313,ok
+fréquentas,fréquenter,verbe,Rendis visite,Rendre visite,inflected,0.6313,ok
 fréquente,fréquent,adj,Régulière,Régulier,inflected,0.6083,ok
-fréquentent,fréquenter,verbe,Rendent visitent,Rendre visite,inflected,0.6313,ok
+fréquentent,fréquenter,verbe,Rendent visite,Rendre visite,inflected,0.6313,ok
 fréquenter,fréquenter,verbe,Rendre visite,Rendre visite,verbatim,0.6313,ok
-fréquentera,fréquenter,verbe,Rendra visitera,Rendre visite,inflected,0.6313,ok
+fréquentera,fréquenter,verbe,Rendra visite,Rendre visite,inflected,0.6313,ok
 fréquentes,fréquent,adj,Régulières,Régulier,inflected,0.6083,ok
-fréquentez,fréquenter,verbe,Rendez visitez,Rendre visite,inflected,0.6313,ok
-fréquentiez,fréquenter,verbe,Rendiez visitiez,Rendre visite,inflected,0.6313,ok
-fréquentons,fréquenter,verbe,Rendons visitons,Rendre visite,inflected,0.6313,ok
+fréquentez,fréquenter,verbe,Rendez visite,Rendre visite,inflected,0.6313,ok
+fréquentiez,fréquenter,verbe,Rendiez visite,Rendre visite,inflected,0.6313,ok
+fréquentons,fréquenter,verbe,Rendons visite,Rendre visite,inflected,0.6313,ok
 fréquents,fréquent,adj,Réguliers,Régulier,inflected,0.6083,ok
-fréquentât,fréquenter,verbe,Rendît visitât,Rendre visite,inflected,0.6313,ok
-fréquenté,fréquenter,verbe,Rendu visité,Rendre visite,inflected,0.6313,ok
-fréquentée,fréquenter,verbe,Rendue visitée,Rendre visite,inflected,0.6313,ok
-fréquentées,fréquenter,verbe,Rendues visitées,Rendre visite,inflected,0.6313,ok
-fréquentés,fréquenter,verbe,Rendus visités,Rendre visite,inflected,0.6313,ok
+fréquentât,fréquenter,verbe,Rendît visite,Rendre visite,inflected,0.6313,ok
+fréquenté,fréquenter,verbe,Rendu visite,Rendre visite,inflected,0.6313,ok
+fréquentée,fréquenter,verbe,Rendue visite,Rendre visite,inflected,0.6313,ok
+fréquentées,fréquenter,verbe,Rendues visite,Rendre visite,inflected,0.6313,ok
+fréquentés,fréquenter,verbe,Rendus visite,Rendre visite,inflected,0.6313,ok
 frêle,frêle,adj,Délicat,Délicat,verbatim,0.5656,ok
 frêles,frêle,adj,Délicates,Délicat,inflected,0.5656,ok
 fugitif,fugitif,nom,En cavale,En cavale,verbatim,0.5688,ok
@@ -10031,15 +10036,15 @@ fœtaux,fœtal,adj,Préliminaires,Préliminaire,inflected,0.6431,ok
 gaffe,gaffe,nom,Bévue,Bévue,verbatim,0.5897,ok
 gaffes,gaffe,nom,Bévues,Bévue,inflected,0.5897,ok
 gage,gage,nom,Signe de bonne foi,Signe de bonne foi,verbatim,0.4947,ok
-gages,gage,nom,Signes de bonne fois,Signe de bonne foi,inflected,0.4947,ok
+gages,gage,nom,Signes de bonne foi,Signe de bonne foi,inflected,0.4947,ok
 galant,galant,nom,Courtois et attentionné,Courtois et attentionné,verbatim,0.5327,ok
 galante,galant,nom,Courtois et attentionné,Courtois et attentionné,head-pos-mismatch,0.5327,ok
 galanterie,galanterie,nom,Égard délicat,Égard délicat,verbatim,0.6410,ok
-galanteries,galanterie,nom,Égards délicates,Égard délicat,inflected,0.6410,ok
+galanteries,galanterie,nom,Égards délicats,Égard délicat,inflected,0.6410,ok
 galantes,galant,nom,Courtois et attentionné,Courtois et attentionné,head-pos-mismatch,0.5327,ok
 galants,galant,nom,Courtois et attentionné,Courtois et attentionné,head-pos-mismatch,0.5327,ok
 galet,galet,nom,Pierre plate,Pierre plate,verbatim,0.6222,ok
-galets,galet,nom,Pierre plats,Pierre plate,inflected,0.6222,ok
+galets,galet,nom,Pierre plat,Pierre plate,inflected,0.6222,ok
 gallo,gallo,nom,Coq,Coq,verbatim,0.6250,ok
 galon,galon,nom,Tissu,Tissu,verbatim,0.6156,ok
 galons,galon,nom,Tissus,Tissu,inflected,0.6156,ok
@@ -10140,7 +10145,7 @@ gentillesse,gentillesse,nom,Bonté,Bonté,verbatim,0.6476,ok
 gentils,gentil,nom,Aimable,Aimable,head-pos-mismatch,0.5671,ok
 gents,gent,adj,Nobles,Noble,inflected,0.6237,ok
 genèse,genèse,nom,Premier livre,Premier livre,verbatim,0.5124,ok
-genèses,genèse,nom,Premières livres,Premier livre,inflected,0.5124,ok
+genèses,genèse,nom,Premiers livres,Premier livre,inflected,0.5124,ok
 genêt,genêt,nom,Arbuste,Arbuste,verbatim,0.6478,ok
 genêts,genêt,nom,Arbustes,Arbuste,inflected,0.6478,ok
 germa,germer,verbe,Émergea,Émerger,inflected,0.6237,ok
@@ -10164,11 +10169,11 @@ gestations,gestation,nom,Durées de la grossesse,Durée de la grossesse,inflecte
 gibet,gibet,nom,Potence,Potence,verbatim,0.5882,ok
 gibets,gibet,nom,Potences,Potence,inflected,0.5882,ok
 gifle,gifle,nom,Coup violent,Coup violent,verbatim,0.6217,ok
-gifles,gifle,nom,Coups violentes,Coup violent,inflected,0.6217,ok
+gifles,gifle,nom,Coups violents,Coup violent,inflected,0.6217,ok
 girl,girl,nom,Jeune femme,Jeune femme,verbatim,0.5698,ok
 girls,girl,nom,Jeunes femmes,Jeune femme,inflected,0.5698,ok
 gite,gite,nom,Logement rural,Logement rural,verbatim,0.4924,ok
-gites,gite,nom,Logements rurales,Logement rural,inflected,0.4924,ok
+gites,gite,nom,Logements ruraux,Logement rural,inflected,0.4924,ok
 glace,glace,nom,Congélateur,Congélateur,verbatim,0.5434,ok
 glaces,glace,nom,Congélateurs,Congélateur,inflected,0.5434,ok
 glaciaire,glaciaire,adj,Géant des neiges,Géant des neiges,verbatim,0.6264,ok
@@ -10181,7 +10186,7 @@ glacis,glacis,nom,Pente défensive,Pente défensive,verbatim,0.6045,ok
 glaise,glaise,nom,Vitrage,Vitrage,verbatim,0.5169,ok
 glaises,glaise,nom,Vitrages,Vitrage,inflected,0.5169,ok
 glaive,glaive,nom,Arme blanche,Arme blanche,verbatim,0.6453,ok
-glaives,glaive,nom,Armes blancs,Arme blanche,inflected,0.6453,ok
+glaives,glaive,nom,Armes blanches,Arme blanche,inflected,0.6453,ok
 glass,glass,nom,Verre,Verre,verbatim,0.5822,ok
 glissa,glisser,verbe,Déplaça doucement,Déplacer doucement,inflected,0.5885,ok
 glissai,glisser,verbe,Déplaçai doucement,Déplacer doucement,inflected,0.5885,ok
@@ -10264,7 +10269,7 @@ gosiers,gosier,nom,Orifices de la gorge,Orifice de la gorge,inflected,0.5099,ok
 goth,goth,nom,Ténébreux,Ténébreux,verbatim,0.5915,ok
 goths,goth,nom,Ténébreux,Ténébreux,inflected,0.5915,ok
 goudron,goudron,nom,Résine noire,Résine noire,verbatim,0.6275,ok
-goudrons,goudron,nom,Résines noirs,Résine noire,inflected,0.6275,ok
+goudrons,goudron,nom,Résines noires,Résine noire,inflected,0.6275,ok
 gouverna,gouverner,verbe,Dirigea,Diriger,inflected,0.5305,ok
 gouvernai,gouverner,verbe,Dirigeai,Diriger,inflected,0.5305,ok
 gouvernail,gouvernail,nom,Bâton de direction,Bâton de direction,verbatim,0.6339,ok
@@ -10350,7 +10355,7 @@ grands,grand,nom,Imposant,Imposant,head-pos-mismatch,0.6435,ok
 granit,granit,nom,Roche dure,Roche dure,verbatim,0.6246,ok
 granite,granite,nom,Roche magmatique,Roche magmatique,verbatim,0.5486,ok
 granites,granite,nom,Roches magmatiques,Roche magmatique,inflected,0.5486,ok
-granits,granit,nom,Roches durs,Roche dure,inflected,0.6246,ok
+granits,granit,nom,Roches dures,Roche dure,inflected,0.6246,ok
 graphe,graphe,nom,Représentation visuelle,Représentation visuelle,verbatim,0.5529,ok
 graphes,graphe,nom,Représentations visuelles,Représentation visuelle,inflected,0.5529,ok
 graphique,graphique,nom,Visuel,Visuel,verbatim,0.6419,ok
@@ -10764,7 +10769,7 @@ histologies,histologie,nom,Études des tissus,Étude des tissus,inflected,0.5647
 historique,historique,nom,Antique,Antique,verbatim,0.5867,ok
 historiques,historique,nom,Antiques,Antique,inflected,0.5867,ok
 hiver,hiver,nom,Saison froide,Saison froide,verbatim,0.5700,ok
-hivers,hiver,nom,Saisons froids,Saison froide,inflected,0.5700,ok
+hivers,hiver,nom,Saisons froides,Saison froide,inflected,0.5700,ok
 hiérarchie,hiérarchie,nom,Ordre établi,Ordre établi,verbatim,0.6324,ok
 hiérarchies,hiérarchie,nom,Ordres établis,Ordre établi,inflected,0.6324,ok
 hiéroglyphe,hiéroglyphe,nom,Caractère sacré,Caractère sacré,verbatim,0.6100,ok
@@ -10871,7 +10876,7 @@ hygiéniques,hygiénique,adj,Propres et sains,Propre et sain,inflected,0.5512,ok
 hymen,hymen,nom,Membrane virginale,Membrane virginale,verbatim,0.5355,ok
 hymens,hymen,nom,Membranes virginales,Membrane virginale,inflected,0.5355,ok
 hymne,hymne,nom,Chant national,Chant national,verbatim,0.6150,ok
-hymnes,hymne,nom,Chants nationales,Chant national,inflected,0.6150,ok
+hymnes,hymne,nom,Chants nationaux,Chant national,inflected,0.6150,ok
 hyperbole,hyperbole,nom,Exagération,Exagération,verbatim,0.6429,ok
 hyperboles,hyperbole,nom,Exagérations,Exagération,inflected,0.6429,ok
 hypnotique,hypnotique,adj,Envoûtant,Envoûtant,verbatim,0.6075,ok
@@ -11179,37 +11184,37 @@ implorées,implorer,verbe,Suppliées,Supplier,inflected,0.5711,ok
 implorés,implorer,verbe,Suppliés,Supplier,inflected,0.5711,ok
 impolitique,impolitique,adj,Manquant de tact,Manquant de tact,verbatim,0.4677,ok
 impopulaire,impopulaire,adj,Mal aimé,Mal aimé,verbatim,0.6266,ok
-importa,importer,verbe,Fit entra,Faire entrer,inflected,0.6413,ok
-importai,importer,verbe,Fis entrai,Faire entrer,inflected,0.6413,ok
-importaient,importer,verbe,Faisaient entraient,Faire entrer,inflected,0.6413,ok
-importais,importer,verbe,Faisais entrais,Faire entrer,inflected,0.6413,ok
-importait,importer,verbe,Faisait entrait,Faire entrer,inflected,0.6413,ok
-importas,importer,verbe,Fis entras,Faire entrer,inflected,0.6413,ok
-importasse,importer,verbe,Fisse entrasse,Faire entrer,inflected,0.6413,ok
-importe,importer,verbe,Fait entre,Faire entrer,inflected,0.6413,ok
-importent,importer,verbe,Font entrent,Faire entrer,inflected,0.6413,ok
+importa,importer,verbe,Fit entrer,Faire entrer,inflected,0.6413,ok
+importai,importer,verbe,Fis entrer,Faire entrer,inflected,0.6413,ok
+importaient,importer,verbe,Faisaient entrer,Faire entrer,inflected,0.6413,ok
+importais,importer,verbe,Faisais entrer,Faire entrer,inflected,0.6413,ok
+importait,importer,verbe,Faisait entrer,Faire entrer,inflected,0.6413,ok
+importas,importer,verbe,Fis entrer,Faire entrer,inflected,0.6413,ok
+importasse,importer,verbe,Fisse entrer,Faire entrer,inflected,0.6413,ok
+importe,importer,verbe,Fait entrer,Faire entrer,inflected,0.6413,ok
+importent,importer,verbe,Font entrer,Faire entrer,inflected,0.6413,ok
 importer,importer,verbe,Faire entrer,Faire entrer,verbatim,0.6413,ok
-importera,importer,verbe,Fera entrera,Faire entrer,inflected,0.6413,ok
-importerai,importer,verbe,Ferai entrerai,Faire entrer,inflected,0.6413,ok
-importerais,importer,verbe,Ferais entrerais,Faire entrer,inflected,0.6413,ok
-importerait,importer,verbe,Ferait entrerait,Faire entrer,inflected,0.6413,ok
-importerez,importer,verbe,Ferez entrerez,Faire entrer,inflected,0.6413,ok
-importerons,importer,verbe,Ferons entrerons,Faire entrer,inflected,0.6413,ok
-importeront,importer,verbe,Feront entreront,Faire entrer,inflected,0.6413,ok
-importes,importer,verbe,Fais entres,Faire entrer,inflected,0.6413,ok
-importez,importer,verbe,Faites entrez,Faire entrer,inflected,0.6413,ok
-importiez,importer,verbe,Faisiez entriez,Faire entrer,inflected,0.6413,ok
-importions,importer,verbe,Faisions entrions,Faire entrer,inflected,0.6413,ok
-importons,importer,verbe,Faisons entrons,Faire entrer,inflected,0.6413,ok
+importera,importer,verbe,Fera entrer,Faire entrer,inflected,0.6413,ok
+importerai,importer,verbe,Ferai entrer,Faire entrer,inflected,0.6413,ok
+importerais,importer,verbe,Ferais entrer,Faire entrer,inflected,0.6413,ok
+importerait,importer,verbe,Ferait entrer,Faire entrer,inflected,0.6413,ok
+importerez,importer,verbe,Ferez entrer,Faire entrer,inflected,0.6413,ok
+importerons,importer,verbe,Ferons entrer,Faire entrer,inflected,0.6413,ok
+importeront,importer,verbe,Feront entrer,Faire entrer,inflected,0.6413,ok
+importes,importer,verbe,Fais entrer,Faire entrer,inflected,0.6413,ok
+importez,importer,verbe,Faites entrer,Faire entrer,inflected,0.6413,ok
+importiez,importer,verbe,Faisiez entrer,Faire entrer,inflected,0.6413,ok
+importions,importer,verbe,Faisions entrer,Faire entrer,inflected,0.6413,ok
+importons,importer,verbe,Faisons entrer,Faire entrer,inflected,0.6413,ok
 importunité,importunité,nom,Insistance excessive,Insistance excessive,verbatim,0.5777,ok
-importâmes,importer,verbe,Fîmes entrâmes,Faire entrer,inflected,0.6413,ok
-importât,importer,verbe,Fît entrât,Faire entrer,inflected,0.6413,ok
-importâtes,importer,verbe,Fîtes entrâtes,Faire entrer,inflected,0.6413,ok
-importèrent,importer,verbe,Firent entrèrent,Faire entrer,inflected,0.6413,ok
-importé,importer,verbe,Fait entré,Faire entrer,inflected,0.6413,ok
-importée,importer,verbe,Faite entrée,Faire entrer,inflected,0.6413,ok
-importées,importer,verbe,Faites entrées,Faire entrer,inflected,0.6413,ok
-importés,importer,verbe,Faits entrés,Faire entrer,inflected,0.6413,ok
+importâmes,importer,verbe,Fîmes entrer,Faire entrer,inflected,0.6413,ok
+importât,importer,verbe,Fît entrer,Faire entrer,inflected,0.6413,ok
+importâtes,importer,verbe,Fîtes entrer,Faire entrer,inflected,0.6413,ok
+importèrent,importer,verbe,Firent entrer,Faire entrer,inflected,0.6413,ok
+importé,importer,verbe,Fait entrer,Faire entrer,inflected,0.6413,ok
+importée,importer,verbe,Faite entrer,Faire entrer,inflected,0.6413,ok
+importées,importer,verbe,Faites entrer,Faire entrer,inflected,0.6413,ok
+importés,importer,verbe,Faits entrer,Faire entrer,inflected,0.6413,ok
 imposition,imposition,nom,Action de contraindre,Action de contraindre,verbatim,0.6043,ok
 impositions,imposition,nom,Actions de contraindre,Action de contraindre,inflected,0.6043,ok
 impossible,impossible,adj,Irréalisable,Irréalisable,verbatim,0.5247,ok
@@ -11457,42 +11462,42 @@ infléchis,infléchir,verbe,Orientes,Orienter,inflected,0.5757,ok
 infléchisse,infléchir,verbe,Oriente,Orienter,inflected,0.5757,ok
 infléchit,infléchir,verbe,Oriente,Orienter,inflected,0.5757,ok
 infléchît,infléchir,verbe,Orientât,Orienter,inflected,0.5757,ok
-informa,informer,verbe,Rendit compta,Rendre compte,inflected,0.6469,ok
-informai,informer,verbe,Rendis comptai,Rendre compte,inflected,0.6469,ok
-informaient,informer,verbe,Rendaient comptaient,Rendre compte,inflected,0.6469,ok
-informais,informer,verbe,Rendais comptais,Rendre compte,inflected,0.6469,ok
-informait,informer,verbe,Rendait comptait,Rendre compte,inflected,0.6469,ok
-informant,informer,verbe,Rendant comptant,Rendre compte,inflected,0.6469,ok
-informasse,informer,verbe,Rendisse comptasse,Rendre compte,inflected,0.6469,ok
+informa,informer,verbe,Rendit compte,Rendre compte,inflected,0.6469,ok
+informai,informer,verbe,Rendis compte,Rendre compte,inflected,0.6469,ok
+informaient,informer,verbe,Rendaient compte,Rendre compte,inflected,0.6469,ok
+informais,informer,verbe,Rendais compte,Rendre compte,inflected,0.6469,ok
+informait,informer,verbe,Rendait compte,Rendre compte,inflected,0.6469,ok
+informant,informer,verbe,Rendant compte,Rendre compte,inflected,0.6469,ok
+informasse,informer,verbe,Rendisse compte,Rendre compte,inflected,0.6469,ok
 informe,informer,verbe,Rend compte,Rendre compte,inflected,0.6469,ok
 informel,informel,adj,Non-officiel,Non-officiel,verbatim,0.6166,ok
 informelle,informel,adj,Non-officielle,Non-officiel,inflected,0.6166,ok
 informelles,informel,adj,Non-officielles,Non-officiel,inflected,0.6166,ok
 informels,informel,adj,Non-officiels,Non-officiel,inflected,0.6166,ok
-informent,informer,verbe,Rendent comptent,Rendre compte,inflected,0.6469,ok
+informent,informer,verbe,Rendent compte,Rendre compte,inflected,0.6469,ok
 informer,informer,verbe,Rendre compte,Rendre compte,verbatim,0.6469,ok
-informera,informer,verbe,Rendra comptera,Rendre compte,inflected,0.6469,ok
-informerai,informer,verbe,Rendrai compterai,Rendre compte,inflected,0.6469,ok
-informerais,informer,verbe,Rendrais compterais,Rendre compte,inflected,0.6469,ok
-informerait,informer,verbe,Rendrait compterait,Rendre compte,inflected,0.6469,ok
-informeras,informer,verbe,Rendras compteras,Rendre compte,inflected,0.6469,ok
-informerez,informer,verbe,Rendrez compterez,Rendre compte,inflected,0.6469,ok
-informeriez,informer,verbe,Rendriez compteriez,Rendre compte,inflected,0.6469,ok
-informerons,informer,verbe,Rendrons compterons,Rendre compte,inflected,0.6469,ok
-informeront,informer,verbe,Rendront compteront,Rendre compte,inflected,0.6469,ok
-informes,informer,verbe,Rends comptes,Rendre compte,inflected,0.6469,ok
-informez,informer,verbe,Rendez comptez,Rendre compte,inflected,0.6469,ok
-informiez,informer,verbe,Rendiez comptiez,Rendre compte,inflected,0.6469,ok
-informions,informer,verbe,Rendions comptions,Rendre compte,inflected,0.6469,ok
-informons,informer,verbe,Rendons comptons,Rendre compte,inflected,0.6469,ok
-informâmes,informer,verbe,Rendîmes comptâmes,Rendre compte,inflected,0.6469,ok
-informât,informer,verbe,Rendît comptât,Rendre compte,inflected,0.6469,ok
-informâtes,informer,verbe,Rendîtes comptâtes,Rendre compte,inflected,0.6469,ok
-informèrent,informer,verbe,Rendirent comptèrent,Rendre compte,inflected,0.6469,ok
-informé,informer,verbe,Rendu compté,Rendre compte,inflected,0.6469,ok
-informée,informer,verbe,Rendue comptée,Rendre compte,inflected,0.6469,ok
-informées,informer,verbe,Rendues comptées,Rendre compte,inflected,0.6469,ok
-informés,informer,verbe,Rendus comptés,Rendre compte,inflected,0.6469,ok
+informera,informer,verbe,Rendra compte,Rendre compte,inflected,0.6469,ok
+informerai,informer,verbe,Rendrai compte,Rendre compte,inflected,0.6469,ok
+informerais,informer,verbe,Rendrais compte,Rendre compte,inflected,0.6469,ok
+informerait,informer,verbe,Rendrait compte,Rendre compte,inflected,0.6469,ok
+informeras,informer,verbe,Rendras compte,Rendre compte,inflected,0.6469,ok
+informerez,informer,verbe,Rendrez compte,Rendre compte,inflected,0.6469,ok
+informeriez,informer,verbe,Rendriez compte,Rendre compte,inflected,0.6469,ok
+informerons,informer,verbe,Rendrons compte,Rendre compte,inflected,0.6469,ok
+informeront,informer,verbe,Rendront compte,Rendre compte,inflected,0.6469,ok
+informes,informer,verbe,Rends compte,Rendre compte,inflected,0.6469,ok
+informez,informer,verbe,Rendez compte,Rendre compte,inflected,0.6469,ok
+informiez,informer,verbe,Rendiez compte,Rendre compte,inflected,0.6469,ok
+informions,informer,verbe,Rendions compte,Rendre compte,inflected,0.6469,ok
+informons,informer,verbe,Rendons compte,Rendre compte,inflected,0.6469,ok
+informâmes,informer,verbe,Rendîmes compte,Rendre compte,inflected,0.6469,ok
+informât,informer,verbe,Rendît compte,Rendre compte,inflected,0.6469,ok
+informâtes,informer,verbe,Rendîtes compte,Rendre compte,inflected,0.6469,ok
+informèrent,informer,verbe,Rendirent compte,Rendre compte,inflected,0.6469,ok
+informé,informer,verbe,Rendu compte,Rendre compte,inflected,0.6469,ok
+informée,informer,verbe,Rendue compte,Rendre compte,inflected,0.6469,ok
+informées,informer,verbe,Rendues compte,Rendre compte,inflected,0.6469,ok
+informés,informer,verbe,Rendus compte,Rendre compte,inflected,0.6469,ok
 infortune,infortune,nom,Mésaventure,Mésaventure,verbatim,0.6464,ok
 infortunes,infortune,nom,Mésaventures,Mésaventure,inflected,0.6464,ok
 infortuné,infortuné,adj,Malheureux,Malheureux,verbatim,0.6171,ok
@@ -11789,7 +11794,7 @@ instituiez,instituer,verbe,Créiez,Créer,inflected,0.5389,ok
 instituions,instituer,verbe,Créions,Créer,inflected,0.5389,ok
 instituons,instituer,verbe,Créons,Créer,inflected,0.5389,ok
 institut,institut,nom,École supérieure,École supérieure,verbatim,0.6253,ok
-instituts,institut,nom,Écoles supérieurs,École supérieure,inflected,0.6253,ok
+instituts,institut,nom,Écoles supérieures,École supérieure,inflected,0.6253,ok
 instituâmes,instituer,verbe,Créâmes,Créer,inflected,0.5389,ok
 instituât,instituer,verbe,Créât,Créer,inflected,0.5389,ok
 institué,instituer,verbe,Créé,Créer,inflected,0.5389,ok
@@ -11839,15 +11844,15 @@ intendantes,intendant,adj,Gestionnaires de maison,Gestionnaire de maison,inflect
 intendants,intendant,adj,Gestionnaires de maison,Gestionnaire de maison,inflected,0.6364,ok
 intense,intense,adj,Vif,Vif,verbatim,0.6468,ok
 intenses,intense,adj,Vifs,Vif,inflected,0.6468,ok
-intensifia,intensifier,verbe,Rendit plut fort,Rendre plus fort,inflected,0.4336,ok
-intensifie,intensifier,verbe,Rend plaît fort,Rendre plus fort,inflected,0.4336,ok
+intensifia,intensifier,verbe,Rendit plus fort,Rendre plus fort,inflected,0.4336,ok
+intensifie,intensifier,verbe,Rend plus fort,Rendre plus fort,inflected,0.4336,ok
 intensifier,intensifier,verbe,Rendre plus fort,Rendre plus fort,verbatim,0.4336,ok
-intensifies,intensifier,verbe,Rends plais fort,Rendre plus fort,inflected,0.4336,ok
-intensifiez,intensifier,verbe,Rendez plaisez fort,Rendre plus fort,inflected,0.4336,ok
-intensifiât,intensifier,verbe,Rendît plût fort,Rendre plus fort,inflected,0.4336,ok
-intensifié,intensifier,verbe,Rendu plu fort,Rendre plus fort,inflected,0.4336,ok
-intensifiée,intensifier,verbe,Rendue plu forte,Rendre plus fort,inflected,0.4336,ok
-intensifiés,intensifier,verbe,Rendus plu forts,Rendre plus fort,inflected,0.4336,ok
+intensifies,intensifier,verbe,Rends plus fort,Rendre plus fort,inflected,0.4336,ok
+intensifiez,intensifier,verbe,Rendez plus fort,Rendre plus fort,inflected,0.4336,ok
+intensifiât,intensifier,verbe,Rendît plus fort,Rendre plus fort,inflected,0.4336,ok
+intensifié,intensifier,verbe,Rendu plus fort,Rendre plus fort,inflected,0.4336,ok
+intensifiée,intensifier,verbe,Rendue plus fort,Rendre plus fort,inflected,0.4336,ok
+intensifiés,intensifier,verbe,Rendus plus fort,Rendre plus fort,inflected,0.4336,ok
 intercala,intercaler,verbe,Inséra,Insérer,inflected,0.6074,ok
 intercalai,intercaler,verbe,Insérai,Insérer,inflected,0.6074,ok
 intercalais,intercaler,verbe,Insérais,Insérer,inflected,0.6074,ok
@@ -11887,19 +11892,19 @@ interposés,interposer,verbe,S'insérer,S'insérer,pp-reflexive-skipped,0.7708,o
 interprété,interpréter,verbe,Jouer un rôle,Jouer un rôle,pp-only-skipped,0.7037,ok
 interprétée,interpréter,verbe,Jouer un rôle,Jouer un rôle,pp-only-skipped,0.7037,ok
 interprétés,interpréter,verbe,Jouer un rôle,Jouer un rôle,pp-only-skipped,0.7037,ok
-interrompe,interrompre,verbe,Coupe coure,Couper court,inflected,0.6324,ok
-interrompes,interrompre,verbe,Coupes coures,Couper court,inflected,0.6324,ok
-interrompez,interrompre,verbe,Coupez courez,Couper court,inflected,0.6324,ok
-interrompis,interrompre,verbe,Coupas courus,Couper court,inflected,0.6324,ok
-interrompit,interrompre,verbe,Coupa courut,Couper court,inflected,0.6324,ok
-interrompra,interrompre,verbe,Coupera courra,Couper court,inflected,0.6324,ok
+interrompe,interrompre,verbe,Coupe court,Couper court,inflected,0.6324,ok
+interrompes,interrompre,verbe,Coupes court,Couper court,inflected,0.6324,ok
+interrompez,interrompre,verbe,Coupez court,Couper court,inflected,0.6324,ok
+interrompis,interrompre,verbe,Coupas court,Couper court,inflected,0.6324,ok
+interrompit,interrompre,verbe,Coupa court,Couper court,inflected,0.6324,ok
+interrompra,interrompre,verbe,Coupera court,Couper court,inflected,0.6324,ok
 interrompre,interrompre,verbe,Couper court,Couper court,verbatim,0.6324,ok
-interromps,interrompre,verbe,Coupes cours,Couper court,inflected,0.6324,ok
+interromps,interrompre,verbe,Coupes court,Couper court,inflected,0.6324,ok
 interrompt,interrompre,verbe,Coupe court,Couper court,inflected,0.6324,ok
-interrompu,interrompre,verbe,Coupé couru,Couper court,inflected,0.6324,ok
-interrompue,interrompre,verbe,Coupée courue,Couper court,inflected,0.6324,ok
-interrompus,interrompre,verbe,Coupés courus,Couper court,inflected,0.6324,ok
-interrompît,interrompre,verbe,Coupât courût,Couper court,inflected,0.6324,ok
+interrompu,interrompre,verbe,Coupé court,Couper court,inflected,0.6324,ok
+interrompue,interrompre,verbe,Coupée courte,Couper court,inflected,0.6324,ok
+interrompus,interrompre,verbe,Coupés courts,Couper court,inflected,0.6324,ok
+interrompît,interrompre,verbe,Coupât court,Couper court,inflected,0.6324,ok
 intervenais,intervenir,verbe,S'immisçais,S'immiscer,inflected,0.5307,ok
 intervenait,intervenir,verbe,S'immisçait,S'immiscer,inflected,0.5307,ok
 intervenant,intervenir,verbe,S'immisçant,S'immiscer,inflected,0.5307,ok
@@ -12060,7 +12065,7 @@ jante,jante,nom,Bordure de la roue,Bordure de la roue,verbatim,0.6217,ok
 jantes,jante,nom,Bordures de la roue,Bordure de la roue,inflected,0.6217,ok
 janv,janv,nom,Premier mois de l'année,Premier mois de l'année,verbatim,0.6430,ok
 janvier,janvier,nom,Premier mois,Premier mois,verbatim,0.6404,ok
-janviers,janvier,nom,Premiers mois,Premier mois,inflected,0.6404,ok
+janviers,janvier,nom,Premier mois,Premier mois,identity,0.6404,ok
 jardinage,jardinage,nom,Travail de la terre,Travail de la terre,verbatim,0.5917,ok
 jardinages,jardinage,nom,Travaux de la terre,Travail de la terre,inflected,0.5917,ok
 jardinier,jardinier,nom,Soignant les plantes,Soignant les plantes,verbatim,0.5712,ok
@@ -12079,7 +12084,7 @@ jazz,jazz,nom,Musique improvisée,Musique improvisée,verbatim,0.6489,ok
 jean,jean,nom,Tissu bleu,Tissu bleu,verbatim,0.5515,ok
 jeans,jean,nom,Tissus bleus,Tissu bleu,inflected,0.5515,ok
 jeep,jeep,nom,Véhicule tout-terrain,Véhicule tout-terrain,verbatim,0.5334,ok
-jeeps,jeep,nom,Véhicules touts-terrain,Véhicule tout-terrain,inflected,0.5334,ok
+jeeps,jeep,nom,Véhicules tout-terrain,Véhicule tout-terrain,inflected,0.5334,ok
 jeta,jeter,verbe,Abandonna,Abandonner,inflected,0.4018,ok
 jetai,jeter,verbe,Abandonnai,Abandonner,inflected,0.4018,ok
 jetaient,jeter,verbe,Abandonnaient,Abandonner,inflected,0.4018,ok
@@ -12226,31 +12231,31 @@ justicier,justicier,nom,Vengeur,Vengeur,verbatim,0.5993,ok
 justiciers,justicier,nom,Vengeurs,Vengeur,inflected,0.5993,ok
 justicière,justicier,nom,Vengeresse,Vengeur,inflected,0.5993,ok
 justicières,justicier,nom,Vengeresses,Vengeur,inflected,0.5993,ok
-justifia,justifier,verbe,Rendit compta,Rendre compte,inflected,0.6084,ok
-justifiai,justifier,verbe,Rendis comptai,Rendre compte,inflected,0.6084,ok
-justifiais,justifier,verbe,Rendais comptais,Rendre compte,inflected,0.6084,ok
-justifiait,justifier,verbe,Rendait comptait,Rendre compte,inflected,0.6084,ok
-justifiant,justifier,verbe,Rendant comptant,Rendre compte,inflected,0.6084,ok
-justifias,justifier,verbe,Rendis comptas,Rendre compte,inflected,0.6084,ok
-justifiasse,justifier,verbe,Rendisse comptasse,Rendre compte,inflected,0.6084,ok
+justifia,justifier,verbe,Rendit compte,Rendre compte,inflected,0.6084,ok
+justifiai,justifier,verbe,Rendis compte,Rendre compte,inflected,0.6084,ok
+justifiais,justifier,verbe,Rendais compte,Rendre compte,inflected,0.6084,ok
+justifiait,justifier,verbe,Rendait compte,Rendre compte,inflected,0.6084,ok
+justifiant,justifier,verbe,Rendant compte,Rendre compte,inflected,0.6084,ok
+justifias,justifier,verbe,Rendis compte,Rendre compte,inflected,0.6084,ok
+justifiasse,justifier,verbe,Rendisse compte,Rendre compte,inflected,0.6084,ok
 justifie,justifier,verbe,Rend compte,Rendre compte,inflected,0.6084,ok
-justifient,justifier,verbe,Rendent comptent,Rendre compte,inflected,0.6084,ok
+justifient,justifier,verbe,Rendent compte,Rendre compte,inflected,0.6084,ok
 justifier,justifier,verbe,Rendre compte,Rendre compte,verbatim,0.6084,ok
-justifiera,justifier,verbe,Rendra comptera,Rendre compte,inflected,0.6084,ok
-justifierai,justifier,verbe,Rendrai compterai,Rendre compte,inflected,0.6084,ok
-justifieras,justifier,verbe,Rendras compteras,Rendre compte,inflected,0.6084,ok
-justifierez,justifier,verbe,Rendrez compterez,Rendre compte,inflected,0.6084,ok
-justifies,justifier,verbe,Rends comptes,Rendre compte,inflected,0.6084,ok
-justifiez,justifier,verbe,Rendez comptez,Rendre compte,inflected,0.6084,ok
-justifiiez,justifier,verbe,Rendiez comptiez,Rendre compte,inflected,0.6084,ok
-justifiions,justifier,verbe,Rendions comptions,Rendre compte,inflected,0.6084,ok
-justifions,justifier,verbe,Rendons comptons,Rendre compte,inflected,0.6084,ok
-justifiâmes,justifier,verbe,Rendîmes comptâmes,Rendre compte,inflected,0.6084,ok
-justifiât,justifier,verbe,Rendît comptât,Rendre compte,inflected,0.6084,ok
-justifié,justifier,verbe,Rendu compté,Rendre compte,inflected,0.6084,ok
-justifiée,justifier,verbe,Rendue comptée,Rendre compte,inflected,0.6084,ok
-justifiées,justifier,verbe,Rendues comptées,Rendre compte,inflected,0.6084,ok
-justifiés,justifier,verbe,Rendus comptés,Rendre compte,inflected,0.6084,ok
+justifiera,justifier,verbe,Rendra compte,Rendre compte,inflected,0.6084,ok
+justifierai,justifier,verbe,Rendrai compte,Rendre compte,inflected,0.6084,ok
+justifieras,justifier,verbe,Rendras compte,Rendre compte,inflected,0.6084,ok
+justifierez,justifier,verbe,Rendrez compte,Rendre compte,inflected,0.6084,ok
+justifies,justifier,verbe,Rends compte,Rendre compte,inflected,0.6084,ok
+justifiez,justifier,verbe,Rendez compte,Rendre compte,inflected,0.6084,ok
+justifiiez,justifier,verbe,Rendiez compte,Rendre compte,inflected,0.6084,ok
+justifiions,justifier,verbe,Rendions compte,Rendre compte,inflected,0.6084,ok
+justifions,justifier,verbe,Rendons compte,Rendre compte,inflected,0.6084,ok
+justifiâmes,justifier,verbe,Rendîmes compte,Rendre compte,inflected,0.6084,ok
+justifiât,justifier,verbe,Rendît compte,Rendre compte,inflected,0.6084,ok
+justifié,justifier,verbe,Rendu compte,Rendre compte,inflected,0.6084,ok
+justifiée,justifier,verbe,Rendue compte,Rendre compte,inflected,0.6084,ok
+justifiées,justifier,verbe,Rendues compte,Rendre compte,inflected,0.6084,ok
+justifiés,justifier,verbe,Rendus compte,Rendre compte,inflected,0.6084,ok
 jute,jute,nom,Fibre textile,Fibre textile,verbatim,0.5534,ok
 juvénile,juvénile,adj,Adolescent,Adolescent,verbatim,0.5641,ok
 juvéniles,juvénile,adj,Adolescents,Adolescent,inflected,0.5641,ok
@@ -12526,7 +12531,7 @@ libérée,libérer,verbe,Affranchie,Affranchir,inflected,0.4506,ok
 libérées,libérer,verbe,Affranchies,Affranchir,inflected,0.4506,ok
 libérés,libérer,verbe,Affranchis,Affranchir,inflected,0.4506,ok
 licence,licence,nom,Permis officiel,Permis officiel,verbatim,0.5866,ok
-licences,licence,nom,Permis officiels,Permis officiel,inflected,0.5866,ok
+licences,licence,nom,Permis officiel,Permis officiel,inflected,0.5866,ok
 licitation,licitation,nom,Vente aux enchères,Vente aux enchères,verbatim,0.5544,ok
 licitations,licitation,nom,Ventes aux enchères,Vente aux enchères,inflected,0.5544,ok
 lien,lien,nom,Rattachement,Rattachement,verbatim,0.6432,ok
@@ -12554,11 +12559,11 @@ ligatures,ligature,nom,Liens typographiques,Lien typographique,inflected,0.5506,
 lignage,lignage,nom,Descendance,Descendance,verbatim,0.6202,ok
 lignages,lignage,nom,Descendances,Descendance,inflected,0.6202,ok
 lignite,lignite,nom,Houille brune,Houille brune,verbatim,0.5236,ok
-lignites,lignite,nom,Houilles bruns,Houille brune,inflected,0.5236,ok
+lignites,lignite,nom,Houilles brunes,Houille brune,inflected,0.5236,ok
 liiez,lier,verbe,Reliiez,Relier,inflected,0.5604,ok
 liions,lier,verbe,Reliions,Relier,inflected,0.5604,ok
 lime,lime,nom,Citron vert,Citron vert,verbatim,0.5959,ok
-limes,lime,nom,Citron vertes,Citron vert,inflected,0.5959,ok
+limes,lime,nom,Citron vert,Citron vert,inflected,0.5959,ok
 limita,limiter,verbe,Restreignit,Restreindre,inflected,0.5421,ok
 limitai,limiter,verbe,Restreignis,Restreindre,inflected,0.5421,ok
 limitaient,limiter,verbe,Restreignaient,Restreindre,inflected,0.5421,ok
@@ -12878,7 +12883,7 @@ maisons,maison,nom,Habitations,Habitation,inflected,0.6102,ok
 majesté,majesté,nom,Splendeur royale,Splendeur royale,verbatim,0.5376,ok
 majestés,majesté,nom,Splendeurs royales,Splendeur royale,inflected,0.5376,ok
 majorité,majorité,nom,Groupe dominant,Groupe dominant,verbatim,0.6320,ok
-majorités,majorité,nom,Groupes dominantes,Groupe dominant,inflected,0.6320,ok
+majorités,majorité,nom,Groupes dominants,Groupe dominant,inflected,0.6320,ok
 maladresse,maladresse,nom,Manque de grâce,Manque de grâce,verbatim,0.5632,ok
 maladresses,maladresse,nom,Manques de grâce,Manque de grâce,inflected,0.5632,ok
 malaise,malaise,nom,Inconfort,Inconfort,verbatim,0.6131,ok
@@ -12906,7 +12911,7 @@ manchons,manchon,nom,Protecteurs du bras,Protecteur du bras,inflected,0.6291,ok
 mandarin,mandarin,nom,Chinois officiel,Chinois officiel,verbatim,0.5077,ok
 mandarine,mandarin,nom,Chinoise officielle,Chinois officiel,inflected,0.5077,ok
 mandarines,mandarin,nom,Chinoises officielles,Chinois officiel,inflected,0.5077,ok
-mandarins,mandarin,nom,Chinois officiels,Chinois officiel,inflected,0.5077,ok
+mandarins,mandarin,nom,Chinois officiel,Chinois officiel,inflected,0.5077,ok
 mandement,mandement,nom,Ordre impératif,Ordre impératif,verbatim,0.6210,ok
 mandements,mandement,nom,Ordres impératifs,Ordre impératif,inflected,0.6210,ok
 mandibule,mandibule,nom,Maxillaire,Maxillaire,verbatim,0.5525,ok
@@ -13137,8 +13142,8 @@ marquage,marquage,nom,Signalisation,Signalisation,verbatim,0.6030,ok
 marquages,marquage,nom,Signalisations,Signalisation,inflected,0.6030,ok
 marqueterie,marqueterie,nom,Travail du bois,Travail du bois,verbatim,0.6028,ok
 marquis,marquis,nom,Noble français,Noble français,verbatim,0.5694,ok
-marquise,marquis,nom,Noble française,Noble français,inflected,0.5694,ok
-marquises,marquis,nom,Nobles françaises,Noble français,inflected,0.5694,ok
+marquise,marquis,nom,Noble français,Noble français,inflected,0.5694,ok
+marquises,marquis,nom,Nobles français,Noble français,inflected,0.5694,ok
 marraine,marraine,nom,Tante de baptême,Tante de baptême,verbatim,0.6299,ok
 marraines,marraine,nom,Tantes de baptême,Tante de baptême,inflected,0.6299,ok
 mars,mars,nom,Planète rouge,Planète rouge,verbatim,0.6011,ok
@@ -13430,20 +13435,20 @@ mobilisé,mobiliser,verbe,Rassemblé,Rassembler,inflected,0.5996,ok
 mobilisée,mobiliser,verbe,Rassemblée,Rassembler,inflected,0.5996,ok
 mobilisées,mobiliser,verbe,Rassemblées,Rassembler,inflected,0.5996,ok
 mobilisés,mobiliser,verbe,Rassemblés,Rassembler,inflected,0.5996,ok
-modela,modeler,verbe,Donna forma,Donner forme,inflected,0.5166,ok
-modelaient,modeler,verbe,Donnaient formaient,Donner forme,inflected,0.5166,ok
-modelais,modeler,verbe,Donnais formais,Donner forme,inflected,0.5166,ok
-modelait,modeler,verbe,Donnait formait,Donner forme,inflected,0.5166,ok
-modelant,modeler,verbe,Donnant formant,Donner forme,inflected,0.5166,ok
-modelassent,modeler,verbe,Donnassent formassent,Donner forme,inflected,0.5166,ok
+modela,modeler,verbe,Donna forme,Donner forme,inflected,0.5166,ok
+modelaient,modeler,verbe,Donnaient forme,Donner forme,inflected,0.5166,ok
+modelais,modeler,verbe,Donnais forme,Donner forme,inflected,0.5166,ok
+modelait,modeler,verbe,Donnait forme,Donner forme,inflected,0.5166,ok
+modelant,modeler,verbe,Donnant forme,Donner forme,inflected,0.5166,ok
+modelassent,modeler,verbe,Donnassent forme,Donner forme,inflected,0.5166,ok
 modeler,modeler,verbe,Donner forme,Donner forme,verbatim,0.5166,ok
-modelions,modeler,verbe,Donnions formions,Donner forme,inflected,0.5166,ok
-modelons,modeler,verbe,Donnons formons,Donner forme,inflected,0.5166,ok
-modelèrent,modeler,verbe,Donnèrent formèrent,Donner forme,inflected,0.5166,ok
-modelé,modeler,verbe,Donné formé,Donner forme,inflected,0.5166,ok
-modelée,modeler,verbe,Donnée formée,Donner forme,inflected,0.5166,ok
-modelées,modeler,verbe,Données formées,Donner forme,inflected,0.5166,ok
-modelés,modeler,verbe,Donnés formés,Donner forme,inflected,0.5166,ok
+modelions,modeler,verbe,Donnions forme,Donner forme,inflected,0.5166,ok
+modelons,modeler,verbe,Donnons forme,Donner forme,inflected,0.5166,ok
+modelèrent,modeler,verbe,Donnèrent forme,Donner forme,inflected,0.5166,ok
+modelé,modeler,verbe,Donné forme,Donner forme,inflected,0.5166,ok
+modelée,modeler,verbe,Donnée forme,Donner forme,inflected,0.5166,ok
+modelées,modeler,verbe,Données forme,Donner forme,inflected,0.5166,ok
+modelés,modeler,verbe,Donnés forme,Donner forme,inflected,0.5166,ok
 modernité,modernité,nom,Époque actuelle,Époque actuelle,verbatim,0.5919,ok
 modernités,modernité,nom,Époques actuelles,Époque actuelle,inflected,0.5919,ok
 modeste,modeste,nom,Humble,Humble,verbatim,0.5306,ok
@@ -13457,12 +13462,12 @@ modiques,modique,adj,Faibles,Faible,inflected,0.6323,ok
 module,module,nom,Bloc fonctionnel,Bloc fonctionnel,verbatim,0.6240,ok
 modules,module,nom,Blocs fonctionnels,Bloc fonctionnel,inflected,0.6240,ok
 modus,modus,nom,Manière,Manière,verbatim,0.5689,ok
-modèlent,modeler,verbe,Donnent forment,Donner forme,inflected,0.5166,ok
-modèlera,modeler,verbe,Donnera formera,Donner forme,inflected,0.5166,ok
-modèlerai,modeler,verbe,Donnerai formerai,Donner forme,inflected,0.5166,ok
-modèlerait,modeler,verbe,Donnerait formerait,Donner forme,inflected,0.5166,ok
-modèlerons,modeler,verbe,Donnerons formerons,Donner forme,inflected,0.5166,ok
-modèleront,modeler,verbe,Donneront formeront,Donner forme,inflected,0.5166,ok
+modèlent,modeler,verbe,Donnent forme,Donner forme,inflected,0.5166,ok
+modèlera,modeler,verbe,Donnera forme,Donner forme,inflected,0.5166,ok
+modèlerai,modeler,verbe,Donnerai forme,Donner forme,inflected,0.5166,ok
+modèlerait,modeler,verbe,Donnerait forme,Donner forme,inflected,0.5166,ok
+modèlerons,modeler,verbe,Donnerons forme,Donner forme,inflected,0.5166,ok
+modèleront,modeler,verbe,Donneront forme,Donner forme,inflected,0.5166,ok
 modérateur,modérateur,nom,Animateur,Animateur,verbatim,0.6091,ok
 modérateurs,modérateur,nom,Animateurs,Animateur,inflected,0.6091,ok
 modération,modération,nom,Tempérance,Tempérance,verbatim,0.6136,ok
@@ -13482,7 +13487,7 @@ moites,moite,adj,Humides,Humide,inflected,0.5996,ok
 mole,mole,nom,Tache de naissance,Tache de naissance,verbatim,0.5324,ok
 moles,mole,nom,Taches de naissance,Tache de naissance,inflected,0.5324,ok
 monarchie,monarchie,nom,Régime royal,Régime royal,verbatim,0.6148,ok
-monarchies,monarchie,nom,Régimes royales,Régime royal,inflected,0.6148,ok
+monarchies,monarchie,nom,Régimes royaux,Régime royal,inflected,0.6148,ok
 monarque,monarque,nom,Souverain,Souverain,verbatim,0.5042,ok
 monarques,monarque,nom,Souverains,Souverain,inflected,0.5042,ok
 monastique,monastique,adj,Relatif au cloître,Relatif au cloître,verbatim,0.5773,ok
@@ -14108,28 +14113,28 @@ noterions,noter,verbe,Consignerions par écrit,Consigner par écrit,inflected,0.
 noterons,noter,verbe,Consignerons par écrit,Consigner par écrit,inflected,0.4414,ok
 noteront,noter,verbe,Consigneront par écrit,Consigner par écrit,inflected,0.4414,ok
 notez,noter,verbe,Consignez par écrit,Consigner par écrit,inflected,0.4414,ok
-notifia,notifier,verbe,Rendit compta,Rendre compte,inflected,0.6160,ok
-notifiai,notifier,verbe,Rendis comptai,Rendre compte,inflected,0.6160,ok
-notifiaient,notifier,verbe,Rendaient comptaient,Rendre compte,inflected,0.6160,ok
-notifiait,notifier,verbe,Rendait comptait,Rendre compte,inflected,0.6160,ok
-notifiant,notifier,verbe,Rendant comptant,Rendre compte,inflected,0.6160,ok
+notifia,notifier,verbe,Rendit compte,Rendre compte,inflected,0.6160,ok
+notifiai,notifier,verbe,Rendis compte,Rendre compte,inflected,0.6160,ok
+notifiaient,notifier,verbe,Rendaient compte,Rendre compte,inflected,0.6160,ok
+notifiait,notifier,verbe,Rendait compte,Rendre compte,inflected,0.6160,ok
+notifiant,notifier,verbe,Rendant compte,Rendre compte,inflected,0.6160,ok
 notifie,notifier,verbe,Rend compte,Rendre compte,inflected,0.6160,ok
-notifient,notifier,verbe,Rendent comptent,Rendre compte,inflected,0.6160,ok
+notifient,notifier,verbe,Rendent compte,Rendre compte,inflected,0.6160,ok
 notifier,notifier,verbe,Rendre compte,Rendre compte,verbatim,0.6160,ok
-notifiera,notifier,verbe,Rendra comptera,Rendre compte,inflected,0.6160,ok
-notifierai,notifier,verbe,Rendrai compterai,Rendre compte,inflected,0.6160,ok
-notifierait,notifier,verbe,Rendrait compterait,Rendre compte,inflected,0.6160,ok
-notifierez,notifier,verbe,Rendrez compterez,Rendre compte,inflected,0.6160,ok
-notifierons,notifier,verbe,Rendrons compterons,Rendre compte,inflected,0.6160,ok
-notifieront,notifier,verbe,Rendront compteront,Rendre compte,inflected,0.6160,ok
-notifies,notifier,verbe,Rends comptes,Rendre compte,inflected,0.6160,ok
-notifions,notifier,verbe,Rendons comptons,Rendre compte,inflected,0.6160,ok
-notifiât,notifier,verbe,Rendît comptât,Rendre compte,inflected,0.6160,ok
-notifièrent,notifier,verbe,Rendirent comptèrent,Rendre compte,inflected,0.6160,ok
-notifié,notifier,verbe,Rendu compté,Rendre compte,inflected,0.6160,ok
-notifiée,notifier,verbe,Rendue comptée,Rendre compte,inflected,0.6160,ok
-notifiées,notifier,verbe,Rendues comptées,Rendre compte,inflected,0.6160,ok
-notifiés,notifier,verbe,Rendus comptés,Rendre compte,inflected,0.6160,ok
+notifiera,notifier,verbe,Rendra compte,Rendre compte,inflected,0.6160,ok
+notifierai,notifier,verbe,Rendrai compte,Rendre compte,inflected,0.6160,ok
+notifierait,notifier,verbe,Rendrait compte,Rendre compte,inflected,0.6160,ok
+notifierez,notifier,verbe,Rendrez compte,Rendre compte,inflected,0.6160,ok
+notifierons,notifier,verbe,Rendrons compte,Rendre compte,inflected,0.6160,ok
+notifieront,notifier,verbe,Rendront compte,Rendre compte,inflected,0.6160,ok
+notifies,notifier,verbe,Rends compte,Rendre compte,inflected,0.6160,ok
+notifions,notifier,verbe,Rendons compte,Rendre compte,inflected,0.6160,ok
+notifiât,notifier,verbe,Rendît compte,Rendre compte,inflected,0.6160,ok
+notifièrent,notifier,verbe,Rendirent compte,Rendre compte,inflected,0.6160,ok
+notifié,notifier,verbe,Rendu compte,Rendre compte,inflected,0.6160,ok
+notifiée,notifier,verbe,Rendue compte,Rendre compte,inflected,0.6160,ok
+notifiées,notifier,verbe,Rendues compte,Rendre compte,inflected,0.6160,ok
+notifiés,notifier,verbe,Rendus compte,Rendre compte,inflected,0.6160,ok
 notoire,notoire,adj,Célèbre,Célèbre,verbatim,0.5799,ok
 notoires,notoire,adj,Célèbres,Célèbre,inflected,0.5799,ok
 notons,noter,verbe,Consignons par écrit,Consigner par écrit,inflected,0.4414,ok
@@ -14170,25 +14175,25 @@ nucléaire,nucléaire,adj,Atomique,Atomique,verbatim,0.5951,ok
 nucléaires,nucléaire,adj,Atomiques,Atomique,inflected,0.5951,ok
 nudité,nudité,nom,Dévoilement,Dévoilement,verbatim,0.5440,ok
 nudités,nudité,nom,Dévoilements,Dévoilement,inflected,0.5440,ok
-nuira,nuire,verbe,Portera atteindra,Porter atteinte,inflected,0.5804,ok
-nuiraient,nuire,verbe,Porteraient atteindraient,Porter atteinte,inflected,0.5804,ok
-nuirais,nuire,verbe,Porterais atteindrais,Porter atteinte,inflected,0.5804,ok
-nuirait,nuire,verbe,Porterait atteindrait,Porter atteinte,inflected,0.5804,ok
+nuira,nuire,verbe,Portera atteinte,Porter atteinte,inflected,0.5804,ok
+nuiraient,nuire,verbe,Porteraient atteinte,Porter atteinte,inflected,0.5804,ok
+nuirais,nuire,verbe,Porterais atteinte,Porter atteinte,inflected,0.5804,ok
+nuirait,nuire,verbe,Porterait atteinte,Porter atteinte,inflected,0.5804,ok
 nuire,nuire,verbe,Porter atteinte,Porter atteinte,verbatim,0.5804,ok
-nuirions,nuire,verbe,Porterions atteindrions,Porter atteinte,inflected,0.5804,ok
-nuiront,nuire,verbe,Porteront atteindront,Porter atteinte,inflected,0.5804,ok
-nuisaient,nuire,verbe,Portaient atteignaient,Porter atteinte,inflected,0.5804,ok
-nuisait,nuire,verbe,Portait atteignait,Porter atteinte,inflected,0.5804,ok
-nuisant,nuire,verbe,Portant atteignant,Porter atteinte,inflected,0.5804,ok
-nuise,nuire,verbe,Porte atteigne,Porter atteinte,inflected,0.5804,ok
-nuisent,nuire,verbe,Portent atteignent,Porter atteinte,inflected,0.5804,ok
-nuisions,nuire,verbe,Portions atteignions,Porter atteinte,inflected,0.5804,ok
-nuisirent,nuire,verbe,Portèrent atteignirent,Porter atteinte,inflected,0.5804,ok
-nuisissent,nuire,verbe,Portassent atteignissent,Porter atteinte,inflected,0.5804,ok
-nuisit,nuire,verbe,Porta atteignit,Porter atteinte,inflected,0.5804,ok
-nuisons,nuire,verbe,Portons atteignons,Porter atteinte,inflected,0.5804,ok
-nuisît,nuire,verbe,Portât atteignît,Porter atteinte,inflected,0.5804,ok
-nuit,nuire,verbe,Porte atteint,Porter atteinte,inflected,0.5804,ok
+nuirions,nuire,verbe,Porterions atteinte,Porter atteinte,inflected,0.5804,ok
+nuiront,nuire,verbe,Porteront atteinte,Porter atteinte,inflected,0.5804,ok
+nuisaient,nuire,verbe,Portaient atteinte,Porter atteinte,inflected,0.5804,ok
+nuisait,nuire,verbe,Portait atteinte,Porter atteinte,inflected,0.5804,ok
+nuisant,nuire,verbe,Portant atteinte,Porter atteinte,inflected,0.5804,ok
+nuise,nuire,verbe,Porte atteinte,Porter atteinte,inflected,0.5804,ok
+nuisent,nuire,verbe,Portent atteinte,Porter atteinte,inflected,0.5804,ok
+nuisions,nuire,verbe,Portions atteinte,Porter atteinte,inflected,0.5804,ok
+nuisirent,nuire,verbe,Portèrent atteinte,Porter atteinte,inflected,0.5804,ok
+nuisissent,nuire,verbe,Portassent atteinte,Porter atteinte,inflected,0.5804,ok
+nuisit,nuire,verbe,Porta atteinte,Porter atteinte,inflected,0.5804,ok
+nuisons,nuire,verbe,Portons atteinte,Porter atteinte,inflected,0.5804,ok
+nuisît,nuire,verbe,Portât atteinte,Porter atteinte,inflected,0.5804,ok
+nuit,nuire,verbe,Porte atteinte,Porter atteinte,inflected,0.5804,ok
 nullité,nullité,nom,Inutilité,Inutilité,verbatim,0.6068,ok
 nullités,nullité,nom,Inutilités,Inutilité,inflected,0.6068,ok
 nuptialité,nuptialité,nom,Taux de mariage,Taux de mariage,verbatim,0.4796,ok
@@ -14462,7 +14467,7 @@ ordonnateur,ordonnateur,nom,Unité centrale,Unité centrale,verbatim,0.5365,ok
 ordre,ordre,nom,Rang,Rang,verbatim,0.6304,ok
 ordres,ordre,nom,Rangs,Rang,inflected,0.6304,ok
 oreille,oreille,nom,Organe auditif,Organe auditif,verbatim,0.5172,ok
-oreilles,oreille,nom,Organes auditives,Organe auditif,inflected,0.5172,ok
+oreilles,oreille,nom,Organes auditifs,Organe auditif,inflected,0.5172,ok
 orgue,orgue,nom,Instrument à vent,Instrument à vent,verbatim,0.6083,ok
 orgues,orgue,nom,Instruments à vent,Instrument à vent,inflected,0.6083,ok
 original,original,nom,Authentique,Authentique,verbatim,0.5610,ok
@@ -14600,8 +14605,8 @@ pailles,paille,nom,Tiges de blé,Tige de blé,inflected,0.6213,ok
 pairie,pairie,nom,Terrain herbeux,Terrain herbeux,verbatim,0.4771,ok
 pairies,pairie,nom,Terrains herbeux,Terrain herbeux,inflected,0.4771,ok
 palatin,palatin,nom,Noble romain,Noble romain,verbatim,0.6180,ok
-palatine,palatin,nom,Noble romaine,Noble romain,inflected,0.6180,ok
-palatines,palatin,nom,Nobles romaines,Noble romain,inflected,0.6180,ok
+palatine,palatin,nom,Noble romain,Noble romain,inflected,0.6180,ok
+palatines,palatin,nom,Nobles romains,Noble romain,inflected,0.6180,ok
 palatins,palatin,nom,Nobles romains,Noble romain,inflected,0.6180,ok
 palette,palette,nom,Gamme de couleurs,Gamme de couleurs,verbatim,0.6392,ok
 palettes,palette,nom,Gammes de couleurs,Gamme de couleurs,inflected,0.6392,ok
@@ -14956,7 +14961,7 @@ pellicules,pellicule,nom,Couches protectrices,Couche protectrice,inflected,0.628
 peloton,peloton,nom,Groupe compact,Groupe compact,verbatim,0.6143,ok
 pelotons,peloton,nom,Groupes compacts,Groupe compact,inflected,0.6143,ok
 pelouse,pelouse,nom,Tapis vert,Tapis vert,verbatim,0.5661,ok
-pelouses,pelouse,nom,Tapis verts,Tapis vert,inflected,0.5661,ok
+pelouses,pelouse,nom,Tapis vert,Tapis vert,inflected,0.5661,ok
 pennies,penny,nom,Cents,Cent,inflected,0.5157,ok
 penny,penny,nom,Cent,Cent,verbatim,0.5157,ok
 pensif,pensif,adj,Profond,Profond,verbatim,0.5964,ok
@@ -15018,31 +15023,31 @@ permît,permettre,verbe,Autorisât,Autoriser,inflected,0.5586,ok
 permîtes,permettre,verbe,Autorisâtes,Autoriser,inflected,0.5586,ok
 perplexité,perplexité,nom,Doute,Doute,verbatim,0.4370,ok
 perplexités,perplexité,nom,Doutes,Doute,inflected,0.4370,ok
-perpétua,perpétuer,verbe,Fit dura,Faire durer,inflected,0.6119,ok
-perpétuai,perpétuer,verbe,Fis durai,Faire durer,inflected,0.6119,ok
-perpétuais,perpétuer,verbe,Faisais durais,Faire durer,inflected,0.6119,ok
-perpétuait,perpétuer,verbe,Faisait durait,Faire durer,inflected,0.6119,ok
-perpétuant,perpétuer,verbe,Faisant durant,Faire durer,inflected,0.6119,ok
-perpétuas,perpétuer,verbe,Fis duras,Faire durer,inflected,0.6119,ok
-perpétue,perpétuer,verbe,Fait dure,Faire durer,inflected,0.6119,ok
-perpétuent,perpétuer,verbe,Font durent,Faire durer,inflected,0.6119,ok
+perpétua,perpétuer,verbe,Fit durer,Faire durer,inflected,0.6119,ok
+perpétuai,perpétuer,verbe,Fis durer,Faire durer,inflected,0.6119,ok
+perpétuais,perpétuer,verbe,Faisais durer,Faire durer,inflected,0.6119,ok
+perpétuait,perpétuer,verbe,Faisait durer,Faire durer,inflected,0.6119,ok
+perpétuant,perpétuer,verbe,Faisant durer,Faire durer,inflected,0.6119,ok
+perpétuas,perpétuer,verbe,Fis durer,Faire durer,inflected,0.6119,ok
+perpétue,perpétuer,verbe,Fait durer,Faire durer,inflected,0.6119,ok
+perpétuent,perpétuer,verbe,Font durer,Faire durer,inflected,0.6119,ok
 perpétuer,perpétuer,verbe,Faire durer,Faire durer,verbatim,0.6119,ok
-perpétuera,perpétuer,verbe,Fera durera,Faire durer,inflected,0.6119,ok
-perpétuerai,perpétuer,verbe,Ferai durerai,Faire durer,inflected,0.6119,ok
-perpétueras,perpétuer,verbe,Feras dureras,Faire durer,inflected,0.6119,ok
-perpétuerez,perpétuer,verbe,Ferez durerez,Faire durer,inflected,0.6119,ok
-perpétues,perpétuer,verbe,Fais dures,Faire durer,inflected,0.6119,ok
-perpétuez,perpétuer,verbe,Faites durez,Faire durer,inflected,0.6119,ok
-perpétuions,perpétuer,verbe,Faisions durions,Faire durer,inflected,0.6119,ok
+perpétuera,perpétuer,verbe,Fera durer,Faire durer,inflected,0.6119,ok
+perpétuerai,perpétuer,verbe,Ferai durer,Faire durer,inflected,0.6119,ok
+perpétueras,perpétuer,verbe,Feras durer,Faire durer,inflected,0.6119,ok
+perpétuerez,perpétuer,verbe,Ferez durer,Faire durer,inflected,0.6119,ok
+perpétues,perpétuer,verbe,Fais durer,Faire durer,inflected,0.6119,ok
+perpétuez,perpétuer,verbe,Faites durer,Faire durer,inflected,0.6119,ok
+perpétuions,perpétuer,verbe,Faisions durer,Faire durer,inflected,0.6119,ok
 perpétuité,perpétuité,nom,Durée sans fin,Durée sans fin,verbatim,0.5681,ok
 perpétuités,perpétuité,nom,Durées sans fin,Durée sans fin,inflected,0.5681,ok
-perpétuons,perpétuer,verbe,Faisons durons,Faire durer,inflected,0.6119,ok
-perpétuât,perpétuer,verbe,Fît durât,Faire durer,inflected,0.6119,ok
-perpétuâtes,perpétuer,verbe,Fîtes durâtes,Faire durer,inflected,0.6119,ok
-perpétué,perpétuer,verbe,Fait duré,Faire durer,inflected,0.6119,ok
-perpétuée,perpétuer,verbe,Faite duré,Faire durer,inflected,0.6119,ok
-perpétuées,perpétuer,verbe,Faites duré,Faire durer,inflected,0.6119,ok
-perpétués,perpétuer,verbe,Faits duré,Faire durer,inflected,0.6119,ok
+perpétuons,perpétuer,verbe,Faisons durer,Faire durer,inflected,0.6119,ok
+perpétuât,perpétuer,verbe,Fît durer,Faire durer,inflected,0.6119,ok
+perpétuâtes,perpétuer,verbe,Fîtes durer,Faire durer,inflected,0.6119,ok
+perpétué,perpétuer,verbe,Fait durer,Faire durer,inflected,0.6119,ok
+perpétuée,perpétuer,verbe,Faite durer,Faire durer,inflected,0.6119,ok
+perpétuées,perpétuer,verbe,Faites durer,Faire durer,inflected,0.6119,ok
+perpétués,perpétuer,verbe,Faits durer,Faire durer,inflected,0.6119,ok
 perruque,perruque,nom,Chevelure factice,Chevelure factice,verbatim,0.6368,ok
 perruques,perruque,nom,Chevelures factices,Chevelure factice,inflected,0.6368,ok
 pers,pers,adj,Persévérant,Persévérant,verbatim,0.5369,ok
@@ -15129,9 +15134,9 @@ pesez,peser,verbe,Avez du poids,Avoir du poids,inflected,0.6287,ok
 pesions,peser,verbe,Avions du poids,Avoir du poids,inflected,0.6287,ok
 peso,peso,nom,Monnaie philippine,Monnaie philippine,verbatim,0.5989,ok
 pesons,peser,verbe,Avons du poids,Avoir du poids,inflected,0.6287,ok
-pesos,peso,nom,Monnaies philippins,Monnaie philippine,inflected,0.5989,ok
+pesos,peso,nom,Monnaies philippines,Monnaie philippine,inflected,0.5989,ok
 pessimisme,pessimisme,nom,Vision noire,Vision noire,verbatim,0.4661,ok
-pessimismes,pessimisme,nom,Visions noirs,Vision noire,inflected,0.4661,ok
+pessimismes,pessimisme,nom,Visions noires,Vision noire,inflected,0.4661,ok
 pesât,peser,verbe,Eût du poids,Avoir du poids,inflected,0.6287,ok
 pesèrent,peser,verbe,Eurent du poids,Avoir du poids,inflected,0.6287,ok
 pesé,peser,verbe,Avoir du poids,Avoir du poids,pp-only-skipped,0.6287,ok
@@ -15143,7 +15148,7 @@ petitesses,petitesse,nom,Minuties,Minutie,inflected,0.6389,ok
 peul,peul,nom,Tribu africaine,Tribu africaine,verbatim,0.5114,ok
 peule,peul,nom,Tribu africaine,Tribu africaine,inflected,0.5114,ok
 peules,peul,nom,Tribus africaines,Tribu africaine,inflected,0.5114,ok
-peuls,peul,nom,Tribus africains,Tribu africaine,inflected,0.5114,ok
+peuls,peul,nom,Tribus africaines,Tribu africaine,inflected,0.5114,ok
 peuplement,peuplement,nom,Installation humaine,Installation humaine,verbatim,0.5805,ok
 peuplements,peuplement,nom,Installations humaines,Installation humaine,inflected,0.5805,ok
 peur,peur,nom,Angoisse,Angoisse,verbatim,0.5968,ok
@@ -15290,7 +15295,7 @@ placards,placard,nom,Meubles fermés,Meuble fermé,inflected,0.6082,ok
 placenta,placenta,nom,Organe fœtal,Organe fœtal,verbatim,0.5576,ok
 placentas,placenta,nom,Organes fœtaux,Organe fœtal,inflected,0.5576,ok
 plafond,plafond,nom,Limite supérieure,Limite supérieure,verbatim,0.5884,ok
-plafonds,plafond,nom,Limites supérieurs,Limite supérieure,inflected,0.5884,ok
+plafonds,plafond,nom,Limites supérieures,Limite supérieure,inflected,0.5884,ok
 plagioclase,plagioclase,nom,Minéral feldspathique,Minéral feldspathique,verbatim,0.5769,ok
 plaidoirie,plaidoirie,nom,Défense,Défense,verbatim,0.5978,ok
 plaidoiries,plaidoirie,nom,Défenses,Défense,inflected,0.5978,ok
@@ -15518,38 +15523,38 @@ pointes,pointe,nom,Extrémités,Extrémité,inflected,0.5476,ok
 points,point,nom,Extrémités,Extrémité,inflected,0.5477,ok
 poire,poire,nom,Fruit,Fruit,verbatim,0.6342,ok
 poires,poire,nom,Fruits,Fruit,inflected,0.6342,ok
-poli,polir,verbe,Rendu brillé,Rendre brillant,inflected,0.6317,ok
+poli,polir,verbe,Rendu brillant,Rendre brillant,inflected,0.6317,ok
 police,police,nom,Force de l'ordre,Force de l'ordre,verbatim,0.5953,ok
 polices,police,nom,Forces de l'ordre,Force de l'ordre,inflected,0.5953,ok
 policier,policier,nom,Agent de la paix,Agent de la paix,verbatim,0.5552,ok
 policiers,policier,nom,Agents de la paix,Agent de la paix,inflected,0.5552,ok
 policière,policier,nom,Agente de la paix,Agent de la paix,inflected,0.5552,ok
 policières,policier,nom,Agentes de la paix,Agent de la paix,inflected,0.5552,ok
-polie,polir,verbe,Rendue brillé,Rendre brillant,inflected,0.6317,ok
-polies,polir,verbe,Rendues brillé,Rendre brillant,inflected,0.6317,ok
+polie,polir,verbe,Rendue brillante,Rendre brillant,inflected,0.6317,ok
+polies,polir,verbe,Rendues brillantes,Rendre brillant,inflected,0.6317,ok
 polir,polir,verbe,Rendre brillant,Rendre brillant,verbatim,0.6317,ok
-poliraient,polir,verbe,Rendraient brilleraient,Rendre brillant,inflected,0.6317,ok
-polirait,polir,verbe,Rendrait brillerait,Rendre brillant,inflected,0.6317,ok
-polirent,polir,verbe,Rendirent brillèrent,Rendre brillant,inflected,0.6317,ok
-polirions,polir,verbe,Rendrions brillerions,Rendre brillant,inflected,0.6317,ok
-polirons,polir,verbe,Rendrons brillerons,Rendre brillant,inflected,0.6317,ok
-poliront,polir,verbe,Rendront brilleront,Rendre brillant,inflected,0.6317,ok
-polis,polir,verbe,Rends brilles,Rendre brillant,inflected,0.6317,ok
-polissaient,polir,verbe,Rendaient brillaient,Rendre brillant,inflected,0.6317,ok
-polissais,polir,verbe,Rendais brillais,Rendre brillant,inflected,0.6317,ok
-polissait,polir,verbe,Rendait brillait,Rendre brillant,inflected,0.6317,ok
+poliraient,polir,verbe,Rendraient brillant,Rendre brillant,inflected,0.6317,ok
+polirait,polir,verbe,Rendrait brillant,Rendre brillant,inflected,0.6317,ok
+polirent,polir,verbe,Rendirent brillant,Rendre brillant,inflected,0.6317,ok
+polirions,polir,verbe,Rendrions brillant,Rendre brillant,inflected,0.6317,ok
+polirons,polir,verbe,Rendrons brillant,Rendre brillant,inflected,0.6317,ok
+poliront,polir,verbe,Rendront brillant,Rendre brillant,inflected,0.6317,ok
+polis,polir,verbe,Rends brillant,Rendre brillant,inflected,0.6317,ok
+polissaient,polir,verbe,Rendaient brillant,Rendre brillant,inflected,0.6317,ok
+polissais,polir,verbe,Rendais brillant,Rendre brillant,inflected,0.6317,ok
+polissait,polir,verbe,Rendait brillant,Rendre brillant,inflected,0.6317,ok
 polissant,polir,verbe,Rendant brillant,Rendre brillant,inflected,0.6317,ok
-polissent,polir,verbe,Rendent brillent,Rendre brillant,inflected,0.6317,ok
-polissez,polir,verbe,Rendez brillez,Rendre brillant,inflected,0.6317,ok
-polissions,polir,verbe,Rendions brillions,Rendre brillant,inflected,0.6317,ok
-polissons,polir,verbe,Rendons brillons,Rendre brillant,inflected,0.6317,ok
-polit,polir,verbe,Rend brille,Rendre brillant,inflected,0.6317,ok
+polissent,polir,verbe,Rendent brillant,Rendre brillant,inflected,0.6317,ok
+polissez,polir,verbe,Rendez brillant,Rendre brillant,inflected,0.6317,ok
+polissions,polir,verbe,Rendions brillant,Rendre brillant,inflected,0.6317,ok
+polissons,polir,verbe,Rendons brillant,Rendre brillant,inflected,0.6317,ok
+polit,polir,verbe,Rend brillant,Rendre brillant,inflected,0.6317,ok
 politicien,politicien,nom,Homme d'État,Homme d'État,verbatim,0.5017,ok
 politiciens,politicien,nom,Hommes d'État,Homme d'État,inflected,0.5017,ok
 politique,politique,nom,Action publique,Action publique,verbatim,0.5989,ok
 politiques,politique,nom,Actions publiques,Action publique,inflected,0.5989,ok
 pollen,pollen,nom,Poudre fine,Poudre fine,verbatim,0.5287,ok
-pollens,pollen,nom,Poudres fins,Poudre fine,inflected,0.5287,ok
+pollens,pollen,nom,Poudres fines,Poudre fine,inflected,0.5287,ok
 pollution,pollution,nom,Contamination,Contamination,verbatim,0.4830,ok
 pollutions,pollution,nom,Contaminations,Contamination,inflected,0.4830,ok
 polygamie,polygamie,nom,Mariage multiple,Mariage multiple,verbatim,0.5659,ok
@@ -15592,7 +15597,7 @@ ponts,pont,nom,Passerelles,Passerelle,inflected,0.5453,ok
 popularité,popularité,nom,Célébrité,Célébrité,verbatim,0.5871,ok
 popularités,popularité,nom,Célébrités,Célébrité,inflected,0.5871,ok
 porcelaine,porcelaine,nom,Vaisselle fine,Vaisselle fine,verbatim,0.5202,ok
-porcelaines,porcelaine,nom,Vaisselles fins,Vaisselle fine,inflected,0.5202,ok
+porcelaines,porcelaine,nom,Vaisselles fines,Vaisselle fine,inflected,0.5202,ok
 poreuse,poreux,adj,Alvéolée,Alvéolé,inflected,0.6121,ok
 poreuses,poreux,adj,Alvéolées,Alvéolé,inflected,0.6121,ok
 poreux,poreux,adj,Alvéolé,Alvéolé,verbatim,0.6121,ok
@@ -15602,7 +15607,7 @@ port,port,nom,Emplacement d'amarrage,Emplacement d'amarrage,verbatim,0.5894,ok
 portier,portier,nom,Concierge d'hôtel,Concierge d'hôtel,verbatim,0.6103,ok
 portiers,portier,nom,Concierges d'hôtel,Concierge d'hôtel,inflected,0.6103,ok
 portique,portique,nom,Galerie couverte,Galerie couverte,verbatim,0.5228,ok
-portiques,portique,nom,Galeries couverts,Galerie couverte,inflected,0.5228,ok
+portiques,portique,nom,Galeries couvertes,Galerie couverte,inflected,0.5228,ok
 portière,portier,nom,Concierge d'hôtel,Concierge d'hôtel,inflected,0.6103,ok
 portières,portier,nom,Concierges d'hôtel,Concierge d'hôtel,inflected,0.6103,ok
 porto,porto,adj,Ville du nord,Ville du nord,verbatim,0.5658,ok
@@ -15637,30 +15642,30 @@ poulettes,poulet,nom,Volailles,Volaille,inflected,0.5379,ok
 poulie,poulie,nom,Accessoire,Accessoire,verbatim,0.5958,ok
 poulies,poulie,nom,Accessoires,Accessoire,inflected,0.5958,ok
 pourcentage,pourcentage,nom,Taux sur cent,Taux sur cent,verbatim,0.6496,ok
-poursuis,poursuivre,verbe,Vas plais loin,Aller plus loin,inflected,0.6365,ok
-poursuit,poursuivre,verbe,Va plaît loin,Aller plus loin,inflected,0.6365,ok
+poursuis,poursuivre,verbe,Vas plus loin,Aller plus loin,inflected,0.6365,ok
+poursuit,poursuivre,verbe,Va plus loin,Aller plus loin,inflected,0.6365,ok
 poursuite,poursuite,nom,Action de suivre,Action de suivre,verbatim,0.6078,ok
 poursuites,poursuite,nom,Actions de suivre,Action de suivre,inflected,0.6078,ok
-poursuivais,poursuivre,verbe,Allais plaisais loin,Aller plus loin,inflected,0.6365,ok
-poursuivait,poursuivre,verbe,Allait plaisait loin,Aller plus loin,inflected,0.6365,ok
-poursuivant,poursuivre,verbe,Allant plaisant loin,Aller plus loin,inflected,0.6365,ok
-poursuive,poursuivre,verbe,Aille plaise loin,Aller plus loin,inflected,0.6365,ok
-poursuivent,poursuivre,verbe,Vont plaisent loin,Aller plus loin,inflected,0.6365,ok
-poursuives,poursuivre,verbe,Ailles plaises loin,Aller plus loin,inflected,0.6365,ok
-poursuivez,poursuivre,verbe,Allez plaisez loin,Aller plus loin,inflected,0.6365,ok
-poursuivi,poursuivre,verbe,Allé plu loin,Aller plus loin,inflected,0.6365,ok
-poursuivie,poursuivre,verbe,Allée plu loin,Aller plus loin,inflected,0.6365,ok
-poursuivies,poursuivre,verbe,Allées plu loin,Aller plus loin,inflected,0.6365,ok
-poursuiviez,poursuivre,verbe,Alliez plaisiez loin,Aller plus loin,inflected,0.6365,ok
-poursuivis,poursuivre,verbe,Allés plu loin,Aller plus loin,inflected,0.6365,ok
-poursuivit,poursuivre,verbe,Alla plut loin,Aller plus loin,inflected,0.6365,ok
-poursuivons,poursuivre,verbe,Allons plaisons loin,Aller plus loin,inflected,0.6365,ok
-poursuivra,poursuivre,verbe,Ira plaira loin,Aller plus loin,inflected,0.6365,ok
-poursuivrai,poursuivre,verbe,Irai plairai loin,Aller plus loin,inflected,0.6365,ok
-poursuivras,poursuivre,verbe,Iras plairas loin,Aller plus loin,inflected,0.6365,ok
+poursuivais,poursuivre,verbe,Allais plus loin,Aller plus loin,inflected,0.6365,ok
+poursuivait,poursuivre,verbe,Allait plus loin,Aller plus loin,inflected,0.6365,ok
+poursuivant,poursuivre,verbe,Allant plus loin,Aller plus loin,inflected,0.6365,ok
+poursuive,poursuivre,verbe,Aille plus loin,Aller plus loin,inflected,0.6365,ok
+poursuivent,poursuivre,verbe,Vont plus loin,Aller plus loin,inflected,0.6365,ok
+poursuives,poursuivre,verbe,Ailles plus loin,Aller plus loin,inflected,0.6365,ok
+poursuivez,poursuivre,verbe,Allez plus loin,Aller plus loin,inflected,0.6365,ok
+poursuivi,poursuivre,verbe,Allé plus loin,Aller plus loin,inflected,0.6365,ok
+poursuivie,poursuivre,verbe,Allée plus loin,Aller plus loin,inflected,0.6365,ok
+poursuivies,poursuivre,verbe,Allées plus loin,Aller plus loin,inflected,0.6365,ok
+poursuiviez,poursuivre,verbe,Alliez plus loin,Aller plus loin,inflected,0.6365,ok
+poursuivis,poursuivre,verbe,Allés plus loin,Aller plus loin,inflected,0.6365,ok
+poursuivit,poursuivre,verbe,Alla plus loin,Aller plus loin,inflected,0.6365,ok
+poursuivons,poursuivre,verbe,Allons plus loin,Aller plus loin,inflected,0.6365,ok
+poursuivra,poursuivre,verbe,Ira plus loin,Aller plus loin,inflected,0.6365,ok
+poursuivrai,poursuivre,verbe,Irai plus loin,Aller plus loin,inflected,0.6365,ok
+poursuivras,poursuivre,verbe,Iras plus loin,Aller plus loin,inflected,0.6365,ok
 poursuivre,poursuivre,verbe,Aller plus loin,Aller plus loin,verbatim,0.6365,ok
-poursuivrez,poursuivre,verbe,Irez plairez loin,Aller plus loin,inflected,0.6365,ok
-poursuivît,poursuivre,verbe,Allât plût loin,Aller plus loin,inflected,0.6365,ok
+poursuivrez,poursuivre,verbe,Irez plus loin,Aller plus loin,inflected,0.6365,ok
+poursuivît,poursuivre,verbe,Allât plus loin,Aller plus loin,inflected,0.6365,ok
 pourtour,pourtour,nom,Bord,Bord,verbatim,0.5811,ok
 pourtours,pourtour,nom,Bords,Bord,inflected,0.5811,ok
 pourvoi,pourvoi,nom,Recours,Recours,verbatim,0.6493,ok
@@ -16177,7 +16182,7 @@ protecteurs,protecteur,nom,Boucliers,Bouclier,inflected,0.6448,ok
 protectrice,protecteur,nom,Bouclier,Bouclier,inflected,0.6448,ok
 protestant,protestant,nom,Chrétien non catholique,Chrétien non catholique,verbatim,0.5822,ok
 protestante,protestant,nom,Chrétienne non catholique,Chrétien non catholique,inflected,0.5822,ok
-protestants,protestant,nom,Chrétiens non catholiques,Chrétien non catholique,inflected,0.5822,ok
+protestants,protestant,nom,Chrétiens non catholique,Chrétien non catholique,inflected,0.5822,ok
 protocole,protocole,nom,Règle formelle,Règle formelle,verbatim,0.6423,ok
 protocoles,protocole,nom,Règles formelles,Règle formelle,inflected,0.6423,ok
 protoplasma,protoplasma,nom,Substance vivante,Substance vivante,verbatim,0.6329,ok
@@ -16220,7 +16225,7 @@ prouvée,prouver,verbe,Étayée,Étayer,inflected,0.4192,ok
 prouvées,prouver,verbe,Étayées,Étayer,inflected,0.4192,ok
 prouvés,prouver,verbe,Étayés,Étayer,inflected,0.4192,ok
 proverbe,proverbe,nom,Maxime populaire,Maxime populaire,verbatim,0.6048,ok
-proverbes,proverbe,nom,Maxime populaires,Maxime populaire,inflected,0.6048,ok
+proverbes,proverbe,nom,Maxime populaire,Maxime populaire,inflected,0.6048,ok
 province,province,nom,Division administrative,Division administrative,verbatim,0.5900,ok
 provinces,province,nom,Divisions administratives,Division administrative,inflected,0.5900,ok
 provocateur,provocateur,nom,Instigateur,Instigateur,verbatim,0.5653,ok
@@ -16315,7 +16320,7 @@ préfets,préfet,nom,Chefs d'un département,Chef d'un département,inflected,0.
 préfète,préfet,nom,Cheffe d'un département,Chef d'un département,inflected,0.5802,ok
 préfètes,préfet,nom,Cheffes d'un département,Chef d'un département,inflected,0.5802,ok
 préférence,préférence,nom,Choix privilégié,Choix privilégié,verbatim,0.6364,ok
-préférences,préférence,nom,Choix privilégiés,Choix privilégié,inflected,0.6364,ok
+préférences,préférence,nom,Choix privilégié,Choix privilégié,inflected,0.6364,ok
 préhension,préhension,nom,Prise en main,Prise en main,verbatim,0.6103,ok
 préhensions,préhension,nom,Prises en main,Prise en main,inflected,0.6103,ok
 préjudicia,préjudicier,verbe,Porta un jugement hâtif,Porter un jugement hâtif,inflected,0.5478,ok
@@ -16533,7 +16538,7 @@ pulpe,pulpe,nom,Chair,Chair,verbatim,0.5492,ok
 pulpes,pulpe,nom,Chairs,Chair,inflected,0.5492,ok
 pulvérulent,pulvérulent,adj,Fragile et friable,Fragile et friable,verbatim,0.5893,ok
 pupille,pupille,nom,Ouverture noire,Ouverture noire,verbatim,0.6123,ok
-pupilles,pupille,nom,Ouvertures noirs,Ouverture noire,inflected,0.6123,ok
+pupilles,pupille,nom,Ouvertures noires,Ouverture noire,inflected,0.6123,ok
 purge,purger,verbe,Nettoie,Nettoyer,inflected,0.4776,ok
 purgea,purger,verbe,Nettoya,Nettoyer,inflected,0.4776,ok
 purgeai,purger,verbe,Nettoyai,Nettoyer,inflected,0.4776,ok
@@ -16645,7 +16650,7 @@ pépinière,pépinière,nom,Nurserie,Nurserie,verbatim,0.5601,ok
 pépinières,pépinière,nom,Nurseries,Nurserie,inflected,0.5601,ok
 péremptoire,péremptoire,adj,Autoritaire,Autoritaire,verbatim,0.5099,ok
 péricarde,péricarde,nom,Membrane protectrice,Membrane protectrice,verbatim,0.5759,ok
-péricardes,péricarde,nom,Membranes protecteurs,Membrane protectrice,inflected,0.5759,ok
+péricardes,péricarde,nom,Membranes protectrices,Membrane protectrice,inflected,0.5759,ok
 péril,péril,nom,Danger imminent,Danger imminent,verbatim,0.5688,ok
 périlleuse,périlleux,adj,Dangereuse,Dangereux,inflected,0.5977,ok
 périlleuses,périlleux,adj,Dangereuses,Dangereux,inflected,0.5977,ok
@@ -17108,7 +17113,7 @@ recevrions,recevoir,verbe,Accueillerions,Accueillir,inflected,0.6317,ok
 recevrons,recevoir,verbe,Accueillerons,Accueillir,inflected,0.6317,ok
 recevront,recevoir,verbe,Accueilleront,Accueillir,inflected,0.6317,ok
 rechange,rechange,nom,Monnaie étrangère,Monnaie étrangère,verbatim,0.5689,ok
-rechanges,rechange,nom,Monnaies étrangers,Monnaie étrangère,inflected,0.5689,ok
+rechanges,rechange,nom,Monnaies étrangères,Monnaie étrangère,inflected,0.5689,ok
 recherche,recherche,nom,Investigation approfondie,Investigation approfondie,verbatim,0.5900,ok
 reconquerra,reconquérir,verbe,Reprendra,Reprendre,inflected,0.6138,ok
 reconquiers,reconquérir,verbe,Reprends,Reprendre,inflected,0.6138,ok
@@ -17516,11 +17521,11 @@ religion,religion,nom,Croyance,Croyance,verbatim,0.6461,ok
 religions,religion,nom,Croyances,Croyance,inflected,0.6461,ok
 religiosité,religiosité,nom,Piété,Piété,verbatim,0.3962,ok
 reliquaire,reliquaire,nom,Vase sacré,Vase sacré,verbatim,0.4420,ok
-reliquaires,reliquaire,nom,Vases sacré,Vase sacré,inflected,0.4420,ok
+reliquaires,reliquaire,nom,Vases sacrés,Vase sacré,inflected,0.4420,ok
 reliquat,reliquat,nom,Restant,Restant,verbatim,0.5104,ok
 reliquats,reliquat,nom,Restants,Restant,inflected,0.5104,ok
 relique,relique,nom,Objet sacré,Objet sacré,verbatim,0.6438,ok
-reliques,relique,nom,Objets sacré,Objet sacré,inflected,0.6438,ok
+reliques,relique,nom,Objets sacrés,Objet sacré,inflected,0.6438,ok
 reliure,reliure,nom,Couverture solide,Couverture solide,verbatim,0.5240,ok
 reliures,reliure,nom,Couvertures solides,Couverture solide,inflected,0.5240,ok
 relève,relever,verbe,S'élève,S'élever,inflected,0.6101,ok
@@ -19371,7 +19376,7 @@ sacristies,sacristie,nom,Oratoires,Oratoire,inflected,0.6319,ok
 sacrum,sacrum,nom,Os du dos,Os du dos,verbatim,0.5372,ok
 sacrums,sacrum,nom,Os du dos,Os du dos,inflected,0.5372,ok
 sagesse,sagesse,nom,Bon sens,Bon sens,verbatim,0.6322,ok
-sagesses,sagesse,nom,Bonnes sens,Bon sens,inflected,0.6322,ok
+sagesses,sagesse,nom,Bon sens,Bon sens,identity,0.6322,ok
 saignée,saignée,nom,Écoulement du sang,Écoulement du sang,verbatim,0.5567,ok
 saignées,saignée,nom,Écoulements du sang,Écoulement du sang,inflected,0.5567,ok
 saillie,saillie,nom,Accouplement,Accouplement,verbatim,0.5652,ok
@@ -19433,7 +19438,7 @@ sanctionné,sanctionner,verbe,Puni,Punir,inflected,0.5242,ok
 sanctionnée,sanctionner,verbe,Punie,Punir,inflected,0.5242,ok
 sanctionnés,sanctionner,verbe,Punis,Punir,inflected,0.5242,ok
 sanctuaire,sanctuaire,nom,Lieu sacré,Lieu sacré,verbatim,0.6112,ok
-sanctuaires,sanctuaire,nom,Lieux sacré,Lieu sacré,inflected,0.6112,ok
+sanctuaires,sanctuaire,nom,Lieux sacrés,Lieu sacré,inflected,0.6112,ok
 sanguinaire,sanguinaire,nom,Violent,Violent,verbatim,0.5139,ok
 sapaient,saper,verbe,Expert en déminage,Expert en déminage,head-pos-mismatch,0.4509,ok
 sapait,saper,verbe,Expert en déminage,Expert en déminage,head-pos-mismatch,0.4509,ok
@@ -19710,41 +19715,41 @@ signaient,signer,verbe,Apposaient son nom,Apposer son nom,inflected,0.5476,ok
 signais,signer,verbe,Apposais son nom,Apposer son nom,inflected,0.5476,ok
 signait,signer,verbe,Apposait son nom,Apposer son nom,inflected,0.5476,ok
 signal,signal,nom,Indication,Indication,verbatim,0.6120,ok
-signala,signaler,verbe,Fit connut,Faire connaître,inflected,0.6231,ok
-signalai,signaler,verbe,Fis connus,Faire connaître,inflected,0.6231,ok
-signalaient,signaler,verbe,Faisaient connaissaient,Faire connaître,inflected,0.6231,ok
-signalais,signaler,verbe,Faisais connaissais,Faire connaître,inflected,0.6231,ok
-signalait,signaler,verbe,Faisait connaissait,Faire connaître,inflected,0.6231,ok
-signalant,signaler,verbe,Faisant connaissant,Faire connaître,inflected,0.6231,ok
-signalas,signaler,verbe,Fis connus,Faire connaître,inflected,0.6231,ok
-signalasse,signaler,verbe,Fisse connusse,Faire connaître,inflected,0.6231,ok
-signalasses,signaler,verbe,Fisses connusses,Faire connaître,inflected,0.6231,ok
-signale,signaler,verbe,Fait connaît,Faire connaître,inflected,0.6231,ok
+signala,signaler,verbe,Fit connaître,Faire connaître,inflected,0.6231,ok
+signalai,signaler,verbe,Fis connaître,Faire connaître,inflected,0.6231,ok
+signalaient,signaler,verbe,Faisaient connaître,Faire connaître,inflected,0.6231,ok
+signalais,signaler,verbe,Faisais connaître,Faire connaître,inflected,0.6231,ok
+signalait,signaler,verbe,Faisait connaître,Faire connaître,inflected,0.6231,ok
+signalant,signaler,verbe,Faisant connaître,Faire connaître,inflected,0.6231,ok
+signalas,signaler,verbe,Fis connaître,Faire connaître,inflected,0.6231,ok
+signalasse,signaler,verbe,Fisse connaître,Faire connaître,inflected,0.6231,ok
+signalasses,signaler,verbe,Fisses connaître,Faire connaître,inflected,0.6231,ok
+signale,signaler,verbe,Fait connaître,Faire connaître,inflected,0.6231,ok
 signalement,signalement,nom,Description physique,Description physique,verbatim,0.5415,ok
-signalent,signaler,verbe,Font connaissent,Faire connaître,inflected,0.6231,ok
+signalent,signaler,verbe,Font connaître,Faire connaître,inflected,0.6231,ok
 signaler,signaler,verbe,Faire connaître,Faire connaître,verbatim,0.6231,ok
-signalera,signaler,verbe,Fera connaîtra,Faire connaître,inflected,0.6231,ok
-signalerai,signaler,verbe,Ferai connaîtrai,Faire connaître,inflected,0.6231,ok
-signalerais,signaler,verbe,Ferais connaîtrais,Faire connaître,inflected,0.6231,ok
-signalerait,signaler,verbe,Ferait connaîtrait,Faire connaître,inflected,0.6231,ok
-signaleras,signaler,verbe,Feras connaîtras,Faire connaître,inflected,0.6231,ok
-signalerez,signaler,verbe,Ferez connaîtrez,Faire connaître,inflected,0.6231,ok
-signaleriez,signaler,verbe,Feriez connaîtriez,Faire connaître,inflected,0.6231,ok
-signalerons,signaler,verbe,Ferons connaîtrons,Faire connaître,inflected,0.6231,ok
-signaleront,signaler,verbe,Feront connaîtront,Faire connaître,inflected,0.6231,ok
-signales,signaler,verbe,Fais connais,Faire connaître,inflected,0.6231,ok
-signalez,signaler,verbe,Faites connaissez,Faire connaître,inflected,0.6231,ok
-signaliez,signaler,verbe,Faisiez connaissiez,Faire connaître,inflected,0.6231,ok
-signalions,signaler,verbe,Faisions connaissions,Faire connaître,inflected,0.6231,ok
-signalons,signaler,verbe,Faisons connaissons,Faire connaître,inflected,0.6231,ok
-signalâmes,signaler,verbe,Fîmes connûmes,Faire connaître,inflected,0.6231,ok
-signalât,signaler,verbe,Fît connût,Faire connaître,inflected,0.6231,ok
-signalâtes,signaler,verbe,Fîtes connûtes,Faire connaître,inflected,0.6231,ok
-signalèrent,signaler,verbe,Firent connurent,Faire connaître,inflected,0.6231,ok
-signalé,signaler,verbe,Fait connu,Faire connaître,inflected,0.6231,ok
-signalée,signaler,verbe,Faite connue,Faire connaître,inflected,0.6231,ok
-signalées,signaler,verbe,Faites connues,Faire connaître,inflected,0.6231,ok
-signalés,signaler,verbe,Faits connus,Faire connaître,inflected,0.6231,ok
+signalera,signaler,verbe,Fera connaître,Faire connaître,inflected,0.6231,ok
+signalerai,signaler,verbe,Ferai connaître,Faire connaître,inflected,0.6231,ok
+signalerais,signaler,verbe,Ferais connaître,Faire connaître,inflected,0.6231,ok
+signalerait,signaler,verbe,Ferait connaître,Faire connaître,inflected,0.6231,ok
+signaleras,signaler,verbe,Feras connaître,Faire connaître,inflected,0.6231,ok
+signalerez,signaler,verbe,Ferez connaître,Faire connaître,inflected,0.6231,ok
+signaleriez,signaler,verbe,Feriez connaître,Faire connaître,inflected,0.6231,ok
+signalerons,signaler,verbe,Ferons connaître,Faire connaître,inflected,0.6231,ok
+signaleront,signaler,verbe,Feront connaître,Faire connaître,inflected,0.6231,ok
+signales,signaler,verbe,Fais connaître,Faire connaître,inflected,0.6231,ok
+signalez,signaler,verbe,Faites connaître,Faire connaître,inflected,0.6231,ok
+signaliez,signaler,verbe,Faisiez connaître,Faire connaître,inflected,0.6231,ok
+signalions,signaler,verbe,Faisions connaître,Faire connaître,inflected,0.6231,ok
+signalons,signaler,verbe,Faisons connaître,Faire connaître,inflected,0.6231,ok
+signalâmes,signaler,verbe,Fîmes connaître,Faire connaître,inflected,0.6231,ok
+signalât,signaler,verbe,Fît connaître,Faire connaître,inflected,0.6231,ok
+signalâtes,signaler,verbe,Fîtes connaître,Faire connaître,inflected,0.6231,ok
+signalèrent,signaler,verbe,Firent connaître,Faire connaître,inflected,0.6231,ok
+signalé,signaler,verbe,Fait connaître,Faire connaître,inflected,0.6231,ok
+signalée,signaler,verbe,Faite connaître,Faire connaître,inflected,0.6231,ok
+signalées,signaler,verbe,Faites connaître,Faire connaître,inflected,0.6231,ok
+signalés,signaler,verbe,Faits connaître,Faire connaître,inflected,0.6231,ok
 signant,signer,verbe,Apposant son nom,Apposer son nom,inflected,0.5476,ok
 signasse,signer,verbe,Apposasse son nom,Apposer son nom,inflected,0.5476,ok
 signassent,signer,verbe,Apposassent son nom,Apposer son nom,inflected,0.5476,ok
@@ -19805,23 +19810,23 @@ silhouette,silhouette,nom,Contour,Contour,verbatim,0.6460,ok
 silhouettes,silhouette,nom,Contours,Contour,inflected,0.6460,ok
 silo,silo,nom,Réservoir agricole,Réservoir agricole,verbatim,0.5271,ok
 silos,silo,nom,Réservoirs agricoles,Réservoir agricole,inflected,0.5271,ok
-simplifia,simplifier,verbe,Rendit plut clair,Rendre plus clair,inflected,0.5091,ok
+simplifia,simplifier,verbe,Rendit plus clair,Rendre plus clair,inflected,0.5091,ok
 simplifiai,simplifier,verbe,Rendis plus clair,Rendre plus clair,inflected,0.5091,ok
-simplifiais,simplifier,verbe,Rendais plaisais clair,Rendre plus clair,inflected,0.5091,ok
-simplifiait,simplifier,verbe,Rendait plaisait clair,Rendre plus clair,inflected,0.5091,ok
-simplifiant,simplifier,verbe,Rendant plaisant clair,Rendre plus clair,inflected,0.5091,ok
-simplifie,simplifier,verbe,Rend plaît clair,Rendre plus clair,inflected,0.5091,ok
-simplifient,simplifier,verbe,Rendent plaisent clair,Rendre plus clair,inflected,0.5091,ok
+simplifiais,simplifier,verbe,Rendais plus clair,Rendre plus clair,inflected,0.5091,ok
+simplifiait,simplifier,verbe,Rendait plus clair,Rendre plus clair,inflected,0.5091,ok
+simplifiant,simplifier,verbe,Rendant plus clair,Rendre plus clair,inflected,0.5091,ok
+simplifie,simplifier,verbe,Rend plus clair,Rendre plus clair,inflected,0.5091,ok
+simplifient,simplifier,verbe,Rendent plus clair,Rendre plus clair,inflected,0.5091,ok
 simplifier,simplifier,verbe,Rendre plus clair,Rendre plus clair,verbatim,0.5091,ok
-simplifiera,simplifier,verbe,Rendra plaira clair,Rendre plus clair,inflected,0.5091,ok
-simplifies,simplifier,verbe,Rends plais clair,Rendre plus clair,inflected,0.5091,ok
-simplifiez,simplifier,verbe,Rendez plaisez clair,Rendre plus clair,inflected,0.5091,ok
-simplifions,simplifier,verbe,Rendons plaisons clair,Rendre plus clair,inflected,0.5091,ok
-simplifiât,simplifier,verbe,Rendît plût clair,Rendre plus clair,inflected,0.5091,ok
-simplifié,simplifier,verbe,Rendu plu clair,Rendre plus clair,inflected,0.5091,ok
-simplifiée,simplifier,verbe,Rendue plu claire,Rendre plus clair,inflected,0.5091,ok
-simplifiées,simplifier,verbe,Rendues plu claires,Rendre plus clair,inflected,0.5091,ok
-simplifiés,simplifier,verbe,Rendus plu clairs,Rendre plus clair,inflected,0.5091,ok
+simplifiera,simplifier,verbe,Rendra plus clair,Rendre plus clair,inflected,0.5091,ok
+simplifies,simplifier,verbe,Rends plus clair,Rendre plus clair,inflected,0.5091,ok
+simplifiez,simplifier,verbe,Rendez plus clair,Rendre plus clair,inflected,0.5091,ok
+simplifions,simplifier,verbe,Rendons plus clair,Rendre plus clair,inflected,0.5091,ok
+simplifiât,simplifier,verbe,Rendît plus clair,Rendre plus clair,inflected,0.5091,ok
+simplifié,simplifier,verbe,Rendu plus clair,Rendre plus clair,inflected,0.5091,ok
+simplifiée,simplifier,verbe,Rendue plus clair,Rendre plus clair,inflected,0.5091,ok
+simplifiées,simplifier,verbe,Rendues plus clair,Rendre plus clair,inflected,0.5091,ok
+simplifiés,simplifier,verbe,Rendus plus clair,Rendre plus clair,inflected,0.5091,ok
 simulacre,simulacre,nom,Image,Image,verbatim,0.6483,ok
 simulacres,simulacre,nom,Images,Image,inflected,0.6483,ok
 simultané,simultané,adj,En même temps,En même temps,verbatim,0.6296,ok
@@ -19842,7 +19847,7 @@ siphons,siphon,nom,Tubes aspirants,Tube aspirant,inflected,0.6009,ok
 sire,sire,nom,Chef,Chef,verbatim,0.6100,ok
 sires,sire,nom,Chefs,Chef,inflected,0.6100,ok
 sirène,sirène,nom,Nymphe marine,Nymphe marine,verbatim,0.6257,ok
-sirènes,sirène,nom,Nymphes marine,Nymphe marine,inflected,0.6257,ok
+sirènes,sirène,nom,Nymphes marines,Nymphe marine,inflected,0.6257,ok
 sisal,sisal,nom,Fibre textile,Fibre textile,verbatim,0.5044,ok
 situation,situation,nom,Conjoncture,Conjoncture,verbatim,0.6325,ok
 situations,situation,nom,Conjonctures,Conjoncture,inflected,0.6325,ok
@@ -19863,7 +19868,7 @@ socialisme,socialisme,nom,Système économique,Système économique,verbatim,0.4
 socialismes,socialisme,nom,Systèmes économiques,Système économique,inflected,0.4933,ok
 sociaux,social,adj,En relation,En relation,head-pos-mismatch,0.6207,ok
 socle,socle,nom,Base solide,Base solide,verbatim,0.5873,ok
-socles,socle,nom,Base solides,Base solide,inflected,0.5873,ok
+socles,socle,nom,Base solide,Base solide,inflected,0.5873,ok
 soda,soda,nom,Boisson gazeuse,Boisson gazeuse,verbatim,0.5732,ok
 sodas,soda,nom,Boissons gazeuses,Boisson gazeuse,inflected,0.5732,ok
 soft,soft,adj,Doux,Doux,verbatim,0.5583,ok
@@ -19912,7 +19917,7 @@ sorcières,sorcier,nom,Magiciennes,Magicien,inflected,0.5366,ok
 sordide,sordide,adj,Ténébreux,Ténébreux,verbatim,0.6497,ok
 sordides,sordide,adj,Ténébreux,Ténébreux,inflected,0.6497,ok
 sorgho,sorgho,nom,Céréale africaine,Céréale africaine,verbatim,0.6260,ok
-sorghos,sorgho,nom,Céréales africains,Céréale africaine,inflected,0.6260,ok
+sorghos,sorgho,nom,Céréales africaines,Céréale africaine,inflected,0.6260,ok
 sors,sortir,verbe,Quittes,Quitter,inflected,0.5097,ok
 sort,sortir,verbe,Quitte,Quitter,inflected,0.5097,ok
 sortaient,sortir,verbe,Quittaient,Quitter,inflected,0.5097,ok
@@ -20304,7 +20309,7 @@ spectateur,spectateur,nom,Assisté,Assisté,verbatim,0.5737,ok
 spectateurs,spectateur,nom,Assistés,Assisté,inflected,0.5737,ok
 spectatrice,spectateur,nom,Assistée,Assisté,inflected,0.5737,ok
 spectre,spectre,nom,Organisation criminelle,Organisation criminelle,verbatim,0.6222,ok
-spectres,spectre,nom,Organisations criminels,Organisation criminelle,inflected,0.6222,ok
+spectres,spectre,nom,Organisations criminelles,Organisation criminelle,inflected,0.6222,ok
 sphère,sphère,nom,Surface ronde,Surface ronde,verbatim,0.6414,ok
 sphères,sphère,nom,Surfaces rondes,Surface ronde,inflected,0.6414,ok
 spiritueuse,spiritueux,adj,Éthylique,Éthylique,head-pos-mismatch,0.4309,ok
@@ -20405,7 +20410,7 @@ strophes,strophe,nom,Versets,Verset,inflected,0.6312,ok
 stupidité,stupidité,nom,Bêtise,Bêtise,verbatim,0.6470,ok
 stupidités,stupidité,nom,Bêtises,Bêtise,inflected,0.6470,ok
 stylet,stylet,nom,Pointe fine,Pointe fine,verbatim,0.5007,ok
-stylets,stylet,nom,Pointes fins,Pointe fine,inflected,0.5007,ok
+stylets,stylet,nom,Pointes fines,Pointe fine,inflected,0.5007,ok
 stylo,stylo,nom,Instrument d'écriture,Instrument d'écriture,verbatim,0.6317,ok
 stylos,stylo,nom,Instruments d'écriture,Instrument d'écriture,inflected,0.6317,ok
 stèle,stèle,nom,Pierre gravée,Pierre gravée,verbatim,0.5709,ok
@@ -20737,8 +20742,8 @@ suspectés,suspecter,verbe,Doutés,Douter,inflected,0.6246,ok
 suspicion,suspicion,nom,Doute,Doute,verbatim,0.5505,ok
 suspicions,suspicion,nom,Doutes,Doute,inflected,0.5505,ok
 suzerain,suzerain,nom,Seigneur dominant,Seigneur dominant,verbatim,0.5319,ok
-suzeraine,suzerain,nom,Seigneur dominante,Seigneur dominant,inflected,0.5319,ok
-suzeraines,suzerain,nom,Seigneurs dominantes,Seigneur dominant,inflected,0.5319,ok
+suzeraine,suzerain,nom,Seigneur dominant,Seigneur dominant,inflected,0.5319,ok
+suzeraines,suzerain,nom,Seigneurs dominants,Seigneur dominant,inflected,0.5319,ok
 suzerains,suzerain,nom,Seigneurs dominants,Seigneur dominant,inflected,0.5319,ok
 syllogisme,syllogisme,nom,Raisonnement déductif,Raisonnement déductif,verbatim,0.5834,ok
 syllogismes,syllogisme,nom,Raisonnements déductifs,Raisonnement déductif,inflected,0.5834,ok
@@ -20755,7 +20760,7 @@ sympathisé,sympathiser,verbe,Compris et partagé,Comprendre et partager,inflect
 symétrie,symétrie,nom,Harmonie,Harmonie,verbatim,0.5912,ok
 symétries,symétrie,nom,Harmonies,Harmonie,inflected,0.5912,ok
 synagogue,synagogue,nom,Lieu de culte juif,Lieu de culte juif,verbatim,0.6134,ok
-synagogues,synagogue,nom,Lieux de culte juifs,Lieu de culte juif,inflected,0.6134,ok
+synagogues,synagogue,nom,Lieux de culte juif,Lieu de culte juif,inflected,0.6134,ok
 synclinal,synclinal,adj,En forme de V,En forme de V,verbatim,0.6208,ok
 synclinale,synclinal,adj,En forme de V,En forme de V,head-pos-mismatch,0.6208,ok
 synclinales,synclinal,adj,En forme de V,En forme de V,head-pos-mismatch,0.6208,ok
@@ -20866,7 +20871,7 @@ séparée,séparer,verbe,Divisée,Diviser,inflected,0.5076,ok
 séparées,séparer,verbe,Divisées,Diviser,inflected,0.5076,ok
 séparés,séparer,verbe,Divisés,Diviser,inflected,0.5076,ok
 sépulture,sépulture,nom,Dernier repos,Dernier repos,verbatim,0.5516,ok
-sépultures,sépulture,nom,Derniers repos,Dernier repos,inflected,0.5516,ok
+sépultures,sépulture,nom,Dernier repos,Dernier repos,identity,0.5516,ok
 séreuse,séreux,nom,Grave,Grave,inflected,0.5674,ok
 séreuses,séreux,nom,Graves,Grave,inflected,0.5674,ok
 séreux,séreux,nom,Grave,Grave,verbatim,0.5674,ok
@@ -20883,7 +20888,7 @@ sévérités,sévérité,nom,Rigueurs,Rigueur,inflected,0.5047,ok
 tabernacle,tabernacle,nom,Ornemental,Ornemental,verbatim,0.5386,ok
 tabernacles,tabernacle,nom,Ornemental,Ornemental,head-pos-mismatch,0.5386,ok
 table,table,nom,Meuble à surface plane,Meuble à surface plane,verbatim,0.6375,ok
-tables,table,nom,Meubles à surface planes,Meuble à surface plane,inflected,0.6375,ok
+tables,table,nom,Meubles à surface plane,Meuble à surface plane,inflected,0.6375,ok
 tablette,tablette,nom,Ardoise numérique,Ardoise numérique,verbatim,0.6322,ok
 tablettes,tablette,nom,Ardoises numériques,Ardoise numérique,inflected,0.6322,ok
 tablier,tablier,nom,Protecteur,Protecteur,verbatim,0.6498,ok
@@ -20897,7 +20902,7 @@ tailleurs,tailleur,nom,Maîtres du ciseau,Maître du ciseau,inflected,0.4860,ok
 tailleuse,tailleur,nom,Maîtresse du ciseau,Maître du ciseau,inflected,0.4860,ok
 tailleuses,tailleur,nom,Maîtresses du ciseau,Maître du ciseau,inflected,0.4860,ok
 tain,tain,nom,Rivière écossaise,Rivière écossaise,verbatim,0.4561,ok
-tains,tain,nom,Rivières écossais,Rivière écossaise,inflected,0.4561,ok
+tains,tain,nom,Rivières écossaises,Rivière écossaise,inflected,0.4561,ok
 talc,talc,nom,Poudre blanche,Poudre blanche,verbatim,0.6100,ok
 talon,talon,nom,Extrémité pointue,Extrémité pointue,verbatim,0.5413,ok
 talons,talon,nom,Extrémités pointues,Extrémité pointue,inflected,0.5413,ok
@@ -21018,7 +21023,7 @@ tendaient,tendre,verbe,Doux et mou,Doux et mou,head-pos-mismatch,0.5804,ok
 tendais,tendre,verbe,Doux et mou,Doux et mou,head-pos-mismatch,0.5804,ok
 tendait,tendre,verbe,Doux et mou,Doux et mou,head-pos-mismatch,0.5804,ok
 tendance,tendance,nom,Mode passagère,Mode passagère,verbatim,0.6202,ok
-tendances,tendance,nom,Modes passagères,Mode passagère,inflected,0.6202,ok
+tendances,tendance,nom,Modes passagers,Mode passagère,inflected,0.6202,ok
 tendant,tendre,verbe,Doux et mou,Doux et mou,head-pos-mismatch,0.5804,ok
 tende,tendre,verbe,Doux et mou,Doux et mou,head-pos-mismatch,0.5804,ok
 tendent,tendre,verbe,Doux et mou,Doux et mou,head-pos-mismatch,0.5804,ok
@@ -21058,14 +21063,14 @@ tenure,tenure,nom,Durée,Durée,verbatim,0.6483,ok
 tenures,tenure,nom,Durées,Durée,inflected,0.6483,ok
 terme,terme,nom,Mot de fin,Mot de fin,verbatim,0.6264,ok
 termes,terme,nom,Mots de fin,Mot de fin,inflected,0.6264,ok
-termina,terminer,verbe,Clore,Clore,no-inflection,0.5542,ok
-terminai,terminer,verbe,Clore,Clore,no-inflection,0.5542,ok
-terminaient,terminer,verbe,Clore,Clore,no-inflection,0.5542,ok
-terminais,terminer,verbe,Clore,Clore,no-inflection,0.5542,ok
-terminait,terminer,verbe,Clore,Clore,no-inflection,0.5542,ok
+termina,terminer,verbe,Clore,Clore,no-inflection-finite,0.5542,ok
+terminai,terminer,verbe,Clore,Clore,no-inflection-finite,0.5542,ok
+terminaient,terminer,verbe,Clore,Clore,no-inflection-finite,0.5542,ok
+terminais,terminer,verbe,Clore,Clore,no-inflection-finite,0.5542,ok
+terminait,terminer,verbe,Clore,Clore,no-inflection-finite,0.5542,ok
 terminant,terminer,verbe,Closant,Clore,inflected,0.5542,ok
-terminas,terminer,verbe,Clore,Clore,no-inflection,0.5542,ok
-terminasse,terminer,verbe,Clore,Clore,no-inflection,0.5542,ok
+terminas,terminer,verbe,Clore,Clore,no-inflection-finite,0.5542,ok
+terminasse,terminer,verbe,Clore,Clore,no-inflection-finite,0.5542,ok
 termine,terminer,verbe,Clôt,Clore,inflected,0.5542,ok
 terminent,terminer,verbe,Closent,Clore,inflected,0.5542,ok
 terminer,terminer,verbe,Clore,Clore,verbatim,0.5542,ok
@@ -21083,16 +21088,16 @@ terminez,terminer,verbe,Closez,Clore,inflected,0.5542,ok
 terminiez,terminer,verbe,Closiez,Clore,inflected,0.5542,ok
 terminions,terminer,verbe,Closions,Clore,inflected,0.5542,ok
 terminons,terminer,verbe,Closons,Clore,inflected,0.5542,ok
-terminâmes,terminer,verbe,Clore,Clore,no-inflection,0.5542,ok
-terminât,terminer,verbe,Clore,Clore,no-inflection,0.5542,ok
-terminâtes,terminer,verbe,Clore,Clore,no-inflection,0.5542,ok
-terminèrent,terminer,verbe,Clore,Clore,no-inflection,0.5542,ok
+terminâmes,terminer,verbe,Clore,Clore,no-inflection-finite,0.5542,ok
+terminât,terminer,verbe,Clore,Clore,no-inflection-finite,0.5542,ok
+terminâtes,terminer,verbe,Clore,Clore,no-inflection-finite,0.5542,ok
+terminèrent,terminer,verbe,Clore,Clore,no-inflection-finite,0.5542,ok
 terminé,terminer,verbe,Clos,Clore,inflected,0.5542,ok
 terminée,terminer,verbe,Close,Clore,inflected,0.5542,ok
 terminées,terminer,verbe,Closes,Clore,inflected,0.5542,ok
 terminés,terminer,verbe,Clos,Clore,inflected,0.5542,ok
 terrasse,terrasse,nom,Sol extérieur,Sol extérieur,verbatim,0.6136,ok
-terrasses,terrasse,nom,Sol extérieurs,Sol extérieur,inflected,0.6136,ok
+terrasses,terrasse,nom,Sol extérieur,Sol extérieur,inflected,0.6136,ok
 terre,terre,nom,Planète bleue,Planète bleue,verbatim,0.5227,ok
 terreau,terreau,nom,Sol fertile,Sol fertile,verbatim,0.5663,ok
 terreaux,terreau,nom,Sol fertile,Sol fertile,inflected,0.5663,ok
@@ -21121,7 +21126,7 @@ thym,thym,nom,Glande du cou,Glande du cou,verbatim,0.5115,ok
 thème,thème,nom,Motif dominant,Motif dominant,verbatim,0.6381,ok
 thèmes,thème,nom,Motifs dominants,Motif dominant,inflected,0.6381,ok
 théocratie,théocratie,nom,Pouvoir religieux,Pouvoir religieux,verbatim,0.6071,ok
-théocraties,théocratie,nom,Pu religieuses,Pouvoir religieux,inflected,0.6071,ok
+théocraties,théocratie,nom,Pu religieux,Pouvoir religieux,inflected,0.6071,ok
 théorie,théorie,nom,Hypothèse,Hypothèse,verbatim,0.5947,ok
 théories,théorie,nom,Hypothèses,Hypothèse,inflected,0.5947,ok
 théorème,théorème,nom,Proposition démontrée,Proposition démontrée,verbatim,0.6261,ok
@@ -21144,10 +21149,20 @@ tine,tine,nom,Dent pointue,Dent pointue,verbatim,0.5419,ok
 tines,tine,nom,Dents pointues,Dent pointue,inflected,0.5419,ok
 tique,tique,nom,Parasite,Parasite,verbatim,0.5973,ok
 tiques,tique,nom,Parasites,Parasite,inflected,0.5973,ok
+tira,tirer,verbe,Extraire,Extraire,no-inflection-finite,0.7334,ok
+tirai,tirer,verbe,Extraire,Extraire,no-inflection-finite,0.7334,ok
+tirasse,tirer,verbe,Extraire,Extraire,no-inflection-finite,0.7334,ok
+tirassent,tirer,verbe,Extraire,Extraire,no-inflection-finite,0.7334,ok
+tirasses,tirer,verbe,Extraire,Extraire,no-inflection-finite,0.7334,ok
+tirassiez,tirer,verbe,Extraire,Extraire,no-inflection-finite,0.7334,ok
+tirassions,tirer,verbe,Extraire,Extraire,no-inflection-finite,0.7334,ok
 tiret,tiret,nom,Trait d'union,Trait d'union,verbatim,0.5737,ok
 tirets,tiret,nom,Traits d'union,Trait d'union,inflected,0.5737,ok
 tiroir,tiroir,nom,Compartiment coulissant,Compartiment coulissant,verbatim,0.6281,ok
 tiroirs,tiroir,nom,Compartiments coulissants,Compartiment coulissant,inflected,0.6281,ok
+tirâmes,tirer,verbe,Extraire,Extraire,no-inflection-finite,0.7334,ok
+tirât,tirer,verbe,Extraire,Extraire,no-inflection-finite,0.7334,ok
+tirèrent,tirer,verbe,Extraire,Extraire,no-inflection-finite,0.7334,ok
 tissage,tissage,nom,Tressage,Tressage,verbatim,0.6174,ok
 tissages,tissage,nom,Tressages,Tressage,inflected,0.6174,ok
 titane,titane,nom,Métal blanc,Métal blanc,verbatim,0.5459,ok
@@ -21163,7 +21178,7 @@ toges,toge,nom,Vêtements,Vêtement,inflected,0.5651,ok
 toison,toison,nom,Laine de mouton,Laine de mouton,verbatim,0.5515,ok
 toisons,toison,nom,Laines de mouton,Laine de mouton,inflected,0.5515,ok
 toit,toit,nom,Couverture protectrice,Couverture protectrice,verbatim,0.6065,ok
-toits,toit,nom,Couvertures protecteurs,Couverture protectrice,inflected,0.6065,ok
+toits,toit,nom,Couvertures protectrices,Couverture protectrice,inflected,0.6065,ok
 toiture,toiture,nom,Couverture protectrice,Couverture protectrice,verbatim,0.5811,ok
 toitures,toiture,nom,Couvertures protectrices,Couverture protectrice,inflected,0.5811,ok
 tolère,tolérer,verbe,Endure,Endurer,inflected,0.6381,ok
@@ -21246,7 +21261,7 @@ tomme,tomme,nom,Fromage,Fromage,verbatim,0.5721,ok
 tommes,tomme,nom,Fromages,Fromage,inflected,0.5721,ok
 tong,tong,nom,Instrument de musique,Instrument de musique,verbatim,0.5709,ok
 tonnage,tonnage,nom,Poids total,Poids total,verbatim,0.5711,ok
-tonnages,tonnage,nom,Poids totaux,Poids total,inflected,0.5711,ok
+tonnages,tonnage,nom,Poids total,Poids total,inflected,0.5711,ok
 tonneau,tonneau,nom,Baril,Baril,verbatim,0.6391,ok
 tonneaux,tonneau,nom,Barils,Baril,inflected,0.6391,ok
 tonus,tonus,nom,Force et tension,Force et tension,verbatim,0.5632,ok
@@ -21817,7 +21832,7 @@ ulcères,ulcère,nom,Plaies,Plaie,inflected,0.5407,ok
 ulcération,ulcération,nom,Dégénérescence,Dégénérescence,verbatim,0.5631,ok
 ulcérations,ulcération,nom,Dégénérescences,Dégénérescence,inflected,0.5631,ok
 unanimité,unanimité,nom,Accord total,Accord total,verbatim,0.6416,ok
-unanimités,unanimité,nom,Accords totales,Accord total,inflected,0.6416,ok
+unanimités,unanimité,nom,Accords totaux,Accord total,inflected,0.6416,ok
 unicité,unicité,nom,Caractère unique,Caractère unique,verbatim,0.6490,ok
 unicités,unicité,nom,Caractères uniques,Caractère unique,inflected,0.6490,ok
 unie,unir,verbe,Rassemblée,Rassembler,inflected,0.6146,ok
@@ -22293,7 +22308,7 @@ volumineux,volumineux,adj,Ample,Ample,verbatim,0.6361,ok
 voluptueuse,voluptueux,nom,Sensuelle,Sensuel,inflected,0.6080,ok
 voluptueux,voluptueux,nom,Sensuel,Sensuel,verbatim,0.6080,ok
 volupté,volupté,nom,Plaisir sensuel,Plaisir sensuel,verbatim,0.5766,ok
-voluptés,volupté,nom,Plaisir sensuelles,Plaisir sensuel,inflected,0.5766,ok
+voluptés,volupté,nom,Plaisir sensuel,Plaisir sensuel,inflected,0.5766,ok
 vota,voter,verbe,Glissa un bulletin,Glisser un bulletin,inflected,0.5654,ok
 votaient,voter,verbe,Glissaient un bulletin,Glisser un bulletin,inflected,0.5654,ok
 votait,voter,verbe,Glissait un bulletin,Glisser un bulletin,inflected,0.5654,ok
@@ -22365,7 +22380,7 @@ vénalité,vénalité,nom,Bassesse,Bassesse,verbatim,0.5144,ok
 vénalités,vénalité,nom,Bassesses,Bassesse,inflected,0.5144,ok
 vénaux,vénal,adj,Mercenaires,Mercenaire,inflected,0.5901,ok
 vénération,vénération,nom,Respect profond,Respect profond,verbatim,0.5825,ok
-vénérations,vénération,nom,Respects profondes,Respect profond,inflected,0.5825,ok
+vénérations,vénération,nom,Respects profonds,Respect profond,inflected,0.5825,ok
 vénézuélien,vénézuélien,nom,D'Amérique latine,D'Amérique latine,verbatim,0.4480,ok
 véracité,véracité,nom,Sincérité,Sincérité,verbatim,0.5190,ok
 véracités,véracité,nom,Sincérités,Sincérité,inflected,0.5190,ok
@@ -22519,7 +22534,7 @@ zébus,zébu,nom,Bovins d'Asie,Bovin d'Asie,inflected,0.5594,ok
 échelon,échelon,nom,Réseau d'espionnage,Réseau d'espionnage,verbatim,0.5835,ok
 échelons,échelon,nom,Réseaux d'espionnage,Réseau d'espionnage,inflected,0.5835,ok
 échiquier,échiquier,nom,Dalle damier,Dalle damier,verbatim,0.5955,ok
-échiquiers,échiquier,nom,Dalles damiers,Dalle damier,inflected,0.5955,ok
+échiquiers,échiquier,nom,Dalles damier,Dalle damier,inflected,0.5955,ok
 échographie,échographie,nom,Ultrason,Ultrason,verbatim,0.4957,ok
 échoua,échouer,verbe,N'aboutit à rien,N'aboutir à rien,inflected,0.6205,ok
 échouai,échouer,verbe,N'aboutis à rien,N'aboutir à rien,inflected,0.6205,ok
@@ -22611,7 +22626,7 @@ zébus,zébu,nom,Bovins d'Asie,Bovin d'Asie,inflected,0.5594,ok
 écoulement,écoulement,nom,Dépense,Dépense,verbatim,0.6177,ok
 écoulements,écoulement,nom,Dépenses,Dépense,inflected,0.6177,ok
 écrin,écrin,nom,Boîte précieuse,Boîte précieuse,verbatim,0.5866,ok
-écrins,écrin,nom,Boîtes précieux,Boîte précieuse,inflected,0.5866,ok
+écrins,écrin,nom,Boîtes précieuses,Boîte précieuse,inflected,0.5866,ok
 écrira,écrire,verbe,Rédigera,Rédiger,inflected,0.4315,ok
 écrirai,écrire,verbe,Rédigerai,Rédiger,inflected,0.4315,ok
 écriraient,écrire,verbe,Rédigeraient,Rédiger,inflected,0.4315,ok
@@ -22661,7 +22676,7 @@ zébus,zébu,nom,Bovins d'Asie,Bovin d'Asie,inflected,0.5594,ok
 écueil,écueil,nom,Obstacle,Obstacle,verbatim,0.5660,ok
 écueils,écueil,nom,Obstacles,Obstacle,inflected,0.5660,ok
 écume,écume,nom,Mousse marine,Mousse marine,verbatim,0.5150,ok
-écumes,écume,nom,Mousses marine,Mousse marine,inflected,0.5150,ok
+écumes,écume,nom,Mousses marins,Mousse marine,inflected,0.5150,ok
 édification,édification,nom,Construction,Construction,verbatim,0.5950,ok
 édita,éditer,verbe,Retoucha,Retoucher,inflected,0.6285,ok
 éditaient,éditer,verbe,Retouchaient,Retoucher,inflected,0.6285,ok
@@ -23111,7 +23126,7 @@ zébus,zébu,nom,Bovins d'Asie,Bovin d'Asie,inflected,0.5594,ok
 éteintes,éteindre,verbe,Rendues inactives,Rendre inactif,inflected,0.6448,ok
 éteints,éteindre,verbe,Rendus inactifs,Rendre inactif,inflected,0.6448,ok
 étiage,étiage,nom,Plus bas niveau,Plus bas niveau,verbatim,0.5055,ok
-étiages,étiage,nom,Plus bas niveaux,Plus bas niveau,inflected,0.5055,ok
+étiages,étiage,nom,Plus bas niveau,Plus bas niveau,identity,0.5055,ok
 étoffe,étoffe,nom,Tissu,Tissu,verbatim,0.5352,ok
 étoffes,étoffe,nom,Tissus,Tissu,inflected,0.5352,ok
 étole,étole,nom,Châle léger,Châle léger,verbatim,0.5642,ok
@@ -23156,7 +23171,7 @@ zébus,zébu,nom,Bovins d'Asie,Bovin d'Asie,inflected,0.5594,ok
 étranges,étrange,nom,Insolites,Insolite,inflected,0.5830,ok
 étrangeté,étrangeté,nom,Originalité,Originalité,verbatim,0.6371,ok
 étrangetés,étrangeté,nom,Originalités,Originalité,inflected,0.6371,ok
-étrangère,étranger,nom,D'un autre pays,D'un autre pays,identity,0.5909,ok
+étrangère,étranger,nom,D'un autres pays,D'un autre pays,inflected,0.5909,ok
 étrangères,étranger,nom,D'un autres pays,D'un autre pays,inflected,0.5909,ok
 étroit,étroit,adj,D'une faible largeur,D'une faible largeur,verbatim,0.5961,ok
 étroite,étroit,adj,D'une faible largeur,D'une faible largeur,identity,0.5961,ok

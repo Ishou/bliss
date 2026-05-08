@@ -12,13 +12,20 @@ Output columns:
   filter_score, validation_flag
 
 inflection_status values:
-  - "verbatim"           : surface == lemma, clue copied as-is
-  - "inflected"          : head token successfully inflected
-  - "identity"           : inflected == original (already correct form)
-  - "no-inflection"      : index.inflect returned None
-  - "head-pos-mismatch"  : no clue head matches surface POS
-  - "no-target-pos"      : surface POS not in {nom, adj, verbe}
-  - "no-owner"           : no (lemma, pos) candidate has a clue in corpus
+  - "verbatim"              : surface == lemma, clue copied as-is
+  - "inflected"             : head token successfully inflected
+  - "identity"              : inflected == original (already correct form)
+  - "no-inflection"         : index.inflect returned None for non-finite target
+                              (ppas/nominal/adj — lemma fallback is acceptable)
+  - "no-inflection-finite"  : index.inflect returned None for a finite-verb
+                              target (ipsi/simp/etc. with no `ppas` in target).
+                              Routed to dropped — shipping the lemma-form
+                              infinitive on a finite-tense surface reads as
+                              a tense disagreement (extraire/soustraire are
+                              defective at passé simple in grammalecte).
+  - "head-pos-mismatch"     : no clue head matches surface POS
+  - "no-target-pos"         : surface POS not in {nom, adj, verbe}
+  - "no-owner"              : no (lemma, pos) candidate has a clue in corpus
 """
 from __future__ import annotations
 import argparse, csv, os, sys
@@ -190,8 +197,13 @@ def main() -> None:
         # (verb+DObj strands the object; reflexive head strands the pronoun)
         # and shipping would land a broken adjectival reading in the runtime
         # CSV. Filter score is irrelevant — these are structural skips.
+        # `no-inflection-finite` shares the drop policy: defective finite-tense
+        # targets (extraire/soustraire at passé simple) cannot safely fall back
+        # to the lemma-form infinitive — shipping would re-introduce the
+        # `tira → "Extraire"` tense-disagreement bug.
         skipped = r.get("inflection_status") in (
             "pp-only-skipped", "pp-reflexive-skipped",
+            "no-inflection-finite",
         )
         if skipped or s < args.threshold:
             dropped.append(r)
