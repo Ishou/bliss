@@ -41,11 +41,25 @@ import type { Pseudonym, SessionId } from '@/domain/game';
 import '@/ui/styles/fonts.css';
 import '@/ui/styles/index.css';
 
-// MSW preview-mode bootstrap (ADR-0007 §5). Cloudflare Pages preview
-// builds set `VITE_USE_MOCK_API=true` via `.env.preview`; production
-// builds load `.env` (`VITE_USE_MOCK_API=false`) and the dynamic import
-// below is dead code, so Vite tree-shakes `msw/browser` and every
-// handler out of the prod bundle. Verified with:
+// MSW bootstrap (ADR-0007 §5). Two independent flags pick which API
+// surfaces are intercepted:
+//
+//   * VITE_MOCK_GRID_API  → mocks `/v1/puzzles/...` (grid backend)
+//   * VITE_MOCK_GAME_API  → mocks `/v1/lobbies/...` REST and the
+//                           `/v1/lobbies/:id/ws` WebSocket
+//
+// `.env`             — both false (production hits real backends).
+// `.env.preview`     — both true  (Cloudflare Pages previews are
+//                                  self-contained, no live backends).
+// `.env.development` — both false (real backends on localhost). A
+//                      contributor without one of the services
+//                      running drops a `.env.development.local`
+//                      override that flips the matching flag to
+//                      `true` for an MSW fallback.
+//
+// Production builds set both flags false; the dynamic `import()`
+// below becomes dead code under falsy literal env values, so Vite
+// tree-shakes `msw/browser` and every handler out. Verified with:
 //
 //   pnpm build && grep -r setupWorker dist/   # → empty
 //
@@ -54,8 +68,16 @@ import '@/ui/styles/index.css';
 // router loader is intercepted (avoids a race where the initial
 // fetch slips through to the real API host).
 async function enableMocks(): Promise<void> {
-  if (import.meta.env.VITE_USE_MOCK_API !== 'true') return;
-  const { worker } = await import('@/infrastructure/mocks/browser');
+  const mockGrid = import.meta.env.VITE_MOCK_GRID_API === 'true';
+  const mockGame = import.meta.env.VITE_MOCK_GAME_API === 'true';
+  if (!mockGrid && !mockGame) return;
+  const mod = await import('@/infrastructure/mocks/browser');
+  const handlersMod = await import('@/infrastructure/mocks/handlers');
+  const handlers = [
+    ...(mockGrid ? handlersMod.gridApiHandlers : []),
+    ...(mockGame ? handlersMod.gameApiHandlers : []),
+  ];
+  const worker = mod.createWorker(handlers);
   await worker.start({
     serviceWorker: { url: '/mockServiceWorker.js' },
     onUnhandledRequest: 'bypass',

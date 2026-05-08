@@ -3,8 +3,10 @@
 // Build-time env injected by Vite. The composition root resolves
 // `VITE_GRID_API_URL` once and threads it through router context, so
 // `ui/` and `application/` never read `import.meta.env`. ADR-0007 §5
-// adds `VITE_USE_MOCK_API` so preview deploys swap the real API for
-// spec-driven Mock Service Worker handlers.
+// adds the per-surface `VITE_MOCK_GRID_API` / `VITE_MOCK_GAME_API`
+// flags so preview deploys swap the real APIs for spec-driven Mock
+// Service Worker handlers and `pnpm dev` can mock just the game-api
+// while still hitting a real grid backend on localhost.
 interface ImportMetaEnv {
   /** Absolute base URL of the Grid API (production target). */
   readonly VITE_GRID_API_URL: string;
@@ -16,11 +18,20 @@ interface ImportMetaEnv {
    */
   readonly VITE_GAME_API_BASE_URL: string;
   /**
-   * `'true'` for preview builds: register Mock Service Worker so the
-   * SPA never reaches the real API. `'false'` (default) for prod.
+   * `'true'` to mount MSW handlers for the Grid REST surface
+   * (`/v1/puzzles/...`). `.env.preview` enables this for self-
+   * contained previews; `.env.development` keeps it off so a real
+   * grid backend on localhost serves real puzzles + answer-validation.
    * String, not boolean — Vite injects env vars verbatim.
    */
-  readonly VITE_USE_MOCK_API: 'true' | 'false';
+  readonly VITE_MOCK_GRID_API: 'true' | 'false';
+  /**
+   * `'true'` to mount MSW handlers for the Game REST + WebSocket
+   * surfaces (`/v1/lobbies/...`). Enabled in both `.env.preview` and
+   * `.env.development` so multiplayer works without the game-api
+   * Helm chart running locally.
+   */
+  readonly VITE_MOCK_GAME_API: 'true' | 'false';
   /**
    * Multiplayer feature flag (ADR-0018 §10). When `'true'`, the
    * `/lobby/:lobbyId` route is registered and the lobby/game adapters

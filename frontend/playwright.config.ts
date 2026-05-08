@@ -3,9 +3,9 @@ import { defineConfig, devices } from '@playwright/test';
 // Playwright configuration for end-to-end tests under `frontend/e2e/`.
 //
 // Tests run against `vite --mode preview`, which loads `.env.preview`
-// (`VITE_USE_MOCK_API=true`). MSW intercepts all Grid + Game REST/WS
-// calls, so the suite needs no live API and never touches production —
-// per ADR-0007 §5.
+// (`VITE_MOCK_GRID_API=true` + `VITE_MOCK_GAME_API=true`). MSW
+// intercepts every Grid + Game REST/WS call, so the suite needs no
+// live API and never touches production — per ADR-0007 §5.
 //
 // `frontend/e2e/` is intentionally separate from `frontend/tests/`
 // (vitest) to keep the runners' globs disjoint. eslint-plugin-boundaries

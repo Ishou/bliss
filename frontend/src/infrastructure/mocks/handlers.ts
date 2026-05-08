@@ -24,7 +24,7 @@
 // mirror `game/api/asyncapi.yaml`.
 //
 // This module is reached only from `main.tsx` and only when
-// `import.meta.env.VITE_USE_MOCK_API === 'true'` (preview builds). Vite
+// `import.meta.env.VITE_MOCK_GRID_API === 'true'` (preview builds). Vite
 // tree-shakes the dynamic-import branch — and therefore `msw` and
 // these handlers — out of production bundles. Verify with:
 //
@@ -163,4 +163,11 @@ const gridHandlers = [
 // Order matters only for overlap, which we don't have: grid REST is
 // `/v1/puzzles/...`, game REST is `/v1/lobbies/...`, game WS is its own
 // dimension. The WS link handler is appended last by convention.
-export const handlers = [...gridHandlers, ...gameHandlers, gameWsHandler];
+//
+// Handler groups are exported separately so the composition root can
+// install the grid set, the game set, or both depending on env. The
+// dev posture (real grid backend on localhost, mocked game-api) wants
+// the game set only; preview wants both; production installs neither.
+export const gridApiHandlers = gridHandlers;
+export const gameApiHandlers = [...gameHandlers, gameWsHandler];
+export const handlers = [...gridApiHandlers, ...gameApiHandlers];

@@ -1,9 +1,13 @@
 // MSW handlers for the game/ bounded context (lobby REST + lobby WS).
-// Mounted only in preview builds (`VITE_USE_MOCK_API=true`); the entire
-// `mocks/` tree tree-shakes out of production. Per ADR-0007 §5 these
-// handlers replay the spec contract so a reviewer can click "Créer une
-// partie", land on `/lobby/:id`, see the WaitingRoom, start a game,
-// type into the grid, and feel another player typing back.
+// Mounted whenever `VITE_MOCK_GAME_API=true` — Cloudflare Pages
+// previews opt in so a reviewer can click "Créer une partie", land on
+// `/lobby/:id`, see the WaitingRoom, start a game, type into the
+// grid, and feel another player typing back without a backend running.
+// `pnpm dev` keeps this off by default so contributors run against a
+// real game-api on localhost; a `.env.development.local` flip is the
+// fallback when a contributor doesn't have it running. The entire
+// `mocks/` tree tree-shakes out of production builds (both flags off
+// in `.env`).
 //
 // Wire shapes mirror `game/api/openapi.yaml` (REST) and
 // `game/api/asyncapi.yaml` (WebSocket) verbatim. Identifier formats per
