@@ -13,7 +13,7 @@
 -- consumed counter; per-(puzzle, player) usage lives in puzzle_hint_usage so
 -- one shared puzzleId URL doesn't burn through hints across users.
 
-CREATE TABLE puzzles (
+CREATE TABLE IF NOT EXISTS puzzles (
     puzzle_id      UUID PRIMARY KEY,
     width          INT         NOT NULL CHECK (width  BETWEEN 1 AND 50),
     height         INT         NOT NULL CHECK (height BETWEEN 1 AND 50),

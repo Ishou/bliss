@@ -18,7 +18,7 @@
 --     RETURNING hints_used;
 -- Empty result == cap reached → 429.
 
-CREATE TABLE puzzle_hint_usage (
+CREATE TABLE IF NOT EXISTS puzzle_hint_usage (
     puzzle_id    UUID        NOT NULL REFERENCES puzzles(puzzle_id) ON DELETE CASCADE,
     session_id   UUID        NOT NULL,
     hints_used   INT         NOT NULL DEFAULT 0 CHECK (hints_used >= 0),
