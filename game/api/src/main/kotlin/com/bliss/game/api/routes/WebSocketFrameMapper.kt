@@ -124,13 +124,13 @@ internal fun UseCaseError.toErrorFrame(): ServerToClientFrame.Error =
         UseCaseError.LobbyFull ->
             ServerToClientFrame.Error(
                 errorType = "https://bliss.example/errors/lobby-full",
-                title = "Lobby is full",
+                title = "Salon complet",
                 status = 409,
             )
         UseCaseError.NotOwner ->
             ServerToClientFrame.Error(
                 errorType = "https://bliss.example/errors/not-owner",
-                title = "Owner-only operation",
+                title = "Opération réservée au propriétaire",
                 status = 403,
             )
         UseCaseError.InvalidState ->
@@ -142,13 +142,13 @@ internal fun UseCaseError.toErrorFrame(): ServerToClientFrame.Error =
         UseCaseError.PlayerNotInLobby ->
             ServerToClientFrame.Error(
                 errorType = "https://bliss.example/errors/player-not-in-lobby",
-                title = "Player is not a member of this lobby",
+                title = "Vous n'êtes pas membre de ce salon",
                 status = 403,
             )
         is UseCaseError.InvalidArgument ->
             ServerToClientFrame.Error(
                 errorType = "https://bliss.example/errors/invalid-argument",
-                title = "Invalid argument",
+                title = "Argument invalide",
                 detail = detail,
                 status = 400,
             )
