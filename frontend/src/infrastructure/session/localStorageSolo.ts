@@ -73,7 +73,6 @@ export function saveSoloLetter(
   writeStore(store);
 }
 
-/** Drop every entry for one puzzle (the "Actualiser" reset path). */
 export function clearSoloEntriesForPuzzle(puzzleId: string): void {
   const store = readStore();
   if (!(puzzleId in store)) return;
@@ -81,7 +80,6 @@ export function clearSoloEntriesForPuzzle(puzzleId: string): void {
   writeStore(store);
 }
 
-/** Drop every entry across every puzzle (GDPR erase flow). */
 export function clearAllSoloEntries(): void {
   try {
     globalThis.localStorage?.removeItem(SOLO_ENTRIES_KEY);
