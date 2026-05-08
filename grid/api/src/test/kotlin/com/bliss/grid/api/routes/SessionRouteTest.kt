@@ -62,7 +62,7 @@ class SessionRouteTest {
         }
 
     @Test
-    fun `is idempotent — calling twice returns 0 the second time`() =
+    fun `is idempotent - calling twice returns 0 the second time`() =
         testApplication {
             application { module() }
             client.get("/v1/puzzles/$puzzleId")
