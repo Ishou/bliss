@@ -124,7 +124,7 @@ class PostgresPuzzleRepositoryTest {
         val id = UUID.randomUUID()
         val grid =
             Grid.fromPlacements(
-                width = 5,
+                width = 6,
                 height = 5,
                 placements =
                     listOf(
