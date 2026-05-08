@@ -147,12 +147,17 @@ export interface PresenceEntry {
 // a refreshing or late-joining client rehydrates the grid from the
 // snapshot instead of receiving an empty grid; cleared cells are absent
 // from the list and the server emits entries sorted by row then column.
-// `presence` is the ephemeral cursor map for currently-connected peers
-// — optional and absent or empty when state is WAITING / COMPLETED.
-// Not persisted (lives in `SessionManager`'s in-memory map server-side).
+// `lockedPositions` is the cumulative set of cells whose containing word
+// was validated correct — server-enforced read-only. Always emitted
+// (empty when nothing locked yet); a refreshing or late-joining client
+// renders these cells locked from the first frame. `presence` is the
+// ephemeral cursor map for currently-connected peers — optional and
+// absent or empty when state is WAITING / COMPLETED. Not persisted
+// (lives in `SessionManager`'s in-memory map server-side).
 export interface GameSession {
   readonly puzzle: GamePuzzle;
   readonly entries: readonly CellEntry[];
+  readonly lockedPositions: readonly Position[];
   readonly startedAt: Instant;
   readonly completedAt: Instant | null;
   readonly presence?: readonly PresenceEntry[];

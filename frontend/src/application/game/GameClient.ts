@@ -7,6 +7,7 @@ import type {
   LobbyId,
   LobbyLifecycleState,
   Player,
+  Position,
   Pseudonym,
   GameSession,
   SessionId,
@@ -191,6 +192,20 @@ export interface CursorBumpedEvent {
   readonly direction: 'across' | 'down';
 }
 
+// Server broadcast: every cell in `positions` is now locked because its
+// containing word was just completed correctly. Mirrors AsyncAPI
+// `wordLocked`. A crossing fill that closes two words at once produces a
+// single event whose `positions` is the union. Cells in `positions`
+// become read-only client-side; the server silently ignores subsequent
+// `cellUpdate` writes targeting any of them, so the lock is a UX hint
+// over a server-enforced contract — last-write-wins still applies in
+// theory, but no further `cellUpdated` rebroadcasts will follow.
+export interface WordLockedEvent {
+  readonly type: 'wordLocked';
+  readonly positions: readonly Position[];
+  readonly lockedAt: Instant;
+}
+
 export interface GameSolvedEvent {
   readonly type: 'gameSolved';
   readonly durationMs: number;
@@ -219,5 +234,6 @@ export type GameEvent =
   | IdleEvent
   | ConnectionLostEvent
   | CursorBumpedEvent
+  | WordLockedEvent
   | GameSolvedEvent
   | GameErrorEvent;

@@ -45,7 +45,7 @@ const SERVER_EVENT_TYPES = new Set<GameEvent['type']>([
   'lobbyState', 'playerJoined', 'playerLeft', 'playerRenamed',
   'gameStarted', 'cellUpdated', 'presenceUpdated',
   'typing', 'idle', 'connectionLost', 'cursorBumped',
-  'gameSolved', 'error',
+  'wordLocked', 'gameSolved', 'error',
 ]);
 
 // Outbound `cellFocus` debounce window. ADR-0018 §"Presence" pins the

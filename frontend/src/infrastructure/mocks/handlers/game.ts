@@ -17,6 +17,7 @@ import type { components } from '@/infrastructure/api/game/types';
 import {
   BOT_PSEUDONYM,
   BOT_SESSION_ID,
+  MOCK_ANSWERS,
   buildGameSession,
   generateLobbyId,
   getLobby,
@@ -242,6 +243,68 @@ const lobbyWsHandler = lobbyWs.addEventListener('connection', ({ client, params 
     }, BOT_PRESENCE_TICK_MS);
   };
 
+  // Track positions already locked so we never re-emit a `wordLocked` for
+  // the same word. Mirrors the server-side monotonic-additive contract.
+  const lockedKeys = new Set<string>();
+
+  // After a successful `cellUpdate`, walk every clue containing the
+  // just-filled position; for each whose letters all match `MOCK_ANSWERS`,
+  // emit a `wordLocked`. Crossing fills emit one frame whose `positions`
+  // is the union of both words.
+  const maybeFireWordLocked = (lobby: Lobby, justRow: number, justCol: number): void => {
+    if (!lobby.game) return;
+    const clues = lobby.game.puzzle.clues;
+    const newLocks: Array<{ row: number; column: number }> = [];
+    for (const clue of clues) {
+      const positions: Array<{ row: number; column: number }> = [];
+      for (let i = 0; i < clue.length; i++) {
+        const r = clue.start.row + (clue.direction === 'down' ? i : 0);
+        const c = clue.start.column + (clue.direction === 'across' ? i : 0);
+        positions.push({ row: r, column: c });
+      }
+      const includesJust = positions.some(
+        (p) => p.row === justRow && p.column === justCol,
+      );
+      if (!includesJust) continue;
+      // Skip already-locked words.
+      if (positions.every((p) => lockedKeys.has(`${p.row},${p.column}`))) continue;
+      const allCorrect = positions.every((p) => {
+        const key = `${p.row},${p.column}`;
+        const placed = cellEntries.get(key);
+        const expected = MOCK_ANSWERS.get(key);
+        return placed != null && expected != null && placed === expected;
+      });
+      if (!allCorrect) continue;
+      for (const p of positions) {
+        const key = `${p.row},${p.column}`;
+        if (!lockedKeys.has(key)) {
+          lockedKeys.add(key);
+          newLocks.push(p);
+        }
+      }
+    }
+    if (newLocks.length === 0) return;
+    updateLobby(lobbyId, (current) => ({
+      ...current,
+      game: current.game
+        ? {
+            ...current.game,
+            lockedPositions: [
+              ...current.game.lockedPositions,
+              ...newLocks,
+            ].sort((a, b) => a.row - b.row || a.column - b.column),
+          }
+        : current.game,
+    }));
+    client.send(
+      JSON.stringify({
+        type: 'wordLocked',
+        positions: newLocks,
+        lockedAt: nowIso(),
+      }),
+    );
+  };
+
   // Mock relaxation: emit `gameSolved` once every non-block cell holds
   // any letter. The route consumes `durationMs` to freeze the timer
   // and the modal; `finalEntries` is the cell list we just collected.
@@ -361,8 +424,14 @@ const lobbyWsHandler = lobbyWs.addEventListener('connection', ({ client, params 
           column: number;
           letter: string | null;
         };
+        const key = cellKey(upd.row, upd.column);
+        // Locked cells reject writes silently — no broadcast, no state
+        // mutation. Mirrors the server's `UpdateCellUseCase` short-circuit
+        // when `position in session.lockedPositions`.
+        if (lockedKeys.has(key)) return;
+        const lobby = getLobby(lobbyId);
         const ownerSessionId =
-          getLobby(lobbyId)?.ownerSessionId ?? '00000000-0000-0000-0000-000000000000';
+          lobby?.ownerSessionId ?? '00000000-0000-0000-0000-000000000000';
         // Echo via canonical broadcast — last-write-wins, server-stamped.
         client.send(
           JSON.stringify({
@@ -374,9 +443,9 @@ const lobbyWsHandler = lobbyWs.addEventListener('connection', ({ client, params 
             writtenAt: nowIso(),
           }),
         );
-        const key = cellKey(upd.row, upd.column);
         if (upd.letter == null) cellEntries.delete(key);
         else cellEntries.set(key, upd.letter);
+        if (lobby) maybeFireWordLocked(lobby, upd.row, upd.column);
         maybeFireGameSolved();
         return;
       }
