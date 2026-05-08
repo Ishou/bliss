@@ -1,7 +1,7 @@
 # Sub-processors Register
 
 > Authoritative list of third parties that process personal data on
-> behalf of Bliss. Every PR that introduces a new vendor in the data
+> behalf of WordSparrow. Every PR that introduces a new vendor in the data
 > path must update this file.
 
 ## Current sub-processors
@@ -54,7 +54,7 @@ they ever are, this file changes:
 - **Sentry, Datadog, New Relic, any APM** — observability rollout
   (ADR-0007) is a separate concern; if a vendor is selected there,
   this file is updated as part of that PR.
-- **Email / SMS providers** — Bliss has no notification system.
+- **Email / SMS providers** — WordSparrow has no notification system.
 - **LLM providers (OpenAI, Anthropic, Mistral, Cohere)** — clue
   generation is an offline batch pipeline (ADR-0013). LLM calls happen
   on the operator's machine over individual API keys, with input limited
