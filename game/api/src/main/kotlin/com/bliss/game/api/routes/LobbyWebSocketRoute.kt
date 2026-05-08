@@ -94,7 +94,7 @@ fun Route.lobbyWebSocketRoute(
 
         val current = repo.findById(lobbyId)
         if (current == null) {
-            sendError("Salon introuvable", "No lobby with id ${lobbyId.value} exists.", status = 404)
+            sendError("Salon introuvable", "Aucun salon avec l'identifiant ${lobbyId.value} n'existe.", status = 404)
             close(CloseReason(CloseReason.Codes.VIOLATED_POLICY, "lobby not found"))
             return@webSocket
         }
