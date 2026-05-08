@@ -13,6 +13,7 @@ import { wordRange } from '@/ui/components/grid/wordRange';
 import { Button } from '@/ui/components/primitives';
 import {
   AppHeader,
+  Footer,
   ProgressBar,
   PuzzleToolbar,
 } from '@/ui/components/layout';
@@ -152,6 +153,7 @@ function PageShell({ children }: { children: React.ReactNode }) {
       <main className={mainStyles}>
         <div className={contentStyles}>{children}</div>
       </main>
+      <Footer />
     </div>
   );
 }
