@@ -54,7 +54,7 @@ const articleStyles = css({
 function LegalNoticePage() {
   return (
     <div className={pageStyles}>
-      <AppHeader activeNavId="grilles" />
+      <AppHeader />
       <main className={mainStyles}>
         <article className={articleStyles}>
           <h1>Mentions légales</h1>

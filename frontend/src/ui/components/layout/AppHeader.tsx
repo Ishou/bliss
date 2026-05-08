@@ -1,3 +1,4 @@
+import { useRouterState } from '@tanstack/react-router';
 import { css, cx } from 'styled-system/css';
 import { Lockup } from '@/ui/components/brand';
 
@@ -99,31 +100,25 @@ const rightSlotStyles = css({
   alignItems: 'center',
 });
 
-const privacyLinkStyles = css({
-  fontFamily: 'body',
-  fontSize: 'xs',
-  fontWeight: 'medium',
-  color: 'fgMuted',
-  textDecoration: 'none',
-  // Mobile: hide to keep the header tight at 44 px. Desktop reveals it
-  // in the right slot.
-  display: { base: 'none', md: 'inline-flex' },
-  _hover: { color: 'fg' },
-  _focusVisible: {
-    outline: '2px solid token(colors.focusRing)',
-    outlineOffset: '2px',
-    borderRadius: '2px',
-  },
-});
-
 export interface AppHeaderProps {
-  // The id of the active nav link. Defaults to `grilles` since the
-  // current routes only mount the puzzle page; future routes can pass
-  // their own id.
+  // Optional override for the active nav id. When omitted, the header
+  // resolves the active link from the current pathname — the common
+  // case for top-level pages. Pass an explicit id for routes whose URL
+  // does not match a nav link's `href` but should still highlight one
+  // (e.g. the lobby route still belongs to "Grilles").
   readonly activeNavId?: string;
 }
 
-export function AppHeader({ activeNavId = 'grilles' }: AppHeaderProps) {
+// Resolve the active nav id from a pathname against `NAV_LINKS`. Exact
+// match only — sub-routes don't auto-highlight a parent nav today;
+// callers that need that pass `activeNavId` explicitly.
+function activeIdForPath(pathname: string): string | undefined {
+  return NAV_LINKS.find((link) => link.href === pathname)?.id;
+}
+
+export function AppHeader({ activeNavId }: AppHeaderProps = {}) {
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const resolvedActiveId = activeNavId ?? activeIdForPath(pathname);
   return (
     <header className={headerOuterStyles} role="banner">
       <div className={headerInnerStyles}>
@@ -152,7 +147,7 @@ export function AppHeader({ activeNavId = 'grilles' }: AppHeaderProps) {
       </div>
       <nav className={navStyles} aria-label="Navigation principale">
         {NAV_LINKS.map((link) => {
-          const isActive = link.id === activeNavId;
+          const isActive = link.id === resolvedActiveId;
           return (
             <a
               key={link.id}
@@ -165,11 +160,7 @@ export function AppHeader({ activeNavId = 'grilles' }: AppHeaderProps) {
           );
         })}
       </nav>
-        <div className={rightSlotStyles}>
-          <a href="/confidentialite" className={privacyLinkStyles} aria-label="Politique de confidentialité">
-            Confidentialité
-          </a>
-        </div>
+        <div className={rightSlotStyles} />
       </div>
     </header>
   );
