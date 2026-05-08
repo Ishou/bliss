@@ -67,12 +67,14 @@ Vous disposez des droits prévus par le RGPD :
   l'historique des indices, écrivez à l'adresse ci-dessus.
 - **Droit à l'effacement** (article 17) : utilisez le bouton "Effacer
   mes données" dans les paramètres. L'identifiant de session, le
-  pseudonyme et l'historique d'indices sont supprimés immédiatement, et
-  les visites Matomo du **jour en cours** sont effacées. Les visites
-  des jours précédents sont déjà non-attribuables (le hachage rotatif
-  quotidien empêche tout recoupement inter-journalier) ; elles ne peuvent
-  pas être activement supprimées mais restent soumises à la fenêtre de
-  conservation de 13 mois.
+  pseudonyme et l'historique d'indices côté serveur sont supprimés
+  immédiatement. Les visites Matomo ne sont pas activement supprimées
+  parce qu'elles sont déjà non-attribuables par construction : le
+  hachage rotatif quotidien empêche tout recoupement avec d'autres
+  jours, et la création d'un nouvel identifiant de session local après
+  l'effacement rompt le lien avec les visites du jour en cours. Les
+  visites Matomo restent soumises à la fenêtre de conservation de
+  13 mois sous forme agrégée et anonyme.
 - **Droit d'opposition** : vous pouvez désactiver la mesure d'audience
   via le réglage `Do Not Track` de votre navigateur ; Matomo le
   respecte automatiquement.
@@ -161,7 +163,12 @@ GDPR rights:
   visible in game settings (pseudonym, session ID). For the hint
   history, contact the address above.
 - **Erasure** (Article 17): use the "Erase my data" button in settings.
-  Session ID, pseudonym, and hint history are deleted immediately;
+  Session ID, pseudonym, and server-side hint history are deleted
+  immediately. Matomo visits are not actively deleted because they are
+  already non-attributable by design — the daily-rotated hash prevents
+  cross-day linkage, and a fresh local session id after the call breaks
+  linkage with same-day visits. Matomo data remains under the 13-month
+  retention window in aggregate, anonymous form.
   **today's** Matomo visits are removed. Visits from prior days are
   already non-attributable (the hash rotates daily; cross-day linkage is
   impossible by design) and cannot be actively deleted; they remain

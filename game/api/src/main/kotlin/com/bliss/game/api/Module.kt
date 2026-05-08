@@ -4,6 +4,7 @@ import com.bliss.game.api.dto.ProblemDetails
 import com.bliss.game.api.routes.health
 import com.bliss.game.api.routes.lobbies
 import com.bliss.game.api.routes.lobbyWebSocketRoute
+import com.bliss.game.application.ports.AnalyticsEventSink
 import com.bliss.game.application.usecases.CreateLobbyUseCase
 import com.bliss.game.application.usecases.JoinLobbyUseCase
 import com.bliss.game.application.usecases.LeaveLobbyUseCase
@@ -15,6 +16,8 @@ import com.bliss.game.application.usecases.StartGameUseCase
 import com.bliss.game.application.usecases.UpdateCellUseCase
 import com.bliss.game.infrastructure.HttpPuzzleProvider
 import com.bliss.game.infrastructure.InMemoryLobbyRepository
+import com.bliss.game.infrastructure.analytics.MatomoAnalyticsAdapter
+import com.bliss.game.infrastructure.analytics.NoopAnalyticsAdapter
 import io.ktor.client.HttpClient
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
@@ -33,7 +36,12 @@ import io.ktor.server.routing.routing
 import io.ktor.server.websocket.WebSockets
 import io.ktor.server.websocket.pingPeriod
 import io.ktor.server.websocket.timeout
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.serialization.json.Json
+import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
 import java.time.Duration
 import kotlin.time.Duration.Companion.seconds
@@ -151,15 +159,23 @@ fun Application.module() {
     val lobbyRepository = InMemoryLobbyRepository()
     val gridBaseUrl = System.getenv("GRID_BASE_URL") ?: "http://grid-api:8080"
     val puzzleProvider = HttpPuzzleProvider(HttpClient(), gridBaseUrl)
+
+    // Fire-and-forget analytics scope (ADR-0025). Cancelled on app stop so in-flight
+    // posts don't outlive the JVM. Adapter falls back to a no-op when the three
+    // MATOMO_* env vars are unset, so dev / pre-Matomo prod work unchanged.
+    val analyticsScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    monitor.subscribe(ApplicationStopped) { analyticsScope.cancel() }
+    val analyticsEventSink: AnalyticsEventSink = createAnalyticsEventSink(analyticsScope)
+
     val useCases =
         LobbyUseCases(
-            createLobby = CreateLobbyUseCase(lobbyRepository, SystemClock),
-            joinLobby = JoinLobbyUseCase(lobbyRepository, SystemClock),
-            renameSelf = RenameSelfUseCase(lobbyRepository, SystemClock),
+            createLobby = CreateLobbyUseCase(lobbyRepository, SystemClock, analyticsEventSink = analyticsEventSink),
+            joinLobby = JoinLobbyUseCase(lobbyRepository, SystemClock, analyticsEventSink = analyticsEventSink),
+            renameSelf = RenameSelfUseCase(lobbyRepository, SystemClock, analyticsEventSink = analyticsEventSink),
             setGridConfig = SetGridConfigUseCase(lobbyRepository, SystemClock),
-            startGame = StartGameUseCase(lobbyRepository, puzzleProvider, SystemClock),
-            updateCell = UpdateCellUseCase(lobbyRepository, SystemClock),
-            leaveLobby = LeaveLobbyUseCase(lobbyRepository, SystemClock),
+            startGame = StartGameUseCase(lobbyRepository, puzzleProvider, SystemClock, analyticsEventSink = analyticsEventSink),
+            updateCell = UpdateCellUseCase(lobbyRepository, SystemClock, analyticsEventSink = analyticsEventSink),
+            leaveLobby = LeaveLobbyUseCase(lobbyRepository, SystemClock, analyticsEventSink = analyticsEventSink),
         )
     val sessionManager = SessionManager()
 
@@ -196,5 +212,30 @@ fun Application.module() {
         health(APP_VERSION)
         lobbies(createLobby = useCases.createLobby, repo = lobbyRepository, sessionManager = sessionManager)
         lobbyWebSocketRoute(sessionManager, useCases, lobbyRepository, presenceAggregator)
+    }
+}
+
+private val analyticsLogger = LoggerFactory.getLogger("com.bliss.game.api.analytics")
+
+/**
+ * Returns a Matomo adapter when all three env vars are configured, otherwise a no-op.
+ * Mirrors the equivalent helper in `:grid:api`'s Module so both contexts behave alike.
+ */
+private fun createAnalyticsEventSink(scope: CoroutineScope): AnalyticsEventSink {
+    val url = System.getenv("MATOMO_URL")?.trim()?.trimEnd('/')
+    val siteId = System.getenv("MATOMO_SITE_ID")?.trim()
+    val salt = System.getenv("MATOMO_ID_SALT")?.trim()
+    return if (!url.isNullOrBlank() && !siteId.isNullOrBlank() && !salt.isNullOrBlank() && salt.length >= 16) {
+        analyticsLogger.info("Matomo analytics enabled at {} (site {})", url, siteId)
+        MatomoAnalyticsAdapter(
+            httpClient = HttpClient(),
+            baseUrl = url,
+            siteId = siteId,
+            idSalt = salt,
+            scope = scope,
+        )
+    } else {
+        analyticsLogger.info("Matomo analytics disabled (missing or short MATOMO_URL/MATOMO_SITE_ID/MATOMO_ID_SALT)")
+        NoopAnalyticsAdapter()
     }
 }

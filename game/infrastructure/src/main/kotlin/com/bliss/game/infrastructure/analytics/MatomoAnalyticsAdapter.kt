@@ -60,7 +60,7 @@ class MatomoAnalyticsAdapter(
         require(baseUrl.startsWith("http")) { "baseUrl must include scheme (got: $baseUrl)" }
     }
 
-    override suspend fun record(
+    override fun record(
         event: AnalyticsEvent,
         sessionId: SessionId?,
     ) {

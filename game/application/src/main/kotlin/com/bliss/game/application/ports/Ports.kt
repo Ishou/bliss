@@ -96,8 +96,28 @@ interface PresenceBroadcaster {
  * across days. The raw `SessionId` is never sent to the analytics backend.
  */
 interface AnalyticsEventSink {
-    suspend fun record(
+    /**
+     * Non-blocking by contract — implementations launch the work into their own
+     * supervised scope and return immediately. Callers may invoke from synchronous
+     * or coroutine code; never throws, never propagates failure.
+     */
+    fun record(
         event: AnalyticsEvent,
         sessionId: SessionId? = null,
     )
+
+    companion object {
+        /**
+         * In-process no-op sink. Use as a default for use-case constructors so existing
+         * tests continue to compile without Matomo wiring, and as the production fallback
+         * when Matomo env vars are not configured.
+         */
+        val Noop: AnalyticsEventSink =
+            object : AnalyticsEventSink {
+                override fun record(
+                    event: AnalyticsEvent,
+                    sessionId: SessionId?,
+                ) = Unit
+            }
+    }
 }

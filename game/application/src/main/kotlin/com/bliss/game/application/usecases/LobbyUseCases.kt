@@ -1,5 +1,6 @@
 package com.bliss.game.application.usecases
 
+import com.bliss.game.application.ports.AnalyticsEventSink
 import com.bliss.game.application.ports.Clock
 import com.bliss.game.application.ports.LobbyEvent
 import com.bliss.game.application.ports.LobbyRepository
@@ -15,8 +16,11 @@ import com.bliss.game.domain.Player
 import com.bliss.game.domain.Position
 import com.bliss.game.domain.Pseudonym
 import com.bliss.game.domain.SessionId
+import com.bliss.game.domain.analytics.AnalyticsEvent
 import java.time.Duration
 import java.time.Instant
+
+private fun GridConfig.toLabel(): String = "${width}x$height"
 
 /**
  * Bootstraps a new lobby in WAITING with the calling player as owner.
@@ -36,6 +40,7 @@ class CreateLobbyUseCase(
     private val repo: LobbyRepository,
     private val clock: Clock,
     private val defaultGridConfig: GridConfig = GridConfig(7, 7),
+    private val analyticsEventSink: AnalyticsEventSink = AnalyticsEventSink.Noop,
 ) {
     suspend operator fun invoke(
         ownerSessionId: SessionId,
@@ -56,7 +61,9 @@ class CreateLobbyUseCase(
                 game = null,
                 lastActivityAt = now,
             )
-        return UseCaseResult(repo.save(lobby), listOf(LobbyEvent.PlayerJoined(owner)))
+        val saved = repo.save(lobby)
+        analyticsEventSink.record(AnalyticsEvent.LobbyCreated(saved.gridConfig.toLabel()), ownerSessionId)
+        return UseCaseResult(saved, listOf(LobbyEvent.PlayerJoined(owner)))
     }
 }
 
@@ -64,6 +71,7 @@ class CreateLobbyUseCase(
 class JoinLobbyUseCase(
     private val repo: LobbyRepository,
     private val clock: Clock,
+    private val analyticsEventSink: AnalyticsEventSink = AnalyticsEventSink.Noop,
 ) {
     suspend operator fun invoke(
         lobbyId: LobbyId,
@@ -86,6 +94,9 @@ class JoinLobbyUseCase(
                 }
             } ?: return failure(UseCaseError.LobbyNotFound)
         if (updated.isFull() && !updated.hasJoined(sessionId)) return failure(UseCaseError.LobbyFull)
+        if (emitted != null) {
+            analyticsEventSink.record(AnalyticsEvent.LobbyJoined(updated.players.size), sessionId)
+        }
         return success(updated, listOfNotNull(emitted))
     }
 }
@@ -94,6 +105,7 @@ class JoinLobbyUseCase(
 class RenameSelfUseCase(
     private val repo: LobbyRepository,
     private val clock: Clock,
+    private val analyticsEventSink: AnalyticsEventSink = AnalyticsEventSink.Noop,
 ) {
     suspend operator fun invoke(
         lobbyId: LobbyId,
@@ -114,6 +126,7 @@ class RenameSelfUseCase(
             } ?: return failure(UseCaseError.LobbyNotFound)
         // Player left between findById and mutate; mutator no-oped silently.
         if (!renamed) return failure(UseCaseError.PlayerNotInLobby)
+        analyticsEventSink.record(AnalyticsEvent.PlayerRenamed, sessionId)
         return success(updated, listOf(LobbyEvent.PlayerRenamed(sessionId, newPseudonym)))
     }
 }
@@ -151,6 +164,7 @@ class StartGameUseCase(
     private val repo: LobbyRepository,
     private val puzzleProvider: PuzzleProvider,
     private val clock: Clock,
+    private val analyticsEventSink: AnalyticsEventSink = AnalyticsEventSink.Noop,
 ) {
     suspend operator fun invoke(
         lobbyId: LobbyId,
@@ -173,6 +187,10 @@ class StartGameUseCase(
                 lobby.copy(state = LobbyLifecycleState.IN_PROGRESS, game = s, lastActivityAt = now)
             } ?: return failure(UseCaseError.LobbyNotFound)
         val started = session ?: return failure(UseCaseError.InvalidState)
+        analyticsEventSink.record(
+            AnalyticsEvent.GameStarted(updated.gridConfig.toLabel(), updated.players.size),
+            sessionId,
+        )
         return success(updated, listOf(LobbyEvent.GameStarted(started)))
     }
 }
@@ -181,6 +199,7 @@ class StartGameUseCase(
 class LeaveLobbyUseCase(
     private val repo: LobbyRepository,
     private val clock: Clock,
+    private val analyticsEventSink: AnalyticsEventSink = AnalyticsEventSink.Noop,
 ) {
     suspend operator fun invoke(
         lobbyId: LobbyId,
@@ -212,6 +231,7 @@ class LeaveLobbyUseCase(
         // Distinguish: null+!present = lobby not found; null+present = deleted; non-null+!present = not a member.
         if (!playerWasPresent && updated == null) return failure(UseCaseError.LobbyNotFound)
         if (!playerWasPresent) return failure(UseCaseError.PlayerNotInLobby)
+        analyticsEventSink.record(AnalyticsEvent.LobbyLeft, sessionId)
         if (updated == null) {
             events += LobbyEvent.LobbyClosed("last player left")
             return success(null, events)
@@ -228,6 +248,7 @@ class LeaveLobbyUseCase(
 class UpdateCellUseCase(
     private val repo: LobbyRepository,
     private val clock: Clock,
+    private val analyticsEventSink: AnalyticsEventSink = AnalyticsEventSink.Noop,
 ) {
     suspend operator fun invoke(
         lobbyId: LobbyId,
@@ -263,6 +284,14 @@ class UpdateCellUseCase(
         val events = mutableListOf<LobbyEvent>(LobbyEvent.CellUpdated(sessionId, position, letter, stamp))
         solved?.let { (durationMs, finalEntries) ->
             events += LobbyEvent.GameSolved(durationMs, finalEntries)
+            analyticsEventSink.record(
+                AnalyticsEvent.GameSolved(
+                    gridSize = updated.gridConfig.toLabel(),
+                    playerCount = updated.players.size,
+                    durationMs = durationMs,
+                ),
+                sessionId,
+            )
         }
         return success(updated, events)
     }

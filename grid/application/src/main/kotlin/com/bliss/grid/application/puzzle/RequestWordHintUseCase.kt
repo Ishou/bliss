@@ -1,5 +1,7 @@
 package com.bliss.grid.application.puzzle
 
+import com.bliss.grid.application.analytics.AnalyticsEventSink
+import com.bliss.grid.domain.analytics.AnalyticsEvent
 import com.bliss.grid.domain.generation.WordRepository
 import java.text.Normalizer
 import java.util.UUID
@@ -28,6 +30,7 @@ class RequestWordHintUseCase(
     private val puzzleRepository: PuzzleRepository,
     private val hintUsageRepository: HintUsageRepository,
     private val wordRepository: WordRepository,
+    private val analyticsEventSink: AnalyticsEventSink = AnalyticsEventSink.Noop,
 ) {
     fun execute(
         puzzleId: UUID,
@@ -45,6 +48,13 @@ class RequestWordHintUseCase(
             hintUsageRepository.trySpend(puzzleId, sessionId, puzzle.hintsAllowed)
                 ?: return WordHintOutcome.BudgetExhausted
         val exists = wordRepository.containsLemma(normalized)
+        analyticsEventSink.record(
+            AnalyticsEvent.HintUsed(
+                gridSize = "${puzzle.grid.width}x${puzzle.grid.height}",
+                hintsUsedSoFar = usedAfter,
+            ),
+            sessionId,
+        )
         return WordHintOutcome.Granted(
             word = normalized,
             exists = exists,

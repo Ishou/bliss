@@ -35,6 +35,10 @@ tags:
       using the corpus as a free dictionary lookup.
   - name: puzzles
     description: Read access and validation for mots-fléchés puzzles.
+  - name: sessions
+    description: |
+      Anonymous session lifecycle. Currently exposes only the right-to-erasure
+      endpoint (RGPD Article 17, ADR-0025 §5).
 
 paths:
   /v1/puzzles/{puzzleId}:
@@ -204,6 +208,54 @@ paths:
           description: |
             No puzzle with this id. RFC 7807;
             `type` is `https://bliss.example/errors/puzzle-not-found`.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+
+  /v1/sessions/{sessionId}:
+    delete:
+      operationId: deleteSession
+      summary: Erase server-side data for a session (RGPD Article 17).
+      description: |
+        Removes every server-side row attributable to `sessionId`. Today
+        that's the `puzzle_hint_usage` rows; any future table keyed on a
+        `session_id` extends this same call (ADR-0025 §5).
+
+        Always idempotent and always returns `200`: a session id with no
+        prior data returns `deleted: 0`. The endpoint never reveals whether
+        a session had data, so a client probing other sessions cannot use
+        it as an oracle.
+
+        Matomo audience-measurement visits are NOT erased through this
+        call — the daily-rotated salted hash (ADR-0025 §3) makes prior-day
+        visits already non-attributable, and a fresh local sessionId after
+        the call breaks linkage going forward. The privacy notice
+        (`/confidentialite`, `/privacy`) discloses this trade-off.
+      tags: [sessions]
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          description: UUID identifying the session to erase.
+          schema:
+            type: string
+            format: uuid
+            example: 019186c5-d702-7b3a-a3d4-b40dc2d6d871
+      responses:
+        '200':
+          description: |
+            Erasure completed. Body reports the number of rows deleted
+            (across all server-side tables). A zero count is a valid
+            success — it means the session never used a hint.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteSessionResponse'
+        '400':
+          description: |
+            Path parameter `sessionId` is not a valid UUID. RFC 7807;
+            `type` is `https://bliss.example/errors/invalid-session-id`.
           content:
             application/problem+json:
               schema:
@@ -499,6 +551,21 @@ components:
             Candidate French word. Server normalizes case and Unicode (NFC)
             before lookup; clients SHOULD send lowercase.
           example: forêt
+
+    DeleteSessionResponse:
+      type: object
+      description: |
+        Response body for `DELETE /v1/sessions/{sessionId}` on a 200.
+        Reports the number of rows the server actually deleted across all
+        tables that reference the session. `0` is a valid success — the
+        session never used a hint.
+      required: [deleted]
+      properties:
+        deleted:
+          type: integer
+          minimum: 0
+          description: Total rows deleted (across all tables).
+          example: 3
 
     WordHintResult:
       type: object

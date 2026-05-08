@@ -88,6 +88,39 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/sessions/{sessionId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Erase server-side data for a session (RGPD Article 17).
+         * @description Removes every server-side row attributable to `sessionId`. Today
+         *     that's the `puzzle_hint_usage` rows; any future table keyed on a
+         *     `session_id` extends this same call (ADR-0025 §5).
+         *
+         *     Always idempotent and always returns `200`: a session id with no
+         *     prior data returns `deleted: 0`. The endpoint never reveals whether
+         *     a session had data, so a client probing other sessions cannot use
+         *     it as an oracle.
+         *
+         *     Matomo audience-measurement visits are NOT erased through this
+         *     call — the daily-rotated salted hash (ADR-0025 §3) makes prior-day
+         *     visits already non-attributable, and a fresh local sessionId after
+         *     the call breaks linkage going forward. The privacy notice
+         *     (`/confidentialite`, `/privacy`) discloses this trade-off.
+         */
+        delete: operations["deleteSession"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -265,6 +298,19 @@ export interface components {
              * @example forêt
              */
             word: string;
+        };
+        /**
+         * @description Response body for `DELETE /v1/sessions/{sessionId}` on a 200.
+         *     Reports the number of rows the server actually deleted across all
+         *     tables that reference the session. `0` is a valid success — the
+         *     session never used a hint.
+         */
+        DeleteSessionResponse: {
+            /**
+             * @description Total rows deleted (across all tables).
+             * @example 3
+             */
+            deleted: number;
         };
         /**
          * @description Response body for `POST /v1/puzzles/{puzzleId}/hints` on a 200. The
@@ -636,6 +682,45 @@ export interface operations {
              *     `type` is `https://bliss.example/errors/puzzle-not-found`.
              */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    deleteSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description UUID identifying the session to erase. */
+                sessionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /**
+             * @description Erasure completed. Body reports the number of rows deleted
+             *     (across all server-side tables). A zero count is a valid
+             *     success — it means the session never used a hint.
+             */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeleteSessionResponse"];
+                };
+            };
+            /**
+             * @description Path parameter `sessionId` is not a valid UUID. RFC 7807;
+             *     `type` is `https://bliss.example/errors/invalid-session-id`.
+             */
+            400: {
                 headers: {
                     [name: string]: unknown;
                 };

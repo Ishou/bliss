@@ -19,8 +19,28 @@ import java.util.UUID
  * value comes from the `X-Session-Id` request header (mirrors `game/`'s `SessionId`).
  */
 interface AnalyticsEventSink {
-    suspend fun record(
+    /**
+     * Non-blocking by contract — implementations launch the work into their own
+     * supervised scope and return immediately. Callers may invoke from synchronous
+     * or coroutine code; never throws, never propagates failure.
+     */
+    fun record(
         event: AnalyticsEvent,
         sessionId: UUID? = null,
     )
+
+    companion object {
+        /**
+         * In-process no-op sink. Use as a default in use-case constructors so existing
+         * tests continue to compile, and as the production fallback when Matomo env vars
+         * are not configured.
+         */
+        val Noop: AnalyticsEventSink =
+            object : AnalyticsEventSink {
+                override fun record(
+                    event: AnalyticsEvent,
+                    sessionId: UUID?,
+                ) = Unit
+            }
+    }
 }
