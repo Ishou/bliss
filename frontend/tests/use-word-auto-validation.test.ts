@@ -179,6 +179,40 @@ describe('useWordAutoValidation', () => {
     expect(result.current.validated.has('3,1')).toBe(true);
   });
 
+  it('locks a 2-letter word ("AI" for "Forme du verbe avoir")', async () => {
+    // The user reported typing "AI" for "Forme du verbe avoir" and
+    // seeing no validation. Smallest possible word — the
+    // `wordRange.length >= 2` gate is exactly the boundary case.
+    const tinyPuzzle: Puzzle = {
+      id: 'tiny-puzzle',
+      title: 't',
+      language: 'fr',
+      width: 4,
+      height: 1,
+      hintsAllowed: 3,
+      cells: [
+        {
+          kind: 'definition',
+          position: { row: 0, col: 0 },
+          clues: [{ text: 'Forme du verbe avoir', arrow: 'right' }],
+        },
+        { kind: 'letter', position: { row: 0, col: 1 }, entry: '' },
+        { kind: 'letter', position: { row: 0, col: 2 }, entry: '' },
+      ],
+    };
+    mountInput(0, 1, 'A');
+    mountInput(0, 2, 'I');
+    const solver = makeSolver({ solved: false, incorrectCells: [] });
+    const { result } = renderHook(() => useWordAutoValidation(tinyPuzzle, solver));
+
+    // After typing the second letter the word is fully filled.
+    await act(async () => { result.current.onCellFilled({ row: 0, col: 2 }, 'across'); });
+    await waitFor(() => expect(result.current.validated.has('0,1')).toBe(true));
+
+    expect(result.current.validated.has('0,2')).toBe(true);
+    expect(solver.validate).toHaveBeenCalledTimes(1);
+  });
+
   it('resets validated set on puzzle reference change', async () => {
     mountInput(0, 1, 'D');
     mountInput(0, 2, 'E');

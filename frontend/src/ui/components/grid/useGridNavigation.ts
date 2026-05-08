@@ -594,6 +594,13 @@ export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOpt
               bumpEntries();
               onCellChangeRef.current?.(f.row, f.col, letter);
             }
+            // The `input` event never fires on this branch (we
+            // preventDefault'd the keydown), so handleInput's
+            // `onCellFilled` path is unreachable from desktop typing.
+            // Fire it here so solo auto-validation runs on every
+            // keystroke regardless of platform — the Android soft-
+            // keyboard path covers the same callback in handleInput.
+            if (!el.readOnly) onCellFilledRef.current?.(f, dir);
           }
         }
         const clue = lookup.clueAt(f.row, f.col, dir);
