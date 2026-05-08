@@ -69,6 +69,7 @@ const renderHome = (overrides: { lobbyClient?: Partial<LobbyClient> } = {}) => {
     context: {
       puzzleRepository: stubPuzzleRepository,
       puzzleSolver: stubPuzzleSolver,
+      sessionClient: { eraseSession: () => Promise.resolve({ deleted: 0 }) },
       lobbyClient,
       gameClient: stubGameClient,
       getSession: () => ({ sessionId, pseudonym }),

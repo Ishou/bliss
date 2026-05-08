@@ -11,6 +11,11 @@ import {
   createHttpPuzzleSolver,
   createWebSocketGameClient,
 } from '@/infrastructure';
+import { createHttpSessionClient } from '@/infrastructure/api/grid/HttpSessionClient';
+import {
+  createMatomoTracker,
+  readMatomoConfigFromEnv,
+} from '@/infrastructure/analytics/matomoTracker';
 import {
   getOrCreateSessionId,
   getPseudonym,
@@ -70,6 +75,11 @@ enableMocks()
       baseUrl: gridApiBaseUrl,
       sessionId,
     });
+    const sessionClient = createHttpSessionClient({ baseUrl: gridApiBaseUrl });
+
+    // Cookieless Matomo tracker (ADR-0025). No-op when env vars are unset
+    // (local dev / preview / pre-Matomo prod).
+    const tracker = createMatomoTracker(readMatomoConfigFromEnv());
     // ADR-0018 §10 — multiplayer ships dark. The lobby route, its
     // adapters, and the session accessor are only instantiated when
     // the runtime flag is on. Production flips this to `'true'` after
@@ -99,14 +109,25 @@ enableMocks()
           return {
             puzzleRepository,
             puzzleSolver,
+            sessionClient,
             lobbyClient,
             gameClient,
             getSession,
             setPseudonym: setPersistedPseudonym,
           };
         })()
-      : { puzzleRepository, puzzleSolver };
+      : { puzzleRepository, puzzleSolver, sessionClient };
     const router = createAppRouter({ context, multiplayer });
+
+    // Track page views on every route resolution. `onResolved` fires after
+    // a navigation completes (initial mount included), giving us the canonical
+    // matched URL — query strings are kept off the wire by hooking on
+    // `location.pathname` only, so a shareable lobby id isn't leaked into
+    // analytics as part of the URL.
+    router.subscribe('onResolved', (event) => {
+      const url = event.toLocation.pathname;
+      tracker.trackPageView(url, document.title || undefined);
+    });
 
     createRoot(container).render(
       <StrictMode>
