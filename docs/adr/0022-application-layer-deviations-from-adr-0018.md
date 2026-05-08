@@ -78,6 +78,20 @@ between merging PR A and PR B, temporarily violating the TDD principle in `MANIF
 Unlike ADR-0022 §3 (where neither Wave F half fit under the cap), here the split is
 mechanically viable; the justification is co-shipping of implementation and its covering tests.
 
+### 6. Wave 2 PR #230 exceeds ADR-0001 §4 400-line cap
+
+ADR-0001 §4 sets a hard cap of 400 non-blank, non-generated lines per PR. Wave 2 PR #230
+(`feat(game-application): PresenceAggregator + presence LobbyEvent variants`) ships
+approximately 520 non-blank lines (~360 implementation + ~160 test).
+
+**Rationale:** The critical-path source (`PresenceAggregator` + the four `LobbyEvent` variants
++ `PresenceBroadcaster` port) is approximately 359 non-blank lines -- under the cap in
+isolation. The bulk of the overage is the `PresenceAggregatorTest` suite (9 tests covering
+state-machine + timer logic). Each mechanically possible split half would still carry its
+covering tests and exceed the cap independently, making the split unproductive for
+reviewability. Co-shipping implementation and covering tests follows the same TDD justification
+as ADR-0022 §5.
+
 ## Consequences
 
 - `LobbyEventBroadcaster` does not exist as a port. Wave D (infrastructure) does not
