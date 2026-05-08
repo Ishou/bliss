@@ -9,6 +9,7 @@ import com.bliss.game.domain.CellEntry
 import com.bliss.game.domain.GameSession
 import com.bliss.game.domain.GridConfig
 import com.bliss.game.domain.Letter
+import com.bliss.game.domain.LetterCell
 import com.bliss.game.domain.Lobby
 import com.bliss.game.domain.LobbyId
 import com.bliss.game.domain.LobbyLifecycleState
@@ -17,6 +18,7 @@ import com.bliss.game.domain.Position
 import com.bliss.game.domain.Pseudonym
 import com.bliss.game.domain.SessionId
 import com.bliss.game.domain.analytics.AnalyticsEvent
+import com.bliss.game.domain.wordsContaining
 import java.time.Duration
 import java.time.Instant
 
@@ -258,11 +260,15 @@ class UpdateCellUseCase(
     ): UseCaseOutcome<Lobby> {
         var solved: Pair<Long, Map<Position, CellEntry>>? = null
         var writtenAt: Instant? = null
+        var newLocks: Set<Position> = emptySet()
         val updated =
             repo.mutate(lobbyId) { lobby ->
                 if (lobby.state != LobbyLifecycleState.IN_PROGRESS) return@mutate lobby
                 if (!lobby.hasJoined(sessionId)) return@mutate lobby
                 val session = lobby.game ?: return@mutate lobby
+                // Locked cells silently ignore writes — no event, no broadcast, no lastActivityAt
+                // bump (so peers' idle timers do not reset on attempts to overwrite a sage cell).
+                if (position in session.lockedPositions) return@mutate lobby
                 val now = clock.now().also { writtenAt = it }
                 val entries =
                     if (letter == null) {
@@ -270,7 +276,13 @@ class UpdateCellUseCase(
                     } else {
                         session.entries + (position to CellEntry(sessionId, letter, now))
                     }
-                val nextSession = session.copy(entries = entries)
+                val locks = newlyLockedPositions(session, entries, position)
+                newLocks = locks
+                val nextSession =
+                    session.copy(
+                        entries = entries,
+                        lockedPositions = session.lockedPositions + locks,
+                    )
                 if (nextSession.isSolved() && session.completedAt == null) {
                     val completed = nextSession.copy(completedAt = now)
                     solved = Duration.between(session.startedAt, now).toMillis() to entries
@@ -279,9 +291,13 @@ class UpdateCellUseCase(
                     lobby.copy(game = nextSession, lastActivityAt = now)
                 }
             } ?: return failure(UseCaseError.LobbyNotFound)
-        // Validate post-conditions (writtenAt is null only if mutator short-circuited).
-        val stamp = writtenAt ?: return reasonFor(updated, sessionId)
+        // writtenAt is null when the mutator short-circuited (player not in lobby, not IN_PROGRESS,
+        // or position already locked). The locked-no-op case must surface as success-with-no-events.
+        val stamp = writtenAt ?: return passthroughOrFailure(updated, sessionId)
         val events = mutableListOf<LobbyEvent>(LobbyEvent.CellUpdated(sessionId, position, letter, stamp))
+        if (newLocks.isNotEmpty()) {
+            events += LobbyEvent.WordLocked(newLocks, stamp)
+        }
         solved?.let { (durationMs, finalEntries) ->
             events += LobbyEvent.GameSolved(durationMs, finalEntries)
             analyticsEventSink.record(
@@ -296,12 +312,44 @@ class UpdateCellUseCase(
         return success(updated, events)
     }
 
-    private fun reasonFor(
+    /**
+     * Returns the union of positions belonging to words whose answer is now fully and correctly
+     * filled, scoped to words containing [justWritten]. Words that were already locked or that
+     * lack a clue covering this cell return no positions.
+     */
+    private fun newlyLockedPositions(
+        session: GameSession,
+        entries: Map<Position, CellEntry>,
+        justWritten: Position,
+    ): Set<Position> {
+        val answers: Map<Position, Letter> =
+            session.puzzle.cells
+                .asSequence()
+                .filterIsInstance<LetterCell>()
+                .mapNotNull { cell -> cell.answer?.let { cell.position to it } }
+                .toMap()
+        val locks = mutableSetOf<Position>()
+        for (word in session.puzzle.wordsContaining(justWritten)) {
+            // Skip words that are already (partially) locked by a prior fill.
+            if (word.any { it in session.lockedPositions }) continue
+            val complete =
+                word.all { pos ->
+                    val expected = answers[pos] ?: return@all false
+                    entries[pos]?.letter == expected
+                }
+            if (complete) locks += word
+        }
+        return locks
+    }
+
+    private fun passthroughOrFailure(
         lobby: Lobby,
         sessionId: SessionId,
     ): UseCaseOutcome<Lobby> =
         when {
+            lobby.state != LobbyLifecycleState.IN_PROGRESS -> failure(UseCaseError.InvalidState)
             !lobby.hasJoined(sessionId) -> failure(UseCaseError.PlayerNotInLobby)
-            else -> failure(UseCaseError.InvalidState)
+            // Otherwise the short-circuit was a locked-cell no-op: success with no events.
+            else -> success(lobby, emptyList())
         }
 }

@@ -326,10 +326,12 @@ private fun validSession(i: Int): SessionId {
     return SessionId("0190e3b2-1c45-7d2e-9a3f-c0d1e2f3$low")
 }
 
-internal class Harness {
+internal class Harness(
+    puzzle: com.bliss.game.domain.GamePuzzle = Samples.puzzle(),
+) {
     val clock = FakeClock()
     val repo = InMemoryLobbyRepository()
-    val provider = FakePuzzleProvider(Samples.puzzle())
+    val provider = FakePuzzleProvider(puzzle)
     val create = CreateLobbyUseCase(repo, clock)
     val join = JoinLobbyUseCase(repo, clock)
     val rename = RenameSelfUseCase(repo, clock)
