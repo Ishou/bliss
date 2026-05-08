@@ -102,6 +102,12 @@ class RequestWordHintUseCaseTest {
                     if (counter.compareAndSet(current, current + 1)) return current + 1
                 }
             }
+
+            override fun deleteBySession(sessionId: UUID): Int {
+                val keys = counters.keys.filter { it.second == sessionId }
+                keys.forEach { counters.remove(it) }
+                return keys.size
+            }
         }
     }
 

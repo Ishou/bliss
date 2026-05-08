@@ -9,7 +9,7 @@ import java.util.UUID
  * Events are silently dropped — no logging, no allocations beyond the call frame.
  */
 class NoopAnalyticsAdapter : AnalyticsEventSink {
-    override suspend fun record(
+    override fun record(
         event: AnalyticsEvent,
         sessionId: UUID?,
     ) {

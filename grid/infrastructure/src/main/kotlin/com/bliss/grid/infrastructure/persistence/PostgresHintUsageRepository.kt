@@ -35,6 +35,14 @@ class PostgresHintUsageRepository(
             }
         }
 
+    override fun deleteBySession(sessionId: UUID): Int =
+        dataSource.connection.use { conn ->
+            conn.prepareStatement(DELETE_SQL).use { stmt ->
+                stmt.setObject(1, sessionId)
+                stmt.executeUpdate()
+            }
+        }
+
     companion object {
         // INSERT side guarded with `WHERE $3 > 0` so a 0-quota puzzle skips
         // the insert; ON CONFLICT side guarded with `hints_used < $4` so a
@@ -50,5 +58,8 @@ class PostgresHintUsageRepository(
                 WHERE puzzle_hint_usage.hints_used < ?
             RETURNING hints_used
             """
+
+        private const val DELETE_SQL =
+            "DELETE FROM puzzle_hint_usage WHERE session_id = ?"
     }
 }

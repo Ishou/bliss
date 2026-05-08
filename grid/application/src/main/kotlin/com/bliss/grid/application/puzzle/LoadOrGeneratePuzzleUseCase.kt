@@ -1,5 +1,7 @@
 package com.bliss.grid.application.puzzle
 
+import com.bliss.grid.application.analytics.AnalyticsEventSink
+import com.bliss.grid.domain.analytics.AnalyticsEvent
 import java.time.Clock
 import java.util.UUID
 
@@ -21,6 +23,7 @@ class LoadOrGeneratePuzzleUseCase(
     private val hintsAllowed: Int = DEFAULT_HINTS_ALLOWED,
     private val title: String = DEFAULT_TITLE,
     private val language: String = DEFAULT_LANGUAGE,
+    private val analyticsEventSink: AnalyticsEventSink = AnalyticsEventSink.Noop,
 ) {
     fun execute(
         puzzleId: UUID,
@@ -29,6 +32,13 @@ class LoadOrGeneratePuzzleUseCase(
     ): StoredPuzzle? =
         puzzleRepository.getOrCompute(puzzleId) {
             val grid = generatePuzzle.execute(width = width, height = height) ?: return@getOrCompute null
+            analyticsEventSink.record(
+                AnalyticsEvent.PuzzleGenerated(
+                    gridSize = "${grid.width}x${grid.height}",
+                    language = language,
+                ),
+                sessionId = null,
+            )
             StoredPuzzle(
                 grid = grid,
                 title = title,

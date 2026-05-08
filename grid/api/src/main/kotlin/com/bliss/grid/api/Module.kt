@@ -2,8 +2,11 @@ package com.bliss.grid.api
 
 import com.bliss.grid.api.dto.ProblemDetails
 import com.bliss.grid.api.infrastructure.Database
+import com.bliss.grid.api.routes.deleteSession
 import com.bliss.grid.api.routes.health
 import com.bliss.grid.api.routes.puzzles
+import com.bliss.grid.application.analytics.AnalyticsEventSink
+import com.bliss.grid.application.puzzle.DeleteSessionUseCase
 import com.bliss.grid.application.puzzle.GeneratePuzzleUseCase
 import com.bliss.grid.application.puzzle.HintUsageRepository
 import com.bliss.grid.application.puzzle.LoadOrGeneratePuzzleUseCase
@@ -11,17 +14,21 @@ import com.bliss.grid.application.puzzle.PuzzleRepository
 import com.bliss.grid.application.puzzle.RequestWordHintUseCase
 import com.bliss.grid.application.puzzle.ValidatePuzzleUseCase
 import com.bliss.grid.application.puzzle.defaultPuzzleConstraints
+import com.bliss.grid.infrastructure.analytics.MatomoAnalyticsAdapter
+import com.bliss.grid.infrastructure.analytics.NoopAnalyticsAdapter
 import com.bliss.grid.infrastructure.persistence.CsvWordRepository
 import com.bliss.grid.infrastructure.persistence.InMemoryHintUsageRepository
 import com.bliss.grid.infrastructure.persistence.InMemoryPuzzleRepository
 import com.bliss.grid.infrastructure.persistence.PostgresHintUsageRepository
 import com.bliss.grid.infrastructure.persistence.PostgresPuzzleRepository
+import io.ktor.client.HttpClient
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.Application
+import io.ktor.server.application.ApplicationStopped
 import io.ktor.server.application.install
 import io.ktor.server.plugins.calllogging.CallLogging
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
@@ -29,7 +36,12 @@ import io.ktor.server.plugins.cors.routing.CORS
 import io.ktor.server.plugins.statuspages.StatusPages
 import io.ktor.server.response.respondText
 import io.ktor.server.routing.routing
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.serialization.json.Json
+import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
 
 /** Wires CORS, content negotiation (JSON), call logging, RFC 7807 errors, and routes. */
@@ -114,12 +126,48 @@ fun Application.module() {
             null -> InMemoryPuzzleRepository() as PuzzleRepository to InMemoryHintUsageRepository() as HintUsageRepository
             else -> PostgresPuzzleRepository(ds) as PuzzleRepository to PostgresHintUsageRepository(ds) as HintUsageRepository
         }
-    val loadOrGenerate = LoadOrGeneratePuzzleUseCase(puzzleRepository, generatePuzzle)
-    val requestWordHint = RequestWordHintUseCase(puzzleRepository, hintUsageRepository, wordRepository)
+    // Fire-and-forget analytics scope (ADR-0025). Cancelled on app stop so in-flight
+    // posts don't outlive the JVM. The adapter falls back to a no-op when MATOMO_URL /
+    // MATOMO_SITE_ID / MATOMO_ID_SALT are unset, so dev / staging / pre-Matomo prod work
+    // unchanged.
+    val analyticsScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    monitor.subscribe(ApplicationStopped) { analyticsScope.cancel() }
+    val analyticsEventSink: AnalyticsEventSink = createAnalyticsEventSink(analyticsScope)
+
+    val loadOrGenerate = LoadOrGeneratePuzzleUseCase(puzzleRepository, generatePuzzle, analyticsEventSink = analyticsEventSink)
+    val requestWordHint =
+        RequestWordHintUseCase(puzzleRepository, hintUsageRepository, wordRepository, analyticsEventSink = analyticsEventSink)
     val validatePuzzle = ValidatePuzzleUseCase(puzzleRepository)
+    val deleteSession = DeleteSessionUseCase(hintUsageRepository)
 
     routing {
         health(version)
         puzzles(loadOrGenerate, requestWordHint, validatePuzzle)
+        deleteSession(deleteSession)
+    }
+}
+
+private val analyticsLogger = LoggerFactory.getLogger("com.bliss.grid.api.analytics")
+
+/**
+ * Returns a Matomo adapter when all three env vars are configured, otherwise a no-op.
+ * Same shape as [com.bliss.game.api.module]'s helper for parity.
+ */
+private fun createAnalyticsEventSink(scope: CoroutineScope): AnalyticsEventSink {
+    val url = System.getenv("MATOMO_URL")?.trim()?.trimEnd('/')
+    val siteId = System.getenv("MATOMO_SITE_ID")?.trim()
+    val salt = System.getenv("MATOMO_ID_SALT")?.trim()
+    return if (!url.isNullOrBlank() && !siteId.isNullOrBlank() && !salt.isNullOrBlank() && salt.length >= 16) {
+        analyticsLogger.info("Matomo analytics enabled at {} (site {})", url, siteId)
+        MatomoAnalyticsAdapter(
+            httpClient = HttpClient(),
+            baseUrl = url,
+            siteId = siteId,
+            idSalt = salt,
+            scope = scope,
+        )
+    } else {
+        analyticsLogger.info("Matomo analytics disabled (missing or short MATOMO_URL/MATOMO_SITE_ID/MATOMO_ID_SALT)")
+        NoopAnalyticsAdapter()
     }
 }

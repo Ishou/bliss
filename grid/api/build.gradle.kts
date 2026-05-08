@@ -80,6 +80,11 @@ dependencies {
     // narrow: prod apex + www + local Vite dev.
     implementation("io.ktor:ktor-server-cors:$ktorVersion")
 
+    // Ktor client — used by Module.kt to wire MatomoAnalyticsAdapter (ADR-0025).
+    // The client posts events to the self-hosted Matomo Tracking API.
+    implementation("io.ktor:ktor-client-core:$ktorVersion")
+    implementation("io.ktor:ktor-client-cio:$ktorVersion")
+
     // UUID v7 generation (ADR-0003 §6 — wire convention: UUID v7 ids).
     implementation("com.fasterxml.uuid:java-uuid-generator:$javaUuidGeneratorVersion")
 

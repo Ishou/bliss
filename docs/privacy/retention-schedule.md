@@ -22,16 +22,19 @@
 
 ### Erasure on user request
 
-When a user clicks "Erase my data" (Phase 6), the following deletions
-happen in one HTTP request:
+When a user clicks "Erase my data", the following deletions happen in
+one HTTP request:
 
-1. Frontend: `localStorage.clear()` for the Bliss keys.
+1. Frontend: `localStorage.clear()` for the Bliss keys (`bliss.session.id`,
+   `bliss.session.pseudonym`).
 2. Backend: `DELETE /v1/sessions/{sessionId}` on `grid/api` removes all
    `puzzle_hint_usage` rows for that session.
-3. Backend: same handler calls Matomo's `Live.deleteVisits` filtered by
-   the **current day's** rotated hash. Only today's visits are deletable;
-   visits from prior days were recorded under a different hash and are
-   already non-attributable by design (cross-day linkage impossible).
+3. Matomo visits are intentionally NOT deleted — they are already
+   non-attributable by design. The daily-rotated salted hash means visits
+   from prior days cannot be linked, and the fresh local sessionId
+   generated after the erase breaks linkage with same-day visits.
+   Matomo data persists in aggregate, anonymous form under the 13-month
+   retention window.
 
 Aggregate Matomo data (e.g. "10 grids solved on 2026-05-08") remains
 because it cannot be attributed to an individual visitor; this is

@@ -23,4 +23,11 @@ interface HintUsageRepository {
         sessionId: UUID,
         hintsAllowed: Int,
     ): Int?
+
+    /**
+     * Right-to-erasure (RGPD Article 17, ADR-0025 §5). Removes every
+     * hint-usage row tied to [sessionId] across all puzzles. Returns the
+     * number of rows deleted (0 if the session never used a hint).
+     */
+    fun deleteBySession(sessionId: UUID): Int
 }

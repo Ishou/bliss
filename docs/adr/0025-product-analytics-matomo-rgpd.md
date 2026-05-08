@@ -137,13 +137,16 @@ processing activity makes them blockers:
 - **Sub-processors register** (`docs/privacy/sub-processors.md`): Hetzner
   Online GmbH (hosting), Cloudflare Inc. (DNS, CDN). No Matomo Cloud.
 - **Erasure endpoint**: `DELETE /v1/sessions/{sessionId}` on `grid/api`
-  removes hint-usage rows and triggers `Live.deleteVisits` in Matomo for
-  the **current day's** rotated hash. Only today's visits are deletable;
-  visits from prior days were recorded under a different hash (daily
-  rotation) and cannot be matched or retrieved — they are already
-  non-attributable to any individual by design. This limitation is
-  disclosed to users in the privacy notice. Frontend exposes "Effacer mes
-  données" in settings.
+  removes hint-usage rows. Active `Live.deleteVisits` is deliberately
+  omitted: the daily-rotated salted hash already makes prior-day visits
+  non-attributable to any individual, and generating a fresh `sessionId`
+  client-side after erasure breaks same-day linkage without an active
+  Matomo API call. The implementation cost of calling `Live.deleteVisits`
+  (expanded adapter, API dependency) outweighs the marginal compliance
+  gain. Only the hint-usage rows — which are the only data keyed to a
+  user-controlled `sessionId` — are deleted. This design is disclosed
+  to users in the privacy notice. Frontend exposes "Effacer mes données"
+  in settings.
 
 ### 6. Out of scope
 

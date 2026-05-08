@@ -34,4 +34,10 @@ class InMemoryHintUsageRepository : HintUsageRepository {
             // CAS failed — another spend won the race; loop and re-read.
         }
     }
+
+    override fun deleteBySession(sessionId: UUID): Int {
+        val keys = counters.keys.filter { it.second == sessionId }
+        keys.forEach { counters.remove(it) }
+        return keys.size
+    }
 }
