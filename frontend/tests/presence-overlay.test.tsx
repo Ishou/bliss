@@ -9,20 +9,13 @@ import type { Player, Pseudonym, SessionId } from '@/domain/game';
 import type { Cell, Puzzle } from '@/domain';
 import { Grid } from '@/ui/components/grid';
 
-// PresenceOverlay tests. The overlay is mounted as a sibling of the
-// grid (`Grid` wraps it for us when `subscribeToRemotePresence` +
-// `playersBySessionId` are present), so the simplest test surface is
-// rendering Grid with those props and dispatching `presenceUpdated`
-// events through the subscribe registrar.
-//
-// What we pin:
-//   1. A presence frame mounts a ring + a chip + word-tint rects on
-//      the focused cell's word range.
-//   2. Multiple presences on the same cell stack as concentric rings
-//      with distinct `data-stack-index`.
-//   3. The chip carries the peer's pseudonym (looked up via the
-//      `playersBySessionId` map prop).
-//   4. Solo mode (no presence props) renders no overlay at all.
+// Multiplayer presence visuals — post-redesign: the per-cell active ring,
+// word-tint, and badge live INSIDE each `LetterCellView` (no overlay
+// sibling). These tests assert on the cell-level data attributes the
+// builder wires:
+//   - `data-player-active="true"` on the cell whose cursor a peer occupies
+//   - `data-player-word="true"`   on cells inside the peer's word range
+//   - `data-player-badge="true"`  on the badge span (only on remote-active cells)
 
 const L = (row: number, col: number): Cell =>
   ({ kind: 'letter', position: { row, col }, entry: '' });
@@ -45,10 +38,6 @@ const TEST_PUZZLE: Puzzle = {
 
 const SESSION_ALICE = '0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6c' as SessionId;
 const SESSION_BOB = 'aaaa1111-7a2c-7c9e-8f1a-9b2d3e4f5a6c' as SessionId;
-// Stand-in for the local player's session — the overlay filters out
-// frames whose sessionId matches `currentSessionId` (own presence is
-// already conveyed by `letterCellInWord` + the DOM caret), so tests use
-// a third session id distinct from any peer being asserted.
 const SESSION_LOCAL = 'bbbb2222-7a2c-7c9e-8f1a-9b2d3e4f5a6c' as SessionId;
 
 const players: Map<SessionId, Player> = new Map([
@@ -81,8 +70,13 @@ const presence = (
   direction,
 });
 
-describe('PresenceOverlay — single peer cursor', () => {
-  it('renders one ring + one chip on the focused cell after a presenceUpdated dispatch', () => {
+const cellAt = (root: HTMLElement, row: number, col: number) =>
+  root.querySelector<HTMLElement>(
+    `[role="gridcell"][data-row="${row}"][data-col="${col}"]`,
+  );
+
+describe('Presence visuals — single peer cursor', () => {
+  it('marks the focused cell with data-player-active and renders a badge', () => {
     const stream = makeFakeStream();
     const { container } = render(
       <Grid
@@ -93,15 +87,14 @@ describe('PresenceOverlay — single peer cursor', () => {
       />,
     );
     act(() => stream.dispatch(presence(SESSION_ALICE, 1, 2, 'across')));
-    const rings = container.querySelectorAll('[data-testid="presence-ring"]');
-    expect(rings).toHaveLength(1);
-    expect(rings[0]?.getAttribute('data-session-id')).toBe(SESSION_ALICE);
-    const chips = container.querySelectorAll('[data-testid="presence-chip"]');
-    expect(chips).toHaveLength(1);
-    expect(chips[0]?.textContent).toContain('Alice');
+    const active = cellAt(container, 1, 2);
+    expect(active?.getAttribute('data-player-active')).toBe('true');
+    const badges = container.querySelectorAll('[data-player-badge="true"]');
+    expect(badges).toHaveLength(1);
+    expect(badges[0]?.textContent).toBe('A');
   });
 
-  it('renders one word-tint rect per cell in the focused word', () => {
+  it('marks every other cell in the peer\'s word range with data-player-word', () => {
     const stream = makeFakeStream();
     const { container } = render(
       <Grid
@@ -112,14 +105,16 @@ describe('PresenceOverlay — single peer cursor', () => {
       />,
     );
     act(() => stream.dispatch(presence(SESSION_ALICE, 1, 3, 'across')));
-    const tints = container.querySelectorAll(
-      `[data-testid="presence-word-tint"][data-session-id="${SESSION_ALICE}"]`,
+    const wordCells = container.querySelectorAll(
+      '[role="gridcell"][data-player-word="true"]',
     );
-    // across-2 spans (1,1)..(1,4) — 4 letter cells.
-    expect(tints).toHaveLength(4);
+    // across-2 spans (1,1)..(1,4) — 4 letter cells; 1 of them is the
+    // active cell so 3 word-tinted cells remain.
+    expect(wordCells).toHaveLength(3);
+    expect(cellAt(container, 1, 3)?.getAttribute('data-player-active')).toBe('true');
   });
 
-  it('drops the cursor when row/column arrive as null', () => {
+  it('clears the cell highlight when row/column arrive as null', () => {
     const stream = makeFakeStream();
     const { container } = render(
       <Grid
@@ -130,13 +125,13 @@ describe('PresenceOverlay — single peer cursor', () => {
       />,
     );
     act(() => stream.dispatch(presence(SESSION_ALICE, 1, 2, 'across')));
-    expect(container.querySelectorAll('[data-testid="presence-ring"]')).toHaveLength(1);
+    expect(cellAt(container, 1, 2)?.getAttribute('data-player-active')).toBe('true');
     act(() => stream.dispatch(presence(SESSION_ALICE, null, null, null)));
-    expect(container.querySelectorAll('[data-testid="presence-ring"]')).toHaveLength(0);
-    expect(container.querySelectorAll('[data-testid="presence-chip"]')).toHaveLength(0);
+    expect(cellAt(container, 1, 2)?.getAttribute('data-player-active')).toBeNull();
+    expect(container.querySelectorAll('[data-player-badge="true"]')).toHaveLength(0);
   });
 
-  it('drops a presence frame whose sessionId matches currentSessionId (own cursor never overlaid)', () => {
+  it('drops a presence frame whose sessionId matches currentSessionId (own cursor not painted as remote)', () => {
     const stream = makeFakeStream();
     const localPlayers: Map<SessionId, Player> = new Map([
       [SESSION_LOCAL, { sessionId: SESSION_LOCAL, pseudonym: 'Me' as Pseudonym, joinedAt: '2026-05-02T15:30:00Z' }],
@@ -150,14 +145,14 @@ describe('PresenceOverlay — single peer cursor', () => {
         currentSessionId={SESSION_LOCAL}
       />,
     );
-    // Server echoes the local player's own cellFocus back via presenceUpdated;
-    // the overlay must NOT paint a ring for the local player on top of the
-    // existing letterCellInWord highlight.
     act(() => stream.dispatch(presence(SESSION_LOCAL, 1, 2, 'across')));
-    expect(container.querySelectorAll('[data-testid="presence-ring"]')).toHaveLength(0);
-    // A peer presence on the same dispatch round still renders.
+    // No badge should render for the local session even when the server
+    // echoes the local user's own cellFocus back.
+    expect(container.querySelectorAll('[data-player-badge="true"]')).toHaveLength(0);
     act(() => stream.dispatch(presence(SESSION_ALICE, 2, 2, 'down')));
-    expect(container.querySelectorAll('[data-testid="presence-ring"]')).toHaveLength(1);
+    const aliceBadges = container.querySelectorAll('[data-player-badge="true"]');
+    expect(aliceBadges).toHaveLength(1);
+    expect(aliceBadges[0]?.textContent).toBe('A');
   });
 
   it('drops a presence frame for a session not in playersBySessionId', () => {
@@ -172,12 +167,13 @@ describe('PresenceOverlay — single peer cursor', () => {
       />,
     );
     act(() => stream.dispatch(presence(ghost, 1, 2, 'across')));
-    expect(container.querySelectorAll('[data-testid="presence-ring"]')).toHaveLength(0);
+    expect(container.querySelectorAll('[data-player-active="true"]')).toHaveLength(0);
+    expect(container.querySelectorAll('[data-player-badge="true"]')).toHaveLength(0);
   });
 });
 
-describe('PresenceOverlay — overlapping presences', () => {
-  it('stacks concentric rings on the same cell with distinct stack indexes', () => {
+describe('Presence visuals — overlapping presences', () => {
+  it('most-recently-active wins on a shared word cell; only one cell carries data-player-word', () => {
     const stream = makeFakeStream();
     const { container } = render(
       <Grid
@@ -187,34 +183,37 @@ describe('PresenceOverlay — overlapping presences', () => {
         currentSessionId={SESSION_LOCAL}
       />,
     );
+    // Alice solving across-2 (row 1) covers (1,1)..(1,4). Bob solving
+    // down-2 (col 2) covers (1,2)..(3,2). Cell (1,2) is in both ranges.
+    // Bob arrives last, so (1,2) should belong to Bob's word — but
+    // Alice's cursor IS on (1,2), making (1,2) Alice's ACTIVE cell.
+    // Active wins over word, so the cell carries data-player-active.
     act(() => {
-      stream.dispatch(presence(SESSION_ALICE, 2, 2, 'across'));
+      stream.dispatch(presence(SESSION_ALICE, 1, 2, 'across'));
       stream.dispatch(presence(SESSION_BOB, 2, 2, 'down'));
     });
-    const rings = container.querySelectorAll('[data-testid="presence-ring"]');
-    expect(rings).toHaveLength(2);
-    const indexes = Array.from(rings).map((r) => r.getAttribute('data-stack-index')).sort();
-    expect(indexes).toEqual(['0', '1']);
-    // Both pseudonym chips render at the same anchor cell.
-    const chips = container.querySelectorAll('[data-testid="presence-chip"]');
-    expect(chips).toHaveLength(2);
-    const chipText = Array.from(chips).map((c) => c.textContent ?? '').join(' ');
-    expect(chipText).toContain('Alice');
-    expect(chipText).toContain('Bob');
+    const shared = cellAt(container, 1, 2);
+    expect(shared?.getAttribute('data-player-active')).toBe('true');
+    // Two distinct active cells (Alice on (1,2), Bob on (2,2)).
+    const actives = container.querySelectorAll('[data-player-active="true"]');
+    expect(actives).toHaveLength(2);
   });
 });
 
-describe('PresenceOverlay — solo mode', () => {
-  it('does not mount the overlay when neither presence prop is provided', () => {
+describe('Presence visuals — solo mode', () => {
+  it('does not paint any presence attributes when no presence props are supplied', () => {
     const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
-    expect(container.querySelector('[data-testid="presence-overlay"]')).toBeNull();
+    expect(container.querySelectorAll('[data-player-active="true"]')).toHaveLength(0);
+    expect(container.querySelectorAll('[data-player-word="true"]')).toHaveLength(0);
+    expect(container.querySelectorAll('[data-player-badge="true"]')).toHaveLength(0);
   });
 
-  it('does not mount the overlay when only one of the two presence props is provided', () => {
+  it('does not enable presence when only one of the two presence props is provided', () => {
     const stream = makeFakeStream();
     const { container } = render(
       <Grid puzzle={TEST_PUZZLE} subscribeToRemotePresence={stream.subscribe} />,
     );
-    expect(container.querySelector('[data-testid="presence-overlay"]')).toBeNull();
+    act(() => stream.dispatch(presence(SESSION_ALICE, 1, 2, 'across')));
+    expect(container.querySelectorAll('[data-player-active="true"]')).toHaveLength(0);
   });
 });

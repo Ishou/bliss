@@ -112,7 +112,62 @@ const letterCell = css({ bg: 'surface' });
 // (`accentBg` = sage) was visually identical to the validated state,
 // which made the "you're solving this word" cue indistinguishable
 // from "this letter is locked in".
+//
+// `letterCellInWord` is the SOLO-PLAY fallback used when no `presence`
+// prop is provided (single-player puzzles have no per-player tinting).
+// Multiplayer routes pass `presence` for every cell that any player —
+// local or remote — currently occupies; in that path the local player's
+// own word picks up their hash-derived `--player-word-bg`, so this
+// class never paints.
 const letterCellInWord = css({ bg: 'focusBg' });
+// Player-aware modifiers consume CSS vars that the Grid spreads onto
+// the cell wrapper via inline `style={...}` (`playerColorVars(sessionId)`).
+// The wrapper's bg + inset ring are the sole visual cues — the inner
+// `<input>` gets its `_focus` bg/ring suppressed so the two don't
+// double up at the cell edges.
+const letterCellPlayerActive = css({
+  bg: 'var(--player-active-bg)',
+  boxShadow: 'inset 0 0 0 1.5px var(--player-color)',
+  '& input:focus': {
+    bg: 'transparent',
+    boxShadow: 'none',
+  },
+});
+const letterCellPlayerWord = css({
+  bg: 'var(--player-word-bg)',
+});
+// Active-cell badge — small circular chip pinned to the cell's top-right.
+// Renders ONLY for remote players (the local player's own active cell is
+// disambiguated by the wrapper's ring; you don't badge yourself).
+// Background uses the player's accent (`--player-color`); text uses the
+// matching `--player-on` shade for AA contrast at the recipe's 16 %
+// lightness floor.
+//
+// `data-typing="true"` opts into the keystroke-pulse animation defined in
+// `index.css` (`wordsparrow-badge-pulse`). The Grid sets it when the
+// peer is actively receiving keystrokes; absent or false, the badge is
+// static. The keyframe is reduced-motion-aware.
+const playerBadge = css({
+  position: 'absolute',
+  top: '3px',
+  right: '3px',
+  width: '13px',
+  height: '13px',
+  borderRadius: '50%',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  fontSize: '8px',
+  fontWeight: 600,
+  background: 'var(--player-color)',
+  color: 'var(--player-on)',
+  zIndex: 5,
+  pointerEvents: 'none',
+  userSelect: 'none',
+  '&[data-typing="true"]': {
+    animation: 'wordsparrow-badge-pulse 1.4s ease-in-out infinite',
+  },
+});
 // Validated cell — locked, sage-on-sage. Spec §6: bg `primary.800`
 // (`successBg`), letter `primary.500` (`accent`). The `successBg`
 // semantic alias is identical to `accentBg` in the current palette but
@@ -560,8 +615,30 @@ const letterInput = css({
 // `arrowLabel` is hoisted above `LetterArrow` (search for it earlier
 // in this file) so both call sites share the single declaration.
 
+// Per-cell player presence resolved by the Grid (most-recent-wins across
+// all sessions, validated cells subtracted upstream). The Grid composes
+// this from local-cursor state + remote presences and passes it down per
+// cell. Solo play omits `presence` entirely.
+export interface CellPresence {
+  // CSS vars from `playerColorVars(sessionId)` — spread on the wrapper
+  // div's inline `style` so `letterCellPlayerActive` /
+  // `letterCellPlayerWord` resolve.
+  readonly vars: Record<string, string>;
+  // 'active' = this is the player's cursor cell; 'word' = the cell is
+  // part of the player's active word but not their cursor.
+  readonly role: 'active' | 'word';
+  // Single-character initial. Set ONLY for remote players whose active
+  // cell this is — local-player cells and word-tint cells leave it
+  // undefined and the badge is skipped.
+  readonly badge?: string;
+  // Animate the badge with the keystroke-pulse keyframe. Toggled true
+  // by the Grid when the peer is actively typing (within ~1.5 s of the
+  // last incoming letter), false otherwise. Static badge by default.
+  readonly typing?: boolean;
+}
+
 export const LetterCellView = memo(function LetterCellView({
-  cell, ariaLabel, inWord, validated, error, incomingArrows, inputRef, onClick, onKeyDown, onFocus, onBlur, onInput,
+  cell, ariaLabel, inWord, validated, error, presence, incomingArrows, inputRef, onClick, onKeyDown, onFocus, onBlur, onInput,
 }: {
   cell: LetterCell;
   ariaLabel: string;
@@ -573,6 +650,9 @@ export const LetterCellView = memo(function LetterCellView({
   // Transient error state set by `Vérifier`; the parent flips it back
   // off once the shake animation finishes (see PuzzlePage).
   error: boolean;
+  // Multiplayer presence resolved at the Grid layer. Validated cells
+  // are filtered out upstream so this never paints over a sage cell.
+  presence?: CellPresence;
   // Arrows pointing INTO this letter cell from neighbouring def cells
   // (ADR-0005 §6 follow-up). Empty/undefined when the cell sits
   // mid-word and has no entry arrows. Computed once at the Grid layer
@@ -633,25 +713,52 @@ export const LetterCellView = memo(function LetterCellView({
     onClick(e);
   };
 
-  // Class precedence: validated > error > inWord > default. Validated
-  // is terminal (the cell is locked); error is transient and only
-  // composes with the regular surface so the shake reads against the
-  // unhighlighted background.
+  // Class precedence: validated > error > presence.active > presence.word
+  // > inWord > default. Validated is terminal (the cell is locked);
+  // error is transient and only composes with the regular surface so
+  // the shake reads against the unhighlighted background. The presence
+  // branches replace the legacy `inWord` rose tint with a per-player
+  // hue when multiplayer is active — the Grid passes a `presence` for
+  // the local player too, so single-player and multiplayer share one
+  // codepath at the Cell layer.
+  const presenceClass =
+    presence?.role === 'active'
+      ? letterCellPlayerActive
+      : presence?.role === 'word'
+      ? letterCellPlayerWord
+      : null;
   const stateClass = validated
     ? letterCellValidated
     : error
     ? `${letterCell} ${letterCellError}`
+    : presenceClass
+    ? presenceClass
     : inWord
     ? letterCellInWord
     : letterCell;
+
+  // Spread player CSS vars on the wrapper so the cell's modifier class
+  // resolves them. Only set when a presence is actually painting on
+  // this cell — leaves untouched cells free of stale vars.
+  const wrapperStyle =
+    !validated && presence ? presence.vars : undefined;
+  const showBadge =
+    !validated && presence?.role === 'active' && presence.badge !== undefined;
 
   return (
     <div
       role="gridcell"
       className={`${cellBase} ${stateClass}`}
+      style={wrapperStyle}
       data-in-word={inWord ? 'true' : 'false'}
       data-validated={validated ? 'true' : undefined}
       data-error={error ? 'true' : undefined}
+      data-player-active={
+        !validated && presence?.role === 'active' ? 'true' : undefined
+      }
+      data-player-word={
+        !validated && presence?.role === 'word' ? 'true' : undefined
+      }
       data-row={cell.position.row}
       data-col={cell.position.col}
       onMouseDown={handleMouseDown}
@@ -723,6 +830,16 @@ export const LetterCellView = memo(function LetterCellView({
           arrow={a}
         />
       ))}
+      {showBadge && (
+        <span
+          className={playerBadge}
+          aria-hidden="true"
+          data-player-badge="true"
+          data-typing={presence!.typing ? 'true' : undefined}
+        >
+          {presence!.badge}
+        </span>
+      )}
     </div>
   );
 });
