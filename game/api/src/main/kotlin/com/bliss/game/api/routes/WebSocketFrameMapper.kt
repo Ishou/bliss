@@ -92,6 +92,16 @@ internal fun LobbyEvent.toFrameOrNull(): ServerToClientFrame? =
         is LobbyEvent.GridConfigChanged -> null
         // LobbyClosed: the server closes the socket; nothing to broadcast.
         is LobbyEvent.LobbyClosed -> null
+        // Presence-state edge events. The wire DTOs (Typing / Idle /
+        // ConnectionLost / CursorBumped under ServerToClientFrame) and their
+        // mappings land in PR C alongside the WebSocket-side
+        // PresenceBroadcaster adapter. Until then these branches return null
+        // so the sealed `when` stays exhaustive without prematurely emitting
+        // an unmapped wire frame.
+        is LobbyEvent.Typing -> null
+        is LobbyEvent.Idle -> null
+        is LobbyEvent.ConnectionLost -> null
+        is LobbyEvent.CursorBumped -> null
     }
 
 internal fun UseCaseError.toErrorFrame(): ServerToClientFrame.Error =

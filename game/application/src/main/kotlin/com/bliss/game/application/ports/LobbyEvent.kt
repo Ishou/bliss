@@ -1,6 +1,7 @@
 package com.bliss.game.application.ports
 
 import com.bliss.game.domain.CellEntry
+import com.bliss.game.domain.GameClueDirection
 import com.bliss.game.domain.GameSession
 import com.bliss.game.domain.GridConfig
 import com.bliss.game.domain.Letter
@@ -60,5 +61,47 @@ sealed interface LobbyEvent {
      */
     data class LobbyClosed(
         val reason: String,
+    ) : LobbyEvent
+
+    /**
+     * Boolean state edge: peer started ([typing] = true) or stopped ([typing] = false) receiving
+     * keystrokes. Emitted by `PresenceAggregator` on each transition; the same shape covers both
+     * directions. Wire mapping: `typing` AsyncAPI message.
+     */
+    data class Typing(
+        val sessionId: SessionId,
+        val typing: Boolean,
+    ) : LobbyEvent
+
+    /**
+     * Boolean state edge: peer crossed the inactivity threshold ([idle] = true) or returned to
+     * activity ([idle] = false). Independent of [ConnectionLost] — a connected-but-idle peer is
+     * still subscribed. Wire mapping: `idle` AsyncAPI message.
+     */
+    data class Idle(
+        val sessionId: SessionId,
+        val idle: Boolean,
+    ) : LobbyEvent
+
+    /**
+     * Graceful disconnect signal — peer's WebSocket closed but the slot is held during the
+     * server's grace window before any `playerLeft` follows. Distinct from [PlayerLeft]: clients
+     * grey-out the roster pill on this event without removing the slot. Wire mapping:
+     * `connectionLost` AsyncAPI message.
+     */
+    data class ConnectionLost(
+        val sessionId: SessionId,
+    ) : LobbyEvent
+
+    /**
+     * Server-authoritative cursor relocation. Emitted when an answer-validation flow locks cells
+     * that contained a peer's cursor — the server moves the named session's cursor to the next
+     * clue's first letter cell so the peer is not stranded on a sage cell. Wire mapping:
+     * `cursorBumped` AsyncAPI message.
+     */
+    data class CursorBumped(
+        val sessionId: SessionId,
+        val position: Position,
+        val direction: GameClueDirection,
     ) : LobbyEvent
 }
