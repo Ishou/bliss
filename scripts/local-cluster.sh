@@ -208,6 +208,44 @@ cmd_deploy() {
 cmd_dev() {
   require_cmd pnpm "https://pnpm.io/installation (>= v10)"
 
+  # `--force` kills any process already bound to one of the dev ports.
+  # Without it the script fails-fast with the offending PIDs so the user
+  # can decide (a stray gradle from a crashed prior run vs. a real
+  # service they care about elsewhere). Surfaces the "Address already
+  # in use" Ktor exception before it happens — the Gradle wrapper buries
+  # that error several lines deep otherwise.
+  local force=0
+  for arg in "$@"; do
+    case "$arg" in
+      --force|-f) force=1 ;;
+      *) log "unknown dev flag: $arg"; exit 2 ;;
+    esac
+  done
+
+  local -a dev_ports=(7777 7778 5173)
+  local p stray_found=0
+  for p in "${dev_ports[@]}"; do
+    local pids
+    pids=$(lsof -ti "tcp:$p" -sTCP:LISTEN 2>/dev/null || true)
+    if [ -n "$pids" ]; then
+      stray_found=1
+      if [ "$force" = "1" ]; then
+        log "port $p in use by pid(s) ${pids//$'\n'/, } — killing (--force)"
+        # shellcheck disable=SC2086
+        kill -9 $pids 2>/dev/null || true
+      else
+        log "port $p in use by pid(s) ${pids//$'\n'/, }"
+      fi
+    fi
+  done
+  if [ "$stray_found" = "1" ] && [ "$force" != "1" ]; then
+    log "rerun with: make dev FORCE=1   (or scripts/local-cluster.sh dev --force)"
+    exit 1
+  fi
+  # Brief wait so the kernel finishes releasing the sockets before the
+  # Ktor servers attempt to bind below.
+  if [ "$force" = "1" ]; then sleep 1; fi
+
   local repo_root
   repo_root="$(cd "$(dirname "$0")/.." && pwd)"
 
@@ -258,7 +296,8 @@ Usage: $(basename "$0") <up|down|reset|bootstrap|deploy|dev|status>
   reset      delete then recreate
   bootstrap  helm-install ingress-nginx, cert-manager, cloudnative-pg
   deploy     build grid-api image, import into k3d, helm install the app
-  dev        start API (hot reload) + frontend (Vite HMR) on the host
+  dev [-f]   start API (hot reload) + frontend (Vite HMR) on the host
+             (-f / --force: kill any stray process on 7777/7778/5173)
   status     kubectl get nodes,pods -A
 USAGE
 }
@@ -268,13 +307,15 @@ main() {
     usage >&2
     exit 2
   fi
-  case "$1" in
+  local subcmd="$1"
+  shift
+  case "$subcmd" in
     up)        cmd_up ;;
     down)      cmd_down ;;
     reset)     cmd_reset ;;
     bootstrap) cmd_bootstrap ;;
     deploy)    cmd_deploy ;;
-    dev)       cmd_dev ;;
+    dev)       cmd_dev "$@" ;;
     status)    cmd_status ;;
     -h|--help|help) usage ;;
     *) usage >&2; exit 2 ;;

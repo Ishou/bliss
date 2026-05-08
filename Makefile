@@ -31,8 +31,8 @@ cluster-bootstrap: ## Install ingress-nginx, cert-manager, CloudNative-PG via He
 deploy-local:      ## Build grid-api image, import into k3d, helm install
 	./scripts/local-cluster.sh deploy
 
-dev:               ## Start full-stack dev (API hot reload + Vite HMR)
-	./scripts/local-cluster.sh dev
+dev:               ## Start full-stack dev (API hot reload + Vite HMR). FORCE=1 kills strays on 7777/7778/5173.
+	./scripts/local-cluster.sh dev $(if $(FORCE),--force)
 
 cluster-status:    ## kubectl get nodes,pods -A against the local context
 	./scripts/local-cluster.sh status
