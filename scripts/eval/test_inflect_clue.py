@@ -467,3 +467,69 @@ def test_coord_noun_plural_inflates_both_nouns() -> None:
     res = inflect_clue("Élan et énergie", {"nom", "mas", "pl"}, idx)
     assert res.flag == "", res
     assert res.text == "Élans et énergies", res
+
+
+# ---------------------------------------------------------------------------
+# Finding 1: function-word guard — "plus" is tagged as a verb form of
+# "plaire" by grammalecte; the forward walk must break on it rather than
+# inflating it as a co-head.
+# ---------------------------------------------------------------------------
+
+
+def test_function_word_not_inflated_as_verb() -> None:
+    """`Rendre plus bas` for an ipre surface: `plus` is registered in the
+    index as a verb form of `plaire` (ipsi 1sg/2sg). The `_FUNCTION_WORDS`
+    guard must stop the walk before the co-head branch fires on it."""
+    idx = MorphologyIndex()
+    _add(idx, "rendre", "rendre", "v3__t___zz infi")
+    _add(idx, "rendre", "rend", "v3__t___zz ipre 3sg")
+    _add(idx, "plaire", "plus", "v3__i___zz ipsi 1sg 2sg")
+    _add(idx, "bas", "bas", "adj mas inv")
+    res = inflect_clue("Rendre plus bas",
+                       {"v1__t___zz", "ipre", "spre", "1sg", "3sg"}, idx)
+    assert res.flag == ""
+    assert res.text == "Rend plus bas"
+
+
+# ---------------------------------------------------------------------------
+# Finding 2A: conjunction guard — a same-POS token directly adjacent to
+# the head (no conjunction) must not be inflated as a co-head.
+# ---------------------------------------------------------------------------
+
+
+def test_no_conjunction_verb_not_inflated_as_cohead() -> None:
+    """`Faire savoir` for an ipre-3sg verb target: `savoir` follows the
+    head directly without a coordination conjunction and must not be
+    inflated."""
+    idx = MorphologyIndex()
+    _add(idx, "faire", "faire", "v3__t___zz infi")
+    _add(idx, "faire", "fait", "v3__t___zz ipre 3sg")
+    _add(idx, "savoir", "savoir", "v3__i___zz infi")
+    _add(idx, "savoir", "sait", "v3__i___zz ipre 3sg")
+    res = inflect_clue("Faire savoir", {"v3__t___zz", "ipre", "3sg"}, idx)
+    assert res.flag == ""
+    assert res.text == "Fait savoir"
+
+
+# ---------------------------------------------------------------------------
+# Finding 2B: adj/nom-ambiguous token after head — without a conjunction the
+# co-head branch must not fire; adj agreement handles it instead.
+# ---------------------------------------------------------------------------
+
+
+def test_adj_nom_ambiguous_agrees_not_cohead_inflated() -> None:
+    """`Dévouement total` for a nom fem-pl target: `total` carries `nom` in
+    its POS classes, so the co-head branch would inflate it to `totales`
+    (fem pl). With the conjunction guard the co-head branch does not fire;
+    adj agreement inflates it to `totaux` (mas pl, matching the inflected
+    head `dévouements`)."""
+    idx = MorphologyIndex()
+    _add(idx, "dévouement", "dévouement", "nom mas sg")
+    _add(idx, "dévouement", "dévouements", "nom mas pl")
+    _add(idx, "total", "total", "adj nom mas sg")
+    _add(idx, "total", "totale", "adj nom fem sg")
+    _add(idx, "total", "totaux", "adj nom mas pl")
+    _add(idx, "total", "totales", "adj nom fem pl")
+    res = inflect_clue("Dévouement total", {"nom", "fem", "pl"}, idx)
+    assert res.flag == ""
+    assert res.text == "Dévouements totaux"

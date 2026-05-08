@@ -353,6 +353,7 @@ def inflect_clue(
     gn = _agreement_target(inflected, head_lemma, target_pos, target, index)
     initial_gn = gn
     in_pp = False
+    saw_coord = False
     i = head_idx + 1
     while i < len(new_tokens):
         tok = new_tokens[i]
@@ -362,10 +363,12 @@ def inflect_clue(
         classes = index.pos_classes_of_form(lo)
         # Coordinating conjunction: walk through to the next content token.
         if lo in _COORD_WALKTHROUGH:
+            saw_coord = True
             i += 1
             continue
         if lo in _AGREEMENT_PASSTHROUGH:
             in_pp = True
+            saw_coord = False
             i += 1
             continue
         # In PP state, an encountered noun re-anchors the agreement target
@@ -379,10 +382,10 @@ def inflect_clue(
             in_pp = False
             i += 1
             continue
-        # Co-head: same POS as target, NP state. Inflate to the head's
-        # chosen target morphology (`target` already reflects the
-        # post-decomposition choice from the head pick above).
-        if not in_pp and target_pos in classes:
+        if lo in _FUNCTION_WORDS:
+            break
+        # Co-head: same POS as target, NP state, reached after a conjunction.
+        if not in_pp and target_pos in classes and saw_coord:
             co_lemma = index.lemma_of_form(lo, prefer_pos=target_pos)
             if co_lemma:
                 co_form = None
@@ -399,8 +402,10 @@ def inflect_clue(
                             break
                 if co_form and co_form.lower() != lo:
                     new_tokens[i] = co_form
+            saw_coord = False
             i += 1
             continue
+        saw_coord = False
         # Post-head adjective agreement (when we know a gn target).
         if gn is not None and "adj" in classes:
             adj_lemma = index.lemma_of_form(lo, prefer_pos="adj")
@@ -415,6 +420,7 @@ def inflect_clue(
     # Backward walk: pre-head co-heads / adjectives. Symmetry with the
     # forward walk — same POS as target gets inflated to head's morphology;
     # adj at any state agrees to the head's `initial_gn`.
+    saw_coord = False
     i = head_idx - 1
     while i >= 0:
         tok = new_tokens[i]
@@ -422,12 +428,13 @@ def inflect_clue(
             break
         lo = tok.lower()
         if lo in _COORD_WALKTHROUGH:
+            saw_coord = True
             i -= 1
             continue
         if lo in _FUNCTION_WORDS:
             break
         classes = index.pos_classes_of_form(lo)
-        if target_pos in classes:
+        if target_pos in classes and saw_coord:
             co_lemma = index.lemma_of_form(lo, prefer_pos=target_pos)
             if co_lemma:
                 co_form = None
@@ -438,6 +445,7 @@ def inflect_clue(
                         break
                 if co_form and co_form.lower() != lo:
                     new_tokens[i] = co_form
+            saw_coord = False
             i -= 1
             continue
         if initial_gn is not None and "adj" in classes:
