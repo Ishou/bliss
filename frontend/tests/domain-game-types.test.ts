@@ -121,6 +121,7 @@ describe('GamePuzzle shape parity', () => {
       language: 'fr',
       width: 5,
       height: 5,
+      hintsAllowed: 3,
       cells: [],
       clues: [],
       createdAt: '2026-04-24T15:30:00Z',

@@ -12,6 +12,13 @@ const baseHeader: Omit<ApiPuzzle, 'width' | 'height' | 'cells'> = {
 };
 
 describe('apiPuzzleToDomain', () => {
+  it('propagates hintsAllowed from the wire onto the domain Puzzle', () => {
+    const api: ApiPuzzle = {
+      ...baseHeader, hintsAllowed: 3, width: 1, height: 1, cells: [],
+    };
+    expect(apiPuzzleToDomain(api).hintsAllowed).toBe(3);
+  });
+
   it('renames column→col, lifts letters/blocks/single-clue defs, omits `answer` when blank', () => {
     const api: ApiPuzzle = {
       ...baseHeader, width: 4, height: 1,

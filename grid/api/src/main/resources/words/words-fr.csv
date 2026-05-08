@@ -12911,7 +12911,7 @@ drop,fr,4,64407,0.80294245,,grammalecte,MPL-2.0,drop
 drops,fr,5,20641,0.84189427,,grammalecte,MPL-2.0,drop
 drôle,fr,5,811691,0.80223066,Amusant,grammalecte,MPL-2.0,drôle
 drôles,fr,6,178247,0.84980714,Amusantes,grammalecte,MPL-2.0,drôle
-du,fr,2,100000,,Article contracté masculin,bliss,CC0-1.0,du
+du,fr,2,100000,,Article contracté,bliss,CC0-1.0,du
 dual,fr,4,92836,0.7991289,,grammalecte,MPL-2.0,dual
 duale,fr,5,57129,0.83374125,,grammalecte,MPL-2.0,dual
 duales,fr,6,14658,0.8688226,,grammalecte,MPL-2.0,dual
@@ -17080,7 +17080,7 @@ estrade,fr,7,386645,0.8664306,,grammalecte,MPL-2.0,estrade
 estrades,fr,8,37002,0.90369874,,grammalecte,MPL-2.0,estrade
 estuaire,fr,8,400917,0.88762987,Bouche de fleuve,grammalecte,MPL-2.0,estuaire
 estuaires,fr,9,121748,0.91384864,Bouches de fleuve,grammalecte,MPL-2.0,estuaire
-et,fr,2,100000,,Conjonction de coordination,bliss,CC0-1.0,et
+et,fr,2,100000,,Conjonction usuelle,bliss,CC0-1.0,et
 ethnie,fr,6,479367,0.83900034,,grammalecte,MPL-2.0,ethnie
 ethnies,fr,7,433323,0.8653076,,grammalecte,MPL-2.0,ethnie
 ethnique,fr,8,1522394,0.8736636,,grammalecte,MPL-2.0,ethnique
@@ -25343,7 +25343,7 @@ léthargie,fr,9,276135,0.90874743,Torpeur,grammalecte,MPL-2.0,léthargie
 léthargies,fr,10,4288,0.9397688,Torpeurs,grammalecte,MPL-2.0,léthargie
 léthargique,fr,11,90676,0.94171363,,grammalecte,MPL-2.0,léthargique
 lûmes,fr,5,23759,0.8408731,,grammalecte,MPL-2.0,lire
-ma,fr,2,100000,,Possessif féminin singulier,bliss,CC0-1.0,ma
+ma,fr,2,100000,,Possessif féminin,bliss,CC0-1.0,ma
 maar,fr,4,127966,0.79541606,,grammalecte,MPL-2.0,maar
 machination,fr,11,119285,0.940645,Manigance,grammalecte,MPL-2.0,machination
 machine,fr,7,9295997,0.816176,Appareil,grammalecte,MPL-2.0,machine
@@ -46450,7 +46450,7 @@ zéros,fr,5,105047,0.8280725,Points nuls,grammalecte,MPL-2.0,zéro
 œuvrèrent,fr,9,6011,0.9264259,Agirent,grammalecte,MPL-2.0,œuvrer
 œuvré,fr,5,107010,0.8278911,Agi,grammalecte,MPL-2.0,œuvrer
 de,fr,2,0,,Préposition d'origine,bliss,CC0-1.0,de
-es,fr,2,0,,Verbe être à la 2e personne,bliss,CC0-1.0,es
+es,fr,2,0,,Verbe être, 2e pers.,bliss,CC0-1.0,es
 if,fr,2,0,,Arbre à baies rouges,bliss,CC0-1.0,if
 ils,fr,3,0,,Pronom masculin pluriel,bliss,CC0-1.0,ils
 les,fr,3,0,,Article défini pluriel,bliss,CC0-1.0,les
@@ -46469,7 +46469,7 @@ aïe,fr,3,0,,Cri de douleur,bliss,CC0-1.0,aïe
 ail,fr,3,0,,Bulbe à gousses,bliss,CC0-1.0,ail
 air,fr,3,0,,Mélange respirable,bliss,CC0-1.0,air
 ami,fr,3,0,,Compagnon de confiance,bliss,CC0-1.0,ami
-ans,fr,3,0,,Mesure de la durée d'une vie,bliss,CC0-1.0,ans
+ans,fr,3,0,,Mesure d'une vie,bliss,CC0-1.0,ans
 arc,fr,3,0,,Arme à corde tendue,bliss,CC0-1.0,arc
 are,fr,3,0,,Cent mètres carrés,bliss,CC0-1.0,are
 art,fr,3,0,,Création esthétique,bliss,CC0-1.0,art
@@ -46607,8 +46607,8 @@ vos,fr,3,0,,Possessif pluriel,bliss,CC0-1.0,vos
 vue,fr,3,0,,Sens visuel,bliss,CC0-1.0,vue
 yen,fr,3,0,,Monnaie japonaise,bliss,CC0-1.0,yen
 zoo,fr,3,0,,Parc animalier,bliss,CC0-1.0,zoo
-nu,fr,2,100000,,Sans vêtement ou lettre grecque,bliss,CC0-1.0,nu
-pi,fr,2,100000,,Constante mathématique grecque,bliss,CC0-1.0,pi
+nu,fr,2,100000,,Sans vêtement,bliss,CC0-1.0,nu
+pi,fr,2,100000,,Constante grecque,bliss,CC0-1.0,pi
 bu,fr,2,100000,,Participe de boire,bliss,CC0-1.0,bu
 dé,fr,2,100000,,Cube à six faces,bliss,CC0-1.0,dé
 dû,fr,2,100000,,Ce que l'on doit,bliss,CC0-1.0,dû
@@ -46618,7 +46618,7 @@ fa,fr,2,100000,,Note de musique,bliss,CC0-1.0,fa
 ha,fr,2,100000,,Cri d'étonnement,bliss,CC0-1.0,ha
 là,fr,2,100000,,Adverbe de lieu,bliss,CC0-1.0,là
 né,fr,2,100000,,Venu au monde,bliss,CC0-1.0,né
-où,fr,2,100000,,Adverbe de lieu interrogatif,bliss,CC0-1.0,où
+où,fr,2,100000,,Adverbe de lieu,bliss,CC0-1.0,où
 pu,fr,2,100000,,Participe de pouvoir,bliss,CC0-1.0,pu
 ra,fr,2,100000,,Dieu solaire égyptien,bliss,CC0-1.0,ra
 té,fr,2,100000,,Règle d'équerre ou note,bliss,CC0-1.0,té
@@ -46629,7 +46629,7 @@ psi,fr,3,100000,,Lettre grecque (23e),bliss,CC0-1.0,psi
 rho,fr,3,100000,,Lettre grecque (17e),bliss,CC0-1.0,rho
 khi,fr,3,100000,,Lettre grecque (22e),bliss,CC0-1.0,khi
 êta,fr,3,100000,,Lettre grecque (7e),bliss,CC0-1.0,êta
-âme,fr,3,100000,,Partie immatérielle de l'être,bliss,CC0-1.0,âme
+âme,fr,3,100000,,Partie immatérielle,bliss,CC0-1.0,âme
 ave,fr,3,100000,,Salutation latine,bliss,CC0-1.0,ave
 bey,fr,3,100000,,Titre ottoman,bliss,CC0-1.0,bey
 dey,fr,3,100000,,Souverain d'Alger,bliss,CC0-1.0,dey

@@ -1,9 +1,15 @@
 import { createRoute, useNavigate, useRouter } from '@tanstack/react-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { css } from 'styled-system/css';
-import type { Puzzle } from '@/domain';
+import { normalizeAnswerLetter, type Position, type Puzzle } from '@/domain';
 import { LobbyClientError } from '@/application/game';
-import { Grid, useValidation } from '@/ui/components/grid';
+import {
+  Grid,
+  HintControl,
+  useHintRequest,
+  usePuzzleValidation,
+} from '@/ui/components/grid';
+import { wordRange } from '@/ui/components/grid/wordRange';
 import { Button } from '@/ui/components/primitives';
 import {
   AppHeader,
@@ -11,6 +17,8 @@ import {
   PuzzleToolbar,
 } from '@/ui/components/layout';
 import { Route as RootRoute } from './__root';
+
+type ActiveFocus = { readonly position: Position; readonly direction: 'across' | 'down' };
 
 // Top-level page shell. The header sits above the puzzle area, the
 // puzzle area takes the remaining viewport (`flex: 1 1 0; minHeight: 0`
@@ -151,7 +159,25 @@ function PageShell({ children }: { children: React.ReactNode }) {
 function HomePage() {
   const puzzle = Route.useLoaderData() as Puzzle;
   const router = useRouter();
-  const validation = useValidation(puzzle);
+  const { puzzleSolver } = Route.useRouteContext();
+  const validation = usePuzzleValidation(puzzle, puzzleSolver);
+  const hint = useHintRequest(puzzle.id, puzzle.hintsAllowed, puzzleSolver);
+
+  // Active word seam: the Grid emits `onLocalFocusChange(position,
+  // direction)` whenever focus or direction changes. We stash it in a
+  // ref so the hint button can read the current word from the DOM at
+  // click time without forcing a re-render on every keystroke (the
+  // uncontrolled-input contract per ADR-0002 §4 — keystrokes never
+  // touch React state in the typing path).
+  const activeFocusRef = useRef<ActiveFocus | null>(null);
+  const handleLocalFocusChange = useCallback(
+    (position: Position | null, direction: 'across' | 'down' | null) => {
+      activeFocusRef.current =
+        position && direction ? { position, direction } : null;
+    },
+    [],
+  );
+
   // Refresh counter — bumped on every refresh and used as Grid's `key`
   // so React remounts the cell tree. Letter cells are uncontrolled
   // (ADR-0002 §4: values live in the DOM), so a re-render alone leaves
@@ -171,31 +197,55 @@ function HomePage() {
     validation.totalLetterCells > 0 &&
     validation.validated.size === validation.totalLetterCells;
 
-  // Auto-trigger validation after every cell write so a word locks
-  // (or shakes) the moment the player completes its last letter — no
-  // explicit `Vérifier` click needed. The `onCellChange` fires from
-  // useGridNavigation after the DOM input value is already updated,
-  // so `verify()`'s DOM reads see the just-typed letter. Wrapped in
-  // a microtask to keep the navigation handler synchronous (focus +
-  // direction changes finish before validation runs).
-  const verify = validation.verify;
-  const handleCellChange = useCallback(() => {
-    queueMicrotask(verify);
-  }, [verify]);
+  // Build the current word from the focused cell's word-range, reading
+  // each cell's value from the DOM. Returns `null` when no focus, or
+  // when any cell of the word is empty / non-letter (a partial word
+  // can't be checked against the corpus).
+  const getCurrentWord = useCallback((): string | null => {
+    const focus = activeFocusRef.current;
+    if (!focus) return null;
+    const range = wordRange(puzzle, focus.position, focus.direction);
+    if (range.length < 2) return null;
+    let out = '';
+    for (const pos of range) {
+      const input = document.querySelector<HTMLInputElement>(
+        `input[data-cell-kind="letter"][data-row="${pos.row}"][data-col="${pos.col}"]`,
+      );
+      const normalized = normalizeAnswerLetter(input?.value ?? '');
+      if (!normalized) return null;
+      out += normalized;
+    }
+    return out.toLowerCase();
+  }, [puzzle]);
 
   return (
     <PageShell>
       <h1 lang="en" className={srOnly}>
         WordSparrow
       </h1>
-      <PuzzleToolbar metadata={puzzle.title} onRefresh={handleRefresh} />
+      <PuzzleToolbar
+        metadata={puzzle.title}
+        onRefresh={handleRefresh}
+        hintSlot={
+          <HintControl
+            hintsRemaining={hint.hintsRemaining}
+            hintsAllowed={puzzle.hintsAllowed}
+            exhausted={hint.exhausted}
+            pending={hint.pending}
+            lastResult={hint.lastResult}
+            errorMessage={hint.errorMessage}
+            getCurrentWord={getCurrentWord}
+            onRequest={hint.request}
+          />
+        }
+      />
       <div className={gridPanelStyles}>
         <Grid
           key={refreshCount}
           puzzle={puzzle}
           validatedPositions={validation.validated}
           errorPositions={validation.errors}
-          onCellChange={handleCellChange}
+          onLocalFocusChange={handleLocalFocusChange}
         />
       </div>
       <div className={bottomRowStyles}>
@@ -209,7 +259,7 @@ function HomePage() {
           variant="primary"
           className={verifyButtonStyles}
           onClick={validation.verify}
-          disabled={isComplete}
+          disabled={isComplete || validation.pending}
           aria-label="Vérifier la grille"
         >
           Vérifier

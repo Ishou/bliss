@@ -13,4 +13,4 @@ export type {
   Puzzle,
   VerticalArrow,
 } from './puzzle';
-export { SAMPLE_PUZZLE } from './puzzle';
+export { SAMPLE_PUZZLE, normalizeAnswerLetter } from './puzzle';

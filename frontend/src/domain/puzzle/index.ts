@@ -13,3 +13,4 @@ export type {
 } from './Cell';
 export type { Puzzle } from './Puzzle';
 export { SAMPLE_PUZZLE } from './samples';
+export { normalizeAnswerLetter } from './letterNormalize';

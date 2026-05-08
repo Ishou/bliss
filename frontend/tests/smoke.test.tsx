@@ -1,7 +1,7 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import { RouterProvider, createMemoryHistory, createRouter } from '@tanstack/react-router';
-import { describe, it, expect } from 'vitest';
-import type { PuzzleRepository } from '@/application';
+import { describe, it, expect, vi } from 'vitest';
+import type { PuzzleRepository, PuzzleSolver } from '@/application';
 import type { Puzzle } from '@/domain';
 import { Route as RootRoute } from '@/ui/routes/__root';
 import { Route as IndexRoute } from '@/ui/routes/index';
@@ -14,14 +14,18 @@ import { Route as IndexRoute } from '@/ui/routes/index';
 // the test exercises the real loader → component path HTTP-free.
 const samplePuzzle: Puzzle = {
   id: '0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6b',
-  title: 'WordSparrow', language: 'fr', width: 1, height: 1,
+  title: 'WordSparrow', language: 'fr', width: 1, height: 1, hintsAllowed: 3,
   cells: [{ kind: 'letter', position: { row: 0, col: 0 }, entry: '' }],
 };
 const puzzleRepository: PuzzleRepository = { fetchById: () => Promise.resolve(samplePuzzle) };
+const puzzleSolver: PuzzleSolver = {
+  validate: vi.fn().mockResolvedValue({ solved: false, incorrectCells: [] }),
+  requestHint: vi.fn().mockRejectedValue(new Error('not used')),
+};
 // Multiplayer context fields are unused on `/` and remain absent
 // here, mirroring the production composition root when the
 // multiplayer flag is off.
-const ctx = { puzzleRepository };
+const ctx = { puzzleRepository, puzzleSolver };
 
 describe('App smoke test', () => {
   it('renders the WordSparrow heading on the root route', async () => {

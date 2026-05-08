@@ -59,6 +59,10 @@ export interface PuzzleToolbarProps {
   // falls back to its mount-instant tick.
   readonly timerStartedAt?: string;
   readonly timerFrozenAtMs?: number;
+  // Optional slot rendered before the refresh icon. Solo passes the
+  // hint affordance (`<HintControl />`); multiplayer omits it — the
+  // hint endpoint is solo-scoped per ADR-0018.
+  readonly hintSlot?: React.ReactNode;
 }
 
 export function PuzzleToolbar({
@@ -67,6 +71,7 @@ export function PuzzleToolbar({
   onOpenSettings,
   timerStartedAt,
   timerFrozenAtMs,
+  hintSlot,
 }: PuzzleToolbarProps) {
   return (
     <div className={toolbarStyles} role="toolbar" aria-label="Outils de la grille">
@@ -77,6 +82,7 @@ export function PuzzleToolbar({
         {metadata}
       </div>
       <div className={rightSlotStyles}>
+        {hintSlot}
         <IconButton
           aria-label="Actualiser la grille"
           onClick={onRefresh}
