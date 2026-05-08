@@ -77,7 +77,15 @@ export function useWordAutoValidation(
         if (!allFilled) continue;
         const key = wordKey(word);
         if (inFlightRef.current.has(key)) continue;
-        if (validated.has(positionKey(word[0]!.row, word[0]!.col))) continue;
+        // Skip only if the WHOLE word is already validated — a perpendicular
+        // word crossing a previously-locked one shares one cell with that
+        // lock, but its other cells still need to be checked. The earlier
+        // `validated.has(word[0])` short-circuit silently dropped every
+        // word that crossed a lock at its starting cell, which is the
+        // user-reported "validation does not happen when crossing an
+        // already validated word".
+        const wordKeys = word.map((p) => positionKey(p.row, p.col));
+        if (wordKeys.every((k) => validated.has(k))) continue;
         fullyFilled.push(word);
       }
       if (fullyFilled.length === 0) return;

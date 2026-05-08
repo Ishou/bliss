@@ -129,6 +129,56 @@ describe('useWordAutoValidation', () => {
     );
   });
 
+  it('locks a perpendicular word that crosses an already-validated word', async () => {
+    // 5×4 puzzle with two crossing words sharing (0,1):
+    //   across (0,1)..(0,4) and down (0,1)..(3,1).
+    // Reproduces the user-reported "validation does not happen when
+    // crossing an already validated word": once the across word locks,
+    // typing into the down word's last cell would hit the old
+    // `validated.has(word[0])` short-circuit (because (0,1) is the
+    // down word's first cell and is already in `validated` from the
+    // across lock), and the hook silently skipped the new word.
+    const crossingPuzzle: Puzzle = {
+      id: 'crossing-puzzle',
+      title: 't',
+      language: 'fr',
+      width: 5,
+      height: 4,
+      hintsAllowed: 3,
+      cells: [
+        {
+          kind: 'definition',
+          position: { row: 0, col: 0 },
+          clues: [{ text: 'demo', arrow: 'right' }],
+        },
+        { kind: 'letter', position: { row: 0, col: 1 }, entry: '' },
+        { kind: 'letter', position: { row: 0, col: 2 }, entry: '' },
+        { kind: 'letter', position: { row: 0, col: 3 }, entry: '' },
+        { kind: 'letter', position: { row: 0, col: 4 }, entry: '' },
+        { kind: 'letter', position: { row: 1, col: 1 }, entry: '' },
+        { kind: 'letter', position: { row: 2, col: 1 }, entry: '' },
+        { kind: 'letter', position: { row: 3, col: 1 }, entry: '' },
+      ],
+    };
+    mountInput(0, 1, 'D'); mountInput(0, 2, 'E'); mountInput(0, 3, 'M'); mountInput(0, 4, 'O');
+    mountInput(1, 1, 'A'); mountInput(2, 1, 'R'); mountInput(3, 1, 'D');
+    const solver = makeSolver({ solved: false, incorrectCells: [] });
+    const { result } = renderHook(() => useWordAutoValidation(crossingPuzzle, solver));
+
+    // Step 1: lock the across word.
+    await act(async () => { result.current.onCellFilled({ row: 0, col: 4 }, 'across'); });
+    await waitFor(() => expect(result.current.validated.has('0,1')).toBe(true));
+
+    // Step 2: complete the down word. (0,1) is already validated from
+    // step 1; the new word's first cell is the crossing.
+    await act(async () => { result.current.onCellFilled({ row: 3, col: 1 }, 'down'); });
+    await waitFor(() => expect(result.current.validated.has('3,1')).toBe(true));
+
+    expect(result.current.validated.has('1,1')).toBe(true);
+    expect(result.current.validated.has('2,1')).toBe(true);
+    expect(result.current.validated.has('3,1')).toBe(true);
+  });
+
   it('resets validated set on puzzle reference change', async () => {
     mountInput(0, 1, 'D');
     mountInput(0, 2, 'E');

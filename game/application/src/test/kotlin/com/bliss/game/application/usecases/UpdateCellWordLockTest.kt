@@ -218,6 +218,37 @@ class UpdateCellWordLockTest {
         }
 
     @Test
+    fun `completing a word that crosses an already-locked word still locks the new word`() =
+        runTest {
+            // The fixture's two words share `cross03`. Lock the across word
+            // first, then fill the rest of the down word. The shared cell
+            // is part of a locked word but the down word as a whole is not
+            // — `candidateWordsToCheck` was incorrectly skipping any word
+            // that touched a locked cell, so subsequent perpendicular
+            // words never validated. This is the user-reported "validation
+            // does not happen when crossing an already validated word".
+            val h = harness()
+            val lobby = h.create(sessionA, alice).value
+            h.start(lobby.id, sessionA).requireSuccess()
+
+            // Lock the across word first.
+            h.write(lobby.id, sessionA, across01, Letter('P')).requireSuccess()
+            h.write(lobby.id, sessionA, across02, Letter('A')).requireSuccess()
+            h.write(lobby.id, sessionA, cross03, Letter('S')).requireSuccess()
+
+            // Now type the rest of the down word (cross03 already correctly
+            // filled and locked). Fill from the second cell to the last.
+            h.write(lobby.id, sessionA, down13, Letter('E')).requireSuccess()
+            val out = h.write(lobby.id, sessionA, down23, Letter('L')).requireSuccess()
+
+            // The down word's cells (excluding the already-locked crossing)
+            // must lock too.
+            val locks = out.events.filterIsInstance<LobbyEvent.WordLocked>()
+            assertThat(locks).hasSize(1)
+            assertThat(locks[0].positions).containsExactlyInAnyOrder(down13, down23)
+        }
+
+    @Test
     fun `WordLocked is emitted alongside GameSolved on the final winning fill`() =
         runTest {
             val h = harness()

@@ -335,10 +335,17 @@ class UpdateCellUseCase(
                 // letter. The lock just won't fire on this keystroke.
                 return success(updated, events).withSolved(solved)
             }
+        // Positions that just transitioned to locked. Words crossing an
+        // already-locked word reuse its cells — those cells are already
+        // sage on every client, so we emit only the freshly-locked ones.
+        // The WordLocked event payload becomes the diff, not the union;
+        // re-broadcasting an already-locked position would be wire noise.
         val newLocks =
             candidateWords
+                .asSequence()
                 .filter { word -> word.none { it in incorrect } }
-                .flatten()
+                .flatMap { it.asSequence() }
+                .filter { it !in session.lockedPositions }
                 .toSet()
         if (newLocks.isEmpty()) return success(updated, events).withSolved(solved)
 
@@ -385,7 +392,11 @@ class UpdateCellUseCase(
     ): List<List<Position>> {
         val candidates = mutableListOf<List<Position>>()
         for (word in session.puzzle.wordsContaining(justWritten)) {
-            if (word.any { it in session.lockedPositions }) continue
+            // Skip only if the entire word is already locked — a perpendicular
+            // word crossing a locked one reuses one cell but its other cells
+            // still need to be validated. Skipping on `any` (the previous
+            // behavior) silently dropped every word that crossed a lock.
+            if (word.all { it in session.lockedPositions }) continue
             if (word.all { entries[it] != null }) candidates += word
         }
         return candidates
