@@ -78,7 +78,7 @@ fun Route.lobbies(
                             HttpStatusCode.BadRequest,
                             "Identifiant de salon invalide",
                             INVALID_LOBBY_ID_TYPE,
-                            "Path parameter lobbyId must be an 8-char base58 nanoid, was '$raw'.",
+                            "Le paramètre lobbyId doit être un identifiant base58 de 8 caractères, reçu : '$raw'.",
                         )
                     }
 
@@ -88,7 +88,7 @@ fun Route.lobbies(
                     HttpStatusCode.NotFound,
                     "Salon introuvable",
                     LOBBY_NOT_FOUND_TYPE,
-                    "No lobby exists for id '${lobbyId.value}'.",
+                    "Aucun salon pour l'identifiant '${lobbyId.value}'.",
                 )
             }
             // Mirror the WebSocket snapshot: REST `GET` rehydrating a refreshing
