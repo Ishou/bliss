@@ -362,3 +362,108 @@ def test_non_reflexive_head_inflates_normally() -> None:
                        {"v1__t___zz", "ppas", "fem", "sg"}, idx)
     assert res.flag == "", res
     assert res.text.lower().startswith("soulevée"), res
+
+
+# ---------------------------------------------------------------------------
+# Coordination: post-head co-heads of the same POS as the surface target
+# should inflate alongside the head. Head-only inflation produced clues like
+# "Nettoya et désinfecter" (head verb conjugated, second verb stranded as
+# infinitive) and "Élans et énergie" (head noun pluralized, second noun
+# stranded as singular). The unified forward walk now inflates both.
+# ---------------------------------------------------------------------------
+
+
+def _build_coord_index() -> MorphologyIndex:
+    """Two -er verbs coordinated by `et`, plus `air` (noun) for the
+    'stops at non-matching POS' test."""
+    idx = MorphologyIndex()
+    # `nettoyer`
+    _add(idx, "nettoyer", "nettoyer", "v1__t_q_zz infi")
+    _add(idx, "nettoyer", "nettoie", "v1__t_q_zz ipre 3sg")
+    _add(idx, "nettoyer", "nettoyée", "v1__t_q_zz ppas fem sg")
+    # `désinfecter`
+    _add(idx, "désinfecter", "désinfecter", "v1__t_q_zz infi")
+    _add(idx, "désinfecter", "désinfecte", "v1__t_q_zz ipre 3sg")
+    _add(idx, "désinfecter", "désinfectée", "v1__t_q_zz ppas fem sg")
+    # `recruter` + `engager` for the chain test
+    _add(idx, "recruter", "recruter", "v1__t___zz infi")
+    _add(idx, "recruter", "recrute", "v1__t___zz ipre 3sg")
+    _add(idx, "recruter", "recrutée", "v1__t___zz ppas fem sg")
+    _add(idx, "engager", "engager", "v1__t___zz infi")
+    _add(idx, "engager", "engage", "v1__t___zz ipre 3sg")
+    _add(idx, "engager", "engagée", "v1__t___zz ppas fem sg")
+    # `air` — noun used to stop the forward walk.
+    _add(idx, "air", "air", "nom mas sg")
+    _add(idx, "air", "airs", "nom mas pl")
+    # `élan` + `énergie` for the noun-coord test.
+    _add(idx, "élan", "élan", "nom mas sg")
+    _add(idx, "élan", "élans", "nom mas pl")
+    _add(idx, "énergie", "énergie", "nom fem sg")
+    _add(idx, "énergie", "énergies", "nom fem pl")
+    return idx
+
+
+def test_coord_verb_ipre_3sg_inflates_both_verbs() -> None:
+    """`Nettoyer et désinfecter` + ipre-3sg surface → both verbs
+    conjugate to ipre-3sg ('Nettoie et désinfecte')."""
+    idx = _build_coord_index()
+    res = inflect_clue(
+        "Nettoyer et désinfecter",
+        {"v1__t_q_zz", "ipre", "3sg"},
+        idx,
+    )
+    assert res.flag == "", res
+    assert res.text == "Nettoie et désinfecte", res
+
+
+def test_coord_verb_ppas_fem_sg_inflates_both_verbs() -> None:
+    """`Recruter et engager` + ppas-fem-sg surface → both verbs become
+    ppas fem-sg ('Recrutée et engagée')."""
+    idx = _build_coord_index()
+    res = inflect_clue(
+        "Recruter et engager",
+        {"v1__t___zz", "ppas", "fem", "sg"},
+        idx,
+    )
+    assert res.flag == "", res
+    assert res.text == "Recrutée et engagée", res
+
+
+def test_coord_verb_chain_inflates_all_three() -> None:
+    """`V1 et V2 et V3` chain — every verb inflates."""
+    idx = _build_coord_index()
+    res = inflect_clue(
+        "Nettoyer et désinfecter et engager",
+        {"v1__t_q_zz", "ipre", "3sg"},
+        idx,
+    )
+    assert res.flag == "", res
+    assert res.text == "Nettoie et désinfecte et engage", res
+
+
+def test_coord_walk_stops_at_non_target_pos() -> None:
+    """`Nettoyer et désinfecter l'air` for an ipre-3sg verb surface:
+    both verbs inflate, then the walker hits the article + noun and
+    stops. `l'air` stays untouched."""
+    idx = _build_coord_index()
+    res = inflect_clue(
+        "Nettoyer et désinfecter l'air",
+        {"v1__t_q_zz", "ipre", "3sg"},
+        idx,
+    )
+    assert res.flag == "", res
+    assert res.text == "Nettoie et désinfecte l'air", res
+
+
+def test_coord_noun_plural_inflates_both_nouns() -> None:
+    """`Élan et énergie` for a mas-pl noun surface → both nouns
+    pluralize ('Élans et énergies'). The second noun has fem gender
+    intrinsically; the walker passes a number-only target via the
+    `_RELAX_GENDER_FOR` relaxation, so it picks up the fem-pl form."""
+    idx = _build_coord_index()
+    # The surface here is conceptually some mas-pl noun whose lemma
+    # has clue "Élan et énergie" — we just hand the inflater the
+    # right tag set directly (the head matches élan / mas-pl).
+    res = inflect_clue("Élan et énergie", {"nom", "mas", "pl"}, idx)
+    assert res.flag == "", res
+    assert res.text == "Élans et énergies", res

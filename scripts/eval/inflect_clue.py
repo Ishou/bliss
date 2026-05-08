@@ -330,83 +330,125 @@ def inflect_clue(
     head_changed = inflected.lower() != tokens[head_idx].lower()
     new_tokens[head_idx] = inflected
 
-    # Adjective agreement. Walk forward from the head; track the current
-    # agreement target. In a "head de N adj" / "head à N adj" construction
-    # French attaches the adj to the closer noun (`Carnets de notes
-    # quotidiennes`), so we update the target when crossing a preposition
-    # into a new noun. Pre-head walk uses the head's target only — adj
-    # before the head modifies it directly.
-    initial = _agreement_target(inflected, head_lemma, target_pos, target, index)
-    if initial:
-        # Forward walk: state machine NP (after head, before any preposition)
-        # vs PP (after crossing into a prepositional phrase). In NP state,
-        # adj agrees with the head's target (post-head modifier). On crossing
-        # a preposition we enter PP state; the next noun re-anchors the
-        # agreement target, and subsequent adj agree with that closer noun
-        # ("Carnets de notes quotidiennes").
-        agreement = set(initial)
-        in_pp = False
-        i = head_idx + 1
-        while i < len(new_tokens):
-            tok = new_tokens[i]
-            if not _is_alpha_token(tok):
-                break
-            lo = tok.lower()
-            classes = index.pos_classes_of_form(lo)
-            if lo in _AGREEMENT_PASSTHROUGH:
-                in_pp = True
-                i += 1
-                continue
-            # In PP state, an encountered noun re-anchors the target.
-            if in_pp and "nom" in classes:
-                noun_lemma = index.lemma_of_form(lo, prefer_pos="nom")
-                if noun_lemma:
-                    new_target = _noun_agreement_from_form(lo, noun_lemma, index)
-                    if new_target:
-                        agreement = new_target
-                in_pp = False  # we're now in the inner NP after the prep
-                i += 1
-                continue
-            # Adjective: inflect to current agreement target.
-            if "adj" in classes:
-                adj_lemma = index.lemma_of_form(lo, prefer_pos="adj")
-                if adj_lemma:
-                    new_form = index.inflect(adj_lemma, agreement, prefer_pos="adj")
-                    if new_form and new_form.lower() != lo:
-                        new_tokens[i] = new_form
-                i += 1
-                continue
-            # Coordinating conjunction: walk through to reach co-modifiers.
-            # `Long et barbant` → both adj should agree, even though `et` would
-            # otherwise break the chain.
-            if lo in _COORD_WALKTHROUGH:
-                i += 1
-                continue
+    # Forward walk after the head. Two jobs in one loop:
+    #
+    #   (a) Co-head inflation: a token whose POS matches `target_pos`,
+    #       reached through coordinating conjunctions in NP state, gets
+    #       inflated to the head's chosen target morphology. This is what
+    #       turns "Nettoyer et désinfecter" → "Nettoie et désinfecte"
+    #       for an ipre-3sg surface, and "Élan et énergie" →
+    #       "Élans et énergies" for a mas-pl noun surface. Adjectives
+    #       fall under this rule too — `target_pos == "adj"` makes
+    #       `"adj" in classes` overlap with the co-head branch and gives
+    #       the historic `Long et ennuyeux → Longue et ennuyeuse`
+    #       behaviour for free.
+    #   (b) Post-head adjective agreement: an adj token, regardless of
+    #       target POS, agrees with the current `gn` target. Crossing
+    #       a preposition (`_AGREEMENT_PASSTHROUGH`) flips to PP state;
+    #       the next noun re-anchors `gn` (`Carnets de notes quotidiennes`).
+    #
+    # Verb targets that don't have a (gender, number) — finite tenses,
+    # not ppas — still run the loop for co-head inflation; the adj
+    # branch is just a no-op when `gn` is None.
+    gn = _agreement_target(inflected, head_lemma, target_pos, target, index)
+    initial_gn = gn
+    in_pp = False
+    i = head_idx + 1
+    while i < len(new_tokens):
+        tok = new_tokens[i]
+        if not _is_alpha_token(tok):
             break
-
-        # Backward walk: pre-head adjectives. Walks through coordinating
-        # conjunctions so `Long et barbant` cluing a fem-pl head agrees both
-        # adjectives (`Longues et barbantes`).
-        i = head_idx - 1
-        while i >= 0:
-            tok = new_tokens[i]
-            if not _is_alpha_token(tok):
-                break
-            lo = tok.lower()
-            if lo in _COORD_WALKTHROUGH:
-                i -= 1
-                continue
-            if lo in _FUNCTION_WORDS:
-                break
-            if "adj" not in index.pos_classes_of_form(lo):
-                break
+        lo = tok.lower()
+        classes = index.pos_classes_of_form(lo)
+        # Coordinating conjunction: walk through to the next content token.
+        if lo in _COORD_WALKTHROUGH:
+            i += 1
+            continue
+        if lo in _AGREEMENT_PASSTHROUGH:
+            in_pp = True
+            i += 1
+            continue
+        # In PP state, an encountered noun re-anchors the agreement target
+        # for downstream adjectives (`Carnets de notes quotidiennes`).
+        if in_pp and "nom" in classes:
+            noun_lemma = index.lemma_of_form(lo, prefer_pos="nom")
+            if noun_lemma:
+                new_target = _noun_agreement_from_form(lo, noun_lemma, index)
+                if new_target:
+                    gn = new_target
+            in_pp = False
+            i += 1
+            continue
+        # Co-head: same POS as target, NP state. Inflate to the head's
+        # chosen target morphology (`target` already reflects the
+        # post-decomposition choice from the head pick above).
+        if not in_pp and target_pos in classes:
+            co_lemma = index.lemma_of_form(lo, prefer_pos=target_pos)
+            if co_lemma:
+                co_form = None
+                for trial in _decompose_targets(target):
+                    cand = index.inflect(co_lemma, trial, prefer_pos=target_pos)
+                    if cand:
+                        co_form = cand
+                        break
+                if co_form is None and target_pos in _RELAX_GENDER_FOR:
+                    for trial in _decompose_targets(target - GENDER_TOKENS):
+                        cand = index.inflect(co_lemma, trial, prefer_pos=target_pos)
+                        if cand:
+                            co_form = cand
+                            break
+                if co_form and co_form.lower() != lo:
+                    new_tokens[i] = co_form
+            i += 1
+            continue
+        # Post-head adjective agreement (when we know a gn target).
+        if gn is not None and "adj" in classes:
             adj_lemma = index.lemma_of_form(lo, prefer_pos="adj")
-            if not adj_lemma:
-                break
-            new_form = index.inflect(adj_lemma, initial, prefer_pos="adj")
-            if new_form and new_form.lower() != lo:
-                new_tokens[i] = new_form
+            if adj_lemma:
+                new_form = index.inflect(adj_lemma, gn, prefer_pos="adj")
+                if new_form and new_form.lower() != lo:
+                    new_tokens[i] = new_form
+            i += 1
+            continue
+        break
+
+    # Backward walk: pre-head co-heads / adjectives. Symmetry with the
+    # forward walk — same POS as target gets inflated to head's morphology;
+    # adj at any state agrees to the head's `initial_gn`.
+    i = head_idx - 1
+    while i >= 0:
+        tok = new_tokens[i]
+        if not _is_alpha_token(tok):
+            break
+        lo = tok.lower()
+        if lo in _COORD_WALKTHROUGH:
             i -= 1
+            continue
+        if lo in _FUNCTION_WORDS:
+            break
+        classes = index.pos_classes_of_form(lo)
+        if target_pos in classes:
+            co_lemma = index.lemma_of_form(lo, prefer_pos=target_pos)
+            if co_lemma:
+                co_form = None
+                for trial in _decompose_targets(target):
+                    cand = index.inflect(co_lemma, trial, prefer_pos=target_pos)
+                    if cand:
+                        co_form = cand
+                        break
+                if co_form and co_form.lower() != lo:
+                    new_tokens[i] = co_form
+            i -= 1
+            continue
+        if initial_gn is not None and "adj" in classes:
+            adj_lemma = index.lemma_of_form(lo, prefer_pos="adj")
+            if adj_lemma:
+                new_form = index.inflect(adj_lemma, initial_gn, prefer_pos="adj")
+                if new_form and new_form.lower() != lo:
+                    new_tokens[i] = new_form
+            i -= 1
+            continue
+        break
 
     if not head_changed and new_tokens == tokens:
         return InflectionResult(_capitalize_first(clue), "identity")
