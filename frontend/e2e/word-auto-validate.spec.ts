@@ -117,18 +117,29 @@ test('typing a wrong word produces no visible feedback', async ({ page }) => {
   }
 });
 
-test('Vérifier still works on top of an auto-locked word', async ({ page }) => {
+test('locks rehydrate from localStorage after a page reload', async ({ page }) => {
+  // Solo letters persist in localStorage (per `SoloEntriesStore`); the
+  // route remounts the grid on reload with `defaultValue` from those
+  // entries. Without rehydration in `useWordAutoValidation` the cells
+  // would re-paint with letters but become editable again — the user
+  // would see "their progress" except every word is unlocked. Pin
+  // that contract here.
   await gridReady(page);
-
   await typeWord(page, 1, ANSWER_ACROSS_ROW1);
-  // Wait for the auto-lock so we know the auto-validation finished
-  // before exercising Vérifier (avoids ordering ambiguity in the test).
-  await expect(letterInput(page, 1, 0)).toHaveAttribute('readonly', '');
+  // Pre-condition: the word is locked before we reload.
+  for (let col = 0; col < ANSWER_ACROSS_ROW1.length; col++) {
+    await expect(letterInput(page, 1, col)).toHaveAttribute('readonly', '');
+  }
 
-  // Vérifier targets the whole grid — incomplete cells will come back
-  // as incorrectCells. We only need to confirm the button still
-  // responds (its disabled-when-complete guard does not trip on a
-  // partially-locked grid).
-  const verify = page.getByRole('button', { name: /Vérifier la grille/i });
-  await expect(verify).toBeEnabled();
+  await page.reload();
+  await page.waitForSelector('[role="grid"]', { state: 'visible' });
+
+  // After reload, the cells must (a) keep their letters and (b) stay
+  // read-only — the rehydration `validate` POST locked them again.
+  for (let col = 0; col < ANSWER_ACROSS_ROW1.length; col++) {
+    const cell = letterInput(page, 1, col);
+    await expect(cell).toHaveValue(ANSWER_ACROSS_ROW1[col]);
+    await expect(cell).toHaveAttribute('readonly', '');
+  }
 });
+

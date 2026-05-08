@@ -233,4 +233,58 @@ describe('useWordAutoValidation', () => {
     rerender({ p: { ...puzzle } });
     expect(result.current.validated.size).toBe(0);
   });
+
+  it('rehydrates locked words from persisted entries on mount', async () => {
+    // Persisted-letter rehydration: solo entries live in localStorage,
+    // so a page reload (or a router invalidate that returns a fresh
+    // Puzzle reference) re-paints the cells with `defaultValue` from
+    // the entries — but the in-memory `validated` set is gone. Without
+    // this rehydration the player sees their letters but every word is
+    // editable again and the progress bar reads zero. The hook walks
+    // every word against the persisted letters and POSTs once.
+    const initialFilled = [
+      { row: 0, column: 1, letter: 'D' },
+      { row: 0, column: 2, letter: 'E' },
+      { row: 0, column: 3, letter: 'M' },
+      { row: 0, column: 4, letter: 'O' },
+    ];
+    const solver = makeSolver({ solved: false, incorrectCells: [] });
+    const { result } = renderHook(() =>
+      useWordAutoValidation(puzzle, solver, initialFilled),
+    );
+
+    await waitFor(() =>
+      expect(result.current.validated.size).toBe(4),
+    );
+    expect(result.current.validated.has('0,1')).toBe(true);
+    expect(result.current.validated.has('0,4')).toBe(true);
+    expect(solver.validate).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not lock a rehydrated word the server flags as incorrect', async () => {
+    const initialFilled = [
+      { row: 0, column: 1, letter: 'D' },
+      { row: 0, column: 2, letter: 'E' },
+      { row: 0, column: 3, letter: 'M' },
+      { row: 0, column: 4, letter: 'X' },
+    ];
+    const solver = makeSolver({
+      solved: false,
+      incorrectCells: [{ row: 0, column: 4 }],
+    });
+    const { result } = renderHook(() =>
+      useWordAutoValidation(puzzle, solver, initialFilled),
+    );
+
+    await waitFor(() =>
+      expect(solver.validate).toHaveBeenCalledTimes(1),
+    );
+    expect(result.current.validated.size).toBe(0);
+  });
+
+  it('does not POST when initialFilledCells is empty', () => {
+    const solver = makeSolver({ solved: false, incorrectCells: [] });
+    renderHook(() => useWordAutoValidation(puzzle, solver, []));
+    expect(solver.validate).not.toHaveBeenCalled();
+  });
 });

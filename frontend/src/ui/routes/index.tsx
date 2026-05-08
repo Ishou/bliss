@@ -7,7 +7,6 @@ import {
   Grid,
   HintControl,
   useHintRequest,
-  usePuzzleValidation,
   useWordAutoValidation,
 } from '@/ui/components/grid';
 import { wordRange } from '@/ui/components/grid/wordRange';
@@ -88,26 +87,6 @@ const gridPanelStyles = css({
   padding: { base: '4px', md: '12px' },
 });
 
-// Bottom row groups the progress bar and the Vérifier CTA. On mobile
-// the brief makes the button full-width and stacks it under the bar; on
-// desktop the bar takes the available width and the button sits inline
-// to its right.
-const bottomRowStyles = css({
-  display: 'flex',
-  width: '100%',
-  alignItems: { base: 'stretch', md: 'flex-end' },
-  flexDirection: { base: 'column', md: 'row' },
-  gap: { base: '12px', md: '20px' },
-});
-
-const progressSlotStyles = css({ flex: 1, minWidth: 0 });
-
-const verifyButtonStyles = css({
-  width: { base: '100%', md: 'auto' },
-  paddingInline: '28px',
-  paddingBlock: '12px',
-});
-
 // Shared visually-hidden style — used by the page-level h1 (the visible
 // brand mark is the styled Lockup in the header; the h1 keeps the WCAG
 // heading hierarchy a real one) and the aria-live status region.
@@ -163,11 +142,6 @@ function HomePage() {
   const puzzle = Route.useLoaderData() as Puzzle;
   const router = useRouter();
   const { puzzleSolver, soloEntriesStore } = Route.useRouteContext();
-  const validation = usePuzzleValidation(puzzle, puzzleSolver);
-  // Auto-validate words as the player types. Wrong words drop silently;
-  // correct words add their cells to a separate `validated` set we
-  // merge with the manual-Vérifier set below before passing to <Grid>.
-  const autoValidation = useWordAutoValidation(puzzle, puzzleSolver);
   const hint = useHintRequest(puzzle.id, puzzle.hintsAllowed, puzzleSolver);
 
   // Active word seam: the Grid emits `onLocalFocusChange(position,
@@ -179,8 +153,14 @@ function HomePage() {
   const activeFocusRef = useRef<ActiveFocus | null>(null);
   const handleLocalFocusChange = useCallback(
     (position: Position | null, direction: 'across' | 'down' | null) => {
-      activeFocusRef.current =
-        position && direction ? { position, direction } : null;
+      // Keep the last non-null focus. The toolbar's hint button is
+      // outside the grid, so clicking it blurs the cell input — and
+      // React 18 flushes the resulting (null, null) focus-change effect
+      // *between* the blur and the click. Clearing here would race
+      // against `getCurrentWord` reading this ref in `onClick`.
+      if (position && direction) {
+        activeFocusRef.current = { position, direction };
+      }
     },
     [],
   );
@@ -205,6 +185,20 @@ function HomePage() {
     return soloEntriesStore.load(puzzle.id);
   }, [puzzle.id, refreshCount, soloEntriesStore]);
 
+  // Word-by-word auto-validation: when the player completes a word,
+  // its cells lock if every letter matches. Wrong words drop silently
+  // (the product decision per ADR-0005 §6: incorrect fills must be
+  // visually indistinguishable from in-progress ones). The progress
+  // bar reflects the running tally of locked cells.
+  //
+  // Passing `initialEntries` here rehydrates locks earned in a prior
+  // session: without it, a page reload re-paints the typed letters
+  // (cells are uncontrolled, populated via `defaultValue` from
+  // `initialEntries`) but every word would be back to editable and the
+  // progress bar would read zero. The hook walks the persisted entries
+  // once per puzzle and POSTs `validate` in a single round-trip.
+  const autoValidation = useWordAutoValidation(puzzle, puzzleSolver, initialEntries);
+
   const handleCellChange = useCallback(
     (row: number, col: number, letter: string | null) => {
       soloEntriesStore.save(puzzle.id, row, col, letter);
@@ -212,19 +206,10 @@ function HomePage() {
     [soloEntriesStore, puzzle.id],
   );
 
-  // Union manual-Vérifier validations with the live auto-locked cells.
-  // Both share the same "row,col" keying so a Set union is enough.
-  const validatedPositions = useMemo<ReadonlySet<string>>(() => {
-    if (autoValidation.validated.size === 0) return validation.validated;
-    if (validation.validated.size === 0) return autoValidation.validated;
-    const merged = new Set<string>(validation.validated);
-    for (const k of autoValidation.validated) merged.add(k);
-    return merged;
-  }, [autoValidation.validated, validation.validated]);
-
-  const isComplete =
-    validation.totalLetterCells > 0 &&
-    validatedPositions.size === validation.totalLetterCells;
+  const totalLetterCells = useMemo<number>(
+    () => puzzle.cells.reduce((n, c) => (c.kind === 'letter' ? n + 1 : n), 0),
+    [puzzle.cells],
+  );
 
   // Build the current word from the focused cell's word-range, reading
   // each cell's value from the DOM. Returns `null` when no focus, or
@@ -272,34 +257,17 @@ function HomePage() {
         <Grid
           key={refreshCount}
           puzzle={puzzle}
-          validatedPositions={validatedPositions}
-          errorPositions={validation.errors}
+          validatedPositions={autoValidation.validated}
           onCellFilled={autoValidation.onCellFilled}
           onLocalFocusChange={handleLocalFocusChange}
           initialEntries={initialEntries}
           onCellChange={handleCellChange}
         />
       </div>
-      <div className={bottomRowStyles}>
-        <div className={progressSlotStyles}>
-          <ProgressBar
-            value={validatedPositions.size}
-            total={validation.totalLetterCells}
-          />
-        </div>
-        <Button
-          variant="primary"
-          className={verifyButtonStyles}
-          onClick={validation.verify}
-          disabled={isComplete || validation.pending}
-          aria-label="Vérifier la grille"
-        >
-          Vérifier
-        </Button>
-      </div>
-      <p className={srOnly} role="status" aria-live="polite">
-        {validation.announce}
-      </p>
+      <ProgressBar
+        value={autoValidation.validated.size}
+        total={totalLetterCells}
+      />
       {isMultiplayerEnabled() ? <CreateLobbyButton /> : null}
     </PageShell>
   );

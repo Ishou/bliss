@@ -133,3 +133,18 @@ test('writes to a locked cell are silently ignored by the server', async ({ page
   });
   await expect(first).toHaveValue('D');
 });
+
+test('progress bar reflects locked-cell count, same shape as solo', async ({ page }) => {
+  await startMultiplayerGame(page);
+
+  // Mock puzzle is 5×5 with one block at (2,2) and one definition at
+  // (0,0): 25 − 1 − 1 = 23 letter cells. Bar starts empty.
+  const bar = page.getByRole('progressbar', { name: 'Progression' });
+  await expect(bar).toHaveAttribute('aria-valuemax', '23');
+  await expect(bar).toHaveAttribute('aria-valuenow', '0');
+
+  // Lock the "DEMO" word — 4 cells move into `lockedPositions` and the
+  // bar advances accordingly. Same hook (ProgressBar) the solo route uses.
+  await typeWordAcross(page, 0, 1, ['D', 'E', 'M', 'O']);
+  await expect(bar).toHaveAttribute('aria-valuenow', '4');
+});
