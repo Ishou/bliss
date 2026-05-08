@@ -33,34 +33,40 @@ function letterInput(page: Page, row: number, col: number): Locator {
 }
 
 async function typeWord(page: Page, row: number, letters: readonly string[]): Promise<void> {
-  // `useGridNavigation.handleInput` keys off the InputEvent's
-  // `inputType === 'insertText'` and `data` fields. Playwright's
-  // `keyboard.press` / `pressSequentially` does not always fire a
-  // synthetic `input` event with that shape on this `<input
-  // type="search">` (the cell wraps it under `pointer-events: none`),
-  // so we mirror the unit-test pattern (see `tests/grid-input.test.tsx`)
-  // and dispatch the InputEvent ourselves. One `evaluate` call per
-  // letter so React's auto-advance focus has time to land between
-  // keystrokes — batching the loop server-side races the focus state
-  // ref and writes every letter into the first cell.
-  for (let i = 0; i < letters.length; i++) {
-    await page.evaluate(
-      ({ row, col, letter }) => {
-        const sel = `input[data-cell-kind="letter"][data-row="${row}"][data-col="${col}"]`;
-        const el = document.querySelector<HTMLInputElement>(sel);
-        if (!el) return;
-        el.focus();
-        el.value = letter;
-        el.dispatchEvent(new InputEvent('input', {
-          inputType: 'insertText',
-          data: letter,
-          bubbles: true,
-        }));
-      },
-      { row, col: i, letter: letters[i]! },
-    );
-    // One animation frame so React flushes state + focus moves before
-    // the next keystroke.
+  // Focus the first letter cell on the row ONCE, then dispatch each
+  // InputEvent against `document.activeElement` so the grid's auto-
+  // advance carries focus forward and React's focus state ref always
+  // matches the cell we target. `useGridNavigation.handleInput` keys
+  // off the InputEvent's `inputType === 'insertText'` and `data` so
+  // we synthesize the event directly (Playwright's keyboard.press /
+  // pressSequentially does not reliably fire a real `input` event on
+  // this `<input type="search">` wrapped in a `pointer-events: none`
+  // cell). Re-focusing an explicit selector per keystroke caused a
+  // shift bug — el.focus() does not synchronously flush React's
+  // setFocused, so handleInput read a stale focused position and
+  // attributed the keystroke to the previous column.
+  for (let col = 0; col < /* width */ 16; col++) {
+    const exists = await page.evaluate(({ row, col }) => {
+      const sel = `input[data-cell-kind="letter"][data-row="${row}"][data-col="${col}"]`;
+      const el = document.querySelector<HTMLInputElement>(sel);
+      if (!el) return false;
+      el.focus();
+      return true;
+    }, { row, col });
+    if (exists) break;
+  }
+  await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => r(null))));
+  for (const letter of letters) {
+    await page.evaluate((letter) => {
+      const el = document.activeElement as HTMLInputElement | null;
+      if (!el || el.getAttribute('data-cell-kind') !== 'letter') return;
+      el.value = letter;
+      el.dispatchEvent(new InputEvent('input', {
+        inputType: 'insertText',
+        data: letter,
+        bubbles: true,
+      }));
+    }, letter);
     await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => r(null))));
   }
 }

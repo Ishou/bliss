@@ -330,3 +330,41 @@ describe('WebSocketGameClient.disconnect', () => {
     expect(() => client.disconnect()).not.toThrow();
   });
 });
+
+describe('WebSocketGameClient reconnect race', () => {
+  // React StrictMode (dev) double-mounts useEffect, so the lobby route
+  // calls connect → disconnect → connect synchronously. The original
+  // `onclose` handler unconditionally cleared the outer socket ref,
+  // which nuked the freshly-assigned new socket when the old one's
+  // close event finally fired. Caused the multiplayer e2e to fail with
+  // "socket is not open" on every Démarrer click.
+  it('keeps the new socket usable when an old socket\'s onclose fires after a fresh connect()', async () => {
+    const client = makeClient();
+    // First mount: connect, open, then synchronously disconnect (the
+    // strict-mode cleanup path).
+    const firstConnect = client.connect({ lobbyId, sessionId, pseudonym });
+    const ws1 = MockWebSocket.instances[0]!;
+    ws1.emitOpen();
+    await firstConnect;
+
+    // disconnect() calls ws1.close(); the mock fires onclose
+    // synchronously inside close(). We then immediately reconnect.
+    client.disconnect();
+
+    const secondConnect = client.connect({ lobbyId, sessionId, pseudonym });
+    const ws2 = MockWebSocket.instances[1]!;
+    ws2.emitOpen();
+    await secondConnect;
+
+    // The new socket should accept frames. Without the fix this
+    // throws "socket is not open" because the lingering close from
+    // ws1 (or, in tests, the synchronous one) wiped the ref.
+    expect(() => client.cellUpdate(0, 1, 'D' as Letter)).not.toThrow();
+    expect(JSON.parse(ws2.sent[ws2.sent.length - 1]!)).toEqual({
+      type: 'cellUpdate',
+      row: 0,
+      column: 1,
+      letter: 'D',
+    });
+  });
+});

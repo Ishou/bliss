@@ -165,6 +165,15 @@ export function createWebSocketGameClient(
           // `error` server frame; we don't synthesize a GameEvent here.
         };
         ws.onclose = () => {
+          // Only clear the outer `socket` ref if WE are still the
+          // current socket. Reconnects (and React StrictMode's
+          // double-mount in dev) can cycle disconnect → connect
+          // synchronously, so a stale `onclose` from the prior socket
+          // would otherwise nuke the freshly-assigned new one and
+          // leave `socket = null` while a connected WS is sitting in
+          // the closure. Caused the multiplayer e2e to see "socket is
+          // not open" on every Démarrer click.
+          if (socket !== ws) return;
           socket = null;
           pendingJoin = null;
           // Any close — clean or not — drops the transport. A future
