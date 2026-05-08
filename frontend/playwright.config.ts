@@ -18,7 +18,13 @@ export default defineConfig({
   workers: 1,
   reporter: [['list']],
   use: {
-    baseURL: 'http://localhost:5173',
+    // 5174, not 5173: `make dev` runs `pnpm dev` on 5173 with
+    // `.env.development` (real Grid API on localhost:7777). If e2e
+    // shared that port via Playwright's `reuseExistingServer`, tests
+    // would silently hit the real backend (random puzzles, no MSW
+    // interception) and fail in confusing ways. A dedicated preview
+    // port lets `make dev` and `pnpm e2e` coexist on the same machine.
+    baseURL: 'http://localhost:5174',
     trace: 'on-first-retry',
   },
   // Browser/device matrix:
@@ -38,8 +44,8 @@ export default defineConfig({
     { name: 'iphone-14', use: { ...devices['iPhone 14'] } },
   ],
   webServer: {
-    command: 'pnpm dev:preview',
-    url: 'http://localhost:5173',
+    command: 'pnpm dev:preview --port 5174 --strictPort',
+    url: 'http://localhost:5174',
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
   },
