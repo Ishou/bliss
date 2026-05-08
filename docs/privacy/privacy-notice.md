@@ -8,14 +8,14 @@
 
 ## En bref
 
-Bliss (mots fléchés en ligne) collecte le strict minimum nécessaire pour
+WordSparrow (mots fléchés en ligne) collecte le strict minimum nécessaire pour
 faire fonctionner le service. Aucun compte, aucun cookie publicitaire,
 aucun partage avec des annonceurs. Vous pouvez à tout moment effacer vos
 données depuis les paramètres du jeu.
 
 ## Responsable du traitement
 
-Bliss est exploité par Colin Auberger, contact :
+WordSparrow est exploité par Colin Auberger, contact :
 `colin.auberger@gmail.com`. Toute demande relative à vos données peut être
 adressée à cette adresse.
 
@@ -52,7 +52,7 @@ sa configuration respecte les conditions de l'exemption :
 
 ## Cookies
 
-Bliss n'utilise **pas** de cookies. Le service stocke un identifiant de
+WordSparrow n'utilise **pas** de cookies. Le service stocke un identifiant de
 session anonyme dans le `localStorage` de votre navigateur (technologie
 distincte des cookies). La mesure d'audience Matomo fonctionne en mode
 sans cookie.
@@ -83,7 +83,7 @@ Vous disposez des droits prévus par le RGPD :
 
 ## Sous-traitants
 
-Bliss s'appuie sur les sous-traitants suivants. La liste à jour est
+WordSparrow s'appuie sur les sous-traitants suivants. La liste à jour est
 maintenue dans
 [`docs/privacy/sub-processors.md`](./sub-processors.md).
 
@@ -91,10 +91,10 @@ maintenue dans
   Kubernetes et de la base de données.
 - **Cloudflare, Inc.** (États-Unis) — DNS et diffusion de contenu
   statique. Cloudflare voit votre adresse IP lorsqu'elle livre les
-  pages du jeu mais ne la transmet pas à Bliss et la traite selon son
+  pages du jeu mais ne la transmet pas à WordSparrow et la traite selon son
   propre Data Processing Addendum (clauses contractuelles types).
 
-Aucune donnée n'est transférée hors UE par Bliss elle-même ; les
+Aucune donnée n'est transférée hors UE par WordSparrow elle-même ; les
 serveurs sont situés en Allemagne (Hetzner). Cloudflare opère un réseau
 mondial mais maintient des engagements contractuels conformes au RGPD.
 
@@ -114,13 +114,13 @@ Git.
 
 ## In short
 
-Bliss (online French crossword puzzles) collects the minimum needed to
+WordSparrow (online French crossword puzzles) collects the minimum needed to
 run the service. No accounts, no advertising cookies, no sharing with
 advertisers. You can erase your data at any time from the game settings.
 
 ## Data controller
 
-Bliss is operated by Colin Auberger, contact: `colin.auberger@gmail.com`.
+WordSparrow is operated by Colin Auberger, contact: `colin.auberger@gmail.com`.
 
 ## Data we process
 
@@ -151,7 +151,7 @@ sharing, no individual profiling).
 
 ## Cookies
 
-Bliss does **not** set cookies. The service stores an anonymous session
+WordSparrow does **not** set cookies. The service stores an anonymous session
 identifier in your browser's `localStorage` (a technology distinct from
 cookies). Matomo audience measurement runs in cookieless mode.
 
@@ -187,10 +187,10 @@ authoritative list.
   hosting.
 - **Cloudflare, Inc.** (USA) — DNS and static content delivery.
   Cloudflare sees your IP address when serving game pages but does not
-  forward it to Bliss and processes it under its own DPA (Standard
+  forward it to WordSparrow and processes it under its own DPA (Standard
   Contractual Clauses).
 
-Bliss itself does not transfer data outside the EU; servers are in
+WordSparrow itself does not transfer data outside the EU; servers are in
 Germany (Hetzner). Cloudflare runs a global network but maintains
 GDPR-compliant contractual safeguards.
 

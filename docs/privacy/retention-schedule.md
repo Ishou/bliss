@@ -1,6 +1,6 @@
 # Data Retention Schedule
 
-> Authoritative list of how long Bliss keeps each piece of data and how it
+> Authoritative list of how long WordSparrow keeps each piece of data and how it
 > is enforced. Any new processing activity introduced by a feature must add
 > a row here as a precondition to merge.
 
@@ -16,7 +16,7 @@
 | Matomo visit + event data | MariaDB (k3s, dedicated to Matomo) | **13 months** | Matomo admin UI: Privacy → Anonymize previous logs |
 | Matomo aggregated reports | MariaDB | Indefinite (already aggregated, non-identifying) | n/a |
 | Application logs (Ktor `CallLogging`) | stdout, scraped to log store TBD | Pending observability ADR-0007 | Out of scope here |
-| Cloudflare access logs | Cloudflare-side | Per Cloudflare's own retention policy | Outside Bliss control |
+| Cloudflare access logs | Cloudflare-side | Per Cloudflare's own retention policy | Outside WordSparrow control |
 
 ## Special cases
 
@@ -25,7 +25,7 @@
 When a user clicks "Erase my data", the following deletions happen in
 one HTTP request:
 
-1. Frontend: `localStorage.clear()` for the Bliss keys (`bliss.session.id`,
+1. Frontend: `localStorage.clear()` for the WordSparrow keys (`bliss.session.id`,
    `bliss.session.pseudonym`).
 2. Backend: `DELETE /v1/sessions/{sessionId}` on `grid/api` removes all
    `puzzle_hint_usage` rows for that session.
@@ -50,7 +50,7 @@ The application never persists an IP address.
   exemption.
 - **Cloudflare** sees IPs because it terminates TLS for the static
   frontend; that is disclosed in the privacy notice and follows
-  Cloudflare's DPA, not Bliss's.
+  Cloudflare's DPA, not WordSparrow's.
 - **Hetzner** sees IPs at the load-balancer level for the API
   endpoints; these are not logged or persisted by the application.
 
