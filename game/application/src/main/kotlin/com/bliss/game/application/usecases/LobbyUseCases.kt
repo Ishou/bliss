@@ -19,6 +19,7 @@ import com.bliss.game.domain.Pseudonym
 import com.bliss.game.domain.SessionId
 import com.bliss.game.domain.analytics.AnalyticsEvent
 import com.bliss.game.domain.wordsContaining
+import kotlinx.coroutines.CancellationException
 import java.time.Duration
 import java.time.Instant
 
@@ -329,6 +330,8 @@ class UpdateCellUseCase(
         val incorrect =
             try {
                 wordValidator.incorrectPositions(session.puzzle.id, lettersOf(entriesAfter))
+            } catch (cause: CancellationException) {
+                throw cause
             } catch (cause: Exception) {
                 // Validator failure must NOT take down the cellUpdate. The cell
                 // entry is already committed; the player will still see their
