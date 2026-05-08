@@ -177,15 +177,29 @@ class CsvWordRepository(
                                 .mapNotNull { record -> toWordWithFreq(record, path) }
                                 .sortedByDescending { it.second }
                                 .map { it.first }
-                        // Merge: for each main word, apply overlay theme if present.
-                        // Words in overlays that aren't in the main CSV are added at
-                        // the tail (they were curated for theme purposes — should be
-                        // available even if the LoRA pipeline didn't emit them).
+                        // Merge: for each main word, append the overlay's clue (if
+                        // any) to the main word's clue list, preserving the main
+                        // clue as primary. This is what makes EST carry both a
+                        // verb-form clue (from main, theme=null) and a compass
+                        // clue (from themed/compass.csv) at runtime — the filler
+                        // picks one at placement time per the per-grid theme caps.
+                        // Words in overlays that aren't in the main CSV are added
+                        // at the tail (they were curated for theme purposes —
+                        // should be available even if the LoRA pipeline didn't
+                        // emit them).
                         val byText = HashMap<String, Word>(mainWords.size + overlay.size)
                         for (w in mainWords) {
                             val themed = overlay[w.text]
                             byText[w.text] =
-                                if (themed != null) w.copy(theme = themed.theme) else w
+                                if (themed != null) {
+                                    Word(
+                                        text = w.text,
+                                        clues = w.clues + themed.clues,
+                                        lemma = w.lemma,
+                                    )
+                                } else {
+                                    w
+                                }
                         }
                         for ((text, themedWord) in overlay) {
                             byText.getOrPut(text) { themedWord }
@@ -219,7 +233,19 @@ class CsvWordRepository(
                         CSVParser.parse(reader, format).use { parser ->
                             for (record in parser.records) {
                                 val pair = toWordWithFreq(record, path) ?: continue
-                                val withTheme = pair.first.copy(theme = theme)
+                                val w = pair.first
+                                // Stamp the overlay's theme onto each clue.
+                                val themedClues =
+                                    w.clues.map {
+                                        com.bliss.grid.domain.model
+                                            .WordClue(it.text, theme)
+                                    }
+                                val withTheme =
+                                    com.bliss.grid.domain.model.Word(
+                                        text = w.text,
+                                        clues = themedClues,
+                                        lemma = w.lemma,
+                                    )
                                 out[withTheme.text] = withTheme
                             }
                         }
@@ -299,6 +325,10 @@ class CsvWordRepository(
                 lemma = foldedLemma,
                 theme = theme,
             ) to frequency
+            // Note: the Word(text, definition, lemma, theme) overload wraps
+            // (definition, theme) into a single-clue list — the loader's
+            // overlay-merge step (in fromClasspath) is what produces the
+            // multi-clue case for words that exist in both main + overlay.
         }
 
         private val DIACRITICS = "\\p{InCombiningDiacriticalMarks}+".toRegex()

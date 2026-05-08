@@ -5,6 +5,7 @@ import com.bliss.grid.domain.model.Direction
 import com.bliss.grid.domain.model.Position
 import com.bliss.grid.domain.model.Row
 import com.bliss.grid.domain.model.Word
+import com.bliss.grid.domain.model.WordClue
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
@@ -49,7 +50,7 @@ class SkeletonFillerThemeTest {
                 themeLimits = mapOf("chem" to 1),
             )
         assertNotNull(placements, "expected a fill")
-        val themesPicked = placements!!.map { it.word.theme }.filter { it != null }
+        val themesPicked = placements!!.map { it.chosenClue.theme }.filter { it != null }
         assertEquals(1, themesPicked.size, "exactly one chem-themed word should be placed")
     }
 
@@ -117,9 +118,50 @@ class SkeletonFillerThemeTest {
                 themeLimits = mapOf("chem" to 1),
             )
         assertNotNull(placements)
-        val themesPicked = placements!!.map { it.word.theme }
+        val themesPicked = placements!!.map { it.chosenClue.theme }
         // One placement carries chem theme; the other is null (the unthemed pronom).
         assertEquals(1, themesPicked.count { it == "chem" })
         assertEquals(1, themesPicked.count { it == null })
+    }
+
+    /**
+     * Multi-clue word: when the themed cap is already full, a word
+     * carrying both a themed and an unthemed clue should still place,
+     * choosing the unthemed clue. This is the EST = [verb, compass]
+     * scenario — compass cap full → fall back to verb-form clue.
+     */
+    @Test
+    fun `multi-clue word picks the non-themed clue when theme cap is full`() {
+        val slotA = WordSlot(pos(0, 0), Direction.DOWN_RIGHT, 2)
+        val slotB = WordSlot(pos(2, 0), Direction.DOWN_RIGHT, 2)
+        val candidates =
+            listOf(
+                // Compass-only: must take the compass slot.
+                Word(text = "NE", clues = listOf(WordClue("Point cardinal", "compass"))),
+                // Multi-clue: verb (no theme) + compass.
+                Word(
+                    text = "OR",
+                    clues =
+                        listOf(
+                            WordClue("Conjonction de coordination", null),
+                            WordClue("Point cardinal", "compass"),
+                        ),
+                ),
+            )
+        val filler = SkeletonFiller(ListWordRepository(candidates))
+        val placements =
+            filler.fill(
+                slots = listOf(slotA, slotB),
+                random = Random(0),
+                deadline = System.currentTimeMillis() + 1_000,
+                themeLimits = mapOf("compass" to 1),
+            )
+        assertNotNull(placements)
+        val byText = placements!!.associateBy { it.word.text }
+        // NE used the compass slot.
+        assertEquals("compass", byText["NE"]!!.chosenClue.theme)
+        // OR fell back to the unthemed clue (compass slot was full).
+        assertNull(byText["OR"]!!.chosenClue.theme)
+        assertEquals("Conjonction de coordination", byText["OR"]!!.chosenClue.text)
     }
 }
