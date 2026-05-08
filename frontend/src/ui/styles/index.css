@@ -8,6 +8,26 @@
 
 @layer reset, base, tokens, recipes, utilities;
 
+/* Paint the page background on `html` / `body` themselves so the
+ * rubber-band scroll on macOS (Safari + Chrome reveal the document's
+ * own background past the content edges) and the brief flash before
+ * React hydrates both stay charbon instead of falling back to the
+ * browser's default white. The first-paint flash also disappears
+ * because the bg is set before the React tree mounts. `color-scheme`
+ * tells the browser to render system UI (scrollbars, form controls)
+ * with the dark variant.
+ *
+ * Outside Panda's `@layer base` so the rule is unconditional — Panda
+ * preflight resets ride the same layer and would otherwise tie the
+ * specificity dance to whatever order the codegen emits. */
+:root {
+  color-scheme: dark;
+  background-color: var(--colors-bg);
+}
+html, body {
+  background-color: var(--colors-bg);
+}
+
 /* Shake animation for the cell error state — ADR-0005 §6 component
  * spec: 200 ms total, three small oscillations of about 4 px. Defined
  * outside Panda's layers because the animation name is referenced from
