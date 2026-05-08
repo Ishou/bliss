@@ -96,7 +96,7 @@ export function buildMockPuzzle(): GamePuzzle {
       } else if (row === 2 && column === 2) {
         cells.push({ kind: 'block', position: { row, column } });
       } else {
-        cells.push({ kind: 'letter', position: { row, column }, letter: null });
+        cells.push({ kind: 'letter', position: { row, column } });
       }
     }
   }
@@ -116,6 +116,7 @@ export function buildMockPuzzle(): GamePuzzle {
         text: 'Démo',
       },
     ],
+    hintsAllowed: 3,
     createdAt: new Date().toISOString(),
   };
 }

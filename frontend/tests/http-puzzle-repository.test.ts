@@ -63,21 +63,11 @@ describe('HttpPuzzleRepository', () => {
     expect(url).toBe(`https://api.example.test/v1/puzzles/${apiFixture.id}`);
     // identity & dimensions round-trip from the spec fixture
     expect(puzzle.id).toBe(apiFixture.id);
-    expect(puzzle.width).toBe(5);
-    expect(puzzle.height).toBe(5);
-    // single definition cell at (0,1)
-    expect(puzzle.cells[1]).toEqual({
-      kind: 'definition', position: { row: 0, col: 1 },
-      clues: [{ text: 'Capitale de la France', arrow: 'right' }],
-    });
-    // first letter cell following the def
-    expect(puzzle.cells[2]).toEqual({
-      kind: 'letter', position: { row: 0, col: 2 }, entry: '',
-    });
-    // letter cell at (2,0) — pre-filled; verifies LetterCell.letter → domain answer mapping
-    expect(puzzle.cells[10]).toEqual({
-      kind: 'letter', position: { row: 2, col: 0 }, answer: 'B', entry: '',
-    });
+    expect(puzzle.width).toBe(apiFixture.width);
+    expect(puzzle.height).toBe(apiFixture.height);
+    // every letter cell has no answer (LetterCell.letter removed from wire — PR #218)
+    const letterCells = puzzle.cells.filter((c) => c.kind === 'letter');
+    expect(letterCells.every((c) => !('answer' in c))).toBe(true);
     // the wire's top-level `clues` array is non-empty and every clue
     // text surfaces on a `DefinitionCell` in the domain — proves the
     // mapping is exercised end-to-end.
