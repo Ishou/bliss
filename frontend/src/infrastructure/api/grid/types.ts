@@ -47,9 +47,10 @@ export interface paths {
          *     Framing as "hint" rather than free corpus lookup is intentional: it
          *     caps unauthenticated clients to `Puzzle.hintsAllowed` calls per
          *     puzzle and prevents the endpoint being used as a dictionary scrape.
-         *     Identification of the calling player (cookie, session token,
-         *     IP+UA fingerprint) is a server concern and not part of this wire
-         *     contract.
+         *     Player identity on the wire is the `X-Session-Id` header (UUID v7,
+         *     same convention as `game/api`'s `SessionId`). The server keeps a
+         *     per-(puzzle, session) hint counter; absent or malformed values
+         *     produce a 400 `invalid-session-id` response.
          */
         post: operations["requestWordHint"];
         delete?: never;
@@ -402,6 +403,12 @@ export interface components {
         /** @description UUID v7 identifier of the puzzle. */
         PuzzleId: components["schemas"]["PuzzleId"];
         /**
+         * @description UUID v7 identifying the calling player's session. The server uses
+         *     this to track per-(puzzle, session) hint budgets. Absent or
+         *     non-UUID values produce a 400 `invalid-session-id` response.
+         */
+        SessionId: string;
+        /**
          * @description Number of columns to generate. Defaults to 10 when omitted, matching
          *     the historical solo-mode size. Valid range is 5..15 inclusive; values
          *     outside that range — or non-integers — produce a 400 with problem
@@ -503,7 +510,14 @@ export interface operations {
     requestWordHint: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                /**
+                 * @description UUID v7 identifying the calling player's session. The server uses
+                 *     this to track per-(puzzle, session) hint budgets. Absent or
+                 *     non-UUID values produce a 400 `invalid-session-id` response.
+                 */
+                "X-Session-Id": components["parameters"]["SessionId"];
+            };
             path: {
                 /** @description UUID v7 identifier of the puzzle. */
                 puzzleId: components["parameters"]["PuzzleId"];
@@ -529,8 +543,15 @@ export interface operations {
                 };
             };
             /**
-             * @description Request body invalid — `word` violates length / character class.
-             *     RFC 7807; `type` is `https://bliss.example/errors/invalid-word`.
+             * @description Request is malformed. RFC 7807. Variants:
+             *     - `X-Session-Id` absent or not a valid UUID
+             *       (`type` = `https://bliss.example/errors/invalid-session-id`).
+             *     - Path parameter `puzzleId` is not a valid UUID
+             *       (`type` = `https://bliss.example/errors/invalid-puzzle-id`).
+             *     - Request body missing or unparseable
+             *       (`type` = `https://bliss.example/errors/invalid-request-body`).
+             *     - `word` violates length or character class
+             *       (`type` = `https://bliss.example/errors/invalid-word`).
              */
             400: {
                 headers: {
