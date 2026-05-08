@@ -28,17 +28,19 @@ export interface ValidationResult {
 }
 
 export interface HintResult {
-  /** Server-normalized form of the requested word (NFC, lowercased). */
-  readonly word: string;
-  /** True iff the word is a real French lemma the server recognises. */
-  readonly exists: boolean;
+  /** Echo of the requested row (zero-indexed). */
+  readonly row: number;
+  /** Echo of the requested column (zero-indexed). */
+  readonly column: number;
+  /** Canonical solution letter at `(row, column)` — single uppercase A–Z. */
+  readonly letter: string;
   /** Remaining budget after this call; `0` means the next call 429s. */
   readonly hintsRemaining: number;
 }
 
 export type HintErrorKind =
   | 'budget-exhausted'
-  | 'invalid-word'
+  | 'invalid-coord'
   | 'transient';
 
 // Typed error so the UI can branch on `err.kind` instead of regexing
@@ -66,9 +68,9 @@ export interface PuzzleSolver {
   ): Promise<ValidationResult>;
 
   /**
-   * Spend one hint credit asking whether `word` is a real lemma. Throws
-   * `HintRequestError` on every documented 4xx (budget-exhausted,
-   * invalid-word) and on transient/network failures.
+   * Spend one hint credit to reveal the canonical letter at `(row, column)`.
+   * Throws `HintRequestError` on every documented 4xx (budget-exhausted,
+   * invalid-coord) and on transient/network failures.
    */
-  requestHint(puzzleId: string, word: string): Promise<HintResult>;
+  requestHint(puzzleId: string, row: number, column: number): Promise<HintResult>;
 }

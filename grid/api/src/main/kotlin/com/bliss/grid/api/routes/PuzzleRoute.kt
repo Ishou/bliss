@@ -2,17 +2,17 @@ package com.bliss.grid.api.routes
 
 import com.bliss.grid.api.dto.CellDto
 import com.bliss.grid.api.dto.ProblemDetails
+import com.bliss.grid.api.dto.RevealCellHintRequest
+import com.bliss.grid.api.dto.RevealCellHintResult
 import com.bliss.grid.api.dto.ValidatePuzzleRequest
 import com.bliss.grid.api.dto.ValidatePuzzleResult
-import com.bliss.grid.api.dto.WordHintRequest
-import com.bliss.grid.api.dto.WordHintResult
 import com.bliss.grid.api.mapper.GridToPuzzleMapper
 import com.bliss.grid.application.puzzle.FilledCellInput
 import com.bliss.grid.application.puzzle.LoadOrGeneratePuzzleUseCase
-import com.bliss.grid.application.puzzle.RequestWordHintUseCase
+import com.bliss.grid.application.puzzle.RevealCellHintOutcome
+import com.bliss.grid.application.puzzle.RevealCellHintUseCase
 import com.bliss.grid.application.puzzle.ValidatePuzzleOutcome
 import com.bliss.grid.application.puzzle.ValidatePuzzleUseCase
-import com.bliss.grid.application.puzzle.WordHintOutcome
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.request.receive
@@ -40,8 +40,8 @@ private const val PUZZLE_GENERATION_FAILED_TYPE: String =
     "https://bliss.example/errors/puzzle-generation-failed"
 private const val INVALID_SESSION_ID_TYPE: String =
     "https://bliss.example/errors/invalid-session-id"
-private const val INVALID_WORD_TYPE: String =
-    "https://bliss.example/errors/invalid-word"
+private const val INVALID_COORD_TYPE: String =
+    "https://bliss.example/errors/invalid-coord"
 private const val INVALID_REQUEST_BODY_TYPE: String =
     "https://bliss.example/errors/invalid-request-body"
 private const val INVALID_VALIDATE_REQUEST_TYPE: String =
@@ -52,7 +52,8 @@ private const val HINT_BUDGET_EXHAUSTED_TYPE: String =
 /**
  * Grid bounded-context HTTP surface (ADR-0003 §4). Three endpoints:
  *  - GET  `/v1/puzzles/{puzzleId}` — idempotent puzzle fetch (lookup-or-generate).
- *  - POST `/v1/puzzles/{puzzleId}/hints` — spend a hint to corpus-check a word.
+ *  - POST `/v1/puzzles/{puzzleId}/hints` — spend a hint to reveal the
+ *    canonical letter at a `(row, column)` cell.
  *  - POST `/v1/puzzles/{puzzleId}/validate` — verify a filled grid against
  *    the canonical solution; returns position-only diff.
  *
@@ -64,7 +65,7 @@ private const val HINT_BUDGET_EXHAUSTED_TYPE: String =
  */
 fun Route.puzzles(
     loadOrGenerate: LoadOrGeneratePuzzleUseCase,
-    requestWordHint: RequestWordHintUseCase,
+    revealCellHint: RevealCellHintUseCase,
     validatePuzzle: ValidatePuzzleUseCase,
     mapper: GridToPuzzleMapper = GridToPuzzleMapper(),
 ) {
@@ -160,45 +161,46 @@ fun Route.puzzles(
 
         val body =
             try {
-                call.receive<WordHintRequest>()
+                call.receive<RevealCellHintRequest>()
             } catch (e: SerializationException) {
                 call.respondProblem(
                     status = HttpStatusCode.BadRequest,
                     title = "Corps de requête invalide",
                     type = INVALID_REQUEST_BODY_TYPE,
-                    detail = e.message ?: "request body could not be deserialized as WordHintRequest",
+                    detail = e.message ?: "request body could not be deserialized as RevealCellHintRequest",
                 )
                 return@post
             }
 
-        when (val outcome = requestWordHint.execute(puzzleId, sessionId, body.word)) {
-            is WordHintOutcome.Granted ->
+        when (val outcome = revealCellHint.execute(puzzleId, sessionId, body.row, body.column)) {
+            is RevealCellHintOutcome.Granted ->
                 call.respond(
-                    WordHintResult(
-                        word = outcome.word,
-                        exists = outcome.exists,
+                    RevealCellHintResult(
+                        row = outcome.row,
+                        column = outcome.column,
+                        letter = outcome.letter.toString(),
                         hintsRemaining = outcome.hintsRemaining,
                     ),
                 )
-            is WordHintOutcome.PuzzleNotFound ->
+            is RevealCellHintOutcome.PuzzleNotFound ->
                 call.respondProblem(
                     status = HttpStatusCode.NotFound,
                     title = "Grille introuvable",
                     type = PUZZLE_NOT_FOUND_TYPE,
                     detail = "Aucune grille pour l'identifiant '$puzzleId'.",
                 )
-            is WordHintOutcome.BudgetExhausted ->
+            is RevealCellHintOutcome.BudgetExhausted ->
                 call.respondProblem(
                     status = HttpStatusCode.TooManyRequests,
                     title = "Quota d'indices épuisé",
                     type = HINT_BUDGET_EXHAUSTED_TYPE,
                     detail = "Le quota d'indices pour cette grille a déjà été atteint.",
                 )
-            is WordHintOutcome.InvalidWord ->
+            is RevealCellHintOutcome.InvalidCoord ->
                 call.respondProblem(
                     status = HttpStatusCode.BadRequest,
-                    title = "Mot invalide",
-                    type = INVALID_WORD_TYPE,
+                    title = "Coordonnées invalides",
+                    type = INVALID_COORD_TYPE,
                     detail = outcome.reason,
                 )
         }

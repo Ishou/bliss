@@ -70,7 +70,8 @@ export function createHttpPuzzleSolver(
 
     async requestHint(
       puzzleId: string,
-      word: string,
+      row: number,
+      column: number,
     ): Promise<HintResult> {
       const { data, error, response } = await client.POST(
         '/v1/puzzles/{puzzleId}/hints',
@@ -79,7 +80,7 @@ export function createHttpPuzzleSolver(
             path: { puzzleId },
             header: { 'X-Session-Id': sessionId },
           },
-          body: { word },
+          body: { row, column },
         },
       );
       if (error || !data) {
@@ -91,13 +92,14 @@ export function createHttpPuzzleSolver(
           throw new HintRequestError('budget-exhausted', 0, detail);
         }
         if (response.status === 400) {
-          throw new HintRequestError('invalid-word', null, detail);
+          throw new HintRequestError('invalid-coord', null, detail);
         }
         throw new HintRequestError('transient', null, detail);
       }
       return {
-        word: data.word,
-        exists: data.exists,
+        row: data.row,
+        column: data.column,
+        letter: data.letter,
         hintsRemaining: data.hintsRemaining,
       };
     },

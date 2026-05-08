@@ -14,7 +14,7 @@ import com.bliss.grid.application.puzzle.GeneratePuzzleUseCase
 import com.bliss.grid.application.puzzle.LoadOrGeneratePuzzleUseCase
 import com.bliss.grid.application.puzzle.PUZZLE_HEIGHT
 import com.bliss.grid.application.puzzle.PUZZLE_WIDTH
-import com.bliss.grid.application.puzzle.RequestWordHintUseCase
+import com.bliss.grid.application.puzzle.RevealCellHintUseCase
 import com.bliss.grid.application.puzzle.ValidatePuzzleUseCase
 import com.bliss.grid.application.puzzle.defaultPuzzleConstraints
 import com.bliss.grid.domain.generation.WordRepository
@@ -283,7 +283,7 @@ class PuzzleRouteTest {
                 routing {
                     puzzles(
                         loadOrGenerate = LoadOrGeneratePuzzleUseCase(puzzleRepo, gen),
-                        requestWordHint = RequestWordHintUseCase(puzzleRepo, hintUsageRepo, emptyRepo),
+                        revealCellHint = RevealCellHintUseCase(puzzleRepo, hintUsageRepo),
                         validatePuzzle = ValidatePuzzleUseCase(puzzleRepo),
                     )
                 }

@@ -2,7 +2,8 @@ import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { HintControl } from '@/ui/components/grid/HintControl';
 
-const noopGetWord = () => 'forêt';
+const focusedAt = (row: number, column: number, isLocked = false) =>
+  () => ({ row, column, isLocked });
 
 function renderWith(overrides: Partial<React.ComponentProps<typeof HintControl>> = {}) {
   const onRequest = vi.fn();
@@ -14,7 +15,7 @@ function renderWith(overrides: Partial<React.ComponentProps<typeof HintControl>>
       pending={false}
       lastResult={null}
       errorMessage={null}
-      getCurrentWord={noopGetWord}
+      getFocusedCell={focusedAt(2, 4)}
       onRequest={onRequest}
       {...overrides}
     />,
@@ -30,16 +31,26 @@ describe('HintControl', () => {
     ).toHaveTextContent('2/3');
   });
 
-  it('calls onRequest with the active word on click', () => {
-    const { onRequest } = renderWith();
+  it('calls onRequest with the focused cell coordinates on click', () => {
+    const { onRequest } = renderWith({ getFocusedCell: focusedAt(2, 4) });
     fireEvent.click(
       screen.getByRole('button', { name: 'Demander un indice' }),
     );
-    expect(onRequest).toHaveBeenCalledWith('forêt');
+    expect(onRequest).toHaveBeenCalledWith(2, 4);
   });
 
-  it('does not call onRequest when getCurrentWord returns null', () => {
-    const { onRequest } = renderWith({ getCurrentWord: () => null });
+  it('does not call onRequest when no cell is focused', () => {
+    const { onRequest } = renderWith({ getFocusedCell: () => null });
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Demander un indice' }),
+    );
+    expect(onRequest).not.toHaveBeenCalled();
+  });
+
+  it('does not call onRequest when the focused cell is already locked', () => {
+    const { onRequest } = renderWith({
+      getFocusedCell: focusedAt(2, 4, true),
+    });
     fireEvent.click(
       screen.getByRole('button', { name: 'Demander un indice' }),
     );
@@ -60,14 +71,9 @@ describe('HintControl', () => {
     ).toBeDisabled();
   });
 
-  it('renders a success status pill when lastResult.exists is true', () => {
-    renderWith({ lastResult: { word: 'forêt', exists: true } });
-    expect(screen.getByRole('status')).toHaveTextContent('« forêt » existe');
-  });
-
-  it('renders a failure status pill when lastResult.exists is false', () => {
-    renderWith({ lastResult: { word: 'xyz', exists: false } });
-    expect(screen.getByRole('status')).toHaveTextContent('« xyz » introuvable');
+  it('renders a success status pill with the revealed letter', () => {
+    renderWith({ lastResult: { row: 2, column: 4, letter: 'P' } });
+    expect(screen.getByRole('status')).toHaveTextContent('Lettre révélée : P');
   });
 
   it('renders the error message when supplied', () => {

@@ -46,34 +46,54 @@ describe('MSW preview handlers', () => {
     expect(body.clues).toEqual(fixture.clues);
   });
 
-  it('POST /v1/puzzles/:puzzleId/hints decrements the budget then 429s when exhausted', async () => {
+  it('POST /v1/puzzles/:puzzleId/hints reveals letters then 429s when exhausted', async () => {
     // Each test gets a fresh puzzleId so the per-puzzle counter starts
     // at the fixture's `hintsAllowed` (3) regardless of test order.
     const puzzleId = '11111111-2222-3333-4444-555555555555';
-    const post = (word: string) =>
+    // Pull three distinct fixture letter cells so each call hits a
+    // valid coord and the per-puzzle counter actually decrements.
+    const letterCells = (fixture.cells as ReadonlyArray<components['schemas']['Cell']>)
+      .filter((c): c is components['schemas']['LetterCell'] => c.kind === 'letter')
+      .slice(0, 3)
+      .map((c) => c.position);
+    const post = (row: number, column: number) =>
       fetch(`http://localhost/v1/puzzles/${puzzleId}/hints`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ word }),
+        body: JSON.stringify({ row, column }),
       });
 
-    const r1 = await post('forêt');
+    const r1 = await post(letterCells[0]!.row, letterCells[0]!.column);
     expect(r1.status).toBe(200);
-    expect(await r1.json()).toMatchObject({ exists: true, hintsRemaining: 2 });
+    expect(await r1.json()).toMatchObject({ hintsRemaining: 2 });
 
-    const r2 = await post('clé');
+    const r2 = await post(letterCells[1]!.row, letterCells[1]!.column);
     expect(r2.status).toBe(200);
     expect(await r2.json()).toMatchObject({ hintsRemaining: 1 });
 
-    const r3 = await post('arc');
+    const r3 = await post(letterCells[2]!.row, letterCells[2]!.column);
     expect(r3.status).toBe(200);
     expect(await r3.json()).toMatchObject({ hintsRemaining: 0 });
 
-    const r4 = await post('fin');
+    const r4 = await post(letterCells[0]!.row, letterCells[0]!.column);
     expect(r4.status).toBe(429);
     expect(r4.headers.get('content-type')).toContain('application/problem+json');
     expect(await r4.json()).toMatchObject({
       type: 'https://bliss.example/errors/hint-budget-exhausted',
+    });
+  });
+
+  it('POST /v1/puzzles/:puzzleId/hints rejects non-letter coordinates with invalid-coord', async () => {
+    const puzzleId = '22222222-2222-3333-4444-555555555555';
+    const response = await fetch(`http://localhost/v1/puzzles/${puzzleId}/hints`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ row: 999, column: 999 }),
+    });
+    expect(response.status).toBe(400);
+    expect(response.headers.get('content-type')).toContain('application/problem+json');
+    expect(await response.json()).toMatchObject({
+      type: 'https://bliss.example/errors/invalid-coord',
     });
   });
 

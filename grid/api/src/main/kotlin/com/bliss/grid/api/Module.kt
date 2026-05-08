@@ -11,7 +11,7 @@ import com.bliss.grid.application.puzzle.GeneratePuzzleUseCase
 import com.bliss.grid.application.puzzle.HintUsageRepository
 import com.bliss.grid.application.puzzle.LoadOrGeneratePuzzleUseCase
 import com.bliss.grid.application.puzzle.PuzzleRepository
-import com.bliss.grid.application.puzzle.RequestWordHintUseCase
+import com.bliss.grid.application.puzzle.RevealCellHintUseCase
 import com.bliss.grid.application.puzzle.ValidatePuzzleUseCase
 import com.bliss.grid.application.puzzle.defaultPuzzleConstraints
 import com.bliss.grid.infrastructure.analytics.MatomoAnalyticsAdapter
@@ -60,6 +60,11 @@ fun Application.module() {
         allowMethod(HttpMethod.Options) // preflight
         allowHeader(HttpHeaders.ContentType)
         allowHeader(HttpHeaders.Accept)
+        // POST /v1/puzzles/{puzzleId}/hints sends the player's session as a
+        // custom header (see openapi.yaml + HttpPuzzleSolver.ts); without
+        // this allowance the browser preflight fails and the call never
+        // reaches the route.
+        allowHeader("X-Session-Id")
 
         // Production frontends (Cloudflare Pages serving wordsparrow.io).
         allowHost("wordsparrow.io", schemes = listOf("https"))
@@ -144,14 +149,14 @@ fun Application.module() {
     val analyticsEventSink: AnalyticsEventSink = createAnalyticsEventSink(analyticsScope)
 
     val loadOrGenerate = LoadOrGeneratePuzzleUseCase(puzzleRepository, generatePuzzle, analyticsEventSink = analyticsEventSink)
-    val requestWordHint =
-        RequestWordHintUseCase(puzzleRepository, hintUsageRepository, wordRepository, analyticsEventSink = analyticsEventSink)
+    val revealCellHint =
+        RevealCellHintUseCase(puzzleRepository, hintUsageRepository, analyticsEventSink = analyticsEventSink)
     val validatePuzzle = ValidatePuzzleUseCase(puzzleRepository)
     val deleteSession = DeleteSessionUseCase(hintUsageRepository)
 
     routing {
         health(version)
-        puzzles(loadOrGenerate, requestWordHint, validatePuzzle)
+        puzzles(loadOrGenerate, revealCellHint, validatePuzzle)
         deleteSession(deleteSession)
     }
 }
