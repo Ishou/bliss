@@ -192,26 +192,31 @@ class PresenceAggregator(
      */
     suspend fun tickOnce() {
         val now = clock.now()
-        val toForget = mutableListOf<SessionId>()
-        for ((sid, state) in sessions) {
-            val typingFell =
-                state.typing && state.lastKeystrokeAt?.let { isOlderThan(it, now, typingTrailingEdge) } == true
-            if (typingFell) state.typing = false
-
-            val idleRose =
-                !state.idle &&
+        for (sid in ArrayList(sessions.keys)) {
+            var typingFell = false
+            var idleRose = false
+            var expired = false
+            var lobbyId: LobbyId? = null
+            sessions.computeIfPresent(sid) { _, state ->
+                lobbyId = state.lobbyId
+                typingFell =
+                    state.typing &&
+                    state.lastKeystrokeAt?.let { isOlderThan(it, now, typingTrailingEdge) } == true
+                if (typingFell) state.typing = false
+                idleRose =
+                    !state.idle &&
                     state.disconnectedAt == null &&
                     isOlderThan(state.lastActivityAt, now, idleThreshold)
-            if (idleRose) state.idle = true
-
-            val expired =
-                state.disconnectedAt?.let { isOlderThan(it, now, disconnectGrace) } == true
-            if (expired) toForget += sid
-
-            if (typingFell) broadcaster.broadcast(state.lobbyId, LobbyEvent.Typing(sid, typing = false))
-            if (idleRose) broadcaster.broadcast(state.lobbyId, LobbyEvent.Idle(sid, idle = true))
+                if (idleRose) state.idle = true
+                expired = state.disconnectedAt?.let { isOlderThan(it, now, disconnectGrace) } == true
+                state
+            }
+            if (expired) sessions.remove(sid)
+            lobbyId?.let { lid ->
+                if (typingFell) broadcaster.broadcast(lid, LobbyEvent.Typing(sid, typing = false))
+                if (idleRose) broadcaster.broadcast(lid, LobbyEvent.Idle(sid, idle = true))
+            }
         }
-        for (sid in toForget) sessions.remove(sid)
     }
 
     /**
