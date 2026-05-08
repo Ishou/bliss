@@ -154,13 +154,13 @@ function FrenchContent() {
     <>
       <h1>Politique de confidentialité</h1>
       <p>
-        <strong>Bliss</strong> (mots fléchés en ligne) collecte le strict minimum nécessaire pour
+        <strong>WordSparrow</strong> (mots fléchés en ligne) collecte le strict minimum nécessaire pour
         faire fonctionner le service. Aucun compte, aucun cookie publicitaire, aucun partage avec
         des annonceurs.
       </p>
       <h2>Responsable du traitement</h2>
       <p>
-        Bliss est exploité par Colin Auberger, contact :{' '}
+        WordSparrow est exploité par Colin Auberger, contact :{' '}
         <a href="mailto:colin.auberger@gmail.com">colin.auberger@gmail.com</a>.
       </p>
       <h2>Données traitées</h2>
@@ -213,7 +213,7 @@ function FrenchContent() {
       </p>
       <h2>Cookies</h2>
       <p>
-        Bliss <strong>n’utilise pas</strong> de cookies. Le service stocke un identifiant de
+        WordSparrow <strong>n’utilise pas</strong> de cookies. Le service stocke un identifiant de
         session anonyme dans le <code>localStorage</code> de votre navigateur (technologie
         distincte des cookies). Matomo fonctionne en mode sans cookie.
       </p>
@@ -261,12 +261,12 @@ function EnglishContent() {
     <>
       <h1>Privacy Policy</h1>
       <p>
-        <strong>Bliss</strong> (online French crossword puzzles) collects the minimum needed to
+        <strong>WordSparrow</strong> (online French crossword puzzles) collects the minimum needed to
         run the service. No accounts, no advertising cookies, no sharing with advertisers.
       </p>
       <h2>Data controller</h2>
       <p>
-        Bliss is operated by Colin Auberger, contact:{' '}
+        WordSparrow is operated by Colin Auberger, contact:{' '}
         <a href="mailto:colin.auberger@gmail.com">colin.auberger@gmail.com</a>.
       </p>
       <h2>Data we process</h2>
@@ -319,7 +319,7 @@ function EnglishContent() {
       </p>
       <h2>Cookies</h2>
       <p>
-        Bliss does <strong>not</strong> set cookies. The service stores an anonymous session
+        WordSparrow does <strong>not</strong> set cookies. The service stores an anonymous session
         identifier in your browser&apos;s <code>localStorage</code> (distinct from cookies). Matomo
         runs in cookieless mode.
       </p>
