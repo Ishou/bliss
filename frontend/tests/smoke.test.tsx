@@ -35,7 +35,12 @@ const soloEntriesStore = {
   save: vi.fn(),
   clearForPuzzle: vi.fn(),
 };
-const ctx = { puzzleRepository, puzzleSolver, sessionClient, soloEntriesStore };
+const tourSeenStore = {
+  get: () => true,
+  set: vi.fn(),
+  clear: vi.fn(),
+};
+const ctx = { puzzleRepository, puzzleSolver, sessionClient, soloEntriesStore, tourSeenStore };
 
 describe('App smoke test', () => {
   it('renders the WordSparrow heading on the root route', async () => {

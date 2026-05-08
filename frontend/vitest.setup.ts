@@ -22,3 +22,26 @@ if (typeof globalThis.ResizeObserver === 'undefined') {
     disconnect() {}
   } as unknown as typeof ResizeObserver;
 }
+
+// jsdom doesn't ship `visualViewport`; `@zag-js/tour` reads it on
+// machine start to track boundary size for the spotlight cutout. Stub
+// the minimum surface (size + listener no-ops) so tour-driven specs
+// can mount the machine without ReferenceError.
+if (typeof window !== 'undefined' && typeof window.visualViewport === 'undefined') {
+  // Use Object.defineProperty since jsdom marks the prop non-writable.
+  Object.defineProperty(window, 'visualViewport', {
+    configurable: true,
+    value: {
+      width: 1024,
+      height: 768,
+      offsetLeft: 0,
+      offsetTop: 0,
+      pageLeft: 0,
+      pageTop: 0,
+      scale: 1,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      dispatchEvent: () => false,
+    },
+  });
+}

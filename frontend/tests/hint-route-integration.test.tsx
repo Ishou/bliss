@@ -69,6 +69,11 @@ const renderHomeRoute = (solver: PuzzleSolver) => {
         save: () => {},
         clearForPuzzle: () => {},
       },
+      tourSeenStore: {
+        get: () => true,
+        set: () => {},
+        clear: () => {},
+      },
     },
   });
   return render(<RouterProvider router={router} />);
