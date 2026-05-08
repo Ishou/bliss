@@ -77,10 +77,6 @@ cnilExempt:
   doNotTrack: true
   # Country granularity only; no city-level GeoIP.
   geolocationCountryOnly: true
-  # Disable fingerprinting browser plugins (Java/Silverlight/QT etc).
-  disableBrowserPluginCapture: true
-  # Disable cross-site cookies entirely.
-  disableTrackingCookies: true
 
 podSecurityContext:
   runAsNonRoot: false

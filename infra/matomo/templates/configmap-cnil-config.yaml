@@ -29,12 +29,16 @@ data:
     do_not_track = {{ if .Values.cnilExempt.doNotTrack }}1{{ else }}0{{ end }}
 
     ; No browser fingerprinting via plugin detection.
+    ; Hardcoded — not exposed as a Helm value. Changing this would silently
+    ; invalidate the CNIL exemption (ADR-0025 §2).
     enable_browser_archiving_triggering = 0
 
     ; Country-only geolocation (no city-level data).
     enable_geoip_city_lookup = {{ if .Values.cnilExempt.geolocationCountryOnly }}0{{ else }}1{{ end }}
 
     ; Disable cross-site / cross-domain visitor identification.
+    ; Hardcoded — not exposed as a Helm value. Changing this would silently
+    ; invalidate the CNIL exemption (ADR-0025 §2).
     enable_first_party_cookies = 0
 
     ; Force the JS tracker to operate in cookieless mode regardless of
