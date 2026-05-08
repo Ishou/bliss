@@ -15,14 +15,7 @@ COPY grid/domain/build.gradle.kts grid/domain/
 COPY grid/application/build.gradle.kts grid/application/
 COPY grid/infrastructure/build.gradle.kts grid/infrastructure/
 COPY grid/api/build.gradle.kts grid/api/
-# settings.gradle.kts include(":grid:worker") forces gradle to evaluate
-# the worker project at configuration time — even though :grid:api:shadowJar
-# does not depend on it. The worker is local-dev only (ADR-0013 §8) and is
-# never built into this image; copying its build script is enough to satisfy
-# the project-directory check.
-COPY grid/worker/build.gradle.kts grid/worker/
-# Same reason for the game/ bounded context — settings.gradle.kts includes
-# :game:domain (and future :game:* modules), so Gradle's configuration step
+# settings.gradle.kts includes :game:* modules. Gradle's configuration step
 # requires those project directories to exist before any task can run.
 # :grid:api:shadowJar has no dependency on game/, so the build script alone
 # is enough; src/ is intentionally not copied.
