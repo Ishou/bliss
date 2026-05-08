@@ -76,9 +76,9 @@ fun Route.puzzles(
             parseUuid(rawId) ?: run {
                 call.respondProblem(
                     status = HttpStatusCode.BadRequest,
-                    title = "Invalid puzzle id",
+                    title = "Identifiant de grille invalide",
                     type = INVALID_PUZZLE_ID_TYPE,
-                    detail = "Path parameter puzzleId must be a UUID, was '$rawId'.",
+                    detail = "Le paramètre puzzleId doit être un UUID, reçu : '$rawId'.",
                 )
                 return@get
             }
@@ -88,7 +88,7 @@ fun Route.puzzles(
                 is DimensionParse.Invalid -> {
                     call.respondProblem(
                         status = HttpStatusCode.BadRequest,
-                        title = "Invalid puzzle dimensions",
+                        title = "Dimensions de grille invalides",
                         type = INVALID_DIMENSIONS_TYPE,
                         detail = parsed.detail,
                     )
@@ -101,7 +101,7 @@ fun Route.puzzles(
                 is DimensionParse.Invalid -> {
                     call.respondProblem(
                         status = HttpStatusCode.BadRequest,
-                        title = "Invalid puzzle dimensions",
+                        title = "Dimensions de grille invalides",
                         type = INVALID_DIMENSIONS_TYPE,
                         detail = parsed.detail,
                     )
@@ -115,9 +115,9 @@ fun Route.puzzles(
             log.warn("puzzle_generation_failed puzzle_id={}", puzzleId)
             call.respondProblem(
                 status = HttpStatusCode.UnprocessableEntity,
-                title = "Puzzle generation failed",
+                title = "Échec de la génération de grille",
                 type = PUZZLE_GENERATION_FAILED_TYPE,
-                detail = "The generator could not satisfy the requested constraints.",
+                detail = "Le générateur n'a pas pu satisfaire les contraintes demandées.",
             )
             return@get
         }
@@ -139,9 +139,9 @@ fun Route.puzzles(
             parseUuid(rawId) ?: run {
                 call.respondProblem(
                     status = HttpStatusCode.BadRequest,
-                    title = "Invalid puzzle id",
+                    title = "Identifiant de grille invalide",
                     type = INVALID_PUZZLE_ID_TYPE,
-                    detail = "Path parameter puzzleId must be a UUID, was '$rawId'.",
+                    detail = "Le paramètre puzzleId doit être un UUID, reçu : '$rawId'.",
                 )
                 return@post
             }
@@ -151,9 +151,9 @@ fun Route.puzzles(
             parseUuid(rawSession) ?: run {
                 call.respondProblem(
                     status = HttpStatusCode.BadRequest,
-                    title = "Invalid session id",
+                    title = "Identifiant de session invalide",
                     type = INVALID_SESSION_ID_TYPE,
-                    detail = "X-Session-Id header must be a UUID; got '$rawSession'.",
+                    detail = "L'en-tête X-Session-Id doit être un UUID, reçu : '$rawSession'.",
                 )
                 return@post
             }
@@ -164,7 +164,7 @@ fun Route.puzzles(
             } catch (e: SerializationException) {
                 call.respondProblem(
                     status = HttpStatusCode.BadRequest,
-                    title = "Invalid request body",
+                    title = "Corps de requête invalide",
                     type = INVALID_REQUEST_BODY_TYPE,
                     detail = e.message ?: "request body could not be deserialized as WordHintRequest",
                 )
@@ -183,21 +183,21 @@ fun Route.puzzles(
             is WordHintOutcome.PuzzleNotFound ->
                 call.respondProblem(
                     status = HttpStatusCode.NotFound,
-                    title = "Puzzle not found",
+                    title = "Grille introuvable",
                     type = PUZZLE_NOT_FOUND_TYPE,
-                    detail = "No puzzle with id '$puzzleId'.",
+                    detail = "Aucune grille pour l'identifiant '$puzzleId'.",
                 )
             is WordHintOutcome.BudgetExhausted ->
                 call.respondProblem(
                     status = HttpStatusCode.TooManyRequests,
-                    title = "Hint budget exhausted",
+                    title = "Quota d'indices épuisé",
                     type = HINT_BUDGET_EXHAUSTED_TYPE,
-                    detail = "Hint budget for this (puzzle, player) is already at the cap.",
+                    detail = "Le quota d'indices pour cette grille a déjà été atteint.",
                 )
             is WordHintOutcome.InvalidWord ->
                 call.respondProblem(
                     status = HttpStatusCode.BadRequest,
-                    title = "Invalid word",
+                    title = "Mot invalide",
                     type = INVALID_WORD_TYPE,
                     detail = outcome.reason,
                 )
@@ -210,9 +210,9 @@ fun Route.puzzles(
             parseUuid(rawId) ?: run {
                 call.respondProblem(
                     status = HttpStatusCode.BadRequest,
-                    title = "Invalid puzzle id",
+                    title = "Identifiant de grille invalide",
                     type = INVALID_PUZZLE_ID_TYPE,
-                    detail = "Path parameter puzzleId must be a UUID, was '$rawId'.",
+                    detail = "Le paramètre puzzleId doit être un UUID, reçu : '$rawId'.",
                 )
                 return@post
             }
@@ -223,7 +223,7 @@ fun Route.puzzles(
             } catch (e: SerializationException) {
                 call.respondProblem(
                     status = HttpStatusCode.BadRequest,
-                    title = "Invalid request body",
+                    title = "Corps de requête invalide",
                     type = INVALID_REQUEST_BODY_TYPE,
                     detail = e.message ?: "request body could not be deserialized as ValidatePuzzleRequest",
                 )
@@ -245,14 +245,14 @@ fun Route.puzzles(
             is ValidatePuzzleOutcome.PuzzleNotFound ->
                 call.respondProblem(
                     status = HttpStatusCode.NotFound,
-                    title = "Puzzle not found",
+                    title = "Grille introuvable",
                     type = PUZZLE_NOT_FOUND_TYPE,
-                    detail = "No puzzle with id '$puzzleId'.",
+                    detail = "Aucune grille pour l'identifiant '$puzzleId'.",
                 )
             is ValidatePuzzleOutcome.RequestInvalid ->
                 call.respondProblem(
                     status = HttpStatusCode.BadRequest,
-                    title = "Invalid validate request",
+                    title = "Requête de validation invalide",
                     type = INVALID_VALIDATE_REQUEST_TYPE,
                     detail = outcome.reason,
                 )

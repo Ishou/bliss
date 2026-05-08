@@ -76,7 +76,7 @@ fun Route.lobbies(
                     .getOrElse {
                         return@get call.respondProblem(
                             HttpStatusCode.BadRequest,
-                            "Invalid lobby id",
+                            "Identifiant de salon invalide",
                             INVALID_LOBBY_ID_TYPE,
                             "Path parameter lobbyId must be an 8-char base58 nanoid, was '$raw'.",
                         )
@@ -86,7 +86,7 @@ fun Route.lobbies(
             if (lobby == null) {
                 return@get call.respondProblem(
                     HttpStatusCode.NotFound,
-                    "Lobby not found",
+                    "Salon introuvable",
                     LOBBY_NOT_FOUND_TYPE,
                     "No lobby exists for id '${lobbyId.value}'.",
                 )
@@ -100,7 +100,7 @@ fun Route.lobbies(
 }
 
 private suspend fun ApplicationCall.respondInvalidCreate(detail: String?) =
-    respondProblem(HttpStatusCode.BadRequest, "Invalid lobby create request", INVALID_CREATE_TYPE, detail)
+    respondProblem(HttpStatusCode.BadRequest, "Requête de création de salon invalide", INVALID_CREATE_TYPE, detail)
 
 private suspend fun ApplicationCall.respondProblem(
     status: HttpStatusCode,

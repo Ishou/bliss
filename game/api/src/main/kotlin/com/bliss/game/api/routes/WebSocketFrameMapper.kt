@@ -118,7 +118,7 @@ internal fun UseCaseError.toErrorFrame(): ServerToClientFrame.Error =
         UseCaseError.LobbyNotFound ->
             ServerToClientFrame.Error(
                 errorType = "https://bliss.example/errors/lobby-not-found",
-                title = "Lobby not found",
+                title = "Salon introuvable",
                 status = 404,
             )
         UseCaseError.LobbyFull ->
@@ -136,7 +136,7 @@ internal fun UseCaseError.toErrorFrame(): ServerToClientFrame.Error =
         UseCaseError.InvalidState ->
             ServerToClientFrame.Error(
                 errorType = "https://bliss.example/errors/invalid-state",
-                title = "Invalid lobby state for this operation",
+                title = "État de salon invalide pour cette opération",
                 status = 409,
             )
         UseCaseError.PlayerNotInLobby ->

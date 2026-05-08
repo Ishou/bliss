@@ -94,7 +94,7 @@ fun Route.lobbyWebSocketRoute(
 
         val current = repo.findById(lobbyId)
         if (current == null) {
-            sendError("Lobby not found", "No lobby with id ${lobbyId.value} exists.", status = 404)
+            sendError("Salon introuvable", "No lobby with id ${lobbyId.value} exists.", status = 404)
             close(CloseReason(CloseReason.Codes.VIOLATED_POLICY, "lobby not found"))
             return@webSocket
         }
@@ -158,7 +158,7 @@ private suspend fun DefaultWebSocketServerSession.parseLobbyIdOrClose(): LobbyId
     return try {
         LobbyId(raw)
     } catch (cause: IllegalArgumentException) {
-        sendError("Invalid lobbyId", cause.message ?: "lobbyId failed validation")
+        sendError("Identifiant de salon invalide", cause.message ?: "lobbyId n'est pas valide")
         close(CloseReason(CloseReason.Codes.CANNOT_ACCEPT, "invalid lobbyId"))
         null
     }
@@ -168,7 +168,7 @@ private suspend fun DefaultWebSocketServerSession.parseLobbyIdOrClose(): LobbyId
 private suspend fun DefaultWebSocketServerSession.parseQuerySessionIdOrClose(): String? {
     val raw = call.request.queryParameters["sessionId"] ?: return ""
     if (!SESSION_ID_REGEX.matches(raw)) {
-        sendError("Invalid sessionId", "Query parameter 'sessionId' must be a UUID v7.")
+        sendError("Identifiant de session invalide", "Le paramètre sessionId doit être un UUID v7.")
         close(CloseReason(CloseReason.Codes.VIOLATED_POLICY, "invalid sessionId"))
         return null
     }
@@ -334,7 +334,7 @@ private suspend fun DefaultWebSocketServerSession.dispatchJoin(
         try {
             SessionId(parsed.sessionId)
         } catch (cause: IllegalArgumentException) {
-            sendError("Invalid sessionId", cause.message ?: "sessionId failed validation")
+            sendError("Identifiant de session invalide", cause.message ?: "sessionId n'est pas valide")
             return null
         }
     val pseudo =
