@@ -12,10 +12,13 @@ import com.bliss.game.api.PresencePosition
 import com.bliss.game.api.SessionManager
 import com.bliss.game.api.SystemClock
 import com.bliss.game.application.ports.Clock
+import com.bliss.game.application.ports.LobbyEvent
+import com.bliss.game.application.ports.PresenceBroadcaster
 import com.bliss.game.application.ports.PuzzleProvider
 import com.bliss.game.application.usecases.CreateLobbyUseCase
 import com.bliss.game.application.usecases.JoinLobbyUseCase
 import com.bliss.game.application.usecases.LeaveLobbyUseCase
+import com.bliss.game.application.usecases.PresenceAggregator
 import com.bliss.game.application.usecases.RenameSelfUseCase
 import com.bliss.game.application.usecases.SetGridConfigUseCase
 import com.bliss.game.application.usecases.StartGameUseCase
@@ -54,6 +57,7 @@ import java.util.UUID
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 import io.ktor.server.websocket.WebSockets as ServerWebSockets
 
 /**
@@ -754,6 +758,67 @@ class LobbyWebSocketRouteTest {
             }
         }
 
+    // ---------- presence wiring tests ----------
+
+    @Test
+    fun `presence wiring - cellUpdate fires typing edge, cellFocus resets idle timer, disconnect fires connectionLost`() =
+        runWithPresence { harness, presenceClock, broadcaster, aggregator ->
+            val lobbyId = harness.seedLobby()
+            harness.startGame(lobbyId)
+
+            // Part 1: cellUpdate -> recordKeystroke -> Typing(true) emitted.
+            // Re-joining the owner (already in the lobby) produces no playerJoined event, so we
+            // rely on cellUpdated as the sync point instead.
+            coroutineScope {
+                harness.client.webSocket("/v1/lobbies/${lobbyId.value}/ws") {
+                    receiveText() // initial snapshot
+                    sendText("""{"type":"joinLobby","sessionId":"$sessionA","pseudonym":"$pseudoA"}""")
+                    sendText("""{"type":"cellUpdate","row":0,"column":3,"letter":"P"}""")
+                    drainUntil("cellUpdated") // confirms joinLobby + cellUpdate were processed
+                    // recordKeystroke is called after broadcast; yield so the handler can complete.
+                    delay(200.milliseconds)
+                    assertThat(broadcaster.eventsOfType<LobbyEvent.Typing>())
+                        .contains(LobbyEvent.Typing(SessionId(sessionA), typing = true))
+
+                    // Part 2: cellFocus -> recordFocus -> clears idle state (Idle(false) emitted).
+                    // Advance the presence clock past both thresholds and tick to drive idle state.
+                    presenceClock.advance(java.time.Duration.ofMillis(100))
+                    aggregator.tickOnce()
+                    broadcaster.clear()
+
+                    sendText("""{"type":"cellFocus","row":0,"column":0,"direction":"across"}""")
+                    drainUntil("presenceUpdated")
+                    // recordFocus is called after broadcast in the handler; yield for it to complete.
+                    delay(200.milliseconds)
+                    assertThat(broadcaster.eventsOfType<LobbyEvent.Idle>())
+                        .contains(LobbyEvent.Idle(SessionId(sessionA), idle = false))
+                    broadcaster.clear()
+                }
+            }
+
+            // Part 3: socket close -> recordDisconnect -> ConnectionLost emitted.
+            // Clear any events from Part 1/2's socket close before starting the next assertion.
+            broadcaster.clear()
+            coroutineScope {
+                harness.client.webSocket("/v1/lobbies/${lobbyId.value}/ws") {
+                    receiveText() // initial snapshot
+                    sendText("""{"type":"joinLobby","sessionId":"$sessionA","pseudonym":"$pseudoA"}""")
+                    // Use cellFocus as a sync point: presenceUpdated confirms the server processed
+                    // joinLobby (session bound) before we exit and trigger the finally block.
+                    sendText("""{"type":"cellFocus","row":0,"column":0,"direction":"across"}""")
+                    drainUntil("presenceUpdated")
+                    // Exit block - socket closes, finally fires recordDisconnect.
+                }
+                withTimeout(5_000) {
+                    while (broadcaster.eventsOfType<LobbyEvent.ConnectionLost>().isEmpty()) {
+                        delay(50)
+                    }
+                }
+            }
+            assertThat(broadcaster.eventsOfType<LobbyEvent.ConnectionLost>())
+                .contains(LobbyEvent.ConnectionLost(SessionId(sessionA)))
+        }
+
     // ---------- harness ----------
 
     private class Harness(
@@ -839,6 +904,72 @@ class LobbyWebSocketRouteTest {
         }
     }
 
+    private fun runWithPresence(block: suspend (Harness, AdjustableClock, CapturingPresenceBroadcaster, PresenceAggregator) -> Unit) =
+        testApplication {
+            val clock: Clock = SystemClock
+            val repo = InMemoryLobbyRepository()
+            val puzzle = SamplePuzzles.tiny()
+            val provider =
+                object : PuzzleProvider {
+                    override suspend fun fetch(
+                        width: Int,
+                        height: Int,
+                    ): GamePuzzle = puzzle
+                }
+            val createLobby = CreateLobbyUseCase(repo, clock)
+            val startGameUseCase = StartGameUseCase(repo, provider, clock)
+            val updateCellUseCase = UpdateCellUseCase(repo, clock)
+            val useCases =
+                LobbyUseCases(
+                    createLobby = createLobby,
+                    joinLobby = JoinLobbyUseCase(repo, clock),
+                    renameSelf = RenameSelfUseCase(repo, clock),
+                    setGridConfig = SetGridConfigUseCase(repo, clock),
+                    startGame = startGameUseCase,
+                    updateCell = updateCellUseCase,
+                    leaveLobby = LeaveLobbyUseCase(repo, clock),
+                )
+            val sessionManager = SessionManager()
+            val presenceClock = AdjustableClock()
+            val presenceBroadcaster = CapturingPresenceBroadcaster()
+            // Short thresholds so tests can drive the aggregator into idle state without real-time waits.
+            val presenceAggregator =
+                PresenceAggregator(
+                    clock = presenceClock,
+                    broadcaster = presenceBroadcaster,
+                    typingTrailingEdge = java.time.Duration.ofMillis(10),
+                    idleThreshold = java.time.Duration.ofMillis(10),
+                )
+            val backgroundJob = SupervisorJob()
+            val backgroundScope = CoroutineScope(backgroundJob + Dispatchers.Default)
+            application {
+                install(ServerWebSockets)
+                routing {
+                    lobbyWebSocketRoute(
+                        sessionManager,
+                        useCases,
+                        repo,
+                        presenceAggregator = presenceAggregator,
+                        backgroundScope = backgroundScope,
+                        // Long grace keeps the lobby alive between Part 1/2 and Part 3; the timer
+                        // is cancelled by backgroundJob.cancel() before it fires.
+                        reconnectGrace = 30.seconds,
+                    )
+                }
+            }
+            val client = createClient { install(WebSockets) }
+            try {
+                block(
+                    Harness(client, createLobby, startGameUseCase, updateCellUseCase, sessionManager, repo),
+                    presenceClock,
+                    presenceBroadcaster,
+                    presenceAggregator,
+                )
+            } finally {
+                backgroundJob.cancel()
+            }
+        }
+
     private object SamplePuzzles {
         fun tiny(): GamePuzzle =
             GamePuzzle(
@@ -851,6 +982,42 @@ class LobbyWebSocketRouteTest {
                 clues = emptyList(),
                 createdAt = Instant.parse("2026-01-01T00:00:00Z"),
             )
+    }
+}
+
+private class AdjustableClock(
+    private var instant: Instant = Instant.parse("2026-01-01T00:00:00Z"),
+) : Clock {
+    override fun now(): Instant = instant
+
+    fun advance(d: java.time.Duration) {
+        instant = instant.plus(d)
+    }
+}
+
+private class CapturingPresenceBroadcaster : PresenceBroadcaster {
+    private val recorded = mutableListOf<Pair<LobbyId, LobbyEvent>>()
+
+    override suspend fun broadcast(
+        lobbyId: LobbyId,
+        event: LobbyEvent,
+    ) {
+        synchronized(recorded) { recorded.add(lobbyId to event) }
+    }
+
+    fun events(): List<LobbyEvent> = synchronized(recorded) { recorded.map { it.second }.toList() }
+
+    inline fun <reified T : LobbyEvent> eventsOfType(): List<T> = events().filterIsInstance<T>()
+
+    fun clear() {
+        synchronized(recorded) { recorded.clear() }
+    }
+}
+
+private suspend fun DefaultClientWebSocketSession.drainUntil(frameType: String) {
+    while (true) {
+        val text = receiveText()
+        if (text.contains("\"type\":\"$frameType\"")) return
     }
 }
 

@@ -133,11 +133,7 @@ fun Route.lobbyWebSocketRoute(
         } finally {
             val boundSessionId = sessionManager.unregister(lobbyId, this) ?: memberSessionId
             if (boundSessionId != null) {
-                // Tell the presence aggregator the socket is gone. Fires a
-                // `connectionLost` event immediately; the session is held in
-                // the aggregator for the grace window, after which `tickOnce`
-                // forgets it. Distinct from `playerLeft`, which the
-                // reconnect-grace coroutine below schedules separately.
+                // connectionLost fires here; playerLeft is scheduled by the grace coroutine.
                 presenceAggregator?.recordDisconnect(lobbyId, SessionId(boundSessionId))
                 scheduleReconnectGrace(
                     backgroundScope = backgroundScope,
@@ -275,9 +271,7 @@ private suspend fun DefaultWebSocketServerSession.handleFrame(
                     letter,
                 )
             }
-            // Keystroke fires the rising typing edge once per burst; the
-            // trailing edge fires from PresenceAggregator.tickOnce after the
-            // configured idle gap. Also clears any pending idle / disconnect.
+            // rising typing edge; trailing edge fires from tickOnce after the configured gap.
             presenceAggregator?.recordKeystroke(lobbyId, SessionId(sid))
             memberSessionId
         }
@@ -304,8 +298,7 @@ private suspend fun DefaultWebSocketServerSession.handleFrame(
                     direction = parsed.direction,
                 ),
             )
-            // Focus is activity for the idle timer (and clears disconnect
-            // grace) but does NOT fire a typing edge — pure presence signal.
+            // focus is activity for the idle timer but does not fire a typing edge.
             presenceAggregator?.recordFocus(lobbyId, SessionId(sid))
             memberSessionId
         }

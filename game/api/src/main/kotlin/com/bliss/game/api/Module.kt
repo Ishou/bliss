@@ -182,13 +182,7 @@ fun Application.module() {
     val gcJob = gc.run(this)
     monitor.subscribe(ApplicationStopped) { gcJob.cancel() }
 
-    // Presence aggregator (multiplayer-highlights wave). Edge events
-    // (`typing`, `idle`, `connectionLost`, `cursorBumped`) flow through the
-    // WebSocket-backed broadcaster directly into `SessionManager.broadcast`,
-    // mirroring the existing fan-out path used by every other server frame.
-    // The 1s tick cadence is the resolution at which the trailing typing
-    // edge (~1.5s default) and the idle threshold (~30s) are observable;
-    // sub-second jitter on the tick has no visible UX impact on either.
+    // 1s tick: coarser than the ~1.5s typing-edge gap; sub-second jitter has no UX impact.
     val presenceBroadcaster = WebSocketPresenceBroadcaster(sessionManager)
     val presenceAggregator =
         PresenceAggregator(
