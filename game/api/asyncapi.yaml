@@ -249,18 +249,14 @@ components:
       x-enum-varnames: [LETTER, DEFINITION, BLOCK]
     GameLetterCell:
       type: object
-      required: [kind, position, letter]
+      required: [kind, position]
       description: |
-        Player-fillable answer cell. The `letter` slot exists for the pre-filled
-        / placeholder use case; in v1 the server ALWAYS emits `null` here. The
-        canonical solution is domain-private until the puzzle is solved (see
-        `gameSolved.finalEntries`); player input is broadcast separately via
-        `cellUpdated` events keyed by sessionId. Sending the answer here would
-        render every grid pre-solved on the client.
+        Player-fillable answer cell. Solution is server-private; not carried
+        on snapshot or update messages. Player input flows in via `cellUpdate`
+        and is rebroadcast as `cellUpdated`. Mirrors the OpenAPI definition.
       properties:
         kind:     { type: string, enum: [letter] }
         position: { $ref: '#/components/schemas/GamePosition' }
-        letter:   { type: string, minLength: 1, maxLength: 1, pattern: '^[A-Z]$', nullable: true, description: Always `null` in v1. The slot is reserved for a future pre-filled / replay use case. Absence is a protocol error (field is always present). }
     GameDefinitionCell:
       type: object
       required: [kind, position, clues]

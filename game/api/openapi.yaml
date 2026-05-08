@@ -296,28 +296,21 @@ components:
 
     GameLetterCell:
       type: object
-      required: [kind, position, letter]
+      required: [kind, position]
       description: |
-        Player-fillable answer cell. The `letter` slot exists for the pre-filled
-        / placeholder use case; in v1 the server ALWAYS emits `null` here. The
-        canonical solution is domain-private until the puzzle is solved (see the
-        AsyncAPI `gameSolved.finalEntries` payload); player input is broadcast
-        over the WebSocket via `cellUpdated`. Sending the answer here would
-        render every grid pre-solved on the client. Mirrors `GameLetterCell` in
-        `game/api/asyncapi.yaml`; keep in sync.
+        Player-fillable answer cell. The canonical solution is server-private
+        and never carried on the wire. Player input flows in via the
+        `cellUpdate` WebSocket frame and is rebroadcast as `cellUpdated`. On
+        solve, `gameSolved.finalEntries` carries the full solved grid — the
+        only post-completion broadcast of canonical letters. Mirrors
+        `GameLetterCell` in `game/api/asyncapi.yaml`; keep in sync per
+        ADR-0001 §1 (no cross-context $ref).
       properties:
         kind:
           type: string
           enum: [letter]
         position:
           $ref: '#/components/schemas/GamePosition'
-        letter:
-          type: string
-          minLength: 1
-          maxLength: 1
-          pattern: '^[A-Z]$'
-          nullable: true
-          description: Always `null` in v1. The slot is reserved for a future pre-filled / replay use case.
 
     GameDefinitionCell:
       type: object
