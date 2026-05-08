@@ -42,4 +42,21 @@ object Themes {
      * half compass directions.
      */
     const val COMPASS: String = "compass"
+
+    /**
+     * Greek letters (alpha, beta, mu, pi, ...). The corpus carries
+     * enough of them — bliss-curated 2/3-letter symbols (mu, nu, pi,
+     * tau, phi, psi, rho) plus longer grammalecte names (alpha, delta,
+     * gamma) — that an uncapped grid can stack three of them and read
+     * like a math primer. Default cap = 2.
+     */
+    const val GREEK: String = "greek"
+
+    /**
+     * Common French acronyms / sigles (TV, FM, PQ, CP, BAC, TGV, ...).
+     * Distinct from [ABBREV] which is title-only (DR, MR, MME). The
+     * corpus has a long tail of these and they read as filler if a
+     * grid stacks more than a couple. Default cap = 2.
+     */
+    const val SIGLE: String = "sigle"
 }
