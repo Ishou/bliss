@@ -25,7 +25,11 @@ const puzzleSolver: PuzzleSolver = {
 // Multiplayer context fields are unused on `/` and remain absent
 // here, mirroring the production composition root when the
 // multiplayer flag is off.
-const sessionClient = { eraseSession: vi.fn().mockResolvedValue({ deleted: 0 }) };
+const sessionClient = {
+  eraseSession: vi.fn().mockResolvedValue({ deleted: 0 }),
+  getSessionId: vi.fn().mockReturnValue('test-session-id'),
+  clearLocalSession: vi.fn(),
+};
 const ctx = { puzzleRepository, puzzleSolver, sessionClient };
 
 describe('App smoke test', () => {

@@ -17,10 +17,12 @@ import {
   readMatomoConfigFromEnv,
 } from '@/infrastructure/analytics/matomoTracker';
 import {
+  clearSession,
   getOrCreateSessionId,
   getPseudonym,
   setPseudonym,
 } from '@/infrastructure/session/localStorageSession';
+import type { SessionClient } from '@/application/session/SessionClient';
 import { registerServiceWorker } from '@/infrastructure/pwa';
 import type { Pseudonym, SessionId } from '@/domain/game';
 // `fonts.css` is imported separately (rather than via `@import` from
@@ -75,7 +77,15 @@ enableMocks()
       baseUrl: gridApiBaseUrl,
       sessionId,
     });
-    const sessionClient = createHttpSessionClient({ baseUrl: gridApiBaseUrl });
+    // Compose the full SessionClient: the HTTP adapter covers eraseSession
+    // while the localStorage helpers cover getSessionId/clearLocalSession.
+    // This is the only place allowed to import both; ui/ components receive
+    // the composed port through router context (ADR-0002 §7).
+    const sessionClient: SessionClient = {
+      ...createHttpSessionClient({ baseUrl: gridApiBaseUrl }),
+      getSessionId: getOrCreateSessionId,
+      clearLocalSession: clearSession,
+    };
 
     // Cookieless Matomo tracker (ADR-0025). No-op when env vars are unset
     // (local dev / preview / pre-Matomo prod).

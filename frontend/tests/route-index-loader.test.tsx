@@ -27,7 +27,11 @@ const renderWith = (repository: PuzzleRepository) => {
     context: {
       puzzleRepository: repository,
       puzzleSolver: stubSolver,
-      sessionClient: { eraseSession: () => Promise.resolve({ deleted: 0 }) },
+      sessionClient: {
+        eraseSession: () => Promise.resolve({ deleted: 0 }),
+        getSessionId: () => 'test-session-id',
+        clearLocalSession: () => {},
+      },
     },
   });
   return render(<RouterProvider router={router} />);

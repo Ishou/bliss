@@ -11,13 +11,6 @@
 import { useState } from 'react';
 import { css } from 'styled-system/css';
 import type { SessionClient } from '@/application/session/SessionClient';
-// Privacy notice is the one place where ui/ legitimately reaches into the
-// localStorage session adapter: the erase button needs to read the
-// sessionId to send to the server *and* clear it locally afterwards. A
-// general-purpose port would be over-engineering for this single use; the
-// boundaries rule is suppressed for these two imports only.
-// eslint-disable-next-line boundaries/element-types
-import { clearSession, getOrCreateSessionId } from '@/infrastructure/session/localStorageSession';
 
 export type PrivacyLanguage = 'fr' | 'en';
 
@@ -96,9 +89,9 @@ function EraseDataSection({
     setStatus('pending');
     setErrorMessage(null);
     try {
-      const sessionId = getOrCreateSessionId();
+      const sessionId = sessionClient.getSessionId();
       await sessionClient.eraseSession(sessionId);
-      clearSession();
+      sessionClient.clearLocalSession();
       setStatus('success');
       // Brief pause so the user sees the confirmation, then navigate home.
       setTimeout(() => {

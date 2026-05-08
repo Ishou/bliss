@@ -1,8 +1,8 @@
 // HTTP adapter for the grid-api session lifecycle endpoints.
 //
-// Currently exposes only `eraseSession` — the right-to-erasure call
-// (RGPD Article 17, ADR-0025 §5). The matching backend route is
-// `DELETE /v1/sessions/{sessionId}` on grid-api.
+// Returns only the network-transport slice of SessionClient (`eraseSession`).
+// The composition root (`main.tsx`) merges this with the localStorage helpers
+// to produce a full SessionClient — see ADR-0025 §5.
 
 import type { SessionClient } from '@/application/session/SessionClient';
 import { createGridApiClient } from './client';
@@ -12,7 +12,9 @@ export interface CreateHttpSessionClientOptions {
   readonly fetch?: typeof fetch;
 }
 
-export function createHttpSessionClient(options: CreateHttpSessionClientOptions): SessionClient {
+export function createHttpSessionClient(
+  options: CreateHttpSessionClientOptions,
+): Pick<SessionClient, 'eraseSession'> {
   const client = createGridApiClient({ baseUrl: options.baseUrl, fetch: options.fetch });
   return {
     async eraseSession(sessionId) {

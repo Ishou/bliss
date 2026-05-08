@@ -159,7 +159,11 @@ const renderLobby = (overrides: RenderLobbyOverrides) => {
     context: {
       puzzleRepository: stubPuzzleRepository,
       puzzleSolver: stubPuzzleSolver,
-      sessionClient: { eraseSession: () => Promise.resolve({ deleted: 0 }) },
+      sessionClient: {
+        eraseSession: () => Promise.resolve({ deleted: 0 }),
+        getSessionId: () => 'test-session-id',
+        clearLocalSession: () => {},
+      },
       lobbyClient,
       gameClient,
       getSession: () => ({ sessionId, pseudonym }),
