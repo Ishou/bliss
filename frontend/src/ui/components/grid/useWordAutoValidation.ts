@@ -26,6 +26,18 @@ const positionKey = (row: number, col: number): string => `${row},${col}`;
 const wordKey = (positions: ReadonlyArray<Position>): string =>
   positions.map((p) => positionKey(p.row, p.col)).join('|');
 
+export interface PersistedFilledCell {
+  readonly row: number;
+  readonly column: number;
+  readonly letter: string;
+}
+
+// Stable empty default for the optional `initialFilledCells` arg —
+// passing `[]` as a default value would create a fresh reference each
+// render, retriggering the rehydration effect (which resets `validated`)
+// and clobbering locks earned via `onCellFilled` since the last render.
+const NO_INITIAL_FILL: ReadonlyArray<PersistedFilledCell> = [];
+
 export interface WordAutoValidationState {
   readonly validated: ReadonlySet<string>;
   readonly onCellFilled: (position: Position, direction: 'across' | 'down') => void;
@@ -34,14 +46,93 @@ export interface WordAutoValidationState {
 export function useWordAutoValidation(
   puzzle: Puzzle,
   solver: PuzzleSolver,
+  initialFilledCells: ReadonlyArray<PersistedFilledCell> = NO_INITIAL_FILL,
 ): WordAutoValidationState {
   const [validated, setValidated] = useState<ReadonlySet<string>>(() => new Set());
 
-  // Reset on puzzle swap. Reference identity is enough — the loader
-  // returns a fresh `Puzzle` object on `router.invalidate()`.
+  // Reset on puzzle swap AND rehydrate locks from persisted entries.
+  // Solo letters live in localStorage; on a page reload the cells
+  // re-paint via `defaultValue`, but the in-memory `validated` set is
+  // gone — so without this effect the player would see their letters
+  // and an empty progress bar, with every previously-locked word back
+  // to editable. Rehydration walks every word in the puzzle, finds the
+  // ones whose persisted letters fully fill the range, and POSTs the
+  // whole filled grid in a single request. Words come back locked iff
+  // none of their cells appear in `incorrectCells`.
   useEffect(() => {
-    setValidated(new Set());
-  }, [puzzle]);
+    // No-op when already empty — returning the same ref lets React
+    // skip the re-render, which matters because callers may hand us a
+    // fresh `[]` literal each render and we do NOT want to thrash.
+    setValidated((prev) => (prev.size === 0 ? prev : new Set()));
+
+    if (initialFilledCells.length === 0) return;
+
+    const letterAt = new Map<string, string>();
+    for (const e of initialFilledCells) {
+      const norm = normalizeAnswerLetter(e.letter);
+      if (norm) letterAt.set(positionKey(e.row, e.column), norm);
+    }
+    if (letterAt.size === 0) return;
+
+    const seenWords = new Set<string>();
+    const fullyFilled: Position[][] = [];
+    for (const cell of puzzle.cells) {
+      if (cell.kind !== 'letter') continue;
+      for (const direction of ['across', 'down'] as const) {
+        const range = wordRange(puzzle, cell.position, direction);
+        if (range.length < 2) continue;
+        const range2 = [...range];
+        const key = wordKey(range2);
+        if (seenWords.has(key)) continue;
+        const allFilled = range2.every((p) =>
+          letterAt.has(positionKey(p.row, p.col)),
+        );
+        if (!allFilled) continue;
+        seenWords.add(key);
+        fullyFilled.push(range2);
+      }
+    }
+    if (fullyFilled.length === 0) return;
+
+    const filled: FilledCellInput[] = [];
+    for (const [k, letter] of letterAt) {
+      const [row, col] = k.split(',').map(Number);
+      filled.push({ row, column: col, letter });
+    }
+
+    let cancelled = false;
+    void solver
+      .validate(puzzle.id, filled)
+      .then((result) => {
+        if (cancelled) return;
+        const incorrect = new Set<string>();
+        for (const pos of result.incorrectCells) {
+          incorrect.add(positionKey(pos.row, pos.column));
+        }
+        setValidated((prev) => {
+          let changed = false;
+          const next = new Set(prev);
+          for (const word of fullyFilled) {
+            const wordKeys = word.map((p) => positionKey(p.row, p.col));
+            if (!wordKeys.every((kk) => !incorrect.has(kk))) continue;
+            for (const kk of wordKeys) {
+              if (!next.has(kk)) {
+                next.add(kk);
+                changed = true;
+              }
+            }
+          }
+          return changed ? next : prev;
+        });
+      })
+      // Mirror onCellFilled: rehydration failures drop silently. Worst
+      // case the cells stay editable until the player retypes a word.
+      .catch(() => {});
+
+    return () => {
+      cancelled = true;
+    };
+  }, [puzzle, initialFilledCells, solver]);
 
   // Track in-flight word checks so we don't pile up duplicate requests
   // for the same word while one is on the wire.

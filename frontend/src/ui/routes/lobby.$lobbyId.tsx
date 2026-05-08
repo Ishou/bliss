@@ -29,7 +29,7 @@ import type {
 } from '@/domain/game';
 import { Grid } from '@/ui/components/grid';
 import { usePresenceState } from '@/ui/components/grid/usePresenceState';
-import { AppHeader, PuzzleToolbar } from '@/ui/components/layout';
+import { AppHeader, ProgressBar, PuzzleToolbar } from '@/ui/components/layout';
 import { ConnectionBanner } from '@/ui/components/lobby/ConnectionBanner';
 import { EndGameModal } from '@/ui/components/lobby/EndGameModal';
 import { PlayerList } from '@/ui/components/lobby/PlayerList';
@@ -494,6 +494,14 @@ function InGameView({
     return set;
   }, [isCompleted, lockedPositions, puzzle.cells]);
 
+  // Same progress bar as solo: count of locked cells over total letter
+  // cells. The denominator is fixed per puzzle; the numerator grows as
+  // `wordLocked` events arrive (and jumps to total on `gameSolved`).
+  const totalLetterCells = useMemo<number>(
+    () => puzzle.cells.reduce((n, c) => (c.kind === 'letter' ? n + 1 : n), 0),
+    [puzzle.cells],
+  );
+
   // Multiplayer presence-state derived from the typing / idle /
   // connectionLost / presenceUpdated event stream. One subscription owns
   // the aggregation; both the roster pill (`typingSessionIds` /
@@ -552,6 +560,10 @@ function InGameView({
           typingSessionIds={typingSessionIds}
         />
       </div>
+      <ProgressBar
+        value={validatedPositions.size}
+        total={totalLetterCells}
+      />
     </>
   );
 }
