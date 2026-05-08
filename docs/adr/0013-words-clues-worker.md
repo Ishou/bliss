@@ -237,6 +237,15 @@ out of Postgres and into the in-tree CSV. The Flyway migration
 (§6) stays — it's how the local-dev DB gets created in the first
 place.
 
+> **Update (2026-05-08): Migrations V1–V7 removed.** With the
+> Python pipeline (`scripts/clue_generation/merge_clues_into_wordlist.py`)
+> fully superseding the Kotlin worker, the `words` staging table no longer
+> serves any purpose in local dev either. Migrations V1–V7 are dropped in
+> PR #221 alongside the worker module. The local-dev regen workflow now
+> operates entirely in the Python layer; no Postgres schema is required.
+> Developers with V1–V7 already applied should
+> `DROP SCHEMA public CASCADE; CREATE SCHEMA public;` on next start.
+
 `fr.json` is removed in the same PR that introduces the CSV.
 There is no `WORDS_SOURCE` flag and no fallback path: keeping two
 sources to drift apart is exactly the failure mode the CSV is
