@@ -41,13 +41,6 @@ data class Word private constructor(
      */
     val definition: String get() = clues.first().text
 
-    /**
-     * Set of distinct themes carried across all clues. Empty if every
-     * clue has `theme = null`. Used by the filler's domain check to
-     * decide whether a word can fit a given theme-cap state.
-     */
-    val themes: Set<String> get() = clues.mapNotNullTo(HashSet()) { it.theme }
-
     companion object {
         operator fun invoke(
             text: String,
