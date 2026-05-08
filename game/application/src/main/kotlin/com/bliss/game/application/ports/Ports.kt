@@ -4,6 +4,7 @@ import com.bliss.game.domain.GamePuzzle
 import com.bliss.game.domain.Lobby
 import com.bliss.game.domain.LobbyId
 import com.bliss.game.domain.SessionId
+import com.bliss.game.domain.analytics.AnalyticsEvent
 import java.time.Instant
 
 /**

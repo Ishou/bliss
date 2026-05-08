@@ -1,13 +1,14 @@
 package com.bliss.game.infrastructure.analytics
 
-import com.bliss.game.application.ports.AnalyticsEvent
 import com.bliss.game.application.ports.AnalyticsEventSink
 import com.bliss.game.domain.SessionId
+import com.bliss.game.domain.analytics.AnalyticsEvent
 import io.ktor.client.HttpClient
 import io.ktor.client.request.parameter
 import io.ktor.client.request.post
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.isSuccess
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import org.slf4j.LoggerFactory
@@ -67,6 +68,7 @@ class MatomoAnalyticsAdapter(
             try {
                 send(event, sessionId)
             } catch (cause: Throwable) {
+                if (cause is CancellationException) throw cause
                 logger.warn("matomo event dropped: $event ({})", cause.javaClass.simpleName)
             }
         }

@@ -1,5 +1,6 @@
 package com.bliss.grid.application.analytics
 
+import com.bliss.grid.domain.analytics.AnalyticsEvent
 import java.util.UUID
 
 /**

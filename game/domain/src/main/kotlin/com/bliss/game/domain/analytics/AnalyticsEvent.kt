@@ -1,4 +1,4 @@
-package com.bliss.game.application.ports
+package com.bliss.game.domain.analytics
 
 /**
  * Analytics events emitted by `game/` use cases on user-meaningful state transitions.

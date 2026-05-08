@@ -1,8 +1,8 @@
 package com.bliss.game.infrastructure.analytics
 
-import com.bliss.game.application.ports.AnalyticsEvent
 import com.bliss.game.application.ports.AnalyticsEventSink
 import com.bliss.game.domain.SessionId
+import com.bliss.game.domain.analytics.AnalyticsEvent
 
 /**
  * No-op sink for dev environments and tests where Matomo is not configured.

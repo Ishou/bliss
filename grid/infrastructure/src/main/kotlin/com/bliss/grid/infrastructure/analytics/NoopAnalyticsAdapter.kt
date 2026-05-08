@@ -1,7 +1,7 @@
 package com.bliss.grid.infrastructure.analytics
 
-import com.bliss.grid.application.analytics.AnalyticsEvent
 import com.bliss.grid.application.analytics.AnalyticsEventSink
+import com.bliss.grid.domain.analytics.AnalyticsEvent
 import java.util.UUID
 
 /**

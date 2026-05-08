@@ -1,4 +1,4 @@
-package com.bliss.grid.application.analytics
+package com.bliss.grid.domain.analytics
 
 /**
  * Analytics events emitted by `grid/` use cases on user-meaningful state transitions.

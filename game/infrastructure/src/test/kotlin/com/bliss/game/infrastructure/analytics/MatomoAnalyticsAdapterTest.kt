@@ -5,8 +5,8 @@ import assertk.assertions.contains
 import assertk.assertions.hasLength
 import assertk.assertions.isEqualTo
 import assertk.assertions.isNotNull
-import com.bliss.game.application.ports.AnalyticsEvent
 import com.bliss.game.domain.SessionId
+import com.bliss.game.domain.analytics.AnalyticsEvent
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
