@@ -12,6 +12,8 @@ This catches the two main model-output failure modes from the previous run:
 
 Returns (flag, reason) where flag is one of:
   ok               clue passes
+  blocklisted      clue text matches an entry in the runtime blocklist
+                   (sourced from `inapproprié` ratings — see triage_runtime_feedback.py)
   no-head          no content word found in clue (only function words / empty)
   unknown-head     head not in grammalecte (likely a hallucination or proper noun)
   head-not-lemma   head exists but is an inflected form, not citation form
@@ -22,8 +24,10 @@ Returns (flag, reason) where flag is one of:
 
 from __future__ import annotations
 
+import csv
 import re
 from dataclasses import dataclass
+from pathlib import Path
 
 from morphology_index import MorphologyIndex
 
@@ -275,14 +279,47 @@ def _find_pleonasm(clue: str) -> str | None:
     return None
 
 
+_WS_RE = re.compile(r"\s+")
+
+
+def _normalize_blocklist_key(s: str) -> str:
+    return _WS_RE.sub(" ", s.strip().lower())
+
+
+def load_blocklist(path: Path) -> frozenset[str]:
+    """Load `data/eval/blocklist_clues.csv` into a frozenset of normalized
+    clue strings. Missing file → empty set (degrades gracefully when the
+    file hasn't been seeded yet). Empty rows skipped."""
+    p = Path(path)
+    if not p.exists():
+        return frozenset()
+    out: set[str] = set()
+    with p.open(encoding="utf-8") as fh:
+        reader = csv.DictReader(fh)
+        for row in reader:
+            clue = (row.get("clue") or "").strip()
+            if not clue:
+                continue
+            out.add(_normalize_blocklist_key(clue))
+    return frozenset(out)
+
+
 def validate_lemma_clue(
     clue: str,
     target_lemma: str,
     target_pos: str,
     index: MorphologyIndex,
+    blocklist: frozenset[str] | None = None,
 ) -> ValidationResult:
     if not clue.strip():
         return ValidationResult("no-head", "empty clue")
+
+    # Blocklist gate runs before any other check — a clue rated `inapproprié`
+    # in runtime_feedback must never re-ship, even if it would pass every
+    # structural gate. Match is case- and whitespace-insensitive.
+    if blocklist:
+        if _normalize_blocklist_key(clue) in blocklist:
+            return ValidationResult("blocklisted", "clue is on the blocklist")
 
     # Pixel-fit gate (the no-overflow contract). Loaded lazily so callers
     # without Pillow installed don't pay an import cost; clue_metrics is
