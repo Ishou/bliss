@@ -153,6 +153,70 @@ class UpdateCellWordLockTest {
             )
         }
 
+    // The v1 wire (grid/api/openapi.yaml LetterCell) deliberately strips
+    // the canonical letter — solutions are server-private. So in
+    // production HttpPuzzleProvider yields a GamePuzzle whose every
+    // LetterCell.answer is null, even though the underlying grid does
+    // know the answer. UpdateCellUseCase used to read `cell.answer`
+    // directly; against this realistic puzzle it could never lock a
+    // word, no matter what the player typed. That is the production
+    // bug the user kept seeing in `make dev`: words filled, never
+    // locked. Lock decisions must therefore be delegated to a
+    // collaborator that asks grid (the only owner of the answers)
+    // whether each candidate word is correct.
+    @Test
+    fun `wordLocked must still fire when the puzzle ships with no answers (v1 wire reality)`() =
+        runTest {
+            val puzzleWithoutAnswers =
+                GamePuzzle(
+                    id = UUID.fromString("0190e3c0-0000-7000-8000-000000000002"),
+                    title = "Realistic v1 puzzle",
+                    language = "fr",
+                    width = 5,
+                    height = 5,
+                    cells =
+                        listOf(
+                            BlockCell(Position(0, 0)),
+                            LetterCell(across01, answer = null),
+                            LetterCell(across02, answer = null),
+                            LetterCell(cross03, answer = null),
+                            LetterCell(down13, answer = null),
+                            LetterCell(down23, answer = null),
+                        ),
+                    clues =
+                        listOf(
+                            GameClue(acrossClueId, GameClueDirection.ACROSS, across01, 3, "PAS"),
+                            GameClue(downClueId, GameClueDirection.DOWN, cross03, 3, "SEL"),
+                        ),
+                    createdAt = Instant.parse("2026-01-01T00:00:00Z"),
+                )
+            // Answers live with the grid (the only authority) — game-api
+            // resolves them via the WordValidator port at runtime.
+            val gridAnswers =
+                mapOf(
+                    across01 to Letter('P'),
+                    across02 to Letter('A'),
+                    cross03 to Letter('S'),
+                    down13 to Letter('E'),
+                    down23 to Letter('L'),
+                )
+            val h = Harness(puzzleWithoutAnswers, answers = gridAnswers)
+            val lobby = h.create(sessionA, alice).value
+            h.start(lobby.id, sessionA).requireSuccess()
+
+            h.write(lobby.id, sessionA, across01, Letter('P')).requireSuccess()
+            h.write(lobby.id, sessionA, across02, Letter('A')).requireSuccess()
+            val solved = h.write(lobby.id, sessionA, cross03, Letter('S')).requireSuccess()
+
+            // Reproduces the user's "words never go valid" symptom: before the
+            // WordValidator port the use case read `cell.answer`, found null
+            // everywhere, and never locked anything. With the validator in
+            // place, the grid-supplied answers drive the lock decision.
+            val locked = solved.events.filterIsInstance<LobbyEvent.WordLocked>()
+            assertThat(locked).hasSize(1)
+            assertThat(locked[0].positions).containsExactlyInAnyOrder(across01, across02, cross03)
+        }
+
     @Test
     fun `WordLocked is emitted alongside GameSolved on the final winning fill`() =
         runTest {

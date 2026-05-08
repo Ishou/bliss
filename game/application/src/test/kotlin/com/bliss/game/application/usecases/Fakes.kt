@@ -101,6 +101,30 @@ class FakePuzzleProvider(
     ): GamePuzzle = supplier(width, height)
 }
 
+/**
+ * In-memory [com.bliss.game.application.ports.WordValidator] for tests.
+ * Returns the set of positions whose submitted letter does not match the
+ * answer table — same contract as grid's `POST /validate`. Defaults to
+ * an empty answer table (every typed cell reads as incorrect), matching
+ * the production behavior of an empty puzzle.
+ */
+class FakeWordValidator(
+    private val answers: Map<com.bliss.game.domain.Position, com.bliss.game.domain.Letter> = emptyMap(),
+) : com.bliss.game.application.ports.WordValidator {
+    override suspend fun incorrectPositions(
+        puzzleId: java.util.UUID,
+        filled: Map<com.bliss.game.domain.Position, com.bliss.game.domain.Letter>,
+    ): Set<com.bliss.game.domain.Position> {
+        val incorrect = mutableSetOf<com.bliss.game.domain.Position>()
+        // Every answer-bearing position not present (or wrong) in `filled`
+        // is reported incorrect — mirrors grid/api ValidatePuzzleUseCase.
+        for ((pos, expected) in answers) {
+            if (filled[pos] != expected) incorrect += pos
+        }
+        return incorrect
+    }
+}
+
 internal object Samples {
     val sessionA = SessionId("0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6b")
     val sessionB = SessionId("0190e3b2-1c45-7d2e-9a3f-b0c1d2e3f4a5")

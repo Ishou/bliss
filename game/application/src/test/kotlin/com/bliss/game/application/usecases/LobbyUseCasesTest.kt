@@ -328,16 +328,29 @@ private fun validSession(i: Int): SessionId {
 
 internal class Harness(
     puzzle: com.bliss.game.domain.GamePuzzle = Samples.puzzle(),
+    answers: Map<com.bliss.game.domain.Position, com.bliss.game.domain.Letter> =
+        run {
+            // Default answers: extract from the puzzle's LetterCells. Existing
+            // tests that hand-construct puzzles with answers on letter cells
+            // (the pre-validator era of game/domain) keep working without
+            // every test having to plumb a separate answer table.
+            val map = mutableMapOf<com.bliss.game.domain.Position, com.bliss.game.domain.Letter>()
+            for (cell in puzzle.cells) {
+                if (cell is com.bliss.game.domain.LetterCell) cell.answer?.let { map[cell.position] = it }
+            }
+            map
+        },
 ) {
     val clock = FakeClock()
     val repo = InMemoryLobbyRepository()
     val provider = FakePuzzleProvider(puzzle)
+    val wordValidator = FakeWordValidator(answers)
     val create = CreateLobbyUseCase(repo, clock)
     val join = JoinLobbyUseCase(repo, clock)
     val rename = RenameSelfUseCase(repo, clock)
     val setConfig = SetGridConfigUseCase(repo, clock)
     val start = StartGameUseCase(repo, provider, clock)
-    val update = UpdateCellUseCase(repo, clock)
+    val update = UpdateCellUseCase(repo, clock, wordValidator)
     val leave = LeaveLobbyUseCase(repo, clock)
 
     suspend fun create(

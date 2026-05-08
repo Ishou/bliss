@@ -873,7 +873,7 @@ class LobbyWebSocketRouteTest {
             }
         val createLobby = CreateLobbyUseCase(repo, clock)
         val startGameUseCase = StartGameUseCase(repo, provider, clock)
-        val updateCellUseCase = UpdateCellUseCase(repo, clock)
+        val updateCellUseCase = UpdateCellUseCase(repo, clock, NullWordValidator)
         val useCases =
             LobbyUseCases(
                 createLobby = createLobby,
@@ -925,7 +925,7 @@ class LobbyWebSocketRouteTest {
                 }
             val createLobby = CreateLobbyUseCase(repo, clock)
             val startGameUseCase = StartGameUseCase(repo, provider, clock)
-            val updateCellUseCase = UpdateCellUseCase(repo, clock)
+            val updateCellUseCase = UpdateCellUseCase(repo, clock, NullWordValidator)
             val useCases =
                 LobbyUseCases(
                     createLobby = createLobby,
@@ -975,6 +975,19 @@ class LobbyWebSocketRouteTest {
                 backgroundJob.cancel()
             }
         }
+
+    /**
+     * Inert WordValidator for route tests that don't exercise word locking.
+     * The puzzles used here carry no clues, so [UpdateCellUseCase] never
+     * computes candidate words and never invokes the validator — but the
+     * use case still needs an instance for construction.
+     */
+    private object NullWordValidator : com.bliss.game.application.ports.WordValidator {
+        override suspend fun incorrectPositions(
+            puzzleId: java.util.UUID,
+            filled: Map<com.bliss.game.domain.Position, com.bliss.game.domain.Letter>,
+        ): Set<com.bliss.game.domain.Position> = emptySet()
+    }
 
     private object SamplePuzzles {
         fun tiny(): GamePuzzle =

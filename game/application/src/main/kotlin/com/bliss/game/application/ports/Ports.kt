@@ -1,11 +1,14 @@
 package com.bliss.game.application.ports
 
 import com.bliss.game.domain.GamePuzzle
+import com.bliss.game.domain.Letter
 import com.bliss.game.domain.Lobby
 import com.bliss.game.domain.LobbyId
+import com.bliss.game.domain.Position
 import com.bliss.game.domain.SessionId
 import com.bliss.game.domain.analytics.AnalyticsEvent
 import java.time.Instant
+import java.util.UUID
 
 /**
  * Atomic lobby state operations. The infrastructure adapter (Wave D) holds a
@@ -120,4 +123,27 @@ interface AnalyticsEventSink {
                 ) = Unit
             }
     }
+}
+
+/**
+ * Asks grid which currently-filled cells don't match the canonical solution.
+ *
+ * Per the v1 wire spec (grid/api/openapi.yaml `LetterCell`), grid strips
+ * letter answers from `GET /v1/puzzles/{id}` so the browser can never see
+ * the solution and cheat. game-api therefore can't validate locally —
+ * `LetterCell.answer` is null on every cell of every puzzle it ever
+ * receives. To know whether a player just completed a word, `UpdateCellUseCase`
+ * delegates to this port (HTTP adapter calls `POST /v1/puzzles/{id}/validate`,
+ * mirroring the FE solo path's `PuzzleSolver.validate`).
+ *
+ * Returns the set of positions whose submitted letter does NOT match the
+ * canonical solution. A position absent from the set is correct; a
+ * position absent from the request is reported as incorrect (the v1
+ * grid endpoint treats unfilled cells as wrong, same as FE solo).
+ */
+interface WordValidator {
+    suspend fun incorrectPositions(
+        puzzleId: UUID,
+        filled: Map<Position, Letter>,
+    ): Set<Position>
 }
