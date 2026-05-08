@@ -89,6 +89,30 @@ const indicatorStyles = css({
   flexShrink: 0,
 });
 
+// Disconnected state offers a one-click recovery — the WS adapter has
+// already given up reconnecting, so `window.location.reload()` is the
+// only path forward. Sized to read as a primary action without
+// crowding the banner copy on narrow viewports.
+const recoveryButtonStyles = css({
+  marginInlineStart: 'sm',
+  paddingInline: 'md',
+  paddingBlock: '4px',
+  fontFamily: 'body',
+  fontSize: 'sm',
+  fontWeight: 'semibold',
+  color: 'errorBg',
+  bg: 'errorText',
+  borderRadius: 'sm',
+  border: 'none',
+  cursor: 'pointer',
+  flexShrink: 0,
+  _hover: { opacity: 0.9 },
+  _focusVisible: {
+    outline: '2px solid token(colors.focusRing)',
+    outlineOffset: '2px',
+  },
+});
+
 const COPY: Record<BannerVariant, BannerCopy> = {
   connecting: {
     text: 'Connexion en cours…',
@@ -126,6 +150,17 @@ export function ConnectionBanner({ state }: ConnectionBannerProps) {
         </span>
       ) : null}
       <span>{copy.text}</span>
+      {state === 'disconnected' ? (
+        <button
+          type="button"
+          className={recoveryButtonStyles}
+          onClick={() => {
+            window.location.reload();
+          }}
+        >
+          Recharger
+        </button>
+      ) : null}
     </div>
   );
 }
