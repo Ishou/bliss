@@ -27,3 +27,10 @@ postgres:
     endpoint: "https://fsn1.your-objectstorage.com"
 # Bootstrapped via `kubectl create secret generic wordsparrow-api-env ...` (ADR-0009 §10).
 envFromSecret: "wordsparrow-api-env"
+retention:
+  hintUsage:
+    enabled: true
+    image:
+      requireDigest: true
+      # Set at deploy time via --set retention.hintUsage.image.digest=sha256:...
+      digest: ""

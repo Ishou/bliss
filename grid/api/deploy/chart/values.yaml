@@ -80,3 +80,18 @@ env:
 # Name of a Kubernetes Secret to envFrom into the pod. ADR-0009 §10:
 # bootstrapped via `kubectl create secret`, never committed.
 envFromSecret: ""
+# Data-retention CronJobs (ADR-0025 §5, docs/privacy/retention-schedule.md).
+retention:
+  hintUsage:
+    # Off by default — local-dev keeps everything. Prod enables.
+    enabled: false
+    # Cron expression. Daily 03:30 UTC, after the 02:00 CNPG backup.
+    schedule: "30 3 * * *"
+    # Days from `updated_at` to keep rows.
+    days: 90
+    image:
+      repository: postgres
+      tag: "16-alpine"
+      digest: ""
+      # When true, helm install/upgrade fails fast if digest is empty (mirrors main image guard).
+      requireDigest: false

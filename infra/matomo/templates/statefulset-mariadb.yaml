@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "matomo.mariadb.fullname" . }}
+  labels: {{- include "matomo.labels" . | nindent 4 }}
+    app.kubernetes.io/component: mariadb
+spec:
+  serviceName: {{ include "matomo.mariadb.fullname" . }}
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "matomo.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: mariadb
+  template:
+    metadata:
+      labels:
+        {{- include "matomo.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: mariadb
+    spec:
+      securityContext:
+        # mariadb image runs as uid 999.
+        fsGroup: 999
+      containers:
+        - name: mariadb
+          image: {{ include "matomo.mariadb.image" . | quote }}
+          imagePullPolicy: {{ .Values.mariadb.image.pullPolicy }}
+          securityContext: {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+          ports:
+            - {name: mysql, containerPort: 3306, protocol: TCP}
+          {{- with .Values.mariadb.envFromSecret }}
+          envFrom:
+            - secretRef: {name: {{ . }}}
+          {{- end }}
+          livenessProbe:
+            exec:
+              command: ["/bin/sh", "-c", "mariadb-admin ping -uroot -p\"$MARIADB_ROOT_PASSWORD\""]
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          readinessProbe:
+            exec:
+              command: ["/bin/sh", "-c", "mariadb-admin ping -uroot -p\"$MARIADB_ROOT_PASSWORD\""]
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          {{- with .Values.mariadb.resources }}
+          resources: {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/mysql
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: [{{ .Values.mariadb.persistence.accessMode }}]
+        resources:
+          requests:
+            storage: {{ .Values.mariadb.persistence.size }}
+        {{- if .Values.mariadb.persistence.storageClass }}
+        storageClassName: {{ .Values.mariadb.persistence.storageClass | quote }}
+        {{- end }}

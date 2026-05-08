@@ -1,0 +1,87 @@
+# Shared defaults for the Matomo + MariaDB chart. Per-env files override
+# what differs (values-prod.yaml).
+
+# Matomo workload.
+matomo:
+  image:
+    repository: matomo
+    # Manifesto (digest pinning): empty -> tag fallback. Prod sets digest.
+    digest: ""
+    tag: "5.2.1-apache"
+    pullPolicy: IfNotPresent
+    # When true, helm install/upgrade fails fast if digest is empty.
+    requireDigest: false
+  replicaCount: 1
+  resources: {}
+  service:
+    type: ClusterIP
+    port: 80
+  # PVC for Matomo's runtime state. Keeps `config.ini.php`, plugins,
+  # uploaded user files, and the install lock across restarts.
+  persistence:
+    enabled: true
+    size: 5Gi
+    storageClass: ""
+    # ReadWriteOnce is fine for replicaCount=1. Bumping replicas requires
+    # ReadWriteMany or stateless config + external session storage.
+    accessMode: ReadWriteOnce
+  # Cluster-trusted hostname Matomo will accept in the Host header.
+  # Required (Matomo refuses requests for unknown hostnames in prod).
+  trustedHostname: ""
+  # Bootstrapped via:
+  #   kubectl -n matomo create secret generic matomo-env \
+  #     --from-literal=MATOMO_DATABASE_USERNAME=matomo \
+  #     --from-literal=MATOMO_DATABASE_PASSWORD='<generated>' \
+  #     --from-literal=MATOMO_DATABASE_DBNAME=matomo
+  envFromSecret: ""
+
+# MariaDB sidecar (Matomo's DB; not shared with anything else).
+mariadb:
+  image:
+    repository: mariadb
+    digest: ""
+    tag: "11.4.4-noble"
+    pullPolicy: IfNotPresent
+    requireDigest: false
+  resources: {}
+  service:
+    port: 3306
+  persistence:
+    enabled: true
+    size: 5Gi
+    storageClass: ""
+    accessMode: ReadWriteOnce
+  # Bootstrapped via:
+  #   kubectl -n matomo create secret generic mariadb-env \
+  #     --from-literal=MARIADB_ROOT_PASSWORD='<generated>' \
+  #     --from-literal=MARIADB_USER=matomo \
+  #     --from-literal=MARIADB_PASSWORD='<generated>' \
+  #     --from-literal=MARIADB_DATABASE=matomo
+  envFromSecret: ""
+
+ingress:
+  enabled: true
+  className: nginx
+  # REQUIRED per env (analytics.wordsparrow.io in prod).
+  host: ""
+  tlsSecretName: ""
+  annotations: {}
+
+# CNIL audience-measurement consent-exemption configuration. Mounted as
+# a config fragment that Matomo's bootstrap merges on first run. Each
+# key here is load-bearing for the exemption — see ADR-0025 §2.
+cnilExempt:
+  # Two-byte mask (a.b.c.d -> a.b.0.0); CNIL's recommended floor.
+  ipAnonymizationMaskBytes: 2
+  # Honour DoNotTrack browser preference.
+  doNotTrack: true
+  # Country granularity only; no city-level GeoIP.
+  geolocationCountryOnly: true
+
+podSecurityContext:
+  runAsNonRoot: false
+  fsGroup: 33  # www-data; Matomo writes config files at runtime.
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop: [ALL]

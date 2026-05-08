@@ -1,0 +1,32 @@
+# Production overrides — Hetzner k3s cluster (ADR-0009 §2 / ADR-0025).
+matomo:
+  image:
+    requireDigest: true
+    digest: ""  # Set by deployment workflow; helm aborts if empty.
+  resources:
+    requests: {cpu: 100m, memory: 512Mi}
+    limits: {cpu: 1000m, memory: 1Gi}
+  persistence:
+    size: 10Gi
+    storageClass: hcloud-volumes
+  trustedHostname: "analytics.wordsparrow.io"
+  envFromSecret: "matomo-env"
+
+mariadb:
+  image:
+    requireDigest: true
+    digest: ""
+  resources:
+    requests: {cpu: 100m, memory: 512Mi}
+    limits: {cpu: 1000m, memory: 1Gi}
+  persistence:
+    size: 10Gi
+    storageClass: hcloud-volumes
+  envFromSecret: "mariadb-env"
+
+ingress:
+  host: "analytics.wordsparrow.io"
+  tlsSecretName: "matomo-tls"
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    external-dns.alpha.kubernetes.io/hostname: "analytics.wordsparrow.io"
