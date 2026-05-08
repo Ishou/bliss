@@ -13,6 +13,7 @@ import { wordRange } from '@/ui/components/grid/wordRange';
 import { Button } from '@/ui/components/primitives';
 import {
   AppHeader,
+  Footer,
   ProgressBar,
   PuzzleToolbar,
 } from '@/ui/components/layout';
@@ -152,6 +153,7 @@ function PageShell({ children }: { children: React.ReactNode }) {
       <main className={mainStyles}>
         <div className={contentStyles}>{children}</div>
       </main>
+      <Footer />
     </div>
   );
 }
@@ -357,13 +359,90 @@ const HomeStatus = ({ role, text }: { role: 'status' | 'alert'; text: string }) 
   </PageShell>
 );
 
+// CSS-only skeleton for the home route. Mirrors the real page rhythm
+// (toolbar row, grid panel, bottom row) so the layout doesn't jump when
+// the loader resolves. `prefers-reduced-motion` disables the pulse for
+// users with vestibular sensitivity.
+const skeletonPulse = css({
+  bg: 'surfaceElevated',
+  borderRadius: '6px',
+  animation: 'wordsparrow-skeleton-pulse 1.4s ease-in-out infinite',
+});
+
+const skeletonToolbarStyles = css({
+  width: '100%',
+  height: { base: '36px', md: '44px' },
+});
+
+const skeletonGridStyles = css({
+  width: '100%',
+  flex: '1 1 0',
+  minHeight: 0,
+  display: 'grid',
+  // 10×10 grid of placeholder cells reads as "puzzle is on its way".
+  gridTemplateColumns: 'repeat(10, 1fr)',
+  gridTemplateRows: 'repeat(10, 1fr)',
+  gap: '2px',
+  borderRadius: '12px',
+  overflow: 'hidden',
+});
+
+const skeletonCellStyles = css({
+  bg: 'bg',
+  opacity: 0.6,
+});
+
+const skeletonBottomRowStyles = css({
+  display: 'flex',
+  width: '100%',
+  alignItems: { base: 'stretch', md: 'flex-end' },
+  flexDirection: { base: 'column', md: 'row' },
+  gap: { base: '12px', md: '20px' },
+});
+
+const skeletonProgressStyles = css({
+  flex: 1,
+  minWidth: 0,
+  height: '32px',
+});
+
+const skeletonButtonStyles = css({
+  width: { base: '100%', md: '120px' },
+  height: '40px',
+});
+
+function HomeSkeleton() {
+  // 100 placeholder cells (10×10) reads cheaply on first paint and matches
+  // the typical puzzle density — the real grid replaces it in place.
+  const cells = Array.from({ length: 100 });
+  return (
+    <PageShell>
+      <div className={`${skeletonPulse} ${skeletonToolbarStyles}`} aria-hidden />
+      <div className={gridPanelStyles}>
+        <div className={skeletonGridStyles} aria-hidden>
+          {cells.map((_, i) => (
+            <div key={i} className={skeletonCellStyles} />
+          ))}
+        </div>
+      </div>
+      <div className={skeletonBottomRowStyles} aria-hidden>
+        <div className={`${skeletonPulse} ${skeletonProgressStyles}`} />
+        <div className={`${skeletonPulse} ${skeletonButtonStyles}`} />
+      </div>
+      <p className={srOnly} role="status">
+        Chargement de la grille…
+      </p>
+    </PageShell>
+  );
+}
+
 export const Route = createRoute({
   getParentRoute: () => RootRoute,
   path: '/',
   loader: ({ context }): Promise<Puzzle> =>
     context.puzzleRepository.fetchById(DEFAULT_PUZZLE_ID),
   component: HomePage,
-  pendingComponent: () => <HomeStatus role="status" text="Chargement de la grille…" />,
+  pendingComponent: HomeSkeleton,
   errorComponent: ({ error }) => (
     <HomeStatus role="alert" text={`Échec du chargement de la grille : ${error.message}`} />
   ),

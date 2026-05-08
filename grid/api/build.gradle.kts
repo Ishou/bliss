@@ -80,6 +80,10 @@ dependencies {
     // narrow: prod apex + www + local Vite dev.
     implementation("io.ktor:ktor-server-cors:$ktorVersion")
 
+    // Default-headers — applies fixed security headers (HSTS, X-Content-Type-Options,
+    // Referrer-Policy, X-Frame-Options) to every response.
+    implementation("io.ktor:ktor-server-default-headers:$ktorVersion")
+
     // Ktor client — used by Module.kt to wire MatomoAnalyticsAdapter (ADR-0025).
     // The client posts events to the self-hosted Matomo Tracking API.
     implementation("io.ktor:ktor-client-core:$ktorVersion")

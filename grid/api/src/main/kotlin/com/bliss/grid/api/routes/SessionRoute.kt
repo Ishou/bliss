@@ -46,9 +46,9 @@ fun Route.deleteSession(deleteSession: DeleteSessionUseCase) {
                 val problem =
                     ProblemDetails(
                         type = INVALID_SESSION_ID_TYPE_DELETE,
-                        title = "Invalid session id",
+                        title = "Identifiant de session invalide",
                         status = HttpStatusCode.BadRequest.value,
-                        detail = "Path parameter sessionId must be a UUID, was '$rawId'.",
+                        detail = "Le paramètre sessionId doit être un UUID, reçu : '$rawId'.",
                         instance = call.request.local.uri,
                     )
                 call.respondText(

@@ -30,6 +30,7 @@ import io.ktor.server.application.install
 import io.ktor.server.plugins.calllogging.CallLogging
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.plugins.cors.routing.CORS
+import io.ktor.server.plugins.defaultheaders.DefaultHeaders
 import io.ktor.server.plugins.statuspages.StatusPages
 import io.ktor.server.response.respondText
 import io.ktor.server.routing.routing
@@ -102,6 +103,14 @@ fun Application.module() {
         level = Level.INFO
     }
 
+    install(DefaultHeaders) {
+        header("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+        header("X-Content-Type-Options", "nosniff")
+        header("Referrer-Policy", "strict-origin-when-cross-origin")
+        header("X-Frame-Options", "DENY")
+        header(HttpHeaders.Server, "WordSparrow")
+    }
+
     // game/api is the FIRST WebSocket-using service in this repo (ADR-0018 §3,
     // ADR-0006). The WebSocket route (PR #138) attaches inside `routing { }`
     // below; the plugin install must precede route registration.
@@ -120,7 +129,7 @@ fun Application.module() {
             val problem =
                 ProblemDetails(
                     type = "about:blank",
-                    title = "Bad Request",
+                    title = "Requête invalide",
                     status = HttpStatusCode.BadRequest.value,
                     detail = cause.message,
                     instance = call.request.local.uri,
@@ -135,7 +144,7 @@ fun Application.module() {
             val problem =
                 ProblemDetails(
                     type = "about:blank",
-                    title = "Internal Server Error",
+                    title = "Erreur interne du serveur",
                     status = HttpStatusCode.InternalServerError.value,
                     detail = cause.message,
                     instance = call.request.local.uri,

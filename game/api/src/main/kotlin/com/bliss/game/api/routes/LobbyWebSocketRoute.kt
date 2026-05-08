@@ -94,7 +94,7 @@ fun Route.lobbyWebSocketRoute(
 
         val current = repo.findById(lobbyId)
         if (current == null) {
-            sendError("Lobby not found", "No lobby with id ${lobbyId.value} exists.", status = 404)
+            sendError("Salon introuvable", "Aucun salon avec l'identifiant ${lobbyId.value} n'existe.", status = 404)
             close(CloseReason(CloseReason.Codes.VIOLATED_POLICY, "lobby not found"))
             return@webSocket
         }
@@ -151,14 +151,14 @@ fun Route.lobbyWebSocketRoute(
 private suspend fun DefaultWebSocketServerSession.parseLobbyIdOrClose(): LobbyId? {
     val raw = call.parameters["lobbyId"]
     if (raw == null) {
-        sendError("Missing lobbyId", "Path parameter 'lobbyId' is required.")
+        sendError("Identifiant de salon manquant", "Le paramètre lobbyId est obligatoire.")
         close(CloseReason(CloseReason.Codes.CANNOT_ACCEPT, "missing lobbyId"))
         return null
     }
     return try {
         LobbyId(raw)
     } catch (cause: IllegalArgumentException) {
-        sendError("Invalid lobbyId", cause.message ?: "lobbyId failed validation")
+        sendError("Identifiant de salon invalide", cause.message ?: "lobbyId n'est pas valide")
         close(CloseReason(CloseReason.Codes.CANNOT_ACCEPT, "invalid lobbyId"))
         null
     }
@@ -168,7 +168,7 @@ private suspend fun DefaultWebSocketServerSession.parseLobbyIdOrClose(): LobbyId
 private suspend fun DefaultWebSocketServerSession.parseQuerySessionIdOrClose(): String? {
     val raw = call.request.queryParameters["sessionId"] ?: return ""
     if (!SESSION_ID_REGEX.matches(raw)) {
-        sendError("Invalid sessionId", "Query parameter 'sessionId' must be a UUID v7.")
+        sendError("Identifiant de session invalide", "Le paramètre sessionId doit être un UUID v7.")
         close(CloseReason(CloseReason.Codes.VIOLATED_POLICY, "invalid sessionId"))
         return null
     }
@@ -179,10 +179,10 @@ private suspend fun DefaultWebSocketServerSession.parseFrameOrError(text: String
     try {
         ROUTE_JSON.decodeFromString(ClientToServerFrame.serializer(), text)
     } catch (cause: SerializationException) {
-        sendError("Malformed frame", cause.message ?: "frame failed to deserialize")
+        sendError("Trame malformée", cause.message ?: "la trame n'a pas pu être désérialisée")
         null
     } catch (cause: IllegalArgumentException) {
-        sendError("Invalid frame", cause.message ?: "frame failed validation")
+        sendError("Trame invalide", cause.message ?: "la trame n'a pas passé la validation")
         null
     }
 
@@ -260,7 +260,7 @@ private suspend fun DefaultWebSocketServerSession.handleFrame(
                 try {
                     parsed.letter?.let { Letter(it.single()) }
                 } catch (_: Exception) {
-                    sendError("Invalid letter", "letter must be a single uppercase A-Z character or null")
+                    sendError("Lettre invalide", "La lettre doit être un caractère majuscule A-Z ou null.")
                     return memberSessionId
                 }
             dispatch(lobbyId, sessionManager) {
@@ -334,7 +334,7 @@ private suspend fun DefaultWebSocketServerSession.dispatchJoin(
         try {
             SessionId(parsed.sessionId)
         } catch (cause: IllegalArgumentException) {
-            sendError("Invalid sessionId", cause.message ?: "sessionId failed validation")
+            sendError("Identifiant de session invalide", cause.message ?: "sessionId n'est pas valide")
             return null
         }
     val pseudo =
@@ -399,8 +399,8 @@ private suspend fun DefaultWebSocketServerSession.sendNotJoined() {
     send(
         encode(
             protocolErrorFrame(
-                title = "Not joined",
-                detail = "Send a 'joinLobby' frame before issuing other operations.",
+                title = "Non connecté au salon",
+                detail = "Envoyez une trame 'joinLobby' avant toute autre opération.",
                 status = 409,
             ),
         ),
@@ -427,7 +427,7 @@ private suspend fun DefaultWebSocketServerSession.sendInvalidPseudonym(detail: S
         encode(
             ServerToClientFrame.Error(
                 errorType = "https://bliss.example/errors/invalid-pseudonym",
-                title = "Invalid pseudonym",
+                title = "Pseudonyme invalide",
                 detail = detail,
                 status = 400,
             ),

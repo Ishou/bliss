@@ -22,6 +22,13 @@ ingress:
     # but that's brittle — a future re-install without the override silently
     # publishes a ClusterIP. Pinning per-Ingress removes the dependency.
     external-dns.alpha.kubernetes.io/target: "178.105.38.131"
+    # Per-IP rate limiting at the ingress (leaky-bucket). Puzzle generation
+    # runs an expensive CSP solver, so first-line abuse protection sits at
+    # the boundary rather than in-process. Tunable; raise/lower per
+    # observed traffic. `limit-rps` is the average; burst is rps × multiplier.
+    nginx.ingress.kubernetes.io/limit-rps: "10"
+    nginx.ingress.kubernetes.io/limit-burst-multiplier: "5"
+    nginx.ingress.kubernetes.io/limit-connections: "20"
 postgres:
   cluster:
     # HA per ADR-0009 §3 + docs/local-development.md divergence table.

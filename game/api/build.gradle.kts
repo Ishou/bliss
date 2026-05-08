@@ -59,6 +59,10 @@ dependencies {
     // CORS — wordsparrow.io frontend talks to this API in the browser.
     implementation("io.ktor:ktor-server-cors:$ktorVersion")
 
+    // Default-headers — applies fixed security headers (HSTS, X-Content-Type-Options,
+    // Referrer-Policy, X-Frame-Options) to every response.
+    implementation("io.ktor:ktor-server-default-headers:$ktorVersion")
+
     // WebSockets — game/api is the first WS-using service in this repo
     // (ADR-0018 §3 / ADR-0006). The route itself lands in Wave F PR #10.
     implementation("io.ktor:ktor-server-websockets:$ktorVersion")

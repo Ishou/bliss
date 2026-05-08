@@ -78,12 +78,12 @@ describe('localStorageSession', () => {
   });
 
   describe('getPseudonym', () => {
-    it('generates a `Joueur ####` default and persists it on first call', async () => {
+    it('generates an `<Animal> ###` default and persists it on first call', async () => {
       const { getPseudonym } = await loadFresh();
 
       const name = getPseudonym();
 
-      expect(name).toMatch(/^Joueur \d{4}$/);
+      expect(name).toMatch(/^[A-ZÀ-Ü][a-zà-ü]+ \d{3}$/);
       expect(window.localStorage.getItem(PSEUDONYM_KEY)).toBe(name);
     });
 
@@ -210,7 +210,7 @@ describe('localStorageSession', () => {
       expect(getOrCreateSessionId()).toBe(id);
 
       const defaultName = getPseudonym();
-      expect(defaultName).toMatch(/^Joueur \d{4}$/);
+      expect(defaultName).toMatch(/^[A-ZÀ-Ü][a-zà-ü]+ \d{3}$/);
       expect(getPseudonym()).toBe(defaultName);
 
       const set = setPseudonym('Charlie');

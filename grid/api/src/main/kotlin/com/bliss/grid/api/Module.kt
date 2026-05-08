@@ -33,6 +33,7 @@ import io.ktor.server.application.install
 import io.ktor.server.plugins.calllogging.CallLogging
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.plugins.cors.routing.CORS
+import io.ktor.server.plugins.defaultheaders.DefaultHeaders
 import io.ktor.server.plugins.statuspages.StatusPages
 import io.ktor.server.response.respondText
 import io.ktor.server.routing.routing
@@ -88,13 +89,21 @@ fun Application.module() {
         level = Level.INFO
     }
 
+    install(DefaultHeaders) {
+        header("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+        header("X-Content-Type-Options", "nosniff")
+        header("Referrer-Policy", "strict-origin-when-cross-origin")
+        header("X-Frame-Options", "DENY")
+        header(HttpHeaders.Server, "WordSparrow")
+    }
+
     install(StatusPages) {
         // RFC 7807 catch-all per ADR-0003 §6.
         exception<Throwable> { call, cause ->
             val problem =
                 ProblemDetails(
                     type = "about:blank",
-                    title = "Internal Server Error",
+                    title = "Erreur interne du serveur",
                     status = HttpStatusCode.InternalServerError.value,
                     detail = cause.message,
                     instance = call.request.local.uri,

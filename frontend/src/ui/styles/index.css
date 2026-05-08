@@ -96,3 +96,17 @@ html, body {
   }
 }
 
+/* Skeleton placeholder pulse — pending state of route loaders. Subtle
+ * opacity oscillation reads as "loading" without distracting from the
+ * surrounding chrome. Reduced-motion users see a static placeholder. */
+@keyframes wordsparrow-skeleton-pulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  @keyframes wordsparrow-skeleton-pulse {
+    0%, 100% { opacity: 0.7; }
+  }
+}
+

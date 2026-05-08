@@ -38,6 +38,21 @@ describe('ConnectionBanner', () => {
     expect(banner).toHaveAttribute('data-state', 'disconnected');
   });
 
+  it('exposes a Recharger CTA only in the disconnected state', () => {
+    const { rerender } = render(<ConnectionBanner state="disconnected" />);
+    expect(
+      screen.getByRole('button', { name: 'Recharger' }),
+    ).toBeInTheDocument();
+    rerender(<ConnectionBanner state="reconnecting" />);
+    expect(
+      screen.queryByRole('button', { name: 'Recharger' }),
+    ).toBeNull();
+    rerender(<ConnectionBanner state="connecting" />);
+    expect(
+      screen.queryByRole('button', { name: 'Recharger' }),
+    ).toBeNull();
+  });
+
   it('renders the reconnecting copy with a retry indicator marked aria-hidden', () => {
     render(<ConnectionBanner state="reconnecting" />);
     const banner = screen.getByTestId('connection-banner');

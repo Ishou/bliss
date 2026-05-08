@@ -62,11 +62,50 @@ const errorMessageStyles = css({
   opacity: 0.8,
 });
 
+const errorActionStyles = css({
+  marginTop: 'lg',
+  paddingInline: 'lg',
+  paddingBlock: 'sm',
+  fontSize: 'body',
+  fontFamily: 'body',
+  fontWeight: 'semibold',
+  color: 'bg',
+  bg: 'accent',
+  borderRadius: 'md',
+  border: 'none',
+  cursor: 'pointer',
+  textDecoration: 'none',
+  _hover: { opacity: 0.9 },
+});
+
 function RootErrorBoundary() {
   return (
     <main className={errorPageStyles}>
-      <h1 className={errorTitleStyles}>Something went wrong.</h1>
-      <p className={errorMessageStyles}>Please reload the page to try again.</p>
+      <h1 className={errorTitleStyles}>Une erreur est survenue.</h1>
+      <p className={errorMessageStyles}>Rechargez la page pour réessayer.</p>
+      <button
+        type="button"
+        className={errorActionStyles}
+        onClick={() => {
+          window.location.reload();
+        }}
+      >
+        Recharger la page
+      </button>
+    </main>
+  );
+}
+
+function RootNotFound() {
+  return (
+    <main className={errorPageStyles}>
+      <h1 className={errorTitleStyles}>Page introuvable.</h1>
+      <p className={errorMessageStyles}>
+        Cette page n&apos;existe pas ou a été déplacée.
+      </p>
+      <a href="/" className={errorActionStyles}>
+        Retour à l&apos;accueil
+      </a>
     </main>
   );
 }
@@ -79,4 +118,5 @@ export const Route = createRootRouteWithContext<AppRouterContext>()({
     </>
   ),
   errorComponent: RootErrorBoundary,
+  notFoundComponent: RootNotFound,
 });
