@@ -27,3 +27,6 @@ postgres:
     endpoint: "https://fsn1.your-objectstorage.com"
 # Bootstrapped via `kubectl create secret generic wordsparrow-api-env ...` (ADR-0009 §10).
 envFromSecret: "wordsparrow-api-env"
+retention:
+  hintUsage:
+    enabled: true

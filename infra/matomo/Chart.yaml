@@ -1,0 +1,17 @@
+apiVersion: v2
+name: matomo
+description: |
+  Self-hosted Matomo + dedicated MariaDB for Bliss product analytics
+  (ADR-0025). Configured for the CNIL audience-measurement consent
+  exemption: cookieless, IP-anonymized, country-only geo, no
+  fingerprinting, DoNotTrack honoured.
+type: application
+version: 0.1.0
+appVersion: "5.2.1"
+# This chart deploys two workloads (Matomo and a private MariaDB) as
+# first-party templates rather than pulling third-party subcharts. The
+# rationale is in README.md §"Why no Bitnami / no third-party chart":
+# we want a tiny, audited surface area aligned with ADR-0025's "zero
+# new sub-processors" stance and to avoid coupling to charts whose
+# upstream support model is in flux.
+dependencies: []

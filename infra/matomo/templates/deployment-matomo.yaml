@@ -1,0 +1,78 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "matomo.matomo.fullname" . }}
+  labels: {{- include "matomo.labels" . | nindent 4 }}
+    app.kubernetes.io/component: matomo
+spec:
+  replicas: {{ .Values.matomo.replicaCount }}
+  strategy:
+    # Matomo writes to a single ReadWriteOnce PVC; rolling new pods up
+    # while old ones still hold the volume mount fails. Recreate is the
+    # safe strategy until persistence moves to ReadWriteMany.
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "matomo.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: matomo
+  template:
+    metadata:
+      labels:
+        {{- include "matomo.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: matomo
+      annotations:
+        # Roll the pod when the CNIL config changes so settings take effect.
+        checksum/cnil-config: {{ include (print $.Template.BasePath "/configmap-cnil-config.yaml") . | sha256sum }}
+    spec:
+      securityContext: {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: matomo
+          image: {{ include "matomo.matomo.image" . | quote }}
+          imagePullPolicy: {{ .Values.matomo.image.pullPolicy }}
+          securityContext: {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+          ports:
+            - {name: http, containerPort: 80, protocol: TCP}
+          env:
+            - name: MATOMO_DATABASE_HOST
+              value: {{ include "matomo.mariadb.fullname" . | quote }}
+            {{- if .Values.matomo.trustedHostname }}
+            - name: MATOMO_GENERAL_TRUSTED_HOSTS
+              value: {{ .Values.matomo.trustedHostname | quote }}
+            {{- end }}
+          {{- with .Values.matomo.envFromSecret }}
+          envFrom:
+            - secretRef: {name: {{ . }}}
+          {{- end }}
+          livenessProbe:
+            httpGet: {path: /matomo.php, port: http}
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          readinessProbe:
+            httpGet: {path: /matomo.php, port: http}
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          startupProbe:
+            httpGet: {path: /matomo.php, port: http}
+            periodSeconds: 5
+            failureThreshold: 60
+          {{- with .Values.matomo.resources }}
+          resources: {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: data
+              mountPath: /var/www/html
+            - name: cnil-config
+              mountPath: /var/www/html/config/common.config.ini.php
+              subPath: common.config.ini.php
+              readOnly: true
+      volumes:
+        - name: data
+          {{- if .Values.matomo.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ include "matomo.matomo.fullname" . }}
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        - name: cnil-config
+          configMap:
+            name: {{ include "matomo.fullname" . }}-cnil
