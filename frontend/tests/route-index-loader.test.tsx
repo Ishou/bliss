@@ -32,6 +32,11 @@ const renderWith = (repository: PuzzleRepository) => {
         getSessionId: () => 'test-session-id',
         clearLocalSession: () => {},
       },
+      soloEntriesStore: {
+        load: () => [],
+        save: () => {},
+        clearForPuzzle: () => {},
+      },
     },
   });
   return render(<RouterProvider router={router} />);

@@ -30,7 +30,12 @@ const sessionClient = {
   getSessionId: vi.fn().mockReturnValue('test-session-id'),
   clearLocalSession: vi.fn(),
 };
-const ctx = { puzzleRepository, puzzleSolver, sessionClient };
+const soloEntriesStore = {
+  load: () => [],
+  save: vi.fn(),
+  clearForPuzzle: vi.fn(),
+};
+const ctx = { puzzleRepository, puzzleSolver, sessionClient, soloEntriesStore };
 
 describe('App smoke test', () => {
   it('renders the WordSparrow heading on the root route', async () => {

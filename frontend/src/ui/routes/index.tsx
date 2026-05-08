@@ -1,5 +1,5 @@
 import { createRoute, useNavigate, useRouter } from '@tanstack/react-router';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { css } from 'styled-system/css';
 import { normalizeAnswerLetter, type Position, type Puzzle } from '@/domain';
 import { LobbyClientError } from '@/application/game';
@@ -161,7 +161,7 @@ function PageShell({ children }: { children: React.ReactNode }) {
 function HomePage() {
   const puzzle = Route.useLoaderData() as Puzzle;
   const router = useRouter();
-  const { puzzleSolver } = Route.useRouteContext();
+  const { puzzleSolver, soloEntriesStore } = Route.useRouteContext();
   const validation = usePuzzleValidation(puzzle, puzzleSolver);
   const hint = useHintRequest(puzzle.id, puzzle.hintsAllowed, puzzleSolver);
 
@@ -188,12 +188,24 @@ function HomePage() {
   // the only seam that clears the DOM.
   const [refreshCount, setRefreshCount] = useState(0);
   const handleRefresh = useCallback(() => {
+    // Must clear before bumping refreshCount — initialEntries reads storage on the next render.
+    soloEntriesStore.clearForPuzzle(puzzle.id);
     setRefreshCount((n) => n + 1);
-    // The Grid API is stateless (per the §404 note in
-    // `grid/api/openapi.yaml`) — invalidating refetches and yields a
-    // fresh puzzle. Remount + new puzzle in one beat.
     void router.invalidate();
-  }, [router]);
+  }, [router, soloEntriesStore, puzzle.id]);
+
+  // void refreshCount forces a storage re-read after "Actualiser" clears — without depending on the value.
+  const initialEntries = useMemo(() => {
+    void refreshCount;
+    return soloEntriesStore.load(puzzle.id);
+  }, [puzzle.id, refreshCount, soloEntriesStore]);
+
+  const handleCellChange = useCallback(
+    (row: number, col: number, letter: string | null) => {
+      soloEntriesStore.save(puzzle.id, row, col, letter);
+    },
+    [soloEntriesStore, puzzle.id],
+  );
 
   const isComplete =
     validation.totalLetterCells > 0 &&
@@ -248,6 +260,8 @@ function HomePage() {
           validatedPositions={validation.validated}
           errorPositions={validation.errors}
           onLocalFocusChange={handleLocalFocusChange}
+          initialEntries={initialEntries}
+          onCellChange={handleCellChange}
         />
       </div>
       <div className={bottomRowStyles}>

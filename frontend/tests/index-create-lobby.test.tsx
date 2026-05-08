@@ -74,6 +74,11 @@ const renderHome = (overrides: { lobbyClient?: Partial<LobbyClient> } = {}) => {
         getSessionId: () => 'test-session-id',
         clearLocalSession: () => {},
       },
+      soloEntriesStore: {
+        load: () => [],
+        save: () => {},
+        clearForPuzzle: () => {},
+      },
       lobbyClient,
       gameClient: stubGameClient,
       getSession: () => ({ sessionId, pseudonym }),
