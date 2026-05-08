@@ -64,3 +64,20 @@ interface PuzzleProvider {
 interface Clock {
     fun now(): Instant
 }
+
+/**
+ * Out-bound port for ephemeral presence events ([LobbyEvent.Typing], [LobbyEvent.Idle],
+ * [LobbyEvent.ConnectionLost], [LobbyEvent.CursorBumped]). The infrastructure adapter wires this
+ * to `SessionManager.broadcast`; the application layer does not know transport.
+ *
+ * Why a dedicated port (vs. returning events from a use case as `LobbyUseCases` does): the
+ * presence aggregator's edge events fire on internal timer transitions, not in response to a
+ * single use-case invocation that has a return value to attach events to. The aggregator pushes
+ * directly through this port whenever a threshold is crossed.
+ */
+interface PresenceBroadcaster {
+    suspend fun broadcast(
+        lobbyId: LobbyId,
+        event: LobbyEvent,
+    )
+}
