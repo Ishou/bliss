@@ -21,8 +21,21 @@ export default defineConfig({
     baseURL: 'http://localhost:5173',
     trace: 'on-first-retry',
   },
+  // Browser/device matrix:
+  //   chromium  — desktop Chrome on the developer machine (default)
+  //   pixel-7   — Chromium + Android UA, viewport, and touch defaults.
+  //               Catches the mobile-Chrome rendering path; does NOT
+  //               reproduce real-Android IME / soft-keyboard composition
+  //               (no Playwright engine does — that's a real-device gap).
+  //   iphone-14 — WebKit + iOS UA, viewport, and touch defaults.
+  //               Catches Safari iOS rendering and pointer-events branches;
+  //               same IME caveat as pixel-7.
+  // Adding webkit/mobile projects roughly triples e2e wall time. Run a
+  // single project in dev with `pnpm e2e --project=chromium`; CI runs all.
   projects: [
-    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+    { name: 'chromium',  use: { ...devices['Desktop Chrome'] } },
+    { name: 'pixel-7',   use: { ...devices['Pixel 7'] } },
+    { name: 'iphone-14', use: { ...devices['iPhone 14'] } },
   ],
   webServer: {
     command: 'pnpm dev:preview',
