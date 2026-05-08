@@ -195,9 +195,9 @@ class PresenceAggregator(
         for (sid in ArrayList(sessions.keys)) {
             var typingFell = false
             var idleRose = false
-            var expired = false
             var lobbyId: LobbyId? = null
-            sessions.computeIfPresent(sid) { _, state ->
+            sessions.compute(sid) { _, state ->
+                if (state == null) return@compute null
                 lobbyId = state.lobbyId
                 typingFell =
                     state.typing &&
@@ -208,10 +208,9 @@ class PresenceAggregator(
                     state.disconnectedAt == null &&
                     isOlderThan(state.lastActivityAt, now, idleThreshold)
                 if (idleRose) state.idle = true
-                expired = state.disconnectedAt?.let { isOlderThan(it, now, disconnectGrace) } == true
-                state
+                val expired = state.disconnectedAt?.let { isOlderThan(it, now, disconnectGrace) } == true
+                if (expired) null else state
             }
-            if (expired) sessions.remove(sid)
             lobbyId?.let { lid ->
                 if (typingFell) broadcaster.broadcast(lid, LobbyEvent.Typing(sid, typing = false))
                 if (idleRose) broadcaster.broadcast(lid, LobbyEvent.Idle(sid, idle = true))
