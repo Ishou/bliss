@@ -23,22 +23,22 @@ import { Grid } from '@/ui/components/grid';
 // Same fixture as grid-input.test.tsx — kept inline so the tests stay
 // independent. 5×4 grid; (1,1)..(1,4) is across-2; (1,2),(2,2),(3,2) is
 // down-1 starting at definition (0,2).
-const L = (row: number, col: number, answer: string): Cell =>
-  ({ kind: 'letter', position: { row, col }, answer, entry: '' });
+const L = (row: number, col: number): Cell =>
+  ({ kind: 'letter', position: { row, col }, entry: '' });
 
 const TEST_PUZZLE: Puzzle = {
-  id: 'test', title: 'test', language: 'fr', width: 5, height: 4,
+  id: 'test', title: 'test', language: 'fr', width: 5, height: 4, hintsAllowed: 3,
   cells: [
     { kind: 'definition', position: { row: 0, col: 0 }, clues: [{ text: 'across-1', arrow: 'right' }] },
-    L(0, 1, 'A'),
+    L(0, 1),
     { kind: 'definition', position: { row: 0, col: 2 }, clues: [{ text: 'down-1', arrow: 'down' }] },
-    L(0, 3, 'B'), L(0, 4, 'C'),
+    L(0, 3), L(0, 4),
     { kind: 'definition', position: { row: 1, col: 0 }, clues: [{ text: 'across-2', arrow: 'right' }] },
-    L(1, 1, 'D'), L(1, 2, 'E'), L(1, 3, 'F'), L(1, 4, 'G'),
-    L(2, 0, 'H'), L(2, 1, 'I'), L(2, 2, 'J'), L(2, 3, 'K'), L(2, 4, 'L'),
-    L(3, 0, 'M'),
+    L(1, 1), L(1, 2), L(1, 3), L(1, 4),
+    L(2, 0), L(2, 1), L(2, 2), L(2, 3), L(2, 4),
+    L(3, 0),
     { kind: 'block', position: { row: 3, col: 1 } },
-    L(3, 2, 'N'), L(3, 3, 'O'), L(3, 4, 'P'),
+    L(3, 2), L(3, 3), L(3, 4),
   ],
 };
 

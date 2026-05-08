@@ -21,7 +21,7 @@ const L = (row: number, col: number): Cell =>
   ({ kind: 'letter', position: { row, col }, entry: '' });
 
 const TEST_PUZZLE: Puzzle = {
-  id: 'test', title: 'test', language: 'fr', width: 5, height: 4,
+  id: 'test', title: 'test', language: 'fr', width: 5, height: 4, hintsAllowed: 3,
   cells: [
     { kind: 'definition', position: { row: 0, col: 0 }, clues: [{ text: 'across-1', arrow: 'right' }] },
     L(0, 1),

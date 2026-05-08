@@ -38,12 +38,49 @@ import puzzleFixtureJson from './fixtures/puzzle.json';
 import { gameHandlers, gameWsHandler } from './handlers/game';
 
 type Puzzle = components['schemas']['Puzzle'];
+type Position = components['schemas']['Position'];
+type ValidatePuzzleRequest = components['schemas']['ValidatePuzzleRequest'];
+type WordHintRequest = components['schemas']['WordHintRequest'];
 
 // Cast through `unknown` because Vite's JSON import returns the
 // inferred literal type; the cast is structurally validated at runtime
 // by MSW returning it through the Grid API client (which has spec-
 // generated types).
 const puzzleFixture = puzzleFixtureJson as unknown as Puzzle;
+
+// Preview parity for the `/validate` endpoint: extract the canonical
+// letter from each fixture letter cell. The wire `LetterCell` no longer
+// carries `letter` (PR #218), but the preview JSON does — they are the
+// expected answers the player is supposed to type. Used solely by the
+// mock handler below; nothing on the contract surface depends on this.
+type FixtureLetterCell = { kind: 'letter'; position: Position; letter?: string };
+const fixtureLetterByPosition = new Map<string, string>();
+for (const cell of puzzleFixtureJson.cells as readonly FixtureLetterCell[]) {
+  if (cell.kind !== 'letter' || !cell.letter) continue;
+  fixtureLetterByPosition.set(
+    `${cell.position.row},${cell.position.column}`,
+    cell.letter.toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, ''),
+  );
+}
+const fixtureLetterCellCount = fixtureLetterByPosition.size;
+
+// Per-puzzle hint counter. Resets on module reload (preview only). The
+// real server scopes this per (puzzle, player); for MSW we only need
+// the budget-exhaustion transition.
+const hintsRemainingByPuzzle = new Map<string, number>();
+
+const HINT_PROBLEM_BUDGET = {
+  type: 'https://bliss.example/errors/hint-budget-exhausted',
+  title: 'Indices épuisés',
+  status: 429,
+  detail: 'hintsRemaining: 0',
+};
+const HINT_PROBLEM_INVALID_WORD = {
+  type: 'https://bliss.example/errors/invalid-word',
+  title: 'Mot invalide',
+  status: 400,
+  detail: 'word must be 2–50 letters',
+};
 
 /**
  * Handlers for every Grid API operation declared in
@@ -59,7 +96,69 @@ const gridHandlers = [
     const puzzleId = String(params.puzzleId);
     return HttpResponse.json({ ...puzzleFixture, id: puzzleId });
   }),
+
+  // POST /v1/puzzles/{id}/hints — preview parity. Decrement a per-puzzle
+  // counter seeded from `puzzleFixture.hintsAllowed`; once it hits zero
+  // the next call returns a 429 problem+json, mirroring the real
+  // server's `hint-budget-exhausted` shape. The `exists` heuristic
+  // ("at least 3 letters") is intentionally crude — it is enough for a
+  // reviewer to see the affordance flip between ✓/✗/exhausted without
+  // shipping a French corpus into the mock bundle.
+  http.post('*/v1/puzzles/:puzzleId/hints', async ({ params, request }) => {
+    const puzzleId = String(params.puzzleId);
+    const body = (await request.json()) as WordHintRequest;
+    const word = body.word ?? '';
+    if (word.length < 2 || word.length > 50) {
+      return HttpResponse.json(HINT_PROBLEM_INVALID_WORD, {
+        status: 400,
+        headers: { 'content-type': 'application/problem+json' },
+      });
+    }
+    const remaining = hintsRemainingByPuzzle.get(puzzleId) ??
+      (puzzleFixture.hintsAllowed ?? 3);
+    if (remaining <= 0) {
+      return HttpResponse.json(HINT_PROBLEM_BUDGET, {
+        status: 429,
+        headers: { 'content-type': 'application/problem+json' },
+      });
+    }
+    const next = remaining - 1;
+    hintsRemainingByPuzzle.set(puzzleId, next);
+    return HttpResponse.json({
+      word: word.toLowerCase().normalize('NFC'),
+      exists: word.trim().length >= 3,
+      hintsRemaining: next,
+    });
+  }),
+
+  // POST /v1/puzzles/{id}/validate — preview parity. Compares the
+  // submitted letters against the fixture's canonical letters; reports
+  // every wrong-letter AND every unfilled letter cell as `incorrectCells`.
+  // The real server runs the same comparison server-side; for preview we
+  // borrow the JSON's `letter` field to avoid shipping a separate answer
+  // sheet.
+  http.post('*/v1/puzzles/:puzzleId/validate', async ({ request }) => {
+    const body = (await request.json()) as ValidatePuzzleRequest;
+    const submitted = new Map<string, string>();
+    for (const cell of body.filledCells ?? []) {
+      submitted.set(`${cell.row},${cell.column}`, cell.letter);
+    }
+    const incorrect: Position[] = [];
+    for (const [key, expected] of fixtureLetterByPosition) {
+      const got = submitted.get(key);
+      if (got !== expected) {
+        const [row, column] = key.split(',').map(Number);
+        incorrect.push({ row, column });
+      }
+    }
+    return HttpResponse.json({
+      solved:
+        incorrect.length === 0 && submitted.size === fixtureLetterCellCount,
+      incorrectCells: incorrect,
+    });
+  }),
 ];
+
 
 // Order matters only for overlap, which we don't have: grid REST is
 // `/v1/puzzles/...`, game REST is `/v1/lobbies/...`, game WS is its own

@@ -1,7 +1,7 @@
 import { act, render, screen } from '@testing-library/react';
 import { RouterProvider, createMemoryHistory, createRouter } from '@tanstack/react-router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { PuzzleRepository } from '@/application';
+import type { PuzzleRepository, PuzzleSolver } from '@/application';
 import { LobbyClientError, type GameClient, type LobbyClient } from '@/application/game';
 import type { Puzzle } from '@/domain';
 import type { Lobby, LobbyId, Pseudonym, SessionId } from '@/domain/game';
@@ -23,13 +23,17 @@ const buttonName = 'Créer une partie multijoueur';
 
 const samplePuzzle: Puzzle = {
   id: '0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6b',
-  title: 'WordSparrow', language: 'fr', width: 1, height: 1,
+  title: 'WordSparrow', language: 'fr', width: 1, height: 1, hintsAllowed: 3,
   cells: [{ kind: 'letter', position: { row: 0, col: 0 }, entry: '' }],
 };
 
 // Plain function — `vi.restoreAllMocks()` would erase a `mockResolvedValue`.
 const stubPuzzleRepository: PuzzleRepository = {
   fetchById: () => Promise.resolve(samplePuzzle),
+};
+const stubPuzzleSolver: PuzzleSolver = {
+  validate: () => Promise.resolve({ solved: false, incorrectCells: [] }),
+  requestHint: () => Promise.reject(new Error('not used')),
 };
 
 const baseCreatedLobby: Lobby & { readonly id: LobbyId } = {
@@ -64,6 +68,7 @@ const renderHome = (overrides: { lobbyClient?: Partial<LobbyClient> } = {}) => {
     history: createMemoryHistory({ initialEntries: ['/'] }),
     context: {
       puzzleRepository: stubPuzzleRepository,
+      puzzleSolver: stubPuzzleSolver,
       lobbyClient,
       gameClient: stubGameClient,
       getSession: () => ({ sessionId, pseudonym }),

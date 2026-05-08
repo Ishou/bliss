@@ -41,22 +41,22 @@ vi.mock('react-zoom-pan-pinch', async (importActual) => {
 //   D→  X   X   X   X     across-2: (1,1)..(1,4)
 //   X   X   X   X   X
 //   X   B   X   X   X
-const L = (row: number, col: number, answer: string): Cell =>
-  ({ kind: 'letter', position: { row, col }, answer, entry: '' });
+const L = (row: number, col: number): Cell =>
+  ({ kind: 'letter', position: { row, col }, entry: '' });
 
 const TEST_PUZZLE: Puzzle = {
-  id: 'test', title: 'test', language: 'fr', width: 5, height: 4,
+  id: 'test', title: 'test', language: 'fr', width: 5, height: 4, hintsAllowed: 3,
   cells: [
     { kind: 'definition', position: { row: 0, col: 0 }, clues: [{ text: 'across-1', arrow: 'right' }] },
-    L(0, 1, 'A'),
+    L(0, 1),
     { kind: 'definition', position: { row: 0, col: 2 }, clues: [{ text: 'down-1', arrow: 'down' }] },
-    L(0, 3, 'B'), L(0, 4, 'C'),
+    L(0, 3), L(0, 4),
     { kind: 'definition', position: { row: 1, col: 0 }, clues: [{ text: 'across-2', arrow: 'right' }] },
-    L(1, 1, 'D'), L(1, 2, 'E'), L(1, 3, 'F'), L(1, 4, 'G'),
-    L(2, 0, 'H'), L(2, 1, 'I'), L(2, 2, 'J'), L(2, 3, 'K'), L(2, 4, 'L'),
-    L(3, 0, 'M'),
+    L(1, 1), L(1, 2), L(1, 3), L(1, 4),
+    L(2, 0), L(2, 1), L(2, 2), L(2, 3), L(2, 4),
+    L(3, 0),
     { kind: 'block', position: { row: 3, col: 1 } },
-    L(3, 2, 'N'), L(3, 3, 'O'), L(3, 4, 'P'),
+    L(3, 2), L(3, 3), L(3, 4),
   ],
 };
 
@@ -431,7 +431,7 @@ describe('Grid keyboard interactions — Tab / Enter clue cycling', () => {
   it('cycle interleaves across and down by spatial position, not by direction', () => {
     const SPATIAL: Puzzle = {
       id: 'spatial-test', title: 'spatial test', language: 'fr',
-      width: 4, height: 3,
+      width: 4, height: 3, hintsAllowed: 3,
       cells: [
         // Stacked def at (0,0): across at (0,1)..(0,3) and down at (1,0)..(2,0).
         {

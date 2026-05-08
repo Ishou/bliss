@@ -620,6 +620,7 @@ function gamePuzzleToPuzzle(gamePuzzle: GamePuzzle): Puzzle {
     language: gamePuzzle.language,
     width: gamePuzzle.width,
     height: gamePuzzle.height,
+    hintsAllowed: gamePuzzle.hintsAllowed,
     cells,
   };
 }

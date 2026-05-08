@@ -8,7 +8,7 @@ import {
   type GameEvent,
   type LobbyClient,
 } from '@/application/game';
-import type { PuzzleRepository } from '@/application';
+import type { PuzzleRepository, PuzzleSolver } from '@/application';
 import type {
   CellEntry,
   GamePuzzle,
@@ -132,6 +132,10 @@ const makeFakeGameClient = (): FakeGameClient => {
 const stubPuzzleRepository: PuzzleRepository = {
   fetchById: vi.fn().mockRejectedValue(new Error('unused in lobby tests')),
 };
+const stubPuzzleSolver: PuzzleSolver = {
+  validate: vi.fn().mockRejectedValue(new Error('unused in lobby tests')),
+  requestHint: vi.fn().mockRejectedValue(new Error('unused in lobby tests')),
+};
 
 interface RenderLobbyOverrides {
   readonly lobbyClient?: Partial<LobbyClient>;
@@ -154,6 +158,7 @@ const renderLobby = (overrides: RenderLobbyOverrides) => {
     history: createMemoryHistory({ initialEntries: [`/lobby/${lobbyId}`] }),
     context: {
       puzzleRepository: stubPuzzleRepository,
+      puzzleSolver: stubPuzzleSolver,
       lobbyClient,
       gameClient,
       getSession: () => ({ sessionId, pseudonym }),
@@ -356,6 +361,7 @@ const buildGamePuzzle = (): GamePuzzle => ({
   language: 'fr',
   width: 3,
   height: 3,
+  hintsAllowed: 3,
   cells: [
     {
       kind: 'definition',

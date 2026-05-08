@@ -183,7 +183,7 @@ describe('Grid render', () => {
 
   it('renders long single-clue text in full (no clamp); arrow rendered on receiving letter cell', () => {
     const puzzle: Puzzle = {
-      id: 'long', title: 'long', language: 'fr', width: 2, height: 1,
+      id: 'long', title: 'long', language: 'fr', width: 2, height: 1, hintsAllowed: 3,
       cells: [
         {
           kind: 'definition',
@@ -195,7 +195,7 @@ describe('Grid render', () => {
             },
           ],
         },
-        { kind: 'letter', position: { row: 0, col: 1 }, answer: 'A', entry: '' },
+        { kind: 'letter', position: { row: 0, col: 1 }, entry: '' },
       ],
     };
     const { container } = render(<Grid puzzle={puzzle} />);
@@ -236,11 +236,11 @@ describe('Grid render', () => {
   // and the edge.
   it('places `right-down` arrow on the receiving cell\'s left edge', () => {
     const puzzle: Puzzle = {
-      id: 'rd', title: 'rd', language: 'fr', width: 2, height: 2,
+      id: 'rd', title: 'rd', language: 'fr', width: 2, height: 2, hintsAllowed: 3,
       cells: [
         { kind: 'definition', position: { row: 0, col: 0 }, clues: [{ text: 'Plante grimpante', arrow: 'right-down' }] },
-        { kind: 'letter', position: { row: 0, col: 1 }, answer: 'A', entry: '' },
-        { kind: 'letter', position: { row: 1, col: 1 }, answer: 'B', entry: '' },
+        { kind: 'letter', position: { row: 0, col: 1 }, entry: '' },
+        { kind: 'letter', position: { row: 1, col: 1 }, entry: '' },
       ],
     };
     const { container } = render(<Grid puzzle={puzzle} />);
@@ -253,11 +253,11 @@ describe('Grid render', () => {
 
   it('places `down-right` arrow on the receiving cell\'s top edge', () => {
     const puzzle: Puzzle = {
-      id: 'dr', title: 'dr', language: 'fr', width: 2, height: 2,
+      id: 'dr', title: 'dr', language: 'fr', width: 2, height: 2, hintsAllowed: 3,
       cells: [
         { kind: 'definition', position: { row: 0, col: 0 }, clues: [{ text: 'Mot de passe', arrow: 'down-right' }] },
-        { kind: 'letter', position: { row: 1, col: 0 }, answer: 'A', entry: '' },
-        { kind: 'letter', position: { row: 1, col: 1 }, answer: 'B', entry: '' },
+        { kind: 'letter', position: { row: 1, col: 0 }, entry: '' },
+        { kind: 'letter', position: { row: 1, col: 1 }, entry: '' },
       ],
     };
     const { container } = render(<Grid puzzle={puzzle} />);
@@ -273,7 +273,7 @@ describe('Grid render', () => {
   // the receiving edge into q1 (28 %) + q3 (72 %).
   it('renders both arrows on the receiving cell for a [right + right-down] pair', () => {
     const puzzle: Puzzle = {
-      id: 'rr', title: 'rr', language: 'fr', width: 2, height: 2,
+      id: 'rr', title: 'rr', language: 'fr', width: 2, height: 2, hintsAllowed: 3,
       cells: [
         {
           kind: 'definition',
@@ -283,8 +283,8 @@ describe('Grid render', () => {
             { text: 'Deuxième', arrow: 'right-down' },
           ],
         },
-        { kind: 'letter', position: { row: 0, col: 1 }, answer: 'A', entry: '' },
-        { kind: 'letter', position: { row: 1, col: 1 }, answer: 'B', entry: '' },
+        { kind: 'letter', position: { row: 0, col: 1 }, entry: '' },
+        { kind: 'letter', position: { row: 1, col: 1 }, entry: '' },
       ],
     };
     const { container } = render(<Grid puzzle={puzzle} />);
@@ -295,7 +295,7 @@ describe('Grid render', () => {
 
   it('renders both arrows on the receiving cell for a [down + down-right] pair', () => {
     const puzzle: Puzzle = {
-      id: 'dd', title: 'dd', language: 'fr', width: 2, height: 2,
+      id: 'dd', title: 'dd', language: 'fr', width: 2, height: 2, hintsAllowed: 3,
       cells: [
         {
           kind: 'definition',
@@ -305,8 +305,8 @@ describe('Grid render', () => {
             { text: 'Deuxième', arrow: 'down-right' },
           ],
         },
-        { kind: 'letter', position: { row: 1, col: 0 }, answer: 'A', entry: '' },
-        { kind: 'letter', position: { row: 1, col: 1 }, answer: 'B', entry: '' },
+        { kind: 'letter', position: { row: 1, col: 0 }, entry: '' },
+        { kind: 'letter', position: { row: 1, col: 1 }, entry: '' },
       ],
     };
     const { container } = render(<Grid puzzle={puzzle} />);

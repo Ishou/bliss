@@ -4,6 +4,7 @@
   "language": "fr",
   "width": 10,
   "height": 10,
+  "hintsAllowed": 3,
   "cells": [
     { "kind": "definition", "position": { "row": 0, "column": 0 }, "clueId": "019e0147-bfc8-7c0b-90cd-86923b35cf1b", "text": "Rang ou position", "arrow": "down-right" },
     { "kind": "definition", "position": { "row": 0, "column": 0 }, "clueId": "019e0147-bfc8-7c0b-90cd-86923b35cf1c", "text": "Tissu contractile", "arrow": "right-down" },

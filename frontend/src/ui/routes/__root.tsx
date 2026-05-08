@@ -1,6 +1,6 @@
 import { HeadContent, Outlet, createRootRouteWithContext } from '@tanstack/react-router';
 import { css } from 'styled-system/css';
-import type { PuzzleRepository } from '@/application';
+import type { PuzzleRepository, PuzzleSolver } from '@/application';
 import type { GameClient, LobbyClient } from '@/application/game';
 import type { Pseudonym, SessionId } from '@/domain/game';
 
@@ -27,6 +27,7 @@ export interface AppSession {
 
 export interface AppRouterContext {
   readonly puzzleRepository: PuzzleRepository;
+  readonly puzzleSolver: PuzzleSolver;
   readonly lobbyClient?: LobbyClient;
   readonly gameClient?: GameClient;
   readonly getSession?: () => AppSession;

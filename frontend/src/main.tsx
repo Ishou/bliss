@@ -8,6 +8,7 @@ import { createAppRouter } from '@/ui/router';
 import {
   createHttpLobbyClient,
   createHttpPuzzleRepository,
+  createHttpPuzzleSolver,
   createWebSocketGameClient,
 } from '@/infrastructure';
 import {
@@ -57,9 +58,11 @@ enableMocks()
     console.error('[MSW] worker failed to start, continuing without mock:', err);
   })
   .then(() => {
+    const gridApiBaseUrl = import.meta.env.VITE_GRID_API_URL;
     const puzzleRepository = createHttpPuzzleRepository({
-      baseUrl: import.meta.env.VITE_GRID_API_URL,
+      baseUrl: gridApiBaseUrl,
     });
+    const puzzleSolver = createHttpPuzzleSolver({ baseUrl: gridApiBaseUrl });
     // ADR-0018 §10 — multiplayer ships dark. The lobby route, its
     // adapters, and the session accessor are only instantiated when
     // the runtime flag is on. Production flips this to `'true'` after
@@ -88,13 +91,14 @@ enableMocks()
           };
           return {
             puzzleRepository,
+            puzzleSolver,
             lobbyClient,
             gameClient,
             getSession,
             setPseudonym: setPersistedPseudonym,
           };
         })()
-      : { puzzleRepository };
+      : { puzzleRepository, puzzleSolver };
     const router = createAppRouter({ context, multiplayer });
 
     createRoot(container).render(
