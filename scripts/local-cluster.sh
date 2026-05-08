@@ -217,20 +217,28 @@ cmd_dev() {
   fi
 
   log "starting full-stack dev (Ctrl+C to stop all)"
-  log "  API:      http://localhost:8080  (Ktor auto-reload)"
+  log "  Grid API: http://localhost:7777  (Ktor auto-reload)"
+  log "  Game API: http://localhost:7778  (Ktor auto-reload, WebSocket on the same host)"
   log "  Frontend: http://localhost:5173  (Vite HMR)"
 
   # Kill all child processes on exit (Ctrl+C, term, or script error).
   # shellcheck disable=SC2064
   trap "trap - EXIT; kill 0 2>/dev/null" EXIT INT TERM
 
-  # 1. Continuous compilation — recompiles on every file save.
+  # 1. Continuous compilation — one watcher per Ktor module so a save
+  #    in either bounded context triggers a re-run of just that one.
   "${repo_root}/gradlew" -t :grid:api:classes -p "${repo_root}" --no-daemon -q &
+  "${repo_root}/gradlew" -t :game:api:classes -p "${repo_root}" --no-daemon -q &
 
-  # 2. Ktor server with development=true (auto-reload on class changes).
+  # 2. Ktor servers with development=true (auto-reload on class changes).
+  #    Each defaults to its module's DEFAULT_PORT (grid 7777, game 7778);
+  #    prod charts pin PORT explicitly via `env:` so the local defaults
+  #    don't bleed into the cluster.
   "${repo_root}/gradlew" :grid:api:run -p "${repo_root}" --no-daemon -q &
+  "${repo_root}/gradlew" :game:api:run -p "${repo_root}" --no-daemon -q &
 
-  # 3. Vite dev server with HMR (.env.development points at localhost:8080).
+  # 3. Vite dev server with HMR. `frontend/.env.development` points at
+  #    localhost:7777 (grid) and localhost:7778 (game) — no MSW.
   pnpm --dir "${repo_root}/frontend" dev &
 
   wait

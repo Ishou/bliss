@@ -38,7 +38,7 @@ type Problem = components['schemas']['Problem'];
 const LOBBY_ID_PATTERN = /^[1-9A-HJ-NP-Za-km-z]{8}$/;
 
 // `*://*/...` glob so MSW intercepts whatever host the adapters use —
-// `wss://game.wordsparrow.io` in preview, `ws://localhost:8081` in dev.
+// `wss://game.wordsparrow.io` in preview, `ws://localhost:7778` in dev.
 const lobbyWs = ws.link('*://*/v1/lobbies/:lobbyId/ws');
 
 // Bot cadence — random in 4–8 s so the demo feels alive without being

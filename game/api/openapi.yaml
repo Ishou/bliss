@@ -37,8 +37,8 @@ info:
 servers:
   - url: https://game.wordsparrow.io
     description: Production. URL stabilizes when the game-api Helm chart lands (ADR-0018).
-  - url: http://localhost:8081
-    description: Local dev (Ktor `embeddedServer`). Port 8081 per ADR-0007 §3.
+  - url: http://localhost:7778
+    description: Local dev (Ktor `embeddedServer`). Paired with grid-api's 7777 in `make dev`; prod chart pins PORT=8081 explicitly per ADR-0007 §3.
 
 tags:
   - name: lobbies

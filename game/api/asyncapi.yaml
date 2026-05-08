@@ -65,9 +65,9 @@ servers:
     protocol: wss
     description: Placeholder host; canonical URL stabilizes when the game-api Helm chart lands (ADR-0018).
   local:
-    url: localhost:8081
+    url: localhost:7778
     protocol: ws
-    description: Local dev server (Ktor `embeddedServer`).
+    description: Local dev server (Ktor `embeddedServer`). Paired with grid-api's 7777 in `make dev`; prod pins PORT=8081 via Helm.
 
 defaultContentType: application/json
 
