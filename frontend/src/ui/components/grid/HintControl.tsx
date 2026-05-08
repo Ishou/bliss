@@ -5,11 +5,15 @@ import { HintIcon } from '@/ui/components/icons';
 import type { HintLastResult } from './useHintRequest';
 
 // Toolbar affordance for the per-puzzle hint budget. Clicking spends one
-// credit checking whether the active word exists in the corpus; the
-// status pill (aria-live) reports `✓ existe` / `✗ introuvable` /
-// `Indices épuisés`. Exhausted = budget hit zero (server 429 or 200
-// with `hintsRemaining: 0`); the button locks for the rest of the
-// puzzle.
+// credit to reveal the canonical letter at the currently focused cell;
+// the status pill (aria-live) reports `Lettre révélée` / `Indices
+// épuisés`. The button is disabled while pending or once the budget hit
+// zero (exhausted = server 429 or 200 with hintsRemaining 0, locked for
+// the rest of the puzzle). Focus / locked-cell guards happen in the
+// click handler itself rather than the disabled prop: the focused cell
+// changes on every keystroke (auto-advance), and reflecting that into
+// React state would break the uncontrolled-input contract from
+// ADR-0002 §4. A click on a locked cell is a silent no-op.
 
 const containerStyles = css({
   position: 'relative',
@@ -72,6 +76,13 @@ const liveRegionStyles = css({
   border: 0,
 });
 
+export interface FocusedCell {
+  readonly row: number;
+  readonly column: number;
+  /** True iff the cell has already been revealed via a previous hint. */
+  readonly isLocked: boolean;
+}
+
 export interface HintControlProps {
   readonly hintsRemaining: number;
   readonly hintsAllowed: number;
@@ -79,9 +90,9 @@ export interface HintControlProps {
   readonly pending: boolean;
   readonly lastResult: HintLastResult | null;
   readonly errorMessage: string | null;
-  /** Returns the current word the user is filling, or `null` if none. */
-  readonly getCurrentWord: () => string | null;
-  readonly onRequest: (word: string) => void;
+  /** Returns the focused letter cell, or `null` if no cell has focus. */
+  readonly getFocusedCell: () => FocusedCell | null;
+  readonly onRequest: (row: number, column: number) => void;
 }
 
 export function HintControl({
@@ -91,14 +102,22 @@ export function HintControl({
   pending,
   lastResult,
   errorMessage,
-  getCurrentWord,
+  getFocusedCell,
   onRequest,
 }: HintControlProps) {
   const handleClick = useCallback(() => {
-    const word = getCurrentWord();
-    if (!word || word.length < 2) return;
-    onRequest(word);
-  }, [getCurrentWord, onRequest]);
+    const cell = getFocusedCell();
+    if (!cell || cell.isLocked) return;
+    onRequest(cell.row, cell.column);
+  }, [getFocusedCell, onRequest]);
+
+  // Keep focus on the active cell so the user doesn't have to tab back
+  // into the grid after spending a hint. `mousedown`'s default focuses
+  // the button; preventing it suppresses the focus shift while still
+  // letting the synthesized `click` fire.
+  const handleMouseDown = useCallback((event: React.MouseEvent) => {
+    event.preventDefault();
+  }, []);
 
   const status = renderStatus({ lastResult, errorMessage, exhausted });
 
@@ -108,6 +127,7 @@ export function HintControl({
         aria-label="Demander un indice"
         tone="accent"
         onClick={handleClick}
+        onMouseDown={handleMouseDown}
         disabled={exhausted || pending}
       >
         <HintIcon />
@@ -149,15 +169,10 @@ function renderStatus({
     };
   }
   if (lastResult) {
-    return lastResult.exists
-      ? {
-          text: `✓ « ${lastResult.word} » existe`,
-          className: statusSuccessStyles,
-        }
-      : {
-          text: `✗ « ${lastResult.word} » introuvable`,
-          className: statusFailureStyles,
-        };
+    return {
+      text: `Lettre révélée : ${lastResult.letter}`,
+      className: statusSuccessStyles,
+    };
   }
   return null;
 }

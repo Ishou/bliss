@@ -124,6 +124,34 @@ class CorsTest {
         }
 
     @Test
+    fun `preflight allows X-Session-Id for the hints endpoint`() =
+        testApplication {
+            application { module() }
+
+            val response =
+                client.options("/v1/puzzles/$validId/hints") {
+                    headers {
+                        append(HttpHeaders.Origin, "https://wordsparrow.io")
+                        append(HttpHeaders.AccessControlRequestMethod, "POST")
+                        append(
+                            HttpHeaders.AccessControlRequestHeaders,
+                            "Content-Type, X-Session-Id",
+                        )
+                    }
+                }
+
+            assertThat(response.status).isEqualTo(HttpStatusCode.OK)
+            assertThat(response.headers[HttpHeaders.AccessControlAllowOrigin])
+                .isEqualTo("https://wordsparrow.io")
+            // Ktor lower-cases the echoed allowed-headers list; check both
+            // tokens are present rather than asserting exact formatting.
+            val allowHeaders =
+                response.headers[HttpHeaders.AccessControlAllowHeaders].orEmpty().lowercase()
+            assertThat(allowHeaders).contains("x-session-id")
+            assertThat(allowHeaders).contains("content-type")
+        }
+
+    @Test
     fun `Cloudflare Pages preview origin is NOT in the allowlist`() =
         testApplication {
             application { module() }

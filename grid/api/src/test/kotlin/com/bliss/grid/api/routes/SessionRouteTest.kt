@@ -14,8 +14,10 @@ import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
+import io.ktor.client.HttpClient
 import io.ktor.server.testing.testApplication
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import org.junit.jupiter.api.Test
@@ -45,14 +47,7 @@ class SessionRouteTest {
         testApplication {
             application { module() }
             // Bootstrap the puzzle and spend one hint to seed a hint_usage row.
-            client.get("/v1/puzzles/$puzzleId")
-            client.post("/v1/puzzles/$puzzleId/hints") {
-                headers {
-                    append("X-Session-Id", sessionId)
-                    append(HttpHeaders.ContentType, ContentType.Application.Json.toString())
-                }
-                setBody("""{"word":"chien"}""")
-            }
+            spendOneHint(client)
 
             val response = client.delete("/v1/sessions/$sessionId")
 
@@ -65,14 +60,7 @@ class SessionRouteTest {
     fun `is idempotent - calling twice returns 0 the second time`() =
         testApplication {
             application { module() }
-            client.get("/v1/puzzles/$puzzleId")
-            client.post("/v1/puzzles/$puzzleId/hints") {
-                headers {
-                    append("X-Session-Id", sessionId)
-                    append(HttpHeaders.ContentType, ContentType.Application.Json.toString())
-                }
-                setBody("""{"word":"chien"}""")
-            }
+            spendOneHint(client)
 
             val first = client.delete("/v1/sessions/$sessionId")
             val second = client.delete("/v1/sessions/$sessionId")
@@ -82,6 +70,30 @@ class SessionRouteTest {
             assertThat(firstBody["deleted"]!!.jsonPrimitive.content.toInt()).isEqualTo(1)
             assertThat(secondBody["deleted"]!!.jsonPrimitive.content.toInt()).isEqualTo(0)
         }
+
+    /**
+     * Bootstraps the shared `puzzleId` into the in-memory store and spends
+     * exactly one hint against the canonical first letter cell, so the
+     * subsequent DELETE has a `puzzle_hint_usage` row to remove.
+     */
+    private suspend fun spendOneHint(client: HttpClient) {
+        val getResponse = client.get("/v1/puzzles/$puzzleId")
+        val cells = Json.parseToJsonElement(getResponse.bodyAsText()).jsonObject["cells"]!!.jsonArray
+        val letter =
+            cells.firstNotNullOf { element ->
+                val cell = element.jsonObject
+                if (cell["kind"]!!.jsonPrimitive.content == "letter") cell["position"]!!.jsonObject else null
+            }
+        val row = letter["row"]!!.jsonPrimitive.content.toInt()
+        val column = letter["column"]!!.jsonPrimitive.content.toInt()
+        client.post("/v1/puzzles/$puzzleId/hints") {
+            headers {
+                append("X-Session-Id", sessionId)
+                append(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+            }
+            setBody("""{"row":$row,"column":$column}""")
+        }
+    }
 
     @Test
     fun `responds 400 invalid-session-id when sessionId is not a UUID`() =

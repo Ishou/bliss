@@ -1,7 +1,7 @@
 import { createRoute, useNavigate, useRouter } from '@tanstack/react-router';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { css } from 'styled-system/css';
-import { normalizeAnswerLetter, type Position, type Puzzle } from '@/domain';
+import { type Position, type Puzzle } from '@/domain';
 import { LobbyClientError } from '@/application/game';
 import {
   Grid,
@@ -9,7 +9,6 @@ import {
   useHintRequest,
   useWordAutoValidation,
 } from '@/ui/components/grid';
-import { wordRange } from '@/ui/components/grid/wordRange';
 import { Button } from '@/ui/components/primitives';
 import {
   AppHeader,
@@ -144,7 +143,52 @@ function HomePage() {
   const router = useRouter();
   const navigate = useNavigate();
   const { puzzleSolver, soloEntriesStore, tourSeenStore } = Route.useRouteContext();
-  const hint = useHintRequest(puzzle.id, puzzle.hintsAllowed, puzzleSolver);
+
+  // Locked cells = cells revealed via a previous hint. Source of truth
+  // for "this cell is correct, untouchable, and survives reload."
+  // Initialized from solo localStorage and merged into the union we
+  // pass to <Grid> as `validatedPositions` — Grid already renders
+  // validated cells as read-only with the sage tint, which is the
+  // visual we want for revealed cells too (ADR-0005 §6 leaf.700 pill).
+  const [lockedHintCells, setLockedHintCells] = useState<ReadonlySet<string>>(
+    () => new Set(),
+  );
+  useEffect(() => {
+    const persisted = soloEntriesStore.loadLockedCells(puzzle.id);
+    setLockedHintCells(new Set(persisted.map((c) => `${c.row},${c.column}`)));
+  }, [puzzle.id, soloEntriesStore]);
+
+  // Wire the reveal callback before instantiating useHintRequest. On a
+  // 200 the hook fires `onReveal(row, column, letter)`; we write the
+  // letter into the matching uncontrolled <input>, persist it through
+  // the standard solo-entries path, and add the cell to the locked set
+  // (also persisted). Querying the DOM directly mirrors how the focus
+  // ref is consumed: keep the keystroke path uncontrolled.
+  const handleHintReveal = useCallback(
+    (row: number, column: number, letter: string) => {
+      const input = document.querySelector<HTMLInputElement>(
+        `input[data-cell-kind="letter"][data-row="${row}"][data-col="${column}"]`,
+      );
+      if (input) input.value = letter;
+      soloEntriesStore.save(puzzle.id, row, column, letter);
+      soloEntriesStore.lockCell(puzzle.id, row, column);
+      setLockedHintCells((prev) => {
+        const key = `${row},${column}`;
+        if (prev.has(key)) return prev;
+        const next = new Set(prev);
+        next.add(key);
+        return next;
+      });
+    },
+    [puzzle.id, soloEntriesStore],
+  );
+
+  const hint = useHintRequest(
+    puzzle.id,
+    puzzle.hintsAllowed,
+    puzzleSolver,
+    handleHintReveal,
+  );
 
   // Onboarding tour. `?tour=1` (set by the Aide page button) forces it
   // open even after first visit; the flag is then stripped from the URL
@@ -161,7 +205,7 @@ function HomePage() {
 
   // Active word seam: the Grid emits `onLocalFocusChange(position,
   // direction)` whenever focus or direction changes. We stash it in a
-  // ref so the hint button can read the current word from the DOM at
+  // ref so the hint button can read the current cell from the DOM at
   // click time without forcing a re-render on every keystroke (the
   // uncontrolled-input contract per ADR-0002 §4 — keystrokes never
   // touch React state in the typing path).
@@ -172,7 +216,7 @@ function HomePage() {
       // outside the grid, so clicking it blurs the cell input — and
       // React 18 flushes the resulting (null, null) focus-change effect
       // *between* the blur and the click. Clearing here would race
-      // against `getCurrentWord` reading this ref in `onClick`.
+      // against `getFocusedCell` reading this ref in `onClick`.
       if (position && direction) {
         activeFocusRef.current = { position, direction };
       }
@@ -226,26 +270,34 @@ function HomePage() {
     [puzzle.cells],
   );
 
-  // Build the current word from the focused cell's word-range, reading
-  // each cell's value from the DOM. Returns `null` when no focus, or
-  // when any cell of the word is empty / non-letter (a partial word
-  // can't be checked against the corpus).
-  const getCurrentWord = useCallback((): string | null => {
+  // Read the currently focused cell's coordinates + lock state. The
+  // focus ref is updated on every `onLocalFocusChange` callback (no
+  // re-render in the keystroke path); we resolve `isLocked` lazily at
+  // click time against the latest `lockedHintCells`. Returns `null`
+  // when no letter cell currently holds the caret.
+  const lockedHintCellsRef = useRef(lockedHintCells);
+  lockedHintCellsRef.current = lockedHintCells;
+  const getFocusedCell = useCallback(() => {
     const focus = activeFocusRef.current;
     if (!focus) return null;
-    const range = wordRange(puzzle, focus.position, focus.direction);
-    if (range.length < 2) return null;
-    let out = '';
-    for (const pos of range) {
-      const input = document.querySelector<HTMLInputElement>(
-        `input[data-cell-kind="letter"][data-row="${pos.row}"][data-col="${pos.col}"]`,
-      );
-      const normalized = normalizeAnswerLetter(input?.value ?? '');
-      if (!normalized) return null;
-      out += normalized;
-    }
-    return out.toLowerCase();
-  }, [puzzle]);
+    const key = `${focus.position.row},${focus.position.col}`;
+    return {
+      row: focus.position.row,
+      column: focus.position.col,
+      isLocked: lockedHintCellsRef.current.has(key),
+    };
+  }, []);
+
+  // Union the auto-validated cells with the hint-revealed (locked)
+  // cells before passing to <Grid>. Grid renders both as read-only
+  // with the sage tint — the contract we want for revealed cells too.
+  const validatedPositions = useMemo<ReadonlySet<string>>(() => {
+    if (lockedHintCells.size === 0) return autoValidation.validated;
+    if (autoValidation.validated.size === 0) return lockedHintCells;
+    const merged = new Set<string>(autoValidation.validated);
+    for (const k of lockedHintCells) merged.add(k);
+    return merged;
+  }, [autoValidation.validated, lockedHintCells]);
 
   return (
     <PageShell>
@@ -263,7 +315,7 @@ function HomePage() {
             pending={hint.pending}
             lastResult={hint.lastResult}
             errorMessage={hint.errorMessage}
-            getCurrentWord={getCurrentWord}
+            getFocusedCell={getFocusedCell}
             onRequest={hint.request}
           />
         }
@@ -272,7 +324,7 @@ function HomePage() {
         <Grid
           key={refreshCount}
           puzzle={puzzle}
-          validatedPositions={autoValidation.validated}
+          validatedPositions={validatedPositions}
           onCellFilled={autoValidation.onCellFilled}
           onLocalFocusChange={handleLocalFocusChange}
           initialEntries={initialEntries}
@@ -280,7 +332,7 @@ function HomePage() {
         />
       </div>
       <ProgressBar
-        value={autoValidation.validated.size}
+        value={validatedPositions.size}
         total={totalLetterCells}
       />
       {isMultiplayerEnabled() ? <CreateLobbyButton /> : null}

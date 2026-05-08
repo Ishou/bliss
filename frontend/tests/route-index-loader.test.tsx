@@ -35,6 +35,8 @@ const renderWith = (repository: PuzzleRepository) => {
       soloEntriesStore: {
         load: () => [],
         save: () => {},
+        loadLockedCells: () => [],
+        lockCell: () => {},
         clearForPuzzle: () => {},
       },
       tourSeenStore: {

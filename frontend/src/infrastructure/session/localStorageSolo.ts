@@ -1,6 +1,6 @@
 // storage failures are non-fatal — every helper degrades to a no-op rather than throw.
 
-import type { SoloEntry } from '@/application/solo/SoloEntriesStore';
+import type { SoloEntry, SoloLockedCell } from '@/application/solo/SoloEntriesStore';
 
 const SOLO_ENTRIES_KEY = 'bliss.solo.entries';
 
@@ -10,7 +10,20 @@ interface StoredEntry {
   l: string;
 }
 
-type SoloStore = Record<string, StoredEntry[]>;
+interface StoredLock {
+  r: number;
+  c: number;
+}
+
+interface StoredPuzzle {
+  entries: StoredEntry[];
+  lockedCells?: StoredLock[];
+}
+
+// Per-puzzle bucket. Legacy shape (PR #242) was `StoredEntry[]` — kept on
+// read for transparent migration; on write we always emit the object form.
+type StoredPuzzleBucket = StoredEntry[] | StoredPuzzle;
+type SoloStore = Record<string, StoredPuzzleBucket>;
 
 function readStore(): SoloStore {
   try {
@@ -37,12 +50,30 @@ function writeStore(store: SoloStore): void {
   }
 }
 
+function readBucket(store: SoloStore, puzzleId: string): StoredPuzzle {
+  const raw = store[puzzleId];
+  if (!raw) return { entries: [], lockedCells: [] };
+  if (Array.isArray(raw)) return { entries: raw, lockedCells: [] };
+  return { entries: raw.entries ?? [], lockedCells: raw.lockedCells ?? [] };
+}
+
+function persistBucket(
+  store: SoloStore,
+  puzzleId: string,
+  bucket: StoredPuzzle,
+): void {
+  if (bucket.entries.length === 0 && (bucket.lockedCells ?? []).length === 0) {
+    delete store[puzzleId];
+  } else {
+    store[puzzleId] = bucket;
+  }
+}
+
 /** Load the persisted entries for a puzzle, or `[]` if none. */
 export function loadSoloEntries(puzzleId: string): SoloEntry[] {
   const store = readStore();
-  const entries = store[puzzleId];
-  if (!entries || !Array.isArray(entries)) return [];
-  return entries
+  const bucket = readBucket(store, puzzleId);
+  return bucket.entries
     .filter((e): e is StoredEntry =>
       typeof e?.r === 'number' &&
       typeof e?.c === 'number' &&
@@ -60,16 +91,39 @@ export function saveSoloLetter(
   letter: string | null,
 ): void {
   const store = readStore();
-  const list = store[puzzleId] ?? [];
-  const next = list.filter((e) => !(e.r === row && e.c === column));
+  const bucket = readBucket(store, puzzleId);
+  const next = bucket.entries.filter((e) => !(e.r === row && e.c === column));
   if (letter && letter.length > 0) {
     next.push({ r: row, c: column, l: letter });
   }
-  if (next.length === 0) {
-    delete store[puzzleId];
-  } else {
-    store[puzzleId] = next;
-  }
+  persistBucket(store, puzzleId, { entries: next, lockedCells: bucket.lockedCells });
+  writeStore(store);
+}
+
+/** Load the locked-cell coordinates for a puzzle, or `[]` if none. */
+export function loadSoloLockedCells(puzzleId: string): SoloLockedCell[] {
+  const store = readStore();
+  const bucket = readBucket(store, puzzleId);
+  return (bucket.lockedCells ?? [])
+    .filter(
+      (e): e is StoredLock => typeof e?.r === 'number' && typeof e?.c === 'number',
+    )
+    .map((e) => ({ row: e.r, column: e.c }));
+}
+
+export function saveSoloLockedCell(
+  puzzleId: string,
+  row: number,
+  column: number,
+): void {
+  const store = readStore();
+  const bucket = readBucket(store, puzzleId);
+  const existing = bucket.lockedCells ?? [];
+  if (existing.some((e) => e.r === row && e.c === column)) return;
+  persistBucket(store, puzzleId, {
+    entries: bucket.entries,
+    lockedCells: [...existing, { r: row, c: column }],
+  });
   writeStore(store);
 }
 

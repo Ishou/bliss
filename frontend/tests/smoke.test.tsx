@@ -33,6 +33,8 @@ const sessionClient = {
 const soloEntriesStore = {
   load: () => [],
   save: vi.fn(),
+  loadLockedCells: () => [],
+  lockCell: vi.fn(),
   clearForPuzzle: vi.fn(),
 };
 const tourSeenStore = {

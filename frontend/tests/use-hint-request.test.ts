@@ -17,11 +17,12 @@ describe('useHintRequest', () => {
     vi.useRealTimers();
   });
 
-  it('writes hintsRemaining and lastResult on a successful request', async () => {
+  it('writes hintsRemaining and lastResult on a successful reveal', async () => {
     const solver = makeSolver();
     (solver.requestHint as ReturnType<typeof vi.fn>).mockResolvedValue({
-      word: 'forêt',
-      exists: true,
+      row: 3,
+      column: 5,
+      letter: 'P',
       hintsRemaining: 2,
     });
     const { result } = renderHook(() =>
@@ -29,15 +30,37 @@ describe('useHintRequest', () => {
     );
 
     await act(async () => {
-      result.current.request('forêt');
+      result.current.request(3, 5);
       await Promise.resolve();
       await Promise.resolve();
     });
 
     expect(result.current.hintsRemaining).toBe(2);
-    expect(result.current.lastResult).toEqual({ word: 'forêt', exists: true });
+    expect(result.current.lastResult).toEqual({ row: 3, column: 5, letter: 'P' });
     expect(result.current.exhausted).toBe(false);
     expect(result.current.errorMessage).toBeNull();
+  });
+
+  it('fires the onReveal callback so the parent can apply the letter', async () => {
+    const solver = makeSolver();
+    (solver.requestHint as ReturnType<typeof vi.fn>).mockResolvedValue({
+      row: 3,
+      column: 5,
+      letter: 'P',
+      hintsRemaining: 2,
+    });
+    const onReveal = vi.fn();
+    const { result } = renderHook(() =>
+      useHintRequest(PUZZLE_ID, 3, solver, onReveal),
+    );
+
+    await act(async () => {
+      result.current.request(3, 5);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(onReveal).toHaveBeenCalledWith(3, 5, 'P');
   });
 
   it('flips exhausted on HintRequestError(budget-exhausted)', async () => {
@@ -50,7 +73,7 @@ describe('useHintRequest', () => {
     );
 
     await act(async () => {
-      result.current.request('forêt');
+      result.current.request(3, 5);
       await Promise.resolve();
       await Promise.resolve();
     });
@@ -60,12 +83,33 @@ describe('useHintRequest', () => {
     expect(result.current.errorMessage).toBe('Indices épuisés');
   });
 
+  it('treats invalid-coord as a silent no-op without surfacing an error', async () => {
+    const solver = makeSolver();
+    (solver.requestHint as ReturnType<typeof vi.fn>).mockRejectedValue(
+      new HintRequestError('invalid-coord', null, 'out of bounds'),
+    );
+    const { result } = renderHook(() =>
+      useHintRequest(PUZZLE_ID, 3, solver),
+    );
+
+    await act(async () => {
+      result.current.request(99, 99);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(result.current.errorMessage).toBeNull();
+    expect(result.current.exhausted).toBe(false);
+    expect(result.current.hintsRemaining).toBe(3);
+  });
+
   it('clears lastResult after the linger interval', async () => {
     vi.useFakeTimers();
     const solver = makeSolver();
     (solver.requestHint as ReturnType<typeof vi.fn>).mockResolvedValue({
-      word: 'arc',
-      exists: false,
+      row: 0,
+      column: 0,
+      letter: 'A',
       hintsRemaining: 2,
     });
     const { result } = renderHook(() =>
@@ -73,7 +117,7 @@ describe('useHintRequest', () => {
     );
 
     await act(async () => {
-      result.current.request('arc');
+      result.current.request(0, 0);
       await Promise.resolve();
       await Promise.resolve();
     });
@@ -83,19 +127,5 @@ describe('useHintRequest', () => {
       vi.advanceTimersByTime(4_000);
     });
     expect(result.current.lastResult).toBeNull();
-  });
-
-  it('skips short words without spending a credit', async () => {
-    const solver = makeSolver();
-    const { result } = renderHook(() =>
-      useHintRequest(PUZZLE_ID, 3, solver),
-    );
-
-    await act(async () => {
-      result.current.request('a');
-    });
-
-    expect(solver.requestHint).not.toHaveBeenCalled();
-    expect(result.current.hintsRemaining).toBe(3);
   });
 });
