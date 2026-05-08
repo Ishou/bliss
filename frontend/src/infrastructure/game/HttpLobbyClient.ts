@@ -8,6 +8,13 @@
 // Status → kind mapping (ADR-0003 §6):
 //   400 → 'validation', 404 → 'not-found',
 //   5xx → 'transient', network failure → 'upstream-unavailable'.
+//
+// A non-RFC 7807 response (no `type` + `title` body) is also treated
+// as `upstream-unavailable` regardless of status: it means whatever
+// is answering on the configured host isn't speaking the Bliss
+// game-api contract — typically a wrong service occupying the port
+// in local dev (the "Service indisponible" UX is what the user
+// needs to see in that case, not "validation" or "not-found").
 
 import {
   LobbyClientError,
@@ -81,17 +88,28 @@ export function createHttpLobbyClient(
 
 function liftProblem(error: WireProblem | undefined, response: Response): LobbyClientError {
   const status = response.status;
-  const problem: ProblemDetails | null = error
-    ? {
-        type: error.type,
-        title: error.title,
-        status: error.status,
-        ...(error.detail != null ? { detail: error.detail } : {}),
-        ...(error.instance != null ? { instance: error.instance } : {}),
-      }
-    : null;
-  const message =
-    problem?.detail ?? problem?.title ?? `lobby request failed with HTTP ${status}`;
+  // A real Bliss game-api error response is RFC 7807 problem+json
+  // with `type` + `title` (and `status`) populated. If those aren't
+  // there, the upstream isn't speaking our contract — surface as
+  // unavailable so the UI shows "Service indisponible" instead of a
+  // misleading validation/not-found copy. Catches the local-dev case
+  // where another process (e.g., gunicorn) occupies the port.
+  if (!error || typeof error.type !== 'string' || typeof error.title !== 'string') {
+    return new LobbyClientError({
+      kind: 'upstream-unavailable',
+      status,
+      problem: null,
+      message: `lobby request rejected with HTTP ${status} but no RFC 7807 problem body`,
+    });
+  }
+  const problem: ProblemDetails = {
+    type: error.type,
+    title: error.title,
+    status: error.status,
+    ...(error.detail != null ? { detail: error.detail } : {}),
+    ...(error.instance != null ? { instance: error.instance } : {}),
+  };
+  const message = problem.detail ?? problem.title;
   return new LobbyClientError({ kind: statusToKind(status), status, problem, message });
 }
 
