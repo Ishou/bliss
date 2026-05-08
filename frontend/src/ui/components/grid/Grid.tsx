@@ -193,6 +193,7 @@ const positionKey = (p: Position) => `${p.row},${p.col}`;
 export function Grid({
   puzzle,
   onCellChange,
+  onCellFilled,
   subscribeToRemoteCellUpdates,
   initialEntries,
   onLocalFocusChange,
@@ -205,6 +206,11 @@ export function Grid({
 }: {
   puzzle: Puzzle;
   onCellChange?: (row: number, col: number, letter: string | null) => void;
+  // Solo auto-validation seam: invoked after a letter is typed into a
+  // cell so the route's validation hook can check whether the fill
+  // closed a word. Multiplayer callers omit this — the server is
+  // authoritative and pushes `wordLocked` instead.
+  onCellFilled?: (position: Position, direction: Direction) => void;
   subscribeToRemoteCellUpdates?: (handler: (event: GameEvent) => void) => Unsubscribe;
   initialEntries?: ReadonlyArray<{ row: number; column: number; letter: string }>;
   onLocalFocusChange?: (
@@ -344,6 +350,7 @@ export function Grid({
 
   const nav = useGridNavigation(puzzle, {
     onCellChange,
+    onCellFilled,
     onFocusChange: onLocalFocusChange,
     getZoomScale,
     isPanning: isPanningGetter,

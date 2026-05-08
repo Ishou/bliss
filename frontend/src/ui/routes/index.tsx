@@ -8,6 +8,7 @@ import {
   HintControl,
   useHintRequest,
   usePuzzleValidation,
+  useWordAutoValidation,
 } from '@/ui/components/grid';
 import { wordRange } from '@/ui/components/grid/wordRange';
 import { Button } from '@/ui/components/primitives';
@@ -163,6 +164,10 @@ function HomePage() {
   const router = useRouter();
   const { puzzleSolver, soloEntriesStore } = Route.useRouteContext();
   const validation = usePuzzleValidation(puzzle, puzzleSolver);
+  // Auto-validate words as the player types. Wrong words drop silently;
+  // correct words add their cells to a separate `validated` set we
+  // merge with the manual-Vérifier set below before passing to <Grid>.
+  const autoValidation = useWordAutoValidation(puzzle, puzzleSolver);
   const hint = useHintRequest(puzzle.id, puzzle.hintsAllowed, puzzleSolver);
 
   // Active word seam: the Grid emits `onLocalFocusChange(position,
@@ -207,9 +212,19 @@ function HomePage() {
     [soloEntriesStore, puzzle.id],
   );
 
+  // Union manual-Vérifier validations with the live auto-locked cells.
+  // Both share the same "row,col" keying so a Set union is enough.
+  const validatedPositions = useMemo<ReadonlySet<string>>(() => {
+    if (autoValidation.validated.size === 0) return validation.validated;
+    if (validation.validated.size === 0) return autoValidation.validated;
+    const merged = new Set<string>(validation.validated);
+    for (const k of autoValidation.validated) merged.add(k);
+    return merged;
+  }, [autoValidation.validated, validation.validated]);
+
   const isComplete =
     validation.totalLetterCells > 0 &&
-    validation.validated.size === validation.totalLetterCells;
+    validatedPositions.size === validation.totalLetterCells;
 
   // Build the current word from the focused cell's word-range, reading
   // each cell's value from the DOM. Returns `null` when no focus, or
@@ -257,8 +272,9 @@ function HomePage() {
         <Grid
           key={refreshCount}
           puzzle={puzzle}
-          validatedPositions={validation.validated}
+          validatedPositions={validatedPositions}
           errorPositions={validation.errors}
+          onCellFilled={autoValidation.onCellFilled}
           onLocalFocusChange={handleLocalFocusChange}
           initialEntries={initialEntries}
           onCellChange={handleCellChange}
@@ -267,7 +283,7 @@ function HomePage() {
       <div className={bottomRowStyles}>
         <div className={progressSlotStyles}>
           <ProgressBar
-            value={validation.validated.size}
+            value={validatedPositions.size}
             total={validation.totalLetterCells}
           />
         </div>
