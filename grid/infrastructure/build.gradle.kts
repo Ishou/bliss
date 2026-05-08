@@ -39,11 +39,4 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
-    // Tests in this module don't ship migrations of their own; they share the
-    // schema owned by grid-api. Surface that path so Flyway in the
-    // testcontainers contract tests can pick it up via filesystem location.
-    systemProperty(
-        "flyway.test.migrations",
-        file("${rootProject.projectDir}/grid/api/src/main/resources/db/migration").absolutePath,
-    )
 }

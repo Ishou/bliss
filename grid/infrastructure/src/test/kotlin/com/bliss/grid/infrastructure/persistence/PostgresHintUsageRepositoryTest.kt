@@ -45,14 +45,10 @@ class PostgresHintUsageRepositoryTest {
                     password = pg.password
                 },
             )
-        val migrations =
-            requireNotNull(System.getProperty("flyway.test.migrations")) {
-                "flyway.test.migrations system property must be set by build.gradle.kts"
-            }
         Flyway
             .configure()
             .dataSource(dataSource)
-            .locations("filesystem:$migrations")
+            .locations("classpath:db/migration")
             .load()
             .migrate()
         puzzles = PostgresPuzzleRepository(dataSource)
