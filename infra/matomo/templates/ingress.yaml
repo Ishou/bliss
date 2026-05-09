@@ -7,7 +7,7 @@ Matomo on `analytics.wordsparrow.io` is split across two Ingresses:
    on the public site MUST work without auth, otherwise we measure
    nothing.
 2. `ingress-admin`    — catch-all `/` behind ingress-nginx basic-auth
-   referencing the `admin-htpasswd` Secret (ADR-0028). The Matomo
+   referencing the `admin-htpasswd` Secret (ADR-0032). The Matomo
    dashboard, login, AJAX endpoints, and config UI all sit here.
 
 ingress-nginx merges paths from multiple Ingresses on the same host
@@ -21,7 +21,7 @@ out-of-band (same htpasswd file as observability):
   htpasswd -c -B -C 12 ./auth admin
   kubectl -n matomo create secret generic admin-htpasswd --from-file=auth
 The Secret is namespace-scoped, so the same file gets re-created in
-matomo + observability. ADR-0028 §2.
+matomo + observability. ADR-0032.
 
 The dashboard is server-rendered PHP (not an SPA) — basic-auth
 prompts once per browser session, no XHR-spam problem that drove the

@@ -58,7 +58,7 @@ kubectl -n matomo create secret generic matomo-env \
 ```
 
 The admin dashboard sits behind `nginx.ingress.kubernetes.io/auth-type:
-basic` referencing an `admin-htpasswd` Secret per **ADR-0028** (PR-G).
+basic` referencing an `admin-htpasswd` Secret per **ADR-0032**.
 Tracker beacons (`/matomo.php`, `/matomo.js`, `/piwik.*`, `/js/*`) are
 explicitly carved out so embedded `<script>` tags on the public site
 keep working without auth. Bootstrap the Secret in this namespace via
