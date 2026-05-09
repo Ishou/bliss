@@ -152,6 +152,26 @@ class CorsTest {
         }
 
     @Test
+    fun `preflight allows DELETE for the session erasure endpoint`() =
+        testApplication {
+            application { module() }
+
+            val response =
+                client.options("/v1/sessions/$validId") {
+                    headers {
+                        append(HttpHeaders.Origin, "https://wordsparrow.io")
+                        append(HttpHeaders.AccessControlRequestMethod, "DELETE")
+                    }
+                }
+
+            assertThat(response.status).isEqualTo(HttpStatusCode.OK)
+            assertThat(response.headers[HttpHeaders.AccessControlAllowOrigin])
+                .isEqualTo("https://wordsparrow.io")
+            assertThat(response.headers[HttpHeaders.AccessControlAllowMethods]!!)
+                .contains("DELETE")
+        }
+
+    @Test
     fun `Cloudflare Pages preview origin is NOT in the allowlist`() =
         testApplication {
             application { module() }

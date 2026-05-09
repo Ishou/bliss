@@ -11,6 +11,7 @@
 import { useState } from 'react';
 import { css } from 'styled-system/css';
 import type { SessionClient } from '@/application/session/SessionClient';
+import { Button } from '@/ui/components/primitives/Button';
 
 export type PrivacyLanguage = 'fr' | 'en';
 
@@ -44,20 +45,7 @@ const eraseSectionStyles = css({
   borderRadius: '8px',
 });
 
-const eraseButtonStyles = css({
-  marginTop: 'sm',
-  padding: 'sm md',
-  fontFamily: 'body',
-  fontSize: 'body',
-  fontWeight: 'semibold',
-  backgroundColor: 'fg',
-  color: 'bg',
-  border: 'none',
-  borderRadius: '6px',
-  cursor: 'pointer',
-  _hover: { opacity: 0.85 },
-  _disabled: { opacity: 0.5, cursor: 'not-allowed' },
-});
+const eraseButtonStyles = css({ marginTop: 'sm' });
 
 const statusOkStyles = css({ marginTop: 'sm', color: 'success', fontWeight: 'semibold' });
 const statusErrStyles = css({ marginTop: 'sm', color: 'error', fontWeight: 'semibold' });
@@ -107,14 +95,14 @@ function EraseDataSection({
     <section className={eraseSectionStyles} aria-labelledby="erase-heading">
       <h2 id="erase-heading">{t.eraseTitle}</h2>
       <p>{t.eraseDescription}</p>
-      <button
-        type="button"
+      <Button
+        variant="secondary"
         className={eraseButtonStyles}
         onClick={handleErase}
         disabled={status === 'pending' || status === 'success'}
       >
         {status === 'pending' ? t.erasing : t.eraseButton}
-      </button>
+      </Button>
       {status === 'success' && <p className={statusOkStyles}>{t.successMessage}</p>}
       {status === 'error' && (
         <p className={statusErrStyles}>
