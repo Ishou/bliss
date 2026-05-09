@@ -314,6 +314,60 @@ describe('Grid keyboard interactions', () => {
     cell.dispatchEvent(new InputEvent('input', { inputType: 'insertText', data: '12', bubbles: true }));
     expect(cell.value).toBe('');
   });
+
+  // Mots fléchés grids store unaccented uppercase letters; the validation
+  // wire form (`normalizeAnswerLetter`) drops diacritics. Players on AZERTY
+  // keyboards emit accented glyphs (é, à, ç, …), so the cell write path
+  // must collapse those to their base ASCII letter at type time. Otherwise
+  // the cell renders 'É' while the validator compares against 'E', and the
+  // first letter of every accented word stays visually wrong.
+  it('keydown typing strips diacritics from the written letter', () => {
+    const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
+    const start = inputAt(container, 1, 1)!;
+    click(start);
+    typeChar(start, 'é');
+    expect(start.value).toBe('E');
+    expect(document.activeElement).toBe(inputAt(container, 1, 2));
+  });
+
+  it('Android soft-keyboard input strips diacritics from the written letter', () => {
+    const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
+    const start = inputAt(container, 1, 1)!;
+    click(start);
+    start.value = 'à';
+    start.dispatchEvent(new InputEvent('input', { inputType: 'insertText', data: 'à', bubbles: true }));
+    expect(start.value).toBe('A');
+    expect(document.activeElement).toBe(inputAt(container, 1, 2));
+  });
+
+  // Mobile soft keyboards (Gboard / iOS) erase via the `input` event with
+  // `inputType === 'deleteContentBackward'`, NOT keydown. The browser clears
+  // `target.value` *before* handleInput fires, so a before/after diff on
+  // `target.value` doesn't detect the deletion. Without reconciling against
+  // the cell-values mirror, the cell empties visually but the clue banner
+  // (which reads the mirror via `getEntryAt`) keeps showing the stale glyph.
+  it('mobile soft-keyboard erase on a filled cell clears the banner letter, not just the DOM input', () => {
+    const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
+    const target = inputAt(container, 1, 1)!;
+    click(target);
+    typeChar(target, 'x');
+    click(target); // typeChar advanced focus; come back to (1,1).
+    expect(target.value).toBe('X');
+    const panel = container.querySelector<HTMLElement>('[data-testid="current-clue-panel"]')!;
+    // Sanity: across-2's letter row currently reads "X···" — the typed X is in the banner.
+    expect(panel.textContent).toContain('X');
+    // Mobile flow: the browser empties the DOM input first, then dispatches
+    // `input` with `deleteContentBackward`. By the time handleInput runs,
+    // target.value is already ''.
+    target.value = '';
+    act(() => {
+      target.dispatchEvent(new InputEvent('input', { inputType: 'deleteContentBackward', data: null, bubbles: true }));
+    });
+    expect(target.value).toBe('');
+    expect(document.activeElement).toBe(target);
+    // The clue banner must reflect the deletion — no stale 'X' in the letter row.
+    expect(panel.textContent).not.toContain('X');
+  });
 });
 
 // Tab / Enter cycle across the puzzle's clues in deterministic order:
