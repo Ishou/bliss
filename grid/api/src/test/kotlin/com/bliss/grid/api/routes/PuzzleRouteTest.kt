@@ -188,7 +188,7 @@ class PuzzleRouteTest {
         }
 
     @Test
-    fun `responds 200 with difficulty and gridNumber omitted until daily-grid PR ships values`() =
+    fun `responds 200 with difficulty and gridNumber absent when mapper receives null values`() =
         testApplication {
             application { module() }
 

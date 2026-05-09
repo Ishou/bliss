@@ -27,7 +27,6 @@ const samplePuzzle: Puzzle = {
   width: 5,
   height: 3,
   hintsAllowed: 3,
-  // Explicit nulls until the daily-grid PR ships value-generation logic.
   difficulty: null,
   gridNumber: null,
   cells: [

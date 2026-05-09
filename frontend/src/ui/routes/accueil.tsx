@@ -222,10 +222,8 @@ function GrilleDuJourCard({ puzzle }: { readonly puzzle: Puzzle }) {
   const entriesCount = soloEntriesStore.load(puzzle.id).length;
   const hasStarted = lockedCount > 0 || entriesCount > 0;
 
-  // Meta row: date `· n°X · facile`. The number and difficulty are
-  // optional — the daily-grid PR will start populating them. Until then
-  // both are null and only the date renders, so this PR is invisible to
-  // users on the wire-default path.
+  // Meta row: date `· n°X · facile`. Number and difficulty are optional —
+  // rendered only when populated.
   const metaParts: string[] = [formatTodayFr(new Date())];
   if (puzzle.gridNumber != null) metaParts.push(`n°${puzzle.gridNumber}`);
   if (puzzle.difficulty != null) metaParts.push(puzzle.difficulty);

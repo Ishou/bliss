@@ -17,9 +17,6 @@ export interface Puzzle {
   readonly height: number;
   readonly hintsAllowed: number;
   readonly cells: readonly Cell[];
-  // Optional metadata. Null/undefined until the daily-grid PR ships
-  // value-generation logic; the Accueil meta row hides parts that are
-  // absent.
   readonly difficulty?: Difficulty | null;
   readonly gridNumber?: number | null;
 }
