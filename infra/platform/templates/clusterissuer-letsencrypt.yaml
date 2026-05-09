@@ -15,6 +15,18 @@ metadata:
   name: letsencrypt-prod
   labels:
     {{- include "platform.labels" . | nindent 4 }}
+  annotations:
+    # Run after the cert-manager subchart's CRDs have been registered
+    # with the API. Without this hook the umbrella `helm install` race
+    # is "no matches for kind ClusterIssuer in version cert-manager.io/v1"
+    # because the parent template renders alongside the subchart's
+    # CRD manifest and Kubernetes hasn't picked up the new kind yet.
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "1"
+    # Idempotent across reinstalls: the previous ClusterIssuer is
+    # removed just before the hook re-creates it, so a fresh `helm
+    # install` after `helm uninstall` does not collide on the name.
+    "helm.sh/hook-delete-policy": before-hook-creation
 spec:
   acme:
     server: https://acme-v02.api.letsencrypt.org/directory
