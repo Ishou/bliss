@@ -21,7 +21,7 @@ ingress:
     # with `--set ingress-nginx.controller.extraArgs.publish-status-address=...`,
     # but that's brittle — a future re-install without the override silently
     # publishes a ClusterIP. Pinning per-Ingress removes the dependency.
-    external-dns.alpha.kubernetes.io/target: "178.105.38.131"
+    external-dns.alpha.kubernetes.io/target: "116.202.180.82"
     # Per-IP rate limiting at the ingress (leaky-bucket). Puzzle generation
     # runs an expensive CSP solver, so first-line abuse protection sits at
     # the boundary rather than in-process. Tunable; raise/lower per
