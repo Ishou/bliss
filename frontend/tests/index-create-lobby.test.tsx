@@ -51,6 +51,7 @@ const stubGameClient: GameClient = {
   connect: () => Promise.resolve(),
   joinLobby: () => {}, renameSelf: () => {}, setGridConfig: () => {},
   startGame: () => {}, cellUpdate: () => {}, cellFocus: () => {}, leaveLobby: () => {},
+  rotateCode: () => {},
   disconnect: () => {}, subscribe: () => () => {},
   subscribeConnectionState: () => () => {},
 };

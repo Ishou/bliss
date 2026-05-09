@@ -107,6 +107,15 @@ describe('WebSocketGameClient client→server frames', () => {
     expect(JSON.parse(ws.sent[4]!)).toEqual({ type: 'leaveLobby' });
   });
 
+  it('rotateCode sends {type:"rotateCode"} matching AsyncAPI RotateCodePayload', async () => {
+    // ADR-0029: owner-only request to mint a fresh join code in place.
+    // The wire frame carries no body — owner identity is implicit from
+    // the prior joinLobby's sessionId binding on the server.
+    const { client, ws } = await connectAndOpen();
+    client.rotateCode();
+    expect(JSON.parse(ws.sent[1]!)).toEqual({ type: 'rotateCode' });
+  });
+
   it('throws when called before the socket is open', () => {
     const client = makeClient();
     expect(() => client.cellUpdate(0, 0, null)).toThrow(/not open/);

@@ -54,6 +54,11 @@ export interface WaitingRoomProps {
   // and the label flips to "Démarrage…" so the click is acknowledged
   // even though the WS round-trip can take several hundred ms.
   readonly isStarting?: boolean;
+  // ADR-0029: owner-only join-code rotation. Button only rendered
+  // when `onRotateCode` is supplied AND the caller is the owner.
+  // `isRotating` mirrors `isStarting`'s busy-state posture.
+  readonly onRotateCode?: () => void;
+  readonly isRotating?: boolean;
 }
 
 const styles = {
@@ -122,6 +127,7 @@ const COPY_FEEDBACK_MS = 2000;
 export function WaitingRoom({
   lobby, currentSessionId, onRename, onSetGridConfig, onStart, onCopyShareUrl,
   pseudonymError, onClearPseudonymError, isStarting = false,
+  onRotateCode, isRotating = false,
 }: WaitingRoomProps): React.ReactElement {
   const isOwner = lobby.ownerSessionId === currentSessionId;
   // Solo-through-the-multiplayer-flow is supported (handy while waiting for
@@ -192,6 +198,16 @@ export function WaitingRoom({
               {codeRevealed ? <EyeOffIcon /> : <EyeIcon />}
             </button>
           </div>
+          {isOwner && onRotateCode ? (
+            <Button
+              variant="ghost"
+              onClick={onRotateCode}
+              disabled={isRotating}
+              aria-busy={isRotating || undefined}
+            >
+              {isRotating ? 'Régénération…' : 'Régénérer le code'}
+            </Button>
+          ) : null}
         </div>
       ) : null}
 

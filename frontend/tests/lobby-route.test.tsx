@@ -118,6 +118,7 @@ const makeFakeGameClient = (): FakeGameClient => {
     cellUpdate: (row, column, letter) => { cellUpdateCalls.push({ row, column, letter }); },
     cellFocus: (row, column, direction) => { cellFocusCalls.push({ row, column, direction }); },
     leaveLobby: () => {},
+    rotateCode: () => {},
     disconnect: () => { disconnectCalls.count += 1; },
     subscribe: (handler) => { subscribers.add(handler); return () => { subscribers.delete(handler); }; },
     // Match the real adapter: prime synchronously with the current

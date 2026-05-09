@@ -351,6 +351,64 @@ describe('WaitingRoom — Start button loading state', () => {
   });
 });
 
+describe('WaitingRoom — code rotation (ADR-0029)', () => {
+  // Owner-only "Régénérer le code" button next to the readonly PIN.
+
+  it('renders the "Régénérer le code" button only for the owner', () => {
+    render(
+      <WaitingRoom
+        lobby={baseLobby}
+        currentSessionId={ownerSessionId}
+        {...noopProps}
+        onRotateCode={() => {}}
+      />,
+    );
+    expect(screen.getByRole('button', { name: /régénérer le code/i })).toBeInTheDocument();
+  });
+
+  it('hides the "Régénérer le code" button from non-owners', () => {
+    render(
+      <WaitingRoom
+        lobby={baseLobby}
+        currentSessionId={peerSessionId}
+        {...noopProps}
+        onRotateCode={() => {}}
+      />,
+    );
+    expect(screen.queryByRole('button', { name: /régénérer le code/i })).toBeNull();
+  });
+
+  it('fires onRotateCode when the owner clicks the button', () => {
+    const onRotateCode = vi.fn();
+    render(
+      <WaitingRoom
+        lobby={baseLobby}
+        currentSessionId={ownerSessionId}
+        {...noopProps}
+        onRotateCode={onRotateCode}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: /régénérer le code/i }));
+    expect(onRotateCode).toHaveBeenCalledTimes(1);
+  });
+
+  it('disables the button and flips the label while isRotating is true', () => {
+    render(
+      <WaitingRoom
+        lobby={baseLobby}
+        currentSessionId={ownerSessionId}
+        {...noopProps}
+        onRotateCode={() => {}}
+        isRotating
+      />,
+    );
+    const button = screen.getByRole('button', { name: /régénération…/i });
+    expect(button).toBeDisabled();
+    expect(button).toHaveAttribute('aria-busy', 'true');
+    expect(screen.queryByRole('button', { name: /régénérer le code/i })).toBeNull();
+  });
+});
+
 describe('WaitingRoom — player row alignment', () => {
   it('places the pseudonym before the badge group inside each row', () => {
     render(

@@ -76,6 +76,7 @@ const stubGameClient: GameClient = {
   cellUpdate: () => {},
   cellFocus: () => {},
   leaveLobby: () => {},
+  rotateCode: () => {},
   disconnect: () => {},
   subscribe: () => () => {},
   subscribeConnectionState: () => () => {},

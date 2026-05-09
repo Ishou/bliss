@@ -553,6 +553,16 @@ const lobbyWsHandler = lobbyWs.addEventListener('connection', ({ client, params 
         return;
       }
 
+      case 'rotateCode': {
+        // ADR-0029: owner-only rotation. Preview always accepts (the
+        // owner is always the local player in MSW mode).
+        if (!getLobby(lobbyId)) return;
+        const newCode = generateLobbyCode();
+        updateLobby(lobbyId, (current) => ({ ...current, code: newCode }));
+        sendSnapshot();
+        return;
+      }
+
       case 'leaveLobby':
       default:
         return;
