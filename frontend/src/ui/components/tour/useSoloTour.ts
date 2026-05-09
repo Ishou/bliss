@@ -1,7 +1,21 @@
 import { Tour, useTour } from '@ark-ui/react/tour';
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import type { TourSeenStore } from '@/application/tour/TourSeenStore';
-import { SOLO_TOUR_STEPS } from './soloTourSteps';
+import { buildSoloTourSteps } from './soloTourSteps';
+
+// `md` breakpoint mirror of `panda.config.ts` — defaults to Panda's
+// `md = 768px`. Re-evaluated once at hook mount; we don't subscribe to
+// resize events because the steps array is set on the zag machine at
+// mount time and zag doesn't support steps swapping mid-tour.
+const DESKTOP_MIN_PX = 768;
+
+function detectIsDesktop(): boolean {
+  if (typeof window === 'undefined') return true;
+  if (typeof window.matchMedia !== 'function') {
+    return window.innerWidth >= DESKTOP_MIN_PX;
+  }
+  return window.matchMedia(`(min-width: ${DESKTOP_MIN_PX}px)`).matches;
+}
 
 export interface UseSoloTourOptions {
   readonly tourSeenStore: TourSeenStore;
@@ -42,8 +56,33 @@ export function useSoloTour({
   const forcedOpenRef = useRef(forcedOpen);
   forcedOpenRef.current = forcedOpen;
 
+  // Synchronous "user dismissed during this mount" flag. Set inside
+  // `onStatusChange` BEFORE the state machine completes its transition
+  // and BEFORE React schedules the post-dismiss render — refs mutate
+  // synchronously, so by the time the auto-open effect re-runs after
+  // dismiss, this is `true` and short-circuits the gate.
+  //
+  // Why this exists: a previous version gated re-open on
+  // `!tourSeenStore.get()` (i.e. localStorage). Real Chrome on macOS
+  // reproducibly hit a race where, on dismissing a tooltip step
+  // (Terminer / Passer / ESC on step ≥ 2), the auto-open effect ran
+  // *before* the `set(true)` write was visible to `get()`, re-firing
+  // `tour.start()` and silently re-opening the welcome step. Symptom
+  // was a "stuck dim backdrop" the user could only clear with a
+  // second ESC. The localStorage write is still kept below for
+  // cross-reload persistence, but this in-memory ref is what
+  // guarantees correctness within a single mount.
+  const dismissedThisSessionRef = useRef(false);
+
+  // Steps are derived from viewport once at mount. The zoom step is
+  // desktop-only because GridZoomControls is hidden on mobile.
+  const steps = useMemo(
+    () => buildSoloTourSteps({ isDesktop: detectIsDesktop() }),
+    [],
+  );
+
   const tour = useTour({
-    steps: SOLO_TOUR_STEPS,
+    steps,
     closeOnInteractOutside: false,
     closeOnEscape: true,
     keyboardNavigation: true,
@@ -65,6 +104,9 @@ export function useSoloTour({
         details.status === 'dismissed' ||
         details.status === 'skipped'
       ) {
+        // Set the synchronous guard FIRST so the auto-open effect
+        // can never re-fire `start()` after a dismiss in this mount.
+        dismissedThisSessionRef.current = true;
         tourSeenStore.set(true);
         if (forcedOpenRef.current) {
           onForcedOpenConsumedRef.current();
@@ -74,11 +116,11 @@ export function useSoloTour({
   });
 
   // Auto-open: open whenever the machine is currently closed AND the
-  // user either forced it open via `?tour=1` or hasn't seen the tour
-  // yet (seen flag is read live, so a dismissal mid-session flips it
-  // and prevents re-open).
+  // user neither dismissed this session nor previously saw the tour
+  // (`?tour=1` overrides the seen flag — the Aide launcher uses it).
   useEffect(() => {
     if (tour.open) return;
+    if (dismissedThisSessionRef.current) return;
     if (forcedOpen || !tourSeenStore.get()) {
       tour.start();
     }

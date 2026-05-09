@@ -55,7 +55,7 @@ test('first visit auto-opens the Bienvenue step', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Suivant' })).toBeVisible();
 });
 
-test('Suivant walks through all four steps; Terminer closes and persists', async ({
+test('Suivant walks through all six desktop steps; Terminer closes and persists', async ({
   page,
 }) => {
   await page.goto('/');
@@ -64,29 +64,40 @@ test('Suivant walks through all four steps; Terminer closes and persists', async
     page.getByRole('alertdialog', { name: 'Bienvenue' }),
   ).toBeVisible();
 
+  // Step 2: Cases d'indices.
   await page.getByRole('button', { name: 'Suivant' }).click();
   await expect(
     page.getByRole('alertdialog', { name: "Cases d'indices" }),
   ).toBeVisible();
-  await page.screenshot({
-    path: '/tmp/tour-step-2-clue-cells.png',
-  });
+  await page.screenshot({ path: '/tmp/tour-step-2-clue-cells.png' });
 
+  // Step 3: Suivez les flèches.
   await page.getByRole('button', { name: 'Suivant' }).click();
   await expect(
     page.getByRole('alertdialog', { name: 'Suivez les flèches' }),
   ).toBeVisible();
-  await page.screenshot({
-    path: '/tmp/tour-step-3-arrows.png',
-  });
+  await page.screenshot({ path: '/tmp/tour-step-3-arrows.png' });
 
+  // Step 4: Coup de pouce (hint button).
   await page.getByRole('button', { name: 'Suivant' }).click();
   await expect(
-    page.getByRole('alertdialog', { name: 'Bandeau et validation' }),
+    page.getByRole('alertdialog', { name: 'Coup de pouce' }),
   ).toBeVisible();
-  await page.screenshot({
-    path: '/tmp/tour-step-4-banner.png',
-  });
+  await page.screenshot({ path: '/tmp/tour-step-4-hints.png' });
+
+  // Step 5 (desktop only): Ajuster le zoom.
+  await page.getByRole('button', { name: 'Suivant' }).click();
+  await expect(
+    page.getByRole('alertdialog', { name: 'Ajuster le zoom' }),
+  ).toBeVisible();
+  await page.screenshot({ path: '/tmp/tour-step-5-zoom.png' });
+
+  // Step 6: Progression et validation (progress bar).
+  await page.getByRole('button', { name: 'Suivant' }).click();
+  await expect(
+    page.getByRole('alertdialog', { name: 'Progression et validation' }),
+  ).toBeVisible();
+  await page.screenshot({ path: '/tmp/tour-step-6-validation.png' });
 
   // The backdrop carries the spotlight clip-path on tooltip steps;
   // Playwright's element-from-point check sees the backdrop covering
@@ -94,8 +105,19 @@ test('Suivant walks through all four steps; Terminer closes and persists', async
   // `pointer-events: auto` and z-index 1003 so a real mouse click goes
   // through fine — bypass Playwright's hit-testing with `force: true`.
   await page.getByRole('button', { name: 'Terminer' }).click({ force: true });
+  // Wait long enough for any auto-open useEffect to have re-fired and
+  // committed a re-open render (or NOT, if the dismiss-session ref is
+  // doing its job — see `useSoloTour.ts dismissedThisSessionRef`).
+  await page.waitForTimeout(500);
+  // Tour parts stay mounted under `<Tour.Root>` (Ark's lifecycle drives
+  // visibility via the `hidden` HTML attribute + our
+  // `[data-state="closed"]:d_none!` Panda override). What must NOT
+  // happen is any part keeping `data-state="open"` — that flag is
+  // stamped only when the zag machine is in the open tag, so a stuck
+  // "open" state means the machine silently re-opened (which is the
+  // user-reported bug).
   await expect(
-    page.locator('[data-scope="tour"][data-part="content"][data-state="open"]'),
+    page.locator('[data-scope="tour"][data-state="open"]'),
   ).toHaveCount(0);
 
   // Persisted in localStorage under the wordsparrow.* namespace.
@@ -110,19 +132,128 @@ test('Suivant walks through all four steps; Terminer closes and persists', async
   await expect(
     page.getByRole('alertdialog', { name: 'Bienvenue' }),
   ).toHaveCount(0);
+  // No `data-state="open"` after reload either.
+  await expect(
+    page.locator('[data-scope="tour"][data-state="open"]'),
+  ).toHaveCount(0);
+});
 
-  // After dismissal + reload, the backdrop element may stay mounted
-  // (Ark UI keeps Tour parts in the DOM as long as <Tour.Root> is
-  // rendered). What matters is that it must NOT be visually rendered:
-  // assert `display: none`. A future CSS regression that fights the
-  // `hidden` HTML attribute (e.g. an overzealous global `[hidden] {
-  // display: block }`) would surface as the user staring at a black
-  // overlay even though the tour is "closed".
-  const backdropDisplay = await page.evaluate(() => {
-    const bd = document.querySelector('[data-scope="tour"][data-part="backdrop"]');
-    return bd ? window.getComputedStyle(bd).display : 'no-element';
-  });
-  expect(backdropDisplay === 'none' || backdropDisplay === 'no-element').toBe(true);
+test('every footer button stays inside the popover content box', async ({ page }) => {
+  // Regression: a previous build sized the popover for 1–2 buttons
+  // (Dialog primitive), which the four-chip tour footer (Passer · dots
+  // · Précédent · Suivant) overflowed by ~30–60 px. The Suivant pill
+  // visually clipped past the popover's right padding. This test walks
+  // every step (welcome → validation) and asserts that each button's
+  // right edge stays inside the content card's right edge — the
+  // strongest expression of "fits inside the popover".
+  await page.goto('/');
+  await expect(page.getByRole('grid')).toBeVisible();
+  await expect(page.getByRole('alertdialog', { name: 'Bienvenue' })).toBeVisible();
+
+  for (let stepIndex = 0; stepIndex < 6; stepIndex += 1) {
+    const overflow = await page.evaluate(() => {
+      const content = document.querySelector(
+        '[data-scope="tour"][data-part="content"]',
+      ) as HTMLElement | null;
+      if (!content) return { error: 'no content' };
+      const c = content.getBoundingClientRect();
+      const buttons = Array.from(
+        document.querySelectorAll('[data-scope="tour"][data-part="action-trigger"]'),
+      ).map((b) => {
+        const r = b.getBoundingClientRect();
+        return {
+          text: b.textContent?.trim(),
+          right: r.right,
+          left: r.left,
+        };
+      });
+      return { contentRight: c.right, contentLeft: c.left, buttons };
+    });
+    if ('error' in overflow) throw new Error(overflow.error);
+    for (const btn of overflow.buttons) {
+      // Allow 1 px sub-pixel rounding tolerance.
+      expect(
+        btn.right,
+        `step ${stepIndex + 1}, button "${btn.text}": right ${btn.right} > content ${overflow.contentRight}`,
+      ).toBeLessThanOrEqual(overflow.contentRight + 1);
+      expect(
+        btn.left,
+        `step ${stepIndex + 1}, button "${btn.text}": left ${btn.left} < content ${overflow.contentLeft}`,
+      ).toBeGreaterThanOrEqual(overflow.contentLeft - 1);
+    }
+    if (stepIndex < 5) {
+      await page.getByRole('button', { name: 'Suivant' }).click();
+      await page.waitForTimeout(150);
+    }
+  }
+});
+
+test('Terminer on step 6 does NOT silently reopen the tour at welcome', async ({
+  page,
+}) => {
+  // The user-reported bug: after Terminer (last-step dismiss), the
+  // popover briefly disappears, but the backdrop stays — and a second
+  // ESC is required to fully clear it. Investigation traced this to
+  // the auto-open `useEffect` re-firing `tour.start()` because
+  // `tourSeenStore.get()` racily returned `false` despite a
+  // synchronous `set(true)` in `onStatusChange`. Fix is the
+  // `dismissedThisSessionRef` synchronous guard in `useSoloTour.ts`.
+  await page.goto('/');
+  await expect(page.getByRole('grid')).toBeVisible();
+  for (let i = 0; i < 5; i += 1) {
+    await page.getByRole('button', { name: 'Suivant' }).click();
+    await page.waitForTimeout(120);
+  }
+  await expect(
+    page.getByRole('alertdialog', { name: 'Progression et validation' }),
+  ).toBeVisible();
+  await page.getByRole('button', { name: 'Terminer' }).click({ force: true });
+  // 500 ms is long enough for any auto-open re-fire to have rendered
+  // a welcome alertdialog. If the bug regresses, this catches it.
+  await page.waitForTimeout(500);
+  await expect(
+    page.getByRole('alertdialog', { name: 'Progression et validation' }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole('alertdialog', { name: 'Bienvenue' }),
+  ).toHaveCount(0);
+  await expect(
+    page.locator('[data-scope="tour"][data-state="open"]'),
+  ).toHaveCount(0);
+  // Seen flag persisted for cross-reload behaviour.
+  const seen = await page.evaluate(() =>
+    window.localStorage.getItem('wordsparrow.tour.seen'),
+  );
+  expect(seen).toBe('true');
+});
+
+test('zoom step description mentions wheel zoom on desktop', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.getByRole('grid')).toBeVisible();
+  // Walk to step 5 (zoom).
+  for (let i = 0; i < 4; i += 1) {
+    await page.getByRole('button', { name: 'Suivant' }).click();
+    await page.waitForTimeout(120);
+  }
+  const zoom = page.getByRole('alertdialog', { name: 'Ajuster le zoom' });
+  await expect(zoom).toBeVisible();
+  await expect(zoom).toContainText('molette');
+});
+
+test('ESC dismisses the welcome step', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.getByRole('grid')).toBeVisible();
+  await expect(
+    page.getByRole('alertdialog', { name: 'Bienvenue' }),
+  ).toBeVisible();
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(300);
+  await expect(
+    page.locator('[data-scope="tour"][data-state="open"]'),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole('alertdialog', { name: 'Bienvenue' }),
+  ).toHaveCount(0);
 });
 
 test('grid panel size is preserved across the tour lifecycle', async ({ page }) => {
@@ -164,6 +295,54 @@ test('grid panel size is preserved across the tour lifecycle', async ({ page }) 
   expect(duringWelcome).not.toBeNull();
   expect(afterDismiss).toEqual(duringWelcome);
   expect(afterReload).toEqual(duringWelcome);
+});
+
+test.describe('mobile viewport', () => {
+  test.use({ viewport: { width: 360, height: 720 } });
+
+  test('exposes 5 steps (zoom step skipped on mobile)', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.getByRole('grid')).toBeVisible();
+    await expect(
+      page.getByRole('alertdialog', { name: 'Bienvenue' }),
+    ).toBeVisible();
+
+    // Step counter reads "1 sur 5" on mobile (no zoom step).
+    await expect(page.getByText('Étape 1 sur 5')).toBeVisible();
+  });
+
+  test('"Passer le tour" button text does not wrap mid-pill', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.getByRole('grid')).toBeVisible();
+    const skip = page.getByRole('button', { name: 'Passer le tour' });
+    await expect(skip).toBeVisible();
+    // `whiteSpace: nowrap` is set on the action-trigger so the long
+    // French label stays on a single line. If the rule regresses, the
+    // button height grows past the surrounding row — assert against the
+    // measured height instead of the CSS literal so the check still
+    // passes if a future change moves the styling to the Button
+    // primitive.
+    const heights = await skip.evaluate((el) => {
+      const cs = window.getComputedStyle(el);
+      const fs = parseFloat(cs.fontSize);
+      return { offsetH: (el as HTMLElement).offsetHeight, fontSize: fs };
+    });
+    // Single-line: 16 px font + ~8 px padding × 2 ≈ 42 px (border
+    // included). Two-line wrap pushes height past 3 × font-size.
+    expect(heights.offsetH).toBeLessThan(heights.fontSize * 3);
+  });
+
+  test('footer buttons remain reachable on a 360 px viewport', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.getByRole('grid')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Passer le tour' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Suivant' })).toBeVisible();
+    // Walk through to step 2 to verify the Précédent + Suivant pair fits.
+    await page.getByRole('button', { name: 'Suivant' }).click();
+    await expect(page.getByRole('button', { name: 'Précédent' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Suivant' })).toBeVisible();
+    await page.screenshot({ path: '/tmp/tour-mobile-step-2.png' });
+  });
 });
 
 test('Aide page launches the tour with ?tour=1', async ({ page }) => {
