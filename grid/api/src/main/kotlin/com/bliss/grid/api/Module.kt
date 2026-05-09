@@ -73,8 +73,6 @@ fun Application.module() {
         // this allowance the browser preflight fails and the call never
         // reaches the route.
         allowHeader("X-Session-Id")
-        // X-Request-Id: client-generated correlation id propagated through
-        // logs/traces (MANIFESTO Observability). Echoed back via CallId.
         allowHeader("X-Request-Id")
 
         // Production frontends (Cloudflare Pages serving wordsparrow.io).

@@ -52,10 +52,7 @@ dependencies {
     implementation("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$kotlinxSerializationVersion")
 
-    // Status pages (RFC 7807) + call logging + correlation IDs — ADR-0003 §6,
-    // MANIFESTO Observability ("every log: correlation ID"). CallId generates
-    // an X-Request-Id per request (or echoes the client's) and CallLogging
-    // pipes it into Logback MDC so the JSON encoder emits it on every line.
+    // Status pages (RFC 7807) + call logging + correlation IDs — ADR-0003 §6, MANIFESTO Observability.
     implementation("io.ktor:ktor-server-status-pages:$ktorVersion")
     implementation("io.ktor:ktor-server-call-logging:$ktorVersion")
     implementation("io.ktor:ktor-server-call-id:$ktorVersion")
