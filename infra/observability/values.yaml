@@ -26,15 +26,30 @@ signoz:
         cpu: 1000m
         memory: 2Gi
 
-  zookeeper:
-    replicaCount: 1
-    resources:
-      requests:
-        cpu: 50m
-        memory: 100Mi
-      limits:
-        cpu: 200m
-        memory: 256Mi
+  # SigNoz nests the ZooKeeper subchart under its own ClickHouse
+  # subchart (signoz.clickhouse.zookeeper), not at the SigNoz top
+  # level. First-iteration override at signoz.zookeeper.* was
+  # silently ignored.
+  clickhouse:
+    zookeeper:
+      replicaCount: 1
+      # Bitnami flipped their public Docker Hub policy in 2024-08
+      # to "latest only" and moved every older tag from `bitnami/*`
+      # to `bitnamilegacy/*`. The SigNoz subchart's pin
+      # (`bitnami/zookeeper:3.7.1`) now 404s. Override the
+      # repository to `bitnamilegacy/zookeeper`; the tag is the
+      # same and SigNoz documents 3.7.1 as the supported ZK
+      # version (its own comment warns against changing it).
+      # Revisit if/when SigNoz upstream bumps the pin.
+      image:
+        repository: bitnamilegacy/zookeeper
+      resources:
+        requests:
+          cpu: 50m
+          memory: 100Mi
+        limits:
+          cpu: 200m
+          memory: 256Mi
 
   queryService:
     resources:
