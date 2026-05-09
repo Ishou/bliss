@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1
 # grid-api container image (ADR-0007 §3). Multi-stage: JDK builder produces
 # the shadowJar; JRE runtime image runs it. Base images pinned to digest per
 # MANIFESTO; bump digest and tag together.

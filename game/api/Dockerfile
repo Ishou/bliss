@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1
 # game-api container image (ADR-0007 §3, ADR-0018). Multi-stage: JDK builder
 # produces the shadowJar; JRE runtime image runs it. Base images pinned to
 # digest per MANIFESTO; bump digest and tag together. Mirrors grid/api/Dockerfile
