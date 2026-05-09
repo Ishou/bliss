@@ -1,4 +1,4 @@
-import { act, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import {
   RouterProvider,
   createMemoryHistory,
@@ -7,6 +7,7 @@ import {
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { PuzzleRepository, PuzzleSolver } from '@/application';
 import {
+  LobbyClientError,
   type GameClient,
   type LobbyClient,
 } from '@/application/game';
@@ -99,6 +100,7 @@ const renderAccueil = (options: RenderOptions = {}) => {
   const lobbyClient: LobbyClient = {
     createLobby: vi.fn().mockResolvedValue(baseCreatedLobby),
     getLobby: vi.fn().mockResolvedValue(baseCreatedLobby),
+    findByCode: vi.fn().mockResolvedValue(baseCreatedLobby),
     ...options.lobbyClient,
   };
   const puzzleRepository: PuzzleRepository = {
@@ -179,13 +181,68 @@ describe('Accueil route', () => {
     });
   });
 
-  it('renders the join-by-code controls as disabled', async () => {
-    vi.stubEnv('VITE_FEATURE_MULTIPLAYER', 'true');
+  it('disables join controls when the multiplayer flag is off', async () => {
+    vi.stubEnv('VITE_FEATURE_MULTIPLAYER', 'false');
     renderAccueil();
     const codeInput = await screen.findByRole('textbox', { name: 'Code de partie' });
     expect(codeInput).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Rejoindre' })).toBeDisabled();
     expect(screen.getByText('Disponible bientôt')).toBeInTheDocument();
+  });
+
+  it('keeps Rejoindre disabled until the typed code matches the pattern', async () => {
+    vi.stubEnv('VITE_FEATURE_MULTIPLAYER', 'true');
+    renderAccueil();
+    const codeInput = await screen.findByRole('textbox', { name: 'Code de partie' }) as HTMLInputElement;
+    expect(codeInput).not.toBeDisabled();
+    const rejoindre = screen.getByRole('button', { name: 'Rejoindre' });
+    expect(rejoindre).toBeDisabled();
+    // Five chars — still under the six-char pattern.
+    fireEvent.change(codeInput, { target: { value: 'A2B3C' } });
+    expect(rejoindre).toBeDisabled();
+    fireEvent.change(codeInput, { target: { value: 'A2B3C4' } });
+    expect(rejoindre).not.toBeDisabled();
+  });
+
+  it('uppercases input and strips chars outside the Crockford alphabet', async () => {
+    vi.stubEnv('VITE_FEATURE_MULTIPLAYER', 'true');
+    renderAccueil();
+    const codeInput = await screen.findByRole('textbox', { name: 'Code de partie' }) as HTMLInputElement;
+    // Lowercase + the excluded chars `0`, `1`, `O`, `I`, `L` must drop
+    // out; the remaining `a2b3c4` uppercases to a valid code.
+    fireEvent.change(codeInput, { target: { value: 'a2b3c4-0OIL1' } });
+    expect(codeInput.value).toBe('A2B3C4');
+  });
+
+  it('resolves the typed code, navigates to the matching lobby on success', async () => {
+    vi.stubEnv('VITE_FEATURE_MULTIPLAYER', 'true');
+    const { router, lobbyClient } = renderAccueil();
+    const codeInput = await screen.findByRole('textbox', { name: 'Code de partie' }) as HTMLInputElement;
+    fireEvent.change(codeInput, { target: { value: 'A2B3C4' } });
+    const rejoindre = screen.getByRole('button', { name: 'Rejoindre' });
+    await act(async () => { rejoindre.click(); });
+    await vi.waitFor(() => {
+      expect(lobbyClient.findByCode).toHaveBeenCalledWith('A2B3C4');
+      expect(router.state.location.pathname).toBe(`/lobby/${createdLobbyId}`);
+    });
+  });
+
+  it('shows a "code introuvable" message when the server returns 404', async () => {
+    vi.stubEnv('VITE_FEATURE_MULTIPLAYER', 'true');
+    const notFound = new LobbyClientError({
+      kind: 'not-found',
+      status: 404,
+      problem: null,
+      message: 'lobby not found',
+    });
+    renderAccueil({ lobbyClient: { findByCode: vi.fn().mockRejectedValue(notFound) } });
+    const codeInput = await screen.findByRole('textbox', { name: 'Code de partie' }) as HTMLInputElement;
+    fireEvent.change(codeInput, { target: { value: 'A2B3C4' } });
+    await act(async () => {
+      screen.getByRole('button', { name: 'Rejoindre' }).click();
+    });
+    const alert = await screen.findByRole('alert');
+    expect(alert.textContent).toMatch(/Aucune partie pour ce code/);
   });
 
   it('disables "Créer une partie" when the multiplayer flag is off', async () => {

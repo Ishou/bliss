@@ -33,6 +33,10 @@ export const BOT_PSEUDONYM = 'Bot 🤖';
 
 // 8-char base58 alphabet per ADR-0020 (no `0`, `O`, `I`, `l`).
 const BASE58 = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+// 6-char Crockford-style alphabet for join codes — must mirror the
+// `code` schema pattern in `game/api/openapi.yaml` and the Kotlin
+// `LobbyCode` regex (no `0/O`, `1/I/L`).
+const LOBBY_CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 
 export function generateLobbyId(): string {
   let id = '';
@@ -42,12 +46,27 @@ export function generateLobbyId(): string {
   return id;
 }
 
+export function generateLobbyCode(): string {
+  let code = '';
+  for (let i = 0; i < 6; i++) {
+    code += LOBBY_CODE_ALPHABET.charAt(Math.floor(Math.random() * LOBBY_CODE_ALPHABET.length));
+  }
+  return code;
+}
+
 export function putLobby(lobby: Lobby): void {
   lobbies.set(lobby.id, lobby);
 }
 
 export function getLobby(lobbyId: string): Lobby | undefined {
   return lobbies.get(lobbyId);
+}
+
+export function getLobbyByCode(code: string): Lobby | undefined {
+  for (const lobby of lobbies.values()) {
+    if (lobby.code === code) return lobby;
+  }
+  return undefined;
 }
 
 export function updateLobby(

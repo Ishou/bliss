@@ -30,6 +30,19 @@ export interface LobbyClient {
    * (in-memory v1 — ADR-0018 §3).
    */
   getLobby(lobbyId: LobbyId): Promise<Lobby>;
+
+  /**
+   * `GET /v1/lobbies/by-code/{code}`. Resolves a human-friendly join
+   * code to the canonical lobby resource. Powers the Accueil "Rejoindre
+   * avec un code" flow — the resolved `id` is the same `LobbyId` the
+   * URL-share path uses, so the caller can navigate to `/lobby/:lobbyId`
+   * and let the existing route loader open the WebSocket.
+   *
+   * Throws {@link LobbyClientError} with:
+   *   - `kind: 'validation'` for a malformed code (400 — pattern reject),
+   *   - `kind: 'not-found'` when no lobby carries the supplied code (404).
+   */
+  findByCode(code: string): Promise<Lobby & { readonly id: LobbyId }>;
 }
 
 // Typed error envelope. One concrete `Error` subclass with a `kind`

@@ -23,8 +23,10 @@ import {
   BOT_SESSION_ID,
   MOCK_ANSWERS,
   buildGameSession,
+  generateLobbyCode,
   generateLobbyId,
   getLobby,
+  getLobbyByCode,
   putLobby,
   updateLobby,
   type Lobby,
@@ -105,6 +107,9 @@ export const gameHandlers = [
       // ADR-0003 §6: `game` is in `required`; `null` (still WAITING) is
       // the explicit blank value, not absence.
       game: null,
+      // Mirror the server: every new lobby carries a Crockford-style
+      // join code that the Accueil "Rejoindre avec un code" flow types.
+      code: generateLobbyCode(),
     };
     putLobby(lobby);
 
@@ -112,6 +117,30 @@ export const gameHandlers = [
       status: 201,
       headers: { Location: `/v1/lobbies/${id}` },
     });
+  }),
+
+  // GET /v1/lobbies/by-code/:code — must match before the `:lobbyId`
+  // catch-all below; MSW dispatches the first matching handler.
+  http.get('*/v1/lobbies/by-code/:code', ({ params }) => {
+    const code = String(params.code);
+    if (!/^[A-HJKM-NP-Z2-9]{6}$/.test(code)) {
+      return problem(
+        400,
+        'https://bliss.example/errors/invalid-lobby-code',
+        'Invalid code',
+        `\`${code}\` does not match the lobby-code pattern.`,
+      );
+    }
+    const lobby = getLobbyByCode(code);
+    if (!lobby) {
+      return problem(
+        404,
+        'https://bliss.example/errors/lobby-not-found',
+        'Lobby not found',
+        `No lobby with code ${code}.`,
+      );
+    }
+    return HttpResponse.json(lobby);
   }),
 
   // GET /v1/lobbies/:lobbyId — replay the persisted lobby.
