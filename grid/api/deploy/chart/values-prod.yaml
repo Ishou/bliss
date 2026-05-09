@@ -46,5 +46,7 @@ retention:
     enabled: true
     image:
       requireDigest: true
-      # Set at deploy time via --set retention.hintUsage.image.digest=sha256:...
-      digest: ""
+      # postgres:16-alpine (see values.yaml). Third-party image, pinned in
+      # this file rather than injected by CD: the CD workflow only resolves
+      # the grid-api digest. Bump alongside the `tag` in values.yaml.
+      digest: "sha256:4e6e670bb069649261c9c18031f0aded7bb249a5b6664ddec29c013a89310d50"
