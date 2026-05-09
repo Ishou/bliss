@@ -61,11 +61,20 @@ dependencies {
     // and an epoll DoS in -transport-native-epoll. GHSA refs: v8h7-rr48-vmmv,
     // m4cv-j2px-7723, xxqh-mfjm-7mv9, 38f8-5428-x5cv, 57rv-r2g8-2cj3,
     // f6hv-jmp6-3vwv, rwm7-x88c-3g2p, mj4r-2hfc-f8p6.
+    //
+    // Pin transitive Jackson to versions that fix DoS CVEs in number-length
+    // and document-length parsing limits.
+    //   com.fasterxml.jackson.core (Jackson 2.x line, used by Logstash
+    //     encoder): 2.21.1 — GHSA-72hv-8253-57qq.
+    //   tools.jackson.core (Jackson 3.x line, pulled in transitively): 3.1.1
+    //     — GHSA-72hv-8253-57qq, GHSA-6v53-7c9g-w56r, GHSA-2m67-wjpj-xhg9.
     constraints {
         implementation("io.netty:netty-codec-http:4.2.13.Final")
         implementation("io.netty:netty-codec-http2:4.2.13.Final")
         implementation("io.netty:netty-codec-compression:4.2.13.Final")
         implementation("io.netty:netty-transport-native-epoll:4.2.13.Final")
+        implementation("com.fasterxml.jackson.core:jackson-core:2.21.1")
+        implementation("tools.jackson.core:jackson-core:3.1.1")
     }
 
     // Grid bounded-context inner layers (ADR-0001 §1, MANIFESTO Architecture).
