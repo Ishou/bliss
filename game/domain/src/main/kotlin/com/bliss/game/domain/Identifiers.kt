@@ -5,6 +5,7 @@ import java.security.SecureRandom
 private val LOBBY_ID_REGEX = Regex("^[1-9A-HJ-NP-Za-km-z]{8}$")
 private const val BASE58_ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
 private const val LOBBY_ID_LENGTH = 8
+
 // Crockford-style alphabet: A-H, J, K, M, N, P-Z, 2-9. Excludes the
 // ambiguous chars 0/O, 1/I/L (I and L look like 1; L can also look like
 // 1; 0 looks like O). The naive `J-N` range includes L — broken out
