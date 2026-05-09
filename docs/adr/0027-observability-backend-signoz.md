@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed
+Accepted
 
 ## Context
 
@@ -122,7 +122,10 @@ through one UI.
    on the collector restricts to `wordsparrow.io` apex + `www`.
 7. Alerts: SigNoz's built-in alert rules cover the launch requirement (5xx
    rate symptom alert). Notification channel: SMTP via Gmail with an app
-   password (separate Secret, ADR-0028 covers admin-credential handling).
+   password. The app password is stored as a Kubernetes Secret (not committed
+   to the repo; injected at deploy time via `kubectl create secret` or a
+   sealed-secret workflow). Secret hygiene for IaC is addressed in a
+   follow-up ADR.
 8. PII scrubbing happens at the **collector** layer, not in application
    code: drop `?email=`, `?token=`, `?session=` query parameters; redact
    `Authorization` and `Cookie` request headers; never capture request
@@ -169,5 +172,5 @@ that appears in `kubectl logs` and in the response header from PR #267.
 - A future ADR if/when we move to OpenObserve or Grafana stack (the
   motivation would have to be measurable: cluster pressure or a missing
   feature). Reference this ADR as superseded.
-- Sealed-secrets or SOPS for IaC-pure secret management (currently
-  out-of-scope, see ADR-0028).
+- Sealed-secrets or SOPS for IaC-pure secret management (out-of-scope for
+  this ADR; a follow-up ADR will document the decision).
