@@ -14,6 +14,9 @@ signoz:
   # Right-sized for the cx33 worker. SigNoz's defaults assume larger
   # nodes; we cut back where the workload tolerates it. Expect to revisit
   # once we have real telemetry to justify bumps.
+  # ZooKeeper is nested under clickhouse (signoz.clickhouse.zookeeper),
+  # not at the SigNoz top level — first-iteration override at
+  # signoz.zookeeper.* was silently ignored.
   clickhouse:
     replicaCount: 1
     persistence:
@@ -25,12 +28,6 @@ signoz:
       limits:
         cpu: 1000m
         memory: 2Gi
-
-  # SigNoz nests the ZooKeeper subchart under its own ClickHouse
-  # subchart (signoz.clickhouse.zookeeper), not at the SigNoz top
-  # level. First-iteration override at signoz.zookeeper.* was
-  # silently ignored.
-  clickhouse:
     zookeeper:
       replicaCount: 1
       # Bitnami flipped their public Docker Hub policy in 2024-08
