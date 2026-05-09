@@ -2,11 +2,13 @@ package com.bliss.game.api.routes
 
 import assertk.assertThat
 import assertk.assertions.contains
+import assertk.assertions.doesNotContain
 import assertk.assertions.isEqualTo
 import assertk.assertions.isFalse
 import assertk.assertions.isNotNull
 import assertk.assertions.isNull
 import assertk.assertions.isTrue
+import assertk.assertions.matches
 import com.bliss.game.api.LobbyUseCases
 import com.bliss.game.api.PresencePosition
 import com.bliss.game.api.SessionManager
@@ -74,6 +76,7 @@ class LobbyWebSocketRouteTest {
     fun `connecting sends a lobbyState snapshot first`() =
         runWith { harness ->
             val lobbyId = harness.seedLobby()
+            val code = harness.codeFor(lobbyId)
             harness.client.webSocket("/v1/lobbies/${lobbyId.value}/ws") {
                 val text = receiveText()
                 assertThat(text).contains("\"type\":\"lobbyState\"")
@@ -81,10 +84,66 @@ class LobbyWebSocketRouteTest {
             }
         }
 
+    // ADR-0027 — code-gate. New joiners must present `code`; reconnects
+    // (sessionId already a member) bypass the check.
+
+    @Test
+    fun `joinLobby new joiner without code returns wrong-code error frame`() =
+        runWith { harness ->
+            val lobbyId = harness.seedLobby()
+            harness.client.webSocket("/v1/lobbies/${lobbyId.value}/ws") {
+                receiveText() // initial snapshot
+                sendText("""{"type":"joinLobby","sessionId":"$sessionB","pseudonym":"$pseudoB"}""")
+                val text = receiveText()
+                assertThat(text).contains("\"type\":\"error\"")
+                assertThat(text).contains("\"errorType\":\"https://bliss.example/errors/wrong-code\"")
+                assertThat(text).contains("\"status\":403")
+            }
+        }
+
+    @Test
+    fun `joinLobby new joiner with mismatched code returns wrong-code error frame`() =
+        runWith { harness ->
+            val lobbyId = harness.seedLobby()
+            harness.client.webSocket("/v1/lobbies/${lobbyId.value}/ws") {
+                receiveText()
+                // Pattern-valid but not the lobby's actual code.
+                sendText("""{"type":"joinLobby","sessionId":"$sessionB","pseudonym":"$pseudoB","code":"WRONG2"}""")
+                val text = receiveText()
+                assertThat(text).contains("\"errorType\":\"https://bliss.example/errors/wrong-code\"")
+            }
+        }
+
+    @Test
+    fun `joinLobby reconnect omits code and is accepted (bypass)`() =
+        runWith { harness ->
+            val lobbyId = harness.seedLobby()
+            val code = harness.codeFor(lobbyId)
+            // sessionA is the lobby owner — already a member — so reconnect
+            // bypasses the code check by construction even with no code at all.
+            harness.client.webSocket("/v1/lobbies/${lobbyId.value}/ws") {
+                receiveText()
+                sendText("""{"type":"joinLobby","sessionId":"$sessionA","pseudonym":"$pseudoA"}""")
+                // No error frame should appear; absence is the assertion.
+                // We probe one read with a tight timeout — if it surfaces an
+                // error frame we fail; if it times out (idle reconnect, no
+                // broadcast since sessionA was already there) we pass.
+                val timed = withTimeoutOrNull(200) { receiveText() }
+                if (timed != null) {
+                    assertThat(timed).doesNotContain("\"type\":\"error\"")
+                }
+            }
+            // Reference `code` so the import / variable stays meaningful for
+            // future regression edits even though this test deliberately
+            // omits it from the wire frame.
+            assertThat(code).matches(Regex("^[A-HJKM-NP-Z2-9]{6}$"))
+        }
+
     @Test
     fun `cellUpdate from one client is broadcast to both`() =
         runWith { harness ->
             val lobbyId = harness.seedLobby()
+            val code = harness.codeFor(lobbyId)
             harness.startGame(lobbyId)
 
             val aReady = CompletableDeferred<Unit>()
@@ -111,7 +170,7 @@ class LobbyWebSocketRouteTest {
                         aReady.await()
                         harness.client.webSocket("/v1/lobbies/${lobbyId.value}/ws") {
                             receiveText() // initial snapshot
-                            sendText("""{"type":"joinLobby","sessionId":"$sessionB","pseudonym":"$pseudoB"}""")
+                            sendText("""{"type":"joinLobby","sessionId":"$sessionB","pseudonym":"$pseudoB","code":"$code"}""")
                             bReady.complete(Unit)
                             // After the cellUpdate, both clients should observe cellUpdated.
                             sendText("""{"type":"cellUpdate","row":0,"column":3,"letter":"P"}""")
@@ -138,6 +197,7 @@ class LobbyWebSocketRouteTest {
     fun `cellUpdate with null letter is broadcast as explicit null to both clients`() =
         runWith { harness ->
             val lobbyId = harness.seedLobby()
+            val code = harness.codeFor(lobbyId)
             harness.startGame(lobbyId)
 
             val aReady = CompletableDeferred<Unit>()
@@ -163,7 +223,7 @@ class LobbyWebSocketRouteTest {
                         aReady.await()
                         harness.client.webSocket("/v1/lobbies/${lobbyId.value}/ws") {
                             receiveText() // initial snapshot
-                            sendText("""{"type":"joinLobby","sessionId":"$sessionB","pseudonym":"$pseudoB"}""")
+                            sendText("""{"type":"joinLobby","sessionId":"$sessionB","pseudonym":"$pseudoB","code":"$code"}""")
                             bReady.complete(Unit)
                             // Send a cell-clear (letter: null) — verifies explicitNulls=true is honoured.
                             sendText("""{"type":"cellUpdate","row":0,"column":3,"letter":null}""")
@@ -188,6 +248,7 @@ class LobbyWebSocketRouteTest {
     fun `late joiner receives a fresh snapshot reflecting the current grid config`() =
         runWith { harness ->
             val lobbyId = harness.seedLobby()
+            val code = harness.codeFor(lobbyId)
             // Owner sets a non-default grid config and waits to observe the
             // resulting snapshot rebroadcast.
             val ownerSawSnapshot = CompletableDeferred<Unit>()
@@ -235,6 +296,7 @@ class LobbyWebSocketRouteTest {
             // which must already carry the entry — otherwise a refresh
             // re-renders the grid empty.
             val lobbyId = harness.seedLobby()
+            val code = harness.codeFor(lobbyId)
             harness.startGame(lobbyId)
             harness.typeLetter(lobbyId, SessionId(sessionA), Position(0, 3), Letter('P'))
 
@@ -270,6 +332,7 @@ class LobbyWebSocketRouteTest {
         // open so the user can correct and retry without a reconnect.
         runWith { harness ->
             val lobbyId = harness.seedLobby()
+            val code = harness.codeFor(lobbyId)
             val observerJoined = CompletableDeferred<Unit>()
             val observerSawPlayerRenamed = CompletableDeferred<Unit>()
             val observerHoldOpen = CompletableDeferred<Unit>()
@@ -298,7 +361,7 @@ class LobbyWebSocketRouteTest {
 
                 harness.client.webSocket("/v1/lobbies/${lobbyId.value}/ws") {
                     receiveText() // snapshot
-                    sendText("""{"type":"joinLobby","sessionId":"$sessionB","pseudonym":"$pseudoB"}""")
+                    sendText("""{"type":"joinLobby","sessionId":"$sessionB","pseudonym":"$pseudoB","code":"$code"}""")
                     sendText("""{"type":"renameSelf","newPseudonym":"$tooLong"}""")
                     // Read until the structured error frame addressed to the sender
                     // arrives. The previous behaviour was an unhandled exception
@@ -338,6 +401,7 @@ class LobbyWebSocketRouteTest {
     fun `disconnect emits a playerLeft frame to remaining members`() =
         runWith { harness ->
             val lobbyId = harness.seedLobby()
+            val code = harness.codeFor(lobbyId)
             val ownerSawLeft = CompletableDeferred<String>()
             val ownerJoined = CompletableDeferred<Unit>()
             coroutineScope {
@@ -358,7 +422,7 @@ class LobbyWebSocketRouteTest {
                 ownerJoined.await()
                 harness.client.webSocket("/v1/lobbies/${lobbyId.value}/ws") {
                     receiveText() // snapshot
-                    sendText("""{"type":"joinLobby","sessionId":"$sessionB","pseudonym":"$pseudoB"}""")
+                    sendText("""{"type":"joinLobby","sessionId":"$sessionB","pseudonym":"$pseudoB","code":"$code"}""")
                     // Drop without leaveLobby — disconnect alone triggers the playerLeft broadcast
                     // once the reconnect-grace window elapses (zero in this test).
                 }
@@ -377,6 +441,7 @@ class LobbyWebSocketRouteTest {
             // playerJoined frame when the second tab opens, otherwise observer
             // clients would briefly see a duplicate row (then a stale playerLeft).
             val lobbyId = harness.seedLobby()
+            val code = harness.codeFor(lobbyId)
             val observerSawJoinForB = CompletableDeferred<Unit>()
             val secondJoinSettled = CompletableDeferred<Unit>()
             val observerJoined = CompletableDeferred<Unit>()
@@ -413,7 +478,7 @@ class LobbyWebSocketRouteTest {
                     async {
                         harness.client.webSocket("/v1/lobbies/${lobbyId.value}/ws") {
                             receiveText() // snapshot
-                            sendText("""{"type":"joinLobby","sessionId":"$sessionB","pseudonym":"$pseudoB"}""")
+                            sendText("""{"type":"joinLobby","sessionId":"$sessionB","pseudonym":"$pseudoB","code":"$code"}""")
                             while (!tab1HoldOpen.isCompleted) {
                                 withTimeoutOrNull(200) { receiveText() }
                             }
@@ -426,7 +491,7 @@ class LobbyWebSocketRouteTest {
                 // and broadcast nothing.
                 harness.client.webSocket("/v1/lobbies/${lobbyId.value}/ws") {
                     receiveText() // snapshot — should already show sessionB present
-                    sendText("""{"type":"joinLobby","sessionId":"$sessionB","pseudonym":"$pseudoB"}""")
+                    sendText("""{"type":"joinLobby","sessionId":"$sessionB","pseudonym":"$pseudoB","code":"$code"}""")
                     // Give the server a moment to process and broadcast (or not).
                     delay(200)
                 }
@@ -448,6 +513,7 @@ class LobbyWebSocketRouteTest {
         // fire if the eager short-circuit ever regresses.
         runWith(reconnectGrace = 500.milliseconds) { harness ->
             val lobbyId = harness.seedLobby()
+            val code = harness.codeFor(lobbyId)
             val observerSawLeft = CompletableDeferred<Unit>()
             val observerJoined = CompletableDeferred<Unit>()
             val tab1Joined = CompletableDeferred<Unit>()
@@ -482,7 +548,7 @@ class LobbyWebSocketRouteTest {
                     async {
                         harness.client.webSocket("/v1/lobbies/${lobbyId.value}/ws") {
                             receiveText() // snapshot
-                            sendText("""{"type":"joinLobby","sessionId":"$sessionB","pseudonym":"$pseudoB"}""")
+                            sendText("""{"type":"joinLobby","sessionId":"$sessionB","pseudonym":"$pseudoB","code":"$code"}""")
                             tab1Joined.complete(Unit)
                             while (!tab1HoldOpen.isCompleted) {
                                 withTimeoutOrNull(200) { receiveText() }
@@ -494,7 +560,7 @@ class LobbyWebSocketRouteTest {
                 // Tab 2 for the same sessionB opens, joins, then closes.
                 harness.client.webSocket("/v1/lobbies/${lobbyId.value}/ws") {
                     receiveText() // snapshot
-                    sendText("""{"type":"joinLobby","sessionId":"$sessionB","pseudonym":"$pseudoB"}""")
+                    sendText("""{"type":"joinLobby","sessionId":"$sessionB","pseudonym":"$pseudoB","code":"$code"}""")
                     // close on block exit
                 }
                 tab2Done.complete(Unit)
@@ -517,6 +583,7 @@ class LobbyWebSocketRouteTest {
         // is held the whole time from the survivors' point of view.
         runWith(reconnectGrace = 800.milliseconds) { harness ->
             val lobbyId = harness.seedLobby()
+            val code = harness.codeFor(lobbyId)
             val observerJoined = CompletableDeferred<Unit>()
             val firstJoined = CompletableDeferred<Unit>()
             val secondJoined = CompletableDeferred<Unit>()
@@ -544,7 +611,7 @@ class LobbyWebSocketRouteTest {
                 // Original socket: joins as sessionB, then drops immediately.
                 harness.client.webSocket("/v1/lobbies/${lobbyId.value}/ws") {
                     receiveText() // snapshot
-                    sendText("""{"type":"joinLobby","sessionId":"$sessionB","pseudonym":"$pseudoB"}""")
+                    sendText("""{"type":"joinLobby","sessionId":"$sessionB","pseudonym":"$pseudoB","code":"$code"}""")
                     firstJoined.complete(Unit)
                 }
                 firstJoined.await()
@@ -555,7 +622,7 @@ class LobbyWebSocketRouteTest {
                     async {
                         harness.client.webSocket("/v1/lobbies/${lobbyId.value}/ws") {
                             receiveText() // snapshot
-                            sendText("""{"type":"joinLobby","sessionId":"$sessionB","pseudonym":"$pseudoB"}""")
+                            sendText("""{"type":"joinLobby","sessionId":"$sessionB","pseudonym":"$pseudoB","code":"$code"}""")
                             secondJoined.complete(Unit)
                             while (!reconnectHoldOpen.isCompleted) {
                                 withTimeoutOrNull(200) { receiveText() }
@@ -582,6 +649,7 @@ class LobbyWebSocketRouteTest {
         // the right snapshot).
         runWith(reconnectGrace = 200.milliseconds) { harness ->
             val lobbyId = harness.seedLobby()
+            val code = harness.codeFor(lobbyId)
             val observerSawLeft = CompletableDeferred<Unit>()
             val observerJoined = CompletableDeferred<Unit>()
             val firstJoined = CompletableDeferred<Unit>()
@@ -604,7 +672,7 @@ class LobbyWebSocketRouteTest {
 
                 harness.client.webSocket("/v1/lobbies/${lobbyId.value}/ws") {
                     receiveText() // snapshot
-                    sendText("""{"type":"joinLobby","sessionId":"$sessionB","pseudonym":"$pseudoB"}""")
+                    sendText("""{"type":"joinLobby","sessionId":"$sessionB","pseudonym":"$pseudoB","code":"$code"}""")
                     firstJoined.complete(Unit)
                 }
                 firstJoined.await()
@@ -627,6 +695,7 @@ class LobbyWebSocketRouteTest {
     fun `cellFocus from one client broadcasts presenceUpdated to both`() =
         runWith { harness ->
             val lobbyId = harness.seedLobby()
+            val code = harness.codeFor(lobbyId)
             harness.startGame(lobbyId)
 
             val aReady = CompletableDeferred<Unit>()
@@ -652,7 +721,7 @@ class LobbyWebSocketRouteTest {
                         aReady.await()
                         harness.client.webSocket("/v1/lobbies/${lobbyId.value}/ws") {
                             receiveText() // initial snapshot
-                            sendText("""{"type":"joinLobby","sessionId":"$sessionB","pseudonym":"$pseudoB"}""")
+                            sendText("""{"type":"joinLobby","sessionId":"$sessionB","pseudonym":"$pseudoB","code":"$code"}""")
                             bReady.complete(Unit)
                             sendText("""{"type":"cellFocus","row":1,"column":2,"direction":"down"}""")
                             while (!bSawPresence.isCompleted) {
@@ -684,6 +753,7 @@ class LobbyWebSocketRouteTest {
         // a fresh joiner must NOT carry the sender's entry.
         runWith { harness ->
             val lobbyId = harness.seedLobby()
+            val code = harness.codeFor(lobbyId)
             harness.startGame(lobbyId)
 
             val ownerJoined = CompletableDeferred<Unit>()
@@ -738,6 +808,7 @@ class LobbyWebSocketRouteTest {
         // event arrives.
         runWith { harness ->
             val lobbyId = harness.seedLobby()
+            val code = harness.codeFor(lobbyId)
             harness.startGame(lobbyId)
             // Pre-populate presence as if another player had focused a cell
             // before this connection opens.
@@ -764,6 +835,7 @@ class LobbyWebSocketRouteTest {
     fun `presence wiring - cellUpdate fires typing edge, cellFocus resets idle timer, disconnect fires connectionLost`() =
         runWithPresence { harness, presenceClock, broadcaster, aggregator ->
             val lobbyId = harness.seedLobby()
+            val code = harness.codeFor(lobbyId)
             harness.startGame(lobbyId)
 
             // Part 1: cellUpdate -> recordKeystroke -> Typing(true); no playerJoined on re-join, so cellUpdated is the sync point.
@@ -840,6 +912,9 @@ class LobbyWebSocketRouteTest {
             val outcome = createLobby(SessionId("0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6b"), Pseudonym("Alice"))
             return outcome.value.id
         }
+
+        /** Looks up the canonical join code for a seeded lobby (ADR-0027). */
+        suspend fun codeFor(lobbyId: LobbyId): String = checkNotNull(repo.findById(lobbyId)) { "lobby $lobbyId was not seeded" }.code.value
 
         suspend fun startGame(lobbyId: LobbyId) {
             val out = startGameUseCase(lobbyId, SessionId("0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6b"))

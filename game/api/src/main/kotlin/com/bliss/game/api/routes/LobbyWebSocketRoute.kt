@@ -344,7 +344,7 @@ private suspend fun DefaultWebSocketServerSession.dispatchJoin(
             sendInvalidPseudonym(cause.message ?: "pseudonym failed validation")
             return null
         }
-    val outcome = useCases.joinLobby(lobbyId, sid, pseudo)
+    val outcome = useCases.joinLobby(lobbyId, sid, pseudo, parsed.code)
     handleOutcome(outcome, lobbyId, sessionManager)
     return if (outcome is UseCaseOutcome.Success) {
         // Bind the socket to the player's sessionId so a subsequent

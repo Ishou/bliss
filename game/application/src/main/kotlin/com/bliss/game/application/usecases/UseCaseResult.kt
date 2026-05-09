@@ -25,6 +25,14 @@ sealed interface UseCaseError {
 
     data object PlayerNotInLobby : UseCaseError
 
+    /**
+     * The new joiner did not present a valid lobby code, or presented a code
+     * that does not match the lobby's. ADR-0027: the WS `joinLobby` frame is
+     * code-gated for new joiners; reconnects (sessionId already a member)
+     * bypass the check by construction and never raise this.
+     */
+    data object WrongCode : UseCaseError
+
     data class InvalidArgument(
         val detail: String,
     ) : UseCaseError

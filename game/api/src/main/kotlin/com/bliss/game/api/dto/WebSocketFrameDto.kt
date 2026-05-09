@@ -32,6 +32,10 @@ sealed class ClientToServerFrame {
     data class JoinLobby(
         val sessionId: String,
         val pseudonym: String,
+        // Six-char Crockford join code (ADR-0027). Required for new joiners;
+        // optional / ignored for already-joined sessions on the reconnect
+        // path (server bypasses the check when sessionId is already a member).
+        val code: String? = null,
     ) : ClientToServerFrame()
 
     @Serializable

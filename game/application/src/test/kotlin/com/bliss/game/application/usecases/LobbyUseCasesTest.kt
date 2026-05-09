@@ -18,6 +18,7 @@ import com.bliss.game.application.usecases.Samples.sessionB
 import com.bliss.game.application.usecases.Samples.sessionC
 import com.bliss.game.domain.GridConfig
 import com.bliss.game.domain.Letter
+import com.bliss.game.domain.Lobby
 import com.bliss.game.domain.LobbyId
 import com.bliss.game.domain.LobbyLifecycleState
 import com.bliss.game.domain.Position
@@ -127,8 +128,77 @@ class LobbyUseCasesTest {
         runTest {
             val h = harness()
             val ghost = LobbyId("zzzzzzzz")
-            val out = h.join(ghost, sessionA, alice)
+            // The not-found branch fires before any code check, so an
+            // arbitrary code is fine here.
+            val out = h.joinWithCode(ghost, sessionA, alice, code = "A2B3C4")
             assertThat((out as UseCaseOutcome.Failure).error).isEqualTo(UseCaseError.LobbyNotFound)
+        }
+
+    // ADR-0027 — code-gate cases. New joiners must present the lobby's
+    // `code`; reconnecting sessions (sessionId already a member) bypass the
+    // check by construction so a refresh / tab-recovery flow never needs
+    // the code.
+
+    @Test
+    fun `JoinLobby returns WrongCode when a new joiner presents a null code`() =
+        runTest {
+            val h = harness()
+            val lobby = h.create(sessionA, alice).value
+            val out = h.joinWithCode(lobby.id, sessionB, bob, code = null)
+            assertThat((out as UseCaseOutcome.Failure).error).isEqualTo(UseCaseError.WrongCode)
+        }
+
+    @Test
+    fun `JoinLobby returns WrongCode when a new joiner presents a mismatched code`() =
+        runTest {
+            val h = harness()
+            val lobby = h.create(sessionA, alice).value
+            // Pattern-valid but not this lobby's code.
+            val out = h.joinWithCode(lobby.id, sessionB, bob, code = "WRONG2")
+            assertThat((out as UseCaseOutcome.Failure).error).isEqualTo(UseCaseError.WrongCode)
+        }
+
+    @Test
+    fun `JoinLobby admits a new joiner when the code matches lobby code`() =
+        runTest {
+            val h = harness()
+            val lobby = h.create(sessionA, alice).value
+            val out = h.joinWithCode(lobby.id, sessionB, bob, code = lobby.code.value).requireSuccess()
+            assertThat(out.value.players.keys).isEqualTo(setOf(sessionA, sessionB))
+        }
+
+    // Reconnect bypass — the existing reconnect test (`JoinLobby is idempotent
+    // for the same sessionId reconnect`) already exercises the happy path
+    // because the convenience `join` resolves the lobby's code. The two
+    // cases below pin the ADR-0027 invariant that reconnects do NOT consult
+    // the code, regardless of what the client re-sends.
+
+    @Test
+    fun `JoinLobby reconnect succeeds even when code is null`() =
+        runTest {
+            val h = harness()
+            val lobby = h.create(sessionA, alice).value
+            h.joinWithCode(lobby.id, sessionB, bob, code = lobby.code.value).requireSuccess()
+            h.clock.advance(Duration.ofSeconds(15))
+            // Reconnect with null code — must still succeed (idempotent path).
+            val second = h.joinWithCode(lobby.id, sessionB, bob, code = null).requireSuccess()
+            assertThat(second.value.players[sessionB]).isNotNull()
+            assertThat(second.events).hasSize(0)
+        }
+
+    @Test
+    fun `JoinLobby reconnect succeeds even when code is wrong (regression guard)`() =
+        runTest {
+            val h = harness()
+            val lobby = h.create(sessionA, alice).value
+            h.joinWithCode(lobby.id, sessionB, bob, code = lobby.code.value).requireSuccess()
+            // A client that re-sends a stale / mistyped code on reconnect must
+            // not be locked out of their own lobby — guards against a future
+            // refactor that mistakenly applies the code check before the
+            // reconnect branch.
+            val out = h.joinWithCode(lobby.id, sessionB, bob, code = "WRONG2").requireSuccess()
+            assertThat(out.value.players[sessionB]).isNotNull()
+            assertThat(out.events).hasSize(0)
         }
 
     @Test
@@ -358,11 +428,29 @@ internal class Harness(
         p: Pseudonym,
     ) = create.invoke(s, p)
 
+    /**
+     * Convenience join — resolves the lobby's canonical code so the test
+     * site exercises the happy-path. Tests that need to probe the
+     * ADR-0027 code-gate deliberately use [joinWithCode] and pass a
+     * wrong/null value explicitly. (A `code: String? = repo.findById(l)?.code?.value`
+     * default would compile-fail: Kotlin disallows suspend calls in default
+     * parameter values.)
+     */
     suspend fun join(
         l: LobbyId,
         s: SessionId,
         p: Pseudonym,
-    ) = join.invoke(l, s, p)
+    ): UseCaseOutcome<Lobby> {
+        val code = repo.findById(l)?.code?.value
+        return join.invoke(l, s, p, code)
+    }
+
+    suspend fun joinWithCode(
+        l: LobbyId,
+        s: SessionId,
+        p: Pseudonym,
+        code: String?,
+    ) = join.invoke(l, s, p, code)
 
     suspend fun rename(
         l: LobbyId,

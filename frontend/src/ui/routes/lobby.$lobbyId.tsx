@@ -167,6 +167,7 @@ function LobbyPage() {
   const gameClient = ctx.gameClient!;
   const getSession = ctx.getSession!;
   const setPersistedPseudonym = ctx.setPseudonym;
+  const lobbyJoinCodeStash = ctx.lobbyJoinCodeStash!;
   const navigate = useNavigate();
 
   const [view, setView] = useState<LobbyView>(() => ({
@@ -185,6 +186,22 @@ function LobbyPage() {
   const handleClearPseudonymError = useCallback(() => {
     setPseudonymError(null);
   }, []);
+  // ADR-0027: when the server rejects the WS join with `wrong-code`
+  // (no code or mismatched code on a new join), the route does NOT
+  // mount the WaitingRoom — the un-authorised user lands on a
+  // read-only-snapshot view with this banner asking the organiser
+  // for the code. Already-joined sessions never raise this.
+  const [joinDenied, setJoinDenied] = useState<string | null>(null);
+  // ADR-0027: gate the WaitingRoom render on a confirmed join so a new
+  // joiner whose code the server is about to reject doesn't see the
+  // lobby contents (player list with the owner) flash before the
+  // wrong-code banner takes over. Already-joined sessions (reconnect
+  // path: sessionId is already in the snapshot's player list) start
+  // confirmed because the server's reconnect branch never fails.
+  const initialSessionId = getSession().sessionId;
+  const [joinConfirmed, setJoinConfirmed] = useState<boolean>(() =>
+    initialLobby.players.some((p) => p.sessionId === initialSessionId),
+  );
   // True between "Démarrer la partie" click and the server-side
   // confirmation. WaitingRoom uses the flag to disable the button and
   // flip the label to "Démarrage…" so the WS round-trip (frame →
@@ -209,6 +226,23 @@ function LobbyPage() {
       } else if (event.type === 'playerRenamed' && event.sessionId === sessionId) {
         setPseudonymError(null);
       }
+      if (event.type === 'error' &&
+        event.errorType === 'https://bliss.example/errors/wrong-code') {
+        // Server rejected the join — the WaitingRoom does not mount.
+        // Drop the stash so a later reload doesn't replay the bad code.
+        setJoinDenied(event.detail ?? 'Code invalide ou partie privée. Demandez le code à l’organisateur.');
+        lobbyJoinCodeStash.clear(lobbyId as LobbyId);
+      }
+      // First `playerJoined` for our own sessionId confirms the WS join
+      // — flip on the WaitingRoom render. Clear the stash now that the
+      // server has accepted us; future reconnects bypass the code.
+      // (Reconnect path: sessionId already in the snapshot's player
+      // list, handled at mount time via the initial-state computation
+      // above.)
+      if (event.type === 'playerJoined' && event.sessionId === sessionId) {
+        setJoinConfirmed(true);
+        lobbyJoinCodeStash.clear(lobbyId as LobbyId);
+      }
       // Clear the in-flight Start spinner once the server either
       // confirms the new game or rejects the request. `gameStarted`
       // also unmounts WaitingRoom, but resetting the flag is good
@@ -221,13 +255,20 @@ function LobbyPage() {
     const unsubscribeConnection = gameClient.subscribeConnectionState((state) => {
       setConnectionState(state);
     });
-    void gameClient.connect({ lobbyId: lobbyId as LobbyId, sessionId, pseudonym }).catch(() => {});
+    // ADR-0027: read the code stash the navigation populated. Read is
+    // non-destructive so React StrictMode's mount-unmount-remount
+    // cycle doesn't drain the stash on the first mount and starve the
+    // second of its code. The stash is cleared on either confirmed
+    // join (`playerJoined` for our sessionId) or wrong-code rejection
+    // — see the subscribe handler above.
+    const code = lobbyJoinCodeStash.read(lobbyId as LobbyId) ?? undefined;
+    void gameClient.connect({ lobbyId: lobbyId as LobbyId, sessionId, pseudonym, code }).catch(() => {});
     return () => {
       unsubscribeEvents();
       unsubscribeConnection();
       gameClient.disconnect();
     };
-  }, [gameClient, lobbyId, getSession]);
+  }, [gameClient, lobbyId, getSession, lobbyJoinCodeStash]);
 
   const { sessionId } = getSession();
   const lobby = view.lobby;
@@ -251,9 +292,17 @@ function LobbyPage() {
     gameClient.startGame();
   }, [gameClient]);
 
+  // ADR-0027: the address-bar URL is `/lobby/$lobbyId` and is NEVER a
+  // share token (a viewer copying it cannot join — the WS rejects on
+  // missing code). The share button copies a `/join/$code` link
+  // instead; recipients clicking it land on the lobby with the code
+  // already stashed, and the URL replaces back to `/lobby/$lobbyId`.
+  const lobbyCode = lobby.code;
   const handleCopyShareUrl = useCallback(() => {
-    void navigator.clipboard?.writeText(window.location.href);
-  }, []);
+    if (lobbyCode == null) return;
+    const shareUrl = `${window.location.origin}/join/${lobbyCode}`;
+    void navigator.clipboard?.writeText(shareUrl);
+  }, [lobbyCode]);
 
   const handleCellChange = useCallback((row: number, col: number, letter: string | null) => {
     // The Grid hook reports `string | null`; `cellUpdate` expects
@@ -377,7 +426,26 @@ function LobbyPage() {
     <>
       <ConnectionBanner state={connectionState} />
       <LobbyShell>
-        {lobby.state === 'WAITING' ? (
+        {lobby.state === 'WAITING' && joinDenied != null ? (
+          <p
+            role="alert"
+            className={css({ fontSize: 'body', color: 'errorText', textAlign: 'center', margin: 0, paddingBlock: 'md' })}
+          >
+            {joinDenied}
+          </p>
+        ) : null}
+        {lobby.state === 'WAITING' && joinDenied == null && !joinConfirmed ? (
+          // Brief "connecting" status while the WS join is in flight.
+          // Prevents the "see the owner for a fraction of a second" flash
+          // when a wrong-code response is on its way (ADR-0027).
+          <p
+            role="status"
+            className={css({ fontSize: 'body', color: 'fgMuted', textAlign: 'center', margin: 0, paddingBlock: 'md' })}
+          >
+            Connexion à la partie…
+          </p>
+        ) : null}
+        {lobby.state === 'WAITING' && joinDenied == null && joinConfirmed ? (
           <>
             <p className={detailStyles}>
               {lobby.players.length} {lobby.players.length === 1 ? 'joueur' : 'joueurs'}
@@ -584,6 +652,11 @@ function applyEvent(current: LobbyView, event: GameEvent): LobbyView {
         lobby: {
           players: event.players, ownerSessionId: event.ownerSessionId,
           state: event.state, gridConfig: event.gridConfig, game: event.game,
+          // The WS `lobbyState` payload doesn't carry the join code yet
+          // (asyncapi follow-up). Preserve the value the REST loader
+          // populated so the WaitingRoom share-link affordance keeps
+          // working through reconnects + late snapshots.
+          code: current.lobby.code,
         },
       };
     case 'playerJoined':

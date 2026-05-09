@@ -169,4 +169,9 @@ export interface Lobby {
   readonly state: LobbyLifecycleState;
   readonly gridConfig: GridConfig;
   readonly game: GameSession | null;
+  // Six-char Crockford-style join code (ADR-0027). Carried on the REST
+  // `Lobby` since #262; the WS `lobbyState` snapshot does not yet carry
+  // it, so the lobby route preserves the value across snapshots from
+  // the REST loader's initial response.
+  readonly code?: string | null;
 }

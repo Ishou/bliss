@@ -155,6 +155,13 @@ internal fun UseCaseError.toErrorFrame(): ServerToClientFrame.Error =
                 title = "Vous n'êtes pas membre de ce salon",
                 status = 403,
             )
+        UseCaseError.WrongCode ->
+            ServerToClientFrame.Error(
+                errorType = "https://bliss.example/errors/wrong-code",
+                title = "Code de partie invalide",
+                detail = "Demandez le code à l'organisateur.",
+                status = 403,
+            )
         is UseCaseError.InvalidArgument ->
             ServerToClientFrame.Error(
                 errorType = "https://bliss.example/errors/invalid-argument",
