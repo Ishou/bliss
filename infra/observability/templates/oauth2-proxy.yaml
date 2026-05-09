@@ -97,6 +97,16 @@ spec:
             - --htpasswd-file=/etc/oauth2-proxy/htpasswd
             - --display-htpasswd-form=true
             - --email-domain=*
+            # NOTE: do NOT set --skip-provider-button=true here. With
+            # the dummy OIDC config (provider=keycloak-oidc + bogus
+            # localhost URLs), --skip-provider-button causes
+            # /oauth2/sign_in to bypass the htpasswd form and redirect
+            # to http://localhost/login (the dummy oidc-issuer-url +
+            # login-url), which the browser can't reach. Leaving it
+            # off renders both the bogus "Sign in with Keycloak"
+            # button AND the htpasswd form on the same page; the user
+            # ignores the button and fills in the form. Mild UX
+            # weirdness traded for a working login flow.
             # Static upstream — oauth2-proxy is used as auth-only
             # via nginx auth-url, not as a reverse proxy. Returning
             # 200 from a static upstream lets nginx forward the
@@ -114,10 +124,6 @@ spec:
             # 168h = 7 days — single login per week.
             - --cookie-expire=168h
             - --cookie-refresh=24h
-            # Skip the "Sign in with provider" button page since
-            # there's no real provider; render the htpasswd form
-            # directly.
-            - --skip-provider-button=true
           env:
             - name: OAUTH2_PROXY_COOKIE_SECRET
               valueFrom:
