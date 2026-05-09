@@ -364,12 +364,12 @@ export interface components {
              *     input). Six uppercase alphanumeric characters, drawn from the
              *     unambiguous Crockford-style alphabet (no `0`/`O`, `1`/`I`,
              *     `L`) so a player reading the code aloud cannot land on a
-             *     different lobby. Null until the join-by-code feature ships
+             *     different lobby. Absent until the join-by-code feature ships
              *     its mint logic in a follow-up PR; clients should fall back
              *     to the existing URL-share path while absent.
              * @example A2B3C4
              */
-            code?: string | null;
+            code?: string;
         };
         /**
          * @description Request body for `POST /v1/lobbies`.
