@@ -87,9 +87,11 @@ feel varied, short enough not to starve a thin clue pool.
 
 ### Hexagonal placement
 
-A new domain port `ClueCooldownRepository` (in `grid:domain`, per the
-project convention that ports live in `domain` rather than
-`application`) exposes `snapshot(bucketId)`,
+A new domain port `ClueCooldownRepository` (in `grid:domain`, following
+the same placement as `WordRepository`: the domain generator invokes it
+directly, so the port must reside in domain to avoid an upward dependency.
+Contrast with `HintUsageRepository` and `PuzzleRepository`, which are
+application-level ports and live in `grid:application`.) exposes `snapshot(bucketId)`,
 `recordGeneration(bucketId, usedClues, rollMaxInclusive)`, and
 `deleteBySession(bucketId)`. The domain remains I/O-free: the
 application layer pre-loads the snapshot and passes a small
