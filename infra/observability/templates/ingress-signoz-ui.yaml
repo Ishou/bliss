@@ -1,0 +1,57 @@
+{{/*
+SigNoz UI ingresses — two hosts (`errors.` + `dashboard.wordsparrow.io`)
+both pointing at the same SigNoz frontend Service. Both gated by
+ingress-nginx basic auth via the `admin-htpasswd` Secret (ADR-0028).
+
+Why two ingresses for the same backend instead of one with multiple
+hosts:
+- Cleaner annotations per host (a future move of `errors.` to a
+  dedicated error-tracker product needs to retarget only one Ingress).
+- external-dns publishes one A record per Ingress hostname; the rule
+  in `docs/deploy.md` §"Floating IP / DNS records" expects each
+  Ingress to carry its own `target` annotation, which makes
+  per-Ingress declarations the sane atomic unit.
+
+Both ingresses share:
+- cert-manager letsencrypt-prod ClusterIssuer (issued out of the
+  platform chart in PR-#274).
+- external-dns target = the Hetzner floating IP.
+- ingress-nginx basic-auth pointing at the bootstrapped
+  `admin-htpasswd` Secret in this namespace.
+*/}}
+{{- if .Values.ingress.enabled }}
+{{- range $host := .Values.ingress.hosts }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: signoz-ui-{{ $host | replace "." "-" }}
+  labels: {{- include "observability.labels" $ | nindent 4 }}
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    external-dns.alpha.kubernetes.io/hostname: {{ $host | quote }}
+    # Per `docs/deploy.md` §"Floating IP / DNS records": every Ingress
+    # in this repo MUST carry the `target` annotation explicitly.
+    external-dns.alpha.kubernetes.io/target: {{ $.Values.ingress.floatingIp | quote }}
+    # ADR-0028 — htpasswd basic auth on the SigNoz UI surfaces.
+    nginx.ingress.kubernetes.io/auth-type: basic
+    nginx.ingress.kubernetes.io/auth-secret: {{ $.Values.ingress.authSecretName | quote }}
+    nginx.ingress.kubernetes.io/auth-realm: "WordSparrow ops — observability"
+spec:
+  ingressClassName: {{ $.Values.ingress.className | quote }}
+  tls:
+    - hosts: [{{ $host | quote }}]
+      secretName: {{ $.Values.ingress.tlsSecretName }}-{{ $host | replace "." "-" }}
+  rules:
+    - host: {{ $host | quote }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "observability.signozFrontendService" $ }}
+                port:
+                  number: {{ $.Values.ingress.servicePort | int }}
+{{- end }}
+{{- end }}
