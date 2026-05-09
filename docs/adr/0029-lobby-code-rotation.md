@@ -13,8 +13,9 @@ share captures the chip) currently leaves the owner with one option:
 abandon the lobby and create a fresh one. That kicks every legitimate
 player and breaks any in-flight share link.
 
-The product wants the multiplayer flow usable on streams. ADR-0027 §3
-("Information disclosure") explicitly carries a residual "members who
+The product wants the multiplayer flow usable on streams.
+ADR-0027 Threat model → Information disclosure explicitly carries a
+residual "members who
 have already joined keep their access" risk, but the worse story today
 is the **non-member** who learns the code from the stream and then
 joins indefinitely until the lobby is torn down. Today there is no
