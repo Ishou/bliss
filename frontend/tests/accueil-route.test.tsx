@@ -7,6 +7,7 @@ import {
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { PuzzleRepository, PuzzleSolver } from '@/application';
 import {
+  LobbyClientError,
   type GameClient,
   type LobbyClient,
 } from '@/application/game';
@@ -200,17 +201,12 @@ describe('Accueil route', () => {
     });
   });
 
-  // The PIN input is an Ark UI / zag-js machine; firing realistic
-  // keystroke / paste events through it from jsdom is unreliable
-  // (cf. `feedback_strictmode_zag_machine` memory: zag machines are
-  // brittle outside a real browser). The input-behaviour contract
-  // — Crockford normalisation, /join/$code URL paste extraction, the
-  // pattern check — lives at the PinInput primitive level
-  // (`tests/primitives/pin-input.test.tsx`) where the property tests
-  // exercise the pure normaliser. The Accueil tests below cover only
-  // the surrounding consumer behaviour (rendering, flag-gating, the
-  // eye toggle, and the Créer-une-partie button — none of which go
-  // through zag's keyboard machine).
+  // Keystroke-by-keystroke input through zag's keyboard machine is
+  // unreliable in jsdom (zag machines are brittle outside a real browser).
+  // Paste events bypass zag and are reliable — they're intercepted at the
+  // React level before zag's onBeforeInput filter runs. The two handleJoin
+  // integration tests below use that mechanism. The remaining tests cover
+  // rendering, flag-gating, the eye toggle, and the Créer-une-partie button.
 
   it('disables join controls when the multiplayer flag is off', async () => {
     vi.stubEnv('VITE_FEATURE_MULTIPLAYER', 'false');
@@ -287,5 +283,54 @@ describe('Accueil route', () => {
     const title = await screen.findByRole('heading', { name: 'Grille du jour' });
     const meta = title.nextElementSibling;
     expect(meta?.textContent).toMatch(/· n°142 · facile$/);
+  });
+
+  it('resolves a pasted code and navigates to the matching lobby on success', async () => {
+    vi.stubEnv('VITE_FEATURE_MULTIPLAYER', 'true');
+    const { router, lobbyClient, container } = renderAccueil();
+    await screen.findAllByLabelText(/code de partie/i);
+    const slot = container.querySelector<HTMLInputElement>('input[data-part="input"]')!;
+    fireEvent.paste(slot, {
+      clipboardData: { getData: () => 'A2B3C4' },
+    });
+    await vi.waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Rejoindre' })).not.toBeDisabled();
+    });
+    await act(async () => {
+      screen.getByRole('button', { name: 'Rejoindre' }).click();
+    });
+    await vi.waitFor(() => {
+      expect(lobbyClient.findByCode).toHaveBeenCalledWith('A2B3C4');
+      expect(router.state.location.pathname).toBe(`/lobby/${createdLobbyId}`);
+    });
+  });
+
+  it('shows "Aucune partie pour ce code" error when findByCode returns 404', async () => {
+    vi.stubEnv('VITE_FEATURE_MULTIPLAYER', 'true');
+    const notFound = new LobbyClientError({
+      kind: 'not-found',
+      status: 404,
+      problem: null,
+      message: '404',
+    });
+    const { container } = renderAccueil({
+      lobbyClient: { findByCode: vi.fn().mockRejectedValue(notFound) },
+    });
+    await screen.findAllByLabelText(/code de partie/i);
+    const slot = container.querySelector<HTMLInputElement>('input[data-part="input"]')!;
+    fireEvent.paste(slot, {
+      clipboardData: { getData: () => 'A2B3C4' },
+    });
+    await vi.waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Rejoindre' })).not.toBeDisabled();
+    });
+    await act(async () => {
+      screen.getByRole('button', { name: 'Rejoindre' }).click();
+    });
+    await vi.waitFor(() => {
+      expect(screen.getByRole('alert')).toHaveTextContent(
+        'Aucune partie pour ce code. Vérifiez la saisie.',
+      );
+    });
   });
 });
