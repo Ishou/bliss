@@ -68,7 +68,7 @@ class LobbiesRouteTest {
             val json = Json.parseToJsonElement(body) as JsonObject
             assertThat(json.containsKey("game")).isEqualTo(true)
             // `code` is now minted at lobby creation — pattern-matches the
-            // `^[A-HJ-NP-Z2-9]{6}$` Crockford-style alphabet declared in the
+            // `^[A-HJKM-NP-Z2-9]{6}$` Crockford-style alphabet declared in the
             // openapi schema. Phase 2 of the join-by-code wave.
             assertThat(json.containsKey("code")).isEqualTo(true)
             val code = lobby.code

@@ -623,9 +623,9 @@ components:
             input). Six uppercase alphanumeric characters, drawn from the
             unambiguous Crockford-style alphabet (no `0`/`O`, `1`/`I`,
             `L`) so a player reading the code aloud cannot land on a
-            different lobby. Absent until the join-by-code feature ships
-            its mint logic in a follow-up PR; clients should fall back
-            to the existing URL-share path while absent.
+            different lobby. Always present for lobbies created after the
+            join-by-code wave (PR #262). Will be promoted to `required`
+            in phase 3 once all clients expect the field.
           example: A2B3C4
 
     CreateLobbyRequest:

@@ -73,7 +73,7 @@ class CreateLobbyUseCase(
     }
 
     /**
-     * Generate a fresh [LobbyCode] not already in use. The 32^6 ≈ 1B
+     * Generate a fresh [LobbyCode] not already in use. The 31^6 ≈ 887M
      * keyspace makes collisions vanishingly unlikely at v1 scale (low
      * tens of concurrent lobbies); the bounded retry exists so a future
      * volume regression fails loudly instead of corrupting the wire
