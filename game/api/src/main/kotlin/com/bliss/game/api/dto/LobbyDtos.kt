@@ -19,6 +19,11 @@ data class LobbyResponseDto(
     val state: String,
     val gridConfig: GridConfigDto,
     val game: GameSessionDto?,
+    // Optional human-friendly join code (`code` schema field). Null
+    // until the join-by-code follow-up mints real values; `explicitNulls
+    // = false` on the JSON config keeps the key off the wire on the
+    // null path.
+    val code: String? = null,
 )
 
 @Serializable

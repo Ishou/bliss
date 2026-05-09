@@ -67,6 +67,11 @@ class LobbiesRouteTest {
             // JSON to verify the field was emitted, not omitted.
             val json = Json.parseToJsonElement(body) as JsonObject
             assertThat(json.containsKey("game")).isEqualTo(true)
+            // `code` is optional + nullable in v1 — minted by the join-by-code
+            // follow-up. `explicitNulls = false` on the JSON config omits null
+            // fields, so absence is the contract until that PR ships.
+            assertThat(json.containsKey("code")).isEqualTo(false)
+            assertThat(lobby.code).isEqualTo(null)
         }
 
     @Test
