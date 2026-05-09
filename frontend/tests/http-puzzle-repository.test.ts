@@ -114,4 +114,47 @@ describe('HttpPuzzleRepository', () => {
     });
     await expect(repo.fetchById(apiFixture.id)).rejects.toThrow(/Out of attempts/);
   });
+
+  it('GETs /v1/puzzles/daily and maps gridNumber + difficulty to the domain Puzzle', async () => {
+    const fetchSpy = vi.fn().mockResolvedValue(json(apiFixture));
+    const repo = createHttpPuzzleRepository({
+      baseUrl: 'https://api.example.test', fetch: fetchSpy,
+    });
+
+    const puzzle = await repo.fetchDaily();
+
+    const call = fetchSpy.mock.calls[0][0];
+    const url = call instanceof Request ? call.url : String(call);
+    expect(url).toBe('https://api.example.test/v1/puzzles/daily');
+    expect(puzzle.id).toBe(apiFixture.id);
+    expect(puzzle.gridNumber).toBe(apiFixture.gridNumber);
+    expect(puzzle.difficulty).toBe(apiFixture.difficulty);
+  });
+
+  it('GETs /v1/puzzles/daily?date=... when date is provided', async () => {
+    const fetchSpy = vi.fn().mockResolvedValue(json(apiFixture));
+    const repo = createHttpPuzzleRepository({
+      baseUrl: 'https://api.example.test', fetch: fetchSpy,
+    });
+
+    await repo.fetchDaily('2026-05-09');
+
+    const call = fetchSpy.mock.calls[0][0];
+    const url = call instanceof Request ? call.url : String(call);
+    expect(url).toContain('/v1/puzzles/daily');
+    expect(url).toContain('date=2026-05-09');
+  });
+
+  it('rejects with the RFC 7807 detail when fetchDaily returns a problem body', async () => {
+    const repo = createHttpPuzzleRepository({
+      baseUrl: 'https://api.example.test',
+      fetch: vi.fn().mockResolvedValue(
+        json(
+          { type: 'https://x/err', title: 'Invalid date', status: 400, detail: 'date must be ISO-8601' },
+          400, 'application/problem+json',
+        ),
+      ),
+    });
+    await expect(repo.fetchDaily('bad-date')).rejects.toThrow(/date must be ISO-8601/);
+  });
 });
