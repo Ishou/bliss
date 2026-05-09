@@ -95,6 +95,11 @@ const linkActiveStyles = css({
 });
 
 const rightSlotStyles = css({
+  // Pin to grid column 3 explicitly: when the centre `<nav>` is
+  // `display: none` on mobile, CSS Grid auto-placement would otherwise
+  // drop this slot into column 2 (the now-empty auto column), parking
+  // the hamburger in the visual middle of the header.
+  gridColumnStart: 3,
   display: 'flex',
   justifyContent: 'flex-end',
   alignItems: 'center',
