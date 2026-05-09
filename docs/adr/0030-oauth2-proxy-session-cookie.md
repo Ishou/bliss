@@ -77,7 +77,7 @@ a **two-Ingress-per-host** layout:
 **Ingress 1 — `/oauth2/*` → oauth2-proxy, no `auth-url` applied.**
 The `/oauth2` paths are exposed on a separate Ingress with no `auth-url`
 annotation. Placing `/oauth2` behind `auth-url` creates a redirect loop:
-`auth-signin` redirects to `/oauth2/start`, which is itself validated by
+`auth-signin` redirects to `/oauth2/sign_in`, which is itself validated by
 `auth-url`, which redirects again (nginx detects the cycle and 500s).
 Two Ingresses share the same TLS Secret; cert-manager is idempotent on the
 `secretName` so only one Certificate object is issued per host.
