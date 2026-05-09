@@ -2,6 +2,7 @@ package com.bliss.grid.api
 
 import assertk.assertThat
 import assertk.assertions.isEqualTo
+import assertk.assertions.isNotEqualTo
 import assertk.assertions.isNotNull
 import assertk.assertions.matches
 import io.ktor.client.request.get
@@ -35,6 +36,24 @@ class CorrelationIdTest {
             assertThat(response.status).isEqualTo(HttpStatusCode.OK)
             val id = response.headers["X-Request-Id"]
             assertThat(id).isNotNull()
+            assertThat(id!!).matches(Regex("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"))
+        }
+
+    @Test
+    fun `ignores oversized X-Request-Id and generates server-side UUID`() =
+        testApplication {
+            application { module() }
+
+            val oversized = "x".repeat(129)
+            val response =
+                client.get("/v1/health") {
+                    header("X-Request-Id", oversized)
+                }
+
+            assertThat(response.status).isEqualTo(HttpStatusCode.OK)
+            val id = response.headers["X-Request-Id"]
+            assertThat(id).isNotNull()
+            assertThat(id).isNotEqualTo(oversized)
             assertThat(id!!).matches(Regex("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"))
         }
 }
