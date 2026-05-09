@@ -40,13 +40,18 @@ signoz:
       # Revisit if/when SigNoz upstream bumps the pin.
       image:
         repository: bitnamilegacy/zookeeper
+      # Initial 256Mi limit OOMKilled the pod during JVM startup
+      # (Bitnami's ZK 3.7.1 image runs OpenJDK 17, baseline ~200 MB
+      # before any ZNodes). 512Mi gives the JVM headroom for the
+      # heap + non-heap (compressed class space, code cache,
+      # metaspace) without paging.
       resources:
         requests:
           cpu: 50m
-          memory: 100Mi
+          memory: 256Mi
         limits:
           cpu: 200m
-          memory: 256Mi
+          memory: 512Mi
 
   queryService:
     resources:
