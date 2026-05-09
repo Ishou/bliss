@@ -27,6 +27,8 @@ const samplePuzzle: Puzzle = {
   width: 5,
   height: 3,
   hintsAllowed: 3,
+  difficulty: null,
+  gridNumber: null,
   cells: [
     { kind: 'letter', position: { row: 0, col: 0 }, entry: '' },
     { kind: 'letter', position: { row: 0, col: 1 }, entry: '' },
@@ -50,9 +52,6 @@ const sessionId = '0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6b' as SessionId;
 const pseudonym = 'Joueur 1234' as Pseudonym;
 const createdLobbyId = '7gQ2xK9p' as LobbyId;
 
-const stubPuzzleRepository: PuzzleRepository = {
-  fetchById: () => Promise.resolve(samplePuzzle),
-};
 const stubPuzzleSolver: PuzzleSolver = {
   validate: () => Promise.resolve({ solved: false, incorrectCells: [] }),
   requestHint: () => Promise.reject(new Error('not used')),
@@ -85,6 +84,7 @@ interface RenderOptions {
   readonly soloStore?: SoloEntriesStore;
   readonly lobbyClient?: Partial<LobbyClient>;
   readonly initialEntry?: string;
+  readonly puzzle?: Puzzle;
 }
 
 const emptyStore: SoloEntriesStore = {
@@ -101,12 +101,15 @@ const renderAccueil = (options: RenderOptions = {}) => {
     getLobby: vi.fn().mockResolvedValue(baseCreatedLobby),
     ...options.lobbyClient,
   };
+  const puzzleRepository: PuzzleRepository = {
+    fetchById: () => Promise.resolve(options.puzzle ?? samplePuzzle),
+  };
   const routeTree = RootRoute.addChildren([AccueilRoute, GrilleRoute, LobbyRoute]);
   const router = createRouter({
     routeTree,
     history: createMemoryHistory({ initialEntries: [options.initialEntry ?? '/'] }),
     context: {
-      puzzleRepository: stubPuzzleRepository,
+      puzzleRepository,
       puzzleSolver: stubPuzzleSolver,
       sessionClient: {
         eraseSession: () => Promise.resolve({ deleted: 0 }),
@@ -209,5 +212,24 @@ describe('Accueil route', () => {
     renderAccueil();
     const link = await screen.findByRole('button', { name: 'Voir les anciennes grilles →' });
     expect(link).toBeDisabled();
+  });
+
+  it('omits the gridNumber and difficulty meta when both are null', async () => {
+    renderAccueil();
+    // Sub-row sits directly under the card title; with both fields null
+    // it must not contain a `·` separator (only the date).
+    const title = await screen.findByRole('heading', { name: 'Grille du jour' });
+    const meta = title.nextElementSibling;
+    expect(meta).not.toBeNull();
+    expect(meta?.textContent).not.toContain('·');
+    expect(meta?.textContent).not.toContain('n°');
+  });
+
+  it('renders `· n°X · difficulty` when puzzle metadata is populated', async () => {
+    const populated: Puzzle = { ...samplePuzzle, gridNumber: 142, difficulty: 'facile' };
+    renderAccueil({ puzzle: populated });
+    const title = await screen.findByRole('heading', { name: 'Grille du jour' });
+    const meta = title.nextElementSibling;
+    expect(meta?.textContent).toMatch(/· n°142 · facile$/);
   });
 });

@@ -7,6 +7,8 @@ import type { Cell } from './Cell';
 // tech. `hintsAllowed` is the per-puzzle hint budget the player may spend
 // against `POST /v1/puzzles/{id}/hints`; the server is authoritative on
 // the running counter, this field only seeds the UI.
+export type Difficulty = 'facile' | 'moyen' | 'difficile';
+
 export interface Puzzle {
   readonly id: string;
   readonly title: string;
@@ -15,4 +17,6 @@ export interface Puzzle {
   readonly height: number;
   readonly hintsAllowed: number;
   readonly cells: readonly Cell[];
+  readonly difficulty?: Difficulty | null;
+  readonly gridNumber?: number | null;
 }

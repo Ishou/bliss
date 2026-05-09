@@ -6,9 +6,11 @@ import assertk.assertions.hasSize
 import assertk.assertions.isEqualTo
 import assertk.assertions.isIn
 import assertk.assertions.isNotNull
+import assertk.assertions.isNull
 import assertk.assertions.isTrue
 import com.bliss.grid.api.dto.BlockCellDto
 import com.bliss.grid.api.dto.DefinitionCellDto
+import com.bliss.grid.api.dto.DifficultyDto
 import com.bliss.grid.api.dto.LetterCellDto
 import com.bliss.grid.domain.model.Column
 import com.bliss.grid.domain.model.Direction
@@ -114,6 +116,33 @@ class GridToPuzzleMapperTest {
         defsAtOrigin.forEach { def ->
             assertThat(clueIds.contains(def.clueId)).isTrue()
         }
+    }
+
+    @Test
+    fun `difficulty and gridNumber default to null and pass through when supplied`() {
+        val grid =
+            gridWith(
+                placements =
+                    listOf(
+                        WordPlacement(Word("OR", "metal"), pos(0, 0), Direction.RIGHT),
+                    ),
+            )
+
+        val withDefaults = mapper.toApi(grid, UUID.randomUUID(), Instant.now(), hintsAllowed = 3)
+        assertThat(withDefaults.difficulty).isNull()
+        assertThat(withDefaults.gridNumber).isNull()
+
+        val withValues =
+            mapper.toApi(
+                grid = grid,
+                puzzleId = UUID.randomUUID(),
+                createdAt = Instant.now(),
+                hintsAllowed = 3,
+                difficulty = DifficultyDto.FACILE,
+                gridNumber = 142,
+            )
+        assertThat(withValues.difficulty).isEqualTo(DifficultyDto.FACILE)
+        assertThat(withValues.gridNumber).isEqualTo(142)
     }
 
     @Test

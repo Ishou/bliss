@@ -13,8 +13,6 @@ import { Route as RootRoute } from './__root';
 // (create + disabled join-by-code).
 //
 // Backend gaps the UI defers to follow-up PRs:
-//  - Puzzle DTO has no `gridNumber` / `difficulty` yet — the meta row
-//    is hidden until those fields ship.
 //  - No daily-grid endpoint — we reuse the grille route's hardcoded
 //    UUID v7 so behaviour is identical to today.
 //  - No archive route — the "Anciennes grilles" link renders disabled.
@@ -222,12 +220,17 @@ function GrilleDuJourCard({ puzzle }: { readonly puzzle: Puzzle }) {
   const entriesCount = soloEntriesStore.load(puzzle.id).length;
   const hasStarted = lockedCount > 0 || entriesCount > 0;
 
-  const dateLabel = formatTodayFr(new Date());
+  // Meta row: date `· n°X · facile`. Number and difficulty are optional —
+  // rendered only when populated.
+  const metaParts: string[] = [formatTodayFr(new Date())];
+  if (puzzle.gridNumber != null) metaParts.push(`n°${puzzle.gridNumber}`);
+  if (puzzle.difficulty != null) metaParts.push(puzzle.difficulty);
+  const metaLabel = metaParts.join(' · ');
 
   return (
     <section className={cardStyles} aria-labelledby="accueil-grille-title">
       <h2 id="accueil-grille-title" className={cardTitleStyles}>Grille du jour</h2>
-      <p className={cardSubtitleStyles}>{dateLabel}</p>
+      <p className={cardSubtitleStyles}>{metaLabel}</p>
       <ProgressBar
         value={lockedCount}
         total={totalLetterCells}

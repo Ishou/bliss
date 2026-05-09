@@ -152,6 +152,21 @@ export interface components {
              */
             language: string;
             /**
+             * @description Puzzle difficulty level. Lowercase French enum values match the
+             *     user-facing content language. Omitted when not yet assigned;
+             *     clients must treat absence as "no difficulty set".
+             * @example facile
+             * @enum {string|null}
+             */
+            difficulty?: "facile" | "moyen" | "difficile" | null;
+            /**
+             * @description Sequential daily-puzzle number (e.g. 142 for the 142nd daily
+             *     grid). Omitted when not yet assigned; clients must treat
+             *     absence as "no number assigned".
+             * @example 142
+             */
+            gridNumber?: number | null;
+            /**
              * @description Number of columns.
              * @example 5
              */
