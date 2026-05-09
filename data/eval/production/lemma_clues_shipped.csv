@@ -561,7 +561,8 @@ canal,nom,,,Voie d'eau,1,ok,,0.6798
 canaliser,verbe,,,Orienter,1,ok,,0.7502
 canard,nom,,,Palmipède aquatique,1,ok,,0.6618
 candidature,nom,,,Postulation,1,ok,,0.7574
-cane,nom,,,Bâton,1,ok,,0.6889
+cane,nom,,,Femelle du canard,1,ok,,0.6889
+canne,nom,,,Bâton,1,ok,,0.7908
 cantonal,adj,,,Local,1,ok,,0.9998
 capillarité,nom,,,Tension superficielle,1,ok,,0.6559
 capitaine,nom,,,Chef du navire,1,ok,,0.6746
@@ -4160,7 +4161,7 @@ ténacité,nom,,,Force,1,ok,,0.8491
 ténor,nom,,,Chanteur principal,1,ok,,0.7015
 ténébreux,nom,,,Sombre et obscur,1,ok,,0.7575
 tête,nom,,,Sommet,1,ok,,1.0000
-têtu,nom,,,Gay,1,ok,,0.9999
+têtu,nom,,,Obstiné,1,ok,,0.9999
 ultimatum,nom,,,Dernier avertissement,1,ok,,0.7522
 ultime,adj,,,Dernier,1,ok,,1.0000
 ultérieur,adj,,,Futur,1,ok,,1.0000
