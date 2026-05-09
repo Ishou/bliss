@@ -8,7 +8,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { Puzzle } from '@/domain';
 import { Route as RootRoute } from '@/ui/routes/__root';
 import { Route as AideRoute } from '@/ui/routes/aide';
-import { Route as IndexRoute } from '@/ui/routes/index';
+import { Route as IndexRoute } from '@/ui/routes/grille';
 
 const stubPuzzle: Puzzle = {
   id: '0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6b',
@@ -80,7 +80,7 @@ describe('Aide route', () => {
       .toBeInTheDocument();
   });
 
-  it('navigates to "/" with ?tour=1 when the launcher button is clicked', async () => {
+  it('navigates to "/grille" with ?tour=1 when the launcher button is clicked', async () => {
     const { router } = renderAide();
     const launcher = await screen.findByRole('button', {
       name: 'Lancer le tour',
@@ -89,7 +89,7 @@ describe('Aide route', () => {
     // TanStack Router resolves the navigation asynchronously; wait until
     // the location reflects the new search param.
     await vi.waitFor(() => {
-      expect(router.state.location.pathname).toBe('/');
+      expect(router.state.location.pathname).toBe('/grille');
       expect(router.state.location.search).toMatchObject({ tour: 1 });
     });
   });

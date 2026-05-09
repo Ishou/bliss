@@ -20,7 +20,7 @@ import type {
   SessionId,
 } from '@/domain/game';
 import { Route as RootRoute } from '@/ui/routes/__root';
-import { Route as IndexRoute } from '@/ui/routes/index';
+import { Route as IndexRoute } from '@/ui/routes/grille';
 import { Route as LobbyRoute } from '@/ui/routes/lobby.$lobbyId';
 
 // `/lobby/:lobbyId` route tests. Covers loader happy path, loader 404,

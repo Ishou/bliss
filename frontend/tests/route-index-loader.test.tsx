@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { PuzzleRepository, PuzzleSolver } from '@/application';
 import type { Puzzle } from '@/domain';
 import { Route as RootRoute } from '@/ui/routes/__root';
-import { Route as IndexRoute } from '@/ui/routes/index';
+import { Route as IndexRoute } from '@/ui/routes/grille';
 
 const puzzle: Puzzle = {
   id: '0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6b',
@@ -21,7 +21,7 @@ const renderWith = (repository: PuzzleRepository) => {
   const routeTree = RootRoute.addChildren([IndexRoute]);
   const router = createRouter({
     routeTree,
-    history: createMemoryHistory({ initialEntries: ['/'] }),
+    history: createMemoryHistory({ initialEntries: ['/grille'] }),
     // Multiplayer context fields are unused on `/` and remain absent
     // here, mirroring the production root when the flag is off.
     context: {

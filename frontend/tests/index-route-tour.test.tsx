@@ -8,7 +8,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { Puzzle } from '@/domain';
 import type { TourSeenStore } from '@/application/tour/TourSeenStore';
 import { Route as RootRoute } from '@/ui/routes/__root';
-import { Route as IndexRoute } from '@/ui/routes/index';
+import { Route as IndexRoute } from '@/ui/routes/grille';
 
 // End-to-end-ish test of the tour wiring at the route level: confirms
 // the Bienvenue step renders when the seen flag is false, and that
@@ -47,7 +47,7 @@ const buildContext = (tourSeenStore: TourSeenStore) => ({
 
 const renderIndex = (
   tourSeenStore: TourSeenStore,
-  initialEntry = '/',
+  initialEntry = '/grille',
 ) => {
   const routeTree = RootRoute.addChildren([IndexRoute]);
   const router = createRouter({
@@ -107,7 +107,7 @@ describe('index route — onboarding tour wiring', () => {
         set: vi.fn(),
         clear: vi.fn(),
       },
-      '/?tour=1',
+      '/grille?tour=1',
     );
     await screen.findByRole('grid');
     await flush();
