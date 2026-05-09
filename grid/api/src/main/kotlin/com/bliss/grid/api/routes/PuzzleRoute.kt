@@ -113,6 +113,8 @@ fun Route.puzzles(
             return@get
         }
         val difficulty = DifficultyDto.fromWire(dailyPuzzleSelector.difficultyForDate(date))
+        val rawGridNumber = dailyPuzzleSelector.gridNumberForDate(date)
+        val gridNumber = if (rawGridNumber >= 1) rawGridNumber else null
         call.respond(
             mapper.toApi(
                 grid = stored.grid,
@@ -122,7 +124,7 @@ fun Route.puzzles(
                 title = stored.title,
                 language = stored.language,
                 difficulty = difficulty,
-                gridNumber = dailyPuzzleSelector.gridNumberForDate(date),
+                gridNumber = gridNumber,
             ),
         )
     }
