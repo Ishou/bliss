@@ -13,8 +13,6 @@ import { Route as RootRoute } from './__root';
 // (create + disabled join-by-code).
 //
 // Backend gaps the UI defers to follow-up PRs:
-//  - Puzzle DTO has no `gridNumber` / `difficulty` yet — the meta row
-//    is hidden until those fields ship.
 //  - No daily-grid endpoint — we reuse the grille route's hardcoded
 //    UUID v7 so behaviour is identical to today.
 //  - No archive route — the "Anciennes grilles" link renders disabled.
