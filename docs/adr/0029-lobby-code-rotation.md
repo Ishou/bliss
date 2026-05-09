@@ -108,7 +108,7 @@ Concretely:
 - The lobby snapshot now leaks `code` to every subscribed socket. This
   is acceptable: every subscribed socket is already a member (the
   code-gate per ADR-0027 admits no one else), and members already had
-  access via `Lobby` REST anyway (§3 below).
+  access via `Lobby` REST anyway (see Threat model → Information disclosure below).
 
 ### Different
 
