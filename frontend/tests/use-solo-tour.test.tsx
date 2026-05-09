@@ -78,7 +78,11 @@ describe('useSoloTour', () => {
     expect(result.current.open).toBe(true);
   });
 
-  it('exposes the 4 steps configured in soloTourSteps', async () => {
+  it('exposes the desktop step set (6 steps including zoom)', async () => {
+    // jsdom's default viewport is 1024×768 — the desktop branch of
+    // `buildSoloTourSteps`. The mobile branch (5 steps without `zoom`)
+    // is exercised by the e2e suite where the actual viewport size is
+    // controllable via Playwright projects.
     const store = buildStore(false);
     const { result } = renderHook(() =>
       useSoloTour({
@@ -88,7 +92,7 @@ describe('useSoloTour', () => {
       }),
     );
     await flushTour();
-    expect(result.current.totalSteps).toBe(4);
+    expect(result.current.totalSteps).toBe(6);
     expect(result.current.step?.id).toBe('welcome');
   });
 });

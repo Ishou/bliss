@@ -3,6 +3,7 @@ import { Tour, type UseTourReturn } from '@ark-ui/react/tour';
 import { Button } from '@/ui/components/primitives';
 import { PaginationDots } from './PaginationDots';
 import {
+  actionTriggerStyles,
   arrowStyles,
   arrowTipStyles,
   backdropStyles,
@@ -32,13 +33,22 @@ export interface SoloTourProps {
 
 export function SoloTour({ tour }: SoloTourProps) {
   return (
-    // Portal the tour parts to document.body so they don't disrupt the
-    // PageShell flex layout. Without the portal, when the tour is closed
-    // the positioner stays mounted as a `display: block` flex item and
-    // its 18px parent flex `gap` shrinks the grid panel by 18 px — see
-    // routes/index.tsx contentStyles. The portal keeps the tour parts
-    // outside the flex container while preserving Tour.Root's React
-    // context for the descendant parts.
+    // `<Tour.Root>` is context-only — Backdrop / Spotlight /
+    // Positioner render in place. The `<Portal>` re-parents them to
+    // `document.body` so the tour never disrupts the route's flex
+    // layout (without it, the closed-state positioner stayed in flow
+    // as a 0-height flex sibling and the parent's `gap: 18px` shrank
+    // the grid panel by 18 px — see `routes/index.tsx contentStyles`).
+    //
+    // We let Ark/zag drive the open/closed lifecycle via the `hidden`
+    // HTML attribute and our `[data-state="closed"]:d_none!` Panda
+    // override; do NOT gate this subtree on `tour.open` in JSX. A
+    // previous attempt at `{tour.open && (<Portal>…)}` short-circuited
+    // zag's machine activity cleanups (focus-trap, dismissable-branch,
+    // interact-outside) by removing their target nodes from the DOM
+    // before the cleanup ran, leaving stale state that surfaced as a
+    // backdrop with `data-state="open"` after dismiss. Trust the
+    // library lifecycle.
     <Tour.Root tour={tour}>
       <Portal>
         <Tour.Backdrop className={backdropStyles} />
@@ -66,7 +76,9 @@ export function SoloTour({ tour }: SoloTourProps) {
               aria-label="Passer le tour"
               asChild
             >
-              <Button variant="ghost">Passer le tour</Button>
+              <Button variant="ghost" className={actionTriggerStyles}>
+                Passer le tour
+              </Button>
             </Tour.ActionTrigger>
             <PaginationDots current={tour.stepIndex} total={tour.totalSteps} />
             <div className={footerRightGroupStyles}>
@@ -88,7 +100,9 @@ export function SoloTour({ tour }: SoloTourProps) {
                         aria-label={action.label}
                         asChild
                       >
-                        <Button variant={variant}>{action.label}</Button>
+                        <Button variant={variant} className={actionTriggerStyles}>
+                          {action.label}
+                        </Button>
                       </Tour.ActionTrigger>
                     );
                   })

@@ -25,6 +25,28 @@ export function registerServiceWorker(): void {
 
   window.addEventListener('load', () => {
     const wb = new Workbox('/sw.js');
+
+    // When a new SW takes control of this client, the precached files
+    // (index.html, JS bundle, CSS) are now the new build's. The
+    // currently-running JS bundle in this tab is still the OLD one,
+    // though, so any client-side route added in the new build won't
+    // resolve — TanStack Router renders the 404 component for
+    // navigations that match the old route table. The user's
+    // workaround is a hard refresh; we automate it.
+    //
+    // `controlling` fires when the controller changes. For a brand-new
+    // first install (no previous controller), workbox-window doesn't
+    // emit it, so this only triggers on real updates. The `refreshing`
+    // guard prevents a reload loop if multiple `controlling` events
+    // fire (rare but defensible — Chrome can fire twice during a fast
+    // update).
+    let refreshing = false;
+    wb.addEventListener('controlling', () => {
+      if (refreshing) return;
+      refreshing = true;
+      window.location.reload();
+    });
+
     wb.register().catch((err: unknown) => {
       // Registration failures are non-fatal — the app still works
       // online; only the offline-shell precache is lost.
