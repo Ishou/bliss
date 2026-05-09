@@ -18,6 +18,7 @@ interface StoredLock {
 interface StoredPuzzle {
   entries: StoredEntry[];
   lockedCells?: StoredLock[];
+  hintsUsed?: number;
 }
 
 // Per-puzzle bucket. Legacy shape (PR #242) was `StoredEntry[]` — kept on
@@ -52,9 +53,13 @@ function writeStore(store: SoloStore): void {
 
 function readBucket(store: SoloStore, puzzleId: string): StoredPuzzle {
   const raw = store[puzzleId];
-  if (!raw) return { entries: [], lockedCells: [] };
-  if (Array.isArray(raw)) return { entries: raw, lockedCells: [] };
-  return { entries: raw.entries ?? [], lockedCells: raw.lockedCells ?? [] };
+  if (!raw) return { entries: [], lockedCells: [], hintsUsed: 0 };
+  if (Array.isArray(raw)) return { entries: raw, lockedCells: [], hintsUsed: 0 };
+  return {
+    entries: raw.entries ?? [],
+    lockedCells: raw.lockedCells ?? [],
+    hintsUsed: raw.hintsUsed ?? 0,
+  };
 }
 
 function persistBucket(
@@ -62,7 +67,11 @@ function persistBucket(
   puzzleId: string,
   bucket: StoredPuzzle,
 ): void {
-  if (bucket.entries.length === 0 && (bucket.lockedCells ?? []).length === 0) {
+  if (
+    bucket.entries.length === 0 &&
+    (bucket.lockedCells ?? []).length === 0 &&
+    (bucket.hintsUsed ?? 0) === 0
+  ) {
     delete store[puzzleId];
   } else {
     store[puzzleId] = bucket;
@@ -96,7 +105,11 @@ export function saveSoloLetter(
   if (letter && letter.length > 0) {
     next.push({ r: row, c: column, l: letter });
   }
-  persistBucket(store, puzzleId, { entries: next, lockedCells: bucket.lockedCells });
+  persistBucket(store, puzzleId, {
+    entries: next,
+    lockedCells: bucket.lockedCells,
+    hintsUsed: bucket.hintsUsed,
+  });
   writeStore(store);
 }
 
@@ -123,6 +136,26 @@ export function saveSoloLockedCell(
   persistBucket(store, puzzleId, {
     entries: bucket.entries,
     lockedCells: [...existing, { r: row, c: column }],
+    hintsUsed: bucket.hintsUsed,
+  });
+  writeStore(store);
+}
+
+export function loadSoloHintsUsed(puzzleId: string): number {
+  const store = readStore();
+  const bucket = readBucket(store, puzzleId);
+  return typeof bucket.hintsUsed === 'number' && bucket.hintsUsed >= 0
+    ? bucket.hintsUsed
+    : 0;
+}
+
+export function recordSoloHintUsed(puzzleId: string): void {
+  const store = readStore();
+  const bucket = readBucket(store, puzzleId);
+  persistBucket(store, puzzleId, {
+    entries: bucket.entries,
+    lockedCells: bucket.lockedCells,
+    hintsUsed: (bucket.hintsUsed ?? 0) + 1,
   });
   writeStore(store);
 }

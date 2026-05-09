@@ -82,6 +82,8 @@ const renderHome = (overrides: { lobbyClient?: Partial<LobbyClient> } = {}) => {
         save: () => {},
         loadLockedCells: () => [],
         lockCell: () => {},
+        loadHintsUsed: () => 0,
+        recordHintUsed: () => {},
         clearForPuzzle: () => {},
       },
       tourSeenStore: {

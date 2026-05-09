@@ -26,7 +26,9 @@ import {
   clearAllSoloEntries,
   clearSoloEntriesForPuzzle,
   loadSoloEntries,
+  loadSoloHintsUsed,
   loadSoloLockedCells,
+  recordSoloHintUsed,
   saveSoloLetter,
   saveSoloLockedCell,
 } from '@/infrastructure/session/localStorageSolo';
@@ -135,6 +137,8 @@ enableMocks()
       save: saveSoloLetter,
       loadLockedCells: loadSoloLockedCells,
       lockCell: saveSoloLockedCell,
+      loadHintsUsed: loadSoloHintsUsed,
+      recordHintUsed: recordSoloHintUsed,
       clearForPuzzle: clearSoloEntriesForPuzzle,
     };
 

@@ -43,12 +43,28 @@ export interface WordAutoValidationState {
   readonly onCellFilled: (position: Position, direction: 'across' | 'down') => void;
 }
 
+// Fired once per word that newly enters the `validated` set, in both
+// the live `onCellFilled` path and the rehydration path. The route
+// uses this to persist the locked positions to `soloEntriesStore` so
+// Accueil's "Grille du jour" progress reflects the full validated set
+// (not just hint-revealed cells). Storage-agnostic by design — the
+// hook lives under `ui/components/grid/` and must not import
+// `application/solo/`.
+export type OnWordValidated = (positions: ReadonlyArray<Position>) => void;
+
 export function useWordAutoValidation(
   puzzle: Puzzle,
   solver: PuzzleSolver,
   initialFilledCells: ReadonlyArray<PersistedFilledCell> = NO_INITIAL_FILL,
+  onWordValidated?: OnWordValidated,
 ): WordAutoValidationState {
   const [validated, setValidated] = useState<ReadonlySet<string>>(() => new Set());
+
+  // Stash in a ref so the callback identity does not factor into the
+  // effect / `onCellFilled` deps (callers commonly pass a fresh arrow
+  // each render).
+  const onWordValidatedRef = useRef<OnWordValidated | undefined>(onWordValidated);
+  onWordValidatedRef.current = onWordValidated;
 
   // Reset on puzzle swap AND rehydrate locks from persisted entries.
   // Solo letters live in localStorage; on a page reload the cells
@@ -109,21 +125,25 @@ export function useWordAutoValidation(
         for (const pos of result.incorrectCells) {
           incorrect.add(positionKey(pos.row, pos.column));
         }
+        const newlyLocked: Position[][] = [];
         setValidated((prev) => {
           let changed = false;
           const next = new Set(prev);
           for (const word of fullyFilled) {
             const wordKeys = word.map((p) => positionKey(p.row, p.col));
             if (!wordKeys.every((kk) => !incorrect.has(kk))) continue;
+            const wordIsNew = wordKeys.some((kk) => !next.has(kk));
             for (const kk of wordKeys) {
               if (!next.has(kk)) {
                 next.add(kk);
                 changed = true;
               }
             }
+            if (wordIsNew) newlyLocked.push(word);
           }
           return changed ? next : prev;
         });
+        for (const word of newlyLocked) onWordValidatedRef.current?.(word);
       })
       // Mirror onCellFilled: rehydration failures drop silently. Worst
       // case the cells stay editable until the player retypes a word.
@@ -214,6 +234,7 @@ export function useWordAutoValidation(
           for (const pos of result.incorrectCells) {
             incorrect.add(positionKey(pos.row, pos.column));
           }
+          const newlyLocked: Position[][] = [];
           setValidated((prev) => {
             let changed = false;
             const next = new Set(prev);
@@ -221,15 +242,18 @@ export function useWordAutoValidation(
               const wordKeys = word.map((p) => positionKey(p.row, p.col));
               const allCorrect = wordKeys.every((k) => !incorrect.has(k));
               if (!allCorrect) continue;
+              const wordIsNew = wordKeys.some((k) => !next.has(k));
               for (const k of wordKeys) {
                 if (!next.has(k)) {
                   next.add(k);
                   changed = true;
                 }
               }
+              if (wordIsNew) newlyLocked.push(word);
             }
             return changed ? next : prev;
           });
+          for (const word of newlyLocked) onWordValidatedRef.current?.(word);
         })
         // Wrong words drop silently — incorrect fills are visually
         // indistinguishable from in-progress ones per the product

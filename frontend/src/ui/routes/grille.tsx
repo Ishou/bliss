@@ -147,10 +147,20 @@ function HomePage() {
   const [lockedHintCells, setLockedHintCells] = useState<ReadonlySet<string>>(
     () => new Set(),
   );
-  useEffect(() => {
-    const persisted = soloEntriesStore.loadLockedCells(puzzle.id);
-    setLockedHintCells(new Set(persisted.map((c) => `${c.row},${c.column}`)));
-  }, [puzzle.id, soloEntriesStore]);
+
+  // Refresh counter — bumped on every Actualiser click. Used as Grid's
+  // `key` so React remounts the cell tree (letter cells are
+  // uncontrolled per ADR-0002 §4 — only a remount clears the DOM) AND
+  // as a memo dep on every storage-derived state slice so a clear
+  // propagates back into React.
+  const [refreshCount, setRefreshCount] = useState(0);
+  const handleRefresh = useCallback(() => {
+    // Must clear before bumping refreshCount — the storage-derived
+    // memos below read on the next render.
+    soloEntriesStore.clearForPuzzle(puzzle.id);
+    setRefreshCount((n) => n + 1);
+    void router.invalidate();
+  }, [router, soloEntriesStore, puzzle.id]);
 
   // Wire the reveal callback before instantiating useHintRequest. On a
   // 200 the hook fires `onReveal(row, column, letter)`; we write the
@@ -177,11 +187,24 @@ function HomePage() {
     [puzzle.id, soloEntriesStore],
   );
 
+  // Persisted hint count survives page reloads and resets on
+  // Actualiser (which calls `clearForPuzzle`). The memo re-reads on
+  // `refreshCount` to mirror `initialEntries`'s rehydrate posture.
+  const initialHintsUsed = useMemo(() => {
+    void refreshCount;
+    return soloEntriesStore.loadHintsUsed(puzzle.id);
+  }, [puzzle.id, refreshCount, soloEntriesStore]);
+  const handleHintConsumed = useCallback(() => {
+    soloEntriesStore.recordHintUsed(puzzle.id);
+  }, [puzzle.id, soloEntriesStore]);
+
   const hint = useHintRequest(
     puzzle.id,
     puzzle.hintsAllowed,
     puzzleSolver,
     handleHintReveal,
+    initialHintsUsed,
+    handleHintConsumed,
   );
 
   // Onboarding tour. `?tour=1` (set by the Aide page button) forces it
@@ -218,24 +241,21 @@ function HomePage() {
     [],
   );
 
-  // Refresh counter — bumped on every refresh and used as Grid's `key`
-  // so React remounts the cell tree. Letter cells are uncontrolled
-  // (ADR-0002 §4: values live in the DOM), so a re-render alone leaves
-  // the player's typed letters in place. Remounting via key forces a
-  // fresh `defaultValue={cell.entry}` pass on each `<input>`, which is
-  // the only seam that clears the DOM.
-  const [refreshCount, setRefreshCount] = useState(0);
-  const handleRefresh = useCallback(() => {
-    // Must clear before bumping refreshCount — initialEntries reads storage on the next render.
-    soloEntriesStore.clearForPuzzle(puzzle.id);
-    setRefreshCount((n) => n + 1);
-    void router.invalidate();
-  }, [router, soloEntriesStore, puzzle.id]);
-
   // void refreshCount forces a storage re-read after "Actualiser" clears — without depending on the value.
   const initialEntries = useMemo(() => {
     void refreshCount;
     return soloEntriesStore.load(puzzle.id);
+  }, [puzzle.id, refreshCount, soloEntriesStore]);
+
+  // Mirror the `initialEntries` posture for the locked-cell state:
+  // re-read storage on every refreshCount bump so `clearForPuzzle`
+  // (Actualiser) propagates into the React state. Without
+  // `refreshCount` in the deps the effect was bound to `[puzzle.id]`
+  // alone — locks survived the storage clear and the cells stayed
+  // sage-tinted until a full reload.
+  useEffect(() => {
+    const persisted = soloEntriesStore.loadLockedCells(puzzle.id);
+    setLockedHintCells(new Set(persisted.map((c) => `${c.row},${c.column}`)));
   }, [puzzle.id, refreshCount, soloEntriesStore]);
 
   // Word-by-word auto-validation: when the player completes a word,
@@ -250,7 +270,19 @@ function HomePage() {
   // `initialEntries`) but every word would be back to editable and the
   // progress bar would read zero. The hook walks the persisted entries
   // once per puzzle and POSTs `validate` in a single round-trip.
-  const autoValidation = useWordAutoValidation(puzzle, puzzleSolver, initialEntries);
+  // Persist every auto-validated cell to the same `lockedCells` bucket
+  // hint reveals write to. Without this, Accueil's "Grille du jour"
+  // progress only counted hint-revealed cells (capped at hintsAllowed)
+  // because the auto-validated set lived in React state only.
+  const handleWordValidated = useCallback(
+    (positions: ReadonlyArray<Position>) => {
+      for (const p of positions) {
+        soloEntriesStore.lockCell(puzzle.id, p.row, p.col);
+      }
+    },
+    [puzzle.id, soloEntriesStore],
+  );
+  const autoValidation = useWordAutoValidation(puzzle, puzzleSolver, initialEntries, handleWordValidated);
 
   const handleCellChange = useCallback(
     (row: number, col: number, letter: string | null) => {
@@ -264,24 +296,6 @@ function HomePage() {
     [puzzle.cells],
   );
 
-  // Read the currently focused cell's coordinates + lock state. The
-  // focus ref is updated on every `onLocalFocusChange` callback (no
-  // re-render in the keystroke path); we resolve `isLocked` lazily at
-  // click time against the latest `lockedHintCells`. Returns `null`
-  // when no letter cell currently holds the caret.
-  const lockedHintCellsRef = useRef(lockedHintCells);
-  lockedHintCellsRef.current = lockedHintCells;
-  const getFocusedCell = useCallback(() => {
-    const focus = activeFocusRef.current;
-    if (!focus) return null;
-    const key = `${focus.position.row},${focus.position.col}`;
-    return {
-      row: focus.position.row,
-      column: focus.position.col,
-      isLocked: lockedHintCellsRef.current.has(key),
-    };
-  }, []);
-
   // Union the auto-validated cells with the hint-revealed (locked)
   // cells before passing to <Grid>. Grid renders both as read-only
   // with the sage tint — the contract we want for revealed cells too.
@@ -292,6 +306,25 @@ function HomePage() {
     for (const k of lockedHintCells) merged.add(k);
     return merged;
   }, [autoValidation.validated, lockedHintCells]);
+
+  // Read the currently focused cell's coordinates + lock state. The
+  // focus ref is updated on every `onLocalFocusChange` callback (no
+  // re-render in the keystroke path); we resolve `isLocked` lazily at
+  // click time against the latest `validatedPositions` (auto-validated
+  // ∪ hint-revealed), so the hint button refuses both kinds of
+  // already-sage cells.
+  const validatedPositionsRef = useRef(validatedPositions);
+  validatedPositionsRef.current = validatedPositions;
+  const getFocusedCell = useCallback(() => {
+    const focus = activeFocusRef.current;
+    if (!focus) return null;
+    const key = `${focus.position.row},${focus.position.col}`;
+    return {
+      row: focus.position.row,
+      column: focus.position.col,
+      isLocked: validatedPositionsRef.current.has(key),
+    };
+  }, []);
 
   return (
     <PageShell>

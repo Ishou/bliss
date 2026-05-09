@@ -287,4 +287,68 @@ describe('useWordAutoValidation', () => {
     renderHook(() => useWordAutoValidation(puzzle, solver, []));
     expect(solver.validate).not.toHaveBeenCalled();
   });
+
+  // Bug 1 — the auto-validated set lives in React state and was lost on
+  // route exit, so Accueil's "Grille du jour" progress (which reads
+  // `loadLockedCells`) never saw it. The hook now fires `onWordValidated`
+  // once per word that newly enters the `validated` set so the route
+  // can persist via `soloEntriesStore.lockCell`.
+  it('fires onWordValidated once per word that becomes locked (live fill)', async () => {
+    mountInput(0, 1, 'D');
+    mountInput(0, 2, 'E');
+    mountInput(0, 3, 'M');
+    mountInput(0, 4, 'O');
+    const solver = makeSolver({ solved: false, incorrectCells: [] });
+    const onWordValidated = vi.fn();
+    const { result } = renderHook(() =>
+      useWordAutoValidation(puzzle, solver, undefined, onWordValidated),
+    );
+    await act(async () => {
+      result.current.onCellFilled({ row: 0, col: 4 }, 'across');
+    });
+    await waitFor(() => expect(onWordValidated).toHaveBeenCalledTimes(1));
+    const positions = onWordValidated.mock.calls[0]![0]!;
+    expect(positions.map((p: { row: number; col: number }) => `${p.row},${p.col}`)).toEqual([
+      '0,1',
+      '0,2',
+      '0,3',
+      '0,4',
+    ]);
+  });
+
+  it('fires onWordValidated on rehydration so legacy localStorage self-heals', async () => {
+    const initialFilled = [
+      { row: 0, column: 1, letter: 'D' },
+      { row: 0, column: 2, letter: 'E' },
+      { row: 0, column: 3, letter: 'M' },
+      { row: 0, column: 4, letter: 'O' },
+    ];
+    const solver = makeSolver({ solved: false, incorrectCells: [] });
+    const onWordValidated = vi.fn();
+    renderHook(() =>
+      useWordAutoValidation(puzzle, solver, initialFilled, onWordValidated),
+    );
+    await waitFor(() => expect(onWordValidated).toHaveBeenCalledTimes(1));
+  });
+
+  it('does not fire onWordValidated for an incorrect word', async () => {
+    mountInput(0, 1, 'D');
+    mountInput(0, 2, 'E');
+    mountInput(0, 3, 'M');
+    mountInput(0, 4, 'X');
+    const solver = makeSolver({
+      solved: false,
+      incorrectCells: [{ row: 0, column: 4 }],
+    });
+    const onWordValidated = vi.fn();
+    const { result } = renderHook(() =>
+      useWordAutoValidation(puzzle, solver, undefined, onWordValidated),
+    );
+    await act(async () => {
+      result.current.onCellFilled({ row: 0, col: 4 }, 'across');
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    expect(onWordValidated).not.toHaveBeenCalled();
+  });
 });
