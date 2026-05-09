@@ -39,10 +39,15 @@ spec:
             - name: MATOMO_GENERAL_TRUSTED_HOSTS
               value: {{ .Values.matomo.trustedHostname | quote }}
             {{- end }}
-          {{- with .Values.matomo.envFromSecret }}
+          # Defaults to the chart-managed `<release>-credentials`
+          # Secret (templates/secret-credentials.yaml). The same
+          # Secret feeds the MariaDB StatefulSet — single source of
+          # truth for the shared user/password/database. An operator
+          # override via `matomo.envFromSecret` still wins for
+          # break-glass rotations outside Helm.
           envFrom:
-            - secretRef: {name: {{ . }}}
-          {{- end }}
+            - secretRef:
+                name: {{ default (printf "%s-credentials" (include "matomo.fullname" .)) .Values.matomo.envFromSecret }}
           livenessProbe:
             httpGet: {path: /matomo.php, port: http}
             initialDelaySeconds: 30

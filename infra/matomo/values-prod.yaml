@@ -10,7 +10,10 @@ matomo:
     size: 10Gi
     storageClass: hcloud-volumes
   trustedHostname: "analytics.wordsparrow.io"
-  envFromSecret: "matomo-env"
+  # envFromSecret intentionally empty — chart defaults to the
+  # chart-managed `<release>-credentials` Secret
+  # (templates/secret-credentials.yaml). Override only for
+  # out-of-band credential rotations.
 
 mariadb:
   image:
@@ -22,7 +25,7 @@ mariadb:
   persistence:
     size: 10Gi
     storageClass: hcloud-volumes
-  envFromSecret: "mariadb-env"
+  # envFromSecret intentionally empty — see matomo.envFromSecret above.
 
 ingress:
   host: "analytics.wordsparrow.io"
