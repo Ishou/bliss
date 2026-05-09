@@ -43,10 +43,14 @@ spec:
             readOnlyRootFilesystem: false
           ports:
             - {name: mysql, containerPort: 3306, protocol: TCP}
-          {{- with .Values.mariadb.envFromSecret }}
+          # Defaults to the chart-managed `<release>-credentials`
+          # Secret (templates/secret-credentials.yaml) — single source
+          # of truth for both the MariaDB and Matomo workloads. An
+          # operator override via `mariadb.envFromSecret` still wins
+          # for break-glass rotations outside Helm.
           envFrom:
-            - secretRef: {name: {{ . }}}
-          {{- end }}
+            - secretRef:
+                name: {{ default (printf "%s-credentials" (include "matomo.fullname" .)) .Values.mariadb.envFromSecret }}
           livenessProbe:
             exec:
               command: ["/bin/sh", "-c", "mariadb-admin ping -uroot -p\"$MARIADB_ROOT_PASSWORD\""]

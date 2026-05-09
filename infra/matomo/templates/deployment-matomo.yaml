@@ -39,10 +39,24 @@ spec:
             - name: MATOMO_GENERAL_TRUSTED_HOSTS
               value: {{ .Values.matomo.trustedHostname | quote }}
             {{- end }}
-          {{- with .Values.matomo.envFromSecret }}
-          envFrom:
-            - secretRef: {name: {{ . }}}
-          {{- end }}
+            # Project only the three keys Matomo needs from the shared credentials
+            # Secret — MARIADB_ROOT_PASSWORD must not reach the app process.
+            {{- $credSecret := default (printf "%s-credentials" (include "matomo.fullname" .)) .Values.matomo.envFromSecret }}
+            - name: MATOMO_DATABASE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $credSecret }}
+                  key: MATOMO_DATABASE_USERNAME
+            - name: MATOMO_DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $credSecret }}
+                  key: MATOMO_DATABASE_PASSWORD
+            - name: MATOMO_DATABASE_DBNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $credSecret }}
+                  key: MATOMO_DATABASE_DBNAME
           livenessProbe:
             httpGet: {path: /matomo.php, port: http}
             initialDelaySeconds: 30
