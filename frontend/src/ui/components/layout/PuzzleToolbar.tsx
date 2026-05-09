@@ -1,20 +1,23 @@
 import { css } from 'styled-system/css';
-import { IconButton } from '@/ui/components/primitives';
-import { RefreshIcon, SettingsIcon } from '@/ui/components/icons';
+import { IconButton, OverflowMenu } from '@/ui/components/primitives';
+import {
+  RefreshIcon,
+  RestartIcon,
+  SettingsIcon,
+} from '@/ui/components/icons';
 import { TimerPill } from './TimerPill';
 
 // Toolbar above the grid — ADR-0005 §5.
 //
-// Three columns: timer pill on the left, grid metadata centered, icon
-// buttons on the right. On mobile the settings cog is dropped (the brief
-// says it moves into the menu — there is no menu in the current scope,
-// so it's simply hidden); only refresh remains.
+// Three columns: timer pill on the left, grid metadata centred, action
+// chrome on the right. Desktop keeps refresh + settings as bare icon
+// buttons; mobile collapses both into a 3-dot overflow menu (Ark UI
+// `Menu`) so the row stays one phone-thumb wide.
 //
-// `onRefresh` is wired to the parent (which currently issues a
-// no-op-friendly refetch); `onOpenSettings` is invoked but the parent
-// holds no settings dialog yet, so the desktop callback can no-op too.
-// The buttons exist visually because the brief's mock places them; the
-// surfaces they would drive are out of scope.
+// `metadata` accepts either a plain string (used as-is on both
+// breakpoints) or `{ short, full }` so callers can supply a compact
+// label for narrow viewports — the mockup uses "n°142" on mobile and
+// "Grille du jour · n°142 · facile" on desktop.
 
 const toolbarStyles = css({
   display: 'grid',
@@ -39,6 +42,9 @@ const centerSlotStyles = css({
   textOverflow: 'ellipsis',
 });
 
+const metadataShortStyles = css({ display: { base: 'inline', md: 'none' } });
+const metadataFullStyles = css({ display: { base: 'none', md: 'inline' } });
+
 const rightSlotStyles = css({
   display: 'flex',
   justifyContent: 'flex-end',
@@ -47,9 +53,14 @@ const rightSlotStyles = css({
 });
 
 const desktopOnlyStyles = css({ display: { base: 'none', md: 'inline-flex' } });
+const mobileOnlyStyles = css({ display: { base: 'inline-flex', md: 'none' } });
+
+export type PuzzleToolbarMetadata =
+  | string
+  | { readonly short: string; readonly full: string };
 
 export interface PuzzleToolbarProps {
-  readonly metadata: string;
+  readonly metadata: PuzzleToolbarMetadata;
   readonly onRefresh?: () => void;
   readonly onOpenSettings?: () => void;
   // Optional server-driven timer parameters. Multiplayer passes
@@ -73,32 +84,70 @@ export function PuzzleToolbar({
   timerFrozenAtMs,
   hintSlot,
 }: PuzzleToolbarProps) {
+  const { short, full } = normalizeMetadata(metadata);
+  const overflowItems = [
+    {
+      id: 'refresh',
+      label: 'Recommencer',
+      icon: <RestartIcon />,
+      onSelect: () => onRefresh?.(),
+      disabled: onRefresh === undefined,
+    },
+    {
+      id: 'settings',
+      label: 'Réglages',
+      icon: <SettingsIcon />,
+      onSelect: () => onOpenSettings?.(),
+      disabled: onOpenSettings === undefined,
+    },
+  ];
   return (
     <div className={toolbarStyles} role="toolbar" aria-label="Outils de la grille">
       <div className={leftSlotStyles}>
         <TimerPill startedAt={timerStartedAt} frozenAtMs={timerFrozenAtMs} />
       </div>
       <div className={centerSlotStyles} aria-label="Informations de la grille">
-        {metadata}
+        {short === full ? (
+          <span>{full}</span>
+        ) : (
+          <>
+            <span className={metadataShortStyles}>{short}</span>
+            <span className={metadataFullStyles}>{full}</span>
+          </>
+        )}
       </div>
       <div className={rightSlotStyles}>
         {hintSlot}
         <IconButton
           aria-label="Actualiser la grille"
+          title="Actualiser la grille"
           onClick={onRefresh}
           disabled={onRefresh === undefined}
+          className={desktopOnlyStyles}
         >
           <RefreshIcon />
         </IconButton>
         <IconButton
           aria-label="Paramètres"
+          title="Paramètres"
           onClick={onOpenSettings}
           disabled={onOpenSettings === undefined}
           className={desktopOnlyStyles}
         >
           <SettingsIcon />
         </IconButton>
+        <span className={mobileOnlyStyles}>
+          <OverflowMenu triggerLabel="Plus d'actions" items={overflowItems} />
+        </span>
       </div>
     </div>
   );
+}
+
+function normalizeMetadata(metadata: PuzzleToolbarMetadata): {
+  short: string;
+  full: string;
+} {
+  if (typeof metadata === 'string') return { short: metadata, full: metadata };
+  return metadata;
 }

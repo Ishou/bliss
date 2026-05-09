@@ -3,11 +3,12 @@ import { css, cx } from 'styled-system/css';
 
 // Square icon button — ADR-0002 §2 + ADR-0005 §6.
 //
-// 28×28 desktop / 24×24 mobile (the brief sizes the toolbar's hint /
-// refresh / settings buttons exactly here). Subtle border in the line
-// colour, muted icon, hover brightens, press scales to 96%. Brand
-// consistency comes from the optional `tone="accent"` variant which the
-// hint button uses (sage icon over the same neutral chrome).
+// 36×36 desktop / 32×32 mobile — the toolbar revamp pushed the hit
+// targets up so they read as primary chrome instead of decoration.
+// Subtle border in the line colour, muted icon, hover brightens, press
+// scales to 96%. Brand consistency comes from the optional
+// `tone="accent"` variant which the hint button uses (sage icon over
+// the same neutral chrome).
 //
 // Ark UI does not ship an `IconButton` (same rationale as `Button` —
 // headless library, native `<button>` already exposes the right ARIA
@@ -18,10 +19,10 @@ const baseStyles = css({
   display: 'inline-flex',
   alignItems: 'center',
   justifyContent: 'center',
-  // 28 px desktop / 24 px mobile, per the brief.
-  width: { base: '24px', md: '28px' },
-  height: { base: '24px', md: '28px' },
-  borderRadius: 'sm',
+  // 36 px desktop / 32 px mobile.
+  width: { base: '32px', md: '36px' },
+  height: { base: '32px', md: '36px' },
+  borderRadius: 'md',
   bg: 'transparent',
   border: '1px solid token(colors.border)',
   cursor: 'pointer',
@@ -39,7 +40,7 @@ const baseStyles = css({
   '& svg': {
     width: '1em',
     height: '1em',
-    fontSize: { base: '14px', md: '16px' },
+    fontSize: { base: '16px', md: '18px' },
   },
 });
 

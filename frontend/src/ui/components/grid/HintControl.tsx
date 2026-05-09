@@ -1,6 +1,5 @@
 import { useCallback } from 'react';
 import { css, cx } from 'styled-system/css';
-import { IconButton } from '@/ui/components/primitives';
 import { HintIcon } from '@/ui/components/icons';
 import type { HintLastResult } from './useHintRequest';
 
@@ -14,15 +13,67 @@ import type { HintLastResult } from './useHintRequest';
 // changes on every keystroke (auto-advance), and reflecting that into
 // React state would break the uncontrolled-input contract from
 // ADR-0002 §4. A click on a locked cell is a silent no-op.
+//
+// Visual layer: a single pill button (bulb + "Indice" label + thin
+// divider + counter) sized to match the toolbar's other 36-px
+// affordances. On mobile the label collapses so the pill reads as
+// `bulb 2/3` only — the divider hides with it.
 
 const containerStyles = css({
   position: 'relative',
   display: 'inline-flex',
   alignItems: 'center',
-  gap: '6px',
 });
 
-const badgeStyles = css({
+const pillStyles = css({
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: '8px',
+  height: { base: '32px', md: '36px' },
+  paddingInline: { base: '10px', md: '14px' },
+  borderRadius: 'md',
+  bg: 'transparent',
+  color: 'accent',
+  border: '1px solid token(colors.border)',
+  fontFamily: 'body',
+  fontWeight: 'medium',
+  fontSize: 'sm',
+  lineHeight: '1',
+  cursor: 'pointer',
+  transition:
+    'background-color 120ms ease-out, border-color 120ms ease-out, color 120ms ease-out, transform 120ms ease-out',
+  _hover: {
+    borderColor: 'accent',
+    bg: 'color-mix(in srgb, token(colors.accent) 10%, transparent)',
+  },
+  _active: { transform: 'scale(0.97)' },
+  _focusVisible: {
+    outline: '2px solid token(colors.focusRing)',
+    outlineOffset: '2px',
+  },
+  _disabled: {
+    opacity: 0.5,
+    cursor: 'not-allowed',
+    _hover: { borderColor: 'border', bg: 'transparent' },
+  },
+  '& svg': {
+    width: { base: '16px', md: '18px' },
+    height: { base: '16px', md: '18px' },
+  },
+});
+
+const labelStyles = css({
+  display: { base: 'none', md: 'inline' },
+});
+
+const dividerStyles = css({
+  display: { base: 'none', md: 'inline-block' },
+  width: '1px',
+  height: '16px',
+  bg: 'color-mix(in srgb, token(colors.border) 80%, transparent)',
+});
+
+const counterStyles = css({
   fontFamily: 'mono',
   fontSize: 'xs',
   color: 'fgMuted',
@@ -123,21 +174,25 @@ export function HintControl({
 
   return (
     <div className={containerStyles}>
-      <IconButton
+      <button
+        type="button"
+        className={pillStyles}
         aria-label="Demander un indice"
-        tone="accent"
+        title="Demander un indice"
         onClick={handleClick}
         onMouseDown={handleMouseDown}
         disabled={exhausted || pending}
       >
         <HintIcon />
-      </IconButton>
-      <span
-        className={badgeStyles}
-        aria-label={`${hintsRemaining} sur ${hintsAllowed} indices restants`}
-      >
-        {hintsRemaining}/{hintsAllowed}
-      </span>
+        <span className={labelStyles}>Indice</span>
+        <span className={dividerStyles} aria-hidden="true" />
+        <span
+          className={counterStyles}
+          aria-label={`${hintsRemaining} sur ${hintsAllowed} indices restants`}
+        >
+          {hintsRemaining}/{hintsAllowed}
+        </span>
+      </button>
       {status ? (
         <span
           className={cx(statusBaseStyles, status.className)}
