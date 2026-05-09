@@ -36,11 +36,31 @@ spec:
           securityContext: {{- toYaml .Values.containerSecurityContext | nindent 12 }}
           ports:
             - {name: http, containerPort: {{ .Values.service.port }}, protocol: TCP}
-          {{- with .Values.env }}
-          env: {{- toYaml . | nindent 12 }}
-          {{- end }}
+          env:
+            # DATABASE_URL is sourced directly from CNPG's
+            # auto-generated `<cluster>-app` Secret (key: `uri`).
+            # CNPG creates that Secret as soon as the Cluster CR is
+            # processed, using the password the chart pre-supplied
+            # via `bootstrap.initdb.secret` (see postgres-cluster.yaml
+            # + secret-pg-credentials.yaml). No operator step
+            # between install and pod-start is required.
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "wordsparrow-api.pgClusterName" . }}-app
+                  key: uri
+            {{- with .Values.env }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
           {{- with .Values.envFromSecret }}
           envFrom:
+            # Operator-supplied envs (Matomo analytics — optional, the
+            # adapter falls back to a noop when MATOMO_URL/SITE_ID/
+            # ID_SALT are missing). DATABASE_URL is no longer expected
+            # in this Secret; the chart's env entry above takes
+            # precedence even if a stale operator-managed
+            # DATABASE_URL is still present (Kubernetes pod spec:
+            # explicit `env` wins over `envFrom` for the same name).
             - secretRef: {name: {{ . }}}
           {{- end }}
           # startupProbe: gate for CSV cold-start (~30-60 s on 250m CPU); liveness/readiness only fire after this passes
