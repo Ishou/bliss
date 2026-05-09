@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1
 # grid-api container image (ADR-0007 §3). Multi-stage: JDK builder produces
 # the shadowJar; JRE runtime image runs it. Base images pinned to digest per
 # MANIFESTO; bump digest and tag together.
@@ -41,6 +42,28 @@ RUN apk add --no-cache wget
 WORKDIR /app
 
 COPY --from=build /workspace/grid/api/build/libs/grid-api-*-all.jar /app/grid-api.jar
+
+# OpenTelemetry Java agent (ADR-0027). Auto-instruments Ktor + JDBC +
+# the Ktor HTTP client + WebSockets at JVM start without any code
+# imports — the manifesto's "MUST NOT use vendor-specific
+# instrumentation libraries in application code" rule is satisfied
+# because the agent attaches via -javaagent and emits OTLP, the open
+# wire format. Activated via JAVA_TOOL_OPTIONS in the chart's env
+# values; the Helm chart owns the OTLP endpoint, service name, and
+# resource attributes.
+#
+# Pinned to v2.10.0 with explicit SHA256 verification — Docker
+# BuildKit's `--checksum` flag refuses the build if the downloaded
+# bytes don't match. Bumps require updating both the URL and the
+# hash; no floating, per MANIFESTO Reproducible Builds. To compute
+# the hash for a new version:  curl -sL <url> | shasum -a 256
+# OpenTelemetry doesn't publish a separate `.sha256` file alongside
+# the release artefact, so the hash here is the source of truth —
+# verified locally on first introduction (2026-05-09).
+ADD --chmod=0644 \
+    --checksum=sha256:d05f6e36fac8db629263a6aaec2841cc934d064d7b19bfe38425b604b8b54926 \
+    https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/v2.10.0/opentelemetry-javaagent.jar \
+    /app/otel.jar
 
 # Run as non-root. K8s pod security context requires runAsNonRoot=true (see chart's
 # values.yaml); without an explicit USER here, kubelet refused to start with
