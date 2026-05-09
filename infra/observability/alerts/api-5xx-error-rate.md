@@ -42,7 +42,7 @@ SELECT
   ) AS errors,
   countIf(
     resource_string_service$$name IN ('grid-api', 'game-api')
-    AND attribute_string['http.method'] != ''
+    AND attributes_string['http.method'] != ''
   ) AS total,
   errors / nullIf(total, 0) AS error_rate
 FROM
@@ -95,25 +95,50 @@ email lands in the maintainer's inbox within ~10s. If it doesn't:
 
 1. Recreate the Email channel using the Notification table above.
 2. Recreate the alert rule using the Trigger + Query tables above.
-3. Smoke-test by curling a guaranteed 500 against either API and
-   waiting 5–7 minutes for the email.
+3. Smoke-test using the fault-injection procedure in the Smoke test
+   section below and wait 5–7 minutes for the alert email.
 
 ## Smoke test
 
+### Verifying OTel span capture (does NOT trigger the alert)
+
 ```sh
-# Force a 5xx on game-api by sending malformed JSON to a known POST
-# endpoint. game-api logs the failure; the OTel agent records the
-# span with http.status_code=500; SigNoz's evaluator picks it up
-# at the next eval tick.
+# Send malformed JSON to POST /v1/lobbies. game-api's SerializationException
+# handler maps this to HTTP 400 (not 500) — see LobbiesRoute.kt:58-59.
+# Use this to confirm the OTel agent is capturing spans and they appear
+# in SigNoz Traces Explorer, but do not expect the 5xx alert to fire.
 curl -sS -X POST https://api.wordsparrow.io/v1/lobbies \
      -H 'Content-Type: application/json' \
      --data '{"this is not": "valid json'
 ```
 
-Expected: error response from the API, an entry with HTTP 500 in
-the SigNoz UI's traces explorer within ~30s, and an email in the
-maintainer's inbox within ~7 minutes (5-min window + 2 evaluation
-ticks).
+Expected: HTTP 400 response, and a span with `http.status_code=400`
+visible in the SigNoz Traces Explorer within ~30s. This confirms the
+OTel pipeline is healthy. It will **not** trigger the 5xx alert.
+
+### Triggering a real 5xx to smoke-test the alert threshold
+
+To confirm the alert fires, inject a fault at the infrastructure layer:
+
+```sh
+# 1. Scale down the Postgres StatefulSet so game-api loses its DB.
+kubectl scale statefulset -n game <postgres-sts-name> --replicas=0
+
+# 2. Send a valid CreateLobbyRequest — the API will reach the DB,
+#    fail, and record a 5xx span.
+curl -sS -X POST https://api.wordsparrow.io/v1/lobbies \
+     -H 'Content-Type: application/json' \
+     -d '{"ownerSessionId":"smoke-test","ownerPseudonym":"tester"}'
+
+# 3. Repeat step 2 enough times over 5 minutes to push error_rate > 1%.
+
+# 4. Restore Postgres.
+kubectl scale statefulset -n game <postgres-sts-name> --replicas=1
+```
+
+Expected: after 2 consecutive 1-minute evaluations with error_rate > 1%
+(~7 minutes from first fault), an alert email arrives in the maintainer's
+inbox. Restore Postgres immediately after confirming the email.
 
 ## Future revisions
 
