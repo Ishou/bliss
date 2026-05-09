@@ -1,6 +1,6 @@
 # Hint = letter reveal
 
-**Status**: design approved 2026-05-08, awaiting implementation plan.
+**Status**: design approved 2026-05-08, implemented in feat/hint-letter-reveal (PR #249).
 
 ## Why
 
@@ -17,17 +17,17 @@ The current hint affordance answers "is this word in the corpus?" — it costs a
 ### Request shape — `POST /v1/puzzles/{puzzleId}/hints`
 
 ```json
-{ "row": 3, "col": 5 }
+{ "row": 3, "column": 5 }
 ```
 
-- `row` and `col` are zero-indexed grid coordinates.
+- `row` and `column` are zero-indexed grid coordinates.
 - Header `X-Session-Id: <uuid v7>` unchanged (player session, hint-budget key).
 - Content-Type `application/json` unchanged.
 
 ### Response shape (200)
 
 ```json
-{ "row": 3, "col": 5, "letter": "A", "hintsRemaining": 2 }
+{ "row": 3, "column": 5, "letter": "A", "hintsRemaining": 2 }
 ```
 
 - `letter` is the canonical solution at that cell, uppercase, single Unicode letter (matches the validate endpoint's `letter` shape).
@@ -37,7 +37,7 @@ The current hint affordance answers "is this word in the corpus?" — it costs a
 
 | Status | `type` | When |
 |---|---|---|
-| 400 | `…/invalid-coord` | (row, col) is out of bounds, or points to a non-letter cell (clue cell, black cell). Hint **not** decremented. |
+| 400 | `…/invalid-coord` | (row, column) is out of bounds, or points to a non-letter cell (clue cell, black cell). Hint **not** decremented. |
 | 400 | `…/invalid-session-id` | `X-Session-Id` missing or not UUID. Unchanged. |
 | 429 | `…/budget-exhausted` | Budget already at zero before this call. Body echoes `hintsRemaining: 0`. Unchanged semantics. |
 
@@ -50,18 +50,18 @@ One letter per call, one credit per letter. Draining the grid still costs `hints
 ## Backend (`grid/`)
 
 - **OpenAPI spec** (`grid/api/openapi.yaml`): replace request body `HintRequest` and response `HintResponse` schemas. Add `invalid-coord` problem-detail type to the route's `4xx` documentation.
-- **Use case**: rename `RequestWordHintUseCase` → `RevealCellHintUseCase`. New signature accepts `(puzzleId, sessionId, row, col)`. Behaviour:
-  1. Load the puzzle; resolve the cell at (row, col).
+- **Use case**: rename `RequestWordHintUseCase` → `RevealCellHintUseCase`. New signature accepts `(puzzleId, sessionId, row, column)`. Behaviour:
+  1. Load the puzzle; resolve the cell at (row, column).
   2. If absent or not a letter cell → return `Failure(InvalidCoord)`.
   3. Atomically increment `puzzle_hint_usage` for (puzzle, session). If post-increment count exceeds `hintsAllowed`, return `Failure(BudgetExhausted)` and do not increment beyond the cap.
-  4. Look up the canonical solution letter at (row, col) from the same puzzle.
-  5. Return `Success({ row, col, letter, hintsRemaining })`.
+  4. Look up the canonical solution letter at (row, column) from the same puzzle.
+  5. Return `Success({ row, column, letter, hintsRemaining })`.
 - **Repository**: `PuzzleRepository` already exposes the canonical solution to `ValidatePuzzleUseCase`; the same path is reused. No new SQL.
 - **Migration**: none. `puzzle_hint_usage` schema unchanged.
 - **Route** (`PuzzleRoute.kt`): map `InvalidCoord` to a 400 problem-detail. The existing 400 mapping for `invalid-session-id` and 429 for `budget-exhausted` stay.
 - **Tests** (`HintsRouteTest`):
   - 200 happy path returns the letter at a valid letter cell, decrements budget.
-  - 400 `invalid-coord` for out-of-bounds row/col.
+  - 400 `invalid-coord` for out-of-bounds row/column.
   - 400 `invalid-coord` for clue/black cell.
   - 400 `invalid-session-id` (existing) unchanged.
   - 429 `budget-exhausted` (existing) unchanged.
@@ -76,11 +76,11 @@ Regen `frontend/src/infrastructure/api/grid/types.ts` after the OpenAPI change (
 `PuzzleSolver.requestHint`:
 
 ```ts
-requestHint(puzzleId: string, row: number, col: number): Promise<HintResult>;
+requestHint(puzzleId: string, row: number, column: number): Promise<HintResult>;
 
 interface HintResult {
   readonly row: number;
-  readonly col: number;
+  readonly column: number;
   readonly letter: string;
   readonly hintsRemaining: number;
 }
@@ -92,14 +92,14 @@ interface HintResult {
 `HttpPuzzleSolver.requestHint` builds the new body and maps the new error shape. Status-code routing per ADR-0003 §6 (we don't parse `error.type` URIs).
 
 ### Hook (`useHintRequest`)
-- Signature changes: `request(row: number, col: number)` instead of `request(word: string)`. The hook no longer cares about the active *word*; it cares about the focused *cell*.
-- On success it surfaces `lastResult: { row, col, letter }` (instead of `{ word, exists }`) so the consumer can both apply the letter to the DOM input and mark the cell as locked.
+- Signature changes: `request(row: number, column: number)` instead of `request(word: string)`. The hook no longer cares about the active *word*; it cares about the focused *cell*.
+- On success it surfaces `lastResult: { row, column, letter }` (instead of `{ word, exists }`) so the consumer can both apply the letter to the DOM input and mark the cell as locked.
 - The pending guard, sequence-number-based stale-result drop, and 4 s pill linger all stay.
 - Reset-on-puzzle-change behaviour stays.
 
 ### Component (`HintControl`)
-- Replace the `getCurrentWord(): string | null` callback with `getFocusedCell(): { row: number; col: number; isLocked: boolean } | null`.
-- Click handler: if `getFocusedCell()` returns null, no-op. Otherwise call `request(row, col)`.
+- Replace the `getCurrentWord(): string | null` callback with `getFocusedCell(): { row: number; column: number; isLocked: boolean } | null`.
+- Click handler: if `getFocusedCell()` returns null, no-op. Otherwise call `request(row, column)`.
 - Disabled rule: `exhausted || pending || focusedCell === null || focusedCell.isLocked`.
 - The `onMouseDown` → `preventDefault()` keep-focus fix from the previous turn stays.
 - Status pill copy:
@@ -118,7 +118,7 @@ interface HintResult {
 - Auto-validation (PR #245) treats locked cells as filled; since they're correct by construction, the validator naturally agrees. No special-casing needed.
 
 ### Persistence
-- Solo localStorage shape extends from `{ letters }` to `{ letters, lockedCells }`, where `lockedCells` is an array of `{ row, col }` (small, JSON-friendly).
+- Solo localStorage shape extends from `{ letters }` to `{ letters, lockedCells }`, where `lockedCells` is an array of `{ row, column }` (small, JSON-friendly).
 - On read, if the stored blob lacks `lockedCells`, treat it as empty. If the blob is malformed (parse error or wrong shape), drop and start fresh — same defensiveness as today.
 - No version bump required because the new field is purely additive.
 
