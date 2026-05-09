@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { css } from 'styled-system/css';
 import { MAX_PSEUDONYM_LENGTH, type Lobby, type Pseudonym, type SessionId } from '@/domain/game';
+import { EyeIcon, EyeOffIcon } from '@/ui/components/icons';
 import { Button, TextField, ToggleGroup } from '@/ui/components/primitives';
+import { PinInput } from '@/ui/components/primitives/PinInput';
 import { PlayerList, MAX_PLAYERS } from './PlayerList';
 
 // Pure prop-driven WaitingRoom rendered while `lobby.state === 'WAITING'`.
@@ -71,6 +73,43 @@ const styles = {
   copyFeedback: css({
     fontSize: 'sm', color: 'accent', fontWeight: 'medium',
   }),
+  // Code surface — readonly `PinInput` flanked by an eye toggle.
+  // Same primitive the Accueil "Rejoindre" input uses, in `readOnly`
+  // mode, so mask vs reveal swaps the masking glyph without changing
+  // the slot widths. Single visibility affordance: clicking the eye
+  // is what reveals the code; "Copier le lien" copies the share URL
+  // (which contains the code, like `/join/A2B3C4`).
+  codeSection: css({
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 'xs',
+  }),
+  codeRow: css({
+    display: 'flex',
+    alignItems: 'center',
+    gap: 'sm',
+  }),
+  codeLabel: css({ fontSize: 'sm', color: 'fgMuted' }),
+  // Plain icon button — no border / fill until hover, so it reads as
+  // a tertiary affordance next to the PIN slots.
+  iconToggle: css({
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '2.25em',
+    height: '2.25em',
+    bg: 'transparent',
+    color: 'fgMuted',
+    border: 'none',
+    borderRadius: 'sm',
+    cursor: 'pointer',
+    transition: 'color 120ms ease-out, background-color 120ms ease-out',
+    _hover: { color: 'fg', bg: 'surface' },
+    _focusVisible: {
+      outline: '2px solid token(colors.focusRing)',
+      outlineOffset: '2px',
+    },
+  }),
 };
 
 // How long the inline "Lien copié !" feedback stays on screen after a
@@ -112,6 +151,11 @@ export function WaitingRoom({
       copyTimerRef.current = null;
     }, COPY_FEEDBACK_MS);
   };
+  // ADR-0027 §"WaitingRoom code visibility toggle" — default-masked
+  // (streamer-safe). The eye toggle is the single visibility
+  // affordance; the share button below copies the `/join/$code`
+  // URL which already contains the code.
+  const [codeRevealed, setCodeRevealed] = useState(false);
 
   return (
     <section className={styles.container} aria-label="Salle d'attente">
@@ -126,6 +170,30 @@ export function WaitingRoom({
           variant="stacked"
         />
       </div>
+
+      {lobby.code != null ? (
+        <div className={styles.codeSection}>
+          <span className={styles.codeLabel}>Code de partie</span>
+          <div className={styles.codeRow}>
+            <PinInput
+              label="Code de partie"
+              value={lobby.code}
+              onValueChange={() => { /* readonly — no edits accepted */ }}
+              mask={!codeRevealed}
+              readOnly
+            />
+            <button
+              type="button"
+              className={styles.iconToggle}
+              aria-label={codeRevealed ? 'Masquer le code' : 'Afficher le code'}
+              aria-pressed={codeRevealed}
+              onClick={() => setCodeRevealed((v) => !v)}
+            >
+              {codeRevealed ? <EyeOffIcon /> : <EyeIcon />}
+            </button>
+          </div>
+        </div>
+      ) : null}
 
       <div className={styles.row}>
         <Button variant="ghost" onClick={handleCopyClick}>

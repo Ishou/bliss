@@ -3,7 +3,10 @@ import { useState } from 'react';
 import { css } from 'styled-system/css';
 import type { Puzzle } from '@/domain';
 import { LobbyClientError } from '@/application/game';
+import { LOBBY_CODE_PATTERN, extractLobbyCode } from '@/domain/game/lobbyCode';
+import { EyeIcon, EyeOffIcon } from '@/ui/components/icons';
 import { Button } from '@/ui/components/primitives';
+import { PinInput } from '@/ui/components/primitives/PinInput';
 import { AppHeader, Footer, ProgressBar } from '@/ui/components/layout';
 import { Route as RootRoute } from './__root';
 
@@ -63,9 +66,16 @@ const srOnly = css({
   border: 0,
 });
 
-// Two-column on md+ (mockup desktop), single column on mobile. Grid
-// stretching keeps both cards the same height in the desktop row even
-// when the Multijoueur card has more content.
+// Two-column on md+ (mockup desktop), single column on mobile.
+//
+// `align-items: start` (rather than the default `stretch`): when one
+// card grows — typically the Multijoueur card surfacing a "code
+// introuvable" error below the Rejoindre button — we do NOT want the
+// Grille card to grow with it. Stretch would propagate the new
+// height to the sibling and (combined with `marginTop: auto` on the
+// Grille card's footer) shift the Reprendre button down. Top-align
+// keeps each card at its natural height; minor visual asymmetry is
+// the trade we accept for a stable layout under error states.
 //
 // `minmax(0, 1fr)` instead of plain `1fr`: `1fr` resolves to
 // `minmax(auto, 1fr)`, which refuses to shrink a track below its
@@ -76,6 +86,7 @@ const srOnly = css({
 const cardsGridStyles = css({
   display: 'grid',
   gridTemplateColumns: { base: '1fr', md: 'minmax(0, 1fr) minmax(0, 1fr)' },
+  alignItems: 'start',
   gap: 'md',
 });
 
@@ -143,27 +154,43 @@ const dividerStyles = css({
   _after: { content: '""', flex: 1, height: '1px', bg: 'border' },
 });
 
-const joinRowStyles = css({
+// Two-row layout — PIN slots + eye toggle on row one, Rejoindre on
+// row two — keeps the slots full-width without the wrap-collapse bug
+// that overlaid the button on top of the slots when the row was
+// allowed to wrap.
+const joinFormStyles = css({
   display: 'flex',
+  flexDirection: 'column',
   gap: 'sm',
-  alignItems: 'stretch',
 });
 
-const codeInputStyles = css({
-  flex: 1,
-  minWidth: 0,
-  paddingBlock: 'sm',
-  paddingInline: 'sm',
+const pinWrapStyles = css({
+  display: 'flex',
+  alignItems: 'center',
+  gap: 'xs',
+  width: '100%',
+  // The PIN itself is `flex: 1; minWidth: 0` (see PinInput.tsx) so
+  // the eye toggle sits flush right and the slots share the
+  // remaining width via their own `flex: 1` distribution.
+});
+
+const eyeToggleStyles = css({
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  width: '2.25em',
+  height: '2.25em',
+  bg: 'transparent',
+  color: 'fgMuted',
+  border: 'none',
   borderRadius: 'sm',
-  border: '1px solid token(colors.border)',
-  bg: 'surface',
-  color: 'fg',
-  fontFamily: 'body',
-  fontSize: 'body',
-  letterSpacing: '0.1em',
-  textTransform: 'uppercase',
-  _placeholder: { color: 'fgMuted', letterSpacing: '0.1em' },
-  _disabled: { opacity: 0.6, cursor: 'not-allowed' },
+  cursor: 'pointer',
+  transition: 'color 120ms ease-out, background-color 120ms ease-out',
+  _hover: { color: 'fg', bg: 'surface' },
+  _focusVisible: {
+    outline: '2px solid token(colors.focusRing)',
+    outlineOffset: '2px',
+  },
 });
 
 const helperTextStyles = css({
@@ -252,13 +279,6 @@ function GrilleDuJourCard({ puzzle }: { readonly puzzle: Puzzle }) {
   );
 }
 
-// Same Crockford-style alphabet as the OpenAPI `code` schema and the
-// Kotlin LobbyCode regex — keep all three in sync. Excludes the
-// ambiguous chars `0`/`O`, `1`/`I`/`L` so a player reading the code
-// aloud cannot land on a different lobby.
-const LOBBY_CODE_PATTERN = /^[A-HJKM-NP-Z2-9]{6}$/;
-const LOBBY_CODE_ALLOWED_CHARS = /[A-HJKM-NP-Z2-9]/;
-
 function MultijoueurCard() {
   const navigate = useNavigate();
   const ctx = Route.useRouteContext();
@@ -272,6 +292,7 @@ function MultijoueurCard() {
   const [pending, setPending] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [code, setCode] = useState('');
+  const [codeRevealed, setCodeRevealed] = useState(false);
   const [joinPending, setJoinPending] = useState(false);
   const [joinError, setJoinError] = useState<string | null>(null);
 
@@ -315,14 +336,12 @@ function MultijoueurCard() {
     }
   };
 
-  // Normalise typed input: uppercase + strip anything outside the allowed
-  // alphabet, then cap at 6 chars. Keeps the input visually aligned with
-  // what the server accepts, so a paste of "a-2b3c4" lands as "A2B3C4".
+  // Accepts both bare codes and full share-link URLs — pasting
+  // `https://wordsparrow.io/join/A2B3C4` extracts the code and fills the
+  // input. Otherwise normalises typed chars (uppercase + Crockford
+  // alphabet + 6-char cap). One source of truth in `domain/game/lobbyCode`.
   const handleCodeChange = (raw: string) => {
-    const normalised = Array.from(raw.toUpperCase())
-      .filter((ch) => LOBBY_CODE_ALLOWED_CHARS.test(ch))
-      .slice(0, 6)
-      .join('');
+    const normalised = extractLobbyCode(raw);
     setCode(normalised);
     if (joinError != null) setJoinError(null);
   };
@@ -345,24 +364,35 @@ function MultijoueurCard() {
         ) : null}
         <div className={dividerStyles} aria-hidden="true">ou avec un code</div>
         <form
-          className={joinRowStyles}
+          className={joinFormStyles}
           onSubmit={(event) => {
             event.preventDefault();
             void handleJoin();
           }}
+          // `autoComplete="off"` on the form is the second belt-and-
+          // braces pass against browser password / form save: the per-
+          // slot props in `PinInput` are the primary defence, this
+          // covers any browser that walks up to the form.
+          autoComplete="off"
         >
-          <input
-            type="text"
-            disabled={!canJoin}
-            aria-label="Code de partie"
-            placeholder="A2B3C4"
-            value={code}
-            onChange={(event) => handleCodeChange(event.target.value)}
-            autoComplete="off"
-            autoCapitalize="characters"
-            spellCheck={false}
-            className={codeInputStyles}
-          />
+          <div className={pinWrapStyles}>
+            <PinInput
+              label="Code de partie"
+              value={code}
+              onValueChange={handleCodeChange}
+              mask={!codeRevealed}
+              disabled={!canJoin}
+            />
+            <button
+              type="button"
+              className={eyeToggleStyles}
+              aria-label={codeRevealed ? 'Masquer le code' : 'Afficher le code'}
+              aria-pressed={codeRevealed}
+              onClick={() => setCodeRevealed((v) => !v)}
+            >
+              {codeRevealed ? <EyeOffIcon /> : <EyeIcon />}
+            </button>
+          </div>
           <Button
             type="submit"
             variant="ghost"

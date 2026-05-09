@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import { css } from 'styled-system/css';
 import { LobbyClientError } from '@/application/game';
 import type { Lobby, LobbyId } from '@/domain/game';
+import { LOBBY_CODE_PATTERN } from '@/domain/game/lobbyCode';
 import { AppHeader, Footer } from '@/ui/components/layout';
 import { Route as RootRoute } from './__root';
 
@@ -19,8 +20,6 @@ import { Route as RootRoute } from './__root';
 // Reload-after-join doesn't need to revisit `/join/$code`: the lobby
 // route's WS join falls through to the sessionId-keyed reconnect
 // branch on the server, which bypasses the code check by design.
-
-const LOBBY_CODE_PATTERN = /^[A-HJKM-NP-Z2-9]{6}$/;
 
 const pageStyles = css({
   minHeight: '100dvh',
