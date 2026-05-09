@@ -38,17 +38,6 @@ application {
 }
 
 dependencies {
-    // Pin transitive Jackson to versions that fix DoS CVEs in number-length
-    // and document-length parsing limits.
-    //   com.fasterxml.jackson.core (Jackson 2.x line, used by Logstash
-    //     encoder): 2.21.1 — GHSA-72hv-8253-57qq.
-    //   tools.jackson.core (Jackson 3.x line, pulled in transitively): 3.1.1
-    //     — GHSA-72hv-8253-57qq, GHSA-6v53-7c9g-w56r, GHSA-2m67-wjpj-xhg9.
-    constraints {
-        implementation("com.fasterxml.jackson.core:jackson-core:2.21.1")
-        implementation("tools.jackson.core:jackson-core:3.1.1")
-    }
-
     // Game bounded-context inner layers (ADR-0001 §1, MANIFESTO Architecture).
     implementation(project(":game:domain"))
     implementation(project(":game:application"))
