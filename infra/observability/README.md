@@ -12,7 +12,6 @@ Out of scope for this PR (queued for follow-ups):
 - Backend OTel Java agent on grid/api + game/api (PR-E)
 - Frontend OTel browser SDK + public OTLP ingest ingress on `otlp.wordsparrow.io` (PR-F)
 - htpasswd-gating Matomo (`analytics.wordsparrow.io`) — same Secret pattern, separate chart (PR-G)
-- SigNoz alert rule + Gmail SMTP relay for the launch 5xx symptom alert (PR-H)
 
 ## One-time install
 
@@ -76,6 +75,31 @@ kubectl -n platform rollout restart deploy/platform-ingress-nginx-controller
 ```
 
 The ingress-nginx restart forces an immediate reload of the auth file (otherwise it'd take ~5 min for the controller to pick up the Secret update on its own).
+
+### Configure the launch symptom alert
+
+ADR-0032 defines a single launch alert: API 5xx error rate > 1% over
+5 minutes, delivered via Gmail SMTP relay. The rule itself lives in
+SigNoz's DB once you create it via the UI; the version-controlled
+spec is at [`alerts/api-5xx-error-rate.md`](./alerts/api-5xx-error-rate.md).
+
+One-time setup:
+
+1. **Generate a Google App Password** at https://myaccount.google.com/apppasswords.
+   Save the 16-character output to your password manager.
+2. **In SigNoz UI** → Settings → Channels → New Channel → Email,
+   create a channel named `gmail-relay` using the SMTP table in
+   `alerts/api-5xx-error-rate.md`. Hit "Test" before saving — a test
+   email should land in your inbox within ~10s.
+3. **Create the alert rule** following the Query section of the spec.
+   Either Builder mode (filter `service.name in [grid-api, game-api]`,
+   aggregate count, formula `errors / total > 0.01`) or paste the SQL.
+   Bind the channel to the rule.
+4. **Smoke-test** with the curl one-liner at the bottom of the spec.
+   Wait 5–7 minutes for the email; if it doesn't arrive, see the
+   troubleshooting bullets in the spec.
+
+After a SigNoz reinstall, repeat steps 2–3 from the same spec.
 
 ### Bump the SigNoz subchart
 
