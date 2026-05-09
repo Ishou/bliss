@@ -155,6 +155,24 @@ describe('Grid keyboard interactions', () => {
     }
   });
 
+  it('does not refocus when Tab moves focus to a button outside the grid (WCAG 2.1 SC 2.1.2)', () => {
+    // Pressing Tab must be able to reach page controls (hint button, nav
+    // buttons, etc.). If handleBlur snapped focus back to the grid cell,
+    // keyboard users would be trapped — a WCAG A-level failure.
+    const btn = document.createElement('button');
+    btn.textContent = 'Hint';
+    document.body.appendChild(btn);
+    try {
+      const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
+      const target = inputAt(container, 1, 1)!;
+      click(target);
+      act(() => btn.focus());
+      expect(document.activeElement).toBe(btn);
+    } finally {
+      btn.remove();
+    }
+  });
+
   it('typing a letter writes it and advances along the current direction', () => {
     const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
     const start = inputAt(container, 1, 1)!;

@@ -480,6 +480,8 @@ export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOpt
       }
       if (next instanceof HTMLTextAreaElement) return;
       if (next instanceof HTMLAnchorElement && next.href) return;
+      if (next instanceof HTMLButtonElement) return;
+      if (next instanceof HTMLSelectElement) return;
       if (next.isContentEditable) return;
     }
     event.currentTarget.focus({ preventScroll: true });
