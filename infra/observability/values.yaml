@@ -40,13 +40,18 @@ signoz:
       # Revisit if/when SigNoz upstream bumps the pin.
       image:
         repository: bitnamilegacy/zookeeper
+      # Initial 256Mi limit OOMKilled the pod during JVM startup
+      # (Bitnami's ZK 3.7.1 image runs OpenJDK 17, baseline ~200 MB
+      # before any ZNodes). 512Mi gives the JVM headroom for the
+      # heap + non-heap (compressed class space, code cache,
+      # metaspace) without paging.
       resources:
         requests:
           cpu: 50m
-          memory: 100Mi
+          memory: 256Mi
         limits:
           cpu: 200m
-          memory: 256Mi
+          memory: 512Mi
 
   queryService:
     resources:
@@ -130,11 +135,13 @@ ingress:
   # (matomo, grid/api, game/api). When the FIP rotates, update every
   # chart's values-prod.yaml in the same PR.
   floatingIp: "116.202.180.82"
-  # Service backend (chart-managed SigNoz frontend Service name + port).
-  # Wired into the Ingress template so swapping subchart versions only
-  # requires updating these values, not editing templates.
-  serviceName: ""        # Empty -> derived as "<release>-signoz-frontend"
-  servicePort: 3301
+  # SigNoz UI Service backend. SigNoz 0.122 consolidated what used to
+  # be a separate `<release>-signoz-frontend` Service (port 3301) into
+  # the main `<release>-signoz` Service exposing port 8080. Empty
+  # `serviceName` would default to the legacy name and 503 because
+  # that Service no longer exists in 0.122. Pin explicitly.
+  serviceName: observability-signoz
+  servicePort: 8080
   # The htpasswd-gated Secret is bootstrapped out-of-band by
   # scripts/bootstrap-admin-htpasswd.sh (ADR-0028 §2). Name match
   # required; `admin-htpasswd` is the documented value.
