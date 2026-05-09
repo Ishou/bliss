@@ -25,6 +25,25 @@ ingress-nginx:
     hostNetwork: true
     service:
       type: ClusterIP
+    # publishService and publish-status-address are mutually exclusive
+    # in ingress-nginx (controller crashes on startup with "flags
+    # --publish-service and --publish-status-address are mutually
+    # exclusive"). The chart enables publishService by default; we
+    # disable it here because we want the controller to write the
+    # floating IP — supplied via `extraArgs.publish-status-address` at
+    # install time — into Ingress `.status.loadBalancer.ingress[0].ip`,
+    # not the controller Service's ClusterIP.
+    publishService:
+      enabled: false
+    # The Hetzner Floating IP is assigned (Terraform-side) to the
+    # worker node — only the worker has the IP aliased on its public
+    # interface (terraform/k8s/providers/hetzner/cloud-init/worker.yaml.tftpl).
+    # ingress-nginx therefore MUST run on a worker; if the scheduler
+    # places it on the control plane, traffic to the FIP arrives at
+    # the worker and finds no listener. The label is applied by
+    # cloud-init via k3s `node-label`.
+    nodeSelector:
+      bliss.io/role: worker
     # `publish-status-address` is the IP ingress-nginx writes back into
     # every Ingress's `.status.loadBalancer.ingress[0].ip`. external-dns
     # reads that field to decide which record to create, so pinning it
