@@ -65,13 +65,14 @@ metadata:
     # rejects non-browser POSTs whose Origin doesn't match. Curl can
     # spoof, but most abusers won't.
     nginx.ingress.kubernetes.io/server-snippet: |
-      if ($request_method = POST) {
-        set $origin_ok 0;
-        {{- range .Values.ingress.otlpPublic.allowedOrigins }}
-        if ($http_origin = "{{ . }}") { set $origin_ok 1; }
-        {{- end }}
-        if ($origin_ok = 0) { return 403; }
-      }
+      set $otlp_origin_ok 0;
+      {{- range .Values.ingress.otlpPublic.allowedOrigins }}
+      if ($http_origin = "{{ . }}") { set $otlp_origin_ok 1; }
+      {{- end }}
+      set $otlp_block "";
+      if ($request_method = POST) { set $otlp_block P; }
+      if ($otlp_origin_ok = 0) { set $otlp_block "${otlp_block}X"; }
+      if ($otlp_block = PX) { return 403; }
     # Per-IP rate limit. limit-rps is the sustained rate; multiplier
     # bounds the burst window. Tune `limitRps` / `limitBurstMultiplier`
     # in values.yaml if abuse appears or if legitimate spike loads need
