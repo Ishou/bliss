@@ -188,6 +188,22 @@ class PuzzleRouteTest {
         }
 
     @Test
+    fun `responds 200 with difficulty and gridNumber omitted until daily-grid PR ships values`() =
+        testApplication {
+            application { module() }
+
+            val body = client.get("/v1/puzzles/$validId").bodyAsText()
+            val json = Json.parseToJsonElement(body).jsonObject
+
+            // The Module json config sets `explicitNulls = false`, so null-valued
+            // optional fields are omitted from the wire payload (not emitted as
+            // `"foo": null`). Frontend types generated from the spec accept
+            // `undefined | null` for nullable fields, so absence is contract-OK.
+            assertThat(json.containsKey("difficulty")).isEqualTo(false)
+            assertThat(json.containsKey("gridNumber")).isEqualTo(false)
+        }
+
+    @Test
     fun `LetterCells in the response carry no canonical letter`() =
         testApplication {
             application { module() }

@@ -41,6 +41,8 @@ class GridToPuzzleMapper {
         hintsAllowed: Int,
         title: String = "Grille du jour",
         language: String = "fr",
+        difficulty: String? = null,
+        gridNumber: Int? = null,
     ): PuzzleResponse {
         val clueIdByPlacement: Map<WordPlacement, String> =
             grid.placements.associateWith { uuidGenerator.generate().toString() }
@@ -68,6 +70,8 @@ class GridToPuzzleMapper {
             clues = clues,
             hintsAllowed = hintsAllowed,
             createdAt = DateTimeFormatter.ISO_INSTANT.format(createdAt),
+            difficulty = difficulty,
+            gridNumber = gridNumber,
         )
     }
 

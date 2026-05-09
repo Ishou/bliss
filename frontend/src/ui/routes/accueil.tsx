@@ -222,12 +222,19 @@ function GrilleDuJourCard({ puzzle }: { readonly puzzle: Puzzle }) {
   const entriesCount = soloEntriesStore.load(puzzle.id).length;
   const hasStarted = lockedCount > 0 || entriesCount > 0;
 
-  const dateLabel = formatTodayFr(new Date());
+  // Meta row: date `· n°X · facile`. The number and difficulty are
+  // optional — the daily-grid PR will start populating them. Until then
+  // both are null and only the date renders, so this PR is invisible to
+  // users on the wire-default path.
+  const metaParts: string[] = [formatTodayFr(new Date())];
+  if (puzzle.gridNumber != null) metaParts.push(`n°${puzzle.gridNumber}`);
+  if (puzzle.difficulty != null) metaParts.push(puzzle.difficulty);
+  const metaLabel = metaParts.join(' · ');
 
   return (
     <section className={cardStyles} aria-labelledby="accueil-grille-title">
       <h2 id="accueil-grille-title" className={cardTitleStyles}>Grille du jour</h2>
-      <p className={cardSubtitleStyles}>{dateLabel}</p>
+      <p className={cardSubtitleStyles}>{metaLabel}</p>
       <ProgressBar
         value={lockedCount}
         total={totalLetterCells}

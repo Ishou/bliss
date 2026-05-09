@@ -354,6 +354,26 @@ components:
             language-neutral.
           example: fr
           pattern: '^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$'
+        difficulty:
+          type: string
+          enum: [facile, moyen, difficile]
+          x-enum-varnames: [FACILE, MOYEN, DIFFICILE]
+          nullable: true
+          description: |
+            Puzzle difficulty level. Lowercase French enum values match the
+            user-facing content language. Null until the daily-grid PR
+            assigns one — clients should hide the difficulty label when
+            this field is absent.
+          example: facile
+        gridNumber:
+          type: integer
+          minimum: 1
+          nullable: true
+          description: |
+            Sequential daily-puzzle number (e.g. 142 for the 142nd daily
+            grid). Null until the daily-grid PR assigns one — clients
+            should hide the number when this field is absent.
+          example: 142
         width:
           type: integer
           minimum: 1

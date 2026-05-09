@@ -21,6 +21,8 @@ data class PuzzleResponse(
     val clues: List<ClueDto>,
     val hintsAllowed: Int,
     val createdAt: String,
+    val difficulty: String? = null,
+    val gridNumber: Int? = null,
 )
 
 /**
