@@ -10,6 +10,15 @@ if (typeof window !== 'undefined') {
   window.scrollBy = (() => {}) as typeof window.scrollBy;
 }
 
+// jsdom's `document.hasFocus()` returns `false` by default — there is
+// no real OS-level window focus inside the test runner. The grid's
+// blur-refocus heuristic uses it to skip refocusing when the user has
+// switched tabs/windows, so under tests we pretend the tab is focused
+// (the common case the heuristic is tuned for).
+if (typeof document !== 'undefined') {
+  document.hasFocus = () => true;
+}
+
 // jsdom doesn't ship `ResizeObserver`; `react-zoom-pan-pinch` (used by
 // `Grid` to host pinch/zoom) instantiates one to track wrapper sizing.
 // A no-op stub is enough for our tests — we don't assert on transform
