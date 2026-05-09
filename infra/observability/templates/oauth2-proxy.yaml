@@ -1,0 +1,156 @@
+{{/*
+oauth2-proxy as a cookie-issuing wrapper around the existing
+admin-htpasswd Secret. ingress-nginx delegates auth via `auth-url`,
+oauth2-proxy validates the request against the htpasswd file (or its
+session cookie), and issues a long-lived session cookie scoped to
+.wordsparrow.io so a single login persists across all subsequent
+SigNoz UI requests — including XHR + WebSocket — without basic-auth
+re-prompts.
+
+Why not stay on plain basic auth: SigNoz's frontend issues XHR/WS
+that browsers don't auto-include `Authorization` for, so every API
+call triggered a re-prompt and made the UI unusable. Proper fix per
+the standard nginx + oauth2-proxy pattern; reuses the same Secret
+ADR-0028 already authorises us to deploy.
+
+What this does NOT add: a new identity provider. oauth2-proxy here
+runs in standalone htpasswd-only mode (no OIDC). The Secret is the
+single source of truth for credentials; rotating the password via
+`bootstrap-admin-htpasswd.sh --rotate` invalidates the existing
+sessions on the next cookie refresh.
+*/}}
+{{- if .Values.oauth2Proxy.enabled }}
+
+{{/*
+Cookie-signing secret — chart-managed, persisted across upgrades via
+lookup(). 32 bytes base64-encoded as oauth2-proxy expects. Lost on
+chart uninstall (helm.sh/resource-policy: keep keeps it across
+helm uninstall just like admin-htpasswd) so existing sessions stay
+valid across reinstalls.
+*/}}
+{{- $secretName := "oauth2-proxy-cookie" -}}
+{{- $existing := lookup "v1" "Secret" .Release.Namespace $secretName -}}
+{{- $cookieSecret := "" -}}
+{{- if and $existing $existing.data (index $existing.data "cookie-secret") -}}
+{{- $cookieSecret = index $existing.data "cookie-secret" | b64dec -}}
+{{- else -}}
+{{/* Generate a 32-byte base64 string as oauth2-proxy expects */}}
+{{- $cookieSecret = randAlphaNum 32 | b64enc -}}
+{{- end -}}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ $secretName }}
+  namespace: {{ .Release.Namespace }}
+  labels: {{- include "observability.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/resource-policy": keep
+type: Opaque
+stringData:
+  cookie-secret: {{ $cookieSecret | quote }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: oauth2-proxy
+  namespace: {{ .Release.Namespace }}
+  labels: {{- include "observability.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: oauth2-proxy
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: oauth2-proxy
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      containers:
+        - name: oauth2-proxy
+          image: {{ printf "%s:%s" .Values.oauth2Proxy.image.repository .Values.oauth2Proxy.image.tag | quote }}
+          imagePullPolicy: IfNotPresent
+          args:
+            - --http-address=0.0.0.0:4180
+            # htpasswd-only standalone mode. No upstream OIDC; the
+            # `--provider=keycloak-oidc` flag is purely a stub so
+            # oauth2-proxy starts (it requires a provider value).
+            # When htpasswd-file is set + only-allowed-emails is
+            # *, oauth2-proxy validates against the htpasswd file
+            # for sign-in and never reaches out to keycloak.
+            - --provider=keycloak-oidc
+            - --client-id=dummy
+            - --client-secret=dummy
+            - --oidc-issuer-url=http://localhost
+            - --skip-oidc-discovery=true
+            - --htpasswd-file=/etc/oauth2-proxy/htpasswd
+            - --display-htpasswd-form=true
+            - --email-domain=*
+            # Static upstream — oauth2-proxy is used as auth-only
+            # via nginx auth-url, not as a reverse proxy. Returning
+            # 200 from a static upstream lets nginx forward the
+            # original request after auth succeeds.
+            - --upstream=static://200
+            - --reverse-proxy=true
+            # Cookie scoped to .wordsparrow.io so the same session
+            # works on errors.wordsparrow.io AND
+            # dashboard.wordsparrow.io.
+            - --cookie-domain=.wordsparrow.io
+            - --whitelist-domain=.wordsparrow.io
+            - --cookie-secure=true
+            - --cookie-httponly=true
+            - --cookie-samesite=lax
+            # 168h = 7 days — single login per week.
+            - --cookie-expire=168h
+            - --cookie-refresh=24h
+            # Skip the "Sign in with provider" button page since
+            # there's no real provider; render the htpasswd form
+            # directly.
+            - --skip-provider-button=true
+          env:
+            - name: OAUTH2_PROXY_COOKIE_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $secretName }}
+                  key: cookie-secret
+          ports:
+            - name: http
+              containerPort: 4180
+              protocol: TCP
+          volumeMounts:
+            - name: htpasswd
+              mountPath: /etc/oauth2-proxy
+              readOnly: true
+          resources:
+            requests:
+              cpu: 20m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
+      volumes:
+        - name: htpasswd
+          secret:
+            secretName: {{ .Values.ingress.authSecretName }}
+            items:
+              - key: auth
+                path: htpasswd
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: oauth2-proxy
+  namespace: {{ .Release.Namespace }}
+  labels: {{- include "observability.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: oauth2-proxy
+    app.kubernetes.io/instance: {{ .Release.Name }}
+  ports:
+    - name: http
+      port: 4180
+      targetPort: http
+      protocol: TCP
+{{- end }}

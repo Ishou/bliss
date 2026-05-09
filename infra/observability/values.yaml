@@ -103,6 +103,17 @@ signoz:
         cpu: 500m
         memory: 512Mi
 
+# oauth2-proxy — cookie-issuing wrapper around `admin-htpasswd` so
+# SigNoz's SPA XHR/WS don't trigger basic-auth re-prompts on every
+# request. Standalone htpasswd mode (no OIDC). Single session cookie
+# scoped to `.wordsparrow.io`, valid for 7 days. See
+# templates/oauth2-proxy.yaml for the full deployment.
+oauth2Proxy:
+  enabled: true
+  image:
+    repository: quay.io/oauth2-proxy/oauth2-proxy
+    tag: v7.6.0
+
 # Ingress hosts. Two ingresses target the same SigNoz frontend Service:
 # `errors.wordsparrow.io` (Sentry-style "what blew up" entry point) and
 # `dashboard.wordsparrow.io` (the same UI's metrics + traces views are
