@@ -51,6 +51,7 @@ const inputAt = (row: number, col: number) =>
 const renderHomeRoute = (solver: PuzzleSolver) => {
   const repository: PuzzleRepository = {
     fetchById: vi.fn().mockResolvedValue(puzzle),
+    fetchDaily: vi.fn().mockResolvedValue(puzzle),
   };
   const routeTree = RootRoute.addChildren([IndexRoute]);
   const router = createRouter({

@@ -49,18 +49,20 @@ const renderWith = (repository: PuzzleRepository) => {
   return render(<RouterProvider router={router} />);
 };
 
-describe('Index route loader', () => {
-  it('asks the repository for a UUID-shaped default puzzle id exactly once', async () => {
-    const fetchById = vi.fn().mockResolvedValue(puzzle);
-    renderWith({ fetchById });
+describe('Grille route loader', () => {
+  it('calls fetchDaily exactly once and renders the grid', async () => {
+    const fetchDaily = vi.fn().mockResolvedValue(puzzle);
+    const fetchById = vi.fn().mockRejectedValue(new Error('grille loader should not call fetchById'));
+    renderWith({ fetchById, fetchDaily });
     await screen.findByRole('grid');
-    expect(fetchById).toHaveBeenCalledTimes(1);
-    expect(fetchById).toHaveBeenCalledWith(expect.stringMatching(/^[0-9a-f-]{36}$/));
+    expect(fetchDaily).toHaveBeenCalledTimes(1);
+    expect(fetchById).not.toHaveBeenCalled();
   });
 
   it('renders the error component when the repository rejects', async () => {
     renderWith({
-      fetchById: vi.fn().mockRejectedValue(new Error('puzzle fetch failed: Out of attempts')),
+      fetchById: vi.fn().mockRejectedValue(new Error('unused')),
+      fetchDaily: vi.fn().mockRejectedValue(new Error('daily puzzle fetch failed: Out of attempts')),
     });
     const alert = await screen.findByRole('alert');
     expect(alert).toHaveTextContent(/Out of attempts/);
@@ -69,7 +71,8 @@ describe('Index route loader', () => {
 
   it('exposes the hint affordance with the per-puzzle budget badge', async () => {
     const fetchById = vi.fn().mockResolvedValue(puzzle);
-    renderWith({ fetchById });
+    const fetchDaily = vi.fn().mockResolvedValue(puzzle);
+    renderWith({ fetchById, fetchDaily });
     await screen.findByRole('grid');
     expect(
       screen.getByRole('button', { name: 'Demander un indice' }),

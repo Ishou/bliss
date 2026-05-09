@@ -6,15 +6,27 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonClassDiscriminator
 
 @Serializable
-enum class DifficultyDto {
+enum class DifficultyDto(
+    val wireValue: String,
+) {
     @SerialName("facile")
-    FACILE,
+    FACILE("facile"),
 
     @SerialName("moyen")
-    MOYEN,
+    MOYEN("moyen"),
 
     @SerialName("difficile")
-    DIFFICILE,
+    DIFFICILE("difficile"),
+
+    ;
+
+    companion object {
+        // String → enum lookup for callers that exchange the wire token
+        // across the application boundary (where importing `DifficultyDto`
+        // would be a layer violation). `null` for unknown values, leaving
+        // the route layer to decide the fallback.
+        fun fromWire(value: String): DifficultyDto? = entries.firstOrNull { it.wireValue == value }
+    }
 }
 
 /**

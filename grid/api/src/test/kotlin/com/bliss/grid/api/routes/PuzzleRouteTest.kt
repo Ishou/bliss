@@ -204,6 +204,56 @@ class PuzzleRouteTest {
         }
 
     @Test
+    fun `daily endpoint responds 200 with populated difficulty and gridNumber`() =
+        testApplication {
+            application { module() }
+
+            val response = client.get("/v1/puzzles/daily?date=2026-05-09")
+
+            assertThat(response.status).isEqualTo(HttpStatusCode.OK)
+            val json = Json.parseToJsonElement(response.bodyAsText()).jsonObject
+            assertThat(json["difficulty"]!!.jsonPrimitive.content).isEqualTo("facile")
+            // 2026-05-09 is day 129 since 2026-01-01 (anchor day 1).
+            assertThat(json["gridNumber"]!!.jsonPrimitive.content.toInt()).isEqualTo(129)
+        }
+
+    @Test
+    fun `daily endpoint returns the same puzzle id for the same date`() =
+        testApplication {
+            application { module() }
+
+            val first = Json.parseToJsonElement(client.get("/v1/puzzles/daily?date=2026-05-09").bodyAsText()).jsonObject
+            val second = Json.parseToJsonElement(client.get("/v1/puzzles/daily?date=2026-05-09").bodyAsText()).jsonObject
+
+            assertThat(first["id"]!!.jsonPrimitive.content).isEqualTo(second["id"]!!.jsonPrimitive.content)
+        }
+
+    @Test
+    fun `daily endpoint rejects malformed date with RFC 7807 problem`() =
+        testApplication {
+            application { module() }
+
+            val response = client.get("/v1/puzzles/daily?date=not-a-date")
+
+            assertThat(response.status).isEqualTo(HttpStatusCode.BadRequest)
+            val json = Json.parseToJsonElement(response.bodyAsText()).jsonObject
+            assertThat(json["type"]!!.jsonPrimitive.content)
+                .isEqualTo("https://bliss.example/errors/invalid-puzzle-date")
+        }
+
+    @Test
+    fun `daily endpoint omits gridNumber for a pre-launch date`() =
+        testApplication {
+            application { module() }
+
+            val response = client.get("/v1/puzzles/daily?date=2025-12-31")
+
+            assertThat(response.status).isEqualTo(HttpStatusCode.OK)
+            val json = Json.parseToJsonElement(response.bodyAsText()).jsonObject
+            assertThat(json.containsKey("gridNumber")).isEqualTo(false)
+        }
+
+    @Test
     fun `LetterCells in the response carry no canonical letter`() =
         testApplication {
             application { module() }

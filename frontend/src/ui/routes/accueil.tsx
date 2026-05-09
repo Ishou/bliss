@@ -13,12 +13,8 @@ import { Route as RootRoute } from './__root';
 // (create + disabled join-by-code).
 //
 // Backend gaps the UI defers to follow-up PRs:
-//  - No daily-grid endpoint — we reuse the grille route's hardcoded
-//    UUID v7 so behaviour is identical to today.
 //  - No archive route — the "Anciennes grilles" link renders disabled.
 //  - No join-by-code endpoint — input + Rejoindre render disabled.
-
-const DEFAULT_PUZZLE_ID = '0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6b';
 
 const isMultiplayerEnabled = (): boolean =>
   import.meta.env.VITE_FEATURE_MULTIPLAYER === 'true';
@@ -360,8 +356,7 @@ function AccueilStatus({ role, text }: { role: 'status' | 'alert'; text: string 
 export const Route = createRoute({
   getParentRoute: () => RootRoute,
   path: '/',
-  loader: ({ context }): Promise<Puzzle> =>
-    context.puzzleRepository.fetchById(DEFAULT_PUZZLE_ID),
+  loader: ({ context }): Promise<Puzzle> => context.puzzleRepository.fetchDaily(),
   component: AccueilPage,
   pendingComponent: () => <AccueilStatus role="status" text="Chargement…" />,
   errorComponent: ({ error }) => (

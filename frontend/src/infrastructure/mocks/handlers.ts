@@ -89,6 +89,24 @@ const HINT_PROBLEM_INVALID_COORD = {
  * URL) and any same-origin proxy a future ADR introduces.
  */
 const gridHandlers = [
+  // GET /v1/puzzles/daily — must match before the `:puzzleId` catch-all
+  // below; MSW dispatches the first matching handler. Preview returns the
+  // fixture with the requested date's gridNumber + the fixture's default
+  // difficulty so the Accueil meta row reads like production.
+  http.get('*/v1/puzzles/daily', ({ request }) => {
+    const url = new URL(request.url);
+    const date = url.searchParams.get('date') ?? new Date().toISOString().slice(0, 10);
+    // Match the server's anchor (2026-01-01 = day 1).
+    const epochMs = Date.parse(`${date}T00:00:00Z`);
+    const launchEpochMs = Date.parse('2026-01-01T00:00:00Z');
+    const gridNumber = Math.floor((epochMs - launchEpochMs) / 86_400_000) + 1;
+    return HttpResponse.json({
+      ...puzzleFixture,
+      difficulty: 'facile',
+      gridNumber,
+    });
+  }),
+
   http.get('*/v1/puzzles/:puzzleId', ({ params }) => {
     // Echo the requested id back so the round-trip looks realistic
     // (the spec example's hard-coded UUID would otherwise mismatch

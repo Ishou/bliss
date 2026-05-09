@@ -6,6 +6,7 @@ import com.bliss.grid.api.routes.deleteSession
 import com.bliss.grid.api.routes.health
 import com.bliss.grid.api.routes.puzzles
 import com.bliss.grid.application.analytics.AnalyticsEventSink
+import com.bliss.grid.application.puzzle.DailyPuzzleSelector
 import com.bliss.grid.application.puzzle.DeleteSessionUseCase
 import com.bliss.grid.application.puzzle.GeneratePuzzleUseCase
 import com.bliss.grid.application.puzzle.HintUsageRepository
@@ -158,10 +159,11 @@ fun Application.module() {
         RevealCellHintUseCase(puzzleRepository, hintUsageRepository, analyticsEventSink = analyticsEventSink)
     val validatePuzzle = ValidatePuzzleUseCase(puzzleRepository)
     val deleteSession = DeleteSessionUseCase(hintUsageRepository)
+    val dailyPuzzleSelector = DailyPuzzleSelector()
 
     routing {
         health(version)
-        puzzles(loadOrGenerate, revealCellHint, validatePuzzle)
+        puzzles(loadOrGenerate, revealCellHint, validatePuzzle, dailyPuzzleSelector = dailyPuzzleSelector)
         deleteSession(deleteSession)
     }
 }
