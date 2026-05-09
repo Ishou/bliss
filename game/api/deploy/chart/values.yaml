@@ -93,11 +93,19 @@ env:
   - name: PORT
     value: "8081"
   # Pin the grid-api host. Module.kt's default is http://localhost:7777
-  # (local-dev convenience, paired with grid/api's DEFAULT_PORT). In the
-  # cluster, grid-api lives at the Kubernetes Service DNS name on its
-  # service port (8080 per grid/api/deploy/chart/values.yaml).
+  # (local-dev convenience). In the cluster, grid-api is exposed by
+  # the wordsparrow-api chart (release name = `wordsparrow-api`,
+  # so the Service is `wordsparrow-api` in the same namespace).
+  # The service port is 8080 per grid/api/deploy/chart/values.yaml.
+  # Earlier value `http://grid-api:8080` was a stale rename: the
+  # chart's release/Service name is `wordsparrow-api`, not
+  # `grid-api`, and DNS for `grid-api` returns NXDOMAIN — that
+  # surfaced as `UnresolvedAddressException` on every multiplayer
+  # WebSocket upgrade (game-api needs to fetch a puzzle from grid
+  # to start the lobby). IDEAS.md #9 ("validation marche pas en
+  # multijoueur") root-caused.
   - name: GRID_BASE_URL
-    value: "http://grid-api:8080"
+    value: "http://wordsparrow-api:8080"
   # OpenTelemetry agent configuration (ADR-0027). Endpoint defaults to
   # the in-cluster SigNoz collector Service. Local installs without
   # observability/* deployed will see harmless connection-refused
