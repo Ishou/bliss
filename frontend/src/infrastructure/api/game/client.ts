@@ -14,6 +14,7 @@
 // Mirrors `infrastructure/api/grid/client.ts`. Two clients exist because the
 // grid and game bounded contexts have separate OpenAPI specs (ADR-0001 §1).
 import createClient, { type Client, type ClientOptions } from 'openapi-fetch';
+import { uuidv7 } from 'uuidv7';
 
 import type { paths } from './types';
 
@@ -48,10 +49,21 @@ export interface GameApiClientOptions {
  * when they need data.
  */
 export function createGameApiClient(options: GameApiClientOptions): Client<paths> {
-  return createClient<paths>({
+  const client = createClient<paths>({
     baseUrl: options.baseUrl,
     fetch: options.fetch,
   });
+  // WebSocket connections do not support custom request headers from the browser
+  // -- instrumenting them is a follow-up (likely via the connect URL).
+  client.use({
+    onRequest({ request }) {
+      if (!request.headers.has('X-Request-Id')) {
+        request.headers.set('X-Request-Id', uuidv7());
+      }
+      return request;
+    },
+  });
+  return client;
 }
 
 export type GameApiClient = Client<paths>;

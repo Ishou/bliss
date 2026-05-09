@@ -74,9 +74,10 @@ dependencies {
     implementation("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$kotlinxSerializationVersion")
 
-    // Status pages (RFC 7807) + call logging — ADR-0003 §6, MANIFESTO Observability.
+    // Status pages (RFC 7807) + call logging + correlation IDs — ADR-0003 §6, MANIFESTO Observability.
     implementation("io.ktor:ktor-server-status-pages:$ktorVersion")
     implementation("io.ktor:ktor-server-call-logging:$ktorVersion")
+    implementation("io.ktor:ktor-server-call-id:$ktorVersion")
 
     // CORS — wordsparrow.io frontend talks to this API in the browser.
     implementation("io.ktor:ktor-server-cors:$ktorVersion")

@@ -28,6 +28,8 @@ import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.Application
 import io.ktor.server.application.ApplicationStopped
 import io.ktor.server.application.install
+import io.ktor.server.plugins.callid.CallId
+import io.ktor.server.plugins.callid.callIdMdc
 import io.ktor.server.plugins.calllogging.CallLogging
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.plugins.cors.routing.CORS
@@ -70,6 +72,7 @@ fun Application.module() {
         allowMethod(HttpMethod.Options) // preflight
         allowHeader(HttpHeaders.ContentType)
         allowHeader(HttpHeaders.Accept)
+        allowHeader("X-Request-Id")
 
         // Production frontends (Cloudflare Pages serving wordsparrow.io).
         allowHost("wordsparrow.io", schemes = listOf("https"))
@@ -100,8 +103,21 @@ fun Application.module() {
         )
     }
 
+    // Must install before CallLogging so callIdMdc binding is in scope for the access log.
+    install(CallId) {
+        header("X-Request-Id")
+        generate {
+            java.util.UUID
+                .randomUUID()
+                .toString()
+        }
+        verify { it.isNotEmpty() && it.length <= 128 }
+        replyToHeader("X-Request-Id")
+    }
+
     install(CallLogging) {
         level = Level.INFO
+        callIdMdc("correlation_id")
     }
 
     install(DefaultHeaders) {
