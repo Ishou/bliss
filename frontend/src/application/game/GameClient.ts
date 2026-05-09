@@ -85,6 +85,11 @@ export interface GameClient {
   // Voluntary disconnect; frees the slot immediately.
   leaveLobby(): void;
 
+  // Owner-only (ADR-0029). Mints a fresh `LobbyCode` server-side; the
+  // refreshed `lobbyState` snapshot carries the new value. Non-owner
+  // surfaces a `not-owner` error frame.
+  rotateCode(): void;
+
   // Close the underlying socket without sending `leaveLobby`.
   disconnect(): void;
 

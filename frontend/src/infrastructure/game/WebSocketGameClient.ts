@@ -245,6 +245,8 @@ export function createWebSocketGameClient(
 
     leaveLobby() { sendFrame({ type: 'leaveLobby' }); },
 
+    rotateCode() { sendFrame({ type: 'rotateCode' }); },
+
     disconnect() {
       const ws = socket;
       // Always clear any pending debounced `cellFocus` so it does not
@@ -309,7 +311,9 @@ interface CellFocusFrame {
   readonly direction: 'across' | 'down' | null;
 }
 interface LeaveLobbyFrame { readonly type: 'leaveLobby'; }
+interface RotateCodeFrame { readonly type: 'rotateCode'; }
 
 type ClientToServerFrame =
   | JoinLobbyFrame | RenameSelfFrame | SetGridConfigFrame
-  | StartGameFrame | CellUpdateFrame | CellFocusFrame | LeaveLobbyFrame;
+  | StartGameFrame | CellUpdateFrame | CellFocusFrame | LeaveLobbyFrame
+  | RotateCodeFrame;

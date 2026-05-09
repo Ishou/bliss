@@ -207,6 +207,9 @@ function LobbyPage() {
   // flip the label to "Démarrage…" so the WS round-trip (frame →
   // server → broadcast) is not perceived as a dead click.
   const [isStarting, setIsStarting] = useState(false);
+  // ADR-0029: rotation spinner; cleared in the subscribe handler below.
+  const [isRotating, setIsRotating] = useState(false);
+  const preRotationCodeRef = useRef<string | null>(null);
 
   // Single side effect: connect on mount, disconnect on unmount.
   // `joinLobby` is auto-sent by the adapter inside `connect` (PR #138's
@@ -251,6 +254,15 @@ function LobbyPage() {
       if (event.type === 'gameStarted' || event.type === 'error') {
         setIsStarting(false);
       }
+      // ADR-0029: clear the rotation spinner on the refreshed `lobbyState`
+      // (new `code`) or on any server `error` (defensive, e.g. not-owner).
+      if ((event.type === 'lobbyState'
+          && preRotationCodeRef.current != null
+          && event.code !== preRotationCodeRef.current)
+        || event.type === 'error') {
+        setIsRotating(false);
+        preRotationCodeRef.current = null;
+      }
     });
     const unsubscribeConnection = gameClient.subscribeConnectionState((state) => {
       setConnectionState(state);
@@ -291,6 +303,14 @@ function LobbyPage() {
     setIsStarting(true);
     gameClient.startGame();
   }, [gameClient]);
+
+  // ADR-0029: dispatch rotation; stash the pre-click code so the
+  // subscribe handler can detect the refreshed snapshot.
+  const handleRotateCode = useCallback(() => {
+    preRotationCodeRef.current = view.lobby.code ?? null;
+    setIsRotating(true);
+    gameClient.rotateCode();
+  }, [gameClient, view.lobby.code]);
 
   // ADR-0027: the address-bar URL is `/lobby/$lobbyId` and is NEVER a
   // share token (a viewer copying it cannot join — the WS rejects on
@@ -460,6 +480,8 @@ function LobbyPage() {
               pseudonymError={pseudonymError}
               onClearPseudonymError={handleClearPseudonymError}
               isStarting={isStarting}
+              onRotateCode={handleRotateCode}
+              isRotating={isRotating}
             />
           </>
         ) : null}
