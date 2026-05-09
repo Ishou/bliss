@@ -59,6 +59,7 @@ const renderHome = (overrides: { lobbyClient?: Partial<LobbyClient> } = {}) => {
   const lobbyClient: LobbyClient = {
     createLobby: vi.fn().mockResolvedValue(baseCreatedLobby),
     getLobby: vi.fn().mockResolvedValue(baseCreatedLobby),
+    findByCode: vi.fn().mockRejectedValue(new Error('unused in create-lobby tests')),
     ...overrides.lobbyClient,
   };
   // Mounting the lobby route alongside index lets the success-path

@@ -83,6 +83,12 @@ export function createHttpLobbyClient(
       );
       return wireToDomain(wire);
     },
+    async findByCode(code: string) {
+      const wire = await safeRequest(() =>
+        client.GET('/v1/lobbies/by-code/{code}', { params: { path: { code } } }),
+      );
+      return { id: wire.id as unknown as LobbyId, ...wireToDomain(wire) };
+    },
   };
 }
 

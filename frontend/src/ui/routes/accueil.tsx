@@ -252,6 +252,13 @@ function GrilleDuJourCard({ puzzle }: { readonly puzzle: Puzzle }) {
   );
 }
 
+// Same Crockford-style alphabet as the OpenAPI `code` schema and the
+// Kotlin LobbyCode regex — keep all three in sync. Excludes the
+// ambiguous chars `0`/`O`, `1`/`I`/`L` so a player reading the code
+// aloud cannot land on a different lobby.
+const LOBBY_CODE_PATTERN = /^[A-HJKM-NP-Z2-9]{6}$/;
+const LOBBY_CODE_ALLOWED_CHARS = /[A-HJKM-NP-Z2-9]/;
+
 function MultijoueurCard() {
   const navigate = useNavigate();
   const ctx = Route.useRouteContext();
@@ -259,9 +266,15 @@ function MultijoueurCard() {
   const lobbyClient = ctx.lobbyClient;
   const getSession = ctx.getSession;
   const canCreate = flagOn && lobbyClient != null && getSession != null;
+  const canJoin = flagOn && lobbyClient != null;
 
   const [pending, setPending] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [code, setCode] = useState('');
+  const [joinPending, setJoinPending] = useState(false);
+  const [joinError, setJoinError] = useState<string | null>(null);
+
+  const codeMatches = LOBBY_CODE_PATTERN.test(code);
 
   const handleCreate = async () => {
     if (!canCreate) return;
@@ -278,6 +291,31 @@ function MultijoueurCard() {
       setErrorMessage(messageForError(err));
       setPending(false);
     }
+  };
+
+  const handleJoin = async () => {
+    if (!canJoin || !codeMatches) return;
+    setJoinPending(true);
+    setJoinError(null);
+    try {
+      const lobby = await lobbyClient!.findByCode(code);
+      await navigate({ to: '/lobby/$lobbyId', params: { lobbyId: lobby.id } });
+    } catch (err) {
+      setJoinError(messageForJoinError(err));
+      setJoinPending(false);
+    }
+  };
+
+  // Normalise typed input: uppercase + strip anything outside the allowed
+  // alphabet, then cap at 6 chars. Keeps the input visually aligned with
+  // what the server accepts, so a paste of "a-2b3c4" lands as "A2B3C4".
+  const handleCodeChange = (raw: string) => {
+    const normalised = Array.from(raw.toUpperCase())
+      .filter((ch) => LOBBY_CODE_ALLOWED_CHARS.test(ch))
+      .slice(0, 6)
+      .join('');
+    setCode(normalised);
+    if (joinError != null) setJoinError(null);
   };
 
   return (
@@ -297,17 +335,39 @@ function MultijoueurCard() {
           <p className={errorTextStyles} role="alert">{errorMessage}</p>
         ) : null}
         <div className={dividerStyles} aria-hidden="true">ou avec un code</div>
-        <div className={joinRowStyles}>
+        <form
+          className={joinRowStyles}
+          onSubmit={(event) => {
+            event.preventDefault();
+            void handleJoin();
+          }}
+        >
           <input
             type="text"
-            disabled
+            disabled={!canJoin}
             aria-label="Code de partie"
-            placeholder="A1B2C3"
+            placeholder="A2B3C4"
+            value={code}
+            onChange={(event) => handleCodeChange(event.target.value)}
+            autoComplete="off"
+            autoCapitalize="characters"
+            spellCheck={false}
             className={codeInputStyles}
           />
-          <Button variant="ghost" disabled title="Bientôt">Rejoindre</Button>
-        </div>
-        <p className={helperTextStyles}>Disponible bientôt</p>
+          <Button
+            type="submit"
+            variant="ghost"
+            disabled={!canJoin || !codeMatches || joinPending}
+            title={!canJoin ? 'Bientôt' : undefined}
+          >
+            {joinPending ? 'Recherche…' : 'Rejoindre'}
+          </Button>
+        </form>
+        {joinError != null ? (
+          <p className={errorTextStyles} role="alert">{joinError}</p>
+        ) : !canJoin ? (
+          <p className={helperTextStyles}>Disponible bientôt</p>
+        ) : null}
       </div>
     </section>
   );
@@ -324,6 +384,27 @@ function messageForError(err: unknown): string {
       case 'validation':
       case 'transient':
       case 'not-found':
+        return 'Une erreur est survenue. Réessayez.';
+    }
+  }
+  return 'Une erreur est survenue. Réessayez.';
+}
+
+// Distinct copy for the join-by-code path: the user typed a code, so a
+// 404 is meaningfully different from a transient 5xx and earns specific
+// guidance. Validation should not reach the wire (we filter to the
+// allowed alphabet on input), but if the server tightens its pattern
+// later we surface a helpful message instead of a generic retry hint.
+function messageForJoinError(err: unknown): string {
+  if (err instanceof LobbyClientError) {
+    switch (err.kind) {
+      case 'not-found':
+        return 'Aucune partie pour ce code. Vérifiez la saisie.';
+      case 'validation':
+        return 'Code invalide.';
+      case 'upstream-unavailable':
+        return 'Service indisponible. Réessayez dans un instant.';
+      case 'transient':
         return 'Une erreur est survenue. Réessayez.';
     }
   }
