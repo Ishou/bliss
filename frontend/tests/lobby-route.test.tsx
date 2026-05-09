@@ -46,6 +46,7 @@ const baseLobby: Lobby = {
   state: 'WAITING',
   gridConfig: { width: 7, height: 7 },
   game: null,
+  code: 'A2B3C4',
 };
 
 interface FakeGameClient extends GameClient {
@@ -182,6 +183,7 @@ const renderLobby = (overrides: RenderLobbyOverrides) => {
       gameClient,
       getSession: () => ({ sessionId, pseudonym }),
       setPseudonym,
+      lobbyJoinCodeStash: { stash: () => {}, read: () => null, clear: () => {} },
     },
   });
   return { ...render(<RouterProvider router={router} />), lobbyClient, gameClient, setPseudonym };
@@ -466,14 +468,12 @@ describe('Lobby route Wave H integration', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /Copier le lien/i }));
 
-    // We pass `window.location.href` verbatim so a player landing on
-    // the route via a real URL gets the shareable link. jsdom does
-    // not propagate TanStack Router's memory history into
-    // `window.location`, so we just assert the call happened with the
-    // host's current href (the route's actual share URL is verified
-    // end-to-end on the preview deploy).
+    // ADR-0027: the share-link is `${origin}/join/${lobby.code}` —
+    // never the routing URL. The address bar `/lobby/$lobbyId` is
+    // intentionally NOT a join token, so copying it would let any
+    // viewer with the URL on screen join the lobby.
     expect(writeText).toHaveBeenCalledTimes(1);
-    expect(writeText).toHaveBeenCalledWith(window.location.href);
+    expect(writeText).toHaveBeenCalledWith(`${window.location.origin}/join/${baseLobby.code}`);
   });
 
   it('unmounts WaitingRoom and mounts Grid + Timer on gameStarted', async () => {

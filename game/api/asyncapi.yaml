@@ -388,7 +388,20 @@ components:
         type:      { type: string, enum: [joinLobby] }
         sessionId: { $ref: '#/components/schemas/SessionId' }
         pseudonym: { $ref: '#/components/schemas/Pseudonym' }
-      example: { type: joinLobby, sessionId: 0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6b, pseudonym: Joueur 1234 }
+        code:
+          type: string
+          minLength: 6
+          maxLength: 6
+          pattern: '^[A-HJKM-NP-Z2-9]{6}$'
+          description: |
+            Six-char Crockford-style join code (ADR-0027). Required for new
+            joiners — server rejects with `wrong-code` (403) on missing or
+            mismatched value. Optional / ignored for already-joined sessions:
+            the reconnect branch is keyed by `sessionId` and never reads this
+            field, so a refresh / tab-recovery flow does not need to
+            re-supply it.
+          example: A2B3C4
+      example: { type: joinLobby, sessionId: 0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6b, pseudonym: Joueur 1234, code: A2B3C4 }
     RenameSelfPayload:
       type: object
       required: [type, newPseudonym]
@@ -657,6 +670,8 @@ components:
             `https://bliss.example/errors/not-owner`,
             `https://bliss.example/errors/invalid-state`,
             `https://bliss.example/errors/player-not-in-lobby`,
+            `https://bliss.example/errors/wrong-code` (ADR-0027 — new joiner
+              missing / mismatched the lobby's code; reconnects bypass),
             `https://bliss.example/errors/invalid-argument`,
             `https://bliss.example/errors/protocol` (generic protocol violations).
           example: 'https://bliss.example/errors/lobby-full'

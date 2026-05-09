@@ -39,6 +39,7 @@ import type { SoloEntriesStore } from '@/application/solo/SoloEntriesStore';
 import type { TourSeenStore } from '@/application/tour/TourSeenStore';
 import type { SessionClient } from '@/application/session/SessionClient';
 import { registerServiceWorker } from '@/infrastructure/pwa';
+import { sessionStorageLobbyJoinCodeStash } from '@/infrastructure/session/sessionStorageLobbyJoinCode';
 import type { Pseudonym, SessionId } from '@/domain/game';
 // `fonts.css` is imported separately (rather than via `@import` from
 // `index.css`) so the `@font-face` rules reach the `fontaine` Vite
@@ -184,6 +185,7 @@ enableMocks()
             gameClient,
             getSession,
             setPseudonym: setPersistedPseudonym,
+            lobbyJoinCodeStash: sessionStorageLobbyJoinCodeStash,
           };
         })()
       : { puzzleRepository, puzzleSolver, sessionClient, soloEntriesStore, tourSeenStore };

@@ -91,6 +91,7 @@ const renderHome = (overrides: { lobbyClient?: Partial<LobbyClient> } = {}) => {
       lobbyClient,
       gameClient: stubGameClient,
       getSession: () => ({ sessionId, pseudonym }),
+      lobbyJoinCodeStash: { stash: () => {}, read: () => null, clear: () => {} },
     },
   });
   return { ...render(<RouterProvider router={router} />), lobbyClient };

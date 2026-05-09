@@ -2,6 +2,7 @@ import { HeadContent, Outlet, createRootRouteWithContext } from '@tanstack/react
 import { css } from 'styled-system/css';
 import type { PuzzleRepository, PuzzleSolver } from '@/application';
 import type { GameClient, LobbyClient } from '@/application/game';
+import type { LobbyJoinCodeStash } from '@/application/session/LobbyJoinCodeStash';
 import type { SessionClient } from '@/application/session/SessionClient';
 import type { SoloEntriesStore } from '@/application/solo/SoloEntriesStore';
 import type { TourSeenStore } from '@/application/tour/TourSeenStore';
@@ -38,6 +39,11 @@ export interface AppRouterContext {
   readonly gameClient?: GameClient;
   readonly getSession?: () => AppSession;
   readonly setPseudonym?: (pseudonym: Pseudonym) => void;
+  // ADR-0027: per-tab one-shot stash that the `/join/$code` route and
+  // the Accueil "Rejoindre" submit populate, and the lobby route's
+  // WS-open consumes. Optional alongside the multiplayer adapters
+  // because every route that reads it is gated by the same flag.
+  readonly lobbyJoinCodeStash?: LobbyJoinCodeStash;
 }
 
 const errorPageStyles = css({

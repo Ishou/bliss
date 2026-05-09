@@ -101,7 +101,16 @@ class CreateLobbyUseCase(
     }
 }
 
-/** Idempotent join — re-joining with the same sessionId emits no event (reconnect path). */
+/**
+ * Idempotent join — re-joining with the same sessionId emits no event (reconnect path).
+ *
+ * ADR-0027: new joiners must present `code` matching `lobby.code`; the
+ * mutator records `wrongCode = true` on a mismatch so the post-mutate
+ * branch can return [UseCaseError.WrongCode] without conflating it with
+ * `LobbyFull` (both leave the lobby unchanged). Reconnects (sessionId
+ * already a member) bypass the check by construction — no code is ever
+ * read on that branch.
+ */
 class JoinLobbyUseCase(
     private val repo: LobbyRepository,
     private val clock: Clock,
@@ -111,13 +120,20 @@ class JoinLobbyUseCase(
         lobbyId: LobbyId,
         sessionId: SessionId,
         pseudonym: Pseudonym,
+        code: String?,
     ): UseCaseOutcome<Lobby> {
         var emitted: LobbyEvent? = null
+        var wrongCode = false
         val updated =
             repo.mutate(lobbyId) { lobby ->
                 when {
                     // Reconnect path: bump lastActivityAt so an idle re-open keeps the lobby alive.
+                    // Code is intentionally NOT checked here — see ADR-0027.
                     lobby.hasJoined(sessionId) -> lobby.touched(clock.now())
+                    code != lobby.code.value -> {
+                        wrongCode = true
+                        lobby
+                    }
                     lobby.isFull() -> lobby
                     else -> {
                         val now = clock.now()
@@ -127,6 +143,7 @@ class JoinLobbyUseCase(
                     }
                 }
             } ?: return failure(UseCaseError.LobbyNotFound)
+        if (wrongCode) return failure(UseCaseError.WrongCode)
         if (updated.isFull() && !updated.hasJoined(sessionId)) return failure(UseCaseError.LobbyFull)
         if (emitted != null) {
             analyticsEventSink.record(AnalyticsEvent.LobbyJoined(updated.players.size), sessionId)

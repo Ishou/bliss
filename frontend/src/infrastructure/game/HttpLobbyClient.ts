@@ -137,5 +137,6 @@ function wireToDomain(wire: WireLobby): Lobby {
     state: wire.state,
     gridConfig: wire.gridConfig,
     game: wire.game as unknown as Lobby['game'],
+    code: wire.code ?? null,
   };
 }

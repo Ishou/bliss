@@ -4,6 +4,7 @@ import { Route as RootRoute } from './routes/__root';
 import { Route as AccueilRoute } from './routes/accueil';
 import { Route as GrilleRoute } from './routes/grille';
 import { Route as AideRoute } from './routes/aide';
+import { Route as JoinRoute } from './routes/join.$code';
 import { Route as LobbyRoute } from './routes/lobby.$lobbyId';
 import { Route as ConfidentialiteRoute } from './routes/confidentialite';
 import { Route as PrivacyRoute } from './routes/privacy';
@@ -28,7 +29,9 @@ export function createAppRouter({ context, multiplayer }: CreateAppRouterOptions
     PrivacyRoute,
     LegalNoticeRoute,
   ];
-  const children = multiplayer ? [...baseChildren, LobbyRoute] : baseChildren;
+  // Multiplayer-flag-gated routes: lobby + the `/join/$code` share-link
+  // landing both require the game-api adapter on the router context.
+  const children = multiplayer ? [...baseChildren, JoinRoute, LobbyRoute] : baseChildren;
   const routeTree = RootRoute.addChildren(children);
   return createRouter({ routeTree, context });
 }

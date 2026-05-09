@@ -265,8 +265,9 @@ function MultijoueurCard() {
   const flagOn = isMultiplayerEnabled();
   const lobbyClient = ctx.lobbyClient;
   const getSession = ctx.getSession;
+  const lobbyJoinCodeStash = ctx.lobbyJoinCodeStash;
   const canCreate = flagOn && lobbyClient != null && getSession != null;
-  const canJoin = flagOn && lobbyClient != null;
+  const canJoin = flagOn && lobbyClient != null && lobbyJoinCodeStash != null;
 
   const [pending, setPending] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -299,7 +300,15 @@ function MultijoueurCard() {
     setJoinError(null);
     try {
       const lobby = await lobbyClient!.findByCode(code);
-      await navigate({ to: '/lobby/$lobbyId', params: { lobbyId: lobby.id } });
+      // ADR-0027: stash the code so the lobby route's WS-open consumes
+      // it on mount. The address bar shows only `/lobby/$lobbyId`; the
+      // code never appears in the URL.
+      lobbyJoinCodeStash!.stash(lobby.id, code);
+      await navigate({
+        to: '/lobby/$lobbyId',
+        params: { lobbyId: lobby.id },
+        replace: true, // keep Accueil out of the back-stack
+      });
     } catch (err) {
       setJoinError(messageForJoinError(err));
       setJoinPending(false);

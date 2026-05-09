@@ -41,12 +41,17 @@ export type ConnectionState =
 
 export interface GameClient {
   // Open the WebSocket. Resolves once the socket is OPEN. The handshake
-  // payload (sessionId + pseudonym) is sent inside the `joinLobby` frame,
-  // not as URL params, mirroring the AsyncAPI `JoinLobby` message.
+  // payload (sessionId + pseudonym + optional code) is sent inside the
+  // `joinLobby` frame, not as URL params, mirroring the AsyncAPI
+  // `JoinLobby` message. ADR-0027: `code` is required for new joiners
+  // and optional for already-joined sessions (reconnect bypass keyed by
+  // `sessionId`); a wrong / missing code on a new join surfaces as a
+  // `wrong-code` error frame the lobby route renders inline.
   connect(args: {
     lobbyId: LobbyId;
     sessionId: SessionId;
     pseudonym: Pseudonym;
+    code?: string;
   }): Promise<void>;
 
   // Send the first frame after the socket opens; claims a slot.

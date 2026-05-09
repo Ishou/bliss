@@ -398,7 +398,27 @@ const lobbyWsHandler = lobbyWs.addEventListener('connection', ({ client, params 
 
     switch (type) {
       case 'joinLobby': {
-        const join = parsed as unknown as { sessionId: string; pseudonym: string };
+        const join = parsed as unknown as {
+          sessionId: string;
+          pseudonym: string;
+          code?: string;
+        };
+        // ADR-0027: code-gate for new joiners; reconnects (sessionId
+        // already a member) bypass the check by construction.
+        const lobbyNow = getLobby(lobbyId);
+        const isReconnect = lobbyNow?.players.some((p) => p.sessionId === join.sessionId) ?? false;
+        if (!isReconnect && (join.code == null || join.code !== lobbyNow?.code)) {
+          client.send(
+            JSON.stringify({
+              type: 'error',
+              errorType: 'https://bliss.example/errors/wrong-code',
+              title: 'Code de partie invalide',
+              detail: 'Demandez le code à l’organisateur.',
+              status: 403,
+            }),
+          );
+          return;
+        }
         const joinedAt = nowIso();
         updateLobby(lobbyId, (current) =>
           current.players.some((p) => p.sessionId === join.sessionId)

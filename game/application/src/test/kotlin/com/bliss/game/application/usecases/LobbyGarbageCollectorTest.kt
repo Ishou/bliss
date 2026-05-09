@@ -169,7 +169,7 @@ internal class GcHarness(
         l: LobbyId,
         s: com.bliss.game.domain.SessionId,
         p: Pseudonym,
-    ) = join.invoke(l, s, p)
+    ) = join.invoke(l, s, p, code = repo.findById(l)?.code?.value)
 
     suspend fun start(
         l: LobbyId,

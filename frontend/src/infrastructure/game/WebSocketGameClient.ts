@@ -74,7 +74,12 @@ export function createWebSocketGameClient(
   }
 
   let socket: WebSocketLike | null = null;
-  let pendingJoin: { sessionId: SessionId; pseudonym: Pseudonym } | null = null;
+  // ADR-0027: `code` is required for new joiners and optional for
+  // already-joined sessions (server-side reconnect bypass keyed by
+  // sessionId). The route reads it from sessionStorage at WS-open and
+  // threads it through `connect()`; reload-after-join leaves it
+  // undefined (sessionId reconnect handles that case).
+  let pendingJoin: { sessionId: SessionId; pseudonym: Pseudonym; code?: string } | null = null;
   // Debounced `cellFocus` state. We only ever send the *latest* focus the
   // caller asked for in the trailing edge of the window, NOT each entry.
   // A burst of N focus changes within 200 ms compresses to a single
@@ -131,11 +136,11 @@ export function createWebSocketGameClient(
   };
 
   return {
-    connect({ lobbyId, sessionId, pseudonym }) {
+    connect({ lobbyId, sessionId, pseudonym, code }) {
       if (socket) throw new Error('WebSocketGameClient: already connected');
       const ws = new Ctor(`${options.wsBaseUrl}/v1/lobbies/${lobbyId}/ws`) as unknown as WebSocketLike;
       socket = ws;
-      pendingJoin = { sessionId, pseudonym };
+      pendingJoin = { sessionId, pseudonym, code };
       setConnectionState('connecting');
 
       return new Promise<void>((resolve, reject) => {
@@ -143,13 +148,14 @@ export function createWebSocketGameClient(
         ws.onopen = () => {
           settled = true;
           // Send handshake immediately on open. AsyncAPI `JoinLobby`
-          // carries sessionId + pseudonym in the payload; the URL never
-          // does (so the session token never lands in proxy logs).
+          // carries sessionId + pseudonym + code in the payload; the URL
+          // never does (so neither session nor code lands in proxy logs).
           if (pendingJoin) {
             ws.send(JSON.stringify({
               type: 'joinLobby',
               sessionId: pendingJoin.sessionId,
               pseudonym: pendingJoin.pseudonym,
+              ...(pendingJoin.code != null ? { code: pendingJoin.code } : {}),
             } satisfies JoinLobbyFrame));
             pendingJoin = null;
           }
@@ -193,6 +199,7 @@ export function createWebSocketGameClient(
         type: 'joinLobby',
         sessionId: pendingJoin.sessionId,
         pseudonym: pendingJoin.pseudonym,
+        ...(pendingJoin.code != null ? { code: pendingJoin.code } : {}),
       });
       pendingJoin = null;
     },
@@ -277,6 +284,7 @@ interface JoinLobbyFrame {
   readonly type: 'joinLobby';
   readonly sessionId: SessionId;
   readonly pseudonym: Pseudonym;
+  readonly code?: string;
 }
 interface RenameSelfFrame {
   readonly type: 'renameSelf';

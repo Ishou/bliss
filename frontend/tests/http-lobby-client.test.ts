@@ -28,6 +28,7 @@ const lobbyFixture: WireLobby = {
   state: 'WAITING',
   gridConfig: { width: 7, height: 7 },
   game: null,
+  code: 'A2B3C4',
 };
 
 const problemBody = (status: number, detail: string, type: string): WireProblem => ({
@@ -81,6 +82,7 @@ describe('HttpLobbyClient.createLobby', () => {
       state: lobbyFixture.state,
       gridConfig: lobbyFixture.gridConfig,
       game: lobbyFixture.game,
+      code: lobbyFixture.code,
     });
   });
 

@@ -96,6 +96,25 @@ const emptyStore: SoloEntriesStore = {
   clearForPuzzle: () => {},
 };
 
+// In-memory `LobbyJoinCodeStash` (real impl, not a mock — manifesto's
+// "no mocks of own code"). Per-render Map so each test starts with a
+// clean stash regardless of what the production sessionStorage adapter
+// might be carrying across other tests.
+const makeInMemoryStash = () => {
+  const map = new Map<string, string>();
+  return {
+    stash(lobbyId: string, code: string) {
+      map.set(lobbyId, code);
+    },
+    read(lobbyId: string) {
+      return map.get(lobbyId) ?? null;
+    },
+    clear(lobbyId: string) {
+      map.delete(lobbyId);
+    },
+  };
+};
+
 const renderAccueil = (options: RenderOptions = {}) => {
   const lobbyClient: LobbyClient = {
     createLobby: vi.fn().mockResolvedValue(baseCreatedLobby),
@@ -124,6 +143,7 @@ const renderAccueil = (options: RenderOptions = {}) => {
       lobbyClient,
       gameClient: stubGameClient,
       getSession: () => ({ sessionId, pseudonym }),
+      lobbyJoinCodeStash: makeInMemoryStash(),
     },
   });
   return { router, lobbyClient, ...render(<RouterProvider router={router} />) };
