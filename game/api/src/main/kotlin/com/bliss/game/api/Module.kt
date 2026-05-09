@@ -105,16 +105,14 @@ fun Application.module() {
         )
     }
 
-    // Correlation IDs (MANIFESTO Observability). Trust the client's
-    // X-Request-Id when present and well-formed; fall back to a fresh
-    // UUID. The id is echoed back to the client and piped into the
-    // Logback MDC field `correlation_id` (logback.xml already exposes
-    // that key on the JSON encoder), so every log line emitted while
-    // the call is in scope carries the same id. Must be installed
-    // before CallLogging so the MDC binding fires for the access log.
+    // Must install before CallLogging so callIdMdc binding is in scope for the access log.
     install(CallId) {
         header("X-Request-Id")
-        generate { java.util.UUID.randomUUID().toString() }
+        generate {
+            java.util.UUID
+                .randomUUID()
+                .toString()
+        }
         verify { it.isNotEmpty() && it.length <= 128 }
         replyToHeader("X-Request-Id")
     }
