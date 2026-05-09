@@ -172,17 +172,17 @@ fun Application.module() {
     monitor.subscribe(ApplicationStopped) { analyticsScope.cancel() }
     val analyticsEventSink: AnalyticsEventSink = createAnalyticsEventSink(analyticsScope)
 
-    // Clue cooldown (ADR-0031). Default OFF in PR 2 — wires only when
-    // GRID_CLUE_COOLDOWN_ENABLED=true. The in-memory adapter is the only
-    // shipping adapter at this stage; the Postgres path lands in PR 3
-    // alongside the flag default flipping to ON. Flag retirement is owed
-    // by 2026-09-01 per the manifesto's expiring-feature-flag rule.
+    // Clue cooldown (ADR-0031). Off by default; Postgres adapter and route
+    // plumbing are not yet wired. Flag retirement: 2026-09-01.
     val cooldownRepository: ClueCooldownRepository? =
         if (System.getenv("GRID_CLUE_COOLDOWN_ENABLED")?.toBooleanStrictOrNull() == true) {
             InMemoryClueCooldownRepository()
         } else {
             null
         }
+    val cooldownMax =
+        System.getenv("GRID_CLUE_COOLDOWN_MAX")?.toIntOrNull()
+            ?: LoadOrGeneratePuzzleUseCase.DEFAULT_COOLDOWN_MAX
 
     val loadOrGenerate =
         LoadOrGeneratePuzzleUseCase(
@@ -190,6 +190,7 @@ fun Application.module() {
             generatePuzzle = generatePuzzle,
             analyticsEventSink = analyticsEventSink,
             cooldownRepository = cooldownRepository,
+            cooldownMax = cooldownMax,
         )
     val revealCellHint =
         RevealCellHintUseCase(puzzleRepository, hintUsageRepository, analyticsEventSink = analyticsEventSink)
