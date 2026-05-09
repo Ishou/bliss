@@ -42,6 +42,44 @@ const headerOuterStyles = css({
   borderBottom: '1px solid token(colors.gridLine)',
 });
 
+// WCAG 2.4.1 — let keyboard users jump past the nav to the main content.
+// Visually hidden until focused; the `_focusVisible` rule restores it as a
+// pinned chip in the top-left of the viewport.
+const skipLinkStyles = css({
+  position: 'absolute',
+  width: '1px',
+  height: '1px',
+  margin: '-1px',
+  padding: 0,
+  overflow: 'hidden',
+  clip: 'rect(0, 0, 0, 0)',
+  whiteSpace: 'nowrap',
+  borderWidth: 0,
+  _focusVisible: {
+    position: 'fixed',
+    top: '8px',
+    insetInlineStart: '8px',
+    width: 'auto',
+    height: 'auto',
+    margin: 0,
+    paddingBlock: '8px',
+    paddingInline: '12px',
+    overflow: 'visible',
+    clip: 'auto',
+    whiteSpace: 'normal',
+    bg: 'accent',
+    color: 'bg',
+    fontFamily: 'body',
+    fontSize: 'sm',
+    fontWeight: 'medium',
+    textDecoration: 'none',
+    borderRadius: 'md',
+    zIndex: 100,
+    outline: '2px solid token(colors.focusRing)',
+    outlineOffset: '2px',
+  },
+});
+
 const headerInnerStyles = css({
   width: '100%',
   maxWidth: '720px',
@@ -130,6 +168,9 @@ export function AppHeader({ activeNavId }: AppHeaderProps = {}) {
   const resolvedActiveId = activeNavId ?? activeIdForPath(pathname);
   return (
     <header className={headerOuterStyles} role="banner">
+      <a href="#main-content" className={skipLinkStyles}>
+        Aller au contenu principal
+      </a>
       <div className={headerInnerStyles}>
         <div className={lockupSlotStyles}>
         <a

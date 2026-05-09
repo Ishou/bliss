@@ -124,7 +124,7 @@ function PageShell({ children }: { children: React.ReactNode }) {
   return (
     <div className={pageStyles}>
       <AppHeader />
-      <main className={mainStyles}>
+      <main id="main-content" tabIndex={-1} className={mainStyles}>
         <div className={contentStyles}>{children}</div>
       </main>
       <Footer />

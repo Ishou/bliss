@@ -52,7 +52,7 @@ const statusErrStyles = css({ marginTop: 'sm', color: 'error', fontWeight: 'semi
 
 export function PrivacyNotice({ lang, sessionClient }: PrivacyNoticeProps) {
   return (
-    <main className={pageStyles}>
+    <main id="main-content" tabIndex={-1} className={pageStyles}>
       {lang === 'fr' ? <FrenchContent /> : <EnglishContent />}
       <EraseDataSection lang={lang} sessionClient={sessionClient} />
     </main>

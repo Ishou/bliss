@@ -202,7 +202,7 @@ function AidePage() {
   return (
     <div className={pageStyles}>
       <AppHeader />
-      <main className={mainStyles}>
+      <main id="main-content" tabIndex={-1} className={mainStyles}>
         <div className={contentStyles}>
           <h1 className={headingStyles}>Aide</h1>
 
