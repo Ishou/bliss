@@ -67,11 +67,13 @@ class LobbiesRouteTest {
             // JSON to verify the field was emitted, not omitted.
             val json = Json.parseToJsonElement(body) as JsonObject
             assertThat(json.containsKey("game")).isEqualTo(true)
-            // `code` is optional + nullable in v1 — minted by the join-by-code
-            // follow-up. `explicitNulls = false` on the JSON config omits null
-            // fields, so absence is the contract until that PR ships.
-            assertThat(json.containsKey("code")).isEqualTo(false)
-            assertThat(lobby.code).isEqualTo(null)
+            // `code` is now minted at lobby creation — pattern-matches the
+            // `^[A-HJ-NP-Z2-9]{6}$` Crockford-style alphabet declared in the
+            // openapi schema. Phase 2 of the join-by-code wave.
+            assertThat(json.containsKey("code")).isEqualTo(true)
+            val code = lobby.code
+            assertThat(code).isNotNull()
+            assertThat(code!!).matches(Regex("^[A-HJKM-NP-Z2-9]{6}$"))
         }
 
     @Test
@@ -131,6 +133,47 @@ class LobbiesRouteTest {
             val response = client.get("/v1/lobbies/not-bs!")
 
             assertProblem(response, HttpStatusCode.BadRequest, "https://bliss.example/errors/invalid-lobby-id")
+        }
+
+    @Test
+    fun `GET by-code returns 200 with the same lobby as the create response`() =
+        testApplication {
+            application { module() }
+            val client = jsonClient()
+
+            val created = client.post("/v1/lobbies") { jsonBody(CreateLobbyRequestDto(ownerSessionId, ownerPseudonym)) }
+            val createdLobby = JSON.decodeFromString<LobbyResponseDto>(created.bodyAsText())
+            val code = createdLobby.code!!
+
+            val response = client.get("/v1/lobbies/by-code/$code")
+
+            assertThat(response.status).isEqualTo(HttpStatusCode.OK)
+            val resolved = JSON.decodeFromString<LobbyResponseDto>(response.bodyAsText())
+            assertThat(resolved.id).isEqualTo(createdLobby.id)
+            assertThat(resolved.code).isEqualTo(code)
+        }
+
+    @Test
+    fun `GET by-code with an unknown but well-formed code returns 404`() =
+        testApplication {
+            application { module() }
+
+            // Pattern-valid but no lobby was minted with this code.
+            val response = client.get("/v1/lobbies/by-code/A2B3C4")
+
+            assertProblem(response, HttpStatusCode.NotFound, "https://bliss.example/errors/lobby-not-found")
+        }
+
+    @Test
+    fun `GET by-code with a malformed code returns 400`() =
+        testApplication {
+            application { module() }
+
+            // Lower-case 'a' is outside the Crockford alphabet; LobbyCode
+            // init rejects it and the route emits a typed problem.
+            val response = client.get("/v1/lobbies/by-code/a2b3c4")
+
+            assertProblem(response, HttpStatusCode.BadRequest, "https://bliss.example/errors/invalid-lobby-code")
         }
 
     private suspend fun assertProblem(

@@ -11,6 +11,7 @@ import com.bliss.game.domain.GameSession
 import com.bliss.game.domain.GridConfig
 import com.bliss.game.domain.Letter
 import com.bliss.game.domain.Lobby
+import com.bliss.game.domain.LobbyCode
 import com.bliss.game.domain.LobbyId
 import com.bliss.game.domain.LobbyLifecycleState
 import com.bliss.game.domain.Player
@@ -54,6 +55,7 @@ class CreateLobbyUseCase(
         }
         val now = clock.now()
         val owner = Player(ownerSessionId, ownerPseudonym, now)
+        val code = mintUniqueCode()
         val lobby =
             Lobby(
                 id = LobbyId.generate(),
@@ -63,10 +65,39 @@ class CreateLobbyUseCase(
                 gridConfig = defaultGridConfig,
                 game = null,
                 lastActivityAt = now,
+                code = code,
             )
         val saved = repo.save(lobby)
         analyticsEventSink.record(AnalyticsEvent.LobbyCreated(saved.gridConfig.toLabel()), ownerSessionId)
         return UseCaseResult(saved, listOf(LobbyEvent.PlayerJoined(owner)))
+    }
+
+    /**
+     * Generate a fresh [LobbyCode] not already in use. The 32^6 ≈ 1B
+     * keyspace makes collisions vanishingly unlikely at v1 scale (low
+     * tens of concurrent lobbies); the bounded retry exists so a future
+     * volume regression fails loudly instead of corrupting the wire
+     * contract by returning a duplicate code.
+     *
+     * Same lookup-then-save TOCTOU caveat as the owner-session
+     * idempotency above: a parallel save could race in between
+     * findByCode and the surrounding save, but the window is microseconds
+     * and any collision-on-save is dwarfed by the much rarer minted-code
+     * collision. Tightening this requires repository-level uniqueness
+     * (planned for the Postgres adapter via `UNIQUE (code)`).
+     */
+    private suspend fun mintUniqueCode(): LobbyCode {
+        repeat(MAX_CODE_MINT_ATTEMPTS) {
+            val candidate = LobbyCode.generate()
+            if (repo.findByCode(candidate) == null) return candidate
+        }
+        error(
+            "LobbyCode mint exhausted $MAX_CODE_MINT_ATTEMPTS attempts — keyspace saturation or a generator bug; investigate before retrying.",
+        )
+    }
+
+    private companion object {
+        const val MAX_CODE_MINT_ATTEMPTS = 8
     }
 }
 

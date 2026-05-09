@@ -9,6 +9,7 @@ import com.bliss.game.domain.GamePuzzle
 import com.bliss.game.domain.Letter
 import com.bliss.game.domain.LetterCell
 import com.bliss.game.domain.Lobby
+import com.bliss.game.domain.LobbyCode
 import com.bliss.game.domain.LobbyId
 import com.bliss.game.domain.LobbyLifecycleState
 import com.bliss.game.domain.Position
@@ -42,6 +43,11 @@ class InMemoryLobbyRepository : LobbyRepository {
     private fun lockFor(id: LobbyId): ReentrantLock = storeLock.withLock { locks.getOrPut(id) { ReentrantLock() } }
 
     override suspend fun findById(id: LobbyId): Lobby? = storeLock.withLock { store[id] }
+
+    override suspend fun findByCode(code: LobbyCode): Lobby? =
+        storeLock.withLock {
+            store.values.firstOrNull { it.code == code }
+        }
 
     override suspend fun save(lobby: Lobby): Lobby =
         lockFor(lobby.id).withLock {

@@ -14,6 +14,7 @@ import com.bliss.game.api.dto.ProblemDetails
 import com.bliss.game.api.mapper.toResponseDto
 import com.bliss.game.application.ports.LobbyRepository
 import com.bliss.game.application.usecases.CreateLobbyUseCase
+import com.bliss.game.domain.LobbyCode
 import com.bliss.game.domain.LobbyId
 import com.bliss.game.domain.Pseudonym
 import com.bliss.game.domain.SessionId
@@ -34,6 +35,7 @@ import kotlinx.serialization.json.Json
 
 private const val INVALID_CREATE_TYPE = "https://bliss.example/errors/invalid-lobby-create-request"
 private const val INVALID_LOBBY_ID_TYPE = "https://bliss.example/errors/invalid-lobby-id"
+private const val INVALID_LOBBY_CODE_TYPE = "https://bliss.example/errors/invalid-lobby-code"
 private const val LOBBY_NOT_FOUND_TYPE = "https://bliss.example/errors/lobby-not-found"
 
 /**
@@ -95,6 +97,37 @@ fun Route.lobbies(
             // client carries the same ephemeral cursor map so the UI can render
             // peer cursors before the WS handshake completes.
             call.respond(HttpStatusCode.OK, lobby.toResponseDto(sessionManager.getPresence(lobbyId)))
+        }
+
+        // Lookup-by-code path. Routed under the same `/v1/lobbies` prefix so
+        // both reads sit alongside in OpenAPI; the `by-code` literal segment
+        // disambiguates from the `{lobbyId}` matcher (Ktor literal segments
+        // win over parameterised ones, but order in the file matters too —
+        // keeping this below the `{lobbyId}` block is fine because the
+        // literal `by-code` cannot be a valid base58 lobbyId).
+        get("by-code/{code}") {
+            val raw = call.parameters["code"].orEmpty()
+            val code =
+                runCatching { LobbyCode(raw) }
+                    .getOrElse {
+                        return@get call.respondProblem(
+                            HttpStatusCode.BadRequest,
+                            "Code de salon invalide",
+                            INVALID_LOBBY_CODE_TYPE,
+                            "Le paramètre code doit être 6 caractères alphanumériques (Crockford), reçu : '$raw'.",
+                        )
+                    }
+
+            val lobby = repo.findByCode(code)
+            if (lobby == null) {
+                return@get call.respondProblem(
+                    HttpStatusCode.NotFound,
+                    "Salon introuvable",
+                    LOBBY_NOT_FOUND_TYPE,
+                    "Aucun salon pour le code '${code.value}'.",
+                )
+            }
+            call.respond(HttpStatusCode.OK, lobby.toResponseDto(sessionManager.getPresence(lobby.id)))
         }
     }
 }

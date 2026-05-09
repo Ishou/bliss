@@ -57,6 +57,7 @@ fun Lobby.toResponseDto(presence: Map<String, PresencePosition> = emptyMap()): L
         // the map (matches openapi `GameSession.presence` which is "absent or
         // empty when state is WAITING/COMPLETED").
         game = game?.toDto(if (state == LobbyLifecycleState.IN_PROGRESS) presence else emptyMap()),
+        code = code.value,
     )
 
 private fun Player.toDto() = PlayerDto(sessionId.value, pseudonym.value, ISO.format(joinedAt))

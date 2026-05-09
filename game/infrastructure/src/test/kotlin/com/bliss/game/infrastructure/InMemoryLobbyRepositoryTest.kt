@@ -9,6 +9,7 @@ import assertk.assertions.isNotNull
 import assertk.assertions.isNull
 import com.bliss.game.domain.GridConfig
 import com.bliss.game.domain.Lobby
+import com.bliss.game.domain.LobbyCode
 import com.bliss.game.domain.LobbyId
 import com.bliss.game.domain.LobbyLifecycleState
 import com.bliss.game.domain.Player
@@ -35,6 +36,7 @@ class InMemoryLobbyRepositoryTest {
         ownerSessionId: SessionId = sessionA,
         state: LobbyLifecycleState = LobbyLifecycleState.WAITING,
         lastActivityAt: Instant = joinedAt,
+        code: LobbyCode = LobbyCode.generate(),
     ): Lobby =
         Lobby(
             id = id,
@@ -44,6 +46,7 @@ class InMemoryLobbyRepositoryTest {
             gridConfig = gridConfig,
             game = null,
             lastActivityAt = lastActivityAt,
+            code = code,
         )
 
     @Test

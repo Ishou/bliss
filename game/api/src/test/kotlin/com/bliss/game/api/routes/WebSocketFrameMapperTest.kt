@@ -13,6 +13,7 @@ import com.bliss.game.domain.GameSession
 import com.bliss.game.domain.GridConfig
 import com.bliss.game.domain.Letter
 import com.bliss.game.domain.Lobby
+import com.bliss.game.domain.LobbyCode
 import com.bliss.game.domain.LobbyId
 import com.bliss.game.domain.LobbyLifecycleState
 import com.bliss.game.domain.Player
@@ -190,6 +191,7 @@ class WebSocketFrameMapperTest {
                     lockedPositions = lockedPositions,
                 ),
             lastActivityAt = startedAt,
+            code = LobbyCode.generate(),
         )
 
     private fun puzzle(): GamePuzzle =

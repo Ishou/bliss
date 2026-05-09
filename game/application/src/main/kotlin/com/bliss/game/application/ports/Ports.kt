@@ -3,6 +3,7 @@ package com.bliss.game.application.ports
 import com.bliss.game.domain.GamePuzzle
 import com.bliss.game.domain.Letter
 import com.bliss.game.domain.Lobby
+import com.bliss.game.domain.LobbyCode
 import com.bliss.game.domain.LobbyId
 import com.bliss.game.domain.Position
 import com.bliss.game.domain.SessionId
@@ -17,6 +18,15 @@ import java.util.UUID
  */
 interface LobbyRepository {
     suspend fun findById(id: LobbyId): Lobby?
+
+    /**
+     * Lookup by the human-friendly join [LobbyCode]. Returns `null` when no
+     * lobby carries the code. Powers the Accueil "Rejoindre avec un code"
+     * flow + `CreateLobbyUseCase`'s mint-collision check. O(n) in the
+     * in-memory v1 — fine while lobby counts are small (ADR-0018 §3); a
+     * Postgres adapter can index `code` when it lands.
+     */
+    suspend fun findByCode(code: LobbyCode): Lobby?
 
     suspend fun save(lobby: Lobby): Lobby
 

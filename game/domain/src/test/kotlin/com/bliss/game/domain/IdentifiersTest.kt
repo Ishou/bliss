@@ -49,6 +49,41 @@ class IdentifiersTest {
     }
 
     @Test
+    fun `LobbyCode accepts a six-char Crockford-style value`() {
+        assertThat(LobbyCode("A2B3C4").value).isEqualTo("A2B3C4")
+    }
+
+    @Test
+    fun `LobbyCode rejects ambiguous chars and the digit 1`() {
+        assertFailure { LobbyCode("A0B3C4") }.messageContains("LobbyCode")
+        assertFailure { LobbyCode("A1B3C4") }.messageContains("LobbyCode")
+        assertFailure { LobbyCode("AIB3C4") }.messageContains("LobbyCode")
+        assertFailure { LobbyCode("ALB3C4") }.messageContains("LobbyCode")
+        assertFailure { LobbyCode("AOB3C4") }.messageContains("LobbyCode")
+    }
+
+    @Test
+    fun `LobbyCode rejects wrong length`() {
+        assertFailure { LobbyCode("A2B3C") }.messageContains("LobbyCode")
+        assertFailure { LobbyCode("A2B3C45") }.messageContains("LobbyCode")
+    }
+
+    @Test
+    fun `LobbyCode rejects lowercase`() {
+        assertFailure { LobbyCode("a2b3c4") }.messageContains("LobbyCode")
+    }
+
+    @Test
+    fun `LobbyCode generate always produces a valid code`() {
+        val pattern = Regex("^[A-HJKM-NP-Z2-9]{6}$")
+        repeat(200) {
+            val code = LobbyCode.generate()
+            assertThat(code.value).hasLength(6)
+            assertThat(pattern.matches(code.value)).isTrue()
+        }
+    }
+
+    @Test
     fun `SessionId accepts a UUID string`() {
         assertThat(SessionId("0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6b").value)
             .isEqualTo("0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6b")
