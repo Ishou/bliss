@@ -18,7 +18,10 @@ metadata:
     # cert-manager CRDs from the subchart need to register before
     # any ClusterIssuer manifest can be applied.
     "helm.sh/hook": post-install,post-upgrade
-    "helm.sh/hook-weight": "1"
+    # See clusterissuer-letsencrypt.yaml — weight 10 runs after
+    # cert-manager's startupapicheck (weight 1) so the validating
+    # webhook is fully bootstrapped before this manifest is applied.
+    "helm.sh/hook-weight": "10"
     "helm.sh/hook-delete-policy": before-hook-creation
 spec:
   selfSigned: {}
