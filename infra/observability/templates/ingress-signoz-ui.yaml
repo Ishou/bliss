@@ -19,9 +19,57 @@ Both ingresses share:
 - ingress-nginx basic-auth pointing at the bootstrapped
   `admin-htpasswd` Secret in this namespace.
 */}}
+{{/*
+Two Ingresses per host:
+
+1. `/oauth2/*` → oauth2-proxy, NO auth-url annotations. This path
+   IS the auth provider; if it were itself behind the auth check
+   nginx would loop (`auth-signin` redirects to `/oauth2/start`
+   which then redirects to `/oauth2/start` … and 500s on cycle
+   detection). Splitting it out is the canonical pattern.
+
+2. `/` → SigNoz frontend, behind oauth2-proxy via auth-url. Every
+   non-/oauth2 request is validated against the cookie / redirected
+   to /oauth2/start when missing.
+
+Both Ingresses on the same host share the same TLS Secret and the
+same external-dns target annotation. cert-manager issues one cert
+for the host (whichever Ingress is reconciled first); ingress-nginx
+merges them on the listening port.
+*/}}
 {{- if .Values.ingress.enabled }}
 {{- range $host := .Values.ingress.hosts }}
+{{- if $.Values.oauth2Proxy.enabled }}
 ---
+{{/* Ingress 1/2: /oauth2/* — auth provider, no auth-url applied */}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: signoz-ui-{{ $host | replace "." "-" }}-oauth2
+  labels: {{- include "observability.labels" $ | nindent 4 }}
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    external-dns.alpha.kubernetes.io/hostname: {{ $host | quote }}
+    external-dns.alpha.kubernetes.io/target: {{ $.Values.ingress.floatingIp | quote }}
+spec:
+  ingressClassName: {{ $.Values.ingress.className | quote }}
+  tls:
+    - hosts: [{{ $host | quote }}]
+      secretName: {{ $.Values.ingress.tlsSecretName }}-{{ $host | replace "." "-" }}
+  rules:
+    - host: {{ $host | quote }}
+      http:
+        paths:
+          - path: /oauth2
+            pathType: Prefix
+            backend:
+              service:
+                name: oauth2-proxy
+                port:
+                  number: 4180
+{{- end }}
+---
+{{/* Ingress 2/2: / — SigNoz UI, behind auth */}}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -64,19 +112,6 @@ spec:
     - host: {{ $host | quote }}
       http:
         paths:
-          {{- if $.Values.oauth2Proxy.enabled }}
-          # /oauth2/* — login form, callback, sign-out, auth probe.
-          # Routed to oauth2-proxy so the redirect from auth-signin
-          # lands on the htpasswd login page, and so the cookie is
-          # set on the SigNoz host (cookie domain = wordsparrow.io).
-          - path: /oauth2
-            pathType: Prefix
-            backend:
-              service:
-                name: oauth2-proxy
-                port:
-                  number: 4180
-          {{- end }}
           - path: /
             pathType: Prefix
             backend:
