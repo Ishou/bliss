@@ -2,6 +2,7 @@ package com.bliss.game.infrastructure
 
 import com.bliss.game.application.ports.LobbyRepository
 import com.bliss.game.domain.Lobby
+import com.bliss.game.domain.LobbyCode
 import com.bliss.game.domain.LobbyId
 import com.bliss.game.domain.LobbyLifecycleState
 import com.bliss.game.domain.SessionId
@@ -18,6 +19,10 @@ class InMemoryLobbyRepository : LobbyRepository {
     private fun lockFor(id: LobbyId): ReentrantLock = locks.computeIfAbsent(id) { ReentrantLock() }
 
     override suspend fun findById(id: LobbyId): Lobby? = store[id]
+
+    // O(n) scan; same trade-off as findWaitingByOwnerSession above. Volume
+    // stays small in v1 and a Postgres adapter would index `code`.
+    override suspend fun findByCode(code: LobbyCode): Lobby? = store.values.firstOrNull { it.code == code }
 
     override suspend fun save(lobby: Lobby): Lobby =
         lockFor(lobby.id).withLock {

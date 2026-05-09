@@ -31,6 +31,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/lobbies/by-code/{code}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Resolve a lobby from its human-friendly join code.
+         * @description Powers the Accueil "Rejoindre avec un code" flow. The frontend
+         *     passes the typed code; on success the response carries the full
+         *     `Lobby` resource and the client navigates to `/lobby/{id}` using
+         *     the returned `id`. The WebSocket join still goes through the
+         *     existing AsyncAPI surface keyed by `lobbyId`.
+         */
+        get: operations["getLobbyByCode"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/lobbies/{lobbyId}": {
         parameters: {
             query?: never;
@@ -364,9 +388,9 @@ export interface components {
              *     input). Six uppercase alphanumeric characters, drawn from the
              *     unambiguous Crockford-style alphabet (no `0`/`O`, `1`/`I`,
              *     `L`) so a player reading the code aloud cannot land on a
-             *     different lobby. Absent until the join-by-code feature ships
-             *     its mint logic in a follow-up PR; clients should fall back
-             *     to the existing URL-share path while absent.
+             *     different lobby. Always present for lobbies created after the
+             *     join-by-code wave (PR #262). Will be promoted to `required`
+             *     in phase 3 once all clients expect the field.
              * @example A2B3C4
              */
             code?: string;
@@ -456,6 +480,54 @@ export interface operations {
              *       (same `type`).
              */
             400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    getLobbyByCode: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Six-char Crockford-style join code (`code` schema). */
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Lobby found. Body matches `GET /v1/lobbies/{lobbyId}`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Lobby"];
+                };
+            };
+            /**
+             * @description Path parameter `code` does not match the documented pattern.
+             *     RFC 7807; `type` is `https://bliss.example/errors/invalid-lobby-code`.
+             */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /**
+             * @description No lobby carries the supplied code (typo, expired, GC'd —
+             *     same v1 caveat as `lobbyId` lookup). RFC 7807;
+             *     `type` is `https://bliss.example/errors/lobby-not-found`.
+             */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

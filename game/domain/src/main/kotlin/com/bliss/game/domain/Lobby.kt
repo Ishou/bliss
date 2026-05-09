@@ -98,6 +98,7 @@ data class Lobby(
     val gridConfig: GridConfig,
     val game: GameSession?,
     val lastActivityAt: Instant,
+    val code: LobbyCode,
 ) {
     init {
         require(players.size <= MAX_PLAYERS) {

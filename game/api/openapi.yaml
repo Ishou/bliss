@@ -92,6 +92,52 @@ paths:
               schema:
                 $ref: '#/components/schemas/Problem'
 
+  /v1/lobbies/by-code/{code}:
+    get:
+      operationId: getLobbyByCode
+      summary: Resolve a lobby from its human-friendly join code.
+      description: |
+        Powers the Accueil "Rejoindre avec un code" flow. The frontend
+        passes the typed code; on success the response carries the full
+        `Lobby` resource and the client navigates to `/lobby/{id}` using
+        the returned `id`. The WebSocket join still goes through the
+        existing AsyncAPI surface keyed by `lobbyId`.
+      tags: [lobbies]
+      parameters:
+        - name: code
+          in: path
+          required: true
+          description: Six-char Crockford-style join code (`code` schema).
+          schema:
+            type: string
+            minLength: 6
+            maxLength: 6
+            pattern: '^[A-HJKM-NP-Z2-9]{6}$'
+      responses:
+        '200':
+          description: Lobby found. Body matches `GET /v1/lobbies/{lobbyId}`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Lobby'
+        '400':
+          description: |
+            Path parameter `code` does not match the documented pattern.
+            RFC 7807; `type` is `https://bliss.example/errors/invalid-lobby-code`.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '404':
+          description: |
+            No lobby carries the supplied code (typo, expired, GC'd —
+            same v1 caveat as `lobbyId` lookup). RFC 7807;
+            `type` is `https://bliss.example/errors/lobby-not-found`.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+
   /v1/lobbies/{lobbyId}:
     get:
       operationId: getLobby
@@ -570,16 +616,16 @@ components:
           type: string
           minLength: 6
           maxLength: 6
-          pattern: '^[A-HJ-NP-Z2-9]{6}$'
+          pattern: '^[A-HJKM-NP-Z2-9]{6}$'
           description: |
             Human-friendly join code surfaced to non-owner players (the
             Accueil "Rejoindre avec un code" flow renders this in the
             input). Six uppercase alphanumeric characters, drawn from the
             unambiguous Crockford-style alphabet (no `0`/`O`, `1`/`I`,
             `L`) so a player reading the code aloud cannot land on a
-            different lobby. Absent until the join-by-code feature ships
-            its mint logic in a follow-up PR; clients should fall back
-            to the existing URL-share path while absent.
+            different lobby. Always present for lobbies created after the
+            join-by-code wave (PR #262). Will be promoted to `required`
+            in phase 3 once all clients expect the field.
           example: A2B3C4
 
     CreateLobbyRequest:
