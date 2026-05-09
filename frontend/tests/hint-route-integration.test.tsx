@@ -48,7 +48,57 @@ const inputAt = (row: number, col: number) =>
     `input[data-cell-kind="letter"][data-row="${row}"][data-col="${col}"]`,
   );
 
-const renderHomeRoute = (solver: PuzzleSolver) => {
+// In-memory soloEntriesStore so reset-path tests can observe the
+// effect of `clearForPuzzle` propagating into the React state.
+const makeInMemoryStore = (
+  seed: {
+    entries?: Array<{ row: number; column: number; letter: string }>;
+    locks?: Array<{ row: number; column: number }>;
+    hintsUsed?: number;
+  } = {},
+) => {
+  const entries = new Map<string, string>(
+    (seed.entries ?? []).map((e) => [`${e.row},${e.column}`, e.letter]),
+  );
+  const locks = new Set<string>(
+    (seed.locks ?? []).map((c) => `${c.row},${c.column}`),
+  );
+  let hintsUsed = seed.hintsUsed ?? 0;
+  return {
+    load: () =>
+      [...entries.entries()].map(([k, letter]) => {
+        const [row, column] = k.split(',').map(Number);
+        return { row, column, letter };
+      }),
+    save: (_id: string, row: number, column: number, letter: string | null) => {
+      const key = `${row},${column}`;
+      if (letter == null || letter === '') entries.delete(key);
+      else entries.set(key, letter);
+    },
+    loadLockedCells: () =>
+      [...locks].map((k) => {
+        const [row, column] = k.split(',').map(Number);
+        return { row, column };
+      }),
+    lockCell: (_id: string, row: number, column: number) => {
+      locks.add(`${row},${column}`);
+    },
+    loadHintsUsed: () => hintsUsed,
+    recordHintUsed: () => {
+      hintsUsed += 1;
+    },
+    clearForPuzzle: () => {
+      entries.clear();
+      locks.clear();
+      hintsUsed = 0;
+    },
+  };
+};
+
+const renderHomeRoute = (
+  solver: PuzzleSolver,
+  storeOverride?: ReturnType<typeof makeInMemoryStore>,
+) => {
   const repository: PuzzleRepository = {
     fetchById: vi.fn().mockResolvedValue(puzzle),
     fetchDaily: vi.fn().mockResolvedValue(puzzle),
@@ -65,13 +115,7 @@ const renderHomeRoute = (solver: PuzzleSolver) => {
         getSessionId: () => 'test-session-id',
         clearLocalSession: () => {},
       },
-      soloEntriesStore: {
-        load: () => [],
-        save: () => {},
-        loadLockedCells: () => [],
-        lockCell: () => {},
-        clearForPuzzle: () => {},
-      },
+      soloEntriesStore: storeOverride ?? makeInMemoryStore(),
       tourSeenStore: {
         get: () => true,
         set: () => {},
@@ -88,6 +132,151 @@ const click = (el: HTMLElement) => {
 };
 const typeChar = (el: HTMLInputElement, ch: string) =>
   fireEvent.keyDown(el, { key: ch });
+
+// Bug 2 — the hint button used to consult only `lockedHintCells`, so
+// a cell already auto-validated by typing the correct word was still
+// hint-eligible (wasted hint). The fix has `getFocusedCell` read the
+// full `validatedPositions` (auto-validated ∪ hint-revealed).
+describe('Index route — hint refused on validated cells', () => {
+  it('does not call the solver when the focused cell is already auto-validated', async () => {
+    const validate = vi.fn().mockResolvedValue({ solved: false, incorrectCells: [] });
+    const requestHint = vi.fn().mockResolvedValue({
+      row: 0,
+      column: 1,
+      letter: 'A',
+      hintsRemaining: 2,
+    });
+    const solver: PuzzleSolver = { validate, requestHint };
+    renderHomeRoute(solver);
+    await screen.findByRole('grid');
+
+    // Type the full 2-letter word at (0,1)..(0,2). After the second
+    // letter the auto-validate flow POSTs once and locks both cells.
+    const first = inputAt(0, 1)!;
+    click(first);
+    typeChar(first, 'a');
+    const second = inputAt(0, 2)!;
+    typeChar(second, 'i');
+    await vi.waitFor(() => expect(validate).toHaveBeenCalled());
+    // ProgressBar reflects the lock — surface signal that
+    // `validatedPositions` includes (0,1)..(0,2).
+    await screen.findByText('2 / 2 cases');
+
+    // Focus the validated cell and click the hint button.
+    click(first);
+    act(() => { first.blur(); });
+    const hintButton = screen.getByRole('button', { name: 'Demander un indice' });
+    await act(async () => { fireEvent.click(hintButton); });
+
+    expect(requestHint).not.toHaveBeenCalled();
+    // Counter unchanged.
+    expect(screen.getByLabelText('3 sur 3 indices restants')).toBeInTheDocument();
+  });
+});
+
+// Bug 3 — `clearForPuzzle` deletes locks from storage, but the React
+// `lockedHintCells` state was bound to a `[puzzle.id]`-only effect, so
+// the in-memory set survived the storage clear. Adding `refreshCount`
+// to the effect deps re-reads the now-empty store on the next render.
+describe('Index route — refresh clears the locked-cell state', () => {
+  it('un-locks cells in the DOM after clicking Actualiser', async () => {
+    const validate = vi.fn().mockResolvedValue({ solved: false, incorrectCells: [] });
+    const requestHint = vi.fn();
+    const solver: PuzzleSolver = { validate, requestHint };
+    const store = makeInMemoryStore({
+      entries: [
+        { row: 0, column: 1, letter: 'A' },
+        { row: 0, column: 2, letter: 'I' },
+      ],
+      locks: [
+        { row: 0, column: 1 },
+        { row: 0, column: 2 },
+      ],
+    });
+    renderHomeRoute(solver, store);
+    await screen.findByRole('grid');
+    // Cells start sage / read-only because storage seeded the locks.
+    await vi.waitFor(() => expect(inputAt(0, 1)!.readOnly).toBe(true));
+    expect(inputAt(0, 2)!.readOnly).toBe(true);
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Actualiser la grille' }));
+    });
+
+    await vi.waitFor(() => expect(inputAt(0, 1)!.readOnly).toBe(false));
+    expect(inputAt(0, 2)!.readOnly).toBe(false);
+    // ProgressBar reflects the clean slate.
+    expect(screen.getByText('0 / 2 cases')).toBeInTheDocument();
+  });
+});
+
+// Bug 4 — hint counter was React-state-only; page reload reset it to
+// `hintsAllowed`. The route now reads `loadHintsUsed` on mount and
+// persists each consumed hint via `recordHintUsed`.
+describe('Index route — hint count persists across reloads', () => {
+  it('rehydrates hintsRemaining from hintsUsed and resets it on Actualiser', async () => {
+    const solver: PuzzleSolver = {
+      validate: vi.fn().mockResolvedValue({ solved: false, incorrectCells: [] }),
+      requestHint: vi.fn(),
+    };
+    const store = makeInMemoryStore({ hintsUsed: 2 });
+    renderHomeRoute(solver, store);
+    await screen.findByRole('grid');
+    // 3 allowed - 2 used = 1 remaining (rehydrated).
+    expect(await screen.findByLabelText('1 sur 3 indices restants')).toBeInTheDocument();
+    // Actualiser → clearForPuzzle → hintsUsed back to 0.
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Actualiser la grille' }));
+    });
+    expect(await screen.findByLabelText('3 sur 3 indices restants')).toBeInTheDocument();
+  });
+
+  it('survives a remount with the same store (F5 analog)', async () => {
+    const solver: PuzzleSolver = {
+      validate: vi.fn().mockResolvedValue({ solved: false, incorrectCells: [] }),
+      requestHint: vi.fn().mockResolvedValue({ row: 0, column: 2, letter: 'B', hintsRemaining: 2 }),
+    };
+    const store = makeInMemoryStore();
+    const { unmount } = renderHomeRoute(solver, store);
+    await screen.findByRole('grid');
+    expect(await screen.findByLabelText('3 sur 3 indices restants')).toBeInTheDocument();
+    const first = inputAt(0, 1)!;
+    click(first);
+    typeChar(first, 'a');
+    act(() => { inputAt(0, 2)!.blur(); });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Demander un indice' }));
+    });
+    await screen.findByLabelText('2 sur 3 indices restants');
+
+    // Simulate F5: tear down the React tree, then re-render with the
+    // same `store` (which models the persistent localStorage).
+    unmount();
+    renderHomeRoute(solver, store);
+    await screen.findByRole('grid');
+    expect(await screen.findByLabelText('2 sur 3 indices restants')).toBeInTheDocument();
+  });
+
+  it('persists each consumed hint via recordHintUsed', async () => {
+    const solver: PuzzleSolver = {
+      validate: vi.fn().mockResolvedValue({ solved: false, incorrectCells: [] }),
+      requestHint: vi.fn().mockResolvedValue({ row: 0, column: 2, letter: 'B', hintsRemaining: 2 }),
+    };
+    const store = makeInMemoryStore();
+    const recordSpy = vi.spyOn(store, 'recordHintUsed');
+    renderHomeRoute(solver, store);
+    await screen.findByRole('grid');
+    const first = inputAt(0, 1)!;
+    click(first);
+    typeChar(first, 'a');
+    act(() => { inputAt(0, 2)!.blur(); });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Demander un indice' }));
+    });
+    await screen.findByLabelText('2 sur 3 indices restants');
+    expect(recordSpy).toHaveBeenCalledTimes(1);
+  });
+});
 
 describe('Index route — hint button integration', () => {
   it('sends the focused cell coordinates to the solver after a real blur→click sequence', async () => {

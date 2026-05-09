@@ -35,9 +35,17 @@ export function useHintRequest(
   hintsAllowed: number,
   solver: PuzzleSolver,
   onReveal?: (row: number, column: number, letter: string) => void,
+  // Persisted hints-already-consumed for this puzzle. Lets a page
+  // reload (or an Actualiser bump that resets the value to 0) restore
+  // `hintsRemaining` without losing earlier spend.
+  initialHintsUsed: number = 0,
+  // Fired when a hint succeeds so the route can persist the running
+  // tally via `soloEntriesStore.recordHintUsed`.
+  onHintConsumed?: () => void,
 ): HintRequestState {
-  const [hintsRemaining, setHintsRemaining] = useState<number>(hintsAllowed);
-  const [exhausted, setExhausted] = useState<boolean>(false);
+  const initialRemaining = Math.max(0, hintsAllowed - initialHintsUsed);
+  const [hintsRemaining, setHintsRemaining] = useState<number>(initialRemaining);
+  const [exhausted, setExhausted] = useState<boolean>(initialRemaining <= 0);
   const [pending, setPending] = useState<boolean>(false);
   const [lastResult, setLastResult] = useState<HintLastResult | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -48,12 +56,18 @@ export function useHintRequest(
   useEffect(() => {
     onRevealRef.current = onReveal;
   }, [onReveal]);
-
-  // Reset on puzzle change (or hintsAllowed change, which is downstream
-  // of the same wire field).
+  const onHintConsumedRef = useRef(onHintConsumed);
   useEffect(() => {
-    setHintsRemaining(hintsAllowed);
-    setExhausted(false);
+    onHintConsumedRef.current = onHintConsumed;
+  }, [onHintConsumed]);
+
+  // Reset on puzzle change (or hintsAllowed / initialHintsUsed change,
+  // both downstream of either a route swap or a refresh that cleared
+  // the persisted counter).
+  useEffect(() => {
+    const remaining = Math.max(0, hintsAllowed - initialHintsUsed);
+    setHintsRemaining(remaining);
+    setExhausted(remaining <= 0);
     setPending(false);
     setLastResult(null);
     setErrorMessage(null);
@@ -62,7 +76,7 @@ export function useHintRequest(
       window.clearTimeout(lingerTimerRef.current);
       lingerTimerRef.current = null;
     }
-  }, [puzzleId, hintsAllowed]);
+  }, [puzzleId, hintsAllowed, initialHintsUsed]);
 
   // Cleanup on unmount.
   useEffect(() => {
@@ -102,6 +116,7 @@ export function useHintRequest(
             letter: result.letter,
           });
           if (result.hintsRemaining <= 0) setExhausted(true);
+          onHintConsumedRef.current?.();
           onRevealRef.current?.(result.row, result.column, result.letter);
           scheduleLinger();
         })

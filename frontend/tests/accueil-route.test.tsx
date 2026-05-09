@@ -94,6 +94,8 @@ const emptyStore: SoloEntriesStore = {
   save: () => {},
   loadLockedCells: () => [],
   lockCell: () => {},
+  loadHintsUsed: () => 0,
+  recordHintUsed: () => {},
   clearForPuzzle: () => {},
 };
 

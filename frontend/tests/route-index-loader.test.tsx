@@ -37,6 +37,8 @@ const renderWith = (repository: PuzzleRepository) => {
         save: () => {},
         loadLockedCells: () => [],
         lockCell: () => {},
+        loadHintsUsed: () => 0,
+        recordHintUsed: () => {},
         clearForPuzzle: () => {},
       },
       tourSeenStore: {

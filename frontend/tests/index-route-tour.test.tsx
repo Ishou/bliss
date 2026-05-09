@@ -43,6 +43,8 @@ const buildContext = (tourSeenStore: TourSeenStore) => ({
     save: () => {},
     loadLockedCells: () => [],
     lockCell: () => {},
+    loadHintsUsed: () => 0,
+    recordHintUsed: () => {},
     clearForPuzzle: () => {},
   },
   tourSeenStore,

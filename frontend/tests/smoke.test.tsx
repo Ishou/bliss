@@ -35,6 +35,8 @@ const soloEntriesStore = {
   save: vi.fn(),
   loadLockedCells: () => [],
   lockCell: vi.fn(),
+  loadHintsUsed: () => 0,
+  recordHintUsed: vi.fn(),
   clearForPuzzle: vi.fn(),
 };
 const tourSeenStore = {

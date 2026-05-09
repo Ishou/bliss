@@ -3,6 +3,8 @@ import {
   clearAllSoloEntries,
   clearSoloEntriesForPuzzle,
   loadSoloEntries,
+  loadSoloHintsUsed,
+  recordSoloHintUsed,
   saveSoloLetter,
 } from '@/infrastructure/session/localStorageSolo';
 
@@ -136,6 +138,36 @@ describe('localStorageSolo', () => {
       expect(loadSoloEntries(PUZZLE_A)).toEqual([]);
       expect(loadSoloEntries(PUZZLE_B)).toEqual([]);
       expect(window.localStorage.getItem(KEY)).toBeNull();
+    });
+  });
+
+  describe('hintsUsed persistence', () => {
+    it('returns 0 when nothing has been recorded', () => {
+      expect(loadSoloHintsUsed(PUZZLE_A)).toBe(0);
+    });
+
+    it('increments and survives a fresh read (page reload analog)', () => {
+      recordSoloHintUsed(PUZZLE_A);
+      recordSoloHintUsed(PUZZLE_A);
+      expect(loadSoloHintsUsed(PUZZLE_A)).toBe(2);
+    });
+
+    it('preserves entries and lockedCells when incremented', () => {
+      saveSoloLetter(PUZZLE_A, 0, 0, 'A');
+      recordSoloHintUsed(PUZZLE_A);
+      expect(loadSoloEntries(PUZZLE_A)).toEqual([{ row: 0, column: 0, letter: 'A' }]);
+      expect(loadSoloHintsUsed(PUZZLE_A)).toBe(1);
+    });
+
+    it('isolates hintsUsed between puzzles', () => {
+      recordSoloHintUsed(PUZZLE_A);
+      expect(loadSoloHintsUsed(PUZZLE_B)).toBe(0);
+    });
+
+    it('clearForPuzzle resets the hintsUsed counter', () => {
+      recordSoloHintUsed(PUZZLE_A);
+      clearSoloEntriesForPuzzle(PUZZLE_A);
+      expect(loadSoloHintsUsed(PUZZLE_A)).toBe(0);
     });
   });
 });
