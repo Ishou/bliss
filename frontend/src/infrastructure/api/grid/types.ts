@@ -153,17 +153,16 @@ export interface components {
             language: string;
             /**
              * @description Puzzle difficulty level. Lowercase French enum values match the
-             *     user-facing content language. Null until the daily-grid PR
-             *     assigns one — clients should hide the difficulty label when
-             *     this field is absent.
+             *     user-facing content language. Omitted when not yet assigned;
+             *     clients must treat absence as "no difficulty set".
              * @example facile
              * @enum {string|null}
              */
             difficulty?: "facile" | "moyen" | "difficile" | null;
             /**
              * @description Sequential daily-puzzle number (e.g. 142 for the 142nd daily
-             *     grid). Null until the daily-grid PR assigns one — clients
-             *     should hide the number when this field is absent.
+             *     grid). Omitted when not yet assigned; clients must treat
+             *     absence as "no number assigned".
              * @example 142
              */
             gridNumber?: number | null;
