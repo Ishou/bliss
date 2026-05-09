@@ -45,6 +45,7 @@ internal fun Lobby.toLobbyStateFrame(presence: Map<String, PresencePosition> = e
         ownerSessionId = ownerSessionId.value,
         state = state.name,
         gridConfig = gridConfig.toDto(),
+        code = code.value,
         // Presence is ephemeral and only meaningful while IN_PROGRESS — outside
         // that we drop it on the floor (matches asyncapi `GameSession.presence`
         // which is "absent or empty when state is WAITING/COMPLETED").

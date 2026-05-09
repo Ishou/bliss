@@ -348,6 +348,7 @@ describe('Lobby route applyEvent reducer', () => {
         ownerSessionId: sessionId,
         state: 'WAITING',
         gridConfig: { width: 7, height: 7 },
+        code: 'A2B3C4',
         game: null,
       });
     });
@@ -472,8 +473,25 @@ describe('Lobby route Wave H integration', () => {
     // never the routing URL. The address bar `/lobby/$lobbyId` is
     // intentionally NOT a join token, so copying it would let any
     // viewer with the URL on screen join the lobby.
-    expect(writeText).toHaveBeenCalledTimes(1);
-    expect(writeText).toHaveBeenCalledWith(`${window.location.origin}/join/${baseLobby.code}`);
+    expect(writeText).toHaveBeenLastCalledWith(`${window.location.origin}/join/${baseLobby.code}`);
+
+    // A `lobbyState` event carrying a different `code` flips the
+    // reducer's source of truth: the next copy must write the new
+    // code, proving `event.code` is taken (not preserved from the
+    // REST loader).
+    act(() => {
+      gameClient.dispatch({
+        type: 'lobbyState',
+        players: baseLobby.players,
+        ownerSessionId: baseLobby.ownerSessionId,
+        state: 'WAITING',
+        gridConfig: baseLobby.gridConfig,
+        code: 'NEWCD2',
+        game: null,
+      });
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Copier le lien/i }));
+    expect(writeText).toHaveBeenLastCalledWith(`${window.location.origin}/join/NEWCD2`);
   });
 
   it('unmounts WaitingRoom and mounts Grid + Timer on gameStarted', async () => {
@@ -560,6 +578,7 @@ describe('Lobby route Wave H integration', () => {
         ownerSessionId: sessionId,
         state: 'IN_PROGRESS',
         gridConfig: { width: 3, height: 3 },
+        code: 'A2B3C4',
         game: {
           puzzle: buildGamePuzzle(),
           entries: [],

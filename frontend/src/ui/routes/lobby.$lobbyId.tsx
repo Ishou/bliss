@@ -647,16 +647,14 @@ function InGameView({
 function applyEvent(current: LobbyView, event: GameEvent): LobbyView {
   switch (event.type) {
     case 'lobbyState':
+      // `code` is now first-class on the snapshot — take it from the
+      // event so future server-side mutations propagate.
       return {
         ...current,
         lobby: {
           players: event.players, ownerSessionId: event.ownerSessionId,
           state: event.state, gridConfig: event.gridConfig, game: event.game,
-          // The WS `lobbyState` payload doesn't carry the join code yet
-          // (asyncapi follow-up). Preserve the value the REST loader
-          // populated so the WaitingRoom share-link affordance keeps
-          // working through reconnects + late snapshots.
-          code: current.lobby.code,
+          code: event.code,
         },
       };
     case 'playerJoined':
