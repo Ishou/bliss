@@ -1,0 +1,118 @@
+# Shared defaults for the observability umbrella chart.
+# Per-env files override what differs (values-prod.yaml). Each subchart's
+# values are nested under its dependency name (Helm convention).
+
+signoz:
+  enabled: true
+
+  # Cluster identifier surfaced on every ingested span/metric/log. Lets
+  # the SigNoz UI tag data by deployment when we eventually have multiple
+  # (staging/prod). One value today.
+  global:
+    clusterName: "wordsparrow-prod"
+
+  # Right-sized for the cx33 worker. SigNoz's defaults assume larger
+  # nodes; we cut back where the workload tolerates it. Expect to revisit
+  # once we have real telemetry to justify bumps.
+  clickhouse:
+    replicaCount: 1
+    persistence:
+      size: 20Gi
+    resources:
+      requests:
+        cpu: 200m
+        memory: 1Gi
+      limits:
+        cpu: 1000m
+        memory: 2Gi
+
+  zookeeper:
+    replicaCount: 1
+    resources:
+      requests:
+        cpu: 50m
+        memory: 100Mi
+      limits:
+        cpu: 200m
+        memory: 256Mi
+
+  queryService:
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+
+  frontend:
+    # Disable the chart's default Ingress — we manage two aliased
+    # ingresses (errors.wordsparrow.io + dashboard.wordsparrow.io) in
+    # templates/ingress-signoz-ui.yaml so they share the htpasswd
+    # auth-secret + cert-manager annotations consistently.
+    ingress:
+      enabled: false
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 200m
+        memory: 128Mi
+
+  alertmanager:
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 200m
+        memory: 128Mi
+
+  otelCollector:
+    # PII scrubbing per ADR-0027 §8 — drop `?email=` / `?token=` /
+    # `?session=` query parameters; redact Authorization + Cookie
+    # request headers; never capture request bodies. Implemented as
+    # OTel transform processors. The exact processor config lives
+    # under .Values.signoz.otelCollector.config.processors and is
+    # set by the SigNoz subchart's defaults; we override below to
+    # add our scrubbing pipeline.
+    #
+    # Left empty in v1 — applied as a follow-up once we have real
+    # telemetry to inform the redaction list. PR-E ships the agent;
+    # PR-D ships the backend; PII config is small enough to land
+    # inline once we know what's there to scrub.
+    config: {}
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+
+# Ingress hosts. Two ingresses target the same SigNoz frontend Service:
+# `errors.wordsparrow.io` (Sentry-style "what blew up" entry point) and
+# `dashboard.wordsparrow.io` (the same UI's metrics + traces views are
+# the primary use). Both gated by the same `admin-htpasswd` Secret per
+# ADR-0028.
+ingress:
+  enabled: true
+  className: nginx
+  hosts:
+    - errors.wordsparrow.io
+    - dashboard.wordsparrow.io
+  tlsSecretName: signoz-tls
+  # Hetzner floating IP — same value the rest of the charts use
+  # (matomo, grid/api, game/api). When the FIP rotates, update every
+  # chart's values-prod.yaml in the same PR.
+  floatingIp: "116.202.180.82"
+  # Service backend (chart-managed SigNoz frontend Service name + port).
+  # Wired into the Ingress template so swapping subchart versions only
+  # requires updating these values, not editing templates.
+  serviceName: ""        # Empty -> derived as "<release>-signoz-frontend"
+  servicePort: 3301
+  # The htpasswd-gated Secret is bootstrapped out-of-band by
+  # scripts/bootstrap-admin-htpasswd.sh (ADR-0028 §2). Name match
+  # required; `admin-htpasswd` is the documented value.
+  authSecretName: admin-htpasswd

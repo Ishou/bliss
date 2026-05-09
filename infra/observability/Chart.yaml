@@ -1,0 +1,32 @@
+apiVersion: v2
+name: observability
+description: |
+  WordSparrow observability backend (ADR-0027). Wraps the upstream SigNoz
+  chart to ingest OTLP traces/metrics/logs/errors from grid/api, game/api,
+  and the frontend, and exposes the SigNoz UI behind ingress-nginx with
+  htpasswd auth (ADR-0028).
+
+  Companion to:
+    - PR-E: backend OTel Java agent on grid/api + game/api
+    - PR-F: frontend OTel browser SDK + public OTLP ingest ingress
+    - PR-H: SigNoz alert rule + Gmail SMTP relay
+
+  Out of scope here: the apps emitting OTLP and the public OTLP receiver
+  ingress. PR-D ships the backend and admin-side ingresses only.
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+# SigNoz subchart pin. The 0.55.x line is the most recent stable as of
+# 2026-05; bumps are deliberate in a follow-up PR (no floating versions
+# per MANIFESTO Reproducible Builds).
+#
+# The chart bundles ClickHouse + ZooKeeper + query-service + frontend +
+# alertmanager + otel-collector. We override values to right-size for
+# the cx33 worker (~8 GB RAM total, ~3 GB available after grid/game/
+# matomo). Single ClickHouse replica (HA off in v1, same posture as
+# CNPG cluster.instances=1 in `local`).
+dependencies:
+  - name: signoz
+    version: "0.55.0"
+    repository: "https://charts.signoz.io"
+    condition: signoz.enabled

@@ -1,0 +1,25 @@
+# Production overrides — Hetzner k3s cluster (ADR-0009 / ADR-0027).
+#
+# Used by:
+#   helm install observability infra/observability/ \
+#     -n observability --create-namespace \
+#     -f infra/observability/values-prod.yaml
+
+signoz:
+  clickhouse:
+    persistence:
+      # Hetzner Cloud Volume — same StorageClass the platform chart
+      # registers (ADR-0009 §3, hcloud-csi). 20 GiB at ADR-0027's
+      # default retention (7 d traces, 30 d metrics) leaves ample
+      # headroom for the launch traffic profile; revisit on growth.
+      storageClass: hcloud-volumes
+
+  zookeeper:
+    persistence:
+      storageClass: hcloud-volumes
+
+ingress:
+  # Cert-manager + external-dns + ingress-nginx are all in the platform
+  # chart already. Only the values-prod-specific knobs land here; the
+  # template's annotations cover the rest.
+  className: nginx
