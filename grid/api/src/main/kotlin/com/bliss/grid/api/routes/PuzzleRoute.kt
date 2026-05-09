@@ -1,12 +1,14 @@
 package com.bliss.grid.api.routes
 
 import com.bliss.grid.api.dto.CellDto
+import com.bliss.grid.api.dto.DifficultyDto
 import com.bliss.grid.api.dto.ProblemDetails
 import com.bliss.grid.api.dto.RevealCellHintRequest
 import com.bliss.grid.api.dto.RevealCellHintResult
 import com.bliss.grid.api.dto.ValidatePuzzleRequest
 import com.bliss.grid.api.dto.ValidatePuzzleResult
 import com.bliss.grid.api.mapper.GridToPuzzleMapper
+import com.bliss.grid.application.puzzle.DailyPuzzleSelector
 import com.bliss.grid.application.puzzle.FilledCellInput
 import com.bliss.grid.application.puzzle.LoadOrGeneratePuzzleUseCase
 import com.bliss.grid.application.puzzle.RevealCellHintOutcome
@@ -24,6 +26,10 @@ import io.ktor.server.routing.post
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
+import java.time.Clock
+import java.time.LocalDate
+import java.time.ZoneOffset
+import java.time.format.DateTimeParseException
 import java.util.UUID
 
 // Mirrors minimum/maximum from PuzzleWidth/PuzzleHeight in openapi.yaml; keep in sync manually.
@@ -34,6 +40,8 @@ private const val INVALID_DIMENSIONS_TYPE: String =
     "https://bliss.example/errors/invalid-puzzle-dimensions"
 private const val INVALID_PUZZLE_ID_TYPE: String =
     "https://bliss.example/errors/invalid-puzzle-id"
+private const val INVALID_PUZZLE_DATE_TYPE: String =
+    "https://bliss.example/errors/invalid-puzzle-date"
 private const val PUZZLE_NOT_FOUND_TYPE: String =
     "https://bliss.example/errors/puzzle-not-found"
 private const val PUZZLE_GENERATION_FAILED_TYPE: String =
@@ -68,8 +76,56 @@ fun Route.puzzles(
     revealCellHint: RevealCellHintUseCase,
     validatePuzzle: ValidatePuzzleUseCase,
     mapper: GridToPuzzleMapper = GridToPuzzleMapper(),
+    dailyPuzzleSelector: DailyPuzzleSelector = DailyPuzzleSelector(),
+    clock: Clock = Clock.systemUTC(),
 ) {
     val log = LoggerFactory.getLogger("com.bliss.grid.api.routes.PuzzleRoute")
+
+    get("/v1/puzzles/daily") {
+        val rawDate = call.parameters["date"]
+        val date =
+            if (rawDate.isNullOrBlank()) {
+                LocalDate.ofInstant(clock.instant(), ZoneOffset.UTC)
+            } else {
+                try {
+                    LocalDate.parse(rawDate)
+                } catch (_: DateTimeParseException) {
+                    call.respondProblem(
+                        status = HttpStatusCode.BadRequest,
+                        title = "Date invalide",
+                        type = INVALID_PUZZLE_DATE_TYPE,
+                        detail = "Le paramètre date doit être au format ISO-8601 YYYY-MM-DD, reçu : '$rawDate'.",
+                    )
+                    return@get
+                }
+            }
+
+        val puzzleId = dailyPuzzleSelector.puzzleIdForDate(date)
+        val stored = loadOrGenerate.execute(puzzleId)
+        if (stored == null) {
+            log.warn("daily_puzzle_generation_failed date={} puzzle_id={}", date, puzzleId)
+            call.respondProblem(
+                status = HttpStatusCode.UnprocessableEntity,
+                title = "Échec de la génération de grille",
+                type = PUZZLE_GENERATION_FAILED_TYPE,
+                detail = "Le générateur n'a pas pu satisfaire les contraintes demandées.",
+            )
+            return@get
+        }
+        val difficulty = DifficultyDto.fromWire(dailyPuzzleSelector.difficultyForDate(date))
+        call.respond(
+            mapper.toApi(
+                grid = stored.grid,
+                puzzleId = puzzleId,
+                createdAt = stored.createdAt,
+                hintsAllowed = stored.hintsAllowed,
+                title = stored.title,
+                language = stored.language,
+                difficulty = difficulty,
+                gridNumber = dailyPuzzleSelector.gridNumberForDate(date),
+            ),
+        )
+    }
 
     get("/v1/puzzles/{puzzleId}") {
         val rawId = call.parameters["puzzleId"].orEmpty()

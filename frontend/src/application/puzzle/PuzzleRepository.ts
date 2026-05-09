@@ -8,4 +8,9 @@ import type { Puzzle } from '@/domain';
 // `errorComponent` renders verbatim.
 export interface PuzzleRepository {
   fetchById(puzzleId: string): Promise<Puzzle>;
+  // Daily-grid endpoint. `date` is an ISO calendar string `YYYY-MM-DD`;
+  // the server falls back to today's UTC date when the parameter is
+  // omitted. The Accueil and Grille route loaders both call this so the
+  // two surfaces converge on the same canonical puzzleId for the day.
+  fetchDaily(date?: string): Promise<Puzzle>;
 }

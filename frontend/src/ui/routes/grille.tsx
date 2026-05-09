@@ -112,12 +112,6 @@ const createLobbyErrorStyles = css({
   color: 'errorText',
 });
 
-// Hard-coded UUID v7 for v1: the Grid API is stateless (per the §404
-// note in `grid/api/openapi.yaml`) — every well-formed id yields a
-// freshly generated puzzle. Replaced with a route param or a
-// client-minted UUID v7 once persistence lands.
-const DEFAULT_PUZZLE_ID = '0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6b';
-
 // Multiplayer feature flag (ADR-0018 §10). Read once per render — when
 // off, the CTA is not mounted at all and the solo flow above is the
 // only thing on `/`. Reading `import.meta.env` here keeps the seam
@@ -514,8 +508,7 @@ export const Route = createRoute({
   path: '/grille',
   validateSearch: (search: Record<string, unknown>): IndexSearch =>
     search.tour === 1 || search.tour === '1' ? { tour: 1 } : {},
-  loader: ({ context }): Promise<Puzzle> =>
-    context.puzzleRepository.fetchById(DEFAULT_PUZZLE_ID),
+  loader: ({ context }): Promise<Puzzle> => context.puzzleRepository.fetchDaily(),
   component: HomePage,
   pendingComponent: HomeSkeleton,
   errorComponent: ({ error }) => (

@@ -103,6 +103,7 @@ const renderAccueil = (options: RenderOptions = {}) => {
   };
   const puzzleRepository: PuzzleRepository = {
     fetchById: () => Promise.resolve(options.puzzle ?? samplePuzzle),
+    fetchDaily: () => Promise.resolve(options.puzzle ?? samplePuzzle),
   };
   const routeTree = RootRoute.addChildren([AccueilRoute, GrilleRoute, LobbyRoute]);
   const router = createRouter({

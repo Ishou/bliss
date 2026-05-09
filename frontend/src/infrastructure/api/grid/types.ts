@@ -26,6 +26,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/puzzles/daily": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Fetch the daily puzzle for a given date.
+         * @description Returns the puzzle of the day for the supplied `date` (or today's
+         *     UTC date when omitted). Two callers reach this endpoint: the
+         *     Accueil card resolves "today's grid" without holding a UUID, and
+         *     the Grille route navigates here when the player picks "Reprendre"
+         *     / "Commencer".
+         *
+         *     The server derives a deterministic UUID v7 from the date and
+         *     delegates to the same `loadOrGenerate` path as `GET /v1/puzzles/{
+         *     puzzleId}` — so subsequent hint / validate calls keyed by the
+         *     returned `id` resolve to the same canonical grid.
+         *
+         *     `gridNumber` and `difficulty` on the response are populated from
+         *     the date (sequence number from a launch-day anchor; difficulty
+         *     is `facile` until heuristics land in a follow-up). Other fields
+         *     match the `Puzzle` schema.
+         */
+        get: operations["getDailyPuzzle"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/puzzles/{puzzleId}/hints": {
         parameters: {
             query?: never;
@@ -580,6 +614,58 @@ export interface operations {
              *     word list, interlocking rules) are unsatisfiable within the
              *     attempt budget. RFC 7807 body;
              *     `type` is `https://bliss.example/errors/puzzle-generation-failed`.
+             */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    getDailyPuzzle: {
+        parameters: {
+            query?: {
+                /**
+                 * @description ISO-8601 calendar date (`YYYY-MM-DD`) in UTC. When omitted the
+                 *     server uses today's UTC date. Future dates are accepted and
+                 *     generate the puzzle ahead of time.
+                 */
+                date?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Daily puzzle resolved for the requested date. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Puzzle"];
+                };
+            };
+            /**
+             * @description The `date` query parameter is not a valid ISO-8601 calendar
+             *     date. RFC 7807 body;
+             *     `type` is `https://bliss.example/errors/invalid-puzzle-date`.
+             */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /**
+             * @description Generation failed for the requested date. Same shape as the
+             *     `getPuzzle` 422.
              */
             422: {
                 headers: {

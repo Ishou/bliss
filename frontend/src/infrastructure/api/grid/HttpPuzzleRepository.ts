@@ -33,5 +33,15 @@ export function createHttpPuzzleRepository(
       }
       return apiPuzzleToDomain(data);
     },
+    async fetchDaily(date?: string): Promise<Puzzle> {
+      const { data, error, response } = await client.GET('/v1/puzzles/daily', {
+        params: { query: date != null ? { date } : {} },
+      });
+      if (error) {
+        const detail = error.detail ?? error.title ?? `HTTP ${response.status}`;
+        throw new Error(`daily puzzle fetch failed: ${detail}`);
+      }
+      return apiPuzzleToDomain(data);
+    },
   };
 }

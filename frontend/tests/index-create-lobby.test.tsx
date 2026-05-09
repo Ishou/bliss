@@ -30,6 +30,7 @@ const samplePuzzle: Puzzle = {
 // Plain function — `vi.restoreAllMocks()` would erase a `mockResolvedValue`.
 const stubPuzzleRepository: PuzzleRepository = {
   fetchById: () => Promise.resolve(samplePuzzle),
+  fetchDaily: () => Promise.resolve(samplePuzzle),
 };
 const stubPuzzleSolver: PuzzleSolver = {
   validate: () => Promise.resolve({ solved: false, incorrectCells: [] }),
