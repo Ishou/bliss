@@ -28,6 +28,8 @@ import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.Application
 import io.ktor.server.application.ApplicationStopped
 import io.ktor.server.application.install
+import io.ktor.server.plugins.callid.CallId
+import io.ktor.server.plugins.callid.callIdMdc
 import io.ktor.server.plugins.calllogging.CallLogging
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.plugins.cors.routing.CORS
@@ -70,6 +72,9 @@ fun Application.module() {
         allowMethod(HttpMethod.Options) // preflight
         allowHeader(HttpHeaders.ContentType)
         allowHeader(HttpHeaders.Accept)
+        // X-Request-Id: client-generated correlation id propagated through
+        // logs/traces (MANIFESTO Observability). Echoed back via CallId.
+        allowHeader("X-Request-Id")
 
         // Production frontends (Cloudflare Pages serving wordsparrow.io).
         allowHost("wordsparrow.io", schemes = listOf("https"))
@@ -100,8 +105,23 @@ fun Application.module() {
         )
     }
 
+    // Correlation IDs (MANIFESTO Observability). Trust the client's
+    // X-Request-Id when present and well-formed; fall back to a fresh
+    // UUID. The id is echoed back to the client and piped into the
+    // Logback MDC field `correlation_id` (logback.xml already exposes
+    // that key on the JSON encoder), so every log line emitted while
+    // the call is in scope carries the same id. Must be installed
+    // before CallLogging so the MDC binding fires for the access log.
+    install(CallId) {
+        header("X-Request-Id")
+        generate { java.util.UUID.randomUUID().toString() }
+        verify { it.isNotEmpty() && it.length <= 128 }
+        replyToHeader("X-Request-Id")
+    }
+
     install(CallLogging) {
         level = Level.INFO
+        callIdMdc("correlation_id")
     }
 
     install(DefaultHeaders) {

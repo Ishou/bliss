@@ -14,6 +14,7 @@
 // The first endpoint (`GET /v1/puzzles/{puzzleId}`) lands in the consumer
 // workstream; this PR ships the contract-side wrapper only.
 import createClient, { type Client, type ClientOptions } from 'openapi-fetch';
+import { uuidv7 } from 'uuidv7';
 
 import type { paths } from './types';
 
@@ -46,10 +47,23 @@ export interface GridApiClientOptions {
  * when they need data.
  */
 export function createGridApiClient(options: GridApiClientOptions): Client<paths> {
-  return createClient<paths>({
+  const client = createClient<paths>({
     baseUrl: options.baseUrl,
     fetch: options.fetch,
   });
+  // Per-request correlation id (MANIFESTO Observability). The Ktor side
+  // (CallId plugin) trusts X-Request-Id, echoes it back, and pipes it
+  // into Logback MDC. UUID v7 is time-ordered, which keeps logs sortable
+  // when the id is later joined against trace data.
+  client.use({
+    onRequest({ request }) {
+      if (!request.headers.has('X-Request-Id')) {
+        request.headers.set('X-Request-Id', uuidv7());
+      }
+      return request;
+    },
+  });
+  return client;
 }
 
 export type GridApiClient = Client<paths>;
