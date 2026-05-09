@@ -1,7 +1,8 @@
 {{/*
 SigNoz UI ingresses — two hosts (`errors.` + `dashboard.wordsparrow.io`)
-both pointing at the same SigNoz frontend Service. Both gated by
-ingress-nginx basic auth via the `admin-htpasswd` Secret (ADR-0028).
+both pointing at the same SigNoz frontend Service. Auth: oauth2-proxy
+session-cookie (ADR-0030) when `oauth2Proxy.enabled=true`; ingress-nginx
+basic-auth (ADR-0028) otherwise.
 
 Why two ingresses for the same backend instead of one with multiple
 hosts:

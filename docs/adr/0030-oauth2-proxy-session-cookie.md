@@ -87,7 +87,7 @@ The main Ingress replaces the basic-auth annotations with:
 
 ```yaml
 nginx.ingress.kubernetes.io/auth-url: "http://oauth2-proxy.<ns>.svc.cluster.local:4180/oauth2/auth"
-nginx.ingress.kubernetes.io/auth-signin: "https://<host>/oauth2/start?rd=$escaped_request_uri"
+nginx.ingress.kubernetes.io/auth-signin: "https://<host>/oauth2/sign_in?rd=$escaped_request_uri"
 nginx.ingress.kubernetes.io/auth-response-headers: "X-Auth-Request-User,X-Auth-Request-Email,X-Auth-Request-Preferred-Username"
 ```
 
