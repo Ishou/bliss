@@ -80,9 +80,11 @@ const counterStyles = css({
   fontVariantNumeric: 'tabular-nums',
   letterSpacing: '0.02em',
   // Reserve space for the two-character ratio (e.g. "0/3") so the
-  // toolbar layout doesn't reflow as the count drops.
+  // pill layout doesn't reflow as the count drops; centred so the
+  // glyph sits visually balanced inside the pill instead of left-
+  // anchored against the divider.
   minWidth: '2.4em',
-  textAlign: 'left',
+  textAlign: 'center',
 });
 
 const statusBaseStyles = css({

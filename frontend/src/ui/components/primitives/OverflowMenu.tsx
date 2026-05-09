@@ -15,11 +15,23 @@ import { MoreIcon } from '@/ui/components/icons';
 // 32/36-px chips. Item icons inherit colour through `currentColor`
 // (the row sets a single `color` token).
 
+// Sit above every other in-page sticky / overlay (the
+// CurrentCluePanel and the AppHeader both use z-index 10). Dialogs
+// occupy 1000–1003, so we stay above the in-page sticky chrome but
+// below modal layers.
+//
+// IMPORTANT: zag's popper sets the positioner's inline style to
+// `zIndex: var(--z-index)`, where `--z-index` is synced from the
+// content's `z-index`. Setting z-index on the positioner alone is
+// silently overridden — the value has to live on the content. (Same
+// gotcha is documented in `soloTour.styles.ts`.)
 const positionerStyles = css({
-  zIndex: 1100,
+  zIndex: 1500,
 });
 
 const contentStyles = css({
+  position: 'relative',
+  zIndex: 1500,
   bg: 'surface',
   color: 'fg',
   border: '1px solid token(colors.border)',
