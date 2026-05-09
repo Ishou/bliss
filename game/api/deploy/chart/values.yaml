@@ -82,8 +82,12 @@ probes:
 # Inline env vars. Prefer envFromSecret for anything sensitive.
 # OpenJDK default MaxRAMPercentage=25 → ~128 MB on 512Mi; 75% → ~384 MB heap.
 env:
+  # `-javaagent:/app/otel.jar` activates the OpenTelemetry Java agent
+  # baked into the runtime image (Dockerfile §"Stage 2"). Agent reads
+  # OTEL_* env vars below for endpoint + service identity, then auto-
+  # instruments Ktor + Ktor HTTP client + WebSockets. ADR-0027.
   - name: JAVA_TOOL_OPTIONS
-    value: "-XX:MaxRAMPercentage=75.0"
+    value: "-javaagent:/app/otel.jar -XX:MaxRAMPercentage=75.0"
   # Pin prod port. Main.kt's DEFAULT_PORT is 7778 (local-dev convenience);
   # this keeps prod on 8081 regardless of in-app default changes.
   - name: PORT
@@ -94,6 +98,26 @@ env:
   # service port (8080 per grid/api/deploy/chart/values.yaml).
   - name: GRID_BASE_URL
     value: "http://grid-api:8080"
+  # OpenTelemetry agent configuration (ADR-0027). Endpoint defaults to
+  # the in-cluster SigNoz collector Service. Local installs without
+  # observability/* deployed will see harmless connection-refused
+  # warnings in agent logs; the app itself is unaffected.
+  - name: OTEL_EXPORTER_OTLP_ENDPOINT
+    value: "http://observability-signoz-otel-collector.observability:4317"
+  - name: OTEL_EXPORTER_OTLP_PROTOCOL
+    value: "grpc"
+  - name: OTEL_SERVICE_NAME
+    value: "game-api"
+  # `service.name` is canonical for the SigNoz UI; `bounded_context`
+  # mirrors the Logback MDC field on every structured log line
+  # (ADR-0007 §7) so traces and logs join cleanly.
+  - name: OTEL_RESOURCE_ATTRIBUTES
+    value: "bounded_context=game"
+  # 100% sampling at launch volume; tune down once traffic ramps.
+  - name: OTEL_TRACES_SAMPLER
+    value: "parentbased_traceidratio"
+  - name: OTEL_TRACES_SAMPLER_ARG
+    value: "1.0"
 # Name of a Kubernetes Secret to envFrom into the pod. ADR-0009 §10:
 # bootstrapped via `kubectl create secret`, never committed.
 envFromSecret: ""

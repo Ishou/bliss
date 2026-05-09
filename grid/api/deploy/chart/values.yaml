@@ -71,12 +71,39 @@ probes:
 # Inline env vars. Prefer envFromSecret for anything sensitive.
 # OpenJDK default MaxRAMPercentage=25 → ~256 MB on 1Gi; 75% → ~768 MB heap for position-letter index
 env:
+  # `-javaagent:/app/otel.jar` activates the OpenTelemetry Java agent
+  # baked into the runtime image (Dockerfile §"Stage 2"). Agent reads
+  # OTEL_* env vars below for endpoint + service identity, then auto-
+  # instruments Ktor + JDBC + Ktor HTTP client + WebSockets. ADR-0027.
   - name: JAVA_TOOL_OPTIONS
-    value: "-XX:MaxRAMPercentage=75.0"
+    value: "-javaagent:/app/otel.jar -XX:MaxRAMPercentage=75.0"
   # Pin prod port. Main.kt's DEFAULT_PORT is 7777 (local-dev convenience);
   # this keeps prod on 8080 regardless of in-app default changes.
   - name: PORT
     value: "8080"
+  # OpenTelemetry agent configuration (ADR-0027). Endpoint defaults to
+  # the in-cluster SigNoz collector Service. Local installs that don't
+  # have observability/* deployed will see harmless connection-refused
+  # warnings in agent logs; the app itself is unaffected.
+  - name: OTEL_EXPORTER_OTLP_ENDPOINT
+    value: "http://observability-signoz-otel-collector.observability:4317"
+  - name: OTEL_EXPORTER_OTLP_PROTOCOL
+    value: "grpc"
+  - name: OTEL_SERVICE_NAME
+    value: "grid-api"
+  # `service.name` is canonical for the SigNoz UI; `bounded_context`
+  # mirrors the Logback MDC field already on every structured log line
+  # (ADR-0007 §7) so traces and logs join cleanly.
+  - name: OTEL_RESOURCE_ATTRIBUTES
+    value: "bounded_context=grid"
+  # 100% sampling at launch volume — the agent's overhead at this
+  # rate is single-digit ms per request, well within budget. Tune
+  # down (e.g. 0.1 = 10%) once traffic ramps and a representative
+  # sample suffices.
+  - name: OTEL_TRACES_SAMPLER
+    value: "parentbased_traceidratio"
+  - name: OTEL_TRACES_SAMPLER_ARG
+    value: "1.0"
 # Name of a Kubernetes Secret to envFrom into the pod. ADR-0009 §10:
 # bootstrapped via `kubectl create secret`, never committed.
 envFromSecret: ""

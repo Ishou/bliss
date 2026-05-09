@@ -49,6 +49,17 @@ WORKDIR /app
 
 COPY --from=build /workspace/game/api/build/libs/game-api-*-all.jar /app/game-api.jar
 
+# OpenTelemetry Java agent (ADR-0027). Auto-instruments Ktor + the
+# Ktor HTTP client + WebSockets at JVM start without any code
+# imports — manifesto's OTel-only rule satisfied because the agent
+# attaches via -javaagent and emits OTLP, the open wire format.
+# Activated via JAVA_TOOL_OPTIONS in the chart's env values; the
+# Helm chart owns the OTLP endpoint, service name, and resource
+# attributes. Same pinned version as grid/api (mirror).
+ADD --chmod=0644 \
+    https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/v2.10.0/opentelemetry-javaagent.jar \
+    /app/otel.jar
+
 # Run as non-root. K8s pod security context requires runAsNonRoot=true; without
 # an explicit USER here, kubelet refuses to start with
 # "container has runAsNonRoot and image will run as root".
