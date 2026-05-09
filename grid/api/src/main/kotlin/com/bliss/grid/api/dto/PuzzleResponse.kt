@@ -5,6 +5,18 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonClassDiscriminator
 
+@Serializable
+enum class DifficultyDto {
+    @SerialName("facile")
+    FACILE,
+
+    @SerialName("moyen")
+    MOYEN,
+
+    @SerialName("difficile")
+    DIFFICILE,
+}
+
 /**
  * `Puzzle` schema from `grid/api/openapi.yaml`. Pure wire types; the API
  * layer owns serialization, the mapper package owns the domain → DTO
@@ -21,7 +33,7 @@ data class PuzzleResponse(
     val clues: List<ClueDto>,
     val hintsAllowed: Int,
     val createdAt: String,
-    val difficulty: String? = null,
+    val difficulty: DifficultyDto? = null,
     val gridNumber: Int? = null,
 )
 

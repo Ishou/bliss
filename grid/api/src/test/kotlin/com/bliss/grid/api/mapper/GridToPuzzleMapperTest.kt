@@ -10,6 +10,7 @@ import assertk.assertions.isNull
 import assertk.assertions.isTrue
 import com.bliss.grid.api.dto.BlockCellDto
 import com.bliss.grid.api.dto.DefinitionCellDto
+import com.bliss.grid.api.dto.DifficultyDto
 import com.bliss.grid.api.dto.LetterCellDto
 import com.bliss.grid.domain.model.Column
 import com.bliss.grid.domain.model.Direction
@@ -137,10 +138,10 @@ class GridToPuzzleMapperTest {
                 puzzleId = UUID.randomUUID(),
                 createdAt = Instant.now(),
                 hintsAllowed = 3,
-                difficulty = "facile",
+                difficulty = DifficultyDto.FACILE,
                 gridNumber = 142,
             )
-        assertThat(withValues.difficulty).isEqualTo("facile")
+        assertThat(withValues.difficulty).isEqualTo(DifficultyDto.FACILE)
         assertThat(withValues.gridNumber).isEqualTo(142)
     }
 

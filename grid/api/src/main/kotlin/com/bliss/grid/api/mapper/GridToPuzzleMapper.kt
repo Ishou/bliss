@@ -4,6 +4,7 @@ import com.bliss.grid.api.dto.BlockCellDto
 import com.bliss.grid.api.dto.CellDto
 import com.bliss.grid.api.dto.ClueDto
 import com.bliss.grid.api.dto.DefinitionCellDto
+import com.bliss.grid.api.dto.DifficultyDto
 import com.bliss.grid.api.dto.LetterCellDto
 import com.bliss.grid.api.dto.PuzzleResponse
 import com.bliss.grid.domain.model.ClueCell
@@ -41,7 +42,7 @@ class GridToPuzzleMapper {
         hintsAllowed: Int,
         title: String = "Grille du jour",
         language: String = "fr",
-        difficulty: String? = null,
+        difficulty: DifficultyDto? = null,
         gridNumber: Int? = null,
     ): PuzzleResponse {
         val clueIdByPlacement: Map<WordPlacement, String> =
