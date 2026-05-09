@@ -31,12 +31,6 @@ const CHUNK_RELOAD_FLAG = 'bliss.chunk-mismatch-reload';
  * route-level code splitting in the future would expose it, and the
  * symptom (a blank page after a deploy) is opaque enough that a
  * one-line guard now is cheaper than a postmortem later.
- *
- * Vite emits `vite:preloadError` on `window` whenever a dynamic
- * `import(...)` fails to load its preload chunk. Calling
- * `event.preventDefault()` suppresses the rethrow; we then trigger a
- * fresh navigation, which (with the SW now active on the new build)
- * pulls v2 across the board.
  */
 function installChunkMismatchGuard(): void {
   window.addEventListener('vite:preloadError', (event: Event) => {
