@@ -16,6 +16,13 @@ export interface paths {
          * @description Returns the full puzzle document — every cell and clue. The response
          *     is self-contained: a client with the document can render the grid and
          *     the clue list without further round-trips.
+         *
+         *     When the optional `X-Session-Id` header is present, clue selection on
+         *     cache miss is biased away from clues recently used by the same
+         *     session (per ADR-0030 "per-session clue cooldown"). When absent,
+         *     clue selection is unaffected — the cooldown machinery is bypassed
+         *     end-to-end. Cache hits return the persisted grid as-is regardless of
+         *     the header, so the same `puzzleId` always yields the same clues.
          */
         get: operations["getPuzzle"];
         put?: never;
@@ -50,6 +57,14 @@ export interface paths {
          *     the date (sequence number from a launch-day anchor; difficulty
          *     is `facile` until heuristics land in a follow-up). Other fields
          *     match the `Puzzle` schema.
+         *
+         *     Clue selection on the **first** generation of each new daily
+         *     date is biased away from clues used in recent daily grids, per
+         *     ADR-0030 "shared daily-bucket cooldown" (sentinel UUID
+         *     `00000000-0000-7000-8000-000000000000`). Subsequent same-day
+         *     fetches hit the cache and return the persisted grid unchanged.
+         *     The endpoint ignores any client-supplied `X-Session-Id` header —
+         *     the daily bucket is global by design.
          */
         get: operations["getDailyPuzzle"];
         put?: never;
@@ -527,6 +542,19 @@ export interface components {
          */
         SessionId: string;
         /**
+         * @description UUID v7 identifying the calling player's session. When present,
+         *     the server biases clue selection on cache miss away from clues
+         *     recently used by the same session (per ADR-0030 "per-session clue
+         *     cooldown"). When absent, no cooldown is applied and clue
+         *     selection is unaffected. Cache hits are unchanged regardless.
+         *
+         *     Non-UUID values, or a UUID equal to the reserved daily-bucket
+         *     sentinel `00000000-0000-7000-8000-000000000000`, produce a 400
+         *     `invalid-session-id` response (poisoning guard per ADR-0030
+         *     Threat model § Tampering).
+         */
+        OptionalSessionId: string;
+        /**
          * @description Number of columns to generate. Defaults to 10 when omitted, matching
          *     the historical solo-mode size. Valid range is 5..15 inclusive; values
          *     outside that range — or non-integers — produce a 400 with problem
@@ -569,7 +597,21 @@ export interface operations {
                  */
                 height?: components["parameters"]["PuzzleHeight"];
             };
-            header?: never;
+            header?: {
+                /**
+                 * @description UUID v7 identifying the calling player's session. When present,
+                 *     the server biases clue selection on cache miss away from clues
+                 *     recently used by the same session (per ADR-0030 "per-session clue
+                 *     cooldown"). When absent, no cooldown is applied and clue
+                 *     selection is unaffected. Cache hits are unchanged regardless.
+                 *
+                 *     Non-UUID values, or a UUID equal to the reserved daily-bucket
+                 *     sentinel `00000000-0000-7000-8000-000000000000`, produce a 400
+                 *     `invalid-session-id` response (poisoning guard per ADR-0030
+                 *     Threat model § Tampering).
+                 */
+                "X-Session-Id"?: components["parameters"]["OptionalSessionId"];
+            };
             path: {
                 /** @description UUID v7 identifier of the puzzle. */
                 puzzleId: components["parameters"]["PuzzleId"];
@@ -600,6 +642,11 @@ export interface operations {
              *     - Query parameter `width` or `height` is not an integer or is
              *       outside the supported 5..15 range
              *       (`type` = `https://bliss.example/errors/invalid-puzzle-dimensions`).
+             *     - Header `X-Session-Id` is present but not a valid UUID, or
+             *       equals the reserved daily-bucket sentinel
+             *       `00000000-0000-7000-8000-000000000000` (poisoning guard per
+             *       ADR-0030)
+             *       (`type` = `https://bliss.example/errors/invalid-session-id`).
              */
             400: {
                 headers: {
