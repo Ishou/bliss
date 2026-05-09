@@ -1,11 +1,46 @@
+{{/*
+Matomo on `analytics.wordsparrow.io` is split across two Ingresses:
+
+1. `ingress-tracker`  — public tracker beacons (`/matomo.php`,
+   `/matomo.js`, legacy `/piwik.*`, the `/js/` tag-manager prefix).
+   Embedded `<script src="https://analytics.wordsparrow.io/matomo.js">`
+   on the public site MUST work without auth, otherwise we measure
+   nothing.
+2. `ingress-admin`    — catch-all `/` behind ingress-nginx basic-auth
+   referencing the `admin-htpasswd` Secret (ADR-0028). The Matomo
+   dashboard, login, AJAX endpoints, and config UI all sit here.
+
+ingress-nginx merges paths from multiple Ingresses on the same host
+into one server block. Path priority is longest-prefix-first, so
+`Exact /matomo.php` and `Prefix /js/` beat `Prefix /` — the
+no-auth Ingress wins for tracker paths even though the catch-all
+covers the same host.
+
+The htpasswd Secret (`admin-htpasswd`) is bootstrapped per-namespace
+out-of-band (same htpasswd file as observability):
+  htpasswd -c -B -C 12 ./auth admin
+  kubectl -n matomo create secret generic admin-htpasswd --from-file=auth
+The Secret is namespace-scoped, so the same file gets re-created in
+matomo + observability. ADR-0028 §2.
+
+The dashboard is server-rendered PHP (not an SPA) — basic-auth
+prompts once per browser session, no XHR-spam problem that drove the
+oauth2-proxy decision for SigNoz. Re-using oauth2-proxy here would
+require either three Ingresses (auth provider, tracker, dashboard)
+or cross-namespace cookie sharing on `.wordsparrow.io`; the simpler
+basic-auth path matches Matomo's request shape.
+*/}}
 {{- if .Values.ingress.enabled -}}
 {{- if not .Values.ingress.host -}}
 {{- fail "ingress.host must be set (analytics.wordsparrow.io in prod; see values-prod.yaml)" -}}
 {{- end -}}
+{{- $matomoSvc := include "matomo.matomo.fullname" . -}}
+{{- $matomoPort := .Values.matomo.service.port -}}
+---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ include "matomo.fullname" . }}
+  name: {{ include "matomo.fullname" . }}-tracker
   labels: {{- include "matomo.labels" . | nindent 4 }}
   {{- with .Values.ingress.annotations }}
   annotations: {{- toYaml . | nindent 4 }}
@@ -21,10 +56,64 @@ spec:
     - host: {{ .Values.ingress.host | quote }}
       http:
         paths:
+          - path: /matomo.php
+            pathType: Exact
+            backend:
+              service:
+                name: {{ $matomoSvc }}
+                port: {number: {{ $matomoPort }}}
+          - path: /matomo.js
+            pathType: Exact
+            backend:
+              service:
+                name: {{ $matomoSvc }}
+                port: {number: {{ $matomoPort }}}
+          - path: /piwik.php
+            pathType: Exact
+            backend:
+              service:
+                name: {{ $matomoSvc }}
+                port: {number: {{ $matomoPort }}}
+          - path: /piwik.js
+            pathType: Exact
+            backend:
+              service:
+                name: {{ $matomoSvc }}
+                port: {number: {{ $matomoPort }}}
+          - path: /js/
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ $matomoSvc }}
+                port: {number: {{ $matomoPort }}}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "matomo.fullname" . }}-admin
+  labels: {{- include "matomo.labels" . | nindent 4 }}
+  annotations:
+    {{- with .Values.ingress.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+    nginx.ingress.kubernetes.io/auth-type: basic
+    nginx.ingress.kubernetes.io/auth-secret: {{ .Values.ingress.authSecretName | quote }}
+    nginx.ingress.kubernetes.io/auth-realm: "WordSparrow ops — analytics"
+spec:
+  ingressClassName: {{ .Values.ingress.className }}
+  {{- if .Values.ingress.tlsSecretName }}
+  tls:
+    - hosts: [{{ .Values.ingress.host | quote }}]
+      secretName: {{ .Values.ingress.tlsSecretName }}
+  {{- end }}
+  rules:
+    - host: {{ .Values.ingress.host | quote }}
+      http:
+        paths:
           - path: /
             pathType: Prefix
             backend:
               service:
-                name: {{ include "matomo.matomo.fullname" . }}
-                port: {number: {{ .Values.matomo.service.port }}}
+                name: {{ $matomoSvc }}
+                port: {number: {{ $matomoPort }}}
 {{- end }}

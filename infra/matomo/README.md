@@ -57,6 +57,24 @@ kubectl -n matomo create secret generic matomo-env \
   --from-literal=MATOMO_DATABASE_DBNAME=matomo
 ```
 
+The admin dashboard sits behind `nginx.ingress.kubernetes.io/auth-type:
+basic` referencing an `admin-htpasswd` Secret per **ADR-0028** (PR-G).
+Tracker beacons (`/matomo.php`, `/matomo.js`, `/piwik.*`, `/js/*`) are
+explicitly carved out so embedded `<script>` tags on the public site
+keep working without auth. Bootstrap the Secret in this namespace via
+the same script that handles the observability namespace:
+
+```sh
+./infra/observability/scripts/bootstrap-admin-htpasswd.sh \
+  --namespace=matomo
+```
+
+Secrets are namespace-scoped, so `observability/admin-htpasswd` and
+`matomo/admin-htpasswd` are two distinct Secrets with two passwords by
+default. Use the same password for both by recording the first one
+from the script's stdout and applying it to the second namespace by
+hand if you'd rather have a single 1Password entry.
+
 Install:
 
 ```sh
