@@ -25,6 +25,7 @@ const baseLobby: Lobby = {
   state: 'WAITING',
   gridConfig: { width: 7, height: 7 },
   game: null,
+  code: 'A2B3C4',
 };
 
 const noopProps = {
@@ -194,6 +195,52 @@ describe('WaitingRoom — pseudonym editor', () => {
     const input = screen.getByLabelText(/votre pseudonyme/i) as HTMLInputElement;
     fireEvent.change(input, { target: { value: 'Alice' } });
     expect(onClearPseudonymError).toHaveBeenCalled();
+  });
+});
+
+describe('WaitingRoom — readonly PinInput + eye toggle (ADR-0027)', () => {
+  // The code surface in the WaitingRoom is the same `PinInput`
+  // primitive the Accueil uses, in `readOnly` mode. Same fixed slot
+  // widths regardless of mask state — no layout shift between mask
+  // and reveal — and the eye toggle is the single visibility
+  // affordance.
+
+  it('renders the code as readOnly PinInput slots, masked by default', () => {
+    const { container } = render(
+      <WaitingRoom lobby={baseLobby} currentSessionId={ownerSessionId} {...noopProps} />,
+    );
+    const slots = container.querySelectorAll<HTMLInputElement>('input[data-part="input"]');
+    expect(slots).toHaveLength(6);
+    for (const slot of slots) {
+      expect(slot.readOnly).toBe(true);
+      // Streamer-safe default: masked at first paint.
+      expect(slot.getAttribute('data-mask')).toBe('true');
+    }
+  });
+
+  it('reveals the code via the eye toggle and re-masks on second click', () => {
+    const { container } = render(
+      <WaitingRoom lobby={baseLobby} currentSessionId={ownerSessionId} {...noopProps} />,
+    );
+    const showToggle = screen.getByRole('button', { name: /afficher le code/i });
+    expect(showToggle).toHaveAttribute('aria-pressed', 'false');
+    fireEvent.click(showToggle);
+    const masked = container.querySelectorAll<HTMLInputElement>('input[data-part="input"][data-mask="true"]');
+    expect(masked).toHaveLength(0);
+    const hideToggle = screen.getByRole('button', { name: /masquer le code/i });
+    expect(hideToggle).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(hideToggle);
+    const remasked = container.querySelectorAll<HTMLInputElement>('input[data-part="input"][data-mask="true"]');
+    expect(remasked).toHaveLength(6);
+  });
+
+  it('does not render the code surface when lobby.code is null (legacy lobbies)', () => {
+    const noCodeLobby: Lobby = { ...baseLobby, code: null };
+    const { container } = render(
+      <WaitingRoom lobby={noCodeLobby} currentSessionId={ownerSessionId} {...noopProps} />,
+    );
+    expect(container.querySelector('input[data-part="input"]')).toBeNull();
+    expect(screen.queryByRole('button', { name: /afficher le code/i })).toBeNull();
   });
 });
 
