@@ -40,8 +40,7 @@ class DailyPuzzleSelector(
 ) {
     fun puzzleIdForDate(date: LocalDate): UUID = deterministicUuidV7(date)
 
-    fun gridNumberForDate(date: LocalDate): Int =
-        (date.toEpochDay() - launchEpochDay).toInt() + 1
+    fun gridNumberForDate(date: LocalDate): Int = (date.toEpochDay() - launchEpochDay).toInt() + 1
 
     /**
      * Returns the wire-side difficulty token (`facile` / `moyen` /
