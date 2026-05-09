@@ -120,6 +120,19 @@ const letterCell = css({ bg: 'surface' });
 // own word picks up their hash-derived `--player-word-bg`, so this
 // class never paints.
 const letterCellInWord = css({ bg: 'focusBg' });
+// Solo-mode focused-cell ring driven by React state (not the input's
+// `:focus` pseudo-class). Lets the visual persist when DOM focus
+// leaves the input — e.g. the user taps the hint button or page
+// chrome. Suppresses the input's own `:focus` styling so the two
+// don't double up while DOM focus is still present.
+const letterCellSoloFocused = css({
+  bg: 'focusBg',
+  boxShadow: 'inset 0 0 0 1.5px token(colors.focusRing)',
+  '& input:focus': {
+    bg: 'transparent',
+    boxShadow: 'none',
+  },
+});
 // Player-aware modifiers consume CSS vars that the Grid spreads onto
 // the cell wrapper via inline `style={...}` (`playerColorVars(sessionId)`).
 // The wrapper's bg + inset ring are the sole visual cues — the inner
@@ -638,11 +651,15 @@ export interface CellPresence {
 }
 
 export const LetterCellView = memo(function LetterCellView({
-  cell, ariaLabel, inWord, validated, error, presence, incomingArrows, inputRef, onClick, onKeyDown, onFocus, onBlur, onInput,
+  cell, ariaLabel, inWord, focused, validated, error, presence, incomingArrows, inputRef, onClick, onKeyDown, onFocus, onBlur, onInput,
 }: {
   cell: LetterCell;
   ariaLabel: string;
   inWord: boolean;
+  // Solo-mode "this is the focused cell" — driven by React state so the
+  // ring persists when DOM focus leaves the grid. Multiplayer ignores
+  // this prop and uses `presence?.role === 'active'` instead.
+  focused: boolean;
   // Validated state takes precedence over `inWord` for backgrounds —
   // a locked correct cell stays sage-tinted regardless of which word
   // the player is currently solving.
@@ -662,8 +679,9 @@ export const LetterCellView = memo(function LetterCellView({
   onClick: (e: MouseEvent<HTMLDivElement>) => void;
   onKeyDown: (e: KeyboardEvent<HTMLInputElement>) => void;
   onFocus: (e: FocusEvent<HTMLInputElement>) => void;
-  // onBlur clears the word-highlight when focus leaves the grid; see
-  // `useGridNavigation.handleBlur` for the batching rationale.
+  // onBlur snaps DOM focus back to the cell when blur would otherwise
+  // leak to a button / page chrome — keeps typing reachable and the
+  // mobile soft keyboard up. See `useGridNavigation.handleBlur`.
   onBlur: (e: FocusEvent<HTMLInputElement>) => void;
   // onInput covers Android soft keyboards, which emit key==="Unidentified" on keydown.
   onInput: (e: FormEvent<HTMLInputElement>) => void;
@@ -714,13 +732,16 @@ export const LetterCellView = memo(function LetterCellView({
   };
 
   // Class precedence: validated > error > presence.active > presence.word
-  // > inWord > default. Validated is terminal (the cell is locked);
-  // error is transient and only composes with the regular surface so
-  // the shake reads against the unhighlighted background. The presence
-  // branches replace the legacy `inWord` rose tint with a per-player
-  // hue when multiplayer is active — the Grid passes a `presence` for
-  // the local player too, so single-player and multiplayer share one
-  // codepath at the Cell layer.
+  // > soloFocused > inWord > default. Validated is terminal (the cell is
+  // locked); error is transient and only composes with the regular
+  // surface so the shake reads against the unhighlighted background.
+  // The presence branches replace the legacy `inWord` rose tint with a
+  // per-player hue when multiplayer is active — the Grid passes a
+  // `presence` for the local player too. `soloFocused` paints the
+  // focused-cell ring from React state in single-player so the visual
+  // persists when DOM focus leaves the input (hint button, page
+  // chrome); skipped under multiplayer because `presence.active`
+  // already covers the local cursor.
   const presenceClass =
     presence?.role === 'active'
       ? letterCellPlayerActive
@@ -733,6 +754,8 @@ export const LetterCellView = memo(function LetterCellView({
     ? `${letterCell} ${letterCellError}`
     : presenceClass
     ? presenceClass
+    : focused && !presence
+    ? letterCellSoloFocused
     : inWord
     ? letterCellInWord
     : letterCell;

@@ -14,6 +14,11 @@ export interface Clue {
 
 export interface CellHighlight {
   readonly currentWord: boolean;
+  // True when this cell is the React-state-focused cell. Drives the
+  // solo-mode focused-cell ring on the wrapper so the visual persists
+  // when DOM focus leaves the input (e.g. user taps the hint button or
+  // page chrome). `false` for all cells whenever no cell is focused.
+  readonly focused: boolean;
   // Arrow direction of the active clue when the focused cell sits on a
   // path that originates at this definition cell; `null` otherwise. The
   // renderer uses this to highlight the matching sub-clue inside a
@@ -27,12 +32,11 @@ export interface GridNavigation {
   // click (not pointerdown) — pan gestures never produce a click, so focus is suppressed naturally.
   readonly handleClick: (event: React.MouseEvent<HTMLDivElement>) => void;
   readonly handleFocus: (event: React.FocusEvent<HTMLInputElement>) => void;
-  // Clear focused state when an input loses focus (e.g. user taps outside the
-  // grid). Without this the word-highlight stripe stayed lit on the last
-  // focused row even after the input was visibly blurred. During a typing
-  // burst the new cell's focus event fires synchronously after the old
-  // cell's blur, and React 18's automatic batching folds the two state
-  // updates into one render — no flicker.
+  // Snap DOM focus back to the cell input when blur would otherwise leave
+  // the grid for a button / non-focusable element / page background. Keeps
+  // typing reachable after a tap on the hint button or page chrome — on
+  // mobile this also re-shows the soft keyboard. No React state writes;
+  // `focused` is already sticky.
   readonly handleBlur: (event: React.FocusEvent<HTMLInputElement>) => void;
   readonly handleKeyDown: (event: React.KeyboardEvent<HTMLInputElement>) => void;
   // Android Gboard fires keydown key==="Unidentified"; the real letter arrives here via InputEvent.data.
@@ -305,11 +309,13 @@ export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOpt
   const scrollTimeoutRef = useRef<number | null>(null);
   // Tracks the last cell the user clicked, separately from `focused`.
   // The toggle-on-repeat-click path needs to know whether the *previous
-  // click* targeted the same cell — using `focused` would miss the case
-  // where the input lost focus between clicks (iOS soft-keyboard quirks,
-  // a stray pointer event, the `handleBlur` blur-clears-focused behaviour, etc.).
-  // Cleared by `handleFocus` when focus moves to a new cell via keyboard or
-  // programmatic navigation, so the next tap is treated as a first click.
+  // click* targeted the same cell — `focused` is sticky now, but iOS
+  // soft-keyboard hide/reshow and stray pointer events can still
+  // interleave focus changes between two same-cell clicks, so the
+  // click history captures the user's actual interaction sequence
+  // independent of focus churn. Cleared by `handleFocus` when focus
+  // moves to a new cell via keyboard or programmatic navigation, so
+  // the next tap is treated as a first click.
   const lastClickedRef = useRef<Position | null>(null);
 
   // Cancel any pending scroll on unmount so we don't fire scrollBy on a
@@ -388,12 +394,10 @@ export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOpt
       const p = posOf(event.currentTarget);
       if (!p) return;
       // Read repeat-click state from `lastClickedRef` (NOT from `focused`):
-      // `focused` can be transiently null between two same-cell clicks
-      // because of the `handleBlur` blur-clears-focused behaviour + iOS soft-keyboard
-      // re-show quirks. Using it here would silently break the NYT-style
-      // toggle on real devices even though jsdom tests pass. The click
-      // history captures the user's actual interaction sequence regardless
-      // of focus churn.
+      // iOS soft-keyboard hide/reshow can interleave focus changes
+      // between two same-cell clicks even with sticky `focused`. The
+      // click history captures the user's actual interaction sequence
+      // independent of any focus churn that platform quirks introduce.
       const isRepeatClick = lastClickedRef.current !== null && same(lastClickedRef.current, p);
       lastClickedRef.current = p;
       const { direction: dir } = stateRef.current;
@@ -452,15 +456,33 @@ export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOpt
     scheduleVisibleScroll(event.currentTarget);
   }, [scheduleVisibleScroll]);
 
-  const handleBlur = useCallback(() => {
-    // Unconditionally null-out focused. If focus is moving to another
-    // letter cell (typing → auto-advance, or tapping a different cell),
-    // that cell's `handleFocus` fires synchronously after this and
-    // restores `focused` — React batches both updates into one render.
-    // If focus is moving outside the grid (user taps the page chrome,
-    // hits Tab, etc.) there is no follow-up focus event and the word
-    // highlight clears, which is the bug this fixes.
-    setFocused(null);
+  // Focus is intentionally sticky: tapping outside the grid leaves
+  // `focused` set so highlight + clue panel + presence cursor persist.
+  // A click on another letter cell still moves `focused` via that
+  // cell's `handleFocus`. Grid is remounted on puzzle change
+  // (key=refreshCount) so stale focus never leaks across puzzles.
+  //
+  // DOM focus is a separate concern: when the user taps a button, the
+  // cell input itself blurs, which on mobile hides the soft keyboard
+  // and on every platform makes typing unreachable. Snap DOM focus
+  // back unless the blur is moving somewhere the user actually wants
+  // it (another grid cell, another text input, a link). Synchronous
+  // call so iOS Safari keeps us in the user-gesture context required
+  // to re-show the soft keyboard.
+  const handleBlur = useCallback((event: React.FocusEvent<HTMLInputElement>) => {
+    if (!document.hasFocus()) return;
+    const next = event.relatedTarget;
+    if (next instanceof HTMLElement) {
+      if (next.closest('[data-cell-kind="letter"]')) return;
+      if (next instanceof HTMLInputElement) {
+        const t = next.type;
+        if (t === 'text' || t === 'search' || t === 'email' || t === 'password' || t === 'tel' || t === 'url' || t === 'number') return;
+      }
+      if (next instanceof HTMLTextAreaElement) return;
+      if (next instanceof HTMLAnchorElement && next.href) return;
+      if (next.isContentEditable) return;
+    }
+    event.currentTarget.focus({ preventScroll: true });
   }, []);
 
   const currentClue = useMemo<Clue | null>(
@@ -738,24 +760,32 @@ export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOpt
       }
       const letter = stripDiacritics(data);
       target.value = letter;
-      const { focused: f, direction: dir } = stateRef.current;
-      if (!f) return;
-      const prevLetter = cellValuesRef.current.get(key(f)) ?? '';
+      // Identify the destination cell from the input event's target —
+      // the element that actually received the keystroke — rather than
+      // from React's `focused` state. Focus state can lag during a fast
+      // typing burst (auto-advance queues a setFocused that hasn't
+      // committed yet by the time the next input event fires), and the
+      // target is the authoritative source for "which cell was typed
+      // into".
+      const p = posOf(target);
+      if (!p) return;
+      const { direction: dir } = stateRef.current;
+      const prevLetter = cellValuesRef.current.get(key(p)) ?? '';
       if (prevLetter !== letter) {
-        cellValuesRef.current.set(key(f), letter);
+        cellValuesRef.current.set(key(p), letter);
         bumpEntries();
-        onCellChangeRef.current?.(f.row, f.col, letter);
+        onCellChangeRef.current?.(p.row, p.col, letter);
       }
       // Auto-validation seam: announce that a letter was placed at
-      // (f, dir). The hook's consumer (solo route's
+      // (p, dir). The hook's consumer (solo route's
       // `useWordAutoValidation`) decides whether the fill closed a word.
       // Fired on every keystroke that lands a letter, even when the
       // letter was already the same — re-typing the last letter of a
       // correct word should still trigger the lock check.
-      onCellFilledRef.current?.(f, dir);
-      const clue = lookup.clueAt(f.row, f.col, dir);
+      onCellFilledRef.current?.(p, dir);
+      const clue = lookup.clueAt(p.row, p.col, dir);
       if (!clue) return;
-      const idx = clue.cells.findIndex((c) => same(c.position, f));
+      const idx = clue.cells.findIndex((c) => same(c.position, p));
       if (idx >= 0 && idx < clue.cells.length - 1) focusCell(clue.cells[idx + 1].position);
     },
     [bumpEntries, focusCell, lookup],
@@ -763,7 +793,7 @@ export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOpt
 
   const highlightFor = useCallback(
     (p: Position): CellHighlight => {
-      if (!focused || !currentClue) return { currentWord: false, currentArrow: null };
+      if (!focused || !currentClue) return { currentWord: false, focused: false, currentArrow: null };
       const isFocused = same(focused, p);
       // `currentWordRange` is computed via the same `wordRange` helper
       // PresenceOverlay uses for remote cursors — both code paths now
@@ -773,6 +803,7 @@ export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOpt
       const isDef = def.row === p.row && def.col === p.col;
       return {
         currentWord: inWord && !isFocused,
+        focused: isFocused,
         currentArrow: isDef ? currentClue.clue.arrow : null,
       };
     },

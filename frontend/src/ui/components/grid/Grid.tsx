@@ -918,6 +918,7 @@ export function Grid({
                             cell={cell}
                             ariaLabel={`Case ligne ${cell.position.row + 1}, colonne ${cell.position.col + 1}`}
                             inWord={highlight.currentWord}
+                            focused={highlight.focused}
                             validated={validated}
                             error={error}
                             presence={presence}

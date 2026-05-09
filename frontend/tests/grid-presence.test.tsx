@@ -57,7 +57,12 @@ describe('Grid — onLocalFocusChange', () => {
     expect(positions.some((p) => p && p.row === 1 && p.col === 2)).toBe(true);
   });
 
-  it('emits (null, null) when focus leaves the grid', () => {
+  it('does NOT emit (null, null) when focus leaves the grid — presence is sticky', () => {
+    // Focus is sticky now (PR #255): tapping outside the grid keeps
+    // `focused` set so the local highlight, current-clue panel, and
+    // peer-visible cursor all persist. Peers see the local cursor
+    // disappear only on disconnect — not every time the user taps the
+    // hint button or the URL bar.
     const onLocalFocusChange = vi.fn();
     const { container } = render(
       <Grid puzzle={TEST_PUZZLE} onLocalFocusChange={onLocalFocusChange} />,
@@ -66,7 +71,7 @@ describe('Grid — onLocalFocusChange', () => {
     click(cell);
     onLocalFocusChange.mockClear();
     fireEvent.blur(cell);
-    expect(onLocalFocusChange).toHaveBeenCalledWith(null, null);
+    expect(onLocalFocusChange).not.toHaveBeenCalled();
   });
 });
 

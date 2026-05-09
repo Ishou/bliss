@@ -102,24 +102,57 @@ describe('Grid keyboard interactions', () => {
     expect(defAt(container, 1, 0)?.dataset.currentClue).toBe('true');
   });
 
-  it('clears the word highlight when focus leaves the grid', () => {
+  it('keeps the focused cell and word highlighted after focus leaves the grid', () => {
     const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
     const target = inputAt(container, 1, 1)!;
     click(target);
     // Pre-blur sanity: the cells along across-2 are highlighted as in-word.
     expect(wrapAt(container, 1, 2)?.dataset.inWord).toBe('true');
     expect(defAt(container, 1, 0)?.dataset.currentClue).toBe('true');
-    // Blur the input — simulates the user tapping outside the grid (the
-    // page chrome, the URL bar, the keyboard's "done" button, etc.).
-    // act() flushes the React state update synchronously so the DOM
-    // assertions below see the post-blur render.
+    // Blur the input — simulates the user tapping outside the grid
+    // (hint button, page chrome, soft-keyboard transitions). Focus is
+    // sticky by design: the player's "active cell" shouldn't disappear
+    // every time they tap a non-grid affordance like the hint button,
+    // because the next thing they want is for that affordance to act
+    // on the cell they were just on. DOM focus also snaps back so
+    // typing remains reachable on mobile (soft keyboard up).
     act(() => target.blur());
-    // Word highlight + current-clue stripe must clear; otherwise the
-    // grid keeps a stale "this row is selected" appearance after the
-    // user has visibly de-selected it.
-    expect(wrapAt(container, 1, 2)?.dataset.inWord).toBe('false');
-    expect(wrapAt(container, 1, 4)?.dataset.inWord).toBe('false');
-    expect(defAt(container, 1, 0)?.dataset.currentClue).toBe('false');
+    expect(wrapAt(container, 1, 2)?.dataset.inWord).toBe('true');
+    expect(wrapAt(container, 1, 4)?.dataset.inWord).toBe('true');
+    expect(defAt(container, 1, 0)?.dataset.currentClue).toBe('true');
+    expect(document.activeElement).toBe(target);
+  });
+
+  it('does not refocus when focus moves to another grid letter cell', () => {
+    const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
+    const first = inputAt(container, 1, 1)!;
+    const second = inputAt(container, 1, 2)!;
+    click(first);
+    // Cell-to-cell focus transition (typing auto-advance, arrow-key
+    // navigation, repeat-click on a different cell). The refocus
+    // heuristic must skip this case so the new cell gets focus, not
+    // the previous one. Calling .focus() on `second` triggers blur on
+    // `first` with relatedTarget=`second`, exercising the heuristic.
+    act(() => second.focus());
+    expect(document.activeElement).toBe(second);
+  });
+
+  it('does not refocus when focus moves to a text input outside the grid', () => {
+    // External text input simulates a search box / form field somewhere
+    // else on the page. The user explicitly wants to type there, so the
+    // grid must not fight that.
+    const external = document.createElement('input');
+    external.type = 'text';
+    document.body.appendChild(external);
+    try {
+      const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
+      const target = inputAt(container, 1, 1)!;
+      click(target);
+      act(() => external.focus());
+      expect(document.activeElement).toBe(external);
+    } finally {
+      external.remove();
+    }
   });
 
   it('typing a letter writes it and advances along the current direction', () => {
@@ -223,10 +256,10 @@ describe('Grid keyboard interactions', () => {
 
   // Pins the regression that prompted the lastClickedRef refactor: even if
   // the input blurs between two same-cell clicks (iOS soft-keyboard
-  // re-show, stray pointer events, the `handleBlur` blur-clears-focused
-  // behaviour), the second click must still toggle direction. Using
-  // `focused` as the repeat-click signal would fail this test because
-  // blur clears it.
+  // re-show, stray pointer events), the second click must still toggle
+  // direction. `focused` is sticky now and the test still passes against
+  // it, but the click history is the load-bearing signal — `focused` can
+  // still drift on platforms that yank DOM focus mid-interaction.
   it('toggles direction on second click even if focus was lost between clicks', () => {
     const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
     click(inputAt(container, 1, 1)!);
