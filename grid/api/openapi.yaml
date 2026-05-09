@@ -50,11 +50,19 @@ paths:
         Returns the full puzzle document — every cell and clue. The response
         is self-contained: a client with the document can render the grid and
         the clue list without further round-trips.
+
+        When the optional `X-Session-Id` header is present, clue selection on
+        cache miss is biased away from clues recently used by the same
+        session (per ADR-0031 "per-session clue cooldown"). When absent,
+        clue selection is unaffected — the cooldown machinery is bypassed
+        end-to-end. Cache hits return the persisted grid as-is regardless of
+        the header, so the same `puzzleId` always yields the same clues.
       tags: [puzzles]
       parameters:
         - $ref: '#/components/parameters/PuzzleId'
         - $ref: '#/components/parameters/PuzzleWidth'
         - $ref: '#/components/parameters/PuzzleHeight'
+        - $ref: '#/components/parameters/OptionalSessionId'
       responses:
         '200':
           description: |
@@ -75,6 +83,11 @@ paths:
             - Query parameter `width` or `height` is not an integer or is
               outside the supported 5..15 range
               (`type` = `https://bliss.example/errors/invalid-puzzle-dimensions`).
+            - Header `X-Session-Id` is present but not a valid UUID, or
+              equals the reserved daily-bucket sentinel
+              `00000000-0000-7000-8000-000000000000` (poisoning guard per
+              ADR-0031)
+              (`type` = `https://bliss.example/errors/invalid-session-id`).
           content:
             application/problem+json:
               schema:
@@ -110,6 +123,14 @@ paths:
         the date (sequence number from a launch-day anchor; difficulty
         is `facile` until heuristics land in a follow-up). Other fields
         match the `Puzzle` schema.
+
+        Clue selection on the **first** generation of each new daily
+        date is biased away from clues used in recent daily grids, per
+        ADR-0031 "shared daily-bucket cooldown" (sentinel UUID
+        `00000000-0000-7000-8000-000000000000`). Subsequent same-day
+        fetches hit the cache and return the persisted grid unchanged.
+        The endpoint ignores any client-supplied `X-Session-Id` header —
+        the daily bucket is global by design.
       tags: [puzzles]
       parameters:
         - in: query
@@ -345,6 +366,26 @@ components:
         UUID v7 identifying the calling player's session. The server uses
         this to track per-(puzzle, session) hint budgets. Absent or
         non-UUID values produce a 400 `invalid-session-id` response.
+      schema:
+        type: string
+        format: uuid
+        example: 019186c5-d702-7b3a-a3d4-b40dc2d6d871
+
+    OptionalSessionId:
+      name: X-Session-Id
+      in: header
+      required: false
+      description: |
+        UUID v7 identifying the calling player's session. When present,
+        the server biases clue selection on cache miss away from clues
+        recently used by the same session (per ADR-0031 "per-session clue
+        cooldown"). When absent, no cooldown is applied and clue
+        selection is unaffected. Cache hits are unchanged regardless.
+
+        Non-UUID values, or a UUID equal to the reserved daily-bucket
+        sentinel `00000000-0000-7000-8000-000000000000`, produce a 400
+        `invalid-session-id` response (poisoning guard per ADR-0031
+        Threat model § Tampering).
       schema:
         type: string
         format: uuid
