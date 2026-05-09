@@ -1,6 +1,8 @@
 import { useRouterState } from '@tanstack/react-router';
 import { css, cx } from 'styled-system/css';
 import { Lockup } from '@/ui/components/brand';
+import { OverflowMenu } from '@/ui/components/primitives';
+import { HamburgerIcon } from '@/ui/components/icons';
 
 // App-wide header — ADR-0005 §5 layout spec.
 //
@@ -9,12 +11,11 @@ import { Lockup } from '@/ui/components/brand';
 // brief mock are not in the current scope). The active nav link uses a
 // 1.5 px sage underline — solid `accent` would over-saturate the page.
 //
-// Mobile (< 768 px): the brief reorganises to a 44 px row with the
-// lockup on the left and a hamburger on the right. The current scope
-// includes neither hamburger nor mobile-only menu, so on mobile we ship
-// just the lockup; nav links are hidden via `display: none` rather than
-// removed from the DOM, so a future hamburger toggle can simply flip the
-// container's `display: flex`.
+// Mobile (< 768 px): 44 px row with the lockup on the left and a
+// hamburger on the right. The hamburger is an `OverflowMenu` whose
+// items mirror the desktop nav links — selecting an item navigates via
+// a plain `window.location.assign` (anchor semantics) so the active
+// link logic stays a single source of truth in `NAV_LINKS`.
 
 interface NavLink {
   readonly id: string;
@@ -24,7 +25,6 @@ interface NavLink {
 
 const NAV_LINKS: readonly NavLink[] = [
   { id: 'grilles', label: 'Grilles', href: '/' },
-  { id: 'statistiques', label: 'Statistiques', href: '/statistiques' },
   { id: 'aide', label: 'Aide', href: '/aide' },
 ];
 
@@ -95,9 +95,18 @@ const linkActiveStyles = css({
 });
 
 const rightSlotStyles = css({
+  // Pin to grid column 3 explicitly: when the centre `<nav>` is
+  // `display: none` on mobile, CSS Grid auto-placement would otherwise
+  // drop this slot into column 2 (the now-empty auto column), parking
+  // the hamburger in the visual middle of the header.
+  gridColumnStart: 3,
   display: 'flex',
   justifyContent: 'flex-end',
   alignItems: 'center',
+});
+
+const mobileNavSlotStyles = css({
+  display: { base: 'inline-flex', md: 'none' },
 });
 
 export interface AppHeaderProps {
@@ -160,7 +169,21 @@ export function AppHeader({ activeNavId }: AppHeaderProps = {}) {
           );
         })}
       </nav>
-        <div className={rightSlotStyles} />
+        <div className={rightSlotStyles}>
+          <span className={mobileNavSlotStyles}>
+            <OverflowMenu
+              triggerLabel="Ouvrir le menu"
+              triggerIcon={<HamburgerIcon />}
+              items={NAV_LINKS.map((link) => ({
+                id: link.id,
+                label: link.label,
+                onSelect: () => {
+                  window.location.assign(link.href);
+                },
+              }))}
+            />
+          </span>
+        </div>
       </div>
     </header>
   );

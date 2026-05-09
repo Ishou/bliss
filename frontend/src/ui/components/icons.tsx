@@ -39,11 +39,44 @@ export function RefreshIcon({ className }: IconProps) {
 }
 
 export function HintIcon({ className }: IconProps) {
+  // Lightbulb: glass envelope (rounded), filament hint, threaded base.
   return (
     <svg {...baseSvgProps} className={className}>
-      <circle cx="12" cy="12" r="9" />
-      <path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1 .9-1 1.7" />
-      <path d="M12 17h.01" />
+      <path d="M9 18h6" />
+      <path d="M10 21h4" />
+      <path d="M12 3a6 6 0 0 0-3.5 10.9c.5.4.8.9.9 1.5l.1.6h5l.1-.6c.1-.6.4-1.1.9-1.5A6 6 0 0 0 12 3Z" />
+    </svg>
+  );
+}
+
+export function HamburgerIcon({ className }: IconProps) {
+  // Three stacked horizontal lines — mobile nav trigger.
+  return (
+    <svg {...baseSvgProps} className={className}>
+      <path d="M4 7h16" />
+      <path d="M4 12h16" />
+      <path d="M4 17h16" />
+    </svg>
+  );
+}
+
+export function MoreIcon({ className }: IconProps) {
+  // Three horizontal dots — overflow menu trigger.
+  return (
+    <svg {...baseSvgProps} className={className}>
+      <circle cx="5" cy="12" r="1" fill="currentColor" stroke="none" />
+      <circle cx="12" cy="12" r="1" fill="currentColor" stroke="none" />
+      <circle cx="19" cy="12" r="1" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+export function RestartIcon({ className }: IconProps) {
+  // Counter-clockwise arrow — used by the mobile overflow "Recommencer" item.
+  return (
+    <svg {...baseSvgProps} className={className}>
+      <path d="M4 12a8 8 0 1 0 2.34-5.66" />
+      <path d="M4 4v4h4" />
     </svg>
   );
 }

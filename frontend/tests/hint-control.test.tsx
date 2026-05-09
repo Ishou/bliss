@@ -31,6 +31,20 @@ describe('HintControl', () => {
     ).toHaveTextContent('2/3');
   });
 
+  it('renders the visible "Indice" label inside the pill', () => {
+    renderWith();
+    expect(
+      screen.getByRole('button', { name: 'Demander un indice' }),
+    ).toHaveTextContent('Indice');
+  });
+
+  it('exposes a tooltip via the title attribute', () => {
+    renderWith();
+    expect(
+      screen.getByRole('button', { name: 'Demander un indice' }),
+    ).toHaveAttribute('title', 'Demander un indice');
+  });
+
   it('calls onRequest with the focused cell coordinates on click', () => {
     const { onRequest } = renderWith({ getFocusedCell: focusedAt(2, 4) });
     fireEvent.click(

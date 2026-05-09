@@ -23,3 +23,8 @@ export {
   type ToggleGroupProps,
   type ToggleGroupOption,
 } from './ToggleGroup';
+export {
+  OverflowMenu,
+  type OverflowMenuProps,
+  type OverflowMenuItem,
+} from './OverflowMenu';
