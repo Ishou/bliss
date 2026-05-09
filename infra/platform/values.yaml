@@ -47,6 +47,17 @@ ingress-nginx:
     # network. This is the standard pairing for hostNetwork=true
     # ingress controllers.
     dnsPolicy: ClusterFirstWithHostNet
+    # hostNetwork=true means the controller binds the host's
+    # :80/:443. The chart default `RollingUpdate` strategy spins
+    # up the new pod *before* terminating the old one — but only
+    # one pod can hold those host ports at a time, so the new
+    # pod stays Pending forever and the rollout deadlocks (had to
+    # `kubectl delete pod` to unblock the first time we hit it).
+    # `Recreate` terminates the old pod first, accepts the brief
+    # ingress downtime (~5-10s while the new one boots), and the
+    # rollout completes cleanly.
+    updateStrategy:
+      type: Recreate
     service:
       type: ClusterIP
     # Match the ingressClassName the WordSparrow chart hard-codes
