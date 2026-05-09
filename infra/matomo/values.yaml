@@ -67,7 +67,7 @@ ingress:
   tlsSecretName: ""
   annotations: {}
   # Name of the htpasswd Secret in this namespace that gates the admin
-  # dashboard (ADR-0028). Tracker paths (/matomo.php, /matomo.js,
+  # dashboard (ADR-0032). Tracker paths (/matomo.php, /matomo.js,
   # /piwik.*, /js/*) bypass auth so embedded `<script>` tags on the
   # public site continue to work. Bootstrapped out-of-band:
   #   htpasswd -c -B -C 12 ./auth admin
