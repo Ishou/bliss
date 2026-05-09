@@ -23,3 +23,8 @@ ingress:
   # chart already. Only the values-prod-specific knobs land here; the
   # template's annotations cover the rest.
   className: nginx
+
+  # Public OTLP/HTTP ingest for browser-side spans (PR-F.2). ADR-0033.
+  otlpPublic:
+    enabled: true
+    host: "otlp.wordsparrow.io"

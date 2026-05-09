@@ -10,7 +10,7 @@ WordSparrow observability backend per [ADR-0027](../../docs/adr/0027-observabili
 Out of scope for this PR (queued for follow-ups):
 
 - Backend OTel Java agent on grid/api + game/api (PR-E)
-- Frontend OTel browser SDK + public OTLP ingest ingress on `otlp.wordsparrow.io` (PR-F)
+- Frontend browser-side OTel SDK wiring (PR-F.2). The public ingest endpoint at `otlp.wordsparrow.io` ships in PR-F.1 (this chart, ADR-0033); the actual SDK + sampler land in the frontend bundle in F.2.
 - htpasswd-gating Matomo (`analytics.wordsparrow.io`) — same Secret pattern, separate chart (PR-G)
 
 ## One-time install
@@ -100,6 +100,40 @@ One-time setup:
    troubleshooting bullets in the spec.
 
 After a SigNoz reinstall, repeat steps 2–3 from the same spec.
+
+### Smoke-test the public OTLP endpoint
+
+Once `helm upgrade` lands PR-F.1 in prod (and the cert-manager + external-dns reconcile, ~5 min), the browser ingest endpoint should accept POSTs from a `wordsparrow.io` Origin and reject everything else:
+
+```sh
+# 200 expected (allowed Origin)
+curl -i -X POST https://otlp.wordsparrow.io/v1/traces \
+  -H 'Origin: https://wordsparrow.io' \
+  -H 'Content-Type: application/x-protobuf' \
+  --data-binary @/dev/null
+
+# 403 expected (Origin not in allow-list)
+curl -i -X POST https://otlp.wordsparrow.io/v1/traces \
+  -H 'Origin: https://example.com' \
+  -H 'Content-Type: application/x-protobuf' \
+  --data-binary @/dev/null
+
+# 200 expected on OPTIONS preflight from a wordsparrow.io Origin
+curl -i -X OPTIONS https://otlp.wordsparrow.io/v1/traces \
+  -H 'Origin: https://wordsparrow.io' \
+  -H 'Access-Control-Request-Method: POST'
+```
+
+If abuse appears, disable the Ingress immediately:
+
+```sh
+helm upgrade observability infra/observability/ \
+  -n observability \
+  -f infra/observability/values-prod.yaml \
+  --set ingress.otlpPublic.enabled=false
+```
+
+ADR-0033 §5 enumerates the longer-term mitigations (tighter rate limit, same-origin proxy, auth proxy).
 
 ### Bump the SigNoz subchart
 

@@ -1,0 +1,101 @@
+{{/*
+Public OTLP/HTTP ingest at otlp.wordsparrow.io. The browser OTel SDK
+(PR-F.2) POSTs spans here; the ingress forwards to the SigNoz-bundled
+otel-collector Service on port 4318 (HTTP receiver, default config).
+
+This is an unauthenticated public endpoint. The threat is anyone on
+the internet POSTing spans to fill ClickHouse / cost us money. The
+controls layered here are:
+
+1. **CORS at ingress.** Only `https://wordsparrow.io` (and `www.`) is
+   accepted as an Origin for browser-issued requests; any other origin
+   gets the preflight rejected. CORS is browser-enforced, so this is
+   friction-not-security against curl, but it does block other websites
+   from using this endpoint as a beacon for free.
+2. **Origin allow-list at server.** A `configuration-snippet` rejects
+   non-matching `Origin` headers with 403 *before* nginx forwards to
+   the collector. Curl can spoof `Origin`, but the bar is now higher
+   than zero — most opportunistic abusers won't bother.
+3. **Per-IP rate limit.** `limit-rps` + `limit-burst-multiplier` keep a
+   single bad actor's throughput bounded. Tune down if abuse appears.
+4. **Browser sampler at 10%.** Configured in the frontend SDK
+   (PR-F.2). Drops 90% of legitimate traces, lowering both backend
+   load and per-IP request count.
+5. **Collector ingestion limits.** Default SigNoz collector resource
+   limits + ClickHouse storage limits cap the blast radius even if 1-4
+   fail.
+
+Alternatives we considered (see ADR-0033 §3 for the long form):
+- Reuse the existing `api.wordsparrow.io` host with a `/otlp/*` path
+  and an nginx upstream rewrite. Saves a subdomain + cert, but mixes
+  concerns: api.wordsparrow.io is grid-api's public API and shouldn't
+  carry OTel traffic.
+- Thin auth proxy issuing short-lived ingest tokens tied to session
+  IDs. Right answer for higher abuse risk; over-engineered for now.
+- Same-origin proxy (frontend POSTs to `/otlp/v1/traces` on the same
+  origin as the SPA, which an internal layer forwards). Cleanest from
+  a CORS standpoint but requires standing up a proxy on the SPA's
+  CDN/origin server, which we don't operate.
+
+If abuse appears, the cheapest mitigation is to drop this Ingress and
+ship the same-origin proxy variant.
+*/}}
+{{- if .Values.ingress.otlpPublic.enabled }}
+{{- $host := .Values.ingress.otlpPublic.host -}}
+{{- if not $host -}}
+{{- fail "ingress.otlpPublic.host must be set when ingress.otlpPublic.enabled=true" -}}
+{{- end }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: otlp-public
+  labels: {{- include "observability.labels" . | nindent 4 }}
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    external-dns.alpha.kubernetes.io/hostname: {{ $host | quote }}
+    external-dns.alpha.kubernetes.io/target: {{ .Values.ingress.floatingIp | quote }}
+    # CORS at ingress: handle the preflight (OPTIONS /v1/traces) without
+    # forwarding to the collector (which doesn't ship CORS by default).
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-origin: {{ .Values.ingress.otlpPublic.allowedOrigins | join ", " | quote }}
+    nginx.ingress.kubernetes.io/cors-allow-methods: "POST, OPTIONS"
+    nginx.ingress.kubernetes.io/cors-allow-headers: "content-type, traceparent, tracestate, baggage"
+    nginx.ingress.kubernetes.io/cors-max-age: "600"
+    # Server-side Origin allow-list. CORS protects browsers; this
+    # rejects non-browser POSTs whose Origin doesn't match. Curl can
+    # spoof, but most abusers won't.
+    nginx.ingress.kubernetes.io/server-snippet: |
+      if ($request_method = POST) {
+        set $origin_ok 0;
+        {{- range .Values.ingress.otlpPublic.allowedOrigins }}
+        if ($http_origin = "{{ . }}") { set $origin_ok 1; }
+        {{- end }}
+        if ($origin_ok = 0) { return 403; }
+      }
+    # Per-IP rate limit. limit-rps is the sustained rate; multiplier
+    # bounds the burst window. Tune `limitRps` / `limitBurstMultiplier`
+    # in values.yaml if abuse appears or if legitimate spike loads need
+    # more headroom.
+    nginx.ingress.kubernetes.io/limit-rps: {{ .Values.ingress.otlpPublic.limitRps | quote }}
+    nginx.ingress.kubernetes.io/limit-burst-multiplier: {{ .Values.ingress.otlpPublic.limitBurstMultiplier | quote }}
+    # Hard request body cap. OTLP/HTTP messages are typically <100KB;
+    # 1MB blocks anyone trying to ingest oversized payloads to amplify
+    # collector CPU.
+    nginx.ingress.kubernetes.io/proxy-body-size: "1m"
+spec:
+  ingressClassName: {{ .Values.ingress.className | quote }}
+  tls:
+    - hosts: [{{ $host | quote }}]
+      secretName: otlp-public-tls
+  rules:
+    - host: {{ $host | quote }}
+      http:
+        paths:
+          - path: /v1/traces
+            pathType: Exact
+            backend:
+              service:
+                name: {{ .Values.ingress.otlpPublic.collectorService | quote }}
+                port:
+                  number: {{ .Values.ingress.otlpPublic.collectorPort | int }}
+{{- end }}

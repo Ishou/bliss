@@ -146,3 +146,30 @@ ingress:
   # scripts/bootstrap-admin-htpasswd.sh (ADR-0028 §2). Name match
   # required; `admin-htpasswd` is the documented value.
   authSecretName: admin-htpasswd
+
+  # Public OTLP/HTTP ingest endpoint at otlp.wordsparrow.io for the
+  # browser OTel SDK (PR-F.2). Disabled in this defaults file; enable
+  # in values-prod.yaml. ADR-0033 documents the trade-offs (public
+  # endpoint risk, mitigations, alternatives).
+  otlpPublic:
+    enabled: false
+    host: ""
+    # Origins accepted as `Origin:` header (browser CORS + nginx
+    # allow-list). Both apex and www included so visitors arriving via
+    # either don't have their traces silently dropped.
+    allowedOrigins:
+      - https://wordsparrow.io
+      - https://www.wordsparrow.io
+    # Sustained per-IP request rate. nginx-ingress's default unit is
+    # requests/second. With the browser sampler at 10% (PR-F.2), 5
+    # rps/IP supports ~50 actual user requests/sec/IP without dropping.
+    limitRps: 5
+    # Burst headroom multiplier — final burst window is
+    # `limitRps * limitBurstMultiplier`.
+    limitBurstMultiplier: 10
+    # Service name + port of the SigNoz-bundled OTel collector's HTTP
+    # receiver (default config exposes 4318 via the collector Service).
+    # Same release prefix the gRPC endpoint uses in app charts'
+    # OTEL_EXPORTER_OTLP_ENDPOINT.
+    collectorService: "observability-signoz-otel-collector"
+    collectorPort: 4318
