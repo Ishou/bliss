@@ -4,7 +4,7 @@ import { describe, it, expect, vi } from 'vitest';
 import type { PuzzleRepository, PuzzleSolver } from '@/application';
 import type { Puzzle } from '@/domain';
 import { Route as RootRoute } from '@/ui/routes/__root';
-import { Route as IndexRoute } from '@/ui/routes/index';
+import { Route as IndexRoute } from '@/ui/routes/grille';
 
 // Smoke test: the root route renders the "WordSparrow" wordmark as a
 // top-level landmark and sets the document title (WCAG 2.4.2). These
@@ -49,7 +49,7 @@ describe('App smoke test', () => {
     const routeTree = RootRoute.addChildren([IndexRoute]);
     const router = createRouter({
       routeTree,
-      history: createMemoryHistory({ initialEntries: ['/'] }),
+      history: createMemoryHistory({ initialEntries: ['/grille'] }),
       context: ctx,
     });
 
@@ -66,7 +66,7 @@ describe('App smoke test', () => {
     const routeTree = RootRoute.addChildren([IndexRoute]);
     const router = createRouter({
       routeTree,
-      history: createMemoryHistory({ initialEntries: ['/'] }),
+      history: createMemoryHistory({ initialEntries: ['/grille'] }),
       context: ctx,
     });
 
@@ -81,7 +81,7 @@ describe('App smoke test', () => {
     const routeTree = RootRoute.addChildren([IndexRoute]);
     const router = createRouter({
       routeTree,
-      history: createMemoryHistory({ initialEntries: ['/'] }),
+      history: createMemoryHistory({ initialEntries: ['/grille'] }),
       context: ctx,
     });
 

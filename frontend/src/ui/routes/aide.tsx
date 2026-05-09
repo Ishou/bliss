@@ -219,7 +219,7 @@ function AidePage() {
               variant="primary"
               className={tourCardActionStyles}
               onClick={() => {
-                void navigate({ to: '/', search: { tour: 1 } });
+                void navigate({ to: '/grille', search: { tour: 1 } });
               }}
             >
               Lancer le tour

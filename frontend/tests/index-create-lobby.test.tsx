@@ -6,7 +6,7 @@ import { LobbyClientError, type GameClient, type LobbyClient } from '@/applicati
 import type { Puzzle } from '@/domain';
 import type { Lobby, LobbyId, Pseudonym, SessionId } from '@/domain/game';
 import { Route as RootRoute } from '@/ui/routes/__root';
-import { Route as IndexRoute } from '@/ui/routes/index';
+import { Route as IndexRoute } from '@/ui/routes/grille';
 import { Route as LobbyRoute } from '@/ui/routes/lobby.$lobbyId';
 
 // Covers the "Créer une partie multijoueur" button: flag gate,
@@ -65,7 +65,7 @@ const renderHome = (overrides: { lobbyClient?: Partial<LobbyClient> } = {}) => {
   const routeTree = RootRoute.addChildren([IndexRoute, LobbyRoute]);
   const router = createRouter({
     routeTree,
-    history: createMemoryHistory({ initialEntries: ['/'] }),
+    history: createMemoryHistory({ initialEntries: ['/grille'] }),
     context: {
       puzzleRepository: stubPuzzleRepository,
       puzzleSolver: stubPuzzleSolver,

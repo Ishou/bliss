@@ -24,7 +24,7 @@ interface NavLink {
 }
 
 const NAV_LINKS: readonly NavLink[] = [
-  { id: 'grilles', label: 'Grilles', href: '/' },
+  { id: 'grille', label: 'Grille', href: '/grille' },
   { id: 'aide', label: 'Aide', href: '/aide' },
 ];
 

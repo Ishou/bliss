@@ -1,7 +1,8 @@
 import { createRouter } from '@tanstack/react-router';
 import type { AppRouterContext } from './routes/__root';
 import { Route as RootRoute } from './routes/__root';
-import { Route as IndexRoute } from './routes/index';
+import { Route as AccueilRoute } from './routes/accueil';
+import { Route as GrilleRoute } from './routes/grille';
 import { Route as AideRoute } from './routes/aide';
 import { Route as LobbyRoute } from './routes/lobby.$lobbyId';
 import { Route as ConfidentialiteRoute } from './routes/confidentialite';
@@ -20,7 +21,8 @@ export interface CreateAppRouterOptions {
 
 export function createAppRouter({ context, multiplayer }: CreateAppRouterOptions) {
   const baseChildren = [
-    IndexRoute,
+    AccueilRoute,
+    GrilleRoute,
     AideRoute,
     ConfidentialiteRoute,
     PrivacyRoute,

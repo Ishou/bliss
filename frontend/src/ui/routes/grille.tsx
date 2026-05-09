@@ -199,7 +199,7 @@ function HomePage() {
     tourSeenStore,
     forcedOpen,
     onForcedOpenConsumed: () => {
-      void navigate({ to: '/', search: {}, replace: true });
+      void navigate({ to: '/grille', search: {}, replace: true });
     },
   });
 
@@ -511,7 +511,7 @@ export interface IndexSearch {
 
 export const Route = createRoute({
   getParentRoute: () => RootRoute,
-  path: '/',
+  path: '/grille',
   validateSearch: (search: Record<string, unknown>): IndexSearch =>
     search.tour === 1 || search.tour === '1' ? { tour: 1 } : {},
   loader: ({ context }): Promise<Puzzle> =>

@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { PuzzleRepository, PuzzleSolver } from '@/application';
 import type { Puzzle } from '@/domain';
 import { Route as RootRoute } from '@/ui/routes/__root';
-import { Route as IndexRoute } from '@/ui/routes/index';
+import { Route as IndexRoute } from '@/ui/routes/grille';
 
 // Integration regression for the hint feature. Renders the real Index
 // route (Grid + HintControl wired through the route's `getFocusedCell`
@@ -55,7 +55,7 @@ const renderHomeRoute = (solver: PuzzleSolver) => {
   const routeTree = RootRoute.addChildren([IndexRoute]);
   const router = createRouter({
     routeTree,
-    history: createMemoryHistory({ initialEntries: ['/'] }),
+    history: createMemoryHistory({ initialEntries: ['/grille'] }),
     context: {
       puzzleRepository: repository,
       puzzleSolver: solver,

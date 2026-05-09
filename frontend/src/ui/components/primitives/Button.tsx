@@ -32,10 +32,7 @@ const baseStyles = css({
   paddingBlock: 'sm',
   fontSize: 'body',
   fontFamily: 'body',
-  // Brand brief allows weights 400 / 500 only (ADR-0005 §5). The CTA
-  // earns the heavier of the two — the previous `bold` (700) was
-  // outside the type system and broke the brand's "two-weight" rule.
-  fontWeight: 'medium',
+  fontWeight: 'bold',
   cursor: 'pointer',
   transition: 'background-color 120ms ease-out, color 120ms ease-out, opacity 120ms ease-out, border-color 120ms ease-out',
   // Shared focus ring — `focusRing` (= secondary.400, the rose) at

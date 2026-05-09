@@ -320,6 +320,36 @@ reads as "this is the puzzle's question, distinct from the answer
 field". The single-weight constraint and the OFL self-hosted policy
 match Nunito's, so the typographic system stays coherent.
 
+#### Amendment (2026-05-09): Bold (700) button labels
+
+Interactive buttons (`Button` primitive in
+`frontend/src/ui/components/primitives/Button.tsx`) set their label
+text at weight **700 bold**. This applies to all variants — `primary`,
+`secondary`, `ghost` — and supersedes the prior `medium` (500) baseline
+that an earlier revision of the primitive shipped with.
+
+- **Why heavier than body.** On the dark twilight palette and at the
+  Accueil card density, `medium` (500) reads as "passive label" rather
+  than "action". The CTAs in the Accueil mockups (`Reprendre`, `Créer
+  une partie`, `Rejoindre`) need to register as primary affordances at
+  a glance — bold gets them past the surrounding `fgMuted` body text
+  without resorting to color saturation, which would over-warm the
+  page.
+- **Why not `semibold` (600).** Tested both weights in the dev server
+  against the Accueil cards (PR feat/accueil-page); semibold sits too
+  close to body weight on Nunito's variable axis to break out of the
+  card chrome. Bold is the smallest step that reads as a button label
+  at a quick scan.
+- **Type-system fit.** The §5 type scale already uses 700 for `xl`,
+  `lg`, and `cell` tokens, so 700 is not a new weight in the system —
+  buttons join the existing heavy-anchor cohort rather than
+  introducing a fresh axis stop.
+
+This supersedes the inline note that previously lived in `Button.tsx`
+("brand brief allows weights 400 / 500 only"), which mis-cited this
+ADR — the §5 type scale has always used 400 / 500 / 600 / 700 / 800.
+The "two-weight rule" referenced there was never an ADR rule.
+
 ### 6. Logo: type-only wordmark, designer commission deferred
 
 - **v1 logo:** the word `WordSparrow` set in Nunito Variable at the
