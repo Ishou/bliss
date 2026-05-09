@@ -22,6 +22,16 @@
 # `runcmd` entries via /bin/sh (dash on Ubuntu), which does not support
 # `set -o pipefail`. Invoking a script by path lets cloud-init honor the
 # `#!/bin/bash` shebang so `set -euo pipefail` works.
+#
+# Floating IP setup (ADR-0012). The worker is the assigned holder of
+# the cluster's Hetzner floating IP (see hcloud_floating_ip_assignment
+# in floating-ip.tf). Hetzner routes FIP traffic to this server at the
+# network level, but the OS kernel rejects packets to addresses it
+# does not know it owns — so we configure the FIP as an alias on the
+# public interface (eth0 on Hetzner CX/CCX Ubuntu 24.04 cloud images).
+# Additionally, FIP:6443 traffic is DNAT'd to the CP's private IP so
+# kubeconfigs hitting the FIP land on the k3s API server. Both happen
+# in floating-ip-config.service which runs at every boot.
 
 write_files:
   - path: /etc/rancher/k3s/config.yaml
@@ -33,6 +43,64 @@ write_files:
       node-label:
         - "bliss.io/role=worker"
         - "bliss.io/cluster=${cluster_name}"
+
+  - path: /etc/sysctl.d/60-ip-forward.conf
+    permissions: "0644"
+    owner: root:root
+    content: |
+      # Required so iptables DNAT in floating-ip-config.service can
+      # forward FIP:6443 traffic to the CP across the private network.
+      net.ipv4.ip_forward=1
+
+  - path: /usr/local/bin/floating-ip-config.sh
+    permissions: "0755"
+    owner: root:root
+    content: |
+      #!/bin/bash
+      set -euo pipefail
+
+      # 1. Alias the floating IP on the public interface so the kernel
+      #    accepts traffic to it. Idempotent: existing-address errors
+      #    are swallowed so reboots don't fail the unit.
+      ip addr add ${floating_ip}/32 dev eth0 2>/dev/null || true
+
+      # 2. Enable IPv4 forwarding (also persisted in /etc/sysctl.d/).
+      sysctl -w net.ipv4.ip_forward=1 >/dev/null
+
+      # 3. DNAT incoming TCP/6443 on the FIP to the CP's private IP.
+      #    `-C` checks for existence first so we don't add duplicate
+      #    rules across reboots.
+      iptables -t nat -C PREROUTING -p tcp -d ${floating_ip} --dport 6443 \
+          -j DNAT --to-destination ${cp_ip}:6443 2>/dev/null \
+        || iptables -t nat -A PREROUTING -p tcp -d ${floating_ip} --dport 6443 \
+             -j DNAT --to-destination ${cp_ip}:6443
+
+      # 4. MASQUERADE on the egress side so the CP's reply transits
+      #    back through this worker (otherwise the CP replies directly
+      #    to the client from its own public IP, the connection breaks
+      #    because the client expects replies from the FIP).
+      iptables -t nat -C POSTROUTING -p tcp -d ${cp_ip} --dport 6443 \
+          -j MASQUERADE 2>/dev/null \
+        || iptables -t nat -A POSTROUTING -p tcp -d ${cp_ip} --dport 6443 \
+             -j MASQUERADE
+
+  - path: /etc/systemd/system/floating-ip-config.service
+    permissions: "0644"
+    owner: root:root
+    content: |
+      [Unit]
+      Description=Configure Hetzner floating IP alias and 6443 DNAT
+      After=network-online.target
+      Wants=network-online.target
+      Before=k3s-agent.service
+
+      [Service]
+      Type=oneshot
+      RemainAfterExit=yes
+      ExecStart=/usr/local/bin/floating-ip-config.sh
+
+      [Install]
+      WantedBy=multi-user.target
 
   - path: /usr/local/bin/install-k3s.sh
     permissions: "0755"
@@ -65,4 +133,10 @@ write_files:
       curl -sfL https://get.k3s.io | sh -s - agent
 
 runcmd:
+  # Apply IP forwarding sysctl from /etc/sysctl.d/.
+  - sysctl --system
+  # Enable + start the FIP setup unit so the alias and DNAT rules
+  # are in place before k3s-agent comes up.
+  - systemctl daemon-reload
+  - systemctl enable --now floating-ip-config.service
   - /usr/local/bin/install-k3s.sh
