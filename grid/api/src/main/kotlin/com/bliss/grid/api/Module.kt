@@ -58,6 +58,11 @@ fun Application.module() {
         // local dev need allowance here.
         allowMethod(HttpMethod.Get)
         allowMethod(HttpMethod.Options) // preflight
+        // DELETE /v1/sessions/{sessionId} is the GDPR erasure endpoint
+        // (ADR-0025 §5). Without this allowance the browser preflight
+        // fails and the privacy-notice "Effacer mes données" button
+        // surfaces "Failed to fetch" instead of erasing the session.
+        allowMethod(HttpMethod.Delete)
         allowHeader(HttpHeaders.ContentType)
         allowHeader(HttpHeaders.Accept)
         // POST /v1/puzzles/{puzzleId}/hints sends the player's session as a
