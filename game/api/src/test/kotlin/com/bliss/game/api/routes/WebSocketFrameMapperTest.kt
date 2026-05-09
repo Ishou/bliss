@@ -120,6 +120,14 @@ class WebSocketFrameMapperTest {
     }
 
     @Test
+    fun `lobbyState snapshot carries the lobby code as a first-class field`() {
+        // `code` is always present — the server mints one at create-time and never sends a snapshot without it.
+        val lobby = inProgressLobby(emptyMap())
+        val frame = lobby.toLobbyStateFrame()
+        assertThat(frame.code).isEqualTo(lobby.code.value)
+    }
+
+    @Test
     fun `lobbyState snapshot serializes lockedPositions sorted by row then column`() {
         val locks = setOf(Position(2, 0), Position(0, 1), Position(0, 0))
         val lobby = inProgressLobby(emptyMap(), lockedPositions = locks)

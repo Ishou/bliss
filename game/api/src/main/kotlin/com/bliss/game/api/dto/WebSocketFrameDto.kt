@@ -95,6 +95,10 @@ sealed class ServerToClientFrame {
         val ownerSessionId: String,
         val state: String,
         val gridConfig: GridConfigDto,
+        // Always present — the server mints a code at create-time. Future
+        // server-side mutations (rotation, future renames) propagate via
+        // the same snapshot path as every other lobby field.
+        val code: String,
         val game: GameSessionDto? = null,
     ) : ServerToClientFrame()
 

@@ -192,6 +192,8 @@ const lobbyWsHandler = lobbyWs.addEventListener('connection', ({ client, params 
         ownerSessionId: lobby.ownerSessionId,
         state: lobby.state,
         gridConfig: lobby.gridConfig,
+        // First-class snapshot field — mirrors the wire schema.
+        code: lobby.code,
         game: lobby.game,
       }),
     );

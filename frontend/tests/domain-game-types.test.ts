@@ -67,6 +67,7 @@ describe('application/game GameEvent union', () => {
         ownerSessionId: 's' as SessionId,
         state: 'WAITING',
         gridConfig: { width: 5, height: 5 },
+        code: 'A2B3C4',
         game: null,
       },
       { type: 'playerLeft', sessionId: 's' as SessionId },

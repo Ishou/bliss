@@ -460,14 +460,21 @@ components:
     # ----- Server → client payloads -----
     LobbyStatePayload:
       type: object
-      required: [type, players, ownerSessionId, state, gridConfig, game]
-      description: Snapshot fired on join and on reconnect.
+      required: [type, players, ownerSessionId, state, gridConfig, code, game]
+      description: Snapshot fired on join, on reconnect, and on owner-driven lobby field changes (`setGridConfig`).
       properties:
         type:           { type: string, enum: [lobbyState] }
         players:        { type: array, maxItems: 8, items: { $ref: '#/components/schemas/Player' } }
         ownerSessionId: { $ref: '#/components/schemas/SessionId' }
         state:          { $ref: '#/components/schemas/LobbyLifecycleState' }
         gridConfig:     { $ref: '#/components/schemas/GridConfig' }
+        code:
+          type: string
+          minLength: 6
+          maxLength: 6
+          pattern: '^[A-HJKM-NP-Z2-9]{6}$'
+          description: Six-char Crockford-style join code (ADR-0027). Always present on the snapshot so future server-side mutations propagate to clients via the same channel as every other lobby field.
+          example: A2B3C4
         game:           { $ref: '#/components/schemas/GameSession', nullable: true }
       example:
         type: lobbyState
@@ -475,6 +482,7 @@ components:
         ownerSessionId: 0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6b
         state: IN_PROGRESS
         gridConfig: { width: 7, height: 7 }
+        code: A2B3C4
         game:
           puzzle: { id: 0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6c, title: Petite grille du mardi, language: fr, width: 5, height: 5, cells: [], clues: [], hintsAllowed: 3, createdAt: '2026-04-24T15:30:00Z' }
           entries:

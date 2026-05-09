@@ -108,6 +108,9 @@ export interface LobbyStateEvent {
   readonly ownerSessionId: SessionId;
   readonly state: LobbyLifecycleState;
   readonly gridConfig: GridConfig;
+  // Always present — first-class snapshot field so future server-side
+  // mutations propagate via the same channel as every other lobby field.
+  readonly code: string;
   readonly game: GameSession | null;
 }
 
