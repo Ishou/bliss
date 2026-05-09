@@ -9,7 +9,9 @@ Proposed
 The launch-readiness rollout introduces three admin URLs:
 
 - `errors.wordsparrow.io` and `dashboard.wordsparrow.io` — both alias the
-  same SigNoz UI per ADR-0027 (one Service, two Ingress hosts).
+  same SigNoz UI (one Service, two Ingress hosts with different routing
+  rules; the SigNoz ingress architecture will be formally documented in
+  ADR-0027, which is currently in-flight).
 - `analytics.wordsparrow.io` — existing Matomo deployment, currently public,
   needs gating before public traffic arrives.
 
@@ -145,7 +147,7 @@ addition (e.g. when there are multiple Secrets that need this treatment).
 | **Spoofing** | Attacker guesses or phishes the shared password | Medium | 32-char random password (≥160 bits entropy); rotated annually via the same bootstrap script; never emailed, only in password manager. |
 | **Tampering** | Man-in-the-middle modifies traffic between operator and dashboard | Low | TLS via cert-manager + Let's Encrypt is already mandatory in `infra/platform/`; ingress-nginx serves only HTTPS. |
 | **Repudiation** | "Who logged in at 03:00?" | Acceptable | No per-user audit trail. Acceptable in a single-user environment; reconsider when a second admin joins. |
-| **Information Disclosure** | Attacker with the password sees error messages, request URLs, traces — which can include PII | High → mitigated to Medium | PII scrubbing happens at the OTel collector layer (ADR-0027 §8): drop `?email=` / `?token=` / `?session=` query params; redact `Authorization` and `Cookie` request headers; no request bodies captured. Matomo is already cookieless and IP-anonymised (ADR-0025). |
+| **Information Disclosure** | Attacker with the password sees error messages, request URLs, traces — which can include PII | High → mitigated to Medium | PII scrubbing is applied at the OTel collector layer: `?email=`, `?token=`, and `?session=` query params are dropped; `Authorization` and `Cookie` request headers are redacted; no request bodies are captured. (These rules will be formally codified in ADR-0027, currently in-flight; this inline text will be superseded once ADR-0027 merges.) Matomo is already cookieless and IP-anonymised (ADR-0025). |
 | **Denial of Service** | Brute force the password endpoint | Low | Existing per-IP rate limit on the ingress (10 RPS, 5× burst — see `grid/api/deploy/chart/values-prod.yaml:25`) extends to admin Ingresses. With 160-bit entropy and rate-limiting at 10 RPS, brute force is not feasible. No fail2ban-style auto-block today; tracked as a future hardening item. |
 | **Elevation of Privilege** | Attacker leverages dashboard access to write back to the cluster | None | All three URLs are read-only observability surfaces. SigNoz alerts can trigger SMTP send, but the SMTP secret is held by SigNoz itself, not exposed via the UI. No API tokens with cluster write permission are visible from these UIs. |
 
