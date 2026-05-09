@@ -28,7 +28,7 @@ The user's framing during planning:
 - *"Already-joined players should not get kicked."* — preserve the live
   game / waiting room as members experienced it.
 
-ADR-0001 §"Threat Modeling Before Building" requires a model for
+The manifesto's *Threat Modeling Before Building* requires a model for
 authn / authz changes. ADR-0027's threat model is updated by reference:
 this ADR adds a *mitigation* for one of its residual risks rather than
 introducing a new attack surface.
