@@ -4,6 +4,7 @@ import com.bliss.game.application.usecases.CreateLobbyUseCase
 import com.bliss.game.application.usecases.JoinLobbyUseCase
 import com.bliss.game.application.usecases.LeaveLobbyUseCase
 import com.bliss.game.application.usecases.RenameSelfUseCase
+import com.bliss.game.application.usecases.RotateLobbyCodeUseCase
 import com.bliss.game.application.usecases.SetGridConfigUseCase
 import com.bliss.game.application.usecases.StartGameUseCase
 import com.bliss.game.application.usecases.UpdateCellUseCase
@@ -21,4 +22,5 @@ data class LobbyUseCases(
     val startGame: StartGameUseCase,
     val updateCell: UpdateCellUseCase,
     val leaveLobby: LeaveLobbyUseCase,
+    val rotateCode: RotateLobbyCodeUseCase,
 )

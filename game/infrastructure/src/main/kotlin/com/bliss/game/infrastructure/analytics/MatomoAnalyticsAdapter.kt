@@ -171,5 +171,6 @@ internal object WireMapper {
                 )
             is AnalyticsEvent.PlayerRenamed -> Wire(action = "player_renamed:v1", name = null)
             is AnalyticsEvent.LobbyLeft -> Wire(action = "lobby_left:v1", name = null)
+            is AnalyticsEvent.LobbyCodeRotated -> Wire(action = "lobby_code_rotated:v1", name = null)
         }
 }

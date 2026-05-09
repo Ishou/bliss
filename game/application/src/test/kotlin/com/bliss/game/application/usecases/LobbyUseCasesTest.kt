@@ -8,6 +8,7 @@ import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotEqualTo
 import assertk.assertions.isNotNull
 import assertk.assertions.isNull
+import assertk.assertions.matches
 import com.bliss.game.application.ports.LobbyEvent
 import com.bliss.game.application.usecases.Samples.aPos
 import com.bliss.game.application.usecases.Samples.alice
@@ -199,6 +200,82 @@ class LobbyUseCasesTest {
             val out = h.joinWithCode(lobby.id, sessionB, bob, code = "WRONG2").requireSuccess()
             assertThat(out.value.players[sessionB]).isNotNull()
             assertThat(out.events).hasSize(0)
+        }
+
+    // ADR-0029 — owner-only rotation. Tests verify the owner gate, the
+    // in-place code update, and that the OLD code stops working.
+
+    @Test
+    fun `RotateLobbyCode mints a fresh code and emits CodeRotated`() =
+        runTest {
+            val h = harness()
+            val lobby = h.create(sessionA, alice).value
+            val before = lobby.code.value
+            val out = h.rotate(lobby.id, sessionA).requireSuccess()
+            assertThat(out.value.code.value).isNotEqualTo(before)
+            assertThat(out.value.code.value).matches(Regex("^[A-HJKM-NP-Z2-9]{6}$"))
+            assertThat(out.events).containsExactly(LobbyEvent.CodeRotated(out.value.code))
+        }
+
+    @Test
+    fun `RotateLobbyCode rejects non-owner with NotOwner and leaves code untouched`() =
+        runTest {
+            val h = harness()
+            val lobby = h.create(sessionA, alice).value
+            h.join(lobby.id, sessionB, bob).requireSuccess()
+            val before =
+                h.repo
+                    .findById(lobby.id)!!
+                    .code.value
+            val out = h.rotate(lobby.id, sessionB)
+            assertThat((out as UseCaseOutcome.Failure).error).isEqualTo(UseCaseError.NotOwner)
+            assertThat(
+                h.repo
+                    .findById(lobby.id)!!
+                    .code.value,
+            ).isEqualTo(before)
+        }
+
+    @Test
+    fun `RotateLobbyCode returns LobbyNotFound when missing`() =
+        runTest {
+            val h = harness()
+            val ghost = LobbyId("zzzzzzzz")
+            val out = h.rotate(ghost, sessionA)
+            assertThat((out as UseCaseOutcome.Failure).error).isEqualTo(UseCaseError.LobbyNotFound)
+        }
+
+    @Test
+    fun `RotateLobbyCode keeps existing players (reconnect-bypass invariant unchanged)`() =
+        runTest {
+            val h = harness()
+            val lobby = h.create(sessionA, alice).value
+            h.join(lobby.id, sessionB, bob).requireSuccess()
+            h.rotate(lobby.id, sessionA).requireSuccess()
+            val state = h.repo.findById(lobby.id)!!
+            assertThat(state.players.keys).isEqualTo(setOf(sessionA, sessionB))
+            // sessionB is already a member; reconnect bypasses the code check.
+            val reconnect = h.joinWithCode(lobby.id, sessionB, bob, code = null).requireSuccess()
+            assertThat(reconnect.value.players[sessionB]).isNotNull()
+            assertThat(reconnect.events).hasSize(0)
+        }
+
+    @Test
+    fun `JoinLobby with the old code fails after rotation`() =
+        runTest {
+            val h = harness()
+            val lobby = h.create(sessionA, alice).value
+            val oldCode = lobby.code.value
+            h.rotate(lobby.id, sessionA).requireSuccess()
+            val rejected = h.joinWithCode(lobby.id, sessionB, bob, code = oldCode)
+            assertThat((rejected as UseCaseOutcome.Failure).error).isEqualTo(UseCaseError.WrongCode)
+            // The post-rotation code DOES admit a fresh joiner.
+            val newCode =
+                h.repo
+                    .findById(lobby.id)!!
+                    .code.value
+            val admitted = h.joinWithCode(lobby.id, sessionB, bob, code = newCode).requireSuccess()
+            assertThat(admitted.value.players.keys).isEqualTo(setOf(sessionA, sessionB))
         }
 
     @Test
@@ -422,6 +499,7 @@ internal class Harness(
     val start = StartGameUseCase(repo, provider, clock)
     val update = UpdateCellUseCase(repo, clock, wordValidator)
     val leave = LeaveLobbyUseCase(repo, clock)
+    val rotateCode = RotateLobbyCodeUseCase(repo, clock)
 
     suspend fun create(
         s: SessionId,
@@ -480,6 +558,11 @@ internal class Harness(
         l: LobbyId,
         s: SessionId,
     ) = leave.invoke(l, s)
+
+    suspend fun rotate(
+        l: LobbyId,
+        s: SessionId,
+    ) = rotateCode.invoke(l, s)
 }
 
 internal fun <T> UseCaseOutcome<T>.requireSuccess(): UseCaseResult<T> =

@@ -4,6 +4,7 @@ import assertk.assertThat
 import assertk.assertions.containsExactly
 import assertk.assertions.isEqualTo
 import assertk.assertions.isNotNull
+import assertk.assertions.isNull
 import com.bliss.game.api.dto.ServerToClientFrame
 import com.bliss.game.application.ports.LobbyEvent
 import com.bliss.game.domain.CellEntry
@@ -125,6 +126,13 @@ class WebSocketFrameMapperTest {
         val lobby = inProgressLobby(emptyMap())
         val frame = lobby.toLobbyStateFrame()
         assertThat(frame.code).isEqualTo(lobby.code.value)
+    }
+
+    @Test
+    fun `LobbyEvent CodeRotated maps to no dedicated frame (snapshot path)`() {
+        // Wire mapping mirrors GridConfigChanged: route re-broadcasts a refreshed lobbyState.
+        val frame = LobbyEvent.CodeRotated(LobbyCode.generate()).toFrameOrNull()
+        assertThat(frame).isNull()
     }
 
     @Test

@@ -11,6 +11,7 @@ import com.bliss.game.application.usecases.LeaveLobbyUseCase
 import com.bliss.game.application.usecases.LobbyGarbageCollector
 import com.bliss.game.application.usecases.PresenceAggregator
 import com.bliss.game.application.usecases.RenameSelfUseCase
+import com.bliss.game.application.usecases.RotateLobbyCodeUseCase
 import com.bliss.game.application.usecases.SetGridConfigUseCase
 import com.bliss.game.application.usecases.StartGameUseCase
 import com.bliss.game.application.usecases.UpdateCellUseCase
@@ -209,6 +210,7 @@ fun Application.module() {
             startGame = StartGameUseCase(lobbyRepository, puzzleProvider, SystemClock, analyticsEventSink = analyticsEventSink),
             updateCell = UpdateCellUseCase(lobbyRepository, SystemClock, wordValidator, analyticsEventSink = analyticsEventSink),
             leaveLobby = LeaveLobbyUseCase(lobbyRepository, SystemClock, analyticsEventSink = analyticsEventSink),
+            rotateCode = RotateLobbyCodeUseCase(lobbyRepository, SystemClock, analyticsEventSink = analyticsEventSink),
         )
     val sessionManager = SessionManager()
 

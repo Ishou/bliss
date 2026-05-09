@@ -5,6 +5,7 @@ import com.bliss.game.domain.GameClueDirection
 import com.bliss.game.domain.GameSession
 import com.bliss.game.domain.GridConfig
 import com.bliss.game.domain.Letter
+import com.bliss.game.domain.LobbyCode
 import com.bliss.game.domain.Player
 import com.bliss.game.domain.Position
 import com.bliss.game.domain.Pseudonym
@@ -37,6 +38,11 @@ sealed interface LobbyEvent {
      */
     data class GridConfigChanged(
         val config: GridConfig,
+    ) : LobbyEvent
+
+    /** Owner rotated the join code (ADR-0029). Wire mapping mirrors [GridConfigChanged]: the route re-broadcasts the [LobbyState] snapshot. */
+    data class CodeRotated(
+        val code: LobbyCode,
     ) : LobbyEvent
 
     data class GameStarted(

@@ -42,4 +42,7 @@ sealed interface AnalyticsEvent {
 
     /** A player ran the leave use case (graceful exit, not a disconnect). */
     data object LobbyLeft : AnalyticsEvent
+
+    /** Owner rotated the lobby join code (ADR-0029). */
+    data object LobbyCodeRotated : AnalyticsEvent
 }
