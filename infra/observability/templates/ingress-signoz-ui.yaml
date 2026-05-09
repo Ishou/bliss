@@ -92,7 +92,12 @@ metadata:
     #   info to the upstream so SigNoz can log who triggered an
     #   action (X-Auth-Request-User / X-Auth-Request-Email).
     nginx.ingress.kubernetes.io/auth-url: "http://oauth2-proxy.{{ $.Release.Namespace }}.svc.cluster.local:4180/oauth2/auth"
-    nginx.ingress.kubernetes.io/auth-signin: "https://{{ $host }}/oauth2/start?rd=$escaped_request_uri"
+    # `/oauth2/sign_in` is where the htpasswd form lives in v7;
+    # `/oauth2/start` would still try to launch the OIDC flow
+    # (redirect to the dummy keycloak issuer → 500). The
+    # `rd=` query param tells oauth2-proxy where to send the
+    # browser after a successful login.
+    nginx.ingress.kubernetes.io/auth-signin: "https://{{ $host }}/oauth2/sign_in?rd=$escaped_request_uri"
     nginx.ingress.kubernetes.io/auth-response-headers: "X-Auth-Request-User,X-Auth-Request-Email,X-Auth-Request-Preferred-Username"
     {{- else }}
     # Pure basic auth fallback when oauth2-proxy is disabled. Works
