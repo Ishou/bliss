@@ -44,8 +44,6 @@ describe('PuzzleToolbar', () => {
 
   it('renders a single metadata span when given a plain string (no duplicate text node)', () => {
     render(<PuzzleToolbar metadata="Mots fléchés" />);
-    // String metadata collapses to one node so DOM-text queries elsewhere
-    // (e.g. lobby-route smoke checks looking for "joueur") stay unique.
     expect(screen.getAllByText('Mots fléchés')).toHaveLength(1);
   });
 });
