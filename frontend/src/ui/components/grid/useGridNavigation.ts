@@ -105,6 +105,17 @@ const posOf = (el: HTMLElement): Position | null => {
 // ASCII A–Z plus French diacritics the puzzle ships with.
 const LETTER_RE = /^[a-zA-ZàâçéèêëîïôûùüÿñæœÀÂÇÉÈÊËÎÏÔÛÙÜŸÑÆŒ]$/;
 
+// Display-form normalization for a single accepted keystroke. Strips
+// combining diacritics (NFD then drops U+0300–U+036F) and uppercases
+// — so 'é' renders as 'E', 'ç' as 'C', etc. Mots fléchés grids are
+// stored unaccented (matches the wire form `normalizeAnswerLetter`
+// produces for validation), and players type with their native AZERTY
+// keyboard which emits accented glyphs. Ligatures (Æ/Œ) don't decompose
+// under NFD and are preserved as-is — that's a pre-existing latent
+// case the validation layer already rejects, kept untouched here.
+const stripDiacritics = (letter: string): string =>
+  letter.toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+
 interface ClueLookup {
   cellAt: (r: number, c: number) => Cell | null;
   cluesAt: (r: number, c: number) => readonly Clue[];
@@ -578,7 +589,7 @@ export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOpt
       if (k.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey && LETTER_RE.test(k)) {
         event.preventDefault();
         const el = refs.current.get(key(f));
-        const letter = k.toUpperCase();
+        const letter = stripDiacritics(k);
         if (el) {
           // Validated cells render with `readOnly` (see LetterCellView)
           // — typing should not overwrite a locked-in correct letter.
@@ -680,17 +691,34 @@ export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOpt
       // readOnly via composition events — mirror the keydown path's
       // guard so a typed letter never lands on a locked cell.
       if (target.readOnly) return;
-      // insertText = typed character; backspace arrives on keydown with key==="Backspace" reliably.
+      // Non-insert input events split two ways:
+      //   1. Paste / autocorrect — multi-char or non-letter content lands
+      //      in `target.value`. Blank it and notify (always — even if the
+      //      mirror was already empty, consumers may need to know a paste
+      //      was rejected because server-side state could differ).
+      //   2. Mobile erase — Gboard / iOS fire `deleteContentBackward` here
+      //      when erasing a filled cell. The browser already cleared the
+      //      DOM by the time we run, so we can't diff `target.value`.
+      //      Reconcile against the cell-values mirror instead.
+      // Desktop Backspace doesn't reach here; handleKeyDown's
+      // `case 'Backspace'` preventDefaults and keeps the mirror in sync
+      // itself. The empty-cell mobile case still arrives via keydown
+      // (browser has nothing to delete natively, so it falls through).
       if (inputEvent.inputType !== 'insertText') {
-        // paste/autocorrect: blank if multi-char or non-letter so cells stay clean.
+        const p = posOf(target);
         if (target.value.length > 1 || (target.value && !LETTER_RE.test(target.value))) {
           target.value = '';
-          const p = posOf(target);
           if (p) {
             cellValuesRef.current.delete(key(p));
             bumpEntries();
             onCellChangeRef.current?.(p.row, p.col, null);
           }
+          return;
+        }
+        if (target.value === '' && p && cellValuesRef.current.has(key(p))) {
+          cellValuesRef.current.delete(key(p));
+          bumpEntries();
+          onCellChangeRef.current?.(p.row, p.col, null);
         }
         return;
       }
@@ -708,7 +736,7 @@ export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOpt
         }
         return;
       }
-      const letter = data.toUpperCase();
+      const letter = stripDiacritics(data);
       target.value = letter;
       const { focused: f, direction: dir } = stateRef.current;
       if (!f) return;
