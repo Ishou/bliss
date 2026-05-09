@@ -242,6 +242,18 @@ class PuzzleRouteTest {
         }
 
     @Test
+    fun `daily endpoint omits gridNumber for a pre-launch date`() =
+        testApplication {
+            application { module() }
+
+            val response = client.get("/v1/puzzles/daily?date=2025-12-31")
+
+            assertThat(response.status).isEqualTo(HttpStatusCode.OK)
+            val json = Json.parseToJsonElement(response.bodyAsText()).jsonObject
+            assertThat(json.containsKey("gridNumber")).isEqualTo(false)
+        }
+
+    @Test
     fun `LetterCells in the response carry no canonical letter`() =
         testApplication {
             application { module() }
