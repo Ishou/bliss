@@ -167,6 +167,8 @@ const renderLobby = (overrides: RenderLobbyOverrides) => {
       soloEntriesStore: {
         load: () => [],
         save: () => {},
+        loadLockedCells: () => [],
+        lockCell: () => {},
         clearForPuzzle: () => {},
       },
       tourSeenStore: {

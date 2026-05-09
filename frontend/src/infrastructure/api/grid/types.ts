@@ -36,23 +36,28 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Spend a hint to check whether a word exists in the corpus.
-         * @description Per-puzzle hint mechanism. The client submits a candidate word; the
-         *     server reports whether it is a known lemma in the French corpus and
-         *     decrements the puzzle's hint budget. Each answered lookup (200 or
-         *     400/404 — anything that consumes a server-side dictionary check)
-         *     costs one hint; once the budget is exhausted the server responds
-         *     with 429 and the client UI SHOULD disable the affordance.
+         * Spend a hint to reveal the canonical letter at a cell.
+         * @description Per-puzzle hint mechanism. The client submits a `(row, column)`
+         *     coordinate inside the puzzle; the server returns the canonical
+         *     solution letter at that cell and decrements the puzzle's hint
+         *     budget. Each answered call costs one hint; once the budget is
+         *     exhausted the server responds with 429 and the client UI SHOULD
+         *     disable the affordance.
          *
-         *     Framing as "hint" rather than free corpus lookup is intentional: it
-         *     caps unauthenticated clients to `Puzzle.hintsAllowed` calls per
-         *     puzzle and prevents the endpoint being used as a dictionary scrape.
+         *     One letter per call, by design: `Puzzle.hintsAllowed` caps total
+         *     reveals so unauthenticated clients cannot drain a grid in a single
+         *     request. Brute-forcing the full solution still requires
+         *     `hintsAllowed` calls and is bounded by edge rate limiting.
+         *
          *     Player identity on the wire is the `X-Session-Id` header (UUID v7,
          *     same convention as `game/api`'s `SessionId`). The server keeps a
          *     per-(puzzle, session) hint counter; absent or malformed values
-         *     produce a 400 `invalid-session-id` response.
+         *     produce a 400 `invalid-session-id` response. Coordinates that
+         *     point at a non-letter cell (definition or block) or that fall
+         *     outside the puzzle bounds produce a 400 `invalid-coord` and do
+         *     NOT decrement the budget.
          */
-        post: operations["requestWordHint"];
+        post: operations["revealCellHint"];
         delete?: never;
         options?: never;
         head?: never;
@@ -290,14 +295,25 @@ export interface components {
              */
             text: string;
         };
-        /** @description Request body for `POST /v1/puzzles/{puzzleId}/hints`. */
-        WordHintRequest: {
+        /**
+         * @description Request body for `POST /v1/puzzles/{puzzleId}/hints`. Identifies
+         *     the cell whose canonical letter the caller wants to reveal.
+         *     `(row, column)` MUST point at a `letter`-kind cell within the
+         *     puzzle bounds; pointing at a definition or block cell, or out of
+         *     bounds, is a 400 `invalid-coord` and does NOT decrement the
+         *     budget.
+         */
+        RevealCellHintRequest: {
             /**
-             * @description Candidate French word. Server normalizes case and Unicode (NFC)
-             *     before lookup; clients SHOULD send lowercase.
-             * @example forêt
+             * @description Zero-indexed row of the cell to reveal.
+             * @example 3
              */
-            word: string;
+            row: number;
+            /**
+             * @description Zero-indexed column of the cell to reveal.
+             * @example 5
+             */
+            column: number;
         };
         /**
          * @description Response body for `DELETE /v1/sessions/{sessionId}` on a 200.
@@ -313,21 +329,28 @@ export interface components {
             deleted: number;
         };
         /**
-         * @description Response body for `POST /v1/puzzles/{puzzleId}/hints` on a 200. The
-         *     server-normalized form is echoed so the client can highlight the
-         *     match it actually evaluated.
+         * @description Response body for `POST /v1/puzzles/{puzzleId}/hints` on a 200.
+         *     Echoes the requested coordinate alongside the canonical letter so
+         *     the client can correlate the response with the cell to update
+         *     even if multiple reveals are in flight.
          */
-        WordHintResult: {
+        RevealCellHintResult: {
             /**
-             * @description Server-normalized form (NFC, lowercase).
-             * @example forêt
+             * @description Echo of the request's `row`.
+             * @example 3
              */
-            word: string;
+            row: number;
             /**
-             * @description True iff the word is a known lemma in the corpus.
-             * @example true
+             * @description Echo of the request's `column`.
+             * @example 5
              */
-            exists: boolean;
+            column: number;
+            /**
+             * @description Canonical solution letter at `(row, column)`, single uppercase
+             *     A-Z code point. Diacritics are normalized server-side.
+             * @example P
+             */
+            letter: string;
             /**
              * @description Hints left after this call. `0` means the next call will return
              *     a 429 with `type` `https://bliss.example/errors/hint-budget-exhausted`.
@@ -553,7 +576,7 @@ export interface operations {
             };
         };
     };
-    requestWordHint: {
+    revealCellHint: {
         parameters: {
             query?: never;
             header: {
@@ -572,20 +595,21 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["WordHintRequest"];
+                "application/json": components["schemas"]["RevealCellHintRequest"];
             };
         };
         responses: {
             /**
-             * @description Hint consumed. Body reports whether the word exists in the
-             *     corpus and the remaining budget for this `(puzzle, player)`.
+             * @description Hint consumed. Body reports the canonical letter at the
+             *     requested cell and the remaining budget for this
+             *     `(puzzle, player)`.
              */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["WordHintResult"];
+                    "application/json": components["schemas"]["RevealCellHintResult"];
                 };
             };
             /**
@@ -596,8 +620,9 @@ export interface operations {
              *       (`type` = `https://bliss.example/errors/invalid-puzzle-id`).
              *     - Request body missing or unparseable
              *       (`type` = `https://bliss.example/errors/invalid-request-body`).
-             *     - `word` violates length or character class
-             *       (`type` = `https://bliss.example/errors/invalid-word`).
+             *     - `(row, column)` is out of bounds or points at a non-letter
+             *       cell (`type` = `https://bliss.example/errors/invalid-coord`).
+             *       The hint budget is NOT decremented in this case.
              */
             400: {
                 headers: {

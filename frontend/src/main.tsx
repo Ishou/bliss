@@ -26,7 +26,9 @@ import {
   clearAllSoloEntries,
   clearSoloEntriesForPuzzle,
   loadSoloEntries,
+  loadSoloLockedCells,
   saveSoloLetter,
+  saveSoloLockedCell,
 } from '@/infrastructure/session/localStorageSolo';
 import {
   clearTourSeen,
@@ -130,6 +132,8 @@ enableMocks()
     const soloEntriesStore: SoloEntriesStore = {
       load: loadSoloEntries,
       save: saveSoloLetter,
+      loadLockedCells: loadSoloLockedCells,
+      lockCell: saveSoloLockedCell,
       clearForPuzzle: clearSoloEntriesForPuzzle,
     };
 

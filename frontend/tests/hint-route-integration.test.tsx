@@ -7,20 +7,20 @@ import { Route as RootRoute } from '@/ui/routes/__root';
 import { Route as IndexRoute } from '@/ui/routes/index';
 
 // Integration regression for the hint feature. Renders the real Index
-// route (Grid + HintControl wired through the route's `getCurrentWord`
+// route (Grid + HintControl wired through the route's `getFocusedCell`
 // seam) and exercises the realistic blur→click sequence a real browser
 // produces when the user has a letter cell focused and clicks the hint
 // button.
 //
 // Why this test exists: the unit tests (`hint-control.test.tsx`,
-// `use-hint-request.test.ts`) stub `getCurrentWord` directly, so they
+// `use-hint-request.test.ts`) stub `getFocusedCell` directly, so they
 // never exercise the route's `activeFocusRef` plumbing. In production
 // the cell `<input onBlur>` sets `focused = null`, the focus-change
 // `useEffect` flushes between the blur and the click (React 18's
-// between-discrete-event passive-effect flush), and `getCurrentWord`
-// returns `null` — the hint silently no-ops. This test fails on the
-// pre-fix wiring and passes once `handleLocalFocusChange` keeps the
-// last non-null focus.
+// between-discrete-event passive-effect flush), and `getFocusedCell`
+// would return `null` — the hint silently no-ops. This test fails on
+// the pre-fix wiring and passes once `handleLocalFocusChange` keeps
+// the last non-null focus.
 
 // 1×3 row: definition at (0,0) + letter cells at (0,1) and (0,2). The
 // across word starts at (0,1) so clicking (0,1) sets direction=across
@@ -67,6 +67,8 @@ const renderHomeRoute = (solver: PuzzleSolver) => {
       soloEntriesStore: {
         load: () => [],
         save: () => {},
+        loadLockedCells: () => [],
+        lockCell: () => {},
         clearForPuzzle: () => {},
       },
       tourSeenStore: {
@@ -87,10 +89,11 @@ const typeChar = (el: HTMLInputElement, ch: string) =>
   fireEvent.keyDown(el, { key: ch });
 
 describe('Index route — hint button integration', () => {
-  it('sends the typed word to the solver after a real blur→click sequence', async () => {
+  it('sends the focused cell coordinates to the solver after a real blur→click sequence', async () => {
     const requestHint = vi.fn().mockResolvedValue({
-      word: 'ab',
-      exists: true,
+      row: 0,
+      column: 2,
+      letter: 'B',
       hintsRemaining: 2,
     });
     const solver: PuzzleSolver = {
@@ -102,23 +105,21 @@ describe('Index route — hint button integration', () => {
     await screen.findByRole('grid');
 
     // Focus the first letter cell (= start of the across word) and type
-    // the two letters. typeChar advances focus along the word direction,
-    // so after 'B' the focus lands on the (now-out-of-range) end of the
-    // word, but the second cell input retains its 'B' value.
+    // a letter; the cell handler advances focus to (0, 2). That cell is
+    // the one the hint should target after the blur→click race below.
     const first = inputAt(0, 1)!;
     click(first);
     typeChar(first, 'a');
-    const second = inputAt(0, 2)!;
-    typeChar(second, 'b');
 
     // Real browsers fire `blur` on the focused cell when the user
     // mousedowns the toolbar button, and React 18 flushes pending
     // passive effects between the blur and the click — so the
-    // focus-change `useEffect` writes `null` into `activeFocusRef`
+    // focus-change `useEffect` would write `null` into `activeFocusRef`
     // before `onClick` reads it. jsdom doesn't move focus on
     // `fireEvent.click`, so we simulate the sequence explicitly: blur
     // the cell inside `act()` (forcing the same passive-effect flush
     // the real browser does between events), then click the button.
+    const second = inputAt(0, 2)!;
     act(() => {
       second.blur();
     });
@@ -129,8 +130,10 @@ describe('Index route — hint button integration', () => {
     });
 
     expect(requestHint).toHaveBeenCalledTimes(1);
-    expect(requestHint).toHaveBeenCalledWith(puzzle.id, 'ab');
-    // The success path also writes the new hintsRemaining into the badge.
+    expect(requestHint).toHaveBeenCalledWith(puzzle.id, 0, 2);
+    // The success path writes the new hintsRemaining into the badge
+    // and writes the revealed letter into the matching <input>.
     await screen.findByLabelText('2 sur 3 indices restants');
+    expect(inputAt(0, 2)!.value).toBe('B');
   });
 });

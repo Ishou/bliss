@@ -77,6 +77,8 @@ const renderHome = (overrides: { lobbyClient?: Partial<LobbyClient> } = {}) => {
       soloEntriesStore: {
         load: () => [],
         save: () => {},
+        loadLockedCells: () => [],
+        lockCell: () => {},
         clearForPuzzle: () => {},
       },
       tourSeenStore: {

@@ -40,7 +40,7 @@ import { gameHandlers, gameWsHandler } from './handlers/game';
 type Puzzle = components['schemas']['Puzzle'];
 type Position = components['schemas']['Position'];
 type ValidatePuzzleRequest = components['schemas']['ValidatePuzzleRequest'];
-type WordHintRequest = components['schemas']['WordHintRequest'];
+type RevealCellHintRequest = components['schemas']['RevealCellHintRequest'];
 
 // Cast through `unknown` because Vite's JSON import returns the
 // inferred literal type; the cast is structurally validated at runtime
@@ -75,11 +75,11 @@ const HINT_PROBLEM_BUDGET = {
   status: 429,
   detail: 'hintsRemaining: 0',
 };
-const HINT_PROBLEM_INVALID_WORD = {
-  type: 'https://bliss.example/errors/invalid-word',
-  title: 'Mot invalide',
+const HINT_PROBLEM_INVALID_COORD = {
+  type: 'https://bliss.example/errors/invalid-coord',
+  title: 'Coordonnées invalides',
   status: 400,
-  detail: 'word must be 2–50 letters',
+  detail: 'coordinate is out of bounds or does not point at a letter cell',
 };
 
 /**
@@ -97,19 +97,19 @@ const gridHandlers = [
     return HttpResponse.json({ ...puzzleFixture, id: puzzleId });
   }),
 
-  // POST /v1/puzzles/{id}/hints — preview parity. Decrement a per-puzzle
+  // POST /v1/puzzles/{id}/hints — preview parity. Looks up the canonical
+  // letter at (row, column) in the fixture, decrements a per-puzzle
   // counter seeded from `puzzleFixture.hintsAllowed`; once it hits zero
   // the next call returns a 429 problem+json, mirroring the real
-  // server's `hint-budget-exhausted` shape. The `exists` heuristic
-  // ("at least 3 letters") is intentionally crude — it is enough for a
-  // reviewer to see the affordance flip between ✓/✗/exhausted without
-  // shipping a French corpus into the mock bundle.
+  // server's `hint-budget-exhausted` shape. Coordinates that don't map
+  // to a fixture letter cell return a 400 `invalid-coord` and the
+  // budget is left untouched.
   http.post('*/v1/puzzles/:puzzleId/hints', async ({ params, request }) => {
     const puzzleId = String(params.puzzleId);
-    const body = (await request.json()) as WordHintRequest;
-    const word = body.word ?? '';
-    if (word.length < 2 || word.length > 50) {
-      return HttpResponse.json(HINT_PROBLEM_INVALID_WORD, {
+    const body = (await request.json()) as RevealCellHintRequest;
+    const expected = fixtureLetterByPosition.get(`${body.row},${body.column}`);
+    if (!expected) {
+      return HttpResponse.json(HINT_PROBLEM_INVALID_COORD, {
         status: 400,
         headers: { 'content-type': 'application/problem+json' },
       });
@@ -125,8 +125,9 @@ const gridHandlers = [
     const next = remaining - 1;
     hintsRemainingByPuzzle.set(puzzleId, next);
     return HttpResponse.json({
-      word: word.toLowerCase().normalize('NFC'),
-      exists: word.trim().length >= 3,
+      row: body.row,
+      column: body.column,
+      letter: expected,
       hintsRemaining: next,
     });
   }),

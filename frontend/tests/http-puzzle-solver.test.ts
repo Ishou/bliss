@@ -68,9 +68,9 @@ describe('HttpPuzzleSolver — validate', () => {
 });
 
 describe('HttpPuzzleSolver — requestHint', () => {
-  it('POSTs the word to /v1/puzzles/{id}/hints and unwraps the result', async () => {
+  it('POSTs the (row, column) to /v1/puzzles/{id}/hints and unwraps the letter', async () => {
     const fetchSpy = vi.fn().mockResolvedValue(
-      json({ word: 'forêt', exists: true, hintsRemaining: 2 }),
+      json({ row: 3, column: 5, letter: 'P', hintsRemaining: 2 }),
     );
     const solver = createHttpPuzzleSolver({
       sessionId: '019186c5-d702-7b3a-a3d4-b40dc2d6d871',
@@ -78,12 +78,15 @@ describe('HttpPuzzleSolver — requestHint', () => {
       fetch: fetchSpy,
     });
 
-    const result = await solver.requestHint(PUZZLE_ID, 'forêt');
+    const result = await solver.requestHint(PUZZLE_ID, 3, 5);
 
     const call = fetchSpy.mock.calls[0][0];
     const url = call instanceof Request ? call.url : String(call);
+    const init = call instanceof Request ? call : fetchSpy.mock.calls[0][1];
     expect(url).toBe(`https://api.example.test/v1/puzzles/${PUZZLE_ID}/hints`);
-    expect(result).toEqual({ word: 'forêt', exists: true, hintsRemaining: 2 });
+    const body = await (init as Request).clone().text();
+    expect(JSON.parse(body)).toEqual({ row: 3, column: 5 });
+    expect(result).toEqual({ row: 3, column: 5, letter: 'P', hintsRemaining: 2 });
   });
 
   it('throws HintRequestError(budget-exhausted) on 429', async () => {
@@ -104,7 +107,7 @@ describe('HttpPuzzleSolver — requestHint', () => {
       ),
     });
     try {
-      await solver.requestHint(PUZZLE_ID, 'forêt');
+      await solver.requestHint(PUZZLE_ID, 3, 5);
       expect.fail('expected HintRequestError to throw');
     } catch (err) {
       expect(err).toBeInstanceOf(HintRequestError);
@@ -114,17 +117,17 @@ describe('HttpPuzzleSolver — requestHint', () => {
     }
   });
 
-  it('throws HintRequestError(invalid-word) on 400', async () => {
+  it('throws HintRequestError(invalid-coord) on 400', async () => {
     const solver = createHttpPuzzleSolver({
       sessionId: '019186c5-d702-7b3a-a3d4-b40dc2d6d871',
       baseUrl: 'https://api.example.test',
       fetch: vi.fn().mockResolvedValue(
         json(
           {
-            type: 'https://bliss.example/errors/invalid-word',
-            title: 'Mot invalide',
+            type: 'https://bliss.example/errors/invalid-coord',
+            title: 'Coordonnées invalides',
             status: 400,
-            detail: 'word must be 2–50 letters',
+            detail: '(99, 99) out of grid bounds',
           },
           400,
           'application/problem+json',
@@ -132,11 +135,11 @@ describe('HttpPuzzleSolver — requestHint', () => {
       ),
     });
     try {
-      await solver.requestHint(PUZZLE_ID, 'a');
+      await solver.requestHint(PUZZLE_ID, 99, 99);
       expect.fail('expected HintRequestError to throw');
     } catch (err) {
       expect(err).toBeInstanceOf(HintRequestError);
-      expect((err as HintRequestError).kind).toBe('invalid-word');
+      expect((err as HintRequestError).kind).toBe('invalid-coord');
     }
   });
 
@@ -153,7 +156,7 @@ describe('HttpPuzzleSolver — requestHint', () => {
       ),
     });
     try {
-      await solver.requestHint(PUZZLE_ID, 'forêt');
+      await solver.requestHint(PUZZLE_ID, 3, 5);
       expect.fail('expected HintRequestError to throw');
     } catch (err) {
       expect(err).toBeInstanceOf(HintRequestError);
