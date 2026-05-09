@@ -77,6 +77,45 @@ Each module ships its own `architecture/` Konsist test mirroring `:grid:domain`'
 - Health endpoint at `/v1/health`. Probes (Kubernetes liveness / readiness / startup) are configured in the Helm chart.
 - Error handling: throw a domain exception → `StatusPages` maps to RFC 7807 problem-detail JSON with the right `type`, `status`, `detail`.
 
+## CORS — the "Failed to fetch" recurring tax
+
+This has bitten three PRs already (#78 added the initial allowlist, #259 added DELETE for session erasure, and the next route with a non-simple method or a custom header will hit it again unless you do the dance below). When the frontend at `https://wordsparrow.io` calls `https://api.wordsparrow.io`, the browser preflights every cross-origin request that isn't *CORS-simple*. If the preflight fails, the user sees `Erreur: Failed to fetch` — the actual route never runs, so backend logs are empty and you waste time grepping the wrong thing.
+
+### What CORS-simple actually means
+
+Ktor's `CORS` plugin allows simple methods (`GET`, `HEAD`, `POST`) **implicitly**. Everything else — `DELETE`, `PUT`, `PATCH` — needs an explicit `allowMethod(HttpMethod.X)` call in `Application.module()`. Custom request headers (anything outside `Accept`, `Accept-Language`, `Content-Language`, `Content-Type` with simple values) need `allowHeader("X-Foo")`.
+
+### Checklist when adding a route
+
+Before merging a route in `<context>/api/src/main/kotlin/.../routes/`, verify in the **same PR**:
+
+1. **Method allowlist** — if the route is anything other than `GET`/`POST`, add `allowMethod(HttpMethod.<Verb>)` to the `install(CORS)` block in `Module.kt`. Yes, even if the OpenAPI spec is correct — the spec doesn't drive CORS.
+2. **Custom headers** — if the client sends any header beyond `Content-Type` / `Accept`, add `allowHeader("X-Foo")`. Today only `X-Session-Id` is in scope (used by the hints endpoint).
+3. **CorsTest** — add a wire-path test in `<context>/api/src/test/kotlin/.../routes/CorsTest.kt` that:
+   - Issues an `OPTIONS` preflight with `Origin: https://wordsparrow.io` and `Access-Control-Request-Method: <YourVerb>`.
+   - Asserts `Access-Control-Allow-Origin == "https://wordsparrow.io"` and that `Access-Control-Allow-Methods` contains your verb.
+   This is the only gate that catches the bug *before* a deploy. Don't skip it.
+
+### The 24-hour preflight cache trap
+
+`Module.kt` sets `maxAgeInSeconds = 86400`. Browsers cache a preflight result for **24 hours** — failure included. So after deploying the CORS fix, a returning user *still* sees `Failed to fetch` until the cached preflight expires. Mitigations when verifying a fix in prod:
+
+- DevTools → Network → check **"Disable cache"** (only effective while DevTools is open).
+- Or test in a fresh private/incognito window.
+- Or wait ~24h before declaring victory.
+
+Don't lower `maxAgeInSeconds` to "fix" this — the long cache exists for good reason (one fewer preflight per request hour). Just remember the cache exists.
+
+### Where this is wired today
+
+- `grid/api/src/main/kotlin/com/bliss/grid/api/Module.kt` — the `install(CORS) { ... }` block, with allowlist comments explaining each `allowHost` / `allowMethod` / `allowHeader`.
+- `grid/api/src/test/kotlin/com/bliss/grid/api/routes/CorsTest.kt` — wire-path tests, one per verb + one per custom header.
+- `game/api/.../Module.kt` — when `:game:api` ships its first non-`GET` HTTP route or its first WS authentication header, the same dance applies. WebSocket upgrades are not subject to CORS preflight in the same way, but the initial HTTP `GET` that carries the `Upgrade: websocket` header *is*.
+
+### Why preview deploys are excluded from the allowlist
+
+Cloudflare Pages preview deploys (`*.bliss-frontend.pages.dev`) use MSW mocks (ADR-0007 §5) and never hit the real API. Adding them to the allowlist would mask a misconfigured preview that started calling prod by mistake. There's a CorsTest that asserts preview origins are **not** echoed back — keep it.
+
 ## Test stack
 
 - **JUnit 5 platform** — the launcher.
@@ -177,6 +216,7 @@ If the recurrence becomes annoying, the long-term fix is either (a) glob the COP
 | Spotless fails on imports | New imports added; ktlint hasn't sorted them | `./gradlew spotlessApply`. |
 | Test passes locally, fails in CI with race | TOCTOU between a snapshot read and a `mutate` call | Move the guard inside the `mutate` lambda. PR #127's review documents the pattern. |
 | Flyway migration fails in CI | Wrong version number / non-idempotent SQL | Migrations are forward-only and immutable once shipped. New migration = next `V<n>` number. |
+| Frontend shows `Erreur: Failed to fetch` and the backend has no log line for the route | CORS preflight is failing — the route never runs. Usually a missing `allowMethod(...)` for `DELETE` / `PUT` / `PATCH` or a missing `allowHeader(...)` for a custom request header | Update `install(CORS)` in `Module.kt`, add a `CorsTest` for the verb/header, redeploy. See the "CORS" section above; remember the 24h browser preflight cache. |
 
 ## Don'ts
 
@@ -191,3 +231,4 @@ If the recurrence becomes annoying, the long-term fix is either (a) glob the COP
 - **Don't** edit generated SQL or Konsist test reports.
 - **Don't** suppress Spotless / Konsist with `@Suppress`. Fix the underlying issue.
 - **Don't** forget the Dockerfile when adding a `:game:*` module to `settings.gradle.kts`.
+- **Don't** ship a non-`GET`/`POST` route or a custom request header without updating `install(CORS)` in `Module.kt` *and* adding a CorsTest case. The browser preflight failure shows up as `Failed to fetch` on the frontend with **no log line on the backend** — wastes hours every time. See the "CORS" section.
