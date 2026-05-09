@@ -566,6 +566,21 @@ components:
             - $ref: '#/components/schemas/GameSession'
           nullable: true
           description: Null while WAITING; populated while IN_PROGRESS or COMPLETED.
+        code:
+          type: string
+          minLength: 6
+          maxLength: 6
+          pattern: '^[A-HJ-NP-Z2-9]{6}$'
+          description: |
+            Human-friendly join code surfaced to non-owner players (the
+            Accueil "Rejoindre avec un code" flow renders this in the
+            input). Six uppercase alphanumeric characters, drawn from the
+            unambiguous Crockford-style alphabet (no `0`/`O`, `1`/`I`,
+            `L`) so a player reading the code aloud cannot land on a
+            different lobby. Absent until the join-by-code feature ships
+            its mint logic in a follow-up PR; clients should fall back
+            to the existing URL-share path while absent.
+          example: A2B3C4
 
     CreateLobbyRequest:
       type: object

@@ -358,6 +358,18 @@ export interface components {
             gridConfig: components["schemas"]["GridConfig"];
             /** @description Null while WAITING; populated while IN_PROGRESS or COMPLETED. */
             game: components["schemas"]["GameSession"] | null;
+            /**
+             * @description Human-friendly join code surfaced to non-owner players (the
+             *     Accueil "Rejoindre avec un code" flow renders this in the
+             *     input). Six uppercase alphanumeric characters, drawn from the
+             *     unambiguous Crockford-style alphabet (no `0`/`O`, `1`/`I`,
+             *     `L`) so a player reading the code aloud cannot land on a
+             *     different lobby. Absent until the join-by-code feature ships
+             *     its mint logic in a follow-up PR; clients should fall back
+             *     to the existing URL-share path while absent.
+             * @example A2B3C4
+             */
+            code?: string;
         };
         /**
          * @description Request body for `POST /v1/lobbies`.
