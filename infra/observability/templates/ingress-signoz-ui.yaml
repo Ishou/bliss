@@ -16,8 +16,10 @@ Both ingresses share:
 - cert-manager letsencrypt-prod ClusterIssuer (issued out of the
   platform chart in PR-#274).
 - external-dns target = the Hetzner floating IP.
-- ingress-nginx basic-auth pointing at the bootstrapped
-  `admin-htpasswd` Secret in this namespace.
+- auth: oauth2-proxy session-cookie (ADR-0030) when
+  `oauth2Proxy.enabled=true`; ingress-nginx basic-auth (ADR-0028)
+  otherwise. The `/oauth2` Ingresses (Ingress 1/2 per host) carry
+  no auth annotations — they ARE the auth provider endpoint.
 */}}
 {{/*
 Two Ingresses per host:
