@@ -47,6 +47,7 @@ module "cluster" {
   control_plane_count = var.control_plane_count
   worker_count        = var.worker_count
   node_size           = var.node_size
+  worker_node_size    = var.worker_node_size
   ssh_public_keys     = var.ssh_public_keys
   k3s_version         = var.k3s_version
 }

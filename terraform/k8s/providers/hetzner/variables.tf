@@ -29,8 +29,14 @@ variable "worker_count" {
 }
 
 variable "node_size" {
-  description = "Hetzner server type (e.g. cx22, cx32, cpx21). Default cx22 per ADR-0009 §2."
+  description = "Hetzner server type (e.g. cx22, cx32, cpx21). Default cx22 per ADR-0009 §2. Used for control-plane nodes and as the fallback for workers when `worker_node_size` is null."
   type        = string
+}
+
+variable "worker_node_size" {
+  description = "Optional Hetzner server type for worker nodes (e.g. cx32 to host the SigNoz observability stack while keeping the control plane on cx22). When null, workers inherit `node_size`."
+  type        = string
+  default     = null
 }
 
 variable "ssh_public_keys" {
