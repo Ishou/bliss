@@ -19,10 +19,10 @@ data class LobbyResponseDto(
     val state: String,
     val gridConfig: GridConfigDto,
     val game: GameSessionDto?,
-    // Optional human-friendly join code (`code` schema field). Null
-    // until the join-by-code follow-up mints real values; `explicitNulls
-    // = false` on the JSON config keeps the key off the wire on the
-    // null path.
+    // Human-friendly join code. Non-null for every lobby created after
+    // PR #262; nullable here because the OpenAPI schema hasn't promoted
+    // `code` to `required` yet (phase 3). `explicitNulls = false` omits
+    // the key when null.
     val code: String? = null,
 )
 
