@@ -84,7 +84,7 @@ const errorActionStyles = css({
 
 function RootErrorBoundary() {
   return (
-    <main className={errorPageStyles}>
+    <main id="main-content" tabIndex={-1} className={errorPageStyles}>
       <h1 className={errorTitleStyles}>Une erreur est survenue.</h1>
       <p className={errorMessageStyles}>Rechargez la page pour réessayer.</p>
       <button
@@ -102,7 +102,7 @@ function RootErrorBoundary() {
 
 function RootNotFound() {
   return (
-    <main className={errorPageStyles}>
+    <main id="main-content" tabIndex={-1} className={errorPageStyles}>
       <h1 className={errorTitleStyles}>Page introuvable.</h1>
       <p className={errorMessageStyles}>
         Cette page n&apos;existe pas ou a été déplacée.

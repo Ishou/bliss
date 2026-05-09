@@ -128,7 +128,7 @@ const errorActionsStyles = css({
 const LobbyShell = ({ children }: { children: React.ReactNode }) => (
   <div className={pageStyles}>
     <AppHeader activeNavId="grilles" />
-    <main className={mainStyles}>
+    <main id="main-content" tabIndex={-1} className={mainStyles}>
       <div className={contentStyles}>
         <h1 lang="en" className={srOnly}>
           WordSparrow
