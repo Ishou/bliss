@@ -178,16 +178,6 @@ const HELP_SECTIONS: ReadonlyArray<HelpSection> = [
     ),
   },
   {
-    value: 'statistiques-serie',
-    label: 'Statistiques et série',
-    content: (
-      <>
-        Vos parties terminées alimentent une série quotidienne. Consultez
-        la page <em>Statistiques</em> pour voir votre progression.
-      </>
-    ),
-  },
-  {
     value: 'multijoueur',
     label: 'Multijoueur',
     content: (
@@ -202,7 +192,7 @@ const HELP_SECTIONS: ReadonlyArray<HelpSection> = [
     value: 'nous-contacter',
     label: 'Nous contacter',
     content: (
-      <>Pour toute question, écrivez à contact@wordsparrow.app.</>
+      <>Pour toute question, écrivez à colin.auberger@gmail.com.</>
     ),
   },
 ];

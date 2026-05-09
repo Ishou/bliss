@@ -67,14 +67,12 @@ describe('Aide route', () => {
       .toBeInTheDocument();
   });
 
-  it('renders all six help-section triggers', async () => {
+  it('renders all five help-section triggers', async () => {
     renderAide();
     await screen.findByRole('button', { name: 'Comment jouer' });
     expect(screen.getByRole('button', { name: 'Raccourcis clavier' }))
       .toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Validation et indices' }))
-      .toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Statistiques et série' }))
       .toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Multijoueur' }))
       .toBeInTheDocument();
