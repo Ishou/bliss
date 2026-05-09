@@ -33,6 +33,31 @@ ingress-nginx:
     # the node's public IP. Service stays ClusterIP. README.md documents
     # the trade-off vs. paying for a Hetzner load balancer later.
     hostNetwork: true
+    # `hostNetwork: true` makes the controller pod use the host's
+    # network namespace, including its DNS resolver — i.e.
+    # /etc/resolv.conf inside the container points at Hetzner's
+    # public DNS, not CoreDNS. That breaks any Ingress annotation
+    # that references in-cluster Services by their cluster.local
+    # name (e.g. `auth-url:
+    # http://oauth2-proxy.observability.svc.cluster.local:4180/...`)
+    # — nginx attempts the lookup, host DNS doesn't know
+    # cluster.local, and the auth subrequest 502s, returning 500
+    # to the client. Setting `dnsPolicy: ClusterFirstWithHostNet`
+    # restores cluster-DNS resolution while keeping the host
+    # network. This is the standard pairing for hostNetwork=true
+    # ingress controllers.
+    dnsPolicy: ClusterFirstWithHostNet
+    # hostNetwork=true means the controller binds the host's
+    # :80/:443. The chart default `RollingUpdate` strategy spins
+    # up the new pod *before* terminating the old one — but only
+    # one pod can hold those host ports at a time, so the new
+    # pod stays Pending forever and the rollout deadlocks (had to
+    # `kubectl delete pod` to unblock the first time we hit it).
+    # `Recreate` terminates the old pod first, accepts the brief
+    # ingress downtime (~5-10s while the new one boots), and the
+    # rollout completes cleanly.
+    updateStrategy:
+      type: Recreate
     service:
       type: ClusterIP
     # Match the ingressClassName the WordSparrow chart hard-codes
