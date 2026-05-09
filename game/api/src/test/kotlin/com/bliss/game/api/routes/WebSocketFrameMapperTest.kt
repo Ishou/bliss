@@ -121,9 +121,7 @@ class WebSocketFrameMapperTest {
 
     @Test
     fun `lobbyState snapshot carries the lobby code as a first-class field`() {
-        // PR #273 deferred this — the route preserved `code` from the REST
-        // loader because the snapshot didn't carry it. Now `code` rides
-        // every snapshot so future server-side mutations propagate.
+        // `code` is always present — the server mints one at create-time and never sends a snapshot without it.
         val lobby = inProgressLobby(emptyMap())
         val frame = lobby.toLobbyStateFrame()
         assertThat(frame.code).isEqualTo(lobby.code.value)
