@@ -40,6 +40,19 @@ write_files:
     content: |
       node-ip: ${private_ip}
       flannel-iface: ${private_iface}
+      # Append a random node-id suffix to the hostname so a
+      # rebuilt worker (server_type bump, taint+apply, hardware swap)
+      # joins the cluster under a fresh name. Without this the new
+      # k3s-agent generates a fresh node password but the CP rejects
+      # the join because /var/lib/rancher/k3s/server/cred/node-passwd
+      # still has the old worker's entry under the same hostname —
+      # "Node password rejected" loop. The id-suffix sidesteps the
+      # whole collision instead of requiring CP-side cleanup at every
+      # rebuild. Trade-off: node names go from deterministic
+      # (wordsparrow-worker-0) to suffixed (wordsparrow-worker-0-a1b2c3d4),
+      # so anything pinning workloads to a literal node name must use
+      # a label selector instead.
+      with-node-id: true
       node-label:
         - "bliss.io/role=worker"
         - "bliss.io/cluster=${cluster_name}"
