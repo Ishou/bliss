@@ -7,26 +7,7 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ThreadLocalRandom
 import java.util.concurrent.atomic.AtomicLong
 
-/**
- * In-memory adapter for [ClueCooldownRepository]. Used in local dev and
- * route tests; not used in production (the Postgres adapter lands in
- * PR 3 and is the durable path).
- *
- * Concurrency: each bucket has an [AtomicLong] counter and its own
- * [ConcurrentHashMap] of cooldown rows. Concurrent
- * [recordGeneration] calls on the same bucket bump the counter
- * atomically and upsert their row sets independently. No locks held
- * across the row writes — same posture as
- * [InMemoryHintUsageRepository].
- *
- * Lost on restart, like the puzzle store. A bucket whose counter and
- * rows reset gets fresh variety after a process restart (degraded
- * gracefully — the cooldown is best-effort variety, not correctness).
- *
- * The roll function is injected so tests can pin the result (see
- * [InMemoryClueCooldownRepositoryTest] property check around the ADR-0031
- * "current_seq - last_used_seq < rolledN" invariant).
- */
+/** In-memory [ClueCooldownRepository] for dev and tests; not durable across restarts. */
 class InMemoryClueCooldownRepository(
     private val randomCooldown: (rollMaxInclusive: Int) -> Int =
         { max -> ThreadLocalRandom.current().nextInt(1, max + 1) },

@@ -18,13 +18,6 @@ import java.util.UUID
  * stdlib would silently invalidate existing ids if we re-derived from a
  * seed. Storing the placement list keeps live puzzles stable across
  * generator code churn.
- *
- * Cooldown (ADR-0031): when a non-null `bucketId` is supplied AND a
- * [cooldownRepository] is wired, the use case pre-loads the bucket's
- * cooldown snapshot into a [ClueCooldownPolicy] before generation, then
- * records the placed `(word, clue)` pairs after generation succeeds. The
- * counter and rows are written only on cache miss — replaying the same
- * `puzzleId` returns the persisted grid without bumping the counter.
  */
 class LoadOrGeneratePuzzleUseCase(
     private val puzzleRepository: PuzzleRepository,
