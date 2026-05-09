@@ -38,6 +38,19 @@ application {
 }
 
 dependencies {
+    // Pin transitive Netty 4.2.x to 4.2.13.Final (current Ktor pin is .12).
+    // Fixes a cluster of HTTP-request-smuggling, decompression-bomb, and
+    // resource-exhaustion CVEs in netty-codec-http / -http2 / -compression
+    // and an epoll DoS in -transport-native-epoll. GHSA refs: v8h7-rr48-vmmv,
+    // m4cv-j2px-7723, xxqh-mfjm-7mv9, 38f8-5428-x5cv, 57rv-r2g8-2cj3,
+    // f6hv-jmp6-3vwv, rwm7-x88c-3g2p, mj4r-2hfc-f8p6.
+    constraints {
+        implementation("io.netty:netty-codec-http:4.2.13.Final")
+        implementation("io.netty:netty-codec-http2:4.2.13.Final")
+        implementation("io.netty:netty-codec-compression:4.2.13.Final")
+        implementation("io.netty:netty-transport-native-epoll:4.2.13.Final")
+    }
+
     // Game bounded-context inner layers (ADR-0001 §1, MANIFESTO Architecture).
     implementation(project(":game:domain"))
     implementation(project(":game:application"))
