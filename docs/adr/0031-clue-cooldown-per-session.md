@@ -1,8 +1,8 @@
-# ADR-0030: Per-session (and per-daily) clue cooldown across grid generations
+# ADR-0031: Per-session (and per-daily) clue cooldown across grid generations
 
 ## Status
 
-Proposed
+Accepted
 
 ## Context
 

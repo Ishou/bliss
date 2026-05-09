@@ -19,7 +19,7 @@ export interface paths {
          *
          *     When the optional `X-Session-Id` header is present, clue selection on
          *     cache miss is biased away from clues recently used by the same
-         *     session (per ADR-0030 "per-session clue cooldown"). When absent,
+         *     session (per ADR-0031 "per-session clue cooldown"). When absent,
          *     clue selection is unaffected — the cooldown machinery is bypassed
          *     end-to-end. Cache hits return the persisted grid as-is regardless of
          *     the header, so the same `puzzleId` always yields the same clues.
@@ -60,7 +60,7 @@ export interface paths {
          *
          *     Clue selection on the **first** generation of each new daily
          *     date is biased away from clues used in recent daily grids, per
-         *     ADR-0030 "shared daily-bucket cooldown" (sentinel UUID
+         *     ADR-0031 "shared daily-bucket cooldown" (sentinel UUID
          *     `00000000-0000-7000-8000-000000000000`). Subsequent same-day
          *     fetches hit the cache and return the persisted grid unchanged.
          *     The endpoint ignores any client-supplied `X-Session-Id` header —
@@ -544,13 +544,13 @@ export interface components {
         /**
          * @description UUID v7 identifying the calling player's session. When present,
          *     the server biases clue selection on cache miss away from clues
-         *     recently used by the same session (per ADR-0030 "per-session clue
+         *     recently used by the same session (per ADR-0031 "per-session clue
          *     cooldown"). When absent, no cooldown is applied and clue
          *     selection is unaffected. Cache hits are unchanged regardless.
          *
          *     Non-UUID values, or a UUID equal to the reserved daily-bucket
          *     sentinel `00000000-0000-7000-8000-000000000000`, produce a 400
-         *     `invalid-session-id` response (poisoning guard per ADR-0030
+         *     `invalid-session-id` response (poisoning guard per ADR-0031
          *     Threat model § Tampering).
          */
         OptionalSessionId: string;
@@ -601,13 +601,13 @@ export interface operations {
                 /**
                  * @description UUID v7 identifying the calling player's session. When present,
                  *     the server biases clue selection on cache miss away from clues
-                 *     recently used by the same session (per ADR-0030 "per-session clue
+                 *     recently used by the same session (per ADR-0031 "per-session clue
                  *     cooldown"). When absent, no cooldown is applied and clue
                  *     selection is unaffected. Cache hits are unchanged regardless.
                  *
                  *     Non-UUID values, or a UUID equal to the reserved daily-bucket
                  *     sentinel `00000000-0000-7000-8000-000000000000`, produce a 400
-                 *     `invalid-session-id` response (poisoning guard per ADR-0030
+                 *     `invalid-session-id` response (poisoning guard per ADR-0031
                  *     Threat model § Tampering).
                  */
                 "X-Session-Id"?: components["parameters"]["OptionalSessionId"];
@@ -645,7 +645,7 @@ export interface operations {
              *     - Header `X-Session-Id` is present but not a valid UUID, or
              *       equals the reserved daily-bucket sentinel
              *       `00000000-0000-7000-8000-000000000000` (poisoning guard per
-             *       ADR-0030)
+             *       ADR-0031)
              *       (`type` = `https://bliss.example/errors/invalid-session-id`).
              */
             400: {
