@@ -125,23 +125,16 @@ export function useWordAutoValidation(
         for (const pos of result.incorrectCells) {
           incorrect.add(positionKey(pos.row, pos.column));
         }
-        const newlyLocked: Position[][] = [];
-        setValidated((prev) => {
-          let changed = false;
-          const next = new Set(prev);
-          for (const word of fullyFilled) {
-            const wordKeys = word.map((p) => positionKey(p.row, p.col));
-            if (!wordKeys.every((kk) => !incorrect.has(kk))) continue;
-            const wordIsNew = wordKeys.some((kk) => !next.has(kk));
-            for (const kk of wordKeys) {
-              if (!next.has(kk)) {
-                next.add(kk);
-                changed = true;
-              }
-            }
-            if (wordIsNew) newlyLocked.push(word);
+        const newlyLocked = fullyFilled.filter((word) => {
+          const keys = word.map((p) => positionKey(p.row, p.col));
+          return keys.every((k) => !incorrect.has(k));
+        });
+        setValidated((_prev) => {
+          const next = new Set<string>();
+          for (const word of newlyLocked) {
+            for (const k of word.map((p) => positionKey(p.row, p.col))) next.add(k);
           }
-          return changed ? next : prev;
+          return next.size > 0 ? next : _prev;
         });
         for (const word of newlyLocked) onWordValidatedRef.current?.(word);
       })
@@ -234,24 +227,20 @@ export function useWordAutoValidation(
           for (const pos of result.incorrectCells) {
             incorrect.add(positionKey(pos.row, pos.column));
           }
-          const newlyLocked: Position[][] = [];
+          const newlyLocked = fullyFilled.filter((word) => {
+            const keys = word.map((p) => positionKey(p.row, p.col));
+            return (
+              keys.every((k) => !incorrect.has(k)) &&
+              keys.some((k) => !validated.has(k))
+            );
+          });
           setValidated((prev) => {
-            let changed = false;
+            if (newlyLocked.length === 0) return prev;
             const next = new Set(prev);
-            for (const word of fullyFilled) {
-              const wordKeys = word.map((p) => positionKey(p.row, p.col));
-              const allCorrect = wordKeys.every((k) => !incorrect.has(k));
-              if (!allCorrect) continue;
-              const wordIsNew = wordKeys.some((k) => !next.has(k));
-              for (const k of wordKeys) {
-                if (!next.has(k)) {
-                  next.add(k);
-                  changed = true;
-                }
-              }
-              if (wordIsNew) newlyLocked.push(word);
+            for (const word of newlyLocked) {
+              for (const k of word.map((p) => positionKey(p.row, p.col))) next.add(k);
             }
-            return changed ? next : prev;
+            return next;
           });
           for (const word of newlyLocked) onWordValidatedRef.current?.(word);
         })
