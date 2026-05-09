@@ -5,26 +5,7 @@ import { css } from 'styled-system/css';
 import { IconButton } from './IconButton';
 import { MoreIcon } from '@/ui/components/icons';
 
-// Three-dot overflow menu — wraps Ark UI's `Menu` so the keyboard /
-// focus / outside-click semantics come from one accessible
-// implementation. Visual layer (surface, padding, hover row) stays
-// owned by Bliss, mirroring the `Dialog` wrapper next door.
-//
-// The trigger is rendered via `asChild` on top of the project
-// `IconButton` primitive so the toolbar reads as a uniform set of
-// 32/36-px chips. Item icons inherit colour through `currentColor`
-// (the row sets a single `color` token).
-
-// Sit above every other in-page sticky / overlay (the
-// CurrentCluePanel and the AppHeader both use z-index 10). Dialogs
-// occupy 1000–1003, so we stay above the in-page sticky chrome but
-// below modal layers.
-//
-// IMPORTANT: zag's popper sets the positioner's inline style to
-// `zIndex: var(--z-index)`, where `--z-index` is synced from the
-// content's `z-index`. Setting z-index on the positioner alone is
-// silently overridden — the value has to live on the content. (Same
-// gotcha is documented in `soloTour.styles.ts`.)
+// z-index must be on content, not positioner — zag syncs --z-index from content to positioner's inline style.
 const positionerStyles = css({
   zIndex: 1500,
 });

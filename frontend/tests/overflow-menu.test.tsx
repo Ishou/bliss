@@ -2,15 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { OverflowMenu } from '@/ui/components/primitives';
 
-// OverflowMenu is a thin wrapper around Ark UI's `Menu`. The trigger
-// contract (label + title) is the project-owned surface — Ark already
-// owns the keyboard / pointer behaviour for the menu items themselves
-// (covered by their own test suite). Driving the headless menu's
-// pointer state machine reliably from jsdom requires user-event, which
-// isn't a project dep, so we keep the wrapper test focused on the
-// trigger contract and the items' presence in the DOM via a custom
-// trigger glyph.
-
+// user-event is not a project dep — pointer state machine is Ark's; test trigger contract only.
 describe('OverflowMenu', () => {
   it('renders a labeled trigger with a title attribute', () => {
     render(
