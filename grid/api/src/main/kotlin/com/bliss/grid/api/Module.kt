@@ -15,9 +15,11 @@ import com.bliss.grid.application.puzzle.PuzzleRepository
 import com.bliss.grid.application.puzzle.RevealCellHintUseCase
 import com.bliss.grid.application.puzzle.ValidatePuzzleUseCase
 import com.bliss.grid.application.puzzle.defaultPuzzleConstraints
+import com.bliss.grid.domain.generation.ClueCooldownRepository
 import com.bliss.grid.infrastructure.analytics.MatomoAnalyticsAdapter
 import com.bliss.grid.infrastructure.analytics.NoopAnalyticsAdapter
 import com.bliss.grid.infrastructure.persistence.CsvWordRepository
+import com.bliss.grid.infrastructure.persistence.InMemoryClueCooldownRepository
 import com.bliss.grid.infrastructure.persistence.InMemoryHintUsageRepository
 import com.bliss.grid.infrastructure.persistence.InMemoryPuzzleRepository
 import com.bliss.grid.infrastructure.persistence.PostgresHintUsageRepository
@@ -170,7 +172,25 @@ fun Application.module() {
     monitor.subscribe(ApplicationStopped) { analyticsScope.cancel() }
     val analyticsEventSink: AnalyticsEventSink = createAnalyticsEventSink(analyticsScope)
 
-    val loadOrGenerate = LoadOrGeneratePuzzleUseCase(puzzleRepository, generatePuzzle, analyticsEventSink = analyticsEventSink)
+    // Clue cooldown (ADR-0031). Default OFF in PR 2 — wires only when
+    // GRID_CLUE_COOLDOWN_ENABLED=true. The in-memory adapter is the only
+    // shipping adapter at this stage; the Postgres path lands in PR 3
+    // alongside the flag default flipping to ON. Flag retirement is owed
+    // by 2026-09-01 per the manifesto's expiring-feature-flag rule.
+    val cooldownRepository: ClueCooldownRepository? =
+        if (System.getenv("GRID_CLUE_COOLDOWN_ENABLED")?.toBooleanStrictOrNull() == true) {
+            InMemoryClueCooldownRepository()
+        } else {
+            null
+        }
+
+    val loadOrGenerate =
+        LoadOrGeneratePuzzleUseCase(
+            puzzleRepository = puzzleRepository,
+            generatePuzzle = generatePuzzle,
+            analyticsEventSink = analyticsEventSink,
+            cooldownRepository = cooldownRepository,
+        )
     val revealCellHint =
         RevealCellHintUseCase(puzzleRepository, hintUsageRepository, analyticsEventSink = analyticsEventSink)
     val validatePuzzle = ValidatePuzzleUseCase(puzzleRepository)

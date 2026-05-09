@@ -25,6 +25,7 @@ import kotlin.random.Random
  */
 internal class SkeletonFiller(
     private val repository: WordRepository,
+    private val cooldownPolicy: ClueCooldownPolicy = ClueCooldownPolicy.Inert,
 ) {
     /**
      * Try to fill every [slots] entry with a word. Returns one [WordPlacement] per
@@ -264,6 +265,13 @@ internal class SkeletonFiller(
      * themed (e.g. NE has compass-only). Among clues that fit current caps, pick
      * uniformly at random for variety; if none fit (shouldn't happen — domainFor
      * filters), fall back to the word's first clue.
+     *
+     * Cooldown (ADR-0031): clues recently used in the same bucket are
+     * filtered out before the non-themed / random pick. If every fitting
+     * clue is on cooldown, the picker falls back to uniform-random over
+     * the full fitting set so generation never fails. With the default
+     * [ClueCooldownPolicy.Inert] the filter is a no-op and the original
+     * behavior is preserved.
      */
     private fun pickClue(
         word: Word,
@@ -273,10 +281,12 @@ internal class SkeletonFiller(
     ): WordClue {
         if (word.clues.size == 1) return word.clues.first()
         val fitting = word.clues.filter { themeAllowed(it.theme, themeUsed, themeLimits) }
-        val nonThemed = fitting.filter { it.theme == null }
+        val fresh = fitting.filterNot { cooldownPolicy.isOnCooldown(ClueId(word.text, it.text)) }
+        val pool = if (fresh.isNotEmpty()) fresh else fitting
+        val nonThemed = pool.filter { it.theme == null }
         return when {
             nonThemed.isNotEmpty() -> nonThemed.random(random)
-            fitting.isNotEmpty() -> fitting.random(random)
+            pool.isNotEmpty() -> pool.random(random)
             else -> word.clues.first()
         }
     }

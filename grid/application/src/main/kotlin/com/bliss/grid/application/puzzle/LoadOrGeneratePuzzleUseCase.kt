@@ -2,6 +2,9 @@ package com.bliss.grid.application.puzzle
 
 import com.bliss.grid.application.analytics.AnalyticsEventSink
 import com.bliss.grid.domain.analytics.AnalyticsEvent
+import com.bliss.grid.domain.generation.ClueCooldownPolicy
+import com.bliss.grid.domain.generation.ClueCooldownRepository
+import com.bliss.grid.domain.generation.ClueId
 import java.time.Clock
 import java.util.UUID
 
@@ -15,6 +18,13 @@ import java.util.UUID
  * stdlib would silently invalidate existing ids if we re-derived from a
  * seed. Storing the placement list keeps live puzzles stable across
  * generator code churn.
+ *
+ * Cooldown (ADR-0031): when a non-null `bucketId` is supplied AND a
+ * [cooldownRepository] is wired, the use case pre-loads the bucket's
+ * cooldown snapshot into a [ClueCooldownPolicy] before generation, then
+ * records the placed `(word, clue)` pairs after generation succeeds. The
+ * counter and rows are written only on cache miss — replaying the same
+ * `puzzleId` returns the persisted grid without bumping the counter.
  */
 class LoadOrGeneratePuzzleUseCase(
     private val puzzleRepository: PuzzleRepository,
@@ -24,14 +34,39 @@ class LoadOrGeneratePuzzleUseCase(
     private val title: String = DEFAULT_TITLE,
     private val language: String = DEFAULT_LANGUAGE,
     private val analyticsEventSink: AnalyticsEventSink = AnalyticsEventSink.Noop,
+    private val cooldownRepository: ClueCooldownRepository? = null,
+    private val cooldownMax: Int = DEFAULT_COOLDOWN_MAX,
 ) {
     fun execute(
         puzzleId: UUID,
         width: Int? = null,
         height: Int? = null,
+        sessionId: UUID? = null,
     ): StoredPuzzle? =
         puzzleRepository.getOrCompute(puzzleId) {
-            val grid = generatePuzzle.execute(width = width, height = height) ?: return@getOrCompute null
+            val cooldown = cooldownRepository
+            val cooldownActive = cooldown != null && sessionId != null
+            val policy =
+                if (cooldownActive) {
+                    ClueCooldownPolicy.fromSet(cooldown!!.snapshot(sessionId!!).onCooldown)
+                } else {
+                    ClueCooldownPolicy.Inert
+                }
+            val grid =
+                generatePuzzle.execute(
+                    width = width,
+                    height = height,
+                    cooldownPolicy = policy,
+                ) ?: return@getOrCompute null
+
+            if (cooldownActive) {
+                cooldown!!.recordGeneration(
+                    bucketId = sessionId!!,
+                    usedClues = grid.placements.map { ClueId(it.word.text, it.chosenClue.text) },
+                    rollMaxInclusive = cooldownMax,
+                )
+            }
+
             analyticsEventSink.record(
                 AnalyticsEvent.PuzzleGenerated(
                     gridSize = "${grid.width}x${grid.height}",
@@ -52,5 +87,14 @@ class LoadOrGeneratePuzzleUseCase(
         const val DEFAULT_HINTS_ALLOWED: Int = 3
         const val DEFAULT_TITLE: String = "Grille du jour"
         const val DEFAULT_LANGUAGE: String = "fr"
+
+        /**
+         * Default upper bound on the random `rand(1..X)` cooldown TTL in
+         * generations. Per ADR-0031: typical session is 5-20 puzzles;
+         * uniform draw on `[1..8]` gives expected suppression ~4.5,
+         * varied without starving a thin clue pool. Override via the
+         * `cooldownMax` ctor parameter (env-backed in `Module.kt`).
+         */
+        const val DEFAULT_COOLDOWN_MAX: Int = 8
     }
 }
