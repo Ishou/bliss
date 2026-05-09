@@ -81,13 +81,7 @@ class LoadOrGeneratePuzzleUseCase(
         const val DEFAULT_TITLE: String = "Grille du jour"
         const val DEFAULT_LANGUAGE: String = "fr"
 
-        /**
-         * Default upper bound on the random `rand(1..X)` cooldown TTL in
-         * generations. Per ADR-0031: typical session is 5-20 puzzles;
-         * uniform draw on `[1..8]` gives expected suppression ~4.5,
-         * varied without starving a thin clue pool. Override via the
-         * `cooldownMax` ctor parameter (env-backed in `Module.kt`).
-         */
+        /** Max `rand(1..X)` cooldown TTL per ADR-0031; env-backed via `cooldownMax` ctor param in `Module.kt`. */
         const val DEFAULT_COOLDOWN_MAX: Int = 8
     }
 }
