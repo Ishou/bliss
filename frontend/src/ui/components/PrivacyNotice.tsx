@@ -191,6 +191,15 @@ function FrenchContent() {
             <td>90 jours après la dernière demande</td>
           </tr>
           <tr>
+            <td>
+              Tour d’accueil vu (booléen) dans <code>localStorage</code>
+            </td>
+            <td>
+              Ne pas relancer la visite guidée à chaque ouverture du jeu
+            </td>
+            <td>Jusqu’à effacement</td>
+          </tr>
+          <tr>
             <td>Mesures d’audience anonymisées (Matomo auto-hébergé)</td>
             <td>Comprendre l’usage du service pour l’améliorer</td>
             <td>13 mois (recommandation CNIL)</td>
@@ -295,6 +304,15 @@ function EnglishContent() {
             <td>Hints used per puzzle</td>
             <td>Cap hints per puzzle</td>
             <td>90 days from last request</td>
+          </tr>
+          <tr>
+            <td>
+              Onboarding tour seen (boolean) in <code>localStorage</code>
+            </td>
+            <td>
+              Avoid replaying the guided tour every time you open the game
+            </td>
+            <td>Until erased</td>
           </tr>
           <tr>
             <td>Anonymized audience metrics (self-hosted Matomo)</td>

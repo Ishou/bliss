@@ -17,6 +17,7 @@ import {
   ProgressBar,
   PuzzleToolbar,
 } from '@/ui/components/layout';
+import { SoloTour, useSoloTour } from '@/ui/components/tour';
 import { Route as RootRoute } from './__root';
 
 type ActiveFocus = { readonly position: Position; readonly direction: 'across' | 'down' };
@@ -141,8 +142,22 @@ function PageShell({ children }: { children: React.ReactNode }) {
 function HomePage() {
   const puzzle = Route.useLoaderData() as Puzzle;
   const router = useRouter();
-  const { puzzleSolver, soloEntriesStore } = Route.useRouteContext();
+  const navigate = useNavigate();
+  const { puzzleSolver, soloEntriesStore, tourSeenStore } = Route.useRouteContext();
   const hint = useHintRequest(puzzle.id, puzzle.hintsAllowed, puzzleSolver);
+
+  // Onboarding tour. `?tour=1` (set by the Aide page button) forces it
+  // open even after first visit; the flag is then stripped from the URL
+  // once the tour closes so a reload doesn't replay it forever.
+  const tourSearch = Route.useSearch();
+  const forcedOpen = tourSearch.tour === 1;
+  const tour = useSoloTour({
+    tourSeenStore,
+    forcedOpen,
+    onForcedOpenConsumed: () => {
+      void navigate({ to: '/', search: {}, replace: true });
+    },
+  });
 
   // Active word seam: the Grid emits `onLocalFocusChange(position,
   // direction)` whenever focus or direction changes. We stash it in a
@@ -269,6 +284,7 @@ function HomePage() {
         total={totalLetterCells}
       />
       {isMultiplayerEnabled() ? <CreateLobbyButton /> : null}
+      <SoloTour tour={tour} />
     </PageShell>
   );
 }
@@ -434,9 +450,18 @@ function HomeSkeleton() {
   );
 }
 
+// `?tour=1` re-opens the onboarding tour from the Aide page. Any other
+// value (or absence) parses to `undefined`, which the home page reads
+// as "not forced open".
+export interface IndexSearch {
+  readonly tour?: 1;
+}
+
 export const Route = createRoute({
   getParentRoute: () => RootRoute,
   path: '/',
+  validateSearch: (search: Record<string, unknown>): IndexSearch =>
+    search.tour === 1 || search.tour === '1' ? { tour: 1 } : {},
   loader: ({ context }): Promise<Puzzle> =>
     context.puzzleRepository.fetchById(DEFAULT_PUZZLE_ID),
   component: HomePage,

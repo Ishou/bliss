@@ -169,6 +169,11 @@ const renderLobby = (overrides: RenderLobbyOverrides) => {
         save: () => {},
         clearForPuzzle: () => {},
       },
+      tourSeenStore: {
+        get: () => true,
+        set: () => {},
+        clear: () => {},
+      },
       lobbyClient,
       gameClient,
       getSession: () => ({ sessionId, pseudonym }),

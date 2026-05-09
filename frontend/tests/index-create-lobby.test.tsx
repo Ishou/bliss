@@ -79,6 +79,11 @@ const renderHome = (overrides: { lobbyClient?: Partial<LobbyClient> } = {}) => {
         save: () => {},
         clearForPuzzle: () => {},
       },
+      tourSeenStore: {
+        get: () => true,
+        set: () => {},
+        clear: () => {},
+      },
       lobbyClient,
       gameClient: stubGameClient,
       getSession: () => ({ sessionId, pseudonym }),

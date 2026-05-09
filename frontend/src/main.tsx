@@ -28,7 +28,13 @@ import {
   loadSoloEntries,
   saveSoloLetter,
 } from '@/infrastructure/session/localStorageSolo';
+import {
+  clearTourSeen,
+  getTourSeen,
+  setTourSeen,
+} from '@/infrastructure/session/localStorageTour';
 import type { SoloEntriesStore } from '@/application/solo/SoloEntriesStore';
+import type { TourSeenStore } from '@/application/tour/TourSeenStore';
 import type { SessionClient } from '@/application/session/SessionClient';
 import { registerServiceWorker } from '@/infrastructure/pwa';
 import type { Pseudonym, SessionId } from '@/domain/game';
@@ -116,6 +122,7 @@ enableMocks()
       clearLocalSession: () => {
         clearSession();
         clearAllSoloEntries();
+        clearTourSeen();
       },
     };
 
@@ -124,6 +131,14 @@ enableMocks()
       load: loadSoloEntries,
       save: saveSoloLetter,
       clearForPuzzle: clearSoloEntriesForPuzzle,
+    };
+
+    // Onboarding-tour completion flag. Same indirection rationale as
+    // SoloEntriesStore — keep the localStorage seam outside ui/.
+    const tourSeenStore: TourSeenStore = {
+      get: getTourSeen,
+      set: setTourSeen,
+      clear: clearTourSeen,
     };
 
     // Cookieless Matomo tracker (ADR-0025). No-op when env vars are unset
@@ -160,13 +175,14 @@ enableMocks()
             puzzleSolver,
             sessionClient,
             soloEntriesStore,
+            tourSeenStore,
             lobbyClient,
             gameClient,
             getSession,
             setPseudonym: setPersistedPseudonym,
           };
         })()
-      : { puzzleRepository, puzzleSolver, sessionClient, soloEntriesStore };
+      : { puzzleRepository, puzzleSolver, sessionClient, soloEntriesStore, tourSeenStore };
     const router = createAppRouter({ context, multiplayer });
 
     // Track page views on every route resolution. `onResolved` fires after

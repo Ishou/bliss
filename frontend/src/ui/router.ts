@@ -2,6 +2,7 @@ import { createRouter } from '@tanstack/react-router';
 import type { AppRouterContext } from './routes/__root';
 import { Route as RootRoute } from './routes/__root';
 import { Route as IndexRoute } from './routes/index';
+import { Route as AideRoute } from './routes/aide';
 import { Route as LobbyRoute } from './routes/lobby.$lobbyId';
 import { Route as ConfidentialiteRoute } from './routes/confidentialite';
 import { Route as PrivacyRoute } from './routes/privacy';
@@ -18,7 +19,13 @@ export interface CreateAppRouterOptions {
 }
 
 export function createAppRouter({ context, multiplayer }: CreateAppRouterOptions) {
-  const baseChildren = [IndexRoute, ConfidentialiteRoute, PrivacyRoute, LegalNoticeRoute];
+  const baseChildren = [
+    IndexRoute,
+    AideRoute,
+    ConfidentialiteRoute,
+    PrivacyRoute,
+    LegalNoticeRoute,
+  ];
   const children = multiplayer ? [...baseChildren, LobbyRoute] : baseChildren;
   const routeTree = RootRoute.addChildren(children);
   return createRouter({ routeTree, context });

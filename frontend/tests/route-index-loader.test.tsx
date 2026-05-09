@@ -37,6 +37,11 @@ const renderWith = (repository: PuzzleRepository) => {
         save: () => {},
         clearForPuzzle: () => {},
       },
+      tourSeenStore: {
+        get: () => true,
+        set: () => {},
+        clear: () => {},
+      },
     },
   });
   return render(<RouterProvider router={router} />);
