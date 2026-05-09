@@ -73,20 +73,40 @@ spec:
           imagePullPolicy: IfNotPresent
           args:
             - --http-address=0.0.0.0:4180
-            # htpasswd-only standalone mode. No upstream OIDC; the
-            # `--provider=keycloak-oidc` flag is purely a stub so
-            # oauth2-proxy starts (it requires a provider value).
-            # When htpasswd-file is set + only-allowed-emails is
-            # *, oauth2-proxy validates against the htpasswd file
-            # for sign-in and never reaches out to keycloak.
+            # htpasswd-only standalone mode. oauth2-proxy v7 still
+            # requires a `--provider` value even when the actual
+            # auth path is htpasswd; we keep `keycloak-oidc` and
+            # supply dummy OIDC URLs so the provider initialiser
+            # passes its required-setting checks. None of these
+            # endpoints are ever called when the htpasswd form
+            # succeeds — they exist only to satisfy v7's strict
+            # `--skip-oidc-discovery=true` validation, which now
+            # demands explicit jwks/login/redeem/validate/profile
+            # URLs ("missing required setting: jwks-url" was the
+            # symptom before this fix).
             - --provider=keycloak-oidc
             - --client-id=dummy
             - --client-secret=dummy
             - --oidc-issuer-url=http://localhost
             - --skip-oidc-discovery=true
+            - --login-url=http://localhost/login
+            - --redeem-url=http://localhost/redeem
+            - --profile-url=http://localhost/profile
+            - --validate-url=http://localhost/validate
+            - --oidc-jwks-url=http://localhost/jwks
             - --htpasswd-file=/etc/oauth2-proxy/htpasswd
             - --display-htpasswd-form=true
             - --email-domain=*
+            # NOTE: do NOT set --skip-provider-button=true here. With
+            # the dummy OIDC config (provider=keycloak-oidc + bogus
+            # localhost URLs), --skip-provider-button causes
+            # /oauth2/sign_in to bypass the htpasswd form and redirect
+            # to http://localhost/login (the dummy oidc-issuer-url +
+            # login-url), which the browser can't reach. Leaving it
+            # off renders both the bogus "Sign in with Keycloak"
+            # button AND the htpasswd form on the same page; the user
+            # ignores the button and fills in the form. Mild UX
+            # weirdness traded for a working login flow.
             # Static upstream — oauth2-proxy is used as auth-only
             # via nginx auth-url, not as a reverse proxy. Returning
             # 200 from a static upstream lets nginx forward the
@@ -104,10 +124,6 @@ spec:
             # 168h = 7 days — single login per week.
             - --cookie-expire=168h
             - --cookie-refresh=24h
-            # Skip the "Sign in with provider" button page since
-            # there's no real provider; render the htpasswd form
-            # directly.
-            - --skip-provider-button=true
           env:
             - name: OAUTH2_PROXY_COOKIE_SECRET
               valueFrom:

@@ -1,7 +1,8 @@
 {{/*
 SigNoz UI ingresses — two hosts (`errors.` + `dashboard.wordsparrow.io`)
-both pointing at the same SigNoz frontend Service. Both gated by
-ingress-nginx basic auth via the `admin-htpasswd` Secret (ADR-0028).
+both pointing at the same SigNoz frontend Service. Auth: oauth2-proxy
+session-cookie (ADR-0030) when `oauth2Proxy.enabled=true`; ingress-nginx
+basic-auth (ADR-0028) otherwise.
 
 Why two ingresses for the same backend instead of one with multiple
 hosts:
@@ -16,12 +17,62 @@ Both ingresses share:
 - cert-manager letsencrypt-prod ClusterIssuer (issued out of the
   platform chart in PR-#274).
 - external-dns target = the Hetzner floating IP.
-- ingress-nginx basic-auth pointing at the bootstrapped
-  `admin-htpasswd` Secret in this namespace.
+- auth: oauth2-proxy session-cookie (ADR-0030) when
+  `oauth2Proxy.enabled=true`; ingress-nginx basic-auth (ADR-0028)
+  otherwise. The `/oauth2` Ingresses (Ingress 1/2 per host) carry
+  no auth annotations — they ARE the auth provider endpoint.
+*/}}
+{{/*
+Two Ingresses per host:
+
+1. `/oauth2/*` → oauth2-proxy, NO auth-url annotations. This path
+   IS the auth provider; if it were itself behind the auth check
+   nginx would loop (`auth-signin` redirects to `/oauth2/sign_in`
+   which is itself validated by `auth-url`, which redirects again
+   … and 500s on cycle detection). Splitting it out is the canonical pattern.
+
+2. `/` → SigNoz frontend, behind oauth2-proxy via auth-url. Every
+   non-/oauth2 request is validated against the cookie / redirected
+   to /oauth2/sign_in when missing.
+
+Both Ingresses on the same host share the same TLS Secret and the
+same external-dns target annotation. cert-manager issues one cert
+for the host (whichever Ingress is reconciled first); ingress-nginx
+merges them on the listening port.
 */}}
 {{- if .Values.ingress.enabled }}
 {{- range $host := .Values.ingress.hosts }}
+{{- if $.Values.oauth2Proxy.enabled }}
 ---
+{{/* Ingress 1/2: /oauth2/* — auth provider, no auth-url applied */}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: signoz-ui-{{ $host | replace "." "-" }}-oauth2
+  labels: {{- include "observability.labels" $ | nindent 4 }}
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    external-dns.alpha.kubernetes.io/hostname: {{ $host | quote }}
+    external-dns.alpha.kubernetes.io/target: {{ $.Values.ingress.floatingIp | quote }}
+spec:
+  ingressClassName: {{ $.Values.ingress.className | quote }}
+  tls:
+    - hosts: [{{ $host | quote }}]
+      secretName: {{ $.Values.ingress.tlsSecretName }}-{{ $host | replace "." "-" }}
+  rules:
+    - host: {{ $host | quote }}
+      http:
+        paths:
+          - path: /oauth2
+            pathType: Prefix
+            backend:
+              service:
+                name: oauth2-proxy
+                port:
+                  number: 4180
+{{- end }}
+---
+{{/* Ingress 2/2: / — SigNoz UI, behind auth */}}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -44,7 +95,12 @@ metadata:
     #   info to the upstream so SigNoz can log who triggered an
     #   action (X-Auth-Request-User / X-Auth-Request-Email).
     nginx.ingress.kubernetes.io/auth-url: "http://oauth2-proxy.{{ $.Release.Namespace }}.svc.cluster.local:4180/oauth2/auth"
-    nginx.ingress.kubernetes.io/auth-signin: "https://{{ $host }}/oauth2/start?rd=$escaped_request_uri"
+    # `/oauth2/sign_in` is where the htpasswd form lives in v7;
+    # `/oauth2/start` would still try to launch the OIDC flow
+    # (redirect to the dummy keycloak issuer → 500). The
+    # `rd=` query param tells oauth2-proxy where to send the
+    # browser after a successful login.
+    nginx.ingress.kubernetes.io/auth-signin: "https://{{ $host }}/oauth2/sign_in?rd=$escaped_request_uri"
     nginx.ingress.kubernetes.io/auth-response-headers: "X-Auth-Request-User,X-Auth-Request-Email,X-Auth-Request-Preferred-Username"
     {{- else }}
     # Pure basic auth fallback when oauth2-proxy is disabled. Works
@@ -64,19 +120,6 @@ spec:
     - host: {{ $host | quote }}
       http:
         paths:
-          {{- if $.Values.oauth2Proxy.enabled }}
-          # /oauth2/* — login form, callback, sign-out, auth probe.
-          # Routed to oauth2-proxy so the redirect from auth-signin
-          # lands on the htpasswd login page, and so the cookie is
-          # set on the SigNoz host (cookie domain = wordsparrow.io).
-          - path: /oauth2
-            pathType: Prefix
-            backend:
-              service:
-                name: oauth2-proxy
-                port:
-                  number: 4180
-          {{- end }}
           - path: /
             pathType: Prefix
             backend:

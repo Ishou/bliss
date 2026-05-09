@@ -71,18 +71,29 @@ registration.
 
 ### ingress-nginx wiring
 
-Both SigNoz Ingresses (`errors.wordsparrow.io`, `dashboard.wordsparrow.io`)
-replace the basic-auth annotations with:
+Both SigNoz hosts (`errors.wordsparrow.io`, `dashboard.wordsparrow.io`) use
+a **two-Ingress-per-host** layout:
+
+**Ingress 1 — `/oauth2/*` → oauth2-proxy, no `auth-url` applied.**
+The `/oauth2` paths are exposed on a separate Ingress with no `auth-url`
+annotation. Placing `/oauth2` behind `auth-url` creates a redirect loop:
+`auth-signin` redirects to `/oauth2/sign_in`, which is itself validated by
+`auth-url`, which redirects again (nginx detects the cycle and 500s).
+Two Ingresses share the same TLS Secret; cert-manager is idempotent on the
+`secretName` so only one Certificate object is issued per host.
+
+**Ingress 2 — `/` → SigNoz frontend, behind oauth2-proxy.**
+The main Ingress replaces the basic-auth annotations with:
 
 ```yaml
 nginx.ingress.kubernetes.io/auth-url: "http://oauth2-proxy.<ns>.svc.cluster.local:4180/oauth2/auth"
-nginx.ingress.kubernetes.io/auth-signin: "https://<host>/oauth2/start?rd=$escaped_request_uri"
+nginx.ingress.kubernetes.io/auth-signin: "https://<host>/oauth2/sign_in?rd=$escaped_request_uri"
 nginx.ingress.kubernetes.io/auth-response-headers: "X-Auth-Request-User,X-Auth-Request-Email,X-Auth-Request-Preferred-Username"
 ```
 
-A `/oauth2` path prefix on each Ingress routes the login form and sign-out
-endpoint to oauth2-proxy on the SigNoz host, ensuring the cookie is issued
-on the correct domain.
+The split ensures the cookie is issued on the correct domain (`.wordsparrow.io`)
+while avoiding the nginx redirect-loop that occurs when the auth provider
+endpoint is itself protected by the auth check.
 
 ### Threat model delta (STRIDE-lite vs ADR-0028)
 
