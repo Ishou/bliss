@@ -33,10 +33,28 @@ metadata:
     # Per `docs/deploy.md` §"Floating IP / DNS records": every Ingress
     # in this repo MUST carry the `target` annotation explicitly.
     external-dns.alpha.kubernetes.io/target: {{ $.Values.ingress.floatingIp | quote }}
-    # ADR-0028 — htpasswd basic auth on the SigNoz UI surfaces.
+    {{- if $.Values.oauth2Proxy.enabled }}
+    # Auth flow (ADR-0028 + oauth2-proxy override):
+    # - auth-url   : every request gets validated by oauth2-proxy
+    #   first; 200 = pass cookie present, 401 = redirect to signin.
+    # - auth-signin: where ingress-nginx sends unauthenticated
+    #   visitors (relative path on the same host so the cookie domain
+    #   `.wordsparrow.io` is set correctly on issuance).
+    # - auth-response-headers: forwards oauth2-proxy's resolved user
+    #   info to the upstream so SigNoz can log who triggered an
+    #   action (X-Auth-Request-User / X-Auth-Request-Email).
+    nginx.ingress.kubernetes.io/auth-url: "http://oauth2-proxy.{{ $.Release.Namespace }}.svc.cluster.local:4180/oauth2/auth"
+    nginx.ingress.kubernetes.io/auth-signin: "https://{{ $host }}/oauth2/start?rd=$escaped_request_uri"
+    nginx.ingress.kubernetes.io/auth-response-headers: "X-Auth-Request-User,X-Auth-Request-Email,X-Auth-Request-Preferred-Username"
+    {{- else }}
+    # Pure basic auth fallback when oauth2-proxy is disabled. Works
+    # for terminal-based clients (`curl -u`) but causes browser-
+    # spam on SPA XHR/WS calls — leave oauth2Proxy.enabled=true
+    # except for break-glass debugging.
     nginx.ingress.kubernetes.io/auth-type: basic
     nginx.ingress.kubernetes.io/auth-secret: {{ $.Values.ingress.authSecretName | quote }}
     nginx.ingress.kubernetes.io/auth-realm: "WordSparrow ops — observability"
+    {{- end }}
 spec:
   ingressClassName: {{ $.Values.ingress.className | quote }}
   tls:
@@ -46,6 +64,19 @@ spec:
     - host: {{ $host | quote }}
       http:
         paths:
+          {{- if $.Values.oauth2Proxy.enabled }}
+          # /oauth2/* — login form, callback, sign-out, auth probe.
+          # Routed to oauth2-proxy so the redirect from auth-signin
+          # lands on the htpasswd login page, and so the cookie is
+          # set on the SigNoz host (cookie domain = wordsparrow.io).
+          - path: /oauth2
+            pathType: Prefix
+            backend:
+              service:
+                name: oauth2-proxy
+                port:
+                  number: 4180
+          {{- end }}
           - path: /
             pathType: Prefix
             backend:
