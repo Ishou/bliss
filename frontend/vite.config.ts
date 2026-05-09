@@ -153,6 +153,20 @@ export default defineConfig({
         navigateFallback: '/index.html',
         navigateFallbackDenylist: [/^\/v1\//],
         cleanupOutdatedCaches: true,
+        // Without these two, a freshly-installed SW sits in `waiting`
+        // forever while any tab is still controlled by the previous SW
+        // — a normal F5 keeps going through the old SW's precache and
+        // never sees the new build. `skipWaiting` makes the new SW
+        // activate on install; `clientsClaim` makes it adopt all open
+        // tabs immediately. The `controlling`-event handler in
+        // `src/infrastructure/pwa.ts` then reloads each tab — fresh
+        // loads reload synchronously, mid-session tabs defer until the
+        // tab next becomes visible so the user is never yanked
+        // mid-typing. Safe here because the bundle isn't code-split
+        // (one big `assets/index-*.js`) so a v1 page never asks the SW
+        // for a v2 chunk; revisit if route-based code splitting lands.
+        skipWaiting: true,
+        clientsClaim: true,
         runtimeCaching: [
           {
             // Grid API: serve fresh when online, fall back to cache when

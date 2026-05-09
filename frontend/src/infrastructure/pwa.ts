@@ -20,6 +20,27 @@ import { Workbox } from 'workbox-window';
 // user when another tab triggers an update.
 const FRESH_LOAD_RELOAD_WINDOW_MS = 3000;
 
+// Session-storage key used by the chunk-load reload guard. Bounded to a
+// single reload per tab session so a genuinely broken chunk request
+// (network outage, CDN 404) cannot drive an infinite reload loop.
+const CHUNK_RELOAD_FLAG = 'bliss.chunk-mismatch-reload';
+
+/**
+ * Recovers from a "v1 page asks for a chunk that's no longer in v2"
+ * mismatch. Today the bundle is one chunk so this can't happen — but
+ * route-level code splitting in the future would expose it, and the
+ * symptom (a blank page after a deploy) is opaque enough that a
+ * one-line guard now is cheaper than a postmortem later.
+ */
+function installChunkMismatchGuard(): void {
+  window.addEventListener('vite:preloadError', (event: Event) => {
+    if (sessionStorage.getItem(CHUNK_RELOAD_FLAG) === '1') return;
+    sessionStorage.setItem(CHUNK_RELOAD_FLAG, '1');
+    event.preventDefault();
+    window.location.reload();
+  });
+}
+
 export function registerServiceWorker(): void {
   if (typeof window === 'undefined') return;
   if (!('serviceWorker' in navigator)) return;
@@ -30,6 +51,8 @@ export function registerServiceWorker(): void {
   // example fixtures. Skip in mock mode — production builds set
   // VITE_USE_MOCK_API=false so this gate is open there.
   if (import.meta.env.VITE_USE_MOCK_API === 'true') return;
+
+  installChunkMismatchGuard();
 
   const start = () => {
     // `updateViaCache: 'none'` forces the browser to fetch `/sw.js`

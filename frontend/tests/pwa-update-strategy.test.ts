@@ -144,4 +144,18 @@ describe('registerServiceWorker — update strategy', () => {
 
     expect(reloadMock).toHaveBeenCalledTimes(1);
   });
+
+  it('reloads once on vite:preloadError', () => {
+    sessionStorage.clear();
+    registerServiceWorker();
+    window.dispatchEvent(new Event('vite:preloadError'));
+    expect(reloadMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not reload a second time when the session flag is already set', () => {
+    sessionStorage.setItem('bliss.chunk-mismatch-reload', '1');
+    registerServiceWorker();
+    window.dispatchEvent(new Event('vite:preloadError'));
+    expect(reloadMock).not.toHaveBeenCalled();
+  });
 });
