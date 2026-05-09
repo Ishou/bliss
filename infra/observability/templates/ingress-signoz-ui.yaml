@@ -27,13 +27,13 @@ Two Ingresses per host:
 
 1. `/oauth2/*` → oauth2-proxy, NO auth-url annotations. This path
    IS the auth provider; if it were itself behind the auth check
-   nginx would loop (`auth-signin` redirects to `/oauth2/start`
-   which then redirects to `/oauth2/start` … and 500s on cycle
-   detection). Splitting it out is the canonical pattern.
+   nginx would loop (`auth-signin` redirects to `/oauth2/sign_in`
+   which is itself validated by `auth-url`, which redirects again
+   … and 500s on cycle detection). Splitting it out is the canonical pattern.
 
 2. `/` → SigNoz frontend, behind oauth2-proxy via auth-url. Every
    non-/oauth2 request is validated against the cookie / redirected
-   to /oauth2/start when missing.
+   to /oauth2/sign_in when missing.
 
 Both Ingresses on the same host share the same TLS Secret and the
 same external-dns target annotation. cert-manager issues one cert
