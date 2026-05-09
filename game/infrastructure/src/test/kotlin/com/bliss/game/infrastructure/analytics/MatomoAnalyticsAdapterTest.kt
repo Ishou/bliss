@@ -55,6 +55,7 @@ class MatomoAnalyticsAdapterTest {
                 AnalyticsEvent.GameSolved(gridSize = "11x11", playerCount = 3, durationMs = 12_345),
                 AnalyticsEvent.PlayerRenamed,
                 AnalyticsEvent.LobbyLeft,
+                AnalyticsEvent.LobbyCodeRotated,
             ).map { WireMapper.toWire(it).action }
 
         assertThat(mapped).isEqualTo(
@@ -65,6 +66,7 @@ class MatomoAnalyticsAdapterTest {
                 "game_solved:v1",
                 "player_renamed:v1",
                 "lobby_left:v1",
+                "lobby_code_rotated:v1",
             ),
         )
     }

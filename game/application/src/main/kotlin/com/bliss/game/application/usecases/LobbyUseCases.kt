@@ -27,6 +27,25 @@ import java.time.Instant
 private fun GridConfig.toLabel(): String = "${width}x$height"
 
 /**
+ * Shared collision-bounded `LobbyCode` minter — used by
+ * [CreateLobbyUseCase] and [RotateLobbyCodeUseCase]. 32^6 keyspace makes
+ * collisions vanishingly unlikely; the bounded retry fails loudly on a
+ * future volume regression instead of returning a duplicate code. Same
+ * TOCTOU caveat as elsewhere — Postgres `UNIQUE (code)` will tighten it.
+ */
+private const val MAX_CODE_MINT_ATTEMPTS = 8
+
+private suspend fun mintUniqueCode(repo: LobbyRepository): LobbyCode {
+    repeat(MAX_CODE_MINT_ATTEMPTS) {
+        val candidate = LobbyCode.generate()
+        if (repo.findByCode(candidate) == null) return candidate
+    }
+    error(
+        "LobbyCode mint exhausted $MAX_CODE_MINT_ATTEMPTS attempts - keyspace saturation or a generator bug; investigate before retrying.",
+    )
+}
+
+/**
  * Bootstraps a new lobby in WAITING with the calling player as owner.
  *
  * Idempotent per [SessionId]: if the caller already owns a WAITING lobby, that
@@ -55,7 +74,7 @@ class CreateLobbyUseCase(
         }
         val now = clock.now()
         val owner = Player(ownerSessionId, ownerPseudonym, now)
-        val code = mintUniqueCode()
+        val code = mintUniqueCode(repo)
         val lobby =
             Lobby(
                 id = LobbyId.generate(),
@@ -71,33 +90,38 @@ class CreateLobbyUseCase(
         analyticsEventSink.record(AnalyticsEvent.LobbyCreated(saved.gridConfig.toLabel()), ownerSessionId)
         return UseCaseResult(saved, listOf(LobbyEvent.PlayerJoined(owner)))
     }
+}
 
-    /**
-     * Generate a fresh [LobbyCode] not already in use. The 31^6 ≈ 887M
-     * keyspace makes collisions vanishingly unlikely at v1 scale (low
-     * tens of concurrent lobbies); the bounded retry exists so a future
-     * volume regression fails loudly instead of corrupting the wire
-     * contract by returning a duplicate code.
-     *
-     * Same lookup-then-save TOCTOU caveat as the owner-session
-     * idempotency above: a parallel save could race in between
-     * findByCode and the surrounding save, but the window is microseconds
-     * and any collision-on-save is dwarfed by the much rarer minted-code
-     * collision. Tightening this requires repository-level uniqueness
-     * (planned for the Postgres adapter via `UNIQUE (code)`).
-     */
-    private suspend fun mintUniqueCode(): LobbyCode {
-        repeat(MAX_CODE_MINT_ATTEMPTS) {
-            val candidate = LobbyCode.generate()
-            if (repo.findByCode(candidate) == null) return candidate
-        }
-        error(
-            "LobbyCode mint exhausted $MAX_CODE_MINT_ATTEMPTS attempts — keyspace saturation or a generator bug; investigate before retrying.",
-        )
-    }
-
-    private companion object {
-        const val MAX_CODE_MINT_ATTEMPTS = 8
+/**
+ * Owner-only: re-mint the lobby's [LobbyCode] in place (ADR-0029).
+ * Membership and game state are unchanged; reconnects key on
+ * `sessionId` so already-joined players keep their seats. Owner check
+ * is re-verified inside the mutator (canonical TOCTOU posture) — a
+ * concurrent ownership transfer is absorbed by leaving the lobby
+ * unchanged.
+ */
+class RotateLobbyCodeUseCase(
+    private val repo: LobbyRepository,
+    private val clock: Clock,
+    private val analyticsEventSink: AnalyticsEventSink = AnalyticsEventSink.Noop,
+) {
+    suspend operator fun invoke(
+        lobbyId: LobbyId,
+        sessionId: SessionId,
+    ): UseCaseOutcome<Lobby> {
+        val current = repo.findById(lobbyId) ?: return failure(UseCaseError.LobbyNotFound)
+        if (!current.isOwner(sessionId)) return failure(UseCaseError.NotOwner)
+        val newCode = mintUniqueCode(repo)
+        var rotated = false
+        val updated =
+            repo.mutate(lobbyId) { lobby ->
+                if (!lobby.isOwner(sessionId)) return@mutate lobby
+                rotated = true
+                lobby.copy(code = newCode, lastActivityAt = clock.now())
+            } ?: return failure(UseCaseError.LobbyNotFound)
+        if (!rotated) return failure(UseCaseError.NotOwner)
+        analyticsEventSink.record(AnalyticsEvent.LobbyCodeRotated, sessionId)
+        return success(updated, listOf(LobbyEvent.CodeRotated(newCode)))
     }
 }
 

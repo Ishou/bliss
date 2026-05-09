@@ -302,6 +302,17 @@ private suspend fun DefaultWebSocketServerSession.handleFrame(
             presenceAggregator?.recordFocus(lobbyId, SessionId(sid))
             memberSessionId
         }
+        ClientToServerFrame.RotateCode -> {
+            val sid =
+                effectiveId ?: run {
+                    sendNotJoined()
+                    return memberSessionId
+                }
+            dispatch(lobbyId, sessionManager) {
+                useCases.rotateCode(lobbyId, SessionId(sid))
+            }
+            memberSessionId
+        }
         ClientToServerFrame.LeaveLobby -> {
             val sid =
                 effectiveId ?: run {
@@ -377,10 +388,13 @@ private suspend fun <T> DefaultWebSocketServerSession.handleOutcome(
             for (event in outcome.result.events) {
                 event.toFrameOrNull()?.let { sessionManager.broadcast(lobbyId, it) }
             }
-            // GridConfigChanged has no dedicated wire frame — re-broadcast the
-            // full snapshot so all clients converge on the new dimensions
-            // (per the wire-mapping note in LobbyEvent.kt).
-            val needsSnapshot = outcome.result.events.any { it is LobbyEvent.GridConfigChanged }
+            // GridConfigChanged and CodeRotated have no dedicated wire frame —
+            // re-broadcast the full snapshot so all clients converge on the
+            // new lobby fields (per the wire-mapping note in LobbyEvent.kt).
+            val needsSnapshot =
+                outcome.result.events.any {
+                    it is LobbyEvent.GridConfigChanged || it is LobbyEvent.CodeRotated
+                }
             if (needsSnapshot) {
                 (outcome.result.value as? Lobby)?.let { lobby ->
                     sessionManager.broadcast(

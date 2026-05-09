@@ -101,6 +101,7 @@ channels:
           - { $ref: '#/components/messages/CellUpdate' }
           - { $ref: '#/components/messages/CellFocus' }
           - { $ref: '#/components/messages/LeaveLobby' }
+          - { $ref: '#/components/messages/RotateCode' }
     subscribe:
       operationId: serverToClient
       summary: Frames broadcast by the server to subscribed players.
@@ -137,6 +138,7 @@ components:
     CellUpdate:     { name: cellUpdate,     title: Client cell write,                  summary: Player typed (or cleared) a letter into a cell.,                                                   payload: { $ref: '#/components/schemas/CellUpdatePayload' } }
     CellFocus:      { name: cellFocus,      title: Client cell focus,                  summary: Player moved (or cleared) their cursor.,                                                           payload: { $ref: '#/components/schemas/CellFocusPayload' },     description: Pure presence signal; lets peers render the sender's cursor + active word. Carries zero domain meaning. Clients SHOULD throttle to ~5 Hz (200 ms debounce). }
     LeaveLobby:     { name: leaveLobby,     title: Leave lobby,                        summary: Voluntary disconnect; frees the slot immediately.,                                                 payload: { $ref: '#/components/schemas/LeaveLobbyPayload' } }
+    RotateCode:     { name: rotateCode,     title: Rotate join code (owner only),      summary: Owner mints a fresh join code in place; old code stops admitting new joiners.,                     payload: { $ref: '#/components/schemas/RotateCodePayload' },    description: "ADR-0029. Owner-only. Server replies with a refreshed `lobbyState` snapshot whose `code` field carries the new value, and rejects with `not-owner` (403) when sent by anyone else. Already-joined sessions stay joined across rotation; only the join authority changes." }
     LobbyState:     { name: lobbyState,     title: Lobby snapshot,                     summary: Full lobby state; fires on join and on reconnect.,                                                 payload: { $ref: '#/components/schemas/LobbyStatePayload' } }
     PlayerJoined:   { name: playerJoined,   title: Player joined,                                                                                                                                  payload: { $ref: '#/components/schemas/PlayerJoinedPayload' } }
     PlayerLeft:     { name: playerLeft,     title: Player left,                                                                                                                                    payload: { $ref: '#/components/schemas/PlayerLeftPayload' } }
@@ -456,12 +458,24 @@ components:
       properties:
         type: { type: string, enum: [leaveLobby] }
       example: { type: leaveLobby }
+    RotateCodePayload:
+      type: object
+      required: [type]
+      description: |
+        ADR-0029. Owner-only mint of a fresh `LobbyCode` in place. No
+        body — owner identity is implicit from the prior `joinLobby`
+        binding. Server replies with a refreshed `lobbyState` snapshot,
+        or `not-owner` (403). The old code is invalidated by the existing
+        ADR-0027 join gate.
+      properties:
+        type: { type: string, enum: [rotateCode] }
+      example: { type: rotateCode }
 
     # ----- Server → client payloads -----
     LobbyStatePayload:
       type: object
       required: [type, players, ownerSessionId, state, gridConfig, code, game]
-      description: Snapshot fired on join, on reconnect, and on owner-driven lobby field changes (`setGridConfig`).
+      description: Snapshot fired on join, on reconnect, and on owner-driven lobby field changes (`setGridConfig`, `rotateCode` per ADR-0029).
       properties:
         type:           { type: string, enum: [lobbyState] }
         players:        { type: array, maxItems: 8, items: { $ref: '#/components/schemas/Player' } }

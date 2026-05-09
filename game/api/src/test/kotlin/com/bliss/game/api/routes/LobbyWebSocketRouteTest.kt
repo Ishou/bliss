@@ -5,6 +5,7 @@ import assertk.assertions.contains
 import assertk.assertions.doesNotContain
 import assertk.assertions.isEqualTo
 import assertk.assertions.isFalse
+import assertk.assertions.isNotEqualTo
 import assertk.assertions.isNotNull
 import assertk.assertions.isNull
 import assertk.assertions.isTrue
@@ -22,6 +23,7 @@ import com.bliss.game.application.usecases.JoinLobbyUseCase
 import com.bliss.game.application.usecases.LeaveLobbyUseCase
 import com.bliss.game.application.usecases.PresenceAggregator
 import com.bliss.game.application.usecases.RenameSelfUseCase
+import com.bliss.game.application.usecases.RotateLobbyCodeUseCase
 import com.bliss.game.application.usecases.SetGridConfigUseCase
 import com.bliss.game.application.usecases.StartGameUseCase
 import com.bliss.game.application.usecases.UpdateCellUseCase
@@ -111,6 +113,35 @@ class LobbyWebSocketRouteTest {
                 sendText("""{"type":"joinLobby","sessionId":"$sessionB","pseudonym":"$pseudoB","code":"WRONG2"}""")
                 val text = receiveText()
                 assertThat(text).contains("\"errorType\":\"https://bliss.example/errors/wrong-code\"")
+            }
+        }
+
+    // ADR-0029 — owner rotates the join code in place. Non-owner rejection
+    // + old-code-after-rotation invalidation live at the use-case layer;
+    // re-asserting them over a multi-socket dance here would only test
+    // the wire glue.
+    @Test
+    fun `rotateCode from the owner broadcasts a lobbyState carrying the new code`() =
+        runWith { harness ->
+            val lobbyId = harness.seedLobby()
+            val oldCode = harness.codeFor(lobbyId)
+            harness.client.webSocket("/v1/lobbies/${lobbyId.value}/ws") {
+                assertThat(receiveText()).contains("\"code\":\"$oldCode\"")
+                sendText("""{"type":"joinLobby","sessionId":"$sessionA","pseudonym":"$pseudoA"}""")
+                sendText("""{"type":"rotateCode"}""")
+                // Drain until a lobbyState frame whose `code` differs lands.
+                val rotated =
+                    withTimeout(5_000) {
+                        var seen: String? = null
+                        while (seen == null) {
+                            val text = receiveText()
+                            if (text.contains("\"type\":\"lobbyState\"") && !text.contains("\"code\":\"$oldCode\"")) seen = text
+                        }
+                        seen
+                    }
+                val newCode = Regex("\"code\":\"([A-HJKM-NP-Z2-9]{6})\"").find(rotated)?.groupValues?.get(1)
+                assertThat(newCode).isNotNull()
+                assertThat(newCode!!).isNotEqualTo(oldCode)
             }
         }
 
@@ -958,6 +989,7 @@ class LobbyWebSocketRouteTest {
                 startGame = startGameUseCase,
                 updateCell = updateCellUseCase,
                 leaveLobby = LeaveLobbyUseCase(repo, clock),
+                rotateCode = RotateLobbyCodeUseCase(repo, clock),
             )
         val sessionManager = SessionManager()
         // Background scope for the reconnect-grace timer. SupervisorJob so a
@@ -1010,6 +1042,7 @@ class LobbyWebSocketRouteTest {
                     startGame = startGameUseCase,
                     updateCell = updateCellUseCase,
                     leaveLobby = LeaveLobbyUseCase(repo, clock),
+                    rotateCode = RotateLobbyCodeUseCase(repo, clock),
                 )
             val sessionManager = SessionManager()
             val presenceClock = AdjustableClock()

@@ -82,6 +82,11 @@ sealed class ClientToServerFrame {
     @Serializable
     @SerialName("leaveLobby")
     object LeaveLobby : ClientToServerFrame()
+
+    /** Owner-only join-code rotation (ADR-0029). No body; owner identity is implicit from the prior `joinLobby` binding. */
+    @Serializable
+    @SerialName("rotateCode")
+    object RotateCode : ClientToServerFrame()
 }
 
 @OptIn(kotlinx.serialization.ExperimentalSerializationApi::class)
