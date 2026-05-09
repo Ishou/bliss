@@ -59,12 +59,23 @@ variable "worker_count" {
 }
 
 variable "node_size" {
-  description = "Provider-specific instance class identifier (e.g. `cx22` for Hetzner, `DEV1-S` for Scaleway, `b2-7` for OVH). String-typed by design: the valid set is provider-coupled and an abstract t-shirt enum would hide real cost/perf knobs. See README §provider-swap."
+  description = "Provider-specific instance class identifier (e.g. `cx22` for Hetzner, `DEV1-S` for Scaleway, `b2-7` for OVH). String-typed by design: the valid set is provider-coupled and an abstract t-shirt enum would hide real cost/perf knobs. See README §provider-swap. Acts as the size for control-plane nodes and the default for worker nodes when `worker_node_size` is not set."
   type        = string
 
   validation {
     condition     = length(var.node_size) > 0
     error_message = "node_size must not be empty. Refer to the active provider's instance-type catalogue."
+  }
+}
+
+variable "worker_node_size" {
+  description = "Optional override for worker-node instance class. When `null` (the default), workers fall back to `var.node_size`. Provided so the worker can be sized larger than the control plane to host stateful workloads (the observability stack — see ADR-0027 — is the first concrete consumer) without paying the same uplift on the control plane, which only runs the k3s API and embedded etcd."
+  type        = string
+  default     = null
+
+  validation {
+    condition     = var.worker_node_size == null || length(var.worker_node_size) > 0
+    error_message = "worker_node_size must be null (inherit node_size) or a non-empty provider instance-class identifier."
   }
 }
 

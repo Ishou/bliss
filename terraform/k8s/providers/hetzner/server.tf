@@ -17,6 +17,13 @@ locals {
   cp_private_ips     = [for i in range(var.control_plane_count) : "10.0.1.${10 + i}"]
   worker_private_ips = [for i in range(var.worker_count) : "10.0.1.${20 + i}"]
 
+  # Worker server type — falls back to the contract's `node_size` when
+  # the optional override is unset. Splitting the size between control
+  # plane and worker (rather than bumping `node_size` for everything)
+  # is per MANIFESTO §Environmental Awareness — right-size, do not
+  # over-provision the control plane just because the worker grew.
+  effective_worker_node_size = coalesce(var.worker_node_size, var.node_size)
+
   cp_user_data = [
     for i in range(var.control_plane_count) :
     templatefile("${path.module}/cloud-init/control-plane.yaml.tftpl", {
@@ -71,7 +78,7 @@ resource "hcloud_server" "worker" {
   count = var.worker_count
 
   name        = "${var.cluster_name}-worker-${count.index}"
-  server_type = var.node_size
+  server_type = local.effective_worker_node_size
   image       = "ubuntu-24.04"
   location    = var.region
 
@@ -85,6 +92,13 @@ resource "hcloud_server" "worker" {
     cp_ip         = local.cp_private_ips[0]
     private_ip    = local.worker_private_ips[count.index]
     private_iface = var.private_iface
+    # Floating IP must be configured as an alias on the worker's public
+    # interface and DNAT'd for k3s API traffic — the worker is the FIP's
+    # assigned holder (see `hcloud_floating_ip_assignment.ingress`) so
+    # any FIP traffic arrives here at the kernel level. Without the alias
+    # the kernel drops the packets as not-for-me; without DNAT, port
+    # 6443 traffic has nowhere to go because k3s runs on the CP.
+    floating_ip = hcloud_floating_ip.ingress.ip_address
   })
 
   labels = {
