@@ -179,12 +179,21 @@ fun Route.puzzles(
                 null
             } else {
                 val parsed = parseUuid(rawSession)
-                if (parsed == null || parsed == ClueCooldownRepository.DAILY_SCOPE_ID) {
+                val detail =
+                    when {
+                        parsed == null ->
+                            "L'en-tête X-Session-Id doit être un UUID, reçu : '$rawSession'."
+                        parsed == ClueCooldownRepository.DAILY_SCOPE_ID ->
+                            "La valeur '$rawSession' est la sentinelle réservée au bucket quotidien " +
+                                "et ne peut pas être utilisée comme identifiant de session."
+                        else -> null
+                    }
+                if (detail != null) {
                     call.respondProblem(
                         status = HttpStatusCode.BadRequest,
                         title = "Identifiant de session invalide",
                         type = INVALID_SESSION_ID_TYPE,
-                        detail = "L'en-tête X-Session-Id doit être un UUID, reçu : '$rawSession'.",
+                        detail = detail,
                     )
                     return@get
                 }

@@ -2,6 +2,7 @@ package com.bliss.grid.api.routes
 
 import assertk.assertThat
 import assertk.assertions.contains
+import assertk.assertions.doesNotContain
 import assertk.assertions.isEqualTo
 import assertk.assertions.startsWith
 import com.bliss.grid.application.puzzle.GeneratePuzzleUseCase
@@ -108,7 +109,12 @@ class PuzzleRouteCooldownTest {
                     header("X-Session-Id", daily.toString())
                 }
             assertThat(response.status).isEqualTo(HttpStatusCode.BadRequest)
-            assertThat(response.bodyAsText()).contains("invalid-session-id")
+            val body = response.bodyAsText()
+            assertThat(body).contains("invalid-session-id")
+            // Detail must name the actual rejection cause: the value IS a UUID,
+            // so a "must be a UUID" message would be misleading.
+            assertThat(body).contains("sentinelle")
+            assertThat(body).doesNotContain("doit être un UUID")
             // Daily bucket was not touched — the route refused before reaching the use case.
             assertThat(cooldown.snapshot(daily).currentSeq).isEqualTo(0L)
         }
