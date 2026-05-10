@@ -15,8 +15,8 @@ describe('Announcer', () => {
         <div />
       </AnnouncerProvider>,
     );
-    const polite = container.querySelector('[role="status"][aria-live="polite"]');
-    const assertive = container.querySelector('[role="alert"][aria-live="assertive"]');
+    const polite = container.querySelector('[aria-live="polite"]');
+    const assertive = container.querySelector('[aria-live="assertive"]');
     expect(polite).not.toBeNull();
     expect(assertive).not.toBeNull();
   });
@@ -29,8 +29,8 @@ describe('Announcer', () => {
       </AnnouncerProvider>,
     );
     act(() => { say('coucou'); });
-    expect(container.querySelector('[role="status"]')?.textContent).toBe('coucou');
-    expect(container.querySelector('[role="alert"]')?.textContent).toBe('');
+    expect(container.querySelector('[aria-live="polite"]')?.textContent).toBe('coucou');
+    expect(container.querySelector('[aria-live="assertive"]')?.textContent).toBe('');
   });
 
   it('say(text, { assertive: true }) writes to the assertive region', () => {
@@ -41,7 +41,7 @@ describe('Announcer', () => {
       </AnnouncerProvider>,
     );
     act(() => { say('erreur', { assertive: true }); });
-    expect(container.querySelector('[role="alert"]')?.textContent).toBe('erreur');
+    expect(container.querySelector('[aria-live="assertive"]')?.textContent).toBe('erreur');
   });
 
   it('de-duplicates identical messages within 200ms (per channel)', () => {
@@ -53,16 +53,16 @@ describe('Announcer', () => {
       </AnnouncerProvider>,
     );
     act(() => { say('même'); });
-    expect(container.querySelector('[role="status"]')?.textContent).toBe('même');
+    expect(container.querySelector('[aria-live="polite"]')?.textContent).toBe('même');
     // Clear and try to re-emit identical text within 200ms — should be skipped (text stays empty after clear).
     act(() => {
-      container.querySelector('[role="status"]')!.textContent = '';
+      container.querySelector('[aria-live="polite"]')!.textContent = '';
       say('même');
     });
-    expect(container.querySelector('[role="status"]')?.textContent).toBe('');
+    expect(container.querySelector('[aria-live="polite"]')?.textContent).toBe('');
     // After 200ms, identical text emits again.
     act(() => { vi.advanceTimersByTime(250); say('même'); });
-    expect(container.querySelector('[role="status"]')?.textContent).toBe('même');
+    expect(container.querySelector('[aria-live="polite"]')?.textContent).toBe('même');
     vi.useRealTimers();
   });
 });

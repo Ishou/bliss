@@ -59,10 +59,18 @@ export function AnnouncerProvider({ children }: { readonly children: ReactNode }
   return (
     <AnnouncerContext.Provider value={api}>
       {children}
-      <div role="status" aria-live="polite" aria-atomic="true" className={visuallyHiddenStyles}>
+      {/*
+        Drop the `role="status"` / `role="alert"` attrs on these regions:
+        `aria-live` alone is sufficient for SR clients to announce
+        mutations, and the explicit roles collide with
+        `screen.getByRole('alert')` / `'status'` queries elsewhere in
+        the test suite (the live regions would always match, making
+        unrelated alert lookups ambiguous).
+      */}
+      <div aria-live="polite" aria-atomic="true" className={visuallyHiddenStyles}>
         {politeText}
       </div>
-      <div role="alert" aria-live="assertive" aria-atomic="true" className={visuallyHiddenStyles}>
+      <div aria-live="assertive" aria-atomic="true" className={visuallyHiddenStyles}>
         {assertiveText}
       </div>
     </AnnouncerContext.Provider>
