@@ -557,8 +557,8 @@ export interface components {
          */
         OptionalSessionId: string;
         /**
-         * @description Number of columns to generate. Defaults to 10 when omitted, matching
-         *     the historical solo-mode size. Valid range is 5..15 inclusive; values
+         * @description Number of columns to generate. Defaults to 15 when omitted, matching
+         *     the daily landscape grid. Valid range is 5..15 inclusive; values
          *     outside that range — or non-integers — produce a 400 with problem
          *     type `https://bliss.example/errors/invalid-puzzle-dimensions`. The
          *     bounds keep the CSP solver's vocabulary needs and per-request time
@@ -566,8 +566,8 @@ export interface components {
          */
         PuzzleWidth: number;
         /**
-         * @description Number of rows to generate. Defaults to 10 when omitted, matching
-         *     the historical solo-mode size. Valid range is 5..15 inclusive; values
+         * @description Number of rows to generate. Defaults to 12 when omitted, matching
+         *     the daily landscape grid. Valid range is 5..15 inclusive; values
          *     outside that range — or non-integers — produce a 400 with problem
          *     type `https://bliss.example/errors/invalid-puzzle-dimensions`.
          */
@@ -583,8 +583,8 @@ export interface operations {
         parameters: {
             query?: {
                 /**
-                 * @description Number of columns to generate. Defaults to 10 when omitted, matching
-                 *     the historical solo-mode size. Valid range is 5..15 inclusive; values
+                 * @description Number of columns to generate. Defaults to 15 when omitted, matching
+                 *     the daily landscape grid. Valid range is 5..15 inclusive; values
                  *     outside that range — or non-integers — produce a 400 with problem
                  *     type `https://bliss.example/errors/invalid-puzzle-dimensions`. The
                  *     bounds keep the CSP solver's vocabulary needs and per-request time
@@ -592,8 +592,8 @@ export interface operations {
                  */
                 width?: components["parameters"]["PuzzleWidth"];
                 /**
-                 * @description Number of rows to generate. Defaults to 10 when omitted, matching
-                 *     the historical solo-mode size. Valid range is 5..15 inclusive; values
+                 * @description Number of rows to generate. Defaults to 12 when omitted, matching
+                 *     the daily landscape grid. Valid range is 5..15 inclusive; values
                  *     outside that range — or non-integers — produce a 400 with problem
                  *     type `https://bliss.example/errors/invalid-puzzle-dimensions`.
                  */
@@ -625,9 +625,11 @@ export interface operations {
             /**
              * @description Puzzle found. Canonical sample at
              *     `grid/api/examples/get-puzzle-200.json` is the contract-test
-             *     fixture for both sides of the wire. The example reflects the
-             *     default 10×10 size; requesting `?width=7&height=7` produces an
-             *     analogous 7×7 document with the same wire shape.
+             *     fixture for both sides of the wire. The example is a 10×10
+             *     grid (smaller than the daily default of 15×12) chosen to keep
+             *     the file readable; the wire shape is identical at any size,
+             *     and requesting `?width=7&height=7` produces an analogous 7×7
+             *     document with the same fields.
              */
             200: {
                 headers: {

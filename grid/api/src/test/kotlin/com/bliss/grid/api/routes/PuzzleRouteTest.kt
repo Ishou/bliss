@@ -217,6 +217,21 @@ class PuzzleRouteTest {
             assertThat(json["gridNumber"]!!.jsonPrimitive.content.toInt()).isEqualTo(129)
         }
 
+    // Pinned to literals (not PUZZLE_WIDTH/HEIGHT) so a future drift in the
+    // shared default would fail this case rather than silently follow.
+    @Test
+    fun `daily endpoint returns a 15x12 landscape grid`() =
+        testApplication {
+            application { module() }
+
+            val response = client.get("/v1/puzzles/daily?date=2026-05-09")
+
+            assertThat(response.status).isEqualTo(HttpStatusCode.OK)
+            val json = Json.parseToJsonElement(response.bodyAsText()).jsonObject
+            assertThat(json["width"]!!.jsonPrimitive.content.toInt()).isEqualTo(15)
+            assertThat(json["height"]!!.jsonPrimitive.content.toInt()).isEqualTo(12)
+        }
+
     @Test
     fun `daily endpoint returns the same puzzle id for the same date`() =
         testApplication {

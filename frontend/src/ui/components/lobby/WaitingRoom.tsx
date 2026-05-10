@@ -19,13 +19,19 @@ import { PlayerList, MAX_PLAYERS } from './PlayerList';
 //
 // All interactive controls (Button, TextField, ToggleGroup) are project-
 // local primitives wrapping Ark UI per ADR-0002 §2.
-const GRID_SIZES = ['5', '7', '9', '11'] as const;
-type GridSize = (typeof GRID_SIZES)[number];
-
-const GRID_SIZE_OPTIONS = GRID_SIZES.map((size) => ({
-  value: size,
-  label: `${size}×${size}`,
-}));
+//
+// Grid presets: square sizes 5–11 and the 15×12 landscape default. The
+// option `value` doubles as a stable serialisable id (`<W>x<H>`); the
+// picker resolves it back to (width, height) before invoking
+// `onSetGridConfig`.
+const GRID_SIZE_OPTIONS = [
+  { value: '5x5',   label: '5×5',   width: 5,  height: 5 },
+  { value: '7x7',   label: '7×7',   width: 7,  height: 7 },
+  { value: '9x9',   label: '9×9',   width: 9,  height: 9 },
+  { value: '11x11', label: '11×11', width: 11, height: 11 },
+  { value: '15x12', label: '15×12', width: 15, height: 12 },
+] as const;
+type GridSize = (typeof GRID_SIZE_OPTIONS)[number]['value'];
 
 export interface WaitingRoomProps {
   readonly lobby: Lobby;
@@ -320,27 +326,32 @@ function PseudonymEditor({
   );
 }
 
-// Square-only picker for v1: the four supported sizes (5×5 / 7×7 / 9×9 /
-// 11×11) all match `width === height`, so we emit `(n, n)`.
+// Five presets: four squares (5×5 / 7×7 / 9×9 / 11×11) and the 15×12
+// landscape default. Selection is keyed by the `<W>x<H>` value string;
+// `currentValue` resolves the lobby's actual gridConfig back to the
+// matching option, with the empty string used when the lobby holds a
+// custom (W,H) outside the preset set so the toggle group renders
+// nothing-selected rather than misattributing.
 function GridSizePicker({
   gridConfig, onSetGridConfig,
 }: {
   readonly gridConfig: Lobby['gridConfig'];
   readonly onSetGridConfig: (width: number, height: number) => void;
 }): React.ReactElement {
-  const currentValue = (gridConfig.width === gridConfig.height
-    ? String(gridConfig.width)
-    : '') as GridSize;
+  const match = GRID_SIZE_OPTIONS.find(
+    (o) => o.width === gridConfig.width && o.height === gridConfig.height,
+  );
+  const currentValue = (match?.value ?? '') as GridSize;
   return (
     <ToggleGroup<GridSize>
       label="Taille de la grille"
       name="grid-size"
       value={currentValue}
       onValueChange={(value) => {
-        const n = Number(value);
-        onSetGridConfig(n, n);
+        const option = GRID_SIZE_OPTIONS.find((o) => o.value === value);
+        if (option) onSetGridConfig(option.width, option.height);
       }}
-      options={GRID_SIZE_OPTIONS}
+      options={GRID_SIZE_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
     />
   );
 }
