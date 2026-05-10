@@ -124,10 +124,20 @@ class CorsTest {
         }
 
     @Test
-    fun `preflight allows X-Session-Id for the hints endpoint`() =
+    fun `preflight allows arbitrary headers (ADR-0034 wildcard)`() =
         testApplication {
             application { module() }
 
+            // ADR-0034 trades the explicit `allowHeader` list for a
+            // wildcard predicate so middleware-added cross-cutting
+            // headers (X-Request-Id, X-Session-Id, OTel `traceparent` /
+            // `tracestate` / `baggage`, future CSRF, etc.) all pass
+            // without a registry edit. This single test exercises the
+            // historical incident set in one preflight: any header the
+            // browser asks about must come back in
+            // `Access-Control-Allow-Headers`. A regression that
+            // accidentally re-narrows the allowlist will fail here
+            // before it lands in prod.
             val response =
                 client.options("/v1/puzzles/$validId/hints") {
                     headers {
@@ -135,7 +145,7 @@ class CorsTest {
                         append(HttpHeaders.AccessControlRequestMethod, "POST")
                         append(
                             HttpHeaders.AccessControlRequestHeaders,
-                            "Content-Type, X-Session-Id",
+                            "Content-Type, X-Session-Id, X-Request-Id, traceparent, tracestate, baggage, X-Foo-Future",
                         )
                     }
                 }
@@ -143,47 +153,19 @@ class CorsTest {
             assertThat(response.status).isEqualTo(HttpStatusCode.OK)
             assertThat(response.headers[HttpHeaders.AccessControlAllowOrigin])
                 .isEqualTo("https://wordsparrow.io")
-            // Ktor lower-cases the echoed allowed-headers list; check both
-            // tokens are present rather than asserting exact formatting.
             val allowHeaders =
                 response.headers[HttpHeaders.AccessControlAllowHeaders].orEmpty().lowercase()
+            // Each header the codebase has historically tripped over.
             assertThat(allowHeaders).contains("x-session-id")
-            assertThat(allowHeaders).contains("content-type")
-        }
-
-    @Test
-    fun `preflight allows W3C Trace Context headers attached by OTel SDK`() =
-        testApplication {
-            application { module() }
-
-            // The OTel browser SDK's FetchInstrumentation (PR-F.2 / ADR-0033)
-            // attaches `traceparent` + `tracestate` to outbound fetches
-            // matching wordsparrow.io so backend spans nest under the browser
-            // fetch in SigNoz. These are non-simple headers from CORS' POV;
-            // without them in `allowHeader` the browser preflight is rejected
-            // and every POST hint / validate fails with "Failed to fetch" —
-            // the exact regression that triggered this test (CORS recurring
-            // tax memory).
-            val response =
-                client.options("/v1/puzzles/$validId/hints") {
-                    headers {
-                        append(HttpHeaders.Origin, "https://wordsparrow.io")
-                        append(HttpHeaders.AccessControlRequestMethod, "POST")
-                        append(
-                            HttpHeaders.AccessControlRequestHeaders,
-                            "Content-Type, X-Session-Id, traceparent, tracestate, baggage",
-                        )
-                    }
-                }
-
-            assertThat(response.status).isEqualTo(HttpStatusCode.OK)
-            assertThat(response.headers[HttpHeaders.AccessControlAllowOrigin])
-                .isEqualTo("https://wordsparrow.io")
-            val allowHeaders =
-                response.headers[HttpHeaders.AccessControlAllowHeaders].orEmpty().lowercase()
+            assertThat(allowHeaders).contains("x-request-id")
             assertThat(allowHeaders).contains("traceparent")
             assertThat(allowHeaders).contains("tracestate")
             assertThat(allowHeaders).contains("baggage")
+            // The wildcard's whole point: a header the codebase has
+            // never seen before still passes. Future-us shipping a
+            // new middleware-added header doesn't have to remember
+            // anything.
+            assertThat(allowHeaders).contains("x-foo-future")
         }
 
     @Test
