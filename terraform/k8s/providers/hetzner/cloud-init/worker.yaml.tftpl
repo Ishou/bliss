@@ -23,15 +23,28 @@
 # `set -o pipefail`. Invoking a script by path lets cloud-init honor the
 # `#!/bin/bash` shebang so `set -euo pipefail` works.
 #
-# Floating IP setup (ADR-0012). The worker is the assigned holder of
-# the cluster's Hetzner floating IP (see hcloud_floating_ip_assignment
-# in floating-ip.tf). Hetzner routes FIP traffic to this server at the
-# network level, but the OS kernel rejects packets to addresses it
-# does not know it owns — so we configure the FIP as an alias on the
-# public interface (eth0 on Hetzner CX/CCX Ubuntu 24.04 cloud images).
+# Floating IP setup (ADR-0012, revised by ADR-0035). The worker is the
+# assigned holder of the cluster's Hetzner floating IP (see
+# hcloud_floating_ip_assignment in floating-ip.tf). Hetzner routes FIP
+# traffic to this server at the network level, but the OS kernel
+# rejects packets to addresses it does not know it owns — so we
+# configure the FIP as a static address on eth0.
+#
+# The alias is declared in /etc/netplan/60-floating-ip.yaml (a netplan
+# dropin merged with Hetzner's DHCP-driven 50-cloud-init.yaml). Going
+# through netplan rather than a runtime `ip addr add` is the lesson
+# from the 2026-05-10 incident: a runtime alias is silently wiped by
+# any netplan/networkd reapply (DHCP renew, package upgrade, manual
+# `netplan apply`), taking 80/443 down while the iptables 6443 DNAT
+# rule keeps working — making the failure mode invisible to anything
+# that probes the API server. Declarative netplan addresses survive
+# every reapply because they ARE the desired state.
+#
 # Additionally, FIP:6443 traffic is DNAT'd to the CP's private IP so
-# kubeconfigs hitting the FIP land on the k3s API server. Both happen
-# in floating-ip-config.service which runs at every boot.
+# kubeconfigs hitting the FIP land on the k3s API server. The DNAT
+# rule lives in floating-ip-config.service (runs at every boot,
+# idempotent). The service is no longer responsible for the alias —
+# only for iptables. See docs/incidents/2026-05-10-floating-ip-alias-wiped.md.
 
 write_files:
   - path: /etc/rancher/k3s/config.yaml
@@ -65,6 +78,30 @@ write_files:
       # forward FIP:6443 traffic to the CP across the private network.
       net.ipv4.ip_forward=1
 
+  - path: /etc/netplan/60-floating-ip.yaml
+    # 0600 — netplan refuses to load world-readable config on Ubuntu 24.04.
+    permissions: "0600"
+    owner: root:root
+    content: |
+      # Hetzner ingress floating IP, declared as a static address on
+      # eth0 so the kernel accepts FIP-destined packets locally
+      # (otherwise it drops them as not-for-me and 80/443 go dark).
+      #
+      # This is a netplan dropin: it merges with the DHCP-driven
+      # 50-cloud-init.yaml that Hetzner's images ship — DHCP keeps
+      # leasing the public IP on eth0, this file just adds the FIP
+      # alongside it. Higher-numbered file wins on conflicts; there is
+      # no conflict here because we only set `addresses`.
+      #
+      # ADR-0035 — do NOT replace this with a runtime `ip addr add`.
+      # See docs/incidents/2026-05-10-floating-ip-alias-wiped.md.
+      network:
+        version: 2
+        ethernets:
+          eth0:
+            addresses:
+              - ${floating_ip}/32
+
   - path: /usr/local/bin/floating-ip-config.sh
     permissions: "0755"
     owner: root:root
@@ -72,15 +109,15 @@ write_files:
       #!/bin/bash
       set -euo pipefail
 
-      # 1. Alias the floating IP on the public interface so the kernel
-      #    accepts traffic to it. Idempotent: existing-address errors
-      #    are swallowed so reboots don't fail the unit.
-      ip addr add ${floating_ip}/32 dev eth0 2>/dev/null || true
+      # The FIP alias on eth0 is owned by /etc/netplan/60-floating-ip.yaml
+      # (ADR-0035). This script is responsible only for the iptables
+      # NAT half — see the 2026-05-10 incident for why the alias was
+      # moved out of here.
 
-      # 2. Enable IPv4 forwarding (also persisted in /etc/sysctl.d/).
+      # 1. Enable IPv4 forwarding (also persisted in /etc/sysctl.d/).
       sysctl -w net.ipv4.ip_forward=1 >/dev/null
 
-      # 3. DNAT incoming TCP/6443 on the FIP to the CP's private IP.
+      # 2. DNAT incoming TCP/6443 on the FIP to the CP's private IP.
       #    `-C` checks for existence first so we don't add duplicate
       #    rules across reboots.
       iptables -t nat -C PREROUTING -p tcp -d ${floating_ip} --dport 6443 \
@@ -88,7 +125,7 @@ write_files:
         || iptables -t nat -A PREROUTING -p tcp -d ${floating_ip} --dport 6443 \
              -j DNAT --to-destination ${cp_ip}:6443
 
-      # 4. MASQUERADE on the egress side so the CP's reply transits
+      # 3. MASQUERADE on the egress side so the CP's reply transits
       #    back through this worker (otherwise the CP replies directly
       #    to the client from its own public IP, the connection breaks
       #    because the client expects replies from the FIP).
@@ -102,7 +139,7 @@ write_files:
     owner: root:root
     content: |
       [Unit]
-      Description=Configure Hetzner floating IP alias and 6443 DNAT
+      Description=Configure Hetzner floating IP 6443 DNAT (alias is in netplan, ADR-0035)
       After=network-online.target
       Wants=network-online.target
       Before=k3s-agent.service
@@ -148,7 +185,13 @@ write_files:
 runcmd:
   # Apply IP forwarding sysctl from /etc/sysctl.d/.
   - sysctl --system
-  # Enable + start the FIP setup unit so the alias and DNAT rules
+  # Apply the netplan dropin so /etc/netplan/60-floating-ip.yaml takes
+  # effect at first boot — installs the FIP alias on eth0 alongside
+  # the DHCP-managed primary address. Idempotent; safe across reboots.
+  # This MUST run before floating-ip-config.service so the kernel owns
+  # the FIP locally before any service starts depending on it.
+  - netplan apply
+  # Enable + start the FIP DNAT unit so iptables rules for FIP:6443
   # are in place before k3s-agent comes up.
   - systemctl daemon-reload
   - systemctl enable --now floating-ip-config.service
