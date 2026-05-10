@@ -24,7 +24,7 @@
     "api:check": "pnpm api:generate && git diff --exit-code -- src/infrastructure/api/grid/types.ts src/infrastructure/api/game/types.ts"
   },
   "dependencies": {
-    "@ark-ui/react": "^4.9.0",
+    "@ark-ui/react": "^5.36.2",
     "@fontsource-variable/nunito": "^5.2.7",
     "@fontsource/lekton": "^5.2.8",
     "@opentelemetry/api": "^1.9.0",
