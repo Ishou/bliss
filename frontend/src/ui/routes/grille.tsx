@@ -13,10 +13,9 @@ import {
 } from '@/ui/components/grid';
 import { Button } from '@/ui/components/primitives';
 import {
-  AppHeader,
-  Footer,
   ProgressBar,
   PuzzleToolbar,
+  ViewportPage,
 } from '@/ui/components/layout';
 import { SoloTour, useSoloTour } from '@/ui/components/tour';
 import { useAnnouncer } from '@/ui/components/a11y/Announcer';
@@ -30,51 +29,6 @@ import {
 import { Route as RootRoute } from './__root';
 
 type ActiveFocus = { readonly position: Position; readonly direction: 'across' | 'down' };
-
-// Top-level page shell. The header sits above the puzzle area, the
-// puzzle area takes the remaining viewport (`flex: 1 1 0; minHeight: 0`
-// so the inner grid shell can absorb leftover height — see Grid.tsx for
-// the rationale).
-const pageStyles = css({
-  minHeight: '100dvh',
-  display: 'flex',
-  flexDirection: 'column',
-  color: 'fg',
-  fontFamily: 'body',
-});
-
-// `<main>` carries the charbon background so e2e probes of the page bg
-// (`getComputedStyle(main).backgroundColor`) resolve through the
-// semantic role token, not the parent shell's inheritance. The header
-// (above) sets its own `bg: 'bg'`, so the whole viewport reads
-// charbon-on-charbon without depending on body / html paint.
-const mainStyles = css({
-  flex: '1 1 0',
-  minHeight: 0,
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  width: '100%',
-  bg: 'bg',
-});
-
-// Inner content column — bounds the toolbar / grid / progress row to
-// the brief's 720 px desktop ceiling without putting the cap on
-// `<main>` itself (which has to span the full viewport so the bg
-// paints edge-to-edge).
-const contentStyles = css({
-  width: '100%',
-  maxWidth: '720px',
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  margin: '0 auto',
-  paddingInline: { base: '16px', md: '20px' },
-  paddingBlock: { base: '12px', md: '20px' },
-  gap: { base: '12px', md: '18px' },
-  flex: '1 1 0',
-  minHeight: 0,
-});
 
 // Lighter charcoal panel behind the grid — mockup §5 shows the grid
 // sitting inside an elevated dark surface that visually separates the
@@ -122,45 +76,6 @@ const createLobbyErrorStyles = css({
   color: 'errorText',
 });
 
-// Same visually-hidden-on-blur, pinned-chip-on-focus pattern as the
-// AppHeader skip link. Placed inside <main> so a keyboard user who
-// already activated the header skip link can Tab once more and jump
-// straight into the grid, bypassing the toolbar.
-const skipToGridStyles = css({
-  position: 'absolute',
-  width: '1px',
-  height: '1px',
-  margin: '-1px',
-  padding: 0,
-  overflow: 'hidden',
-  clip: 'rect(0, 0, 0, 0)',
-  whiteSpace: 'nowrap',
-  borderWidth: 0,
-  _focusVisible: {
-    position: 'fixed',
-    top: '8px',
-    insetInlineStart: '8px',
-    width: 'auto',
-    height: 'auto',
-    margin: 0,
-    paddingBlock: '8px',
-    paddingInline: '12px',
-    overflow: 'visible',
-    clip: 'auto',
-    whiteSpace: 'normal',
-    bg: 'accent',
-    color: 'bg',
-    fontFamily: 'body',
-    fontSize: 'sm',
-    fontWeight: 'medium',
-    textDecoration: 'none',
-    borderRadius: 'md',
-    zIndex: 100,
-    outline: '2px solid token(colors.focusRing)',
-    outlineOffset: '2px',
-  },
-});
-
 function focusFirstUnvalidatedCell(): void {
   // `:not([readonly])` filters out validated cells (Cell.tsx renders
   // them read-only). Falls back to the first letter cell if no cell
@@ -183,23 +98,14 @@ const isMultiplayerEnabled = (): boolean =>
 
 function PageShell({ children }: { children: React.ReactNode }) {
   return (
-    <div className={pageStyles}>
-      <AppHeader />
-      <main id="main-content" tabIndex={-1} className={mainStyles}>
-        <a
-          href="#main-content"
-          className={skipToGridStyles}
-          onClick={(e) => {
-            e.preventDefault();
-            focusFirstUnvalidatedCell();
-          }}
-        >
-          Aller au mot fléché
-        </a>
-        <div className={contentStyles}>{children}</div>
-      </main>
-      <Footer />
-    </div>
+    <ViewportPage
+      skipLink={{
+        label: 'Aller au mot fléché',
+        onActivate: focusFirstUnvalidatedCell,
+      }}
+    >
+      {children}
+    </ViewportPage>
   );
 }
 
