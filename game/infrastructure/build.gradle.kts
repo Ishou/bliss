@@ -12,7 +12,7 @@ kotlin {
 // bounded contexts. Bump in lockstep when grid moves.
 val ktorVersion = "3.4.3"
 val kotlinxSerializationVersion = "1.11.0"
-val javaUuidGeneratorVersion = "4.3.0"
+val javaUuidGeneratorVersion = "5.2.0"
 
 dependencies {
     implementation(project(":game:domain"))
