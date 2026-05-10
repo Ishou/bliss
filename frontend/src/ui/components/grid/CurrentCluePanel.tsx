@@ -372,8 +372,6 @@ export function CurrentCluePanel({
       <div
         className={`${panelBase} ${emptyPanel}`}
         style={inlineStyle}
-        role="status"
-        aria-live="polite"
         data-testid="current-clue-panel"
       >
         <PointerIcon />
@@ -395,8 +393,6 @@ export function CurrentCluePanel({
     <div
       className={`${panelBase} ${activePanel}`}
       style={inlineStyle}
-      role="status"
-      aria-live="polite"
       data-testid="current-clue-panel"
     >
       <span className={clueGroup}>
