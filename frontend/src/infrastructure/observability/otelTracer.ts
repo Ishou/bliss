@@ -87,7 +87,7 @@ export function readOtelConfigFromEnv(): OtelTracerConfig | null {
  * sampler. Errors are rare + high-signal; sampling them away defeats
  * the purpose of capturing them.
  */
-class ErrorAwareSampler implements Sampler {
+export class ErrorAwareSampler implements Sampler {
   private readonly base: Sampler;
 
   constructor(base: Sampler) {
@@ -109,6 +109,11 @@ class ErrorAwareSampler implements Sampler {
   }
 }
 
+// Prevents duplicate listener registration when initOtelTracer is called more
+// than once: window.addEventListener does not deduplicate, so each call would
+// double-emit spans and corrupt alert threshold math.
+let errorsAttached = false;
+
 /**
  * Wire `window.error` and `window.unhandledrejection` to emit OTel
  * spans with `status.code = ERROR`. Captures are scoped tight: just
@@ -116,6 +121,9 @@ class ErrorAwareSampler implements Sampler {
  * cookies, no localStorage. ADR-0027 §8 redaction posture.
  */
 function attachUncaughtErrorReporting(tracer: Tracer): void {
+  if (errorsAttached) return;
+  errorsAttached = true;
+
   window.addEventListener('error', (event) => {
     const span = tracer.startSpan(`${ERROR_SPAN_NAME_PREFIX}error`, {
       attributes: {
