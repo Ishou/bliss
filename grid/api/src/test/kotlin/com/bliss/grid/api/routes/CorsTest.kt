@@ -9,8 +9,12 @@ import com.bliss.grid.api.module
 import io.ktor.client.request.get
 import io.ktor.client.request.headers
 import io.ktor.client.request.options
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
+import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.contentType
 import io.ktor.server.testing.testApplication
 import org.junit.jupiter.api.Test
 
@@ -186,6 +190,34 @@ class CorsTest {
                 .isEqualTo("https://wordsparrow.io")
             assertThat(response.headers[HttpHeaders.AccessControlAllowMethods]!!)
                 .contains("DELETE")
+        }
+
+    @Test
+    fun `actual POST from prod origin echoes Allow-Origin (hints, non-simple Content-Type)`() =
+        testApplication {
+            application { module() }
+
+            // Mirrors the GET case above for the POST /hints path. The
+            // browser sends Content-Type: application/json, which the
+            // CORS spec classifies as non-simple. Ktor's CORS plugin
+            // strips Access-Control-Allow-Origin from the actual (post-
+            // preflight) response unless `allowNonSimpleContentTypes =
+            // true` is set in Module.kt — see game/api Module.kt:93-102
+            // for the canonical write-up. Status code is intentionally
+            // not asserted: the puzzle does not exist so the route
+            // returns 404; what matters is the header.
+            val response =
+                client.post("/v1/puzzles/$validId/hints") {
+                    headers {
+                        append(HttpHeaders.Origin, "https://wordsparrow.io")
+                        append("X-Session-Id", validId)
+                    }
+                    contentType(ContentType.Application.Json)
+                    setBody("""{"row":0,"column":0}""")
+                }
+
+            assertThat(response.headers[HttpHeaders.AccessControlAllowOrigin])
+                .isEqualTo("https://wordsparrow.io")
         }
 
     @Test
