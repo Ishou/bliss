@@ -171,9 +171,14 @@ export default defineConfig({
         // `src/infrastructure/pwa.ts` then reloads each tab — fresh
         // loads reload synchronously, mid-session tabs defer until the
         // tab next becomes visible so the user is never yanked
-        // mid-typing. Safe here because the bundle isn't code-split
-        // (one big `assets/index-*.js`) so a v1 page never asks the SW
-        // for a v2 chunk; revisit if route-based code splitting lands.
+        // mid-typing. Safe here because all four chunks (app + three
+        // vendor splits) are eagerly loaded via <script> tags in
+        // index.html — a tab under the old SW has already fetched
+        // everything it needs before the new SW claims it. No
+        // mid-session dynamic import() will ask the new SW for an
+        // old-hash chunk. If lazy-loaded routes (import('./Route')) are
+        // added later, revisit this: the new SW's precache won't have
+        // the old hashed filenames the still-open page would request.
         skipWaiting: true,
         clientsClaim: true,
         runtimeCaching: [
