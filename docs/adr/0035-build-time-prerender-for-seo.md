@@ -79,3 +79,19 @@ or routing regression therefore fails the build.
 - Future dynamic indexable routes need either an entry in the prerender
   manifest or a migration to runtime SSR (TanStack Start). Re-evaluate
   this ADR when the indexable surface exceeds ~50 static routes.
+
+## Search Console
+
+Verifying the `wordsparrow.io` domain property in Google Search Console
+requires a TXT record at the apex. The record
+(`google-site-verification=sXNHgDIo3MlV64qSSTQMBN1HdvLSiYJZpcCE0HH3Cn0`)
+is managed by the Terraform Cloudflare DNS module
+(`terraform/cloudflare-dns-records.tf`) and is gated on
+`cloudflare_zone_id`/`custom_domain` being non-empty — matching the guard
+pattern of the rest of the DNS-side IaC so a bootstrap apply is still a
+no-op. The token is a public verification string, not a secret; safe to
+commit.
+
+Once verified, `https://wordsparrow.io/sitemap.xml` is submitted under
+Sitemaps. Acceptance criterion: all five indexable routes appear as
+"Indexed" in the Coverage report within 14 days of verification.
