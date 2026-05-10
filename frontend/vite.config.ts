@@ -209,11 +209,10 @@ export default defineConfig({
     rollupOptions: {
       output: {
         // Drop the `sourcesContent` JSON field from every emitted .map.
-        // SigNoz issue #5494 — the platform doesn't auto-symbolicate
-        // frontend stack traces today; a developer fetches the matching
-        // .map and unmaps manually. That manual flow needs `sources` +
-        // `mappings`; `sourcesContent` is only useful for DevTools'
-        // "view source" body, which our investigation flow doesn't
+        // SigNoz doesn't auto-symbolicate frontend stack traces; a developer
+        // fetches the matching .map and unmaps manually. That manual flow
+        // needs `sources` + `mappings`; `sourcesContent` is only useful for
+        // DevTools' "view source" body, which our investigation flow doesn't
         // depend on (open the file in your editor or on GitHub). Net:
         // ~80% smaller .map files on the CDN, identical unmap UX.
         sourcemapExcludeSources: true,
