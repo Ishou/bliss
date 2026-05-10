@@ -201,21 +201,11 @@ export default defineConfig({
     },
   },
   build: {
-    // Emit `.map` files alongside each chunk and reference them via
-    // the `//# sourceMappingURL=` comment Vite appends to the JS. Lets
-    // anyone with browser DevTools open on wordsparrow.io see original
-    // TS line numbers, and lets a contributor unmap the
-    // `exception.stacktrace` attribute on PR-F.3's `window.error` /
-    // `window.unhandledrejection` / `window.react-caught` spans without
-    // reproducing the failure locally.
-    //
-    // Public maps are fine here because the repo itself is public on
-    // GitHub (the OCI `org.opencontainers.image.source` label baked
-    // into our Dockerfiles confirms it). Map files add zero source
-    // disclosure that isn't already at `Ishou/bliss`. They cost ~250 KB
-    // per asset on the static host (CDN-cacheable, only fetched on
-    // demand by DevTools or fetched.mappings unmap tools), no impact on
-    // the bundle every visitor downloads.
+    // Public maps are fine because the repo is public on GitHub
+    // (the OCI `org.opencontainers.image.source` label baked into
+    // our Dockerfiles confirms it). Map files add zero source
+    // disclosure that isn't already at `Ishou/bliss`. ~250 KB per
+    // asset on the static host; CDN-cacheable, only fetched on demand.
     //
     // If the repo ever flips private, change `true` → `'hidden'` and
     // add a CI step that uploads the `.map` files to a private bucket;
