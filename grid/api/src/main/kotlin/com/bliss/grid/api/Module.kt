@@ -64,9 +64,17 @@ fun Application.module() {
         // local dev need allowance here.
         allowMethod(HttpMethod.Get)
         allowMethod(HttpMethod.Options) // preflight
+        // POST /v1/puzzles/{id}/hints (PuzzleRoute.kt:226) and
+        // POST /v1/puzzles/{id}/validate (PuzzleRoute.kt:298). POST is
+        // technically a CORS-simple method, but Ktor's plugin only emits
+        // it in `Access-Control-Allow-Methods` when explicit — mirrors
+        // game/api Module.kt:70 so the configs read identically.
+        allowMethod(HttpMethod.Post)
         // DELETE /v1/sessions/{sessionId} is the GDPR erasure endpoint
-        // (ADR-0025 §5). Methods stay explicit because the set is tiny
-        // and stable — the recurring-tax problem is headers, not methods.
+        // (ADR-0025 §5). Methods stay explicit (vs. the wildcard used
+        // for headers in ADR-0034) because the set is small and the
+        // security trade-off differs — wildcard methods would silently
+        // allow PUT/PATCH on what is a read-leaning API.
         allowMethod(HttpMethod.Delete)
 
         // Headers: wildcard allow per ADR-0034. The previous explicit
@@ -98,6 +106,17 @@ fun Application.module() {
         // No credentials = no cookies. The API is read-only public for now.
         allowCredentials = false
         maxAgeInSeconds = 86400 // cache preflight for 24h
+
+        // POST /v1/puzzles/{id}/hints + /validate send `Content-Type:
+        // application/json`, which the CORS spec classifies as non-simple.
+        // Ktor's CORS plugin defaults to rejecting actual (non-preflight)
+        // requests carrying a non-simple Content-Type with 403 + no
+        // `Access-Control-Allow-Origin`, even when both Origin and Method
+        // passed the preflight. The browser surfaces this as `blocked by
+        // CORS policy: No 'Access-Control-Allow-Origin' header is present
+        // on the requested resource.` — same gotcha game/api documents at
+        // Module.kt:93-102. CorsTest covers the regression.
+        allowNonSimpleContentTypes = true
     }
 
     install(ContentNegotiation) {
