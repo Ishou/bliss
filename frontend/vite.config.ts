@@ -151,7 +151,16 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,woff2,webmanifest}'],
         navigateFallback: '/index.html',
-        navigateFallbackDenylist: [/^\/v1\//],
+        // Bypass `navigateFallback` for files served by Cloudflare Pages
+        // directly. Without these, a returning user with the SW installed
+        // gets the SPA shell when typing `/robots.txt` or `/sitemap.xml`
+        // in the address bar (mode: 'navigate' → fallback fires). See
+        // ADR-0035.
+        navigateFallbackDenylist: [
+          /^\/v1\//,
+          /^\/robots\.txt$/,
+          /^\/sitemap\.xml$/,
+        ],
         cleanupOutdatedCaches: true,
         // Without these two, a freshly-installed SW sits in `waiting`
         // forever while any tab is still controlled by the previous SW
