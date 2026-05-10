@@ -62,9 +62,6 @@ class LoadOrGeneratePuzzleUseCaseCooldownTest {
         useCase.execute(puzzleId, sessionId = sessionId)
         val recordsAfterFirst = tracker!!.records.size
 
-        // Second fetch on the same puzzleId is a cache hit — no new snapshot,
-        // no new recordGeneration. (snapshotCalls may stay the same; we
-        // assert on records here for clarity.)
         useCase.execute(puzzleId, sessionId = sessionId)
         assertThat(tracker.records.size).isEqualTo(recordsAfterFirst)
     }
@@ -80,9 +77,6 @@ class LoadOrGeneratePuzzleUseCaseCooldownTest {
 
     @Test
     fun `null cooldown repository keeps existing behavior`() {
-        // No cooldown wiring at all — the use case behaves as if the feature
-        // flag were off. Even with a sessionId provided, no snapshot or
-        // record call happens (no repository to call against).
         val (useCase, tracker) = newUseCase(cooldownRepository = null)
         val stored = useCase.execute(puzzleId, sessionId = sessionId)
         assertThat(stored).isNotNull()
@@ -102,16 +96,7 @@ class LoadOrGeneratePuzzleUseCaseCooldownTest {
         useCase.execute(puzzleId, sessionId = sessionId)
         useCase.execute(UUID.randomUUID(), sessionId = sessionId)
         assertThat(tracker!!.records).hasSize(2)
-        // The second snapshot must observe the first generation's writes —
-        // the use case re-reads the snapshot inside the second cache-miss
-        // factory lambda, so the seq returned by both records should be 1
-        // and 2 respectively.
-        val seqs = tracker.records.map { (_, _, _) -> tracker.lastReturnedSeq }
-        // We don't store per-record seqs here; assert at minimum that the
-        // counter advanced (snapshotCalls captures the second read).
         assertThat(tracker.snapshotCalls.size >= 2).isTrue()
-        // Silence unused warning.
-        seqs.size
     }
 
     /** In-memory [ClueCooldownRepository] fake that records call order for assertion. */
