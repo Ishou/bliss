@@ -58,8 +58,8 @@ COPY --from=build /workspace/game/api/build/libs/game-api-*-all.jar /app/game-ap
 # Helm chart owns the OTLP endpoint, service name, and resource
 # attributes. Same pinned version as grid/api (mirror).
 ADD --chmod=0644 \
-    --checksum=sha256:d05f6e36fac8db629263a6aaec2841cc934d064d7b19bfe38425b604b8b54926 \
-    https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/v2.10.0/opentelemetry-javaagent.jar \
+    --checksum=sha256:bd01fea1304e8c8803fff827a0bdda02b2266742a85c62548053c6761474bb5b \
+    https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/v2.27.0/opentelemetry-javaagent.jar \
     /app/otel.jar
 
 # Run as non-root. K8s pod security context requires runAsNonRoot=true; without
