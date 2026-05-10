@@ -67,5 +67,12 @@ describe.skipIf(!existsSync(resolve(DIST, 'index.html')))(
       expect(robots).toContain('Disallow: /privacy');
       expect(robots).toContain('Sitemap: https://wordsparrow.io/sitemap.xml');
     });
+
+    it('embeds JSON-LD WebApplication on the homepage', () => {
+      const html = readFileSync(resolve(DIST, 'index.html'), 'utf8');
+      expect(html).toContain('"@type":"WebApplication"');
+      expect(html).toContain('"applicationCategory":"GameApplication"');
+      expect(html).toContain('"inLanguage":"fr"');
+    });
   },
 );

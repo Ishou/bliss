@@ -489,10 +489,27 @@ export const Route = createRoute({
   ),
   head: () => {
     const r = INDEXABLE_ROUTES.find((x) => x.path === '/')!;
-    return buildHead({
+    const base = buildHead({
       title: r.title,
       description: r.description,
       canonical: `${SITE_BASE_URL}/`,
     });
+    return {
+      ...base,
+      scripts: [
+        {
+          type: 'application/ld+json',
+          children: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'WebApplication',
+            name: 'WordSparrow',
+            url: `${SITE_BASE_URL}/`,
+            description: r.description,
+            applicationCategory: 'GameApplication',
+            inLanguage: 'fr',
+          }),
+        },
+      ],
+    };
   },
 });
