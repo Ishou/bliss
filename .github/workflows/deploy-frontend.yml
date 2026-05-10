@@ -3,8 +3,10 @@ name: Deploy Frontend
 # Implements ADR-0004 §3 (GitHub Actions → Cloudflare Pages, Direct Upload).
 #
 # - push to main      -> production deploy (bliss.pages.dev)
-# - pull_request      -> preview deploy at <branch>.<project>.pages.dev,
-#                        commented on the PR by cloudflare/pages-action.
+# - pull_request      -> preview deploy at <branch>.<project>.pages.dev.
+#                        The preview URL is in the action's job log;
+#                        wrangler-action (unlike the legacy pages-action
+#                        it replaced) does not auto-post a PR comment.
 #
 # Drafts are skipped to match the ADR-0001 §6a workflow's behavior and
 # avoid burning Pages build slots on work-in-progress branches.
@@ -36,10 +38,13 @@ concurrency:
 
 permissions:
   contents: read
-  # pages-action posts the preview URL as a PR comment.
+  # Reserved for the optional follow-up that posts the preview URL as
+  # a PR comment via `actions/github-script` (wrangler-action no
+  # longer auto-posts the way the legacy pages-action did). Drop this
+  # if/when that follow-up is decided against.
   pull-requests: write
-  # Required by cloudflare/pages-action when GitHub OIDC is enabled on
-  # the runner; harmless when it is not.
+  # Required by Cloudflare's deploy action(s) when GitHub OIDC is
+  # enabled on the runner; harmless when it is not.
   deployments: write
 
 jobs:
@@ -104,18 +109,26 @@ jobs:
         run: pnpm test:post-build
 
       - name: Publish to Cloudflare Pages
-        # cloudflare/pages-action v1.5.0 (deprecated upstream in favor of
-        # wrangler-action, but still functional; migration tracked as a
-        # follow-up workstream once wrangler-action exposes equivalent
-        # outputs — see ADR-0004 Notes for the revisit triggers).
-        uses: cloudflare/pages-action@f0a1cd58cd66095dee69bfa18fa5efd1dde93bca
+        # cloudflare/wrangler-action v3.15.0 — replacement for the
+        # deprecated cloudflare/pages-action. The legacy action's
+        # bundled deps included `@miniflare/watcher@2.14.4` (Miniflare
+        # v2, EOL upstream), surfacing as `npm warn deprecated` on every
+        # deploy run and a long-tail supply-chain risk if Cloudflare's
+        # API contract shifted under the frozen action. wrangler-action
+        # ships current wrangler + Miniflare 4 and is the explicitly-
+        # supported deploy path going forward.
+        #
+        # Trade-off taken: the legacy action posted preview URLs as PR
+        # comments automatically. wrangler-action doesn't. The preview
+        # URL is still visible in the job log + on the Cloudflare Pages
+        # dashboard; if reviewers miss it, a follow-up step using
+        # `actions/github-script` can re-wire it from the CLI output.
+        uses: cloudflare/wrangler-action@9acf94ace14e7dc412b076f2c5c20b8ce93c79cd
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          projectName: bliss
-          directory: frontend/dist
+          packageManager: pnpm
           # head_ref is set on PR triggers, ref_name on push. Pages routes
           # production by matching against its configured production
           # branch (main); any other branch becomes a preview.
-          branch: ${{ github.head_ref || github.ref_name }}
-          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+          command: pages deploy frontend/dist --project-name=bliss --branch=${{ github.head_ref || github.ref_name }}
