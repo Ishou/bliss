@@ -53,14 +53,23 @@ The layered controls (defense in depth, none individually sufficient):
 | # | Control | Where | Stops |
 |---|---------|-------|-------|
 | 1 | CORS preflight rejection | ingress (nginx-ingress annotations) | Browser-issued cross-origin POSTs from non-`wordsparrow.io` pages |
-| 2 | Server-side Origin allow-list | ingress (nginx server-snippet) | Lazy abusers who don't bother spoofing `Origin` |
-| 3 | Per-IP rate limit (5 rps, burst 50) | ingress (`limit-rps`) | Single-IP floods |
-| 4 | 1 MB request body cap | ingress (`proxy-body-size`) | Oversized-payload CPU amplification |
-| 5 | Browser sampler at 10% | frontend SDK (PR-F.2) | Cuts legitimate traffic by 10× — fewer in-band requests + smaller backend bill |
-| 6 | Collector resource limits + ClickHouse storage limits | chart defaults | Hard ceiling on blast radius if 1–4 fail |
+| 2 | Per-IP rate limit (5 rps, burst 50) | ingress (`limit-rps`) | Single-IP floods |
+| 3 | 1 MB request body cap | ingress (`proxy-body-size`) | Oversized-payload CPU amplification |
+| 4 | Browser sampler at 10% | frontend SDK (PR-F.2) | Cuts legitimate traffic by 10× — fewer in-band requests + smaller backend bill |
+| 5 | Collector resource limits + ClickHouse storage limits | chart defaults | Hard ceiling on blast radius if 1–3 fail |
 
-Curl/HTTP scripts can spoof `Origin` and bypass 1+2. They cannot
-trivially bypass 3 (would need many IPs). They cannot bypass 4 or 6.
+> **Update (2026-05-10):** the original design also included a
+> server-side Origin allow-list via
+> `nginx.ingress.kubernetes.io/server-snippet`. ingress-nginx now
+> rejects snippet annotations cluster-wide via the admission webhook
+> (`allow-snippet-annotations: false` is the post-CVE-2025-1974
+> default). The check is gone; rate limit + body cap + sampler +
+> collector caps still apply. The §"Different" subsection in
+> *Consequences* anticipated this — it just landed faster than
+> expected.
+
+Curl/HTTP scripts can spoof `Origin` and bypass 1. They cannot
+trivially bypass 2 (would need many IPs). They cannot bypass 3, 4, or 5.
 
 This is not security; it's friction. A determined attacker with a
 botnet can still abuse this endpoint. The escape hatch is documented
@@ -129,8 +138,10 @@ Planned shape (will be re-validated when PR-F.2 lands):
 2. Manual smoke test (no frontend code yet): `curl -i -X POST
    https://otlp.wordsparrow.io/v1/traces -H "Origin:
    https://wordsparrow.io" -H "Content-Type: application/x-protobuf"
-   --data-binary @empty.bin` → expect HTTP 200 with `Access-Control-
-   Allow-Origin` header. Same curl with a different Origin → 403.
+   --data-binary @empty.bin` → expect HTTP 200 with an
+   `Access-Control-Allow-Origin` header. (The server-side Origin block
+   was removed in PR #300; a spoofed Origin now also reaches the
+   collector — see ADR-0033 §2 update.)
 3. PR-F.2 lands → frontend ships the SDK → real browser spans appear
    in SigNoz under `service.name=frontend` joined to the backend
    `traceparent`.
