@@ -67,8 +67,7 @@ class SkeletonFillerCooldownTest {
                 )
 
         assertThat(placements).isNotNull()
-        // Either clue is acceptable — the contract is "do not fail", not
-        // "pick any specific clue" when nothing is fresh.
+        // Any clue is acceptable — the contract is "do not fail" when all are on cooldown.
         assertThat(placements!!.single().chosenClue.text)
             .isIn("Verbe etre", "Direction cardinale")
     }
@@ -89,8 +88,7 @@ class SkeletonFillerCooldownTest {
 
     @Test
     fun `default cooldown is Inert when policy not specified`() {
-        // Regression: existing call sites that don't pass a policy continue
-        // to compile and behave as before (no cooldown applied).
+        // Regression guard: call sites without a policy argument compile and behave identically.
         val placements =
             SkeletonFiller(ListWordRepository(listOf(twoClueWord)))
                 .fill(

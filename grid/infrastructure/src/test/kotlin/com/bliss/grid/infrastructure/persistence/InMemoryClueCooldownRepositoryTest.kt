@@ -48,8 +48,7 @@ class InMemoryClueCooldownRepositoryTest {
             // Record at seq=1 → cooldown_until = 1 + rolledN.
             repo.recordGeneration(sid, listOf(tracked), rollMaxInclusive = rolledN)
 
-            // Bump (rolledN - 1) more times with disjoint clues so the tracked
-            // row is unaffected. After this, currentSeq = rolledN.
+            // (rolledN - 1) more bumps with disjoint clues; tracked row unaffected. currentSeq = rolledN.
             for (i in 2..rolledN) {
                 repo.recordGeneration(sid, listOf(ClueId("dummy-$i", "x")), rollMaxInclusive = rolledN)
             }
@@ -58,8 +57,7 @@ class InMemoryClueCooldownRepositoryTest {
             // current - lastUsed = rolledN - 1 < rolledN → on cooldown.
             assertThat(midSnap.onCooldown).contains(tracked)
 
-            // One more bump → currentSeq = rolledN + 1, cooldown_until = rolledN + 1
-            // → current - lastUsed = rolledN, NOT less than rolledN → fresh.
+            // One more bump: currentSeq = rolledN + 1 >= cooldown_until -> clue is now fresh.
             repo.recordGeneration(sid, listOf(ClueId("dummy-final", "x")), rollMaxInclusive = rolledN)
             val finalSnap = repo.snapshot(sid)
             assertThat(finalSnap.onCooldown).doesNotContain(tracked)
@@ -118,9 +116,7 @@ class InMemoryClueCooldownRepositoryTest {
 
     @Test
     fun `daily scope id is a stable sentinel UUID`() {
-        // Reserved per ADR-0031. Pinning the value in tests catches an
-        // accidental constant change that would silently corrupt previously
-        // stored daily-bucket rows.
+        // Pinned: an accidental change to DAILY_SCOPE_ID silently corrupts stored rows.
         assertThat(ClueCooldownRepository.DAILY_SCOPE_ID)
             .isEqualTo(UUID.fromString("00000000-0000-7000-8000-000000000000"))
     }
