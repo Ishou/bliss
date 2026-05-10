@@ -74,14 +74,14 @@ describe('Grid render', () => {
   });
 
   // Track template scales to puzzle dims; rows are 1fr (not auto) so a
-  // non-square puzzle (e.g. 15×12) divides the wrapper height evenly,
+  // non-square puzzle divides the wrapper height evenly,
   // and cells stay square via their own aspect-ratio: 1.
   it('emits gridTemplateColumns/Rows that match puzzle.width/height', () => {
-    const landscape: Puzzle = { ...SAMPLE_PUZZLE, width: 15, height: 12 };
+    const landscape: Puzzle = { ...SAMPLE_PUZZLE, width: 11, height: 9 };
     render(<Grid puzzle={landscape} />);
     const grid = screen.getByRole('grid', { name: landscape.title });
-    expect(grid.style.gridTemplateColumns).toBe('repeat(15, 1fr)');
-    expect(grid.style.gridTemplateRows).toBe('repeat(12, 1fr)');
+    expect(grid.style.gridTemplateColumns).toBe('repeat(11, 1fr)');
+    expect(grid.style.gridTemplateRows).toBe('repeat(9, 1fr)');
   });
 
   it('renders every clue text in the DOM, including stacked clues', () => {

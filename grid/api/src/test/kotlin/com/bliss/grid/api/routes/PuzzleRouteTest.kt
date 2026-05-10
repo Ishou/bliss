@@ -220,7 +220,7 @@ class PuzzleRouteTest {
     // Pinned to literals (not PUZZLE_WIDTH/HEIGHT) so a future drift in the
     // shared default would fail this case rather than silently follow.
     @Test
-    fun `daily endpoint returns a 15x12 landscape grid`() =
+    fun `daily endpoint returns a 10x10 grid`() =
         testApplication {
             application { module() }
 
@@ -228,8 +228,8 @@ class PuzzleRouteTest {
 
             assertThat(response.status).isEqualTo(HttpStatusCode.OK)
             val json = Json.parseToJsonElement(response.bodyAsText()).jsonObject
-            assertThat(json["width"]!!.jsonPrimitive.content.toInt()).isEqualTo(15)
-            assertThat(json["height"]!!.jsonPrimitive.content.toInt()).isEqualTo(12)
+            assertThat(json["width"]!!.jsonPrimitive.content.toInt()).isEqualTo(10)
+            assertThat(json["height"]!!.jsonPrimitive.content.toInt()).isEqualTo(10)
         }
 
     @Test

@@ -62,7 +62,7 @@ private suspend fun mintUniqueCode(repo: LobbyRepository): LobbyCode {
 class CreateLobbyUseCase(
     private val repo: LobbyRepository,
     private val clock: Clock,
-    private val defaultGridConfig: GridConfig = GridConfig(15, 12),
+    private val defaultGridConfig: GridConfig = GridConfig(10, 10),
     private val analyticsEventSink: AnalyticsEventSink = AnalyticsEventSink.Noop,
 ) {
     suspend operator fun invoke(

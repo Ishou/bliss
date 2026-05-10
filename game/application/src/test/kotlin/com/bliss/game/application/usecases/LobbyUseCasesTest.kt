@@ -46,12 +46,12 @@ class LobbyUseCasesTest {
         }
 
     @Test
-    fun `CreateLobby starts the lobby at the 15x12 default grid size`() =
+    fun `CreateLobby starts the lobby at the 10x10 default grid size`() =
         runTest {
             val h = harness()
             val result = h.create(sessionA, alice)
 
-            assertThat(result.value.gridConfig).isEqualTo(GridConfig(15, 12))
+            assertThat(result.value.gridConfig).isEqualTo(GridConfig(10, 10))
         }
 
     // Repro for the "infinite lobbies" DOS path: clicking "Create" repeatedly on the home
