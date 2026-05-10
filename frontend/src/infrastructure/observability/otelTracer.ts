@@ -114,6 +114,13 @@ export class ErrorAwareSampler implements Sampler {
 // double-emit spans and corrupt alert threshold math.
 let errorsAttached = false;
 
+// Tracer captured at init time so `reportCaughtError` (called from the React
+// `onCaughtError` / `onUncaughtError` hooks and from infrastructure adapters
+// like `pwa.ts`) can emit error spans without each caller re-resolving the
+// tracer. Stays `null` when `VITE_OTEL_OTLP_ENDPOINT` is empty (dev / preview
+// / pre-PR-F.2 prod), making `reportCaughtError` a clean no-op there.
+let cachedTracer: Tracer | null = null;
+
 /**
  * Wire `window.error` and `window.unhandledrejection` to emit OTel
  * spans with `status.code = ERROR`. Captures are scoped tight: just
@@ -157,6 +164,43 @@ function attachUncaughtErrorReporting(tracer: Tracer): void {
     });
     span.end();
   });
+}
+
+/**
+ * Emit an error span for a caller-known error path that doesn't surface as
+ * `window.error` / `unhandledrejection`. Wired today by:
+ *
+ *   - React 19's `createRoot({ onCaughtError, onUncaughtError })` hooks in
+ *     `main.tsx`. React caught-by-boundary errors never reach
+ *     `window.error`; without this path SigNoz stays silent on every
+ *     TanStack-Router-`errorComponent` catch — the gap that surfaced the
+ *     real-world `LobbyClientError` example we missed earlier.
+ *   - `infrastructure/pwa.ts` SW-registration failure path. Used to be a
+ *     `console.warn` invisible to anyone without DevTools.
+ *
+ * Span name is `window.<kind>` so the {@link ErrorAwareSampler} always
+ * samples it regardless of `VITE_OTEL_SAMPLER_RATIO` (errors are rare +
+ * high-signal).
+ *
+ * No-ops cleanly when OTel is disabled (config null at init time).
+ * Capture follows ADR-0027 §8 redaction posture: type, message, stack
+ * only — no DOM contents, no cookies, no localStorage.
+ */
+export function reportCaughtError(error: unknown, kind: string): void {
+  if (!cachedTracer) return;
+  const isError = error instanceof Error;
+  const span = cachedTracer.startSpan(`${ERROR_SPAN_NAME_PREFIX}${kind}`, {
+    attributes: {
+      'exception.type': isError ? error.name : typeof error,
+      'exception.message': isError ? error.message : String(error ?? 'unknown'),
+      'exception.stacktrace': isError ? error.stack : undefined,
+    },
+  });
+  span.setStatus({
+    code: SpanStatusCode.ERROR,
+    message: isError ? error.message : `caught error (${kind})`,
+  });
+  span.end();
 }
 
 /**
@@ -243,8 +287,10 @@ export function initOtelTracer(config: OtelTracerConfig | null): void {
     tracerProvider: provider,
   });
 
-  // Tracer for window-level error captures (PR-F.3).
-  attachUncaughtErrorReporting(
-    trace.getTracer(config.serviceName, config.serviceVersion),
-  );
+  // Tracer for window-level error captures (PR-F.3) AND for the
+  // `reportCaughtError` API used by React's onCaughtError / onUncaughtError
+  // hooks and by infrastructure adapters that catch errors locally.
+  const tracer = trace.getTracer(config.serviceName, config.serviceVersion);
+  cachedTracer = tracer;
+  attachUncaughtErrorReporting(tracer);
 }

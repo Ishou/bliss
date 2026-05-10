@@ -19,6 +19,7 @@ import {
 import {
   initOtelTracer,
   readOtelConfigFromEnv,
+  reportCaughtError,
 } from '@/infrastructure/observability/otelTracer';
 import {
   clearSession,
@@ -111,6 +112,12 @@ if (!container) {
 
 enableMocks()
   .catch((err: unknown) => {
+    // Dev / preview-only path. The dynamic `import('./mocks/...')`
+    // chain inside `enableMocks` is gated by `VITE_MOCK_*=true`,
+    // both of which are literal `false` in `.env`, so Vite tree-
+    // shakes this away at production build time. `console.error`
+    // here is intentional and permitted by the eslint `no-console`
+    // rule's `allow: ['warn', 'error']` exception.
     console.error('[MSW] worker failed to start, continuing without mock:', err);
   })
   .then(() => {
@@ -214,7 +221,43 @@ enableMocks()
       tracker.trackPageView(url, document.title || undefined);
     });
 
-    createRoot(container).render(
+    // React 19's `createRoot` accepts `onCaughtError` /
+    // `onUncaughtError` callbacks that REPLACE the default
+    // console.error firehose. Two reasons we wire them:
+    //
+    // 1. Production users open DevTools rarely; React's default
+    //    log dumps a multi-line stack on the console + nothing
+    //    leaves the browser. Caught-by-error-boundary errors
+    //    (e.g. a TanStack Router `errorComponent` catching a
+    //    failed loader fetch) never reach `window.onerror`, so
+    //    PR-F.3's `attachUncaughtErrorReporting` doesn't see
+    //    them either — the SigNoz `frontend` service stays silent
+    //    on real failures.
+    // 2. The OTel pipeline is the right channel for this signal.
+    //    `reportCaughtError` emits `window.react-caught` /
+    //    `window.react-uncaught` spans (always-sampled via
+    //    `ErrorAwareSampler`), so the alert spec's
+    //    `frontend-error-rate-high` rule trips on these too.
+    //
+    // In dev (`import.meta.env.DEV`) we also `console.error` to
+    // keep the contributor workflow noisy — diagnosing a render
+    // crash with no console output is hostile.
+    createRoot(container, {
+      onCaughtError: (error, errorInfo) => {
+        if (import.meta.env.DEV) {
+          // dev-only: keep React's default contributor-facing
+          // firehose locally so a render crash isn't silent in dev.
+          console.error('Caught error:', error, errorInfo);
+        }
+        reportCaughtError(error, 'react-caught');
+      },
+      onUncaughtError: (error, errorInfo) => {
+        if (import.meta.env.DEV) {
+          console.error('Uncaught error:', error, errorInfo);
+        }
+        reportCaughtError(error, 'react-uncaught');
+      },
+    }).render(
       <StrictMode>
         <App router={router} />
       </StrictMode>,
