@@ -31,7 +31,7 @@ K3S_IMAGE="rancher/k3s:v1.30.6-k3s1"
 # deliberately in a follow-up PR; do not float to "latest".
 INGRESS_NGINX_VERSION="4.15.1"   # ingress-nginx, K8s 1.30 compatible
 CERT_MANAGER_VERSION="v1.20.2"   # cert-manager, supports K8s 1.30
-CNPG_VERSION="0.22.1"            # CloudNative-PG operator chart
+CNPG_VERSION="0.28.0"            # CloudNative-PG operator chart
 
 INGRESS_NGINX_REPO="https://kubernetes.github.io/ingress-nginx"
 CERT_MANAGER_REPO="https://charts.jetstack.io"
