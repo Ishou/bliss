@@ -62,7 +62,7 @@ own supported topology, and keeps the DaemonSet off local development environmen
 
 ## Decision
 
-Add `k8s-infra` version `0.13.5` from `https://charts.signoz.io` as a conditional
+Add `k8s-infra` version `0.15.1` from `https://charts.signoz.io` as a conditional
 subchart of the `infra/observability` umbrella chart (alongside the existing `signoz`
 subchart). Enable it in `values-prod.yaml` with:
 
