@@ -13,17 +13,24 @@ spec:
     initdb:
       database: {{ .Values.postgres.cluster.bootstrap.database }}
       owner: {{ .Values.postgres.cluster.bootstrap.owner }}
-      # Pre-supplied owner credentials. CNPG reads `username` +
-      # `password` from this Secret at initdb time and seeds the
-      # owner role with that password — instead of generating its
-      # own. CNPG also surfaces the same credentials on its
-      # auto-generated `<cluster>-app` Secret, which the api
-      # Deployment reads for the runtime DATABASE_URL. The chart
-      # owning the password upstream is what eliminates the
-      # placeholder→swap two-pass install dance — see
-      # secret-pg-credentials.yaml for the full rationale.
-      secret:
-        name: {{ printf "%s-bootstrap" (include "wordsparrow-api.pgClusterName" .) }}
+      # Owner credentials are NOT chart-supplied. cnpg generates the
+      # owner password at initdb and surfaces it on its auto-managed
+      # `<cluster>-app` Secret, which the api Deployment reads via
+      # `valueFrom: secretKeyRef` for the runtime DATABASE_URL.
+      #
+      # Earlier this template set `bootstrap.initdb.secret` to a
+      # chart-owned `<cluster>-bootstrap` Secret rendered by
+      # `secret-pg-credentials.yaml` (now removed). The intent was to
+      # eliminate the placeholder→swap two-pass install dance, and the
+      # template used Helm `lookup` to keep the password stable across
+      # `helm upgrade`s. The pattern broke in practice (operator-#352-
+      # incident): on at least one upgrade the lookup hit its else
+      # branch and regenerated the password while cnpg's `-app` Secret
+      # stayed on the original value — api pods then crashed with
+      # `password authentication failed`. cnpg's own credential
+      # lifecycle (one Secret, owned by the operator, atomic rotation
+      # via `kubectl cnpg` / Cluster spec) is the canonical solution
+      # the chart was reinventing.
   storage:
     size: {{ .Values.postgres.cluster.storage.size }}
     {{- with .Values.postgres.cluster.storage.storageClass }}
