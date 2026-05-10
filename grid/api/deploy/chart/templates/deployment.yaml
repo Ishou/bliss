@@ -42,8 +42,7 @@ spec:
             # CNPG creates that Secret on initdb with the password it
             # generates itself. The chart no longer owns the bootstrap
             # credentials (see postgres-cluster.yaml's `bootstrap.initdb`
-            # block for the removal rationale and the credential-drift
-            # incident that triggered it). No operator step between
+            # block for the removal rationale). No operator step between
             # install and pod-start is required.
             - name: DATABASE_URL
               valueFrom:
