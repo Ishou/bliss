@@ -5,15 +5,18 @@ const controllingHandlers: Array<() => void> = [];
 const constructorCalls: Array<{ scriptUrl: string; options?: unknown }> = [];
 const wbRegister = vi.fn(() => Promise.resolve());
 
+// Vitest 4 narrowed `vi.fn().mockImplementation(arrow)` so the resulting
+// mock is no longer constructable (`new MockedFn(...)` throws "is not a
+// constructor"). Use a regular `function` expression so it carries its
+// own `[[Construct]]` slot. Same observable behaviour, different shape.
 vi.mock('workbox-window', () => ({
-  Workbox: vi.fn().mockImplementation((scriptUrl: string, options?: unknown) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  Workbox: vi.fn(function (this: any, scriptUrl: string, options?: unknown) {
     constructorCalls.push({ scriptUrl, options });
-    return {
-      addEventListener: (type: string, fn: () => void) => {
-        if (type === 'controlling') controllingHandlers.push(fn);
-      },
-      register: wbRegister,
+    this.addEventListener = (type: string, fn: () => void) => {
+      if (type === 'controlling') controllingHandlers.push(fn);
     };
+    this.register = wbRegister;
   }),
 }));
 
