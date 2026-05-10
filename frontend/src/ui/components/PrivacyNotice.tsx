@@ -115,10 +115,10 @@ function EraseDataSection({
 
 const frStrings = {
   confirm:
-    'Confirmer l\'effacement ? Votre identifiant de session, votre pseudonyme et l\'historique des indices côté serveur seront supprimés immédiatement.',
+    'Confirmer l\'effacement ? Votre identifiant de session, votre pseudonyme et toutes vos données serveur (indices et libellés vus) seront supprimés immédiatement.',
   eraseTitle: 'Effacer mes données',
   eraseDescription:
-    'Supprime votre identifiant de session, votre pseudonyme et toutes les demandes d\'indices enregistrées sur le serveur. Vous serez redirigé·e vers l\'accueil après l\'effacement.',
+    'Supprime votre identifiant de session, votre pseudonyme et toutes vos données serveur (demandes d\'indices et mémoire des libellés vus). Vous serez redirigé·e vers l\'accueil après l\'effacement.',
   eraseButton: 'Effacer mes données',
   erasing: 'Effacement en cours…',
   successMessage: 'Données effacées. Redirection…',
@@ -127,10 +127,10 @@ const frStrings = {
 
 const enStrings = {
   confirm:
-    'Confirm erase? Your session id, pseudonym, and server-side hint history will be removed immediately.',
+    'Confirm erase? Your session id, pseudonym, and all server-side data (hint requests and clue history) will be removed immediately.',
   eraseTitle: 'Erase my data',
   eraseDescription:
-    'Removes your session id, pseudonym, and every recorded hint request on the server. You will be redirected home after the erase completes.',
+    'Removes your session id, pseudonym, and all server-side data (hint requests and clue-label memory). You will be redirected home after the erase completes.',
   eraseButton: 'Erase my data',
   erasing: 'Erasing…',
   successMessage: 'Data erased. Redirecting…',
@@ -165,7 +165,10 @@ function FrenchContent() {
             <td>
               Identifiant de session (UUID v7) dans <code>localStorage</code>
             </td>
-            <td>Identifier votre session, compter vos demandes d’indices</td>
+            <td>
+              Identifier votre session, compter vos demandes d’indices, varier
+              les libellés affichés d’une grille à la suivante
+            </td>
             <td>Jusqu’à effacement</td>
           </tr>
           <tr>
@@ -177,6 +180,16 @@ function FrenchContent() {
             <td>Indices demandés par grille</td>
             <td>Limiter le nombre d’indices par grille</td>
             <td>90 jours après la dernière demande</td>
+          </tr>
+          <tr>
+            <td>
+              Mémoire courte des libellés déjà affichés (mot et libellé proposé)
+            </td>
+            <td>
+              Éviter de reproposer le même libellé pour le même mot d’une grille
+              à la suivante
+            </td>
+            <td>Jusqu’à effacement</td>
           </tr>
           <tr>
             <td>
@@ -280,7 +293,10 @@ function EnglishContent() {
             <td>
               Session id (UUID v7) in <code>localStorage</code>
             </td>
-            <td>Identify your session, count your hint requests</td>
+            <td>
+              Identify your session, count your hint requests, vary the clue
+              text shown across consecutive grids
+            </td>
             <td>Until erased</td>
           </tr>
           <tr>
@@ -292,6 +308,16 @@ function EnglishContent() {
             <td>Hints used per puzzle</td>
             <td>Cap hints per puzzle</td>
             <td>90 days from last request</td>
+          </tr>
+          <tr>
+            <td>
+              Short-term memory of clue labels already shown (word + clue text)
+            </td>
+            <td>
+              Avoid repeating the same clue for the same word across
+              consecutive grids
+            </td>
+            <td>Until erased</td>
           </tr>
           <tr>
             <td>
