@@ -13,7 +13,7 @@
 //                  minHeight:0). Use when an inner flex child must
 //                  expand to fill the remaining height (Grille, Lobby).
 //
-// Overflow-resilience invariant (ADR-0036 §5): any grid/flex container
+// Overflow-resilience invariant (ADR-0036 §6): any grid/flex container
 // inside a page shell MUST use minmax(0, 1fr) on grid tracks and
 // minWidth: 0 on flex children with intrinsic-size content. Enforced
 // empirically by frontend/e2e/page-shell-overflow.spec.ts at 320/375/768.
