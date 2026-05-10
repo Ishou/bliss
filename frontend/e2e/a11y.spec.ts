@@ -37,6 +37,32 @@ const STRESS_FIXTURE = JSON.parse(
 ) as Record<string, unknown>;
 
 test.describe('WCAG 2.2 A + AA accessibility', () => {
+  test('accueil route (landing)', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.addInitScript(() => {
+      window.localStorage.setItem('wordsparrow.tour.seen', 'true');
+    });
+    // Mock the puzzle endpoint so the progress widget hydrates
+    // deterministically — the widget renders `Nouvelle grille` /
+    // `0 / N cases` text only after this resolves, and we need it in
+    // the DOM for axe's color-contrast pass.
+    await page.route(/\/v1\/puzzles\//, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(STRESS_FIXTURE),
+      });
+    });
+    // `networkidle` (not `domcontentloaded`) so async-rendered cards
+    // are present when axe runs. Without this, the progress widget's
+    // de-emphasized text was never in the DOM at scan time and the
+    // contrast bug went undetected.
+    await page.goto('/', { waitUntil: 'networkidle' });
+    await page.evaluate(() => document.fonts.ready);
+
+    await runAxe(page, 'accueil');
+  });
+
   test('grille route (puzzle grid)', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     // Pre-seed `wordsparrow.tour.seen=true` so the SoloTour doesn't

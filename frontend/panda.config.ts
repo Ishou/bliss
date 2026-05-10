@@ -188,7 +188,14 @@ export default defineConfig({
 
         // ── Foreground ──────────────────────────────────────────────
         fg:                 { value: '{colors.neutral.50}' },   // primary text on charcoal surfaces
-        fgMuted:            { value: '{colors.neutral.300}' },  // de-emphasized text (timer label, "Grille n°")
+        // Was `neutral.300` (#80818B); bumped to `neutral.200`
+        // (#9A9BA3) so de-emphasized body text (`fontSize: sm`,
+        // `fontWeight: 400`) clears WCAG AA's 4.5:1 threshold on every
+        // surface in the palette: 6.44:1 on `bg`, 5.76:1 on `surface`,
+        // 5.03:1 on `surfaceElevated`. The previous value rendered the
+        // accueil progress widget at 4.09:1 — visibly low and a
+        // serious axe violation. See ADR-0034.
+        fgMuted:            { value: '{colors.neutral.200}' },  // de-emphasized text (timer label, "Grille n°")
         // Text colour on the dark-plum clue surface. `secondary.400`
         // (the light dusty pink that USED to be the surface) gives a
         // ~7:1 contrast on `surfaceVariant`'s plum — well clear of AA.
