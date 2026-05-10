@@ -3,6 +3,7 @@ package com.bliss.game.api.routes
 import assertk.assertThat
 import assertk.assertions.contains
 import assertk.assertions.isEqualTo
+import assertk.assertions.isNotEmpty
 import assertk.assertions.isNotEqualTo
 import assertk.assertions.isNotNull
 import assertk.assertions.isNull
@@ -157,7 +158,7 @@ class CorsTest {
             // Sanity: the route — not the CORS plugin — answered. An empty
             // body from a CORS rejection would defeat the previous assertion
             // alone in some Ktor versions.
-            assertThat(response.bodyAsText()).isNotNull()
+            assertThat(response.bodyAsText()).isNotEmpty()
         }
 
     @Test
