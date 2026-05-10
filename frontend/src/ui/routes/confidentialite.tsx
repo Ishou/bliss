@@ -8,7 +8,12 @@ import { createRoute } from '@tanstack/react-router';
 import { css } from 'styled-system/css';
 import { PrivacyNotice } from '@/ui/components/PrivacyNotice';
 import { AppHeader, Footer } from '@/ui/components/layout';
-import { buildHead, INDEXABLE_ROUTES, SITE_BASE_URL } from '@/ui/seo';
+import {
+  breadcrumbJsonLd,
+  buildHead,
+  INDEXABLE_ROUTES,
+  SITE_BASE_URL,
+} from '@/ui/seo';
 import { Route as RootRoute } from './__root';
 
 const pageStyles = css({
@@ -32,11 +37,23 @@ export const Route = createRoute({
   path: '/confidentialite',
   head: () => {
     const r = INDEXABLE_ROUTES.find((x) => x.path === '/confidentialite')!;
-    return buildHead({
+    const base = buildHead({
       title: r.title,
       description: r.description,
       canonical: `${SITE_BASE_URL}/confidentialite`,
     });
+    return {
+      ...base,
+      scripts: [
+        {
+          type: 'application/ld+json',
+          children: breadcrumbJsonLd([
+            { name: 'Accueil', item: `${SITE_BASE_URL}/` },
+            { name: r.title, item: `${SITE_BASE_URL}/confidentialite` },
+          ]),
+        },
+      ],
+    };
   },
   component: PrivacyRoute,
 });

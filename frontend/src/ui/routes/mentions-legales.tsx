@@ -1,7 +1,12 @@
 import { createRoute } from '@tanstack/react-router';
 import { css } from 'styled-system/css';
 import { AppHeader, Footer } from '@/ui/components/layout';
-import { buildHead, INDEXABLE_ROUTES, SITE_BASE_URL } from '@/ui/seo';
+import {
+  breadcrumbJsonLd,
+  buildHead,
+  INDEXABLE_ROUTES,
+  SITE_BASE_URL,
+} from '@/ui/seo';
 import { Route as RootRoute } from './__root';
 
 const pageStyles = css({
@@ -131,10 +136,22 @@ export const Route = createRoute({
   component: LegalNoticePage,
   head: () => {
     const r = INDEXABLE_ROUTES.find((x) => x.path === '/mentions-legales')!;
-    return buildHead({
+    const base = buildHead({
       title: r.title,
       description: r.description,
       canonical: `${SITE_BASE_URL}/mentions-legales`,
     });
+    return {
+      ...base,
+      scripts: [
+        {
+          type: 'application/ld+json',
+          children: breadcrumbJsonLd([
+            { name: 'Accueil', item: `${SITE_BASE_URL}/` },
+            { name: r.title, item: `${SITE_BASE_URL}/mentions-legales` },
+          ]),
+        },
+      ],
+    };
   },
 });
