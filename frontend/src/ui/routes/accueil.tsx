@@ -8,7 +8,7 @@ import { EyeIcon, EyeOffIcon } from '@/ui/components/icons';
 import { Button } from '@/ui/components/primitives';
 import { PinInput } from '@/ui/components/primitives/PinInput';
 import { AppHeader, Footer, ProgressBar } from '@/ui/components/layout';
-import { buildHead, INDEXABLE_ROUTES, SITE_BASE_URL } from '@/ui/seo';
+import { buildHead, INDEXABLE_ROUTES, SITE_BASE_URL, organizationJsonLd } from '@/ui/seo';
 import { Route as RootRoute } from './__root';
 
 // Accueil (home) — landing page introduced after the action-bar
@@ -508,6 +508,14 @@ export const Route = createRoute({
             description: r.description,
             applicationCategory: 'GameApplication',
             inLanguage: 'fr',
+          }),
+        },
+        {
+          type: 'application/ld+json',
+          children: organizationJsonLd({
+            name: 'WordSparrow',
+            url: `${SITE_BASE_URL}/`,
+            logo: `${SITE_BASE_URL}/icon-512.png`,
           }),
         },
       ],

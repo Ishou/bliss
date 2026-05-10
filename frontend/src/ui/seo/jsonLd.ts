@@ -47,6 +47,22 @@ export function breadcrumbJsonLd(items: ReadonlyArray<BreadcrumbItem>): string {
   });
 }
 
+export interface OrganizationJsonLdInput {
+  readonly name: string;
+  readonly url: string;
+  readonly logo: string;
+}
+
+export function organizationJsonLd(input: OrganizationJsonLdInput): string {
+  return JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: input.name,
+    url: input.url,
+    logo: input.logo,
+  });
+}
+
 export interface GameJsonLdInput {
   readonly name: string;
   readonly description: string;

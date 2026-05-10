@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { faqPageJsonLd, breadcrumbJsonLd, gameJsonLd } from '@/ui/seo';
+import {
+  faqPageJsonLd,
+  breadcrumbJsonLd,
+  gameJsonLd,
+  organizationJsonLd,
+} from '@/ui/seo';
 
 describe('faqPageJsonLd', () => {
   it('returns valid JSON parseable to a FAQPage with one Question per item', () => {
@@ -79,6 +84,44 @@ describe('breadcrumbJsonLd', () => {
     expect(parsed.itemListElement.map((i: { position: number }) => i.position)).toEqual([
       1, 2, 3,
     ]);
+  });
+});
+
+describe('organizationJsonLd', () => {
+  it('returns valid JSON parseable to an Organization with the expected fields', () => {
+    const json = organizationJsonLd({
+      name: 'WordSparrow',
+      url: 'https://wordsparrow.io/',
+      logo: 'https://wordsparrow.io/icon-512.png',
+    });
+    const parsed = JSON.parse(json);
+    expect(parsed['@context']).toBe('https://schema.org');
+    expect(parsed['@type']).toBe('Organization');
+    expect(parsed.name).toBe('WordSparrow');
+    expect(parsed.url).toBe('https://wordsparrow.io/');
+    expect(parsed.logo).toBe('https://wordsparrow.io/icon-512.png');
+  });
+
+  it('reflects the input fields verbatim', () => {
+    const json = organizationJsonLd({
+      name: 'Acme',
+      url: 'https://acme.test/',
+      logo: 'https://acme.test/logo.png',
+    });
+    const parsed = JSON.parse(json);
+    expect(parsed.name).toBe('Acme');
+    expect(parsed.url).toBe('https://acme.test/');
+    expect(parsed.logo).toBe('https://acme.test/logo.png');
+  });
+
+  it('round-trips through JSON.parse + JSON.stringify byte-stable', () => {
+    const json = organizationJsonLd({
+      name: 'WordSparrow',
+      url: 'https://wordsparrow.io/',
+      logo: 'https://wordsparrow.io/icon-512.png',
+    });
+    const reparsed = JSON.stringify(JSON.parse(json));
+    expect(reparsed).toBe(json);
   });
 });
 
