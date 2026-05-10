@@ -60,8 +60,8 @@ class LobbiesRouteTest {
             assertThat(lobby.players[0].sessionId).isEqualTo(ownerSessionId)
             assertThat(lobby.players[0].pseudonym).isEqualTo(ownerPseudonym)
             assertThat(lobby.state).isEqualTo("WAITING")
-            assertThat(lobby.gridConfig.width).isEqualTo(7)
-            assertThat(lobby.gridConfig.height).isEqualTo(7)
+            assertThat(lobby.gridConfig.width).isEqualTo(15)
+            assertThat(lobby.gridConfig.height).isEqualTo(12)
             // game is null while WAITING; ADR-0003 §6 requires the field to
             // be on the wire (absence and null are distinct). Inspect raw
             // JSON to verify the field was emitted, not omitted.

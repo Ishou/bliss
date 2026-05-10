@@ -78,12 +78,19 @@ const gridShellStyles = css({
 });
 
 // Base inline style for the `TransformComponent` wrapper. The wrapper
-// is a square sized by `min(100cqw, 100cqh, 720px)` against the
-// `gridShell` container above — fits whichever axis is smaller. The
-// library's stylesheet defaults this box to `width: fit-content`,
-// which would collapse around `width: 100%` children; the explicit
-// width here keeps the outer box driving layout and the grid inside
-// fills it.
+// is a `puzzle.width × puzzle.height` rectangle (aspect-ratio derived
+// from the puzzle dims) sized to fit whichever container axis binds
+// first. The library's stylesheet defaults this box to `width:
+// fit-content`, which would collapse around `width: 100%` children; the
+// explicit width here keeps the outer box driving layout and the grid
+// inside fills it.
+//
+// Width formula: `min(100cqw, 100cqh * W/H, 720px)`. The first term
+// honors the container's width; the second is the maximum width such
+// that `height = width * H/W` still fits inside the container's height;
+// the third caps the longer side at 720 px on very large displays.
+// `aspect-ratio` then derives the height from the width — no explicit
+// `height` value, so a single source of truth drives both axes.
 //
 // `touchAction` is dynamic per `transformWrapperStyle` below — `pan-y` when
 // the grid is at rest (scale 1) so a vertical swipe over the grid scrolls
@@ -92,19 +99,11 @@ const gridShellStyles = css({
 // native browser zoom on the page chrome (WCAG 1.4.4) and gives the right
 // mobile UX: scroll-through at rest, pan-when-zoomed.
 //
-// Soft-keyboard avoidance is now expressed by shrinking the *shell*
-// (see `shellInlineStyle` below) rather than the wrapper. The wrapper
-// follows automatically because both its width and height are
-// expressed in container-query units against the shell — keeping the
-// grid square as the keyboard collapses the visual viewport.
-const transformWrapperBaseStyle = {
-  // Square box auto-sized to fit the flex slot's smaller axis, capped
-  // at 720 px so it never gets uselessly large on 4K displays. The
-  // height = width clamp expresses an aspect-ratio of 1 implicitly.
-  width: 'min(100cqw, 100cqh, 720px)',
-  height: 'min(100cqw, 100cqh, 720px)',
-  margin: '0 auto',
-};
+// Soft-keyboard avoidance is expressed by shrinking the *shell* (see
+// `shellInlineStyle` below) rather than the wrapper. The wrapper
+// follows automatically because its width is expressed in
+// container-query units against the shell — keeping the grid's aspect
+// ratio constant as the keyboard collapses the visual viewport.
 // `transformContentStyle.width: 100%` defeats the same library default on
 // the inner (transformed) plane so the grid actually spans the wrapper.
 // The library composes its `transform: translate3d() scale()` on top of
@@ -310,7 +309,11 @@ export function Grid({
   const templateStyle = useMemo(
     () => ({
       gridTemplateColumns: `repeat(${puzzle.width}, 1fr)`,
-      gridTemplateRows: `repeat(${puzzle.height}, auto)`,
+      // 1fr (not auto) so rows divide the wrapper's height evenly when
+      // the puzzle aspect doesn't match the wrapper's. Cells carry their
+      // own aspect-ratio: 1, which keeps them square inside the
+      // 1fr × 1fr track they receive.
+      gridTemplateRows: `repeat(${puzzle.height}, 1fr)`,
     }),
     [puzzle.height, puzzle.width],
   );
@@ -740,9 +743,15 @@ export function Grid({
       // once zoomed in (at scale 1 there's nothing to pan to). While the
       // user is mid-drag, switch to `grabbing` for the closed-fist feel.
       const cursor = isPanning ? 'grabbing' : (isZoomedIn ? 'grab' : 'auto');
-      return { ...transformWrapperBaseStyle, touchAction, cursor } as const;
+      return {
+        width: `min(100cqw, calc(100cqh * ${puzzle.width} / ${puzzle.height}), 720px)`,
+        aspectRatio: `${puzzle.width} / ${puzzle.height}`,
+        margin: '0 auto',
+        touchAction,
+        cursor,
+      } as const;
     },
-    [isZoomedIn, isPanning],
+    [isZoomedIn, isPanning, puzzle.width, puzzle.height],
   );
   // Shell maxHeight override — only set when the soft keyboard is open
   // (see the keyboard-avoidance effect above). Inline so React mutates

@@ -73,6 +73,17 @@ describe('Grid render', () => {
     expect(grid).toHaveAttribute('lang', SAMPLE_PUZZLE.language);
   });
 
+  // Track template scales to puzzle dims; rows are 1fr (not auto) so a
+  // non-square puzzle (e.g. 15×12) divides the wrapper height evenly,
+  // and cells stay square via their own aspect-ratio: 1.
+  it('emits gridTemplateColumns/Rows that match puzzle.width/height', () => {
+    const landscape: Puzzle = { ...SAMPLE_PUZZLE, width: 15, height: 12 };
+    render(<Grid puzzle={landscape} />);
+    const grid = screen.getByRole('grid', { name: landscape.title });
+    expect(grid.style.gridTemplateColumns).toBe('repeat(15, 1fr)');
+    expect(grid.style.gridTemplateRows).toBe('repeat(12, 1fr)');
+  });
+
   it('renders every clue text in the DOM, including stacked clues', () => {
     render(<Grid puzzle={SAMPLE_PUZZLE} />);
     for (const { clue } of eachClue(SAMPLE_PUZZLE)) {

@@ -45,6 +45,15 @@ class LobbyUseCasesTest {
             assertThat(result.events[0]).isInstanceOf(LobbyEvent.PlayerJoined::class)
         }
 
+    @Test
+    fun `CreateLobby starts the lobby at the 15x12 default grid size`() =
+        runTest {
+            val h = harness()
+            val result = h.create(sessionA, alice)
+
+            assertThat(result.value.gridConfig).isEqualTo(GridConfig(15, 12))
+        }
+
     // Repro for the "infinite lobbies" DOS path: clicking "Create" repeatedly on the home
     // screen used to mint a fresh in-memory Lobby on every call. With idempotency the second
     // call returns the existing lobby and emits no event.

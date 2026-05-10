@@ -13,7 +13,12 @@
 // French mots-fléchés grid with realistic clue text — this is what
 // the dev/preview reviewer sees, and what the e2e harness loads to
 // stress-test the FitText layout. The same JSON powers both, so any
-// "looks fine in preview, breaks in e2e" drift is impossible.
+// "looks fine in preview, breaks in e2e" drift is impossible. The
+// production default is now 15×12 (see PuzzleConstraints.kt); the
+// preview fixture stays 10×10 because its value is the curated long-
+// clue corpus, not the dimensions — regenerating it at 15×12 would
+// require re-running the offline generator and re-curating the clue
+// set. Out of scope for this PR.
 // (The OpenAPI spec example at `grid/api/examples/get-puzzle-200.json`
 // is still the contract source for `tests/http-puzzle-repository.test.ts`
 // via the `virtual:grid-api-examples/*` Vite plugin; preview's display
