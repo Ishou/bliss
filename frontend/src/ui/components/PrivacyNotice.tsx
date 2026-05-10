@@ -149,7 +149,7 @@ function FrenchContent() {
       <h2>Responsable du traitement</h2>
       <p>
         WordSparrow est exploité par Colin Auberger, contact :{' '}
-        <a href="mailto:colin.auberger@gmail.com">colin.auberger@gmail.com</a>.
+        <a href="mailto:contact@wordsparrow.io">contact@wordsparrow.io</a>.
       </p>
       <h2>Données traitées</h2>
       <table>
@@ -264,7 +264,7 @@ function EnglishContent() {
       <h2>Data controller</h2>
       <p>
         WordSparrow is operated by Colin Auberger, contact:{' '}
-        <a href="mailto:colin.auberger@gmail.com">colin.auberger@gmail.com</a>.
+        <a href="mailto:contact@wordsparrow.io">contact@wordsparrow.io</a>.
       </p>
       <h2>Data we process</h2>
       <table>

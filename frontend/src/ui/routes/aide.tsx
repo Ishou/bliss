@@ -192,7 +192,7 @@ const HELP_SECTIONS: ReadonlyArray<HelpSection> = [
     value: 'nous-contacter',
     label: 'Nous contacter',
     content: (
-      <>Pour toute question, écrivez à colin.auberger@gmail.com.</>
+      <>Pour toute question, écrivez à contact@wordsparrow.io.</>
     ),
   },
 ];

@@ -16,7 +16,7 @@ données depuis les paramètres du jeu.
 ## Responsable du traitement
 
 WordSparrow est exploité par Colin Auberger, contact :
-`colin.auberger@gmail.com`. Toute demande relative à vos données peut être
+`contact@wordsparrow.io`. Toute demande relative à vos données peut être
 adressée à cette adresse.
 
 ## Données traitées
@@ -120,7 +120,7 @@ advertisers. You can erase your data at any time from the game settings.
 
 ## Data controller
 
-WordSparrow is operated by Colin Auberger, contact: `colin.auberger@gmail.com`.
+WordSparrow is operated by Colin Auberger, contact: `contact@wordsparrow.io`.
 
 ## Data we process
 
