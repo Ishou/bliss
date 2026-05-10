@@ -51,6 +51,11 @@ const PALETTE = {
 
 async function bootstrap(page: Page, viewport = { width: 1440, height: 900 }) {
   await page.setViewportSize(viewport);
+  // Pre-seed `wordsparrow.tour.seen` so the SoloTour doesn't open
+  // and obscure the grid during the assertion phase.
+  await page.addInitScript(() => {
+    window.localStorage.setItem('wordsparrow.tour.seen', 'true');
+  });
   await page.route(/\/v1\/puzzles\//, async (route) => {
     await route.fulfill({
       status: 200,
@@ -58,7 +63,9 @@ async function bootstrap(page: Page, viewport = { width: 1440, height: 900 }) {
       body: JSON.stringify(STRESS_FIXTURE),
     });
   });
-  await page.goto('/');
+  // `/` is the accueil landing since the WordSparrow refactor (75885ce);
+  // the puzzle grid lives on `/grille`.
+  await page.goto('/grille');
   await page.waitForSelector('[role="grid"]', { state: 'visible' });
   await page.evaluate(() => document.fonts.ready);
   await page.evaluate(() => new Promise(r => requestAnimationFrame(() => r(null))));
