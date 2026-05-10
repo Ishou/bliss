@@ -1,5 +1,6 @@
 import { useRouterState } from '@tanstack/react-router';
 import { css, cx } from 'styled-system/css';
+import { PAGE_MAX_WIDTH } from './Page';
 import { Lockup } from '@/ui/components/brand';
 import { OverflowMenu } from '@/ui/components/primitives';
 import { HamburgerIcon } from '@/ui/components/icons';
@@ -82,7 +83,7 @@ const skipLinkStyles = css({
 
 const headerInnerStyles = css({
   width: '100%',
-  maxWidth: '720px',
+  maxWidth: PAGE_MAX_WIDTH,
   margin: '0 auto',
   // 44 px mobile / 54 px desktop, per the brief.
   height: { base: '44px', md: '54px' },
