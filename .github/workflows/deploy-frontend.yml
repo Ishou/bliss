@@ -72,6 +72,15 @@ jobs:
         working-directory: frontend
         run: pnpm install --frozen-lockfile
 
+      - name: Install Playwright chromium for prerender
+        # The seo:postbuild step (chained into build / build:preview)
+        # uses Playwright's chromium to render each indexable route to
+        # static HTML. Browser binaries aren't part of the npm package,
+        # so install just chromium with its OS deps before the build.
+        # See ADR-0035.
+        working-directory: frontend
+        run: pnpm exec playwright install chromium --with-deps
+
       - name: Build frontend
         # PR previews use build:preview (loads .env.preview → VITE_USE_MOCK_API=true)
         # so MSW intercepts Grid API calls instead of hitting production.
