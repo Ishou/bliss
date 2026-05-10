@@ -12,18 +12,23 @@ controls layered here are:
    gets the preflight rejected. CORS is browser-enforced, so this is
    friction-not-security against curl, but it does block other websites
    from using this endpoint as a beacon for free.
-2. **Origin allow-list at server.** A `configuration-snippet` rejects
-   non-matching `Origin` headers with 403 *before* nginx forwards to
-   the collector. Curl can spoof `Origin`, but the bar is now higher
-   than zero — most opportunistic abusers won't bother.
-3. **Per-IP rate limit.** `limit-rps` + `limit-burst-multiplier` keep a
+2. **Per-IP rate limit.** `limit-rps` + `limit-burst-multiplier` keep a
    single bad actor's throughput bounded. Tune down if abuse appears.
-4. **Browser sampler at 10%.** Configured in the frontend SDK
+3. **Browser sampler at 10%.** Configured in the frontend SDK
    (PR-F.2). Drops 90% of legitimate traces, lowering both backend
    load and per-IP request count.
-5. **Collector ingestion limits.** Default SigNoz collector resource
-   limits + ClickHouse storage limits cap the blast radius even if 1-4
+4. **Collector ingestion limits.** Default SigNoz collector resource
+   limits + ClickHouse storage limits cap the blast radius even if 1-3
    fail.
+
+ADR-0033 §2 originally included a server-side Origin allow-list via
+`nginx.ingress.kubernetes.io/server-snippet`. Snippet annotations are
+now rejected cluster-wide by the ingress-nginx admission webhook
+(post-CVE-2025-1974 default — `allow-snippet-annotations: false`), so
+the server-side check is gone. Curl with any spoofed Origin can now
+hit the endpoint; rate limit + body cap + sampler still bound the
+abuse. The escape hatches in §5 of the ADR (drop the Ingress, ship
+same-origin proxy, ship auth proxy) remain available.
 
 Alternatives we considered (see ADR-0033 §3 for the long form):
 - Reuse the existing `api.wordsparrow.io` host with a `/otlp/*` path
@@ -56,23 +61,20 @@ metadata:
     external-dns.alpha.kubernetes.io/target: {{ .Values.ingress.floatingIp | quote }}
     # CORS at ingress: handle the preflight (OPTIONS /v1/traces) without
     # forwarding to the collector (which doesn't ship CORS by default).
+    # The original design (ADR-0033) layered an additional server-side
+    # Origin allow-list via `server-snippet` to reject non-browser
+    # POSTs (curl with arbitrary Origin). ingress-nginx now rejects
+    # snippet annotations cluster-wide as part of the post-
+    # CVE-2025-1974 hardening (`allow-snippet-annotations: false` is
+    # the default), so the Origin allow-list is browser-CORS-only.
+    # Defense remains: rate limit, body cap, browser-side sampler,
+    # collector + ClickHouse capacity caps. Documented in ADR-0033 §2
+    # update.
     nginx.ingress.kubernetes.io/enable-cors: "true"
     nginx.ingress.kubernetes.io/cors-allow-origin: {{ .Values.ingress.otlpPublic.allowedOrigins | join ", " | quote }}
     nginx.ingress.kubernetes.io/cors-allow-methods: "POST, OPTIONS"
     nginx.ingress.kubernetes.io/cors-allow-headers: "content-type, traceparent, tracestate, baggage"
     nginx.ingress.kubernetes.io/cors-max-age: "600"
-    # Server-side Origin allow-list. CORS protects browsers; this
-    # rejects non-browser POSTs whose Origin doesn't match. Curl can
-    # spoof, but most abusers won't.
-    nginx.ingress.kubernetes.io/server-snippet: |
-      set $otlp_origin_ok 0;
-      {{- range .Values.ingress.otlpPublic.allowedOrigins }}
-      if ($http_origin = "{{ . }}") { set $otlp_origin_ok 1; }
-      {{- end }}
-      set $otlp_block "";
-      if ($request_method = POST) { set $otlp_block P; }
-      if ($otlp_origin_ok = 0) { set $otlp_block "${otlp_block}X"; }
-      if ($otlp_block = PX) { return 403; }
     # Per-IP rate limit. limit-rps is the sustained rate; multiplier
     # bounds the burst window. Tune `limitRps` / `limitBurstMultiplier`
     # in values.yaml if abuse appears or if legitimate spike loads need
