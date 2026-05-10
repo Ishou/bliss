@@ -92,7 +92,10 @@ test.describe('WCAG 2.2 A + AA accessibility', () => {
 
   test('not-found route', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto('/this-route-does-not-exist');
+    // `networkidle` so React hydrates and sets `document.title` via
+    // `RootNotFound`'s useLayoutEffect — without this wait, axe scans
+    // the pre-hydration shell and `document-title` fails (serious).
+    await page.goto('/this-route-does-not-exist', { waitUntil: 'networkidle' });
     await page.evaluate(() => document.fonts.ready);
 
     await runAxe(page, 'not-found');

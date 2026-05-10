@@ -1,4 +1,5 @@
 import { HeadContent, Outlet, createRootRouteWithContext } from '@tanstack/react-router';
+import { useLayoutEffect } from 'react';
 import { css } from 'styled-system/css';
 import type { PuzzleRepository, PuzzleSolver } from '@/application';
 import type { GameClient, LobbyClient } from '@/application/game';
@@ -108,6 +109,16 @@ function RootErrorBoundary() {
 }
 
 function RootNotFound() {
+  // The 27812a6 refactor dropped hardcoded `<title>` defaults; the
+  // not-found path has no per-route `head: () => …` slot, so the
+  // document is left without a title — fails axe's `document-title`
+  // rule (serious) on the WCAG 2.4.2 baseline. Set it imperatively
+  // here so the gate stays green.
+  useLayoutEffect(() => {
+    const previous = document.title;
+    document.title = 'Page introuvable — WordSparrow';
+    return () => { document.title = previous; };
+  }, []);
   return (
     <main id="main-content" tabIndex={-1} className={errorPageStyles}>
       <h1 className={errorTitleStyles}>Page introuvable.</h1>

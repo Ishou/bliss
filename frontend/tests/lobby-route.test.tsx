@@ -363,7 +363,9 @@ describe('Lobby route applyEvent reducer', () => {
     const gameClient = makeFakeGameClient();
     const { unmount } = renderLobby({ gameClient });
     await screen.findByRole('heading', { name: /WordSparrow/ });
-    expect(gameClient.subscriberCount()).toBe(1);
+    // Two subscribers: the state-reducer subscriber and the SR
+    // announcer subscriber added by PR-B2c.
+    expect(gameClient.subscriberCount()).toBe(2);
 
     unmount();
     expect(gameClient.subscriberCount()).toBe(0);

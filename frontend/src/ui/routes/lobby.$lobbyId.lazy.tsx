@@ -47,6 +47,7 @@ import { EndGameModal } from '@/ui/components/lobby/EndGameModal';
 import { PlayerList } from '@/ui/components/lobby/PlayerList';
 import { WaitingRoom } from '@/ui/components/lobby/WaitingRoom';
 import { Button } from '@/ui/components/primitives';
+import { useAnnouncer } from '@/ui/components/a11y/Announcer';
 
 // Lobby route now shares the home route's chrome (AppHeader + main +
 // 720 px content column, charbon panel behind the grid). The styles
@@ -287,6 +288,23 @@ function LobbyPage() {
 
   const { sessionId } = getSession();
   const lobby = view.lobby;
+
+  // Announce multiplayer events to screen readers. Lives parallel to
+  // the reducer subscription above so the announce path is independent
+  // of the state-folding path. Local user's own join/leave events are
+  // filtered by `multiAnnouncementFor` (returning null = no announce).
+  const announcer = useAnnouncer();
+  useEffect(() => {
+    const pseudonymBySessionId = new Map(
+      lobby.players.map((p) => [p.sessionId, p.pseudonym] as const),
+    );
+    const ctx: MultiAnnounceContext = { localSessionId: sessionId, pseudonymBySessionId };
+    const unsubscribe = gameClient.subscribe((event) => {
+      const text = multiAnnouncementFor(event, ctx);
+      if (text != null) announcer.say(text);
+    });
+    return unsubscribe;
+  }, [gameClient, sessionId, lobby.players, announcer]);
 
   const handleRename = useCallback((newPseudonym: Pseudonym) => {
     gameClient.renameSelf(newPseudonym);
@@ -907,3 +925,54 @@ export const Route = createLazyRoute('/lobby/$lobbyId')({
   pendingComponent: () => <LobbyStatus role="status" text="Chargement du salon…" />,
   errorComponent: LobbyErrorComponent,
 });
+
+export interface MultiAnnounceContext {
+  readonly localSessionId: string;
+  readonly pseudonymBySessionId: ReadonlyMap<string, string>;
+  // Reads the player's letter at (row, col) — '' when empty. Defaults
+  // to a DOM query (ADR-0002 §4: cell values live in the DOM).
+  readonly readLetterAt?: (row: number, col: number) => string;
+}
+
+/**
+ * Map a `GameEvent` to a polite SR announcement, or `null` when no
+ * announcement is appropriate (local user's own join/leave; events
+ * that don't carry a meaningful SR signal).
+ */
+export function multiAnnouncementFor(
+  event: GameEvent,
+  ctx: MultiAnnounceContext,
+): string | null {
+  const read =
+    ctx.readLetterAt ??
+    ((row, col) => {
+      const input = document.querySelector<HTMLInputElement>(
+        `input[data-cell-kind="letter"][data-row="${row}"][data-col="${col}"]`,
+      );
+      return input?.value ?? '';
+    });
+
+  switch (event.type) {
+    case 'playerJoined': {
+      if (event.sessionId === ctx.localSessionId) return null;
+      return `${event.pseudonym} a rejoint la partie`;
+    }
+    case 'playerLeft': {
+      if (event.sessionId === ctx.localSessionId) return null;
+      const name = ctx.pseudonymBySessionId.get(event.sessionId) ?? 'Un joueur';
+      return `${name} a quitté la partie`;
+    }
+    case 'gameStarted': {
+      return 'La partie commence';
+    }
+    case 'wordLocked': {
+      const word = event.positions
+        .map((p) => read(p.row, p.column))
+        .join('');
+      if (word.length === 0) return null;
+      return `mot validé : ${word}`;
+    }
+    default:
+      return null;
+  }
+}
