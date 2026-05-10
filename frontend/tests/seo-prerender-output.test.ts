@@ -211,6 +211,41 @@ describe.skipIf(!existsSync(resolve(DIST, 'index.html')))(
         /<h1\b[^>]*>[^<]*Comment jouer aux mots fléchés en ligne[^<]*<\/h1>/,
       );
     });
+
+    // Guard against the "frozen tour on hard refresh" bug. The
+    // prerender browser starts with empty localStorage; without the
+    // `wordsparrow.tour.seen` seed in `scripts/prerender.ts`,
+    // `useSoloTour` auto-opens the welcome step and the Portal-rendered
+    // tour parts get baked into `dist/grille/index.html` as
+    // `data-state="open"` markup. Real visitors then load that static
+    // HTML and see a tour with no React handlers attached (Portal
+    // content is outside the route's hydratable subtree, so the
+    // client-side machine never adopts it).
+    //
+    // Closed-state tour parts (`data-scope="tour"` with `hidden`) still
+    // render via the Portal; they are inert and invisible. We only
+    // assert the open-state surface is absent.
+    it.each(INDEXABLE_ROUTES)(
+      'does not bake the open-state solo tour into dist/$path',
+      (route) => {
+        const file =
+          route.path === '/'
+            ? resolve(DIST, 'index.html')
+            : resolve(DIST, route.path.slice(1), 'index.html');
+        const html = readFileSync(file, 'utf8');
+        // Only the open-state portal markup signals the bug. The
+        // closed-state Tour.Content (hidden, with the always-rendered
+        // dismiss button inside it) is harmless.
+        expect(html).not.toMatch(/data-scope="tour"[^>]*data-state="open"/);
+        // Welcome-step title only renders into the DOM when the zag
+        // machine is active (it's bound through the live step record,
+        // not the JSX children).
+        expect(html).not.toContain('Bienvenue');
+        // `progressText` resolves to "Étape 1 sur N" only when current
+        // step is 0 (open at welcome); closed-state shows "Étape 0 sur N".
+        expect(html).not.toMatch(/Étape 1 sur \d+/);
+      },
+    );
   },
 );
 
