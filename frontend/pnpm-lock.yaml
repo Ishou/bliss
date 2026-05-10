@@ -10,6 +10,11 @@ overrides:
   postcss: ^8.5.10
   fast-uri: ^3.1.2
 
+patchedDependencies:
+  '@zag-js/pin-input@0.82.2':
+    hash: d8df4c7a3ba8c94b33d661ebeccb5b2002e1c06c03abf95bd78f10947dc14854
+    path: patches/@zag-js__pin-input@0.82.2.patch
+
 importers:
 
   .:
@@ -4473,7 +4478,7 @@ snapshots:
       '@zag-js/menu': 0.82.2
       '@zag-js/number-input': 0.82.2
       '@zag-js/pagination': 0.82.2
-      '@zag-js/pin-input': 0.82.2
+      '@zag-js/pin-input': 0.82.2(patch_hash=d8df4c7a3ba8c94b33d661ebeccb5b2002e1c06c03abf95bd78f10947dc14854)
       '@zag-js/popover': 0.82.2
       '@zag-js/presence': 0.82.2
       '@zag-js/progress': 0.82.2
@@ -6581,7 +6586,7 @@ snapshots:
       '@zag-js/types': 0.82.2
       '@zag-js/utils': 0.82.2
 
-  '@zag-js/pin-input@0.82.2':
+  '@zag-js/pin-input@0.82.2(patch_hash=d8df4c7a3ba8c94b33d661ebeccb5b2002e1c06c03abf95bd78f10947dc14854)':
     dependencies:
       '@zag-js/anatomy': 0.82.2
       '@zag-js/core': 0.82.2

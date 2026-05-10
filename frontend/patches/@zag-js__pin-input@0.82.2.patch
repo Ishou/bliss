@@ -1,0 +1,24 @@
+diff --git a/dist/index.js b/dist/index.js
+index d48efb4c793781c6b8bf807e7f9c3a6e68204837..5a7d0ba86d4068e325ac3c6e2dc62da0aa4a8e81 100644
+--- a/dist/index.js
++++ b/dist/index.js
+@@ -437,6 +437,7 @@ function getNextValue(current, next) {
+   let nextValue = next;
+   if (current[0] === next[0]) nextValue = next[1];
+   else if (current[0] === next[1]) nextValue = next[0];
++  if (nextValue == null) return current ?? "";
+   return nextValue.split("")[nextValue.length - 1];
+ }
+ var invoke = {
+diff --git a/dist/index.mjs b/dist/index.mjs
+index d7d09a8c0594c2d98c43ebc37e79d9d3c879bd79..730429b4f29e5d9953afd4d4ad380622dc109e5e 100644
+--- a/dist/index.mjs
++++ b/dist/index.mjs
+@@ -435,6 +435,7 @@ function getNextValue(current, next) {
+   let nextValue = next;
+   if (current[0] === next[0]) nextValue = next[1];
+   else if (current[0] === next[1]) nextValue = next[0];
++  if (nextValue == null) return current ?? "";
+   return nextValue.split("")[nextValue.length - 1];
+ }
+ var invoke = {
