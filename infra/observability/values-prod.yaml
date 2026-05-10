@@ -28,3 +28,31 @@ ingress:
   otlpPublic:
     enabled: true
     host: "otlp.wordsparrow.io"
+
+# k8s-infra subchart: per-node otel-agent DaemonSet + cluster-state
+# otel-deployment Deployment. Sends kubeletstats / hostmetrics /
+# k8s_cluster metrics to the bundled SigNoz collector over OTLP/gRPC
+# inside the cluster (no public ingress).
+k8s-infra:
+  enabled: true
+  # Tags every metric so SigNoz can filter by cluster — there's only
+  # one prod cluster today, but the field is standard OTel semantic
+  # convention (`k8s.cluster.name`) and dashboards expect it.
+  clusterName: "wordsparrow-prod"
+  # Send OTLP to the in-cluster SigNoz collector Service (same target
+  # the app pods push to via OTEL_EXPORTER_OTLP_ENDPOINT). gRPC port
+  # 4317; cluster-internal, no TLS.
+  otelCollectorEndpoint: "observability-signoz-otel-collector.observability.svc.cluster.local:4317"
+  otelInsecure: true
+  # Sized for the cx33 worker pool. Per-node agent footprint is
+  # modest (kubeletstats + hostmetrics scrape every 60 s by default);
+  # if metric volume bites, narrow the receivers list in
+  # `presets` rather than starving the agent.
+  otelAgent:
+    resources:
+      requests: {cpu: 50m, memory: 128Mi}
+      limits: {cpu: 200m, memory: 256Mi}
+  otelDeployment:
+    resources:
+      requests: {cpu: 50m, memory: 128Mi}
+      limits: {cpu: 200m, memory: 256Mi}

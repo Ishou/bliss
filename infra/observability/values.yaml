@@ -173,3 +173,15 @@ ingress:
     # OTEL_EXPORTER_OTLP_ENDPOINT.
     collectorService: "observability-signoz-otel-collector"
     collectorPort: 4318
+
+# SigNoz k8s-infra subchart (see Chart.yaml). Disabled in defaults so
+# local installs (e.g. `make dev`) don't spin a DaemonSet on every node;
+# enabled in values-prod.yaml with the prod cluster name + collector
+# target. The subchart's own defaults cover most knobs (kubeletstats +
+# hostmetrics + k8s_cluster receivers all on by default); we override
+# only the cluster identity and the in-cluster OTLP target.
+k8s-infra:
+  enabled: false
+  # The chart deploys both an otel-agent DaemonSet (host/pod metrics)
+  # and an otel-deployment singleton (cluster-state metrics). Both
+  # forward to the same OTLP endpoint — see values-prod.yaml override.
