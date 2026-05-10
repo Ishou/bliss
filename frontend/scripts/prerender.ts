@@ -21,6 +21,17 @@ import { INDEXABLE_ROUTES } from '../src/ui/seo/routeManifest.ts';
 
 const DIST = resolve(import.meta.dirname, '../dist');
 
+// Canonical example payload for `GET /v1/puzzles/daily` (and
+// `GET /v1/puzzles/{puzzleId}`). Mirrors the OpenAPI example committed
+// next to the spec — same fixture MSW seeds preview deploys with — so
+// the prerender renders against the exact wire shape the contract
+// promises. Read once at module load; reused across every page.
+const PUZZLE_FIXTURE_PATH = resolve(
+  import.meta.dirname,
+  '../../grid/api/examples/get-puzzle-200.json',
+);
+const PUZZLE_FIXTURE_BODY = readFileSync(PUZZLE_FIXTURE_PATH, 'utf8');
+
 const MIME: Record<string, string> = {
   '.html': 'text/html; charset=utf-8',
   '.js': 'application/javascript; charset=utf-8',
@@ -82,15 +93,28 @@ async function prerenderRoute(
 ): Promise<PrerenderError | null> {
   const page = await context.newPage();
   try {
-    // Block every outbound request that doesn't target the local
-    // static server. Routes with a data loader (`/`, `/grille`) call
-    // `puzzleRepository.fetchDaily()` against the real prod API host;
-    // letting that network call run pins the route on the
-    // pendingComponent indefinitely (or breaks the build behind a
-    // strict egress firewall). Forcing the loader to fail fast lets
-    // the route's `errorComponent` mount, which is what surfaces the
-    // route's `head()` (title / canonical / description) into the DOM
-    // — exactly what the prerender wants to capture.
+    // Routes with a data loader (`/`, `/grille`) call
+    // `puzzleRepository.fetchDaily()` against the real prod API host
+    // (`VITE_GRID_API_URL` = `https://api.wordsparrow.io`). Two things
+    // we need from the network layer here:
+    //   1. Mock `/v1/puzzles/**` with a realistic payload so the loader
+    //      resolves and the *real* component renders. Otherwise the
+    //      route's `errorComponent` mounts ("Une erreur est survenue")
+    //      and that error markup gets baked into `dist/index.html` and
+    //      `dist/grille/index.html` — bad SEO and a guaranteed
+    //      hydration mismatch when the client loader succeeds for real.
+    //   2. Fail every other external request fast (Matomo, OTel, any
+    //      future analytics endpoint). Letting them hang holds the
+    //      page open; a synthetic 503 lets the SDK no-op.
+    // Local static-server requests (the bundle, sitemap, OG image,
+    // etc.) pass through untouched.
+    //
+    // Order matters: Playwright dispatches matching routes in
+    // registration order, but only one route handles each request, so
+    // we register the broad catch-all first and the specific puzzle
+    // pattern second. The catch-all fulfills with 503 for non-local
+    // hosts; the puzzle handler intercepts before that for the API
+    // surface.
     await page.route('**/*', (route_) => {
       const url = route_.request().url();
       if (url.startsWith(baseUrl)) {
@@ -102,6 +126,13 @@ async function prerenderRoute(
         body: '{"error":"prerender-no-network"}',
       });
     });
+    await page.route('**/v1/puzzles/**', (route_) =>
+      route_.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: PUZZLE_FIXTURE_BODY,
+      }),
+    );
     await page.goto(`${baseUrl}${route.path}`, {
       waitUntil: 'domcontentloaded',
       timeout: 30_000,
