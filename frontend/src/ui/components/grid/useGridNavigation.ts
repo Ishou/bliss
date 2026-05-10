@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ArrowDirection, Cell, DefinitionCell, DefinitionClue, LetterCell, Position, Puzzle } from '@/domain';
+import { useAnnouncer } from '@/ui/components/a11y/Announcer';
 import { wordRange } from './wordRange';
 
 // 'across' === ArrowDirection 'right'; 'down' === 'down'.
@@ -263,6 +264,27 @@ export interface UseGridNavigationOptions {
   readonly isPanning?: () => boolean;
 }
 
+// Formats the polite announcement emitted once each time the user enters a
+// new word. Shape: « <clue text> », mot horizontal|vertical de N lettres :
+// <slot pattern>  where each slot is either the current letter (uppercase)
+// or the word 'point' for an empty cell (option-a format, comma-separated).
+function formatWordEntryAnnouncement(
+  clue: Clue,
+  getEntryAt: (row: number, col: number) => string,
+): string {
+  const cells = clue.cells;
+  const direction = cells.every((c) => c.position.row === cells[0]!.position.row)
+    ? 'horizontal'
+    : 'vertical';
+  const pattern = cells
+    .map((c) => {
+      const letter = getEntryAt(c.position.row, c.position.col);
+      return letter !== '' ? letter : 'point';
+    })
+    .join(', ');
+  return `« ${clue.clue.text} », mot ${direction} de ${cells.length} lettres : ${pattern}`;
+}
+
 export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOptions): GridNavigation {
   const lookup = useMemo(() => buildLookup(puzzle), [puzzle]);
   const refs = useRef(new Map<string, HTMLInputElement>());
@@ -521,6 +543,26 @@ export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOpt
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [entriesVersion],
   );
+
+  // Word-transition announcement. Fires exactly once each time the user
+  // enters a new word (identified by the definition cell's position + arrow
+  // direction). Moving within the same word skips the announcement; leaving
+  // the grid clears the last-seen key so re-entering the same word announces
+  // again (the user may have left and come back after reading the clue panel).
+  const announcer = useAnnouncer();
+  const lastWordKeyRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!currentClue || !focused) {
+      lastWordKeyRef.current = null;
+      return;
+    }
+    const def = currentClue.definition.position;
+    const wordKey = `${def.row}:${def.col}:${currentClue.clue.arrow}`;
+    if (wordKey === lastWordKeyRef.current) return;
+    lastWordKeyRef.current = wordKey;
+    announcer.say(formatWordEntryAnnouncement(currentClue, getEntryAt));
+  }, [currentClue, focused, announcer, getEntryAt]);
 
   // Fire the presence-focus callback on every (focused, direction)
   // transition. The transport-layer adapter (`WebSocketGameClient`) is
