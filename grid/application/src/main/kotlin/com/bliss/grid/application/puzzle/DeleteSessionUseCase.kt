@@ -1,16 +1,13 @@
 package com.bliss.grid.application.puzzle
 
+import com.bliss.grid.domain.generation.ClueCooldownRepository
 import java.util.UUID
 
 /**
  * Right-to-erasure (RGPD Article 17, ADR-0025 §5). Removes every server-side
- * row attributable to [sessionId]. Today that's just `puzzle_hint_usage`; any
- * future table that retains a `session_id` column must extend this use case.
- *
- * Returns the count of rows deleted across all tables. The route exposes this
- * for client confirmation but the count is not load-bearing for compliance —
- * a successful (200) response with `deleted = 0` is the expected outcome for
- * a session that never used a hint.
+ * row attributable to [sessionId] and returns the total deleted across all
+ * extended tables. Today that covers `puzzle_hint_usage` always, and
+ * `clue_cooldown` whenever a non-null [cooldownRepository] is wired.
  *
  * Matomo visit erasure is intentionally not invoked from here. The
  * daily-rotated salted hash (ADR-0025 §3) makes prior-day visits already
@@ -20,6 +17,11 @@ import java.util.UUID
  */
 class DeleteSessionUseCase(
     private val hintUsageRepository: HintUsageRepository,
+    private val cooldownRepository: ClueCooldownRepository? = null,
 ) {
-    fun execute(sessionId: UUID): Int = hintUsageRepository.deleteBySession(sessionId)
+    fun execute(sessionId: UUID): Int {
+        val hintRows = hintUsageRepository.deleteBySession(sessionId)
+        val cooldownRows = cooldownRepository?.deleteBySession(sessionId) ?: 0
+        return hintRows + cooldownRows
+    }
 }

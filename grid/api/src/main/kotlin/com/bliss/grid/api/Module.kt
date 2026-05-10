@@ -173,10 +173,12 @@ fun Application.module() {
     monitor.subscribe(ApplicationStopped) { analyticsScope.cancel() }
     val analyticsEventSink: AnalyticsEventSink = createAnalyticsEventSink(analyticsScope)
 
-    // Clue cooldown (ADR-0031). Off by default; route plumbing not yet wired.
-    // Flag retirement: 2026-09-01.
+    // Clue cooldown (ADR-0031). On by default — set GRID_CLUE_COOLDOWN_ENABLED=false
+    // to disable the wiring at the kill-switch level (use case sees null repo,
+    // route still parses X-Session-Id but the cooldown read/write path is
+    // bypassed). Flag retirement: 2026-09-01.
     val cooldownRepository: ClueCooldownRepository? =
-        if (System.getenv("GRID_CLUE_COOLDOWN_ENABLED")?.toBooleanStrictOrNull() == true) {
+        if (System.getenv("GRID_CLUE_COOLDOWN_ENABLED")?.toBooleanStrictOrNull() != false) {
             when (val ds = Database.dataSource()) {
                 null -> InMemoryClueCooldownRepository()
                 else -> PostgresClueCooldownRepository(ds)
@@ -199,7 +201,7 @@ fun Application.module() {
     val revealCellHint =
         RevealCellHintUseCase(puzzleRepository, hintUsageRepository, analyticsEventSink = analyticsEventSink)
     val validatePuzzle = ValidatePuzzleUseCase(puzzleRepository)
-    val deleteSession = DeleteSessionUseCase(hintUsageRepository)
+    val deleteSession = DeleteSessionUseCase(hintUsageRepository, cooldownRepository)
     val dailyPuzzleSelector = DailyPuzzleSelector()
 
     routing {
