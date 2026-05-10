@@ -13,6 +13,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "e2e": "playwright test",
+    "a11y": "playwright test e2e/a11y.spec.ts",
     "typecheck": "pnpm panda:codegen && tsc -b",
     "lint": "eslint .",
     "panda:codegen": "panda codegen --silent",
