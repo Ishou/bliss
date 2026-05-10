@@ -221,23 +221,22 @@ enableMocks()
       tracker.trackPageView(url, document.title || undefined);
     });
 
-    // React 19's `createRoot` accepts `onCaughtError` /
-    // `onUncaughtError` callbacks that REPLACE the default
-    // console.error firehose. Two reasons we wire them:
+    // React 19's `createRoot` accepts an `onCaughtError` callback that
+    // REPLACES the default console.error firehose for errors caught by
+    // an ErrorBoundary. We wire only this one:
     //
-    // 1. Production users open DevTools rarely; React's default
-    //    log dumps a multi-line stack on the console + nothing
-    //    leaves the browser. Caught-by-error-boundary errors
-    //    (e.g. a TanStack Router `errorComponent` catching a
-    //    failed loader fetch) never reach `window.onerror`, so
-    //    PR-F.3's `attachUncaughtErrorReporting` doesn't see
-    //    them either — the SigNoz `frontend` service stays silent
-    //    on real failures.
-    // 2. The OTel pipeline is the right channel for this signal.
-    //    `reportCaughtError` emits `window.react-caught` /
-    //    `window.react-uncaught` spans (always-sampled via
-    //    `ErrorAwareSampler`), so the alert spec's
-    //    `frontend-error-rate-high` rule trips on these too.
+    // Caught-by-error-boundary errors (e.g. a TanStack Router
+    // `errorComponent` catching a failed loader fetch) never reach
+    // `window.onerror`, so `attachUncaughtErrorReporting` doesn't see
+    // them — the SigNoz `frontend` service stays silent on real
+    // failures without this hook. `onCaughtError` fills that gap.
+    //
+    // We do NOT wire `onUncaughtError`: React 19 rethrows uncaught
+    // errors asynchronously via `setTimeout(() => { throw err })`,
+    // which fires the existing `window.addEventListener('error', …)`
+    // handler in `attachUncaughtErrorReporting`. Wiring `onUncaughtError`
+    // as well would double-emit a span for the same error, corrupting
+    // the `frontend-error-rate-high` alert threshold math.
     //
     // In dev (`import.meta.env.DEV`) we also `console.error` to
     // keep the contributor workflow noisy — diagnosing a render
@@ -250,12 +249,6 @@ enableMocks()
           console.error('Caught error:', error, errorInfo);
         }
         reportCaughtError(error, 'react-caught');
-      },
-      onUncaughtError: (error, errorInfo) => {
-        if (import.meta.env.DEV) {
-          console.error('Uncaught error:', error, errorInfo);
-        }
-        reportCaughtError(error, 'react-uncaught');
       },
     }).render(
       <StrictMode>
