@@ -925,9 +925,10 @@ export function Grid({
                           cell.position.row,
                           cell.position.col,
                         );
+                        const ordinal = (n: number) => (n === 1 ? '1ère' : `${n}ème`);
                         const ariaLabel =
                           wordIndex >= 0
-                            ? `${wordIndex + 1}ème lettre : ${letter !== '' ? letter : 'vide'}`
+                            ? `${ordinal(wordIndex + 1)} lettre : ${letter !== '' ? letter : 'vide'}`
                             : `Case ligne ${cell.position.row + 1}, colonne ${cell.position.col + 1}`;
                         return (
                           <LetterCellView
