@@ -43,7 +43,7 @@ val hikariVersion = "7.0.2"
 // signature in the new pod's previous-container logs).
 val flywayVersion = "11.10.4"
 val testcontainersVersion = "1.21.4"
-val kotestPropertyVersion = "5.9.1"
+val kotestPropertyVersion = "6.1.11"
 val commonsCsvVersion = "1.12.0"
 
 application {
@@ -73,7 +73,7 @@ dependencies {
         implementation("io.netty:netty-codec-http2:4.2.13.Final")
         implementation("io.netty:netty-codec-compression:4.2.13.Final")
         implementation("io.netty:netty-transport-native-epoll:4.2.13.Final")
-        implementation("com.fasterxml.jackson.core:jackson-core:2.21.1")
+        implementation("com.fasterxml.jackson.core:jackson-core:2.21.3")
         implementation("tools.jackson.core:jackson-core:3.1.1")
     }
 

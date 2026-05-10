@@ -29,7 +29,7 @@ val logstashEncoderVersion = "9.0"
 val junitVersion = "5.11.4"
 val assertkVersion = "0.28.1"
 val konsistVersion = "0.17.3"
-val kotestPropertyVersion = "5.9.1"
+val kotestPropertyVersion = "6.1.11"
 
 application {
     mainClass.set("com.bliss.game.api.MainKt")
@@ -56,7 +56,7 @@ dependencies {
         implementation("io.netty:netty-codec-http2:4.2.13.Final")
         implementation("io.netty:netty-codec-compression:4.2.13.Final")
         implementation("io.netty:netty-transport-native-epoll:4.2.13.Final")
-        implementation("com.fasterxml.jackson.core:jackson-core:2.21.1")
+        implementation("com.fasterxml.jackson.core:jackson-core:2.21.3")
         implementation("tools.jackson.core:jackson-core:3.1.1")
     }
 
@@ -111,7 +111,7 @@ dependencies {
     // Ktor's testApplication exposes a client; enabling the WebSockets plugin
     // on it lets us drive `/v1/lobbies/{lobbyId}/ws` from tests.
     testImplementation("io.ktor:ktor-client-websockets:$ktorVersion")
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.0")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.11.0")
     testImplementation("com.lemonappdev:konsist:$konsistVersion")
     testImplementation("io.kotest:kotest-property-jvm:$kotestPropertyVersion")
 }

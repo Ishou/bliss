@@ -26,7 +26,7 @@ dependencies {
     // Ktor stack for consistency.
     implementation("io.ktor:ktor-client-core:$ktorVersion")
     implementation("io.ktor:ktor-client-cio:$ktorVersion")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")
 
     // kotlinx-serialization — JSONB encoding for the puzzles.payload column.
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
@@ -46,7 +46,7 @@ dependencies {
 
     // MockEngine + coroutines-test — fake transport for MatomoAnalyticsAdapterTest.
     testImplementation("io.ktor:ktor-client-mock:$ktorVersion")
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.0")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.11.0")
 }
 
 tasks.test {
