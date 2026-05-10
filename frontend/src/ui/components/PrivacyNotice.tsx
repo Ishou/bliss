@@ -85,9 +85,15 @@ function EraseDataSection({
       setTimeout(() => {
         window.location.href = '/';
       }, 1500);
-    } catch (err) {
+    } catch {
+      // The original implementation surfaced the raw error.message
+      // which would render English / technical strings ("Failed to
+      // fetch", "TypeError: Cannot read property…") to a French user.
+      // The actual cause goes to OTel via the `window.error` /
+      // `unhandledrejection` listeners; what reaches the UI is a
+      // localised, calm-tone message.
       setStatus('error');
-      setErrorMessage(err instanceof Error ? err.message : String(err));
+      setErrorMessage(t.eraseFailureMessage);
     }
   }
 
@@ -123,6 +129,7 @@ const frStrings = {
   erasing: 'Effacement en cours…',
   successMessage: 'Données effacées. Redirection…',
   errorPrefix: 'Erreur',
+  eraseFailureMessage: 'Échec de la suppression. Réessayez dans un instant.',
 };
 
 const enStrings = {
@@ -135,6 +142,7 @@ const enStrings = {
   erasing: 'Erasing…',
   successMessage: 'Data erased. Redirecting…',
   errorPrefix: 'Error',
+  eraseFailureMessage: 'Erase failed. Try again in a moment.',
 };
 
 function FrenchContent() {

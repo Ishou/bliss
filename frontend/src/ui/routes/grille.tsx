@@ -544,8 +544,12 @@ export const Route = createRoute({
   loader: ({ context }): Promise<Puzzle> => context.puzzleRepository.fetchDaily(),
   component: HomePage,
   pendingComponent: HomeSkeleton,
+  // `messageForError` returns French copy for known LobbyClientError
+  // kinds and a generic French fallback for everything else — never the
+  // raw `error.message`, which can be an English exception name + a
+  // minified stack frame for a French audience.
   errorComponent: ({ error }) => (
-    <HomeStatus role="alert" text={`Échec du chargement de la grille : ${error.message}`} />
+    <HomeStatus role="alert" text={messageForError(error)} />
   ),
   head: () => ({ meta: [{ title: 'WordSparrow' }] }),
 });
