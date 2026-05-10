@@ -38,31 +38,22 @@ postgres:
     # human-readable version, digest enforces byte-identical pulls per
     # MANIFESTO ("container images pinned to digest").
     #
-    # Major upgrade 16 → 17 (this PR, follow-up for 17 → 18): applied
-    # via cnpg's offline in-place `pg_upgrade` flow (cnpg 1.28 docs /
-    # postgres_upgrades). cnpg's admission webhook
-    # (`vcluster.cnpg.io`) ENFORCES single-major-step upgrades; an
-    # initial 16 → 18 attempt was rejected with "can't upgrade
-    # between majors {17 0} and {16 10}". The two-step is required,
-    # not stylistic. 17 → 18 follows in a separate PR after this one
-    # settles.
-    #
-    # Why 17.8 specifically: cnpg's docs warn that PG 17.0–17.5
-    # carries a `max_slot_wal_keep_size` bug; 17.6+ is the safe
-    # floor. 17.8 is the current 17.x bookworm release and captures
-    # every patch since.
+    # Major upgrade 17 → 18 (step 2 of 2; step 1 was 16 → 17.8 in
+    # PR #350 / ADR-0036). cnpg 1.28's admission webhook
+    # (`vcluster.cnpg.io`) enforces single-major-step in-place
+    # upgrades, which is why this is split.
     #
     # On `helm upgrade`, cnpg detects the major-version delta on the
     # live `Cluster` and schedules a
     # `<cluster>-primary-major-upgrade` Job: the entire cluster
     # (primary + replicas) goes offline for the duration of
-    # `pg_upgrade`, then comes back on PG 17.8. PITR does NOT cross
+    # `pg_upgrade`, then comes back on PG 18.1. PITR does NOT cross
     # the major boundary — take a fresh base backup post-upgrade.
     #
     # Distro continuity: bookworm → bookworm (cnpg requires same OS
     # base for in-place upgrades). The trixie line is the future
     # default (cnpg 1.29+); deferring that transition to its own PR.
-    imageName: "ghcr.io/cloudnative-pg/postgresql:17.8-system-bookworm@sha256:9714cbca68836d0a4f5e455d8078afafd60e0751d28944935309be90d9c4ec98"
+    imageName: "ghcr.io/cloudnative-pg/postgresql:18.1-system-bookworm@sha256:61654dc3b1aa2191e083288caf332e60daa342817a64a285283e69e31f1c854d"
     storage:
       size: 10Gi
       # Empty = cluster default. Prod "hcloud-volumes"; local "local-path".
