@@ -10,7 +10,9 @@ export {
   faqPageJsonLd,
   breadcrumbJsonLd,
   gameJsonLd,
+  organizationJsonLd,
   type FaqItem,
   type BreadcrumbItem,
   type GameJsonLdInput,
+  type OrganizationJsonLdInput,
 } from './jsonLd';

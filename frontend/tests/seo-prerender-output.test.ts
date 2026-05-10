@@ -75,6 +75,20 @@ describe.skipIf(!existsSync(resolve(DIST, 'index.html')))(
       expect(html).toContain('"inLanguage":"fr"');
     });
 
+    it('embeds Organization JSON-LD on the homepage', () => {
+      const html = readFileSync(resolve(DIST, 'index.html'), 'utf8');
+      expect(html).toContain('"@type":"Organization"');
+      expect(html).toContain('"name":"WordSparrow"');
+      expect(html).toContain('"logo":"https://wordsparrow.io/icon-512.png"');
+    });
+
+    it('does NOT embed Organization JSON-LD on non-homepage routes', () => {
+      for (const path of ['grille', 'aide', 'mentions-legales', 'confidentialite']) {
+        const html = readFileSync(resolve(DIST, path, 'index.html'), 'utf8');
+        expect(html).not.toContain('"@type":"Organization"');
+      }
+    });
+
     it('embeds a FAQPage with one Question per HELP_SECTIONS entry on /aide', () => {
       const html = readFileSync(resolve(DIST, 'aide', 'index.html'), 'utf8');
       expect(html).toContain('"@type":"FAQPage"');
