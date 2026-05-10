@@ -95,6 +95,74 @@ describe('useWordAutoValidation', () => {
     expect(solver.validate).toHaveBeenCalledTimes(1);
   });
 
+  it('rewrites the DOM input values to the submitted letters when the word locks (override-on-validate)', async () => {
+    // Repro for "type/del before the cell is locked → validated value
+    // lost". Letter cells are uncontrolled (ADR-0002 §4): defaultValue
+    // applies on mount only and the lock is `readOnly`, so any
+    // keystroke landing during the validate round-trip stays in the
+    // DOM and the eventual lock pins the wrong/empty letter. Closing
+    // the window: when the server confirms a word is correct, push
+    // the submitted letters back into each cell's <input> via the
+    // same querySelector path the hook reads from, then apply the
+    // lock — any stale post-submit edit is overwritten.
+    mountInput(0, 1, 'D');
+    mountInput(0, 2, 'E');
+    mountInput(0, 3, 'M');
+    const lastInput = mountInput(0, 4, 'O');
+
+    let resolve!: (r: ValidationResult) => void;
+    const deferred = new Promise<ValidationResult>((r) => {
+      resolve = r;
+    });
+    const solver: PuzzleSolver = {
+      validate: vi.fn().mockReturnValue(deferred),
+      requestHint: vi.fn().mockRejectedValue(new Error('not used here')),
+    };
+    const { result } = renderHook(() => useWordAutoValidation(puzzle, solver));
+
+    act(() => {
+      result.current.onCellFilled({ row: 0, col: 4 }, 'across');
+    });
+
+    // Simulate the user typing/deleting during the round-trip — this
+    // is the exact race the override exists to defeat.
+    lastInput.value = 'X';
+
+    await act(async () => {
+      resolve({ solved: false, incorrectCells: [] });
+      await Promise.resolve();
+    });
+
+    expect(result.current.validated.has('0,4')).toBe(true);
+    // The override re-pinned the DOM to the validated letter, not the
+    // stale 'X' the simulated keystroke left behind.
+    expect(lastInput.value).toBe('O');
+  });
+
+  it('does not rewrite cells the server flagged incorrect (no false override on a wrong word)', async () => {
+    mountInput(0, 1, 'D');
+    mountInput(0, 2, 'E');
+    mountInput(0, 3, 'M');
+    const lastInput = mountInput(0, 4, 'X');
+
+    const solver = makeSolver({
+      solved: false,
+      incorrectCells: [{ row: 0, column: 4 }],
+    });
+    const { result } = renderHook(() => useWordAutoValidation(puzzle, solver));
+
+    await act(async () => {
+      result.current.onCellFilled({ row: 0, col: 4 }, 'across');
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    // Word was wrong: nothing locked, nothing rewritten — the user can
+    // freely correct it (and any post-submit edit they made is kept).
+    expect(result.current.validated.size).toBe(0);
+    expect(lastInput.value).toBe('X');
+  });
+
   it('does not call the solver when the word is not yet fully filled', () => {
     mountInput(0, 1, 'D');
     mountInput(0, 2, 'E');
