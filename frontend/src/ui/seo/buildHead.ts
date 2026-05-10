@@ -14,6 +14,10 @@ export interface BuildHeadInput {
   readonly description: string;
   readonly canonical: string;
   readonly noindex?: boolean;
+  // Absolute URL of the per-route OpenGraph image. When omitted, the
+  // shared `DEFAULT_OG_IMAGE` is used (current behavior for excluded
+  // routes that ship no per-route artwork).
+  readonly ogImage?: string;
 }
 
 export interface RouteHead {
@@ -22,7 +26,8 @@ export interface RouteHead {
 }
 
 export function buildHead(input: BuildHeadInput): RouteHead {
-  const { title, description, canonical, noindex = false } = input;
+  const { title, description, canonical, noindex = false, ogImage } = input;
+  const image = ogImage ?? DEFAULT_OG_IMAGE;
 
   const meta: Array<Record<string, string>> = [
     { title },
@@ -33,11 +38,11 @@ export function buildHead(input: BuildHeadInput): RouteHead {
     { property: 'og:type', content: 'website' },
     { property: 'og:site_name', content: 'WordSparrow' },
     { property: 'og:locale', content: 'fr_FR' },
-    { property: 'og:image', content: DEFAULT_OG_IMAGE },
+    { property: 'og:image', content: image },
     { name: 'twitter:card', content: 'summary_large_image' },
     { name: 'twitter:title', content: title },
     { name: 'twitter:description', content: description },
-    { name: 'twitter:image', content: DEFAULT_OG_IMAGE },
+    { name: 'twitter:image', content: image },
   ];
 
   if (noindex) {
