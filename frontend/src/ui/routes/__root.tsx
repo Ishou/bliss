@@ -7,6 +7,7 @@ import type { SessionClient } from '@/application/session/SessionClient';
 import type { SoloEntriesStore } from '@/application/solo/SoloEntriesStore';
 import type { TourSeenStore } from '@/application/tour/TourSeenStore';
 import type { Pseudonym, SessionId } from '@/domain/game';
+import { AnnouncerProvider } from '@/ui/components/a11y/Announcer';
 
 // Router context surface — every route loader receives this object as
 // `ctx.context`. The composition root (`main.tsx`) is the only place
@@ -124,7 +125,9 @@ export const Route = createRootRouteWithContext<AppRouterContext>()({
   component: () => (
     <>
       <HeadContent />
-      <Outlet />
+      <AnnouncerProvider>
+        <Outlet />
+      </AnnouncerProvider>
     </>
   ),
   errorComponent: RootErrorBoundary,

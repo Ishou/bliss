@@ -912,11 +912,29 @@ export function Grid({
                         const error = errorPositions?.has(key) ?? false;
                         const incomingArrows = incomingArrowsByLetter.get(key);
                         const presence = presenceMap?.get(key);
+                        const inWord = highlight.currentWord;
+                        const wordIndex =
+                          inWord && nav.currentClue
+                            ? nav.currentClue.cells.findIndex(
+                                (c) =>
+                                  c.position.row === cell.position.row &&
+                                  c.position.col === cell.position.col,
+                              )
+                            : -1;
+                        const letter = nav.getEntryAt(
+                          cell.position.row,
+                          cell.position.col,
+                        );
+                        const ordinal = (n: number) => (n === 1 ? '1ère' : `${n}ème`);
+                        const ariaLabel =
+                          wordIndex >= 0
+                            ? `${ordinal(wordIndex + 1)} lettre : ${letter !== '' ? letter : 'vide'}`
+                            : `Case ligne ${cell.position.row + 1}, colonne ${cell.position.col + 1}`;
                         return (
                           <LetterCellView
                             key={key}
                             cell={cell}
-                            ariaLabel={`Case ligne ${cell.position.row + 1}, colonne ${cell.position.col + 1}`}
+                            ariaLabel={ariaLabel}
                             inWord={highlight.currentWord}
                             focused={highlight.focused}
                             validated={validated}
