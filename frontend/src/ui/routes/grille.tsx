@@ -1,8 +1,10 @@
 import { createRoute, useNavigate, useRouter } from '@tanstack/react-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type React from 'react';
 import { css } from 'styled-system/css';
 import { type Position, type Puzzle } from '@/domain';
 import { LobbyClientError } from '@/application/game';
+import type { SoloEntriesStore } from '@/application/solo/SoloEntriesStore';
 import {
   Grid,
   HintControl,
@@ -17,6 +19,7 @@ import {
   PuzzleToolbar,
 } from '@/ui/components/layout';
 import { SoloTour, useSoloTour } from '@/ui/components/tour';
+import { useAnnouncer } from '@/ui/components/a11y/Announcer';
 import {
   breadcrumbJsonLd,
   buildHead,
@@ -206,6 +209,8 @@ function HomePage() {
   const navigate = useNavigate();
   const { puzzleSolver, soloEntriesStore, tourSeenStore } = Route.useRouteContext();
 
+  const announcer = useAnnouncer();
+
   // Locked cells = cells revealed via a previous hint. Source of truth
   // for "this cell is correct, untouchable, and survives reload."
   // Initialized from solo localStorage and merged into the union we
@@ -236,23 +241,14 @@ function HomePage() {
   // the standard solo-entries path, and add the cell to the locked set
   // (also persisted). Querying the DOM directly mirrors how the focus
   // ref is consumed: keep the keystroke path uncontrolled.
-  const handleHintReveal = useCallback(
-    (row: number, column: number, letter: string) => {
-      const input = document.querySelector<HTMLInputElement>(
-        `input[data-cell-kind="letter"][data-row="${row}"][data-col="${column}"]`,
-      );
-      if (input) input.value = letter;
-      soloEntriesStore.save(puzzle.id, row, column, letter);
-      soloEntriesStore.lockCell(puzzle.id, row, column);
-      setLockedHintCells((prev) => {
-        const key = `${row},${column}`;
-        if (prev.has(key)) return prev;
-        const next = new Set(prev);
-        next.add(key);
-        return next;
-      });
-    },
-    [puzzle.id, soloEntriesStore],
+  const handleHintReveal = useMemo(
+    () => makeHintRevealHandler({
+      puzzleId: puzzle.id,
+      soloEntriesStore,
+      announcer,
+      setLockedHintCells,
+    }),
+    [puzzle.id, soloEntriesStore, announcer],
   );
 
   // Persisted hint count survives page reloads and resets on
@@ -342,13 +338,13 @@ function HomePage() {
   // hint reveals write to. Without this, Accueil's "Grille du jour"
   // progress only counted hint-revealed cells (capped at hintsAllowed)
   // because the auto-validated set lived in React state only.
-  const handleWordValidated = useCallback(
-    (positions: ReadonlyArray<Position>) => {
-      for (const p of positions) {
-        soloEntriesStore.lockCell(puzzle.id, p.row, p.col);
-      }
-    },
-    [puzzle.id, soloEntriesStore],
+  const handleWordValidated = useMemo(
+    () => makeWordValidatedHandler({
+      puzzleId: puzzle.id,
+      soloEntriesStore,
+      announcer,
+    }),
+    [puzzle.id, soloEntriesStore, announcer],
   );
   const autoValidation = useWordAutoValidation(puzzle, puzzleSolver, initialEntries, handleWordValidated);
 
@@ -595,6 +591,68 @@ function HomeSkeleton() {
       </p>
     </PageShell>
   );
+}
+
+// ---------------------------------------------------------------------------
+// Exported factory functions for testability (unit tests don't need the full
+// route harness to exercise the announcement logic).
+// ---------------------------------------------------------------------------
+
+export interface WordValidatedHandlerDeps {
+  readonly puzzleId: string;
+  readonly soloEntriesStore: Pick<SoloEntriesStore, 'lockCell'>;
+  readonly announcer: { say: (text: string) => void };
+  readonly readLetterAt?: (row: number, col: number) => string;
+}
+
+export function makeWordValidatedHandler(
+  deps: WordValidatedHandlerDeps,
+): (positions: ReadonlyArray<Position>) => void {
+  return (positions) => {
+    for (const p of positions) {
+      deps.soloEntriesStore.lockCell(deps.puzzleId, p.row, p.col);
+    }
+    const read =
+      deps.readLetterAt ??
+      ((row, col) => {
+        const input = document.querySelector<HTMLInputElement>(
+          `input[data-cell-kind="letter"][data-row="${row}"][data-col="${col}"]`,
+        );
+        return input?.value ?? '';
+      });
+    const word = positions.map((p) => read(p.row, p.col)).join('');
+    if (word.length > 0) {
+      deps.announcer.say(`mot validé : ${word}`);
+    }
+  };
+}
+
+export interface HintRevealHandlerDeps {
+  readonly puzzleId: string;
+  readonly soloEntriesStore: Pick<SoloEntriesStore, 'save' | 'lockCell'>;
+  readonly announcer: { say: (text: string) => void };
+  readonly setLockedHintCells: React.Dispatch<React.SetStateAction<ReadonlySet<string>>>;
+}
+
+export function makeHintRevealHandler(
+  deps: HintRevealHandlerDeps,
+): (row: number, column: number, letter: string) => void {
+  return (row, column, letter) => {
+    const input = document.querySelector<HTMLInputElement>(
+      `input[data-cell-kind="letter"][data-row="${row}"][data-col="${column}"]`,
+    );
+    if (input) input.value = letter;
+    deps.soloEntriesStore.save(deps.puzzleId, row, column, letter);
+    deps.soloEntriesStore.lockCell(deps.puzzleId, row, column);
+    deps.setLockedHintCells((prev) => {
+      const key = `${row},${column}`;
+      if (prev.has(key)) return prev;
+      const next = new Set(prev);
+      next.add(key);
+      return next;
+    });
+    deps.announcer.say(`lettre ${letter} révélée à la ligne ${row + 1}, colonne ${column + 1}`);
+  };
 }
 
 // `?tour=1` re-opens the onboarding tour from the Aide page. Any other
