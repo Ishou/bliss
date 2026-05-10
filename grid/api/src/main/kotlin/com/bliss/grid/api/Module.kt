@@ -22,6 +22,7 @@ import com.bliss.grid.infrastructure.persistence.CsvWordRepository
 import com.bliss.grid.infrastructure.persistence.InMemoryClueCooldownRepository
 import com.bliss.grid.infrastructure.persistence.InMemoryHintUsageRepository
 import com.bliss.grid.infrastructure.persistence.InMemoryPuzzleRepository
+import com.bliss.grid.infrastructure.persistence.PostgresClueCooldownRepository
 import com.bliss.grid.infrastructure.persistence.PostgresHintUsageRepository
 import com.bliss.grid.infrastructure.persistence.PostgresPuzzleRepository
 import io.ktor.client.HttpClient
@@ -172,11 +173,14 @@ fun Application.module() {
     monitor.subscribe(ApplicationStopped) { analyticsScope.cancel() }
     val analyticsEventSink: AnalyticsEventSink = createAnalyticsEventSink(analyticsScope)
 
-    // Clue cooldown (ADR-0031). Off by default; Postgres adapter and route
-    // plumbing are not yet wired. Flag retirement: 2026-09-01.
+    // Clue cooldown (ADR-0031). Off by default; route plumbing not yet wired.
+    // Flag retirement: 2026-09-01.
     val cooldownRepository: ClueCooldownRepository? =
         if (System.getenv("GRID_CLUE_COOLDOWN_ENABLED")?.toBooleanStrictOrNull() == true) {
-            InMemoryClueCooldownRepository()
+            when (val ds = Database.dataSource()) {
+                null -> InMemoryClueCooldownRepository()
+                else -> PostgresClueCooldownRepository(ds)
+            }
         } else {
             null
         }
