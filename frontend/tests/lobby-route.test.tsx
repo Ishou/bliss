@@ -204,6 +204,11 @@ describe('Lobby route loader', () => {
     expect(screen.getByText('2 joueurs')).toBeInTheDocument();
   });
 
+  it('renders the global footer landmark on the lobby page', async () => {
+    renderLobby({ lobbyClient: { getLobby: vi.fn().mockResolvedValue(baseLobby) } });
+    expect(await screen.findByRole('contentinfo')).toBeInTheDocument();
+  });
+
   it('renders "Salon introuvable" when the lobby client throws kind=not-found', async () => {
     const notFound = new LobbyClientError({
       kind: 'not-found', status: 404, problem: null, message: 'No lobby with id 7gQ2xK9p',

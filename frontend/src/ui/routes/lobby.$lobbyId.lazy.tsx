@@ -41,7 +41,7 @@ import type {
 } from '@/domain/game';
 import { Grid } from '@/ui/components/grid';
 import { usePresenceState } from '@/ui/components/grid/usePresenceState';
-import { AppHeader, ProgressBar, PuzzleToolbar } from '@/ui/components/layout';
+import { AppHeader, Footer, ProgressBar, PuzzleToolbar } from '@/ui/components/layout';
 import { ConnectionBanner } from '@/ui/components/lobby/ConnectionBanner';
 import { EndGameModal } from '@/ui/components/lobby/EndGameModal';
 import { PlayerList } from '@/ui/components/lobby/PlayerList';
@@ -140,6 +140,7 @@ const LobbyShell = ({ children }: { children: React.ReactNode }) => (
         {children}
       </div>
     </main>
+    <Footer />
   </div>
 );
 
