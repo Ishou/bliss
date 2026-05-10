@@ -65,35 +65,26 @@ fun Application.module() {
         allowMethod(HttpMethod.Get)
         allowMethod(HttpMethod.Options) // preflight
         // DELETE /v1/sessions/{sessionId} is the GDPR erasure endpoint
-        // (ADR-0025 §5). Without this allowance the browser preflight
-        // fails and the privacy-notice "Effacer mes données" button
-        // surfaces "Failed to fetch" instead of erasing the session.
+        // (ADR-0025 §5). Methods stay explicit because the set is tiny
+        // and stable — the recurring-tax problem is headers, not methods.
         allowMethod(HttpMethod.Delete)
-        allowHeader(HttpHeaders.ContentType)
-        allowHeader(HttpHeaders.Accept)
-        // POST /v1/puzzles/{puzzleId}/hints sends the player's session as a
-        // custom header (see openapi.yaml + HttpPuzzleSolver.ts); without
-        // this allowance the browser preflight fails and the call never
-        // reaches the route.
-        allowHeader("X-Session-Id")
-        allowHeader("X-Request-Id")
-        // W3C Trace Context propagation (PR-F.2 / ADR-0033). The OTel
-        // browser SDK's FetchInstrumentation attaches `traceparent` and
-        // `tracestate` to outbound fetches matching wordsparrow.io so
-        // backend spans nest under the browser fetch in SigNoz. Both
-        // headers are non-simple from CORS' POV and must be allowed
-        // explicitly — without these entries every POST hint / validate
-        // (and indeed every fetch that triggers a preflight) fails with
-        // 403 because the browser's preflight checks
-        // `Access-Control-Request-Headers` against this list. `baggage`
-        // is the W3C Baggage propagation header — not used today by the
-        // SDK we ship, but allow-listed proactively because the OTel
-        // contrib instrumentations use it interchangeably with the
-        // trace headers and a future SDK bump might enable it. CorsTest
-        // exercises each so a regression here fails CI before prod.
-        allowHeader("traceparent")
-        allowHeader("tracestate")
-        allowHeader("baggage")
+
+        // Headers: wildcard allow per ADR-0034. The previous explicit
+        // allowlist accumulated three production incidents in two
+        // months — DELETE for GDPR (PR #259), X-Request-Id for
+        // correlation IDs (PR #267), traceparent / tracestate for the
+        // OTel SDK (PR-F.2) — each one a contributor adding an outbound
+        // header that middleware silently attaches to every fetch and
+        // forgetting the CORS plugin needs to be told. The defense-in-
+        // depth `allowHeader` gave us was small (no credentials, public
+        // read API, backends ignore unknown headers), the operational
+        // tax was large. Origin allowlist + per-IP rate limit at ingress
+        // remain the actual security perimeter. ADR-0034 has the full
+        // trade-off + the conditions under which this would be revisited
+        // (most prominently: gaining auth would force a return to the
+        // explicit list because credentialed CORS is incompatible with
+        // wildcard headers).
+        allowHeaders { true }
 
         // Production frontends (Cloudflare Pages serving wordsparrow.io).
         allowHost("wordsparrow.io", schemes = listOf("https"))

@@ -87,15 +87,14 @@ class CorsTest {
         }
 
     @Test
-    fun `preflight allows W3C Trace Context headers attached by OTel SDK`() =
+    fun `preflight allows arbitrary headers (ADR-0034 wildcard)`() =
         testApplication {
             application { module() }
 
-            // Same regression pattern as grid-api: PR-F.2's FetchInstrumentation
-            // attaches `traceparent` / `tracestate` to wordsparrow.io fetches.
-            // Both must be in `allowHeader` or the preflight returns no
-            // Allow-Headers and the browser blocks the request — every POST
-            // /v1/lobbies / GET lobby fails as "Failed to fetch".
+            // Mirrors grid-api/CorsTest's wildcard assertion. The
+            // historically-incident-prone keys plus an unfamiliar one
+            // all come back in Access-Control-Allow-Headers — exactly
+            // what ADR-0034 buys.
             val response =
                 client.options("/v1/lobbies") {
                     headers {
@@ -103,7 +102,7 @@ class CorsTest {
                         append(HttpHeaders.AccessControlRequestMethod, "POST")
                         append(
                             HttpHeaders.AccessControlRequestHeaders,
-                            "Content-Type, X-Request-Id, traceparent, tracestate, baggage",
+                            "Content-Type, X-Request-Id, traceparent, tracestate, baggage, X-Foo-Future",
                         )
                     }
                 }
@@ -113,9 +112,11 @@ class CorsTest {
                 .isEqualTo("https://wordsparrow.io")
             val allowHeaders =
                 response.headers[HttpHeaders.AccessControlAllowHeaders].orEmpty().lowercase()
+            assertThat(allowHeaders).contains("x-request-id")
             assertThat(allowHeaders).contains("traceparent")
             assertThat(allowHeaders).contains("tracestate")
             assertThat(allowHeaders).contains("baggage")
+            assertThat(allowHeaders).contains("x-foo-future")
         }
 
     @Test

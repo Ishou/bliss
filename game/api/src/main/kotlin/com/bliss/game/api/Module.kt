@@ -71,19 +71,13 @@ fun Application.module() {
         allowMethod(HttpMethod.Put)
         allowMethod(HttpMethod.Delete)
         allowMethod(HttpMethod.Options) // preflight
-        allowHeader(HttpHeaders.ContentType)
-        allowHeader(HttpHeaders.Accept)
-        allowHeader("X-Request-Id")
-        // W3C Trace Context propagation (PR-F.2 / ADR-0033). Mirrors
-        // grid-api's allow-list so browser fetches that the OTel SDK
-        // augments with `traceparent` / `tracestate` (and the
-        // forward-compatible `baggage`) pass the preflight. Without
-        // these, every POST /v1/lobbies / GET lobby / WS upgrade
-        // request from a browser fails the CORS preflight with 403.
-        // CorsTest exercises each.
-        allowHeader("traceparent")
-        allowHeader("tracestate")
-        allowHeader("baggage")
+
+        // Headers: wildcard allow per ADR-0034. Mirrors grid-api. The
+        // explicit allowlist this replaced caused the PR-F.2 regression
+        // (`traceparent` / `tracestate` from the OTel SDK weren't on
+        // the list, every browser POST 403'd at preflight). Origin
+        // allowlist + per-IP rate limit at ingress remain in place.
+        allowHeaders { true }
 
         // Production frontends (Cloudflare Pages serving wordsparrow.io).
         allowHost("wordsparrow.io", schemes = listOf("https"))
