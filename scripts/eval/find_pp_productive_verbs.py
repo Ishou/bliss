@@ -42,7 +42,7 @@ def main() -> int:
     p.add_argument("--min-pp-freq", type=int, default=0,
                    help="minimum surface frequency to count as PP-productive")
     p.add_argument("--length-min", type=int, default=4)
-    p.add_argument("--length-max", type=int, default=11)
+    p.add_argument("--length-max", type=int, default=15)
     args = p.parse_args()
 
     lex = args.lexique or Path(os.path.expanduser(
