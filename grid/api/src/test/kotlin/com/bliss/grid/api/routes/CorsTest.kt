@@ -152,6 +152,41 @@ class CorsTest {
         }
 
     @Test
+    fun `preflight allows W3C Trace Context headers attached by OTel SDK`() =
+        testApplication {
+            application { module() }
+
+            // The OTel browser SDK's FetchInstrumentation (PR-F.2 / ADR-0033)
+            // attaches `traceparent` + `tracestate` to outbound fetches
+            // matching wordsparrow.io so backend spans nest under the browser
+            // fetch in SigNoz. These are non-simple headers from CORS' POV;
+            // without them in `allowHeader` the browser preflight is rejected
+            // and every POST hint / validate fails with "Failed to fetch" —
+            // the exact regression that triggered this test (CORS recurring
+            // tax memory).
+            val response =
+                client.options("/v1/puzzles/$validId/hints") {
+                    headers {
+                        append(HttpHeaders.Origin, "https://wordsparrow.io")
+                        append(HttpHeaders.AccessControlRequestMethod, "POST")
+                        append(
+                            HttpHeaders.AccessControlRequestHeaders,
+                            "Content-Type, X-Session-Id, traceparent, tracestate, baggage",
+                        )
+                    }
+                }
+
+            assertThat(response.status).isEqualTo(HttpStatusCode.OK)
+            assertThat(response.headers[HttpHeaders.AccessControlAllowOrigin])
+                .isEqualTo("https://wordsparrow.io")
+            val allowHeaders =
+                response.headers[HttpHeaders.AccessControlAllowHeaders].orEmpty().lowercase()
+            assertThat(allowHeaders).contains("traceparent")
+            assertThat(allowHeaders).contains("tracestate")
+            assertThat(allowHeaders).contains("baggage")
+        }
+
+    @Test
     fun `preflight allows DELETE for the session erasure endpoint`() =
         testApplication {
             application { module() }
