@@ -196,23 +196,7 @@ describe('PinInput', () => {
     expect(onValueChange).toHaveBeenLastCalledWith('A2B3C4');
   });
 
-  // Sentinel for the prod crash captured in SigNoz as
-  //   `TypeError: Cannot read properties of undefined (reading 'split')`
-  //   at setFocusedValue → executeActions (@zag-js/pin-input)
-  //
-  // Root cause: zag's `getNextValue` does
-  //   `if (current[0] === next[0]) nextValue = next[1];`
-  //   `return nextValue.split("")[nextValue.length - 1];`
-  // — which throws when the user re-types the character already sitting
-  // in the focused slot (`next` is single-char so `next[1]` is undefined).
-  // Field path: share-link prefill on /join/<code>, focus a slot, retype.
-  //
-  // Upstream still ships the bug on `latest` (1.40.0), so we patch the
-  // installed copy via `patches/@zag-js__pin-input@0.82.2.patch`. jsdom
-  // doesn't faithfully drive zag's input pipeline (React's value tracker
-  // dedups the same-char change), which is why the regression isn't a
-  // behavioural test — it's a sentinel that catches the patch falling
-  // off (zag version bump, pnpm config drift) before prod does.
+  // jsdom's React value-tracker dedups same-char inputs, so a behavioral test can't reach this path.
   it('ships the @zag-js/pin-input getNextValue undefined-guard patch', () => {
     const require = createRequire(import.meta.url);
     const machinePath = require.resolve('@zag-js/pin-input');
