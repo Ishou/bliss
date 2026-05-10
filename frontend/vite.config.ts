@@ -171,9 +171,14 @@ export default defineConfig({
         // `src/infrastructure/pwa.ts` then reloads each tab — fresh
         // loads reload synchronously, mid-session tabs defer until the
         // tab next becomes visible so the user is never yanked
-        // mid-typing. Safe here because the bundle isn't code-split
-        // (one big `assets/index-*.js`) so a v1 page never asks the SW
-        // for a v2 chunk; revisit if route-based code splitting lands.
+        // mid-typing. Safe here because all four chunks (app + three
+        // vendor splits) are eagerly loaded via <script> tags in
+        // index.html — a tab under the old SW has already fetched
+        // everything it needs before the new SW claims it. No
+        // mid-session dynamic import() will ask the new SW for an
+        // old-hash chunk. If lazy-loaded routes (import('./Route')) are
+        // added later, revisit this: the new SW's precache won't have
+        // the old hashed filenames the still-open page would request.
         skipWaiting: true,
         clientsClaim: true,
         runtimeCaching: [
@@ -221,6 +226,44 @@ export default defineConfig({
     // SigNoz still won't auto-unmap, but a developer with the maps in
     // hand can.
     sourcemap: true,
+    rollupOptions: {
+      output: {
+        // Manual vendor splits. Goal: keep stable third-party code in
+        // its own long-lived chunks so a deploy of app-only changes
+        // doesn't bust the user's React/Router/OTel cache. Trade-off:
+        // 3 extra HTTP requests on first paint, but each ~30-100 KB
+        // gzipped over HTTP/2 multiplexing is negligible against the
+        // cache-hit rate on returning visits. Without these, every
+        // app change reinvalidates the entire 240 KB gzipped bundle.
+        //
+        // Only split vendors that are (a) large enough to matter,
+        // (b) genuinely stable across most deploys, and (c) loaded
+        // on every route. Per-route code stays in the default chunk
+        // — Rollup's automatic splitting handles dynamic imports if
+        // we add them later.
+        manualChunks: (id) => {
+          if (
+            id.includes('/node_modules/react/') ||
+            id.includes('/node_modules/react-dom/') ||
+            id.includes('/node_modules/scheduler/')
+          ) {
+            return 'vendor-react';
+          }
+          if (id.includes('/node_modules/@tanstack/')) {
+            return 'vendor-router';
+          }
+          if (id.includes('/node_modules/@opentelemetry/')) {
+            return 'vendor-otel';
+          }
+          // Default — everything else stays with the app bundle. Ark
+          // UI (~150 KB) is intentionally NOT split: it's used on
+          // nearly every route, would invalidate alongside app code
+          // on most deploys anyway, and a separate chunk just adds a
+          // round-trip without a caching win.
+          return undefined;
+        },
+      },
+    },
   },
   test: {
     globals: true,
