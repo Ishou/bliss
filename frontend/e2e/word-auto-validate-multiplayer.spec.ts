@@ -18,26 +18,7 @@
  */
 import { expect, test, type Locator, type Page } from '@playwright/test';
 
-async function startMultiplayerGame(page: Page): Promise<void> {
-  await page.goto('/');
-  // Home page renders the multiplayer CTA via VITE_FEATURE_MULTIPLAYER
-  // (set in .env.preview). Click → POST /v1/lobbies → navigate.
-  await page.getByRole('button', { name: /Créer une partie multijoueur/i }).click();
-  await page.waitForURL(/\/lobby\/[^/]+$/);
-
-  // Wait until the WaitingRoom hydrates from the lobbyState snapshot
-  // and the WS is `connected` (the ConnectionBanner is mounted only
-  // while the connection is unhealthy — its absence is our signal).
-  // `canStart` requires a member count >= 1 AND owner identity, both
-  // of which the snapshot delivers.
-  const startBtn = page.getByRole('button', { name: /Démarrer la partie/i });
-  await expect(startBtn).toBeEnabled({ timeout: 10_000 });
-  await expect(page.getByTestId('connection-banner')).toHaveCount(0);
-
-  await startBtn.click();
-  await page.waitForSelector('[role="grid"]', { state: 'visible', timeout: 10_000 });
-  await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => r(null))));
-}
+import { startMultiplayerGame } from './lib/multiHelpers';
 
 function letterInput(page: Page, row: number, col: number): Locator {
   return page.locator(

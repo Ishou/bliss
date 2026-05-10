@@ -23,6 +23,7 @@ import path from 'node:path';
 import { test } from '@playwright/test';
 
 import { runAxe } from './lib/axeRun';
+import { startMultiplayerGame } from './lib/multiHelpers';
 
 // Same fixture MSW serves in dev/preview — see
 // `frontend/src/infrastructure/mocks/handlers.ts`. Keeps the scanned
@@ -61,5 +62,21 @@ test.describe('WCAG 2.2 A + AA accessibility', () => {
     await page.evaluate(() => new Promise(r => requestAnimationFrame(() => r(null))));
 
     await runAxe(page, 'grille');
+  });
+
+  test('not-found route', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/this-route-does-not-exist');
+    await page.evaluate(() => document.fonts.ready);
+
+    await runAxe(page, 'not-found');
+  });
+
+  test('multi waiting room', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await startMultiplayerGame(page, { stopBeforeStart: true });
+    await page.evaluate(() => document.fonts.ready);
+
+    await runAxe(page, 'multi-waiting-room');
   });
 });
