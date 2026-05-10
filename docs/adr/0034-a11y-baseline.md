@@ -6,6 +6,15 @@ Accepted
 
 ## Context
 
+> **ADR-0001 §7 deviation note:** This ADR is merged in the same PR as
+> the implementation. The design direction (tooling choices, WCAG tag
+> set, severity policy) was established in the `feat/a11y-foundation`
+> design document prior to any implementation commit and reviewed as
+> part of the branch planning phase. The ADR was authored after the
+> implementation to capture decisions already made. This is a documented
+> one-off; future a11y ADRs must be merged before their implementation
+> PRs per ADR-0001 §7.
+
 The manifesto requires WCAG AA accessibility as a non-negotiable
 baseline ("Accessibility is a requirement (WCAG AA minimum), not a
 follow-up ticket"). Prior to this ADR the codebase had:
