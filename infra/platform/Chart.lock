@@ -1,18 +1,18 @@
 dependencies:
 - name: cert-manager
   repository: https://charts.jetstack.io
-  version: v1.16.1
+  version: v1.20.2
 - name: ingress-nginx
   repository: https://kubernetes.github.io/ingress-nginx
-  version: 4.11.3
+  version: 4.15.1
 - name: external-dns
   repository: https://kubernetes-sigs.github.io/external-dns/
-  version: 1.15.0
+  version: 1.21.1
 - name: cloudnative-pg
   repository: https://cloudnative-pg.github.io/charts
   version: 0.22.1
 - name: hcloud-csi
   repository: https://charts.hetzner.cloud
-  version: 2.10.1
-digest: sha256:fd5c842e4117a39cf83a2e80c4750ae6696fad2f97cd96f3592cc710dbec20b3
-generated: "2026-04-26T14:49:58.211248+02:00"
+  version: 2.20.2
+digest: sha256:2c198ae8b5d239e449cddcc05e9d47b53ad02ff07485714ecdc5993517c642d0
+generated: "2026-05-10T13:05:24.313122+02:00"

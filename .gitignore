@@ -13,6 +13,10 @@ build/
 .claude/settings.local.json
 .claude/scheduled_tasks.lock
 
+# Helm: subchart tarballs are downloaded by `helm dependency update`
+# and reproduced from Chart.lock; never commit them.
+infra/*/charts/
+
 # Python
 __pycache__/
 *.pyc

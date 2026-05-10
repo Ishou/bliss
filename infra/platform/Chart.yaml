@@ -8,25 +8,25 @@ type: application
 version: 0.1.0
 appVersion: "0.1.0"
 # Subchart pins. Rationale per dependency:
-# - cert-manager v1.16.1: matches scripts/local-cluster.sh, K8s 1.30 compatible.
-# - ingress-nginx 4.11.3: matches scripts/local-cluster.sh, K8s 1.30 compatible.
-# - external-dns 1.15.0: stable 1.15.x line, app v0.15.x, Cloudflare provider mature.
+# - cert-manager v1.20.2: K8s 1.30+ compatible. Bumped 2026-05-10.
+# - ingress-nginx 4.15.1: K8s 1.30+ compatible. Bumped 2026-05-10.
+# - external-dns 1.21.1: stable 1.21.x line, Cloudflare provider mature. Bumped 2026-05-10.
 # - cloudnative-pg 0.22.1: matches scripts/local-cluster.sh.
-# - hcloud-csi 2.10.1: stable hetznercloud/hcloud-csi-driver v2.x line.
+# - hcloud-csi 2.20.2: stable hetznercloud/hcloud-csi-driver v2.x line. Bumped 2026-05-10.
 # Bumps are deliberate, in a follow-up PR; no floating versions.
 dependencies:
   - name: cert-manager
-    version: "v1.16.1"
+    version: "v1.20.2"
     repository: "https://charts.jetstack.io"
     condition: cert-manager.enabled
 
   - name: ingress-nginx
-    version: "4.11.3"
+    version: "4.15.1"
     repository: "https://kubernetes.github.io/ingress-nginx"
     condition: ingress-nginx.enabled
 
   - name: external-dns
-    version: "1.15.0"
+    version: "1.21.1"
     repository: "https://kubernetes-sigs.github.io/external-dns/"
     condition: external-dns.enabled
 
@@ -36,6 +36,6 @@ dependencies:
     condition: cloudnative-pg.enabled
 
   - name: hcloud-csi
-    version: "2.10.1"
+    version: "2.20.2"
     repository: "https://charts.hetzner.cloud"
     condition: hcloud-csi.enabled
