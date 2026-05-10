@@ -97,7 +97,7 @@ describe('<ViewportPage>', () => {
     renderPage(<ViewportPage>body</ViewportPage>);
     await screen.findByText('body');
     expect(
-      screen.queryByRole('link', { name: /Aller au mot/ }),
+      document.querySelector('main#main-content a[href="#main-content"]'),
     ).toBeNull();
   });
 });
