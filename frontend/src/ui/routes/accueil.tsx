@@ -7,7 +7,7 @@ import { LOBBY_CODE_PATTERN, extractLobbyCode } from '@/domain/game/lobbyCode';
 import { EyeIcon, EyeOffIcon } from '@/ui/components/icons';
 import { Button } from '@/ui/components/primitives';
 import { PinInput } from '@/ui/components/primitives/PinInput';
-import { AppHeader, Footer, ProgressBar } from '@/ui/components/layout';
+import { ContentPage, ProgressBar } from '@/ui/components/layout';
 import { buildHead, INDEXABLE_ROUTES, SITE_BASE_URL, organizationJsonLd } from '@/ui/seo';
 import { Route as RootRoute } from './__root';
 
@@ -22,38 +22,6 @@ import { Route as RootRoute } from './__root';
 
 const isMultiplayerEnabled = (): boolean =>
   import.meta.env.VITE_FEATURE_MULTIPLAYER === 'true';
-
-const pageStyles = css({
-  minHeight: '100dvh',
-  display: 'flex',
-  flexDirection: 'column',
-  color: 'fg',
-  fontFamily: 'body',
-});
-
-const mainStyles = css({
-  // `1 0 auto`: grow to push the footer to the viewport bottom on
-  // short pages, but never shrink below content. Plain `flex: 1` (=
-  // `1 1 0`) collapses main to zero height when the cards' combined
-  // height exceeds the viewport, dropping the cards under the footer.
-  flex: '1 0 auto',
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  width: '100%',
-  bg: 'bg',
-});
-
-const contentStyles = css({
-  width: '100%',
-  maxWidth: '720px',
-  margin: '0 auto',
-  paddingInline: { base: '16px', md: '20px' },
-  paddingBlock: { base: '16px', md: '24px' },
-  display: 'flex',
-  flexDirection: 'column',
-  gap: 'lg',
-});
 
 const srOnly = css({
   position: 'absolute',
@@ -80,13 +48,18 @@ const srOnly = css({
 //
 // `minmax(0, 1fr)` instead of plain `1fr`: `1fr` resolves to
 // `minmax(auto, 1fr)`, which refuses to shrink a track below its
-// min-content width. Multijoueur's input + "Rejoindre" row has a wider
-// min-content than the Grille card, so plain `1fr` would let it eat
-// into the other column. Forcing the min to 0 keeps the columns at a
-// strict 50/50 regardless of content.
+// min-content width. The Multijoueur card's PIN row + eye-toggle has
+// a wider min-content than the viewport on narrow phones (≤375 px),
+// so plain `1fr` would inflate the mobile track and overflow the
+// page-shell paddingInline. Forcing the min to 0 lets the track shrink
+// below its children's min-content, and the children (PinInput root,
+// flex slots) absorb the squeeze via their own `minWidth: 0`.
 const cardsGridStyles = css({
   display: 'grid',
-  gridTemplateColumns: { base: '1fr', md: 'minmax(0, 1fr) minmax(0, 1fr)' },
+  gridTemplateColumns: {
+    base: 'minmax(0, 1fr)',
+    md: 'minmax(0, 1fr) minmax(0, 1fr)',
+  },
   alignItems: 'start',
   gap: 'md',
 });
@@ -215,18 +188,6 @@ function formatTodayFr(now: Date): string {
     month: 'long',
   }).format(now);
   return formatted.charAt(0).toUpperCase() + formatted.slice(1);
-}
-
-function PageShell({ children }: { children: React.ReactNode }) {
-  return (
-    <div className={pageStyles}>
-      <AppHeader />
-      <main id="main-content" tabIndex={-1} className={mainStyles}>
-        <div className={contentStyles}>{children}</div>
-      </main>
-      <Footer />
-    </div>
-  );
 }
 
 function GrilleDuJourCard({ puzzle }: { readonly puzzle: Puzzle }) {
@@ -454,7 +415,7 @@ function messageForJoinError(err: unknown): string {
 function AccueilPage() {
   const puzzle = Route.useLoaderData() as Puzzle;
   return (
-    <PageShell>
+    <ContentPage>
       <h1 lang="fr" className={srOnly}>
         Mots fléchés français en ligne — <span lang="en">WordSparrow</span>
       </h1>
@@ -462,17 +423,17 @@ function AccueilPage() {
         <GrilleDuJourCard puzzle={puzzle} />
         <MultijoueurCard />
       </div>
-    </PageShell>
+    </ContentPage>
   );
 }
 
 function AccueilStatus({ role, text }: { role: 'status' | 'alert'; text: string }) {
   return (
-    <PageShell>
+    <ContentPage>
       <p className={css({ fontSize: 'body', margin: 0, color: 'accent', textAlign: 'center' })} role={role}>
         {text}
       </p>
-    </PageShell>
+    </ContentPage>
   );
 }
 
