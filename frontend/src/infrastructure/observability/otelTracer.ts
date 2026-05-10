@@ -114,6 +114,9 @@ export class ErrorAwareSampler implements Sampler {
 // double-emit spans and corrupt alert threshold math.
 let errorsAttached = false;
 
+// Cached at init so `reportCaughtError` can emit spans without re-resolving the tracer each call.
+let cachedTracer: Tracer | null = null;
+
 /**
  * Wire `window.error` and `window.unhandledrejection` to emit OTel
  * spans with `status.code = ERROR`. Captures are scoped tight: just
@@ -157,6 +160,24 @@ function attachUncaughtErrorReporting(tracer: Tracer): void {
     });
     span.end();
   });
+}
+
+/** Emit an error OTel span for caught errors that don't surface as window.error. */
+export function reportCaughtError(error: unknown, kind: string): void {
+  if (!cachedTracer) return;
+  const isError = error instanceof Error;
+  const span = cachedTracer.startSpan(`${ERROR_SPAN_NAME_PREFIX}${kind}`, {
+    attributes: {
+      'exception.type': isError ? error.name : typeof error,
+      'exception.message': isError ? error.message : String(error ?? 'unknown'),
+      'exception.stacktrace': isError ? error.stack : undefined,
+    },
+  });
+  span.setStatus({
+    code: SpanStatusCode.ERROR,
+    message: isError ? error.message : `caught error (${kind})`,
+  });
+  span.end();
 }
 
 /**
@@ -243,8 +264,8 @@ export function initOtelTracer(config: OtelTracerConfig | null): void {
     tracerProvider: provider,
   });
 
-  // Tracer for window-level error captures (PR-F.3).
-  attachUncaughtErrorReporting(
-    trace.getTracer(config.serviceName, config.serviceVersion),
-  );
+  // Tracer for window-level captures and for `reportCaughtError` in pwa.ts / onCaughtError.
+  const tracer = trace.getTracer(config.serviceName, config.serviceVersion);
+  cachedTracer = tracer;
+  attachUncaughtErrorReporting(tracer);
 }

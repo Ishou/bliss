@@ -19,6 +19,7 @@ import {
 import {
   initOtelTracer,
   readOtelConfigFromEnv,
+  reportCaughtError,
 } from '@/infrastructure/observability/otelTracer';
 import {
   clearSession,
@@ -111,6 +112,7 @@ if (!container) {
 
 enableMocks()
   .catch((err: unknown) => {
+    // Dev/preview only; tree-shaken away in production builds.
     console.error('[MSW] worker failed to start, continuing without mock:', err);
   })
   .then(() => {
@@ -214,7 +216,16 @@ enableMocks()
       tracker.trackPageView(url, document.title || undefined);
     });
 
-    createRoot(container).render(
+    // onCaughtError only: onUncaughtError would double-emit via the window.error handler.
+    createRoot(container, {
+      onCaughtError: (error, errorInfo) => {
+        if (import.meta.env.DEV) {
+          // dev-only: React's default console.error firehose.
+          console.error('Caught error:', error, errorInfo);
+        }
+        reportCaughtError(error, 'react-caught');
+      },
+    }).render(
       <StrictMode>
         <App router={router} />
       </StrictMode>,

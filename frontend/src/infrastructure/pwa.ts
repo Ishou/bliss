@@ -11,6 +11,7 @@
 // cached shell.
 
 import { Workbox } from 'workbox-window';
+import { reportCaughtError } from '@/infrastructure/observability/otelTracer';
 
 // Window after `load` during which a `controlling` event is treated as
 // "F5 just landed on a deploy boundary" and the page reloads
@@ -103,9 +104,8 @@ export function registerServiceWorker(): void {
     });
 
     wb.register().catch((err: unknown) => {
-      // Registration failures are non-fatal — the app still works
-      // online; only the offline-shell precache is lost.
-      console.warn('SW registration failed', err);
+      // Non-fatal; surfaces in SigNoz so we notice sudden upticks without DevTools.
+      reportCaughtError(err, 'pwa-register-failed');
     });
   };
 

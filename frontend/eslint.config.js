@@ -68,6 +68,8 @@ export default tseslint.config(
       ],
       'boundaries/no-unknown': 'error',
       'boundaries/no-unknown-files': 'off',
+      // warn/error allowed; new error reporting goes through reportCaughtError in otelTracer.
+      'no-console': ['error', { allow: ['warn', 'error'] }],
     },
   },
   {
