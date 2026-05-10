@@ -58,7 +58,7 @@ jobs:
         # pnpm/action-setup v4.0.0
         uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2
         with:
-          version: '10.33.0'
+          version: '11.0.9'
           run_install: false
 
       - name: Set up Node.js
@@ -85,11 +85,18 @@ jobs:
         # PR previews use build:preview (loads .env.preview → VITE_USE_MOCK_API=true)
         # so MSW intercepts Grid API calls instead of hitting production.
         # Push to main uses the standard build (no mock).
+        #
+        # Run from the frontend directory rather than `pnpm --filter frontend`
+        # at the repo root: pnpm 11's pre-command install-check requires a
+        # package.json or `pnpm-workspace.yaml` declaring `packages:` at the
+        # cwd. The repo isn't a monorepo, so cd-ing in is simpler than
+        # adding a root workspace manifest.
+        working-directory: frontend
         run: |
           if [ "${{ github.event_name }}" = "pull_request" ]; then
-            pnpm --filter frontend build:preview
+            pnpm build:preview
           else
-            pnpm --filter frontend build
+            pnpm build
           fi
 
       - name: Post-build SEO assertions

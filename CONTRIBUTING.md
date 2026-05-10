@@ -89,7 +89,7 @@ After any change to a `<context>/api/openapi.yaml`, regenerate the client and
 commit the diff:
 
 ```sh
-pnpm --filter frontend api:generate
+(cd frontend && pnpm api:generate)
 # or
 frontend/scripts/generate-api-client.sh
 ```
