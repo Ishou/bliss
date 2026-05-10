@@ -127,7 +127,15 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          packageManager: pnpm
+          # `packageManager` is intentionally unset (defaults to `npm`).
+          # Setting it to `pnpm` makes wrangler-action run `pnpm exec
+          # wrangler --version` and `pnpm add wrangler` at the repo
+          # root — both fail under pnpm 11 because (a) there's no
+          # root `package.json` (we're not a monorepo) and (b) wrangler's
+          # transitive build-script deps (esbuild, workerd) aren't in
+          # our `frontend/pnpm-workspace.yaml:allowBuilds`. npm has
+          # neither constraint and is fine for a one-shot install of
+          # wrangler in the action's working dir.
           # head_ref is set on PR triggers, ref_name on push. Pages routes
           # production by matching against its configured production
           # branch (main); any other branch becomes a preview.
