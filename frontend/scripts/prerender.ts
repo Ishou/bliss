@@ -109,12 +109,11 @@ async function prerenderRoute(
     // Local static-server requests (the bundle, sitemap, OG image,
     // etc.) pass through untouched.
     //
-    // Order matters: Playwright dispatches matching routes in
-    // registration order, but only one route handles each request, so
-    // we register the broad catch-all first and the specific puzzle
-    // pattern second. The catch-all fulfills with 503 for non-local
-    // hosts; the puzzle handler intercepts before that for the API
-    // surface.
+    // Order matters: Playwright uses LIFO dispatch — the last-registered
+    // route handler has highest priority. We register the broad catch-all
+    // first (lowest priority) and the puzzle stub second (highest priority),
+    // so puzzle requests are fulfilled with the fixture before the
+    // catch-all can return 503.
     await page.route('**/*', (route_) => {
       const url = route_.request().url();
       if (url.startsWith(baseUrl)) {
