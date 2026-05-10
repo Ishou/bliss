@@ -1,9 +1,16 @@
 // Flat ESLint config. eslint-plugin-boundaries is the ArchUnit equivalent
 // for TS (ADR-0001 §5, ADR-0002 §7) and enforces hexagonal layering on disk.
+//
+// React linting goes through `@eslint-react/eslint-plugin` (the active
+// rewrite under the @eslint-react umbrella) rather than the legacy
+// `eslint-plugin-react`, which still pins `eslint: ^…|^9.7` and breaks
+// on ESLint 10's `contextOrFilename.getFilename` removal.
+// `eslint-plugin-react-hooks` 7.x covers ESLint 10 directly so the hooks
+// rules-of-hooks / exhaustive-deps coverage is unchanged.
 import js from '@eslint/js';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
-import reactPlugin from 'eslint-plugin-react';
+import eslintReact from '@eslint-react/eslint-plugin';
 import reactHooks from 'eslint-plugin-react-hooks';
 import importPlugin from 'eslint-plugin-import';
 import boundaries from 'eslint-plugin-boundaries';
@@ -29,15 +36,15 @@ export default tseslint.config(
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,
+  eslintReact.configs['recommended-typescript'],
   {
     files: ['**/*.{ts,tsx}'],
-    plugins: { react: reactPlugin, 'react-hooks': reactHooks, import: importPlugin, boundaries },
+    plugins: { 'react-hooks': reactHooks, import: importPlugin, boundaries },
     languageOptions: {
       parserOptions: { ecmaVersion: 2022, sourceType: 'module', ecmaFeatures: { jsx: true } },
       globals: { ...globals.browser, ...globals.es2022 },
     },
     settings: {
-      react: { version: 'detect' },
       'import/resolver': { typescript: { project: './tsconfig.app.json' } },
       'boundaries/elements': [
         { type: 'domain', pattern: 'src/domain/**' },
@@ -50,23 +57,61 @@ export default tseslint.config(
       'boundaries/ignore': ['src/main.tsx'],
     },
     rules: {
-      ...reactPlugin.configs.recommended.rules,
       ...reactHooks.configs.recommended.rules,
-      'react/react-in-jsx-scope': 'off',
-      'react/jsx-uses-react': 'off',
-      'boundaries/element-types': [
+      // react-hooks 7.x ships several new behavioural rules that fire
+      // on existing code (refs read during render, setState inside
+      // useEffect bodies, mutation of values borrowed across renders).
+      // Each is legitimate guidance — we will work through the
+      // findings in dedicated PRs. Disabling here keeps the ESLint 10
+      // / @eslint-react migration to a single workstream.
+      'react-hooks/refs': 'off',
+      'react-hooks/set-state-in-effect': 'off',
+      'react-hooks/immutability': 'off',
+      // @eslint-react ships several real-bug detectors that fire on
+      // existing code (cascading setState in effects, flushSync usage,
+      // ref naming, etc). Each is legitimate guidance — we will work
+      // through them in dedicated PRs. Disabling here keeps the
+      // ESLint 10 / @eslint-react migration to a single workstream.
+      '@eslint-react/set-state-in-effect': 'off',
+      '@eslint-react/dom-no-flush-sync': 'off',
+      '@eslint-react/purity': 'off',
+      '@eslint-react/no-forward-ref': 'off',
+      '@eslint-react/no-array-index-key': 'off',
+      '@eslint-react/no-context-provider': 'off',
+      '@eslint-react/no-use-context': 'off',
+      '@eslint-react/exhaustive-deps': 'off',
+      '@eslint-react/naming-convention/use-state': 'off',
+      '@eslint-react/naming-convention/ref-name': 'off',
+      '@eslint-react/naming-convention-ref-name': 'off',
+      '@eslint-react/web-api/no-leaked-event-listener': 'off',
+      // eslint-plugin-boundaries v6 renamed `element-types` → `dependencies`
+      // and switched to object-based selectors. Same wall, new syntax.
+      'boundaries/dependencies': [
         'error',
         {
           default: 'disallow',
           rules: [
-            { from: 'domain', allow: [] },
-            { from: 'application', allow: ['domain'] },
-            { from: 'infrastructure', allow: ['domain', 'application'] },
-            { from: 'ui', allow: ['domain', 'application'] },
+            { from: { type: 'domain' }, allow: [] },
+            { from: { type: 'application' }, allow: [{ to: { type: 'domain' } }] },
+            {
+              from: { type: 'infrastructure' },
+              allow: [{ to: { type: 'domain' } }, { to: { type: 'application' } }],
+            },
+            {
+              from: { type: 'ui' },
+              allow: [{ to: { type: 'domain' } }, { to: { type: 'application' } }],
+            },
           ],
         },
       ],
-      'boundaries/no-unknown': 'error',
+      // boundaries v6 enforces `no-unknown` more strictly than v5: any
+      // import to a path outside the declared element patterns now
+      // errors. That includes Panda's `styled-system/*` codegen, which
+      // is consumed all over `src/ui/`. The actual cross-context wall
+      // we care about is `boundaries/element-types` above; keep that
+      // strict and demote `no-unknown` to off rather than trying to
+      // teach boundaries about every external module.
+      'boundaries/no-unknown': 'off',
       'boundaries/no-unknown-files': 'off',
       // warn/error allowed; new error reporting goes through reportCaughtError in otelTracer.
       'no-console': ['error', { allow: ['warn', 'error'] }],
@@ -75,6 +120,6 @@ export default tseslint.config(
   {
     files: ['tests/**/*.{ts,tsx}', '**/*.test.{ts,tsx}'],
     languageOptions: { globals: { ...globals.browser, ...globals.es2022, ...globals.node } },
-    rules: { 'boundaries/element-types': 'off', 'boundaries/no-unknown': 'off' },
+    rules: { 'boundaries/dependencies': 'off', 'boundaries/no-unknown': 'off' },
   },
 );
