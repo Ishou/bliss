@@ -66,6 +66,13 @@ ingress:
   host: ""
   tlsSecretName: ""
   annotations: {}
+  # Name of the htpasswd Secret in this namespace that gates the admin
+  # dashboard (ADR-0032). Tracker paths (/matomo.php, /matomo.js,
+  # /piwik.*, /js/*) bypass auth so embedded `<script>` tags on the
+  # public site continue to work. Bootstrapped out-of-band:
+  #   htpasswd -c -B -C 12 ./auth admin
+  #   kubectl -n matomo create secret generic admin-htpasswd --from-file=auth
+  authSecretName: admin-htpasswd
 
 # CNIL audience-measurement consent-exemption configuration. Mounted as
 # a config fragment that Matomo's bootstrap merges on first run. Each
