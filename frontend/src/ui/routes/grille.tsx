@@ -17,7 +17,13 @@ import {
   PuzzleToolbar,
 } from '@/ui/components/layout';
 import { SoloTour, useSoloTour } from '@/ui/components/tour';
-import { buildHead, INDEXABLE_ROUTES, SITE_BASE_URL } from '@/ui/seo';
+import {
+  breadcrumbJsonLd,
+  buildHead,
+  gameJsonLd,
+  INDEXABLE_ROUTES,
+  SITE_BASE_URL,
+} from '@/ui/seo';
 import { Route as RootRoute } from './__root';
 
 type ActiveFocus = { readonly position: Position; readonly direction: 'across' | 'down' };
@@ -554,10 +560,31 @@ export const Route = createRoute({
   ),
   head: () => {
     const r = INDEXABLE_ROUTES.find((x) => x.path === '/grille')!;
-    return buildHead({
+    const base = buildHead({
       title: r.title,
       description: r.description,
       canonical: `${SITE_BASE_URL}/grille`,
     });
+    return {
+      ...base,
+      scripts: [
+        {
+          type: 'application/ld+json',
+          children: breadcrumbJsonLd([
+            { name: 'Accueil', item: `${SITE_BASE_URL}/` },
+            { name: r.title, item: `${SITE_BASE_URL}/grille` },
+          ]),
+        },
+        {
+          type: 'application/ld+json',
+          children: gameJsonLd({
+            name: 'WordSparrow — mots fléchés du jour',
+            description:
+              'Grille de mots fléchés française quotidienne, jouable en ligne sans inscription.',
+            url: `${SITE_BASE_URL}/grille`,
+          }),
+        },
+      ],
+    };
   },
 });

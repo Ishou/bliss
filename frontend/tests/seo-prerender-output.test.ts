@@ -74,5 +74,40 @@ describe.skipIf(!existsSync(resolve(DIST, 'index.html')))(
       expect(html).toContain('"applicationCategory":"GameApplication"');
       expect(html).toContain('"inLanguage":"fr"');
     });
+
+    it('embeds a FAQPage with one Question per HELP_SECTIONS entry on /aide', () => {
+      const html = readFileSync(resolve(DIST, 'aide', 'index.html'), 'utf8');
+      expect(html).toContain('"@type":"FAQPage"');
+      // 5 HELP_SECTIONS entries → exactly 5 Question objects.
+      const questionMatches = html.match(/"@type":"Question"/g) ?? [];
+      expect(questionMatches).toHaveLength(5);
+    });
+
+    it.each([
+      ['aide', '/aide'],
+      ['grille', '/grille'],
+      ['mentions-legales', '/mentions-legales'],
+      ['confidentialite', '/confidentialite'],
+    ])('embeds BreadcrumbList JSON-LD on /%s', (dir) => {
+      const html = readFileSync(resolve(DIST, dir, 'index.html'), 'utf8');
+      expect(html).toContain('"@type":"BreadcrumbList"');
+    });
+
+    it('does NOT embed BreadcrumbList on the homepage (it is the root, not a child)', () => {
+      const html = readFileSync(resolve(DIST, 'index.html'), 'utf8');
+      expect(html).not.toContain('"@type":"BreadcrumbList"');
+    });
+
+    it('embeds Game JSON-LD on /grille', () => {
+      const html = readFileSync(resolve(DIST, 'grille', 'index.html'), 'utf8');
+      expect(html).toContain('"@type":"Game"');
+      expect(html).toContain('"genre":"Word puzzle"');
+      expect(html).toContain('"gamePlatform":"Web browser"');
+    });
+
+    it('does NOT embed Game JSON-LD on the homepage', () => {
+      const html = readFileSync(resolve(DIST, 'index.html'), 'utf8');
+      expect(html).not.toContain('"@type":"Game"');
+    });
   },
 );

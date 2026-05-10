@@ -6,3 +6,11 @@ export {
   type IndexableRoute,
 } from './routeManifest';
 export { buildHead, type BuildHeadInput } from './buildHead';
+export {
+  faqPageJsonLd,
+  breadcrumbJsonLd,
+  gameJsonLd,
+  type FaqItem,
+  type BreadcrumbItem,
+  type GameJsonLdInput,
+} from './jsonLd';
