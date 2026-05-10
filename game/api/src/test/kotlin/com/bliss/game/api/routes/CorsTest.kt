@@ -3,13 +3,19 @@ package com.bliss.game.api.routes
 import assertk.assertThat
 import assertk.assertions.contains
 import assertk.assertions.isEqualTo
+import assertk.assertions.isNotEqualTo
 import assertk.assertions.isNotNull
 import assertk.assertions.isNull
 import com.bliss.game.api.module
 import io.ktor.client.request.headers
 import io.ktor.client.request.options
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
+import io.ktor.client.statement.bodyAsText
+import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.contentType
 import io.ktor.server.testing.testApplication
 import org.junit.jupiter.api.Test
 
@@ -117,6 +123,41 @@ class CorsTest {
             assertThat(allowHeaders).contains("tracestate")
             assertThat(allowHeaders).contains("baggage")
             assertThat(allowHeaders).contains("x-foo-future")
+        }
+
+    @Test
+    fun `cross-origin POST with application-json from allowed origin is not 403'd by CORS`() =
+        testApplication {
+            application { module() }
+
+            // Reproduces the prod regression where browsers POSTing JSON to
+            // `/v1/lobbies` from `https://www.wordsparrow.io` were rejected by
+            // Ktor's CORS plugin with 403 (no `Access-Control-Allow-Origin`),
+            // even though the preflight succeeded. Root cause: by default the
+            // plugin treats `application/json` as a non-simple content type
+            // and blocks the actual request unless `allowNonSimpleContentTypes`
+            // is enabled. Symptom in the browser console:
+            // "blocked by CORS policy: No 'Access-Control-Allow-Origin' header
+            // is present on the requested resource."
+            //
+            // The body is intentionally malformed — what we are asserting is
+            // that the request reaches the route and the response carries the
+            // ACAO header. A 400/500 from validation is fine; a 403 with no
+            // ACAO is the bug.
+            val response =
+                client.post("/v1/lobbies") {
+                    headers { append(HttpHeaders.Origin, "https://www.wordsparrow.io") }
+                    contentType(ContentType.Application.Json)
+                    setBody("{}")
+                }
+
+            assertThat(response.headers[HttpHeaders.AccessControlAllowOrigin])
+                .isEqualTo("https://www.wordsparrow.io")
+            assertThat(response.status).isNotEqualTo(HttpStatusCode.Forbidden)
+            // Sanity: the route — not the CORS plugin — answered. An empty
+            // body from a CORS rejection would defeat the previous assertion
+            // alone in some Ktor versions.
+            assertThat(response.bodyAsText()).isNotNull()
         }
 
     @Test

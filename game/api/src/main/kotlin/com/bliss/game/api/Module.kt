@@ -89,6 +89,17 @@ fun Application.module() {
         // No credentials = no cookies. Sessions are sessionId-in-localStorage.
         allowCredentials = false
         maxAgeInSeconds = 86400 // cache preflight for 24h
+
+        // POST /v1/lobbies sends `Content-Type: application/json`, which the
+        // CORS spec classifies as non-simple. Ktor's CORS plugin defaults to
+        // rejecting actual (non-preflight) requests carrying a non-simple
+        // Content-Type with 403 + no `Access-Control-Allow-Origin`, even
+        // when both Origin and Method passed the preflight. The browser
+        // surfaces this as `blocked by CORS policy: No
+        // 'Access-Control-Allow-Origin' header is present on the requested
+        // resource.` — observed in prod at the multiplayer flag flip from
+        // `https://www.wordsparrow.io`. CorsTest covers the regression.
+        allowNonSimpleContentTypes = true
     }
 
     install(ContentNegotiation) {
