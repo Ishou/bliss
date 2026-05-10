@@ -57,7 +57,7 @@ export function Footer() {
             Mentions légales
           </Link>
           <a
-            href="mailto:colin.auberger@gmail.com"
+            href="mailto:contact@wordsparrow.io"
             className={linkStyles}
           >
             Contact

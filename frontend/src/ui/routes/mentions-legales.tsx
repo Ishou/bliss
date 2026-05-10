@@ -63,8 +63,8 @@ function LegalNoticePage() {
           <p>
             WordSparrow est édité par <strong>Colin Auberger</strong>,
             contact :{' '}
-            <a href="mailto:colin.auberger@gmail.com">
-              colin.auberger@gmail.com
+            <a href="mailto:contact@wordsparrow.io">
+              contact@wordsparrow.io
             </a>
             .
           </p>
@@ -112,8 +112,8 @@ function LegalNoticePage() {
           <p>
             Pour signaler un contenu illicite, un bug ou une faille de
             sécurité, écrivez à{' '}
-            <a href="mailto:colin.auberger@gmail.com">
-              colin.auberger@gmail.com
+            <a href="mailto:contact@wordsparrow.io">
+              contact@wordsparrow.io
             </a>
             .
           </p>
