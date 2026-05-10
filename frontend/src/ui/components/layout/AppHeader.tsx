@@ -156,6 +156,18 @@ export interface AppHeaderProps {
   readonly activeNavId?: string;
 }
 
+// Skip-link label tracks the route family. Grid routes get the
+// shorter "Aller à la grille" — describes the actual jump target,
+// since the grid is the dominant content under <main>. Other routes
+// fall back to the generic "Aller au contenu".
+const GRID_ROUTE_PATTERNS = [/^\/grille(\/|$)/, /^\/lobby\//];
+
+function skipLinkLabelForPath(pathname: string): string {
+  return GRID_ROUTE_PATTERNS.some((re) => re.test(pathname))
+    ? 'Aller à la grille'
+    : 'Aller au contenu';
+}
+
 // Resolve the active nav id from a pathname against `NAV_LINKS`. Exact
 // match only — sub-routes don't auto-highlight a parent nav today;
 // callers that need that pass `activeNavId` explicitly.
@@ -169,7 +181,7 @@ export function AppHeader({ activeNavId }: AppHeaderProps = {}) {
   return (
     <header className={headerOuterStyles} role="banner">
       <a href="#main-content" className={skipLinkStyles}>
-        Aller au contenu principal
+        {skipLinkLabelForPath(pathname)}
       </a>
       <div className={headerInnerStyles}>
         <div className={lockupSlotStyles}>
