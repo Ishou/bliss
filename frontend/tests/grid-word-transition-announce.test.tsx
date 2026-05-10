@@ -1,7 +1,6 @@
 import { act, render } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import type { ReactNode } from 'react';
-import { AnnouncerProvider, useAnnouncer } from '@/ui/components/a11y/Announcer';
+import { AnnouncerProvider } from '@/ui/components/a11y/Announcer';
 import { Grid } from '@/ui/components/grid';
 import type { Puzzle } from '@/domain';
 
@@ -65,65 +64,23 @@ function inputAt(
   return el as HTMLInputElement;
 }
 
-type SayCall = { text: string; assertive?: boolean };
-
-// Spy provider: wraps children in AnnouncerProvider and captures every
-// `say()` call by patching the context value after it has been created.
-// The AnnouncerApi.say property is declared readonly in the interface, but
-// the runtime object returned by useMemo is mutable; we cast to bypass the
-// readonly check so we can wrap the original `say` for test introspection.
-function makeSpy() {
-  const calls: SayCall[] = [];
-
-  function SpyMount({
-    calls: c,
-    children,
-  }: {
-    calls: SayCall[];
-    children: ReactNode;
-  }) {
-    const a = useAnnouncer();
-    const orig = a.say;
-    // Cast to a mutable type so TypeScript allows the in-place patch.
-    // Both this component and useGridNavigation share the same context
-    // object reference (useMemo returns one stable api object per provider),
-    // so wrapping say here makes the spy visible to all hook callers.
-    (a as { say: typeof orig }).say = (
-      text: string,
-      opts?: { assertive?: boolean },
-    ) => {
-      c.push({ text, assertive: opts?.assertive });
-      return orig(text, opts);
-    };
-    return <>{children}</>;
-  }
-
-  function SpyProvider({ children }: { children: ReactNode }) {
-    return (
-      <AnnouncerProvider>
-        <SpyMount calls={calls}>{children}</SpyMount>
-      </AnnouncerProvider>
-    );
-  }
-
-  return { calls, SpyProvider };
+function politeText(container: HTMLElement): string {
+  return container.querySelector('[aria-live="polite"]')?.textContent ?? '';
 }
 
 describe('grid — word-transition announcement', () => {
   it('announces clue + slot pattern on entering a new word (across)', () => {
-    const { calls, SpyProvider } = makeSpy();
     const { container } = render(
-      <SpyProvider>
+      <AnnouncerProvider>
         <Grid puzzle={samplePuzzle} />
-      </SpyProvider>,
+      </AnnouncerProvider>,
     );
     // across-2 starts at (1,1). Focus it — should announce the across-2 clue.
     const acrossCell = inputAt(container, 1, 1);
     act(() => {
       acrossCell.focus();
     });
-    expect(calls.length).toBeGreaterThanOrEqual(1);
-    const text = calls[0]!.text;
+    const text = politeText(container);
     // Must contain the direction label
     expect(text).toMatch(/mot horizontal de \d+ lettres/);
     // Must end with a slot pattern: each token is either a letter or 'point'
@@ -133,47 +90,43 @@ describe('grid — word-transition announcement', () => {
   });
 
   it('announces a down clue with "mot vertical"', () => {
-    const { calls, SpyProvider } = makeSpy();
     const { container } = render(
-      <SpyProvider>
+      <AnnouncerProvider>
         <Grid puzzle={samplePuzzle} />
-      </SpyProvider>,
+      </AnnouncerProvider>,
     );
-    // down-1 first cell is at (1,2). Click its parent to set direction=down,
-    // then focus.
+    // down-1 first cell is at (1,2). Focus first, then click to toggle direction=down.
     const downCell = inputAt(container, 1, 2);
     act(() => {
       downCell.focus();
+    });
+    act(() => {
       // First click on the first-cell of down-1 sets direction=down.
       downCell.click();
     });
-    // Find the call that mentions vertical direction (may not be the first if
-    // the across clue was announced first on focus-before-click).
-    const verticalCall = calls.find((c) => c.text.includes('mot vertical'));
-    expect(verticalCall).toBeDefined();
-    expect(verticalCall!.text).toMatch(/mot vertical de \d+ lettres/);
-    expect(verticalCall!.text).toMatch(/: (point|[A-ZÉÈÀÇÊÎÔÛŸ])(, (point|[A-ZÉÈÀÇÊÎÔÛŸ]))*$/);
+    const text = politeText(container);
+    expect(text).toMatch(/mot vertical de \d+ lettres/);
+    expect(text).toMatch(/: (point|[A-ZÉÈÀÇÊÎÔÛŸ])(, (point|[A-ZÉÈÀÇÊÎÔÛŸ]))*$/);
   });
 
   it('does NOT re-announce when moving within the same word', () => {
-    const { calls, SpyProvider } = makeSpy();
     const { container } = render(
-      <SpyProvider>
+      <AnnouncerProvider>
         <Grid puzzle={samplePuzzle} />
-      </SpyProvider>,
+      </AnnouncerProvider>,
     );
     const c1 = inputAt(container, 1, 1);
     const c2 = inputAt(container, 1, 2);
     act(() => {
       c1.focus();
     });
-    const before = calls.length;
+    const polite = container.querySelector('[aria-live="polite"]')!;
+    const textAfterFirst = polite.textContent;
     // Moving from (1,1) to (1,2) stays within across-2 (same def origin).
-    // The focus handler also clears lastClickedRef for (1,2), but the word
-    // key (def-origin + arrow) is the same, so no re-announce should fire.
+    // The word key (def-origin + arrow) is unchanged, so no re-announce should fire.
     act(() => {
       c2.focus();
     });
-    expect(calls.length).toBe(before);
+    expect(polite.textContent).toBe(textAfterFirst);
   });
 });
