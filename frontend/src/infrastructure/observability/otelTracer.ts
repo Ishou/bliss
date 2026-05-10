@@ -115,10 +115,9 @@ export class ErrorAwareSampler implements Sampler {
 let errorsAttached = false;
 
 // Tracer captured at init time so `reportCaughtError` (called from the React
-// `onCaughtError` / `onUncaughtError` hooks and from infrastructure adapters
-// like `pwa.ts`) can emit error spans without each caller re-resolving the
-// tracer. Stays `null` when `VITE_OTEL_OTLP_ENDPOINT` is empty (dev / preview
-// / pre-PR-F.2 prod), making `reportCaughtError` a clean no-op there.
+// `onCaughtError` hook and from infrastructure adapters like `pwa.ts`) can
+// emit error spans without each caller re-resolving the tracer. Stays `null`
+// when `VITE_OTEL_OTLP_ENDPOINT` is empty, making `reportCaughtError` a no-op.
 let cachedTracer: Tracer | null = null;
 
 /**
@@ -166,25 +165,7 @@ function attachUncaughtErrorReporting(tracer: Tracer): void {
   });
 }
 
-/**
- * Emit an error span for a caller-known error path that doesn't surface as
- * `window.error` / `unhandledrejection`. Wired today by:
- *
- *   - React 19's `createRoot({ onCaughtError })` hook in `main.tsx`.
- *     React caught-by-boundary errors never reach `window.error`;
- *     without this path SigNoz stays silent on every
- *     TanStack-Router-`errorComponent` catch.
- *   - `infrastructure/pwa.ts` SW-registration failure path. Used to be a
- *     `console.warn` invisible to anyone without DevTools.
- *
- * Span name is `window.<kind>` so the {@link ErrorAwareSampler} always
- * samples it regardless of `VITE_OTEL_SAMPLER_RATIO` (errors are rare +
- * high-signal).
- *
- * No-ops cleanly when OTel is disabled (config null at init time).
- * Capture follows ADR-0027 §8 redaction posture: type, message, stack
- * only — no DOM contents, no cookies, no localStorage.
- */
+/** Emit an error OTel span for caught errors that don't surface as window.error. */
 export function reportCaughtError(error: unknown, kind: string): void {
   if (!cachedTracer) return;
   const isError = error instanceof Error;

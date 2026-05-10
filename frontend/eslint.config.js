@@ -68,13 +68,7 @@ export default tseslint.config(
       ],
       'boundaries/no-unknown': 'error',
       'boundaries/no-unknown-files': 'off',
-      // Stale `console.log` / `info` / `debug` in shipped JS clutters
-      // production users' DevTools and competes with the OTel pipeline
-      // (PR-F.2/F.3) that is the actual diagnostic channel. `warn` and
-      // `error` are still allowed: a few of our infrastructure adapters
-      // (WebSocketGameClient, MSW init) keep them as contributor-facing
-      // diagnostics. New error reporting should go through OTel
-      // (`reportCaughtError` in `infrastructure/observability/otelTracer`).
+      // warn/error allowed; new error reporting goes through reportCaughtError in otelTracer.
       'no-console': ['error', { allow: ['warn', 'error'] }],
     },
   },

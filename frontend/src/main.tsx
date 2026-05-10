@@ -112,12 +112,7 @@ if (!container) {
 
 enableMocks()
   .catch((err: unknown) => {
-    // Dev / preview-only path. The dynamic `import('./mocks/...')`
-    // chain inside `enableMocks` is gated by `VITE_MOCK_*=true`,
-    // both of which are literal `false` in `.env`, so Vite tree-
-    // shakes this away at production build time. `console.error`
-    // here is intentional and permitted by the eslint `no-console`
-    // rule's `allow: ['warn', 'error']` exception.
+    // Dev/preview only; tree-shaken away in production builds.
     console.error('[MSW] worker failed to start, continuing without mock:', err);
   })
   .then(() => {
@@ -221,26 +216,7 @@ enableMocks()
       tracker.trackPageView(url, document.title || undefined);
     });
 
-    // React 19's `createRoot` accepts an `onCaughtError` callback that
-    // REPLACES the default console.error firehose for errors caught by
-    // an ErrorBoundary. We wire only this one:
-    //
-    // Caught-by-error-boundary errors (e.g. a TanStack Router
-    // `errorComponent` catching a failed loader fetch) never reach
-    // `window.onerror`, so `attachUncaughtErrorReporting` doesn't see
-    // them — the SigNoz `frontend` service stays silent on real
-    // failures without this hook. `onCaughtError` fills that gap.
-    //
-    // We do NOT wire `onUncaughtError`: React 19 rethrows uncaught
-    // errors asynchronously via `setTimeout(() => { throw err })`,
-    // which fires the existing `window.addEventListener('error', …)`
-    // handler in `attachUncaughtErrorReporting`. Wiring `onUncaughtError`
-    // as well would double-emit a span for the same error, corrupting
-    // the `frontend-error-rate-high` alert threshold math.
-    //
-    // In dev (`import.meta.env.DEV`) we also `console.error` to
-    // keep the contributor workflow noisy — diagnosing a render
-    // crash with no console output is hostile.
+    // onCaughtError only: onUncaughtError would double-emit via the window.error handler.
     createRoot(container, {
       onCaughtError: (error, errorInfo) => {
         if (import.meta.env.DEV) {

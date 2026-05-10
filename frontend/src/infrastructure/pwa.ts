@@ -104,12 +104,7 @@ export function registerServiceWorker(): void {
     });
 
     wb.register().catch((err: unknown) => {
-      // Registration failures are non-fatal — the app still works
-      // online; only the offline-shell precache is lost. Surfaces in
-      // SigNoz as a `window.pwa-register-failed` span so we notice
-      // a sudden uptick (e.g. a botched `vite-plugin-pwa` upgrade
-      // breaking precache) without needing every user to open
-      // DevTools.
+      // Non-fatal; surfaces in SigNoz so we notice sudden upticks without DevTools.
       reportCaughtError(err, 'pwa-register-failed');
     });
   };
