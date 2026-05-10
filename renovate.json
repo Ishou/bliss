@@ -1,0 +1,176 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", ":disableDependencyDashboard"],
+  "timezone": "Europe/Paris",
+  "schedule": ["before 6am on monday"],
+  "prHourlyLimit": 1,
+  "prConcurrentLimit": 5,
+  "rangeStrategy": "bump",
+  "labels": ["dependencies"],
+  "commitMessagePrefix": "chore(deps):",
+  "commitBody": "Signed-off-by: Renovate Bot <bot@wordsparrow.io>",
+  "branchPrefix": "renovate/",
+  "automerge": false,
+  "platformAutomerge": false,
+  "configMigration": true,
+  "lockFileMaintenance": {
+    "enabled": false
+  },
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "labels": ["security"],
+    "schedule": ["at any time"],
+    "prCreation": "immediate"
+  },
+  "packageRules": [
+    {
+      "description": "Vite + Vitest + plugin-react + jsdom move together (peer-dep matrix).",
+      "matchPackageNames": [
+        "vite",
+        "vitest",
+        "@vitejs/plugin-react",
+        "jsdom"
+      ],
+      "groupName": "vite/vitest stack"
+    },
+    {
+      "description": "ESLint + plugins move together (flat-config schema couples them).",
+      "matchPackageNames": [
+        "eslint",
+        "@eslint/js",
+        "eslint-plugin-react-hooks",
+        "eslint-plugin-boundaries",
+        "eslint-import-resolver-typescript",
+        "globals",
+        "typescript-eslint",
+        "@typescript-eslint/eslint-plugin",
+        "@typescript-eslint/parser"
+      ],
+      "groupName": "eslint stack"
+    },
+    {
+      "description": "All @opentelemetry/* browser SDK packages share a release cadence.",
+      "matchPackageNames": ["@opentelemetry/{/,}**"],
+      "groupName": "opentelemetry browser sdk"
+    },
+    {
+      "description": "Ark UI carries @zag-js/* in lockstep — bump together.",
+      "matchPackageNames": ["@ark-ui/{/,}**", "@zag-js/{/,}**"],
+      "groupName": "ark-ui / zag-js"
+    },
+    {
+      "description": "React core moves with react-dom and the @types/* shims.",
+      "matchPackageNames": ["react", "react-dom", "@types/react", "@types/react-dom"],
+      "groupName": "react"
+    },
+    {
+      "description": "Kotlin runtime + stdlib stay coupled.",
+      "matchManagers": ["gradle"],
+      "matchPackageNames": ["org.jetbrains.kotlin:{/,}**"],
+      "groupName": "kotlin"
+    },
+    {
+      "description": "Ktor server + client modules ship as a set.",
+      "matchManagers": ["gradle"],
+      "matchPackageNames": ["io.ktor:{/,}**"],
+      "groupName": "ktor"
+    },
+    {
+      "description": "Flyway core + database-postgresql must move together (SPI registration).",
+      "matchManagers": ["gradle"],
+      "matchPackageNames": ["org.flywaydb:{/,}**"],
+      "groupName": "flyway"
+    },
+    {
+      "description": "kotlinx-coroutines core + test in lockstep.",
+      "matchManagers": ["gradle"],
+      "matchPackageNames": ["org.jetbrains.kotlinx:kotlinx-coroutines-{/,}**"],
+      "groupName": "kotlinx-coroutines"
+    },
+    {
+      "description": "Jackson family.",
+      "matchManagers": ["gradle"],
+      "matchPackageNames": ["com.fasterxml.jackson.{/,}**"],
+      "groupName": "jackson"
+    },
+    {
+      "description": "Netty (we pin transitives for CVEs — bumps must move together).",
+      "matchManagers": ["gradle"],
+      "matchPackageNames": ["io.netty:{/,}**"],
+      "groupName": "netty"
+    },
+    {
+      "description": "Testcontainers family.",
+      "matchManagers": ["gradle"],
+      "matchPackageNames": ["org.testcontainers:{/,}**"],
+      "groupName": "testcontainers"
+    },
+    {
+      "description": "Helm subcharts under infra/ — dependency map but unconditional review.",
+      "matchManagers": ["helmv3"],
+      "groupName": "helm subcharts",
+      "schedule": ["before 6am on monday"]
+    },
+    {
+      "description": "Kotlin pre-releases — Kotlin 2.4 Beta etc. — never auto-PR.",
+      "matchManagers": ["gradle"],
+      "matchPackageNames": ["org.jetbrains.kotlin:{/,}**"],
+      "matchUpdateTypes": ["major"],
+      "enabled": false
+    },
+    {
+      "description": "Stay on Netty 4.2.x line; 5.x is alpha.",
+      "matchManagers": ["gradle"],
+      "matchPackageNames": ["io.netty:{/,}**"],
+      "matchUpdateTypes": ["major"],
+      "enabled": false
+    },
+    {
+      "description": "Stay on Testcontainers 1.21.x line; 2.x is alpha.",
+      "matchManagers": ["gradle"],
+      "matchPackageNames": ["org.testcontainers:{/,}**"],
+      "matchUpdateTypes": ["major"],
+      "enabled": false
+    },
+    {
+      "description": "Stay on JUnit 5.x; 6.x is RC.",
+      "matchManagers": ["gradle"],
+      "matchPackageNames": ["org.junit:{/,}**", "org.junit.jupiter:{/,}**", "org.junit.platform:{/,}**"],
+      "matchUpdateTypes": ["major"],
+      "enabled": false
+    },
+    {
+      "description": "@types/node tracks the Node LTS major (currently 22) — never auto-bump major.",
+      "matchPackageNames": ["@types/node"],
+      "matchUpdateTypes": ["major"],
+      "enabled": false
+    },
+    {
+      "description": "github-actions: minor / patch only, weekly.",
+      "matchManagers": ["github-actions"],
+      "matchUpdateTypes": ["minor", "patch", "digest"],
+      "groupName": "github-actions",
+      "automerge": false
+    }
+  ],
+  "gradle": {
+    "fileMatch": ["(^|/)(.+\\.gradle\\.kts|.+\\.gradle)$"]
+  },
+  "helmv3": {
+    "fileMatch": ["(^|/)Chart\\.yaml$"]
+  },
+  "dockerfile": {
+    "fileMatch": ["(^|/)Dockerfile[^/]*$"]
+  },
+  "github-actions": {
+    "fileMatch": ["^\\.github/workflows/[^/]+\\.ya?ml$"]
+  },
+  "ignorePaths": [
+    "**/node_modules/**",
+    "**/build/**",
+    "**/.gradle/**",
+    "**/dist/**",
+    "**/styled-system/**",
+    "frontend/patches/**"
+  ]
+}
