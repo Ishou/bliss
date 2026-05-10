@@ -7,10 +7,12 @@
   "scripts": {
     "dev": "pnpm panda:codegen && vite",
     "dev:preview": "pnpm panda:codegen && vite --mode preview",
-    "build": "pnpm panda:codegen && tsc -b && vite build",
+    "build": "pnpm panda:codegen && tsc -b && vite build && pnpm seo:postbuild",
     "build:preview": "pnpm panda:codegen && tsc -b && vite build --mode preview",
+    "seo:postbuild": "node --experimental-strip-types scripts/generate-sitemap.ts && node --experimental-strip-types scripts/prerender.ts",
     "preview": "vite preview",
     "test": "vitest run",
+    "test:post-build": "vitest run seo-prerender-output",
     "test:watch": "vitest",
     "e2e": "playwright test",
     "typecheck": "pnpm panda:codegen && tsc -b",

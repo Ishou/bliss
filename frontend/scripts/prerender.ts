@@ -13,7 +13,7 @@
 // of adding puppeteer, vite-react-ssg, or @tanstack/start. Trade-off
 // recorded in ADR-0035.
 
-import { chromium, type Browser } from '@playwright/test';
+import { chromium, type BrowserContext } from '@playwright/test';
 import { createServer, type Server } from 'node:http';
 import { readFileSync, statSync, writeFileSync, mkdirSync } from 'node:fs';
 import { extname, join, dirname, resolve } from 'node:path';
@@ -76,14 +76,34 @@ interface PrerenderError {
 }
 
 async function prerenderRoute(
-  browser: Browser,
+  context: BrowserContext,
   baseUrl: string,
   route: { path: string; title: string },
 ): Promise<PrerenderError | null> {
-  const page = await browser.newPage();
+  const page = await context.newPage();
   try {
+    // Block every outbound request that doesn't target the local
+    // static server. Routes with a data loader (`/`, `/grille`) call
+    // `puzzleRepository.fetchDaily()` against the real prod API host;
+    // letting that network call run pins the route on the
+    // pendingComponent indefinitely (or breaks the build behind a
+    // strict egress firewall). Forcing the loader to fail fast lets
+    // the route's `errorComponent` mount, which is what surfaces the
+    // route's `head()` (title / canonical / description) into the DOM
+    // — exactly what the prerender wants to capture.
+    await page.route('**/*', (route_) => {
+      const url = route_.request().url();
+      if (url.startsWith(baseUrl)) {
+        return route_.continue();
+      }
+      return route_.fulfill({
+        status: 503,
+        contentType: 'application/json',
+        body: '{"error":"prerender-no-network"}',
+      });
+    });
     await page.goto(`${baseUrl}${route.path}`, {
-      waitUntil: 'networkidle',
+      waitUntil: 'domcontentloaded',
       timeout: 30_000,
     });
     // Wait until <HeadContent /> has updated document.title to the
@@ -115,13 +135,23 @@ async function main(): Promise<void> {
   console.warn(`[prerender] static server listening on ${baseUrl}`);
 
   const browser = await chromium.launch();
+  // Block service-worker registration. The prod build registers
+  // workbox via vite-plugin-pwa, and the SW intercepts every fetch
+  // (including the route loader's API call). With it active, even a
+  // synthesised network failure stays trapped inside the SW, the
+  // loader never rejects, and the route stays on its pendingComponent
+  // forever — head() never fires. Blocking SWs at the context level
+  // keeps the runtime page identical to the bundle a search-engine
+  // crawler sees on a cold visit (no SW yet).
+  const context = await browser.newContext({ serviceWorkers: 'block' });
   const errors: PrerenderError[] = [];
   try {
     for (const route of INDEXABLE_ROUTES) {
-      const err = await prerenderRoute(browser, baseUrl, route);
+      const err = await prerenderRoute(context, baseUrl, route);
       if (err) errors.push(err);
     }
   } finally {
+    await context.close();
     await browser.close();
     server.close();
   }
