@@ -115,7 +115,7 @@ Any grid or flex container inside a page shell MUST use `minmax(0, 1fr)`
 on grid tracks and `minWidth: 0` on flex children that contain
 intrinsic-size content (inputs, code blocks, long URLs). Enforced
 empirically by the regression tests at viewports 320 / 375 / 768 px
-(`frontend/e2e/page-shell-overflow.spec.ts`).
+(`frontend/e2e/page-shell-overflow.spec.ts`, ships in PR 1b).
 
 ### 7. New routes consume one of the two primitives
 
