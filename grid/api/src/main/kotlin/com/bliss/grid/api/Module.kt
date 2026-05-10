@@ -77,6 +77,23 @@ fun Application.module() {
         // reaches the route.
         allowHeader("X-Session-Id")
         allowHeader("X-Request-Id")
+        // W3C Trace Context propagation (PR-F.2 / ADR-0033). The OTel
+        // browser SDK's FetchInstrumentation attaches `traceparent` and
+        // `tracestate` to outbound fetches matching wordsparrow.io so
+        // backend spans nest under the browser fetch in SigNoz. Both
+        // headers are non-simple from CORS' POV and must be allowed
+        // explicitly — without these entries every POST hint / validate
+        // (and indeed every fetch that triggers a preflight) fails with
+        // 403 because the browser's preflight checks
+        // `Access-Control-Request-Headers` against this list. `baggage`
+        // is the W3C Baggage propagation header — not used today by the
+        // SDK we ship, but allow-listed proactively because the OTel
+        // contrib instrumentations use it interchangeably with the
+        // trace headers and a future SDK bump might enable it. CorsTest
+        // exercises each so a regression here fails CI before prod.
+        allowHeader("traceparent")
+        allowHeader("tracestate")
+        allowHeader("baggage")
 
         // Production frontends (Cloudflare Pages serving wordsparrow.io).
         allowHost("wordsparrow.io", schemes = listOf("https"))

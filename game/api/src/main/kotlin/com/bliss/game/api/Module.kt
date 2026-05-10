@@ -74,6 +74,16 @@ fun Application.module() {
         allowHeader(HttpHeaders.ContentType)
         allowHeader(HttpHeaders.Accept)
         allowHeader("X-Request-Id")
+        // W3C Trace Context propagation (PR-F.2 / ADR-0033). Mirrors
+        // grid-api's allow-list so browser fetches that the OTel SDK
+        // augments with `traceparent` / `tracestate` (and the
+        // forward-compatible `baggage`) pass the preflight. Without
+        // these, every POST /v1/lobbies / GET lobby / WS upgrade
+        // request from a browser fails the CORS preflight with 403.
+        // CorsTest exercises each.
+        allowHeader("traceparent")
+        allowHeader("tracestate")
+        allowHeader("baggage")
 
         // Production frontends (Cloudflare Pages serving wordsparrow.io).
         allowHost("wordsparrow.io", schemes = listOf("https"))
