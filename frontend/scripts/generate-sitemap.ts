@@ -20,10 +20,11 @@ export function renderSitemap(
   const urls = routes
     .map((r) => {
       const lastmod = lastmodForPath?.(r.path) ?? fallbackLastmod;
-      return `  <url>\n    <loc>${SITE_BASE_URL}${r.path}</loc>\n    <lastmod>${lastmod}</lastmod>\n  </url>`;
+      const imageLoc = `${SITE_BASE_URL}${r.ogImagePath}`;
+      return `  <url>\n    <loc>${SITE_BASE_URL}${r.path}</loc>\n    <lastmod>${lastmod}</lastmod>\n    <image:image><image:loc>${imageLoc}</image:loc></image:image>\n  </url>`;
     })
     .join('\n');
-  return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`;
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">\n${urls}\n</urlset>\n`;
 }
 
 // Path mapping: which file's git history represents this route.
