@@ -5,6 +5,10 @@ metadata:
   labels: {{- include "wordsparrow-api.labels" . | nindent 4 }}
 spec:
   instances: {{ .Values.postgres.cluster.instances }}
+  # Explicit image pin — see values.yaml for the rationale (operator
+  # default drift between cnpg minor releases would otherwise schedule a
+  # PG-major upgrade on next reconcile).
+  imageName: {{ .Values.postgres.cluster.imageName | quote }}
   bootstrap:
     initdb:
       database: {{ .Values.postgres.cluster.bootstrap.database }}

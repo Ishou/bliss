@@ -34,6 +34,15 @@ postgres:
   cluster:
     # CNPG Cluster instances. Prod=3 (HA, ADR-0009 §3); local=1.
     instances: 1
+    # PostgreSQL image — explicitly pinned so cnpg's per-release default
+    # doesn't drift the cluster underneath us. cnpg 0.22.x defaulted to
+    # PG 16 at admission; cnpg 0.28 defaults to PG 18.1, and an unpinned
+    # `imageName` would resolve the new default on next reconcile and
+    # potentially trigger an unintended PG-major upgrade. The pin makes
+    # the major version a deliberate decision, separate from operator
+    # bumps. Bump in lockstep with cnpg minor releases that ship newer
+    # 16.x base images.
+    imageName: "ghcr.io/cloudnative-pg/postgresql:16.10-bookworm"
     storage:
       size: 10Gi
       # Empty = cluster default. Prod "hcloud-volumes"; local "local-path".
