@@ -1,5 +1,86 @@
+import { ROOT_CONTEXT, SpanKind } from '@opentelemetry/api';
+import { SamplingDecision, type Sampler } from '@opentelemetry/sdk-trace-web';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { readOtelConfigFromEnv } from '@/infrastructure/observability/otelTracer';
+import { ErrorAwareSampler, readOtelConfigFromEnv } from '@/infrastructure/observability/otelTracer';
+
+function makeBase(decision: SamplingDecision): Sampler {
+  return {
+    shouldSample: vi.fn().mockReturnValue({ decision }),
+    toString: () => 'MockSampler',
+  };
+}
+
+const NO_ATTRS = {};
+const NO_LINKS: never[] = [];
+
+describe('ErrorAwareSampler', () => {
+  it('always samples spans whose name starts with "window."', () => {
+    const base = makeBase(SamplingDecision.NOT_RECORD);
+    const sampler = new ErrorAwareSampler(base);
+
+    const result = sampler.shouldSample(
+      ROOT_CONTEXT,
+      'trace-id',
+      'window.error',
+      SpanKind.INTERNAL,
+      NO_ATTRS,
+      NO_LINKS,
+    );
+
+    expect(result.decision).toBe(SamplingDecision.RECORD_AND_SAMPLED);
+    expect(base.shouldSample).not.toHaveBeenCalled();
+  });
+
+  it('always samples "window.unhandledrejection" spans', () => {
+    const base = makeBase(SamplingDecision.NOT_RECORD);
+    const sampler = new ErrorAwareSampler(base);
+
+    const result = sampler.shouldSample(
+      ROOT_CONTEXT,
+      'trace-id',
+      'window.unhandledrejection',
+      SpanKind.INTERNAL,
+      NO_ATTRS,
+      NO_LINKS,
+    );
+
+    expect(result.decision).toBe(SamplingDecision.RECORD_AND_SAMPLED);
+    expect(base.shouldSample).not.toHaveBeenCalled();
+  });
+
+  it('delegates non-window spans to the base sampler', () => {
+    const base = makeBase(SamplingDecision.NOT_RECORD);
+    const sampler = new ErrorAwareSampler(base);
+
+    const result = sampler.shouldSample(
+      ROOT_CONTEXT,
+      'trace-id',
+      'fetch.GET /api/puzzle',
+      SpanKind.CLIENT,
+      NO_ATTRS,
+      NO_LINKS,
+    );
+
+    expect(result.decision).toBe(SamplingDecision.NOT_RECORD);
+    expect(base.shouldSample).toHaveBeenCalledOnce();
+  });
+
+  it('does not promote a span whose name merely contains "window." mid-string', () => {
+    const base = makeBase(SamplingDecision.NOT_RECORD);
+    const sampler = new ErrorAwareSampler(base);
+
+    const result = sampler.shouldSample(
+      ROOT_CONTEXT,
+      'trace-id',
+      'some.window.thing',
+      SpanKind.INTERNAL,
+      NO_ATTRS,
+      NO_LINKS,
+    );
+
+    expect(result.decision).toBe(SamplingDecision.NOT_RECORD);
+  });
+});
 
 describe('readOtelConfigFromEnv', () => {
   afterEach(() => {
