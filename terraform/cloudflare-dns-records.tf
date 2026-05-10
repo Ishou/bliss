@@ -14,7 +14,25 @@
 # `www.<custom_domain>` alias is *not* managed here either — Cloudflare
 # Pages handles those records as part of the custom-domain attachment
 # in `terraform/cloudflare-pages-domain.tf` (ADR-0004). This file is
-# intentionally empty of resources; it remains as a stable home for
-# any future zone-level records that don't belong to Pages or to
-# external-dns. Delete the file the next time it stays empty across a
-# release.
+# the stable home for zone-level records that don't belong to Pages or
+# to external-dns — currently the Search Console verification TXT.
+
+# Google Search Console domain-property verification.
+# Issued for `wordsparrow.io` from
+# https://search.google.com/search-console — see ADR-0035 §"Search Console".
+# The token is a public verification string, not a secret; safe to commit.
+#
+# Gated on the same `cloudflare_zone_id`/`custom_domain` non-empty pair as
+# the rest of the DNS-side IaC so a bootstrap apply (before the zone
+# exists) is still a no-op. The record is written at the apex
+# (`name = var.custom_domain`) because Search Console verifies domain
+# properties against the apex TXT, not a `_google` subdomain.
+resource "cloudflare_dns_record" "google_site_verification" {
+  count = var.custom_domain == "" || var.cloudflare_zone_id == "" ? 0 : 1
+
+  zone_id = var.cloudflare_zone_id
+  name    = var.custom_domain
+  type    = "TXT"
+  content = "google-site-verification=sXNHgDIo3MlV64qSSTQMBN1HdvLSiYJZpcCE0HH3Cn0"
+  ttl     = 1 # Auto
+}
