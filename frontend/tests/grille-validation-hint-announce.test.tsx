@@ -8,18 +8,22 @@ import {
 // Minimal stubs
 // ---------------------------------------------------------------------------
 
+// Vitest 4 narrowed `vi.fn()`'s default return type from a typed Mock to
+// `Mock<Procedure | Constructable>`, which is no longer assignable to a
+// concrete callable signature. Pass the real signature to `vi.fn<…>()`
+// so the return type is the function shape the SUT expects.
 function makeStore(): {
-  lockCell: ReturnType<typeof vi.fn>;
-  save: ReturnType<typeof vi.fn>;
+  lockCell: (puzzleId: string, row: number, column: number) => void;
+  save: (puzzleId: string, row: number, column: number, letter: string | null) => void;
 } {
   return {
-    lockCell: vi.fn(),
-    save: vi.fn(),
+    lockCell: vi.fn<(puzzleId: string, row: number, column: number) => void>(),
+    save: vi.fn<(puzzleId: string, row: number, column: number, letter: string | null) => void>(),
   };
 }
 
-function makeAnnouncer(): { say: ReturnType<typeof vi.fn> } {
-  return { say: vi.fn() };
+function makeAnnouncer(): { say: (text: string) => void } {
+  return { say: vi.fn<(text: string) => void>() };
 }
 
 // ---------------------------------------------------------------------------

@@ -138,8 +138,19 @@ describe('index route — onboarding tour wiring', () => {
       '[data-scope="tour"][data-part="spotlight"]',
     );
     expect(spotlight).not.toBeNull();
-    const transition = window.getComputedStyle(spotlight!).transitionProperty;
-    expect(transition).not.toMatch(/all|width|height|left|top/);
+    // Earlier this assertion read `transitionProperty` and asserted it
+    // didn't list `all|width|height|left|top`. jsdom 25 returned an empty
+    // string for unset transition-property; jsdom 29 returns the CSS
+    // initial value `all`, which made the assertion fail despite the
+    // styles file deliberately omitting any transition declaration.
+    //
+    // The actual safety property is "no animation on the box rect on
+    // first mount" — equivalent to `transition-duration: 0s` (the CSS
+    // initial value). Pinning duration is robust across jsdom versions
+    // and still catches a regression that re-adds an animation, since
+    // any new transition declaration would set a non-zero duration.
+    const duration = window.getComputedStyle(spotlight!).transitionDuration;
+    expect(duration).toBe('0s');
   });
 
   it('renders the dismiss + step-action triggers as Bliss Button instances', async () => {
