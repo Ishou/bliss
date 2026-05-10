@@ -110,6 +110,36 @@ describe.skipIf(!existsSync(resolve(DIST, 'index.html')))(
       expect(html).not.toContain('"@type":"Game"');
     });
 
+    it.each(INDEXABLE_ROUTES)('emits exactly one <title> in dist/$path', (route) => {
+      const file =
+        route.path === '/'
+          ? resolve(DIST, 'index.html')
+          : resolve(DIST, route.path.slice(1), 'index.html');
+      const html = readFileSync(file, 'utf8');
+      const titleCount = (html.match(/<title>/g) ?? []).length;
+      expect(titleCount).toBe(1);
+    });
+
+    it.each(INDEXABLE_ROUTES)('emits exactly one og:image in dist/$path', (route) => {
+      const file =
+        route.path === '/'
+          ? resolve(DIST, 'index.html')
+          : resolve(DIST, route.path.slice(1), 'index.html');
+      const html = readFileSync(file, 'utf8');
+      const ogImageCount = (html.match(/property="og:image"/g) ?? []).length;
+      expect(ogImageCount).toBe(1);
+    });
+
+    it.each(INDEXABLE_ROUTES)('emits exactly one canonical link in dist/$path', (route) => {
+      const file =
+        route.path === '/'
+          ? resolve(DIST, 'index.html')
+          : resolve(DIST, route.path.slice(1), 'index.html');
+      const html = readFileSync(file, 'utf8');
+      const canonicalCount = (html.match(/rel="canonical"/g) ?? []).length;
+      expect(canonicalCount).toBe(1);
+    });
+
     it.each(INDEXABLE_ROUTES)(
       'embeds the per-route og:image in dist/$path',
       (route) => {

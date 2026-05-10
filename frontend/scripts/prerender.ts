@@ -48,16 +48,37 @@ const MIME: Record<string, string> = {
   '.webmanifest': 'application/manifest+json',
 };
 
-function startStaticServer(rootDir: string): Promise<{ server: Server; port: number }> {
+function startStaticServer(
+  rootDir: string,
+  originalShell: string,
+): Promise<{ server: Server; port: number }> {
   const server = createServer((req, res) => {
     const urlPath = (req.url ?? '/').split('?')[0];
+    // Always serve the in-memory shell for `/` and `/index.html`. Without
+    // this, once the homepage's prerender writes its post-hydration HTML
+    // to `dist/index.html`, every subsequent route's SPA-shell load would
+    // pick up the homepage's per-route head tags (og:image, canonical,
+    // <title>, etc.) and `<HeadContent />` would inject the route's own
+    // tags on top — leaving duplicate head tags in the dumped outerHTML.
+    if (urlPath === '/' || urlPath === '/index.html') {
+      res.writeHead(200, { 'Content-Type': MIME['.html']! });
+      res.end(originalShell);
+      return;
+    }
     let filePath = join(rootDir, urlPath);
     let isDir = false;
+    let notFound = false;
     try {
       isDir = statSync(filePath).isDirectory();
     } catch {
-      // not found — fall through to SPA shell so the client router can route
-      filePath = join(rootDir, 'index.html');
+      notFound = true;
+    }
+    if (notFound) {
+      // SPA fallback: serve the in-memory clean shell so the client
+      // router can resolve the route from a duplicate-free starting state.
+      res.writeHead(200, { 'Content-Type': MIME['.html']! });
+      res.end(originalShell);
+      return;
     }
     if (isDir) filePath = join(filePath, 'index.html');
     try {
@@ -159,8 +180,52 @@ async function prerenderRoute(
   }
 }
 
+// Tags that `buildHead` (src/ui/seo/buildHead.ts) injects per route via
+// TanStack Router's <HeadContent />. The Vite source `index.html` ships
+// homepage-flavored defaults for the same set so the dev server and a
+// pre-hydration view of the SPA aren't ugly. At prerender time those
+// defaults would duplicate every route's injected tags in the dumped
+// outerHTML — `<HeadContent />` appends, it does not replace — so we
+// strip them from the in-memory shell before serving. This leaves the
+// truly-static head bits (charset, viewport, theme-color, favicons,
+// manifest) intact.
+const STRIP_HEAD_TAG_PATTERNS: ReadonlyArray<RegExp> = [
+  /\s*<title>[^<]*<\/title>/i,
+  /\s*<meta\s+name="description"[^>]*>/i,
+  /\s*<meta\s+property="og:title"[^>]*>/i,
+  /\s*<meta\s+property="og:description"[^>]*>/i,
+  /\s*<meta\s+property="og:url"[^>]*>/i,
+  /\s*<meta\s+property="og:type"[^>]*>/i,
+  /\s*<meta\s+property="og:site_name"[^>]*>/i,
+  /\s*<meta\s+property="og:locale"[^>]*>/i,
+  /\s*<meta\s+property="og:image"[^>]*>/i,
+  /\s*<meta\s+name="twitter:card"[^>]*>/i,
+  /\s*<meta\s+name="twitter:title"[^>]*>/i,
+  /\s*<meta\s+name="twitter:description"[^>]*>/i,
+  /\s*<meta\s+name="twitter:image"[^>]*>/i,
+  /\s*<link\s+rel="canonical"[^>]*>/i,
+];
+
+function stripPerRouteHeadTags(html: string): string {
+  let stripped = html;
+  for (const pattern of STRIP_HEAD_TAG_PATTERNS) {
+    stripped = stripped.replace(pattern, '');
+  }
+  return stripped;
+}
+
 async function main(): Promise<void> {
-  const { server, port } = await startStaticServer(DIST);
+  // Pin the original Vite-built shell in memory before any prerender pass
+  // writes to dist/, with the shell's default per-route head tags
+  // stripped. Every route's prerender then starts from this clean shell —
+  // no duplicate head tags from the source template OR a
+  // previously-written page leaking into the next route's SPA-shell load.
+  // After all routes prerender, the homepage's HTML overwrites
+  // `dist/index.html` last (so direct hits on `/` see the homepage's
+  // per-route tags as expected).
+  const rawShell = readFileSync(join(DIST, 'index.html'), 'utf8');
+  const originalShell = stripPerRouteHeadTags(rawShell);
+  const { server, port } = await startStaticServer(DIST, originalShell);
   const baseUrl = `http://127.0.0.1:${port}`;
   console.warn(`[prerender] static server listening on ${baseUrl}`);
 
