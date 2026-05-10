@@ -200,6 +200,19 @@ export default defineConfig({
       'styled-system': path.resolve(__dirname, './styled-system'),
     },
   },
+  build: {
+    // Public maps are fine because the repo is public on GitHub
+    // (the OCI `org.opencontainers.image.source` label baked into
+    // our Dockerfiles confirms it). Map files add zero source
+    // disclosure that isn't already at `Ishou/bliss`. ~250 KB per
+    // asset on the static host; CDN-cacheable, only fetched on demand.
+    //
+    // If the repo ever flips private, change `true` → `'hidden'` and
+    // add a CI step that uploads the `.map` files to a private bucket;
+    // SigNoz still won't auto-unmap, but a developer with the maps in
+    // hand can.
+    sourcemap: true,
+  },
   test: {
     globals: true,
     environment: 'jsdom',
