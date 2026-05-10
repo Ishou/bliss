@@ -68,4 +68,28 @@ describe('buildHead', () => {
     const head = buildHead({ ...baseInput, noindex: true });
     expect(head.meta).toContainEqual({ name: 'robots', content: 'noindex,follow' });
   });
+
+  it('uses the provided ogImage for og:image and twitter:image', () => {
+    const head = buildHead({
+      ...baseInput,
+      ogImage: 'https://wordsparrow.io/og-aide.png',
+    });
+    expect(head.meta).toContainEqual({
+      property: 'og:image',
+      content: 'https://wordsparrow.io/og-aide.png',
+    });
+    expect(head.meta).toContainEqual({
+      name: 'twitter:image',
+      content: 'https://wordsparrow.io/og-aide.png',
+    });
+    // The default must NOT leak in when a per-route image is supplied.
+    expect(head.meta).not.toContainEqual({
+      property: 'og:image',
+      content: 'https://wordsparrow.io/og-default.png',
+    });
+    expect(head.meta).not.toContainEqual({
+      name: 'twitter:image',
+      content: 'https://wordsparrow.io/og-default.png',
+    });
+  });
 });

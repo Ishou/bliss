@@ -109,5 +109,39 @@ describe.skipIf(!existsSync(resolve(DIST, 'index.html')))(
       const html = readFileSync(resolve(DIST, 'index.html'), 'utf8');
       expect(html).not.toContain('"@type":"Game"');
     });
+
+    it.each(INDEXABLE_ROUTES)(
+      'embeds the per-route og:image in dist/$path',
+      (route) => {
+        const file =
+          route.path === '/'
+            ? resolve(DIST, 'index.html')
+            : resolve(DIST, route.path.slice(1), 'index.html');
+        const html = readFileSync(file, 'utf8');
+        const expected = `${SITE_BASE_URL}${route.ogImagePath}`;
+        expect(html).toContain(`property="og:image" content="${expected}"`);
+        expect(html).toContain(`name="twitter:image" content="${expected}"`);
+        // The shared default must NOT leak into indexable routes.
+        expect(html).not.toContain('og-default.png');
+      },
+    );
   },
 );
+
+// File-existence checks for the per-route OG images. These run regardless
+// of whether dist/ has been built — they assert the public/ checked-in
+// assets, not the post-build output.
+describe('per-route OG image assets', () => {
+  it.each(INDEXABLE_ROUTES)(
+    'public/<og image> exists for $path',
+    (route) => {
+      const path = resolve(
+        __dirname,
+        '..',
+        'public',
+        route.ogImagePath.slice(1),
+      );
+      expect(existsSync(path)).toBe(true);
+    },
+  );
+});

@@ -140,6 +140,7 @@ export const Route = createRoute({
       title: r.title,
       description: r.description,
       canonical: `${SITE_BASE_URL}/mentions-legales`,
+      ogImage: `${SITE_BASE_URL}${r.ogImagePath}`,
     });
     return {
       ...base,

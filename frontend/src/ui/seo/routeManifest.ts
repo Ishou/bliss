@@ -12,6 +12,11 @@ export interface IndexableRoute {
   readonly path: string;
   readonly title: string;
   readonly description: string;
+  // Path (root-relative, with leading `/`) of the per-route OpenGraph
+  // image under `frontend/public/`. The full URL is built as
+  // `${SITE_BASE_URL}${ogImagePath}` and used by `buildHead` for
+  // `og:image` and `twitter:image`.
+  readonly ogImagePath: string;
 }
 
 export const INDEXABLE_ROUTES: ReadonlyArray<IndexableRoute> = [
@@ -20,28 +25,33 @@ export const INDEXABLE_ROUTES: ReadonlyArray<IndexableRoute> = [
     title: 'WordSparrow — mots fléchés français en ligne',
     description:
       'Jouez aux mots fléchés en français, en solo ou en multijoueur. Gratuit, sans inscription.',
+    ogImagePath: '/og-accueil.png',
   },
   {
     path: '/grille',
     title: 'Grille du jour — WordSparrow',
     description: 'Résolvez la grille de mots fléchés du jour, en français.',
+    ogImagePath: '/og-grille.png',
   },
   {
     path: '/aide',
     title: 'Aide — WordSparrow',
     description:
       'Comment jouer aux mots fléchés sur WordSparrow : règles, astuces, raccourcis.',
+    ogImagePath: '/og-aide.png',
   },
   {
     path: '/mentions-legales',
     title: 'Mentions légales — WordSparrow',
     description:
       'Mentions légales et informations éditoriales de WordSparrow.',
+    ogImagePath: '/og-mentions-legales.png',
   },
   {
     path: '/confidentialite',
     title: 'Confidentialité — WordSparrow',
     description: 'Politique de confidentialité de WordSparrow.',
+    ogImagePath: '/og-confidentialite.png',
   },
 ];
 
