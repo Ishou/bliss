@@ -36,8 +36,15 @@ const STRESS_FIXTURE = JSON.parse(
 ) as Record<string, unknown>;
 
 test.describe('WCAG 2.2 A + AA accessibility', () => {
-  test('home route (puzzle grid)', async ({ page }) => {
+  test('grille route (puzzle grid)', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
+    // Pre-seed `wordsparrow.tour.seen=true` so the SoloTour doesn't
+    // open on first visit. The tour is a one-time onboarding overlay;
+    // the steady-state grid (returning user) is the canonical scan
+    // target. Tour-internal a11y is tracked separately.
+    await page.addInitScript(() => {
+      window.localStorage.setItem('wordsparrow.tour.seen', 'true');
+    });
     await page.route(/\/v1\/puzzles\//, async (route) => {
       await route.fulfill({
         status: 200,
@@ -45,11 +52,14 @@ test.describe('WCAG 2.2 A + AA accessibility', () => {
         body: JSON.stringify(STRESS_FIXTURE),
       });
     });
-    await page.goto('/');
+    // `/` is the accueil landing page after the WordSparrow UI refactor
+    // (`75885ce`). The puzzle grid lives on `/grille` — that's the
+    // route this scan must hit.
+    await page.goto('/grille');
     await page.waitForSelector('[role="grid"]', { state: 'visible' });
     await page.evaluate(() => document.fonts.ready);
     await page.evaluate(() => new Promise(r => requestAnimationFrame(() => r(null))));
 
-    await runAxe(page, 'home');
+    await runAxe(page, 'grille');
   });
 });
