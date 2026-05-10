@@ -17,6 +17,10 @@ import {
   readMatomoConfigFromEnv,
 } from '@/infrastructure/analytics/matomoTracker';
 import {
+  initOtelTracer,
+  readOtelConfigFromEnv,
+} from '@/infrastructure/observability/otelTracer';
+import {
   clearSession,
   getOrCreateSessionId,
   getPseudonym,
@@ -94,6 +98,11 @@ async function enableMocks(): Promise<void> {
     onUnhandledRequest: 'bypass',
   });
 }
+
+// Initialise OTel before the first fetch so the FetchInstrumentation can
+// patch the global. Noop when VITE_OTEL_OTLP_ENDPOINT is unset
+// (dev / preview / pre-PR-F.2 prod). ADR-0033.
+initOtelTracer(readOtelConfigFromEnv());
 
 const container = document.getElementById('root');
 if (!container) {
