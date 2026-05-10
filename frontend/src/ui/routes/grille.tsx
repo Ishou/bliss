@@ -392,8 +392,8 @@ function HomePage() {
 
   return (
     <PageShell>
-      <h1 lang="en" className={srOnly}>
-        WordSparrow
+      <h1 lang="fr" className={srOnly}>
+        Grille de mots fléchés du jour — <span lang="en">WordSparrow</span>
       </h1>
       <PuzzleToolbar
         metadata={puzzle.title}

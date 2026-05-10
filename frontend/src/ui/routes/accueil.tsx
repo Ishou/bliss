@@ -455,7 +455,9 @@ function AccueilPage() {
   const puzzle = Route.useLoaderData() as Puzzle;
   return (
     <PageShell>
-      <h1 lang="en" className={srOnly}>WordSparrow</h1>
+      <h1 lang="fr" className={srOnly}>
+        Mots fléchés français en ligne — <span lang="en">WordSparrow</span>
+      </h1>
       <div className={cardsGridStyles}>
         <GrilleDuJourCard puzzle={puzzle} />
         <MultijoueurCard />

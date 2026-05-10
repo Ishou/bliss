@@ -63,8 +63,12 @@ const renderAide = (initialEntry = '/aide') => {
 describe('Aide route', () => {
   it('renders the page heading and tour launcher card', async () => {
     renderAide();
-    expect(await screen.findByRole('heading', { name: 'Aide', level: 1 }))
-      .toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', {
+        name: 'Comment jouer aux mots fléchés en ligne',
+        level: 1,
+      }),
+    ).toBeInTheDocument();
     expect(
       screen.getByRole('heading', { name: "Lancer le tour d'accueil", level: 2 }),
     ).toBeInTheDocument();
