@@ -83,6 +83,10 @@ jobs:
             pnpm --filter frontend build
           fi
 
+      - name: Post-build SEO assertions
+        working-directory: frontend
+        run: pnpm test:post-build
+
       - name: Publish to Cloudflare Pages
         # cloudflare/pages-action v1.5.0 (deprecated upstream in favor of
         # wrangler-action, but still functional; migration tracked as a
