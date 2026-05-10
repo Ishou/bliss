@@ -52,6 +52,6 @@ dependencies:
   # `helm search repo signoz/k8s-infra` before bumping — the chart
   # versions are independent of the main signoz chart.
   - name: k8s-infra
-    version: "0.13.5"
+    version: "0.15.1"
     repository: "https://charts.signoz.io"
     condition: k8s-infra.enabled
