@@ -15,6 +15,7 @@ import com.bliss.grid.application.puzzle.RevealCellHintOutcome
 import com.bliss.grid.application.puzzle.RevealCellHintUseCase
 import com.bliss.grid.application.puzzle.ValidatePuzzleOutcome
 import com.bliss.grid.application.puzzle.ValidatePuzzleUseCase
+import com.bliss.grid.domain.generation.ClueCooldownRepository
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.request.receive
@@ -101,7 +102,10 @@ fun Route.puzzles(
             }
 
         val puzzleId = dailyPuzzleSelector.puzzleIdForDate(date)
-        val stored = loadOrGenerate.execute(puzzleId)
+        // Daily endpoint uses the shared DAILY_SCOPE_ID bucket regardless of
+        // any client-supplied X-Session-Id header (ADR-0031). The endpoint
+        // ignores that header by design.
+        val stored = loadOrGenerate.execute(puzzleId, sessionId = ClueCooldownRepository.DAILY_SCOPE_ID)
         if (stored == null) {
             log.warn("daily_puzzle_generation_failed date={} puzzle_id={}", date, puzzleId)
             call.respondProblem(
@@ -169,7 +173,25 @@ fun Route.puzzles(
                 is DimensionParse.Ok -> parsed.value
             }
 
-        val stored = loadOrGenerate.execute(puzzleId, width, height)
+        val rawSession = call.request.headers["X-Session-Id"]
+        val sessionId =
+            if (rawSession.isNullOrBlank()) {
+                null
+            } else {
+                val parsed = parseUuid(rawSession)
+                if (parsed == null || parsed == ClueCooldownRepository.DAILY_SCOPE_ID) {
+                    call.respondProblem(
+                        status = HttpStatusCode.BadRequest,
+                        title = "Identifiant de session invalide",
+                        type = INVALID_SESSION_ID_TYPE,
+                        detail = "L'en-tête X-Session-Id doit être un UUID, reçu : '$rawSession'.",
+                    )
+                    return@get
+                }
+                parsed
+            }
+
+        val stored = loadOrGenerate.execute(puzzleId, width, height, sessionId)
         if (stored == null) {
             log.warn("puzzle_generation_failed puzzle_id={}", puzzleId)
             call.respondProblem(
