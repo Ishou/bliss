@@ -39,11 +39,11 @@ spec:
           env:
             # DATABASE_URL is sourced directly from CNPG's
             # auto-generated `<cluster>-app` Secret (key: `uri`).
-            # CNPG creates that Secret as soon as the Cluster CR is
-            # processed, using the password the chart pre-supplied
-            # via `bootstrap.initdb.secret` (see postgres-cluster.yaml
-            # + secret-pg-credentials.yaml). No operator step
-            # between install and pod-start is required.
+            # CNPG creates that Secret on initdb with the password it
+            # generates itself. The chart no longer owns the bootstrap
+            # credentials (see postgres-cluster.yaml's `bootstrap.initdb`
+            # block for the removal rationale). No operator step between
+            # install and pod-start is required.
             - name: DATABASE_URL
               valueFrom:
                 secretKeyRef:
