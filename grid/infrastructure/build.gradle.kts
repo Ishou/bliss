@@ -17,8 +17,8 @@ dependencies {
     // Postgres pool + migrations — used by BlissDatabase + PostgresPuzzleRepository.
     implementation("org.postgresql:postgresql:42.7.11")
     implementation("com.zaxxer:HikariCP:7.0.2")
-    implementation("org.flywaydb:flyway-core:11.10.4")
-    implementation("org.flywaydb:flyway-database-postgresql:11.10.4")
+    implementation("org.flywaydb:flyway-core:12.6.0")
+    implementation("org.flywaydb:flyway-database-postgresql:12.6.0")
     implementation("org.slf4j:slf4j-api:2.0.16")
 
     // Ktor client + CIO engine — used by MatomoAnalyticsAdapter to POST events
