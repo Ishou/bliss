@@ -41,7 +41,7 @@ def main() -> int:
     p.add_argument("--lexique", type=Path, default=None)
     p.add_argument("--output", type=Path, required=True)
     p.add_argument("--length-min", type=int, default=4)
-    p.add_argument("--length-max", type=int, default=11)
+    p.add_argument("--length-max", type=int, default=15)
     args = p.parse_args()
 
     lex = args.lexique or Path(os.path.expanduser(

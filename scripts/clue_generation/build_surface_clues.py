@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Build a per-surface clue table from the (lemma, pos)-keyed corpus.
 
-For each surface form in words-fr.csv (4-11 chars), determine the owning
+For each surface form in words-fr.csv (4-15 chars), determine the owning
 (lemma, pos) by grammalecte total-occurrences (with POS precedence
 nom > adj > adv > verbe on ties), then either copy the lemma's clue
 verbatim (if surface == lemma) or inflect the clue's head token to
@@ -122,7 +122,7 @@ def main() -> None:
             if not surface or not surface.isalpha():
                 continue
             L = len(surface)
-            if not (4 <= L <= 11):
+            if not (4 <= L <= 15):
                 continue
             analyses = index.lookup_form(surface)
             if not analyses:

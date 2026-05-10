@@ -32,7 +32,7 @@ PY=.venv/bin/python
 
 # === Phase 1: sample top-X per length, length-interleaved ===
 if [[ ! -f "$SAMPLE_JSONL" ]]; then
-  echo "[1/3] sampling top-$X per length (4-11), length-interleaved"
+  echo "[1/3] sampling top-$X per length (4-15), length-interleaved"
   $PY <<PYEOF
 import csv, json, random
 from pathlib import Path
@@ -46,18 +46,18 @@ with ws.open() as f:
         word = r.get("word","").strip().lower()
         if not lemma or lemma != word or not lemma.isalpha(): continue
         L = len(lemma)
-        if not (4 <= L <= 11): continue
+        if not (4 <= L <= 15): continue
         try: freq = float(r.get("frequency") or 0)
         except: freq = 0
         candidates[L].append((lemma, freq))
 
 # Top-$X per length, sorted by freq descending
 chosen_per_len = {}
-for L in range(4, 12):
+for L in range(4, 16):
     chosen_per_len[L] = sorted(candidates.get(L, []), key=lambda x: -x[1])[:$X]
     print(f"  L{L}: {len(chosen_per_len[L])}")
 
-# Round-robin interleave: 1 length-4, 1 length-5, ..., 1 length-11, repeat
+# Round-robin interleave: 1 length-4, 1 length-5, ..., 1 length-15, repeat
 out = []
 max_len = max(len(b) for b in chosen_per_len.values())
 for i in range(max_len):

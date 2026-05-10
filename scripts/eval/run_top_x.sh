@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Run the full clue-gen pipeline on top-X lemmas per length (4-11).
+# Run the full clue-gen pipeline on top-X lemmas per length (4-15).
 # X chosen for ~6h max wall-clock at ~0.4 clue/s through generate.
 #
 # Lengths are round-robin interleaved at the input level so a kill during
@@ -33,10 +33,10 @@ CLUES="$OUT_DIR/lemma_clues.csv"
 PY=.venv/bin/python
 
 if [[ ! -f "$SAMPLE" ]]; then
-  echo "[1/4] sampling top-$X per length (4-11) and round-robin interleaving"
+  echo "[1/4] sampling top-$X per length (4-15) and round-robin interleaving"
   RAW="$OUT_DIR/sample_raw.csv"
   $PY scripts/eval/sample_lemmas.py \
-    --top-per-length "$X" --min-length 4 --max-length 11 \
+    --top-per-length "$X" --min-length 4 --max-length 15 \
     --output "$RAW" 2>&1 | tail -3 || true
   $PY - <<PYEOF
 # Round-robin interleave by length so kills during generation cover all lengths.
