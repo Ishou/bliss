@@ -1,0 +1,9 @@
+dependencies:
+- name: signoz
+  repository: https://charts.signoz.io
+  version: 0.122.0
+- name: k8s-infra
+  repository: https://charts.signoz.io
+  version: 0.15.1
+digest: sha256:8878951f5f3bc7f79cbc8af2a6f425fb5762b92175cf1f0e258465914558d6c8
+generated: "2026-05-10T21:55:41.331916+02:00"

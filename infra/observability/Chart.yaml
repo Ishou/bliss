@@ -32,3 +32,26 @@ dependencies:
     version: "0.122.0"
     repository: "https://charts.signoz.io"
     condition: signoz.enabled
+  # SigNoz k8s-infra: separate Helm chart that deploys the per-node
+  # otel-agent DaemonSet (kubeletstats + hostmetrics + filelog
+  # receivers, scraping kubelet's /stats/summary and host /proc on
+  # each node) AND a singleton otel-deployment Deployment running the
+  # k8s_cluster receiver. Together they fill the gap the main signoz
+  # chart leaves: the bundled otel-collector is a Deployment that
+  # only listens for pushed OTLP traffic, so per-pod CPU/memory and
+  # node-level metrics aren't visible until k8s-infra is added.
+  #
+  # The OTel agents forward to `observability-signoz-otel-collector`
+  # over OTLP/gRPC (same Service the apps push to), so no extra
+  # ingress / Service is needed — see values-prod.yaml.
+  #
+  # Closes the "pod resource utilization" gap that surfaced during
+  # the grid-api 422 investigation on 2026-05-10 (1 vCPU limit was
+  # throttling the CSP solver; without kubeletstats the throttling
+  # wasn't visible from SigNoz). Verify the chart version against
+  # `helm search repo signoz/k8s-infra` before bumping — the chart
+  # versions are independent of the main signoz chart.
+  - name: k8s-infra
+    version: "0.15.1"
+    repository: "https://charts.signoz.io"
+    condition: k8s-infra.enabled
