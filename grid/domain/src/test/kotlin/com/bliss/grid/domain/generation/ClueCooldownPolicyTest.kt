@@ -7,12 +7,7 @@ import assertk.assertions.isNotEqualTo
 import assertk.assertions.isTrue
 import org.junit.jupiter.api.Test
 
-/**
- * Unit tests for the pure-domain [ClueCooldownPolicy] interface and its two
- * factory shapes. The policy is the read seam between the application
- * layer (which loads the snapshot from Postgres) and the filler (which
- * stays I/O-free) — see ADR-0031.
- */
+/** Unit tests for [ClueCooldownPolicy] and its factory shapes — see ADR-0031. */
 class ClueCooldownPolicyTest {
     @Test
     fun `Inert policy reports nothing on cooldown`() {

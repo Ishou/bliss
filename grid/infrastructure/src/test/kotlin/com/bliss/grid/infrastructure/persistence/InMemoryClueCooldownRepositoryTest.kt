@@ -10,17 +10,7 @@ import com.bliss.grid.domain.generation.ClueId
 import org.junit.jupiter.api.Test
 import java.util.UUID
 
-/**
- * Direct unit tests for [InMemoryClueCooldownRepository]. The Postgres
- * adapter contract test (Testcontainers) lives separately and lands with
- * PR 3; this test pins the in-memory adapter's cooldown semantics so use
- * cases in `:grid:application` can rely on them in their own tests.
- *
- * The roll function is injected so the property check around
- * `cooldown_until_seq = current_seq + rand(1..rollMax)` is deterministic.
- * Per ADR-0031, "a clue used at seq S is on cooldown exactly while
- * current_seq - S < rolledN".
- */
+/** Unit tests for [InMemoryClueCooldownRepository] cooldown semantics — see ADR-0031. */
 class InMemoryClueCooldownRepositoryTest {
     private val sessionId: UUID = UUID.randomUUID()
 

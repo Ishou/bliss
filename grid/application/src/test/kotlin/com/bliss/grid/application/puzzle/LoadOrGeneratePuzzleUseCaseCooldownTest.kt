@@ -15,15 +15,7 @@ import org.junit.jupiter.api.Test
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 
-/**
- * Integration tests for the cooldown wiring inside
- * [LoadOrGeneratePuzzleUseCase] (ADR-0031). The lookup is exercised end
- * to end against in-memory fakes:
- *  - cache hit on a known puzzleId never bumps the counter,
- *  - cache miss with a non-null sessionId bumps the counter and writes
- *    one row per `WordPlacement.chosenClue`,
- *  - sessionId == null bypasses the cooldown read and write path.
- */
+/** Integration tests for cooldown wiring in [LoadOrGeneratePuzzleUseCase] — see ADR-0031. */
 class LoadOrGeneratePuzzleUseCaseCooldownTest {
     private val puzzleId: UUID = UUID.randomUUID()
     private val sessionId: UUID = UUID.randomUUID()

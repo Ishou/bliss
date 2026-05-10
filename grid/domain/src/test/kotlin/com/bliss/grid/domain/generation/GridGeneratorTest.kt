@@ -51,11 +51,7 @@ class GridGeneratorTest {
         }
     }
 
-    /**
-     * Forwards the cooldown policy through to the filler (ADR-0031). Behavior
-     * coverage of the policy itself lives in [SkeletonFillerCooldownTest];
-     * this test guards against accidental removal of the parameter wiring.
-     */
+    /** Guards that [GridGenerator.generate] forwards cooldownPolicy to the filler — see ADR-0031. */
     @Test
     fun `accepts cooldownPolicy parameter and produces a valid grid with Inert default`() {
         val generator = GridGenerator(ListWordRepository(SMALL_FRENCH_WORDS))

@@ -265,13 +265,6 @@ internal class SkeletonFiller(
      * themed (e.g. NE has compass-only). Among clues that fit current caps, pick
      * uniformly at random for variety; if none fit (shouldn't happen — domainFor
      * filters), fall back to the word's first clue.
-     *
-     * Cooldown (ADR-0031): clues recently used in the same bucket are
-     * filtered out before the non-themed / random pick. If every fitting
-     * clue is on cooldown, the picker falls back to uniform-random over
-     * the full fitting set so generation never fails. With the default
-     * [ClueCooldownPolicy.Inert] the filter is a no-op and the original
-     * behavior is preserved.
      */
     private fun pickClue(
         word: Word,

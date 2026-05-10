@@ -13,13 +13,7 @@ import com.bliss.grid.domain.model.WordClue
 import org.junit.jupiter.api.Test
 import kotlin.random.Random
 
-/**
- * Cooldown-aware clue picking inside [SkeletonFiller]. Per ADR-0031, the
- * filler consults a [ClueCooldownPolicy] and biases away from clues
- * already used in recent generations of the same bucket. When all fitting
- * clues for a word are on cooldown, the picker falls back to the existing
- * uniform-random behavior so generation never fails.
- */
+/** Cooldown-aware clue picking in [SkeletonFiller] — see ADR-0031. */
 class SkeletonFillerCooldownTest {
     private fun pos(
         r: Int,
