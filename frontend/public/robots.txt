@@ -1,5 +1,7 @@
 User-agent: *
 Allow: /
 Disallow: /lobby/
+Disallow: /join/
+Disallow: /privacy
 
 Sitemap: https://wordsparrow.io/sitemap.xml
