@@ -10,7 +10,6 @@
 
 import { useState } from 'react';
 import { css } from 'styled-system/css';
-import { PAGE_MAX_WIDTH } from '@/ui/components/layout';
 import type { SessionClient } from '@/application/session/SessionClient';
 import { Button } from '@/ui/components/primitives/Button';
 
@@ -21,10 +20,17 @@ export interface PrivacyNoticeProps {
   readonly sessionClient: SessionClient;
 }
 
-const pageStyles = css({
-  maxWidth: PAGE_MAX_WIDTH,
-  margin: '0 auto',
-  padding: { base: 'lg', md: 'xl' },
+// Article-body typography. The page chrome (header / main / footer /
+// 720px cap) is owned by <ContentPage> in the consuming routes; this
+// component is a pure body slotted into that shell.
+//
+// `& table` becomes a scrolling block-level box at narrow viewports —
+// the data tables (Données traitées / Data we process) have wider
+// intrinsic min-content than mobile devices and would otherwise push
+// the page past the right edge. `display: block` loses true
+// table-layout semantics, but the rendered visual stays intact in
+// every modern engine and the overflow stops on small screens.
+const articleStyles = css({
   fontFamily: 'body',
   color: 'fg',
   lineHeight: '1.6',
@@ -34,7 +40,13 @@ const pageStyles = css({
   '& ul': { marginLeft: 'lg', marginBottom: 'sm' },
   '& li': { marginBottom: 'xs' },
   '& a': { color: 'accent', textDecoration: 'underline' },
-  '& table': { width: '100%', marginBottom: 'md', borderCollapse: 'collapse' },
+  '& table': {
+    display: 'block',
+    maxWidth: '100%',
+    overflowX: 'auto',
+    marginBottom: 'md',
+    borderCollapse: 'collapse',
+  },
   '& th, & td': { border: '1px solid token(colors.border)', padding: 'sm', textAlign: 'left' },
   '& th': { fontWeight: 'semibold' },
 });
@@ -53,10 +65,10 @@ const statusErrStyles = css({ marginTop: 'sm', color: 'error', fontWeight: 'semi
 
 export function PrivacyNotice({ lang, sessionClient }: PrivacyNoticeProps) {
   return (
-    <main id="main-content" tabIndex={-1} className={pageStyles}>
+    <article className={articleStyles}>
       {lang === 'fr' ? <FrenchContent /> : <EnglishContent />}
       <EraseDataSection lang={lang} sessionClient={sessionClient} />
-    </main>
+    </article>
   );
 }
 

@@ -7,37 +7,8 @@ import { Accordion } from '@ark-ui/react/accordion';
 import { createLazyRoute, useNavigate } from '@tanstack/react-router';
 import { css } from 'styled-system/css';
 import { Button } from '@/ui/components/primitives';
-import { AppHeader, Footer } from '@/ui/components/layout';
+import { ContentPage } from '@/ui/components/layout';
 import { HELP_SECTIONS } from './aide';
-
-const pageStyles = css({
-  minHeight: '100dvh',
-  display: 'flex',
-  flexDirection: 'column',
-  color: 'fg',
-  fontFamily: 'body',
-});
-
-const mainStyles = css({
-  flex: '1 1 0',
-  minHeight: 0,
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  width: '100%',
-  bg: 'bg',
-});
-
-const contentStyles = css({
-  width: '100%',
-  maxWidth: '720px',
-  margin: '0 auto',
-  paddingInline: { base: '16px', md: '20px' },
-  paddingBlock: { base: '16px', md: '24px' },
-  display: 'flex',
-  flexDirection: 'column',
-  gap: 'lg',
-});
 
 const headingStyles = css({
   fontSize: 'xl',
@@ -135,59 +106,53 @@ const accordionContentStyles = css({
 function AidePage() {
   const navigate = useNavigate();
   return (
-    <div className={pageStyles}>
-      <AppHeader />
-      <main id="main-content" tabIndex={-1} className={mainStyles}>
-        <div className={contentStyles}>
-          <h1 className={headingStyles}>Comment jouer aux mots fléchés en ligne</h1>
+    <ContentPage>
+      <h1 className={headingStyles}>Comment jouer aux mots fléchés en ligne</h1>
 
-          <section className={tourCardStyles} aria-labelledby="tour-launcher-title">
-            <p className={tourCardEyebrowStyles}>Tour d&apos;accueil</p>
-            <h2 id="tour-launcher-title" className={tourCardTitleStyles}>
-              Lancer le tour d&apos;accueil
-            </h2>
-            <p>
-              Une visite guidée de quelques secondes pour comprendre la
-              grille, les indices et la validation automatique.
-            </p>
-            <Button
-              variant="primary"
-              className={tourCardActionStyles}
-              onClick={() => {
-                void navigate({ to: '/grille', search: { tour: 1 } });
-              }}
-            >
-              Lancer le tour
-            </Button>
-          </section>
+      <section className={tourCardStyles} aria-labelledby="tour-launcher-title">
+        <p className={tourCardEyebrowStyles}>Tour d&apos;accueil</p>
+        <h2 id="tour-launcher-title" className={tourCardTitleStyles}>
+          Lancer le tour d&apos;accueil
+        </h2>
+        <p>
+          Une visite guidée de quelques secondes pour comprendre la
+          grille, les indices et la validation automatique.
+        </p>
+        <Button
+          variant="primary"
+          className={tourCardActionStyles}
+          onClick={() => {
+            void navigate({ to: '/grille', search: { tour: 1 } });
+          }}
+        >
+          Lancer le tour
+        </Button>
+      </section>
 
-          <Accordion.Root
-            className={accordionRootStyles}
-            collapsible
-            multiple={false}
+      <Accordion.Root
+        className={accordionRootStyles}
+        collapsible
+        multiple={false}
+      >
+        {HELP_SECTIONS.map((section) => (
+          <Accordion.Item
+            key={section.value}
+            value={section.value}
+            className={accordionItemStyles}
           >
-            {HELP_SECTIONS.map((section) => (
-              <Accordion.Item
-                key={section.value}
-                value={section.value}
-                className={accordionItemStyles}
-              >
-                <Accordion.ItemTrigger className={accordionTriggerStyles}>
-                  <span>{section.label}</span>
-                  <Accordion.ItemIndicator className={accordionIndicatorStyles}>
-                    ⌄
-                  </Accordion.ItemIndicator>
-                </Accordion.ItemTrigger>
-                <Accordion.ItemContent className={accordionContentStyles}>
-                  {section.content}
-                </Accordion.ItemContent>
-              </Accordion.Item>
-            ))}
-          </Accordion.Root>
-        </div>
-      </main>
-      <Footer />
-    </div>
+            <Accordion.ItemTrigger className={accordionTriggerStyles}>
+              <span>{section.label}</span>
+              <Accordion.ItemIndicator className={accordionIndicatorStyles}>
+                ⌄
+              </Accordion.ItemIndicator>
+            </Accordion.ItemTrigger>
+            <Accordion.ItemContent className={accordionContentStyles}>
+              {section.content}
+            </Accordion.ItemContent>
+          </Accordion.Item>
+        ))}
+      </Accordion.Root>
+    </ContentPage>
   );
 }
 

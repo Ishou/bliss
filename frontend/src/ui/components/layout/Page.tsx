@@ -22,10 +22,10 @@ import * as React from 'react';
 import { css } from 'styled-system/css';
 import { AppHeader } from './AppHeader';
 import { Footer } from './Footer';
+import { PAGE_MAX_WIDTH } from './constants';
 
-// Single source of truth for the content cap. Consumed by AppHeader,
-// Footer, PrivacyNotice, and both page variants below.
-export const PAGE_MAX_WIDTH = '720px';
+// Re-export so callers that import from './Page' still work.
+export { PAGE_MAX_WIDTH } from './constants';
 
 const pageStyles = css({
   minHeight: '100dvh',

@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router';
 import { css } from 'styled-system/css';
-import { PAGE_MAX_WIDTH } from './Page';
+import { PAGE_MAX_WIDTH } from './constants';
 
 const footerOuterStyles = css({
   width: '100%',

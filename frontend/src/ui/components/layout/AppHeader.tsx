@@ -1,6 +1,6 @@
 import { useRouterState } from '@tanstack/react-router';
 import { css, cx } from 'styled-system/css';
-import { PAGE_MAX_WIDTH } from './Page';
+import { PAGE_MAX_WIDTH } from './constants';
 import { Lockup } from '@/ui/components/brand';
 import { OverflowMenu } from '@/ui/components/primitives';
 import { HamburgerIcon } from '@/ui/components/icons';
