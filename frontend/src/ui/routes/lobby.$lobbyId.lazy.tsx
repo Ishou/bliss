@@ -962,6 +962,11 @@ export function multiAnnouncementFor(
       const name = ctx.pseudonymBySessionId.get(event.sessionId) ?? 'Un joueur';
       return `${name} a quitté la partie`;
     }
+    case 'connectionLost': {
+      if (event.sessionId === ctx.localSessionId) return null;
+      const name = ctx.pseudonymBySessionId.get(event.sessionId) ?? 'Un joueur';
+      return `${name} a perdu la connexion`;
+    }
     case 'gameStarted': {
       return 'La partie commence';
     }

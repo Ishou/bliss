@@ -87,6 +87,21 @@ describe('multiAnnouncementFor', () => {
     expect(multiAnnouncementFor(event, { ...baseCtx, readLetterAt: () => '' })).toBeNull();
   });
 
+  it('announces "<name> a perdu la connexion" for a remote connectionLost', () => {
+    const event = { type: 'connectionLost', sessionId: 'session-alice' } as unknown as GameEvent;
+    expect(multiAnnouncementFor(event, baseCtx)).toBe('Alice a perdu la connexion');
+  });
+
+  it('falls back to "Un joueur" for connectionLost with unknown pseudonym', () => {
+    const event = { type: 'connectionLost', sessionId: 'session-unknown' } as unknown as GameEvent;
+    expect(multiAnnouncementFor(event, baseCtx)).toBe('Un joueur a perdu la connexion');
+  });
+
+  it("returns null for the local user's own connectionLost", () => {
+    const event = { type: 'connectionLost', sessionId: 'local-session' } as unknown as GameEvent;
+    expect(multiAnnouncementFor(event, baseCtx)).toBeNull();
+  });
+
   it('returns null for unrelated events (cellUpdated, presenceUpdated)', () => {
     const cell = {
       type: 'cellUpdated',
