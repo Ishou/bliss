@@ -11,6 +11,7 @@ import { createRoute, useNavigate } from '@tanstack/react-router';
 import { css } from 'styled-system/css';
 import { Button } from '@/ui/components/primitives';
 import { AppHeader, Footer } from '@/ui/components/layout';
+import { buildHead, INDEXABLE_ROUTES, SITE_BASE_URL } from '@/ui/seo';
 import { Route as RootRoute } from './__root';
 
 const pageStyles = css({
@@ -260,5 +261,12 @@ export const Route = createRoute({
   getParentRoute: () => RootRoute,
   path: '/aide',
   component: AidePage,
-  head: () => ({ meta: [{ title: 'Aide — WordSparrow' }] }),
+  head: () => {
+    const r = INDEXABLE_ROUTES.find((x) => x.path === '/aide')!;
+    return buildHead({
+      title: r.title,
+      description: r.description,
+      canonical: `${SITE_BASE_URL}/aide`,
+    });
+  },
 });

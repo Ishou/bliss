@@ -17,8 +17,8 @@ export interface BuildHeadInput {
 }
 
 export interface RouteHead {
-  readonly meta: ReadonlyArray<Record<string, string>>;
-  readonly links: ReadonlyArray<Record<string, string>>;
+  readonly meta: Array<Record<string, string>>;
+  readonly links: Array<Record<string, string>>;
 }
 
 export function buildHead(input: BuildHeadInput): RouteHead {

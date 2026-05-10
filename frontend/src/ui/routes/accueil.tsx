@@ -8,6 +8,7 @@ import { EyeIcon, EyeOffIcon } from '@/ui/components/icons';
 import { Button } from '@/ui/components/primitives';
 import { PinInput } from '@/ui/components/primitives/PinInput';
 import { AppHeader, Footer, ProgressBar } from '@/ui/components/layout';
+import { buildHead, INDEXABLE_ROUTES, SITE_BASE_URL } from '@/ui/seo';
 import { Route as RootRoute } from './__root';
 
 // Accueil (home) — landing page introduced after the action-bar
@@ -486,5 +487,12 @@ export const Route = createRoute({
   errorComponent: ({ error }) => (
     <AccueilStatus role="alert" text={messageForError(error)} />
   ),
-  head: () => ({ meta: [{ title: 'WordSparrow — Accueil' }] }),
+  head: () => {
+    const r = INDEXABLE_ROUTES.find((x) => x.path === '/')!;
+    return buildHead({
+      title: r.title,
+      description: r.description,
+      canonical: `${SITE_BASE_URL}/`,
+    });
+  },
 });
