@@ -1,0 +1,34 @@
+# pnpm 11 dropped the `package.json:pnpm` block — every pnpm setting now
+# lives here (or in ~/.config/pnpm/config.yaml). See the v11 release
+# notes: `onlyBuiltDependencies` was renamed to `allowBuilds` and
+# changed from a list to a name → boolean map.
+
+# Transitive pins. Each entry is here for a specific reason — keep the
+# mirror with pnpm 10's `pnpm.overrides` block intact.
+overrides:
+  # `handlebars` is dragged in transitively by an old plugin; pin to the
+  # patched line that closed the regex-DoS / prototype pollution chain.
+  handlebars: ^4.7.9
+  # esbuild floor: Vite 8 needs a recent esbuild for the new oxc / rolldown
+  # transformer chain to work cleanly.
+  esbuild: ^0.25.0
+  # Pull every postcss path onto the same major to avoid double-installs.
+  postcss: ^8.5.10
+  # `fast-uri` parser confusion in older versions; pin to the patched line.
+  fast-uri: ^3.1.2
+  # Vitest 3 bundles its own internal Vite; force it to share Vite 8 with
+  # the direct dep + plugin-react@6 so plugin shapes match across the
+  # rolldown vs rollup type defs.
+  vite: ^8.0.11
+
+# pnpm 11 fails install when a dependency in the graph runs an install
+# script unless the package is on this allowlist (was a soft warning in
+# pnpm 10). The four below are the legitimate native-binary builders
+# pulled into our graph: esbuild (Vite's bundler), msw (service-worker
+# generator), protobufjs (OTel proto codegen), unrs-resolver (Rust-based
+# module resolver under eslint-import-resolver-typescript).
+allowBuilds:
+  esbuild: true
+  msw: true
+  protobufjs: true
+  unrs-resolver: true
