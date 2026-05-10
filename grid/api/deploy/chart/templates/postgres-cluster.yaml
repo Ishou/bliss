@@ -23,9 +23,9 @@ spec:
       # `secret-pg-credentials.yaml` (now removed). The intent was to
       # eliminate the placeholder→swap two-pass install dance, and the
       # template used Helm `lookup` to keep the password stable across
-      # `helm upgrade`s. The pattern broke in practice (operator-#352-
-      # incident): on at least one upgrade the lookup hit its else
-      # branch and regenerated the password while cnpg's `-app` Secret
+      # `helm upgrade`s. The pattern broke in practice: on at least one
+      # upgrade the lookup hit its else branch and regenerated the
+      # password while cnpg's `-app` Secret
       # stayed on the original value — api pods then crashed with
       # `password authentication failed`. cnpg's own credential
       # lifecycle (one Secret, owned by the operator, atomic rotation
