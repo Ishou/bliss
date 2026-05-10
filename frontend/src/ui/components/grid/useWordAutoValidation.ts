@@ -26,6 +26,32 @@ const positionKey = (row: number, col: number): string => `${row},${col}`;
 const wordKey = (positions: ReadonlyArray<Position>): string =>
   positions.map((p) => positionKey(p.row, p.col)).join('|');
 
+// Re-pin the DOM <input> for each newly-validated cell to the letter
+// the client submitted on the wire. Letter cells are uncontrolled per
+// ADR-0002 §4: `defaultValue` only applies on mount and React never
+// refreshes `value` on rerender, so any keystroke landing during the
+// validate round-trip stays in the DOM. Without this override, the
+// eventual `readOnly` lock would pin the input at whatever the player
+// typed *after* submitting — the "type/del before the cell is locked
+// → validated value lost for the session" bug. Writing through
+// `querySelector` mirrors the read path the hook already uses to
+// snapshot DOM values before POSTing.
+function overrideValidatedCellsInDOM(
+  newlyLockedWords: ReadonlyArray<ReadonlyArray<Position>>,
+  submittedLetterByPosition: ReadonlyMap<string, string>,
+): void {
+  for (const word of newlyLockedWords) {
+    for (const p of word) {
+      const letter = submittedLetterByPosition.get(positionKey(p.row, p.col));
+      if (!letter) continue;
+      const input = document.querySelector<HTMLInputElement>(
+        `input[data-cell-kind="letter"][data-row="${p.row}"][data-col="${p.col}"]`,
+      );
+      if (input) input.value = letter;
+    }
+  }
+}
+
 export interface PersistedFilledCell {
   readonly row: number;
   readonly column: number;
@@ -129,6 +155,7 @@ export function useWordAutoValidation(
           const keys = word.map((p) => positionKey(p.row, p.col));
           return keys.every((k) => !incorrect.has(k));
         });
+        overrideValidatedCellsInDOM(newlyLocked, letterAt);
         setValidated((_prev) => {
           const next = new Set<string>();
           for (const word of newlyLocked) {
@@ -219,6 +246,17 @@ export function useWordAutoValidation(
       for (const word of fullyFilled) {
         inFlightRef.current.add(wordKey(word));
       }
+      // Snapshot the letters as submitted; the .then() uses these to
+      // re-pin DOM <input>s of newly-validated cells before the lock
+      // applies, so any keystroke that landed during the round-trip is
+      // overwritten (see overrideValidatedCellsInDOM at module top).
+      const submittedLetterByPosition = new Map<string, string>();
+      for (const cell of filled) {
+        submittedLetterByPosition.set(
+          positionKey(cell.row, cell.column),
+          cell.letter,
+        );
+      }
       void solver
         .validate(puzzle.id, filled)
         .then((result) => {
@@ -234,6 +272,7 @@ export function useWordAutoValidation(
               keys.some((k) => !validated.has(k))
             );
           });
+          overrideValidatedCellsInDOM(newlyLocked, submittedLetterByPosition);
           setValidated((prev) => {
             if (newlyLocked.length === 0) return prev;
             const next = new Set(prev);
