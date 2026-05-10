@@ -59,4 +59,28 @@ describe('renderSitemap', () => {
     expect(xml).not.toContain('/join/');
     expect(xml).not.toContain('/privacy<');
   });
+
+  it('declares the image-sitemap namespace on <urlset>', () => {
+    const xml = renderSitemap(INDEXABLE_ROUTES, '2026-05-10');
+    expect(xml).toContain(
+      'xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"',
+    );
+  });
+
+  it('emits one <image:image> child per route with the absolute og image URL', () => {
+    const xml = renderSitemap(INDEXABLE_ROUTES, '2026-05-10');
+    for (const r of INDEXABLE_ROUTES) {
+      expect(xml).toContain(
+        `<image:image><image:loc>${SITE_BASE_URL}${r.ogImagePath}</image:loc></image:image>`,
+      );
+    }
+  });
+
+  it('emits exactly one <image:image> block per <url>', () => {
+    const xml = renderSitemap(INDEXABLE_ROUTES, '2026-05-10');
+    const imageMatches = xml.match(/<image:image>/g) ?? [];
+    expect(imageMatches.length).toBe(INDEXABLE_ROUTES.length);
+    const imageLocMatches = xml.match(/<image:loc>/g) ?? [];
+    expect(imageLocMatches.length).toBe(INDEXABLE_ROUTES.length);
+  });
 });

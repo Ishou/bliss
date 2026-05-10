@@ -60,6 +60,23 @@ describe.skipIf(!existsSync(resolve(DIST, 'index.html')))(
       expect(xml).not.toContain('/privacy<');
     });
 
+    it('sitemap.xml declares the image namespace', () => {
+      const xml = readFileSync(resolve(DIST, 'sitemap.xml'), 'utf8');
+      expect(xml).toContain(
+        'xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"',
+      );
+    });
+
+    it.each(INDEXABLE_ROUTES)(
+      'sitemap.xml carries image entry for $path',
+      (route) => {
+        const xml = readFileSync(resolve(DIST, 'sitemap.xml'), 'utf8');
+        expect(xml).toContain(
+          `<image:loc>${SITE_BASE_URL}${route.ogImagePath}</image:loc>`,
+        );
+      },
+    );
+
     it('emits dist/robots.txt with the production Disallow set', () => {
       const robots = readFileSync(resolve(DIST, 'robots.txt'), 'utf8');
       expect(robots).toContain('Disallow: /lobby/');
