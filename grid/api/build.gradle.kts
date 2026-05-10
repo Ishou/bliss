@@ -29,19 +29,18 @@ val assertkVersion = "0.28.1"
 val konsistVersion = "0.17.3"
 val postgresqlJdbcVersion = "42.7.11"
 val hikariVersion = "7.0.2"
-// Flyway 12.x auto-loads callbacks from `classpath:db/callback` inside
-// `Flyway.<init>()` — see ClassicConfiguration.loadCallbackLocation. In our
-// shadowJar, that path crashes on startup with
-//   FlywayException: Unknown prefix for location (should be one of ): classpath:db/callback
-// (note the empty `( )` — even `classpath:` isn't recognized). Diagnosed
-// from Deploy API (k8s) run #19. Pinning to the last 11.x release
-// sidesteps the entire callback-autoload codepath; the API surface
-// (`configure().dataSource().locations().load().migrate()`) is identical
-// between 11 and 12, and `flyway-database-postgresql` exists in both.
-// Upgrade revisit: bump back to 12.x once the upstream / shadowJar
-// interaction is fixed (re-run this image, watch for the same crash
-// signature in the new pod's previous-container logs).
-val flywayVersion = "11.10.4"
+// Flyway 12 retry — bumped 2026-05-10 after the 11.10.4 → 12.6.0 release
+// span (~9 months). The original 12.x revert (see git history for the prior
+// shape of this comment) was caused by `Flyway.<init>()` autoloading
+// `classpath:db/callback` and crashing the shadowJar on startup with
+// `FlywayException: Unknown prefix for location`. Our runtime call site
+// uses `Flyway.configure().dataSource().locations().load().migrate()`
+// (BlissDatabase.runMigrations); `load()` constructs Flyway internally,
+// so any constructor-time autoload still applies. CI testcontainers
+// exercises this path; post-deploy `/v1/health` plus previous-container
+// log watch is the prod gate. If the same crash recurs, revert and
+// restore the original comment block from git history.
+val flywayVersion = "12.6.0"
 val testcontainersVersion = "1.21.4"
 val kotestPropertyVersion = "5.9.1"
 val commonsCsvVersion = "1.12.0"
