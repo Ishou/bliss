@@ -114,10 +114,7 @@ export class ErrorAwareSampler implements Sampler {
 // double-emit spans and corrupt alert threshold math.
 let errorsAttached = false;
 
-// Tracer captured at init time so `reportCaughtError` (called from the React
-// `onCaughtError` hook and from infrastructure adapters like `pwa.ts`) can
-// emit error spans without each caller re-resolving the tracer. Stays `null`
-// when `VITE_OTEL_OTLP_ENDPOINT` is empty, making `reportCaughtError` a no-op.
+// Cached at init so `reportCaughtError` can emit spans without re-resolving the tracer each call.
 let cachedTracer: Tracer | null = null;
 
 /**
@@ -267,9 +264,7 @@ export function initOtelTracer(config: OtelTracerConfig | null): void {
     tracerProvider: provider,
   });
 
-  // Tracer for window-level error captures (PR-F.3) AND for the
-  // `reportCaughtError` API used by React's onCaughtError / onUncaughtError
-  // hooks and by infrastructure adapters that catch errors locally.
+  // Tracer for window-level captures and for `reportCaughtError` in pwa.ts / onCaughtError.
   const tracer = trace.getTracer(config.serviceName, config.serviceVersion);
   cachedTracer = tracer;
   attachUncaughtErrorReporting(tracer);

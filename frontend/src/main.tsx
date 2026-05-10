@@ -220,8 +220,7 @@ enableMocks()
     createRoot(container, {
       onCaughtError: (error, errorInfo) => {
         if (import.meta.env.DEV) {
-          // dev-only: keep React's default contributor-facing
-          // firehose locally so a render crash isn't silent in dev.
+          // dev-only: React's default console.error firehose.
           console.error('Caught error:', error, errorInfo);
         }
         reportCaughtError(error, 'react-caught');
