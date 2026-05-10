@@ -1,5 +1,9 @@
 import '@testing-library/jest-dom/vitest';
 
+import * as axeMatchers from 'vitest-axe/matchers';
+import { expect } from 'vitest';
+expect.extend(axeMatchers);
+
 // jsdom does not implement window.scrollTo / window.scrollBy. TanStack
 // Router calls scrollTo on every navigation; `useGridNavigation`'s
 // keyboard-avoidance scroll calls scrollBy after a focus event. Both
