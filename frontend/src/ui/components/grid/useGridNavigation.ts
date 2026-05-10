@@ -668,6 +668,20 @@ export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOpt
           if (dir !== 'down') setDirection('down');
           else moveByVector(k === 'ArrowDown' ? 1 : -1, 0);
           return;
+        case 'Home': {
+          event.preventDefault();
+          const homeClue = lookup.clueAt(f.row, f.col, dir);
+          if (!homeClue) return;
+          focusCell(homeClue.cells[0].position);
+          return;
+        }
+        case 'End': {
+          event.preventDefault();
+          const endClue = lookup.clueAt(f.row, f.col, dir);
+          if (!endClue) return;
+          focusCell(endClue.cells[endClue.cells.length - 1].position);
+          return;
+        }
         case 'Backspace': {
           event.preventDefault();
           const el = refs.current.get(key(f));
