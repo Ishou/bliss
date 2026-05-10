@@ -10,6 +10,7 @@
 
 import { useState } from 'react';
 import { css } from 'styled-system/css';
+import { PAGE_MAX_WIDTH } from '@/ui/components/layout';
 import type { SessionClient } from '@/application/session/SessionClient';
 import { Button } from '@/ui/components/primitives/Button';
 
@@ -21,7 +22,7 @@ export interface PrivacyNoticeProps {
 }
 
 const pageStyles = css({
-  maxWidth: '720px',
+  maxWidth: PAGE_MAX_WIDTH,
   margin: '0 auto',
   padding: { base: 'lg', md: 'xl' },
   fontFamily: 'body',
