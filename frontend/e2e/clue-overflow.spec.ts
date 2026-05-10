@@ -82,6 +82,9 @@ for (const vp of VIEWPORTS) {
     // 10×10 grid the user observed overflowing. The default MSW
     // fixture has trivially short clue texts that no layout would
     // ever fail, so the e2e test would pass vacuously without this.
+    await page.addInitScript(() => {
+      window.localStorage.setItem('wordsparrow.tour.seen', 'true');
+    });
     await page.route(/\/v1\/puzzles\//, async (route) => {
       await route.fulfill({
         status: 200,
@@ -90,7 +93,9 @@ for (const vp of VIEWPORTS) {
       });
     });
 
-    await page.goto('/');
+    // `/` is the accueil landing since the WordSparrow refactor;
+    // the puzzle grid lives on `/grille`.
+    await page.goto('/grille');
 
     // Wait for the grid to render and FitText's first layout pass to
     // settle. Two beats:

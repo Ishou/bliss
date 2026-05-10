@@ -104,6 +104,9 @@ for (const vp of VIEWPORTS) {
     page,
   }) => {
     await page.setViewportSize({ width: vp.width, height: vp.height });
+    await page.addInitScript(() => {
+      window.localStorage.setItem('wordsparrow.tour.seen', 'true');
+    });
     await page.route(/\/v1\/puzzles\//, async (route) => {
       await route.fulfill({
         status: 200,
@@ -111,7 +114,9 @@ for (const vp of VIEWPORTS) {
         body: JSON.stringify(STRESS_FIXTURE),
       });
     });
-    await page.goto('/');
+    // `/` is the accueil landing since the WordSparrow refactor;
+    // the puzzle grid lives on `/grille`.
+    await page.goto('/grille');
     await page.waitForSelector('[role="grid"]', { state: 'visible' });
     await page.evaluate(() => document.fonts.ready);
     await page.evaluate(() => new Promise(r => requestAnimationFrame(() => r(null))));
