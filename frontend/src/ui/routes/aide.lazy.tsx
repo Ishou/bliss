@@ -139,7 +139,7 @@ function AidePage() {
       <AppHeader />
       <main id="main-content" tabIndex={-1} className={mainStyles}>
         <div className={contentStyles}>
-          <h1 className={headingStyles}>Aide</h1>
+          <h1 className={headingStyles}>Comment jouer aux mots fléchés en ligne</h1>
 
           <section className={tourCardStyles} aria-labelledby="tour-launcher-title">
             <p className={tourCardEyebrowStyles}>Tour d&apos;accueil</p>

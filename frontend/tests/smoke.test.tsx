@@ -57,11 +57,14 @@ describe('App smoke test', () => {
 
     render(<RouterProvider router={router} />);
 
-    const heading = await screen.findByRole('heading', { level: 1, name: /wordsparrow/i });
+    const heading = await screen.findByRole('heading', { level: 1, name: /mots fléchés.*wordsparrow/i });
     expect(heading).toBeInTheDocument();
-    // ADR-0005 §7: the wordmark carries lang="en" so screen readers
-    // pronounce the English brand name correctly under a fr-FR root.
-    expect(heading).toHaveAttribute('lang', 'en');
+    // SEO target query lives in French on the H1 itself; ADR-0005 §7's
+    // English-pronunciation guarantee for the brand wordmark is preserved
+    // by the inner <span lang="en">WordSparrow</span>.
+    expect(heading).toHaveAttribute('lang', 'fr');
+    const wordmark = heading.querySelector('span[lang="en"]');
+    expect(wordmark?.textContent).toBe('WordSparrow');
   });
 
   it('sets the document title to the grille manifest title on the root route', async () => {
