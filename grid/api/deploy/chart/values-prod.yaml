@@ -6,8 +6,17 @@ image:
   # Set by the CD workflow per push (ADR-0009 §8 step 5). Format "sha256:...".
   digest: ""
 resources:
+  # CPU 1000m → 3000m, memory 1Gi → 2Gi (2026-05-10) — the 15×12
+  # daily-grid default (PR #356) pushes the CSP solver from ~100-cell
+  # to 180-cell grids, and PR #357 grew the in-memory corpus from ~46k
+  # to ~76k rows. The per-attempt timeout (5s × 10 attempts = 50s) was
+  # exhausting in prod under the prior 1-vCPU limit while the same
+  # code succeeded locally on a 14-core box. The CPU bump gives the
+  # backtracking solver headroom; the RAM bump keeps the JVM
+  # (-XX:MaxRAMPercentage=75.0 = ~1.5Gi heap) comfortable with the
+  # larger corpus + index footprint.
   requests: {cpu: 250m, memory: 512Mi}
-  limits: {cpu: 1000m, memory: 1Gi}
+  limits: {cpu: 3000m, memory: 2Gi}
 ingress:
   host: "api.wordsparrow.io"
   tlsSecretName: "wordsparrow-api-tls"
