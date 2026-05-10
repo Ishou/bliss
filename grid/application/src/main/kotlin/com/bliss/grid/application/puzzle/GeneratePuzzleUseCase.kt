@@ -1,5 +1,6 @@
 package com.bliss.grid.application.puzzle
 
+import com.bliss.grid.domain.generation.ClueCooldownPolicy
 import com.bliss.grid.domain.generation.DEFAULT_GENERATION_TIMEOUT_MS
 import com.bliss.grid.domain.generation.GridConstraints
 import com.bliss.grid.domain.generation.GridGenerator
@@ -54,6 +55,7 @@ class GeneratePuzzleUseCase(
     fun execute(
         width: Int? = null,
         height: Int? = null,
+        cooldownPolicy: ClueCooldownPolicy = ClueCooldownPolicy.Inert,
     ): Grid? {
         val constraints =
             defaults.copy(
@@ -64,7 +66,13 @@ class GeneratePuzzleUseCase(
             val random = Random(System.nanoTime() + attempt)
             val timeoutMs = perAttemptTimeoutMs()
             val started = System.currentTimeMillis()
-            val grid = generator.generate(constraints, random, timeoutMs = timeoutMs)
+            val grid =
+                generator.generate(
+                    constraints,
+                    random,
+                    timeoutMs = timeoutMs,
+                    cooldownPolicy = cooldownPolicy,
+                )
             if (grid != null) {
                 recordSuccess(System.currentTimeMillis() - started)
                 return grid

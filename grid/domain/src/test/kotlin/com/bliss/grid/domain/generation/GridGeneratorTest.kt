@@ -50,6 +50,22 @@ class GridGeneratorTest {
             assertThat(grid1.cells).isNotEqualTo(grid2.cells)
         }
     }
+
+    /** Guards that [GridGenerator.generate] forwards cooldownPolicy to the filler — see ADR-0031. */
+    @Test
+    fun `accepts cooldownPolicy parameter and produces a valid grid with Inert default`() {
+        val generator = GridGenerator(ListWordRepository(SMALL_FRENCH_WORDS))
+        for (seed in 1L..20L) {
+            val grid =
+                generator.generate(
+                    GridConstraints(width = 5, height = 5),
+                    Random(seed),
+                    cooldownPolicy = ClueCooldownPolicy.Inert,
+                ) ?: continue
+            assertThat(validator.validate(grid)).isEmpty()
+            return
+        }
+    }
 }
 
 internal val SMALL_FRENCH_WORDS: List<Word> =

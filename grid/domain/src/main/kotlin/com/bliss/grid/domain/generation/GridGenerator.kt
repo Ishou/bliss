@@ -20,7 +20,8 @@ class GridGenerator(
         random: Random = Random.Default,
         metrics: GenerationMetrics? = null,
         timeoutMs: Long = DEFAULT_GENERATION_TIMEOUT_MS,
-    ): Grid? = generateInterlocked(constraints, random, metrics, timeoutMs)
+        cooldownPolicy: ClueCooldownPolicy = ClueCooldownPolicy.Inert,
+    ): Grid? = generateInterlocked(constraints, random, metrics, timeoutMs, cooldownPolicy)
 
     /**
      * Generates a fully interlocked grid via the skeleton pipeline:
@@ -40,6 +41,7 @@ class GridGenerator(
         random: Random,
         metrics: GenerationMetrics?,
         timeoutMs: Long,
+        cooldownPolicy: ClueCooldownPolicy,
     ): Grid? {
         val w = constraints.width
         val h = constraints.height
@@ -61,7 +63,8 @@ class GridGenerator(
 
         val fillStart = System.nanoTime()
         val placements =
-            SkeletonFiller(repository).fill(slots, random, deadline, constraints.themeLimits, metrics) ?: run {
+            SkeletonFiller(repository, cooldownPolicy)
+                .fill(slots, random, deadline, constraints.themeLimits, metrics) ?: run {
                 metrics?.fillMs = (System.nanoTime() - fillStart) / 1_000_000
                 return null
             }
