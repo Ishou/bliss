@@ -108,8 +108,8 @@ class PuzzleRouteCooldownTest {
                 client.get("/v1/puzzles/$validId") {
                     header("X-Session-Id", daily.toString())
                 }
-            assertThat(response.status).isEqualTo(HttpStatusCode.BadRequest)
             val body = response.bodyAsText()
+            assertThat(response.status).isEqualTo(HttpStatusCode.BadRequest)
             assertThat(body).contains("invalid-session-id")
             // Detail must name the actual rejection cause: the value IS a UUID,
             // so a "must be a UUID" message would be misleading.
