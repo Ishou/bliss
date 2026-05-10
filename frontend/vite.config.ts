@@ -201,23 +201,17 @@ export default defineConfig({
     },
   },
   build: {
-    // Public maps are fine because the repo is public on GitHub (OCI
-    // `org.opencontainers.image.source` baked into our Dockerfiles).
+    // Public maps are fine because the repo is public on GitHub
+    // (the OCI `org.opencontainers.image.source` label baked into
+    // our Dockerfiles confirms it). Map files add zero source
+    // disclosure that isn't already at `Ishou/bliss`. ~250 KB per
+    // asset on the static host; CDN-cacheable, only fetched on demand.
+    //
     // If the repo ever flips private, change `true` → `'hidden'` and
-    // add a CI step that uploads the `.map` files to a private bucket.
+    // add a CI step that uploads the `.map` files to a private bucket;
+    // SigNoz still won't auto-unmap, but a developer with the maps in
+    // hand can.
     sourcemap: true,
-    rollupOptions: {
-      output: {
-        // Drop the `sourcesContent` JSON field from every emitted .map.
-        // SigNoz doesn't auto-symbolicate frontend stack traces; a developer
-        // fetches the matching .map and unmaps manually. That manual flow
-        // needs `sources` + `mappings`; `sourcesContent` is only useful for
-        // DevTools' "view source" body, which our investigation flow doesn't
-        // depend on (open the file in your editor or on GitHub). Net:
-        // ~80% smaller .map files on the CDN, identical unmap UX.
-        sourcemapExcludeSources: true,
-      },
-    },
   },
   test: {
     globals: true,
