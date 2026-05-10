@@ -170,11 +170,10 @@ function attachUncaughtErrorReporting(tracer: Tracer): void {
  * Emit an error span for a caller-known error path that doesn't surface as
  * `window.error` / `unhandledrejection`. Wired today by:
  *
- *   - React 19's `createRoot({ onCaughtError, onUncaughtError })` hooks in
- *     `main.tsx`. React caught-by-boundary errors never reach
- *     `window.error`; without this path SigNoz stays silent on every
- *     TanStack-Router-`errorComponent` catch — the gap that surfaced the
- *     real-world `LobbyClientError` example we missed earlier.
+ *   - React 19's `createRoot({ onCaughtError })` hook in `main.tsx`.
+ *     React caught-by-boundary errors never reach `window.error`;
+ *     without this path SigNoz stays silent on every
+ *     TanStack-Router-`errorComponent` catch.
  *   - `infrastructure/pwa.ts` SW-registration failure path. Used to be a
  *     `console.warn` invisible to anyone without DevTools.
  *
