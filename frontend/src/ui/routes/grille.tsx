@@ -113,6 +113,57 @@ const createLobbyErrorStyles = css({
   color: 'errorText',
 });
 
+// Same visually-hidden-on-blur, pinned-chip-on-focus pattern as the
+// AppHeader skip link. Placed inside <main> so a keyboard user who
+// already activated the header skip link can Tab once more and jump
+// straight into the grid, bypassing the toolbar.
+const skipToGridStyles = css({
+  position: 'absolute',
+  width: '1px',
+  height: '1px',
+  margin: '-1px',
+  padding: 0,
+  overflow: 'hidden',
+  clip: 'rect(0, 0, 0, 0)',
+  whiteSpace: 'nowrap',
+  borderWidth: 0,
+  _focusVisible: {
+    position: 'fixed',
+    top: '8px',
+    insetInlineStart: '8px',
+    width: 'auto',
+    height: 'auto',
+    margin: 0,
+    paddingBlock: '8px',
+    paddingInline: '12px',
+    overflow: 'visible',
+    clip: 'auto',
+    whiteSpace: 'normal',
+    bg: 'accent',
+    color: 'bg',
+    fontFamily: 'body',
+    fontSize: 'sm',
+    fontWeight: 'medium',
+    textDecoration: 'none',
+    borderRadius: 'md',
+    zIndex: 100,
+    outline: '2px solid token(colors.focusRing)',
+    outlineOffset: '2px',
+  },
+});
+
+function focusFirstUnvalidatedCell(): void {
+  // `:not([readonly])` filters out validated cells (Cell.tsx renders
+  // them read-only). Falls back to the first letter cell if no cell
+  // qualifies — covers the "puzzle fully solved" edge case so the
+  // skip link still does something visible.
+  const main = document.getElementById('main-content');
+  const target =
+    main?.querySelector<HTMLInputElement>('input[data-cell-kind="letter"]:not([readonly])')
+    ?? main?.querySelector<HTMLInputElement>('input[data-cell-kind="letter"]');
+  target?.focus();
+}
+
 // Multiplayer feature flag (ADR-0018 §10). Read once per render — when
 // off, the CTA is not mounted at all and the solo flow above is the
 // only thing on `/`. Reading `import.meta.env` here keeps the seam
@@ -126,6 +177,16 @@ function PageShell({ children }: { children: React.ReactNode }) {
     <div className={pageStyles}>
       <AppHeader />
       <main id="main-content" tabIndex={-1} className={mainStyles}>
+        <a
+          href="#main-content"
+          className={skipToGridStyles}
+          onClick={(e) => {
+            e.preventDefault();
+            focusFirstUnvalidatedCell();
+          }}
+        >
+          Aller au mot fléché
+        </a>
         <div className={contentStyles}>{children}</div>
       </main>
       <Footer />
