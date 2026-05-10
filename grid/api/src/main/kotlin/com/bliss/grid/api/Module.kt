@@ -172,8 +172,7 @@ fun Application.module() {
     monitor.subscribe(ApplicationStopped) { analyticsScope.cancel() }
     val analyticsEventSink: AnalyticsEventSink = createAnalyticsEventSink(analyticsScope)
 
-    // Clue cooldown (ADR-0031). Off by default; Postgres adapter and route
-    // plumbing are not yet wired. Flag retirement: 2026-09-01.
+    // Clue cooldown (ADR-0031); off by default, Postgres not yet wired. Flag retirement: 2026-09-01.
     val cooldownRepository: ClueCooldownRepository? =
         if (System.getenv("GRID_CLUE_COOLDOWN_ENABLED")?.toBooleanStrictOrNull() == true) {
             InMemoryClueCooldownRepository()
