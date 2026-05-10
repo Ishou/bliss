@@ -241,23 +241,13 @@ function HomePage() {
   // the standard solo-entries path, and add the cell to the locked set
   // (also persisted). Querying the DOM directly mirrors how the focus
   // ref is consumed: keep the keystroke path uncontrolled.
-  const handleHintReveal = useCallback(
-    (row: number, column: number, letter: string) => {
-      const input = document.querySelector<HTMLInputElement>(
-        `input[data-cell-kind="letter"][data-row="${row}"][data-col="${column}"]`,
-      );
-      if (input) input.value = letter;
-      soloEntriesStore.save(puzzle.id, row, column, letter);
-      soloEntriesStore.lockCell(puzzle.id, row, column);
-      setLockedHintCells((prev) => {
-        const key = `${row},${column}`;
-        if (prev.has(key)) return prev;
-        const next = new Set(prev);
-        next.add(key);
-        return next;
-      });
-      announcer.say(`lettre ${letter} révélée à la ligne ${row + 1}, colonne ${column + 1}`);
-    },
+  const handleHintReveal = useMemo(
+    () => makeHintRevealHandler({
+      puzzleId: puzzle.id,
+      soloEntriesStore,
+      announcer,
+      setLockedHintCells,
+    }),
     [puzzle.id, soloEntriesStore, announcer],
   );
 
@@ -348,26 +338,12 @@ function HomePage() {
   // hint reveals write to. Without this, Accueil's "Grille du jour"
   // progress only counted hint-revealed cells (capped at hintsAllowed)
   // because the auto-validated set lived in React state only.
-  const handleWordValidated = useCallback(
-    (positions: ReadonlyArray<Position>) => {
-      for (const p of positions) {
-        soloEntriesStore.lockCell(puzzle.id, p.row, p.col);
-      }
-      // Announce the validated word for SR users. Read letters from
-      // the uncontrolled <input>s (per ADR-0002 §4 cell values live in
-      // the DOM) and emit on the polite channel.
-      const word = positions
-        .map((p) => {
-          const input = document.querySelector<HTMLInputElement>(
-            `input[data-cell-kind="letter"][data-row="${p.row}"][data-col="${p.col}"]`,
-          );
-          return input?.value ?? '';
-        })
-        .join('');
-      if (word.length > 0) {
-        announcer.say(`mot validé : ${word}`);
-      }
-    },
+  const handleWordValidated = useMemo(
+    () => makeWordValidatedHandler({
+      puzzleId: puzzle.id,
+      soloEntriesStore,
+      announcer,
+    }),
     [puzzle.id, soloEntriesStore, announcer],
   );
   const autoValidation = useWordAutoValidation(puzzle, puzzleSolver, initialEntries, handleWordValidated);
