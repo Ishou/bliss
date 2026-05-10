@@ -114,11 +114,7 @@ class LoadOrGeneratePuzzleUseCaseCooldownTest {
         seqs.size
     }
 
-    /**
-     * Tracking fake that delegates cooldown bookkeeping to the in-memory
-     * adapter contract (counter + per-bucket cooldown rows) while
-     * recording call ordering for the use case test.
-     */
+    /** In-memory [ClueCooldownRepository] fake that records call order for assertion. */
     private class TrackingCooldownRepo : ClueCooldownRepository {
         val snapshotCalls = mutableListOf<UUID>()
         val records = mutableListOf<Triple<UUID, List<ClueId>, Int>>()
