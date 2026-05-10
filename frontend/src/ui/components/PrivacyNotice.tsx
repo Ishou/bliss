@@ -86,8 +86,27 @@ function EraseDataSection({
         window.location.href = '/';
       }, 1500);
     } catch (err) {
+      // The original implementation surfaced the raw error.message,
+      // which renders English / technical strings ("Failed to fetch",
+      // "TypeError: Cannot read property…") to a French user. The UI
+      // now shows a localised, calm-tone message regardless of the
+      // underlying error shape.
+      //
+      // A plain `catch {}` would also swallow the error from the OTel
+      // pipeline — `window.error` / `unhandledrejection` listeners
+      // (PR-F.3) only see thrown / rejected values that escape every
+      // catch block. `globalThis.reportError(err)` re-dispatches the
+      // error through `window.onerror` synthetically so the listener
+      // captures it as a `window.error` span; the UI keeps the
+      // localised message and the OTel pipeline keeps full coverage.
+      // Browser support: Chrome 95+, Firefox 93+, Safari 15.4+ (the
+      // baseline our analytics show, plus a `typeof` guard for the
+      // long tail).
+      if (typeof globalThis.reportError === 'function') {
+        globalThis.reportError(err);
+      }
       setStatus('error');
-      setErrorMessage(err instanceof Error ? err.message : String(err));
+      setErrorMessage(t.eraseFailureMessage);
     }
   }
 
@@ -123,6 +142,7 @@ const frStrings = {
   erasing: 'Effacement en cours…',
   successMessage: 'Données effacées. Redirection…',
   errorPrefix: 'Erreur',
+  eraseFailureMessage: 'Échec de la suppression. Réessayez dans un instant.',
 };
 
 const enStrings = {
@@ -135,6 +155,7 @@ const enStrings = {
   erasing: 'Erasing…',
   successMessage: 'Data erased. Redirecting…',
   errorPrefix: 'Error',
+  eraseFailureMessage: 'Erase failed. Try again in a moment.',
 };
 
 function FrenchContent() {

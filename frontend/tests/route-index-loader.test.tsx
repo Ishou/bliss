@@ -67,7 +67,8 @@ describe('Grille route loader', () => {
       fetchDaily: vi.fn().mockRejectedValue(new Error('daily puzzle fetch failed: Out of attempts')),
     });
     const alert = await screen.findByRole('alert');
-    expect(alert).toHaveTextContent(/Out of attempts/);
+    // errorComponent maps unknown errors to a generic French fallback (PR fixes raw error.message leak).
+    expect(alert).toHaveTextContent(/Une erreur est survenue/);
     expect(screen.queryByRole('grid')).toBeNull();
   });
 

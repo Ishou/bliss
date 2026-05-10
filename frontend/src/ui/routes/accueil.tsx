@@ -479,8 +479,12 @@ export const Route = createRoute({
   loader: ({ context }): Promise<Puzzle> => context.puzzleRepository.fetchDaily(),
   component: AccueilPage,
   pendingComponent: () => <AccueilStatus role="status" text="Chargement…" />,
+  // Daily-puzzle loader throws on transport / decode failures. Not a
+  // LobbyClientError (that's the multiplayer paths); messageForError
+  // falls through to its generic French fallback rather than leaking
+  // an English exception name + minified stack to the user.
   errorComponent: ({ error }) => (
-    <AccueilStatus role="alert" text={`Échec du chargement : ${error.message}`} />
+    <AccueilStatus role="alert" text={messageForError(error)} />
   ),
   head: () => ({ meta: [{ title: 'WordSparrow — Accueil' }] }),
 });
