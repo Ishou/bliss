@@ -17,6 +17,7 @@ import {
   PuzzleToolbar,
 } from '@/ui/components/layout';
 import { SoloTour, useSoloTour } from '@/ui/components/tour';
+import { buildHead, INDEXABLE_ROUTES, SITE_BASE_URL } from '@/ui/seo';
 import { Route as RootRoute } from './__root';
 
 type ActiveFocus = { readonly position: Position; readonly direction: 'across' | 'down' };
@@ -551,5 +552,12 @@ export const Route = createRoute({
   errorComponent: ({ error }) => (
     <HomeStatus role="alert" text={messageForError(error)} />
   ),
-  head: () => ({ meta: [{ title: 'WordSparrow' }] }),
+  head: () => {
+    const r = INDEXABLE_ROUTES.find((x) => x.path === '/grille')!;
+    return buildHead({
+      title: r.title,
+      description: r.description,
+      canonical: `${SITE_BASE_URL}/grille`,
+    });
+  },
 });

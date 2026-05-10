@@ -5,6 +5,7 @@ import { createRoute } from '@tanstack/react-router';
 import { css } from 'styled-system/css';
 import { PrivacyNotice } from '@/ui/components/PrivacyNotice';
 import { AppHeader, Footer } from '@/ui/components/layout';
+import { buildHead, SITE_BASE_URL } from '@/ui/seo';
 import { Route as RootRoute } from './__root';
 
 const pageStyles = css({
@@ -23,16 +24,14 @@ const contentSlotStyles = css({
 export const Route = createRoute({
   getParentRoute: () => RootRoute,
   path: '/privacy',
-  head: () => ({
-    meta: [
-      { title: 'Privacy — WordSparrow' },
-      {
-        name: 'description',
-        content:
-          'WordSparrow privacy policy: minimal data collection, anonymized audience measurement, right to erasure.',
-      },
-    ],
-  }),
+  head: () =>
+    buildHead({
+      title: 'Privacy — WordSparrow',
+      description:
+        'WordSparrow privacy policy: minimal data collection, anonymized audience measurement, right to erasure.',
+      canonical: `${SITE_BASE_URL}/privacy`,
+      noindex: true,
+    }),
   component: PrivacyRoute,
 });
 

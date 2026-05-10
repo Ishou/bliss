@@ -8,6 +8,7 @@ import { createRoute } from '@tanstack/react-router';
 import { css } from 'styled-system/css';
 import { PrivacyNotice } from '@/ui/components/PrivacyNotice';
 import { AppHeader, Footer } from '@/ui/components/layout';
+import { buildHead, INDEXABLE_ROUTES, SITE_BASE_URL } from '@/ui/seo';
 import { Route as RootRoute } from './__root';
 
 const pageStyles = css({
@@ -29,16 +30,14 @@ const contentSlotStyles = css({
 export const Route = createRoute({
   getParentRoute: () => RootRoute,
   path: '/confidentialite',
-  head: () => ({
-    meta: [
-      { title: 'Confidentialité — WordSparrow' },
-      {
-        name: 'description',
-        content:
-          'Politique de confidentialité de WordSparrow : données minimales, mesure d\'audience anonyme, droit à l\'effacement.',
-      },
-    ],
-  }),
+  head: () => {
+    const r = INDEXABLE_ROUTES.find((x) => x.path === '/confidentialite')!;
+    return buildHead({
+      title: r.title,
+      description: r.description,
+      canonical: `${SITE_BASE_URL}/confidentialite`,
+    });
+  },
   component: PrivacyRoute,
 });
 

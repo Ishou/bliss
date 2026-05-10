@@ -64,7 +64,7 @@ describe('App smoke test', () => {
     expect(heading).toHaveAttribute('lang', 'en');
   });
 
-  it('sets the document title to "WordSparrow" on the root route', async () => {
+  it('sets the document title to the grille manifest title on the root route', async () => {
     const routeTree = RootRoute.addChildren([IndexRoute]);
     const router = createRouter({
       routeTree,
@@ -75,7 +75,7 @@ describe('App smoke test', () => {
     render(<RouterProvider router={router} />);
 
     await waitFor(() => {
-      expect(document.title).toBe('WordSparrow');
+      expect(document.title).toBe('Grille du jour — WordSparrow');
     });
   });
 

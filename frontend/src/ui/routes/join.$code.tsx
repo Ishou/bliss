@@ -5,6 +5,7 @@ import { LobbyClientError } from '@/application/game';
 import type { Lobby, LobbyId } from '@/domain/game';
 import { LOBBY_CODE_PATTERN } from '@/domain/game/lobbyCode';
 import { AppHeader, Footer } from '@/ui/components/layout';
+import { buildHead, SITE_BASE_URL } from '@/ui/seo';
 import { Route as RootRoute } from './__root';
 
 // Single-purpose share-link landing — ADR-0027.
@@ -133,5 +134,11 @@ export const Route = createRoute({
   loader: ({ context, params }) => context.lobbyClient!.findByCode(params.code),
   component: JoinCodeRedirect,
   errorComponent: JoinCodeError,
-  head: () => ({ meta: [{ title: 'WordSparrow — Rejoindre' }] }),
+  head: () =>
+    buildHead({
+      title: 'WordSparrow — Rejoindre',
+      description: 'Rejoindre une partie WordSparrow.',
+      canonical: `${SITE_BASE_URL}/`,
+      noindex: true,
+    }),
 });

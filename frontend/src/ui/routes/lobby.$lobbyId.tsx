@@ -35,6 +35,7 @@ import { EndGameModal } from '@/ui/components/lobby/EndGameModal';
 import { PlayerList } from '@/ui/components/lobby/PlayerList';
 import { WaitingRoom } from '@/ui/components/lobby/WaitingRoom';
 import { Button } from '@/ui/components/primitives';
+import { buildHead, SITE_BASE_URL } from '@/ui/seo';
 import { Route as RootRoute } from './__root';
 
 // `/lobby/:lobbyId` route. Loader bootstraps lobby state via REST; the
@@ -910,5 +911,11 @@ export const Route = createRoute({
   component: LobbyPage,
   pendingComponent: () => <LobbyStatus role="status" text="Chargement du salon…" />,
   errorComponent: LobbyErrorComponent,
-  head: () => ({ meta: [{ title: 'Salon · WordSparrow' }] }),
+  head: () =>
+    buildHead({
+      title: 'Salon · WordSparrow',
+      description: 'Salon multijoueur WordSparrow.',
+      canonical: `${SITE_BASE_URL}/grille`,
+      noindex: true,
+    }),
 });
