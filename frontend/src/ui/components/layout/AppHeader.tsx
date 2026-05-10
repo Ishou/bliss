@@ -171,8 +171,17 @@ function skipLinkLabelForPath(pathname: string): string {
 // Resolve the active nav id from a pathname against `NAV_LINKS`. Exact
 // match only — sub-routes don't auto-highlight a parent nav today;
 // callers that need that pass `activeNavId` explicitly.
-function activeIdForPath(pathname: string): string | undefined {
-  return NAV_LINKS.find((link) => link.href === pathname)?.id;
+//
+// Pathname is normalized by stripping a trailing slash (except for `/`
+// itself). Cloudflare Pages serves a prerendered `dist/grille/index.html`
+// for `/grille` and canonicalizes the URL to `/grille/` on hard refresh,
+// while SPA navigation via `<a href="/grille">` keeps the slash off.
+// Without normalization the underline silently drops after a hard refresh.
+export function activeIdForPath(pathname: string): string | undefined {
+  const normalized = pathname.length > 1 && pathname.endsWith('/')
+    ? pathname.slice(0, -1)
+    : pathname;
+  return NAV_LINKS.find((link) => link.href === normalized)?.id;
 }
 
 export function AppHeader({ activeNavId }: AppHeaderProps = {}) {

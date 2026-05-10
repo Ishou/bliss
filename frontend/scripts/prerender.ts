@@ -209,6 +209,24 @@ async function main(): Promise<void> {
   // keeps the runtime page identical to the bundle a search-engine
   // crawler sees on a cold visit (no SW yet).
   const context = await browser.newContext({ serviceWorkers: 'block' });
+  // Mark the onboarding tour as already-seen before any page script
+  // runs. Without this, `useSoloTour` reads an empty localStorage,
+  // auto-opens the welcome step, and the Portal-rendered backdrop /
+  // spotlight / positioner / content get baked into
+  // `dist/grille/index.html` as `data-state="open"` markup. Real
+  // visitors then load that static HTML on a hard refresh, see the
+  // open tour for a frame, and find it frozen — Portal-rendered DOM
+  // sits outside the route's hydratable subtree, so React on the
+  // client never adopts those nodes and no event handlers attach.
+  // Key + value mirror `infrastructure/session/localStorageTour.ts`
+  // (`TOUR_SEEN_KEY` / encodes truthy as the literal string `'true'`).
+  await context.addInitScript(() => {
+    try {
+      localStorage.setItem('wordsparrow.tour.seen', 'true');
+    } catch {
+      // Sandboxed contexts (none in CI) — fall through.
+    }
+  });
   const errors: PrerenderError[] = [];
   try {
     for (const route of INDEXABLE_ROUTES) {
