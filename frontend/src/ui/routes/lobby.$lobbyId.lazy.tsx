@@ -41,52 +41,18 @@ import type {
 } from '@/domain/game';
 import { Grid } from '@/ui/components/grid';
 import { usePresenceState } from '@/ui/components/grid/usePresenceState';
-import { AppHeader, Footer, ProgressBar, PuzzleToolbar } from '@/ui/components/layout';
+import {
+  ContentPage,
+  ProgressBar,
+  PuzzleToolbar,
+  ViewportPage,
+} from '@/ui/components/layout';
 import { ConnectionBanner } from '@/ui/components/lobby/ConnectionBanner';
 import { EndGameModal } from '@/ui/components/lobby/EndGameModal';
 import { PlayerList } from '@/ui/components/lobby/PlayerList';
 import { WaitingRoom } from '@/ui/components/lobby/WaitingRoom';
 import { Button } from '@/ui/components/primitives';
 import { useAnnouncer } from '@/ui/components/a11y/Announcer';
-
-// Lobby route now shares the home route's chrome (AppHeader + main +
-// 720 px content column, charbon panel behind the grid). The styles
-// below mirror `routes/index.tsx` — kept inline rather than extracted
-// to a shared module because both routes are tiny and the inline copy
-// reads cleaner alongside their respective state machines.
-//
-// 100 dvh tracks iOS Safari's visible viewport as the URL bar collapses.
-const pageStyles = css({
-  minHeight: '100dvh',
-  display: 'flex',
-  flexDirection: 'column',
-  color: 'fg',
-  fontFamily: 'body',
-});
-
-const mainStyles = css({
-  flex: '1 1 0',
-  minHeight: 0,
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  width: '100%',
-  bg: 'bg',
-});
-
-const contentStyles = css({
-  width: '100%',
-  maxWidth: '720px',
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  margin: '0 auto',
-  paddingInline: { base: '16px', md: '20px' },
-  paddingBlock: { base: '12px', md: '20px' },
-  gap: { base: '12px', md: '18px' },
-  flex: '1 1 0',
-  minHeight: 0,
-});
 
 // Lighter charcoal panel behind the grid — same role-token + radius
 // + padding as the solo route's panel.
@@ -129,23 +95,37 @@ const errorActionsStyles = css({
   display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'md',
 });
 
-const LobbyShell = ({ children }: { children: React.ReactNode }) => (
-  <div className={pageStyles}>
-    <AppHeader activeNavId="grilles" />
-    <main id="main-content" tabIndex={-1} className={mainStyles}>
-      <div className={contentStyles}>
-        <h1 lang="en" className={srOnly}>
-          WordSparrow
-        </h1>
-        {children}
-      </div>
-    </main>
-    <Footer />
-  </div>
-);
+// Per-phase shell choice (ADR-0036 §5):
+//   - WAITING (and loading / error states) → ContentPage. WaitingRoom
+//     is normal flow content with no `flex: 1` inner absorber, and the
+//     status / error views are equally small. ContentPage's `flex: 1 0
+//     auto` <main> grows to push the footer to the viewport bottom on
+//     short content while never compressing tall content — fixes the
+//     mobile footer-overlap bug where the WaitingRoom intrudes into
+//     the footer's stacking position.
+//   - IN_PROGRESS / COMPLETED → ViewportPage. The grid panel is the
+//     `flex: 1` child that absorbs leftover viewport height; this is
+//     the same chrome /grille uses.
+const LobbyShell = ({
+  variant,
+  children,
+}: {
+  readonly variant: 'content' | 'viewport';
+  readonly children: React.ReactNode;
+}) => {
+  const Page = variant === 'viewport' ? ViewportPage : ContentPage;
+  return (
+    <Page headerActiveNavId="grilles">
+      <h1 lang="en" className={srOnly}>
+        WordSparrow
+      </h1>
+      {children}
+    </Page>
+  );
+};
 
 const LobbyStatus = ({ role, text }: { role: 'status' | 'alert'; text: string }) => (
-  <LobbyShell>
+  <LobbyShell variant="content">
     <p className={detailStyles} role={role}>{text}</p>
   </LobbyShell>
 );
@@ -464,10 +444,22 @@ function LobbyPage() {
     [lobby.players],
   );
 
+  // ADR-0036 §5: pick ViewportPage only once a `flex: 1` inner child
+  // (the grid panel) is present to absorb leftover viewport height.
+  // `lobby.game && gridPuzzle` gates that — until the puzzle is mapped
+  // we stay in ContentPage even if the state has flipped, otherwise
+  // there's a frame where <main> collapses to 0 with no absorber.
+  const shellVariant: 'content' | 'viewport' =
+    (lobby.state === 'IN_PROGRESS' || lobby.state === 'COMPLETED')
+      && lobby.game != null
+      && gridPuzzle != null
+      ? 'viewport'
+      : 'content';
+
   return (
     <>
       <ConnectionBanner state={connectionState} />
-      <LobbyShell>
+      <LobbyShell variant={shellVariant}>
         {lobby.state === 'WAITING' && joinDenied != null ? (
           <p
             role="alert"
@@ -897,7 +889,7 @@ function BackHomeButton() {
 
 function LobbyErrorWithBackHome({ text }: { text: string }) {
   return (
-    <LobbyShell>
+    <LobbyShell variant="content">
       <div className={errorActionsStyles}>
         <p className={detailStyles} role="alert">{text}</p>
         <BackHomeButton />
