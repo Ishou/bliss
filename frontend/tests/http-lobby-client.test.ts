@@ -164,3 +164,78 @@ describe('HttpLobbyClient.getLobby', () => {
       { kind: 'upstream-unavailable', status: null });
   });
 });
+
+describe('HttpLobbyClient.listMyLobbies', () => {
+  const summaryFixture: components['schemas']['LobbySummary'] = {
+    id: '7Hk2pQrS',
+    code: 'A2B3C4',
+    state: 'IN_PROGRESS',
+    gridConfig: { width: 15, height: 12 },
+    playerCount: 2,
+    lastActivityAt: '2026-05-10T18:00:00Z',
+    title: 'Mardi soir',
+  };
+
+  it('GETs the session lobbies and maps the 200 array body to LobbySummary[]', async () => {
+    let calledUrl: string | null = null;
+    server.use(
+      http.get(`${BASE_URL}/v1/sessions/:sessionId/lobbies`, ({ request }) => {
+        calledUrl = request.url;
+        return HttpResponse.json([summaryFixture]);
+      }),
+    );
+
+    const summaries = await makeClient().listMyLobbies(sessionId);
+
+    expect(calledUrl).toBe(`${BASE_URL}/v1/sessions/${sessionId}/lobbies`);
+    expect(summaries).toHaveLength(1);
+    expect(summaries[0]).toEqual({
+      id: summaryFixture.id,
+      code: summaryFixture.code,
+      state: summaryFixture.state,
+      gridConfig: summaryFixture.gridConfig,
+      playerCount: summaryFixture.playerCount,
+      lastActivityAt: summaryFixture.lastActivityAt,
+      title: summaryFixture.title,
+    });
+  });
+
+  it('returns [] when the server responds with an empty array', async () => {
+    server.use(
+      http.get(`${BASE_URL}/v1/sessions/:sessionId/lobbies`, () => HttpResponse.json([])),
+    );
+
+    const summaries = await makeClient().listMyLobbies(sessionId);
+
+    expect(summaries).toEqual([]);
+  });
+
+  it('lifts a 400 problem-details body into LobbyClientError(kind: validation)', async () => {
+    const problem = problemBody(
+      400,
+      'sessionId must be a valid UUID',
+      'https://bliss.example/errors/invalid-session-id',
+    );
+    server.use(
+      http.get(`${BASE_URL}/v1/sessions/:sessionId/lobbies`, () => respondProblem(400, problem)),
+    );
+
+    await expectError(makeClient().listMyLobbies(sessionId), {
+      kind: 'validation',
+      status: 400,
+      messageMatch: /sessionId must be a valid UUID/,
+      type: problem.type,
+    });
+  });
+
+  it('lifts a network failure (resolver throws) into LobbyClientError(kind: upstream-unavailable)', async () => {
+    server.use(
+      http.get(`${BASE_URL}/v1/sessions/:sessionId/lobbies`, () => HttpResponse.error()),
+    );
+
+    await expectError(makeClient().listMyLobbies(sessionId), {
+      kind: 'upstream-unavailable',
+      status: null,
+    });
+  });
+});

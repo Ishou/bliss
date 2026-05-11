@@ -35,6 +35,7 @@ import {
 
 type CreateLobbyRequest = components['schemas']['CreateLobbyRequest'];
 type Problem = components['schemas']['Problem'];
+type WireLobbySummary = components['schemas']['LobbySummary'];
 
 // LobbyId per ADR-0020: 8 chars from the URL-safe base58 alphabet.
 const LOBBY_ID_PATTERN = /^[1-9A-HJ-NP-Za-km-z]{8}$/;
@@ -142,6 +143,14 @@ export const gameHandlers = [
     }
     return HttpResponse.json(lobby);
   }),
+
+  // GET /v1/sessions/:sessionId/lobbies — list lobbies the session is
+  // a member of. ADR-0039 "Mes parties" surface. Preview returns an
+  // empty list by default; PR #9's tests use `lobbySummaryFixture`
+  // through `server.use(...)` to override per-test. No 404 here — an
+  // empty array is the "no lobbies" answer (would leak whether the
+  // session has ever played otherwise).
+  http.get('*/v1/sessions/:sessionId/lobbies', () => HttpResponse.json([])),
 
   // GET /v1/lobbies/:lobbyId — replay the persisted lobby.
   http.get('*/v1/lobbies/:lobbyId', ({ params }) => {
@@ -578,3 +587,26 @@ const lobbyWsHandler = lobbyWs.addEventListener('connection', ({ client, params 
 });
 
 export const gameWsHandler = lobbyWsHandler;
+
+/**
+ * Builder for `LobbySummary` wire fixtures. PR #9's tests
+ * (`listMyLobbies` hook / route loader) override the default MSW
+ * handler with `server.use(http.get(..., () => HttpResponse.json([
+ * lobbySummaryFixture(...), ... ])))` to drive the "Mes parties" UI.
+ * The default `id` is a valid 8-char base58 LobbyId per ADR-0020 §5
+ * so the wire shape round-trips through brand assertions without
+ * adjustment.
+ */
+export function lobbySummaryFixture(
+  overrides: Partial<WireLobbySummary> = {},
+): WireLobbySummary {
+  return {
+    id: '7Hk2pQrS',
+    code: 'A2B3C4',
+    state: 'IN_PROGRESS',
+    gridConfig: { width: 15, height: 12 },
+    playerCount: 2,
+    lastActivityAt: new Date().toISOString(),
+    ...overrides,
+  };
+}

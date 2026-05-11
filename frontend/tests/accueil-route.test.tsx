@@ -123,6 +123,7 @@ const renderAccueil = (options: RenderOptions = {}) => {
     createLobby: vi.fn().mockResolvedValue(baseCreatedLobby),
     getLobby: vi.fn().mockResolvedValue(baseCreatedLobby),
     findByCode: vi.fn().mockResolvedValue(baseCreatedLobby),
+    listMyLobbies: vi.fn().mockResolvedValue([]),
     ...options.lobbyClient,
   };
   const puzzleRepository: PuzzleRepository = {
