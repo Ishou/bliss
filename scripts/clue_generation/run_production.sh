@@ -110,11 +110,17 @@ with dst.open("w", encoding="utf-8") as f:
         # Skip lemmas with no resolvable POS — emit a bare prompt that
         # falls back to historical behavior. ~1% of lemmas at most.
         pos = best_pos.get(lemma)
+        # Lowercase the lemma in the prompt (vs the historical UPPERCASE
+        # format from iter12+). Diagnostic on v8 (2026-05-11) showed
+        # uppercase tokens trigger an "English headline" prior that
+        # over-rides the French context for FR-EN homographs (cane,
+        # errer, clair). Switching to lowercase lifts errer + clair +
+        # triple + clair without any regression on the verb majority.
         if pos:
-            prompt = f"Génère une définition mots-fléchés courte pour: {lemma.upper()} [{pos}]"
+            prompt = f"Génère une définition mots-fléchés courte pour: {lemma} [{pos}]"
             n_with_pos += 1
         else:
-            prompt = f"Génère une définition mots-fléchés courte pour: {lemma.upper()}"
+            prompt = f"Génère une définition mots-fléchés courte pour: {lemma}"
         f.write(json.dumps({"messages":[{"role":"user","content":prompt},{"role":"assistant","content":""}]}, ensure_ascii=False)+"\n")
 print(f"wrote {dst} ({n_with_pos}/{len(out)} with [pos] tag)")
 PYEOF

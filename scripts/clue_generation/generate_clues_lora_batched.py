@@ -79,6 +79,25 @@ def main() -> None:
     parser.add_argument("--batch-size", type=int, default=16)
     parser.add_argument("--max-tokens", type=int, default=24)
     parser.add_argument("--temp", type=float, default=0.3)
+    # Cross-lingual anchor (post-iter17 diagnostic, 2026-05-11).
+    # Prepends a French system message via the chat template's
+    # <|SYSTEM_TOKEN|> slot. command-r 08-2024 supports this — see
+    # https://huggingface.co/CohereForAI/c4ai-command-r-08-2024 chat_template.
+    # Combined with lowercased lemmas in the prompt (vs the historical
+    # UPPERCASE format) this flips the hardest English-leak cases:
+    # `user → Ébrécher` (was Consommateur), `errer → Vagabonder`
+    # (was Égarer), `clair → Net` (was Évidemment), `triple → Multiplié
+    # par trois` (was Voyage à trois). `cane` remains untouchable
+    # without a fresh SFT base (iter19 target).
+    parser.add_argument(
+        "--system-prompt",
+        default=("Tu es un générateur de définitions pour mots fléchés en français. "
+                 "Tu réponds toujours en français, jamais en anglais. "
+                 "Ta réponse est une définition courte, idiomatique, "
+                 "sans le mot à deviner."),
+        help="System message prepended to every prompt via chat template. "
+             "Empty string disables the system message.",
+    )
     parser.add_argument("--lexique", type=Path,
                         default=Path(os.path.expanduser(
                             "~/Downloads/grammalecte/lexique-grammalecte-fr-v7.7.txt")))
@@ -142,12 +161,16 @@ def main() -> None:
         if not batch:
             break
 
-        # Tokenize each prompt with chat template
+        # Tokenize each prompt with chat template, optionally prepending
+        # a system message for French language anchoring.
         prompts: list[list[int]] = []
         for item in batch:
+            msgs: list[dict] = []
+            if args.system_prompt:
+                msgs.append({"role": "system", "content": args.system_prompt})
+            msgs.append({"role": "user", "content": item["user"]})
             chat = tokenizer.apply_chat_template(
-                [{"role": "user", "content": item["user"]}],
-                tokenize=True, add_generation_prompt=True,
+                msgs, tokenize=True, add_generation_prompt=True,
             )
             prompts.append(chat)
 
