@@ -71,4 +71,7 @@ class InMemoryLobbyRepository : LobbyRepository {
 
     override suspend fun findIdleWaiting(cutoff: Instant): List<Lobby> =
         store.values.filter { it.state == LobbyLifecycleState.WAITING && !it.lastActivityAt.isAfter(cutoff) }
+
+    override suspend fun findIdleCompleted(cutoff: Instant): List<Lobby> =
+        store.values.filter { it.state == LobbyLifecycleState.COMPLETED && !it.lastActivityAt.isAfter(cutoff) }
 }

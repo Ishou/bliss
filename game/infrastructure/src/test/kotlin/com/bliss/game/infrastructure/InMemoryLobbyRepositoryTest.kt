@@ -7,6 +7,8 @@ import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
 import assertk.assertions.isNotNull
 import assertk.assertions.isNull
+import com.bliss.game.domain.GamePuzzle
+import com.bliss.game.domain.GameSession
 import com.bliss.game.domain.GridConfig
 import com.bliss.game.domain.Lobby
 import com.bliss.game.domain.LobbyCode
@@ -23,6 +25,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Test
 import java.time.Instant
+import java.util.UUID
 
 class InMemoryLobbyRepositoryTest {
     private val sessionA = SessionId("0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6b")
@@ -245,4 +248,65 @@ class InMemoryLobbyRepositoryTest {
 
             assertThat(idle).isEmpty()
         }
+
+    @Test
+    fun `findIdleCompleted returns completed lobbies at or before cutoff and excludes WAITING`() =
+        runTest {
+            val repo = InMemoryLobbyRepository()
+            val staleCompleted = completedLobbyAt(LobbyId.generate(), lastActivityAt = baseInstant)
+            val freshCompleted =
+                completedLobbyAt(LobbyId.generate(), lastActivityAt = baseInstant.plusSeconds(3600))
+            val staleWaiting = lobbyAt(LobbyId.generate(), lastActivityAt = baseInstant)
+            repo.save(staleCompleted)
+            repo.save(freshCompleted)
+            repo.save(staleWaiting)
+
+            val idle = repo.findIdleCompleted(baseInstant.plusSeconds(60))
+
+            assertThat(idle).hasSize(1)
+            assertThat(idle.map { it.id }).containsExactlyInAnyOrder(staleCompleted.id)
+        }
+
+    @Test
+    fun `findIdleCompleted returns empty when no completed lobbies are at or before cutoff`() =
+        runTest {
+            val repo = InMemoryLobbyRepository()
+            repo.save(completedLobbyAt(LobbyId.generate(), lastActivityAt = baseInstant.plusSeconds(7200)))
+
+            assertThat(repo.findIdleCompleted(baseInstant)).isEmpty()
+        }
+
+    private fun completedLobbyAt(
+        id: LobbyId,
+        ownerSessionId: SessionId = sessionA,
+        lastActivityAt: Instant = baseInstant,
+    ): Lobby {
+        val puzzle =
+            GamePuzzle(
+                id = UUID.fromString("0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5b00"),
+                title = "Sample",
+                language = "fr",
+                width = 5,
+                height = 5,
+                cells = emptyList(),
+                clues = emptyList(),
+                createdAt = baseInstant.minusSeconds(3600),
+            )
+        return Lobby(
+            id = id,
+            ownerSessionId = ownerSessionId,
+            players = mapOf(ownerSessionId to Player(ownerSessionId, alice, baseInstant)),
+            state = LobbyLifecycleState.COMPLETED,
+            gridConfig = gridConfig,
+            game =
+                GameSession(
+                    puzzle = puzzle,
+                    entries = emptyMap(),
+                    startedAt = baseInstant.minusSeconds(1800),
+                    completedAt = baseInstant.minusSeconds(60),
+                ),
+            lastActivityAt = lastActivityAt,
+            code = LobbyCode.generate(),
+        )
+    }
 }
