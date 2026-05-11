@@ -24,6 +24,15 @@ class InMemoryLobbyRepository : LobbyRepository {
     // stays small in v1 and a Postgres adapter would index `code`.
     override suspend fun findByCode(code: LobbyCode): Lobby? = store.values.firstOrNull { it.code == code }
 
+    // O(n) scan over the lobby map. Acceptable for v1 single-replica (ADR-0018 §3); a Postgres
+    // adapter would index `(session_id)` via the membership table for this lookup. ConcurrentHashMap.values()
+    // is weakly consistent — fine: this is a read-only projection for the "My games" surface (ADR-0039),
+    // and a concurrently mutating lobby simply lands in the next call.
+    override suspend fun findBySessionId(sessionId: SessionId): List<Lobby> =
+        store.values
+            .filter { it.players.containsKey(sessionId) }
+            .sortedByDescending { it.lastActivityAt }
+
     override suspend fun save(lobby: Lobby): Lobby =
         lockFor(lobby.id).withLock {
             store[lobby.id] = lobby
