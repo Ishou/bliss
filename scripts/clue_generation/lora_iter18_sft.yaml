@@ -1,0 +1,50 @@
+# iter18 SFT — fresh SFT base with the new prompt schema (system msg +
+# lowercase lemma + [pos]). This replaces v3 (the iter10 SFT base which
+# all iter12-17 DPO refinements resumed from). v3 used UPPERCASE and no
+# system message; the 2026-05-11 diagnostic on v8 showed both choices
+# cost real signal — sticking with v3 forever means re-paying that
+# tax on every future DPO iter.
+#
+# Corpus (data/lora_iter18_sft):
+#   train.jsonl  583 rows
+#   valid.jsonl   20 rows
+#   test.jsonl    24 rows
+#
+# Each row is the iter14-era SFT pair (curated + Claude-authored
+# synthetic + iter `y`-rated y's) re-formatted to the new schema:
+#   {messages: [{system}, {user: "Génère…: lemma [pos]"}, {assistant: clue}]}
+#
+# Hyperparameters mirror iter10 (which produced v3 cleanly): batch_size
+# 4, lr 1e-5, ~600 iters. Promote best-val-loss checkpoint to
+# models/lora-clue-v9 — that becomes the new SFT base, all iter18+ DPO
+# resumes from it.
+#
+# Train via the wrapper (forces -u for mid-train val flush):
+#   bash scripts/clue_generation/train_dpo.sh \
+#       --config scripts/clue_generation/lora_iter18_sft.yaml \
+#       --train --train-mode sft \
+#       2>&1 | tee /tmp/iter18_sft_train.log
+#
+# After training:
+#   python scripts/clue_generation/promote_best_adapter.py \
+#       --log /tmp/iter18_sft_train.log --adapter-dir models/lora-clue-v9
+model: "mlx-community/c4ai-command-r-08-2024-4bit"
+data: "data/lora_iter18_sft"
+adapter_path: "models/lora-clue-v9"
+train_type: lora
+train_mode: sft
+num_layers: 16
+batch_size: 4
+iters: 600
+learning_rate: 1e-5
+steps_per_report: 5
+steps_per_eval: 50
+save_every: 50
+seed: 20260511
+train: true
+fuse: false
+
+lora_parameters:
+  rank: 32
+  dropout: 0.0
+  scale: 20.0

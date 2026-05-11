@@ -1,0 +1,55 @@
+# iter18 DPO — preference refinement on top of the new v9 SFT base.
+# Combines iter14's 1380 base pairs + iter17's 227 coord-long pairs +
+# iter17's 14 hand-authored wrong-sense pairs + iter18's 385 authored
+# diverse pairs (`iter18_authored_pairs.py`). All re-formatted to the
+# new schema (system msg + lowercase + [pos]). 1971 deduped train rows.
+#
+# Corpus (data/lora_dpo_iter18):
+#   train.jsonl  1773 rows
+#   valid.jsonl    99 rows
+#   test.jsonl     99 rows
+#
+# Hyperparameters mirror iter17 (which trained cleanly through 700 iters
+# with val loss monotonically descending): batch_size 2, lr 1e-6, β 0.1,
+# sigmoid. Iters 800 — scaled from iter17's 700 to match the ~30%
+# corpus growth (1434 → 1773 train pairs).
+#
+# Resumes from v9 (the NEW SFT base from iter18 SFT) — NOT from v3.
+# This is the iter18 structural delta: every prior DPO resumed from v3
+# because no fresh SFT had run since iter10; now we re-baseline.
+#
+# Train via the wrapper:
+#   bash scripts/clue_generation/train_dpo.sh \
+#       --config scripts/clue_generation/lora_iter18_dpo.yaml \
+#       --train --train-mode dpo \
+#       --beta 0.1 --dpo-cpo-loss-type sigmoid \
+#       2>&1 | tee /tmp/iter18_dpo_train.log
+#
+# After training:
+#   python scripts/clue_generation/promote_best_adapter.py \
+#       --log /tmp/iter18_dpo_train.log --adapter-dir models/lora-clue-v10
+model: "mlx-community/c4ai-command-r-08-2024-4bit"
+data: "data/lora_dpo_iter18"
+adapter_path: "models/lora-clue-v10"
+train_type: lora
+train_mode: dpo
+num_layers: 16
+batch_size: 2
+iters: 800
+learning_rate: 1e-6
+steps_per_report: 5
+steps_per_eval: 50
+save_every: 50
+seed: 20260511
+train: true
+fuse: false
+
+beta: 0.1
+dpo_cpo_loss_type: sigmoid
+
+resume_adapter_file: "models/lora-clue-v9/adapters.safetensors"
+
+lora_parameters:
+  rank: 32
+  dropout: 0.0
+  scale: 20.0

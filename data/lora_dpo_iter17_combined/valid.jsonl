@@ -1,0 +1,80 @@
+{"prompt": "Génère une définition mots-fléchés courte pour: RÉFUGIER [verbe]", "chosen": "Protéger", "rejected": "Protéger et abriter"}
+{"prompt": "Génère une définition mots-fléchés courte pour: COMMANDER [verbe]", "chosen": "Ordonner", "rejected": "Donner un ordre"}
+{"prompt": "Génère une définition mots-fléchés courte pour: ÉCLATER [verbe]", "chosen": "Exploser", "rejected": "Mettre en pièces"}
+{"prompt": "Génère une définition mots-fléchés courte pour: AMUSER [verbe]", "chosen": "Distraire", "rejected": "Faire rire"}
+{"prompt": "Génère une définition mots-fléchés courte pour: CARRER [verbe]", "chosen": "Élargir", "rejected": "Donner forme carrée"}
+{"prompt": "Génère une définition mots-fléchés courte pour: MOBILISER [verbe]", "chosen": "Rassembler", "rejected": "Rassembler et organiser"}
+{"prompt": "Génère une définition mots-fléchés courte pour: ISOLER [verbe]", "chosen": "Séparer", "rejected": "Séparer et protéger"}
+{"prompt": "Génère une définition mots-fléchés courte pour: JOUER [verbe]", "chosen": "Interpréter", "rejected": "Faire semblant"}
+{"prompt": "Génère une définition mots-fléchés courte pour: ACCRÉDITER [verbe]", "chosen": "Reconnaître", "rejected": "Donner crédit"}
+{"prompt": "Génère une définition mots-fléchés courte pour: RENSEIGNER [verbe]", "chosen": "Informer", "rejected": "Mettre au courant"}
+{"prompt": "Génère une définition mots-fléchés courte pour: MAÎTRISE [nom]", "chosen": "Direction de l'atelier", "rejected": "Direction ouvrière"}
+{"prompt": "Génère une définition mots-fléchés courte pour: VISER [verbe]", "chosen": "Cibler", "rejected": "Mettre en joue"}
+{"prompt": "Génère une définition mots-fléchés courte pour: DIRECTION [nom]", "chosen": "Axe du mouvement", "rejected": "Point cardinal"}
+{"prompt": "Génère une définition mots-fléchés courte pour: CLOUER [verbe]", "chosen": "Fixer", "rejected": "Mettre un clou"}
+{"prompt": "Génère une définition mots-fléchés courte pour: ÉVITER [verbe]", "chosen": "Esquiver", "rejected": "Mettre à distance"}
+{"prompt": "Génère une définition mots-fléchés courte pour: RÉFLÉCHIR [verbe]", "chosen": "Méditer", "rejected": "Avoir une pensée"}
+{"prompt": "Génère une définition mots-fléchés courte pour: RATIFIER [verbe]", "chosen": "Confirmer", "rejected": "Approbation formelle"}
+{"prompt": "Génère une définition mots-fléchés courte pour: ANNONCER [verbe]", "chosen": "Proclamer", "rejected": "Faire savoir"}
+{"prompt": "Génère une définition mots-fléchés courte pour: POSER [verbe]", "chosen": "Installer", "rejected": "Mettre une chose"}
+{"prompt": "Génère une définition mots-fléchés courte pour: LAVER [verbe]", "chosen": "Nettoyer", "rejected": "Nettoyer et rincer"}
+{"prompt": "Génère une définition mots-fléchés courte pour: AVÉRER [verbe]", "chosen": "Confirmer", "rejected": "Mettre en évidence"}
+{"prompt": "Génère une définition mots-fléchés courte pour: ESCROQUER [verbe]", "chosen": "Arnaquer", "rejected": "Mettre la main"}
+{"prompt": "Génère une définition mots-fléchés courte pour: AJUSTER [verbe]", "chosen": "Caler", "rejected": "Mettre au point"}
+{"prompt": "Génère une définition mots-fléchés courte pour: DÉSIGNER [verbe]", "chosen": "Choisir", "rejected": "Choisir et indiquer"}
+{"prompt": "Génère une définition mots-fléchés courte pour: DISCIPLINER [verbe]", "chosen": "Dompter", "rejected": "Mettre sous contrôle"}
+{"prompt": "Génère une définition mots-fléchés courte pour: SUIVRE [verbe]", "chosen": "Talonner", "rejected": "Aller derrière"}
+{"prompt": "Génère une définition mots-fléchés courte pour: VERNIR [verbe]", "chosen": "Lustrer", "rejected": "Mettre une couche"}
+{"prompt": "Génère une définition mots-fléchés courte pour: DÉPORTER [verbe]", "chosen": "Bannir", "rejected": "Mettre en exil"}
+{"prompt": "Génère une définition mots-fléchés courte pour: OCCUPER [verbe]", "chosen": "Tenir", "rejected": "Prendre une place"}
+{"prompt": "Génère une définition mots-fléchés courte pour: RUINER [verbe]", "chosen": "Détruire", "rejected": "Détruire et anéantir"}
+{"prompt": "Génère une définition mots-fléchés courte pour: CORRIGER [verbe]", "chosen": "Amender", "rejected": "Mettre au point"}
+{"prompt": "Génère une définition mots-fléchés courte pour: CONTORSIONNER [verbe]", "chosen": "Tordre", "rejected": "Tordre et déformer"}
+{"prompt": "Génère une définition mots-fléchés courte pour: CALCULER [verbe]", "chosen": "Compter", "rejected": "Faire le calcul"}
+{"prompt": "Génère une définition mots-fléchés courte pour: RÉPÉTER [verbe]", "chosen": "Réitérer", "rejected": "Dire encore"}
+{"prompt": "Génère une définition mots-fléchés courte pour: OPPRIMER [verbe]", "chosen": "Dominer", "rejected": "Dominer et soumettre"}
+{"prompt": "Génère une définition mots-fléchés courte pour: COORDONNER [verbe]", "chosen": "Harmoniser", "rejected": "Harmoniser et aligner"}
+{"prompt": "Génère une définition mots-fléchés courte pour: AMENDE [nom]", "chosen": "Contravention financière", "rejected": "Prune financière"}
+{"prompt": "Génère une définition mots-fléchés courte pour: RASER [verbe]", "chosen": "Tondre", "rejected": "Donner un coup de rasoir"}
+{"prompt": "Génère une définition mots-fléchés courte pour: OUBLIER [verbe]", "chosen": "Omettre", "rejected": "Sortir de l'esprit"}
+{"prompt": "Génère une définition mots-fléchés courte pour: CONSIDÉRER [verbe]", "chosen": "Examiner", "rejected": "Tenir pour vrai"}
+{"prompt": "Génère une définition mots-fléchés courte pour: IMAGINER [verbe]", "chosen": "Concevoir", "rejected": "Voir en pensée"}
+{"prompt": "Génère une définition mots-fléchés courte pour: BÉNIR [verbe]", "chosen": "Sacrer", "rejected": "Donner sa bénédiction"}
+{"prompt": "Génère une définition mots-fléchés courte pour: INFLIGER [verbe]", "chosen": "Imposer", "rejected": "Donner en peine"}
+{"prompt": "Génère une définition mots-fléchés courte pour: INAUGURER [verbe]", "chosen": "Lancer", "rejected": "Mettre en route"}
+{"prompt": "Génère une définition mots-fléchés courte pour: RÉGIR [verbe]", "chosen": "Gouverner", "rejected": "Mettre des règles"}
+{"prompt": "Génère une définition mots-fléchés courte pour: SPONTANÉITÉ [nom]", "chosen": "Caractère naturel", "rejected": "Impulsivité inattendue"}
+{"prompt": "Génère une définition mots-fléchés courte pour: MOUVOIR [verbe]", "chosen": "Bouger", "rejected": "Se déplacer"}
+{"prompt": "Génère une définition mots-fléchés courte pour: MODELER [verbe]", "chosen": "Façonner", "rejected": "Donner une forme"}
+{"prompt": "Génère une définition mots-fléchés courte pour: VALIDER [verbe]", "chosen": "Approuver", "rejected": "Donner son accord"}
+{"prompt": "Génère une définition mots-fléchés courte pour: CONSULAIRE [adjectif]", "chosen": "Diplomatique", "rejected": "Ancien magistrat"}
+{"prompt": "Génère une définition mots-fléchés courte pour: REDEVENIR [verbe]", "chosen": "Repasser", "rejected": "Faire retour"}
+{"prompt": "Génère une définition mots-fléchés courte pour: ESTIMER [verbe]", "chosen": "Évaluer", "rejected": "Donner une valeur"}
+{"prompt": "Génère une définition mots-fléchés courte pour: DISSOCIER [verbe]", "chosen": "Séparer", "rejected": "Mettre à part"}
+{"prompt": "Génère une définition mots-fléchés courte pour: DÉCELER [verbe]", "chosen": "Détecter", "rejected": "Mettre en lumière"}
+{"prompt": "Génère une définition mots-fléchés courte pour: MÉFIER [verbe]", "chosen": "Douter", "rejected": "Douter et être prudent"}
+{"prompt": "Génère une définition mots-fléchés courte pour: COMPRENDRE [verbe]", "chosen": "Englober", "rejected": "Saisir un sens"}
+{"prompt": "Génère une définition mots-fléchés courte pour: ILLUSTRER [verbe]", "chosen": "Dessiner", "rejected": "Dessiner et expliquer"}
+{"prompt": "Génère une définition mots-fléchés courte pour: ATTACHER [verbe]", "chosen": "Lier", "rejected": "Mettre un lien"}
+{"prompt": "Génère une définition mots-fléchés courte pour: SITUER [verbe]", "chosen": "Positionner", "rejected": "Mettre en place"}
+{"prompt": "Génère une définition mots-fléchés courte pour: SOUDER [verbe]", "chosen": "Joindre", "rejected": "Mettre en un tout"}
+{"prompt": "Génère une définition mots-fléchés courte pour: PLAN [nom]", "chosen": "Surface géométrique", "rejected": "Feuille de papier"}
+{"prompt": "Génère une définition mots-fléchés courte pour: PLIER [verbe]", "chosen": "Courber", "rejected": "Donner une courbe"}
+{"prompt": "Génère une définition mots-fléchés courte pour: MOBILISER [verbe]", "chosen": "Rassembler", "rejected": "Mettre en marche"}
+{"prompt": "Génère une définition mots-fléchés courte pour: BANNIR [verbe]", "chosen": "Exiler", "rejected": "Mettre dehors"}
+{"prompt": "Génère une définition mots-fléchés courte pour: FAUSSER [verbe]", "chosen": "Altérer", "rejected": "Mettre de travers"}
+{"prompt": "Génère une définition mots-fléchés courte pour: DIFFUS [adjectif]", "chosen": "Épars", "rejected": "S'étendre partout"}
+{"prompt": "Génère une définition mots-fléchés courte pour: ENTAMER [verbe]", "chosen": "Inciser légèrement", "rejected": "Commencer à manger"}
+{"prompt": "Génère une définition mots-fléchés courte pour: COURIR [verbe]", "chosen": "Galoper", "rejected": "Aller vite"}
+{"prompt": "Génère une définition mots-fléchés courte pour: ASSAILLIR [verbe]", "chosen": "Attaquer", "rejected": "Donner l'assaut"}
+{"prompt": "Génère une définition mots-fléchés courte pour: MOTIVER [verbe]", "chosen": "Inciter", "rejected": "Donner une raison"}
+{"prompt": "Génère une définition mots-fléchés courte pour: COMMETTRE [verbe]", "chosen": "Perpétrer", "rejected": "Faire une faute"}
+{"prompt": "Génère une définition mots-fléchés courte pour: DÉBATTRE [verbe]", "chosen": "Discuter", "rejected": "Mettre en discussion"}
+{"prompt": "Génère une définition mots-fléchés courte pour: TARDIF [adjectif]", "chosen": "En retard pour le départ", "rejected": "Retardé ou en retard"}
+{"prompt": "Génère une définition mots-fléchés courte pour: PERCEVOIR [verbe]", "chosen": "Discerner", "rejected": "Saisir au son"}
+{"prompt": "Génère une définition mots-fléchés courte pour: DÉCOMPOSER [verbe]", "chosen": "Scinder", "rejected": "Mettre en morceaux"}
+{"prompt": "Génère une définition mots-fléchés courte pour: DÉCIDER [verbe]", "chosen": "Statuer", "rejected": "Choix tranché"}
+{"prompt": "Génère une définition mots-fléchés courte pour: SUPPORTER [verbe]", "chosen": "Encourager", "rejected": "Encourager et défendre"}
+{"prompt": "Génère une définition mots-fléchés courte pour: ASSIÉGER [verbe]", "chosen": "Cerner", "rejected": "Mettre le siège"}
+{"prompt": "Génère une définition mots-fléchés courte pour: USER [verbe]", "chosen": "Émousser", "rejected": "Faire une usure"}
+{"prompt": "Génère une définition mots-fléchés courte pour: ASSIGNER [verbe]", "chosen": "Attribuer", "rejected": "Donner en partage"}
