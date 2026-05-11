@@ -133,3 +133,16 @@ data class CreateLobbyRequestDto(
     val ownerSessionId: String,
     val ownerPseudonym: String,
 )
+
+/** `LobbySummary` schema — light-weight projection for "My games" (ADR-0039). */
+@OptIn(ExperimentalSerializationApi::class)
+@Serializable
+data class LobbySummaryDto(
+    val id: String,
+    val code: String,
+    val state: String,
+    val gridConfig: GridConfigDto,
+    val playerCount: Int,
+    val lastActivityAt: String,
+    val title: String? = null,
+)

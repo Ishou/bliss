@@ -4,10 +4,12 @@ import com.bliss.game.api.dto.ProblemDetails
 import com.bliss.game.api.routes.health
 import com.bliss.game.api.routes.lobbies
 import com.bliss.game.api.routes.lobbyWebSocketRoute
+import com.bliss.game.api.routes.sessions
 import com.bliss.game.application.ports.AnalyticsEventSink
 import com.bliss.game.application.usecases.CreateLobbyUseCase
 import com.bliss.game.application.usecases.JoinLobbyUseCase
 import com.bliss.game.application.usecases.LeaveLobbyUseCase
+import com.bliss.game.application.usecases.ListLobbiesForSession
 import com.bliss.game.application.usecases.LobbyGarbageCollector
 import com.bliss.game.application.usecases.PresenceAggregator
 import com.bliss.game.application.usecases.RenameSelfUseCase
@@ -261,6 +263,7 @@ fun Application.module() {
     routing {
         health(APP_VERSION)
         lobbies(createLobby = useCases.createLobby, repo = lobbyRepository, sessionManager = sessionManager)
+        sessions(ListLobbiesForSession(lobbyRepository))
         lobbyWebSocketRoute(sessionManager, useCases, lobbyRepository, presenceAggregator)
     }
 }
