@@ -43,6 +43,13 @@ servers:
 tags:
   - name: lobbies
     description: Pre-game lobby create and read.
+  - name: sessions
+    description: |
+      Anonymous session lifecycle. Currently exposes the per-session lobby
+      listing (powers the Accueil "Mes parties" card) and the right-to-erasure
+      endpoint (RGPD Article 17, ADR-0025 §5). Mirrors the grid-api
+      `/v1/sessions/{sessionId}` shape so the frontend's "Effacer mes données"
+      flow can fan out to both contexts.
 
 paths:
   /v1/lobbies:
@@ -175,6 +182,91 @@ paths:
               schema:
                 $ref: '#/components/schemas/Problem'
 
+  /v1/sessions/{sessionId}/lobbies:
+    get:
+      operationId: listLobbiesForSession
+      summary: List lobbies the caller's session is a member of.
+      description: |
+        Powers the Accueil "Mes parties" card so a returning player can pick
+        up yesterday's lobby without bookmarking the URL. Returns lobbies in
+        every lifecycle state (WAITING, IN_PROGRESS, COMPLETED), ordered by
+        `lastActivityAt` descending so the most recently touched lobby is
+        first. Empty array is the "no lobbies" answer — there is no 404 here,
+        which would leak whether the session has ever played.
+
+        Not paginated: a single anonymous session is naturally capped at a
+        handful of lobbies and pagination would be premature complexity.
+      tags: [sessions]
+      parameters:
+        - $ref: '#/components/parameters/SessionIdPath'
+      responses:
+        '200':
+          description: |
+            List of lobby summaries for this session. Empty array when the
+            session is not a member of any lobby (never played, all lobbies
+            garbage-collected, etc.).
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LobbySummary'
+        '400':
+          description: |
+            Path parameter `sessionId` is not a valid UUID. RFC 7807;
+            `type` is `https://bliss.example/errors/invalid-session-id`.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+
+  /v1/sessions/{sessionId}:
+    delete:
+      operationId: deleteSession
+      summary: Erase server-side lobby data for a session (RGPD Article 17).
+      description: |
+        Cascades the three-rule erasure documented in ADR-0039 across every
+        lobby the session is a member of:
+
+        1. Erased user owns the lobby and is the sole player → the lobby is
+           deleted outright.
+        2. Erased user owns the lobby with at least one remaining player →
+           ownership transfers to the earliest-joined remaining player, the
+           erased user is removed, and their cell entries are anonymised
+           (attribution dropped; letters retained so the puzzle stays
+           coherent for the others).
+        3. Erased user is a non-owner player → they are removed and their
+           entries are anonymised; the lobby and its owner are unchanged.
+
+        Always idempotent and always returns `200`. A session id with no
+        prior data returns all-zero counts. Like the grid-api sibling
+        (`SessionRoute.kt`), the endpoint never reveals whether a session
+        had data — disclosing presence would itself be a leak.
+
+        The frontend's "Effacer mes données" button fans this call out
+        together with grid-api's `DELETE /v1/sessions/{sessionId}`; both
+        must succeed for the UI to claim data was erased.
+      tags: [sessions]
+      parameters:
+        - $ref: '#/components/parameters/SessionIdPath'
+      responses:
+        '200':
+          description: |
+            Erasure completed. Body reports per-rule counts. All-zero is a
+            valid success — the session had no server-side data.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteSessionResponse'
+        '400':
+          description: |
+            Path parameter `sessionId` is not a valid UUID. RFC 7807;
+            `type` is `https://bliss.example/errors/invalid-session-id`.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+
 components:
   parameters:
     LobbyIdPath:
@@ -184,6 +276,17 @@ components:
       description: 8-char base58 nanoid identifying the lobby (ADR-0020).
       schema:
         $ref: '#/components/schemas/LobbyId'
+
+    SessionIdPath:
+      name: sessionId
+      in: path
+      required: true
+      description: |
+        UUID v7 identifying the calling player's anonymous session.
+        Validated by the same `SessionId` value class as the WebSocket
+        surface; non-UUID input is rejected with a 400 RFC 7807 problem.
+      schema:
+        $ref: '#/components/schemas/SessionId'
 
   schemas:
     LobbyId:
@@ -627,6 +730,66 @@ components:
             join-by-code wave (PR #262). Will be promoted to `required`
             in phase 3 once all clients expect the field.
           example: A2B3C4
+        title:
+          type: string
+          minLength: 1
+          maxLength: 64
+          description: |
+            Optional human-friendly label set by the lobby owner at
+            creation (e.g. "Game A", "Mardi soir"). Powers the Accueil
+            "Mes parties" card so a returning player recognises yesterday's
+            lobby at a glance; when absent the UI falls back to a
+            date-derived label. Per ADR-0003 §6, optional means absent OR
+            present — never `null` on the wire.
+          example: Mardi soir
+
+    LobbySummary:
+      type: object
+      required: [id, code, state, gridConfig, playerCount, lastActivityAt]
+      description: |
+        Compact view of a lobby for the "Mes parties" listing. Carries just
+        enough to render a row in the Accueil card (label, code, grid size,
+        recency) without paying the cost of the full `Lobby` snapshot — the
+        `game` payload is intentionally omitted. The frontend hydrates the
+        full lobby through `GET /v1/lobbies/{lobbyId}` when the player
+        clicks through. `title` is optional with the same wire semantics as
+        `Lobby.title` (absent OR present, never `null`).
+      properties:
+        id:
+          $ref: '#/components/schemas/LobbyId'
+        code:
+          type: string
+          minLength: 6
+          maxLength: 6
+          pattern: '^[A-HJKM-NP-Z2-9]{6}$'
+          description: |
+            Join code mirroring `Lobby.code`. Required here because every
+            lobby surfaced by this endpoint is post-PR-#262 and always has
+            a code; the frontend renders it next to the title in the card.
+          example: A2B3C4
+        state:
+          $ref: '#/components/schemas/LobbyLifecycleState'
+        gridConfig:
+          $ref: '#/components/schemas/GridConfig'
+        playerCount:
+          type: integer
+          minimum: 1
+          maximum: 8
+          description: |
+            Number of players currently holding a slot. Computed by the
+            adapter so the summary endpoint avoids loading the full player
+            list.
+          example: 3
+        lastActivityAt:
+          $ref: '#/components/schemas/Instant'
+        title:
+          type: string
+          minLength: 1
+          maxLength: 64
+          description: |
+            Optional label mirroring `Lobby.title`. Absent when the owner
+            did not set one at creation; never `null` on the wire.
+          example: Mardi soir
 
     CreateLobbyRequest:
       type: object
@@ -637,9 +800,61 @@ components:
           $ref: '#/components/schemas/SessionId'
         ownerPseudonym:
           $ref: '#/components/schemas/Pseudonym'
+        title:
+          type: string
+          minLength: 1
+          maxLength: 64
+          description: |
+            Optional human-friendly label for the lobby. Surfaced on the
+            "Mes parties" card. Per ADR-0003 §6, optional means absent OR
+            present — never `null` on the wire; omit the field entirely to
+            create an untitled lobby.
+          example: Mardi soir
       example:
         ownerSessionId: 0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6b
         ownerPseudonym: Joueur 1234
+        title: Mardi soir
+
+    DeleteSessionResponse:
+      type: object
+      description: |
+        Response body for `DELETE /v1/sessions/{sessionId}` on a 200.
+        Reports the per-rule counts of the three-rule cascade documented
+        in ADR-0039. All-zero is a valid success — the session had no
+        server-side data.
+      required: [deletedLobbies, transferredLobbies, removedPlayerships, anonymisedEntries]
+      properties:
+        deletedLobbies:
+          type: integer
+          minimum: 0
+          description: |
+            Number of lobbies deleted because the erased session was the
+            sole owner-player (Rule 1).
+          example: 1
+        transferredLobbies:
+          type: integer
+          minimum: 0
+          description: |
+            Number of lobbies whose ownership was transferred to the
+            earliest-joined remaining player because the erased session
+            was the owner with at least one other player (Rule 2).
+          example: 1
+        removedPlayerships:
+          type: integer
+          minimum: 0
+          description: |
+            Number of lobby memberships removed for the erased session
+            (sum across Rules 2 and 3 — i.e. every lobby the session was
+            a member of and that was not deleted outright).
+          example: 2
+        anonymisedEntries:
+          type: integer
+          minimum: 0
+          description: |
+            Number of `lobby_cell_entries` rows whose author attribution
+            was dropped (letters retained, `writtenBySessionId` cleared)
+            so surviving lobbies stay coherent for the remaining players.
+          example: 7
 
     Problem:
       type: object
