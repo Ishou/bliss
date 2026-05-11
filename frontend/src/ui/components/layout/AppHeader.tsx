@@ -20,8 +20,7 @@ import { HamburgerIcon } from '@/ui/components/icons';
 interface NavLink {
   readonly id: string;
   readonly label: string;
-  // Narrowed to known route paths so <Link to=...> and navigate({ to })
-  // type-check without a cast.
+  // union makes <Link to=> and navigate({ to }) type-safe without a cast.
   readonly href: '/grille' | '/aide';
 }
 
@@ -189,10 +188,7 @@ export function activeIdForPath(pathname: string): string | undefined {
 export function AppHeader({ activeNavId }: AppHeaderProps = {}) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const resolvedActiveId = activeNavId ?? activeIdForPath(pathname);
-  // Client-side navigation for header links. Plain `<a href>` and
-  // `window.location.assign` triggered a full page reload, which paints
-  // the prerendered HTML, then re-hydrates — visible as a flash on every
-  // header click. <Link> + navigate keep the SPA in-process.
+  // <Link>/<navigate> prevents full-page reload + prerender-flash on header clicks.
   const navigate = useNavigate();
   return (
     <header className={headerOuterStyles} role="banner">
