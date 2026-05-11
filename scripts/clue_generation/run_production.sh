@@ -45,10 +45,6 @@ from collections import defaultdict
 sys.path.insert(0, "scripts/eval")
 # lemma_pos_freq returns dict[(lemma, pos)] = total_occurrences; we pick the
 # highest-freq POS per lemma to match grammalecte's "primary sense" choice.
-# Loading the index once costs ~3-5s and lets every prompt carry an
-# explicit [pos] tag, which iter14 trained against but the previous
-# inline sampler never emitted (iter17 diagnostic confirmed this is
-# the cause of the cross-lingual leak on cane/user/clair).
 from build_surface_clues import POS_PRECEDENCE
 from build_surface_clues import lemma_pos_freq
 
@@ -102,11 +98,7 @@ dst = Path("$SAMPLE_JSONL")
 n_with_pos = 0
 with dst.open("w", encoding="utf-8") as f:
     for lemma in out:
-        # Include the POS tag in the prompt to match iter14 / iter17
-        # training. Without it the multilingual base model drifts to the
-        # English sense of FR-EN homographs (cane → walking stick, user
-        # → consumer, clair → "evidently"). iter17 diagnostic showed
-        # adding [pos] flips at least 2/7 known wrong-sense bugs.
+        # Without [pos] the multilingual base model drifts to the English sense of FR-EN homographs.
         # Skip lemmas with no resolvable POS — emit a bare prompt that
         # falls back to historical behavior. ~1% of lemmas at most.
         pos = best_pos.get(lemma)
