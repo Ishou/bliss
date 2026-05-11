@@ -22,10 +22,6 @@ import * as React from 'react';
 import { css } from 'styled-system/css';
 import { AppHeader } from './AppHeader';
 import { Footer } from './Footer';
-import { PAGE_MAX_WIDTH } from './constants';
-
-// Re-export so callers that import from './Page' still work.
-export { PAGE_MAX_WIDTH } from './constants';
 
 const pageStyles = css({
   minHeight: '100dvh',
@@ -63,7 +59,7 @@ const viewportMainStyles = css({
 
 const contentWrapperStyles = css({
   width: '100%',
-  maxWidth: PAGE_MAX_WIDTH,
+  maxWidth: 'pageMaxWidth',
   margin: '0 auto',
   paddingInline: { base: '16px', md: '20px' },
   paddingBlock: { base: '16px', md: '24px' },
@@ -74,7 +70,7 @@ const contentWrapperStyles = css({
 
 const viewportWrapperStyles = css({
   width: '100%',
-  maxWidth: PAGE_MAX_WIDTH,
+  maxWidth: 'pageMaxWidth',
   margin: '0 auto',
   paddingInline: { base: '16px', md: '20px' },
   paddingBlock: { base: '12px', md: '20px' },

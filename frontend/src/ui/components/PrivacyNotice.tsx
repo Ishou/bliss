@@ -9,6 +9,7 @@
 // in the same PR.
 
 import { useState } from 'react';
+import { Link } from '@tanstack/react-router';
 import { css } from 'styled-system/css';
 import type { SessionClient } from '@/application/session/SessionClient';
 import { Button } from '@/ui/components/primitives/Button';
@@ -279,9 +280,9 @@ function FrenchContent() {
         </li>
       </ul>
       <p>
-        <a href="/privacy" hrefLang="en">
+        <Link to="/privacy" hrefLang="en">
           English version
-        </a>
+        </Link>
       </p>
     </>
   );
@@ -393,9 +394,9 @@ function EnglishContent() {
         </li>
       </ul>
       <p>
-        <a href="/confidentialite" hrefLang="fr">
+        <Link to="/confidentialite" hrefLang="fr">
           Version française
-        </a>
+        </Link>
       </p>
     </>
   );

@@ -159,6 +159,10 @@ export default defineConfig({
         black: { value: '800' },
       },
       radii: { sm: { value: '4px' }, md: { value: '8px' } },
+      // Panda can't resolve cross-file import constants; token required (ADR-0036).
+      sizes: {
+        pageMaxWidth: { value: '720px' },
+      },
       shadows: {
         // Subtle near-black glow under floating surfaces (toggle,
         // dialog, dropdown). The rgba is intentionally not bound to
