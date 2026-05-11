@@ -277,8 +277,8 @@ class StartGameUseCase(
  * cleanup is handled by [LobbyGarbageCollector]'s state-specific TTL.
  *
  * Manual ownership transfer is intentionally out of scope. The only
- * code path that transfers ownership is RGPD erasure (see
- * EraseSessionUseCase, PR #11), where the user is gone permanently and
+ * code path that transfers ownership is RGPD erasure (see ADR-0039 §f
+ * and EraseSessionUseCase), where the user is gone permanently and
  * leaving a "dead owner" would lock the rest out of owner-gated
  * actions.
  *
@@ -302,13 +302,13 @@ class LeaveLobbyUseCase(
                 if (!lobby.hasJoined(sessionId)) return@mutate lobby
                 playerWasPresent = true
                 // Remove the player but keep ownerSessionId unchanged on every branch.
-                // The lobby persists even when emptied; GC TTLs (PR #12) handle cleanup.
+                // The lobby persists even when emptied; GC TTLs (see [LobbyGarbageCollector]) handle cleanup.
                 lobby.copy(
                     players = lobby.players - sessionId,
                     lastActivityAt = clock.now(),
                 )
             }
-        // After this change, mutate's mutator never returns null, so updated == null
+        // mutate's mutator never returns null, so updated == null
         // is unambiguously "lobby with this id does not exist" (the repo's only other
         // null path). PlayerNotInLobby is signalled by playerWasPresent=false on a
         // non-null mutate return — the mutator short-circuited without mutating.
