@@ -105,9 +105,10 @@ data class Lobby(
         require(players.size <= MAX_PLAYERS) {
             "Lobby may hold at most $MAX_PLAYERS players, was ${players.size}"
         }
-        require(players.containsKey(ownerSessionId)) {
-            "Lobby owner $ownerSessionId must be a member of the lobby"
-        }
+        // Per ADR-0039, the owner may be absent from `players` once they have left;
+        // ownership is a logical identifier preserved across the owner's
+        // disconnect so they can return via My-games. Owner-only actions are
+        // gated on isOwner(sessionId), not on player membership.
         when (state) {
             LobbyLifecycleState.WAITING ->
                 require(game == null) { "Lobby in WAITING must not carry a GameSession" }
