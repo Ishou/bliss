@@ -161,6 +161,16 @@ class PuzzleRouteCooldownTest {
             assertThat(withHeader.status).isEqualTo(HttpStatusCode.OK)
         }
 
+    /**
+     * Synthesizes ~150 distinct words per length so the bitmask-CSP generator
+     * (PR #368) has enough candidates to converge on the default 15x12 grid
+     * within `GeneratePuzzleUseCase`'s retry budget. The single-shift variant
+     * used previously satisfied the boundary-skeleton filler but starves the
+     * cell-state CSP search. Mirrors `AlwaysMatchingRepository` in
+     * `GeneratePuzzleUseCaseTest` — these wire-path tests don't care about
+     * word quality, only that the route returns 200 OK for a successful
+     * generation.
+     */
     private object SmallWordRepository : WordRepository {
         override fun findByLength(length: Int): List<Word> = candidates(length, emptyMap())
 
@@ -176,11 +186,16 @@ class PuzzleRouteCooldownTest {
             pattern: Map<Int, Char>,
         ): List<Word> {
             val unconstrained = (0 until length).filter { it !in pattern }
-            return (0..25)
-                .map { n ->
-                    val chars = CharArray(length) { i -> pattern[i] ?: 'A' }
-                    unconstrained.forEachIndexed { idx, pos -> chars[pos] = 'A' + (n + idx * 7) % 26 }
-                    Word(String(chars), "test definition")
+            val shifts = intArrayOf(1, 5, 7, 11, 17, 23)
+            return shifts
+                .flatMap { shift ->
+                    (0..25).map { n ->
+                        val chars = CharArray(length) { i -> pattern[i] ?: 'A' }
+                        unconstrained.forEachIndexed { idx, pos ->
+                            chars[pos] = 'A' + (n + idx * shift) % 26
+                        }
+                        Word(String(chars), "test definition")
+                    }
                 }.distinctBy { it.text }
         }
     }
