@@ -115,7 +115,7 @@ object SlotPlanner {
         if (clock.currentTimeMillis() > deadline) return null
 
         val next =
-            state.nextPending() ?: run {
+            state.nextPendingMRV(lengthPolicy) ?: run {
                 // No more pending arrows → check final consistency.
                 return if (state.validate().ok) state.slots.toList() else null
             }

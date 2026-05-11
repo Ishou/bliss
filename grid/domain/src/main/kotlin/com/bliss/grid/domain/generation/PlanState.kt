@@ -216,6 +216,39 @@ internal class PlanState(
     }
 
     /**
+     * Pick the next pending arrow by Minimum Remaining Values — the arrow with
+     * the fewest viable lengths under [lengthPolicy] for its current available
+     * cells. Ties broken by insertion order (LinkedHashMap iteration).
+     *
+     * Rationale: same heuristic the [SkeletonFiller] uses for slot selection.
+     * The planner previously processed arrows in FIFO order which routinely
+     * branched on the wrong arrow first; MRV here mirrors the filler so both
+     * phases fail-fast on the most-constrained variable.
+     *
+     * For arrows whose available length is < 2 (no viable word fits), this
+     * returns them first with a virtual "domain size 0" — they need to be
+     * deactivated before the planner can make progress anyway.
+     */
+    fun nextPendingMRV(lengthPolicy: (Int) -> List<Int>): ClueArrow? {
+        var bestArrow: ClueArrow? = null
+        var bestSize = Int.MAX_VALUE
+        for ((cluePos, dirs) in arrowState) {
+            for ((dir, st) in dirs) {
+                if (st != ArrowState.PENDING) continue
+                val arrow = ClueArrow(cluePos, dir)
+                val available = availableLength(arrow)
+                val size = if (available < 2) 0 else lengthPolicy(available).size
+                if (size < bestSize) {
+                    bestSize = size
+                    bestArrow = arrow
+                    if (size == 0) return bestArrow
+                }
+            }
+        }
+        return bestArrow
+    }
+
+    /**
      * Cheap mid-search feasibility probe: does any clue cell have all of its
      * arrows DEACTIVATED with none MATERIALIZED? Such a cell is a permanent
      * dead-end — no future move can revive a deactivated arrow, so the
