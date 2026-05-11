@@ -93,6 +93,7 @@ object SlotPlanner {
         deadline: Long,
         clock: Clock = SystemClock,
         metrics: GenerationMetrics? = null,
+        lengthPolicy: (Int) -> List<Int> = ::validLengths,
     ): List<WordSlot>? {
         require(width >= 2 && height >= 2) { "grid must be at least 2×2, was $width×$height" }
         val state = PlanState(width, height)
@@ -100,7 +101,7 @@ object SlotPlanner {
             state.addClueCell(arrow.cluePosition)
             state.addArrow(arrow.cluePosition, arrow.direction)
         }
-        return solveVariable(state, random, deadline, clock, metrics)
+        return solveVariable(state, random, deadline, clock, metrics, lengthPolicy)
     }
 
     private fun solveVariable(
@@ -109,6 +110,7 @@ object SlotPlanner {
         deadline: Long,
         clock: Clock,
         metrics: GenerationMetrics?,
+        lengthPolicy: (Int) -> List<Int>,
     ): List<WordSlot>? {
         if (clock.currentTimeMillis() > deadline) return null
 
@@ -124,7 +126,7 @@ object SlotPlanner {
         if (available < 2) {
             val cp = state.checkpoint()
             state.deactivate(next.cluePosition, next.direction)
-            val result = solveVariable(state, random, deadline, clock, metrics)
+            val result = solveVariable(state, random, deadline, clock, metrics, lengthPolicy)
             if (result != null) return result
             state.rollback(cp)
             metrics?.let { it.slotPlanBacktracks++ }
@@ -138,7 +140,7 @@ object SlotPlanner {
         // 2. Bias toward shorter mid-range lengths (3..6) — typical mots-fléchés word
         //    sizes, and breaking long words into shorter sub-slots dramatically eases
         //    the filler's CSP (more candidates per slot, sparser intersection graph).
-        val candidates = orphanSafeLengths(next, available)
+        val candidates = orphanSafeLengths(next, available, lengthPolicy)
         val ordering = orderForBias(candidates, random)
         for (length in ordering) {
             val cp = state.checkpoint()
@@ -147,7 +149,7 @@ object SlotPlanner {
                 // with no recoverable arrow (all DEACTIVATED, none MATERIALIZED
                 // or PENDING). Cuts the search tree before we recurse another
                 // ~20 arrows deep just to discover the same dead-end.
-                val result = solveVariable(state, random, deadline, clock, metrics)
+                val result = solveVariable(state, random, deadline, clock, metrics, lengthPolicy)
                 if (result != null) return result
             }
             state.rollback(cp)
@@ -170,8 +172,9 @@ object SlotPlanner {
     private fun orphanSafeLengths(
         arrow: ClueArrow,
         available: Int,
+        lengthPolicy: (Int) -> List<Int>,
     ): List<Int> {
-        val all = validLengths(available)
+        val all = lengthPolicy(available)
         val isCornerRow1 =
             arrow.cluePosition.row.value == 0 &&
                 arrow.cluePosition.column.value == 0 &&
