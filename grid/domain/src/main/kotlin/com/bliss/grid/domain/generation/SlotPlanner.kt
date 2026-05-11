@@ -1,163 +1,24 @@
 package com.bliss.grid.domain.generation
 
 import com.bliss.grid.domain.model.Direction
-import com.bliss.grid.domain.model.Position
 
 /**
- * Translates a list of [ClueArrow]s into [WordSlot]s.
+ * Utility helpers for the slot-length policy used by [IntegratedSearch].
  *
- * v1: every slot runs full-length — from its first letter to the grid edge along
- * the arrow's step direction. No trailing clue cells, no length variation. This
- * yields the densest possible layout the skeleton allows (every cell beyond the
- * boundary clue cells is a letter), which is enough to validate the skeleton +
- * filler end-to-end before layering variable lengths on top.
+ * Historically this object owned a full two-phase planner (`planVariable` +
+ * `solveVariable`); that pipeline was replaced by the unified
+ * [IntegratedSearch] in the Wave 6 refactor. What remains here is the policy
+ * surface the integrated search calls into:
  *
- * v2 (planned): allow each slot to choose a length from `{M, M-1} ∪ [2, M-3]`
- * where M is the available cells, and insert trailing clue cells (which carry
- * their own arrows recursively) when the chosen length stops short of the edge.
+ * - [validLengths] — the canonical set of slot lengths derivable for a given
+ *   available run, before any corpus / orphan filtering.
+ * - [orphanSafeLengths] — same set, further restricted on the corner arrows
+ *   to avoid orphaning a uniquely-owned perpendicular letter cell.
+ * - [corpusAwareLengthPolicy] — factory for a `(Int) -> List<Int>` closure
+ *   over a [WordRepository] that filters to lengths with sufficient corpus
+ *   density.
  */
 object SlotPlanner {
-    /**
-     * For each arrow, build a slot whose length is the maximum number of cells
-     * that fit between the first letter and the grid edge along the step direction.
-     * Skips arrows whose first letter is already out of bounds (defensive — the
-     * skeleton should never produce these for w, h ≥ 2).
-     */
-    fun planFullLength(
-        arrows: List<ClueArrow>,
-        width: Int,
-        height: Int,
-    ): List<WordSlot> {
-        require(width >= 2 && height >= 2) { "grid must be at least 2×2, was $width×$height" }
-        return arrows.mapNotNull { arrow ->
-            val firstRow = arrow.cluePosition.row.value + arrow.direction.startOffset.row.value
-            val firstCol = arrow.cluePosition.column.value + arrow.direction.startOffset.column.value
-            if (firstRow !in 0 until height || firstCol !in 0 until width) return@mapNotNull null
-
-            val dr = arrow.direction.step.row.value
-            val dc = arrow.direction.step.column.value
-            val length = maxRunLength(firstRow, firstCol, dr, dc, width, height)
-            // Defensive: every skeleton-derived first letter sits at the edge of
-            // a run that's at least 2 cells long given w, h ≥ 2.
-            if (length < 2) return@mapNotNull null
-
-            WordSlot(arrow.cluePosition, arrow.direction, length)
-        }
-    }
-
-    /** Count cells along (dr, dc) starting from (row, col) that stay in bounds. */
-    private fun maxRunLength(
-        row: Int,
-        col: Int,
-        dr: Int,
-        dc: Int,
-        width: Int,
-        height: Int,
-    ): Int {
-        var n = 0
-        var r = row
-        var c = col
-        while (r in 0 until height && c in 0 until width) {
-            n++
-            r += dr
-            c += dc
-        }
-        return n
-    }
-
-    /** Set of cells used as letters across all slots — useful for grid-shape checks. */
-    fun letterCells(slots: List<WordSlot>): Set<Position> = slots.flatMap { it.letterPositions() }.toSet()
-
-    /**
-     * v2 — variable-length plan with coordinated structural mutation.
-     *
-     * Backtracking search over slot lengths. Each pending arrow is materialised at a length
-     * chosen from the valid set `{M, M-1} ∪ [2, M-3]` where M is the current available cells.
-     * If the chosen length stops short of the maximum, a trailing clue cell is placed and
-     * carries a continuation arrow in the same axis. Trailing clues may invalidate
-     * perpendicular skeleton arrows (their first letter / mid-path now sits on a clue cell);
-     * those arrows get deactivated when the planner picks them up later, leaving the
-     * boundary cell non-dual.
-     *
-     * Final plan is validated to ensure no orphan cells (untouched or dropped letter cells)
-     * and no dead clue cells (clue cells with no materialised arrow). Failure at validation
-     * triggers backtracking to the last length choice.
-     *
-     * Returns `null` if no consistent plan can be found within the deadline.
-     */
-    fun planVariable(
-        arrows: List<ClueArrow>,
-        width: Int,
-        height: Int,
-        random: kotlin.random.Random,
-        deadline: Long,
-        clock: Clock = SystemClock,
-        metrics: GenerationMetrics? = null,
-        lengthPolicy: (Int) -> List<Int> = ::validLengths,
-    ): List<WordSlot>? {
-        require(width >= 2 && height >= 2) { "grid must be at least 2×2, was $width×$height" }
-        val state = PlanState(width, height)
-        for (arrow in arrows) {
-            state.addClueCell(arrow.cluePosition)
-            state.addArrow(arrow.cluePosition, arrow.direction)
-        }
-        return solveVariable(state, random, deadline, clock, metrics, lengthPolicy)
-    }
-
-    private fun solveVariable(
-        state: PlanState,
-        random: kotlin.random.Random,
-        deadline: Long,
-        clock: Clock,
-        metrics: GenerationMetrics?,
-        lengthPolicy: (Int) -> List<Int>,
-    ): List<WordSlot>? {
-        if (clock.currentTimeMillis() > deadline) return null
-
-        val next =
-            state.nextPendingMRV(lengthPolicy) ?: run {
-                // No more pending arrows → check final consistency.
-                return if (state.validate().ok) state.slots.toList() else null
-            }
-
-        val available = state.availableLength(next)
-
-        // Arrow can't fit a 2+ letter word — only option is to deactivate it.
-        if (available < 2) {
-            val cp = state.checkpoint()
-            state.deactivate(next.cluePosition, next.direction)
-            val result = solveVariable(state, random, deadline, clock, metrics, lengthPolicy)
-            if (result != null) return result
-            state.rollback(cp)
-            metrics?.let { it.slotPlanBacktracks++ }
-            return null
-        }
-
-        // Length choice strategy:
-        // 1. Filter to orphan-safe lengths (corner row 1 / col 1 only allow even L —
-        //    odd L would deactivate a perpendicular skeleton arrow whose first letter
-        //    is uniquely owned and would orphan).
-        // 2. Bias toward shorter mid-range lengths (3..6) — typical mots-fléchés word
-        //    sizes, and breaking long words into shorter sub-slots dramatically eases
-        //    the filler's CSP (more candidates per slot, sparser intersection graph).
-        val candidates = orphanSafeLengths(next, available, lengthPolicy)
-        val ordering = orderForBias(candidates, random)
-        for (length in ordering) {
-            val cp = state.checkpoint()
-            if (state.materialize(next, length) && !state.hasDeadCluesNow()) {
-                // Forward-check: skip lengths that immediately leave a clue cell
-                // with no recoverable arrow (all DEACTIVATED, none MATERIALIZED
-                // or PENDING). Cuts the search tree before we recurse another
-                // ~20 arrows deep just to discover the same dead-end.
-                val result = solveVariable(state, random, deadline, clock, metrics, lengthPolicy)
-                if (result != null) return result
-            }
-            state.rollback(cp)
-            metrics?.let { it.slotPlanBacktracks++ }
-        }
-        return null
-    }
-
     /**
      * Lengths from [validLengths] further filtered for orphan-safety on the corner
      * arrows. The (0, 0) DOWN_RIGHT word (row 1) and (0, 0) RIGHT_DOWN word (col 1)
@@ -189,43 +50,24 @@ object SlotPlanner {
     }
 
     /**
-     * Order candidate lengths for backtracking, strictly descending. The planner tries
-     * the longest viable length per arrow first and backtracks downward only when a
-     * longer choice produces an unrecoverable plan.
-     *
-     * Rationale: longer words give the grid more visual weight and naturally fragment
-     * the remaining available-cell budget faster, which keeps the tail of the search
-     * tree on shorter slots with looser CSPs. Per-direction "variation" between H and
-     * V slots falls out for free — each arrow's `available` already differs by axis
-     * in a non-square grid, so an H-10 slot starts at 10 while a V-12 slot starts at
-     * 12 without any explicit direction-keyed logic.
-     *
-     * The `random` parameter is unused but kept for signature stability; reintroducing
-     * seeded variety later would not require a call-site change.
-     */
-    internal fun orderForBias(
-        candidates: List<Int>,
-        @Suppress("UNUSED_PARAMETER") random: kotlin.random.Random,
-    ): List<Int> = candidates.sortedDescending()
-
-    /**
-     * Lengths in `{M, M-1} ∪ [2, M-3]`. M-2 is forbidden — it leaves exactly 1 trailing
-     * cell after the trailing clue, which can't form a 2+ letter sub-word and would
-     * orphan that cell.
+     * Lengths in `{M, M-1} ∪ [2, M-3]`, returned in **strict descending order**
+     * so the integrated search tries the longest viable length per arrow first.
+     * M-2 is forbidden — it leaves exactly 1 trailing cell after the trailing
+     * clue, which can't form a 2+ letter sub-word and would orphan that cell.
      *
      * For small M:
-     *   M=2 → {2}                        (only full)
-     *   M=3 → {3, 2}                     (full or M-1)
-     *   M=4 → {4, 3}                     (full and M-1; M-2=2 forbidden)
-     *   M=5 → {5, 4, 2}                  (M-3 = 2 included)
-     *   M=10 → {10, 9, 7, 6, 5, 4, 3, 2} (everything except M-2 = 8)
+     *   M=2 → [2]                        (only full)
+     *   M=3 → [3, 2]                     (full or M-1)
+     *   M=4 → [4, 3]                     (full and M-1; M-2=2 forbidden)
+     *   M=5 → [5, 4, 2]                  (M-3 = 2 included)
+     *   M=10 → [10, 9, 7, 6, 5, 4, 3, 2] (everything except M-2 = 8)
      */
     internal fun validLengths(available: Int): List<Int> {
         require(available >= 2)
         val result = ArrayList<Int>(available)
         result += available
         if (available >= 3) result += available - 1
-        for (l in 2..(available - 3)) result += l
+        for (l in (available - 3) downTo 2) result += l
         return result
     }
 
@@ -235,11 +77,9 @@ object SlotPlanner {
      * [validLengths] list when filtering would leave nothing — better to try a
      * sparse length than to abandon the plan entirely.
      *
-     * Rationale: the planner previously committed to lengths blind to corpus
-     * density. A 10-letter slot whose pattern has ~5 corpus matches forced the
-     * filler to burn the rest of the deadline failing on a doomed CSP. With
-     * corpus-aware filtering, the planner prefers lengths with enough words to
-     * give the filler a wide branching factor.
+     * Rationale: a 10-letter slot whose pattern has ~5 corpus matches forces
+     * the integrated search into a doomed CSP. Corpus-aware filtering keeps
+     * commitments to lengths where the corpus offers a wide branching factor.
      *
      * The returned function is a stateless closure over the repository — safe
      * to reuse across calls, no caching needed (the underlying

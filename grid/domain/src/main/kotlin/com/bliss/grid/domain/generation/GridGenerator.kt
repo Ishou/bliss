@@ -55,24 +55,30 @@ class GridGenerator(
         val arrows = Skeleton.arrows(w, h)
         metrics?.skeletonMs = (clock.nanoTime() - skeletonStart) / 1_000_000
 
-        val slotPlanStart = clock.nanoTime()
-        val slots =
-            SlotPlanner.planVariable(arrows, w, h, random, deadline, clock, metrics, lengthPolicy) ?: run {
-                metrics?.slotPlanMs = (clock.nanoTime() - slotPlanStart) / 1_000_000
-                return null
-            }
-        metrics?.slotPlanMs = (clock.nanoTime() - slotPlanStart) / 1_000_000
-        if (slots.any { it.length < constraints.minWordLength }) return null
+        val searchStart = clock.nanoTime()
+        val state = PlanState(w, h)
+        for (arrow in arrows) {
+            state.addClueCell(arrow.cluePosition)
+            state.addArrow(arrow.cluePosition, arrow.direction)
+        }
+        val search =
+            IntegratedSearch(
+                repository = repository,
+                cooldownPolicy = cooldownPolicy,
+                clock = clock,
+                lengthPolicy = lengthPolicy,
+            )
+        val ok = search.solve(state, random, deadline, constraints.themeLimits, metrics)
+        // The integrated search interleaves planning and filling, so we attribute
+        // the entire wall-time to fillMs and leave slotPlanMs at 0 (no separate
+        // planning phase exists anymore).
+        metrics?.slotPlanMs = 0
+        metrics?.fillMs = (clock.nanoTime() - searchStart) / 1_000_000
+        if (!ok) return null
+        if (state.placements.any { it.word.text.length < constraints.minWordLength }) return null
+        val placements = state.placements
 
-        val fillStart = clock.nanoTime()
-        val placements =
-            SkeletonFiller(repository, cooldownPolicy, clock)
-                .fill(slots, random, deadline, constraints.themeLimits, metrics) ?: run {
-                metrics?.fillMs = (clock.nanoTime() - fillStart) / 1_000_000
-                return null
-            }
-        metrics?.fillMs = (clock.nanoTime() - fillStart) / 1_000_000
-        // The planner + filler enforce the invariants `Grid.fromPlacements` checks
+        // The integrated search enforces the invariants `Grid.fromPlacements` checks
         // (in-bounds, no duplicate words, no clue/letter overlap, consistent crossings).
         // Catch only `IllegalArgumentException` — what `require(...)` throws — so a real
         // programming bug (NPE, IndexOutOfBoundsException) propagates with its stack trace

@@ -50,8 +50,9 @@ internal class IntegratedSearch(
             return false
         }
 
-        // Strict descending — longer words preferred.
-        val lengths = SlotPlanner.orphanSafeLengths(next, available, lengthPolicy).sortedDescending()
+        // validLengths returns descending; orphanSafeLengths and corpus-aware
+        // policies are filter-only and preserve order. Longest words are tried first.
+        val lengths = SlotPlanner.orphanSafeLengths(next, available, lengthPolicy)
         for (length in lengths) {
             val pattern = state.patternFor(next, length)
             metrics?.let { it.fillRepoCalls++ }

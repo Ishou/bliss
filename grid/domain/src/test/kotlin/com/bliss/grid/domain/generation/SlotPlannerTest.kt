@@ -1,120 +1,91 @@
 package com.bliss.grid.domain.generation
 
 import assertk.assertThat
-import assertk.assertions.contains
+import assertk.assertions.containsExactly
 import assertk.assertions.isEqualTo
-import assertk.assertions.isTrue
 import com.bliss.grid.domain.model.Column
 import com.bliss.grid.domain.model.Direction
 import com.bliss.grid.domain.model.Position
 import com.bliss.grid.domain.model.Row
+import com.bliss.grid.domain.model.Word
 import org.junit.jupiter.api.Test
 
 class SlotPlannerTest {
     @Test
-    fun `full-length slot for 0,0 DOWN_RIGHT spans entire row 1`() {
-        val slots = SlotPlanner.planFullLength(Skeleton.arrows(10, 10), 10, 10)
-        val row1Slot =
-            slots.single {
-                it.cluePosition == pos(0, 0) && it.direction == Direction.DOWN_RIGHT
+    fun `validLengths returns descending so the search tries longer lengths first`() {
+        // M=10 → [10, 9, 7, 6, 5, 4, 3, 2] (M-2=8 forbidden, rest descending)
+        assertThat(SlotPlanner.validLengths(10)).containsExactly(10, 9, 7, 6, 5, 4, 3, 2)
+    }
+
+    @Test
+    fun `validLengths for small M only includes the full length and M-1`() {
+        assertThat(SlotPlanner.validLengths(2)).containsExactly(2)
+        assertThat(SlotPlanner.validLengths(3)).containsExactly(3, 2)
+        assertThat(SlotPlanner.validLengths(4)).containsExactly(4, 3)
+        // M=5 → [5, 4, 2] — M-3 = 2 included, M-2 = 3 forbidden
+        assertThat(SlotPlanner.validLengths(5)).containsExactly(5, 4, 2)
+    }
+
+    @Test
+    fun `corpusAwareLengthPolicy filters lengths below the corpus floor, preserving descending order`() {
+        val repo =
+            object : WordRepository {
+                override fun findByLength(length: Int): List<Word> = emptyList()
+
+                override fun findByLengthAndPattern(
+                    length: Int,
+                    pattern: Map<Int, Char>,
+                ): List<Word> = emptyList()
+
+                override fun countByLength(length: Int): Int = if (length <= 5) 1000 else 10
+
+                override fun containsLemma(text: String): Boolean = false
             }
-        assertThat(row1Slot.length).isEqualTo(10)
-        assertThat(row1Slot.firstLetter).isEqualTo(pos(1, 0))
-        assertThat(row1Slot.letterPositions().last()).isEqualTo(pos(1, 9))
+
+        val policy = SlotPlanner.corpusAwareLengthPolicy(repo, minCorpus = 100)
+        // M=10 → validLengths = [10, 9, 7, 6, 5, 4, 3, 2]. minCorpus=100 keeps
+        // only lengths ≤ 5, preserving descending order: [5, 4, 3, 2].
+        assertThat(policy(10)).containsExactly(5, 4, 3, 2)
     }
 
     @Test
-    fun `full-length slot for 0,0 RIGHT_DOWN spans entire col 1`() {
-        val slots = SlotPlanner.planFullLength(Skeleton.arrows(10, 10), 10, 10)
-        val col1Slot =
-            slots.single {
-                it.cluePosition == pos(0, 0) && it.direction == Direction.RIGHT_DOWN
+    fun `corpusAwareLengthPolicy falls back to validLengths when filtering wipes everything`() {
+        val sparseRepo =
+            object : WordRepository {
+                override fun findByLength(length: Int): List<Word> = emptyList()
+
+                override fun findByLengthAndPattern(
+                    length: Int,
+                    pattern: Map<Int, Char>,
+                ): List<Word> = emptyList()
+
+                override fun countByLength(length: Int): Int = 0 // nothing meets the floor
+
+                override fun containsLemma(text: String): Boolean = false
             }
-        assertThat(col1Slot.length).isEqualTo(10)
-        assertThat(col1Slot.firstLetter).isEqualTo(pos(0, 1))
-        assertThat(col1Slot.letterPositions().last()).isEqualTo(pos(9, 1))
+
+        val policy = SlotPlanner.corpusAwareLengthPolicy(sparseRepo, minCorpus = 100)
+        // No length has 100+ words, so fall back to the full validLengths set.
+        assertThat(policy(5)).isEqualTo(SlotPlanner.validLengths(5))
     }
 
     @Test
-    fun `full-length slot for 2,0 RIGHT_DOWN runs from row 0 in col 3 for 10 rows`() {
-        // RIGHT_DOWN clue at (row=0, col=2): word starts at (row=0, col=3) flowing down.
-        val slots = SlotPlanner.planFullLength(Skeleton.arrows(10, 10), 10, 10)
-        val s = slots.single { it.cluePosition == pos(0, 2) && it.direction == Direction.RIGHT_DOWN }
-        assertThat(s.length).isEqualTo(10)
-        assertThat(s.firstLetter).isEqualTo(pos(0, 3))
+    fun `orphanSafeLengths restricts (0,0) DOWN_RIGHT to full length or even trails`() {
+        val arrow = ClueArrow(Position(Row(0), Column(0)), Direction.DOWN_RIGHT)
+        // available = 10 → validLengths = [10, 9, 7, 6, 5, 4, 3, 2].
+        // Corner restriction: keep 10 (full) or even values, preserving
+        // descending order: [10, 6, 4, 2].
+        val result = SlotPlanner.orphanSafeLengths(arrow, available = 10, lengthPolicy = ::dummyValidLengths)
+        assertThat(result).containsExactly(10, 6, 4, 2)
     }
 
     @Test
-    fun `full-length slot for 2,0 DOWN runs from row 1 in col 2 for 9 rows`() {
-        // DOWN clue at (row=0, col=2): word starts at (row=1, col=2) flowing down.
-        val slots = SlotPlanner.planFullLength(Skeleton.arrows(10, 10), 10, 10)
-        val s = slots.single { it.cluePosition == pos(0, 2) && it.direction == Direction.DOWN }
-        assertThat(s.length).isEqualTo(9)
-        assertThat(s.firstLetter).isEqualTo(pos(1, 2))
+    fun `orphanSafeLengths leaves non-corner arrows unchanged`() {
+        val arrow = ClueArrow(Position(Row(0), Column(4)), Direction.DOWN)
+        val result = SlotPlanner.orphanSafeLengths(arrow, available = 10, lengthPolicy = ::dummyValidLengths)
+        // Non-corner: no filtering applied beyond what the lengthPolicy returns.
+        assertThat(result).isEqualTo(SlotPlanner.validLengths(10))
     }
 
-    @Test
-    fun `full-length slot for 0,2 RIGHT runs from col 1 in row 2 for 9 cols`() {
-        // RIGHT clue at (row=2, col=0): word starts at (row=2, col=1) flowing right.
-        val slots = SlotPlanner.planFullLength(Skeleton.arrows(10, 10), 10, 10)
-        val s = slots.single { it.cluePosition == pos(2, 0) && it.direction == Direction.RIGHT }
-        assertThat(s.length).isEqualTo(9)
-        assertThat(s.firstLetter).isEqualTo(pos(2, 1))
-    }
-
-    @Test
-    fun `every letter cell of a 10x10 plan stays in bounds and is not a clue cell`() {
-        val w = 10
-        val h = 10
-        val arrows = Skeleton.arrows(w, h)
-        val clueCells = arrows.map { it.cluePosition }.toSet()
-        val slots = SlotPlanner.planFullLength(arrows, w, h)
-        val letters = SlotPlanner.letterCells(slots)
-
-        for (p in letters) {
-            assertThat(p.row.value in 0 until h).isTrue()
-            assertThat(p.column.value in 0 until w).isTrue()
-        }
-        assertThat(clueCells.intersect(letters).isEmpty()).isTrue()
-    }
-
-    @Test
-    fun `10x10 plan covers every non-clue cell at least once`() {
-        // With v1 (full length), the union of letter cells across all slots
-        // must equal the grid minus the boundary clue cells.
-        val w = 10
-        val h = 10
-        val arrows = Skeleton.arrows(w, h)
-        val clueCells = arrows.map { it.cluePosition }.toSet()
-        val slots = SlotPlanner.planFullLength(arrows, w, h)
-        val letters = SlotPlanner.letterCells(slots)
-        val expectedLetters =
-            (0 until h)
-                .flatMap { r ->
-                    (0 until w).map { c -> Position(Row(r), Column(c)) }
-                }.filter { it !in clueCells }
-                .toSet()
-        assertThat(letters).isEqualTo(expectedLetters)
-    }
-
-    @Test
-    fun `odd-width 11x10 single DOWN clue produces a slot of length 9 in col 10`() {
-        val slots = SlotPlanner.planFullLength(Skeleton.arrows(11, 10), 11, 10)
-        val s = slots.single { it.cluePosition == pos(0, 10) && it.direction == Direction.DOWN }
-        assertThat(s.length).isEqualTo(9) // rows 1..9
-        assertThat(s.firstLetter).isEqualTo(pos(1, 10))
-    }
-
-    @Test
-    fun `odd-height 10x11 single RIGHT clue produces a slot of length 9 in row 10`() {
-        val slots = SlotPlanner.planFullLength(Skeleton.arrows(10, 11), 10, 11)
-        val s = slots.single { it.cluePosition == pos(10, 0) && it.direction == Direction.RIGHT }
-        assertThat(s.length).isEqualTo(9) // cols 1..9
-        assertThat(s.firstLetter).isEqualTo(pos(10, 1))
-    }
-
-    private fun pos(
-        row: Int,
-        col: Int,
-    ): Position = Position(Row(row), Column(col))
+    private fun dummyValidLengths(available: Int): List<Int> = SlotPlanner.validLengths(available)
 }
