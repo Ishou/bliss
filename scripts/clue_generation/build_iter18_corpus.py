@@ -245,22 +245,6 @@ def build_sft() -> dict[str, list[dict]]:
 # --------------------------------------------------------------------- #
 # DPO corpus build                                                      #
 # --------------------------------------------------------------------- #
-_INFINITIVE_RE = re.compile(r"^(s(?:e|')\s*)?([A-ZÀ-Ÿ][a-zà-ÿ]+(?:er|ir|re|oir))\b")
-
-
-def _extract_verb_head(clue: str) -> str | None:
-    """Reused from build_iter17_dpo_corpus.py — pulls a leading verb-
-    infinitive (with reflexive proclitic, if present) from a coord clue."""
-    m = _INFINITIVE_RE.match(clue.strip())
-    if not m:
-        return None
-    proclitic = (m.group(1) or "").strip()
-    verb = m.group(2)
-    if proclitic:
-        return f"{proclitic.capitalize().replace('S ', 'Se ').strip()} {verb.lower()}".strip()
-    return verb
-
-
 def _load_iter17_dpo_pairs() -> list[dict]:
     """Re-extract the iter17 DPO pairs in the new schema. Reading the
     iter17 jsonl directly preserves the iter14 base + iter17 coord-long
