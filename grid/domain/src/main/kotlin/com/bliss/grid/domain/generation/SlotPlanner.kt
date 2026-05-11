@@ -169,7 +169,7 @@ object SlotPlanner {
      * deactivated perpendicular arrows leave bare letter cells, which the loose
      * mots-fléchés model accepts.
      */
-    private fun orphanSafeLengths(
+    internal fun orphanSafeLengths(
         arrow: ClueArrow,
         available: Int,
         lengthPolicy: (Int) -> List<Int>,
