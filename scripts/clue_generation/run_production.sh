@@ -5,6 +5,10 @@
 # Resume-safe: generate_clues_lora.py persists incrementally so interrupting
 # is fine — re-run picks up where it stopped.
 #
+# Required env vars:
+#   GRAMMALECTE_LEX   path to lexique-grammalecte-fr-v7.7.txt
+#                     download: https://grammalecte.net/download.php?prj=fr
+#
 # Output:
 #   data/eval/production/lemma_clues_raw.csv      - all generated (with filter score)
 #   data/eval/production/lemma_clues_shipped.csv  - score >= threshold
@@ -34,7 +38,7 @@ PY=.venv/bin/python
 if [[ ! -f "$SAMPLE_JSONL" ]]; then
   echo "[1/3] sampling top-$X per length (4-15), length-interleaved"
   $PY <<PYEOF
-import csv, json, sys
+import csv, json, os, sys
 from pathlib import Path
 from collections import defaultdict
 
@@ -46,10 +50,12 @@ sys.path.insert(0, "scripts/eval")
 # inline sampler never emitted (iter17 diagnostic confirmed this is
 # the cause of the cross-lingual leak on cane/user/clair).
 from build_surface_clues import POS_PRECEDENCE
-from morphology_index import MorphologyIndex
 from build_surface_clues import lemma_pos_freq
 
-LEX_PATH = Path("$HOME/Downloads/grammalecte/lexique-grammalecte-fr-v7.7.txt")
+_lex_env = os.environ.get("GRAMMALECTE_LEX")
+if not _lex_env:
+    sys.exit("Error: set GRAMMALECTE_LEX to the path of lexique-grammalecte-fr-v7.7.txt")
+LEX_PATH = Path(_lex_env)
 print("  loading lemma_pos_freq for prompt POS tagging…")
 lemma_pos = lemma_pos_freq(LEX_PATH)
 # best_pos[lemma] = POS with highest grammalecte Total occurrences for this lemma.
