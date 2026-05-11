@@ -1,5 +1,5 @@
 import { createRoute, useNavigate, useRouter } from '@tanstack/react-router';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type React from 'react';
 import { css } from 'styled-system/css';
 import { type Position, type Puzzle } from '@/domain';
@@ -475,11 +475,29 @@ const skeletonButtonStyles = css({
 });
 
 function HomeSkeleton() {
+  // TanStack Router's executeHead runs after loaders resolve, so the
+  // route's head() (which sets <title>) never fires while we render in
+  // pending state. Set the title imperatively here so the prerender
+  // script's title check passes and crawlers / share previews still
+  // see the correct page title. Mirrors RootNotFound (__root.tsx).
+  useLayoutEffect(() => {
+    const r = INDEXABLE_ROUTES.find((x) => x.path === '/grille');
+    if (!r) return;
+    const previous = document.title;
+    document.title = r.title;
+    return () => { document.title = previous; };
+  }, []);
   // 100 placeholder cells (10×10) reads cheaply on first paint and matches
   // the typical puzzle density — the real grid replaces it in place.
   const cells = Array.from({ length: 100 });
   return (
     <PageShell>
+      {/* H1 also lives on the loaded HomePage; mirrored here so the
+        * prerendered skeleton body (which now ships in dist/grille/index.html
+        * via the two-pass prerender) carries the SEO target phrase. */}
+      <h1 lang="fr" className={srOnly}>
+        Grille de mots fléchés du jour — <span lang="en">WordSparrow</span>
+      </h1>
       <div className={`${skeletonPulse} ${skeletonToolbarStyles}`} aria-hidden />
       <div className={gridPanelStyles}>
         <div className={skeletonGridStyles} aria-hidden>
@@ -575,6 +593,12 @@ export const Route = createRoute({
     search.tour === 1 || search.tour === '1' ? { tour: 1 } : {},
   loader: ({ context }): Promise<Puzzle> => context.puzzleRepository.fetchDaily(),
   component: HomePage,
+  // pendingMs: TanStack Router defaults to Infinity (pendingComponent
+  // never renders). 200 ms is the sweet spot — fast navs (<200 ms)
+  // skip the skeleton entirely; slow navs / cold loads show it. The
+  // prerender script also relies on this firing (it waits for the
+  // skeleton's status sentinel before dumping HTML).
+  pendingMs: 200,
   pendingComponent: HomeSkeleton,
   // `messageForError` returns French copy for known LobbyClientError
   // kinds and a generic French fallback for everything else — never the

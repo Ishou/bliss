@@ -79,16 +79,7 @@ def main() -> None:
     parser.add_argument("--batch-size", type=int, default=16)
     parser.add_argument("--max-tokens", type=int, default=24)
     parser.add_argument("--temp", type=float, default=0.3)
-    # Cross-lingual anchor (post-iter17 diagnostic, 2026-05-11).
-    # Prepends a French system message via the chat template's
-    # <|SYSTEM_TOKEN|> slot. command-r 08-2024 supports this — see
-    # https://huggingface.co/CohereForAI/c4ai-command-r-08-2024 chat_template.
-    # Combined with lowercased lemmas in the prompt (vs the historical
-    # UPPERCASE format) this flips the hardest English-leak cases:
-    # `user → Ébrécher` (was Consommateur), `errer → Vagabonder`
-    # (was Égarer), `clair → Net` (was Évidemment), `triple → Multiplié
-    # par trois` (was Voyage à trois). `cane` remains untouchable
-    # without a fresh SFT base (iter19 target).
+    # Uppercase tokens activate an English-headline prior; lowercase + system message anchors French.
     parser.add_argument(
         "--system-prompt",
         default=("Tu es un générateur de définitions pour mots fléchés en français. "

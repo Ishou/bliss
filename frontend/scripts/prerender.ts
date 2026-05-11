@@ -21,16 +21,15 @@ import { INDEXABLE_ROUTES } from '../src/ui/seo/routeManifest.ts';
 
 const DIST = resolve(import.meta.dirname, '../dist');
 
-// Canonical example payload for `GET /v1/puzzles/daily` (and
-// `GET /v1/puzzles/{puzzleId}`). Mirrors the OpenAPI example committed
-// next to the spec — same fixture MSW seeds preview deploys with — so
-// the prerender renders against the exact wire shape the contract
-// promises. Read once at module load; reused across every page.
-const PUZZLE_FIXTURE_PATH = resolve(
-  import.meta.dirname,
-  '../../grid/api/examples/get-puzzle-200.json',
-);
-const PUZZLE_FIXTURE_BODY = readFileSync(PUZZLE_FIXTURE_PATH, 'utf8');
+// Routes whose loader fetches the daily puzzle. Their prerendered HTML
+// must NOT bake the fixture-puzzle body — the real puzzle (size,
+// number, difficulty, persisted progress) differs, and on F5 the user
+// would see a fixture-then-real swap. We render these in two passes
+// (see `prerenderRoute`): pass A loads with the fixture so head() fires
+// and produces the real meta / OG / JSON-LD; pass B leaves the puzzle
+// endpoint hanging so the route's pendingComponent (skeleton) renders;
+// we graft pass A's <head> onto pass B's body.
+const PUZZLE_LOADING_ROUTES: ReadonlySet<string> = new Set(['/', '/grille']);
 
 const MIME: Record<string, string> = {
   '.html': 'text/html; charset=utf-8',
@@ -107,34 +106,33 @@ interface PrerenderError {
   readonly reason: string;
 }
 
-async function prerenderRoute(
+// Canonical example payload for `GET /v1/puzzles/daily` (and
+// `GET /v1/puzzles/{puzzleId}`). Mirrors the OpenAPI example committed
+// next to the spec — same fixture MSW seeds preview deploys with — so
+// the loader resolves and head() can fire (head() runs after the loader
+// per TanStack Router's executeHead order). For puzzle-loading routes
+// we then do a second pass with the endpoint hanging so the body is the
+// skeleton; we merge the first pass's <head> over the second pass's body.
+const PUZZLE_FIXTURE_PATH = resolve(
+  import.meta.dirname,
+  '../../grid/api/examples/get-puzzle-200.json',
+);
+const PUZZLE_FIXTURE_BODY = readFileSync(PUZZLE_FIXTURE_PATH, 'utf8');
+
+type PuzzleStub = 'fixture' | 'hang';
+
+async function loadRoute(
   context: BrowserContext,
   baseUrl: string,
   route: { path: string; title: string },
-): Promise<PrerenderError | null> {
+  puzzleStub: PuzzleStub,
+): Promise<string> {
   const page = await context.newPage();
   try {
-    // Routes with a data loader (`/`, `/grille`) call
-    // `puzzleRepository.fetchDaily()` against the real prod API host
-    // (`VITE_GRID_API_URL` = `https://api.wordsparrow.io`). Two things
-    // we need from the network layer here:
-    //   1. Mock `/v1/puzzles/**` with a realistic payload so the loader
-    //      resolves and the *real* component renders. Otherwise the
-    //      route's `errorComponent` mounts ("Une erreur est survenue")
-    //      and that error markup gets baked into `dist/index.html` and
-    //      `dist/grille/index.html` — bad SEO and a guaranteed
-    //      hydration mismatch when the client loader succeeds for real.
-    //   2. Fail every other external request fast (Matomo, OTel, any
-    //      future analytics endpoint). Letting them hang holds the
-    //      page open; a synthetic 503 lets the SDK no-op.
-    // Local static-server requests (the bundle, sitemap, OG image,
-    // etc.) pass through untouched.
-    //
-    // Order matters: Playwright uses LIFO dispatch — the last-registered
-    // route handler has highest priority. We register the broad catch-all
-    // first (lowest priority) and the puzzle stub second (highest priority),
-    // so puzzle requests are fulfilled with the fixture before the
-    // catch-all can return 503.
+    // Fail every external request fast (Matomo, OTel, any future
+    // analytics endpoint). Letting them hang holds the page open; a
+    // synthetic 503 lets the SDK no-op. Local static-server requests
+    // (the bundle, sitemap, OG image, etc.) pass through untouched.
     await page.route('**/*', (route_) => {
       const url = route_.request().url();
       if (url.startsWith(baseUrl)) {
@@ -146,26 +144,98 @@ async function prerenderRoute(
         body: '{"error":"prerender-no-network"}',
       });
     });
-    await page.route('**/v1/puzzles/**', (route_) =>
-      route_.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: PUZZLE_FIXTURE_BODY,
-      }),
-    );
+    // Order matters: Playwright uses LIFO dispatch — last-registered
+    // route handler has highest priority. The puzzle stub runs before
+    // the broader catch-all above.
+    if (puzzleStub === 'fixture') {
+      await page.route('**/v1/puzzles/**', (route_) =>
+        route_.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: PUZZLE_FIXTURE_BODY,
+        }),
+      );
+    } else {
+      await page.route('**/v1/puzzles/**', () => {
+        // Intentional no-op: leave the request hanging so the route's
+        // pendingComponent (skeleton) renders.
+      });
+    }
     await page.goto(`${baseUrl}${route.path}`, {
       waitUntil: 'domcontentloaded',
       timeout: 30_000,
     });
-    // Wait until <HeadContent /> has updated document.title to the
-    // route's expected value. If hydration fails or the route's head()
-    // is wrong, this throws and we fail the build.
+    // Wait for the route to settle. Fixture pass: head() fires after
+    // the loader resolves and updates <title>. Hang pass: the
+    // skeleton's imperative useLayoutEffect sets the title (head() never
+    // fires while the loader pends). Either way, title === expected
+    // signals the page is ready to dump.
     await page.waitForFunction(
       (expected) => document.title === expected,
       route.title,
       { timeout: 5_000 },
     );
-    const html = await page.content();
+    if (puzzleStub === 'hang') {
+      // Belt-and-braces: ensure the skeleton's status sentinel
+      // ("Chargement…" / "Chargement de la grille…") is in the DOM
+      // before dumping. pendingComponent only mounts after TanStack
+      // Router's pendingMs elapses (200 ms on these routes).
+      await page.waitForSelector('main [role="status"]', { timeout: 5_000 });
+    }
+    return await page.content();
+  } finally {
+    await page.close();
+  }
+}
+
+// Graft the fully-loaded route's head metadata onto the skeleton body so
+// the prerendered HTML keeps complete SEO + share-preview tags without
+// baking the fixture grid. Two layers to preserve:
+//   1. The <head> block (title, meta, link, canonical, OG/Twitter cards).
+//   2. <script type="application/ld+json"> tags. React 19 hoists <title>
+//      / <meta> / <link> rendered inline up to <head>, but does NOT
+//      hoist inline <script>, so JSON-LD blocks stay in the body where
+//      <HeadContent /> renders them (inside #root). Without this second
+//      pass we silently lose Game / BreadcrumbList / Organization
+//      schema on /grille and /.
+function mergeHeadIntoBody(metaHtml: string, bodyHtml: string): string {
+  const headMatch = /<head[^>]*>([\s\S]*?)<\/head>/.exec(metaHtml);
+  if (!headMatch) {
+    throw new Error('mergeHeadIntoBody: no <head> in source HTML');
+  }
+  let merged = bodyHtml.replace(/<head[^>]*>[\s\S]*?<\/head>/, () => headMatch[0]);
+  const ldJsonRe = /<script\s+type="application\/ld\+json"[^>]*>[\s\S]*?<\/script>/g;
+  const ldJsonScripts = metaHtml.match(ldJsonRe);
+  if (ldJsonScripts && ldJsonScripts.length > 0) {
+    // Inject just inside #root so the scripts are part of the
+    // hydratable React tree (matches where HeadContent emitted them in
+    // pass A). React replaces them on hydration with the same content,
+    // so no mismatch warning fires.
+    merged = merged.replace(
+      /<div id="root">/,
+      () => `<div id="root">${ldJsonScripts.join('')}`,
+    );
+  }
+  return merged;
+}
+
+async function prerenderRoute(
+  context: BrowserContext,
+  baseUrl: string,
+  route: { path: string; title: string },
+): Promise<PrerenderError | null> {
+  try {
+    const fullHtml = await loadRoute(context, baseUrl, route, 'fixture');
+    let html = fullHtml;
+    if (PUZZLE_LOADING_ROUTES.has(route.path)) {
+      // Second pass: render the skeleton (hang the puzzle endpoint),
+      // then graft the first pass's <head> onto it. This avoids baking
+      // the fixture grid into the prerendered HTML — on F5 the user
+      // would otherwise see a fixture-then-real grid swap — while
+      // keeping the head metadata that crawlers / share previews need.
+      const skeletonHtml = await loadRoute(context, baseUrl, route, 'hang');
+      html = mergeHeadIntoBody(fullHtml, skeletonHtml);
+    }
     const outPath = route.path === '/'
       ? join(DIST, 'index.html')
       : join(DIST, route.path.slice(1), 'index.html');
@@ -175,8 +245,6 @@ async function prerenderRoute(
     return null;
   } catch (err) {
     return { path: route.path, reason: (err as Error).message };
-  } finally {
-    await page.close();
   }
 }
 

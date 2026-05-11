@@ -1,5 +1,5 @@
 import { createRoute, useNavigate } from '@tanstack/react-router';
-import { useState } from 'react';
+import { useLayoutEffect, useState } from 'react';
 import { css } from 'styled-system/css';
 import type { Puzzle } from '@/domain';
 import { LobbyClientError } from '@/application/game';
@@ -437,12 +437,88 @@ function AccueilStatus({ role, text }: { role: 'status' | 'alert'; text: string 
   );
 }
 
+// Card-shaped skeleton for the pending state. Mirrors the two-card grid
+// (Grille du jour + Multijoueur) so the layout doesn't jump when the
+// loader resolves. Used as the route's pendingComponent AND baked into
+// the prerendered HTML — the prerender script leaves the puzzle endpoint
+// hanging so this skeleton dumps to dist/index.html instead of a
+// fixture-puzzle render that would otherwise display stale cosmetic data
+// (puzzle number, difficulty, "Reprendre" vs "Commencer") on F5.
+const skeletonPulse = css({
+  bg: 'surfaceElevated',
+  borderRadius: '6px',
+  animation: 'wordsparrow-skeleton-pulse 1.4s ease-in-out infinite',
+});
+
+const skeletonCardStyles = css({
+  bg: 'surface',
+  borderRadius: 'md',
+  padding: 'lg',
+  border: '1px solid token(colors.border)',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 'md',
+  // Approximate the real card height so the swap is visually neutral.
+  minHeight: '220px',
+});
+
+const skeletonTitleStyles = css({ width: '50%', height: '24px' });
+const skeletonSubtitleStyles = css({ width: '70%', height: '14px' });
+const skeletonRowStyles = css({ width: '100%', height: '32px' });
+const skeletonButtonStyles = css({
+  width: '100%',
+  height: '40px',
+  marginTop: 'auto',
+});
+
+function AccueilSkeleton() {
+  // TanStack Router's executeHead runs after loaders resolve, so the
+  // route's head() (which sets <title>) never fires while we render in
+  // pending state. Set the title imperatively here so the prerender
+  // script's title check passes and crawlers / share previews still
+  // see the correct page title. Mirrors RootNotFound (__root.tsx).
+  useLayoutEffect(() => {
+    const r = INDEXABLE_ROUTES.find((x) => x.path === '/');
+    if (!r) return;
+    const previous = document.title;
+    document.title = r.title;
+    return () => { document.title = previous; };
+  }, []);
+  return (
+    <ContentPage>
+      <h1 lang="fr" className={srOnly}>
+        Mots fléchés français en ligne — <span lang="en">WordSparrow</span>
+      </h1>
+      <div className={cardsGridStyles}>
+        <section className={skeletonCardStyles} aria-hidden>
+          <div className={`${skeletonPulse} ${skeletonTitleStyles}`} />
+          <div className={`${skeletonPulse} ${skeletonSubtitleStyles}`} />
+          <div className={`${skeletonPulse} ${skeletonRowStyles}`} />
+          <div className={`${skeletonPulse} ${skeletonButtonStyles}`} />
+        </section>
+        <section className={skeletonCardStyles} aria-hidden>
+          <div className={`${skeletonPulse} ${skeletonTitleStyles}`} />
+          <div className={`${skeletonPulse} ${skeletonSubtitleStyles}`} />
+          <div className={`${skeletonPulse} ${skeletonButtonStyles}`} />
+        </section>
+      </div>
+      <p className={srOnly} role="status">Chargement…</p>
+    </ContentPage>
+  );
+}
+
 export const Route = createRoute({
   getParentRoute: () => RootRoute,
   path: '/',
   loader: ({ context }): Promise<Puzzle> => context.puzzleRepository.fetchDaily(),
   component: AccueilPage,
-  pendingComponent: () => <AccueilStatus role="status" text="Chargement…" />,
+  // pendingMs: TanStack Router defaults to Infinity (pendingComponent
+  // never renders). 200 ms is the sweet spot — fast navs (<200 ms)
+  // skip the skeleton entirely; slow navs / cold loads show it. The
+  // prerender script also relies on this firing (it waits for the
+  // skeleton's status sentinel before dumping HTML).
+  pendingMs: 200,
+  pendingComponent: AccueilSkeleton,
   // Daily-puzzle loader throws on transport / decode failures. Not a
   // LobbyClientError (that's the multiplayer paths); messageForError
   // falls through to its generic French fallback rather than leaking
