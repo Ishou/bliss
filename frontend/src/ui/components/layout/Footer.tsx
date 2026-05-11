@@ -1,6 +1,5 @@
 import { Link } from '@tanstack/react-router';
 import { css } from 'styled-system/css';
-import { PAGE_MAX_WIDTH } from './constants';
 
 const footerOuterStyles = css({
   width: '100%',
@@ -10,7 +9,7 @@ const footerOuterStyles = css({
 
 const footerInnerStyles = css({
   width: '100%',
-  maxWidth: PAGE_MAX_WIDTH,
+  maxWidth: 'pageMaxWidth',
   margin: '0 auto',
   paddingInline: { base: '16px', md: '20px' },
   paddingBlock: { base: '12px', md: '16px' },

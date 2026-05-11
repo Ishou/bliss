@@ -159,6 +159,14 @@ export default defineConfig({
         black: { value: '800' },
       },
       radii: { sm: { value: '4px' }, md: { value: '8px' } },
+      // Page-shell content cap (ADR-0036). Single source of truth for the
+      // 720 px desktop ceiling shared by AppHeader, Footer, and both Page
+      // variants. Lived in a JS constant before — Panda's static extractor
+      // can't resolve cross-file `import` constants, so `maxWidth: PAGE_MAX_WIDTH`
+      // silently dropped from the emitted CSS and the cap was lost on desktop.
+      sizes: {
+        pageMaxWidth: { value: '720px' },
+      },
       shadows: {
         // Subtle near-black glow under floating surfaces (toggle,
         // dialog, dropdown). The rgba is intentionally not bound to

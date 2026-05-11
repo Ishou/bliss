@@ -3,7 +3,6 @@ export { Footer } from './Footer';
 export {
   ContentPage,
   ViewportPage,
-  PAGE_MAX_WIDTH,
   type ContentPageProps,
   type ViewportPageProps,
 } from './Page';

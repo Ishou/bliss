@@ -1,6 +1,5 @@
-import { useRouterState } from '@tanstack/react-router';
+import { Link, useNavigate, useRouterState } from '@tanstack/react-router';
 import { css, cx } from 'styled-system/css';
-import { PAGE_MAX_WIDTH } from './constants';
 import { Lockup } from '@/ui/components/brand';
 import { OverflowMenu } from '@/ui/components/primitives';
 import { HamburgerIcon } from '@/ui/components/icons';
@@ -21,7 +20,9 @@ import { HamburgerIcon } from '@/ui/components/icons';
 interface NavLink {
   readonly id: string;
   readonly label: string;
-  readonly href: string;
+  // Narrowed to known route paths so <Link to=...> and navigate({ to })
+  // type-check without a cast.
+  readonly href: '/grille' | '/aide';
 }
 
 const NAV_LINKS: readonly NavLink[] = [
@@ -83,7 +84,7 @@ const skipLinkStyles = css({
 
 const headerInnerStyles = css({
   width: '100%',
-  maxWidth: PAGE_MAX_WIDTH,
+  maxWidth: 'pageMaxWidth',
   margin: '0 auto',
   // 44 px mobile / 54 px desktop, per the brief.
   height: { base: '44px', md: '54px' },
@@ -176,7 +177,7 @@ function skipLinkLabelForPath(pathname: string): string {
 // Pathname is normalized by stripping a trailing slash (except for `/`
 // itself). Cloudflare Pages serves a prerendered `dist/grille/index.html`
 // for `/grille` and canonicalizes the URL to `/grille/` on hard refresh,
-// while SPA navigation via `<a href="/grille">` keeps the slash off.
+// while SPA navigation via <Link to="/grille"> keeps the slash off.
 // Without normalization the underline silently drops after a hard refresh.
 export function activeIdForPath(pathname: string): string | undefined {
   const normalized = pathname.length > 1 && pathname.endsWith('/')
@@ -188,6 +189,11 @@ export function activeIdForPath(pathname: string): string | undefined {
 export function AppHeader({ activeNavId }: AppHeaderProps = {}) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const resolvedActiveId = activeNavId ?? activeIdForPath(pathname);
+  // Client-side navigation for header links. Plain `<a href>` and
+  // `window.location.assign` triggered a full page reload, which paints
+  // the prerendered HTML, then re-hydrates — visible as a flash on every
+  // header click. <Link> + navigate keep the SPA in-process.
+  const navigate = useNavigate();
   return (
     <header className={headerOuterStyles} role="banner">
       <a href="#main-content" className={skipLinkStyles}>
@@ -195,8 +201,8 @@ export function AppHeader({ activeNavId }: AppHeaderProps = {}) {
       </a>
       <div className={headerInnerStyles}>
         <div className={lockupSlotStyles}>
-        <a
-          href="/"
+        <Link
+          to="/"
           aria-label="Accueil WordSparrow"
           className={css({
             display: 'inline-flex',
@@ -215,20 +221,20 @@ export function AppHeader({ activeNavId }: AppHeaderProps = {}) {
           <span className={css({ display: { base: 'none', md: 'inline-flex' } })}>
             <Lockup size="desktop" />
           </span>
-        </a>
+        </Link>
       </div>
       <nav className={navStyles} aria-label="Navigation principale">
         {NAV_LINKS.map((link) => {
           const isActive = link.id === resolvedActiveId;
           return (
-            <a
+            <Link
               key={link.id}
-              href={link.href}
+              to={link.href}
               className={cx(linkBaseStyles, isActive ? linkActiveStyles : undefined)}
               aria-current={isActive ? 'page' : undefined}
             >
               {link.label}
-            </a>
+            </Link>
           );
         })}
       </nav>
@@ -241,7 +247,7 @@ export function AppHeader({ activeNavId }: AppHeaderProps = {}) {
                 id: link.id,
                 label: link.label,
                 onSelect: () => {
-                  window.location.assign(link.href);
+                  void navigate({ to: link.href });
                 },
               }))}
             />
