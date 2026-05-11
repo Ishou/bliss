@@ -28,6 +28,14 @@ interface LobbyRepository {
      */
     suspend fun findByCode(code: LobbyCode): Lobby?
 
+    /**
+     * Returns lobbies the given session is currently a member of, in every
+     * lifecycle state (WAITING, IN_PROGRESS, COMPLETED), ordered by
+     * lastActivityAt descending. Returns an empty list if the session is
+     * not in any lobby. Used by the "My games" surface (ADR-0039).
+     */
+    suspend fun findBySessionId(sessionId: SessionId): List<Lobby>
+
     suspend fun save(lobby: Lobby): Lobby
 
     /**
