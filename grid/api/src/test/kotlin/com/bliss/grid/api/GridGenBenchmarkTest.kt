@@ -6,6 +6,7 @@ import com.bliss.grid.domain.generation.GenerationMetrics
 import com.bliss.grid.domain.generation.GridGenerator
 import com.bliss.grid.domain.generation.GridShapeHash
 import com.bliss.grid.infrastructure.persistence.CsvWordRepository
+import org.junit.jupiter.api.Assumptions
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import org.slf4j.LoggerFactory
@@ -195,6 +196,24 @@ class GridGenBenchmarkTest {
     @Test
     fun `100 puzzles PR-gate bench`() {
         runBench(n = 100, label = "pr-gate")
+    }
+
+    /**
+     * Reads two CSVs produced by [runBench] (or the 200-gen tests) and logs a
+     * side-by-side diff table. Skipped unless both `-Dbench.baseline=...` and
+     * `-Dbench.current=...` are supplied on the command line. Carries the
+     * `@Tag("bench")` so it stays out of the default CI lane.
+     */
+    @Test
+    fun `compare baseline vs current`() {
+        val baseline = System.getProperty("bench.baseline")
+        val current = System.getProperty("bench.current")
+        Assumptions.assumeTrue(
+            baseline != null && current != null,
+            "supply -Dbench.baseline=<path> -Dbench.current=<path> to run this diff",
+        )
+        val table = BenchDiff.compare(Path.of(baseline), Path.of(current))
+        log.info("bench_diff_table\n{}", table)
     }
 
     /**
