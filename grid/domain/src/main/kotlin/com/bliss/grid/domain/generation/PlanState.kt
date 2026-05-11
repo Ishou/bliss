@@ -4,6 +4,9 @@ import com.bliss.grid.domain.model.Column
 import com.bliss.grid.domain.model.Direction
 import com.bliss.grid.domain.model.Position
 import com.bliss.grid.domain.model.Row
+import com.bliss.grid.domain.model.Word
+import com.bliss.grid.domain.model.WordClue
+import com.bliss.grid.domain.model.WordPlacement
 
 /**
  * Mutable scratch state for the slot planner's coordinated structural mutation.
@@ -42,6 +45,21 @@ internal class PlanState(
     /** Indexed slot list — index used in [letterMembership] and slot lookups. */
     private val _slots: ArrayList<WordSlot> = ArrayList()
     val slots: List<WordSlot> get() = _slots
+
+    private val _letters: HashMap<Position, Char> = HashMap()
+    val letters: Map<Position, Char> get() = _letters
+
+    private val _placements: ArrayList<WordPlacement> = ArrayList()
+    val placements: List<WordPlacement> get() = _placements
+
+    private val _usedWords: HashSet<String> = HashSet()
+    val usedWords: Set<String> get() = _usedWords
+
+    private val _usedLemmas: HashSet<String> = HashSet()
+    val usedLemmas: Set<String> get() = _usedLemmas
+
+    private val _themeUsed: HashMap<String, Int> = HashMap()
+    val themeUsed: Map<String, Int> get() = _themeUsed
 
     private val undo: ArrayDeque<() -> Unit> = ArrayDeque()
 
@@ -93,6 +111,29 @@ internal class PlanState(
             c += dc
         }
         return n
+    }
+
+    /**
+     * Build the position-index → letter pattern for a candidate slot rooted at
+     * [arrow] with [length] cells. Only positions whose [letters] entry is set
+     * contribute to the pattern. Used by the integrated search to query the
+     * word repository for matches.
+     */
+    fun patternFor(
+        arrow: ClueArrow,
+        length: Int,
+    ): Map<Int, Char> {
+        val first = firstLetter(arrow)
+        val dr = arrow.direction.step.row.value
+        val dc = arrow.direction.step.column.value
+        val pattern = HashMap<Int, Char>(length)
+        for (i in 0 until length) {
+            val r = first.row.value + dr * i
+            val c = first.column.value + dc * i
+            val ch = _letters[Position(Row(r), Column(c))] ?: continue
+            pattern[i] = ch
+        }
+        return pattern
     }
 
     fun arrowState(
@@ -199,6 +240,67 @@ internal class PlanState(
                         addArrow(trail, perpDir)
                     }
                 }
+            }
+        }
+
+        return true
+    }
+
+    /**
+     * Atomically commit (arrow, length, word, clue) — the integrated search's
+     * one structural-mutation step. Builds on [materialize] for cell/arrow
+     * bookkeeping, then writes letters, records the placement, and updates the
+     * dedup + theme counters.
+     *
+     * Returns `false` on any structural conflict (letter conflict at an
+     * intersection, trailing-clue lands on a letter, etc.). Partial mutations
+     * remain in the undo log; caller must [checkpoint] before and [rollback]
+     * on false.
+     */
+    fun commit(
+        arrow: ClueArrow,
+        length: Int,
+        word: Word,
+        clue: WordClue,
+    ): Boolean {
+        require(word.text.length == length) {
+            "word length ${word.text.length} must equal slot length $length"
+        }
+        if (!materialize(arrow, length)) return false
+
+        val first = firstLetter(arrow)
+        val dr = arrow.direction.step.row.value
+        val dc = arrow.direction.step.column.value
+        for (i in 0 until length) {
+            val r = first.row.value + dr * i
+            val c = first.column.value + dc * i
+            val pos = Position(Row(r), Column(c))
+            val ch = word.text[i]
+            val existing = _letters[pos]
+            if (existing != null) {
+                if (existing != ch) return false
+                // Letter already present and matches — no write, no undo.
+            } else {
+                _letters[pos] = ch
+                undo.addLast { _letters.remove(pos) }
+            }
+        }
+
+        _placements += WordPlacement(word, arrow.cluePosition, arrow.direction, clue)
+        undo.addLast { _placements.removeAt(_placements.size - 1) }
+
+        _usedWords += word.text
+        undo.addLast { _usedWords -= word.text }
+
+        _usedLemmas += word.lemma
+        undo.addLast { _usedLemmas -= word.lemma }
+
+        val theme = clue.theme
+        if (theme != null) {
+            val prev = _themeUsed[theme] ?: 0
+            _themeUsed[theme] = prev + 1
+            undo.addLast {
+                if (prev == 0) _themeUsed.remove(theme) else _themeUsed[theme] = prev
             }
         }
 

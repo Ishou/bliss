@@ -2,6 +2,7 @@ package com.bliss.grid.domain.generation
 
 import assertk.assertThat
 import assertk.assertions.containsExactlyInAnyOrder
+import assertk.assertions.hasSize
 import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
 import assertk.assertions.isFalse
@@ -12,6 +13,8 @@ import com.bliss.grid.domain.model.Column
 import com.bliss.grid.domain.model.Direction
 import com.bliss.grid.domain.model.Position
 import com.bliss.grid.domain.model.Row
+import com.bliss.grid.domain.model.Word
+import com.bliss.grid.domain.model.WordClue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 
@@ -181,6 +184,126 @@ class PlanStateTest {
         state.addArrow(pos(0, 0), Direction.DOWN_RIGHT)
         // Arrow stays PENDING - not materialized, not deactivated.
         assertThat(state.hasDeadCluesNow()).isFalse()
+    }
+
+    @Test
+    fun `commit places a slot and writes letters`() {
+        val state = PlanState(width = 5, height = 5)
+        val arrow = ClueArrow(pos(0, 0), Direction.DOWN_RIGHT)
+        state.addClueCell(arrow.cluePosition)
+        state.addArrow(arrow.cluePosition, arrow.direction)
+
+        val word = Word(text = "MOTS", lemma = "MOT", clues = listOf(WordClue(text = "Paroles")))
+        val ok = state.commit(arrow, length = 4, word = word, clue = word.clues.first())
+
+        assertThat(ok).isTrue()
+        assertThat(state.letters[pos(1, 0)]).isEqualTo('M')
+        assertThat(state.letters[pos(1, 1)]).isEqualTo('O')
+        assertThat(state.letters[pos(1, 2)]).isEqualTo('T')
+        assertThat(state.letters[pos(1, 3)]).isEqualTo('S')
+        assertThat(state.placements).hasSize(1)
+        assertThat(state.placements[0].word.text).isEqualTo("MOTS")
+        assertThat(state.usedWords).containsExactlyInAnyOrder("MOTS")
+        assertThat(state.usedLemmas).containsExactlyInAnyOrder("MOT")
+    }
+
+    @Test
+    fun `commit fails when a letter conflicts with an existing one at the same cell`() {
+        val state = PlanState(width = 5, height = 5)
+        val a = ClueArrow(pos(0, 0), Direction.DOWN_RIGHT)
+        val b = ClueArrow(pos(0, 0), Direction.RIGHT_DOWN)
+        state.addClueCell(a.cluePosition)
+        state.addArrow(a.cluePosition, a.direction)
+        state.addArrow(b.cluePosition, b.direction)
+
+        val cp1 = state.checkpoint()
+        // First slot places 'M' at (1, 0) and 'O' at (1, 1)
+        val wordA = Word(text = "MO", lemma = "MO", clues = listOf(WordClue(text = "anything")))
+        assertThat(state.commit(a, length = 2, word = wordA, clue = wordA.clues.first())).isTrue()
+
+        // Second slot RIGHT_DOWN at (0,0): first letter at (0,1), DOWN.
+        // length=2 → positions (0,1), (1,1). Index 1 lands at (1,1) which already has 'O'.
+        val cp2 = state.checkpoint()
+        val wordC = Word(text = "AB", lemma = "AB", clues = listOf(WordClue(text = "x")))
+        // AB at (0,1) DOWN → (0,1)='A', (1,1)='B'. (1,1) already 'O' → conflict.
+        val ok = state.commit(b, length = 2, word = wordC, clue = wordC.clues.first())
+        assertThat(ok).isFalse()
+        state.rollback(cp2)
+        // Other slot still intact.
+        assertThat(state.placements).hasSize(1)
+        assertThat(state.letters[pos(1, 1)]).isEqualTo('O')
+
+        state.rollback(cp1)
+        assertThat(state.placements).isEmpty()
+    }
+
+    @Test
+    fun `commit increments themeUsed only when the clue carries a theme`() {
+        val state = PlanState(width = 5, height = 5)
+        val arrow = ClueArrow(pos(0, 0), Direction.DOWN_RIGHT)
+        state.addClueCell(arrow.cluePosition)
+        state.addArrow(arrow.cluePosition, arrow.direction)
+
+        val themedClue = WordClue(text = "Direction", theme = "compass")
+        val word = Word(text = "NORD", lemma = "NORD", clues = listOf(themedClue))
+
+        assertThat(state.commit(arrow, length = 4, word = word, clue = themedClue)).isTrue()
+        assertThat(state.themeUsed["compass"]).isEqualTo(1)
+    }
+
+    @Test
+    fun `commit does not touch themeUsed when the chosen clue has no theme`() {
+        val state = PlanState(width = 5, height = 5)
+        val arrow = ClueArrow(pos(0, 0), Direction.DOWN_RIGHT)
+        state.addClueCell(arrow.cluePosition)
+        state.addArrow(arrow.cluePosition, arrow.direction)
+
+        val plainClue = WordClue(text = "Mots prononces")
+        val word = Word(text = "MOTS", lemma = "MOT", clues = listOf(plainClue))
+
+        assertThat(state.commit(arrow, length = 4, word = word, clue = plainClue)).isTrue()
+        assertThat(state.themeUsed).isEmpty()
+    }
+
+    @Test
+    fun `rollback after commit restores all integrated-search state`() {
+        val state = PlanState(width = 5, height = 5)
+        val arrow = ClueArrow(pos(0, 0), Direction.DOWN_RIGHT)
+        state.addClueCell(arrow.cluePosition)
+        state.addArrow(arrow.cluePosition, arrow.direction)
+
+        val cp = state.checkpoint()
+        val themedClue = WordClue(text = "Direction", theme = "compass")
+        val word = Word(text = "NORD", lemma = "NORD", clues = listOf(themedClue))
+        assertThat(state.commit(arrow, length = 4, word = word, clue = themedClue)).isTrue()
+
+        state.rollback(cp)
+
+        assertThat(state.letters).isEmpty()
+        assertThat(state.placements).isEmpty()
+        assertThat(state.usedWords).isEmpty()
+        assertThat(state.usedLemmas).isEmpty()
+        assertThat(state.themeUsed).isEmpty()
+    }
+
+    @Test
+    fun `patternFor reads known letters at slot positions`() {
+        val state = PlanState(width = 5, height = 5)
+        val a = ClueArrow(pos(0, 0), Direction.DOWN_RIGHT)
+        val b = ClueArrow(pos(0, 0), Direction.RIGHT_DOWN)
+        state.addClueCell(a.cluePosition)
+        state.addArrow(a.cluePosition, a.direction)
+        state.addArrow(b.cluePosition, b.direction)
+
+        // Place a horizontal word on row 1 → letters at (1,0)..(1,3).
+        val word = Word(text = "MOTS", lemma = "MOT", clues = listOf(WordClue(text = "x")))
+        assertThat(state.commit(a, length = 4, word = word, clue = word.clues.first())).isTrue()
+
+        // For the RIGHT_DOWN slot (first letter at (0,1), DOWN), at length 4:
+        // positions are (0,1), (1,1), (2,1), (3,1). Index 1 lands on (1,1) which has 'O'.
+        val pattern = state.patternFor(b, length = 4)
+        assertThat(pattern[1]).isEqualTo('O')
+        assertThat(pattern[0]).isNull() // (0, 1) is still UNSET
     }
 
     private fun pos(
