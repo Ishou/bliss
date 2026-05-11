@@ -6,8 +6,8 @@ import assertk.assertions.isFalse
 import assertk.assertions.isTrue
 import com.bliss.grid.domain.model.Word
 import com.bliss.grid.domain.model.WordClue
-import kotlin.random.Random
 import org.junit.jupiter.api.Test
+import kotlin.random.Random
 
 class BitmaskCspTest {
     private fun mkLexicon(words: List<String>): Lexicon =
@@ -33,12 +33,13 @@ class BitmaskCspTest {
         //   . .
         // Slots: row 1 horizontal (length 2, DOWN_RIGHT @ (0,0))
         //        col 1 vertical (length 2, RIGHT_DOWN @ (0,0))
-        val cells = cellsFrom(
-            """
+        val cells =
+            cellsFrom(
+                """
             #.
             ..
-            """
-        )
+            """,
+            )
         // Generate every 2-letter combination AA..ZZ — gives the solver plenty of choices.
         val twoLetters =
             buildList {

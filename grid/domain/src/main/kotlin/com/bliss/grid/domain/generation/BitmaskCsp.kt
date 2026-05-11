@@ -42,15 +42,25 @@ internal class BitmaskCsp(
         private set
 
     sealed interface TrailEntry {
-        data class Dom(val sid: Int, val oldMask: LongArray) : TrailEntry {
+        data class Dom(
+            val sid: Int,
+            val oldMask: LongArray,
+        ) : TrailEntry {
             override fun equals(other: Any?): Boolean = this === other
 
             override fun hashCode(): Int = System.identityHashCode(this)
         }
 
-        data class Asg(val sid: Int, val oldWord: Word?, val oldClue: WordClue?) : TrailEntry
+        data class Asg(
+            val sid: Int,
+            val oldWord: Word?,
+            val oldClue: WordClue?,
+        ) : TrailEntry
 
-        data class Used(val word: Word, val clue: WordClue) : TrailEntry
+        data class Used(
+            val word: Word,
+            val clue: WordClue,
+        ) : TrailEntry
     }
 
     enum class Result { OK, TIMEOUT, BUDGET_EXCEEDED }
@@ -82,7 +92,11 @@ internal class BitmaskCsp(
         if (assignedCount == slots.size) return Result.OK
 
         // Frame: (sid, candidate iterator, trail mark to unwind to on pop)
-        data class Frame(val sid: Int, val values: ArrayDeque<Int>, val mark: Int)
+        data class Frame(
+            val sid: Int,
+            val values: ArrayDeque<Int>,
+            val mark: Int,
+        )
         val stack = ArrayDeque<Frame>()
         val firstSid = selectSlot()
         if (firstSid < 0) {
@@ -178,7 +192,10 @@ internal class BitmaskCsp(
         val tail = candidates.subList(sampleSize, candidates.size)
 
         // Score the sample.
-        data class Scored(val wi: Int, val score: Long)
+        data class Scored(
+            val wi: Int,
+            val score: Long,
+        )
         val scored = ArrayList<Scored>(sample.size)
         for (wi in sample) {
             val word = lexicon.wordAt(slot.length, wi)
@@ -358,7 +375,8 @@ internal class BitmaskCsp(
     fun hotSlotMiddleCells(topN: Int): List<Pair<Int, Int>> {
         val unsolved = slots.filter { !it.isAssigned }
         val sorted =
-            unsolved.sortedBy { lexicon.popcount(it.domain) }
+            unsolved
+                .sortedBy { lexicon.popcount(it.domain) }
                 .take(topN)
                 .sortedByDescending { it.length }
         return sorted.map {

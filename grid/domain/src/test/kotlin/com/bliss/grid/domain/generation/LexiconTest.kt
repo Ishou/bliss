@@ -8,8 +8,8 @@ import assertk.assertions.isGreaterThan
 import assertk.assertions.isTrue
 import com.bliss.grid.domain.model.Word
 import com.bliss.grid.domain.model.WordClue
-import kotlin.random.Random
 import org.junit.jupiter.api.Test
+import kotlin.random.Random
 
 class LexiconTest {
     private fun mkWord(text: String): Word = Word(text = text, clues = listOf(WordClue("clue-$text")))

@@ -1,7 +1,6 @@
 package com.bliss.grid.domain.generation
 
 import kotlin.math.max
-import kotlin.math.min
 import kotlin.random.Random
 
 /**
@@ -174,13 +173,15 @@ internal object BlackCellLayout {
             // uncrossed interior letter, which the grid validator rejects.
             val valid = if (isEdge) true else hRun >= minLen || vRun >= minLen
             if (!valid) {
-                ok = false; break
+                ok = false
+                break
             }
             // Additional invariant: interior cells must have *both* axes ≥
             // minLen because GridValidator requires interior letters to be
             // doubly crossed.
             if (!isEdge && (hRun < minLen || vRun < minLen)) {
-                ok = false; break
+                ok = false
+                break
             }
         }
         cells.set(r, c, prior)
@@ -287,19 +288,23 @@ internal object BlackCellLayout {
                 // Try every position in the run, preferring midpoint-close.
                 // Some seeds need an off-midpoint cut on the bottom/right edge
                 // because interior orphans block the strict midpoint.
-                val positions = (start until start + length).sortedBy {
-                    val d = it - mid
-                    // Negative to prefer slightly-left ties, with a per-call
-                    // random salt so deterministic seeds still produce
-                    // structurally different layouts.
-                    if (d == 0) -1 else d * d
-                }.let {
-                    if (it.size > 1) {
-                        val first = it.first()
-                        val rest = it.drop(1).toMutableList().also { l -> l.shuffle(random) }
-                        listOf(first) + rest
-                    } else it
-                }
+                val positions =
+                    (start until start + length)
+                        .sortedBy {
+                            val d = it - mid
+                            // Negative to prefer slightly-left ties, with a per-call
+                            // random salt so deterministic seeds still produce
+                            // structurally different layouts.
+                            if (d == 0) -1 else d * d
+                        }.let {
+                            if (it.size > 1) {
+                                val first = it.first()
+                                val rest = it.drop(1).toMutableList().also { l -> l.shuffle(random) }
+                                listOf(first) + rest
+                            } else {
+                                it
+                            }
+                        }
                 for (pos in positions) {
                     if (pos !in start until start + length) continue
                     if (canPlaceBlack(cells, r, pos, minLen)) {
@@ -336,19 +341,23 @@ internal object BlackCellLayout {
                 // Try every position in the run, preferring midpoint-close.
                 // Some seeds need an off-midpoint cut on the bottom/right edge
                 // because interior orphans block the strict midpoint.
-                val positions = (start until start + length).sortedBy {
-                    val d = it - mid
-                    // Negative to prefer slightly-left ties, with a per-call
-                    // random salt so deterministic seeds still produce
-                    // structurally different layouts.
-                    if (d == 0) -1 else d * d
-                }.let {
-                    if (it.size > 1) {
-                        val first = it.first()
-                        val rest = it.drop(1).toMutableList().also { l -> l.shuffle(random) }
-                        listOf(first) + rest
-                    } else it
-                }
+                val positions =
+                    (start until start + length)
+                        .sortedBy {
+                            val d = it - mid
+                            // Negative to prefer slightly-left ties, with a per-call
+                            // random salt so deterministic seeds still produce
+                            // structurally different layouts.
+                            if (d == 0) -1 else d * d
+                        }.let {
+                            if (it.size > 1) {
+                                val first = it.first()
+                                val rest = it.drop(1).toMutableList().also { l -> l.shuffle(random) }
+                                listOf(first) + rest
+                            } else {
+                                it
+                            }
+                        }
                 for (pos in positions) {
                     if (pos !in start until start + length) continue
                     if (canPlaceBlack(cells, pos, c, minLen)) {
@@ -361,7 +370,6 @@ internal object BlackCellLayout {
         }
         return changed
     }
-
 
     /**
      * Turn every white cell with no white neighbour into BLACK. A

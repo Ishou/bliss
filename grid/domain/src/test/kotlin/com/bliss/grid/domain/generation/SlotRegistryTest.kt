@@ -53,10 +53,31 @@ class SlotRegistryTest {
     private val lexFor5x5 =
         mkLexicon(
             listOf(
-                "AB", "CD", "EF", "GH", "IJ", "KL", "MN", "OP", "QR",
-                "ABC", "DEF", "GHI", "JKL", "MNO", "PQR",
-                "ABCD", "EFGH", "IJKL", "MNOP", "QRST",
-                "ABCDE", "FGHIJ", "KLMNO", "PQRST", "UVWXY",
+                "AB",
+                "CD",
+                "EF",
+                "GH",
+                "IJ",
+                "KL",
+                "MN",
+                "OP",
+                "QR",
+                "ABC",
+                "DEF",
+                "GHI",
+                "JKL",
+                "MNO",
+                "PQR",
+                "ABCD",
+                "EFGH",
+                "IJKL",
+                "MNOP",
+                "QRST",
+                "ABCDE",
+                "FGHIJ",
+                "KLMNO",
+                "PQRST",
+                "UVWXY",
             ),
         )
 
@@ -135,15 +156,16 @@ class SlotRegistryTest {
         //   # . . . .
         //   . . . . .
         //   # . . . .
-        val cells = cellsFrom(
-            """
+        val cells =
+            cellsFrom(
+                """
             ##.##
             .....
             #....
             .....
             #....
-            """
-        )
+            """,
+            )
         val build = SlotRegistry.build(cells, lexFor5x5, minLen = 2)!!
         // Row 0's length-1 white run at column 2 should NOT yield a horizontal slot.
         assertThat(build.slots.none { it.axis == SlotAxis.HORIZONTAL && it.row == 0 }).isTrue()
@@ -152,16 +174,17 @@ class SlotRegistryTest {
     @Test
     fun `build returns null if any slot length has no corpus`() {
         // 6x6 standard skeleton with a length-5 run; corpus only has length 2/3.
-        val cells = cellsFrom(
-            """
+        val cells =
+            cellsFrom(
+                """
             #.#.#.
             ......
             #.....
             ......
             #.....
             ......
-            """
-        )
+            """,
+            )
         val sparseLex = mkLexicon(listOf("AB", "CD", "EF", "ABC", "DEF"))
         val build = SlotRegistry.build(cells, sparseLex, minLen = 2)
         assertThat(build).isNull()
@@ -171,13 +194,14 @@ class SlotRegistryTest {
     fun `build returns null when a slot has no valid on-grid clue position`() {
         // Layout breaks the boundary invariant: (0, 0) is WHITE.
         // Column 0 starts at row 0 with no clue available.
-        val cells = cellsFrom(
-            """
+        val cells =
+            cellsFrom(
+                """
             ...
             ...
             ...
-            """
-        )
+            """,
+            )
         val build = SlotRegistry.build(cells, mkLexicon(listOf("AB", "ABC")), minLen = 2)
         assertThat(build).isNull()
     }

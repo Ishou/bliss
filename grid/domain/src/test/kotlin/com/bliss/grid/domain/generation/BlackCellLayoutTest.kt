@@ -5,9 +5,9 @@ import assertk.assertions.isEqualTo
 import assertk.assertions.isGreaterThan
 import assertk.assertions.isLessThanOrEqualTo
 import assertk.assertions.isTrue
+import org.junit.jupiter.api.Test
 import kotlin.math.abs
 import kotlin.random.Random
-import org.junit.jupiter.api.Test
 
 class BlackCellLayoutTest {
     private fun maxHorizontalRun(cells: CellArray): Int {
@@ -74,13 +74,19 @@ class BlackCellLayoutTest {
     ): Int {
         var lo = 0
         var hi = 0
-        var rr = r - dr; var cc = c - dc
+        var rr = r - dr
+        var cc = c - dc
         while (rr in 0 until cells.height && cc in 0 until cells.width && !cells.isBlack(rr, cc)) {
-            lo++; rr -= dr; cc -= dc
+            lo++
+            rr -= dr
+            cc -= dc
         }
-        rr = r + dr; cc = c + dc
+        rr = r + dr
+        cc = c + dc
         while (rr in 0 until cells.height && cc in 0 until cells.width && !cells.isBlack(rr, cc)) {
-            hi++; rr += dr; cc += dc
+            hi++
+            rr += dr
+            cc += dc
         }
         return lo + 1 + hi
     }

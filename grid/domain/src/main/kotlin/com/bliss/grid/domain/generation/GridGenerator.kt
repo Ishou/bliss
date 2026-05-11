@@ -87,10 +87,18 @@ class GridGenerator(
             val build = SlotRegistry.build(cells, lex, constraints.minWordLength)
             if (build == null) {
                 consecFails++
-                cells = reseedOrPerturb(
-                    cells, w, h, constraints.minWordLength, lTarget, lUseful,
-                    hotCells = emptyList(), consecFails = consecFails, random = random,
-                )
+                cells =
+                    reseedOrPerturb(
+                        cells,
+                        w,
+                        h,
+                        constraints.minWordLength,
+                        lTarget,
+                        lUseful,
+                        hotCells = emptyList(),
+                        consecFails = consecFails,
+                        random = random,
+                    )
                 perturbations++
                 continue
             }
@@ -98,10 +106,18 @@ class GridGenerator(
             val csp = BitmaskCsp(build.slots, lex, acceptor, clock, random)
             if (!csp.initialArcConsistency()) {
                 consecFails++
-                cells = reseedOrPerturb(
-                    cells, w, h, constraints.minWordLength, lTarget, lUseful,
-                    hotCells = emptyList(), consecFails = consecFails, random = random,
-                )
+                cells =
+                    reseedOrPerturb(
+                        cells,
+                        w,
+                        h,
+                        constraints.minWordLength,
+                        lTarget,
+                        lUseful,
+                        hotCells = emptyList(),
+                        consecFails = consecFails,
+                        random = random,
+                    )
                 perturbations++
                 continue
             }
@@ -133,10 +149,18 @@ class GridGenerator(
             // Restart: perturb the layout toward easier topology.
             val hot = csp.hotSlotMiddleCells(GenerationKnobs.HOT_SLOTS_FOR_PERTURB)
             consecFails++
-            cells = reseedOrPerturb(
-                cells, w, h, constraints.minWordLength, lTarget, lUseful,
-                hotCells = hot, consecFails = consecFails, random = random,
-            )
+            cells =
+                reseedOrPerturb(
+                    cells,
+                    w,
+                    h,
+                    constraints.minWordLength,
+                    lTarget,
+                    lUseful,
+                    hotCells = hot,
+                    consecFails = consecFails,
+                    random = random,
+                )
             perturbations++
         }
         metrics?.fillMs = (clock.nanoTime() - searchStart) / NS_PER_MS

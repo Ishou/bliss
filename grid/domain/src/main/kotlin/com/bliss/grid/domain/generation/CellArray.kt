@@ -17,7 +17,7 @@ internal class CellArray(
 ) {
     init {
         require(width >= 2 && height >= 2) {
-            "grid must be at least 2×2, was ${width}×$height"
+            "grid must be at least 2×2, was $width×$height"
         }
     }
 

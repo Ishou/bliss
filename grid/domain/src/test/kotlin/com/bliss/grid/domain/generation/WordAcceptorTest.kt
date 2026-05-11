@@ -3,13 +3,12 @@ package com.bliss.grid.domain.generation
 import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.isFalse
-import assertk.assertions.isNotNull
 import assertk.assertions.isNull
 import assertk.assertions.isTrue
 import com.bliss.grid.domain.model.Word
 import com.bliss.grid.domain.model.WordClue
-import kotlin.random.Random
 import org.junit.jupiter.api.Test
+import kotlin.random.Random
 
 class WordAcceptorTest {
     @Test
