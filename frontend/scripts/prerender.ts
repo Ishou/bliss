@@ -203,7 +203,7 @@ function mergeHeadIntoBody(metaHtml: string, bodyHtml: string): string {
   if (!headMatch) {
     throw new Error('mergeHeadIntoBody: no <head> in source HTML');
   }
-  let merged = bodyHtml.replace(/<head[^>]*>[\s\S]*?<\/head>/, headMatch[0]);
+  let merged = bodyHtml.replace(/<head[^>]*>[\s\S]*?<\/head>/, () => headMatch[0]);
   const ldJsonRe = /<script\s+type="application\/ld\+json"[^>]*>[\s\S]*?<\/script>/g;
   const ldJsonScripts = metaHtml.match(ldJsonRe);
   if (ldJsonScripts && ldJsonScripts.length > 0) {
@@ -213,7 +213,7 @@ function mergeHeadIntoBody(metaHtml: string, bodyHtml: string): string {
     // so no mismatch warning fires.
     merged = merged.replace(
       /<div id="root">/,
-      `<div id="root">${ldJsonScripts.join('')}`,
+      () => `<div id="root">${ldJsonScripts.join('')}`,
     );
   }
   return merged;
