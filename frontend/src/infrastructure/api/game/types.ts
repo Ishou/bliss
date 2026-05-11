@@ -77,6 +77,74 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/sessions/{sessionId}/lobbies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List lobbies the caller's session is a member of.
+         * @description Powers the Accueil "Mes parties" card so a returning player can pick
+         *     up yesterday's lobby without bookmarking the URL. Returns lobbies in
+         *     every lifecycle state (WAITING, IN_PROGRESS, COMPLETED), ordered by
+         *     `lastActivityAt` descending so the most recently touched lobby is
+         *     first. Empty array is the "no lobbies" answer — there is no 404 here,
+         *     which would leak whether the session has ever played.
+         *
+         *     Not paginated: a single anonymous session is naturally capped at a
+         *     handful of lobbies and pagination would be premature complexity.
+         */
+        get: operations["listLobbiesForSession"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/sessions/{sessionId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Erase server-side lobby data for a session (RGPD Article 17).
+         * @description Cascades the three-rule erasure documented in ADR-0039 across every
+         *     lobby the session is a member of:
+         *
+         *     1. Erased user owns the lobby and is the sole player → the lobby is
+         *        deleted outright.
+         *     2. Erased user owns the lobby with at least one remaining player →
+         *        ownership transfers to the earliest-joined remaining player, the
+         *        erased user is removed, and their cell entries are anonymised
+         *        (attribution dropped; letters retained so the puzzle stays
+         *        coherent for the others).
+         *     3. Erased user is a non-owner player → they are removed and their
+         *        entries are anonymised; the lobby and its owner are unchanged.
+         *
+         *     Always idempotent and always returns `200`. A session id with no
+         *     prior data returns all-zero counts. Like the grid-api sibling
+         *     (`SessionRoute.kt`), the endpoint never reveals whether a session
+         *     had data — disclosing presence would itself be a leak.
+         *
+         *     The frontend's "Effacer mes données" button fans this call out
+         *     together with grid-api's `DELETE /v1/sessions/{sessionId}`; both
+         *     must succeed for the UI to claim data was erased.
+         */
+        delete: operations["deleteSession"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -394,17 +462,106 @@ export interface components {
              * @example A2B3C4
              */
             code?: string;
+            /**
+             * @description Optional human-friendly label set by the lobby owner at
+             *     creation (e.g. "Game A", "Mardi soir"). Powers the Accueil
+             *     "Mes parties" card so a returning player recognises yesterday's
+             *     lobby at a glance; when absent the UI falls back to a
+             *     date-derived label. Per ADR-0003 §6, optional means absent OR
+             *     present — never `null` on the wire.
+             * @example Mardi soir
+             */
+            title?: string;
+        };
+        /**
+         * @description Compact view of a lobby for the "Mes parties" listing. Carries just
+         *     enough to render a row in the Accueil card (label, code, grid size,
+         *     recency) without paying the cost of the full `Lobby` snapshot — the
+         *     `game` payload is intentionally omitted. The frontend hydrates the
+         *     full lobby through `GET /v1/lobbies/{lobbyId}` when the player
+         *     clicks through. `title` is optional with the same wire semantics as
+         *     `Lobby.title` (absent OR present, never `null`).
+         */
+        LobbySummary: {
+            id: components["schemas"]["LobbyId"];
+            /**
+             * @description Join code mirroring `Lobby.code`. Required here because every
+             *     lobby surfaced by this endpoint is post-PR-#262 and always has
+             *     a code; the frontend renders it next to the title in the card.
+             * @example A2B3C4
+             */
+            code: string;
+            state: components["schemas"]["LobbyLifecycleState"];
+            gridConfig: components["schemas"]["GridConfig"];
+            /**
+             * @description Number of players currently holding a slot. Computed by the
+             *     adapter so the summary endpoint avoids loading the full player
+             *     list.
+             * @example 3
+             */
+            playerCount: number;
+            lastActivityAt: components["schemas"]["Instant"];
+            /**
+             * @description Optional label mirroring `Lobby.title`. Absent when the owner
+             *     did not set one at creation; never `null` on the wire.
+             * @example Mardi soir
+             */
+            title?: string;
         };
         /**
          * @description Request body for `POST /v1/lobbies`.
          * @example {
          *       "ownerSessionId": "0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6b",
-         *       "ownerPseudonym": "Joueur 1234"
+         *       "ownerPseudonym": "Joueur 1234",
+         *       "title": "Mardi soir"
          *     }
          */
         CreateLobbyRequest: {
             ownerSessionId: components["schemas"]["SessionId"];
             ownerPseudonym: components["schemas"]["Pseudonym"];
+            /**
+             * @description Optional human-friendly label for the lobby. Surfaced on the
+             *     "Mes parties" card. Per ADR-0003 §6, optional means absent OR
+             *     present — never `null` on the wire; omit the field entirely to
+             *     create an untitled lobby.
+             * @example Mardi soir
+             */
+            title?: string;
+        };
+        /**
+         * @description Response body for `DELETE /v1/sessions/{sessionId}` on a 200.
+         *     Reports the per-rule counts of the three-rule cascade documented
+         *     in ADR-0039. All-zero is a valid success — the session had no
+         *     server-side data.
+         */
+        DeleteSessionResponse: {
+            /**
+             * @description Number of lobbies deleted because the erased session was the
+             *     sole owner-player (Rule 1).
+             * @example 1
+             */
+            deletedLobbies: number;
+            /**
+             * @description Number of lobbies whose ownership was transferred to the
+             *     earliest-joined remaining player because the erased session
+             *     was the owner with at least one other player (Rule 2).
+             * @example 1
+             */
+            transferredLobbies: number;
+            /**
+             * @description Number of lobby memberships removed for the erased session
+             *     (sum across Rules 2 and 3 — i.e. every lobby the session was
+             *     a member of and that was not deleted outright).
+             * @example 2
+             */
+            removedPlayerships: number;
+            /**
+             * @description Number of `lobby_cell_entries` rows whose author attribution
+             *     was dropped (letters retained, `writtenBySessionId` cleared)
+             *     so surviving lobbies stay coherent for the remaining players.
+             * @example 7
+             */
+            anonymisedEntries: number;
         };
         /**
          * @description RFC 7807 error envelope (ADR-0003 §6). Additional members per
@@ -441,6 +598,12 @@ export interface components {
     parameters: {
         /** @description 8-char base58 nanoid identifying the lobby (ADR-0020). */
         LobbyIdPath: components["schemas"]["LobbyId"];
+        /**
+         * @description UUID v7 identifying the calling player's anonymous session.
+         *     Validated by the same `SessionId` value class as the WebSocket
+         *     surface; non-UUID input is rejected with a 400 RFC 7807 problem.
+         */
+        SessionIdPath: string;
     };
     requestBodies: never;
     headers: never;
@@ -577,6 +740,91 @@ export interface operations {
              *     RFC 7807; `type` is `https://bliss.example/errors/lobby-not-found`.
              */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    listLobbiesForSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description UUID v7 identifying the calling player's anonymous session.
+                 *     Validated by the same `SessionId` value class as the WebSocket
+                 *     surface; non-UUID input is rejected with a 400 RFC 7807 problem.
+                 */
+                sessionId: components["parameters"]["SessionIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /**
+             * @description List of lobby summaries for this session. Empty array when the
+             *     session is not a member of any lobby (never played, all lobbies
+             *     garbage-collected, etc.).
+             */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LobbySummary"][];
+                };
+            };
+            /**
+             * @description Path parameter `sessionId` is not a valid UUID. RFC 7807;
+             *     `type` is `https://bliss.example/errors/invalid-session-id`.
+             */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    deleteSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description UUID v7 identifying the calling player's anonymous session.
+                 *     Validated by the same `SessionId` value class as the WebSocket
+                 *     surface; non-UUID input is rejected with a 400 RFC 7807 problem.
+                 */
+                sessionId: components["parameters"]["SessionIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /**
+             * @description Erasure completed. Body reports per-rule counts. All-zero is a
+             *     valid success — the session had no server-side data.
+             */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeleteSessionResponse"];
+                };
+            };
+            /**
+             * @description Path parameter `sessionId` is not a valid UUID. RFC 7807;
+             *     `type` is `https://bliss.example/errors/invalid-session-id`.
+             */
+            400: {
                 headers: {
                     [name: string]: unknown;
                 };
