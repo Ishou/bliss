@@ -2,6 +2,7 @@ package com.bliss.grid.application.puzzle
 
 import com.bliss.grid.domain.generation.ClueCooldownPolicy
 import com.bliss.grid.domain.generation.DEFAULT_GENERATION_TIMEOUT_MS
+import com.bliss.grid.domain.generation.GenerationMetrics
 import com.bliss.grid.domain.generation.GridConstraints
 import com.bliss.grid.domain.generation.GridGenerator
 import com.bliss.grid.domain.generation.WordRepository
@@ -56,26 +57,54 @@ class GeneratePuzzleUseCase(
         width: Int? = null,
         height: Int? = null,
         cooldownPolicy: ClueCooldownPolicy = ClueCooldownPolicy.Inert,
-    ): Grid? {
+    ): Grid? = executeWithOutcome(width, height, cooldownPolicy).grid
+
+    /**
+     * Run the retry loop and return the full [AttemptOutcome] — attempts count,
+     * per-attempt wall time, per-attempt metrics, total time.
+     *
+     * [randomFactory] controls how each retry's `Random` is seeded. The default
+     * matches the production behaviour (`System.nanoTime() + attempt`). The
+     * benchmark overrides this for deterministic, reproducible runs.
+     */
+    fun executeWithOutcome(
+        width: Int? = null,
+        height: Int? = null,
+        cooldownPolicy: ClueCooldownPolicy = ClueCooldownPolicy.Inert,
+        randomFactory: (attempt: Int) -> Random = { Random(System.nanoTime() + it) },
+    ): AttemptOutcome {
         val constraints =
             defaults.copy(
                 width = width ?: defaults.width,
                 height = height ?: defaults.height,
             )
+        val perAttemptMs = ArrayList<Long>(maxAttempts)
+        val perAttemptMetrics = ArrayList<GenerationMetrics>(maxAttempts)
         repeat(maxAttempts) { attempt ->
-            val random = Random(System.nanoTime() + attempt)
+            val random = randomFactory(attempt)
             val timeoutMs = perAttemptTimeoutMs()
             val started = System.currentTimeMillis()
+            val metrics = GenerationMetrics()
             val grid =
                 generator.generate(
                     constraints,
                     random,
+                    metrics = metrics,
                     timeoutMs = timeoutMs,
                     cooldownPolicy = cooldownPolicy,
                 )
+            val elapsed = System.currentTimeMillis() - started
+            perAttemptMs += elapsed
+            perAttemptMetrics += metrics
             if (grid != null) {
-                recordSuccess(System.currentTimeMillis() - started)
-                return grid
+                recordSuccess(elapsed)
+                return AttemptOutcome(
+                    grid = grid,
+                    attempts = attempt + 1,
+                    perAttemptMs = perAttemptMs.toList(),
+                    perAttemptMetrics = perAttemptMetrics.toList(),
+                    totalMs = perAttemptMs.sum(),
+                )
             }
             log.warn(
                 "puzzle_generation_retry attempt={} width={} height={} timeout_ms={}",
@@ -85,7 +114,13 @@ class GeneratePuzzleUseCase(
                 timeoutMs,
             )
         }
-        return null
+        return AttemptOutcome(
+            grid = null,
+            attempts = maxAttempts,
+            perAttemptMs = perAttemptMs.toList(),
+            perAttemptMetrics = perAttemptMetrics.toList(),
+            totalMs = perAttemptMs.sum(),
+        )
     }
 
     private fun perAttemptTimeoutMs(): Long {

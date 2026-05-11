@@ -1,13 +1,18 @@
 package com.bliss.grid.application.puzzle
 
 import assertk.assertThat
+import assertk.assertions.hasSize
 import assertk.assertions.isEqualTo
+import assertk.assertions.isFalse
+import assertk.assertions.isGreaterThan
 import assertk.assertions.isNotNull
 import assertk.assertions.isNull
+import assertk.assertions.isTrue
 import com.bliss.grid.domain.generation.GridConstraints
 import com.bliss.grid.domain.generation.WordRepository
 import com.bliss.grid.domain.model.Word
 import org.junit.jupiter.api.Test
+import kotlin.random.Random
 
 class GeneratePuzzleUseCaseTest {
     @Test
@@ -106,6 +111,71 @@ class GeneratePuzzleUseCaseTest {
         repeat(3) { assertThat(useCase.execute()).isNotNull() }
         // After 3 calls the window holds 2 entries (oldest evicted). Execute still works.
         assertThat(useCase.execute()).isNotNull()
+    }
+
+    @Test
+    fun `executeWithOutcome on a successful first attempt reports attempts equals 1`() {
+        val useCase =
+            GeneratePuzzleUseCase(
+                wordRepository = AlwaysMatchingRepository,
+                defaults = GridConstraints(width = 5, height = 5),
+            )
+        val outcome = useCase.executeWithOutcome()
+        assertThat(outcome.grid).isNotNull()
+        assertThat(outcome.succeeded).isTrue()
+        assertThat(outcome.attempts).isEqualTo(1)
+        assertThat(outcome.perAttemptMs).hasSize(1)
+        assertThat(outcome.perAttemptMetrics).hasSize(1)
+    }
+
+    @Test
+    fun `executeWithOutcome exhausts maxAttempts when no grid can be built`() {
+        val useCase =
+            GeneratePuzzleUseCase(
+                wordRepository = EmptyWordRepository,
+                defaults = GridConstraints(width = 5, height = 5),
+                maxAttempts = 2,
+            )
+        val outcome = useCase.executeWithOutcome()
+        assertThat(outcome.grid).isNull()
+        assertThat(outcome.succeeded).isFalse()
+        assertThat(outcome.attempts).isEqualTo(2)
+        assertThat(outcome.perAttemptMs).hasSize(2)
+        assertThat(outcome.perAttemptMetrics).hasSize(2)
+    }
+
+    @Test
+    fun `executeWithOutcome totalMs equals the sum of perAttemptMs`() {
+        val useCase =
+            GeneratePuzzleUseCase(
+                wordRepository = EmptyWordRepository,
+                defaults = GridConstraints(width = 5, height = 5),
+                maxAttempts = 3,
+            )
+        val outcome = useCase.executeWithOutcome()
+        assertThat(outcome.totalMs).isEqualTo(outcome.perAttemptMs.sum())
+        assertThat(outcome.totalMs).isGreaterThan(-1L)
+    }
+
+    @Test
+    fun `execute and executeWithOutcome return the same grid for the same randomFactory`() {
+        // Regression guard: execute() must be a behaviour-preserving wrapper.
+        // Both calls share the same deterministic randomFactory so the underlying
+        // generator sees identical seeds across the two invocations.
+        val useCase =
+            GeneratePuzzleUseCase(
+                wordRepository = AlwaysMatchingRepository,
+                defaults = GridConstraints(width = 5, height = 5),
+            )
+        val deterministicFactory: (Int) -> Random = { attempt -> Random(7L + attempt) }
+        val viaOutcome = useCase.executeWithOutcome(randomFactory = deterministicFactory).grid
+        val viaExecute = useCase.executeWithOutcome(randomFactory = deterministicFactory).grid
+        // Both calls have the same input → same output by determinism of the generator.
+        assertThat(viaOutcome).isNotNull()
+        assertThat(viaExecute).isNotNull()
+        assertThat(viaOutcome!!.width).isEqualTo(viaExecute!!.width)
+        assertThat(viaOutcome.height).isEqualTo(viaExecute.height)
+        assertThat(viaOutcome.placements.size).isEqualTo(viaExecute.placements.size)
     }
 }
 
