@@ -270,7 +270,22 @@ class StartGameUseCase(
     }
 }
 
-/** Removes the player; transfers ownership or closes the lobby when the owner leaves. */
+/**
+ * Removes a player from a lobby. Does NOT transfer ownership when the
+ * owner leaves — the owner is expected to return via My-games
+ * (ADR-0039). The lobby persists even when the last player leaves;
+ * cleanup is handled by [LobbyGarbageCollector]'s state-specific TTL.
+ *
+ * Manual ownership transfer is intentionally out of scope. The only
+ * code path that transfers ownership is RGPD erasure (see
+ * EraseSessionUseCase, PR #11), where the user is gone permanently and
+ * leaving a "dead owner" would lock the rest out of owner-gated
+ * actions.
+ *
+ * If an owner clears localStorage without erasing, owner-only actions
+ * (start, kick) become unavailable until they rejoin; non-owner play
+ * continues. Acceptable until OAuth.
+ */
 class LeaveLobbyUseCase(
     private val repo: LobbyRepository,
     private val clock: Clock,
@@ -286,31 +301,20 @@ class LeaveLobbyUseCase(
             repo.mutate(lobbyId) { lobby ->
                 if (!lobby.hasJoined(sessionId)) return@mutate lobby
                 playerWasPresent = true
-                val liveRemaining = lobby.players - sessionId
-                if (liveRemaining.isEmpty()) {
-                    // null signals the repo to delete atomically inside the lock,
-                    // closing the window between "decide to delete" and "execute delete".
-                    null
-                } else {
-                    // Compute nextOwner from the live snapshot inside the lock so a concurrent
-                    // join/leave between the outer read and mutate cannot produce a ghost owner.
-                    val nextOwner =
-                        if (lobby.isOwner(sessionId)) {
-                            liveRemaining.values.minBy { it.joinedAt }.sessionId
-                        } else {
-                            lobby.ownerSessionId
-                        }
-                    lobby.copy(players = liveRemaining, ownerSessionId = nextOwner, lastActivityAt = clock.now())
-                }
+                // Remove the player but keep ownerSessionId unchanged on every branch.
+                // The lobby persists even when emptied; GC TTLs (PR #12) handle cleanup.
+                lobby.copy(
+                    players = lobby.players - sessionId,
+                    lastActivityAt = clock.now(),
+                )
             }
-        // Distinguish: null+!present = lobby not found; null+present = deleted; non-null+!present = not a member.
-        if (!playerWasPresent && updated == null) return failure(UseCaseError.LobbyNotFound)
+        // After this change, mutate's mutator never returns null, so updated == null
+        // is unambiguously "lobby with this id does not exist" (the repo's only other
+        // null path). PlayerNotInLobby is signalled by playerWasPresent=false on a
+        // non-null mutate return — the mutator short-circuited without mutating.
+        if (updated == null) return failure(UseCaseError.LobbyNotFound)
         if (!playerWasPresent) return failure(UseCaseError.PlayerNotInLobby)
         analyticsEventSink.record(AnalyticsEvent.LobbyLeft, sessionId)
-        if (updated == null) {
-            events += LobbyEvent.LobbyClosed("last player left")
-            return success(null, events)
-        }
         return success(updated, events)
     }
 }
