@@ -53,6 +53,11 @@ class IntegratedSearchTest {
 
         override fun countByLength(length: Int): Int = 26
 
+        override fun lettersAtPosition(
+            length: Int,
+            position: Int,
+        ): Set<Char> = ('A'..'Z').toSet()
+
         override fun containsLemma(text: String): Boolean = true
     }
 
@@ -112,6 +117,11 @@ class IntegratedSearchTest {
                 }
 
                 override fun countByLength(length: Int): Int = 1
+
+                override fun lettersAtPosition(
+                    length: Int,
+                    position: Int,
+                ): Set<Char> = ('A'..'Z').toSet()
 
                 override fun containsLemma(text: String): Boolean = true
             }

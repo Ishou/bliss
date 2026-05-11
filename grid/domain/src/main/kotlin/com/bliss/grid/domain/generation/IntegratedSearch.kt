@@ -60,6 +60,8 @@ internal class IntegratedSearch(
         val lengths = SlotPlanner.orphanSafeLengths(next, available, lengthPolicy)
         for (length in lengths) {
             val pattern = state.patternFor(next, length)
+            // Cheap O(1) viability check before the full pattern lookup.
+            if (!patternIsViable(length, pattern)) continue
             metrics?.let { it.fillRepoCalls++ }
             val matches = repository.findByLengthAndPattern(length, pattern)
             val candidates = filterCandidates(matches, state, themeLimits)
@@ -116,6 +118,11 @@ internal class IntegratedSearch(
             var hasAny = false
             for (length in SlotPlanner.orphanSafeLengths(arrow, available, lengthPolicy)) {
                 val pattern = state.patternFor(arrow, length)
+                // Cheap O(1) dead-end check via the precomputed letter table:
+                // if any known crossing letter doesn't appear at its position
+                // for ANY word of this length, this length is dead — skip the
+                // full findByLengthAndPattern + filter work.
+                if (!patternIsViable(length, pattern)) continue
                 val matches = repository.findByLengthAndPattern(length, pattern)
                 val candidates = filterCandidates(matches, state, themeLimits)
                 if (candidates.isNotEmpty()) {
@@ -124,6 +131,21 @@ internal class IntegratedSearch(
                 }
             }
             if (!hasAny) return false
+        }
+        return true
+    }
+
+    /**
+     * O(|pattern|) early-reject: every known letter at every known position
+     * must appear in at least one word of [length] at that position. Uses the
+     * precomputed [WordRepository.lettersAtPosition] table — O(1) per check.
+     */
+    private fun patternIsViable(
+        length: Int,
+        pattern: Map<Int, Char>,
+    ): Boolean {
+        for ((pos, ch) in pattern) {
+            if (ch !in repository.lettersAtPosition(length, pos)) return false
         }
         return true
     }
