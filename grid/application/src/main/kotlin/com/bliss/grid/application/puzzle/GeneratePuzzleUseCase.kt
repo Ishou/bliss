@@ -1,10 +1,12 @@
 package com.bliss.grid.application.puzzle
 
+import com.bliss.grid.domain.generation.Clock
 import com.bliss.grid.domain.generation.ClueCooldownPolicy
 import com.bliss.grid.domain.generation.DEFAULT_GENERATION_TIMEOUT_MS
 import com.bliss.grid.domain.generation.GenerationMetrics
 import com.bliss.grid.domain.generation.GridConstraints
 import com.bliss.grid.domain.generation.GridGenerator
+import com.bliss.grid.domain.generation.SystemClock
 import com.bliss.grid.domain.generation.WordRepository
 import com.bliss.grid.domain.model.Grid
 import org.slf4j.LoggerFactory
@@ -41,9 +43,10 @@ class GeneratePuzzleUseCase(
     private val maxAttemptTimeoutMs: Long = DEFAULT_GENERATION_TIMEOUT_MS,
     private val warmupCount: Int = 3,
     private val rollingWindow: Int = 20,
+    private val clock: Clock = SystemClock,
 ) {
     private val log = LoggerFactory.getLogger(GeneratePuzzleUseCase::class.java)
-    private val generator = GridGenerator(wordRepository)
+    private val generator = GridGenerator(wordRepository, clock)
 
     /**
      * Recent successful attempt wall times (ms). Kept synchronized — callers
@@ -64,14 +67,14 @@ class GeneratePuzzleUseCase(
      * per-attempt wall time, per-attempt metrics, total time.
      *
      * [randomFactory] controls how each retry's `Random` is seeded. The default
-     * matches the production behaviour (`System.nanoTime() + attempt`). The
-     * benchmark overrides this for deterministic, reproducible runs.
+     * uses the injected [clock]'s nanos so retries get well-spread seeds in
+     * production; bench tests override this for deterministic, reproducible runs.
      */
     fun executeWithOutcome(
         width: Int? = null,
         height: Int? = null,
         cooldownPolicy: ClueCooldownPolicy = ClueCooldownPolicy.Inert,
-        randomFactory: (attempt: Int) -> Random = { Random(System.nanoTime() + it) },
+        randomFactory: (attempt: Int) -> Random = { Random(clock.nanoTime() + it) },
     ): AttemptOutcome {
         val constraints =
             defaults.copy(
@@ -83,7 +86,7 @@ class GeneratePuzzleUseCase(
         repeat(maxAttempts) { attempt ->
             val random = randomFactory(attempt)
             val timeoutMs = perAttemptTimeoutMs()
-            val started = System.currentTimeMillis()
+            val started = clock.currentTimeMillis()
             val metrics = GenerationMetrics()
             val grid =
                 generator.generate(
@@ -93,7 +96,7 @@ class GeneratePuzzleUseCase(
                     timeoutMs = timeoutMs,
                     cooldownPolicy = cooldownPolicy,
                 )
-            val elapsed = System.currentTimeMillis() - started
+            val elapsed = clock.currentTimeMillis() - started
             perAttemptMs += elapsed
             perAttemptMetrics += metrics
             if (grid != null) {

@@ -26,6 +26,7 @@ import kotlin.random.Random
 internal class SkeletonFiller(
     private val repository: WordRepository,
     private val cooldownPolicy: ClueCooldownPolicy = ClueCooldownPolicy.Inert,
+    private val clock: Clock = SystemClock,
 ) {
     /**
      * Try to fill every [slots] entry with a word. Returns one [WordPlacement] per
@@ -108,7 +109,7 @@ internal class SkeletonFiller(
         deadline: Long,
         metrics: GenerationMetrics?,
     ): Boolean {
-        if (System.currentTimeMillis() > deadline) return false
+        if (clock.currentTimeMillis() > deadline) return false
 
         // MRV: scan unassigned slots, pick the one with the smallest domain right now.
         // A domain of size 0 short-circuits to a dead end immediately.

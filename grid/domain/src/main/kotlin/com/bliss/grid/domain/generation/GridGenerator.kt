@@ -14,6 +14,7 @@ const val DEFAULT_GENERATION_TIMEOUT_MS = 5_000L
 
 class GridGenerator(
     private val repository: WordRepository,
+    private val clock: Clock = SystemClock,
 ) {
     fun generate(
         constraints: GridConstraints,
@@ -46,29 +47,29 @@ class GridGenerator(
         val w = constraints.width
         val h = constraints.height
         if (w < 2 || h < 2) return null
-        val deadline = System.currentTimeMillis() + timeoutMs
+        val deadline = clock.currentTimeMillis() + timeoutMs
 
-        val skeletonStart = System.nanoTime()
+        val skeletonStart = clock.nanoTime()
         val arrows = Skeleton.arrows(w, h)
-        metrics?.skeletonMs = (System.nanoTime() - skeletonStart) / 1_000_000
+        metrics?.skeletonMs = (clock.nanoTime() - skeletonStart) / 1_000_000
 
-        val slotPlanStart = System.nanoTime()
+        val slotPlanStart = clock.nanoTime()
         val slots =
-            SlotPlanner.planVariable(arrows, w, h, random, deadline, metrics) ?: run {
-                metrics?.slotPlanMs = (System.nanoTime() - slotPlanStart) / 1_000_000
+            SlotPlanner.planVariable(arrows, w, h, random, deadline, clock, metrics) ?: run {
+                metrics?.slotPlanMs = (clock.nanoTime() - slotPlanStart) / 1_000_000
                 return null
             }
-        metrics?.slotPlanMs = (System.nanoTime() - slotPlanStart) / 1_000_000
+        metrics?.slotPlanMs = (clock.nanoTime() - slotPlanStart) / 1_000_000
         if (slots.any { it.length < constraints.minWordLength }) return null
 
-        val fillStart = System.nanoTime()
+        val fillStart = clock.nanoTime()
         val placements =
-            SkeletonFiller(repository, cooldownPolicy)
+            SkeletonFiller(repository, cooldownPolicy, clock)
                 .fill(slots, random, deadline, constraints.themeLimits, metrics) ?: run {
-                metrics?.fillMs = (System.nanoTime() - fillStart) / 1_000_000
+                metrics?.fillMs = (clock.nanoTime() - fillStart) / 1_000_000
                 return null
             }
-        metrics?.fillMs = (System.nanoTime() - fillStart) / 1_000_000
+        metrics?.fillMs = (clock.nanoTime() - fillStart) / 1_000_000
         // The planner + filler enforce the invariants `Grid.fromPlacements` checks
         // (in-bounds, no duplicate words, no clue/letter overlap, consistent crossings).
         // Catch only `IllegalArgumentException` — what `require(...)` throws — so a real

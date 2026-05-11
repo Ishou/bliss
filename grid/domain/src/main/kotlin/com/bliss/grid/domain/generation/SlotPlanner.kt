@@ -91,6 +91,7 @@ object SlotPlanner {
         height: Int,
         random: kotlin.random.Random,
         deadline: Long,
+        clock: Clock = SystemClock,
         metrics: GenerationMetrics? = null,
     ): List<WordSlot>? {
         require(width >= 2 && height >= 2) { "grid must be at least 2×2, was $width×$height" }
@@ -99,16 +100,17 @@ object SlotPlanner {
             state.addClueCell(arrow.cluePosition)
             state.addArrow(arrow.cluePosition, arrow.direction)
         }
-        return solveVariable(state, random, deadline, metrics)
+        return solveVariable(state, random, deadline, clock, metrics)
     }
 
     private fun solveVariable(
         state: PlanState,
         random: kotlin.random.Random,
         deadline: Long,
+        clock: Clock,
         metrics: GenerationMetrics?,
     ): List<WordSlot>? {
-        if (System.currentTimeMillis() > deadline) return null
+        if (clock.currentTimeMillis() > deadline) return null
 
         val next =
             state.nextPending() ?: run {
@@ -122,7 +124,7 @@ object SlotPlanner {
         if (available < 2) {
             val cp = state.checkpoint()
             state.deactivate(next.cluePosition, next.direction)
-            val result = solveVariable(state, random, deadline, metrics)
+            val result = solveVariable(state, random, deadline, clock, metrics)
             if (result != null) return result
             state.rollback(cp)
             metrics?.let { it.slotPlanBacktracks++ }
@@ -145,7 +147,7 @@ object SlotPlanner {
                 // with no recoverable arrow (all DEACTIVATED, none MATERIALIZED
                 // or PENDING). Cuts the search tree before we recurse another
                 // ~20 arrows deep just to discover the same dead-end.
-                val result = solveVariable(state, random, deadline, metrics)
+                val result = solveVariable(state, random, deadline, clock, metrics)
                 if (result != null) return result
             }
             state.rollback(cp)
