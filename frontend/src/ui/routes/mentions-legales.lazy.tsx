@@ -2,7 +2,7 @@
 // (`./mentions-legales.tsx`) keeps the route definition + `head()` so
 // prerender surfaces per-route metadata without waiting for this chunk.
 
-import { createLazyRoute } from '@tanstack/react-router';
+import { createLazyRoute, Link } from '@tanstack/react-router';
 import { css } from 'styled-system/css';
 import { ContentPage } from '@/ui/components/layout';
 
@@ -84,7 +84,7 @@ function LegalNoticePage() {
         <h2>Données personnelles</h2>
         <p>
           Le traitement des données personnelles est décrit dans la{' '}
-          <a href="/confidentialite">politique de confidentialité</a>.
+          <Link to="/confidentialite">politique de confidentialité</Link>.
         </p>
 
         <h2>Signaler un problème</h2>
