@@ -55,6 +55,13 @@ ITER14_SFT_DIR    = REPO / "data" / "lora"                          # data/lora/
 ITER17_DPO_DIR    = REPO / "data" / "lora_dpo_iter17_combined"      # iter14-base + coord-long + 14 hand-pairs
 RAW_POS           = REPO / "data" / "eval" / "production" / "lemma_clues_raw_pos.csv"
 
+# Curated "best-of" SFT lane — written by extract_best_of_v8.py from
+# iter17's high-confidence shipped output, then hand-edited by the
+# operator to drop wrong-sense / low-quality rows that slipped past
+# the validator + filter. If the file doesn't exist, the lane is
+# disabled (e.g. on a fresh checkout that hasn't run iter17 yet).
+ITER18_BEST_OF    = REPO / "data" / "lora_iter18_best_of_v8.csv"
+
 OUT_SFT_DIR       = REPO / "data" / "lora_iter18_sft"
 OUT_DPO_DIR       = REPO / "data" / "lora_dpo_iter18"
 
@@ -99,6 +106,40 @@ def _sft_row(lemma: str, pos: str, clue: str) -> dict:
             {"role": "assistant", "content": clue},
         ]
     }
+
+
+def _load_iter17_best_of_extras() -> list[dict]:
+    """Read the hand-curated `data/lora_iter18_best_of_v8.csv` into SFT
+    rows. The file is produced by `extract_best_of_v8.py` and then
+    hand-edited by the operator to remove any wrong-sense / low-quality
+    rows that survived the score floor + authored-lemma exclusion.
+
+    Re-running `extract_best_of_v8.py` overwrites the file with fresh
+    auto-filtered candidates — apply your curation **after** extracting,
+    not before, so it lands on a known starting state.
+
+    If the file doesn't exist, the lane is silently disabled."""
+    if not ITER18_BEST_OF.exists():
+        print(f"(no {ITER18_BEST_OF.name} — skipping best-of-v8 lane; "
+              f"run extract_best_of_v8.py to populate)",
+              file=sys.stderr)
+        return []
+    out: list[dict] = []
+    over_cap = 0
+    with ITER18_BEST_OF.open(encoding="utf-8", newline="") as f:
+        for r in csv.DictReader(f):
+            lemma = (r.get("lemma") or "").strip().lower()
+            pos   = _normalize_pos(r.get("pos") or "")
+            clue  = (r.get("clue") or "").strip()
+            if not (lemma and pos and clue):
+                continue
+            if len(clue) > MAX_SFT_CHARS:
+                over_cap += 1
+                continue
+            out.append(_sft_row(lemma, pos, clue))
+    print(f"best-of-v8 extras (from {ITER18_BEST_OF.name}): {len(out)} "
+          f"(over-cap dropped={over_cap})", file=sys.stderr)
+    return out
 
 
 def _load_iter18_sft_extras() -> list[dict]:
@@ -180,9 +221,21 @@ def build_sft() -> dict[str, list[dict]]:
     out["test"].extend(extras[n_valid_extra:n_valid_extra + n_test_extra])
     out["train"].extend(extras[n_valid_extra + n_test_extra:])
 
+    # Best-of self-distillation lane from iter17 production output.
+    # Same 90/5/5 split posture so the eval reflects what we expect at
+    # inference.
+    best_of = _load_iter17_best_of_extras()
+    random.shuffle(best_of)
+    m = len(best_of)
+    m_valid = max(int(round(m * 0.05)), 1)
+    m_test  = max(int(round(m * 0.05)), 1)
+    out["valid"].extend(best_of[:m_valid])
+    out["test"].extend(best_of[m_valid:m_valid + m_test])
+    out["train"].extend(best_of[m_valid + m_test:])
+
     print(
         f"SFT: train={len(out['train'])} valid={len(out['valid'])} test={len(out['test'])} "
-        f"(extras from iter18_authored_pairs.py={n}; skipped={skipped}; "
+        f"(iter18-authored={n}; best-of-v8={m}; skipped={skipped}; "
         f"iter14-sft over-cap dropped={over_cap})",
         file=sys.stderr,
     )
