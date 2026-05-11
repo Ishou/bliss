@@ -30,12 +30,18 @@ data class WordSlot(
         )
     }
 
-    /** All letter cells of this slot, in flow order. */
-    fun letterPositions(): List<Position> {
+    /**
+     * All letter cells of this slot, in flow order. Memoized — the filler calls
+     * this hot in the inner loop (per slot per search node), and a fresh list
+     * allocation each time dominated GC on the 15×12 default constraints.
+     */
+    private val cachedLetterPositions: List<Position> by lazy {
         val r0 = firstLetter.row.value
         val c0 = firstLetter.column.value
         val dr = direction.step.row.value
         val dc = direction.step.column.value
-        return List(length) { i -> Position(Row(r0 + dr * i), Column(c0 + dc * i)) }
+        List(length) { i -> Position(Row(r0 + dr * i), Column(c0 + dc * i)) }
     }
+
+    fun letterPositions(): List<Position> = cachedLetterPositions
 }
