@@ -99,6 +99,7 @@ data class Lobby(
     val game: GameSession?,
     val lastActivityAt: Instant,
     val code: LobbyCode,
+    val title: LobbyTitle? = null,
 ) {
     init {
         require(players.size <= MAX_PLAYERS) {
