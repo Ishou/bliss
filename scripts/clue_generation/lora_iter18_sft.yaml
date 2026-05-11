@@ -6,9 +6,9 @@
 # tax on every future DPO iter.
 #
 # Corpus (data/lora_iter18_sft):
-#   train.jsonl  583 rows
-#   valid.jsonl   20 rows
-#   test.jsonl    24 rows
+#   train.jsonl  720 rows
+#   valid.jsonl   30 rows
+#   test.jsonl    34 rows
 #
 # Each row is the iter14-era SFT pair (curated + Claude-authored
 # synthetic + iter `y`-rated y's) re-formatted to the new schema:
