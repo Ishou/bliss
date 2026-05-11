@@ -68,6 +68,14 @@ interface LobbyRepository {
      * the scan and the eviction.
      */
     suspend fun findIdleWaiting(cutoff: Instant): List<Lobby>
+
+    /**
+     * Returns COMPLETED lobbies whose [Lobby.lastActivityAt] is at or before [cutoff].
+     * Consumed by the lobby garbage collector per the ADR-0039 §c retention matrix
+     * (COMPLETED lobbies kept 7 days). Snapshot — callers must re-validate inside
+     * [mutate] (or [delete]) to avoid TOCTOU between the scan and the eviction.
+     */
+    suspend fun findIdleCompleted(cutoff: Instant): List<Lobby>
 }
 
 /**

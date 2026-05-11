@@ -100,6 +100,13 @@ class InMemoryLobbyRepository : LobbyRepository {
                 .filter { it.state == LobbyLifecycleState.WAITING && !it.lastActivityAt.isAfter(cutoff) }
                 .toList()
         }
+
+    override suspend fun findIdleCompleted(cutoff: Instant): List<Lobby> =
+        storeLock.withLock {
+            store.values
+                .filter { it.state == LobbyLifecycleState.COMPLETED && !it.lastActivityAt.isAfter(cutoff) }
+                .toList()
+        }
 }
 
 /** Returns the puzzle handed at construction time, regardless of width/height. */

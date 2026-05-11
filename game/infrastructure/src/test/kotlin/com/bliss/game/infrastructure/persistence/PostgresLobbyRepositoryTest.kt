@@ -246,6 +246,34 @@ class PostgresLobbyRepositoryTest {
         }
 
     @Test
+    fun `findIdleCompleted returns completed lobbies at or before the cutoff and excludes WAITING and IN_PROGRESS`() =
+        runTest {
+            val idleCompleted =
+                completedLobby(
+                    id = LobbyId.generate(),
+                    owner = sessionA,
+                ).let { it.copy(lastActivityAt = baseInstant.minusSeconds(3600)) }
+            val freshCompleted =
+                completedLobby(
+                    id = LobbyId.generate(),
+                    owner = sessionB,
+                ).let { it.copy(lastActivityAt = baseInstant.plusSeconds(3600)) }
+            val idleWaiting =
+                waitingLobby(
+                    id = LobbyId.generate(),
+                    owner = sessionC,
+                    lastActivityAt = baseInstant.minusSeconds(3600),
+                )
+            repo.save(idleCompleted)
+            repo.save(freshCompleted)
+            repo.save(idleWaiting)
+
+            val result = repo.findIdleCompleted(baseInstant)
+
+            assertThat(result.map { it.id }).containsExactly(idleCompleted.id)
+        }
+
+    @Test
     fun `findBySessionId returns lobbies in every lifecycle state ordered by lastActivityAt desc`() =
         runTest {
             val waiting =

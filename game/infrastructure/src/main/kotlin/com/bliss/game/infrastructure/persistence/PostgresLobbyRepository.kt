@@ -193,6 +193,24 @@ class PostgresLobbyRepository(
             }
         }
 
+    override suspend fun findIdleCompleted(cutoff: Instant): List<Lobby> =
+        withContext(Dispatchers.IO) {
+            ds.connection.use { conn ->
+                val ids = mutableListOf<LobbyId>()
+                conn
+                    .prepareStatement(
+                        "SELECT id FROM lobbies " +
+                            "WHERE state = 'COMPLETED' AND last_activity_at <= ?",
+                    ).use { ps ->
+                        ps.setTimestamp(1, Timestamp.from(cutoff))
+                        ps.executeQuery().use { rs ->
+                            while (rs.next()) ids += LobbyId(rs.getString("id"))
+                        }
+                    }
+                ids.mapNotNull { loadLobby(conn, it) }
+            }
+        }
+
     // ---- internals -----------------------------------------------------
 
     private fun selectIdByCode(
