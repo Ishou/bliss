@@ -12,6 +12,17 @@ import kotlin.random.Random
  */
 const val DEFAULT_GENERATION_TIMEOUT_MS = 5_000L
 
+/**
+ * Initial per-probe budget for the randomized-restart loop inside
+ * [GridGenerator.generate], in **nanoseconds** (so sub-millisecond budgets
+ * are expressible). Doubles per probe up to the per-attempt deadline. Default
+ * = 200ms = 200 × 10⁶ ns; the doubling lets harder seeds get progressively
+ * longer budgets within the overall deadline.
+ */
+private const val INITIAL_PROBE_BUDGET_NS: Long = 1_000L
+
+private const val NS_PER_MS: Long = 1_000_000L
+
 class GridGenerator(
     private val repository: WordRepository,
     private val clock: Clock = SystemClock,
@@ -49,18 +60,13 @@ class GridGenerator(
         val w = constraints.width
         val h = constraints.height
         if (w < 2 || h < 2) return null
-        val deadline = clock.currentTimeMillis() + timeoutMs
+        val deadlineNs = clock.nanoTime() + timeoutMs * NS_PER_MS
 
         val skeletonStart = clock.nanoTime()
         val arrows = Skeleton.arrows(w, h)
-        metrics?.skeletonMs = (clock.nanoTime() - skeletonStart) / 1_000_000
+        metrics?.skeletonMs = (clock.nanoTime() - skeletonStart) / NS_PER_MS
 
         val searchStart = clock.nanoTime()
-        val state = PlanState(w, h)
-        for (arrow in arrows) {
-            state.addClueCell(arrow.cluePosition)
-            state.addArrow(arrow.cluePosition, arrow.direction)
-        }
         val search =
             IntegratedSearch(
                 repository = repository,
@@ -68,13 +74,40 @@ class GridGenerator(
                 clock = clock,
                 lengthPolicy = lengthPolicy,
             )
-        val ok = search.solve(state, random, deadline, constraints.themeLimits, metrics)
+
+        // Randomized restart with exponentially growing probe budget (nanos).
+        // Each probe gets a sub-random derived from the caller's [random], so
+        // the whole generation stays deterministic per input seed but explores
+        // structurally different search trees per probe.
+        var probeBudgetNs = INITIAL_PROBE_BUDGET_NS
+        var probeIdx = 0
+        var successState: PlanState? = null
+        while (clock.nanoTime() < deadlineNs) {
+            val probeDeadlineNs = minOf(deadlineNs, clock.nanoTime() + probeBudgetNs)
+            val probeRandom = Random(random.nextLong() + probeIdx)
+            val state = PlanState(w, h)
+            for (arrow in arrows) {
+                state.addClueCell(arrow.cluePosition)
+                state.addArrow(arrow.cluePosition, arrow.direction)
+            }
+            if (search.solve(state, probeRandom, probeDeadlineNs, constraints.themeLimits, metrics)) {
+                successState = state
+                break
+            }
+            // 1.05× growth — slow geometric ramp. Empirically the best
+            // bench trade-off at 0.01ms initial: many short probes catch
+            // easy seeds fast; the slow ramp avoids committing to long
+            // doomed probes before the deadline.
+            probeBudgetNs = (probeBudgetNs * 21 / 20).coerceAtMost(timeoutMs * NS_PER_MS)
+            probeIdx++
+        }
+
         // The integrated search interleaves planning and filling, so we attribute
         // the entire wall-time to fillMs and leave slotPlanMs at 0 (no separate
         // planning phase exists anymore).
         metrics?.slotPlanMs = 0
-        metrics?.fillMs = (clock.nanoTime() - searchStart) / 1_000_000
-        if (!ok) return null
+        metrics?.fillMs = (clock.nanoTime() - searchStart) / NS_PER_MS
+        val state = successState ?: return null
         if (state.placements.any { it.word.text.length < constraints.minWordLength }) return null
         val placements = state.placements
 
