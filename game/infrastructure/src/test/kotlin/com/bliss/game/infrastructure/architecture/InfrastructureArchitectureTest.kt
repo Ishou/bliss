@@ -26,10 +26,9 @@ class InfrastructureArchitectureTest {
 
     // Ktor client + kotlinx-serialization are legitimate adapter deps (HttpPuzzleProvider
     // talks to grid over REST). Server-side Ktor stays banned — that belongs in :game:api.
-    // JDBC / Postgres / Flyway / HikariCP are scoped to PRODUCTION source only: the V1
-    // Flyway MigrationTest (and the upcoming PostgresLobbyRepository contract test in
-    // PR #5) legitimately import these from src/test. The production-source guard
-    // narrows once PostgresLobbyRepository itself lands in PR #5.
+    // JDBC / Postgres / Flyway / HikariCP are now legitimately in production source via
+    // PostgresLobbyRepository + BlissDatabase (ADR-0039, PR #5); the production-source
+    // guard accordingly narrows to truly out-of-band frameworks.
     @Test
     fun `production infrastructure has no banned framework imports`() {
         val forbiddenPrefixes =
@@ -40,11 +39,6 @@ class InfrastructureArchitectureTest {
                 "org.http4k",
                 "org.jetbrains.exposed",
                 "io.micronaut",
-                "java.sql",
-                "javax.sql",
-                "com.zaxxer.hikari",
-                "org.postgresql",
-                "org.flywaydb",
             )
         Konsist
             .scopeFromProduction(moduleName = "game/infrastructure")
