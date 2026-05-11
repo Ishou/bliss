@@ -237,35 +237,52 @@ internal class SkeletonFiller(
         val matches = repository.findByLengthAndPattern(slot.length, pattern)
         val nothingUsed = usedWords.isEmpty() && usedLemmas.isEmpty()
         // Themes only kick in when at least one cap is configured; the empty-map
-        // case keeps the existing cheap path.
+        // case keeps the existing cheap path. The cooldown filter inside
+        // wordHasUsableClue must still run even when nothing is used and no themes
+        // are active — a word can have all its clues on cooldown at search root.
+        val cooldownActive = cooldownPolicy !== ClueCooldownPolicy.Inert
         val themeActive = themeLimits.isNotEmpty()
+        val needsClueCheck = cooldownActive || themeActive
         return when {
-            nothingUsed && !themeActive -> matches
-            !themeActive ->
-                matches.filter {
-                    nothingUsed || (it.text !in usedWords && it.lemma !in usedLemmas)
-                }
+            nothingUsed && !needsClueCheck -> matches
+            !needsClueCheck ->
+                matches.filter { it.text !in usedWords && it.lemma !in usedLemmas }
             else ->
                 matches.filter {
                     (nothingUsed || (it.text !in usedWords && it.lemma !in usedLemmas)) &&
-                        wordHasFittingClue(it, themeUsed, themeLimits)
+                        wordHasUsableClue(it, themeUsed, themeLimits)
                 }
         }
     }
 
-    /** True iff [word] has at least one clue whose theme fits the live caps. */
-    private fun wordHasFittingClue(
+    /**
+     * True iff [word] has at least one clue that:
+     *  - fits the live theme caps, AND
+     *  - is not on cooldown per [cooldownPolicy].
+     *
+     * Used by [domainFor] to exclude words whose every clue is unusable, so the
+     * silent fallback in [pickClue] (`word.clues.first()`) can be replaced with
+     * an assertion — the domain now guarantees at least one usable clue exists.
+     */
+    private fun wordHasUsableClue(
         word: Word,
         themeUsed: Map<String, Int>,
         themeLimits: Map<String, Int>,
-    ): Boolean = word.clues.any { themeAllowed(it.theme, themeUsed, themeLimits) }
+    ): Boolean =
+        word.clues.any {
+            themeAllowed(it.theme, themeUsed, themeLimits) &&
+                !cooldownPolicy.isOnCooldown(ClueId(word.text, it.text))
+        }
 
     /**
      * Pick which of [word]'s clues to render at placement time. Prefer clues whose
      * theme is `null` so themed slots stay free for words whose only candidate is
-     * themed (e.g. NE has compass-only). Among clues that fit current caps, pick
-     * uniformly at random for variety; if none fit (shouldn't happen — domainFor
-     * filters), fall back to the word's first clue.
+     * themed (e.g. NE has compass-only). Among clues that fit current caps AND
+     * pass the cooldown policy, pick uniformly at random for variety.
+     *
+     * Domain invariant: [domainFor] only returns words for which at least one
+     * usable clue exists (see [wordHasUsableClue]). Reaching the `error(...)`
+     * branch means the caller violated that contract.
      */
     private fun pickClue(
         word: Word,
@@ -273,16 +290,20 @@ internal class SkeletonFiller(
         themeLimits: Map<String, Int>,
         random: Random,
     ): WordClue {
-        if (word.clues.size == 1) return word.clues.first()
-        val fitting = word.clues.filter { themeAllowed(it.theme, themeUsed, themeLimits) }
-        val fresh = fitting.filterNot { cooldownPolicy.isOnCooldown(ClueId(word.text, it.text)) }
-        val pool = if (fresh.isNotEmpty()) fresh else fitting
-        val nonThemed = pool.filter { it.theme == null }
-        return when {
-            nonThemed.isNotEmpty() -> nonThemed.random(random)
-            pool.isNotEmpty() -> pool.random(random)
-            else -> word.clues.first()
+        val usable =
+            word.clues.filter {
+                themeAllowed(it.theme, themeUsed, themeLimits) &&
+                    !cooldownPolicy.isOnCooldown(ClueId(word.text, it.text))
+            }
+        if (usable.isEmpty()) {
+            error(
+                "pickClue invariant violated: word '${word.text}' reached placement with no " +
+                    "theme-fitting, non-cooldown clue. domainFor should have excluded it.",
+            )
         }
+        val nonThemed = usable.filter { it.theme == null }
+        val pool = if (nonThemed.isNotEmpty()) nonThemed else usable
+        return pool.random(random)
     }
 
     /** True iff placing a clue with [theme] would not exceed its per-grid cap. */

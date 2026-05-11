@@ -4,6 +4,7 @@ import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.isIn
 import assertk.assertions.isNotNull
+import assertk.assertions.isNull
 import com.bliss.grid.domain.model.Column
 import com.bliss.grid.domain.model.Direction
 import com.bliss.grid.domain.model.Position
@@ -50,7 +51,7 @@ class SkeletonFillerCooldownTest {
     }
 
     @Test
-    fun `cooldown all clues forces fallback to existing behavior`() {
+    fun `cooldown all clues excludes the word from the search domain`() {
         val both =
             setOf(
                 ClueId("EST", "Verbe etre"),
@@ -66,10 +67,12 @@ class SkeletonFillerCooldownTest {
                     deadline = System.currentTimeMillis() + 1_000,
                 )
 
-        assertThat(placements).isNotNull()
-        // Contract is "do not fail" when nothing is fresh; either clue is acceptable.
-        assertThat(placements!!.single().chosenClue.text)
-            .isIn("Verbe etre", "Direction cardinale")
+        // New contract (Wave 2): a word with no usable (non-cooldown) clue is
+        // excluded from the search domain — no silent fallback to a cooled clue.
+        // With only this single word in the repo and all its clues on cooldown,
+        // the search has no candidate and returns null. In production with a
+        // 100k-word corpus, the search simply moves on to a different word.
+        assertThat(placements).isNull()
     }
 
     @Test
