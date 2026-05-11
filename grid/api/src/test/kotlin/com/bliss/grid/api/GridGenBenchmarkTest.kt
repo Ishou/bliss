@@ -7,44 +7,67 @@ import com.bliss.grid.domain.generation.GridGenerator
 import com.bliss.grid.infrastructure.persistence.CsvWordRepository
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
+import org.slf4j.LoggerFactory
 import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.io.path.bufferedWriter
 import kotlin.random.Random
 
+private const val WARMUP_N = 5
+private const val PROGRESS_INTERVAL = 20
+
 /**
  * Per-phase grid-generation benchmark. Generates N puzzles with deterministic
- * seeds, captures [GenerationMetrics] from each run, and prints/saves the
- * distribution. Runs opt-in via the `bench` JUnit tag — not part of CI.
+ * seeds, captures [GenerationMetrics] from each run, and emits structured
+ * SLF4J logs (Logstash-encoded by the production logback config — see
+ * `grid/api/src/main/resources/logback.xml`). Runs opt-in via the `bench`
+ * JUnit tag — not part of CI.
  *
  * Usage: `./gradlew :grid:api:test -Dincludetags=bench`
  *   or:  `./gradlew :grid:api:test --tests '*GridGenBenchmarkTest*'`
  *
- * Output goes to:
- *   - stdout (summary stats: median / p95 / p99 per phase)
- *   - data/eval/grid_gen_bench_<timestamp>.csv (one row per attempt)
+ * Per-puzzle metrics are also dumped to
+ * `data/eval/grid_gen_bench_<timestamp>.csv` for later analysis.
  */
 @Tag("bench")
 class GridGenBenchmarkTest {
+    private val log = LoggerFactory.getLogger(GridGenBenchmarkTest::class.java)
+
     @Test
     fun `200 puzzles per-phase metrics on the production corpus`() {
         val repo = CsvWordRepository.frenchFromClasspath()
         val generator = GridGenerator(repo)
         val constraints = defaultPuzzleConstraints()
 
-        // JIT warm-up — first few generations recompile hot paths and aren't
-        // representative of steady-state perf.
-        repeat(5) { generator.generate(constraints, Random(it.toLong())) }
+        log.info(
+            "bench_warmup_start width={} height={} warmup_n={}",
+            constraints.width,
+            constraints.height,
+            WARMUP_N,
+        )
+        val warmStart = System.currentTimeMillis()
+        repeat(WARMUP_N) { generator.generate(constraints, Random(it.toLong())) }
+        log.info("bench_warmup_done elapsed_ms={}", System.currentTimeMillis() - warmStart)
 
         val n = 200
+        log.info("bench_loop_start n={}", n)
         val results = ArrayList<GenerationMetrics>(n)
+        val loopStart = System.currentTimeMillis()
         for (i in 0 until n) {
             val m = GenerationMetrics()
             generator.generate(constraints, Random(i.toLong() * 1000), metrics = m)
             results += m
+            if ((i + 1) % PROGRESS_INTERVAL == 0 || i == n - 1) {
+                log.info(
+                    "bench_progress done={} total={} elapsed_ms={} success={}",
+                    i + 1,
+                    n,
+                    System.currentTimeMillis() - loopStart,
+                    results.count { it.succeeded },
+                )
+            }
         }
 
-        // ---- Summary stats ----
         val totalMs = results.map { it.skeletonMs + it.slotPlanMs + it.fillMs }.sorted()
         val skeletonMs = results.map { it.skeletonMs }.sorted()
         val slotPlanMs = results.map { it.slotPlanMs }.sorted()
@@ -56,32 +79,23 @@ class GridGenBenchmarkTest {
         val successCount = results.count { it.succeeded }
         val timeoutCount = n - successCount
 
-        fun List<Long>.p(pct: Int) = this[(pct * (size - 1)) / 100]
-
-        fun List<Long>.fmt() = "min=${first()} p50=${p(50)} p75=${p(75)} p95=${p(95)} p99=${p(99)} max=${last()}"
-
-        println(
-            """
-            |=== Grid-gen benchmark: $n puzzles (${constraints.width}x${constraints.height}, default constraints) ===
-            |success: $successCount/$n  (${"%.1f".format(100.0 * successCount / n)}%)
-            |timeouts: $timeoutCount
-            |
-            |Per-phase wall time (ms):
-            |  total:     ${totalMs.fmt()}
-            |  skeleton:  ${skeletonMs.fmt()}
-            |  slot-plan: ${slotPlanMs.fmt()}
-            |  fill:      ${fillMs.fmt()}
-            |
-            |Search effort:
-            |  slot-plan backtracks: ${planBacks.fmt()}
-            |  fill backtracks:      ${fillBacks.fmt()}
-            |  fill repo calls:      ${repoCalls.fmt()}
-            |  first-slot domain:    ${firstSlotDom.fmt()}
-            |
-            """.trimMargin(),
+        log.info(
+            "bench_summary width={} height={} n={} success={} timeouts={}",
+            constraints.width,
+            constraints.height,
+            n,
+            successCount,
+            timeoutCount,
         )
+        logDistribution("total_ms", totalMs)
+        logDistribution("skeleton_ms", skeletonMs)
+        logDistribution("slot_plan_ms", slotPlanMs)
+        logDistribution("fill_ms", fillMs)
+        logDistribution("slot_plan_backtracks", planBacks)
+        logDistribution("fill_backtracks", fillBacks)
+        logDistribution("fill_repo_calls", repoCalls)
+        logDistribution("first_slot_domain", firstSlotDom)
 
-        // ---- CSV dump ----
         val ts = System.currentTimeMillis()
         val outDir = Path.of("data/eval")
         Files.createDirectories(outDir)
@@ -100,7 +114,24 @@ class GridGenBenchmarkTest {
                 )
             }
         }
-        println("[bench] CSV: $outFile (${results.size} rows)")
+        log.info("bench_csv_written path={} rows={}", outFile, results.size)
+    }
+
+    private fun logDistribution(
+        name: String,
+        sorted: List<Long>,
+    ) {
+        fun List<Long>.p(pct: Int) = this[(pct * (size - 1)) / 100]
+        log.info(
+            "bench_dist name={} min={} p50={} p75={} p95={} p99={} max={}",
+            name,
+            sorted.first(),
+            sorted.p(50),
+            sorted.p(75),
+            sorted.p(95),
+            sorted.p(99),
+            sorted.last(),
+        )
     }
 
     /**
@@ -120,28 +151,34 @@ class GridGenBenchmarkTest {
         val constraints = defaultPuzzleConstraints()
         val useCase = GeneratePuzzleUseCase(repo, constraints)
 
-        // JIT warm-up.
-        repeat(5) { useCase.execute() }
+        log.info("bench_usecase_warmup_start warmup_n={}", WARMUP_N)
+        val warmStart = System.currentTimeMillis()
+        repeat(WARMUP_N) { useCase.execute() }
+        log.info("bench_usecase_warmup_done elapsed_ms={}", System.currentTimeMillis() - warmStart)
 
         val n = 200
+        log.info("bench_usecase_loop_start n={}", n)
         val totalMs = LongArray(n)
         var successCount = 0
+        val loopStart = System.currentTimeMillis()
         for (i in 0 until n) {
             val start = System.currentTimeMillis()
             val grid = useCase.execute()
             totalMs[i] = System.currentTimeMillis() - start
             if (grid != null) successCount++
+            if ((i + 1) % PROGRESS_INTERVAL == 0 || i == n - 1) {
+                log.info(
+                    "bench_usecase_progress done={} total={} elapsed_ms={} success={}",
+                    i + 1,
+                    n,
+                    System.currentTimeMillis() - loopStart,
+                    successCount,
+                )
+            }
         }
-        val sorted = totalMs.sortedArray()
+        val sorted = totalMs.sortedArray().toList()
 
-        fun LongArray.p(pct: Int) = this[(pct * (size - 1)) / 100]
-        println(
-            """
-            |=== Self-calibrating use-case (cutoff = 10× recent-success median) ===
-            |success: $successCount/$n  (${"%.1f".format(100.0 * successCount / n)}%)
-            |Total wall time per puzzle (ms):
-            |  min=${sorted.first()} p50=${sorted.p(50)} p75=${sorted.p(75)} p95=${sorted.p(95)} p99=${sorted.p(99)} max=${sorted.last()}
-            """.trimMargin(),
-        )
+        log.info("bench_usecase_summary n={} success={}", n, successCount)
+        logDistribution("usecase_total_ms", sorted)
     }
 }

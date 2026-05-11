@@ -150,6 +150,14 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
+    // Stream test stdout/stderr live (logger output included). Without this,
+    // Gradle buffers all output until each test completes — fine for unit
+    // tests, but the `bench` suite runs for ~15 minutes and we want
+    // per-N-puzzle progress lines to surface in real time.
+    testLogging {
+        showStandardStreams = true
+        events("standardOut", "standardError", "passed", "failed", "skipped")
+    }
 }
 
 tasks.shadowJar {
