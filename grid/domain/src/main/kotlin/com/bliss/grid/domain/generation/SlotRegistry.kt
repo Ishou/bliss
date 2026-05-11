@@ -120,6 +120,7 @@ internal object SlotRegistry {
                 }
                 val length = positions.size
                 if (length >= minLen) {
+                    if (length > lexicon.maxLength) return null
                     val sid = slots.size
                     val (clue, dir) =
                         horizontalSlotClue(cells, r = r, startC = startC)
@@ -167,6 +168,7 @@ internal object SlotRegistry {
                 }
                 val length = positions.size
                 if (length >= minLen) {
+                    if (length > lexicon.maxLength) return null
                     val sid = slots.size
                     val (clue, dir) =
                         verticalSlotClue(cells, c = col, startR = startR)

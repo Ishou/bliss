@@ -164,8 +164,22 @@ internal object BlackCellLayout {
             val hRun = horizontalRunLength(cells, nr, nc)
             val vRun = verticalRunLength(cells, nr, nc)
             val isEdge = nr == 0 || nc == 0
-            val valid = if (isEdge) hRun >= minLen || vRun >= minLen else hRun >= minLen && vRun >= minLen
+            // Edge cells: a neighbour that would be "stranded" (both runs <
+            // minLen) is acceptable — eliminateOrphans will turn it BLACK
+            // (it becomes a harmless extra clue cell). This is essential
+            // for capping very long boundary runs on large grids where
+            // every midpoint candidate strands an alternating row-0 cell.
+            // Interior cells: must keep at least one axis ≥ minLen so they
+            // participate in some slot; both <minLen would create an
+            // uncrossed interior letter, which the grid validator rejects.
+            val valid = if (isEdge) true else hRun >= minLen || vRun >= minLen
             if (!valid) {
+                ok = false; break
+            }
+            // Additional invariant: interior cells must have *both* axes ≥
+            // minLen because GridValidator requires interior letters to be
+            // doubly crossed.
+            if (!isEdge && (hRun < minLen || vRun < minLen)) {
                 ok = false; break
             }
         }
@@ -270,9 +284,23 @@ internal object BlackCellLayout {
             val length = c - start
             if (length > lCap) {
                 val mid = start + length / 2
-                val offsets = SPLIT_OFFSETS.toMutableList().also { it.shuffle(random) }
-                for (off in offsets) {
-                    val pos = mid + off
+                // Try every position in the run, preferring midpoint-close.
+                // Some seeds need an off-midpoint cut on the bottom/right edge
+                // because interior orphans block the strict midpoint.
+                val positions = (start until start + length).sortedBy {
+                    val d = it - mid
+                    // Negative to prefer slightly-left ties, with a per-call
+                    // random salt so deterministic seeds still produce
+                    // structurally different layouts.
+                    if (d == 0) -1 else d * d
+                }.let {
+                    if (it.size > 1) {
+                        val first = it.first()
+                        val rest = it.drop(1).toMutableList().also { l -> l.shuffle(random) }
+                        listOf(first) + rest
+                    } else it
+                }
+                for (pos in positions) {
                     if (pos !in start until start + length) continue
                     if (canPlaceBlack(cells, r, pos, minLen)) {
                         cells.set(r, pos, CellArray.BLACK)
@@ -305,9 +333,23 @@ internal object BlackCellLayout {
             val length = r - start
             if (length > lCap) {
                 val mid = start + length / 2
-                val offsets = SPLIT_OFFSETS.toMutableList().also { it.shuffle(random) }
-                for (off in offsets) {
-                    val pos = mid + off
+                // Try every position in the run, preferring midpoint-close.
+                // Some seeds need an off-midpoint cut on the bottom/right edge
+                // because interior orphans block the strict midpoint.
+                val positions = (start until start + length).sortedBy {
+                    val d = it - mid
+                    // Negative to prefer slightly-left ties, with a per-call
+                    // random salt so deterministic seeds still produce
+                    // structurally different layouts.
+                    if (d == 0) -1 else d * d
+                }.let {
+                    if (it.size > 1) {
+                        val first = it.first()
+                        val rest = it.drop(1).toMutableList().also { l -> l.shuffle(random) }
+                        listOf(first) + rest
+                    } else it
+                }
+                for (pos in positions) {
                     if (pos !in start until start + length) continue
                     if (canPlaceBlack(cells, pos, c, minLen)) {
                         cells.set(pos, c, CellArray.BLACK)
@@ -320,7 +362,6 @@ internal object BlackCellLayout {
         return changed
     }
 
-    private val SPLIT_OFFSETS = listOf(0, -1, 1, -2, 2)
 
     /**
      * Turn every white cell with no white neighbour into BLACK. A
