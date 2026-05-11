@@ -68,6 +68,8 @@ class CsvWordRepository(
 
     override fun findByLength(length: Int): List<Word> = byLength[length].orEmpty()
 
+    override fun countByLength(length: Int): Int = byLength[length]?.size ?: 0
+
     override fun findByLengthAndPattern(
         length: Int,
         pattern: Map<Int, Char>,

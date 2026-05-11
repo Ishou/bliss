@@ -15,6 +15,8 @@ const val DEFAULT_GENERATION_TIMEOUT_MS = 5_000L
 class GridGenerator(
     private val repository: WordRepository,
     private val clock: Clock = SystemClock,
+    private val lengthPolicy: (Int) -> List<Int> =
+        SlotPlanner.corpusAwareLengthPolicy(repository),
 ) {
     fun generate(
         constraints: GridConstraints,
@@ -55,7 +57,7 @@ class GridGenerator(
 
         val slotPlanStart = clock.nanoTime()
         val slots =
-            SlotPlanner.planVariable(arrows, w, h, random, deadline, clock, metrics) ?: run {
+            SlotPlanner.planVariable(arrows, w, h, random, deadline, clock, metrics, lengthPolicy) ?: run {
                 metrics?.slotPlanMs = (clock.nanoTime() - slotPlanStart) / 1_000_000
                 return null
             }

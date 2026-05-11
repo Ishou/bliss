@@ -228,4 +228,38 @@ object SlotPlanner {
         for (l in 2..(available - 3)) result += l
         return result
     }
+
+    /**
+     * Corpus-aware length policy: filters [validLengths] to lengths whose
+     * corpus count is at least [minCorpus]. Falls back to the full
+     * [validLengths] list when filtering would leave nothing — better to try a
+     * sparse length than to abandon the plan entirely.
+     *
+     * Rationale: the planner previously committed to lengths blind to corpus
+     * density. A 10-letter slot whose pattern has ~5 corpus matches forced the
+     * filler to burn the rest of the deadline failing on a doomed CSP. With
+     * corpus-aware filtering, the planner prefers lengths with enough words to
+     * give the filler a wide branching factor.
+     *
+     * The returned function is a stateless closure over the repository — safe
+     * to reuse across calls, no caching needed (the underlying
+     * [WordRepository.countByLength] is O(1) on indexed adapters).
+     */
+    fun corpusAwareLengthPolicy(
+        repository: WordRepository,
+        minCorpus: Int = DEFAULT_MIN_CORPUS,
+    ): (Int) -> List<Int> =
+        { available ->
+            val all = validLengths(available)
+            val dense = all.filter { repository.countByLength(it) >= minCorpus }
+            if (dense.isNotEmpty()) dense else all
+        }
+
+    /**
+     * Default floor for [corpusAwareLengthPolicy]. Chosen so that on a
+     * 100k-word French corpus, lengths 2..9 typically pass and lengths 10+
+     * may be excluded — matching the empirical "long slots dominate the fat
+     * tail" finding from the Wave 1 25-gen baseline.
+     */
+    const val DEFAULT_MIN_CORPUS: Int = 100
 }
