@@ -603,7 +603,7 @@ export interface components {
          *     Validated by the same `SessionId` value class as the WebSocket
          *     surface; non-UUID input is rejected with a 400 RFC 7807 problem.
          */
-        SessionIdPath: string;
+        SessionIdPath: components["schemas"]["SessionId"];
     };
     requestBodies: never;
     headers: never;
