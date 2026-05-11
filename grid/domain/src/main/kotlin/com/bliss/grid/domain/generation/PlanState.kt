@@ -307,6 +307,17 @@ internal class PlanState(
         return true
     }
 
+    /** All currently PENDING arrows, in insertion order. */
+    fun pendingArrows(): List<ClueArrow> {
+        val out = ArrayList<ClueArrow>()
+        for ((cluePos, dirs) in arrowState) {
+            for ((dir, st) in dirs) {
+                if (st == ArrowState.PENDING) out += ClueArrow(cluePos, dir)
+            }
+        }
+        return out
+    }
+
     /** Returns the next pending arrow, or null if none remain. */
     fun nextPending(): ClueArrow? {
         for ((cluePos, dirs) in arrowState) {

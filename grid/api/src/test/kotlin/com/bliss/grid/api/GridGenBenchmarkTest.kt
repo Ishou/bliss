@@ -188,6 +188,50 @@ class GridGenBenchmarkTest {
         logDistribution("usecase_total_ms", sorted)
     }
 
+    /**
+     * Algorithm-integrity smoke test: generates a single 5×5 grid with the
+     * real French corpus. Must succeed in under ~1s when the algorithm is
+     * working. Failure here means the integrated search is broken at small
+     * sizes — re-running the 25-gen bench would be a waste of 2:30.
+     *
+     * Intended to be invoked manually before any other `@Tag("bench")` run
+     * as a fast pre-flight.
+     */
+    @Test
+    fun `5x5 smoke test on real corpus`() {
+        val repo = CsvWordRepository.frenchFromClasspath()
+        val generator = GridGenerator(repo)
+        val constraints =
+            com.bliss.grid.domain.generation
+                .GridConstraints(width = 5, height = 5, minWordLength = 2)
+
+        // Warmup pass — JIT-compile hot paths.
+        repeat(3) { i -> generator.generate(constraints, kotlin.random.Random((i + 100).toLong())) }
+
+        // Measured runs across 10 seeds to characterise steady-state.
+        val times = LongArray(10)
+        var successes = 0
+        for (i in 0 until 10) {
+            val start = System.currentTimeMillis()
+            val grid = generator.generate(constraints, kotlin.random.Random(i.toLong()))
+            times[i] = System.currentTimeMillis() - start
+            if (grid != null) successes++
+        }
+        val sorted = times.sortedArray()
+        log.info(
+            "bench_smoke_5x5 n=10 successes={} min={} median={} p90={} max={}",
+            successes,
+            sorted[0],
+            sorted[5],
+            sorted[9 * 9 / 10],
+            sorted.last(),
+        )
+        org.junit.jupiter.api.Assertions.assertTrue(
+            successes >= 8,
+            "5x5 smoke failed: only $successes/10 seeds produced a grid — algorithm integrity broken at small sizes",
+        )
+    }
+
     @Test
     fun `25 puzzles fast iteration bench`() {
         runBench(n = 25, label = "fast-25")
@@ -236,7 +280,10 @@ class GridGenBenchmarkTest {
     ) {
         val repo = CsvWordRepository.frenchFromClasspath()
         val generator = GridGenerator(repo)
-        val constraints = defaultPuzzleConstraints()
+        // EXPERIMENT: temporarily 10×10 to compare random-length-bias policy.
+        val constraints =
+            com.bliss.grid.domain.generation
+                .GridConstraints(width = 10, height = 10, minWordLength = 2)
 
         log.info("bench_fast_warmup_start label={} warmup_n={}", label, WARMUP_N)
         val warmStart = System.currentTimeMillis()

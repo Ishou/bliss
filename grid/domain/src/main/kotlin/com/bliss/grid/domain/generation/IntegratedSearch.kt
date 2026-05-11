@@ -1,5 +1,8 @@
 package com.bliss.grid.domain.generation
 
+import com.bliss.grid.domain.model.Column
+import com.bliss.grid.domain.model.Position
+import com.bliss.grid.domain.model.Row
 import com.bliss.grid.domain.model.Word
 import com.bliss.grid.domain.model.WordClue
 import kotlin.random.Random
@@ -50,8 +53,10 @@ internal class IntegratedSearch(
             return false
         }
 
-        // validLengths returns descending; orphanSafeLengths and corpus-aware
-        // policies are filter-only and preserve order. Longest words are tried first.
+        // Length-major iteration: try each length in order (descending from
+        // validLengths), exhaust its candidate words via head-shuffle, then
+        // next length. Cheaper than flattening the joint (length × word) pair
+        // space upfront because most lengths fail forward-check fast.
         val lengths = SlotPlanner.orphanSafeLengths(next, available, lengthPolicy)
         for (length in lengths) {
             val pattern = state.patternFor(next, length)
@@ -65,14 +70,92 @@ internal class IntegratedSearch(
             }
 
             for (word in headShuffle(candidates, random)) {
+                // Deadline check inside the loop — forward-check pruning means
+                // many iterations never recurse (skipping the solve()-entry
+                // deadline check), so we'd otherwise blow past the budget on
+                // pure forward-check work.
+                if (clock.currentTimeMillis() > deadline) return false
                 val clue = pickClue(word, state.themeUsed, themeLimits, random)
                 val cp = state.checkpoint()
-                if (state.commit(next, length, word, clue) && !state.hasDeadCluesNow()) {
+                if (
+                    state.commit(next, length, word, clue) &&
+                    !state.hasDeadCluesNow() &&
+                    forwardCheckPasses(state, themeLimits, next, length)
+                ) {
                     if (solve(state, random, deadline, themeLimits, metrics)) return true
                 }
                 state.rollback(cp)
                 metrics?.let { it.fillBacktracks++ }
             }
+        }
+        return false
+    }
+
+    /**
+     * Scoped forward-check: after committing a slot, only verify arrows whose
+     * path **intersects** at least one cell of the just-committed slot. Arrows
+     * elsewhere on the grid have unchanged domains and need no re-check.
+     *
+     * For each intersecting arrow, scan its valid lengths until one yields a
+     * non-empty candidate set. Empty across all lengths → the commit is dead,
+     * fail-fast.
+     */
+    private fun forwardCheckPasses(
+        state: PlanState,
+        themeLimits: Map<String, Int>,
+        committed: ClueArrow,
+        committedLength: Int,
+    ): Boolean {
+        val committedPositions = positionsForSlot(committed, committedLength)
+
+        for (arrow in state.pendingArrows()) {
+            val available = state.availableLength(arrow)
+            if (available < 2) continue // will be deactivated in its own visit
+            if (!arrowPathTouches(arrow, available, committedPositions)) continue
+
+            var hasAny = false
+            for (length in SlotPlanner.orphanSafeLengths(arrow, available, lengthPolicy)) {
+                val pattern = state.patternFor(arrow, length)
+                val matches = repository.findByLengthAndPattern(length, pattern)
+                val candidates = filterCandidates(matches, state, themeLimits)
+                if (candidates.isNotEmpty()) {
+                    hasAny = true
+                    break
+                }
+            }
+            if (!hasAny) return false
+        }
+        return true
+    }
+
+    private fun positionsForSlot(
+        arrow: ClueArrow,
+        length: Int,
+    ): HashSet<Position> {
+        val first = firstLetter(arrow)
+        val dr = arrow.direction.step.row.value
+        val dc = arrow.direction.step.column.value
+        val out = HashSet<Position>(length)
+        for (i in 0 until length) {
+            out += Position(Row(first.row.value + dr * i), Column(first.column.value + dc * i))
+        }
+        return out
+    }
+
+    private fun arrowPathTouches(
+        arrow: ClueArrow,
+        available: Int,
+        positions: Set<Position>,
+    ): Boolean {
+        val first = firstLetter(arrow)
+        val dr = arrow.direction.step.row.value
+        val dc = arrow.direction.step.column.value
+        var r = first.row.value
+        var c = first.column.value
+        for (i in 0 until available) {
+            if (Position(Row(r), Column(c)) in positions) return true
+            r += dr
+            c += dc
         }
         return false
     }
