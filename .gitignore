@@ -48,3 +48,9 @@ data/eval/sample_iter2_with_definitions.csv
 data/eval/sample_run_*_enriched.csv
 data/eval/sample_run_*_with_definitions.csv
 data/eval/synonym_clues_iter[6-7].csv
+
+# Grid-generation bench artefacts (machine-specific, not committed).
+data/eval/grid_gen_bench_*.csv
+data/eval/baseline_wave-*.csv
+data/eval/current_wave-*.csv
+grid/api/data/
