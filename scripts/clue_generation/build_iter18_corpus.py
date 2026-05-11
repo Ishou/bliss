@@ -40,6 +40,15 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(REPO / "scripts" / "clue_generation"))
+sys.path.insert(0, str(REPO / "scripts" / "eval"))
+from clue_metrics import MAX_CLUE_CHARS  # noqa: E402
+
+# Hard cell-fit budget. Any SFT or DPO chosen clue exceeding this is
+# dropped at build time — teaching the model to emit over-cap clues
+# wastes training on rows the merge pipeline would later refuse to
+# ship. The inherited iter14 SFT data has ~40 such rows (long
+# definitional clues from before MAX_CLUE_CHARS was tightened to 25).
+MAX_SFT_CHARS = MAX_CLUE_CHARS
 
 # Existing iter14 + iter17 sources to carry forward.
 ITER14_SFT_DIR    = REPO / "data" / "lora"                          # data/lora/{train,valid,test}.jsonl
@@ -112,16 +121,29 @@ def _load_iter18_sft_extras() -> list[dict]:
         NEAR_SYNONYM_CONFUSION,
     )
     out: list[dict] = []
+    over_cap_authored: list[tuple[str, str]] = []
     for bucket in (CROSS_LINGUAL_HOMOGRAPH, POS_GLOSS_MISMATCH, NEAR_SYNONYM_CONFUSION):
         for lemma, pos, chosens, _rejecteds in bucket:
             for clue in chosens:
+                if len(clue) > MAX_SFT_CHARS:
+                    over_cap_authored.append((lemma, clue))
+                    continue
                 out.append(_sft_row(lemma, _normalize_pos(pos), clue))
+    if over_cap_authored:
+        print(
+            f"WARN: {len(over_cap_authored)} authored chosens skipped (over "
+            f"{MAX_SFT_CHARS} chars). Shorten in iter18_authored_pairs.py:",
+            file=sys.stderr,
+        )
+        for lemma, clue in over_cap_authored:
+            print(f"  {lemma}: {clue!r} ({len(clue)} chars)", file=sys.stderr)
     return out
 
 
 def build_sft() -> dict[str, list[dict]]:
     out: dict[str, list[dict]] = {"train": [], "valid": [], "test": []}
     skipped = 0
+    over_cap = 0
     for split in out:
         src = ITER14_SFT_DIR / f"{split}.jsonl"
         with src.open(encoding="utf-8") as f:
@@ -140,7 +162,11 @@ def build_sft() -> dict[str, list[dict]]:
                 if not lemma:
                     skipped += 1
                     continue
-                out[split].append(_sft_row(lemma, pos, asst_msg["content"]))
+                clue = asst_msg["content"]
+                if len(clue) > MAX_SFT_CHARS:
+                    over_cap += 1
+                    continue
+                out[split].append(_sft_row(lemma, pos, clue))
 
     # Append iter18 authored chosen-variants as SFT rows. Stratify the
     # 90/5/5 split so a few land in valid/test for measurable evaluation
@@ -156,7 +182,8 @@ def build_sft() -> dict[str, list[dict]]:
 
     print(
         f"SFT: train={len(out['train'])} valid={len(out['valid'])} test={len(out['test'])} "
-        f"(extras from iter18_authored_pairs.py={n}; skipped={skipped})",
+        f"(extras from iter18_authored_pairs.py={n}; skipped={skipped}; "
+        f"iter14-sft over-cap dropped={over_cap})",
         file=sys.stderr,
     )
     return out

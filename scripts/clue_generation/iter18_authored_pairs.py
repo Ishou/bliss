@@ -42,17 +42,18 @@ external corpora.
 CROSS_LINGUAL_HOMOGRAPH = [
     # cane (FR: female duck; EN: walking stick → canne)
     ("cane",  "nom",
-     ["Femelle du canard", "Cane du colvert", "Anatidé femelle", "Mère des canetons"],
+     ["Femelle du canard", "Anatidé femelle", "Mère des canetons"],
      ["Bâton de marche", "Bâton", "Canne", "Roseau", "Stick"]),
 
     # user (FR: to wear out / make use of repeatedly; EN: utilisateur)
     ("user",  "verbe",
-     ["Élimer par l'usage", "Détériorer en se servant", "Émousser", "Frotter jusqu'à l'usure"],
+     ["Avoir recours à", "Détériorer en se servant", "Émousser",
+      "Consommer", "Abîmer", "Élimer"],
      ["Consommateur", "Client", "Utilisateur du service", "Personne qui se sert"]),
 
     # chat (FR: cat; EN: online conversation)
     ("chat",  "nom",
-     ["Félin domestique", "Animal qui ronronne", "Petit mammifère carnassier"],
+     ["Félin domestique", "Animal qui ronronne", "Mammifère carnassier"],
      ["Conversation en ligne", "Discussion sur internet", "Échange de messages"]),
 
     # pile (FR: battery / heap; EN: pile/stack)
@@ -67,7 +68,7 @@ CROSS_LINGUAL_HOMOGRAPH = [
 
     # pain (FR: bread; EN: suffering)
     ("pain",  "nom",
-     ["Aliment de boulangerie", "Mie cuite au four", "Préparation à base de farine"],
+     ["Aliment de boulangerie", "Mie cuite au four", "Aliment du boulanger"],
      ["Douleur intense", "Souffrance", "Mal physique"]),
 
     # son (FR: sound; EN: male offspring)
@@ -97,12 +98,12 @@ CROSS_LINGUAL_HOMOGRAPH = [
 
     # chair (FR: flesh; EN: chair)
     ("chair", "nom",
-     ["Tissu des muscles", "Partie comestible d'un animal", "Pulpe d'un fruit"],
+     ["Tissu des muscles", "Partie comestible", "Pulpe d'un fruit"],
      ["Chaise", "Siège à dossier", "Meuble pour s'asseoir"]),
 
     # dent (FR: tooth; EN: dent / bump)
     ("dent",  "nom",
-     ["Os de la mâchoire", "Élément qui mord", "Pièce maîtresse du sourire"],
+     ["Os de la mâchoire", "Élément qui mord", "Pièce du sourire"],
      ["Bosse dans le métal", "Marque d'impact", "Renfoncement"]),
 
     # car (FR: because; EN: car/automobile)
@@ -112,7 +113,7 @@ CROSS_LINGUAL_HOMOGRAPH = [
 
     # bras (FR: arm; EN: bras = brassiere — rare leak but possible)
     ("bras",  "nom",
-     ["Membre supérieur", "Partie du corps de l'épaule à la main", "Avant-bras et bras combinés"],
+     ["Membre supérieur", "Partie de l'épaule", "Bras et avant-bras"],
      ["Soutien-gorge en anglais", "Sous-vêtement féminin"]),
 
     # plat (FR: flat / dish; EN: same word for "flat", also surname)
