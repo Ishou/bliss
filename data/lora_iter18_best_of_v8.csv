@@ -1,0 +1,58 @@
+lemma,pos,clue,filter_score
+abri,nom,Protection,0.9996
+banc,nom,Siège,0.9995
+bien,adj,Possession,0.9292
+bête,nom,Créature vivante,0.8592
+fief,nom,Domaine,0.9998
+imam,nom,Chef religieux musulman,0.8494
+mémo,nom,Note,0.9996
+ouïe,nom,Sens de l'audition,0.8617
+pire,nom,Plus mauvais,0.8925
+prof,nom,Maître raccourci,0.9993
+ruer,verbe,Charger,0.8997
+râpe,nom,Outil abrasif,0.8109
+saut,nom,Élan vertical,0.8073
+trou,nom,Ouverture,0.9997
+velu,nom,Poilu,0.8611
+voie,nom,Chemin,0.9995
+zoom,nom,Grossissement,0.8253
+aigle,nom,Oiseau majestueux,0.8019
+atome,nom,Particule élémentaire,0.8090
+baron,nom,Noble,0.9998
+bombe,nom,Engin explosif,0.8207
+caser,verbe,Loger,0.9727
+cause,nom,Origine,0.9998
+causer,verbe,Parler,0.9998
+culte,nom,Hommage religieux,0.8084
+cumul,nom,Montant total,0.8000
+droit,nom,Juste,0.9993
+ennui,nom,Lassitude,0.8197
+envoi,nom,Départ,0.9996
+fente,nom,Ouverture,0.9997
+foire,nom,Marché,0.9998
+foirer,verbe,Rater,0.9998
+frais,adj,Pas chaud,0.9996
+frais,nom,Dépenses,0.9996
+frise,nom,Bande chronologique,0.8296
+frisé,adj,Bouclé,0.8296
+fusée,nom,Engin spatial,0.8520
+hêtre,nom,Arbre majestueux,0.8029
+inouï,adj,Exceptionnel,0.9998
+livre,nom,Plein de pages,0.9996
+livrer,verbe,Remettre,0.9996
+lueur,nom,Rayon lumineux,0.8488
+monde,nom,Toute l'existence,0.9998
+natal,adj,Relatif à la naissance,0.9998
+ovule,nom,Cellule fécondée,0.8688
+rôder,verbe,Errer,0.8274
+score,nom,Points,0.9997
+serre,nom,Construction vitrée,0.9998
+serre,nom,Griffe d'oiseaux,0.9998
+sigle,nom,Abréviation,0.8031
+slave,nom,Peuple de l'Est,0.9123
+slave,adj,Relatif aux gens de l'Est,0.9123
+talus,nom,Versant rocheux,0.8518
+tracé,nom,Ligne dessinée,0.8264
+tueur,nom,Assassin,0.8565
+union,nom,Alliance,0.9998
+utile,adj,Pratique,0.9998
