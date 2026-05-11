@@ -184,19 +184,24 @@ object SlotPlanner {
     }
 
     /**
-     * Order candidate lengths for backtracking. Bias: shorter mid-range (3..6) first,
-     * then longer, then 2 last. Keeps variety random within each bucket so consecutive
-     * runs don't repeat the same plan.
+     * Order candidate lengths for backtracking, strictly descending. The planner tries
+     * the longest viable length per arrow first and backtracks downward only when a
+     * longer choice produces an unrecoverable plan.
+     *
+     * Rationale: longer words give the grid more visual weight and naturally fragment
+     * the remaining available-cell budget faster, which keeps the tail of the search
+     * tree on shorter slots with looser CSPs. Per-direction "variation" between H and
+     * V slots falls out for free — each arrow's `available` already differs by axis
+     * in a non-square grid, so an H-10 slot starts at 10 while a V-12 slot starts at
+     * 12 without any explicit direction-keyed logic.
+     *
+     * The `random` parameter is unused but kept for signature stability; reintroducing
+     * seeded variety later would not require a call-site change.
      */
-    private fun orderForBias(
+    internal fun orderForBias(
         candidates: List<Int>,
-        random: kotlin.random.Random,
-    ): List<Int> {
-        val mid = candidates.filter { it in 3..6 }.shuffled(random)
-        val long = candidates.filter { it > 6 }.shuffled(random)
-        val short = candidates.filter { it == 2 }
-        return mid + long + short
-    }
+        @Suppress("UNUSED_PARAMETER") random: kotlin.random.Random,
+    ): List<Int> = candidates.sortedDescending()
 
     /**
      * Lengths in `{M, M-1} ∪ [2, M-3]`. M-2 is forbidden — it leaves exactly 1 trailing

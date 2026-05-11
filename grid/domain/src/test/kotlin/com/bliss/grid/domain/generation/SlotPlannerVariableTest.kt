@@ -4,8 +4,8 @@ import assertk.assertThat
 import assertk.assertions.contains
 import assertk.assertions.containsExactlyInAnyOrder
 import assertk.assertions.isEqualTo
+import assertk.assertions.isGreaterThan
 import assertk.assertions.isGreaterThanOrEqualTo
-import assertk.assertions.isLessThan
 import assertk.assertions.isNotNull
 import assertk.assertions.isTrue
 import com.bliss.grid.domain.model.Column
@@ -45,8 +45,11 @@ class SlotPlannerVariableTest {
     }
 
     @Test
-    fun `most seeds yield plans that skew shorter than full length`() {
-        // Some seeds time out; the median plan should bias toward shorter slots.
+    fun `most seeds yield plans that skew toward longer slots`() {
+        // orderForBias is descending: the planner tries the longest viable length per
+        // arrow first, so the median plan should bias toward long slots. Threshold
+        // sits well above the old short-bias regime (~7) and well below the
+        // observed long-bias regime (~9.5) so it's stable as a contract pin.
         val averages =
             (0L..9L).mapNotNull { seed ->
                 val arrows = Skeleton.arrows(10, 10)
@@ -55,7 +58,29 @@ class SlotPlannerVariableTest {
             }
         assertThat(averages.size).isGreaterThanOrEqualTo(6)
         val medianAvg = averages.sorted()[averages.size / 2]
-        assertThat(medianAvg).isLessThan(7.5)
+        assertThat(medianAvg).isGreaterThan(8.0)
+    }
+
+    @Test
+    fun `orderForBias returns candidates in strictly descending order`() {
+        val candidates = listOf(2, 3, 5, 7, 10)
+        val ordered = SlotPlanner.orderForBias(candidates, Random(0L))
+        assertThat(ordered).isEqualTo(listOf(10, 7, 5, 3, 2))
+    }
+
+    @Test
+    fun `orderForBias is deterministic across seeds`() {
+        val candidates = listOf(10, 9, 7, 6, 5, 4, 3, 2)
+        val a = SlotPlanner.orderForBias(candidates, Random(0L))
+        val b = SlotPlanner.orderForBias(candidates, Random(42L))
+        assertThat(a).isEqualTo(b)
+    }
+
+    @Test
+    fun `orderForBias preserves all input candidates`() {
+        val candidates = listOf(6, 5, 2, 3)
+        val ordered = SlotPlanner.orderForBias(candidates, Random(0L))
+        assertThat(ordered).containsExactlyInAnyOrder(2, 3, 5, 6)
     }
 
     @Test

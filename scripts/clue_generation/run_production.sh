@@ -5,6 +5,10 @@
 # Resume-safe: generate_clues_lora.py persists incrementally so interrupting
 # is fine — re-run picks up where it stopped.
 #
+# Required env vars:
+#   GRAMMALECTE_LEX   path to lexique-grammalecte-fr-v7.7.txt
+#                     download: https://grammalecte.net/download.php?prj=fr
+#
 # Output:
 #   data/eval/production/lemma_clues_raw.csv      - all generated (with filter score)
 #   data/eval/production/lemma_clues_shipped.csv  - score >= threshold
@@ -34,9 +38,36 @@ PY=.venv/bin/python
 if [[ ! -f "$SAMPLE_JSONL" ]]; then
   echo "[1/3] sampling top-$X per length (4-15), length-interleaved"
   $PY <<PYEOF
-import csv, json, random
+import csv, json, os, sys
 from pathlib import Path
 from collections import defaultdict
+
+sys.path.insert(0, "scripts/eval")
+# lemma_pos_freq returns dict[(lemma, pos)] = total_occurrences; we pick the
+# highest-freq POS per lemma to match grammalecte's "primary sense" choice.
+# Loading the index once costs ~3-5s and lets every prompt carry an
+# explicit [pos] tag, which iter14 trained against but the previous
+# inline sampler never emitted (iter17 diagnostic confirmed this is
+# the cause of the cross-lingual leak on cane/user/clair).
+from build_surface_clues import POS_PRECEDENCE
+from build_surface_clues import lemma_pos_freq
+
+_lex_env = os.environ.get("GRAMMALECTE_LEX")
+if not _lex_env:
+    sys.exit("Error: set GRAMMALECTE_LEX to the path of lexique-grammalecte-fr-v7.7.txt")
+LEX_PATH = Path(_lex_env)
+print("  loading lemma_pos_freq for prompt POS tagging…")
+lemma_pos = lemma_pos_freq(LEX_PATH)
+# best_pos[lemma] = POS with highest grammalecte Total occurrences for this lemma.
+best_pos: dict[str, str] = {}
+best_freq: dict[str, int] = {}
+for (lemma, pos), freq in lemma_pos.items():
+    if pos not in POS_PRECEDENCE:
+        continue
+    if freq > best_freq.get(lemma, -1):
+        best_freq[lemma] = freq
+        best_pos[lemma] = pos
+print(f"  resolved POS for {len(best_pos)} lemmas")
 
 ws = Path("grid/api/src/main/resources/words/words-fr.csv")
 candidates = defaultdict(list)
@@ -68,11 +99,25 @@ for i in range(max_len):
 print(f"total: {len(out)}")
 
 dst = Path("$SAMPLE_JSONL")
+n_with_pos = 0
 with dst.open("w", encoding="utf-8") as f:
     for lemma in out:
-        prompt = f"Génère une définition mots-fléchés courte pour: {lemma.upper()}"
+        # Include the POS tag in the prompt to match iter14 / iter17
+        # training. Without it the multilingual base model drifts to the
+        # English sense of FR-EN homographs (cane → walking stick, user
+        # → consumer, clair → "evidently"). iter17 diagnostic showed
+        # adding [pos] flips at least 2/7 known wrong-sense bugs.
+        # Skip lemmas with no resolvable POS — emit a bare prompt that
+        # falls back to historical behavior. ~1% of lemmas at most.
+        pos = best_pos.get(lemma)
+        # Lowercase avoids the uppercase-triggers-English-headline prior in the multilingual base.
+        if pos:
+            prompt = f"Génère une définition mots-fléchés courte pour: {lemma} [{pos}]"
+            n_with_pos += 1
+        else:
+            prompt = f"Génère une définition mots-fléchés courte pour: {lemma}"
         f.write(json.dumps({"messages":[{"role":"user","content":prompt},{"role":"assistant","content":""}]}, ensure_ascii=False)+"\n")
-print(f"wrote {dst}")
+print(f"wrote {dst} ({n_with_pos}/{len(out)} with [pos] tag)")
 PYEOF
 else
   echo "[1/3] reusing $SAMPLE_JSONL"
