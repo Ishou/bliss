@@ -241,10 +241,9 @@ transfer.
 - [ADR-0021 — UUID v7 session id generation](./0021-uuidv7-session-id-generation.md)
   (the anonymous `SessionId` this schema is keyed by, and the column
   shape OAuth will later project into).
-- Rollout plan that this ADR shapes:
-  `/Users/isho/.claude-account2/plans/expressive-jingling-sunbeam.md`
-  (see §2 for this ADR's scope, §10 for leave-no-transfer, §11 for the
-  RGPD cascade, §12 for the GC matrix and cutover).
+- Rollout plan that this ADR shapes (out-of-repo): see §10 of that
+  plan for the leave-no-transfer rationale, §11 for the RGPD cascade,
+  and §12 for the GC matrix and cutover sequencing.
 - Privacy docs updated by PR #11 of the rollout (the three-rule
   cascade is mirrored verbatim into user-facing language):
   - [`docs/privacy/privacy-notice.md`](../privacy/privacy-notice.md)
