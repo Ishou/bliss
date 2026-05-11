@@ -259,6 +259,16 @@ NEAR_SYNONYM_CONFUSION = [
     ("commencer", "verbe",
      ["Débuter", "Entamer", "Mettre en marche"],
      ["Ouvrir la voie", "Inaugurer officiellement", "Couper le ruban"]),
+
+    # sucre (the substance) ↔ "Produit sucré" (the derived adjective form
+    # of sucre — sucré means "sweetened" / describes things containing
+    # sucre, not the substance itself). The LoRA confuses lemma → derived-
+    # form gloss. Same word-family confusion pattern as errer ↔ égarer.
+    ("sucre", "nom",
+     ["Édulcorant naturel", "Glucide cristallisé", "Aliment du café",
+      "Substance des bonbons"],
+     ["Produit sucré", "Aliment qui sucre", "Chose au goût sucré",
+      "Produits sucrés"]),
 ]
 
 

@@ -82,6 +82,43 @@ def _rebuild_user(lemma: str, pos: str) -> str:
 # --------------------------------------------------------------------- #
 # SFT corpus build                                                      #
 # --------------------------------------------------------------------- #
+def _sft_row(lemma: str, pos: str, clue: str) -> dict:
+    return {
+        "messages": [
+            {"role": "system",    "content": SYSTEM_PROMPT},
+            {"role": "user",      "content": _rebuild_user(lemma, pos)},
+            {"role": "assistant", "content": clue},
+        ]
+    }
+
+
+def _load_iter18_sft_extras() -> list[dict]:
+    """Pull the chosen variants from iter18_authored_pairs.py into the
+    SFT corpus. Without these the bug lemmas (cane / errer / sucre /
+    user / triple / clair / advenir + ~37 analogous lemmas across
+    cross-lingual / wrong-POS / near-synonym buckets) have ZERO
+    representation in the SFT data — the model only meets them through
+    DPO's contrastive signal, which iter17 already showed is too weak
+    to override strong base-model priors. SFT-level imitation gives the
+    direct (lemma → correct-clue) mapping every cross-lingual leak
+    needs.
+
+    One SFT row per (lemma, chosen_variant) — the multiple chosen
+    variants per lemma in `iter18_authored_pairs.py` are deliberate
+    paraphrase coverage."""
+    from iter18_authored_pairs import (
+        CROSS_LINGUAL_HOMOGRAPH,
+        POS_GLOSS_MISMATCH,
+        NEAR_SYNONYM_CONFUSION,
+    )
+    out: list[dict] = []
+    for bucket in (CROSS_LINGUAL_HOMOGRAPH, POS_GLOSS_MISMATCH, NEAR_SYNONYM_CONFUSION):
+        for lemma, pos, chosens, _rejecteds in bucket:
+            for clue in chosens:
+                out.append(_sft_row(lemma, _normalize_pos(pos), clue))
+    return out
+
+
 def build_sft() -> dict[str, list[dict]]:
     out: dict[str, list[dict]] = {"train": [], "valid": [], "test": []}
     skipped = 0
@@ -103,15 +140,25 @@ def build_sft() -> dict[str, list[dict]]:
                 if not lemma:
                     skipped += 1
                     continue
-                new_user = _rebuild_user(lemma, pos)
-                out[split].append({
-                    "messages": [
-                        {"role": "system",    "content": SYSTEM_PROMPT},
-                        {"role": "user",      "content": new_user},
-                        {"role": "assistant", "content": asst_msg["content"]},
-                    ]
-                })
-    print(f"SFT: train={len(out['train'])} valid={len(out['valid'])} test={len(out['test'])} (skipped={skipped})", file=sys.stderr)
+                out[split].append(_sft_row(lemma, pos, asst_msg["content"]))
+
+    # Append iter18 authored chosen-variants as SFT rows. Stratify the
+    # 90/5/5 split so a few land in valid/test for measurable evaluation
+    # on the lemmas we actually care about.
+    extras = _load_iter18_sft_extras()
+    random.shuffle(extras)
+    n = len(extras)
+    n_valid_extra = max(int(round(n * 0.05)), 1)
+    n_test_extra  = max(int(round(n * 0.05)), 1)
+    out["valid"].extend(extras[:n_valid_extra])
+    out["test"].extend(extras[n_valid_extra:n_valid_extra + n_test_extra])
+    out["train"].extend(extras[n_valid_extra + n_test_extra:])
+
+    print(
+        f"SFT: train={len(out['train'])} valid={len(out['valid'])} test={len(out['test'])} "
+        f"(extras from iter18_authored_pairs.py={n}; skipped={skipped})",
+        file=sys.stderr,
+    )
     return out
 
 
