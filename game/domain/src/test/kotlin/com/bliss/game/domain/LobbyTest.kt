@@ -74,7 +74,7 @@ class LobbyTest {
                 val s = SessionId("0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a%02x".format(i))
                 s to player(s, "P$i")
             }
-        // Owner must be a member; pick the first.
+        // Pass one of the nine as owner — any member works; the cap check fires before owner validation.
         assertFailure {
             lobby(players = nine, ownerSessionId = nine.keys.first())
         }.messageContains("8")
