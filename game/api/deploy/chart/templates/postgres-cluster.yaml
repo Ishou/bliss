@@ -4,6 +4,17 @@ kind: Cluster
 metadata:
   name: {{ include "bliss-game-api.pgClusterName" . }}
   labels: {{- include "bliss-game-api.labels" . | nindent 4 }}
+  annotations:
+    # Survive Helm rollback. A fresh CNPG cluster (3 instances on Hetzner
+    # volumes + initdb + replica join) takes longer than the api Deployment's
+    # `helm upgrade --wait --timeout 5m` budget. Without this, the first
+    # failed deploy destroys the Cluster mid-bootstrap on rollback, forcing
+    # the next deploy to start over — observed as four consecutive 5m
+    # timeouts on 2026-05-12 after PR #382 introduced the cluster. With
+    # `keep`, the Cluster persists across rollbacks; CNPG finishes
+    # reconciliation in the background and the next deploy adopts the
+    # Ready cluster in seconds. Steady-state deploys stay tight.
+    "helm.sh/resource-policy": keep
 spec:
   instances: {{ .Values.postgres.cluster.instances }}
   # Explicit image pin — operator default drift between cnpg minor releases would
