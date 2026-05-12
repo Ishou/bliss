@@ -79,6 +79,17 @@ value class SessionId(
             "SessionId must be a UUID v7 string, was '$value'"
         }
     }
+
+    companion object {
+        /**
+         * RGPD-anonymisation sentinel for cell entries authored by an erased
+         * user (ADR-0039). The `7` nibble at position 13 satisfies the v7
+         * version check; the `8` nibble at position 17 is the RFC 4122
+         * variant marker, so this value clears the SESSION_ID_REGEX init
+         * check while never colliding with a real generated session.
+         */
+        val ANON: SessionId = SessionId("00000000-0000-7000-8000-000000000000")
+    }
 }
 
 @JvmInline

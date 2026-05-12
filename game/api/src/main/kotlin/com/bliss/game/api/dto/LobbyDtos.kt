@@ -133,3 +133,28 @@ data class CreateLobbyRequestDto(
     val ownerSessionId: String,
     val ownerPseudonym: String,
 )
+
+/**
+ * `DeleteSessionResponse` schema — counts returned by `DELETE /v1/sessions/{sessionId}`
+ * for the three-rule RGPD cascade (ADR-0039). All zeros is a valid success.
+ */
+@Serializable
+data class DeleteSessionResponseDto(
+    val deletedLobbies: Int,
+    val transferredLobbies: Int,
+    val removedPlayerships: Int,
+    val anonymisedEntries: Int,
+)
+
+/** `LobbySummary` schema — light-weight projection for "My games" (ADR-0039). */
+@OptIn(ExperimentalSerializationApi::class)
+@Serializable
+data class LobbySummaryDto(
+    val id: String,
+    val code: String,
+    val state: String,
+    val gridConfig: GridConfigDto,
+    val playerCount: Int,
+    val lastActivityAt: String,
+    val title: String? = null,
+)

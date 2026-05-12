@@ -9,6 +9,7 @@ import {
   createHttpLobbyClient,
   createHttpPuzzleRepository,
   createHttpPuzzleSolver,
+  createReconnectingGameClient,
   createWebSocketGameClient,
 } from '@/infrastructure';
 import { createHttpSessionClient } from '@/infrastructure/api/grid/HttpSessionClient';
@@ -98,6 +99,32 @@ async function enableMocks(): Promise<void> {
     serviceWorker: { url: '/mockServiceWorker.js' },
     onUnhandledRequest: 'bypass',
   });
+  // Expose the worker + the `http`/`HttpResponse` helpers on
+  // `globalThis.__msw__` so e2e specs can call `worker.use(...)` to
+  // override a single handler per test. This is the only way to swap a
+  // response when MSW's service worker is intercepting: Playwright's
+  // `page.route` is bypassed by the SW fetch handler. Guarded by the
+  // same mock flags above, so production builds (both flags false)
+  // tree-shake this branch out alongside the rest of `enableMocks()`.
+  // The handle is intentionally namespaced with `__` to flag it as a
+  // test seam; nothing in `src/` reads it.
+  const mswMod = await import('msw');
+  const w = globalThis as unknown as {
+    __msw__?: {
+      worker: typeof worker;
+      http: typeof mswMod.http;
+      HttpResponse: typeof mswMod.HttpResponse;
+    };
+    __mswReady__?: Promise<void>;
+  };
+  w.__msw__ = { worker, http: mswMod.http, HttpResponse: mswMod.HttpResponse };
+  // If an e2e spec (via `page.addInitScript`) seeded a deferred
+  // `__mswReady__` promise, await it so per-test `worker.use(...)`
+  // handlers are registered before the router's loaders fire their
+  // first fetch. Resolves immediately when no test is wiring this up.
+  if (w.__mswReady__) {
+    await w.__mswReady__;
+  }
 }
 
 // Initialise OTel before the first fetch so the FetchInstrumentation can
@@ -132,8 +159,18 @@ enableMocks()
     // while the localStorage helpers cover getSessionId/clearLocalSession.
     // This is the only place allowed to import both; ui/ components receive
     // the composed port through router context (ADR-0002 §7).
+    //
+    // The HTTP adapter fans the erasure call out to BOTH grid-api and
+    // game-api so the RGPD "Effacer mes données" surface covers the
+    // multiplayer cascade (ADR-0039) in addition to grid hints. When
+    // multiplayer is disabled the game-api base URL is left undefined and
+    // the adapter degrades to a grid-only call.
+    const multiplayerForErase = import.meta.env.VITE_FEATURE_MULTIPLAYER === 'true';
     const sessionClient: SessionClient = {
-      ...createHttpSessionClient({ baseUrl: gridApiBaseUrl }),
+      ...createHttpSessionClient({
+        gridBaseUrl: gridApiBaseUrl,
+        gameBaseUrl: multiplayerForErase ? import.meta.env.VITE_GAME_API_BASE_URL : undefined,
+      }),
       getSessionId: getOrCreateSessionId,
       clearLocalSession: () => {
         clearSession();
@@ -177,7 +214,15 @@ enableMocks()
           // WebSocket URL derives from the same host: swap http(s) for
           // ws(s) so a single env var configures both adapters.
           const wsBaseUrl = gameApiBaseUrl.replace(/^http/, 'ws');
-          const gameClient = createWebSocketGameClient({ wsBaseUrl });
+          // Wrap the bare WebSocket adapter in a backoff-driven reconnect
+          // wrapper so an involuntary close (network blip, server restart
+          // inside the warm-slot window) is silently retried instead of
+          // surfacing the misleading "Connexion perdue" banner. The
+          // wrapper exposes the same `GameClient` port; the lobby route
+          // sees the `reconnecting` state on `subscribeConnectionState`.
+          const gameClient = createReconnectingGameClient({
+            inner: createWebSocketGameClient({ wsBaseUrl }),
+          });
           // `getSession` is a thin closure over the localStorage helpers
           // so routes don't pull `infrastructure/` into `ui/` directly.
           // Branding is asserted at this single seam. `setPersistedPseudonym`

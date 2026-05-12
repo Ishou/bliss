@@ -20,6 +20,7 @@ import {
   LobbyClientError,
   type LobbyClient,
   type LobbyClientErrorKind,
+  type LobbySummary,
   type ProblemDetails,
 } from '@/application/game';
 import type { Lobby, LobbyId } from '@/domain/game';
@@ -28,6 +29,7 @@ import { createGameApiClient, type GameApiClient } from '../api/game/client';
 import type { components } from '../api/game/types';
 
 type WireLobby = components['schemas']['Lobby'];
+type WireLobbySummary = components['schemas']['LobbySummary'];
 type WireProblem = components['schemas']['Problem'];
 
 export interface HttpLobbyClientOptions {
@@ -66,6 +68,35 @@ export function createHttpLobbyClient(
     return data;
   };
 
+  // List variant of `safeRequest`. Mirrors the same kind-mapping and
+  // network-error envelope but is typed for endpoints that return an
+  // array body (currently `GET /v1/sessions/{sessionId}/lobbies`). An
+  // empty list is a valid success — no 404 is emitted for "session has
+  // no lobbies" (would leak whether the session has ever played, per
+  // ADR-0039).
+  const safeRequestList = async (
+    call: () => Promise<{
+      data?: WireLobbySummary[];
+      error?: WireProblem;
+      response: Response;
+    }>,
+  ): Promise<WireLobbySummary[]> => {
+    let result: Awaited<ReturnType<typeof call>>;
+    try {
+      result = await call();
+    } catch (cause) {
+      throw new LobbyClientError({
+        kind: 'upstream-unavailable',
+        status: null,
+        problem: null,
+        message: `lobby request failed: ${cause instanceof Error ? cause.message : String(cause)}`,
+      });
+    }
+    const { data, error, response } = result;
+    if (error || !data) throw liftProblem(error, response);
+    return data;
+  };
+
   return {
     async createLobby({ ownerSessionId, ownerPseudonym }) {
       const wire = await safeRequest(() =>
@@ -88,6 +119,12 @@ export function createHttpLobbyClient(
         client.GET('/v1/lobbies/by-code/{code}', { params: { path: { code } } }),
       );
       return { id: wire.id as unknown as LobbyId, ...wireToDomain(wire) };
+    },
+    async listMyLobbies(sessionId) {
+      const summaries = await safeRequestList(() =>
+        client.GET('/v1/sessions/{sessionId}/lobbies', { params: { path: { sessionId } } }),
+      );
+      return summaries.map(wireToSummary);
     },
   };
 }
@@ -138,5 +175,22 @@ function wireToDomain(wire: WireLobby): Lobby {
     gridConfig: wire.gridConfig,
     game: wire.game as unknown as Lobby['game'],
     code: wire.code ?? null,
+  };
+}
+
+// Wire→domain `LobbySummary` mapping. Same structural shape — the cast
+// localizes the brand assertion on `id` at this seam. `title` is
+// optional on the wire (absent for untitled lobbies, never `null` per
+// ADR-0003 §6); we forward it as-is so callers can distinguish
+// "untitled" from "blank title".
+function wireToSummary(wire: WireLobbySummary): LobbySummary {
+  return {
+    id: wire.id as unknown as LobbyId,
+    code: wire.code,
+    state: wire.state,
+    gridConfig: { width: wire.gridConfig.width, height: wire.gridConfig.height },
+    playerCount: wire.playerCount,
+    lastActivityAt: wire.lastActivityAt,
+    ...(wire.title != null ? { title: wire.title } : {}),
   };
 }

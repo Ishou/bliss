@@ -42,12 +42,14 @@
 module "cluster" {
   source = "./providers/hetzner"
 
-  cluster_name        = var.cluster_name
-  region              = var.region
-  control_plane_count = var.control_plane_count
-  worker_count        = var.worker_count
-  node_size           = var.node_size
-  worker_node_size    = var.worker_node_size
-  ssh_public_keys     = var.ssh_public_keys
-  k3s_version         = var.k3s_version
+  cluster_name                   = var.cluster_name
+  region                         = var.region
+  control_plane_count            = var.control_plane_count
+  worker_count                   = var.worker_count
+  node_size                      = var.node_size
+  worker_node_size               = var.worker_node_size
+  observability_worker_count     = var.observability_worker_count
+  observability_worker_node_size = var.observability_worker_node_size
+  ssh_public_keys                = var.ssh_public_keys
+  k3s_version                    = var.k3s_version
 }

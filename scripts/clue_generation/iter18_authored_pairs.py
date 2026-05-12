@@ -23,7 +23,7 @@ Three buckets, by failure mode discovered after iter17 shipped:
    different verb). We pair the right disambiguation against the
    wrong-lemma rendering.
 
-This file is consumed by build_iter18_dpo_corpus.py — DOES NOT import
+This file is consumed by build_iter18_corpus.py — DOES NOT import
 heavy deps so the file is fast to import and the pair lists are easy
 to diff. The chosen/rejected values are hand-written to cover the
 breadth of plausible right/wrong renderings rather than memorizing a

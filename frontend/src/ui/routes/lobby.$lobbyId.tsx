@@ -22,6 +22,16 @@ import { Route as RootRoute } from './__root';
 export const Route = createRoute({
   getParentRoute: () => RootRoute,
   path: '/lobby/$lobbyId',
+  // `pendingMs: 0` — render the lazy half's `pendingComponent` the
+  // moment a navigation to the lobby starts, rather than holding the
+  // previous route visible until the loader resolves. Without this
+  // TanStack Router defaults `pendingMs` to Infinity, which left the
+  // Accueil "Mes parties" navigation flashing the home page chrome
+  // before swapping to the lobby. The pendingComponent is a thin
+  // "Chargement du salon…" status, identical for every entry path
+  // (refresh, direct URL, link click), so the user sees stable
+  // loading chrome instead of a brief flash of unrelated content.
+  pendingMs: 0,
   loader: ({ context, params }): Promise<Lobby> =>
     // Asserted non-null: this route is only registered when the
     // multiplayer flag is on, in which case the composition root

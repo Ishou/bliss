@@ -420,7 +420,7 @@ class LobbyUseCasesTest {
         }
 
     @Test
-    fun `LeaveLobby transfers ownership to the earliest joined when owner leaves`() =
+    fun `LeaveLobby keeps ownerSessionId unchanged when owner leaves`() =
         runTest {
             val h = harness()
             val lobby = h.create(sessionA, alice).value
@@ -431,19 +431,37 @@ class LobbyUseCasesTest {
 
             val out = h.leave(lobby.id, sessionA).requireSuccess()
             val state = out.value ?: error("expected lobby to remain")
-            assertThat(state.ownerSessionId).isEqualTo(sessionB)
+            // Owner is expected to return via My-games (ADR-0039); ownership stays put.
+            assertThat(state.ownerSessionId).isEqualTo(sessionA)
+            assertThat(state.players.keys).isEqualTo(setOf(sessionB, sessionC))
+            assertThat(out.events).containsExactly(LobbyEvent.PlayerLeft(sessionA))
         }
 
     @Test
-    fun `LeaveLobby closes the lobby and emits LobbyClosed when last player leaves`() =
+    fun `LeaveLobby keeps the lobby with empty players when last player leaves`() =
         runTest {
             val h = harness()
             val lobby = h.create(sessionA, alice).value
             val out = h.leave(lobby.id, sessionA).requireSuccess()
-            assertThat(out.value).isNull()
-            assertThat(out.events).hasSize(2)
-            assertThat(out.events[1]).isInstanceOf(LobbyEvent.LobbyClosed::class)
-            assertThat(h.repo.findById(lobby.id)).isNull()
+            val state = out.value ?: error("expected lobby to remain")
+            assertThat(state.players.keys).isEqualTo(emptySet())
+            assertThat(state.ownerSessionId).isEqualTo(sessionA)
+            // Only PlayerLeft is emitted; LobbyClosed is no longer emitted from the leave path.
+            assertThat(out.events).containsExactly(LobbyEvent.PlayerLeft(sessionA))
+            assertThat(h.repo.findById(lobby.id)).isNotNull()
+        }
+
+    @Test
+    fun `LeaveLobby leaves owner-only actions unavailable after the owner leaves`() =
+        runTest {
+            val h = harness()
+            val lobby = h.create(sessionA, alice).value
+            h.join(lobby.id, sessionB, bob).requireSuccess()
+            h.leave(lobby.id, sessionA).requireSuccess()
+            // Lobby persists with ownerSessionId still pointing at sessionA, who is no
+            // longer a player. A non-owner trying to start the game is rejected as NotOwner.
+            val out = h.start(lobby.id, sessionB)
+            assertThat((out as UseCaseOutcome.Failure).error).isEqualTo(UseCaseError.NotOwner)
         }
 
     @Test

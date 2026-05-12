@@ -28,6 +28,25 @@ interface LobbyRepository {
      */
     suspend fun findByCode(code: LobbyCode): Lobby?
 
+    /**
+     * Returns lobbies the given session is currently a member of and that
+     * have entered play — IN_PROGRESS or COMPLETED only — ordered by
+     * lastActivityAt descending. WAITING (un-started) lobbies are excluded
+     * because they are "salons d'attente", not "parties": surfacing them
+     * conflates the two and produces 404-toast races when the WAITING TTL
+     * elapses between the list fetch and a rejoin click (ADR-0039
+     * amendment 2026-05-12). Returns an empty list if the session has no
+     * matching lobby. Used by the "Mes parties" surface (ADR-0039).
+     */
+    suspend fun findBySessionId(sessionId: SessionId): List<Lobby>
+
+    /**
+     * RGPD Article 17 erasure (ADR-0039). Atomic per lobby. Idempotent.
+     * This is the ONLY method that transfers lobby ownership — regular
+     * LeaveLobbyUseCase keeps ownerSessionId by design.
+     */
+    suspend fun eraseSession(sessionId: SessionId): EraseSessionResult
+
     suspend fun save(lobby: Lobby): Lobby
 
     /**
@@ -60,6 +79,14 @@ interface LobbyRepository {
      * the scan and the eviction.
      */
     suspend fun findIdleWaiting(cutoff: Instant): List<Lobby>
+
+    /**
+     * Returns COMPLETED lobbies whose [Lobby.lastActivityAt] is at or before [cutoff].
+     * Consumed by the lobby garbage collector per the ADR-0039 §c retention matrix
+     * (COMPLETED lobbies kept 7 days). Snapshot — callers must re-validate inside
+     * [mutate] (or [delete]) to avoid TOCTOU between the scan and the eviction.
+     */
+    suspend fun findIdleCompleted(cutoff: Instant): List<Lobby>
 }
 
 /**
@@ -156,4 +183,20 @@ interface WordValidator {
         puzzleId: UUID,
         filled: Map<Position, Letter>,
     ): Set<Position>
+}
+
+/**
+ * Aggregated counts returned by [LobbyRepository.eraseSession]. Each field maps
+ * to one ADR-0039 cascade rule; the sum is what `DELETE /v1/sessions/{sessionId}`
+ * surfaces on the wire.
+ */
+data class EraseSessionResult(
+    val deletedLobbies: Int,
+    val transferredLobbies: Int,
+    val removedPlayerships: Int,
+    val anonymisedEntries: Int,
+) {
+    companion object {
+        val Empty = EraseSessionResult(0, 0, 0, 0)
+    }
 }

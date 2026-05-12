@@ -79,6 +79,28 @@ variable "worker_node_size" {
   }
 }
 
+variable "observability_worker_count" {
+  description = "Number of dedicated observability workers, tainted dedicated=observability:NoSchedule and labeled bliss.io/role=observability. Hosts the SigNoz stack so it can't starve the app workers' CPU. Default 0 — opt-in topology. Set to 1 for the noisy-neighbour mitigation (see follow-ups to ADR-0027)."
+  type        = number
+  default     = 0
+
+  validation {
+    condition     = var.observability_worker_count >= 0 && var.observability_worker_count <= 5
+    error_message = "observability_worker_count must be 0-5. >1 only makes sense once the SigNoz chart runs multiple ClickHouse shards, which is not the v1 posture."
+  }
+}
+
+variable "observability_worker_node_size" {
+  description = "Instance class for observability workers. Defaults to worker_node_size (so it inherits the app worker's size). Override if SigNoz outgrows the shared size."
+  type        = string
+  default     = null
+
+  validation {
+    condition     = var.observability_worker_node_size == null || length(var.observability_worker_node_size) > 0
+    error_message = "observability_worker_node_size must be null (inherit) or a non-empty Hetzner instance class."
+  }
+}
+
 variable "ssh_public_keys" {
   description = "List of SSH public keys (full openssh format, one entry per key) installed on every node for admin access. At least one key is required so the maintainer can reach a node when the k8s API path is broken. ed25519 is preferred; ssh-rsa is accepted for legacy keys but discouraged (OpenSSH 8.8+ disabled it by default due to SHA-1 collision risk)."
   type        = list(string)

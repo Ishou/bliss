@@ -11,8 +11,15 @@ import com.bliss.game.application.usecases.Samples.bob
 import com.bliss.game.application.usecases.Samples.sessionA
 import com.bliss.game.application.usecases.Samples.sessionB
 import com.bliss.game.application.usecases.Samples.sessionC
+import com.bliss.game.domain.GameSession
+import com.bliss.game.domain.GridConfig
+import com.bliss.game.domain.Lobby
+import com.bliss.game.domain.LobbyCode
 import com.bliss.game.domain.LobbyId
+import com.bliss.game.domain.LobbyLifecycleState
+import com.bliss.game.domain.Player
 import com.bliss.game.domain.Pseudonym
+import com.bliss.game.domain.SessionId
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -30,18 +37,19 @@ import java.time.Duration
  * cannot leak threads.
  */
 class LobbyGarbageCollectorTest {
-    private val ttl: Duration = Duration.ofMinutes(30)
+    private val waitingTtl: Duration = Duration.ofHours(24)
+    private val completedTtl: Duration = Duration.ofDays(7)
     private val sweepInterval: Duration = Duration.ofMinutes(5)
 
-    private fun harness(): GcHarness = GcHarness(ttl, sweepInterval)
+    private fun harness(): GcHarness = GcHarness(waitingTtl, completedTtl, sweepInterval)
 
     @Test
-    fun `sweepOnce evicts a WAITING lobby older than the TTL`() =
+    fun `sweepOnce evicts a WAITING lobby older than the waiting TTL`() =
         runTest {
             val h = harness()
             val lobby = h.create(sessionA, alice).value
 
-            h.clock.advance(ttl.plusMinutes(1))
+            h.clock.advance(waitingTtl.plusMinutes(1))
             val evicted = h.gc.sweepOnce()
 
             assertThat(evicted).isEqualTo(1)
@@ -49,12 +57,12 @@ class LobbyGarbageCollectorTest {
         }
 
     @Test
-    fun `sweepOnce keeps a WAITING lobby that is younger than the TTL`() =
+    fun `sweepOnce keeps a WAITING lobby that is younger than the waiting TTL`() =
         runTest {
             val h = harness()
             val lobby = h.create(sessionA, alice).value
 
-            h.clock.advance(ttl.minusMinutes(1))
+            h.clock.advance(waitingTtl.minusMinutes(1))
             val evicted = h.gc.sweepOnce()
 
             assertThat(evicted).isEqualTo(0)
@@ -62,17 +70,99 @@ class LobbyGarbageCollectorTest {
         }
 
     @Test
-    fun `sweepOnce never evicts a lobby that is IN_PROGRESS even if past the TTL`() =
+    fun `sweepOnce uses the 24h waiting TTL knob`() =
+        runTest {
+            val h = harness()
+            val lobby = h.create(sessionA, alice).value
+
+            // 23h59m: still within the 24h window, must NOT evict.
+            h.clock.advance(Duration.ofHours(23).plusMinutes(59))
+            assertThat(h.gc.sweepOnce()).isEqualTo(0)
+            assertThat(h.repo.findById(lobby.id)).isNotNull()
+
+            // Cross the 24h threshold: must evict.
+            h.clock.advance(Duration.ofMinutes(2))
+            assertThat(h.gc.sweepOnce()).isEqualTo(1)
+            assertThat(h.repo.findById(lobby.id)).isNull()
+        }
+
+    @Test
+    fun `sweepOnce never evicts an IN_PROGRESS lobby even past every TTL`() =
         runTest {
             val h = harness()
             val lobby = h.create(sessionA, alice).value
             h.start(lobby.id, sessionA).requireSuccess()
 
-            h.clock.advance(ttl.plusHours(2))
+            // Beyond both waitingTtl (24h) AND completedTtl (7d).
+            h.clock.advance(completedTtl.plus(Duration.ofDays(30)))
             val evicted = h.gc.sweepOnce()
 
             assertThat(evicted).isEqualTo(0)
             assertThat(h.repo.findById(lobby.id)).isNotNull()
+        }
+
+    @Test
+    fun `sweepOnce evicts a COMPLETED lobby older than the completed TTL`() =
+        runTest {
+            val h = harness()
+            val now = h.clock.now()
+            val id = LobbyId.generate()
+            val completed =
+                Lobby(
+                    id = id,
+                    code = LobbyCode.generate(),
+                    ownerSessionId = sessionA,
+                    state = LobbyLifecycleState.COMPLETED,
+                    gridConfig = GridConfig(5, 5),
+                    title = null,
+                    players = linkedMapOf(sessionA to Player(sessionA, alice, now)),
+                    game =
+                        GameSession(
+                            puzzle = Samples.puzzle(),
+                            entries = emptyMap(),
+                            startedAt = now,
+                            completedAt = now,
+                        ),
+                    // Set lastActivityAt comfortably past the 7d retention window so the next sweep evicts.
+                    lastActivityAt = now.minus(completedTtl.plus(Duration.ofDays(1))),
+                )
+            h.repo.save(completed)
+
+            val evicted = h.gc.sweepOnce()
+
+            assertThat(evicted).isEqualTo(1)
+            assertThat(h.repo.findById(id)).isNull()
+        }
+
+    @Test
+    fun `sweepOnce keeps a COMPLETED lobby younger than the completed TTL`() =
+        runTest {
+            val h = harness()
+            val now = h.clock.now()
+            val id = LobbyId.generate()
+            val completed =
+                Lobby(
+                    id = id,
+                    code = LobbyCode.generate(),
+                    ownerSessionId = sessionA,
+                    state = LobbyLifecycleState.COMPLETED,
+                    gridConfig = GridConfig(5, 5),
+                    title = null,
+                    players = linkedMapOf(sessionA to Player(sessionA, alice, now)),
+                    game =
+                        GameSession(
+                            puzzle = Samples.puzzle(),
+                            entries = emptyMap(),
+                            startedAt = now,
+                            completedAt = now,
+                        ),
+                    // 6 days old: under the 7-day retention floor.
+                    lastActivityAt = now.minus(Duration.ofDays(6)),
+                )
+            h.repo.save(completed)
+
+            assertThat(h.gc.sweepOnce()).isEqualTo(0)
+            assertThat(h.repo.findById(id)).isNotNull()
         }
 
     @Test
@@ -81,13 +171,13 @@ class LobbyGarbageCollectorTest {
             val h = harness()
             val lobby = h.create(sessionA, alice).value
 
-            // Just before the TTL would expire, a player joins — should refresh lastActivityAt.
-            h.clock.advance(ttl.minusMinutes(1))
+            // Just before the waiting TTL would expire, a player joins — should refresh lastActivityAt.
+            h.clock.advance(waitingTtl.minusMinutes(1))
             h.join(lobby.id, sessionB, bob).requireSuccess()
 
-            // Now advance another (ttl - 1m). With the bump, total idle time since the join is
-            // ttl - 1m which is below the TTL, so the lobby must survive.
-            h.clock.advance(ttl.minusMinutes(1))
+            // Now advance another (waitingTtl - 1m). With the bump, total idle time since the join
+            // is below the TTL, so the lobby must survive.
+            h.clock.advance(waitingTtl.minusMinutes(1))
             assertThat(h.gc.sweepOnce()).isEqualTo(0)
             assertThat(h.repo.findById(lobby.id)).isNotNull()
         }
@@ -98,8 +188,8 @@ class LobbyGarbageCollectorTest {
             val h = harness()
             val stale = h.create(sessionA, alice).value
 
-            // Advance past the TTL so 'stale' is evictable.
-            h.clock.advance(ttl.plusMinutes(1))
+            // Advance past the waiting TTL so 'stale' is evictable.
+            h.clock.advance(waitingTtl.plusMinutes(1))
 
             // Then create a fresh lobby just before the sweep runs.
             val fresh = h.create(sessionB, bob).value
@@ -149,7 +239,8 @@ class LobbyGarbageCollectorTest {
 }
 
 internal class GcHarness(
-    ttl: Duration,
+    waitingTtl: Duration,
+    completedTtl: Duration,
     sweepInterval: Duration,
 ) {
     val clock = FakeClock()
@@ -158,21 +249,28 @@ internal class GcHarness(
     val create = CreateLobbyUseCase(repo, clock)
     val join = JoinLobbyUseCase(repo, clock)
     val start = StartGameUseCase(repo, provider, clock)
-    val gc = LobbyGarbageCollector(repo, clock, ttl, sweepInterval)
+    val gc =
+        LobbyGarbageCollector(
+            repo = repo,
+            clock = clock,
+            waitingTtl = waitingTtl,
+            completedTtl = completedTtl,
+            sweepInterval = sweepInterval,
+        )
 
     suspend fun create(
-        s: com.bliss.game.domain.SessionId,
+        s: SessionId,
         p: Pseudonym,
     ) = create.invoke(s, p)
 
     suspend fun join(
         l: LobbyId,
-        s: com.bliss.game.domain.SessionId,
+        s: SessionId,
         p: Pseudonym,
     ) = join.invoke(l, s, p, code = repo.findById(l)?.code?.value)
 
     suspend fun start(
         l: LobbyId,
-        s: com.bliss.game.domain.SessionId,
+        s: SessionId,
     ) = start.invoke(l, s)
 }

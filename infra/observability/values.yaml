@@ -17,6 +17,11 @@ signoz:
   # ZooKeeper is nested under clickhouse (signoz.clickhouse.zookeeper),
   # not at the SigNoz top level — first-iteration override at
   # signoz.zookeeper.* was silently ignored.
+  #
+  # Raised 2026-05-12 after the SigNoz stack hit its limits in prod;
+  # ClickHouse + Zookeeper were the bottleneck. Followup: cut SigNoz
+  # retention via the UI (Settings → General → Data retention) from
+  # 7d/30d/3d to 3d/14d/3d.
   clickhouse:
     replicaCount: 1
     persistence:
@@ -26,8 +31,79 @@ signoz:
         cpu: 200m
         memory: 1Gi
       limits:
-        cpu: 1000m
-        memory: 2Gi
+        cpu: 2000m
+        memory: 3Gi
+
+    # Low-RAM tuning per ClickHouse docs (operations/tips):
+    # required for stable operation under 16 GB RAM. Our 3Gi limit
+    # is well into that range. Renders into the CHI's
+    # `spec.configuration.settings` block (server-level XML), as
+    # the SigNoz subchart's `clickhouse.settings` is wired straight
+    # into the CHI by clickhouse/templates/clickhouse-instance/
+    # clickhouse-instance.yaml (merged with `defaultSettings`).
+    # Server-config settings only. Profile-scoped settings
+    # (max_block_size, max_threads, etc.) go in profiles.default below.
+    # Ref: https://clickhouse.com/docs/en/operations/tips
+    settings:
+      # Default mark_cache_size is 5 GiB — larger than our entire
+      # container limit. 500 MB is plenty for our workload (single
+      # shard, narrow MergeTree, low query concurrency).
+      mark_cache_size: 524288000  # 500 MB (bytes)
+      # Cap ClickHouse's self-imposed memory budget at 70% of the
+      # cgroup so kernel page cache + non-server allocations
+      # (background merges, queries) have headroom.
+      max_server_memory_usage_to_ram_ratio: "0.7"
+      # background_pool_size was overridden to 4 in PR #391 — this
+      # broke ClickHouse's MergeTree mutation-pool sanity check
+      # (background_pool_size * background_merges_mutations_concurrency_ratio
+      # must be >= number_of_free_entries_in_pool_to_execute_mutation
+      # default 20). Reverted to the ClickHouse default. The original
+      # low-RAM tuning rationale was speculative.
+      # Parallel-load data parts on startup. Default is 8; observability
+      # worker has 4 vCPU which can sustain 16 cold-start threads
+      # comfortably (the burst is brief — parts are mmap'd, not crunched).
+      # Cuts cold-start part attachment time roughly proportionally for
+      # tables with many small parts.
+      max_part_loading_threads: 16
+      # NB: max_block_size is a profile setting, not server config.
+      # Moved to profiles.default below (ClickHouse rejects it at this
+      # scope with UNKNOWN_ELEMENT_IN_CONFIG, code 137).
+
+    # User-profile overrides. Lighter logging so the verbose
+    # log-table writes (next block) don't have anything to write.
+    # Subchart renders this into CHI `spec.configuration.profiles`
+    # (merged with `defaultProfiles`).
+    profiles:
+      default:
+        # Smaller blocks reduce per-query peak memory. 8192 is the
+        # ClickHouse default but we set it explicitly so a future
+        # subchart bump can't silently raise it. Profile-scoped:
+        # ClickHouse rejects this at server-config scope.
+        max_block_size: 8192
+        log_query_threads: 0
+        log_queries_min_type: QUERY_FINISH
+
+    # Disable verbose ClickHouse-internal log tables (sub-16 GB
+    # tuning per the ClickHouse tips doc). These are CH's OWN
+    # monitoring tables (system.asynchronous_metric_log,
+    # system.metric_log, system.query_thread_log,
+    # system.query_views_log) — NOT the SigNoz user-facing
+    # telemetry storage. Disabling just stops CH from writing its
+    # own monitoring rows; we never query them. The subchart
+    # always ships the operator ConfigMap with `replace="1"`
+    # entries that turn these on; we layer a higher-priority
+    # config.d file via `files:` that sets `remove="1"` to drop
+    # the elements at server start.
+    # Subchart renders this into CHI `spec.configuration.files`.
+    files:
+      config.d/zz-disable-verbose-logs.xml: |
+        <clickhouse>
+          <asynchronous_metric_log remove="1"/>
+          <metric_log remove="1"/>
+          <query_thread_log remove="1"/>
+          <query_views_log remove="1"/>
+        </clickhouse>
+
     zookeeper:
       replicaCount: 1
       # Bitnami flipped their public Docker Hub policy in 2024-08
@@ -40,18 +116,37 @@ signoz:
       # Revisit if/when SigNoz upstream bumps the pin.
       image:
         repository: bitnamilegacy/zookeeper
+      # Bitnami's chart default is heapSize: 1024 (MB) which
+      # silently exceeded our 768Mi container limit, causing the
+      # JVM to OOM-loop at ~700 MB. Apache ZK guide: heap <= 75%
+      # of container memory (= 576 MB at 768Mi). 512 MB is generous
+      # for our workload (single ZK, one ClickHouse, small ZNode
+      # set, low write rate) and leaves comfortable headroom for
+      # heap + non-heap (compressed class space, code cache,
+      # metaspace). Renders as ZOO_HEAP_SIZE env on the ZK
+      # StatefulSet (Bitnami chart's documented contract).
+      heapSize: 512
       # Initial 256Mi limit OOMKilled the pod during JVM startup
       # (Bitnami's ZK 3.7.1 image runs OpenJDK 17, baseline ~200 MB
       # before any ZNodes). 512Mi gives the JVM headroom for the
       # heap + non-heap (compressed class space, code cache,
       # metaspace) without paging.
+      # Raised 2026-05-12: request was 199% of original (~512Mi
+      # actual), limit was 99% used (OOM imminent). Bumped to
+      # 384Mi/768Mi to restore headroom. CPU left alone — measured
+      # usage is ~0.06 cores, well below the 200m limit.
+      # Bumped 2026-05-12 from 768Mi -> 1Gi after live RSS
+      # measurement showed JVM non-heap (~115 MB) plus the 512 MB
+      # heap consumed ~627 MB (82% of 768 Mi) steady-state.
+      # Apache's heap-<=-75%-of-container rule is satisfied at
+      # heap=512 + container=1Gi (51%).
       resources:
         requests:
           cpu: 50m
-          memory: 256Mi
+          memory: 384Mi
         limits:
           cpu: 200m
-          memory: 512Mi
+          memory: 1Gi
 
   queryService:
     resources:
@@ -108,6 +203,24 @@ signoz:
         cpu: 500m
         memory: 512Mi
 
+# Image pre-pull DaemonSet — keeps the SigNoz/ClickHouse/Zookeeper image
+# set warm in containerd's cache on every observability-labeled node so a
+# pod reschedule (helm upgrade, node drain, evict) doesn't pay the 30-60s
+# image-pull penalty on top of ClickHouse's own startup. Templated in
+# templates/image-prepuller-daemonset.yaml.
+imagePrepuller:
+  enabled: false  # opt-in: prod turns it on
+  pauseImage: registry.k8s.io/pause:3.10
+  # Image refs to keep warm in containerd cache on every observability
+  # node. Discover the current pins by rendering the chart and grepping
+  # for `image:` in the SigNoz subchart's StatefulSets/Deployments and
+  # the Altinity CHI; populate values-prod.yaml with what's actually
+  # deployed. Defaults file ships an empty list — the DaemonSet is
+  # disabled here anyway, so the empty list is inert.
+  # Bumping the SigNoz subchart version is a separate PR — update the
+  # values-prod.yaml list when you do.
+  images: []
+
 # oauth2-proxy — cookie-issuing wrapper around `admin-htpasswd` so
 # SigNoz's SPA XHR/WS don't trigger basic-auth re-prompts on every
 # request. Standalone htpasswd mode (no OIDC). Single session cookie
@@ -118,6 +231,14 @@ oauth2Proxy:
   image:
     repository: quay.io/oauth2-proxy/oauth2-proxy
     tag: v7.6.0
+  # Pin to the observability worker so oauth2-proxy isolates with the rest
+  # of the SigNoz stack. Overridden in values-prod.yaml is not
+  # required — the same taint/label set exists in prod and is harmless in
+  # dev (no matching node = pod stays Pending, but oauth2Proxy.enabled is
+  # false in dev today). If a future dev cluster sets enabled: true, drop
+  # the keys via `oauth2Proxy.tolerations: []` / `nodeSelector: {}`.
+  tolerations: []
+  nodeSelector: {}
 
 # Ingress hosts. Two ingresses target the same SigNoz frontend Service:
 # `errors.wordsparrow.io` (Sentry-style "what blew up" entry point) and
