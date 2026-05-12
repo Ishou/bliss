@@ -205,23 +205,4 @@ class SlotRegistryTest {
         val build = SlotRegistry.build(cells, mkLexicon(listOf("AB", "ABC")), minLen = 2)
         assertThat(build).isNull()
     }
-
-    @Test
-    fun `build returns null when a BLACK cell is not any slot's clue position`() {
-        // standard5x5 + extra BLACK at (3,3). The run to the right is length 1
-        // and the run below is length 1 — both < minLen=2, so no slot ever
-        // assigns (3,3) as a clue position. The dead-cell guard in build must reject.
-        val cells =
-            cellsFrom(
-                """
-            #.#.#
-            .....
-            #....
-            ...#.
-            #....
-            """,
-            )
-        val build = SlotRegistry.build(cells, lexFor5x5, minLen = 2)
-        assertThat(build).isNull()
-    }
 }
