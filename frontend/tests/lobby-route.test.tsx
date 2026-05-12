@@ -1153,6 +1153,33 @@ describe('Lobby route Start button loading feedback', () => {
     expect(screen.queryByTestId('connection-banner')).not.toBeInTheDocument();
   });
 
+  it('shows the server-provided title in the toast when there is no detail and the user is not mid-Start', async () => {
+    // Regression: previously the toast fell through to the generic
+    // "Une erreur est survenue. Réessayez." copy whenever the server
+    // shipped only a `title` (no `detail`). Backend error frames like
+    // `lobby-full` ("Salon complet"), `not-owner`
+    // ("Opération réservée au propriétaire") or `player-not-in-lobby`
+    // ("Vous n'êtes pas membre de ce salon") all match this shape —
+    // their titles are clearer than the generic fallback, so the
+    // toast should surface them.
+    const gameClient = makeFakeGameClient();
+    renderLobby({ gameClient });
+    await screen.findByRole('heading', { name: /WordSparrow/ });
+    act(() => { gameClient.dispatchConnectionState('connected'); });
+
+    act(() => {
+      gameClient.dispatch({
+        type: 'error',
+        errorType: 'https://bliss.example/errors/lobby-full',
+        title: 'Salon complet',
+      });
+    });
+
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent('Salon complet');
+    expect(alert).not.toHaveTextContent(/une erreur est survenue/i);
+  });
+
   it('does NOT surface a toast for invalid-pseudonym errors (already handled inline)', async () => {
     const gameClient = makeFakeGameClient();
     renderLobby({ gameClient });
