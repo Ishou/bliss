@@ -178,13 +178,14 @@ class LoadOrGeneratePuzzleUseCaseCooldownTest {
             // enough variety for the bitmask CSP to find consistent
             // assignments even with non-trivial interior crossings.
             val shifts = intArrayOf(1, 5, 7, 11, 17, 23)
-            return shifts.flatMap { shift ->
-                (0..25).map { n ->
-                    val chars = CharArray(length) { i -> pattern[i] ?: 'A' }
-                    unconstrained.forEachIndexed { idx, pos -> chars[pos] = 'A' + (n + idx * shift) % 26 }
-                    Word(String(chars), "test definition")
-                }
-            }.distinctBy { it.text }
+            return shifts
+                .flatMap { shift ->
+                    (0..25).map { n ->
+                        val chars = CharArray(length) { i -> pattern[i] ?: 'A' }
+                        unconstrained.forEachIndexed { idx, pos -> chars[pos] = 'A' + (n + idx * shift) % 26 }
+                        Word(String(chars), "test definition")
+                    }
+                }.distinctBy { it.text }
         }
     }
 }

@@ -139,22 +139,28 @@ internal object BlackCellLayout {
         minLen: Int,
     ): Boolean {
         if (!cells.isBlack(r, c)) return false
-        if (c + 1 < cells.width && !cells.isBlack(r, c + 1) &&
+        if (c + 1 < cells.width &&
+            !cells.isBlack(r, c + 1) &&
             forwardRunHorizontal(cells, r, c + 1) >= minLen
         ) {
             return true
         }
-        if (r + 1 < cells.height && !cells.isBlack(r + 1, c) &&
+        if (r + 1 < cells.height &&
+            !cells.isBlack(r + 1, c) &&
             forwardRunVertical(cells, r + 1, c) >= minLen
         ) {
             return true
         }
-        if (c == 0 && r + 1 < cells.height && !cells.isBlack(r + 1, 0) &&
+        if (c == 0 &&
+            r + 1 < cells.height &&
+            !cells.isBlack(r + 1, 0) &&
             forwardRunHorizontal(cells, r + 1, 0) >= minLen
         ) {
             return true
         }
-        if (r == 0 && c + 1 < cells.width && !cells.isBlack(0, c + 1) &&
+        if (r == 0 &&
+            c + 1 < cells.width &&
+            !cells.isBlack(0, c + 1) &&
             forwardRunVertical(cells, 0, c + 1) >= minLen
         ) {
             return true
@@ -310,9 +316,10 @@ internal object BlackCellLayout {
         minLen: Int,
         lUseful: Int,
     ): Boolean {
-        val candidates = listOf(r to (c - 1), r to (c + 1), (r - 1) to c, (r + 1) to c)
-            .filter { (nr, nc) -> nr in 0 until cells.height && nc in 0 until cells.width }
-            .filter { (nr, nc) -> cells.isBlack(nr, nc) && !(nr == 0 && nc == 0) }
+        val candidates =
+            listOf(r to (c - 1), r to (c + 1), (r - 1) to c, (r + 1) to c)
+                .filter { (nr, nc) -> nr in 0 until cells.height && nc in 0 until cells.width }
+                .filter { (nr, nc) -> cells.isBlack(nr, nc) && !(nr == 0 && nc == 0) }
         for (i in candidates.indices) {
             val (r1, c1) = candidates[i]
             if (!tryWhitenSafely(cells, r1, c1, minLen, lUseful)) continue
@@ -367,8 +374,10 @@ internal object BlackCellLayout {
         val area = cells.width * cells.height
         val target = (blackRatio * area).toInt().coerceAtLeast(1)
         val candidates = mutableListOf<Pair<Int, Int>>()
-        for (r in 0 until cells.height) for (c in 0 until cells.width) {
-            if (!cells.isBlack(r, c)) candidates += r to c
+        for (r in 0 until cells.height) {
+            for (c in 0 until cells.width) {
+                if (!cells.isBlack(r, c)) candidates += r to c
+            }
         }
         candidates.shuffle(random)
         var i = 0
@@ -391,7 +400,8 @@ internal object BlackCellLayout {
         var c = 0
         while (c < cells.width) {
             if (cells.isBlack(r, c)) {
-                c++; continue
+                c++
+                continue
             }
             val start = c
             while (c < cells.width && !cells.isBlack(r, c)) c++
@@ -418,7 +428,8 @@ internal object BlackCellLayout {
         var r = 0
         while (r < cells.height) {
             if (cells.isBlack(r, c)) {
-                r++; continue
+                r++
+                continue
             }
             val start = r
             while (r < cells.height && !cells.isBlack(r, c)) r++
@@ -446,18 +457,20 @@ internal object BlackCellLayout {
         predicate: (Int) -> Boolean,
     ): Int? {
         val mid = start + length / 2
-        val positions = (start until start + length).sortedBy {
-            val d = it - mid
-            if (d == 0) -1 else d * d
-        }.let {
-            if (it.size > 1) {
-                val first = it.first()
-                val rest = it.drop(1).toMutableList().also { l -> l.shuffle(random) }
-                listOf(first) + rest
-            } else {
-                it
-            }
-        }
+        val positions =
+            (start until start + length)
+                .sortedBy {
+                    val d = it - mid
+                    if (d == 0) -1 else d * d
+                }.let {
+                    if (it.size > 1) {
+                        val first = it.first()
+                        val rest = it.drop(1).toMutableList().also { l -> l.shuffle(random) }
+                        listOf(first) + rest
+                    } else {
+                        it
+                    }
+                }
         for (pos in positions) if (predicate(pos)) return pos
         return null
     }
@@ -470,12 +483,14 @@ internal object BlackCellLayout {
         cells.set(0, 0, CellArray.BLACK)
         var c = 2
         while (c <= width - 2) {
-            cells.set(0, c, CellArray.BLACK); c += 2
+            cells.set(0, c, CellArray.BLACK)
+            c += 2
         }
         if (width % 2 == 1) cells.set(0, width - 1, CellArray.BLACK)
         var r = 2
         while (r <= height - 2) {
-            cells.set(r, 0, CellArray.BLACK); r += 2
+            cells.set(r, 0, CellArray.BLACK)
+            r += 2
         }
         if (height % 2 == 1) cells.set(height - 1, 0, CellArray.BLACK)
     }
