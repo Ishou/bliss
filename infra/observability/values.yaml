@@ -135,13 +135,18 @@ signoz:
       # actual), limit was 99% used (OOM imminent). Bumped to
       # 384Mi/768Mi to restore headroom. CPU left alone — measured
       # usage is ~0.06 cores, well below the 200m limit.
+      # Bumped 2026-05-12 from 768Mi -> 1Gi after live RSS
+      # measurement showed JVM non-heap (~115 MB) plus the 512 MB
+      # heap consumed ~627 MB (82% of 768 Mi) steady-state.
+      # Apache's heap-<=-75%-of-container rule is satisfied at
+      # heap=512 + container=1Gi (51%).
       resources:
         requests:
           cpu: 50m
           memory: 384Mi
         limits:
           cpu: 200m
-          memory: 768Mi
+          memory: 1Gi
 
   queryService:
     resources:
