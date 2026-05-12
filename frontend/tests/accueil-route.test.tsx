@@ -311,6 +311,26 @@ describe('Accueil route', () => {
     });
   });
 
+  it('renders the Multijoueur card immediately even when fetchDaily is slow', async () => {
+    let resolveDaily: (puzzle: Puzzle) => void = () => undefined;
+    const fetchDaily = vi.fn(
+      () => new Promise<Puzzle>((resolve) => { resolveDaily = resolve; }),
+    );
+    renderAccueil({ puzzleRepository: { fetchDaily } });
+    // Multijoueur card heading appears without waiting for the daily fetch
+    // to resolve — the loader does not block on the daily puzzle.
+    expect(await screen.findByRole('heading', { name: 'Multijoueur', level: 2 }))
+      .toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Grille du jour', level: 2 }))
+      .toBeInTheDocument();
+    expect(screen.getByText(/chargement/i)).toBeInTheDocument();
+    // The puzzle's primary CTA is NOT in the DOM yet (still loading).
+    expect(screen.queryByRole('button', { name: 'Commencer' })).not.toBeInTheDocument();
+    // Resolve the fetch — the Grille card swaps to its ready state.
+    await act(async () => { resolveDaily(samplePuzzle); });
+    expect(await screen.findByRole('button', { name: 'Commencer' })).toBeInTheDocument();
+  });
+
   describe('when fetchDaily fails', () => {
     it('renders the Grille card error state without replacing the whole page', async () => {
       const fetchDaily = vi.fn().mockRejectedValue(new Error('boom'));
