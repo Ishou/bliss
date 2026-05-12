@@ -1,5 +1,6 @@
 package com.bliss.game.infrastructure.persistence
 
+import com.bliss.game.application.ports.EraseSessionResult
 import com.bliss.game.application.ports.LobbyRepository
 import com.bliss.game.domain.BlockCell
 import com.bliss.game.domain.CellEntry
@@ -155,6 +156,152 @@ class PostgresLobbyRepository(
                 deleteLobbyRow(conn, id)
             }
         }
+    }
+
+    /**
+     * RGPD Article 17 erasure (ADR-0039). Single transaction, all affected
+     * lobbies locked upfront with `SELECT ... FOR UPDATE` ordered by id to
+     * prevent dead-locks against concurrent eraseSession or mutate calls.
+     *
+     * The three rules applied per lobby:
+     *  1. Owner + sole player → DELETE the row (children cascade).
+     *  2. Owner + others      → UPDATE owner_session_id to the earliest-
+     *                           joined remaining player, DELETE the playership,
+     *                           NULL out cell-entry attribution (anonymise).
+     *  3. Non-owner           → DELETE the playership, NULL out attribution.
+     */
+    override suspend fun eraseSession(sessionId: SessionId): EraseSessionResult =
+        withContext(Dispatchers.IO) {
+            ds.connection.use { conn ->
+                conn.autoCommit = false
+                try {
+                    val result = eraseInTransaction(conn, sessionId)
+                    conn.commit()
+                    result
+                } catch (e: Exception) {
+                    conn.rollback()
+                    throw e
+                } finally {
+                    conn.autoCommit = true
+                }
+            }
+        }
+
+    private fun eraseInTransaction(
+        conn: Connection,
+        sessionId: SessionId,
+    ): EraseSessionResult {
+        val sessionUuid = UUID.fromString(sessionId.value)
+        // Snapshot + lock the set of affected lobbies in deterministic order
+        // so two concurrent erasures (different sessionIds touching overlapping
+        // lobbies) cannot deadlock by acquiring locks in opposite orders.
+        val lobbyIds = mutableListOf<LobbyId>()
+        conn
+            .prepareStatement(
+                "SELECT l.id FROM lobbies l " +
+                    "JOIN lobby_players lp ON lp.lobby_id = l.id " +
+                    "WHERE lp.session_id = ? " +
+                    "ORDER BY l.id " +
+                    "FOR UPDATE OF l",
+            ).use { ps ->
+                ps.setObject(1, sessionUuid)
+                ps.executeQuery().use { rs ->
+                    while (rs.next()) lobbyIds += LobbyId(rs.getString("id"))
+                }
+            }
+        if (lobbyIds.isEmpty()) return EraseSessionResult.Empty
+
+        var deletedLobbies = 0
+        var transferredLobbies = 0
+        var removedPlayerships = 0
+        var anonymisedEntries = 0
+        for (id in lobbyIds) {
+            // Read current state under the row lock acquired above.
+            val (owner, remainingPlayers) = loadOwnerAndRemainingPlayers(conn, id, sessionUuid)
+            if (owner == null) continue // lobby vanished between SELECT and now (impossible inside this tx, but safe).
+            val ownsLobby = owner == sessionUuid
+            if (ownsLobby && remainingPlayers.isEmpty()) {
+                // Rule 1: cascade-delete.
+                conn.prepareStatement("DELETE FROM lobbies WHERE id = ?").use { ps ->
+                    ps.setString(1, id.value)
+                    ps.executeUpdate()
+                }
+                deletedLobbies += 1
+                continue
+            }
+            // Rules 2 + 3: remove the playership.
+            val playerRowsDeleted =
+                conn
+                    .prepareStatement(
+                        "DELETE FROM lobby_players WHERE lobby_id = ? AND session_id = ?",
+                    ).use { ps ->
+                        ps.setString(1, id.value)
+                        ps.setObject(2, sessionUuid)
+                        ps.executeUpdate()
+                    }
+            removedPlayerships += playerRowsDeleted
+            // Anonymise this session's cell entries: count + NULL out the FK in one statement.
+            anonymisedEntries +=
+                conn
+                    .prepareStatement(
+                        "UPDATE lobby_cell_entries SET written_by_session_id = NULL " +
+                            "WHERE lobby_id = ? AND written_by_session_id = ?",
+                    ).use { ps ->
+                        ps.setString(1, id.value)
+                        ps.setObject(2, sessionUuid)
+                        ps.executeUpdate()
+                    }
+            // Rule 2: transfer ownership to earliest-joined remaining player.
+            if (ownsLobby) {
+                val newOwner = remainingPlayers.minBy { it.second }.first
+                conn
+                    .prepareStatement("UPDATE lobbies SET owner_session_id = ? WHERE id = ?")
+                    .use { ps ->
+                        ps.setObject(1, newOwner)
+                        ps.setString(2, id.value)
+                        ps.executeUpdate()
+                    }
+                transferredLobbies += 1
+            }
+        }
+        return EraseSessionResult(deletedLobbies, transferredLobbies, removedPlayerships, anonymisedEntries)
+    }
+
+    /**
+     * Returns (ownerSessionUuid, remainingPlayers) where `remainingPlayers` is
+     * the list of (sessionId, joinedAt) pairs for every player except [target].
+     */
+    private fun loadOwnerAndRemainingPlayers(
+        conn: Connection,
+        id: LobbyId,
+        target: UUID,
+    ): Pair<UUID?, List<Pair<UUID, Instant>>> {
+        val owner =
+            conn
+                .prepareStatement("SELECT owner_session_id FROM lobbies WHERE id = ?")
+                .use { ps ->
+                    ps.setString(1, id.value)
+                    ps.executeQuery().use { rs ->
+                        if (rs.next()) rs.getObject("owner_session_id", UUID::class.java) else null
+                    }
+                } ?: return null to emptyList()
+        val remaining = mutableListOf<Pair<UUID, Instant>>()
+        conn
+            .prepareStatement(
+                "SELECT session_id, joined_at FROM lobby_players " +
+                    "WHERE lobby_id = ? AND session_id <> ?",
+            ).use { ps ->
+                ps.setString(1, id.value)
+                ps.setObject(2, target)
+                ps.executeQuery().use { rs ->
+                    while (rs.next()) {
+                        val sid = rs.getObject("session_id", UUID::class.java)
+                        val joined = rs.getTimestamp("joined_at").toInstant()
+                        remaining += sid to joined
+                    }
+                }
+            }
+        return owner to remaining
     }
 
     override suspend fun findWaitingByOwnerSession(ownerSessionId: SessionId): Lobby? =
@@ -319,10 +466,12 @@ class PostgresLobbyRepository(
                     while (rs.next()) {
                         val pos = Position(rs.getInt("row"), rs.getInt("col"))
                         val raw = rs.getObject("written_by_session_id", UUID::class.java)
-                        // RGPD-anonymised entries (null) are surfaced as a zero-SessionId
-                        // sentinel so the existing CellEntry shape (which requires a
-                        // SessionId) keeps working. ADR-0039 owns this policy.
-                        val sid = SessionId((raw ?: ANONYMOUS_SESSION_UUID).toString())
+                        // RGPD-anonymised entries (null in the DB per ADR-0039) are
+                        // surfaced as the domain SessionId.ANON sentinel so the
+                        // existing CellEntry shape (which requires a SessionId)
+                        // keeps working. rewriteChildren maps ANON back to NULL
+                        // on save so the database column itself stays anonymised.
+                        val sid = if (raw == null) SessionId.ANON else SessionId(raw.toString())
                         out[pos] =
                             CellEntry(
                                 sessionId = sid,
@@ -416,7 +565,7 @@ class PostgresLobbyRepository(
                         ps.setInt(2, pos.row)
                         ps.setInt(3, pos.column)
                         ps.setString(4, entry.letter.value.toString())
-                        if (entry.sessionId.value == ANONYMOUS_SESSION_UUID.toString()) {
+                        if (entry.sessionId == SessionId.ANON) {
                             ps.setNull(5, java.sql.Types.OTHER)
                         } else {
                             ps.setObject(5, UUID.fromString(entry.sessionId.value))
@@ -449,13 +598,6 @@ class PostgresLobbyRepository(
         raw: String,
         entries: Map<Position, CellEntry>,
     ): GameSession = json.decodeFromString(GameSessionPayload.serializer(), raw).toDomain(entries)
-
-    companion object {
-        // RGPD anonymisation sentinel for cell entries whose author was erased.
-        // Kept private to the adapter: the application layer keeps treating
-        // `CellEntry.sessionId` as opaque attribution metadata (ADR-0039).
-        private val ANONYMOUS_SESSION_UUID: UUID = UUID.fromString("00000000-0000-7000-8000-000000000000")
-    }
 }
 
 /**

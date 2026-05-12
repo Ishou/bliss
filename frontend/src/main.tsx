@@ -132,8 +132,18 @@ enableMocks()
     // while the localStorage helpers cover getSessionId/clearLocalSession.
     // This is the only place allowed to import both; ui/ components receive
     // the composed port through router context (ADR-0002 §7).
+    //
+    // The HTTP adapter fans the erasure call out to BOTH grid-api and
+    // game-api so the RGPD "Effacer mes données" surface covers the
+    // multiplayer cascade (ADR-0039) in addition to grid hints. When
+    // multiplayer is disabled the game-api base URL is left undefined and
+    // the adapter degrades to a grid-only call.
+    const multiplayerForErase = import.meta.env.VITE_FEATURE_MULTIPLAYER === 'true';
     const sessionClient: SessionClient = {
-      ...createHttpSessionClient({ baseUrl: gridApiBaseUrl }),
+      ...createHttpSessionClient({
+        gridBaseUrl: gridApiBaseUrl,
+        gameBaseUrl: multiplayerForErase ? import.meta.env.VITE_GAME_API_BASE_URL : undefined,
+      }),
       getSessionId: getOrCreateSessionId,
       clearLocalSession: () => {
         clearSession();

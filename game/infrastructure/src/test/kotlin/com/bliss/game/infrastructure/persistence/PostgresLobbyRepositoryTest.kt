@@ -3,6 +3,7 @@ package com.bliss.game.infrastructure.persistence
 import assertk.assertThat
 import assertk.assertions.containsAtLeast
 import assertk.assertions.containsExactly
+import assertk.assertions.containsOnly
 import assertk.assertions.hasSize
 import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
@@ -369,6 +370,115 @@ class PostgresLobbyRepositoryTest {
         runTest {
             val result = repo.mutate(LobbyId.generate()) { error("mutator should not run") }
             assertThat(result).isNull()
+        }
+
+    @Test
+    fun `eraseSession rule 1 - sole-owner lobby is deleted and children cascade`() =
+        runTest {
+            val lobby = waitingLobby(id = LobbyId.generate(), owner = sessionA)
+            repo.save(lobby)
+
+            val result = repo.eraseSession(sessionA)
+
+            assertThat(result.deletedLobbies).isEqualTo(1)
+            assertThat(result.transferredLobbies).isEqualTo(0)
+            assertThat(result.removedPlayerships).isEqualTo(0)
+            assertThat(result.anonymisedEntries).isEqualTo(0)
+            assertThat(repo.findById(lobby.id)).isNull()
+            assertThat(countChildRows("lobby_players", lobby.id)).isEqualTo(0)
+            assertThat(countChildRows("lobby_cell_entries", lobby.id)).isEqualTo(0)
+        }
+
+    @Test
+    fun `eraseSession rule 2 - owner with remaining players - ownership transfers to earliest joined`() =
+        runTest {
+            val base = inProgressLobby(id = LobbyId.generate(), owner = sessionA)
+            val withOthers =
+                base.copy(
+                    players =
+                        base.players +
+                            (sessionB to Player(sessionB, Pseudonym("Bob"), baseInstant.plusSeconds(10))) +
+                            (sessionC to Player(sessionC, Pseudonym("Carol"), baseInstant.plusSeconds(20))),
+                )
+            repo.save(withOthers)
+
+            val result = repo.eraseSession(sessionA)
+
+            assertThat(result.deletedLobbies).isEqualTo(0)
+            assertThat(result.transferredLobbies).isEqualTo(1)
+            assertThat(result.removedPlayerships).isEqualTo(1)
+            // Both seeded entries authored by sessionA (Alice) get anonymised.
+            assertThat(result.anonymisedEntries).isEqualTo(2)
+            val after = repo.findById(withOthers.id)
+            assertThat(after).isNotNull()
+            assertThat(after!!.ownerSessionId).isEqualTo(sessionB)
+            assertThat(after.players.keys.toList()).containsOnly(sessionB, sessionC)
+            // After anonymisation, every entry's sessionId is the ANON sentinel.
+            after.game!!.entries.values.forEach {
+                assertThat(it.sessionId).isEqualTo(SessionId.ANON)
+            }
+        }
+
+    @Test
+    fun `eraseSession rule 3 - non-owner is removed and entries anonymised`() =
+        runTest {
+            val base = inProgressLobby(id = LobbyId.generate(), owner = sessionA)
+            // Add sessionB as a non-owner member; rewrite the seed entries
+            // so one of them is authored by sessionB (so we can assert
+            // anonymisation count of exactly 1).
+            val withGuest =
+                base.copy(
+                    players =
+                        base.players +
+                            (sessionB to Player(sessionB, Pseudonym("Bob"), baseInstant.plusSeconds(10))),
+                    game =
+                        base.game!!.copy(
+                            entries =
+                                mapOf(
+                                    Position(0, 0) to CellEntry(sessionA, Letter('B'), baseInstant.plusSeconds(5)),
+                                    Position(0, 1) to CellEntry(sessionB, Letter('L'), baseInstant.plusSeconds(6)),
+                                ),
+                        ),
+                )
+            repo.save(withGuest)
+
+            val result = repo.eraseSession(sessionB)
+
+            assertThat(result.deletedLobbies).isEqualTo(0)
+            assertThat(result.transferredLobbies).isEqualTo(0)
+            assertThat(result.removedPlayerships).isEqualTo(1)
+            assertThat(result.anonymisedEntries).isEqualTo(1)
+            val after = repo.findById(withGuest.id)
+            assertThat(after).isNotNull()
+            assertThat(after!!.ownerSessionId).isEqualTo(sessionA) // unchanged
+            assertThat(after.players.keys.toList()).containsOnly(sessionA)
+            val anonEntry = after.game!!.entries[Position(0, 1)]
+            assertThat(anonEntry).isNotNull()
+            assertThat(anonEntry!!.sessionId).isEqualTo(SessionId.ANON)
+            // sessionA's entry remains attributed.
+            assertThat(after.game!!.entries[Position(0, 0)]!!.sessionId).isEqualTo(sessionA)
+        }
+
+    @Test
+    fun `eraseSession is idempotent - second call returns all zeros`() =
+        runTest {
+            val lobby = waitingLobby(id = LobbyId.generate(), owner = sessionA)
+            repo.save(lobby)
+
+            val first = repo.eraseSession(sessionA)
+            val second = repo.eraseSession(sessionA)
+
+            assertThat(first.deletedLobbies).isEqualTo(1)
+            assertThat(second.deletedLobbies).isEqualTo(0)
+            assertThat(second.transferredLobbies).isEqualTo(0)
+            assertThat(second.removedPlayerships).isEqualTo(0)
+            assertThat(second.anonymisedEntries).isEqualTo(0)
+        }
+
+    @Test
+    fun `eraseSession returns Empty when the session is in no lobby`() =
+        runTest {
+            assertThat(repo.eraseSession(sessionA).deletedLobbies).isEqualTo(0)
         }
 
     @Test
