@@ -37,11 +37,12 @@ import kotlin.time.Duration.Companion.seconds
 
 private val log = LoggerFactory.getLogger("com.bliss.game.api.routes.LobbyWebSocketRoute")
 
-private val ROUTE_JSON: Json =
+internal val ROUTE_JSON: Json =
     Json {
         prettyPrint = false
         ignoreUnknownKeys = true
         explicitNulls = true
+        encodeDefaults = true
         classDiscriminator = "type"
     }
 

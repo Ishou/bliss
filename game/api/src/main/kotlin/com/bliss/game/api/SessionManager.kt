@@ -224,6 +224,7 @@ class SessionManager(
                 prettyPrint = false
                 ignoreUnknownKeys = true
                 explicitNulls = true
+                encodeDefaults = true
                 classDiscriminator = "type"
             }
     }
