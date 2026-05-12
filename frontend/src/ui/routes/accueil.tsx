@@ -1,5 +1,5 @@
-import { createRoute, useNavigate, useRouter } from '@tanstack/react-router';
-import { useLayoutEffect, useState } from 'react';
+import { createRoute, useNavigate } from '@tanstack/react-router';
+import { useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { css } from 'styled-system/css';
 import type { Puzzle } from '@/domain';
 import { LobbyClientError, type LobbySummary } from '@/application/game';
@@ -12,25 +12,23 @@ import { MyLobbiesSection } from '@/ui/components/lobby/MyLobbiesSection';
 import { buildHead, INDEXABLE_ROUTES, SITE_BASE_URL, organizationJsonLd } from '@/ui/seo';
 import { Route as RootRoute } from './__root';
 
-// Loader return shape — bundles the daily puzzle with the calling
-// session's lobby list (ADR-0039 "Mes parties"). Both fetches run in
-// parallel via Promise.all so the slower of the two bounds wait time
-// rather than the sum.
-//
-// `daily` is a result union, not a bare puzzle: a fetchDaily failure
-// degrades to `{ ok: false }` so the route renders both cards (with the
-// Grille card showing an inline error state + Réessayer) instead of
-// blowing through to the route-level errorComponent and replacing the
-// whole page. Multijoueur stays interactable while the daily is
-// unavailable.
-export type DailyResult =
-  | { readonly ok: true; readonly puzzle: Puzzle }
-  | { readonly ok: false };
-
+// Loader return shape — only the calling session's lobby list
+// (ADR-0039 "Mes parties"). The daily-puzzle fetch is intentionally
+// NOT in the loader: a slow daily endpoint must not block the
+// Multijoueur card from rendering. The Grille du jour card fetches
+// the daily client-side via `useEffect` and manages its own
+// loading / error / ready state — the rest of the page paints
+// immediately with whatever lobbies came back.
 export interface AccueilLoaderData {
-  readonly daily: DailyResult;
   readonly lobbies: readonly LobbySummary[];
 }
+
+// Mirrors a Result union with an explicit `loading` arm so the
+// component renders deterministically without a separate boolean.
+type DailyState =
+  | { readonly status: 'loading' }
+  | { readonly status: 'ok'; readonly puzzle: Puzzle }
+  | { readonly status: 'error' };
 
 // Accueil (home) — landing page introduced after the action-bar
 // revamp. Two cards, side-by-side on desktop, stacked on mobile:
@@ -211,7 +209,47 @@ function formatTodayFr(now: Date): string {
   return formatted.charAt(0).toUpperCase() + formatted.slice(1);
 }
 
-function GrilleDuJourCard({ puzzle }: { readonly puzzle: Puzzle }) {
+// Container — fetches the daily puzzle on mount and renders the
+// matching body for the current state (loading / error / ready). The
+// outer `<section>` + the `<h2>` stay mounted across state
+// transitions so the heading element keeps its identity in the DOM
+// (test queries returning a detached node on a state flip is a real
+// gotcha here) and so screen-reader focus on the heading is not lost
+// when the card swaps from loading to ready.
+function GrilleDuJourCard() {
+  const { puzzleRepository } = Route.useRouteContext();
+  const [state, setState] = useState<DailyState>({ status: 'loading' });
+  const [tick, setTick] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    setState({ status: 'loading' });
+    puzzleRepository
+      .fetchDaily()
+      .then((puzzle) => {
+        if (!cancelled) setState({ status: 'ok', puzzle });
+      })
+      .catch(() => {
+        if (!cancelled) setState({ status: 'error' });
+      });
+    return () => { cancelled = true; };
+  }, [puzzleRepository, tick]);
+
+  return (
+    <section className={cardStyles} aria-labelledby="accueil-grille-title">
+      <h2 id="accueil-grille-title" className={cardTitleStyles}>Grille du jour</h2>
+      {state.status === 'loading' ? (
+        <GrilleDuJourLoadingBody />
+      ) : state.status === 'error' ? (
+        <GrilleDuJourErrorBody onRetry={() => setTick((n) => n + 1)} />
+      ) : (
+        <GrilleDuJourReadyBody puzzle={state.puzzle} />
+      )}
+    </section>
+  );
+}
+
+function GrilleDuJourReadyBody({ puzzle }: { readonly puzzle: Puzzle }) {
   const navigate = useNavigate();
   const { soloEntriesStore } = Route.useRouteContext();
 
@@ -219,23 +257,18 @@ function GrilleDuJourCard({ puzzle }: { readonly puzzle: Puzzle }) {
     (n, c) => (c.kind === 'letter' ? n + 1 : n),
     0,
   );
-  // `loadLockedCells` is the same source the in-puzzle ProgressBar
-  // counts: validated words + revealed-hint cells. Mirrors what the
-  // player sees inside `/grille` so the count never disagrees.
   const lockedCount = soloEntriesStore.loadLockedCells(puzzle.id).length;
   const entriesCount = soloEntriesStore.load(puzzle.id).length;
   const hasStarted = lockedCount > 0 || entriesCount > 0;
 
-  // Meta row: date `· n°X · facile`. Number and difficulty are optional —
-  // rendered only when populated.
-  const metaParts: string[] = [formatTodayFr(new Date())];
+  const todayFr = useMemo(() => formatTodayFr(new Date()), []);
+  const metaParts: string[] = [todayFr];
   if (puzzle.gridNumber != null) metaParts.push(`n°${puzzle.gridNumber}`);
   if (puzzle.difficulty != null) metaParts.push(puzzle.difficulty);
   const metaLabel = metaParts.join(' · ');
 
   return (
-    <section className={cardStyles} aria-labelledby="accueil-grille-title">
-      <h2 id="accueil-grille-title" className={cardTitleStyles}>Grille du jour</h2>
+    <>
       <p className={cardSubtitleStyles}>{metaLabel}</p>
       <ProgressBar
         value={lockedCount}
@@ -258,7 +291,7 @@ function GrilleDuJourCard({ puzzle }: { readonly puzzle: Puzzle }) {
           Voir les anciennes grilles →
         </button>
       </div>
-    </section>
+    </>
   );
 }
 
@@ -435,58 +468,41 @@ function messageForJoinError(err: unknown): string {
 }
 
 function AccueilPage() {
-  const { daily, lobbies } = Route.useLoaderData();
+  const { lobbies } = Route.useLoaderData();
   return (
     <ContentPage>
       <h1 lang="fr" className={srOnly}>
         Mots fléchés français en ligne — <span lang="en">WordSparrow</span>
       </h1>
       <div className={cardsGridStyles}>
-        {daily.ok ? (
-          <GrilleDuJourCard puzzle={daily.puzzle} />
-        ) : (
-          <GrilleDuJourErrorCard />
-        )}
+        <GrilleDuJourCard />
         <MultijoueurCard lobbies={lobbies} />
       </div>
     </ContentPage>
   );
 }
 
-// Card-shaped error state for the daily-puzzle failure path. Mirrors
-// `GrilleDuJourCard`'s chrome (same title id, same card class) so the
-// layout is visually neutral whether the fetch succeeded or not. The
-// Réessayer button re-runs the route loader via `router.invalidate` —
-// no `window.location.reload()` here, because that would also drop the
-// (working) Multijoueur card's state and force the user back through
-// any in-flight create/join flow.
-function GrilleDuJourErrorCard() {
-  const router = useRouter();
-  const [retrying, setRetrying] = useState(false);
-  const handleRetry = async () => {
-    setRetrying(true);
-    try {
-      await router.invalidate();
-    } finally {
-      setRetrying(false);
-    }
-  };
+// Body for the daily-puzzle failure path. Réessayer re-runs only the
+// daily fetch (the parent container bumps `tick`) — never invalidates
+// the router, so the Multijoueur card's in-flight create / join state
+// is preserved through a retry.
+function GrilleDuJourErrorBody({ onRetry }: { readonly onRetry: () => void }) {
   return (
-    <section className={cardStyles} aria-labelledby="accueil-grille-title">
-      <h2 id="accueil-grille-title" className={cardTitleStyles}>Grille du jour</h2>
+    <>
       <p className={errorTextStyles} role="alert">
         Grille du jour indisponible. Réessayez dans un instant.
       </p>
       <div className={cardFooterStyles}>
-        <Button
-          variant="ghost"
-          disabled={retrying}
-          onClick={() => { void handleRetry(); }}
-        >
-          {retrying ? 'Nouvelle tentative…' : 'Réessayer'}
-        </Button>
+        <Button variant="ghost" onClick={onRetry}>Réessayer</Button>
       </div>
-    </section>
+    </>
+  );
+}
+
+// `scripts/prerender.ts` waits on this role="status" element before snapshotting HTML.
+function GrilleDuJourLoadingBody() {
+  return (
+    <p className={cardSubtitleStyles} role="status">Chargement…</p>
   );
 }
 
@@ -581,16 +597,20 @@ export const Route = createRoute({
   // load (the puzzle is the primary content; "Mes parties" is a side
   // surface that should never gate the home page).
   loader: async ({ context }): Promise<AccueilLoaderData> => {
-    const dailyP: Promise<DailyResult> = context.puzzleRepository
-      .fetchDaily()
-      .then((puzzle): DailyResult => ({ ok: true, puzzle }))
-      .catch((): DailyResult => ({ ok: false }));
-    const lobbiesP: Promise<readonly LobbySummary[]> =
-      context.lobbyClient != null && context.getSession != null
-        ? context.lobbyClient.listMyLobbies(context.getSession().sessionId).catch(() => [])
-        : Promise.resolve([]);
-    const [daily, lobbies] = await Promise.all([dailyP, lobbiesP]);
-    return { daily, lobbies };
+    // The daily puzzle is intentionally NOT fetched here. The Grille du
+    // jour card owns its own fetch (and its own loading / error /
+    // ready state) so a slow `/v1/puzzles/daily` cannot delay the
+    // Multijoueur card from rendering. The lobbies fetch is fast and
+    // best-effort (any failure degrades to `[]`), so the loader still
+    // resolves quickly — the route's `pendingComponent` rarely fires
+    // in practice.
+    if (context.lobbyClient == null || context.getSession == null) {
+      return { lobbies: [] };
+    }
+    const lobbies = await context.lobbyClient
+      .listMyLobbies(context.getSession().sessionId)
+      .catch((): readonly LobbySummary[] => []);
+    return { lobbies };
   },
   component: AccueilPage,
   // pendingMs: TanStack Router defaults to Infinity (pendingComponent
