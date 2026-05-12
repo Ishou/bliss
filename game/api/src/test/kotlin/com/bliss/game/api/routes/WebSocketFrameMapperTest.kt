@@ -194,6 +194,19 @@ class WebSocketFrameMapperTest {
     }
 
     @Test
+    fun `GameSessionDto ROUTE JSON keeps defaulted lockedPositions and presence keys present`() {
+        val lobby = inProgressLobby(emptyMap())
+        val game = lobby.toLobbyStateFrame().game
+        assertThat(game).isNotNull()
+
+        val raw = ROUTE_JSON.encodeToString(GameSessionDto.serializer(), game!!)
+        val parsed = Json.parseToJsonElement(raw) as JsonObject
+
+        assertThat(parsed.containsKey("lockedPositions")).isEqualTo(true)
+        assertThat(parsed.containsKey("presence")).isEqualTo(true)
+    }
+
+    @Test
     fun `LobbyEvent CursorBumped maps direction enum to wire string`() {
         val acrossFrame =
             LobbyEvent
