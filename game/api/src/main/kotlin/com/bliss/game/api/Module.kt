@@ -6,6 +6,7 @@ import com.bliss.game.api.routes.lobbies
 import com.bliss.game.api.routes.lobbyWebSocketRoute
 import com.bliss.game.api.routes.sessions
 import com.bliss.game.application.ports.AnalyticsEventSink
+import com.bliss.game.application.ports.LobbyRepository
 import com.bliss.game.application.usecases.CreateLobbyUseCase
 import com.bliss.game.application.usecases.EraseSessionUseCase
 import com.bliss.game.application.usecases.JoinLobbyUseCase
@@ -23,6 +24,8 @@ import com.bliss.game.infrastructure.HttpWordValidator
 import com.bliss.game.infrastructure.InMemoryLobbyRepository
 import com.bliss.game.infrastructure.analytics.MatomoAnalyticsAdapter
 import com.bliss.game.infrastructure.analytics.NoopAnalyticsAdapter
+import com.bliss.game.infrastructure.persistence.BlissDatabase
+import com.bliss.game.infrastructure.persistence.PostgresLobbyRepository
 import io.ktor.client.HttpClient
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
@@ -59,11 +62,13 @@ import kotlin.time.Duration.Companion.seconds
  * the WebSockets plugin, and routes. Mirrors `grid/api`'s Module shape so
  * the two services have the same observability and error envelope.
  *
- * No persistence wiring — game/ is in-memory in v1 (ADR-0018 §3); no
- * Database.start() unlike grid/api. Both REST routes (PR #137) and the
- * WebSocket endpoint (PR #138) consume the same in-memory
- * InMemoryLobbyRepository so a lobby created via REST is visible to a
- * subsequent WebSocket connection on the same process.
+ * Persistence: when `DATABASE_URL` is set (prod), [BlissDatabase] pools the
+ * CNPG datasource and the lobby repository binds to [PostgresLobbyRepository].
+ * Without `DATABASE_URL` (local dev / unit-test CI without postgres), it
+ * falls back to [InMemoryLobbyRepository] so the service boots end-to-end.
+ * Both REST routes and the WebSocket endpoint share the same instance so a
+ * lobby created via POST /v1/lobbies is visible to a subsequent WebSocket
+ * connection (and, post-cutover, across pod restarts).
  */
 fun Application.module() {
     install(CORS) {
@@ -194,14 +199,35 @@ fun Application.module() {
     }
 
     // ---- DI for game routes ---------------------------------------------
-    // Manual wiring; mirrors grid/api's pattern (no DI framework). v1 is
-    // in-memory only (ADR-0018 §3); :game:infrastructure's Postgres adapter
-    // will replace InMemoryLobbyRepository when it lands.
+    // Manual wiring; mirrors grid/api's pattern (no DI framework).
+    //
+    // Persistence binding (Wave E PR #12 — cutover): when DATABASE_URL is set,
+    // bind PostgresLobbyRepository (CNPG via Hikari + Flyway). When it is unset
+    // (local dev / unit-test CI without postgres), fall back to the in-memory
+    // adapter so the service boots end-to-end. ADR-0039.
     //
     // The repository instance is shared between REST routes (PR #137) and
     // the WebSocket route (PR #138) so a lobby created via POST /v1/lobbies
     // is visible to a subsequent WebSocket connection on the same process.
-    val lobbyRepository = InMemoryLobbyRepository()
+    val moduleLog = LoggerFactory.getLogger("com.bliss.game.api.Module")
+    val blissDb =
+        BlissDatabase(
+            poolName = "game-api",
+            maxPoolSize = 10,
+            requireUrl = false, // dev/CI without DATABASE_URL falls back to in-memory
+        )
+    blissDb.start()
+    val pgDataSource = blissDb.dataSource()
+    val lobbyRepository: LobbyRepository =
+        if (pgDataSource != null) {
+            PostgresLobbyRepository(pgDataSource)
+        } else {
+            InMemoryLobbyRepository()
+        }
+    moduleLog.info(
+        "game-api LobbyRepository backend: {}",
+        if (pgDataSource != null) "postgres" else "in-memory",
+    )
     // Local-dev default: grid-api on the host's loopback (paired with
     // grid/api's DEFAULT_PORT=7777). Prod chart pins GRID_BASE_URL
     // explicitly via the deployment env block, so the cluster routes
@@ -232,20 +258,19 @@ fun Application.module() {
         )
     val sessionManager = SessionManager()
 
-    // Lobby garbage collector — evicts WAITING lobbies idle for >30 minutes (ADR-0018 §3
-    // already promises this in `game/api/openapi.yaml`'s 404 description). Companion to the
-    // per-session idempotency in CreateLobbyUseCase: idempotency stops the click-to-spam
-    // path at the source; the GC mops up tab-close / network-drop / crash residue.
-    //
-    // 30 minutes is the right knob for a casual game: long enough that a player who tabs
-    // away to reply to a message can come back, short enough that abandoned lobbies do not
-    // accumulate over a play session. The 5-minute sweep cadence balances responsiveness
-    // against scan cost (O(n) over the in-memory map).
+    // Lobby garbage collector — ADR-0039 GC matrix:
+    //   - WAITING     → evicted after 24h. Replaces the v1 30-minute knob: with multi-day
+    //                   persistence live, players can legitimately leave a lobby open
+    //                   overnight and return the next day.
+    //   - COMPLETED   → evicted after 7d. Retention for the "My games" surface.
+    //   - IN_PROGRESS → never evicted (neither query targets that state).
+    // 5-minute sweep cadence balances responsiveness against scan cost.
     val gc =
         LobbyGarbageCollector(
             repo = lobbyRepository,
             clock = SystemClock,
-            idleTtl = Duration.ofMinutes(30),
+            waitingTtl = Duration.ofHours(24),
+            completedTtl = Duration.ofDays(7),
             sweepInterval = Duration.ofMinutes(5),
         )
     val gcJob = gc.run(this)
