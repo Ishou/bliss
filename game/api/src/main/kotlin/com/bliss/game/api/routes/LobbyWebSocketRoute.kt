@@ -42,6 +42,7 @@ private val ROUTE_JSON: Json =
         prettyPrint = false
         ignoreUnknownKeys = true
         explicitNulls = true
+        encodeDefaults = true
         classDiscriminator = "type"
     }
 

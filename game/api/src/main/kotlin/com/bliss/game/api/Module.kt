@@ -123,6 +123,14 @@ fun Application.module() {
                 // IN_PROGRESS — both fields are in the OpenAPI spec's `required`
                 // lists and clients distinguish between "not yet" and "missing".
                 explicitNulls = true
+                // encodeDefaults = true: DTO collection fields default to
+                // `emptyList()` so the constructor can be called positionally;
+                // without this, kotlinx-serialization omits them when empty,
+                // which violates the OpenAPI `required` contract and crashes
+                // the frontend (`for...of` on `undefined`). Reproduced as the
+                // "Une erreur est survenue." toast when rejoining a fresh
+                // IN_PROGRESS game with no words locked yet.
+                encodeDefaults = true
             },
         )
     }

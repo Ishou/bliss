@@ -5,6 +5,8 @@ import assertk.assertions.containsExactly
 import assertk.assertions.isEqualTo
 import assertk.assertions.isNotNull
 import assertk.assertions.isNull
+import com.bliss.game.api.SessionManager
+import com.bliss.game.api.dto.GameSessionDto
 import com.bliss.game.api.dto.ServerToClientFrame
 import com.bliss.game.application.ports.LobbyEvent
 import com.bliss.game.domain.CellEntry
@@ -21,6 +23,8 @@ import com.bliss.game.domain.Player
 import com.bliss.game.domain.Position
 import com.bliss.game.domain.Pseudonym
 import com.bliss.game.domain.SessionId
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
 import org.junit.jupiter.api.Test
 import java.time.Instant
 import java.util.UUID
@@ -156,6 +160,23 @@ class WebSocketFrameMapperTest {
         val game = frame.game
         assertThat(game).isNotNull()
         assertThat(game!!.lockedPositions).isEqualTo(emptyList<Any>())
+    }
+
+    @Test
+    fun `GameSessionDto JSON keeps defaulted lockedPositions and presence keys present`() {
+        // Regression: kotlinx-serialization omits defaulted fields unless
+        // `encodeDefaults = true`. ADR-0003 §6 requires every `required` OpenAPI
+        // field on the wire; omitting `lockedPositions` crashed the frontend
+        // rejoin flow (`for...of` on `undefined` -> "Une erreur est survenue.").
+        val lobby = inProgressLobby(emptyMap())
+        val game = lobby.toLobbyStateFrame().game
+        assertThat(game).isNotNull()
+
+        val raw = SessionManager.DEFAULT_JSON.encodeToString(GameSessionDto.serializer(), game!!)
+        val parsed = Json.parseToJsonElement(raw) as JsonObject
+
+        assertThat(parsed.containsKey("lockedPositions")).isEqualTo(true)
+        assertThat(parsed.containsKey("presence")).isEqualTo(true)
     }
 
     @Test
