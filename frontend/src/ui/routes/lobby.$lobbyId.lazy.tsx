@@ -206,11 +206,12 @@ function LobbyPage() {
   const preRotationCodeRef = useRef<string | null>(null);
   // Toast surface for server `error` frames not handled inline. Used to
   // separate "the action you just took failed" from "your transport is
-  // down" — the latter remains the ConnectionBanner's job. The hook
-  // returns stable functions across renders (useCallback in the
-  // provider), so capturing `toast` in the long-lived subscribe
-  // callback below does not stale across re-renders.
-  const toast = useToast();
+  // down" — the latter remains the ConnectionBanner's job. Destructure
+  // `show` (stable useCallback) rather than keeping the wrapper object
+  // — the object is recreated on every render because `active` is in
+  // the provider's useMemo deps, which would make the useEffect below
+  // re-run (and reconnect) on every toast state change.
+  const { show: showToast } = useToast();
 
   // Single side effect: connect on mount, disconnect on unmount.
   // `joinLobby` is auto-sent by the adapter inside `connect` (PR #138's
@@ -269,7 +270,7 @@ function LobbyPage() {
           event.errorType === 'https://bliss.example/errors/invalid-pseudonym' ||
           event.errorType === 'https://bliss.example/errors/wrong-code';
         if (!inlineHandled) {
-          toast.show({
+          showToast({
             text: messageForGameErrorEvent(event, { wasStarting: isStartingRef.current }),
             tone: 'error',
           });
@@ -301,7 +302,7 @@ function LobbyPage() {
       unsubscribeConnection();
       gameClient.disconnect();
     };
-  }, [gameClient, lobbyId, getSession, lobbyJoinCodeStash, toast]);
+  }, [gameClient, lobbyId, getSession, lobbyJoinCodeStash, showToast]);
 
   const { sessionId } = getSession();
   const lobby = view.lobby;

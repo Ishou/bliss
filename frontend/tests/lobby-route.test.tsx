@@ -1128,7 +1128,7 @@ describe('Lobby route Start button loading feedback', () => {
     expect(screen.queryByTestId('connection-banner')).not.toBeInTheDocument();
   });
 
-  it('does NOT surface a toast for invalid-pseudonym or wrong-code errors (already handled inline)', async () => {
+  it('does NOT surface a toast for invalid-pseudonym errors (already handled inline)', async () => {
     const gameClient = makeFakeGameClient();
     renderLobby({ gameClient });
     await screen.findByRole('heading', { name: /WordSparrow/ });
@@ -1144,9 +1144,30 @@ describe('Lobby route Start button loading feedback', () => {
     });
 
     // The inline pseudonym error path renders `role="alert"` with the
-    // detail — but the toast (specifically: a global toast surfaced via
-    // ToastProvider) must NOT also fire for this case. We detect this by
-    // asserting that no alert carries the generic toast copy.
+    // detail — but the toast must NOT also fire for this case.
+    const alerts = screen.queryAllByRole('alert');
+    for (const a of alerts) {
+      expect(a).not.toHaveTextContent(/impossible de démarrer la partie/i);
+    }
+  });
+
+  it('does NOT surface a toast for wrong-code errors (already handled inline)', async () => {
+    const gameClient = makeFakeGameClient();
+    renderLobby({ gameClient });
+    await screen.findByRole('heading', { name: /WordSparrow/ });
+    act(() => { gameClient.dispatchConnectionState('connected'); });
+
+    act(() => {
+      gameClient.dispatch({
+        type: 'error',
+        errorType: 'https://bliss.example/errors/wrong-code',
+        title: 'Wrong code',
+        detail: 'Code invalide ou partie privée.',
+      });
+    });
+
+    // The inline wrong-code path renders the join-denied banner —
+    // the toast must NOT also fire for this case.
     const alerts = screen.queryAllByRole('alert');
     for (const a of alerts) {
       expect(a).not.toHaveTextContent(/impossible de démarrer la partie/i);
