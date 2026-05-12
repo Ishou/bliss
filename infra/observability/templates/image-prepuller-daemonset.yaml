@@ -1,0 +1,48 @@
+{{- if .Values.imagePrepuller.enabled }}
+# Pre-pull SigNoz stack images on every observability-labeled node so a
+# pod reschedule (helm upgrade, node drain, evict) doesn't pay a 30-60s
+# image-pull penalty on top of ClickHouse's startup. Init containers run
+# once with `command: ["true"]`, exit 0, leaving the image in containerd
+# cache. The `pause` main container keeps the pod alive but does nothing.
+#
+# Cost: one Pod-per-obs-node consuming ~few MB RAM + zero CPU. Trade-off
+# is well worth the wallclock savings on every restart.
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: observability-image-prepuller
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: observability-image-prepuller
+    app.kubernetes.io/component: image-prepuller
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: observability-image-prepuller
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: observability-image-prepuller
+    spec:
+      nodeSelector:
+        bliss.io/role: observability
+      tolerations:
+        - key: dedicated
+          operator: Equal
+          value: observability
+          effect: NoSchedule
+      initContainers:
+        {{- range $i, $image := .Values.imagePrepuller.images }}
+        - name: prepull-{{ $i }}
+          image: {{ $image | quote }}
+          imagePullPolicy: IfNotPresent
+          command: ["true"]
+        {{- end }}
+      containers:
+        - name: pause
+          image: {{ .Values.imagePrepuller.pauseImage | default "registry.k8s.io/pause:3.10" | quote }}
+          resources:
+            requests: {cpu: 1m, memory: 8Mi}
+            limits: {cpu: 10m, memory: 16Mi}
+      terminationGracePeriodSeconds: 5
+{{- end }}

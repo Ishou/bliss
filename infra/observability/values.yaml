@@ -58,6 +58,12 @@ signoz:
       # Fewer background merge threads. Default scales with cores;
       # at 2 CPU limit we don't benefit from more than 4.
       background_pool_size: 4
+      # Parallel-load data parts on startup. Default is 8; observability
+      # worker has 4 vCPU which can sustain 16 cold-start threads
+      # comfortably (the burst is brief — parts are mmap'd, not crunched).
+      # Cuts cold-start part attachment time roughly proportionally for
+      # tables with many small parts.
+      max_part_loading_threads: 16
 
     # User-profile overrides. Lighter logging so the verbose
     # log-table writes (next block) don't have anything to write.
@@ -181,6 +187,24 @@ signoz:
       limits:
         cpu: 500m
         memory: 512Mi
+
+# Image pre-pull DaemonSet — keeps the SigNoz/ClickHouse/Zookeeper image
+# set warm in containerd's cache on every observability-labeled node so a
+# pod reschedule (helm upgrade, node drain, evict) doesn't pay the 30-60s
+# image-pull penalty on top of ClickHouse's own startup. Templated in
+# templates/image-prepuller-daemonset.yaml.
+imagePrepuller:
+  enabled: false  # opt-in: prod turns it on
+  pauseImage: registry.k8s.io/pause:3.10
+  # Image refs to keep warm in containerd cache on every observability
+  # node. Discover the current pins by rendering the chart and grepping
+  # for `image:` in the SigNoz subchart's StatefulSets/Deployments and
+  # the Altinity CHI; populate values-prod.yaml with what's actually
+  # deployed. Defaults file ships an empty list — the DaemonSet is
+  # disabled here anyway, so the empty list is inert.
+  # Bumping the SigNoz subchart version is a separate PR — update the
+  # values-prod.yaml list when you do.
+  images: []
 
 # oauth2-proxy — cookie-issuing wrapper around `admin-htpasswd` so
 # SigNoz's SPA XHR/WS don't trigger basic-auth re-prompts on every
