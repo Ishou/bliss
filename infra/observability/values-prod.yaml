@@ -71,6 +71,25 @@ signoz:
     persistence:
       storageClass: hcloud-volumes
 
+# Image pre-pull DaemonSet — keeps the SigNoz/ClickHouse/Zookeeper image
+# set warm in containerd's cache on the observability worker so a pod
+# reschedule (helm upgrade, node drain, evict) doesn't pay the 30-60s
+# image-pull penalty on every restart. Image list was derived from
+# `helm template observability . -f values-prod.yaml --kube-version 1.30.0
+# | grep -E "^\s+image:\s" | sort -u` and dedup'd. Refresh after any
+# SigNoz subchart bump.
+imagePrepuller:
+  enabled: true
+  images:
+    - bitnamilegacy/zookeeper:3.7.1
+    - docker.io/alpine:3.18.2
+    - docker.io/altinity/clickhouse-operator:0.21.2
+    - docker.io/altinity/metrics-exporter:0.21.2
+    - docker.io/clickhouse/clickhouse-server:25.5.6
+    - docker.io/otel/opentelemetry-collector-contrib:0.139.0
+    - docker.io/signoz/signoz-otel-collector:v0.144.3
+    - docker.io/signoz/signoz:v0.122.0
+
 ingress:
   # Cert-manager + external-dns + ingress-nginx are all in the platform
   # chart already. Only the values-prod-specific knobs land here; the

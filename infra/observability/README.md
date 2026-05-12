@@ -146,6 +146,10 @@ ADR-0033 §5 enumerates the longer-term mitigations (tighter rate limit, same-or
   ≤75% of 768Mi container memory), ClickHouse mark_cache 500 MB /
   max_server_memory_usage_to_ram_ratio 0.7 / verbose log tables disabled
   (ClickHouse low-RAM tuning, [operations/tips](https://clickhouse.com/docs/en/operations/tips)).
+- 2026-05-12: Restart-speed PR: pre-pull DaemonSet on observability worker
+  keeps SigNoz/ClickHouse/ZK images warm. ClickHouse
+  max_part_loading_threads bumped 8 -> 16. Expected ~30-60s savings on
+  cross-node restarts plus faster CH cold start on every restart.
 
 ### Bump the SigNoz subchart
 
