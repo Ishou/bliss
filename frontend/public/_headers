@@ -4,6 +4,15 @@
 /index.html
   Cache-Control: no-cache
 
+# Extension-less SPA fallback shell (see `_redirects`). CF would
+# otherwise default a no-ext file to `application/octet-stream` and
+# the browser would download it instead of rendering. `no-cache` so
+# a clean-shell deploy is picked up by returning visitors without
+# them needing a hard reload.
+/_spa-shell
+  Content-Type: text/html; charset=utf-8
+  Cache-Control: no-cache
+
 /assets/*
   Cache-Control: public, max-age=31536000, immutable
 

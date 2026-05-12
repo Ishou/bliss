@@ -150,14 +150,14 @@ export default defineConfig({
       ],
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,woff2,webmanifest}'],
-        navigateFallback: '/_spa-shell/',
-        // _spa-shell/index.html is written by seo:postbuild AFTER vite build,
-        // so the glob above never sees it. Explicitly precache it so offline
-        // navigations to non-prerendered routes don't fall back to a network
-        // error. Directory-style path avoids the `.html`-stripping loop on
-        // Cloudflare Pages (see _redirects rationale).
+        navigateFallback: '/_spa-shell',
+        // _spa-shell is written by seo:postbuild AFTER vite build, so the
+        // glob above never sees it. Explicitly precache it so offline
+        // navigations to non-prerendered routes don't fall back to a
+        // network error. Extension-less path avoids CF Pages's URL
+        // canonicalization loops (see public/_redirects rationale).
         additionalManifestEntries: [
-          { url: '/_spa-shell/', revision: null },
+          { url: '/_spa-shell', revision: null },
         ],
         // Bypass `navigateFallback` for files served by Cloudflare Pages
         // directly. Without these, a returning user with the SW installed

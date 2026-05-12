@@ -317,22 +317,19 @@ async function main(): Promise<void> {
   // `/lobby/<id>`, `/join/<code>`) to this document. We write it
   // AFTER the prerender pass on purpose — `originalShell` is the
   // Vite-built shell captured before any route prerendered into
-  // `dist/index.html`, so it carries no per-route head tags. A
-  // direct hit on a non-prerendered URL now serves this neutral
-  // shell instead of the homepage HTML, which previously flashed
-  // before the client router took over.
+  // `dist/index.html`, so it carries no per-route head tags.
   //
-  // Why a directory + `index.html` rather than `dist/200.html`:
-  // CF Pages strips trailing `.html` extensions from URLs — a
-  // request for `/200.html` gets redirected to `/200`, which has no
-  // file, which falls back through `_redirects` to `/200.html`,
-  // which loops. A directory index avoids the strip entirely: the
-  // canonical URL is `/_spa-shell` (no extension to strip) and CF
-  // resolves it to `<dir>/index.html` server-side.
-  const shellDir = join(DIST, '_spa-shell');
-  mkdirSync(shellDir, { recursive: true });
-  writeFileSync(join(shellDir, 'index.html'), originalShell, 'utf8');
-  console.warn('[prerender] wrote SPA fallback shell at dist/_spa-shell/index.html');
+  // No extension and no directory: CF Pages canonicalizes URLs by
+  // stripping BOTH trailing `.html` and trailing `/`. Earlier attempts
+  // (`/200.html`, `/_spa-shell/`) all 301'd to their normalized form
+  // (`/200`, `/_spa-shell`), hit no file, fell back through
+  // `_redirects`, and looped (ERR_TOO_MANY_REDIRECTS on the preview).
+  // A literal extension-less file at `/_spa-shell` has nothing to
+  // strip — CF serves it directly, with `text/html` content-type set
+  // by `_headers` (CF would otherwise default to
+  // `application/octet-stream`).
+  writeFileSync(join(DIST, '_spa-shell'), originalShell, 'utf8');
+  console.warn('[prerender] wrote SPA fallback shell at dist/_spa-shell');
   console.warn(`[prerender] OK — ${INDEXABLE_ROUTES.length} routes`);
 }
 
