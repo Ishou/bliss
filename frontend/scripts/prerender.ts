@@ -321,8 +321,18 @@ async function main(): Promise<void> {
   // direct hit on a non-prerendered URL now serves this neutral
   // shell instead of the homepage HTML, which previously flashed
   // before the client router took over.
-  writeFileSync(join(DIST, '200.html'), originalShell, 'utf8');
-  console.warn('[prerender] wrote SPA fallback shell at dist/200.html');
+  //
+  // Why a directory + `index.html` rather than `dist/200.html`:
+  // CF Pages strips trailing `.html` extensions from URLs — a
+  // request for `/200.html` gets redirected to `/200`, which has no
+  // file, which falls back through `_redirects` to `/200.html`,
+  // which loops. A directory index avoids the strip entirely: the
+  // canonical URL is `/_spa-shell` (no extension to strip) and CF
+  // resolves it to `<dir>/index.html` server-side.
+  const shellDir = join(DIST, '_spa-shell');
+  mkdirSync(shellDir, { recursive: true });
+  writeFileSync(join(shellDir, 'index.html'), originalShell, 'utf8');
+  console.warn('[prerender] wrote SPA fallback shell at dist/_spa-shell/index.html');
   console.warn(`[prerender] OK — ${INDEXABLE_ROUTES.length} routes`);
 }
 

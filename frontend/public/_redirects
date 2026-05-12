@@ -1,13 +1,17 @@
 # Cloudflare Pages SPA fallback. CF Pages serves static files first;
 # any path without a matching prerendered file falls through to the
-# rules below. Without this, `/lobby/<id>`, `/join/<code>` and any
+# rule below. Without this, `/lobby/<id>`, `/join/<code>` and any
 # other non-indexable client route fell back to `/index.html` — the
 # prerendered homepage — which flashed the homepage chrome on the
 # browser before TanStack Router could route to the requested URL.
 #
-# `/200.html` is the clean Vite-built shell written by
-# `scripts/prerender.ts` after the prerender pass completes; it
-# carries no per-route head tags so the swap to the real route is
-# visually neutral. Status `200` is a rewrite (URL stays put), not a
-# redirect.
-/*  /200.html  200
+# Target `/_spa-shell` (a directory containing `index.html`, written
+# by `scripts/prerender.ts` after the prerender pass) rather than
+# `/200.html`: CF Pages strips trailing `.html` from URLs, so
+# `/200.html` would 301 to `/200`, hit no file, fall back through
+# this rule to `/200.html`, and loop. The directory path has no
+# `.html` to strip, so the rewrite resolves cleanly to
+# `dist/_spa-shell/index.html`.
+#
+# Status `200` is a rewrite (URL stays put), not a redirect.
+/*  /_spa-shell  200
