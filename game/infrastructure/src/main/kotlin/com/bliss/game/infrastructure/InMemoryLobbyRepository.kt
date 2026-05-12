@@ -26,12 +26,15 @@ class InMemoryLobbyRepository : LobbyRepository {
     override suspend fun findByCode(code: LobbyCode): Lobby? = store.values.firstOrNull { it.code == code }
 
     // O(n) scan over the lobby map. Acceptable for v1 single-replica (ADR-0018 §3); a Postgres
-    // adapter would index `(session_id)` via the membership table for this lookup. ConcurrentHashMap.values()
-    // is weakly consistent — fine: this is a read-only projection for the "My games" surface (ADR-0039),
-    // and a concurrently mutating lobby simply lands in the next call.
+    // adapter would index `(session_id, state)` via the membership table for this lookup.
+    // ConcurrentHashMap.values() is weakly consistent — fine: this is a read-only projection
+    // for the "Mes parties" surface (ADR-0039), and a concurrently mutating lobby simply
+    // lands in the next call. WAITING lobbies are excluded per the 2026-05-12 amendment:
+    // un-started lobbies are not "parties" and surface confusing 404 toasts when their TTL
+    // elapses between the list fetch and a rejoin click.
     override suspend fun findBySessionId(sessionId: SessionId): List<Lobby> =
         store.values
-            .filter { it.players.containsKey(sessionId) }
+            .filter { it.players.containsKey(sessionId) && it.state != LobbyLifecycleState.WAITING }
             .sortedByDescending { it.lastActivityAt }
 
     override suspend fun save(lobby: Lobby): Lobby =

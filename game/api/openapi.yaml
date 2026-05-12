@@ -188,10 +188,16 @@ paths:
       summary: List lobbies the caller's session is a member of.
       description: |
         Powers the Accueil "Mes parties" card so a returning player can pick
-        up yesterday's lobby without bookmarking the URL. Returns lobbies in
-        every lifecycle state (WAITING, IN_PROGRESS, COMPLETED), ordered by
+        up yesterday's lobby without bookmarking the URL. Returns lobbies
+        that have entered play — `IN_PROGRESS` or `COMPLETED` — ordered by
         `lastActivityAt` descending so the most recently touched lobby is
-        first. Empty array is the "no lobbies" answer — there is no 404 here,
+        first. `WAITING` (un-started) lobbies are excluded because they are
+        "salons d'attente", not "parties"; surfacing them produced confusing
+        404 toasts when the WAITING TTL evicted them between fetch and click
+        (ADR-0039 amendment 2026-05-12). WAITING lobbies remain reachable
+        via the direct lobby URL or the invite code.
+
+        Empty array is the "no lobbies" answer — there is no 404 here,
         which would leak whether the session has ever played.
 
         Not paginated: a single anonymous session is naturally capped at a

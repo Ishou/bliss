@@ -32,11 +32,15 @@ class ListLobbiesForSessionTest {
     private val baseInstant: Instant = Instant.parse("2026-01-01T00:00:00Z")
     private val gridConfig = GridConfig(5, 5)
 
+    // Defaults to IN_PROGRESS because, per the ADR-0039 amendment of
+    // 2026-05-12, WAITING lobbies do not appear in the "Mes parties"
+    // listing. Tests that explicitly cover lifecycle filtering pass the
+    // state they need.
     private fun lobby(
         id: LobbyId,
         owner: SessionId,
         members: Map<SessionId, Pseudonym> = mapOf(owner to alice),
-        state: LobbyLifecycleState = LobbyLifecycleState.WAITING,
+        state: LobbyLifecycleState = LobbyLifecycleState.IN_PROGRESS,
         lastActivityAt: Instant = baseInstant,
         title: LobbyTitle? = null,
         code: LobbyCode = LobbyCode.generate(),
@@ -81,10 +85,11 @@ class ListLobbiesForSessionTest {
             assertThat(out).isEmpty()
         }
 
-    // ADR-0039: lobbies in every lifecycle state are returned so a user
-    // can re-open finished games from the "My games" surface.
+    // ADR-0039 amendment 2026-05-12: WAITING lobbies are excluded from the
+    // listing because they are "salons d'attente", not "parties". Only
+    // IN_PROGRESS and COMPLETED lobbies are returned.
     @Test
-    fun `returns lobbies in WAITING and IN_PROGRESS and COMPLETED states`() =
+    fun `returns IN_PROGRESS and COMPLETED lobbies and excludes WAITING`() =
         runTest {
             val repo = InMemoryLobbyRepository()
             val waiting =
@@ -114,12 +119,63 @@ class ListLobbiesForSessionTest {
 
             val out = ListLobbiesForSession(repo).invoke(sessionA)
 
-            assertThat(out).hasSize(3)
+            assertThat(out).hasSize(2)
             assertThat(out.map { it.state }).containsExactly(
                 LobbyLifecycleState.COMPLETED,
                 LobbyLifecycleState.IN_PROGRESS,
-                LobbyLifecycleState.WAITING,
             )
+        }
+
+    // Explicit guard: a session with one WAITING and one IN_PROGRESS lobby
+    // sees only the IN_PROGRESS one in "Mes parties".
+    @Test
+    fun `excludes WAITING when session has one WAITING and one IN_PROGRESS`() =
+        runTest {
+            val repo = InMemoryLobbyRepository()
+            val waiting =
+                lobby(
+                    LobbyId.generate(),
+                    sessionA,
+                    state = LobbyLifecycleState.WAITING,
+                    lastActivityAt = baseInstant.plusSeconds(10),
+                )
+            val inProgress =
+                lobby(
+                    LobbyId.generate(),
+                    sessionA,
+                    state = LobbyLifecycleState.IN_PROGRESS,
+                    lastActivityAt = baseInstant.plusSeconds(20),
+                )
+            repo.save(waiting)
+            repo.save(inProgress)
+
+            val out = ListLobbiesForSession(repo).invoke(sessionA)
+
+            assertThat(out).hasSize(1)
+            assertThat(out[0].id).isEqualTo(inProgress.id)
+            assertThat(out[0].state).isEqualTo(LobbyLifecycleState.IN_PROGRESS)
+        }
+
+    // COMPLETED lobbies remain in the listing so a user can review a
+    // finished game from "Mes parties".
+    @Test
+    fun `returns COMPLETED lobbies`() =
+        runTest {
+            val repo = InMemoryLobbyRepository()
+            val completed =
+                lobby(
+                    LobbyId.generate(),
+                    sessionA,
+                    state = LobbyLifecycleState.COMPLETED,
+                    lastActivityAt = baseInstant.plusSeconds(30),
+                )
+            repo.save(completed)
+
+            val out = ListLobbiesForSession(repo).invoke(sessionA)
+
+            assertThat(out).hasSize(1)
+            assertThat(out[0].id).isEqualTo(completed.id)
+            assertThat(out[0].state).isEqualTo(LobbyLifecycleState.COMPLETED)
         }
 
     @Test

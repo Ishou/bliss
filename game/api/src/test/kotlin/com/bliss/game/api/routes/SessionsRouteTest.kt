@@ -10,6 +10,8 @@ import com.bliss.game.api.dto.DeleteSessionResponseDto
 import com.bliss.game.api.dto.LobbySummaryDto
 import com.bliss.game.application.usecases.EraseSessionUseCase
 import com.bliss.game.application.usecases.ListLobbiesForSession
+import com.bliss.game.domain.GamePuzzle
+import com.bliss.game.domain.GameSession
 import com.bliss.game.domain.GridConfig
 import com.bliss.game.domain.Lobby
 import com.bliss.game.domain.LobbyCode
@@ -33,6 +35,7 @@ import io.ktor.server.testing.testApplication
 import kotlinx.serialization.json.Json
 import org.junit.jupiter.api.Test
 import java.time.Instant
+import java.util.UUID
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation as ServerContentNegotiation
 
 /**
@@ -186,6 +189,40 @@ class SessionsRouteTest {
             assertThat(body).contains("https://bliss.example/errors/invalid-session-id")
         }
 
+    // ADR-0039 amendment 2026-05-12: WAITING lobbies are "salons d'attente",
+    // not "parties", and must not appear in the "Mes parties" listing.
+    @Test
+    fun `GET excludes WAITING lobbies and returns only IN_PROGRESS or COMPLETED`() =
+        testApplication {
+            val repo = InMemoryLobbyRepository()
+            val owner = SessionId(sessionId)
+            val waiting =
+                lobby(
+                    id = LobbyId.generate(),
+                    owner = owner,
+                    state = LobbyLifecycleState.WAITING,
+                    lastActivityAt = baseInstant.plusSeconds(10),
+                )
+            val inProgress =
+                lobby(
+                    id = LobbyId.generate(),
+                    owner = owner,
+                    state = LobbyLifecycleState.IN_PROGRESS,
+                    lastActivityAt = baseInstant.plusSeconds(20),
+                )
+            repo.save(waiting)
+            repo.save(inProgress)
+            setupApp(repo)
+            val client = jsonClient()
+
+            val response = client.get("/v1/sessions/$sessionId/lobbies")
+
+            assertThat(response.status).isEqualTo(HttpStatusCode.OK)
+            val summaries = JSON.decodeFromString<List<LobbySummaryDto>>(response.bodyAsText())
+            assertThat(summaries).hasSize(1)
+            assertThat(summaries[0].id).isEqualTo(inProgress.id.value)
+        }
+
     @Test
     fun `GET filters out lobbies the session is not a member of`() =
         testApplication {
@@ -216,26 +253,52 @@ class SessionsRouteTest {
         }
     }
 
+    // Defaults to IN_PROGRESS so the helper produces lobbies that the GET
+    // listing returns. Per the ADR-0039 amendment of 2026-05-12, WAITING
+    // lobbies are excluded from the "Mes parties" surface; tests that
+    // need to cover that explicitly pass `state = WAITING`. IN_PROGRESS
+    // and COMPLETED carry a GameSession because the Lobby invariant
+    // requires one (see Lobby.kt:112).
     private fun lobby(
         id: LobbyId,
         owner: SessionId,
         title: LobbyTitle? = null,
-        state: LobbyLifecycleState = LobbyLifecycleState.WAITING,
+        state: LobbyLifecycleState = LobbyLifecycleState.IN_PROGRESS,
         lastActivityAt: Instant = baseInstant,
     ): Lobby {
         val players = mapOf(owner to Player(owner, Pseudonym("Alice"), baseInstant))
+        val game: GameSession? =
+            when (state) {
+                LobbyLifecycleState.WAITING -> null
+                LobbyLifecycleState.IN_PROGRESS ->
+                    GameSession(puzzle(), emptyMap(), baseInstant, null)
+                LobbyLifecycleState.COMPLETED ->
+                    GameSession(puzzle(), emptyMap(), baseInstant, baseInstant.plusSeconds(60))
+            }
         return Lobby(
             id = id,
             ownerSessionId = owner,
             players = players,
             state = state,
             gridConfig = GridConfig(15, 12),
-            game = null,
+            game = game,
             lastActivityAt = lastActivityAt,
             code = LobbyCode.generate(),
             title = title,
         )
     }
+
+    private fun puzzle(): GamePuzzle =
+        GamePuzzle(
+            id = UUID.fromString("0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6c"),
+            title = "Petite grille",
+            language = "fr",
+            width = 5,
+            height = 5,
+            cells = emptyList(),
+            clues = emptyList(),
+            createdAt = Instant.parse("2026-01-01T00:00:00Z"),
+        )
 
     private fun ApplicationTestBuilder.jsonClient() = createClient { install(ContentNegotiation) { json(JSON) } }
 

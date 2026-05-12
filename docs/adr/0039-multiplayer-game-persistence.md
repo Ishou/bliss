@@ -223,6 +223,16 @@ transfer.
 - **OAuth identity adapter.** The schema is shaped to accept it (§e);
   the implementation is a separate ADR when that work begins.
 
+## Amendment 2026-05-12 — exclude WAITING lobbies from listing
+
+The original design (§d) returned lobbies in all lifecycle states.
+Field feedback showed this conflated "salons d'attente" with
+"parties": un-started lobbies appeared in "Mes parties" and produced
+confusing 404 errors when the WAITING TTL evicted them between fetch
+and click. The listing now returns only IN_PROGRESS and COMPLETED.
+WAITING lobbies remain joinable via direct URL / invite code. The GC
+matrix in §c is unchanged; only the read projection narrows.
+
 ## References
 
 - [ADR-0001 — Parallel-agent development workflow](./0001-parallel-agent-development-workflow.md)
