@@ -67,8 +67,14 @@ write_files:
       # a label selector instead.
       with-node-id: true
       node-label:
-        - "bliss.io/role=worker"
+        - "bliss.io/role=${node_role}"
         - "bliss.io/cluster=${cluster_name}"
+%{ if length(node_taints) > 0 ~}
+      node-taint:
+%{ for taint in node_taints ~}
+        - "${taint}"
+%{ endfor ~}
+%{ endif ~}
 
   - path: /etc/sysctl.d/60-ip-forward.conf
     permissions: "0644"

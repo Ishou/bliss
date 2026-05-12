@@ -24,6 +24,11 @@ locals {
   # over-provision the control plane just because the worker grew.
   effective_worker_node_size = coalesce(var.worker_node_size, var.node_size)
 
+  effective_observability_node_size = coalesce(var.observability_worker_node_size, var.worker_node_size, var.node_size)
+  # Observability workers use the .30..(30+N) sub-range to keep them distinct from
+  # app workers' .20.. range. Hits the 10.0.1.0/24 limit at 50+50+...; v1 stays well below.
+  observability_private_ips = [for i in range(var.observability_worker_count) : "10.0.1.${30 + i}"]
+
   cp_user_data = [
     for i in range(var.control_plane_count) :
     templatefile("${path.module}/cloud-init/control-plane.yaml.tftpl", {
@@ -92,6 +97,8 @@ resource "hcloud_server" "worker" {
     cp_ip         = local.cp_private_ips[0]
     private_ip    = local.worker_private_ips[count.index]
     private_iface = var.private_iface
+    node_role     = "worker"
+    node_taints   = []
     # Floating IP must be configured as an alias on the worker's public
     # interface and DNAT'd for k3s API traffic — the worker is the FIP's
     # assigned holder (see `hcloud_floating_ip_assignment.ingress`) so
@@ -118,4 +125,45 @@ resource "hcloud_server_network" "worker" {
   server_id  = hcloud_server.worker[count.index].id
   network_id = hcloud_network.cluster.id
   ip         = local.worker_private_ips[count.index]
+}
+
+resource "hcloud_server" "observability_worker" {
+  count = var.observability_worker_count
+
+  name        = "${var.cluster_name}-obs-${count.index}"
+  server_type = local.effective_observability_node_size
+  image       = "ubuntu-24.04"
+  location    = var.region
+
+  ssh_keys     = [for k in hcloud_ssh_key.operators : k.id]
+  firewall_ids = [hcloud_firewall.cluster.id]
+
+  user_data = templatefile("${path.module}/cloud-init/worker.yaml.tftpl", {
+    cluster_name  = var.cluster_name
+    k3s_version   = var.k3s_version
+    k3s_token     = random_password.k3s_token.result
+    cp_ip         = local.cp_private_ips[0]
+    private_ip    = local.observability_private_ips[count.index]
+    private_iface = var.private_iface
+    floating_ip   = hcloud_floating_ip.ingress.ip_address
+    node_role     = "observability"
+    node_taints   = ["dedicated=observability:NoSchedule"]
+  })
+
+  labels = {
+    cluster = var.cluster_name
+    role    = "observability"
+  }
+
+  depends_on = [
+    hcloud_server.control_plane,
+  ]
+}
+
+resource "hcloud_server_network" "observability_worker" {
+  count = var.observability_worker_count
+
+  server_id  = hcloud_server.observability_worker[count.index].id
+  network_id = hcloud_network.cluster.id
+  ip         = local.observability_private_ips[count.index]
 }
