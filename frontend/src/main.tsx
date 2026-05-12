@@ -98,6 +98,32 @@ async function enableMocks(): Promise<void> {
     serviceWorker: { url: '/mockServiceWorker.js' },
     onUnhandledRequest: 'bypass',
   });
+  // Expose the worker + the `http`/`HttpResponse` helpers on
+  // `globalThis.__msw__` so e2e specs can call `worker.use(...)` to
+  // override a single handler per test. This is the only way to swap a
+  // response when MSW's service worker is intercepting: Playwright's
+  // `page.route` is bypassed by the SW fetch handler. Guarded by the
+  // same mock flags above, so production builds (both flags false)
+  // tree-shake this branch out alongside the rest of `enableMocks()`.
+  // The handle is intentionally namespaced with `__` to flag it as a
+  // test seam; nothing in `src/` reads it.
+  const mswMod = await import('msw');
+  const w = globalThis as unknown as {
+    __msw__?: {
+      worker: typeof worker;
+      http: typeof mswMod.http;
+      HttpResponse: typeof mswMod.HttpResponse;
+    };
+    __mswReady__?: Promise<void>;
+  };
+  w.__msw__ = { worker, http: mswMod.http, HttpResponse: mswMod.HttpResponse };
+  // If an e2e spec (via `page.addInitScript`) seeded a deferred
+  // `__mswReady__` promise, await it so per-test `worker.use(...)`
+  // handlers are registered before the router's loaders fire their
+  // first fetch. Resolves immediately when no test is wiring this up.
+  if (w.__mswReady__) {
+    await w.__mswReady__;
+  }
 }
 
 // Initialise OTel before the first fetch so the FetchInstrumentation can
