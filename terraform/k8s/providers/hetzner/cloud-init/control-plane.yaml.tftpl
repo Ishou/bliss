@@ -15,6 +15,12 @@
 # `runcmd` entries via /bin/sh (dash on Ubuntu), which does not support
 # `set -o pipefail`. Invoking a script by path lets cloud-init honor the
 # `#!/bin/bash` shebang so `set -euo pipefail` works.
+#
+# NOTE: hcloud_server.control_plane uses
+# `lifecycle { ignore_changes = [user_data] }` in server.tf. Edits to
+# this template apply only to NEW control-plane nodes; to update an
+# existing node's cloud-init, `tofu taint` it (or recreate by removing the
+# ignore_changes entry temporarily, plan, taint, apply, restore).
 
 write_files:
   - path: /etc/rancher/k3s/config.yaml

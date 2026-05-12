@@ -45,6 +45,12 @@
 # rule lives in floating-ip-config.service (runs at every boot,
 # idempotent). The service is no longer responsible for the alias —
 # only for iptables. See docs/incidents/2026-05-10-floating-ip-alias-wiped.md.
+#
+# NOTE: hcloud_server.{worker,observability_worker} use
+# `lifecycle { ignore_changes = [user_data] }` in server.tf. Edits to
+# this template apply only to NEW workers; to update an existing
+# worker's cloud-init, `tofu taint` it (or recreate by removing the
+# ignore_changes entry temporarily, plan, taint, apply, restore).
 
 write_files:
   - path: /etc/rancher/k3s/config.yaml

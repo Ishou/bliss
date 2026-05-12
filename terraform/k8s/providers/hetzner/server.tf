@@ -69,6 +69,16 @@ resource "hcloud_server" "control_plane" {
     hcloud_network_subnet.cluster,
     hcloud_firewall.cluster,
   ]
+
+  lifecycle {
+    # The user_data is only consumed by cloud-init on first boot. After
+    # that, byte-level changes to the rendered template (e.g. new
+    # template variables, refactored cloud-init structure) are
+    # semantically inert — recreating the server just to apply them
+    # forces a brief outage. PR #386's apply destroyed the running
+    # worker for exactly this reason; this guard prevents the repeat.
+    ignore_changes = [user_data]
+  }
 }
 
 resource "hcloud_server_network" "control_plane" {
@@ -117,6 +127,16 @@ resource "hcloud_server" "worker" {
     hcloud_server.control_plane,
     hcloud_server_network.control_plane,
   ]
+
+  lifecycle {
+    # The user_data is only consumed by cloud-init on first boot. After
+    # that, byte-level changes to the rendered template (e.g. new
+    # template variables, refactored cloud-init structure) are
+    # semantically inert — recreating the worker just to apply them
+    # forces a brief outage. PR #386's apply destroyed the running
+    # worker for exactly this reason; this guard prevents the repeat.
+    ignore_changes = [user_data]
+  }
 }
 
 resource "hcloud_server_network" "worker" {
@@ -158,6 +178,16 @@ resource "hcloud_server" "observability_worker" {
   depends_on = [
     hcloud_server.control_plane,
   ]
+
+  lifecycle {
+    # The user_data is only consumed by cloud-init on first boot. After
+    # that, byte-level changes to the rendered template (e.g. new
+    # template variables, refactored cloud-init structure) are
+    # semantically inert — recreating the worker just to apply them
+    # forces a brief outage. PR #386's apply destroyed the running
+    # worker for exactly this reason; this guard prevents the repeat.
+    ignore_changes = [user_data]
+  }
 }
 
 resource "hcloud_server_network" "observability_worker" {
