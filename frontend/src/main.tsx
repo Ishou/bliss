@@ -9,6 +9,7 @@ import {
   createHttpLobbyClient,
   createHttpPuzzleRepository,
   createHttpPuzzleSolver,
+  createReconnectingGameClient,
   createWebSocketGameClient,
 } from '@/infrastructure';
 import { createHttpSessionClient } from '@/infrastructure/api/grid/HttpSessionClient';
@@ -213,7 +214,15 @@ enableMocks()
           // WebSocket URL derives from the same host: swap http(s) for
           // ws(s) so a single env var configures both adapters.
           const wsBaseUrl = gameApiBaseUrl.replace(/^http/, 'ws');
-          const gameClient = createWebSocketGameClient({ wsBaseUrl });
+          // Wrap the bare WebSocket adapter in a backoff-driven reconnect
+          // wrapper so an involuntary close (network blip, server restart
+          // inside the warm-slot window) is silently retried instead of
+          // surfacing the misleading "Connexion perdue" banner. The
+          // wrapper exposes the same `GameClient` port; the lobby route
+          // sees the `reconnecting` state on `subscribeConnectionState`.
+          const gameClient = createReconnectingGameClient({
+            inner: createWebSocketGameClient({ wsBaseUrl }),
+          });
           // `getSession` is a thin closure over the localStorage helpers
           // so routes don't pull `infrastructure/` into `ui/` directly.
           // Branding is asserted at this single seam. `setPersistedPseudonym`
