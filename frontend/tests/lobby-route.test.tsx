@@ -665,29 +665,61 @@ describe('Lobby route Wave H integration', () => {
     expect(screen.getByRole('heading', { name: /WordSparrow/ })).toBeInTheDocument();
   });
 
-  it('renders the ConnectionBanner only while the connection is unhealthy', async () => {
+  it('does not render any chrome on the initial connecting state', async () => {
     const gameClient = makeFakeGameClient();
     renderLobby({ gameClient });
     await screen.findByRole('heading', { name: /WordSparrow/ });
 
-    // Initial state is `connecting` so the banner is visible.
-    expect(screen.queryByTestId('connection-banner')).not.toBeNull();
+    // Initial state is `connecting` — the lobby paints immediately from
+    // the REST loader snapshot; neither a banner nor a toast is needed
+    // because the user has not yet experienced a live session to lose.
+    expect(screen.queryByTestId('connection-banner')).toBeNull();
+    expect(screen.queryByTestId('toast')).toBeNull();
+  });
 
-    act(() => {
-      gameClient.dispatchConnectionState('connected');
-    });
+  it('shows a sticky "Reconnexion…" toast on reconnecting and dismisses on connected', async () => {
+    const gameClient = makeFakeGameClient();
+    renderLobby({ gameClient });
+    await screen.findByRole('heading', { name: /WordSparrow/ });
+
+    // Enter the live session before dropping so the route knows the drop
+    // is mid-session (not the first connect).
+    act(() => { gameClient.dispatchConnectionState('connected'); });
+    expect(screen.queryByTestId('toast')).toBeNull();
+
+    act(() => { gameClient.dispatchConnectionState('reconnecting'); });
+    const toast = screen.getByTestId('toast');
+    expect(toast).toHaveTextContent(/reconnexion/i);
+    // No banner during reconnect — the toast is the less-invasive
+    // chrome that replaces the prior fixed top banner.
     expect(screen.queryByTestId('connection-banner')).toBeNull();
 
-    act(() => {
-      gameClient.dispatchConnectionState('disconnected');
-    });
-    const banner = screen.getByTestId('connection-banner');
-    expect(banner).toHaveAttribute('data-state', 'disconnected');
+    // A mid-attempt 'connecting' state keeps the toast (it transitions
+    // through 'connecting' once per retry attempt).
+    act(() => { gameClient.dispatchConnectionState('connecting'); });
+    expect(screen.getByTestId('toast')).toHaveTextContent(/reconnexion/i);
 
-    act(() => {
-      gameClient.dispatchConnectionState('reconnecting');
-    });
-    expect(screen.getByTestId('connection-banner')).toHaveAttribute('data-state', 'reconnecting');
+    // Reconnect succeeds — toast dismisses.
+    act(() => { gameClient.dispatchConnectionState('connected'); });
+    expect(screen.queryByTestId('toast')).toBeNull();
+  });
+
+  it('shows the ConnectionBanner on terminal disconnected and dismisses the toast', async () => {
+    const gameClient = makeFakeGameClient();
+    renderLobby({ gameClient });
+    await screen.findByRole('heading', { name: /WordSparrow/ });
+    act(() => { gameClient.dispatchConnectionState('connected'); });
+    act(() => { gameClient.dispatchConnectionState('reconnecting'); });
+    expect(screen.getByTestId('toast')).toBeInTheDocument();
+
+    // The wrapper emits 'disconnected' only after exhausting retries
+    // (or on voluntary close). Either way, the banner is the user's
+    // one-click escape hatch — the toast steps aside.
+    act(() => { gameClient.dispatchConnectionState('disconnected'); });
+    const banner = screen.getByTestId('connection-banner');
+    expect(banner).toHaveTextContent(/connexion perdue/i);
+    expect(banner).toHaveAttribute('data-state', 'disconnected');
+    expect(screen.queryByTestId('toast')).toBeNull();
   });
 
   it('renders the player roster during IN_PROGRESS marking the local row with data-you and exposing vous/propriétaire via aria-label', async () => {
