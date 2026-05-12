@@ -2,14 +2,24 @@ import { createRoute, useNavigate } from '@tanstack/react-router';
 import { useLayoutEffect, useState } from 'react';
 import { css } from 'styled-system/css';
 import type { Puzzle } from '@/domain';
-import { LobbyClientError } from '@/application/game';
+import { LobbyClientError, type LobbySummary } from '@/application/game';
 import { LOBBY_CODE_PATTERN, extractLobbyCode } from '@/domain/game/lobbyCode';
 import { EyeIcon, EyeOffIcon } from '@/ui/components/icons';
 import { Button } from '@/ui/components/primitives';
 import { PinInput } from '@/ui/components/primitives/PinInput';
 import { ContentPage, ProgressBar } from '@/ui/components/layout';
+import { MyLobbiesSection } from '@/ui/components/lobby/MyLobbiesSection';
 import { buildHead, INDEXABLE_ROUTES, SITE_BASE_URL, organizationJsonLd } from '@/ui/seo';
 import { Route as RootRoute } from './__root';
+
+// Loader return shape — bundles the daily puzzle with the calling
+// session's lobby list (ADR-0039 "Mes parties"). Both fetches run in
+// parallel via Promise.all so the slower of the two bounds wait time
+// rather than the sum.
+export interface AccueilLoaderData {
+  readonly puzzle: Puzzle;
+  readonly lobbies: readonly LobbySummary[];
+}
 
 // Accueil (home) — landing page introduced after the action-bar
 // revamp. Two cards, side-by-side on desktop, stacked on mobile:
@@ -241,7 +251,7 @@ function GrilleDuJourCard({ puzzle }: { readonly puzzle: Puzzle }) {
   );
 }
 
-function MultijoueurCard() {
+function MultijoueurCard({ lobbies }: { readonly lobbies: readonly LobbySummary[] }) {
   const navigate = useNavigate();
   const ctx = Route.useRouteContext();
   const flagOn = isMultiplayerEnabled();
@@ -370,6 +380,7 @@ function MultijoueurCard() {
           <p className={helperTextStyles}>Disponible bientôt</p>
         ) : null}
       </div>
+      {flagOn ? <MyLobbiesSection lobbies={lobbies} /> : null}
     </section>
   );
 }
@@ -413,7 +424,7 @@ function messageForJoinError(err: unknown): string {
 }
 
 function AccueilPage() {
-  const puzzle = Route.useLoaderData() as Puzzle;
+  const { puzzle, lobbies } = Route.useLoaderData();
   return (
     <ContentPage>
       <h1 lang="fr" className={srOnly}>
@@ -421,7 +432,7 @@ function AccueilPage() {
       </h1>
       <div className={cardsGridStyles}>
         <GrilleDuJourCard puzzle={puzzle} />
-        <MultijoueurCard />
+        <MultijoueurCard lobbies={lobbies} />
       </div>
     </ContentPage>
   );
@@ -510,7 +521,22 @@ function AccueilSkeleton() {
 export const Route = createRoute({
   getParentRoute: () => RootRoute,
   path: '/',
-  loader: ({ context }): Promise<Puzzle> => context.puzzleRepository.fetchDaily(),
+  // Parallel fetch: daily puzzle + "Mes parties" lobbies for the calling
+  // session (ADR-0039). The lobbies fetch is best-effort — if the
+  // multiplayer flag is off, the lobby client / session are absent and
+  // we resolve to an empty list. If the lobbies fetch fails, we
+  // similarly degrade to `[]` rather than failing the entire Accueil
+  // load (the puzzle is the primary content; "Mes parties" is a side
+  // surface that should never gate the home page).
+  loader: async ({ context }): Promise<AccueilLoaderData> => {
+    const puzzleP = context.puzzleRepository.fetchDaily();
+    const lobbiesP: Promise<readonly LobbySummary[]> =
+      context.lobbyClient != null && context.getSession != null
+        ? context.lobbyClient.listMyLobbies(context.getSession().sessionId).catch(() => [])
+        : Promise.resolve([]);
+    const [puzzle, lobbies] = await Promise.all([puzzleP, lobbiesP]);
+    return { puzzle, lobbies };
+  },
   component: AccueilPage,
   // pendingMs: TanStack Router defaults to Infinity (pendingComponent
   // never renders). 200 ms is the sweet spot — fast navs (<200 ms)
