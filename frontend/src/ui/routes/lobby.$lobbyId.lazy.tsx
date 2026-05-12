@@ -204,17 +204,7 @@ function LobbyPage() {
   // ADR-0029: rotation spinner; cleared in the subscribe handler below.
   const [isRotating, setIsRotating] = useState(false);
   const preRotationCodeRef = useRef<string | null>(null);
-  // Toast surface for server `error` frames not handled inline AND for
-  // transient connection-loss chrome (`reconnecting` / mid-session
-  // `connecting`). The fixed-top ConnectionBanner is reserved for the
-  // *terminal* `disconnected` state — the reconnecting wrapper only
-  // emits that after the backoff has exhausted, so the banner's
-  // "Recharger" CTA truly is the only path forward when shown.
-  // Destructure `show` / `dismiss` (stable useCallbacks) rather than
-  // keeping the wrapper object — that object is recreated on every
-  // render because `active` is in the provider's useMemo deps, which
-  // would make the useEffect below re-run (and reconnect) on every
-  // toast state change.
+  // Destructure show/dismiss (not the wrapper object) — the object is recreated each render and would re-trigger the connection useEffect.
   const { show: showToast, dismiss: dismissToast } = useToast();
 
   // Single side effect: connect on mount, disconnect on unmount.
@@ -308,14 +298,7 @@ function LobbyPage() {
     };
   }, [gameClient, lobbyId, getSession, lobbyJoinCodeStash, showToast]);
 
-  // Drive the connection toast for mid-session transient states. We
-  // intentionally do NOT toast on the initial `connecting` (before the
-  // user has ever seen a live session there is nothing to "reconnect"
-  // to — the lobby just paints from the REST loader snapshot). Once we
-  // have transitioned to `connected` at least once, any subsequent
-  // `reconnecting` / `connecting` cycle is a real interruption and
-  // earns sticky toast chrome; `connected` dismisses, `disconnected`
-  // (terminal, after backoff exhausted) hands off to the banner.
+  // Skip initial `connecting` — first `connected` arms the ref; only then do transient drops earn toast chrome.
   const hasConnectedRef = useRef(false);
   useEffect(() => {
     if (connectionState === 'connected') {
@@ -522,15 +505,7 @@ function LobbyPage() {
 
   return (
     <>
-      {/*
-        Banner is now reserved for the terminal `disconnected` state —
-        the reconnecting-game-client wrapper only emits this after the
-        backoff has exhausted, so when the user sees the banner the
-        "Recharger" CTA really is the only path forward. Transient
-        states (`connecting`, `reconnecting`) surface via a toast
-        managed in the connection-state subscriber above; less invasive
-        and does not push the lobby content around.
-      */}
+      {/* Only terminal disconnect reaches here; transient states use the toast above. */}
       {connectionState === 'disconnected' ? (
         <ConnectionBanner state="disconnected" />
       ) : null}

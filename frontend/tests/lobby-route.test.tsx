@@ -670,9 +670,7 @@ describe('Lobby route Wave H integration', () => {
     renderLobby({ gameClient });
     await screen.findByRole('heading', { name: /WordSparrow/ });
 
-    // Initial state is `connecting` — the lobby paints immediately from
-    // the REST loader snapshot; neither a banner nor a toast is needed
-    // because the user has not yet experienced a live session to lose.
+    // No live session yet — the loader snapshot covers the user; no chrome needed.
     expect(screen.queryByTestId('connection-banner')).toBeNull();
     expect(screen.queryByTestId('toast')).toBeNull();
   });
@@ -682,20 +680,17 @@ describe('Lobby route Wave H integration', () => {
     renderLobby({ gameClient });
     await screen.findByRole('heading', { name: /WordSparrow/ });
 
-    // Enter the live session before dropping so the route knows the drop
-    // is mid-session (not the first connect).
+    // Arm hasConnectedRef — toast only fires after at least one successful connect.
     act(() => { gameClient.dispatchConnectionState('connected'); });
     expect(screen.queryByTestId('toast')).toBeNull();
 
     act(() => { gameClient.dispatchConnectionState('reconnecting'); });
     const toast = screen.getByTestId('toast');
     expect(toast).toHaveTextContent(/reconnexion/i);
-    // No banner during reconnect — the toast is the less-invasive
-    // chrome that replaces the prior fixed top banner.
+    // No banner during reconnect — toast is the less-invasive replacement.
     expect(screen.queryByTestId('connection-banner')).toBeNull();
 
-    // A mid-attempt 'connecting' state keeps the toast (it transitions
-    // through 'connecting' once per retry attempt).
+    // Mid-attempt 'connecting' keeps the toast (one per retry cycle).
     act(() => { gameClient.dispatchConnectionState('connecting'); });
     expect(screen.getByTestId('toast')).toHaveTextContent(/reconnexion/i);
 
@@ -712,9 +707,7 @@ describe('Lobby route Wave H integration', () => {
     act(() => { gameClient.dispatchConnectionState('reconnecting'); });
     expect(screen.getByTestId('toast')).toBeInTheDocument();
 
-    // The wrapper emits 'disconnected' only after exhausting retries
-    // (or on voluntary close). Either way, the banner is the user's
-    // one-click escape hatch — the toast steps aside.
+    // Terminal disconnect after retries exhaust — banner takes over, toast steps aside.
     act(() => { gameClient.dispatchConnectionState('disconnected'); });
     const banner = screen.getByTestId('connection-banner');
     expect(banner).toHaveTextContent(/connexion perdue/i);
