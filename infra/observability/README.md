@@ -12,6 +12,7 @@ Out of scope for this PR (queued for follow-ups):
 - Backend OTel Java agent on grid/api + game/api (PR-E)
 - Frontend browser-side OTel SDK wiring (PR-F.2). The public ingest endpoint at `otlp.wordsparrow.io` ships in PR-F.1 (this chart, ADR-0033); the actual SDK + sampler land in the frontend bundle in F.2.
 - htpasswd-gating Matomo (`analytics.wordsparrow.io`) — same Secret pattern, separate chart (PR-G)
+- Cut SigNoz retention via UI (Settings → General → Data retention): 3d traces / 14d metrics / 3d logs (was 7d/30d/3d defaults).
 
 ## One-time install
 
