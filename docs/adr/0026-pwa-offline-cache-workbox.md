@@ -58,21 +58,26 @@ Configure `VitePWA` in `vite.config.ts` with:
   competing one.
 - Precache glob: `**/*.{js,css,html,svg,png,woff2,webmanifest}` — captures
   the full app shell including fonts and icons.
-- `navigateFallback: '/200.html'` with `/^\/v1\//` in
+- `navigateFallback: '/_spa-shell/'` with `/^\/v1\//` in
   `navigateFallbackDenylist` — SPA navigation works offline; API paths are
   never intercepted by the navigation fallback.
 
   > **Amendment (2026-05-12, PR #393):** ADR-0035 transformed `dist/index.html`
-  > into the prerendered homepage. `navigateFallback` is now `/200.html` — a
-  > clean Vite shell emitted by `scripts/prerender.ts` after the prerender pass,
-  > carrying no per-route head tags. `additionalManifestEntries: [{ url:
-  > '/200.html', revision: null }]` explicitly precaches it because the Workbox
-  > glob runs during `vite build`, before `seo:postbuild` writes the file.
+  > into the prerendered homepage; it can no longer serve as the SW navigation
+  > fallback. A clean Vite shell is now emitted by `scripts/prerender.ts` (as
+  > part of `seo:postbuild`) to `dist/_spa-shell/index.html`, carrying no
+  > per-route head tags. A directory path (`/_spa-shell/`) is used rather than a
+  > bare file path (`/200.html`) because Cloudflare Pages strips trailing `.html`
+  > extensions and 301-redirects the result — producing an infinite redirect loop
+  > on the preview. `navigateFallback` and `_redirects` both point at
+  > `/_spa-shell/`. `additionalManifestEntries: [{ url: '/_spa-shell/', revision:
+  > null }]` explicitly precaches the shell because the Workbox glob runs during
+  > `vite build`, before `seo:postbuild` writes the file.
 
-- `additionalManifestEntries: [{ url: '/200.html', revision: null }]` —
+- `additionalManifestEntries: [{ url: '/_spa-shell/', revision: null }]` —
   explicitly precaches the SPA fallback shell. `revision: null` marks it as
   self-versioned; since the SW is re-emitted on every Vite build (hashed asset
-  URLs shift the manifest), the SW re-installs and re-fetches `/200.html` on
+  URLs shift the manifest), the SW re-installs and re-fetches `/_spa-shell/` on
   each deploy, bounding staleness to one deployment cycle.
 - `cleanupOutdatedCaches: true` — stale precaches from previous builds are
   deleted automatically.
