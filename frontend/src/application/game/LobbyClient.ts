@@ -1,4 +1,4 @@
-import type { Lobby, LobbyId, Pseudonym, SessionId } from '@/domain/game';
+import type { Lobby, LobbyId, LobbyLifecycleState, Pseudonym, SessionId } from '@/domain/game';
 
 // Application-layer port for the lobby REST surface. The concrete adapter
 // (`HttpLobbyClient` in `infrastructure/`) speaks the OpenAPI contract
@@ -43,6 +43,31 @@ export interface LobbyClient {
    *   - `kind: 'not-found'` when no lobby carries the supplied code (404).
    */
   findByCode(code: string): Promise<Lobby & { readonly id: LobbyId }>;
+
+  /**
+   * `GET /v1/sessions/{sessionId}/lobbies`. Lists the lobbies the
+   * calling session is a member of, in every lifecycle state, ordered
+   * by `lastActivityAt` descending. Powers the Accueil "Mes parties"
+   * surface (ADR-0039). An empty array is the "no lobbies" answer —
+   * there is no 404 here, which would leak whether the session has ever
+   * played. Not paginated.
+   */
+  listMyLobbies(sessionId: SessionId): Promise<readonly LobbySummary[]>;
+}
+
+// Lightweight projection of a lobby for the "Mes parties" list. The
+// server-side adapter computes `playerCount` so the summary endpoint
+// avoids loading the full player list (and to keep this seam thin).
+// `title` is absent when the owner did not set one at creation; per
+// ADR-0003 §6 optional means absent on the wire, never `null`.
+export interface LobbySummary {
+  readonly id: LobbyId;
+  readonly code: string;
+  readonly state: LobbyLifecycleState;
+  readonly gridConfig: { readonly width: number; readonly height: number };
+  readonly playerCount: number;
+  readonly lastActivityAt: string;
+  readonly title?: string;
 }
 
 // Typed error envelope. One concrete `Error` subclass with a `kind`

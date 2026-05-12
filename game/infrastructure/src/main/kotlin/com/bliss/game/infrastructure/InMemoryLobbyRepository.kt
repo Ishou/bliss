@@ -1,5 +1,6 @@
 package com.bliss.game.infrastructure
 
+import com.bliss.game.application.ports.EraseSessionResult
 import com.bliss.game.application.ports.LobbyRepository
 import com.bliss.game.domain.Lobby
 import com.bliss.game.domain.LobbyCode
@@ -23,6 +24,18 @@ class InMemoryLobbyRepository : LobbyRepository {
     // O(n) scan; same trade-off as findWaitingByOwnerSession above. Volume
     // stays small in v1 and a Postgres adapter would index `code`.
     override suspend fun findByCode(code: LobbyCode): Lobby? = store.values.firstOrNull { it.code == code }
+
+    // O(n) scan over the lobby map. Acceptable for v1 single-replica (ADR-0018 §3); a Postgres
+    // adapter would index `(session_id, state)` via the membership table for this lookup.
+    // ConcurrentHashMap.values() is weakly consistent — fine: this is a read-only projection
+    // for the "Mes parties" surface (ADR-0039), and a concurrently mutating lobby simply
+    // lands in the next call. WAITING lobbies are excluded per the 2026-05-12 amendment:
+    // un-started lobbies are not "parties" and surface confusing 404 toasts when their TTL
+    // elapses between the list fetch and a rejoin click.
+    override suspend fun findBySessionId(sessionId: SessionId): List<Lobby> =
+        store.values
+            .filter { it.players.containsKey(sessionId) && it.state != LobbyLifecycleState.WAITING }
+            .sortedByDescending { it.lastActivityAt }
 
     override suspend fun save(lobby: Lobby): Lobby =
         lockFor(lobby.id).withLock {
@@ -62,4 +75,66 @@ class InMemoryLobbyRepository : LobbyRepository {
 
     override suspend fun findIdleWaiting(cutoff: Instant): List<Lobby> =
         store.values.filter { it.state == LobbyLifecycleState.WAITING && !it.lastActivityAt.isAfter(cutoff) }
+
+    override suspend fun findIdleCompleted(cutoff: Instant): List<Lobby> =
+        store.values.filter { it.state == LobbyLifecycleState.COMPLETED && !it.lastActivityAt.isAfter(cutoff) }
+
+    // RGPD Article 17 erasure (ADR-0039). Snapshot the affected lobby ids first, then
+    // process each under its own per-lobby lock so the cascade is atomic per lobby.
+    // ConcurrentHashMap.values() is weakly consistent — fine, we re-validate inside
+    // the lock and a lobby created after the snapshot cannot reference an erased
+    // session (the client cleared its session id before issuing the DELETE).
+    override suspend fun eraseSession(sessionId: SessionId): EraseSessionResult {
+        var deletedLobbies = 0
+        var transferredLobbies = 0
+        var removedPlayerships = 0
+        var anonymisedEntries = 0
+        val targets = store.values.filter { it.players.containsKey(sessionId) }.map { it.id }
+        for (id in targets) {
+            lockFor(id).withLock {
+                val current = store[id] ?: return@withLock
+                if (!current.players.containsKey(sessionId)) return@withLock
+                val remaining = current.players - sessionId
+                if (current.isOwner(sessionId) && remaining.isEmpty()) {
+                    // Rule 1: owner is the sole player. Delete the lobby outright.
+                    store.remove(id)
+                    locks.remove(id)
+                    deletedLobbies += 1
+                    return@withLock
+                }
+                removedPlayerships += 1
+                val newOwner =
+                    if (current.isOwner(sessionId)) {
+                        // Rule 2: owner + others. Earliest-joined remaining player inherits.
+                        transferredLobbies += 1
+                        remaining.values.minBy { it.joinedAt }.sessionId
+                    } else {
+                        // Rule 3: non-owner. Ownership unchanged.
+                        current.ownerSessionId
+                    }
+                val newGame =
+                    current.game?.let { game ->
+                        var count = 0
+                        val rewritten =
+                            game.entries.mapValues { (_, entry) ->
+                                if (entry.sessionId == sessionId) {
+                                    count += 1
+                                    entry.copy(sessionId = SessionId.ANON)
+                                } else {
+                                    entry
+                                }
+                            }
+                        anonymisedEntries += count
+                        game.copy(entries = rewritten)
+                    }
+                store[id] =
+                    current.copy(
+                        players = remaining,
+                        ownerSessionId = newOwner,
+                        game = newGame,
+                    )
+            }
+        }
+        return EraseSessionResult(deletedLobbies, transferredLobbies, removedPlayerships, anonymisedEntries)
+    }
 }

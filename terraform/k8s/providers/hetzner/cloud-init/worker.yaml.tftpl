@@ -45,6 +45,12 @@
 # rule lives in floating-ip-config.service (runs at every boot,
 # idempotent). The service is no longer responsible for the alias —
 # only for iptables. See docs/incidents/2026-05-10-floating-ip-alias-wiped.md.
+#
+# NOTE: hcloud_server.{worker,observability_worker} use
+# `lifecycle { ignore_changes = [user_data] }` in server.tf. Edits to
+# this template apply only to NEW workers; to update an existing
+# worker's cloud-init, `tofu taint` it (or recreate by removing the
+# ignore_changes entry temporarily, plan, taint, apply, restore).
 
 write_files:
   - path: /etc/rancher/k3s/config.yaml
@@ -67,8 +73,14 @@ write_files:
       # a label selector instead.
       with-node-id: true
       node-label:
-        - "bliss.io/role=worker"
+        - "bliss.io/role=${node_role}"
         - "bliss.io/cluster=${cluster_name}"
+%{ if length(node_taints) > 0 ~}
+      node-taint:
+%{ for taint in node_taints ~}
+        - "${taint}"
+%{ endfor ~}
+%{ endif ~}
 
   - path: /etc/sysctl.d/60-ip-forward.conf
     permissions: "0644"
@@ -78,6 +90,7 @@ write_files:
       # forward FIP:6443 traffic to the CP across the private network.
       net.ipv4.ip_forward=1
 
+%{ if floating_ip != "" ~}
   - path: /etc/netplan/60-floating-ip.yaml
     # 0600 — netplan refuses to load world-readable config on Ubuntu 24.04.
     permissions: "0600"
@@ -151,6 +164,7 @@ write_files:
 
       [Install]
       WantedBy=multi-user.target
+%{ endif ~}
 
   - path: /usr/local/bin/install-k3s.sh
     permissions: "0755"
@@ -185,6 +199,7 @@ write_files:
 runcmd:
   # Apply IP forwarding sysctl from /etc/sysctl.d/.
   - sysctl --system
+%{ if floating_ip != "" ~}
   # Apply the netplan dropin so /etc/netplan/60-floating-ip.yaml takes
   # effect at first boot — installs the FIP alias on eth0 alongside
   # the DHCP-managed primary address. Idempotent; safe across reboots.
@@ -195,4 +210,5 @@ runcmd:
   # are in place before k3s-agent comes up.
   - systemctl daemon-reload
   - systemctl enable --now floating-ip-config.service
+%{ endif ~}
   - /usr/local/bin/install-k3s.sh

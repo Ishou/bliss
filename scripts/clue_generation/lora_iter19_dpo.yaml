@@ -1,0 +1,72 @@
+# iter19 DPO — English-leak rejection on top of v10 (iter18 DPO).
+#
+# Diff vs iter18:
+#   • +693 authored English-rejection pairs (iter19_english_rejection_pairs.py):
+#       58 lemmas × multi-variant chosen × multi-variant rejected, two
+#       sub-buckets:
+#         WHOLLY_ENGLISH_CLUE   — full English rejected (48 lemmas)
+#         MIXED_LANGUAGE_LEAK   — French syntax + English content word
+#                                  (10 lemmas: ordinateur, portable,
+#                                  semaine, voyage, bureau, courrier,
+#                                  réunion, entraîneur, courriel,
+#                                  fin de semaine)
+#   • Carries iter18's full DPO corpus forward (1989 pairs) so the v10
+#     wins (cane, errer, clair, user, triple, advenir) stay anchored.
+#
+# Why English-leak teaching warrants its own iter: iter18's prep PR
+# diagnostic showed the system message + lowercase + [pos] schema flips
+# 4/7 wrong-sense bugs at inference but does NOT measurably reduce the
+# baseline rate of English-leak emissions on non-homograph lemmas
+# (model still emits e.g. `chien → "Loyal pet"` ~5% of N=3 samples).
+# DPO with explicit (French chosen × English rejected) pairs is the
+# direct preference signal for that failure mode.
+#
+# Corpus (data/lora_dpo_iter19):
+#   train.jsonl  2414 rows
+#   valid.jsonl   134 rows
+#   test.jsonl    134 rows
+#
+# Hyperparameters mirror iter18 (which trained cleanly @ 800 iters on
+# 1773 train pairs). Iters 1100 — scaled from iter18's 800 for the
+# ~36% corpus growth (1773 → 2414 train pairs).
+#
+# Resumes from v10 (iter18 DPO output) — stacking iter19's gradient
+# on iter18's wins rather than re-baselining from v9. lr 1e-6 is
+# conservative enough to compose; if val loss climbs early, lower to
+# 5e-7 and re-run.
+#
+# Train via the wrapper:
+#   bash scripts/clue_generation/train_dpo.sh \
+#       --config scripts/clue_generation/lora_iter19_dpo.yaml \
+#       --train --train-mode dpo \
+#       --beta 0.1 --dpo-cpo-loss-type sigmoid \
+#       2>&1 | tee /tmp/iter19_dpo_train.log
+#
+# After training:
+#   python scripts/clue_generation/promote_best_adapter.py \
+#       --log /tmp/iter19_dpo_train.log --adapter-dir models/lora-clue-v11
+model: "mlx-community/c4ai-command-r-08-2024-4bit"
+data: "data/lora_dpo_iter19"
+adapter_path: "models/lora-clue-v11"
+train_type: lora
+train_mode: dpo
+num_layers: 16
+batch_size: 2
+iters: 1100
+learning_rate: 1e-6
+steps_per_report: 5
+steps_per_eval: 50
+save_every: 50
+seed: 20260512
+train: true
+fuse: false
+
+beta: 0.1
+dpo_cpo_loss_type: sigmoid
+
+resume_adapter_file: "models/lora-clue-v10/adapters.safetensors"
+
+lora_parameters:
+  rank: 32
+  dropout: 0.0
+  scale: 20.0

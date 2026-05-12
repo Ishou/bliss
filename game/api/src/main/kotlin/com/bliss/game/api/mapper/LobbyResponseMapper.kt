@@ -144,3 +144,16 @@ private fun GameClueDirection.toWire(): String =
     }
 
 private val ISO: DateTimeFormatter = DateTimeFormatter.ISO_INSTANT
+
+fun com.bliss.game.application.usecases.LobbySummary.toDto(): com.bliss.game.api.dto.LobbySummaryDto =
+    com.bliss.game.api.dto.LobbySummaryDto(
+        id = id.value,
+        code = code.value,
+        state = state.name,
+        gridConfig =
+            com.bliss.game.api.dto
+                .GridConfigDto(gridConfig.width, gridConfig.height),
+        playerCount = playerCount,
+        lastActivityAt = ISO.format(lastActivityAt),
+        title = title?.value,
+    )

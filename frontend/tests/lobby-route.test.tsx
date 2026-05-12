@@ -152,6 +152,7 @@ const renderLobby = (overrides: RenderLobbyOverrides) => {
     createLobby: vi.fn().mockRejectedValue(new Error('unused')),
     getLobby: vi.fn().mockResolvedValue(overrides.initialLobby ?? baseLobby),
     findByCode: vi.fn().mockRejectedValue(new Error('unused')),
+    listMyLobbies: vi.fn().mockResolvedValue([]),
     ...overrides.lobbyClient,
   };
   const gameClient = overrides.gameClient ?? makeFakeGameClient();
@@ -189,7 +190,7 @@ const renderLobby = (overrides: RenderLobbyOverrides) => {
       lobbyJoinCodeStash: { stash: () => {}, read: () => null, clear: () => {} },
     },
   });
-  return { ...render(<RouterProvider router={router} />), lobbyClient, gameClient, setPseudonym };
+  return { router, ...render(<RouterProvider router={router} />), lobbyClient, gameClient, setPseudonym };
 };
 
 afterEach(() => vi.restoreAllMocks());
@@ -664,29 +665,54 @@ describe('Lobby route Wave H integration', () => {
     expect(screen.getByRole('heading', { name: /WordSparrow/ })).toBeInTheDocument();
   });
 
-  it('renders the ConnectionBanner only while the connection is unhealthy', async () => {
+  it('does not render any chrome on the initial connecting state', async () => {
     const gameClient = makeFakeGameClient();
     renderLobby({ gameClient });
     await screen.findByRole('heading', { name: /WordSparrow/ });
 
-    // Initial state is `connecting` so the banner is visible.
-    expect(screen.queryByTestId('connection-banner')).not.toBeNull();
+    // No live session yet — the loader snapshot covers the user; no chrome needed.
+    expect(screen.queryByTestId('connection-banner')).toBeNull();
+    expect(screen.queryByTestId('toast')).toBeNull();
+  });
 
-    act(() => {
-      gameClient.dispatchConnectionState('connected');
-    });
+  it('shows a sticky "Reconnexion…" toast on reconnecting and dismisses on connected', async () => {
+    const gameClient = makeFakeGameClient();
+    renderLobby({ gameClient });
+    await screen.findByRole('heading', { name: /WordSparrow/ });
+
+    // Arm hasConnectedRef — toast only fires after at least one successful connect.
+    act(() => { gameClient.dispatchConnectionState('connected'); });
+    expect(screen.queryByTestId('toast')).toBeNull();
+
+    act(() => { gameClient.dispatchConnectionState('reconnecting'); });
+    const toast = screen.getByTestId('toast');
+    expect(toast).toHaveTextContent(/reconnexion/i);
+    // No banner during reconnect — toast is the less-invasive replacement.
     expect(screen.queryByTestId('connection-banner')).toBeNull();
 
-    act(() => {
-      gameClient.dispatchConnectionState('disconnected');
-    });
-    const banner = screen.getByTestId('connection-banner');
-    expect(banner).toHaveAttribute('data-state', 'disconnected');
+    // Mid-attempt 'connecting' keeps the toast (one per retry cycle).
+    act(() => { gameClient.dispatchConnectionState('connecting'); });
+    expect(screen.getByTestId('toast')).toHaveTextContent(/reconnexion/i);
 
-    act(() => {
-      gameClient.dispatchConnectionState('reconnecting');
-    });
-    expect(screen.getByTestId('connection-banner')).toHaveAttribute('data-state', 'reconnecting');
+    // Reconnect succeeds — toast dismisses.
+    act(() => { gameClient.dispatchConnectionState('connected'); });
+    expect(screen.queryByTestId('toast')).toBeNull();
+  });
+
+  it('shows the ConnectionBanner on terminal disconnected and dismisses the toast', async () => {
+    const gameClient = makeFakeGameClient();
+    renderLobby({ gameClient });
+    await screen.findByRole('heading', { name: /WordSparrow/ });
+    act(() => { gameClient.dispatchConnectionState('connected'); });
+    act(() => { gameClient.dispatchConnectionState('reconnecting'); });
+    expect(screen.getByTestId('toast')).toBeInTheDocument();
+
+    // Terminal disconnect after retries exhaust — banner takes over, toast steps aside.
+    act(() => { gameClient.dispatchConnectionState('disconnected'); });
+    const banner = screen.getByTestId('connection-banner');
+    expect(banner).toHaveTextContent(/connexion perdue/i);
+    expect(banner).toHaveAttribute('data-state', 'disconnected');
+    expect(screen.queryByTestId('toast')).toBeNull();
   });
 
   it('renders the player roster during IN_PROGRESS marking the local row with data-you and exposing vous/propriétaire via aria-label', async () => {
@@ -1099,5 +1125,206 @@ describe('Lobby route Start button loading feedback', () => {
     // default label, and the owner can click again.
     const reset = await screen.findByRole('button', { name: /démarrer la partie/i });
     expect(reset).toBeEnabled();
+  });
+
+  it('surfaces a toast on a server `error` frame for a failed startGame', async () => {
+    const gameClient = makeFakeGameClient();
+    renderLobby({ gameClient });
+    await screen.findByRole('heading', { name: /WordSparrow/ });
+    // Move the connection state to 'connected' so the ConnectionBanner
+    // is absent and we can assert the toast is the only chrome surfacing
+    // the error (not the misleading "Connexion perdue" banner).
+    act(() => { gameClient.dispatchConnectionState('connected'); });
+    expect(screen.queryByTestId('connection-banner')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /démarrer la partie/i }));
+    act(() => {
+      gameClient.dispatch({
+        type: 'error',
+        errorType: 'https://bliss.example/errors/grid-generation-failed',
+        title: 'Grid generation failed',
+      });
+    });
+
+    // The toast renders with French copy and `role="alert"` (error tone).
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent(/impossible de démarrer la partie/i);
+    // ConnectionBanner stays absent — transport is healthy.
+    expect(screen.queryByTestId('connection-banner')).not.toBeInTheDocument();
+  });
+
+  it('shows the server-provided title in the toast when there is no detail and the user is not mid-Start', async () => {
+    // Regression: previously the toast fell through to the generic
+    // "Une erreur est survenue. Réessayez." copy whenever the server
+    // shipped only a `title` (no `detail`). Backend error frames like
+    // `lobby-full` ("Salon complet"), `not-owner`
+    // ("Opération réservée au propriétaire") or `player-not-in-lobby`
+    // ("Vous n'êtes pas membre de ce salon") all match this shape —
+    // their titles are clearer than the generic fallback, so the
+    // toast should surface them.
+    const gameClient = makeFakeGameClient();
+    renderLobby({ gameClient });
+    await screen.findByRole('heading', { name: /WordSparrow/ });
+    act(() => { gameClient.dispatchConnectionState('connected'); });
+
+    act(() => {
+      gameClient.dispatch({
+        type: 'error',
+        errorType: 'https://bliss.example/errors/lobby-full',
+        title: 'Salon complet',
+      });
+    });
+
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent('Salon complet');
+    expect(alert).not.toHaveTextContent(/une erreur est survenue/i);
+  });
+
+  it('does NOT surface a toast for invalid-pseudonym errors (already handled inline)', async () => {
+    const gameClient = makeFakeGameClient();
+    renderLobby({ gameClient });
+    await screen.findByRole('heading', { name: /WordSparrow/ });
+    act(() => { gameClient.dispatchConnectionState('connected'); });
+
+    act(() => {
+      gameClient.dispatch({
+        type: 'error',
+        errorType: 'https://bliss.example/errors/invalid-pseudonym',
+        title: 'Invalid pseudonym',
+        detail: 'Pseudonyme déjà pris.',
+      });
+    });
+
+    // The inline pseudonym error path renders `role="alert"` with the
+    // detail — but the toast must NOT also fire for this case.
+    const alerts = screen.queryAllByRole('alert');
+    for (const a of alerts) {
+      expect(a).not.toHaveTextContent(/impossible de démarrer la partie/i);
+    }
+  });
+
+  it('redirects to home and toasts the message on a wrong-code error (no inline banner, no grid leak)', async () => {
+    const gameClient = makeFakeGameClient();
+    // IN_PROGRESS lobby with a populated game — regression: the
+    // previous behaviour rendered the grid even when the WS join was
+    // rejected, exposing the puzzle to a denied joiner.
+    const inProgressLobby: Lobby = {
+      ...baseLobby,
+      state: 'IN_PROGRESS',
+      game: {
+        puzzle: buildGamePuzzle(),
+        entries: [],
+        lockedPositions: [],
+        startedAt: '2026-05-02T15:30:00Z',
+        completedAt: null,
+      },
+    };
+    // Drop sessionId from players so joinConfirmed starts false (new
+    // joiner path, not reconnect).
+    const noMember: Lobby = {
+      ...inProgressLobby,
+      players: inProgressLobby.players.filter((p) => p.sessionId !== sessionId),
+    };
+    const { container, router } = renderLobby({ gameClient, initialLobby: noMember });
+    await screen.findByRole('heading', { name: /WordSparrow/ });
+    act(() => { gameClient.dispatchConnectionState('connected'); });
+
+    act(() => {
+      gameClient.dispatch({
+        type: 'error',
+        errorType: 'https://bliss.example/errors/wrong-code',
+        title: 'Code de partie invalide',
+        detail: 'Demandez le code à l’organisateur.',
+      });
+    });
+
+    await vi.waitFor(() => {
+      expect(router.state.location.pathname).toBe('/');
+    });
+    // The grid never reaches the DOM — the denied joiner is bounced
+    // before any cell renders.
+    expect(container.querySelector('[role="grid"]')).toBeNull();
+    // Toast carries the server-provided detail copy.
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent(/demandez le code/i);
+  });
+
+  it('redirects to home with a friendly toast on a protocol error pre-join (no jargon shown)', async () => {
+    const gameClient = makeFakeGameClient();
+    const noMember: Lobby = {
+      ...baseLobby,
+      players: baseLobby.players.filter((p) => p.sessionId !== sessionId),
+    };
+    const { router } = renderLobby({ gameClient, initialLobby: noMember });
+    await screen.findByRole('heading', { name: /WordSparrow/ });
+    act(() => { gameClient.dispatchConnectionState('connected'); });
+
+    act(() => {
+      gameClient.dispatch({
+        type: 'error',
+        errorType: 'https://bliss.example/errors/protocol',
+        title: 'Non connecté au salon',
+        detail: "Envoyez une trame 'joinLobby' avant toute autre opération.",
+      });
+    });
+
+    await vi.waitFor(() => {
+      expect(router.state.location.pathname).toBe('/');
+    });
+    // The technical "joinLobby trame" jargon must never reach the user.
+    expect(screen.queryByText(/joinLobby/i)).toBeNull();
+    expect(screen.queryByText(/trame/i)).toBeNull();
+    // The toast surfaces a generic French message instead.
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent(/impossible de rejoindre/i);
+  });
+
+  it('hides the lobby grid until joinConfirmed even when the loader returns an IN_PROGRESS snapshot', async () => {
+    const gameClient = makeFakeGameClient();
+    // Loader returns IN_PROGRESS but the calling session is NOT in the
+    // player list — joinConfirmed starts false. The route must show the
+    // connecting placeholder, not the grid.
+    const noMember: Lobby = {
+      ...baseLobby,
+      state: 'IN_PROGRESS',
+      game: {
+        puzzle: buildGamePuzzle(),
+        entries: [],
+        lockedPositions: [],
+        startedAt: '2026-05-02T15:30:00Z',
+        completedAt: null,
+      },
+      players: baseLobby.players.filter((p) => p.sessionId !== sessionId),
+    };
+    const { container } = renderLobby({ gameClient, initialLobby: noMember });
+    await screen.findByRole('heading', { name: /WordSparrow/ });
+
+    // No grid leak — joinConfirmed gates the InGameView render.
+    expect(container.querySelector('[role="grid"]')).toBeNull();
+    expect(screen.getByText(/connexion à la partie/i)).toBeInTheDocument();
+  });
+
+  it('does NOT surface the generic start-failure toast on a wrong-code error (redirected path owns the chrome)', async () => {
+    const gameClient = makeFakeGameClient();
+    renderLobby({ gameClient });
+    await screen.findByRole('heading', { name: /WordSparrow/ });
+    act(() => { gameClient.dispatchConnectionState('connected'); });
+
+    act(() => {
+      gameClient.dispatch({
+        type: 'error',
+        errorType: 'https://bliss.example/errors/wrong-code',
+        title: 'Wrong code',
+        detail: 'Code invalide ou partie privée.',
+      });
+    });
+
+    // wrong-code routes through `setJoinDenied` → redirect + toast
+    // with the server's detail. The generic start-failure toast
+    // must NOT also fire for this case.
+    const alerts = screen.queryAllByRole('alert');
+    for (const a of alerts) {
+      expect(a).not.toHaveTextContent(/impossible de démarrer la partie/i);
+    }
   });
 });

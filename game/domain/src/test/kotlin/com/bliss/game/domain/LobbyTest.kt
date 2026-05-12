@@ -74,20 +74,25 @@ class LobbyTest {
                 val s = SessionId("0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a%02x".format(i))
                 s to player(s, "P$i")
             }
-        // Owner must be a member; pick the first.
+        // Pass one of the nine as owner — any member works; the cap check fires before owner validation.
         assertFailure {
             lobby(players = nine, ownerSessionId = nine.keys.first())
         }.messageContains("8")
     }
 
     @Test
-    fun `Lobby rejects an owner that is not a member`() {
-        assertFailure {
+    fun `Lobby allows an owner that is not a current member`() {
+        // Per ADR-0039, the owner remains the owner after leaving via the
+        // regular leave path — they can return via My-games. Owner-only actions
+        // are gated on isOwner(sessionId), not on player membership.
+        val l =
             lobby(
                 players = mapOf(sessionB to player(sessionB, "Bob")),
                 ownerSessionId = sessionA,
             )
-        }.messageContains("must be a member")
+        assertThat(l.ownerSessionId).isEqualTo(sessionA)
+        assertThat(l.hasJoined(sessionA)).isFalse()
+        assertThat(l.isOwner(sessionA)).isTrue()
     }
 
     @Test

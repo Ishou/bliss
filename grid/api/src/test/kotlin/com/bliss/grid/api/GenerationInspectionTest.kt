@@ -14,55 +14,18 @@ import kotlin.random.Random
 
 /**
  * Generates a real puzzle, inspects the grid layout cell-by-cell to spot
- * structural anomalies (block cells inside the layout, missing clue text, etc.).
+ * structural anomalies (missing clue text, unreachable letters, etc.).
+ *
+ * A previous test asserted "no BlockCellDto cells inside the layout". That
+ * invariant held for the boundary-skeleton generator that pre-dated the
+ * bitmask-CSP generator (ADR-0039, PR #368), which treats interior black
+ * cells as primary search state. Block cells in mots-fleches grids are part
+ * of the public schema (`BlockCell` in `openapi.yaml`), and the mapper
+ * emits them deliberately for any `EmptyCell` / `null` position. The
+ * remaining tests verify the structural properties that still must hold:
+ * area arithmetic and clue-walk reachability.
  */
 class GenerationInspectionTest {
-    @Test
-    fun `no grid produced over 100 seeds should contain block cells inside`() {
-        val repo = CsvWordRepository.frenchFromClasspath()
-        val generator = GridGenerator(repo)
-        val mapper = GridToPuzzleMapper()
-        val constraints = defaultPuzzleConstraints()
-
-        var generated = 0
-        var withBlocks = 0
-        var failureDetails = ""
-        for (seed in 0L until 100L) {
-            val grid = generator.generate(constraints, Random(seed)) ?: continue
-            generated++
-            val puzzle = mapper.toApi(grid, UUID.randomUUID(), Instant.now(), hintsAllowed = 3)
-            val blocks = puzzle.cells.count { it is BlockCellDto }
-            if (blocks > 0) {
-                withBlocks++
-                if (failureDetails.isEmpty()) {
-                    failureDetails =
-                        buildString {
-                            appendLine("seed=$seed blocks=$blocks")
-                            val byPos = puzzle.cells.groupBy { it.position.row to it.position.column }
-                            for (r in 0 until puzzle.height) {
-                                val sb = StringBuilder()
-                                for (c in 0 until puzzle.width) {
-                                    val cells = byPos[r to c].orEmpty()
-                                    val short =
-                                        when {
-                                            cells.isEmpty() -> "?"
-                                            cells.any { it is BlockCellDto } -> "B"
-                                            cells.any { it is DefinitionCellDto } -> "C"
-                                            else -> "L"
-                                        }
-                                    sb.append(short).append(' ')
-                                }
-                                appendLine(sb.toString())
-                            }
-                        }
-                }
-            }
-        }
-        check(withBlocks == 0) {
-            "$withBlocks of $generated grids contain block cells — generator bug\n$failureDetails"
-        }
-    }
-
     @Test
     fun `cell counts add up - letter cells plus distinct clue positions equals grid area`() {
         val repo = CsvWordRepository.frenchFromClasspath()

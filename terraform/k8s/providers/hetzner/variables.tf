@@ -39,6 +39,18 @@ variable "worker_node_size" {
   default     = null
 }
 
+variable "observability_worker_count" {
+  description = "Number of dedicated observability workers, tainted dedicated=observability:NoSchedule and labeled bliss.io/role=observability. Hosts the SigNoz stack so it can't starve the app workers' CPU. Default 0 — opt-in topology. Set to 1 for the noisy-neighbour mitigation (see follow-ups to ADR-0027)."
+  type        = number
+  default     = 0
+}
+
+variable "observability_worker_node_size" {
+  description = "Instance class for observability workers. Defaults to worker_node_size (so it inherits the app worker's size). Override if SigNoz outgrows the shared size."
+  type        = string
+  default     = null
+}
+
 variable "ssh_public_keys" {
   description = "OpenSSH public keys uploaded to Hetzner and installed on every node."
   type        = list(string)

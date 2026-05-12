@@ -27,7 +27,7 @@ adressée à cette adresse.
 | Pseudonyme | Vous le choisissez (par défaut un nom d'animal aléatoire, ex. « Renard 423 ») | Affichage en multijoueur | Idem |
 | Indices demandés par grille | Bouton "indice" pendant une partie | Limiter le nombre d'indices par grille | 90 jours après votre dernière demande, puis suppression automatique |
 | Mémoire courte des libellés déjà affichés (mot et libellé proposé) | Génération de chaque nouvelle grille | Éviter de reproposer le même libellé pour le même mot d'une grille à la suivante (variété) | Jusqu'à effacement |
-| État de salon multijoueur | Salons que vous créez ou rejoignez | Synchroniser la grille en temps réel | En mémoire vive uniquement, supprimé 30 minutes après inactivité ou en quittant |
+| État de salon multijoueur (salons, joueurs, lettres saisies) | Salons que vous créez ou rejoignez | Synchroniser la grille en temps réel, reprendre après rechargement | Stocké côté serveur. Les salons en attente sont supprimés après 30 minutes d'inactivité ; les salons terminés sont conservés 7 jours ; les salons en cours restent jusqu'au départ de tous les joueurs. Effaçable à la demande via "Effacer mes données". |
 | Mesures d'audience anonymisées (Matomo auto-hébergé) | Pages visitées, événements de jeu (création de partie, indice, résolution), durée, taille de grille | Comprendre comment le service est utilisé pour l'améliorer | 13 mois (recommandation CNIL) |
 
 La même mémoire courte est tenue de façon **globale** pour la grille du jour (un seau partagé, sans identifiant individuel) afin que les libellés varient d'un jour sur l'autre.
@@ -70,8 +70,16 @@ Vous disposez des droits prévus par le RGPD :
   l'historique des indices, écrivez à l'adresse ci-dessus.
 - **Droit à l'effacement** (article 17) : utilisez le bouton "Effacer
   mes données" dans les paramètres. L'identifiant de session, le
-  pseudonyme et l'historique d'indices côté serveur sont supprimés
-  immédiatement. Les visites Matomo ne sont pas activement supprimées
+  pseudonyme, l'historique d'indices côté serveur et votre empreinte
+  dans les salons multijoueurs sont supprimés immédiatement. Pour les
+  salons multijoueurs, une cascade en trois règles s'applique : un
+  salon dont vous étiez seul propriétaire est supprimé ; un salon que
+  vous partagiez continue pour les autres joueurs (le plus
+  ancien joueur restant en devient propriétaire, votre pseudonyme
+  disparaît, et les lettres que vous aviez saisies restent sur la
+  grille mais ne vous sont plus attribuées) ; un salon où vous n'étiez
+  qu'invité perd votre pseudonyme et vos lettres deviennent
+  non-attribuées. Les visites Matomo ne sont pas activement supprimées
   parce qu'elles sont déjà non-attribuables par construction : le
   hachage rotatif quotidien empêche tout recoupement avec d'autres
   jours, et la création d'un nouvel identifiant de session local après
@@ -133,7 +141,7 @@ WordSparrow is operated by Colin Auberger, contact: `contact@wordsparrow.io`.
 | Pseudonym | You pick it (default is a random French animal name, e.g. "Renard 423") | Multiplayer display | Same |
 | Hints used per puzzle | "Hint" button during a game | Cap hints per puzzle | 90 days from your last request, then auto-deleted |
 | Short-term memory of clue labels already shown (word + clue text) | Each new puzzle generation | Avoid repeating the same clue for the same word across consecutive grids (variety) | Until erased |
-| Multiplayer lobby state | Lobbies you create or join | Real-time grid sync | In memory only, dropped 30 min after inactivity or on exit |
+| Multiplayer lobby state (lobbies, players, placed letters) | Lobbies you create or join | Real-time grid sync, resume after reload | Stored server-side. WAITING lobbies are dropped after 30 min of inactivity; COMPLETED lobbies are kept 7 days; IN_PROGRESS lobbies remain until everyone leaves. Erased on request via "Erase my data". |
 | Anonymized audience metrics (self-hosted Matomo) | Pages visited, game events, duration, grid size | Understand usage to improve the service | 13 months (CNIL guidance) |
 
 The same short-term memory is also kept **globally** for the daily puzzle (one shared bucket, no individual identifier) so that clue labels vary day over day.
@@ -169,16 +177,19 @@ GDPR rights:
   visible in game settings (pseudonym, session ID). For the hint
   history, contact the address above.
 - **Erasure** (Article 17): use the "Erase my data" button in settings.
-  Session ID, pseudonym, and server-side hint history are deleted
-  immediately. Matomo visits are not actively deleted because they are
-  already non-attributable by design — the daily-rotated hash prevents
-  cross-day linkage, and a fresh local session id after the call breaks
-  linkage with same-day visits. Matomo data remains under the 13-month
-  retention window in aggregate, anonymous form.
-  **today's** Matomo visits are removed. Visits from prior days are
-  already non-attributable (the hash rotates daily; cross-day linkage is
-  impossible by design) and cannot be actively deleted; they remain
-  subject to the 13-month retention window.
+  Session ID, pseudonym, server-side hint history, and your multiplayer
+  lobby footprint are deleted immediately. For multiplayer lobbies we
+  apply a three-rule cascade: a lobby you owned alone is deleted; a
+  lobby you owned with others continues for the remaining players (the
+  earliest-joined remaining player becomes the owner, your name is
+  removed, and any letters you typed stay on the grid but are no longer
+  attributed to you); a lobby you only joined loses your name from the
+  member list and your letters become unattributed. Matomo visits are
+  not actively deleted because they are already non-attributable by
+  design — the daily-rotated hash prevents cross-day linkage, and a
+  fresh local session id after the call breaks linkage with same-day
+  visits. Matomo data remains under the 13-month retention window in
+  aggregate, anonymous form.
 - **Opt-out**: enable your browser's `Do Not Track` setting; Matomo
   honours it automatically.
 - **Complaints**: you may file a complaint with the CNIL (cnil.fr) if

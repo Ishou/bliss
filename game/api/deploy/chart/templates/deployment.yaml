@@ -34,6 +34,33 @@ spec:
       # Away" frame; 30 s covers a slow client RTT + the application's
       # final write of any pending lobby state.
       terminationGracePeriodSeconds: 30
+      {{- if .Values.postgres.enabled }}
+      # Block the api container until the CNPG `-rw` Service accepts
+      # connections. Prevents two failure modes:
+      #   1) Cold-start race: on a fresh deploy, CNPG bootstrap can lag
+      #      the api pod by minutes; without this, the api hangs inside
+      #      Flyway's TCP connect with no port bound, startup probe sees
+      #      `connection refused`, Helm times out (observed 2026-05-12).
+      #   2) Primary failover during rolling cnpg upgrades: the api pod
+      #      must not start reading DATABASE_URL until the writer is back.
+      # Reuses the pinned CNPG postgres image (already cached on every
+      # node — it runs the CNPG cluster). `pg_isready` over the `-rw`
+      # service is the canonical readiness check.
+      initContainers:
+        - name: wait-for-postgres
+          image: {{ .Values.postgres.cluster.imageName | quote }}
+          imagePullPolicy: IfNotPresent
+          securityContext: {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+          command:
+            - /bin/sh
+            - -c
+            - |
+              until pg_isready -h {{ include "bliss-game-api.pgClusterName" . }}-rw -p 5432; do
+                echo "wait-for-postgres: not ready yet"
+                sleep 2
+              done
+              echo "wait-for-postgres: ready"
+      {{- end }}
       containers:
         - name: api
           image: {{ include "bliss-game-api.image" . | quote }}
@@ -41,11 +68,30 @@ spec:
           securityContext: {{- toYaml .Values.containerSecurityContext | nindent 12 }}
           ports:
             - {name: http, containerPort: {{ .Values.service.port }}, protocol: TCP}
-          {{- with .Values.env }}
-          env: {{- toYaml . | nindent 12 }}
-          {{- end }}
+          env:
+            {{- if .Values.postgres.enabled }}
+            # DATABASE_URL is sourced directly from CNPG's auto-generated
+            # `<cluster>-app` Secret (key: `uri`). CNPG creates that Secret on
+            # initdb with the password it generates itself. The chart does
+            # NOT own the bootstrap credentials (see postgres-cluster.yaml's
+            # `bootstrap.initdb` block for the removal rationale, mirrored
+            # from grid/api). No operator step between install and pod-start
+            # is required.
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "bliss-game-api.pgClusterName" . }}-app
+                  key: uri
+            {{- end }}
+            {{- with .Values.env }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
           {{- with .Values.envFromSecret }}
           envFrom:
+            # Operator-supplied envs (Matomo analytics — optional). DATABASE_URL
+            # is sourced from the env block above when postgres.enabled=true;
+            # explicit `env` wins over `envFrom` for the same name even if a
+            # stale operator-managed DATABASE_URL is still present in this Secret.
             - secretRef: {name: {{ . }}}
           {{- end }}
           # Game has no DB cold-start, but parity with grid/api keeps the
