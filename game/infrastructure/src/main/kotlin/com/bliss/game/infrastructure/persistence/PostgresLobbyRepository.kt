@@ -79,6 +79,9 @@ class PostgresLobbyRepository(
             }
         }
 
+    // Filters to IN_PROGRESS + COMPLETED so WAITING (un-started) lobbies do not
+    // appear in the "Mes parties" listing — see ADR-0039 amendment 2026-05-12.
+    // WAITING lobbies remain reachable via direct URL / invite code.
     override suspend fun findBySessionId(sessionId: SessionId): List<Lobby> =
         withContext(Dispatchers.IO) {
             ds.connection.use { conn ->
@@ -88,6 +91,7 @@ class PostgresLobbyRepository(
                         "SELECT l.id FROM lobbies l " +
                             "JOIN lobby_players lp ON lp.lobby_id = l.id " +
                             "WHERE lp.session_id = ? " +
+                            "AND l.state IN ('IN_PROGRESS', 'COMPLETED') " +
                             "ORDER BY l.last_activity_at DESC",
                     ).use { ps ->
                         ps.setObject(1, UUID.fromString(sessionId.value))

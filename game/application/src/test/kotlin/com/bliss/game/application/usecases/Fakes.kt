@@ -50,10 +50,12 @@ class InMemoryLobbyRepository : LobbyRepository {
             store.values.firstOrNull { it.code == code }
         }
 
+    // Mirrors the production adapter: WAITING lobbies are excluded from the
+    // "Mes parties" listing per the ADR-0039 amendment of 2026-05-12.
     override suspend fun findBySessionId(sessionId: SessionId): List<Lobby> =
         storeLock.withLock {
             store.values
-                .filter { it.players.containsKey(sessionId) }
+                .filter { it.players.containsKey(sessionId) && it.state != LobbyLifecycleState.WAITING }
                 .sortedByDescending { it.lastActivityAt }
         }
 

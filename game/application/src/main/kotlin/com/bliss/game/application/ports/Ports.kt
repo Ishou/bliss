@@ -29,10 +29,14 @@ interface LobbyRepository {
     suspend fun findByCode(code: LobbyCode): Lobby?
 
     /**
-     * Returns lobbies the given session is currently a member of, in every
-     * lifecycle state (WAITING, IN_PROGRESS, COMPLETED), ordered by
-     * lastActivityAt descending. Returns an empty list if the session is
-     * not in any lobby. Used by the "My games" surface (ADR-0039).
+     * Returns lobbies the given session is currently a member of and that
+     * have entered play — IN_PROGRESS or COMPLETED only — ordered by
+     * lastActivityAt descending. WAITING (un-started) lobbies are excluded
+     * because they are "salons d'attente", not "parties": surfacing them
+     * conflates the two and produces 404-toast races when the WAITING TTL
+     * elapses between the list fetch and a rejoin click (ADR-0039
+     * amendment 2026-05-12). Returns an empty list if the session has no
+     * matching lobby. Used by the "Mes parties" surface (ADR-0039).
      */
     suspend fun findBySessionId(sessionId: SessionId): List<Lobby>
 

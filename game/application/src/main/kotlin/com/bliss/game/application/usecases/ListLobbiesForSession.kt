@@ -31,8 +31,15 @@ data class LobbySummary(
 
 /**
  * Returns a session's lobbies as light-weight summaries, ordered by
- * lastActivityAt descending. Every lifecycle state is included so a user
- * can re-open finished games (ADR-0039).
+ * lastActivityAt descending. Only IN_PROGRESS and COMPLETED lobbies are
+ * returned — WAITING (un-started) lobbies are excluded because they are
+ * "salons d'attente", not "parties". Surfacing them produced confusing
+ * 404 toasts when the WAITING TTL evicted them between the list fetch
+ * and a rejoin click (ADR-0039 amendment 2026-05-12). WAITING lobbies
+ * remain reachable via direct URL / invite code.
+ *
+ * Filtering lives in the repository so the listing is consistent across
+ * adapters and avoids leaking WAITING lobby ids to the client.
  *
  * Pure transform: no events emitted, no clock injection — we deliberately
  * do not bump [Lobby.lastActivityAt] on a read.

@@ -274,8 +274,11 @@ class PostgresLobbyRepositoryTest {
             assertThat(result.map { it.id }).containsExactly(idleCompleted.id)
         }
 
+    // ADR-0039 amendment 2026-05-12: WAITING lobbies are excluded from the
+    // "Mes parties" listing; only IN_PROGRESS and COMPLETED are returned,
+    // ordered by lastActivityAt descending.
     @Test
-    fun `findBySessionId returns lobbies in every lifecycle state ordered by lastActivityAt desc`() =
+    fun `findBySessionId returns only IN_PROGRESS and COMPLETED ordered by lastActivityAt desc`() =
         runTest {
             val waiting =
                 waitingLobby(id = LobbyId.generate(), owner = sessionA)
@@ -287,7 +290,7 @@ class PostgresLobbyRepositoryTest {
                 completedLobby(id = LobbyId.generate(), owner = sessionA)
                     .copy(lastActivityAt = baseInstant)
             val otherSession =
-                waitingLobby(id = LobbyId.generate(), owner = sessionB)
+                inProgressLobby(id = LobbyId.generate(), owner = sessionB)
                     .copy(lastActivityAt = baseInstant.plusSeconds(120))
             repo.save(waiting)
             repo.save(inProgress)
@@ -296,13 +299,43 @@ class PostgresLobbyRepositoryTest {
 
             val result = repo.findBySessionId(sessionA)
 
-            assertThat(result.map { it.id }).containsExactly(inProgress.id, completed.id, waiting.id)
+            assertThat(result.map { it.id }).containsExactly(inProgress.id, completed.id)
+        }
+
+    @Test
+    fun `findBySessionId excludes a WAITING lobby and returns the IN_PROGRESS one`() =
+        runTest {
+            val waiting =
+                waitingLobby(id = LobbyId.generate(), owner = sessionA)
+                    .copy(lastActivityAt = baseInstant.plusSeconds(10))
+            val inProgress =
+                inProgressLobby(id = LobbyId.generate(), owner = sessionA)
+                    .copy(lastActivityAt = baseInstant.plusSeconds(20))
+            repo.save(waiting)
+            repo.save(inProgress)
+
+            val result = repo.findBySessionId(sessionA)
+
+            assertThat(result.map { it.id }).containsExactly(inProgress.id)
+        }
+
+    @Test
+    fun `findBySessionId still returns COMPLETED lobbies`() =
+        runTest {
+            val completed =
+                completedLobby(id = LobbyId.generate(), owner = sessionA)
+                    .copy(lastActivityAt = baseInstant.plusSeconds(5))
+            repo.save(completed)
+
+            val result = repo.findBySessionId(sessionA)
+
+            assertThat(result.map { it.id }).containsExactly(completed.id)
         }
 
     @Test
     fun `findBySessionId returns empty when the session is not in any lobby`() =
         runTest {
-            repo.save(waitingLobby(id = LobbyId.generate(), owner = sessionA))
+            repo.save(inProgressLobby(id = LobbyId.generate(), owner = sessionA))
 
             assertThat(repo.findBySessionId(sessionB)).isEmpty()
         }
