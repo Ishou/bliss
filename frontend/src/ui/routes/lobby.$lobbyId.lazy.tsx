@@ -51,7 +51,7 @@ import { ConnectionBanner } from '@/ui/components/lobby/ConnectionBanner';
 import { EndGameModal } from '@/ui/components/lobby/EndGameModal';
 import { PlayerList } from '@/ui/components/lobby/PlayerList';
 import { WaitingRoom } from '@/ui/components/lobby/WaitingRoom';
-import { Button } from '@/ui/components/primitives';
+import { Button, useToast } from '@/ui/components/primitives';
 import { useAnnouncer } from '@/ui/components/a11y/Announcer';
 
 // Lighter charcoal panel behind the grid — same role-token + radius
@@ -192,9 +192,26 @@ function LobbyPage() {
   // flip the label to "Démarrage…" so the WS round-trip (frame →
   // server → broadcast) is not perceived as a dead click.
   const [isStarting, setIsStarting] = useState(false);
+  // Mirrored as a ref so the long-lived `subscribe` callback (set up
+  // once per `useEffect` run) can read the latest value without being
+  // re-attached on every state flip. Used to disambiguate "the error
+  // we just received likely killed the start-game flow" from "a stray
+  // server error unrelated to the in-flight Start click" so the toast
+  // copy stays specific instead of falling through to the generic
+  // catch-all.
+  const isStartingRef = useRef(isStarting);
+  isStartingRef.current = isStarting;
   // ADR-0029: rotation spinner; cleared in the subscribe handler below.
   const [isRotating, setIsRotating] = useState(false);
   const preRotationCodeRef = useRef<string | null>(null);
+  // Toast surface for server `error` frames not handled inline. Used to
+  // separate "the action you just took failed" from "your transport is
+  // down" — the latter remains the ConnectionBanner's job. Destructure
+  // `show` (stable useCallback) rather than keeping the wrapper object
+  // — the object is recreated on every render because `active` is in
+  // the provider's useMemo deps, which would make the useEffect below
+  // re-run (and reconnect) on every toast state change.
+  const { show: showToast } = useToast();
 
   // Single side effect: connect on mount, disconnect on unmount.
   // `joinLobby` is auto-sent by the adapter inside `connect` (PR #138's
@@ -239,6 +256,26 @@ function LobbyPage() {
       if (event.type === 'gameStarted' || event.type === 'error') {
         setIsStarting(false);
       }
+      // Surface server `error` frames not handled inline (i.e. neither
+      // `invalid-pseudonym` next-to-the-editor nor `wrong-code`
+      // join-denied banner) via a toast. Before this, a failed
+      // `startGame` (e.g. grid generation failed server-side) left
+      // *no* visible chrome and was easy to mistake for the misleading
+      // "Connexion perdue" banner that pops on a real transport drop.
+      // The toast is intentionally less invasive than a banner: it
+      // sits bottom-right, auto-dismisses, and does not push the lobby
+      // content around.
+      if (event.type === 'error') {
+        const inlineHandled =
+          event.errorType === 'https://bliss.example/errors/invalid-pseudonym' ||
+          event.errorType === 'https://bliss.example/errors/wrong-code';
+        if (!inlineHandled) {
+          showToast({
+            text: messageForGameErrorEvent(event, { wasStarting: isStartingRef.current }),
+            tone: 'error',
+          });
+        }
+      }
       // ADR-0029: clear the rotation spinner on the refreshed `lobbyState`
       // (new `code`) or on any server `error` (defensive, e.g. not-owner).
       if ((event.type === 'lobbyState'
@@ -265,7 +302,7 @@ function LobbyPage() {
       unsubscribeConnection();
       gameClient.disconnect();
     };
-  }, [gameClient, lobbyId, getSession, lobbyJoinCodeStash]);
+  }, [gameClient, lobbyId, getSession, lobbyJoinCodeStash, showToast]);
 
   const { sessionId } = getSession();
   const lobby = view.lobby;
@@ -896,6 +933,25 @@ function LobbyErrorWithBackHome({ text }: { text: string }) {
       </div>
     </LobbyShell>
   );
+}
+
+// French copy for a server `error` frame surfaced via the toast (i.e.
+// not handled inline by the WaitingRoom pseudonym editor or the
+// wrong-code join-denied banner). The server's `detail` is preferred
+// when present — operators set it deliberately, and it carries the
+// most specific context (e.g. "Pseudonyme déjà utilisé"). When the
+// frame arrives mid Start-game flow and ships no `detail`, the copy
+// pins the error to the action the user just took rather than falling
+// through to a generic "Une erreur" that would re-introduce the same
+// "what just broke?" ambiguity the misleading "Connexion perdue"
+// banner caused before this change.
+function messageForGameErrorEvent(
+  event: { readonly detail?: string; readonly title: string },
+  context: { readonly wasStarting: boolean },
+): string {
+  if (event.detail != null && event.detail.length > 0) return event.detail;
+  if (context.wasStarting) return 'Impossible de démarrer la partie. Réessayez.';
+  return 'Une erreur est survenue. Réessayez.';
 }
 
 function LobbyErrorComponent({ error }: { error: Error }) {

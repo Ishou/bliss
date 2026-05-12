@@ -1101,4 +1101,76 @@ describe('Lobby route Start button loading feedback', () => {
     const reset = await screen.findByRole('button', { name: /démarrer la partie/i });
     expect(reset).toBeEnabled();
   });
+
+  it('surfaces a toast on a server `error` frame for a failed startGame', async () => {
+    const gameClient = makeFakeGameClient();
+    renderLobby({ gameClient });
+    await screen.findByRole('heading', { name: /WordSparrow/ });
+    // Move the connection state to 'connected' so the ConnectionBanner
+    // is absent and we can assert the toast is the only chrome surfacing
+    // the error (not the misleading "Connexion perdue" banner).
+    act(() => { gameClient.dispatchConnectionState('connected'); });
+    expect(screen.queryByTestId('connection-banner')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /démarrer la partie/i }));
+    act(() => {
+      gameClient.dispatch({
+        type: 'error',
+        errorType: 'https://bliss.example/errors/grid-generation-failed',
+        title: 'Grid generation failed',
+      });
+    });
+
+    // The toast renders with French copy and `role="alert"` (error tone).
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent(/impossible de démarrer la partie/i);
+    // ConnectionBanner stays absent — transport is healthy.
+    expect(screen.queryByTestId('connection-banner')).not.toBeInTheDocument();
+  });
+
+  it('does NOT surface a toast for invalid-pseudonym errors (already handled inline)', async () => {
+    const gameClient = makeFakeGameClient();
+    renderLobby({ gameClient });
+    await screen.findByRole('heading', { name: /WordSparrow/ });
+    act(() => { gameClient.dispatchConnectionState('connected'); });
+
+    act(() => {
+      gameClient.dispatch({
+        type: 'error',
+        errorType: 'https://bliss.example/errors/invalid-pseudonym',
+        title: 'Invalid pseudonym',
+        detail: 'Pseudonyme déjà pris.',
+      });
+    });
+
+    // The inline pseudonym error path renders `role="alert"` with the
+    // detail — but the toast must NOT also fire for this case.
+    const alerts = screen.queryAllByRole('alert');
+    for (const a of alerts) {
+      expect(a).not.toHaveTextContent(/impossible de démarrer la partie/i);
+    }
+  });
+
+  it('does NOT surface a toast for wrong-code errors (already handled inline)', async () => {
+    const gameClient = makeFakeGameClient();
+    renderLobby({ gameClient });
+    await screen.findByRole('heading', { name: /WordSparrow/ });
+    act(() => { gameClient.dispatchConnectionState('connected'); });
+
+    act(() => {
+      gameClient.dispatch({
+        type: 'error',
+        errorType: 'https://bliss.example/errors/wrong-code',
+        title: 'Wrong code',
+        detail: 'Code invalide ou partie privée.',
+      });
+    });
+
+    // The inline wrong-code path renders the join-denied banner —
+    // the toast must NOT also fire for this case.
+    const alerts = screen.queryAllByRole('alert');
+    for (const a of alerts) {
+      expect(a).not.toHaveTextContent(/impossible de démarrer la partie/i);
+    }
+  });
 });
