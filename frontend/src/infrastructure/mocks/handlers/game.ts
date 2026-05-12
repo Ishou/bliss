@@ -606,7 +606,7 @@ export function lobbySummaryFixture(
     state: 'IN_PROGRESS',
     gridConfig: { width: 15, height: 12 },
     playerCount: 2,
-    lastActivityAt: new Date().toISOString(),
+    lastActivityAt: '2026-05-10T18:00:00Z',
     ...overrides,
   };
 }
