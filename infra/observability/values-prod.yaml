@@ -80,19 +80,28 @@ signoz:
 # SigNoz subchart bump.
 imagePrepuller:
   enabled: true
-  # Images explicitly excluded from pre-pull (distroless — no /bin/true,
-  # so initContainer can't run `true` as a no-op exec):
-  #   - altinity/clickhouse-operator (~26 MB)
-  #   - altinity/metrics-exporter (~25 MB)
-  # Pulled on demand; small enough to not warrant the complexity of
-  # per-image entrypoints.
+  # Pre-pull only images with /bin/sh (shell-based init pattern works on
+  # them). Distroless images (otel-collector-contrib, signoz-otel-collector,
+  # signoz/signoz, altinity/clickhouse-operator, altinity/metrics-exporter)
+  # are excluded — they pull on-demand. Tradeoff: a few seconds of pull
+  # delay on first reschedule for those, but no CrashLoopBackOff on the
+  # DaemonSet. A future fix could replace `command: ["true"]` with each
+  # image's own native entrypoint + a benign flag (`--version`) to support
+  # distroless universally.
   images:
     - bitnamilegacy/zookeeper:3.7.1
     - docker.io/alpine:3.18.2
     - docker.io/clickhouse/clickhouse-server:25.5.6
-    - docker.io/otel/opentelemetry-collector-contrib:0.139.0
-    - docker.io/signoz/signoz-otel-collector:v0.144.3
-    - docker.io/signoz/signoz:v0.122.0
+
+# oauth2-proxy lives at the top-level (custom template — the SigNoz
+# subchart doesn't ship it). Pin to the observability worker for the
+# same reason every signoz.* subcomponent above is pinned: keep the
+# observability stack off the app nodes.
+oauth2Proxy:
+  tolerations:
+    - {key: dedicated, operator: Equal, value: observability, effect: NoSchedule}
+  nodeSelector:
+    bliss.io/role: observability
 
 ingress:
   # Cert-manager + external-dns + ingress-nginx are all in the platform

@@ -226,6 +226,15 @@ oauth2Proxy:
   image:
     repository: quay.io/oauth2-proxy/oauth2-proxy
     tag: v7.6.0
+  # Pin to the observability worker so oauth2-proxy isolates with the rest
+  # of the SigNoz stack (PR #386 added these to every subcomponent but
+  # missed this top-level block). Overridden in values-prod.yaml is not
+  # required — the same taint/label set exists in prod and is harmless in
+  # dev (no matching node = pod stays Pending, but oauth2Proxy.enabled is
+  # false in dev today). If a future dev cluster sets enabled: true, drop
+  # the keys via `oauth2Proxy.tolerations: []` / `nodeSelector: {}`.
+  tolerations: []
+  nodeSelector: {}
 
 # Ingress hosts. Two ingresses target the same SigNoz frontend Service:
 # `errors.wordsparrow.io` (Sentry-style "what blew up" entry point) and
