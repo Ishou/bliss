@@ -150,7 +150,7 @@ export default defineConfig({
       ],
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,woff2,webmanifest}'],
-        navigateFallback: '/index.html',
+        navigateFallback: '/200.html',
         // Bypass `navigateFallback` for files served by Cloudflare Pages
         // directly. Without these, a returning user with the SW installed
         // gets the SPA shell when typing `/robots.txt` or `/sitemap.xml`
