@@ -58,9 +58,22 @@ Configure `VitePWA` in `vite.config.ts` with:
   competing one.
 - Precache glob: `**/*.{js,css,html,svg,png,woff2,webmanifest}` — captures
   the full app shell including fonts and icons.
-- `navigateFallback: '/index.html'` with `/^\/v1\//` in
+- `navigateFallback: '/200.html'` with `/^\/v1\//` in
   `navigateFallbackDenylist` — SPA navigation works offline; API paths are
   never intercepted by the navigation fallback.
+
+  > **Amendment (2026-05-12, PR #393):** ADR-0035 transformed `dist/index.html`
+  > into the prerendered homepage. `navigateFallback` is now `/200.html` — a
+  > clean Vite shell emitted by `scripts/prerender.ts` after the prerender pass,
+  > carrying no per-route head tags. `additionalManifestEntries: [{ url:
+  > '/200.html', revision: null }]` explicitly precaches it because the Workbox
+  > glob runs during `vite build`, before `seo:postbuild` writes the file.
+
+- `additionalManifestEntries: [{ url: '/200.html', revision: null }]` —
+  explicitly precaches the SPA fallback shell. `revision: null` marks it as
+  self-versioned; since the SW is re-emitted on every Vite build (hashed asset
+  URLs shift the manifest), the SW re-installs and re-fetches `/200.html` on
+  each deploy, bounding staleness to one deployment cycle.
 - `cleanupOutdatedCaches: true` — stale precaches from previous builds are
   deleted automatically.
 
