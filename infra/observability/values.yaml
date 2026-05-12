@@ -41,6 +41,8 @@ signoz:
     # the SigNoz subchart's `clickhouse.settings` is wired straight
     # into the CHI by clickhouse/templates/clickhouse-instance/
     # clickhouse-instance.yaml (merged with `defaultSettings`).
+    # Server-config settings only. Profile-scoped settings
+    # (max_block_size, max_threads, etc.) go in profiles.default below.
     # Ref: https://clickhouse.com/docs/en/operations/tips
     settings:
       # Default mark_cache_size is 5 GiB — larger than our entire
@@ -51,10 +53,6 @@ signoz:
       # cgroup so kernel page cache + non-server allocations
       # (background merges, queries) have headroom.
       max_server_memory_usage_to_ram_ratio: "0.7"
-      # Smaller blocks reduce per-query peak memory. 8192 is the
-      # ClickHouse default but we set it explicitly so a future
-      # subchart bump can't silently raise it.
-      max_block_size: 8192
       # Fewer background merge threads. Default scales with cores;
       # at 2 CPU limit we don't benefit from more than 4.
       background_pool_size: 4
@@ -64,14 +62,23 @@ signoz:
       # Cuts cold-start part attachment time roughly proportionally for
       # tables with many small parts.
       max_part_loading_threads: 16
+      # NB: max_block_size is a profile setting, not server config.
+      # Moved to profiles.default below (ClickHouse rejects it at this
+      # scope with UNKNOWN_ELEMENT_IN_CONFIG, code 137).
 
     # User-profile overrides. Lighter logging so the verbose
     # log-table writes (next block) don't have anything to write.
     # Subchart renders this into CHI `spec.configuration.profiles`
     # (merged with `defaultProfiles`).
     profiles:
-      default/log_query_threads: "0"
-      default/log_queries_min_type: QUERY_FINISH
+      default:
+        # Smaller blocks reduce per-query peak memory. 8192 is the
+        # ClickHouse default but we set it explicitly so a future
+        # subchart bump can't silently raise it. Profile-scoped:
+        # ClickHouse rejects this at server-config scope.
+        max_block_size: 8192
+        log_query_threads: 0
+        log_queries_min_type: QUERY_FINISH
 
     # Disable verbose ClickHouse-internal log tables (sub-16 GB
     # tuning per the ClickHouse tips doc). These are CH's OWN
