@@ -87,6 +87,7 @@ interface RenderOptions {
   readonly lobbyClient?: Partial<LobbyClient>;
   readonly initialEntry?: string;
   readonly puzzle?: Puzzle;
+  readonly puzzleRepository?: Partial<PuzzleRepository>;
 }
 
 const emptyStore: SoloEntriesStore = {
@@ -129,6 +130,7 @@ const renderAccueil = (options: RenderOptions = {}) => {
   const puzzleRepository: PuzzleRepository = {
     fetchById: () => Promise.resolve(options.puzzle ?? samplePuzzle),
     fetchDaily: () => Promise.resolve(options.puzzle ?? samplePuzzle),
+    ...options.puzzleRepository,
   };
   const routeTree = RootRoute.addChildren([AccueilRoute, GrilleRoute, LobbyRoute]);
   const router = createRouter({
@@ -306,6 +308,41 @@ describe('Accueil route', () => {
     await vi.waitFor(() => {
       expect(lobbyClient.findByCode).toHaveBeenCalledWith('A2B3C4');
       expect(router.state.location.pathname).toBe(`/lobby/${createdLobbyId}`);
+    });
+  });
+
+  describe('when fetchDaily fails', () => {
+    it('renders the Grille card error state without replacing the whole page', async () => {
+      const fetchDaily = vi.fn().mockRejectedValue(new Error('boom'));
+      renderAccueil({ puzzleRepository: { fetchDaily } });
+      // Multijoueur card heading must still render — the failure is
+      // isolated to the Grille card, not the whole route.
+      expect(await screen.findByRole('heading', { name: 'Multijoueur', level: 2 }))
+        .toBeInTheDocument();
+      // The Grille card surfaces the error inline with a Réessayer
+      // affordance.
+      expect(screen.getByRole('heading', { name: 'Grille du jour', level: 2 }))
+        .toBeInTheDocument();
+      expect(screen.getByText(/grille du jour indisponible/i)).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Réessayer' })).toBeInTheDocument();
+      // No whole-page replacement: the "Une erreur est survenue." root
+      // boundary is never rendered.
+      expect(screen.queryByText(/une erreur est survenue/i)).not.toBeInTheDocument();
+    });
+
+    it('re-runs the loader and renders the puzzle when Réessayer is clicked after a recovery', async () => {
+      const fetchDaily = vi.fn()
+        .mockRejectedValueOnce(new Error('boom'))
+        .mockResolvedValue(samplePuzzle);
+      renderAccueil({ puzzleRepository: { fetchDaily } });
+      const retry = await screen.findByRole('button', { name: 'Réessayer' });
+      await act(async () => { retry.click(); });
+      await vi.waitFor(() => {
+        expect(screen.getByRole('progressbar', { name: 'Nouvelle grille' }))
+          .toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Commencer' })).toBeInTheDocument();
+      });
+      expect(fetchDaily).toHaveBeenCalledTimes(2);
     });
   });
 
