@@ -11,8 +11,9 @@
 | `sessionId` (UUID v7) | Browser `localStorage` | Until the user clears browser storage or clicks "Erase my data" | User-controlled; see ADR-0021 |
 | Pseudonym | Browser `localStorage` | Same as `sessionId` | User-controlled |
 | `puzzle_hint_usage` rows | Postgres (CNPG) | **90 days from `updated_at`** | k8s CronJob (Phase 7), nightly `DELETE WHERE updated_at < now() - interval '90 days'` |
-| Multiplayer lobby state | `game/api` JVM heap | Evicted after 30 min idle, or on close | ADR-0018 §"State: in-memory" |
-| Cell entries during a multiplayer game | `game/api` JVM heap | Lifetime of the lobby | ADR-0018 |
+| Lobby row (`lobbies`) | Postgres (CNPG, `game-api` schema) | WAITING: 30 min idle; IN_PROGRESS: never evicted; COMPLETED: 7 days | k8s CronJob (ADR-0039 §c), nightly sweep |
+| Lobby membership row (`lobby_players`) | Postgres | Lifetime of the parent lobby (`ON DELETE CASCADE`) | Inherits lobby retention |
+| Cell entry row (`lobby_cell_entries`) | Postgres | Lifetime of the parent lobby; `written_by_session_id` is NULLed on RGPD erasure (letter retained for puzzle coherence, attribution dropped) | Inherits lobby retention; ADR-0039 three-rule cascade for erasure |
 | Matomo visit + event data | MariaDB (k3s, dedicated to Matomo) | **13 months** | Matomo admin UI: Privacy → Anonymize previous logs |
 | Matomo aggregated reports | MariaDB | Indefinite (already aggregated, non-identifying) | n/a |
 | Application logs (Ktor `CallLogging`) | stdout, scraped to log store TBD | Pending observability ADR-0007 | Out of scope here |
@@ -23,13 +24,34 @@
 ### Erasure on user request
 
 When a user clicks "Erase my data", the following deletions happen in
-one HTTP request:
+parallel and **all must succeed** for the UI to claim erasure (a partial
+failure surfaces "Veuillez réessayer"):
 
 1. Frontend: `localStorage.clear()` for the WordSparrow keys (`bliss.session.id`,
    `bliss.session.pseudonym`).
 2. Backend: `DELETE /v1/sessions/{sessionId}` on `grid/api` removes all
    `puzzle_hint_usage` rows for that session.
-3. Matomo visits are intentionally NOT deleted — they are already
+3. Backend: `DELETE /v1/sessions/{sessionId}` on `game/api` applies the
+   ADR-0039 three-rule cascade across every lobby the session is a
+   member of:
+
+   - **Rule 1 — sole-player owner.** When the erased user is the only
+     player in a lobby they own, the lobby is deleted outright. The
+     `lobbies` row drop cascades to `lobby_players` and
+     `lobby_cell_entries` via `ON DELETE CASCADE`, so nothing keyed to
+     the lobby survives.
+   - **Rule 2 — owner with remaining players.** Ownership transfers to
+     the earliest-joined remaining player (deterministic so the
+     remaining humans see a stable handoff), the erased user's
+     `lobby_players` row is dropped, and every `lobby_cell_entries`
+     row authored by them has `written_by_session_id` set to `NULL`.
+     The placed letters survive so the puzzle stays coherent for the
+     other players; only attribution is removed.
+   - **Rule 3 — non-owner.** The `lobby_players` row is dropped and the
+     erased user's cell-entry attributions are NULLed. The lobby and
+     its owner are otherwise unchanged.
+
+4. Matomo visits are intentionally NOT deleted — they are already
    non-attributable by design. The daily-rotated salted hash means visits
    from prior days cannot be linked, and the fresh local sessionId
    generated after the erase breaks linkage with same-day visits.

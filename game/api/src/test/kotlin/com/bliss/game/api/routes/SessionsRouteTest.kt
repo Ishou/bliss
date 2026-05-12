@@ -6,7 +6,9 @@ import assertk.assertions.hasSize
 import assertk.assertions.isEqualTo
 import assertk.assertions.isNotNull
 import assertk.assertions.startsWith
+import com.bliss.game.api.dto.DeleteSessionResponseDto
 import com.bliss.game.api.dto.LobbySummaryDto
+import com.bliss.game.application.usecases.EraseSessionUseCase
 import com.bliss.game.application.usecases.ListLobbiesForSession
 import com.bliss.game.domain.GridConfig
 import com.bliss.game.domain.Lobby
@@ -19,6 +21,7 @@ import com.bliss.game.domain.Pseudonym
 import com.bliss.game.domain.SessionId
 import com.bliss.game.infrastructure.InMemoryLobbyRepository
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.request.delete
 import io.ktor.client.request.get
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.HttpStatusCode
@@ -112,6 +115,78 @@ class SessionsRouteTest {
         }
 
     @Test
+    fun `DELETE returns 200 with all-zero counts when the session has no lobbies`() =
+        testApplication {
+            val repo = InMemoryLobbyRepository()
+            setupApp(repo)
+            val client = jsonClient()
+
+            val response = client.delete("/v1/sessions/$sessionId")
+
+            assertThat(response.status).isEqualTo(HttpStatusCode.OK)
+            val body = JSON.decodeFromString<DeleteSessionResponseDto>(response.bodyAsText())
+            assertThat(body.deletedLobbies).isEqualTo(0)
+            assertThat(body.transferredLobbies).isEqualTo(0)
+            assertThat(body.removedPlayerships).isEqualTo(0)
+            assertThat(body.anonymisedEntries).isEqualTo(0)
+        }
+
+    @Test
+    fun `DELETE returns 200 with deletedLobbies count when the session was a sole-owner`() =
+        testApplication {
+            val repo = InMemoryLobbyRepository()
+            val owner = SessionId(sessionId)
+            repo.save(lobby(id = LobbyId.generate(), owner = owner))
+            setupApp(repo)
+            val client = jsonClient()
+
+            val response = client.delete("/v1/sessions/$sessionId")
+
+            assertThat(response.status).isEqualTo(HttpStatusCode.OK)
+            val body = JSON.decodeFromString<DeleteSessionResponseDto>(response.bodyAsText())
+            assertThat(body.deletedLobbies).isEqualTo(1)
+            assertThat(body.transferredLobbies).isEqualTo(0)
+            assertThat(body.removedPlayerships).isEqualTo(0)
+        }
+
+    @Test
+    fun `DELETE is idempotent - second call returns all-zero counts`() =
+        testApplication {
+            val repo = InMemoryLobbyRepository()
+            val owner = SessionId(sessionId)
+            repo.save(lobby(id = LobbyId.generate(), owner = owner))
+            setupApp(repo)
+            val client = jsonClient()
+
+            val first = client.delete("/v1/sessions/$sessionId")
+            assertThat(first.status).isEqualTo(HttpStatusCode.OK)
+
+            val second = client.delete("/v1/sessions/$sessionId")
+
+            assertThat(second.status).isEqualTo(HttpStatusCode.OK)
+            val body = JSON.decodeFromString<DeleteSessionResponseDto>(second.bodyAsText())
+            assertThat(body.deletedLobbies).isEqualTo(0)
+            assertThat(body.transferredLobbies).isEqualTo(0)
+            assertThat(body.removedPlayerships).isEqualTo(0)
+            assertThat(body.anonymisedEntries).isEqualTo(0)
+        }
+
+    @Test
+    fun `DELETE with an invalid sessionId returns 400 with RFC 7807 problem json`() =
+        testApplication {
+            val repo = InMemoryLobbyRepository()
+            setupApp(repo)
+
+            val response = client.delete("/v1/sessions/not-a-uuid")
+
+            assertThat(response.status).isEqualTo(HttpStatusCode.BadRequest)
+            assertThat(response.headers["Content-Type"]!!).startsWith("application/problem+json")
+            val body = response.bodyAsText()
+            assertThat(body).contains("\"status\":400")
+            assertThat(body).contains("https://bliss.example/errors/invalid-session-id")
+        }
+
+    @Test
     fun `GET filters out lobbies the session is not a member of`() =
         testApplication {
             val repo = InMemoryLobbyRepository()
@@ -136,7 +211,7 @@ class SessionsRouteTest {
         application {
             install(ServerContentNegotiation) { json(JSON) }
             routing {
-                sessions(ListLobbiesForSession(repo))
+                sessions(ListLobbiesForSession(repo), EraseSessionUseCase(repo))
             }
         }
     }

@@ -7,6 +7,7 @@ import com.bliss.game.api.routes.lobbyWebSocketRoute
 import com.bliss.game.api.routes.sessions
 import com.bliss.game.application.ports.AnalyticsEventSink
 import com.bliss.game.application.usecases.CreateLobbyUseCase
+import com.bliss.game.application.usecases.EraseSessionUseCase
 import com.bliss.game.application.usecases.JoinLobbyUseCase
 import com.bliss.game.application.usecases.LeaveLobbyUseCase
 import com.bliss.game.application.usecases.ListLobbiesForSession
@@ -263,7 +264,7 @@ fun Application.module() {
     routing {
         health(APP_VERSION)
         lobbies(createLobby = useCases.createLobby, repo = lobbyRepository, sessionManager = sessionManager)
-        sessions(ListLobbiesForSession(lobbyRepository))
+        sessions(ListLobbiesForSession(lobbyRepository), EraseSessionUseCase(lobbyRepository))
         lobbyWebSocketRoute(sessionManager, useCases, lobbyRepository, presenceAggregator)
     }
 }

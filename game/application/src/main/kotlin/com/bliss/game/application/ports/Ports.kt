@@ -36,6 +36,13 @@ interface LobbyRepository {
      */
     suspend fun findBySessionId(sessionId: SessionId): List<Lobby>
 
+    /**
+     * RGPD Article 17 erasure (ADR-0039). Atomic per lobby. Idempotent.
+     * This is the ONLY method that transfers lobby ownership — regular
+     * LeaveLobbyUseCase keeps ownerSessionId by design.
+     */
+    suspend fun eraseSession(sessionId: SessionId): EraseSessionResult
+
     suspend fun save(lobby: Lobby): Lobby
 
     /**
@@ -172,4 +179,20 @@ interface WordValidator {
         puzzleId: UUID,
         filled: Map<Position, Letter>,
     ): Set<Position>
+}
+
+/**
+ * Aggregated counts returned by [LobbyRepository.eraseSession]. Each field maps
+ * to one ADR-0039 cascade rule; the sum is what `DELETE /v1/sessions/{sessionId}`
+ * surfaces on the wire.
+ */
+data class EraseSessionResult(
+    val deletedLobbies: Int,
+    val transferredLobbies: Int,
+    val removedPlayerships: Int,
+    val anonymisedEntries: Int,
+) {
+    companion object {
+        val Empty = EraseSessionResult(0, 0, 0, 0)
+    }
 }
