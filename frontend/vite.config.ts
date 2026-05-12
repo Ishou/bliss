@@ -151,6 +151,10 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,woff2,webmanifest}'],
         navigateFallback: '/200.html',
+        // 200.html is written by seo:postbuild AFTER vite build, so the glob
+        // above never sees it. Explicitly precache it so offline navigations
+        // to non-prerendered routes don't fall back to a network error.
+        additionalManifestEntries: [{ url: '/200.html', revision: null }],
         // Bypass `navigateFallback` for files served by Cloudflare Pages
         // directly. Without these, a returning user with the SW installed
         // gets the SPA shell when typing `/robots.txt` or `/sitemap.xml`
