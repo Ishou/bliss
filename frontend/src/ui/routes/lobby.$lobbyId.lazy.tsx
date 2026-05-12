@@ -187,6 +187,13 @@ function LobbyPage() {
   const [joinConfirmed, setJoinConfirmed] = useState<boolean>(() =>
     initialLobby.players.some((p) => p.sessionId === initialSessionId),
   );
+  // Mirrored as a ref so the long-lived subscribe callback can branch
+  // on whether the user has been admitted into the lobby yet — without
+  // re-attaching the listener on every state change. Pre-join error
+  // frames (e.g. `protocol` when the join hasn't completed) get a
+  // different treatment than the same frame post-join.
+  const joinConfirmedRef = useRef(joinConfirmed);
+  joinConfirmedRef.current = joinConfirmed;
   // True between "Démarrer la partie" click and the server-side
   // confirmation. WaitingRoom uses the flag to disable the button and
   // flip the label to "Démarrage…" so the WS round-trip (frame →
@@ -228,8 +235,26 @@ function LobbyPage() {
       if (event.type === 'error' &&
         event.errorType === 'https://bliss.example/errors/wrong-code') {
         // Server rejected the join — the WaitingRoom does not mount.
+        // The joinDenied effect navigates back to home with a toast
+        // carrying the message, so the in-progress grid / waiting
+        // roster never reaches the denied joiner's DOM.
         // Drop the stash so a later reload doesn't replay the bad code.
         setJoinDenied(event.detail ?? 'Code invalide ou partie privée. Demandez le code à l’organisateur.');
+        lobbyJoinCodeStash.clear(lobbyId as LobbyId);
+      }
+      // `protocol` errors before the join completes mean the server
+      // saw a client→server frame other than `joinLobby` first —
+      // either a bug in our wire ordering or a stale frame from a
+      // previous mount. The wire `detail` ("Envoyez une trame
+      // 'joinLobby'…") is internal protocol language and never
+      // surfaces to the user; we hand them a generic French message
+      // and bounce to home. Post-join `protocol` errors fall through
+      // to the normal toast path (e.g. a malformed cellUpdate would
+      // earn an in-game toast rather than booting the user out).
+      if (event.type === 'error' &&
+        event.errorType === 'https://bliss.example/errors/protocol' &&
+        !joinConfirmedRef.current) {
+        setJoinDenied('Impossible de rejoindre cette partie. Réessayez.');
         lobbyJoinCodeStash.clear(lobbyId as LobbyId);
       }
       // First `playerJoined` for our own sessionId confirms the WS join
@@ -260,9 +285,15 @@ function LobbyPage() {
       // sits bottom-right, auto-dismisses, and does not push the lobby
       // content around.
       if (event.type === 'error') {
+        // `invalid-pseudonym` renders next to the editor; the others
+        // route through `setJoinDenied` and the redirect effect below
+        // surfaces their own toast on the home page. Either way, this
+        // generic toast path must not double-fire.
         const inlineHandled =
           event.errorType === 'https://bliss.example/errors/invalid-pseudonym' ||
-          event.errorType === 'https://bliss.example/errors/wrong-code';
+          event.errorType === 'https://bliss.example/errors/wrong-code' ||
+          (event.errorType === 'https://bliss.example/errors/protocol' &&
+            !joinConfirmedRef.current);
         if (!inlineHandled) {
           showToast({
             text: messageForGameErrorEvent(event, { wasStarting: isStartingRef.current }),
@@ -313,6 +344,21 @@ function LobbyPage() {
       dismissToast();
     }
   }, [connectionState, showToast, dismissToast]);
+
+  // Bounce the user back to Accueil with an error toast when the WS
+  // join was denied (wrong code, pre-join protocol error, etc.).
+  // Previously the lobby rendered an inline banner over a still-
+  // visible WaitingRoom or grid — denied joiners could read the
+  // in-progress puzzle while seeing a "wrong code" message. The
+  // redirect plus the gated render below ensures the lobby content
+  // never reaches a non-member's DOM. `replace: true` keeps Accueil
+  // out of the back-stack so Back doesn't loop the user into the
+  // same denial.
+  useEffect(() => {
+    if (joinDenied == null) return;
+    showToast({ text: joinDenied, tone: 'error' });
+    void navigate({ to: '/', replace: true });
+  }, [joinDenied, showToast, navigate]);
 
   const { sessionId } = getSession();
   const lobby = view.lobby;
@@ -503,6 +549,26 @@ function LobbyPage() {
       ? 'viewport'
       : 'content';
 
+  // Gate every lobby surface (WaitingRoom AND InGameView) on a
+  // confirmed WS join. Until the server has accepted us, we show only
+  // the connecting placeholder — even if the REST loader returned a
+  // populated IN_PROGRESS snapshot, the grid stays hidden so a denied
+  // joiner never sees the in-flight puzzle. `joinDenied != null` is
+  // handled by the redirect effect above; this branch also covers the
+  // tiny render between `setJoinDenied` and the navigate landing.
+  if (!joinConfirmed || joinDenied != null) {
+    return (
+      <LobbyShell variant="content">
+        <p
+          role="status"
+          className={css({ fontSize: 'body', color: 'fgMuted', textAlign: 'center', margin: 0, paddingBlock: 'md' })}
+        >
+          Connexion à la partie…
+        </p>
+      </LobbyShell>
+    );
+  }
+
   return (
     <>
       {/* Only terminal disconnect reaches here; transient states use the toast above. */}
@@ -510,26 +576,7 @@ function LobbyPage() {
         <ConnectionBanner state="disconnected" />
       ) : null}
       <LobbyShell variant={shellVariant}>
-        {lobby.state === 'WAITING' && joinDenied != null ? (
-          <p
-            role="alert"
-            className={css({ fontSize: 'body', color: 'errorText', textAlign: 'center', margin: 0, paddingBlock: 'md' })}
-          >
-            {joinDenied}
-          </p>
-        ) : null}
-        {lobby.state === 'WAITING' && joinDenied == null && !joinConfirmed ? (
-          // Brief "connecting" status while the WS join is in flight.
-          // Prevents the "see the owner for a fraction of a second" flash
-          // when a wrong-code response is on its way (ADR-0027).
-          <p
-            role="status"
-            className={css({ fontSize: 'body', color: 'fgMuted', textAlign: 'center', margin: 0, paddingBlock: 'md' })}
-          >
-            Connexion à la partie…
-          </p>
-        ) : null}
-        {lobby.state === 'WAITING' && joinDenied == null && joinConfirmed ? (
+        {lobby.state === 'WAITING' ? (
           <>
             <p className={detailStyles}>
               {lobby.players.length} {lobby.players.length === 1 ? 'joueur' : 'joueurs'}

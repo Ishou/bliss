@@ -190,7 +190,7 @@ const renderLobby = (overrides: RenderLobbyOverrides) => {
       lobbyJoinCodeStash: { stash: () => {}, read: () => null, clear: () => {} },
     },
   });
-  return { ...render(<RouterProvider router={router} />), lobbyClient, gameClient, setPseudonym };
+  return { router, ...render(<RouterProvider router={router} />), lobbyClient, gameClient, setPseudonym };
 };
 
 afterEach(() => vi.restoreAllMocks());
@@ -1203,7 +1203,108 @@ describe('Lobby route Start button loading feedback', () => {
     }
   });
 
-  it('does NOT surface a toast for wrong-code errors (already handled inline)', async () => {
+  it('redirects to home and toasts the message on a wrong-code error (no inline banner, no grid leak)', async () => {
+    const gameClient = makeFakeGameClient();
+    // IN_PROGRESS lobby with a populated game — regression: the
+    // previous behaviour rendered the grid even when the WS join was
+    // rejected, exposing the puzzle to a denied joiner.
+    const inProgressLobby: Lobby = {
+      ...baseLobby,
+      state: 'IN_PROGRESS',
+      game: {
+        puzzle: buildGamePuzzle(),
+        entries: [],
+        lockedPositions: [],
+        startedAt: '2026-05-02T15:30:00Z',
+        completedAt: null,
+      },
+    };
+    // Drop sessionId from players so joinConfirmed starts false (new
+    // joiner path, not reconnect).
+    const noMember: Lobby = {
+      ...inProgressLobby,
+      players: inProgressLobby.players.filter((p) => p.sessionId !== sessionId),
+    };
+    const { container, router } = renderLobby({ gameClient, initialLobby: noMember });
+    await screen.findByRole('heading', { name: /WordSparrow/ });
+    act(() => { gameClient.dispatchConnectionState('connected'); });
+
+    act(() => {
+      gameClient.dispatch({
+        type: 'error',
+        errorType: 'https://bliss.example/errors/wrong-code',
+        title: 'Code de partie invalide',
+        detail: 'Demandez le code à l’organisateur.',
+      });
+    });
+
+    await vi.waitFor(() => {
+      expect(router.state.location.pathname).toBe('/');
+    });
+    // The grid never reaches the DOM — the denied joiner is bounced
+    // before any cell renders.
+    expect(container.querySelector('[role="grid"]')).toBeNull();
+    // Toast carries the server-provided detail copy.
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent(/demandez le code/i);
+  });
+
+  it('redirects to home with a friendly toast on a protocol error pre-join (no jargon shown)', async () => {
+    const gameClient = makeFakeGameClient();
+    const noMember: Lobby = {
+      ...baseLobby,
+      players: baseLobby.players.filter((p) => p.sessionId !== sessionId),
+    };
+    const { router } = renderLobby({ gameClient, initialLobby: noMember });
+    await screen.findByRole('heading', { name: /WordSparrow/ });
+    act(() => { gameClient.dispatchConnectionState('connected'); });
+
+    act(() => {
+      gameClient.dispatch({
+        type: 'error',
+        errorType: 'https://bliss.example/errors/protocol',
+        title: 'Non connecté au salon',
+        detail: "Envoyez une trame 'joinLobby' avant toute autre opération.",
+      });
+    });
+
+    await vi.waitFor(() => {
+      expect(router.state.location.pathname).toBe('/');
+    });
+    // The technical "joinLobby trame" jargon must never reach the user.
+    expect(screen.queryByText(/joinLobby/i)).toBeNull();
+    expect(screen.queryByText(/trame/i)).toBeNull();
+    // The toast surfaces a generic French message instead.
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent(/impossible de rejoindre/i);
+  });
+
+  it('hides the lobby grid until joinConfirmed even when the loader returns an IN_PROGRESS snapshot', async () => {
+    const gameClient = makeFakeGameClient();
+    // Loader returns IN_PROGRESS but the calling session is NOT in the
+    // player list — joinConfirmed starts false. The route must show the
+    // connecting placeholder, not the grid.
+    const noMember: Lobby = {
+      ...baseLobby,
+      state: 'IN_PROGRESS',
+      game: {
+        puzzle: buildGamePuzzle(),
+        entries: [],
+        lockedPositions: [],
+        startedAt: '2026-05-02T15:30:00Z',
+        completedAt: null,
+      },
+      players: baseLobby.players.filter((p) => p.sessionId !== sessionId),
+    };
+    const { container } = renderLobby({ gameClient, initialLobby: noMember });
+    await screen.findByRole('heading', { name: /WordSparrow/ });
+
+    // No grid leak — joinConfirmed gates the InGameView render.
+    expect(container.querySelector('[role="grid"]')).toBeNull();
+    expect(screen.getByText(/connexion à la partie/i)).toBeInTheDocument();
+  });
+
+  it('does NOT surface the generic start-failure toast on a wrong-code error (redirected path owns the chrome)', async () => {
     const gameClient = makeFakeGameClient();
     renderLobby({ gameClient });
     await screen.findByRole('heading', { name: /WordSparrow/ });
@@ -1218,8 +1319,9 @@ describe('Lobby route Start button loading feedback', () => {
       });
     });
 
-    // The inline wrong-code path renders the join-denied banner —
-    // the toast must NOT also fire for this case.
+    // wrong-code routes through `setJoinDenied` → redirect + toast
+    // with the server's detail. The generic start-failure toast
+    // must NOT also fire for this case.
     const alerts = screen.queryAllByRole('alert');
     for (const a of alerts) {
       expect(a).not.toHaveTextContent(/impossible de démarrer la partie/i);
