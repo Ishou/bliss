@@ -136,6 +136,13 @@ helm upgrade observability infra/observability/ \
 
 ADR-0033 §5 enumerates the longer-term mitigations (tighter rate limit, same-origin proxy, auth proxy).
 
+### Topology follow-ups
+
+- 2026-05-12: SigNoz now runs on a dedicated `bliss.io/role=observability`-tainted
+  worker (Terraform: `observability_worker_count = 1`, `observability_worker_node_size
+  = "cx32"`). Apply terraform first; pods will pend on the taint until the worker
+  joins. ~10 min provision time.
+
 ### Bump the SigNoz subchart
 
 Edit `Chart.yaml`'s `dependencies[].version`, then:

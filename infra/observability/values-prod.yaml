@@ -6,14 +6,67 @@
 #     -f infra/observability/values-prod.yaml
 
 signoz:
+  # Tolerate + nodeSelect the observability worker so SigNoz doesn't share a
+  # node with the apps. Matches the dedicated=observability:NoSchedule taint
+  # and bliss.io/role=observability label set by the Terraform module.
+  #
+  # The SigNoz chart does NOT have a single `global.tolerations` /
+  # `global.nodeSelector` fan-out — each subcomponent reads its own keys.
+  # In 0.122 the pod set is:
+  #   - signoz.signoz             (unified app StatefulSet: query + frontend
+  #                                + alertmanager, merged in 0.120)
+  #   - signoz.telemetryStoreMigrator (Job)
+  #   - signoz.otelCollector      (Deployment)
+  #   - signoz.clickhouse         (ClickHouseInstallation, via the operator)
+  #   - signoz.clickhouse.clickhouseOperator (Deployment)
+  #   - signoz.clickhouse.zookeeper          (StatefulSet, bitnami subchart)
+  # So we set them all explicitly.
+
+  signoz:
+    tolerations:
+      - {key: dedicated, operator: Equal, value: observability, effect: NoSchedule}
+    nodeSelector:
+      bliss.io/role: observability
+
+  telemetryStoreMigrator:
+    tolerations:
+      - {key: dedicated, operator: Equal, value: observability, effect: NoSchedule}
+    nodeSelector:
+      bliss.io/role: observability
+
+  otelCollector:
+    tolerations:
+      - {key: dedicated, operator: Equal, value: observability, effect: NoSchedule}
+    nodeSelector:
+      bliss.io/role: observability
+
   clickhouse:
+    tolerations:
+      - {key: dedicated, operator: Equal, value: observability, effect: NoSchedule}
+    nodeSelector:
+      bliss.io/role: observability
     persistence:
       # Hetzner Cloud Volume — same StorageClass the platform chart
       # registers (ADR-0009 §3, hcloud-csi). 20 GiB at ADR-0027's
       # default retention (7 d traces, 30 d metrics) leaves ample
       # headroom for the launch traffic profile; revisit on growth.
       storageClass: hcloud-volumes
+    clickhouseOperator:
+      tolerations:
+        - {key: dedicated, operator: Equal, value: observability, effect: NoSchedule}
+      nodeSelector:
+        bliss.io/role: observability
+    zookeeper:
+      tolerations:
+        - {key: dedicated, operator: Equal, value: observability, effect: NoSchedule}
+      nodeSelector:
+        bliss.io/role: observability
 
+  # Preserved from the pre-isolation values: the 0.122 chart has merged
+  # zookeeper under clickhouse.zookeeper (see above) so this top-level
+  # `zookeeper:` may be a no-op for the upstream chart, but is kept to
+  # signal intent in case the layout reverts. Safe — extra keys are
+  # ignored.
   zookeeper:
     persistence:
       storageClass: hcloud-volumes
@@ -96,10 +149,19 @@ k8s-infra:
   # modest (60 s scrape intervals); if metric volume bites, narrow
   # the receivers list in `presets` rather than starving the agent.
   otelAgent:
+    # DaemonSet — tolerate the observability taint so we still get host
+    # metrics from that node. No nodeSelector: must run everywhere.
+    tolerations:
+      - {key: dedicated, operator: Equal, value: observability, effect: NoSchedule}
     resources:
       requests: {cpu: 50m, memory: 128Mi}
       limits: {cpu: 200m, memory: 256Mi}
   otelDeployment:
+    # Singleton — pin to the observability worker.
+    tolerations:
+      - {key: dedicated, operator: Equal, value: observability, effect: NoSchedule}
+    nodeSelector:
+      bliss.io/role: observability
     resources:
       requests: {cpu: 50m, memory: 128Mi}
       limits: {cpu: 200m, memory: 256Mi}
