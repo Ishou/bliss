@@ -142,6 +142,10 @@ ADR-0033 §5 enumerates the longer-term mitigations (tighter rate limit, same-or
   worker (Terraform: `observability_worker_count = 1`, `observability_worker_node_size
   = "cx32"`). Apply terraform first; pods will pend on the taint until the worker
   joins. ~10 min provision time.
+- 2026-05-12: Applied docs-recommended tuning: ZK heap 1024→512 MB (Apache guide,
+  ≤75% of 768Mi container memory), ClickHouse mark_cache 500 MB /
+  max_server_memory_usage_to_ram_ratio 0.7 / verbose log tables disabled
+  (ClickHouse low-RAM tuning, [operations/tips](https://clickhouse.com/docs/en/operations/tips)).
 
 ### Bump the SigNoz subchart
 
