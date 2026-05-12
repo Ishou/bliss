@@ -29,8 +29,14 @@ internal object GenerationKnobs {
     /** Base backtrack budget per restart, multiplied by `luby(attempt + 1)`. */
     const val BASE_BUDGET_BACKTRACKS: Int = 200
 
-    /** Maximum number of restart attempts before declaring failure. */
-    const val MAX_RESTARTS: Int = 60
+    /**
+     * Hard cap on restart attempts per [GridGenerator.generate] call.
+     * Per spec §13: with Luby budgets, total work stays bounded so we
+     * can afford many cheap attempts. The wall-clock deadline is the
+     * usual binding constraint; this is just a safety net against
+     * pathologically fast per-attempt loops.
+     */
+    const val MAX_RESTARTS: Int = 2_000
 
     /**
      * Fraction of grid cells to toggle per perturbation step. ~4% is
