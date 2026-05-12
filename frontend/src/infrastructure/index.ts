@@ -32,3 +32,7 @@ export {
   createWebSocketGameClient,
   type WebSocketGameClientOptions,
 } from './game/WebSocketGameClient';
+export {
+  createReconnectingGameClient,
+  type ReconnectingGameClientOptions,
+} from './game/ReconnectingGameClient';
