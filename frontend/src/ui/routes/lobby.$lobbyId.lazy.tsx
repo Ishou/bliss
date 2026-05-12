@@ -963,7 +963,18 @@ function messageForGameErrorEvent(
   context: { readonly wasStarting: boolean },
 ): string {
   if (event.detail != null && event.detail.length > 0) return event.detail;
+  // When the click that's in flight is a Démarrer, the start-specific
+  // copy beats the server's title — "Impossible de démarrer la
+  // partie" stays grounded in the action the user just took, even if
+  // the server's title is more abstract ("Salon complet" right after
+  // Démarrer would read as unrelated chrome).
   if (context.wasStarting) return 'Impossible de démarrer la partie. Réessayez.';
+  // Otherwise prefer the server's `title`: backend error frames carry
+  // French, context-specific titles ("Salon complet", "Opération
+  // réservée au propriétaire", "Vous n'êtes pas membre de ce salon",
+  // etc.) which are strictly more useful than the generic fallback.
+  // The fallback only kicks in for malformed / blank-title frames.
+  if (event.title.length > 0) return event.title;
   return 'Une erreur est survenue. Réessayez.';
 }
 
@@ -979,6 +990,12 @@ function LobbyErrorComponent({ error }: { error: Error }) {
         return <LobbyStatus role="alert" text="Une erreur est survenue. Réessayez." />;
     }
   }
+  // Unknown error — surface to the browser console so the user (or CI
+  // logs) can see the underlying cause when the generic copy is shown.
+  // The fallback UI stays vague-on-purpose: the user is not equipped
+  // to act on a TypeError or a parser mismatch, but a developer
+  // reading devtools should be able to.
+  console.error('LobbyErrorComponent: unexpected error', error);
   return <LobbyStatus role="alert" text="Une erreur est survenue. Réessayez." />;
 }
 
