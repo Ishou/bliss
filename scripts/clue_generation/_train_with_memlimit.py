@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Wrapper: cap MLX memory at $MLX_MEMORY_LIMIT_GB (default 32 GB), then
+"""Wrapper: cap MLX memory at $MLX_MEMORY_LIMIT_GB (default 24 GB), then
 invoke mlx_lm_lora.train.main(). Forwards all argv after this script.
 
 Used by train_dpo.sh when iter19+ runs need to share the GPU with other
