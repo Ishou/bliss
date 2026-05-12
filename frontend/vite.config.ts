@@ -150,14 +150,15 @@ export default defineConfig({
       ],
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,woff2,webmanifest}'],
-        navigateFallback: '/_spa-shell',
-        // _spa-shell is written by seo:postbuild AFTER vite build, so the
-        // glob above never sees it. Explicitly precache it so offline
+        navigateFallback: '/_spa-shell.htm',
+        // _spa-shell.htm is written by seo:postbuild AFTER vite build, so
+        // the glob above never sees it. Explicitly precache it so offline
         // navigations to non-prerendered routes don't fall back to a
-        // network error. Extension-less path avoids CF Pages's URL
-        // canonicalization loops (see public/_redirects rationale).
+        // network error. The `.htm` extension dodges CF Pages's
+        // `.html`-strip canonicalization while still resolving to
+        // `text/html` via CF's MIME table — see public/_redirects.
         additionalManifestEntries: [
-          { url: '/_spa-shell', revision: null },
+          { url: '/_spa-shell.htm', revision: null },
         ],
         // Bypass `navigateFallback` for files served by Cloudflare Pages
         // directly. Without these, a returning user with the SW installed

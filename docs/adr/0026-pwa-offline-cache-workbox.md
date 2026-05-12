@@ -58,31 +58,41 @@ Configure `VitePWA` in `vite.config.ts` with:
   competing one.
 - Precache glob: `**/*.{js,css,html,svg,png,woff2,webmanifest}` — captures
   the full app shell including fonts and icons.
-- `navigateFallback: '/_spa-shell'` with `/^\/v1\//` in
+- `navigateFallback: '/_spa-shell.htm'` with `/^\/v1\//` in
   `navigateFallbackDenylist` — SPA navigation works offline; API paths are
   never intercepted by the navigation fallback.
 
   > **Amendment (2026-05-12, PR #393):** ADR-0035 transformed `dist/index.html`
   > into the prerendered homepage; it can no longer serve as the SW navigation
   > fallback. A clean Vite shell is now emitted by `scripts/prerender.ts` (as
-  > part of `seo:postbuild`) to `dist/_spa-shell`, carrying no per-route head
-  > tags. An **extension-less** file path is used rather than `/200.html` or
-  > `/_spa-shell/`: Cloudflare Pages canonicalizes URLs by stripping BOTH
-  > trailing `.html` and trailing `/`, so both variants 301-redirect to the
-  > normalized form (`/200`, `/_spa-shell`), hit no matching file, fall back
-  > through `_redirects`, and loop (ERR_TOO_MANY_REDIRECTS on the preview).
-  > A bare path has nothing to strip; CF serves it directly. The default
-  > content-type for extension-less files is `application/octet-stream`, so
-  > `public/_headers` overrides it to `text/html; charset=utf-8`.
-  > `navigateFallback` and `_redirects` both point at `/_spa-shell`.
-  > `additionalManifestEntries: [{ url: '/_spa-shell', revision: null }]`
-  > explicitly precaches the shell because the Workbox glob runs during
-  > `vite build`, before `seo:postbuild` writes the file.
+  > part of `seo:postbuild`) to `dist/_spa-shell.htm`, carrying no per-route
+  > head tags. Three earlier paths failed before this one landed:
+  >
+  >   1. `/200.html` — CF's "Pretty URLs" strips trailing `.html`, the URL
+  >      301'd to `/200`, no file matched, the rewrite re-fired, the browser
+  >      saw ERR_TOO_MANY_REDIRECTS on the preview.
+  >   2. `/_spa-shell/` (a directory containing `index.html`) — CF likewise
+  >      strips trailing `/`, the URL 301'd to `/_spa-shell`, no exact file
+  >      matched, same loop.
+  >   3. `/_spa-shell` (extension-less file) — no loop, but CF's MIME table
+  >      defaulted the response to `application/octet-stream` and the
+  >      browser downloaded the file instead of rendering it. `_headers`
+  >      overrides for `Content-Type` do not reliably take effect on CF
+  >      Pages.
+  >
+  > `.htm` threads the needle: CF's Pretty-URLs rules specifically target
+  > `.html` (and `/index.html`), not `.htm`, so the URL is stable; CF's MIME
+  > table still maps `.htm` → `text/html`, so the response renders. No
+  > `_headers` override is needed. `navigateFallback` and `_redirects` both
+  > point at `/_spa-shell.htm`. `additionalManifestEntries: [{ url:
+  > '/_spa-shell.htm', revision: null }]` explicitly precaches the shell
+  > because the Workbox glob runs during `vite build`, before
+  > `seo:postbuild` writes the file.
 
-- `additionalManifestEntries: [{ url: '/_spa-shell', revision: null }]` —
+- `additionalManifestEntries: [{ url: '/_spa-shell.htm', revision: null }]` —
   explicitly precaches the SPA fallback shell. `revision: null` marks it as
   self-versioned; since the SW is re-emitted on every Vite build (hashed asset
-  URLs shift the manifest), the SW re-installs and re-fetches `/_spa-shell` on
+  URLs shift the manifest), the SW re-installs and re-fetches `/_spa-shell.htm` on
   each deploy, bounding staleness to one deployment cycle.
 - `cleanupOutdatedCaches: true` — stale precaches from previous builds are
   deleted automatically.

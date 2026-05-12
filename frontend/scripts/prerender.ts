@@ -319,17 +319,23 @@ async function main(): Promise<void> {
   // Vite-built shell captured before any route prerendered into
   // `dist/index.html`, so it carries no per-route head tags.
   //
-  // No extension and no directory: CF Pages canonicalizes URLs by
-  // stripping BOTH trailing `.html` and trailing `/`. Earlier attempts
-  // (`/200.html`, `/_spa-shell/`) all 301'd to their normalized form
-  // (`/200`, `/_spa-shell`), hit no file, fell back through
-  // `_redirects`, and looped (ERR_TOO_MANY_REDIRECTS on the preview).
-  // A literal extension-less file at `/_spa-shell` has nothing to
-  // strip — CF serves it directly, with `text/html` content-type set
-  // by `_headers` (CF would otherwise default to
-  // `application/octet-stream`).
-  writeFileSync(join(DIST, '_spa-shell'), originalShell, 'utf8');
-  console.warn('[prerender] wrote SPA fallback shell at dist/_spa-shell');
+  // Three previous attempts looped or downloaded; this is the fourth:
+  //   1. `/200.html` — CF strips `.html` → `/200` → no file →
+  //      re-rewrite → loop (ERR_TOO_MANY_REDIRECTS).
+  //   2. `/_spa-shell/` (directory) — CF strips trailing `/` →
+  //      `/_spa-shell` → no file at that exact path → loop.
+  //   3. `/_spa-shell` (extension-less) — no loop, but CF served it
+  //      with `application/octet-stream` (no extension to MIME-sniff
+  //      from), `_headers` Content-Type override was ignored, the
+  //      browser downloaded the file instead of rendering it.
+  //   4. `/_spa-shell.htm` — CF's "Pretty URLs" canonicalization
+  //      targets `.html` specifically (and `/index.html`); `.htm` is
+  //      an alternate HTML extension recognized by CF's MIME table
+  //      as `text/html` but NOT subject to the strip rule. The URL
+  //      stays as `/_spa-shell.htm`, the file resolves directly, the
+  //      response carries `text/html`, the browser renders.
+  writeFileSync(join(DIST, '_spa-shell.htm'), originalShell, 'utf8');
+  console.warn('[prerender] wrote SPA fallback shell at dist/_spa-shell.htm');
   console.warn(`[prerender] OK — ${INDEXABLE_ROUTES.length} routes`);
 }
 

@@ -5,14 +5,17 @@
 # prerendered homepage — which flashed the homepage chrome on the
 # browser before TanStack Router could route to the requested URL.
 #
-# Target `/_spa-shell` (an extension-less file, written by
-# `scripts/prerender.ts`) rather than `/200.html` or `/_spa-shell/`:
-# CF Pages canonicalizes URLs by stripping BOTH trailing `.html` and
-# trailing `/`. Earlier attempts looped: `/200.html` 301'd to `/200`
-# (no file → re-rewrite → 301 → …), `/_spa-shell/` 301'd to
-# `/_spa-shell` (same shape). An extension-less file has nothing to
-# strip, so CF serves it directly. `public/_headers` overrides the
-# default `application/octet-stream` to `text/html`.
+# Target `/_spa-shell.htm` after three failed earlier attempts:
+#   1. `/200.html` — CF strips `.html` → `/200` → no file → loop.
+#   2. `/_spa-shell/` (directory) — CF strips trailing `/` → loop.
+#   3. `/_spa-shell` (no extension) — no loop, but CF served as
+#      `application/octet-stream`, browser downloaded the file.
+#
+# `.htm` is an alternate HTML extension: CF's MIME table maps it to
+# `text/html` (so the browser renders), but CF's "Pretty URLs"
+# canonicalization specifically targets `.html` (and `/index.html`),
+# not `.htm` — so the URL is stable and the rewrite resolves to the
+# file directly.
 #
 # Status `200` is a rewrite (URL stays put), not a redirect.
-/*  /_spa-shell  200
+/*  /_spa-shell.htm  200
