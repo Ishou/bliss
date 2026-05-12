@@ -53,9 +53,12 @@ signoz:
       # cgroup so kernel page cache + non-server allocations
       # (background merges, queries) have headroom.
       max_server_memory_usage_to_ram_ratio: "0.7"
-      # Fewer background merge threads. Default scales with cores;
-      # at 2 CPU limit we don't benefit from more than 4.
-      background_pool_size: 4
+      # background_pool_size was overridden to 4 in PR #391 — this
+      # broke ClickHouse's MergeTree mutation-pool sanity check
+      # (background_pool_size * background_merges_mutations_concurrency_ratio
+      # must be >= number_of_free_entries_in_pool_to_execute_mutation
+      # default 20). Reverted to the ClickHouse default. The original
+      # low-RAM tuning rationale was speculative.
       # Parallel-load data parts on startup. Default is 8; observability
       # worker has 4 vCPU which can sustain 16 cold-start threads
       # comfortably (the burst is brief — parts are mmap'd, not crunched).
