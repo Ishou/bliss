@@ -12,6 +12,7 @@ import type { PuzzleRepository, PuzzleSolver } from '@/application';
 import type {
   CellEntry,
   GamePuzzle,
+  GameSession,
   GridConfig,
   Letter,
   Lobby,
@@ -600,6 +601,55 @@ describe('Lobby route Wave H integration', () => {
           startedAt: '2026-05-02T15:30:00Z',
           completedAt: null,
         },
+      });
+    });
+
+    const cell01 = container.querySelector<HTMLInputElement>(
+      'input[data-cell-kind="letter"][data-row="0"][data-col="1"]',
+    );
+    const cell02 = container.querySelector<HTMLInputElement>(
+      'input[data-cell-kind="letter"][data-row="0"][data-col="2"]',
+    );
+    expect(cell01).not.toBeNull();
+    expect(cell02).not.toBeNull();
+    expect(cell01!.readOnly).toBe(true);
+    expect(cell02!.readOnly).toBe(true);
+  });
+
+  it('handles wordLocked without throwing when lobbyState omits lockedPositions', async () => {
+    const gameClient = makeFakeGameClient();
+    const { container } = renderLobby({ gameClient });
+    await screen.findByRole('heading', { name: /WordSparrow/ });
+
+    // Simulate a lobbyState snapshot where the backend omits lockedPositions
+    // (kotlinx-serialization encodeDefaults=false emits no field for empty arrays).
+    act(() => {
+      gameClient.dispatch({
+        type: 'lobbyState',
+        players: [{ sessionId, pseudonym, joinedAt: '2026-05-02T15:30:00Z' }],
+        ownerSessionId: sessionId,
+        state: 'IN_PROGRESS',
+        gridConfig: { width: 3, height: 3 },
+        code: 'A2B3C4',
+        game: {
+          puzzle: buildGamePuzzle(),
+          entries: [],
+          startedAt: '2026-05-02T15:30:00Z',
+          completedAt: null,
+          // lockedPositions intentionally absent — mirrors the serializer bug
+        } as unknown as GameSession,
+      });
+    });
+
+    // wordLocked must not throw even though lockedPositions was absent above.
+    act(() => {
+      gameClient.dispatch({
+        type: 'wordLocked',
+        positions: [
+          { row: 0, column: 1 },
+          { row: 0, column: 2 },
+        ],
+        lockedAt: '2026-05-02T15:30:30Z',
       });
     });
 

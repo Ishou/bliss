@@ -848,9 +848,9 @@ function applyEvent(current: LobbyView, event: GameEvent): LobbyView {
       if (!game) return current;
       const seen = new Set<string>();
       const merged: GamePosition[] = [];
-      // `?? []`: backend used to omit `lockedPositions` when empty
-      // (kotlinx-serialization `encodeDefaults=false`, fixed in #401).
-      // Guard kept as defense-in-depth against future schema drift.
+      // `?? []`: backend omits this field when empty due to
+      // kotlinx-serialization `encodeDefaults=false`. Guard kept as
+      // defense-in-depth against future schema drift.
       for (const p of game.lockedPositions ?? []) {
         const key = `${p.row},${p.column}`;
         if (seen.has(key)) continue;
