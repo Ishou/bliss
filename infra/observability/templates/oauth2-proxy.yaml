@@ -67,6 +67,12 @@ spec:
         app.kubernetes.io/name: oauth2-proxy
         app.kubernetes.io/instance: {{ .Release.Name }}
     spec:
+      {{- with .Values.oauth2Proxy.tolerations }}
+      tolerations: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.oauth2Proxy.nodeSelector }}
+      nodeSelector: {{- toYaml . | nindent 8 }}
+      {{- end }}
       containers:
         - name: oauth2-proxy
           image: {{ printf "%s:%s" .Values.oauth2Proxy.image.repository .Values.oauth2Proxy.image.tag | quote }}
