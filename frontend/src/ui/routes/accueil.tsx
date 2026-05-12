@@ -1,4 +1,4 @@
-import { createRoute, useNavigate } from '@tanstack/react-router';
+import { createRoute, useNavigate, useRouter } from '@tanstack/react-router';
 import { useLayoutEffect, useState } from 'react';
 import { css } from 'styled-system/css';
 import type { Puzzle } from '@/domain';
@@ -16,8 +16,19 @@ import { Route as RootRoute } from './__root';
 // session's lobby list (ADR-0039 "Mes parties"). Both fetches run in
 // parallel via Promise.all so the slower of the two bounds wait time
 // rather than the sum.
+//
+// `daily` is a result union, not a bare puzzle: a fetchDaily failure
+// degrades to `{ ok: false }` so the route renders both cards (with the
+// Grille card showing an inline error state + Réessayer) instead of
+// blowing through to the route-level errorComponent and replacing the
+// whole page. Multijoueur stays interactable while the daily is
+// unavailable.
+export type DailyResult =
+  | { readonly ok: true; readonly puzzle: Puzzle }
+  | { readonly ok: false };
+
 export interface AccueilLoaderData {
-  readonly puzzle: Puzzle;
+  readonly daily: DailyResult;
   readonly lobbies: readonly LobbySummary[];
 }
 
@@ -424,17 +435,58 @@ function messageForJoinError(err: unknown): string {
 }
 
 function AccueilPage() {
-  const { puzzle, lobbies } = Route.useLoaderData();
+  const { daily, lobbies } = Route.useLoaderData();
   return (
     <ContentPage>
       <h1 lang="fr" className={srOnly}>
         Mots fléchés français en ligne — <span lang="en">WordSparrow</span>
       </h1>
       <div className={cardsGridStyles}>
-        <GrilleDuJourCard puzzle={puzzle} />
+        {daily.ok ? (
+          <GrilleDuJourCard puzzle={daily.puzzle} />
+        ) : (
+          <GrilleDuJourErrorCard />
+        )}
         <MultijoueurCard lobbies={lobbies} />
       </div>
     </ContentPage>
+  );
+}
+
+// Card-shaped error state for the daily-puzzle failure path. Mirrors
+// `GrilleDuJourCard`'s chrome (same title id, same card class) so the
+// layout is visually neutral whether the fetch succeeded or not. The
+// Réessayer button re-runs the route loader via `router.invalidate` —
+// no `window.location.reload()` here, because that would also drop the
+// (working) Multijoueur card's state and force the user back through
+// any in-flight create/join flow.
+function GrilleDuJourErrorCard() {
+  const router = useRouter();
+  const [retrying, setRetrying] = useState(false);
+  const handleRetry = async () => {
+    setRetrying(true);
+    try {
+      await router.invalidate();
+    } finally {
+      setRetrying(false);
+    }
+  };
+  return (
+    <section className={cardStyles} aria-labelledby="accueil-grille-title">
+      <h2 id="accueil-grille-title" className={cardTitleStyles}>Grille du jour</h2>
+      <p className={errorTextStyles} role="alert">
+        Grille du jour indisponible. Réessayez dans un instant.
+      </p>
+      <div className={cardFooterStyles}>
+        <Button
+          variant="ghost"
+          disabled={retrying}
+          onClick={() => { void handleRetry(); }}
+        >
+          {retrying ? 'Nouvelle tentative…' : 'Réessayer'}
+        </Button>
+      </div>
+    </section>
   );
 }
 
@@ -529,13 +581,16 @@ export const Route = createRoute({
   // load (the puzzle is the primary content; "Mes parties" is a side
   // surface that should never gate the home page).
   loader: async ({ context }): Promise<AccueilLoaderData> => {
-    const puzzleP = context.puzzleRepository.fetchDaily();
+    const dailyP: Promise<DailyResult> = context.puzzleRepository
+      .fetchDaily()
+      .then((puzzle): DailyResult => ({ ok: true, puzzle }))
+      .catch((): DailyResult => ({ ok: false }));
     const lobbiesP: Promise<readonly LobbySummary[]> =
       context.lobbyClient != null && context.getSession != null
         ? context.lobbyClient.listMyLobbies(context.getSession().sessionId).catch(() => [])
         : Promise.resolve([]);
-    const [puzzle, lobbies] = await Promise.all([puzzleP, lobbiesP]);
-    return { puzzle, lobbies };
+    const [daily, lobbies] = await Promise.all([dailyP, lobbiesP]);
+    return { daily, lobbies };
   },
   component: AccueilPage,
   // pendingMs: TanStack Router defaults to Infinity (pendingComponent
@@ -545,10 +600,13 @@ export const Route = createRoute({
   // skeleton's status sentinel before dumping HTML).
   pendingMs: 200,
   pendingComponent: AccueilSkeleton,
-  // Daily-puzzle loader throws on transport / decode failures. Not a
-  // LobbyClientError (that's the multiplayer paths); messageForError
-  // falls through to its generic French fallback rather than leaking
-  // an English exception name + minified stack to the user.
+  // Last-resort fallback for unexpected loader throws (e.g. a
+  // composition-root wiring bug). Both first-party fetches in the
+  // loader catch their own failures (`fetchDaily` degrades to
+  // `{ ok: false }`, `listMyLobbies` degrades to `[]`), so this
+  // boundary does NOT fire on transport/decode failures of the daily
+  // puzzle — that path now renders an inline card error state in
+  // `GrilleDuJourErrorCard` while keeping the Multijoueur card mounted.
   errorComponent: ({ error }) => (
     <AccueilStatus role="alert" text={messageForError(error)} />
   ),
