@@ -249,6 +249,30 @@ describe('ReconnectingGameClient', () => {
     expect(fake.connectCalls.length).toBe(1);
   });
 
+  it('cancels a pending retry and does not reconnect when disconnect() is called during reconnecting state', async () => {
+    const fake = makeFakeInnerClient();
+    const client = createReconnectingGameClient({
+      inner: fake.inner,
+      baseDelayMs: 500,
+      jitterRatio: 0,
+    });
+    const { states } = collectStates(client);
+
+    const p = client.connect(connectArgs);
+    fake.resolveOpen();
+    await p;
+
+    fake.drop();
+    expect(states.at(-1)).toBe('reconnecting');
+
+    client.disconnect();
+    expect(states.at(-1)).toBe('disconnected');
+    expect(fake.disconnectCalls.count).toBe(1);
+
+    await vi.advanceTimersByTimeAsync(60_000);
+    expect(fake.connectCalls.length).toBe(1); // no retry fired
+  });
+
   it('forwards write-side methods straight through to the inner client', async () => {
     const fake = makeFakeInnerClient();
     const sentCellUpdates: Array<{ row: number; col: number; letter: string | null }> = [];
