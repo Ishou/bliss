@@ -17,6 +17,11 @@ signoz:
   # ZooKeeper is nested under clickhouse (signoz.clickhouse.zookeeper),
   # not at the SigNoz top level — first-iteration override at
   # signoz.zookeeper.* was silently ignored.
+  #
+  # Raised 2026-05-12 after the SigNoz stack hit its limits in prod;
+  # ClickHouse + Zookeeper were the bottleneck. Followup: cut SigNoz
+  # retention via the UI (Settings → General → Data retention) from
+  # 7d/30d/3d to 3d/14d/3d.
   clickhouse:
     replicaCount: 1
     persistence:
@@ -26,8 +31,8 @@ signoz:
         cpu: 200m
         memory: 1Gi
       limits:
-        cpu: 1000m
-        memory: 2Gi
+        cpu: 2000m
+        memory: 3Gi
     zookeeper:
       replicaCount: 1
       # Bitnami flipped their public Docker Hub policy in 2024-08
@@ -45,13 +50,17 @@ signoz:
       # before any ZNodes). 512Mi gives the JVM headroom for the
       # heap + non-heap (compressed class space, code cache,
       # metaspace) without paging.
+      # Raised 2026-05-12: request was 199% of original (~512Mi
+      # actual), limit was 99% used (OOM imminent). Bumped to
+      # 384Mi/768Mi to restore headroom. CPU left alone — measured
+      # usage is ~0.06 cores, well below the 200m limit.
       resources:
         requests:
           cpu: 50m
-          memory: 256Mi
+          memory: 384Mi
         limits:
           cpu: 200m
-          memory: 512Mi
+          memory: 768Mi
 
   queryService:
     resources:

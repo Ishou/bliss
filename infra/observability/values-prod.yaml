@@ -68,15 +68,30 @@ k8s-infra:
     hostMetrics:        {enabled: true}
     kubeletMetrics:     {enabled: true}
     clusterMetrics:     {enabled: true}
-    logsCollection:     {enabled: true}
+    # Logs from observability/ (SigNoz self-logs), kube-system/ (k3s noise),
+    # and platform/ (cert-manager, ingress-nginx, hcloud-csi, external-dns,
+    # CNPG controller — all live in this single namespace in our cluster)
+    # dwarf the app log volume and feed back into ClickHouse. Limit to
+    # namespaces we actually own: wordsparrow + matomo.
+    # The k8s-infra subchart's blacklist is a sub-object with a
+    # `namespaces` list (and other sibling fields like `pods`,
+    # `containers`, `signozLogs`); the chart's defaults already set
+    # `enabled: true` so we only override `namespaces`.
+    logsCollection:
+      enabled: true
+      blacklist:
+        namespaces:
+          - observability
+          - kube-system
+          - platform
     k8sEvents:          {enabled: true}
     kubernetesAttributes: {enabled: true}
     resourceDetection:  {enabled: true}
     otlpExporter:       {enabled: true}
-    # Watch the watchman: the collector exports its own queue depth,
-    # batch sizes, refused / failed export counts. ~5 MB/day per
-    # collector. Worth it — silent drops are otherwise invisible.
-    selfTelemetry:      {enabled: true}
+    # selfTelemetry disabled 2026-05-12: ~5 MB/day per collector wasn't
+    # worth the queue-depth/batch metrics for our scale. Re-enable if
+    # silent OTLP export drops become a concern.
+    selfTelemetry:      {enabled: false}
   # Sized for the cx33 worker pool. Per-node agent footprint is
   # modest (60 s scrape intervals); if metric volume bites, narrow
   # the receivers list in `presets` rather than starving the agent.
