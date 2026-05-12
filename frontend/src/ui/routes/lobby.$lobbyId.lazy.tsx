@@ -204,14 +204,8 @@ function LobbyPage() {
   // ADR-0029: rotation spinner; cleared in the subscribe handler below.
   const [isRotating, setIsRotating] = useState(false);
   const preRotationCodeRef = useRef<string | null>(null);
-  // Toast surface for server `error` frames not handled inline. Used to
-  // separate "the action you just took failed" from "your transport is
-  // down" — the latter remains the ConnectionBanner's job. Destructure
-  // `show` (stable useCallback) rather than keeping the wrapper object
-  // — the object is recreated on every render because `active` is in
-  // the provider's useMemo deps, which would make the useEffect below
-  // re-run (and reconnect) on every toast state change.
-  const { show: showToast } = useToast();
+  // Destructure show/dismiss (not the wrapper object) — the object is recreated each render and would re-trigger the connection useEffect.
+  const { show: showToast, dismiss: dismissToast } = useToast();
 
   // Single side effect: connect on mount, disconnect on unmount.
   // `joinLobby` is auto-sent by the adapter inside `connect` (PR #138's
@@ -303,6 +297,22 @@ function LobbyPage() {
       gameClient.disconnect();
     };
   }, [gameClient, lobbyId, getSession, lobbyJoinCodeStash, showToast]);
+
+  // Skip initial `connecting` — first `connected` arms the ref; only then do transient drops earn toast chrome.
+  const hasConnectedRef = useRef(false);
+  useEffect(() => {
+    if (connectionState === 'connected') {
+      if (hasConnectedRef.current) dismissToast();
+      hasConnectedRef.current = true;
+      return;
+    }
+    if (!hasConnectedRef.current) return;
+    if (connectionState === 'reconnecting' || connectionState === 'connecting') {
+      showToast({ text: 'Reconnexion…', tone: 'info', duration: null });
+    } else if (connectionState === 'disconnected') {
+      dismissToast();
+    }
+  }, [connectionState, showToast, dismissToast]);
 
   const { sessionId } = getSession();
   const lobby = view.lobby;
@@ -495,7 +505,10 @@ function LobbyPage() {
 
   return (
     <>
-      <ConnectionBanner state={connectionState} />
+      {/* Only terminal disconnect reaches here; transient states use the toast above. */}
+      {connectionState === 'disconnected' ? (
+        <ConnectionBanner state="disconnected" />
+      ) : null}
       <LobbyShell variant={shellVariant}>
         {lobby.state === 'WAITING' && joinDenied != null ? (
           <p
