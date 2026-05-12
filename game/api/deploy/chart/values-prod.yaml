@@ -14,6 +14,22 @@ image:
   requireDigest: true
   # Set by the CD workflow per push (ADR-0009 §8 step 5). Format "sha256:...".
   digest: ""
+postgres:
+  # ADR-0039 cutover — game lobbies live in a dedicated CNPG cluster
+  # (`wordsparrow-game-api-pg`) so the bounded-context separation extends to
+  # storage. Game's data is the multi-day lobby aggregate; grid's data is
+  # puzzle-hint analytics. Different lifecycles + blast radii justify two
+  # clusters rather than a single shared one.
+  enabled: true
+  cluster:
+    # HA per ADR-0009 §3.
+    instances: 3
+    storage: {size: 20Gi, storageClass: "hcloud-volumes"}
+  backups:
+    enabled: true
+    # ADR-0010 §1 (bucket created one-time per ADR-0010 §4); FSN1 endpoint per §2.
+    bucket: "bliss-cnpg-backups"
+    endpoint: "https://fsn1.your-objectstorage.com"
 ingress:
   host: "game.wordsparrow.io"
   tlsSecretName: "bliss-game-api-tls"

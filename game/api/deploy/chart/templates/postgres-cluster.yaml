@@ -1,0 +1,41 @@
+{{- if .Values.postgres.enabled }}
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: {{ include "bliss-game-api.pgClusterName" . }}
+  labels: {{- include "bliss-game-api.labels" . | nindent 4 }}
+spec:
+  instances: {{ .Values.postgres.cluster.instances }}
+  # Explicit image pin — operator default drift between cnpg minor releases would
+  # otherwise schedule a PG-major upgrade on next reconcile. Mirrors grid/api.
+  imageName: {{ .Values.postgres.cluster.imageName | quote }}
+  bootstrap:
+    initdb:
+      database: {{ .Values.postgres.cluster.bootstrap.database }}
+      owner: {{ .Values.postgres.cluster.bootstrap.owner }}
+      # Owner credentials are NOT chart-supplied. cnpg generates the owner
+      # password at initdb and surfaces it on its auto-managed `<cluster>-app`
+      # Secret, which the api Deployment reads via `valueFrom: secretKeyRef`
+      # for the runtime DATABASE_URL. See grid/api/deploy/chart/templates/
+      # postgres-cluster.yaml for the full rationale of why we DO NOT use a
+      # chart-managed bootstrap Secret here.
+  storage:
+    size: {{ .Values.postgres.cluster.storage.size }}
+    {{- with .Values.postgres.cluster.storage.storageClass }}
+    storageClass: {{ . }}
+    {{- end }}
+  {{- if .Values.postgres.backups.enabled }}
+  backup:
+    barmanObjectStore:
+      destinationPath: {{ printf "s3://%s/%s" .Values.postgres.backups.bucket (include "bliss-game-api.pgClusterName" .) | quote }}
+      endpointURL: {{ .Values.postgres.backups.endpoint | quote }}
+      # Bootstrapped via `kubectl create secret generic cnpg-backup-creds
+      # --from-literal=ACCESS_KEY_ID=... --from-literal=ACCESS_SECRET_KEY=...`
+      # per ADR-0009 §10. Object Lock retention lives with operator-config (ADR-0010 §3).
+      s3Credentials:
+        accessKeyId: {name: cnpg-backup-creds, key: ACCESS_KEY_ID}
+        secretAccessKey: {name: cnpg-backup-creds, key: ACCESS_SECRET_KEY}
+      wal: {compression: gzip}
+    retentionPolicy: {{ .Values.postgres.backups.retentionPolicy | quote }}
+  {{- end }}
+{{- end }}

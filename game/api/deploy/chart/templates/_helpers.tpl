@@ -36,6 +36,11 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- default "default" .Values.serviceAccount.name -}}
 {{- end -}}
 {{- end -}}
+{{/* CNPG cluster name kept distinct so the operator's "<name>-app" Secret is predictable.
+     Mirrors grid/api's wordsparrow-api.pgClusterName helper. */}}
+{{- define "bliss-game-api.pgClusterName" -}}
+{{- printf "%s-pg" (include "bliss-game-api.fullname" .) | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
 {{/* Image ref: digest-pinned when set (manifesto), tag fallback otherwise. */}}
 {{- define "bliss-game-api.image" -}}
 {{- if and (not .Values.image.digest) .Values.image.requireDigest -}}

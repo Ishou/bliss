@@ -41,11 +41,30 @@ spec:
           securityContext: {{- toYaml .Values.containerSecurityContext | nindent 12 }}
           ports:
             - {name: http, containerPort: {{ .Values.service.port }}, protocol: TCP}
-          {{- with .Values.env }}
-          env: {{- toYaml . | nindent 12 }}
-          {{- end }}
+          env:
+            {{- if .Values.postgres.enabled }}
+            # DATABASE_URL is sourced directly from CNPG's auto-generated
+            # `<cluster>-app` Secret (key: `uri`). CNPG creates that Secret on
+            # initdb with the password it generates itself. The chart does
+            # NOT own the bootstrap credentials (see postgres-cluster.yaml's
+            # `bootstrap.initdb` block for the removal rationale, mirrored
+            # from grid/api). No operator step between install and pod-start
+            # is required.
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "bliss-game-api.pgClusterName" . }}-app
+                  key: uri
+            {{- end }}
+            {{- with .Values.env }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
           {{- with .Values.envFromSecret }}
           envFrom:
+            # Operator-supplied envs (Matomo analytics — optional). DATABASE_URL
+            # is sourced from the env block above when postgres.enabled=true;
+            # explicit `env` wins over `envFrom` for the same name even if a
+            # stale operator-managed DATABASE_URL is still present in this Secret.
             - secretRef: {name: {{ . }}}
           {{- end }}
           # Game has no DB cold-start, but parity with grid/api keeps the
