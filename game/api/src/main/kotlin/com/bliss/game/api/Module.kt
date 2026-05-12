@@ -281,12 +281,12 @@ fun Application.module() {
     }
 }
 
-// Named constant so WebSocketFrameMapperTest can assert encodeDefaults is set; ADR-0003 §6.
+// internal for test-package visibility; encodeDefaults invariant — ADR-0003 §6.
 internal val REST_JSON: Json =
     Json {
         prettyPrint = false
         ignoreUnknownKeys = true
-        explicitNulls = true  // null ("not yet") must appear on wire; absence ≠ null (ADR-0003 §6).
+        explicitNulls = true // null ("not yet") must appear on wire; absence ≠ null (ADR-0003 §6).
         encodeDefaults = true
     }
 

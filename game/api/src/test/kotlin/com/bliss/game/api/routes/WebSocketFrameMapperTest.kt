@@ -165,10 +165,7 @@ class WebSocketFrameMapperTest {
 
     @Test
     fun `GameSessionDto JSON keeps defaulted lockedPositions and presence keys present`() {
-        // Regression: kotlinx-serialization omits defaulted fields unless
-        // `encodeDefaults = true`. ADR-0003 §6 requires every `required` OpenAPI
-        // field on the wire; omitting `lockedPositions` crashed the frontend
-        // rejoin flow (`for...of` on `undefined` -> "Une erreur est survenue.").
+        // Regression guard: encodeDefaults = true required or kotlinx-serialization drops defaulted fields (ADR-0003 §6).
         val lobby = inProgressLobby(emptyMap())
         val game = lobby.toLobbyStateFrame().game
         assertThat(game).isNotNull()
