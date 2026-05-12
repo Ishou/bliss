@@ -609,7 +609,7 @@ function LobbyPage() {
             players={lobby.players}
             ownerSessionId={lobby.ownerSessionId}
             initialEntries={initialEntries}
-            lockedPositions={lobby.game.lockedPositions}
+            lockedPositions={lobby.game.lockedPositions ?? []}
             onCellChange={handleCellChange}
             subscribeToRemoteCellUpdates={subscribeToRemoteCellUpdates}
             onLocalFocusChange={handleLocalFocusChange}
@@ -848,7 +848,10 @@ function applyEvent(current: LobbyView, event: GameEvent): LobbyView {
       if (!game) return current;
       const seen = new Set<string>();
       const merged: GamePosition[] = [];
-      for (const p of game.lockedPositions) {
+      // `?? []`: backend omits this field when empty due to
+      // kotlinx-serialization `encodeDefaults=false`. Guard kept as
+      // defense-in-depth against future schema drift.
+      for (const p of game.lockedPositions ?? []) {
         const key = `${p.row},${p.column}`;
         if (seen.has(key)) continue;
         seen.add(key);
