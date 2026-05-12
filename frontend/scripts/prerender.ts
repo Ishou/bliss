@@ -312,6 +312,17 @@ async function main(): Promise<void> {
     for (const e of errors) console.error(`  - ${e.path}: ${e.reason}`);
     process.exit(1);
   }
+  // SPA fallback shell. Cloudflare Pages's `public/_redirects` rule
+  // rewrites every path without a matching prerendered file (e.g.
+  // `/lobby/<id>`, `/join/<code>`) to this document. We write it
+  // AFTER the prerender pass on purpose — `originalShell` is the
+  // Vite-built shell captured before any route prerendered into
+  // `dist/index.html`, so it carries no per-route head tags. A
+  // direct hit on a non-prerendered URL now serves this neutral
+  // shell instead of the homepage HTML, which previously flashed
+  // before the client router took over.
+  writeFileSync(join(DIST, '200.html'), originalShell, 'utf8');
+  console.warn('[prerender] wrote SPA fallback shell at dist/200.html');
   console.warn(`[prerender] OK — ${INDEXABLE_ROUTES.length} routes`);
 }
 
