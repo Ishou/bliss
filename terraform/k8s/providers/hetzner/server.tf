@@ -145,7 +145,7 @@ resource "hcloud_server" "observability_worker" {
     cp_ip         = local.cp_private_ips[0]
     private_ip    = local.observability_private_ips[count.index]
     private_iface = var.private_iface
-    floating_ip   = hcloud_floating_ip.ingress.ip_address
+    floating_ip   = ""
     node_role     = "observability"
     node_taints   = ["dedicated=observability:NoSchedule"]
   })
