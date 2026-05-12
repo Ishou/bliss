@@ -80,11 +80,15 @@ signoz:
 # SigNoz subchart bump.
 imagePrepuller:
   enabled: true
+  # Images explicitly excluded from pre-pull (distroless — no /bin/true,
+  # so initContainer can't run `true` as a no-op exec):
+  #   - altinity/clickhouse-operator (~26 MB)
+  #   - altinity/metrics-exporter (~25 MB)
+  # Pulled on demand; small enough to not warrant the complexity of
+  # per-image entrypoints.
   images:
     - bitnamilegacy/zookeeper:3.7.1
     - docker.io/alpine:3.18.2
-    - docker.io/altinity/clickhouse-operator:0.21.2
-    - docker.io/altinity/metrics-exporter:0.21.2
     - docker.io/clickhouse/clickhouse-server:25.5.6
     - docker.io/otel/opentelemetry-collector-contrib:0.139.0
     - docker.io/signoz/signoz-otel-collector:v0.144.3
