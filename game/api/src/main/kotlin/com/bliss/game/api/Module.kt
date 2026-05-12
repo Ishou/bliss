@@ -111,28 +111,7 @@ fun Application.module() {
     }
 
     install(ContentNegotiation) {
-        json(
-            Json {
-                prettyPrint = false
-                ignoreUnknownKeys = true
-                // explicitNulls = true (the kotlinx-serialization default): a
-                // required field that is null on the domain side MUST appear on
-                // the wire as `null`. Per ADR-0003 §6, absence and `null` are
-                // distinct. Most prominently: `Lobby.game` is `null` while
-                // WAITING and `GameSession.completedAt` is `null` while
-                // IN_PROGRESS — both fields are in the OpenAPI spec's `required`
-                // lists and clients distinguish between "not yet" and "missing".
-                explicitNulls = true
-                // encodeDefaults = true: DTO collection fields default to
-                // `emptyList()` so the constructor can be called positionally;
-                // without this, kotlinx-serialization omits them when empty,
-                // which violates the OpenAPI `required` contract and crashes
-                // the frontend (`for...of` on `undefined`). Reproduced as the
-                // "Une erreur est survenue." toast when rejoining a fresh
-                // IN_PROGRESS game with no words locked yet.
-                encodeDefaults = true
-            },
-        )
+        json(REST_JSON)
     }
 
     // Must install before CallLogging so callIdMdc binding is in scope for the access log.
@@ -301,6 +280,15 @@ fun Application.module() {
         lobbyWebSocketRoute(sessionManager, useCases, lobbyRepository, presenceAggregator)
     }
 }
+
+// Named constant so WebSocketFrameMapperTest can assert encodeDefaults is set; ADR-0003 §6.
+internal val REST_JSON: Json =
+    Json {
+        prettyPrint = false
+        ignoreUnknownKeys = true
+        explicitNulls = true
+        encodeDefaults = true
+    }
 
 private val analyticsLogger = LoggerFactory.getLogger("com.bliss.game.api.analytics")
 

@@ -5,6 +5,7 @@ import assertk.assertions.containsExactly
 import assertk.assertions.isEqualTo
 import assertk.assertions.isNotNull
 import assertk.assertions.isNull
+import com.bliss.game.api.REST_JSON
 import com.bliss.game.api.SessionManager
 import com.bliss.game.api.dto.GameSessionDto
 import com.bliss.game.api.dto.ServerToClientFrame
@@ -173,6 +174,19 @@ class WebSocketFrameMapperTest {
         assertThat(game).isNotNull()
 
         val raw = SessionManager.DEFAULT_JSON.encodeToString(GameSessionDto.serializer(), game!!)
+        val parsed = Json.parseToJsonElement(raw) as JsonObject
+
+        assertThat(parsed.containsKey("lockedPositions")).isEqualTo(true)
+        assertThat(parsed.containsKey("presence")).isEqualTo(true)
+    }
+
+    @Test
+    fun `GameSessionDto REST JSON keeps defaulted lockedPositions and presence keys present`() {
+        val lobby = inProgressLobby(emptyMap())
+        val game = lobby.toLobbyStateFrame().game
+        assertThat(game).isNotNull()
+
+        val raw = REST_JSON.encodeToString(GameSessionDto.serializer(), game!!)
         val parsed = Json.parseToJsonElement(raw) as JsonObject
 
         assertThat(parsed.containsKey("lockedPositions")).isEqualTo(true)
