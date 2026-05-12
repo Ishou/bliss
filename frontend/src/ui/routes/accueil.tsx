@@ -1,5 +1,5 @@
 import { createRoute, useNavigate } from '@tanstack/react-router';
-import { useEffect, useLayoutEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { css } from 'styled-system/css';
 import type { Puzzle } from '@/domain';
 import { LobbyClientError, type LobbySummary } from '@/application/game';
@@ -23,10 +23,7 @@ export interface AccueilLoaderData {
   readonly lobbies: readonly LobbySummary[];
 }
 
-// Internal state machine for the daily card. The `error` variant is
-// reached either when `fetchDaily` rejects or when the user clicks
-// Réessayer while another attempt is in flight (handled inside the
-// card). Mirrors a Result union with an explicit `loading` arm so the
+// Mirrors a Result union with an explicit `loading` arm so the
 // component renders deterministically without a separate boolean.
 type DailyState =
   | { readonly status: 'loading' }
@@ -212,15 +209,6 @@ function formatTodayFr(now: Date): string {
   return formatted.charAt(0).toUpperCase() + formatted.slice(1);
 }
 
-// Container — fetches the daily puzzle on mount and renders one of
-// three card states (loading / error / ready). Decoupling the fetch
-// from the route loader means a slow `/v1/puzzles/daily` does NOT
-// hold the Multijoueur card hostage: Accueil renders both cards
-// immediately, and this card alone shows its own loading chrome.
-//
-// Réessayer simply bumps `tick` to re-run the effect — cheaper than
-// `router.invalidate()` (which would also re-fetch lobbies for no
-// reason), and self-contained inside the card.
 // Container — fetches the daily puzzle on mount and renders the
 // matching body for the current state (loading / error / ready). The
 // outer `<section>` + the `<h2>` stay mounted across state
@@ -269,16 +257,12 @@ function GrilleDuJourReadyBody({ puzzle }: { readonly puzzle: Puzzle }) {
     (n, c) => (c.kind === 'letter' ? n + 1 : n),
     0,
   );
-  // `loadLockedCells` is the same source the in-puzzle ProgressBar
-  // counts: validated words + revealed-hint cells. Mirrors what the
-  // player sees inside `/grille` so the count never disagrees.
   const lockedCount = soloEntriesStore.loadLockedCells(puzzle.id).length;
   const entriesCount = soloEntriesStore.load(puzzle.id).length;
   const hasStarted = lockedCount > 0 || entriesCount > 0;
 
-  // Meta row: date `· n°X · facile`. Number and difficulty are optional —
-  // rendered only when populated.
-  const metaParts: string[] = [formatTodayFr(new Date())];
+  const todayFr = useMemo(() => formatTodayFr(new Date()), []);
+  const metaParts: string[] = [todayFr];
   if (puzzle.gridNumber != null) metaParts.push(`n°${puzzle.gridNumber}`);
   if (puzzle.difficulty != null) metaParts.push(puzzle.difficulty);
   const metaLabel = metaParts.join(' · ');
@@ -515,10 +499,7 @@ function GrilleDuJourErrorBody({ onRetry }: { readonly onRetry: () => void }) {
   );
 }
 
-// Body for the daily-puzzle loading path. The visible "Chargement…"
-// copy with `role="status"` doubles as the announce trigger for
-// screen readers and the prerender sentinel that
-// `scripts/prerender.ts` already waits on before dumping HTML.
+// `scripts/prerender.ts` waits on this role="status" element before snapshotting HTML.
 function GrilleDuJourLoadingBody() {
   return (
     <p className={cardSubtitleStyles} role="status">Chargement…</p>
