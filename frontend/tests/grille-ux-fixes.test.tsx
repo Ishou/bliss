@@ -73,10 +73,7 @@ const renderHomeRoute = (puzzle: Puzzle) => {
   return { ...utils, store };
 };
 
-// Renders an arbitrary React subtree inside a single-route memory
-// router so hooks that depend on the router context (`useRouterState`,
-// `useNavigate`) resolve. Mirrors the `renderPage` helper in
-// `tests/page-shell.test.tsx`.
+// Wraps a subtree in a memory-router so TanStack Router hooks resolve.
 const renderWithRouter = (node: ReactNode, pathname = '/grille') => {
   const rootRoute = createRootRoute();
   const testRoute = createRoute({
@@ -102,8 +99,7 @@ describe('grille skeleton — square cells', () => {
       '[aria-hidden="true"] > div',
     );
     expect(placeholders.length).toBeGreaterThanOrEqual(100);
-    // Panda emits an atomic class for `aspectRatio: '1 / 1'` shaped
-    // like `asp_1_/_1`. Assert at least 100 placeholders carry it.
+    // Panda atomic class for aspectRatio:1/1 is `asp_1_/_1`.
     let withAspectClass = 0;
     placeholders.forEach((c) => {
       if (/\basp_1_\/_1\b/.test(c.className)) withAspectClass++;
