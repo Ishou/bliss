@@ -179,18 +179,42 @@ jobs:
             1. `gh pr view "$PR_NUMBER" --json title,body,files,additions,deletions`
                and `gh pr diff "$PR_NUMBER"` to see the change.
             2. Read prior reviews on this PR with
-               `gh pr view "$PR_NUMBER" --json reviews`. Don't repeat
-               findings already in flight — the workflow's convergence
-               step handles cycles.
+               `gh pr view "$PR_NUMBER" --json reviews`. For each prior
+               bot review, build a checklist of every finding it raised.
+               Then check the current diff against each:
+                 - **Resolved** — note it near the top of your review as
+                   `Resolved: Cycle N · Finding M — <summary>`. Don't
+                   re-flag.
+                 - **Still open** — re-flag with
+                   `## Finding K — [carry-over from cycle N] <summary>`.
+                   The fixer cannot claim ignorance of carry-overs.
+                 - **Re-opened** — the fix introduced a new defect
+                   against the same rule (e.g. `perf:` → `style:`
+                   on PR #368). Flag explicitly: name both occurrences.
+               Don't take the fixer's reply comment at face value —
+               grep the diff for the offending pattern and decide on
+               evidence. PRs #356, #361, #368, #401 each cycled because
+               the fixer's reply over-promised relative to the diff.
             3. Read CLAUDE.md, MANIFESTO.md, and all merged ADRs under
                `docs/adr/` (especially ADR-0001 §6a). Read any
                `<context>/api/openapi.yaml` or `asyncapi.yaml` relevant
                to the files changed.
             4. Compose the review body. First line is `LGTM, no findings.`
-               or `Findings — see comments below.` per the skill.
+               or `Findings — see comments below.` per the skill. List
+               carry-overs first, then new findings.
             5. Write to `/tmp/review.md` and exit. The "Submit review"
                step posts it. You have no `gh pr review` capability; do
                not try to post yourself.
+
+            ## When the issue is the PR description, not the diff
+
+            If a prior reviewer's finding has been addressed in the
+            diff but the PR body still claims the old state (e.g. the
+            body still says "this PR will go over 400 lines, splitting
+            into follow-up" *after* the split already happened), flag
+            it as a PR-body update, not a code finding. PR #358 cycle 4
+            burned on this. Phrasing: "PR body still claims X; the
+            current diff no longer shows X. Update or remove the claim."
 
             ## Cap
 
@@ -309,7 +333,18 @@ jobs:
 
             1. Identify each finding from the review. The reviewer was
                instructed to format findings with rule citations and
-               file/line refs. Treat each as a separate item.
+               file/line refs. Treat each as a separate item, including
+               any marked `[carry-over from cycle N]` — these were open
+               in a prior cycle and the prior fixer did not close them.
+
+               **Also pull every prior bot review's findings** (not just
+               the latest one) and confirm each is either:
+               - explicitly marked `Resolved` in the latest review, OR
+               - addressed by your current changes.
+               If a prior finding is neither marked resolved nor in your
+               fix list, treat it as still open. PRs #330, #356, #361,
+               #368, #401, #406 all cycled because prior findings drifted
+               out of view between cycles.
 
             2. For each finding, do exactly one of:
                - **Apply the fix** with Edit/Write tools.
@@ -322,6 +357,15 @@ jobs:
                Use judgment when the reviewer's literal instruction is
                technically wrong: fix the underlying issue, not the literal
                text. Explain non-trivial decisions in your reply comment.
+
+               **Don't introduce a fresh defect against the same rule.**
+               PR #368 cycle 2 fixed `perf:` commits by amending some of
+               them, then added a `style:` commit — same `type-enum` rule
+               violated, fresh occurrence. If a rule fired in a prior
+               cycle, re-check your new commits against that rule before
+               pushing. The closed set of disallowed commit types is
+               `[perf, style, build, ci, revert]`; allowed is
+               `[feat, fix, chore, refactor, test, docs]`.
 
             3. **Verify** based on what you changed:
                - If you touched `frontend/`:
@@ -350,6 +394,12 @@ jobs:
                `git push origin "$PR_HEAD_REF"`
                Do **not** force-push. Do **not** push to main. The branch
                is already checked out at HEAD.
+
+               **Before pushing, scan your new commits' subjects for
+               disallowed types.** `git log origin/main..HEAD --pretty='%s'`
+               and grep for `^(perf|style|build|ci|revert)\(`. If any
+               match, amend before push — commitlint will block merge
+               otherwise and trigger another review cycle.
 
             7. **Write your reply to `/tmp/reply.md`** using the Write
                tool. Do **not** use a `cat <<'REPLY' > /tmp/reply.md`
