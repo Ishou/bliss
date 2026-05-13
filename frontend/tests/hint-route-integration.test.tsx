@@ -202,6 +202,9 @@ describe('Index route — refresh clears the locked-cell state', () => {
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Actualiser la grille' }));
     });
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('refresh-confirm-accept'));
+    });
 
     await vi.waitFor(() => expect(inputAt(0, 1)!.readOnly).toBe(false));
     expect(inputAt(0, 2)!.readOnly).toBe(false);
@@ -227,6 +230,9 @@ describe('Index route — hint count persists across reloads', () => {
     // Actualiser → clearForPuzzle → hintsUsed back to 0.
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Actualiser la grille' }));
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('refresh-confirm-accept'));
     });
     expect(await screen.findByLabelText('3 sur 3 indices restants')).toBeInTheDocument();
   });

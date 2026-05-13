@@ -11,7 +11,7 @@ import {
   useHintRequest,
   useWordAutoValidation,
 } from '@/ui/components/grid';
-import { Button } from '@/ui/components/primitives';
+import { Button, Dialog, DialogDescription } from '@/ui/components/primitives';
 import {
   ProgressBar,
   PuzzleToolbar,
@@ -133,11 +133,19 @@ function HomePage() {
   // as a memo dep on every storage-derived state slice so a clear
   // propagates back into React.
   const [refreshCount, setRefreshCount] = useState(0);
+  const [refreshConfirmOpen, setRefreshConfirmOpen] = useState(false);
+  const openRefreshConfirm = useCallback(() => {
+    setRefreshConfirmOpen(true);
+  }, []);
+  const closeRefreshConfirm = useCallback(() => {
+    setRefreshConfirmOpen(false);
+  }, []);
   const handleRefresh = useCallback(() => {
     // Must clear before bumping refreshCount — the storage-derived
     // memos below read on the next render.
     soloEntriesStore.clearForPuzzle(puzzle.id);
     setRefreshCount((n) => n + 1);
+    setRefreshConfirmOpen(false);
     void router.invalidate();
   }, [router, soloEntriesStore, puzzle.id]);
 
@@ -330,8 +338,8 @@ function HomePage() {
         Grille de mots fléchés du jour — <span lang="en">WordSparrow</span>
       </h1>
       <PuzzleToolbar
-        metadata={puzzle.title}
-        onRefresh={handleRefresh}
+        metadata={buildPuzzleToolbarMetadata(puzzle)}
+        onRefresh={openRefreshConfirm}
         hintSlot={
           <HintControl
             hintsRemaining={hint.hintsRemaining}
@@ -363,8 +371,50 @@ function HomePage() {
       />
       {isMultiplayerEnabled() ? <CreateLobbyButton /> : null}
       <SoloTour tour={tour} />
+      <Dialog
+        open={refreshConfirmOpen}
+        onClose={closeRefreshConfirm}
+        title="Recommencer la grille ?"
+        backdropTestId="refresh-confirm-backdrop"
+        contentTestId="refresh-confirm"
+      >
+        <DialogDescription>
+          Vos lettres saisies seront effacées. Cette action est irréversible.
+        </DialogDescription>
+        <div className={refreshConfirmActionsStyles}>
+          <Button
+            variant="secondary"
+            onClick={closeRefreshConfirm}
+            data-testid="refresh-confirm-cancel"
+          >
+            Annuler
+          </Button>
+          <Button
+            variant="primary"
+            onClick={handleRefresh}
+            data-testid="refresh-confirm-accept"
+          >
+            Recommencer
+          </Button>
+        </div>
+      </Dialog>
     </PageShell>
   );
+}
+
+const refreshConfirmActionsStyles = css({
+  display: 'flex',
+  gap: 'sm',
+  flexWrap: 'wrap',
+  justifyContent: 'flex-end',
+  marginTop: 'sm',
+});
+
+export function buildPuzzleToolbarMetadata(puzzle: Puzzle) {
+  if (puzzle.gridNumber == null) return puzzle.title;
+  const short = `n°${puzzle.gridNumber}`;
+  const full = `${puzzle.title} · ${short}`;
+  return { short, full };
 }
 
 // Self-contained multiplayer entry-point. Reads `lobbyClient` and
@@ -468,12 +518,12 @@ const skeletonToolbarStyles = css({
 
 const skeletonGridStyles = css({
   width: '100%',
-  flex: '1 1 0',
-  minHeight: 0,
+  maxWidth: 'min(100cqw, 100cqh)',
+  marginInline: 'auto',
   display: 'grid',
   // 10×10 grid of placeholder cells reads as "puzzle is on its way".
+  // Rows size implicitly so each cell's aspectRatio 1/1 stays square.
   gridTemplateColumns: 'repeat(10, 1fr)',
-  gridTemplateRows: 'repeat(10, 1fr)',
   gap: '2px',
   borderRadius: '12px',
   overflow: 'hidden',
@@ -482,6 +532,7 @@ const skeletonGridStyles = css({
 const skeletonCellStyles = css({
   bg: 'bg',
   opacity: 0.6,
+  aspectRatio: '1 / 1',
 });
 
 const skeletonBottomRowStyles = css({
