@@ -12,5 +12,5 @@ appVersion: "0.1.0"
 # this api lives in a separate Helm chart at `game/api/deploy/db-chart/`
 # (chart `bliss-game-api-pg`, release `wordsparrow-game-api-pg`) — different lifecycle from the api
 # Deployment (long-lived infra vs rolling app). See ADR-0039 amendment
-# 2026-05-12 for the split rationale.
+# 2026-05-13 for the split rationale.
 dependencies: []
