@@ -64,9 +64,17 @@ export interface ProgressBarProps {
   readonly total: number;
   readonly label?: string;
   readonly pending?: number;
+  // When false, omits the visible "<label> :" prefix; aria-label still carries the full phrase for AT.
+  readonly showLabel?: boolean;
 }
 
-export function ProgressBar({ value, total, label = 'Progression', pending = 0 }: ProgressBarProps) {
+export function ProgressBar({
+  value,
+  total,
+  label = 'Progression',
+  pending = 0,
+  showLabel = true,
+}: ProgressBarProps) {
   // Defensive clamp: if `total` is 0 the puzzle has no letter cells (an
   // edge case that should never reach here in practice); render an empty
   // bar rather than a NaN width.
@@ -79,7 +87,7 @@ export function ProgressBar({ value, total, label = 'Progression', pending = 0 }
   return (
     <div className={wrapperStyles} data-testid="puzzle-progress">
       <div className={labelRowStyles}>
-        <span className={labelMutedStyles}>{label}{' :'}</span>
+        {showLabel ? <span className={labelMutedStyles}>{label}{' :'}</span> : null}
         <span className={labelCountStyles}>
           {safeValue} / {safeTotal} cases
         </span>

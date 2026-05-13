@@ -50,9 +50,8 @@ const listStyles = css({
 
 const itemCardStyles = css({
   display: 'flex',
-  flexDirection: 'row',
-  alignItems: 'center',
-  gap: 'sm',
+  flexDirection: 'column',
+  gap: 'xs',
   padding: 'sm',
   borderRadius: 'sm',
   border: '1px solid token(colors.border)',
@@ -60,6 +59,13 @@ const itemCardStyles = css({
   color: 'fg',
   transition: 'background-color 120ms ease-out, border-color 120ms ease-out',
   _hover: { bg: 'surfaceElevated', borderColor: 'fgMuted' },
+});
+
+const itemHeaderStyles = css({
+  display: 'flex',
+  flexDirection: 'row',
+  alignItems: 'center',
+  gap: 'sm',
 });
 
 const itemLinkStyles = css({
@@ -202,57 +208,61 @@ function LobbyRow({ lobby }: { readonly lobby: LobbySummary }) {
 
   return (
     <div className={itemCardStyles}>
-      <Link
-        to="/lobby/$lobbyId"
-        params={{ lobbyId: lobby.id }}
-        className={itemLinkStyles}
-      >
-        <span className={itemTitleStyles}>{titleFor(lobby)}</span>
-        <span className={itemMetaStyles}>
-          <span>
-            {lobby.gridConfig.width}×{lobby.gridConfig.height}
+      <div className={itemHeaderStyles}>
+        <Link
+          to="/lobby/$lobbyId"
+          params={{ lobbyId: lobby.id }}
+          className={itemLinkStyles}
+        >
+          <span className={itemTitleStyles}>{titleFor(lobby)}</span>
+          <span className={itemMetaStyles}>
+            <span>
+              {lobby.gridConfig.width}×{lobby.gridConfig.height}
+            </span>
+            <span>·</span>
+            <span data-testid="lobby-players">
+              {lobby.playerCount} / {MAX_PLAYERS} joueurs
+            </span>
           </span>
-          <span>·</span>
-          <span data-testid="lobby-players">
-            {lobby.playerCount} / {MAX_PLAYERS} joueurs
+        </Link>
+        <span className={codeGroupStyles}>
+          <span
+            className={codeTextStyles}
+            data-testid="lobby-code"
+            data-masked={revealed ? 'false' : 'true'}
+          >
+            {revealed ? lobby.code : MASK_GLYPHS}
           </span>
+          <button
+            type="button"
+            className={iconButtonStyles}
+            aria-label={revealed ? 'Masquer le code' : 'Afficher le code'}
+            aria-pressed={revealed}
+            onClick={handleToggle}
+          >
+            {revealed ? <EyeOffIcon /> : <EyeIcon />}
+          </button>
+          <button
+            type="button"
+            className={iconButtonStyles}
+            aria-label="Copier le code"
+            onClick={handleCopy}
+          >
+            <CopyGlyph />
+          </button>
+          {justCopied ? (
+            <span role="status" aria-live="polite" className={copyFeedbackStyles}>
+              Copié
+            </span>
+          ) : null}
         </span>
-        <ProgressBar
-          value={lobby.progress.solvedCells}
-          total={lobby.progress.totalCells}
-        />
-      </Link>
-      <span className={codeGroupStyles}>
-        <span
-          className={codeTextStyles}
-          data-testid="lobby-code"
-          data-masked={revealed ? 'false' : 'true'}
-        >
-          {revealed ? lobby.code : MASK_GLYPHS}
-        </span>
-        <button
-          type="button"
-          className={iconButtonStyles}
-          aria-label={revealed ? 'Masquer le code' : 'Afficher le code'}
-          aria-pressed={revealed}
-          onClick={handleToggle}
-        >
-          {revealed ? <EyeOffIcon /> : <EyeIcon />}
-        </button>
-        <button
-          type="button"
-          className={iconButtonStyles}
-          aria-label="Copier le code"
-          onClick={handleCopy}
-        >
-          <CopyGlyph />
-        </button>
-        {justCopied ? (
-          <span role="status" aria-live="polite" className={copyFeedbackStyles}>
-            Copié
-          </span>
-        ) : null}
-      </span>
+      </div>
+      <ProgressBar
+        value={lobby.progress.solvedCells}
+        total={lobby.progress.totalCells}
+        label={`Progression : ${lobby.progress.solvedCells} / ${lobby.progress.totalCells} cases`}
+        showLabel={false}
+      />
     </div>
   );
 }
