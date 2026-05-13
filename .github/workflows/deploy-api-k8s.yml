@@ -104,7 +104,12 @@ jobs:
            github.event.workflow_run.conclusion == 'success' &&
            github.event.workflow_run.event == 'push') }}
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # 30 m covers the cold-bootstrap path: checkout + helm setup +
+    # artifact + kubeconfig (~4 m) + db-chart install (~1 m) + kubectl
+    # wait for CNPG primary election + replica join on Hetzner volumes
+    # (up to 15 m, see Wait step) + api-chart install (~5 m) + margin.
+    # Steady-state runs use only a fraction of this budget.
+    timeout-minutes: 30
     strategy:
       # fail-fast: false so a green grid deploy isn't masked by a red
       # game deploy (and vice versa). Matches build-and-push-image.yml.
@@ -117,12 +122,29 @@ jobs:
             values-file: grid/api/deploy/chart/values-prod.yaml
             digest-artifact: image-digest-grid
             health-url: https://api.wordsparrow.io/v1/health
+            # grid's CNPG cluster is still owned by its api chart;
+            # the split mirrors game-api but is a follow-up PR. Empty
+            # values skip the db-chart steps for this row.
+            db-release-name: ""
+            db-chart-path: ""
+            db-values-file: ""
           - context: game
             release-name: wordsparrow-game-api
             chart-path: game/api/deploy/chart/
             values-file: game/api/deploy/chart/values-prod.yaml
             digest-artifact: image-digest-game
             health-url: https://game.wordsparrow.io/v1/health
+            # CNPG Cluster lifecycle is split out of the api chart so a
+            # failed api deploy's auto-rollback can never destroy the
+            # cluster mid-bootstrap (regression observed 2026-05-12,
+            # ADR-0039 amendment). The db chart is install-once-update-
+            # rarely; idempotent on every workflow run. The release name
+            # matches the wordsparrow-* convention so the CNPG-managed
+            # Secret/Service (`<release>-app`, `<release>-rw`) line up
+            # with the api chart's `database.clusterName`.
+            db-release-name: wordsparrow-game-api-pg
+            db-chart-path: game/api/deploy/db-chart/
+            db-values-file: game/api/deploy/db-chart/values-prod.yaml
     environment:
       # Per-context environment so each appears separately in the GitHub
       # Environments UI and required-reviewer rules can be applied
@@ -218,7 +240,43 @@ jobs:
           printf '%s' "$KUBECONFIG_DATA" > ~/.kube/config
           chmod 600 ~/.kube/config
 
-      - name: Helm upgrade --install
+      - name: Helm upgrade --install (db chart)
+        # CNPG Cluster lives in its own Helm release so its lifecycle is
+        # decoupled from the api chart. Idempotent: on subsequent runs
+        # with no value change, helm finds no diff and returns instantly.
+        # No --wait: Helm 3 doesn't track CNPG Cluster's `Ready` condition,
+        # so --wait would return as soon as the CRD is accepted (instant)
+        # which proves nothing. The next step does the real wait via
+        # kubectl against `.status.phase`.
+        if: env.RUN_ROW == 'true' && matrix.db-chart-path != ''
+        env:
+          DB_RELEASE: ${{ matrix.db-release-name }}
+          DB_CHART: ${{ matrix.db-chart-path }}
+          DB_VALUES: ${{ matrix.db-values-file }}
+        run: |
+          set -euo pipefail
+          helm upgrade --install "$DB_RELEASE" "$DB_CHART" \
+            -n wordsparrow --create-namespace \
+            -f "$DB_VALUES"
+
+      - name: Wait for CNPG cluster Ready
+        # Block the api install until the cluster is actually serving.
+        # `.status.phase == "Cluster in healthy state"` is the CNPG phase
+        # string emitted once primary election + replica join complete.
+        # First-deploy bootstrap on Hetzner volumes is 5-10 min; steady-
+        # state runs return instantly. 15 m covers the cold-boot worst case.
+        if: env.RUN_ROW == 'true' && matrix.db-chart-path != ''
+        env:
+          DB_RELEASE: ${{ matrix.db-release-name }}
+        run: |
+          set -euo pipefail
+          kubectl wait \
+            --for=jsonpath='{.status.phase}'='Cluster in healthy state' \
+            "cluster.postgresql.cnpg.io/$DB_RELEASE" \
+            -n wordsparrow \
+            --timeout=15m
+
+      - name: Helm upgrade --install (api chart)
         if: env.RUN_ROW == 'true'
         id: helm
         env:
@@ -232,6 +290,12 @@ jobs:
         # we'd otherwise capture them. We keep `--wait --timeout 5m` so
         # the step still surfaces the failure as a non-zero exit, but
         # leave the pending-upgrade release in place.
+        #
+        # The db-chart + kubectl-wait steps above guarantee CNPG is
+        # serving before this step starts, so the wait-for-postgres
+        # initContainer in the api chart completes in <1 s in steady
+        # state. The 5 m budget covers Flyway migrations + JVM warm-up;
+        # no headroom needed for cluster bootstrap.
         run: |
           set -euo pipefail
           helm upgrade --install "$RELEASE" "$CHART" \

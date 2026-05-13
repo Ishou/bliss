@@ -233,6 +233,50 @@ and click. The listing now returns only IN_PROGRESS and COMPLETED.
 WAITING lobbies remain joinable via direct URL / invite code. The GC
 matrix in §c is unchanged; only the read projection narrows.
 
+## Amendment 2026-05-13 — split CNPG cluster into its own Helm chart
+
+The original cutover (§a) packaged the CNPG `Cluster` CRD inside the
+api Helm chart at `game/api/deploy/chart/templates/postgres-cluster.yaml`.
+That coupling produced a destructive loop on the very first prod
+deploy: a fresh 3-instance CNPG cluster on Hetzner volumes bootstraps
+in 5-10 min, longer than the api chart's `helm upgrade --wait
+--timeout 5m`. Every failed api deploy auto-rolled-back to the
+pre-cutover revision, which deleted the Cluster CRD, forcing the
+next deploy to re-bootstrap from scratch. Four consecutive timeouts
+were observed on 2026-05-12.
+
+A first attempt (PR #403) annotated the Cluster with
+`helm.sh/resource-policy: keep` to survive rollback. That annotation
+only applies to `helm uninstall`, not `helm rollback`, so the loop
+continued.
+
+Resolution — split the chart in two:
+
+- `game/api/deploy/db-chart/` — chart name `bliss-game-api-pg`,
+  installed as Helm release `wordsparrow-game-api-pg` (matrix entry
+  `db-release-name` in the CD workflow). Owns the CNPG `Cluster` CRD
+  and its backup configuration. Install-once-update-rarely; the deploy
+  workflow runs `helm upgrade --install` idempotently on every push,
+  but the diff is empty in the steady state. The CNPG-managed Secret
+  (`<release>-app`) and Service (`<release>-rw`) names line up with
+  the api chart's `database.clusterName` value.
+- `game/api/deploy/chart/` (Helm release `wordsparrow-game-api`)
+  owns the api Deployment, Service, Ingress. It references the
+  cluster's `<clusterName>-app` Secret for `DATABASE_URL` and
+  hits `<clusterName>-rw` from a `wait-for-postgres` initContainer.
+  The Cluster CRD is gone from this chart.
+- The CD workflow (`.github/workflows/deploy-api-k8s.yml`) deploys
+  the db chart first, then `kubectl wait --for=jsonpath
+  '{.status.phase}'='Cluster in healthy state' ... --timeout=15m`,
+  then the api chart. First-bootstrap pays the 15 m up front;
+  steady-state deploys stay tight at 5 m.
+
+Bounded-context separation is preserved: the db chart is part of
+the game/ tree. Grid's chart is **not** split in this amendment —
+its CNPG cluster has been live and healthy since the original
+cutover, so the same destructive loop has never bitten it. Splitting
+grid's chart is a follow-up.
+
 ## References
 
 - [ADR-0001 — Parallel-agent development workflow](./0001-parallel-agent-development-workflow.md)

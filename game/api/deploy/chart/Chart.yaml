@@ -8,7 +8,9 @@ version: 0.1.0
 appVersion: "0.1.0"
 # Cluster operators (cert-manager, ingress-nginx, external-dns) are
 # cluster-installed once via the bring-up workstream (ADR-0009 §3), not
-# pulled in as subchart dependencies here. Game/ has no DB in v1
-# (ADR-0018 §3 — lobbies live in-memory in :game:infrastructure), so
-# unlike grid/ this chart carries no CNPG `Cluster` either.
+# pulled in as subchart dependencies here. The CNPG `Cluster` that backs
+# this api lives in a separate Helm chart at `game/api/deploy/db-chart/`
+# (chart `bliss-game-api-pg`, release `wordsparrow-game-api-pg`) — different lifecycle from the api
+# Deployment (long-lived infra vs rolling app). See ADR-0039 amendment
+# 2026-05-13 for the split rationale.
 dependencies: []
