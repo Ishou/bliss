@@ -415,6 +415,17 @@ export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOpt
       if (isPanningRef.current?.() === true) return;
       const p = posOf(event.currentTarget);
       if (!p) return;
+      // Validated cells are read-only: there's nothing the player can do
+      // here. Moving DOM focus onto a readOnly <input> on Android / iOS
+      // dismisses the soft keyboard (the browser has no editable target
+      // to attach it to), so the player loses their typing affordance
+      // every time they tap an already-solved cell. Skip the click
+      // entirely — keep focus + direction on the previously-focused
+      // mutable cell so the keyboard stays up and typing remains
+      // reachable. mousedown.preventDefault on the wrapper already
+      // stopped the browser's default blur, so the prior focus is intact.
+      const inputEl = refs.current.get(key(p));
+      if (inputEl?.readOnly) return;
       // Read repeat-click state from `lastClickedRef` (NOT from `focused`):
       // iOS soft-keyboard hide/reshow can interleave focus changes
       // between two same-cell clicks even with sticky `focused`. The
@@ -803,6 +814,27 @@ export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOpt
         return;
       }
       const data = inputEvent.data;
+      // Space — flip solving direction at the focused cell. Mobile soft
+      // keyboards (Gboard, iOS) fire keydown with key === "Unidentified"
+      // for printable characters, so the desktop `case ' '` branch in
+      // handleKeyDown never sees the space. The real character only
+      // shows up here as `InputEvent.data === ' '` with
+      // inputType === 'insertText'. Mirror the desktop space-bar
+      // behavior so mots-fléchés grids stay navigable on touch.
+      if (data === ' ') {
+        const p = posOf(target);
+        // The soft keyboard's space insertion mutated `target.value`
+        // (typically appending " " to the existing letter). Restore it
+        // to whatever the cell mirror has so the visible glyph matches
+        // the stored letter — never let a stray space land in the DOM.
+        const stored = p ? cellValuesRef.current.get(key(p)) ?? '' : '';
+        if (target.value !== stored) target.value = stored;
+        if (!p) return;
+        const here = lookup.cluesAt(p.row, p.col);
+        if (here.length < 2) return;
+        setDirection((prev) => (prev === 'across' ? 'down' : 'across'));
+        return;
+      }
       if (!data || data.length !== 1 || !LETTER_RE.test(data)) {
         const before = target.value;
         target.value = '';

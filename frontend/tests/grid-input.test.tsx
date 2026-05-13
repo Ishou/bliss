@@ -1083,3 +1083,126 @@ describe('Grid pan/zoom does not touch focus', () => {
     expect(document.activeElement).toBe(target);
   });
 });
+
+// Space-bar toggles solving direction at the focused cell. Desktop runs
+// through the keydown branch (case ' '); mobile soft keyboards (Android
+// Gboard, iOS) fire keydown with key === 'Unidentified' for printable
+// characters, so the real space only shows up in the `input` event with
+// inputType === 'insertText' and data === ' '. Both paths must flip
+// direction without writing the space to the cell.
+describe('Grid keyboard interactions — space-bar direction toggle', () => {
+  it('desktop space keydown at an intersection toggles direction', () => {
+    const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
+    // (1,2) sits on both across-2 (focused after the click via the
+    // starting-clue preference) and down-1. Click selects down-1 first.
+    const target = inputAt(container, 1, 2)!;
+    click(target);
+    expect(wrapAt(container, 2, 2)?.dataset.inWord).toBe('true');
+    fireEvent.keyDown(target, { key: ' ' });
+    // After the toggle, across-2 is the active word — (1,3)/(1,4) light up.
+    expect(wrapAt(container, 1, 3)?.dataset.inWord).toBe('true');
+    expect(wrapAt(container, 1, 4)?.dataset.inWord).toBe('true');
+    expect(wrapAt(container, 2, 2)?.dataset.inWord).toBe('false');
+    expect(wrapAt(container, 3, 2)?.dataset.inWord).toBe('false');
+  });
+
+  it('mobile soft-keyboard space input at an intersection toggles direction', () => {
+    const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
+    const target = inputAt(container, 1, 2)!;
+    click(target);
+    expect(wrapAt(container, 2, 2)?.dataset.inWord).toBe('true');
+    // Soft keyboard inserts a space — the browser stuffed ' ' into
+    // target.value; the input event carries data === ' '.
+    target.value = ' ';
+    act(() => {
+      target.dispatchEvent(new InputEvent('input', { inputType: 'insertText', data: ' ', bubbles: true }));
+    });
+    // Direction toggled to across; (1,3)/(1,4) now in-word.
+    expect(wrapAt(container, 1, 3)?.dataset.inWord).toBe('true');
+    expect(wrapAt(container, 1, 4)?.dataset.inWord).toBe('true');
+    expect(wrapAt(container, 2, 2)?.dataset.inWord).toBe('false');
+    // The space must NOT land in the cell — it's a navigation key, not a letter.
+    expect(target.value).toBe('');
+    // Focus stays on the same cell — direction toggle never moves the caret.
+    expect(document.activeElement).toBe(target);
+  });
+
+  it('mobile soft-keyboard space input on a single-clue cell is a no-op', () => {
+    // (0,1) only has across-1 passing through; toggling direction would
+    // strand the user on a perpendicular axis with no word. The handler
+    // matches the desktop branch and bails before the setDirection call.
+    const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
+    const target = inputAt(container, 0, 1)!;
+    click(target);
+    target.value = ' ';
+    act(() => {
+      target.dispatchEvent(new InputEvent('input', { inputType: 'insertText', data: ' ', bubbles: true }));
+    });
+    // Cell stays empty; direction unchanged (still across).
+    expect(target.value).toBe('');
+    expect(document.activeElement).toBe(target);
+  });
+
+  it('mobile soft-keyboard space on a filled cell does not erase the letter', () => {
+    // Regression: the space-detection branch runs BEFORE the
+    // non-letter blanking branch so a typed letter survives the toggle.
+    const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
+    const target = inputAt(container, 1, 2)!;
+    click(target);
+    // Type a letter, then come back to the same cell.
+    typeChar(target, 'a');
+    click(target);
+    expect(target.value).toBe('A');
+    // Now press space on mobile — typing a space concatenates onto 'A'.
+    target.value = 'A ';
+    act(() => {
+      target.dispatchEvent(new InputEvent('input', { inputType: 'insertText', data: ' ', bubbles: true }));
+    });
+    // The space is rejected; the letter is preserved.
+    expect(target.value).toBe('A');
+  });
+});
+
+// Validated cells render with `readOnly` — the spec locks them as soon
+// as `Vérifier` confirms the letter. Tapping a readOnly <input> on
+// Android / iOS dismisses the soft keyboard (no editable target to
+// attach to), so the click handler must skip the focus move and keep
+// the previously-focused mutable cell active.
+describe('Grid keyboard interactions — validated cells preserve focus', () => {
+  it('tapping a validated cell does not move focus off the previously focused mutable cell', () => {
+    const validated = new Set<string>(['1,3']);
+    const { container } = render(
+      <Grid puzzle={TEST_PUZZLE} validatedPositions={validated} />,
+    );
+    const editable = inputAt(container, 1, 1)!;
+    click(editable);
+    expect(document.activeElement).toBe(editable);
+    // Sanity: the targeted cell really is readOnly.
+    const locked = inputAt(container, 1, 3)!;
+    expect(locked.readOnly).toBe(true);
+    // Tap the wrapper around the validated cell — this is the touch
+    // target on mobile (pointerEvents: 'none' on the input itself).
+    const lockedWrapper = wrapAt(container, 1, 3)!;
+    fireEvent.mouseDown(lockedWrapper);
+    fireEvent.click(lockedWrapper);
+    // Focus must stay on the mutable cell — soft keyboard stays up.
+    expect(document.activeElement).toBe(editable);
+  });
+
+  it('tapping a validated cell does not change the active word', () => {
+    const validated = new Set<string>(['1,2']);
+    const { container } = render(
+      <Grid puzzle={TEST_PUZZLE} validatedPositions={validated} />,
+    );
+    // Focus across-2 via (1,1).
+    click(inputAt(container, 1, 1)!);
+    expect(wrapAt(container, 1, 4)?.dataset.inWord).toBe('true');
+    // Tap the validated cell at (1,2) — would otherwise switch to down-1.
+    const lockedWrapper = wrapAt(container, 1, 2)!;
+    fireEvent.mouseDown(lockedWrapper);
+    fireEvent.click(lockedWrapper);
+    // across-2 still active — (1,4) still in-word, (2,2) not.
+    expect(wrapAt(container, 1, 4)?.dataset.inWord).toBe('true');
+    expect(wrapAt(container, 2, 2)?.dataset.inWord).toBe('false');
+  });
+});
