@@ -47,18 +47,27 @@ const listStyles = css({
   gap: 'xs',
 });
 
-const itemLinkStyles = css({
+const itemCardStyles = css({
   display: 'flex',
-  flexDirection: 'column',
-  gap: 'xs',
+  flexDirection: 'row',
+  alignItems: 'center',
+  gap: 'sm',
   padding: 'sm',
   borderRadius: 'sm',
   border: '1px solid token(colors.border)',
   bg: 'surface',
   color: 'fg',
-  textDecoration: 'none',
   transition: 'background-color 120ms ease-out, border-color 120ms ease-out',
   _hover: { bg: 'surfaceElevated', borderColor: 'fgMuted' },
+});
+
+const itemLinkStyles = css({
+  flex: '1',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 'xs',
+  color: 'fg',
+  textDecoration: 'none',
   _focusVisible: {
     outline: '2px solid token(colors.focusRing)',
     outlineOffset: '2px',
@@ -177,15 +186,10 @@ function LobbyRow({ lobby }: { readonly lobby: LobbySummary }) {
     [],
   );
 
-  // prevent Link navigation
-  const handleToggle = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const handleToggle = () => {
     setRevealed((v) => !v);
   };
-  const handleCopy = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const handleCopy = () => {
     void navigator.clipboard?.writeText(lobby.code);
     if (copyTimerRef.current !== null) clearTimeout(copyTimerRef.current);
     setJustCopied(true);
@@ -196,54 +200,55 @@ function LobbyRow({ lobby }: { readonly lobby: LobbySummary }) {
   };
 
   return (
-    <Link
-      to="/lobby/$lobbyId"
-      params={{ lobbyId: lobby.id }}
-      className={itemLinkStyles}
-    >
-      <span className={itemTitleStyles}>{titleFor(lobby)}</span>
-      <span className={itemMetaStyles}>
-        <span className={codeGroupStyles}>
-          <span
-            className={codeTextStyles}
-            data-testid="lobby-code"
-            data-masked={revealed ? 'false' : 'true'}
-          >
-            {revealed ? lobby.code : MASK_GLYPHS}
+    <div className={itemCardStyles}>
+      <Link
+        to="/lobby/$lobbyId"
+        params={{ lobbyId: lobby.id }}
+        className={itemLinkStyles}
+      >
+        <span className={itemTitleStyles}>{titleFor(lobby)}</span>
+        <span className={itemMetaStyles}>
+          <span>
+            {lobby.gridConfig.width}×{lobby.gridConfig.height}
           </span>
-          <button
-            type="button"
-            className={iconButtonStyles}
-            aria-label={revealed ? 'Masquer le code' : 'Afficher le code'}
-            aria-pressed={revealed}
-            onClick={handleToggle}
-          >
-            {revealed ? <EyeOffIcon /> : <EyeIcon />}
-          </button>
-          <button
-            type="button"
-            className={iconButtonStyles}
-            aria-label="Copier le code"
-            onClick={handleCopy}
-          >
-            <CopyGlyph />
-          </button>
-          {justCopied ? (
-            <span role="status" aria-live="polite" className={copyFeedbackStyles}>
-              Copié
-            </span>
-          ) : null}
+          <span>·</span>
+          <span data-testid="lobby-players">
+            {lobby.playerCount} / {MAX_PLAYERS} joueurs
+          </span>
         </span>
-        <span>·</span>
-        <span>
-          {lobby.gridConfig.width}×{lobby.gridConfig.height}
+      </Link>
+      <span className={codeGroupStyles}>
+        <span
+          className={codeTextStyles}
+          data-testid="lobby-code"
+          data-masked={revealed ? 'false' : 'true'}
+        >
+          {revealed ? lobby.code : MASK_GLYPHS}
         </span>
-        <span>·</span>
-        <span data-testid="lobby-players">
-          {lobby.playerCount} / {MAX_PLAYERS} joueurs
-        </span>
+        <button
+          type="button"
+          className={iconButtonStyles}
+          aria-label={revealed ? 'Masquer le code' : 'Afficher le code'}
+          aria-pressed={revealed}
+          onClick={handleToggle}
+        >
+          {revealed ? <EyeOffIcon /> : <EyeIcon />}
+        </button>
+        <button
+          type="button"
+          className={iconButtonStyles}
+          aria-label="Copier le code"
+          onClick={handleCopy}
+        >
+          <CopyGlyph />
+        </button>
+        {justCopied ? (
+          <span role="status" aria-live="polite" className={copyFeedbackStyles}>
+            Copié
+          </span>
+        ) : null}
       </span>
-    </Link>
+    </div>
   );
 }
 
