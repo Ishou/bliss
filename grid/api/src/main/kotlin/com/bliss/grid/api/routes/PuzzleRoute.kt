@@ -24,6 +24,8 @@ import io.ktor.server.response.respondText
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
@@ -105,7 +107,11 @@ fun Route.puzzles(
         // Daily endpoint uses the shared DAILY_SCOPE_ID bucket regardless of
         // any client-supplied X-Session-Id header (ADR-0031). The endpoint
         // ignores that header by design.
-        val stored = loadOrGenerate.execute(puzzleId, sessionId = ClueCooldownRepository.DAILY_SCOPE_ID)
+        // Dispatchers.IO: PuzzleRepository is blocking JDBC; keep it off the Netty event loop.
+        val stored =
+            withContext(Dispatchers.IO) {
+                loadOrGenerate.execute(puzzleId, sessionId = ClueCooldownRepository.DAILY_SCOPE_ID)
+            }
         if (stored == null) {
             log.warn("daily_puzzle_generation_failed date={} puzzle_id={}", date, puzzleId)
             call.respondProblem(
@@ -200,7 +206,7 @@ fun Route.puzzles(
                 parsed
             }
 
-        val stored = loadOrGenerate.execute(puzzleId, width, height, sessionId)
+        val stored = withContext(Dispatchers.IO) { loadOrGenerate.execute(puzzleId, width, height, sessionId) }
         if (stored == null) {
             log.warn("puzzle_generation_failed puzzle_id={}", puzzleId)
             call.respondProblem(
@@ -261,7 +267,7 @@ fun Route.puzzles(
                 return@post
             }
 
-        when (val outcome = revealCellHint.execute(puzzleId, sessionId, body.row, body.column)) {
+        when (val outcome = withContext(Dispatchers.IO) { revealCellHint.execute(puzzleId, sessionId, body.row, body.column) }) {
             is RevealCellHintOutcome.Granted ->
                 call.respond(
                     RevealCellHintResult(
@@ -322,7 +328,7 @@ fun Route.puzzles(
             }
 
         val inputs = body.filledCells.map { FilledCellInput(it.row, it.column, it.letter) }
-        when (val outcome = validatePuzzle.execute(puzzleId, inputs)) {
+        when (val outcome = withContext(Dispatchers.IO) { validatePuzzle.execute(puzzleId, inputs) }) {
             is ValidatePuzzleOutcome.Result ->
                 call.respond(
                     ValidatePuzzleResult(

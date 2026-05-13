@@ -8,6 +8,8 @@ import io.ktor.server.response.respond
 import io.ktor.server.response.respondText
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.delete
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import java.util.UUID
@@ -58,7 +60,7 @@ fun Route.deleteSession(deleteSession: DeleteSessionUseCase) {
                 )
                 return@delete
             }
-        val deleted = deleteSession.execute(sessionId)
+        val deleted = withContext(Dispatchers.IO) { deleteSession.execute(sessionId) }
         call.respond(HttpStatusCode.OK, DeleteSessionResponse(deleted = deleted))
     }
 }
