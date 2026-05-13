@@ -415,6 +415,9 @@ export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOpt
       if (isPanningRef.current?.() === true) return;
       const p = posOf(event.currentTarget);
       if (!p) return;
+      // readOnly input on mobile dismisses the soft keyboard — skip to keep the prior mutable cell focused.
+      const inputEl = refs.current.get(key(p));
+      if (inputEl?.readOnly) return;
       // Read repeat-click state from `lastClickedRef` (NOT from `focused`):
       // iOS soft-keyboard hide/reshow can interleave focus changes
       // between two same-cell clicks even with sticky `focused`. The
@@ -803,6 +806,18 @@ export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOpt
         return;
       }
       const data = inputEvent.data;
+      // Mobile (Gboard/iOS) delivers space as InputEvent.data, not keydown — flip direction here too.
+      if (data === ' ') {
+        const p = posOf(target);
+        // Restore target.value from the cell mirror — space must not land in the DOM.
+        const stored = p ? cellValuesRef.current.get(key(p)) ?? '' : '';
+        if (target.value !== stored) target.value = stored;
+        if (!p) return;
+        const here = lookup.cluesAt(p.row, p.col);
+        if (here.length < 2) return;
+        setDirection((prev) => (prev === 'across' ? 'down' : 'across'));
+        return;
+      }
       if (!data || data.length !== 1 || !LETTER_RE.test(data)) {
         const before = target.value;
         target.value = '';
