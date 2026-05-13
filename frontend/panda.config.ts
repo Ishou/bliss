@@ -189,15 +189,7 @@ export default defineConfig({
         // sage fill). Useful when a secondary surface is needed without
         // taking on the rose clue colour.
         surfaceElevated:{ value: '{colors.neutral.600}' },
-        // Progress-bar pending-segment fill (the gray "unfilled but
-        // entered" region that sits on top of `surfaceElevated`). Was
-        // `border` (`neutral.500` #30323D), which only contrasted 1.24:1
-        // against the surrounding card surface (`neutral.700` #21222A) —
-        // failing WCAG 2.1 SC 1.4.11 "Non-text Contrast" (3:1). Bumped
-        // to `neutral.300` (#80818B): 4.09:1 vs card surface and 4.58:1
-        // vs page bg, comfortably AA. Component-specific token rather
-        // than reusing `border` so future track tweaks don't drag every
-        // UI border with them.
+        // Component-specific token; keeps track tweaks isolated from `border` uses
         progressTrackPending: { value: '{colors.neutral.300}' },
 
         // ── Foreground ──────────────────────────────────────────────
