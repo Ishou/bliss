@@ -39,12 +39,7 @@ class LoadOrGeneratePuzzleUseCase(
         height: Int? = null,
         sessionId: UUID? = null,
     ): StoredPuzzle? {
-        // Cache-hit fast path: a stored puzzle for this id (notably the daily
-        // bucket's deterministic UUID v7) returns from a single indexed SELECT
-        // without allocating the generation lambda, touching the cooldown
-        // repository, or routing through the analytics sink. The miss path
-        // still uses `getOrCompute` so concurrent first-callers race
-        // atomically on the INSERT (ADR-0013).
+        // Fast path: skip lambda allocation on hit; miss path races atomically on INSERT (ADR-0013).
         puzzleRepository.get(puzzleId)?.let { return it }
         return puzzleRepository.getOrCompute(puzzleId) {
             val cooldown = cooldownRepository

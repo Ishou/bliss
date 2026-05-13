@@ -22,14 +22,6 @@ import java.time.Instant
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 
-/**
- * Regression guard for the /daily cache-hit path. The endpoint must return
- * the persisted puzzle from a single indexed SELECT — without invoking the
- * generator, the cooldown repository, or the analytics sink. The generator
- * is wired to an `ExplodingWordRepository` whose every read throws; if
- * generation runs the test fails loudly. The cooldown + analytics trackers
- * cover the eager-setup case (no calls to either on cache-hit).
- */
 class LoadOrGeneratePuzzleUseCaseCacheHitTest {
     private val puzzleId: UUID = UUID.randomUUID()
     private val daily: UUID = ClueCooldownRepository.DAILY_SCOPE_ID
