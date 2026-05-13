@@ -157,8 +157,7 @@ class JoinLobbyUseCase(
                     // Reconnect path: bump lastActivityAt so an idle re-open keeps the lobby alive.
                     // Code is intentionally NOT checked here — see ADR-0027.
                     lobby.hasJoined(sessionId) -> lobby.touched(clock.now())
-                    // Owner re-entry (ADR-0039): owner left and returns via "Mes parties"
-                    // with no code. Re-add as player; auth is by ownerSessionId match.
+                    // Owner re-entry bypass (ADR-0039): auth by ownerSessionId match, same posture as reconnect.
                     lobby.isOwner(sessionId) -> {
                         if (lobby.isFull()) {
                             lobby
