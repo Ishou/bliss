@@ -49,6 +49,14 @@ spec:
       # Reuses the pinned CNPG postgres image (already cached on every
       # node — it runs the CNPG cluster). `pg_isready` over the `-rw`
       # service is the canonical readiness check.
+      #
+      # `-U` / `-d` are NOT optional: the container runs as UID 1000
+      # (`podSecurityContext.runAsNonRoot`) and the cnpg-postgres image
+      # has no `/etc/passwd` entry for that UID. Without explicit user
+      # + db, libpq calls `getpwuid(1000)`, gets NULL, and pg_isready
+      # exits with "could not look up effective user" before any TCP
+      # attempt — observed 2026-05-13 as a 5 m `until`-loop spinning
+      # against a healthy cluster, Helm timing out at the api install.
       initContainers:
         - name: wait-for-postgres
           image: {{ .Values.database.waitImage | quote }}
@@ -58,7 +66,7 @@ spec:
             - /bin/sh
             - -c
             - |
-              until pg_isready -h {{ .Values.database.clusterName }}-rw -p 5432; do
+              until pg_isready -h {{ .Values.database.clusterName }}-rw -p 5432 -U game -d game; do
                 echo "wait-for-postgres: not ready yet"
                 sleep 2
               done
