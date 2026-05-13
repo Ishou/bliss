@@ -26,8 +26,7 @@ application {
 
 dependencies {
     constraints {
-        // Mirror grid/api's CVE pins so the worker shadowJar carries the same
-        // hardened transitive set when run as a CronJob.
+        // CVE pins mirror grid/api.
         implementation("com.fasterxml.jackson.core:jackson-core:2.21.3")
         implementation("tools.jackson.core:jackson-core:3.1.1")
     }
@@ -47,14 +46,7 @@ dependencies {
     testImplementation("com.lemonappdev:konsist:$konsistVersion")
 }
 
-// CsvWordRepository.frenchFromClasspath() reads /words/words-fr.csv plus the
-// themed overlays from the runtime classpath. The canonical copy lives in
-// :grid:api/src/main/resources/words/ (the API has historically been the
-// service that loads them). The worker shadowJar needs the same files at
-// runtime; rather than duplicate the corpus on disk, declare a copy task
-// that stages just the words/ subtree into this module's resource output so
-// any update in :grid:api propagates here without resource-overlap with
-// the worker's own logback.xml.
+// Single-source words corpus from :grid:api — see ADR-0042 §7.
 val copyWordsCorpus =
     tasks.register<Copy>("copyWordsCorpus") {
         from(rootProject.layout.projectDirectory.dir("grid/api/src/main/resources/words"))

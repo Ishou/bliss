@@ -66,8 +66,7 @@ private fun runEnsureDailies(): Int {
 
 private fun productionGridGenerationPort(): GridGenerationPort {
     val wordRepository = CsvWordRepository.frenchFromClasspath()
-    // maxAttempts=1 on the inner generator: EnsureUpcomingDailiesUseCase owns
-    // the per-day attempt budget so each port call reflects exactly one seed.
+    // maxAttempts=1: outer use case owns the per-day attempt budget.
     val generatePuzzle =
         GeneratePuzzleUseCase(
             wordRepository = wordRepository,
