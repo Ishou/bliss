@@ -715,6 +715,28 @@ export interface operations {
                 };
             };
             /**
+             * @description No daily puzzle exists for the requested date. The worker job that
+             *     pre-generates daily grids has not yet produced (or failed to produce)
+             *     a puzzle for this date. Clients should retry shortly or surface a
+             *     user-facing "daily not yet available" message.
+             */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "type": "https://bliss.example/errors/no-daily-puzzle",
+                     *       "title": "Aucune grille du jour disponible",
+                     *       "status": 404,
+                     *       "detail": "La grille du jour n'a pas encore été générée pour cette date."
+                     *     }
+                     */
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /**
              * @description Generation failed for the requested date. Same shape as the
              *     `getPuzzle` 422.
              */
