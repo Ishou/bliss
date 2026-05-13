@@ -123,5 +123,26 @@ tasks.test {
 tasks.shadowJar {
     archiveBaseName.set("game-api")
     archiveClassifier.set("all")
+    // Shadow 9.x defaults `duplicatesStrategy` to EXCLUDE on the shadow jar
+    // task. EXCLUDE drops same-path duplicates BEFORE they reach the
+    // transformer chain, so `mergeServiceFiles()` only ever sees one of
+    // each `META-INF/services/<name>` file across the input jars and the
+    // others are silently lost. Documented in shadow's source and on
+    // https://gradleup.com/shadow/configuration/merging/#handling-duplicates-strategy
+    //
+    // Concrete prod blast radius for game-api: flyway-core ships 28
+    // entries in `META-INF/services/org.flywaydb.core.extensibility.Plugin`
+    // (including `CoreResourceTypeProvider`, the SPI registration that
+    // tells Flyway `.sql` is a migration extension and that registers
+    // the `classpath:` location prefix), flyway-database-postgresql
+    // ships its own 3-entry copy at the same path, and EXCLUDE kept only
+    // postgresql's. `Flyway.<init>` then autoloaded the built-in
+    // `classpath:db/callback` callback path, the LocationParser found no
+    // registered prefix providers, and the JVM crashed at boot with
+    // `FlywayException: Unknown prefix for location (should be one of ):
+    // classpath:db/callback` — observed 2026-05-13 as a 5-restart
+    // crashloop blocking every game-api deploy after the postgres cutover.
+    // Mirrors grid/api/build.gradle.kts's identical fix.
+    duplicatesStrategy = org.gradle.api.file.DuplicatesStrategy.INCLUDE
     mergeServiceFiles()
 }
