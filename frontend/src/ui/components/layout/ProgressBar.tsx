@@ -53,12 +53,17 @@ const fillStyles = css({
 });
 
 // Rendered before fillStyles so sage paints on top, hiding sub-pixel seams.
+// Background is `progressTrackPending` (neutral.300 #80818B): 4.09:1 vs the
+// surrounding card surface (neutral.700 #21222A) and 4.58:1 vs page bg
+// (neutral.800 #17181D), clearing WCAG 2.1 SC 1.4.11 (3:1 non-text). The
+// previous `border` token (neutral.500 #30323D) sat at 1.24:1 — visibly
+// indistinguishable from the track below it.
 const pendingFillStyles = css({
   position: 'absolute',
   top: 0,
   bottom: 0,
   height: '100%',
-  bg: 'border',
+  bg: 'progressTrackPending',
   transition: 'width 220ms ease-out, left 220ms ease-out',
 });
 
