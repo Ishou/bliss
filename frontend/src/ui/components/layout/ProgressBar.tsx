@@ -52,19 +52,33 @@ const fillStyles = css({
   transition: 'width 220ms ease-out',
 });
 
+// Rendered before fillStyles so sage paints on top, hiding sub-pixel seams.
+const pendingFillStyles = css({
+  position: 'absolute',
+  top: 0,
+  bottom: 0,
+  height: '100%',
+  bg: 'border',
+  transition: 'width 220ms ease-out, left 220ms ease-out',
+});
+
 export interface ProgressBarProps {
   readonly value: number;
   readonly total: number;
   readonly label?: string;
+  readonly pending?: number;
 }
 
-export function ProgressBar({ value, total, label = 'Progression' }: ProgressBarProps) {
+export function ProgressBar({ value, total, label = 'Progression', pending = 0 }: ProgressBarProps) {
   // Defensive clamp: if `total` is 0 the puzzle has no letter cells (an
   // edge case that should never reach here in practice); render an empty
   // bar rather than a NaN width.
   const safeTotal = Math.max(total, 0);
   const safeValue = Math.max(0, Math.min(value, safeTotal));
+  // Clamp to remaining track so gray never overflows past 100%.
+  const safePending = Math.max(0, Math.min(pending, safeTotal - safeValue));
   const pct = safeTotal === 0 ? 0 : (safeValue / safeTotal) * 100;
+  const pendingPct = safeTotal === 0 ? 0 : (safePending / safeTotal) * 100;
   return (
     <div className={wrapperStyles} data-testid="puzzle-progress">
       <div className={labelRowStyles}>
@@ -81,6 +95,12 @@ export function ProgressBar({ value, total, label = 'Progression' }: ProgressBar
         aria-valuemin={0}
         aria-valuemax={safeTotal}
       >
+        {/* Pending FIRST so the sage paints on top — kills sub-pixel seams. */}
+        <div
+          className={pendingFillStyles}
+          data-testid="puzzle-progress-pending"
+          style={{ left: `${pct}%`, width: `${pendingPct}%` }}
+        />
         <div className={fillStyles} style={{ width: `${pct}%` }} />
       </div>
     </div>

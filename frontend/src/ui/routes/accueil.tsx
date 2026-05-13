@@ -257,9 +257,17 @@ function GrilleDuJourReadyBody({ puzzle }: { readonly puzzle: Puzzle }) {
     (n, c) => (c.kind === 'letter' ? n + 1 : n),
     0,
   );
-  const lockedCount = soloEntriesStore.loadLockedCells(puzzle.id).length;
-  const entriesCount = soloEntriesStore.load(puzzle.id).length;
-  const hasStarted = lockedCount > 0 || entriesCount > 0;
+  // Derive pending (filled ∖ locked) in one pass.
+  const lockedKeys = new Set(
+    soloEntriesStore.loadLockedCells(puzzle.id).map((c) => `${c.row},${c.column}`),
+  );
+  const entries = soloEntriesStore.load(puzzle.id);
+  const lockedCount = lockedKeys.size;
+  const pending = entries.reduce(
+    (n, e) => (lockedKeys.has(`${e.row},${e.column}`) ? n : n + 1),
+    0,
+  );
+  const hasStarted = lockedCount > 0 || entries.length > 0;
 
   const todayFr = useMemo(() => formatTodayFr(new Date()), []);
   const metaParts: string[] = [todayFr];
@@ -273,6 +281,7 @@ function GrilleDuJourReadyBody({ puzzle }: { readonly puzzle: Puzzle }) {
       <ProgressBar
         value={lockedCount}
         total={totalLetterCells}
+        pending={pending}
         label={hasStarted ? 'Reprise' : 'Nouvelle grille'}
       />
       <div className={cardFooterStyles}>
