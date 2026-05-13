@@ -252,11 +252,14 @@ continued.
 
 Resolution — split the chart in two:
 
-- `game/api/deploy/db-chart/` (Helm release `bliss-game-api-pg`)
-  owns the CNPG `Cluster` CRD and its backup configuration.
-  Install-once-update-rarely; the deploy workflow runs
-  `helm upgrade --install` idempotently on every push, but the
-  diff is empty in the steady state.
+- `game/api/deploy/db-chart/` — chart name `bliss-game-api-pg`,
+  installed as Helm release `wordsparrow-game-api-pg` (matrix entry
+  `db-release-name` in the CD workflow). Owns the CNPG `Cluster` CRD
+  and its backup configuration. Install-once-update-rarely; the deploy
+  workflow runs `helm upgrade --install` idempotently on every push,
+  but the diff is empty in the steady state. The CNPG-managed Secret
+  (`<release>-app`) and Service (`<release>-rw`) names line up with
+  the api chart's `database.clusterName` value.
 - `game/api/deploy/chart/` (Helm release `wordsparrow-game-api`)
   owns the api Deployment, Service, Ingress. It references the
   cluster's `<clusterName>-app` Secret for `DATABASE_URL` and
