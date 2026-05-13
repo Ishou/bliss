@@ -144,6 +144,6 @@ fun GeneratePuzzleUseCase.asGridGenerationPort(): GridGenerationPort =
     GridGenerationPort { randomSeed, cooldownPolicy ->
         executeWithOutcome(
             cooldownPolicy = cooldownPolicy,
-            randomFactory = { Random(randomSeed) },
+            randomFactory = { attempt -> Random(randomSeed + attempt) },
         ).grid
     }
