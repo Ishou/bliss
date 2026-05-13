@@ -79,11 +79,31 @@ private fun Lobby.toSummary(): LobbySummary =
         title = title,
     )
 
+/**
+ * Project [GameSession] to its on-the-wire progress shape.
+ *
+ * `solvedCells` = `lockedPositions.size`, the cumulative server-validated set
+ * (a cell becomes locked when its containing word is validated correct by
+ * grid via [com.bliss.game.application.ports.WordValidator]). We deliberately
+ * do NOT use `GameSession.solvedPositions()` here: that helper compares the
+ * placed entry letter to `LetterCell.answer`, but per the v1 wire spec
+ * (grid/api/openapi.yaml `LetterCell`) grid strips letter answers from
+ * `GET /v1/puzzles/{id}` so the browser cannot see the solution. game-api
+ * therefore receives `LetterCell.answer == null` on every cell of every
+ * puzzle — `solvedPositions()` would return `emptySet()` in production and
+ * the bar would be stuck at 0 / 0.
+ *
+ * `totalCells` = the count of [LetterCell] instances on the puzzle, again
+ * regardless of `answer` — every letter cell on the wire is an answerable
+ * cell from the player's POV (a cell they will eventually fill); only
+ * [com.bliss.game.domain.BlockCell] and [com.bliss.game.domain.DefinitionCell]
+ * are non-fillable.
+ */
 private fun GameSession.toProgress(): LobbyProgress {
     val totalCells =
         puzzle.cells
             .asSequence()
             .filterIsInstance<LetterCell>()
-            .count { it.answer != null }
-    return LobbyProgress(solvedCells = solvedPositions().size, totalCells = totalCells)
+            .count()
+    return LobbyProgress(solvedCells = lockedPositions.size, totalCells = totalCells)
 }
