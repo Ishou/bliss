@@ -36,7 +36,7 @@ database:
   # cluster mid-bootstrap (regression observed 2026-05-12; see
   # ADR-0039 amendment).
   enabled: false
-  # CNPG cluster name. Matches the `bliss-game-api-pg` Helm release's
+  # CNPG cluster name. Matches the `wordsparrow-game-api-pg` Helm release's
   # name, since the db chart sets `.metadata.name = .Release.Name`.
   # CNPG auto-creates `<name>-app` (Secret) and `<name>-rw` (Service).
   clusterName: "wordsparrow-game-api-pg"
