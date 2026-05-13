@@ -35,9 +35,6 @@ describe('ProgressBar', () => {
     const pending = getPendingDiv(container);
     expect(sage!.style.width).toBe('30%');
     expect(pending!.style.width).toBe('20%');
-    // Pending must start exactly where the sage ends so the two segments
-    // butt up against each other (the sage paints on top to hide any
-    // sub-pixel seam).
     expect(pending!.style.left).toBe('30%');
   });
 

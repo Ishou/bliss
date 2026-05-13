@@ -730,8 +730,7 @@ function InGameView({
     return unsubscribe;
   }, [subscribeToRemoteCellUpdates]);
 
-  // Wrap the parent's `onCellChange` so local writes mirror into
-  // `filledPositions` alongside the WS broadcast.
+  // Wraps onCellChange so local writes mirror into filledPositions.
   const handleLocalCellChange = useCallback(
     (row: number, col: number, letter: string | null) => {
       onCellChange(row, col, letter);
