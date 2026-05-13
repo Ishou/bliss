@@ -693,6 +693,65 @@ describe('Lobby route Wave H integration', () => {
     expect(screen.getByTestId('end-game-modal-duration')).toHaveTextContent('01:05');
   });
 
+  it('opens EndGameModal when the REST loader returns a COMPLETED lobby', async () => {
+    // Hard refresh on a completed game: the REST snapshot already
+    // carries state=COMPLETED + completedAt; the WS replay (if any)
+    // arrives after first paint, so the modal must derive its time
+    // from the loader payload synchronously on mount.
+    const completedLobby: Lobby = {
+      ...baseLobby,
+      state: 'COMPLETED',
+      game: {
+        puzzle: buildGamePuzzle(),
+        entries: [],
+        lockedPositions: [],
+        startedAt: '2026-05-02T15:30:00Z',
+        completedAt: '2026-05-02T15:32:30Z',
+      },
+    };
+    renderLobby({ initialLobby: completedLobby });
+
+    const modal = await screen.findByTestId('end-game-modal');
+    expect(modal).toBeInTheDocument();
+    // 150_000 ms between startedAt and completedAt → 02:30.
+    expect(screen.getByTestId('end-game-modal-duration')).toHaveTextContent('02:30');
+  });
+
+  it('opens EndGameModal on a COMPLETED lobbyState snapshot (post-reload reconnect)', async () => {
+    // Reload-after-completion: the user opens the lobby AFTER the game
+    // solved and the live `gameSolved` event was broadcast. The REST
+    // loader / WS `lobbyState` snapshot carries `state: COMPLETED` and
+    // `game.startedAt` + `game.completedAt`, but the user never
+    // receives a `gameSolved` event so `durationMs` must be derived
+    // from the snapshot.
+    const gameClient = makeFakeGameClient();
+    renderLobby({ gameClient });
+    await screen.findByRole('heading', { name: /WordSparrow/ });
+
+    act(() => {
+      gameClient.dispatch({
+        type: 'lobbyState',
+        players: [{ sessionId, pseudonym, joinedAt: '2026-05-02T15:30:00Z' }],
+        ownerSessionId: sessionId,
+        state: 'COMPLETED',
+        gridConfig: { width: 3, height: 3 },
+        code: 'A2B3C4',
+        game: {
+          puzzle: buildGamePuzzle(),
+          entries: [],
+          lockedPositions: [],
+          startedAt: '2026-05-02T15:30:00Z',
+          completedAt: '2026-05-02T15:31:05Z',
+        },
+      });
+    });
+
+    const modal = await screen.findByTestId('end-game-modal');
+    expect(modal).toBeInTheDocument();
+    // 65_000 ms between startedAt and completedAt → 01:05.
+    expect(screen.getByTestId('end-game-modal-duration')).toHaveTextContent('01:05');
+  });
+
   it('dismisses the EndGameModal on Fermer without leaving the page', async () => {
     const gameClient = makeFakeGameClient();
     renderLobby({ gameClient });
