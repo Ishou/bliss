@@ -30,8 +30,7 @@ class GeneratePuzzleUseCaseFallbackTest {
 
         val outcome = useCase.executeWithOutcome()
 
-        // The fallback path was taken (strict invoked maxAttempts times, then
-        // relaxed invoked at least once and returned the relaxed grid).
+        // Relaxed grid returned after strict exhausted its budget.
         assertThat(outcome.grid).isNotNull()
         assertThat(outcome.grid!!).isSameInstanceAs(relaxedGrid)
         // Strict path fully exhausted before fallback fired.
