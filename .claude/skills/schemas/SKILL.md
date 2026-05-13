@@ -121,6 +121,18 @@ AsyncAPI doesn't have a comparable codegen step in this repo yet. When Wave E ad
 - Endpoint prefixes are `/v1/...`. v2 paths land alongside v1; v1 is not deleted.
 - Servers section: production at `wss://game.wordsparrow.io` for AsyncAPI, `https://api.wordsparrow.io/grid` for grid OpenAPI.
 
+## Schema-first binds against `main`, not the wave plan
+
+ADR-0001 §3 says schema PRs are a hard barrier and must merge **before** any implementation PR that depends on them. The rule binds against the merge tree on `main`, not against the dispatch wave plan. PRs #370 and #371 both shipped implementation that referenced fields/ADRs only present on a sibling, still-open PR — and burned review cycles re-flagging it.
+
+Before opening a domain/application/frontend PR that consumes a schema:
+
+1. `git fetch origin main` and verify the field/endpoint/ADR exists on `main` HEAD, not just on the wave's schema PR.
+2. If the schema PR hasn't merged yet, either:
+   - **Wait**, OR
+   - **Cherry-pick** the schema file onto the dependent branch: `git checkout origin/<schema-branch> -- grid/api/openapi.yaml docs/adr/00NN-*.md`. Document the dependency in the PR body so the reviewer doesn't re-flag it.
+3. Never claim "schema-first satisfied" in a PR body when the schema commit is on a sibling branch. The reviewer will catch it.
+
 ## Common failure modes
 
 | Symptom | Cause | Fix |
@@ -133,6 +145,8 @@ AsyncAPI doesn't have a comparable codegen step in this repo yet. When Wave E ad
 | Auto-review: "ADR exception undocumented" | Used a non-default identifier shape / version / etc. without an ADR | File a small ADR (or amend an existing one) before re-pushing the schema. |
 | ADR number collision (two PRs picked the next number simultaneously) | Concurrent dispatch + no ADR-number locking | One PR keeps the number, the other renumbers to next free. Update title, all in-doc refs, and references in companion specs. |
 | Spectral 0 errors but auto-reviewer still flags | Some rules aren't in the public ruleset | Address the finding manually; lint catches a subset, conventions catch the rest. |
+| Integration test passes but consumer sees `required` field missing on the wire | Server-side `Json {}` builder lacks `encodeDefaults = true`; defaulted collection serialized as omitted | This is a backend-side fix even though the symptom is a schema-contract violation. See the dedicated section in `/jvm-backend`. PR #401. |
+| Auto-review: "schema-first violated — field/ADR not on main" | Implementation references a schema commit that lives only on the sibling schema PR | Either wait for the schema PR to merge, or cherry-pick its file onto your branch. The §3 barrier binds against `main`. PRs #370, #371. |
 
 ## Don'ts
 

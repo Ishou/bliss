@@ -151,3 +151,7 @@ pnpm build
 - **Don't** import from `frontend/src/...` with deep relative paths from tests; use the `@/` alias resolved by `vite.config.ts` and `tsconfig.json`.
 - **Don't** mutate `process.env` in tests. Use `vi.stubEnv(...)` if you must.
 - **Don't** call setState inside a render body. Move it into `useEffect` or a callback.
+- **Don't** reference PR numbers, issue numbers, or "fixed in #N" in source comments. PR/issue refs rot once the branch merges — they belong in the PR body and the commit message, not in the code. Cite ADRs or durable identifiers if you need to anchor a comment. Recurring finding: PRs #353, #367, #376, #399, #405.
+- **Don't** write multi-line or multi-paragraph comment blocks. CLAUDE.md is explicit: "Never write multi-paragraph docstrings or multi-line comment blocks — one short line max." If you need to capture rationale, put it in the PR body or an ADR. Recurring: PRs #364, #389, #401.
+- **Don't** put hook return values (objects, arrays, callback wrappers) directly into a `useEffect` dependency array — they're a new reference each render and re-run the effect on every keystroke. Destructure the stable function (`const { show } = useToast()`) and depend on that. PR #385 documented this: `useToast()`'s wrapper object tore down the WebSocket every time the lobby re-rendered.
+- **Don't** default fixture timestamps to `new Date().toISOString()` or seeds to `Math.random()` in tests. Non-deterministic defaults are a latent flake source — hardcode the ISO string and use a fixed seed. PR #378.

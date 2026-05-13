@@ -82,6 +82,18 @@ New domain logic has tests for behavior including failure modes. New application
 - ASCII-only test names (em-dashes crash `compileTestKotlin` under POSIX-locale CI runners — PRs #126, #127).
 - New `:game:*` Gradle module added to `settings.gradle.kts` without the corresponding `COPY <module>/build.gradle.kts` in `grid/api/Dockerfile` (the recurring gotcha).
 - Generated TypeScript types not regenerated after an OpenAPI change (`pnpm api:generate` in `frontend/`).
+- **ADR-0001 §7 violation**: architectural change shipped without a preceding ADR PR. Plans under `docs/superpowers/plans/` are task lists, not decision records. PRs #350, #352, #361, #368, #370, #386 all hit this.
+- **ADR-NNNN referenced but absent on `main`** (or on this branch): the dependent PR has to either wait or cherry-pick. PR #370 cycled twice.
+- **`perf:` or `style:` commit type**: `.commitlintrc.yml` allows only `[feat, fix, chore, refactor, test, docs]`. PR #368.
+- **PR / issue / "fixed in #N" reference in a source-code comment**: those rot post-merge — CLAUDE.md "Don't reference current task, fix, or callers — those belong in the PR description and rot as the codebase evolves." Recurrence: PRs #353, #367, #376, #399, #405.
+- **Multi-line or multi-paragraph comment block in source**: CLAUDE.md "Never write multi-paragraph docstrings or multi-line comment blocks — one short line max." PRs #364, #389, #401.
+- **`helm upgrade` from a dev workstation in a PR-body runbook**: CLAUDE.md "CI is the only path to production." Replace with `workflow_dispatch` at the merge SHA. PRs #350, #352.
+- **Mutable image tag without digest** in `values.yaml`, or Helm subchart deps without a committed `Chart.lock`. CLAUDE.md "Container images pinned to digest." PRs #349, #361.
+- **Cross-bounded-context bundling** even for "trivial" diffs (a dep bump or identical Dockerfile patch across `game/` + `grid/` is still cross-context). ADR-0001 §1 does not yield to ADR-0001 §4. PRs #330, #331, #334, #356, #366, #379.
+- **Test-pad over the 400-line cap**: when the right fix for "missing tests" would breach §4, the answer is split per §6a rule 6, not pad. PR #381.
+- **kotlinx-serialization `Json {}` builder without `encodeDefaults = true`** on a wire DTO: required fields with defaulted values (e.g. empty collections) silently drop from the wire, violating ADR-0003 §6. PR #401 cycled four times on this. Check every `Json` builder under `infrastructure/`, `api/`, and route DSLs.
+- **Absolute local filesystem path** (`/Users/…`, `/home/…`) committed in an ADR or doc: rots immediately. PR #369.
+- **GHA matrix step gated on `matrix.X != ''` without `X` declared in every row**: undefined matrix keys evaluate to `''`, so the gate is permanently false. PR #406.
 
 ## Out of scope — DO NOT comment on
 
@@ -150,6 +162,27 @@ Per ADR-0001 §6a (2026-04-26 amendment): max 5 reviewer cycles per PR. The work
 - Total bot reviews ≥ 5 (cap hit; human intervention required).
 
 You don't enforce this — the workflow does. But know that you're inside a budget. Don't pad findings to "earn your spot"; if the work is clean, the right answer is `LGTM, no findings.` and exit.
+
+## Carrying findings across cycles
+
+Several PRs in the 330–408 range cycled 3–4 times because each iteration's fixer addressed *one* finding and the next reviewer didn't re-flag the rest. Default behavior: **every unresolved prior finding stays open until you can see in the diff that it's fixed**.
+
+When you open a PR with N prior bot reviews:
+
+1. Read each prior review body. Build a checklist: `[Cycle N · Finding M] <summary>` for each.
+2. For each item, check the current HEAD against the cited rule. One of:
+   - **Resolved**: the offending code/config is now correct. Mark it `Resolved: <Cycle N · Finding M>` near the top of your review. Don't re-flag.
+   - **Still open**: re-flag it. Lead with `## Finding K — [carry-over from cycle N] <summary>` so the fixer can't claim ignorance.
+   - **Re-opened**: the fix introduced a new defect against the same rule (e.g. `perf:` → `style:` in #368). Flag explicitly: "Carry-over from cycle N: the prior `perf:` commits remain, AND a new `style:` commit was added."
+3. Only then add NEW findings from this cycle's diff.
+
+PR #368's third review is the canonical example — it explicitly notes "Resolved: ADR-0039 has been added" while carrying forward the 400-line and `perf:`-type findings. Mirror that shape.
+
+If you can't tell whether a prior finding is still open (e.g. the fixer's reply claims "fixed in <sha>" but you can't see the change), grep for the offending pattern in the diff and decide on evidence. Don't take the fixer's word for it; PR #356, #361, and #401 each cycled because the fixer's reply over-promised.
+
+## Distinguish stale PR-body claims from current-diff issues
+
+PR #358 cycle 4 flagged a PR-body line claiming a "400-line cap violation" *after* the PR had already been split. The diff was fine; the PR body was stale. When that happens, your finding is about the **PR description**, not the code — say so. "PR body claims X; the diff no longer shows X. Update or remove the claim." Don't fail a merge on a stale narrative.
 
 ## Don'ts
 
