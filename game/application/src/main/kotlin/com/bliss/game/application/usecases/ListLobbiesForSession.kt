@@ -79,11 +79,12 @@ private fun Lobby.toSummary(): LobbySummary =
         title = title,
     )
 
+// Uses lockedPositions: grid strips LetterCell.answer from the wire, so answer-based counting always returns 0.
 private fun GameSession.toProgress(): LobbyProgress {
     val totalCells =
         puzzle.cells
             .asSequence()
             .filterIsInstance<LetterCell>()
-            .count { it.answer != null }
-    return LobbyProgress(solvedCells = solvedPositions().size, totalCells = totalCells)
+            .count()
+    return LobbyProgress(solvedCells = lockedPositions.size, totalCells = totalCells)
 }

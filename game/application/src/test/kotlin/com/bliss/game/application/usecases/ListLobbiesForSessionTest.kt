@@ -6,7 +6,6 @@ import assertk.assertions.hasSize
 import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
 import assertk.assertions.isNull
-import com.bliss.game.application.usecases.Samples.aPos
 import com.bliss.game.application.usecases.Samples.alice
 import com.bliss.game.application.usecases.Samples.bob
 import com.bliss.game.application.usecases.Samples.pPos
@@ -18,6 +17,7 @@ import com.bliss.game.domain.GamePuzzle
 import com.bliss.game.domain.GameSession
 import com.bliss.game.domain.GridConfig
 import com.bliss.game.domain.Letter
+import com.bliss.game.domain.LetterCell
 import com.bliss.game.domain.Lobby
 import com.bliss.game.domain.LobbyCode
 import com.bliss.game.domain.LobbyId
@@ -303,8 +303,9 @@ class ListLobbiesForSessionTest {
             assertThat(out[0].progress.totalCells).isEqualTo(2)
         }
 
+    // lockedPositions — not solvedPositions() — because answer is null on the wire.
     @Test
-    fun `summary progress counts correctly placed letters as solved`() =
+    fun `summary progress counts server-validated locked positions as solved`() =
         runTest {
             val repo = InMemoryLobbyRepository()
             val lobbyId = LobbyId.generate()
@@ -314,11 +315,10 @@ class ListLobbiesForSessionTest {
                     Samples.puzzle(),
                     mapOf(
                         pPos to CellEntry(sessionA, Letter('P'), baseInstant),
-                        // Wrong letter at aPos — should NOT count towards solved.
-                        aPos to CellEntry(sessionA, Letter('Z'), baseInstant),
                     ),
                     baseInstant,
                     null,
+                    lockedPositions = setOf(pPos),
                 )
             val withEntries =
                 Lobby(
@@ -338,6 +338,45 @@ class ListLobbiesForSessionTest {
 
             assertThat(out).hasSize(1)
             assertThat(out[0].progress.solvedCells).isEqualTo(1)
+            assertThat(out[0].progress.totalCells).isEqualTo(2)
+        }
+
+    @Test
+    fun `summary progress totalCells counts LetterCell instances even when answer is stripped`() =
+        runTest {
+            val repo = InMemoryLobbyRepository()
+            val lobbyId = LobbyId.generate()
+            val players = mapOf(sessionA to Player(sessionA, alice, baseInstant))
+            val strippedPuzzle =
+                Samples
+                    .puzzle()
+                    .let { p ->
+                        p.copy(
+                            cells =
+                                p.cells.map { cell ->
+                                    if (cell is LetterCell) cell.copy(answer = null) else cell
+                                },
+                        )
+                    }
+            val game = GameSession(strippedPuzzle, emptyMap(), baseInstant, null)
+            val noAnswers =
+                Lobby(
+                    id = lobbyId,
+                    ownerSessionId = sessionA,
+                    players = players,
+                    state = LobbyLifecycleState.IN_PROGRESS,
+                    gridConfig = gridConfig,
+                    game = game,
+                    lastActivityAt = baseInstant,
+                    code = LobbyCode.generate(),
+                    title = null,
+                )
+            repo.save(noAnswers)
+
+            val out = ListLobbiesForSession(repo).invoke(sessionA)
+
+            assertThat(out).hasSize(1)
+            assertThat(out[0].progress.solvedCells).isEqualTo(0)
             assertThat(out[0].progress.totalCells).isEqualTo(2)
         }
 

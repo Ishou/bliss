@@ -1,11 +1,6 @@
 import { css } from 'styled-system/css';
 
-// Puzzle progress bar — ADR-0005 §6 component spec.
-//
-// Track in `surfaceElevated` (raised neutral), fill in sage. A label row
-// above pairs muted "Progression" on the left with a sage "X / Y cases"
-// count on the right. Spec calls for 4–5 px track height; we ship 5 px.
-// Fill animates 220 ms ease-out, matching the brief's motion table.
+// Puzzle progress bar — ADR-0005 §6 component spec. Track: surfaceElevated; fill: sage; 5 px height; 220 ms ease-out.
 
 const wrapperStyles = css({
   display: 'flex',
@@ -17,7 +12,8 @@ const wrapperStyles = css({
 const labelRowStyles = css({
   display: 'flex',
   alignItems: 'baseline',
-  justifyContent: 'space-between',
+  gap: '2xs',
+  flexWrap: 'wrap',
   fontFamily: 'body',
   fontSize: 'sm',
   lineHeight: '1',
@@ -83,7 +79,7 @@ export function ProgressBar({ value, total, label = 'Progression', pending = 0 }
   return (
     <div className={wrapperStyles} data-testid="puzzle-progress">
       <div className={labelRowStyles}>
-        <span className={labelMutedStyles}>{label}</span>
+        <span className={labelMutedStyles}>{label}{' :'}</span>
         <span className={labelCountStyles}>
           {safeValue} / {safeTotal} cases
         </span>
