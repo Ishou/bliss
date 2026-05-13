@@ -108,8 +108,6 @@ describe('<MyLobbiesSection> — progress bar', () => {
     expect(bar.getAttribute('aria-valuemax')).toBe('50');
     const text = screen.getByTestId('puzzle-progress').textContent ?? '';
     expect(text).toContain('12 / 50');
-    // Label is hidden in the narrow "Mes parties" card to avoid clamping;
-    // aria-label still carries the full FR phrase so screen readers get it.
     expect(text).not.toMatch(/Progression/);
     expect(bar.getAttribute('aria-label')).toMatch(/Progression\s*:\s*12 \/ 50 cases/);
   });
