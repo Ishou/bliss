@@ -316,6 +316,32 @@ additional owner-bypass in the join path is required. `EXISTS`
 avoids row duplication when the session is both the owner and
 present in `lobby_players`.
 
+## Amendment 2026-05-13 — owner re-entry via backend bypass, not frontend code-stash
+
+The previous amendment ("listing includes owner-only memberships") stated that
+`LobbySummaryDto.code` is already present on the wire, so the owner could
+re-join via the existing code-check path without a new backend branch — the
+frontend "Mes parties" CTA simply needed to call
+`lobbyJoinCodeStash.stash(lobby.id, lobby.code)` before navigating.
+
+PR #416 takes the backend-bypass approach instead:
+
+- A new `lobby.isOwner(sessionId)` branch in `JoinLobbyUseCase` runs before
+  the code check and re-adds the owner to `players` without consulting the
+  code. Auth is `ownerSessionId == sessionId` — identical posture to the
+  existing member-reconnect bypass (`lobby.hasJoined(sessionId)`).
+
+**Why the backend over the frontend:**
+
+1. `MyLobbiesSection` is a pure-presentational component; injecting an impure
+   `lobbyJoinCodeStash` callback couples it to session context and breaks that
+   contract.
+2. If the code has been rotated since the owner left, the frontend-stash
+   approach silently uses a stale code and locks the owner out. The backend
+   bypass is rotation-safe.
+3. The auth surface is unchanged: an outsider whose session id does not match
+   `ownerSessionId` still hits the code-check path and earns `WrongCode`.
+
 ## References
 
 - [ADR-0001 — Parallel-agent development workflow](./0001-parallel-agent-development-workflow.md)

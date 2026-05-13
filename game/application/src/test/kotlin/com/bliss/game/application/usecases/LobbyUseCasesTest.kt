@@ -211,6 +211,55 @@ class LobbyUseCasesTest {
             assertThat(out.events).hasSize(0)
         }
 
+    @Test
+    fun `JoinLobby owner who left re-enters without code and is re-added as player`() =
+        runTest {
+            val h = harness()
+            val lobby = h.create(sessionA, alice).value
+            h.start(lobby.id, sessionA).requireSuccess()
+            h.leave(lobby.id, sessionA).requireSuccess()
+            // Owner is now absent from players but still the owner.
+            val out = h.joinWithCode(lobby.id, sessionA, alice, code = null).requireSuccess()
+            assertThat(out.value.ownerSessionId).isEqualTo(sessionA)
+            assertThat(out.value.players[sessionA]).isNotNull()
+            assertThat(out.events).hasSize(1)
+            assertThat(out.events[0]).isInstanceOf(LobbyEvent.PlayerJoined::class)
+        }
+
+    @Test
+    fun `JoinLobby owner who left re-enters even when code is wrong`() =
+        runTest {
+            val h = harness()
+            val lobby = h.create(sessionA, alice).value
+            h.start(lobby.id, sessionA).requireSuccess()
+            h.leave(lobby.id, sessionA).requireSuccess()
+            val out = h.joinWithCode(lobby.id, sessionA, alice, code = "WRONG2").requireSuccess()
+            assertThat(out.value.players[sessionA]).isNotNull()
+        }
+
+    @Test
+    fun `JoinLobby outsider with wrong code is still rejected (owner bypass does not widen auth)`() =
+        runTest {
+            val h = harness()
+            val lobby = h.create(sessionA, alice).value
+            val out = h.joinWithCode(lobby.id, sessionC, Pseudonym("Carol"), code = "WRONG2")
+            assertThat((out as UseCaseOutcome.Failure).error).isEqualTo(UseCaseError.WrongCode)
+        }
+
+    @Test
+    fun `JoinLobby owner who left cannot rejoin a full lobby and gets LobbyFull`() =
+        runTest {
+            val h = harness()
+            val lobby = h.create(sessionA, alice).value
+            h.leave(lobby.id, sessionA).requireSuccess()
+            // Fill all 8 slots with non-owner sessions.
+            repeat(8) { i ->
+                h.join(lobby.id, validSession(i), Pseudonym("P$i")).requireSuccess()
+            }
+            val out = h.joinWithCode(lobby.id, sessionA, alice, code = null)
+            assertThat((out as UseCaseOutcome.Failure).error).isEqualTo(UseCaseError.LobbyFull)
+        }
+
     // ADR-0029 — owner-only rotation. Tests verify the owner gate, the
     // in-place code update, and that the OLD code stops working.
 
