@@ -159,11 +159,7 @@ function LobbyPage() {
 
   const [view, setView] = useState<LobbyView>(() => ({
     lobby: initialLobby,
-    // Reload-into-COMPLETED: the REST loader can return a snapshot
-    // whose lobby is already solved (the user opens the URL after the
-    // live `gameSolved` was broadcast). Seed `durationMs` from the
-    // snapshot so the modal renders without waiting for an event that
-    // will never arrive.
+    // Seed `durationMs` from the loader snapshot so the modal opens on a hard refresh into a COMPLETED lobby (no live `gameSolved` arrives in that path).
     durationMs: deriveDurationMs(null, initialLobby.state, initialLobby.game),
     modalDismissed: false,
   }));
@@ -832,11 +828,7 @@ function InGameView({
   );
 }
 
-// Derives `durationMs` for the modal when a `lobbyState` snapshot says
-// COMPLETED but no live `gameSolved` ever reaches this client (reload-
-// after-completion). Keeps the existing event-driven value when present
-// so the live path remains authoritative; only fills in the blank from
-// `completedAt − startedAt` when both timestamps are well-formed.
+// Fallback for the reload-after-completion path: derive `durationMs` from `completedAt − startedAt` when no live `gameSolved` reaches this client; live event still wins (returns `current` when set).
 function deriveDurationMs(
   current: number | null,
   state: LobbyLifecycleState,
@@ -862,14 +854,7 @@ function deriveDurationMs(
 function applyEvent(current: LobbyView, event: GameEvent): LobbyView {
   switch (event.type) {
     case 'lobbyState': {
-      // `code` is now first-class on the snapshot — take it from the
-      // event so future server-side mutations propagate.
-      // Derived `durationMs` for the reload-into-COMPLETED path: the
-      // user landing after `gameSolved` was broadcast only ever sees a
-      // `lobbyState` snapshot, never the live event, so the modal must
-      // pull its time from `completedAt − startedAt`. Live `gameSolved`
-      // wins when both arrive because the event-driven value is set
-      // first and we only fall back when `current.durationMs` is null.
+      // `code` is first-class on the snapshot. `durationMs` is filled from the snapshot only when no live `gameSolved` has populated it yet (reload-into-COMPLETED path); see `deriveDurationMs`.
       const derivedDurationMs = deriveDurationMs(current.durationMs, event.state, event.game);
       return {
         ...current,
