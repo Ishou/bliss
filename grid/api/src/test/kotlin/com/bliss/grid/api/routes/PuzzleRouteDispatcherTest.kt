@@ -2,7 +2,6 @@ package com.bliss.grid.api.routes
 
 import assertk.assertThat
 import assertk.assertions.contains
-import assertk.assertions.isFalse
 import assertk.assertions.isNotNull
 import com.bliss.grid.application.puzzle.GeneratePuzzleUseCase
 import com.bliss.grid.application.puzzle.LoadOrGeneratePuzzleUseCase
@@ -29,22 +28,6 @@ import java.net.ServerSocket
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicReference
 
-/**
- * Regression test guarding /v1/puzzles/daily against the blocking-JDBC-on-event-loop
- * bug that made the endpoint slow in production despite the
- * `LoadOrGeneratePuzzleUseCase` cache-hit short-circuit. The PostgresPuzzleRepository
- * `get(...)` adapter performs synchronous JDBC I/O, so the route must dispatch the
- * call onto Dispatchers.IO rather than the Netty call dispatcher (which is backed by
- * the event-loop group and starves under any blocking I/O).
- *
- * `testApplication` cannot detect this because its in-process engine uses the same
- * kotlinx-coroutines worker pool regardless of `withContext(Dispatchers.IO)`. This
- * test stands up a real Netty server on an ephemeral port; Netty names its event-loop
- * threads `eventLoopGroupProxy-*` / `nioEventLoopGroup-*`, distinct from
- * `DefaultDispatcher-worker-*`. With the route's `withContext(Dispatchers.IO)` in
- * place, the spy repo observes a `DefaultDispatcher-worker-*` thread. Without it,
- * the spy observes an `eventLoopGroupProxy-*` thread (the bug).
- */
 class PuzzleRouteDispatcherTest {
     @Test
     fun `daily endpoint dispatches the blocking repository read off the Netty event loop`() {
@@ -84,19 +67,13 @@ class PuzzleRouteDispatcherTest {
         try {
             HttpClient(CIO).use { client ->
                 kotlinx.coroutines.runBlocking {
-                    // Generation will fail and yield 422 — fine. We only need the
-                    // route to have invoked the spy `get(...)` so we can inspect
-                    // the executing thread.
+                    // 422 expected; spy only needs to record the thread.
                     client.get("http://127.0.0.1:$port/v1/puzzles/daily?date=2026-05-09")
                 }
             }
 
             val observed = repoThread.get()
             assertThat(observed).isNotNull()
-            // The bug surfaces as Netty's event-loop thread executing the JDBC
-            // call. With the fix, execution moves to a kotlinx-coroutines IO
-            // worker.
-            assertThat(observed!!.contains("eventLoop") || observed.contains("nioEventLoop")).isFalse()
             assertThat(observed).contains("DefaultDispatcher-worker")
         } finally {
             server.stop(gracePeriodMillis = 100, timeoutMillis = 500)
