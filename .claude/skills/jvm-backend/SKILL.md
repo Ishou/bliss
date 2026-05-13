@@ -165,11 +165,34 @@ If the recurrence becomes annoying, the long-term fix is either (a) glob the COP
 - Task graph is reused across invocations.
 - Some tasks are configuration-cache-incompatible — they show `> Task :foo:bar` followed by an exception about "Configuring … without an existing directory" or similar. The Dockerfile gotcha above is one symptom.
 
+## kotlinx-serialization: `encodeDefaults = true` on every wire-DTO `Json` builder
+
+ADR-0003 §6 requires every field in an OpenAPI/AsyncAPI `required` array to appear on the wire. kotlinx-serialization's default is to **omit** properties whose runtime value equals the declared default — including defaulted collections (`emptyList()`, `emptyMap()`, `emptySet()`). A `data class GameSession(val players: List<Player> = emptyList(), …)` will serialize to `{...}` with no `players` key when the list is empty, breaking the wire contract.
+
+The fix is one line on every `Json { … }` builder that serializes a DTO:
+
+```kotlin
+val wireJson = Json {
+    encodeDefaults = true    // ADR-0003 §6 — required defaulted fields MUST be on the wire
+    ignoreUnknownKeys = true
+    explicitNulls = true     // nullable: true distinct from absence
+}
+```
+
+This applies to:
+- The Ktor `ContentNegotiation` `json(…)` configuration.
+- Any per-route or per-handler `Json` instance.
+- The default `Json` used by the `WebSockets` plugin for outgoing frame serialization.
+- Any test helper that round-trips through `Json.encodeToString(…)`.
+
+Add a regression test for at least one defaulted-collection field per context, asserting the serialized JSON contains the key with `[]` or `{}` — not absence. PR #401 cycled **four** review cycles on three separate `Json {}` builders missing this flag (REST, route-level, default). The pattern is mechanical and the test is one assertion.
+
 ## Common failure modes
 
 | Symptom | Cause | Fix |
 |---|---|---|
 | `Configuring project ':game:X' without an existing directory` in Docker build | `settings.gradle.kts` added a module; the Dockerfile didn't copy its `build.gradle.kts` | Add `COPY game/X/build.gradle.kts game/X/` to every relevant Dockerfile. |
+| OpenAPI consumer (frontend, integration test) sees a `required` field absent | kotlinx-serialization `Json {}` builder lacks `encodeDefaults = true`; defaulted collection serialized as omitted | Add `encodeDefaults = true` to every wire-facing `Json` builder. PR #401. |
 | `InvalidPathException: Malformed input` writing a class file | Em-dash in a `@Test` name | Replace `—` with ASCII `-`. |
 | `dco` CI fails | Missing `Signed-off-by:` trailer | `git commit -s --amend --no-edit && git push --force-with-lease`. Multi-commit branches: `git rebase --signoff origin/main`. |
 | `commitlint` rejects multi-scope | `fix(grid-api,grid-worker):` (commas not allowed) | Single hyphenated scope: `fix(grid):`. |
@@ -191,3 +214,6 @@ If the recurrence becomes annoying, the long-term fix is either (a) glob the COP
 - **Don't** edit generated SQL or Konsist test reports.
 - **Don't** suppress Spotless / Konsist with `@Suppress`. Fix the underlying issue.
 - **Don't** forget the Dockerfile when adding a `:game:*` module to `settings.gradle.kts`.
+- **Don't** instantiate a wire-facing `Json {}` builder without `encodeDefaults = true`. Defaulted required fields (empty collections especially) silently drop from the wire — see the dedicated section above; PR #401.
+- **Don't** reference PR / issue numbers or "fixed in #N" in Kotlin source comments. Those rot once the branch merges. Cite an ADR or move the rationale to the PR body. Recurring: PRs #353, #367, #376, #399, #405.
+- **Don't** write multi-line / multi-paragraph KDoc or `//` comment blocks. CLAUDE.md: "one short line max" in source; deeper rationale belongs in the PR body or an ADR. Recurring: PRs #364, #389, #401.

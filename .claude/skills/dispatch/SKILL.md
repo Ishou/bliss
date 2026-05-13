@@ -109,6 +109,7 @@ The skills are project-level (`.claude/skills/<name>/SKILL.md`) so every agent d
 
 - **Branches**: `<type>/<short-description>` where `<type>` is one of `feat|fix|chore|refactor|test|docs`. Enforced by the `branch-name` CI check. The Claude bot uses the `chore/claude-` prefix (e.g. `chore/claude-game-domain-scoring`) so its branches satisfy the conventional-type requirement per CLAUDE.md. (Historical note: ADR-0001 §2 used `claude/<context>-<slug>-<id>`; CLAUDE.md is the current authority.)
 - **Commit messages**: Conventional Commits, single scope (no commas — commitlint rejects `fix(grid-api,grid-worker):`). Use `fix(grid):` if the change spans multiple submodules of the same context.
+- **Commit type allowlist**: `.commitlintrc.yml` `type-enum` is closed: `[feat, fix, chore, refactor, test, docs]`. **`perf` and `style` are NOT allowed** — PR #368 took three review cycles on this (commits `perf(grid): …` then `style(grid): spotless …`). Use `refactor:` for algorithm/perf tweaks; `chore:` for auto-format. No `build:` / `ci:` / `revert:` either.
 - **DCO sign-off**: `git commit -s` adds `Signed-off-by: <name> <email>`. Required by the `dco` CI check. To fix a missing trailer: `git commit -s --amend --no-edit && git push --force-with-lease`.
 
 ## CI auto-fix loop (paste verbatim into every dispatched agent prompt)
@@ -169,6 +170,15 @@ Per ADR-0001 §6a, the **implementer is not the reviewer**. If you need a manual
 | `claude-review` flags "ADR-XXXX missing from this branch" | The schema PR references an ADR that lives only on a sibling PR | Cherry-pick the ADR file onto this branch (`git checkout origin/<sibling-branch> -- docs/adr/XXXX-*.md`). When sibling lands first, conflict-merge is a clean overlap. |
 | Cross-context `$ref` flagged | AsyncAPI references `grid/api/openapi.yaml#/...` | Inline the schema with a "mirrors grid/api/openapi.yaml; ADR-0001 §1 forbids cross-context $ref" comment. Update both files together when the wire format evolves. |
 | `nullable: true` field absent from `required` | ADR-0003 §6: absence ≠ null | Add the field to `required`. The wire always sends the field; `null` is the explicit blank value. |
+| `commitlint` rejects `perf:` or `style:` | Type not in the `type-enum` allowlist | Rebase to `refactor:` (algorithm/perf tweak) or `chore:` (auto-format). PR #368 burned 3 cycles on this. |
+| Reviewer flags "ADR-0001 §7 violation: no ADR for this change" | Architectural change shipped without a preceding ADR PR | Open an ADR-only PR first (`docs(adr-NNNN): …`), merge it, then rebase implementation on top. Plans under `docs/superpowers/plans/` are NOT decision records — they don't satisfy §7. PRs #350, #352, #361, #368, #370, #386 all hit this. |
+| Reviewer flags "ADR-NNNN referenced but does not exist on main" | Implementation cites an ADR that lives only on a sibling/unmerged PR | Cherry-pick the ADR file from the sibling branch, OR wait for the sibling to merge before opening the dependent PR. PR #370 burned 2 cycles. |
+| Reviewer flags "deploy from dev workstation" in PR body | Runbook directs `helm upgrade` from a laptop | Replace with `workflow_dispatch` against the deploy workflow at the merge SHA. CLAUDE.md "CI is the only path to production." PRs #350, #352. |
+| Reviewer flags "mutable image tag" in `values.yaml` | Tag like `16.10-bookworm` without `@sha256:…` digest | Pin to digest. Helm subchart deps MUST commit `Chart.lock`. A bare version is not a pin. PRs #349, #361. |
+| GHA matrix step `if: matrix.X != ''` silently skipped on every row | Row omits `X`; undefined matrix keys evaluate to `''` | Declare the key in EVERY matrix row (use `""` for rows that should skip). Missing key = silent dead code, not "skip". PR #406 cycled 3 times. |
+| Reviewer flags "cross-bounded-context PR" on a "trivial" dep bump / Dockerfile patch touching both `game/` and `grid/` | ADR-0001 §1 applies even when the diff is small | Split into two PRs by context. Don't argue "it's only 20 lines, the §4 cap is fine" — §4 doesn't override §1. PRs #330, #331, #356, #366, #379 all hit this. |
+| Reviewer asks for added tests; adding them breaches the 400-line cap | Fixer pads instead of splitting | Land tests in a follow-up PR immediately after, citing the original PR. ADR-0001 §6a rule 6: "If a fix would push the PR over the cap, the PR is split, not padded." PR #381. |
+| ADR / committed doc references an absolute local path (`/Users/…/`) | Path is meaningless outside the author's machine | Inline the content or use a repo-relative path. ADRs are durable — local paths rot on push. PR #369. |
 
 ## Frontend conventions
 
@@ -280,3 +290,10 @@ The double `-f -f` overrides the agent-process lock. Worktrees with no commits a
 - **Don't** push to `main` directly. Even single-line "fix" commits go through a PR.
 - **Don't** auto-merge from the orchestrator. The user merges. You report ready.
 - **Don't** do a destructive git operation (force-push, reset --hard, branch -D) outside a worktree without explicit user confirmation per `CLAUDE.md`.
+- **Don't** bundle an ADR with the implementation it governs. ADR-0001 §7 — ADR PR merges first, then implementation rebases on top. Plans under `docs/superpowers/plans/` do not satisfy §7; they're task lists, not decision records.
+- **Don't** use `perf:` or `style:` commit types. `.commitlintrc.yml` rejects them. `refactor:` for algorithm/perf tweaks; `chore:` for auto-format.
+- **Don't** instruct the maintainer to `helm upgrade` from a dev machine in a PR-body runbook. Production paths go through `workflow_dispatch` at the merge SHA.
+- **Don't** pin a container image / Helm subchart with a mutable tag. Digest pin (`@sha256:...`) or commit a lock file. A bare tag is not a pin.
+- **Don't** gate a GHA matrix step on `matrix.X != ''` unless every row declares `X`. Undefined keys evaluate to `''` silently and the step becomes permanent dead code.
+- **Don't** pad a PR with tests to clear a reviewer's "missing tests" finding when doing so breaches the 400-line cap. ADR-0001 §6a rule 6: split the PR, don't pad it.
+- **Don't** open a PR that depends on an ADR not yet merged on `main`. Either wait, or cherry-pick the ADR file onto your branch and label the dependency in the PR body.
