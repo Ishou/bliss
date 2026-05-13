@@ -218,7 +218,43 @@ jobs:
           printf '%s' "$KUBECONFIG_DATA" > ~/.kube/config
           chmod 600 ~/.kube/config
 
-      - name: Helm upgrade --install
+      - name: Helm upgrade --install (db chart)
+        # CNPG Cluster lives in its own Helm release so its lifecycle is
+        # decoupled from the api chart. Idempotent: on subsequent runs
+        # with no value change, helm finds no diff and returns instantly.
+        # No --wait: Helm 3 doesn't track CNPG Cluster's `Ready` condition,
+        # so --wait would return as soon as the CRD is accepted (instant)
+        # which proves nothing. The next step does the real wait via
+        # kubectl against `.status.phase`.
+        if: env.RUN_ROW == 'true' && matrix.db-chart-path != ''
+        env:
+          DB_RELEASE: ${{ matrix.db-release-name }}
+          DB_CHART: ${{ matrix.db-chart-path }}
+          DB_VALUES: ${{ matrix.db-values-file }}
+        run: |
+          set -euo pipefail
+          helm upgrade --install "$DB_RELEASE" "$DB_CHART" \
+            -n wordsparrow --create-namespace \
+            -f "$DB_VALUES"
+
+      - name: Wait for CNPG cluster Ready
+        # Block the api install until the cluster is actually serving.
+        # `.status.phase == "Cluster in healthy state"` is the CNPG phase
+        # string emitted once primary election + replica join complete.
+        # First-deploy bootstrap on Hetzner volumes is 5-10 min; steady-
+        # state runs return instantly. 15 m covers the cold-boot worst case.
+        if: env.RUN_ROW == 'true' && matrix.db-chart-path != ''
+        env:
+          DB_RELEASE: ${{ matrix.db-release-name }}
+        run: |
+          set -euo pipefail
+          kubectl wait \
+            --for=jsonpath='{.status.phase}'='Cluster in healthy state' \
+            "cluster.postgresql.cnpg.io/$DB_RELEASE" \
+            -n wordsparrow \
+            --timeout=15m
+
+      - name: Helm upgrade --install (api chart)
         if: env.RUN_ROW == 'true'
         id: helm
         env:
@@ -232,6 +268,12 @@ jobs:
         # we'd otherwise capture them. We keep `--wait --timeout 5m` so
         # the step still surfaces the failure as a non-zero exit, but
         # leave the pending-upgrade release in place.
+        #
+        # The db-chart + kubectl-wait steps above guarantee CNPG is
+        # serving before this step starts, so the wait-for-postgres
+        # initContainer in the api chart completes in <1 s in steady
+        # state. The 5 m budget covers Flyway migrations + JVM warm-up;
+        # no headroom needed for cluster bootstrap.
         run: |
           set -euo pipefail
           helm upgrade --install "$RELEASE" "$CHART" \

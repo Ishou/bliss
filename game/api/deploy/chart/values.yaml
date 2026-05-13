@@ -23,36 +23,29 @@ image:
 resources:
   requests: {cpu: 100m, memory: 256Mi}
   limits: {cpu: 1000m, memory: 512Mi}
-postgres:
-  # ADR-0039 cutover (Wave E PR #12): multi-day lobby persistence is backed by
-  # a dedicated CNPG cluster, mirroring grid/api's pattern. Off by default so
-  # local-dev `helm install` against k3d boots without provisioning a Cluster
-  # CR (the api falls back to InMemoryLobbyRepository when DATABASE_URL is
-  # unset — BlissDatabase(requireUrl = false)). Prod turns this on.
+database:
+  # Wires DATABASE_URL from the sibling CNPG cluster (Helm release
+  # `bliss-game-api-pg`, chart `game/api/deploy/db-chart/`) and the
+  # wait-for-postgres init container. Off by default so local-dev
+  # `helm install` against k3d boots without a Cluster — the api
+  # falls back to InMemoryLobbyRepository when DATABASE_URL is unset
+  # per `BlissDatabase(requireUrl = false)`. Prod turns this on.
+  #
+  # The Cluster's lifecycle is intentionally split out of this chart
+  # so a failed api deploy's auto-rollback can never destroy the
+  # cluster mid-bootstrap (regression observed 2026-05-12; see
+  # ADR-0039 amendment).
   enabled: false
-  cluster:
-    # CNPG Cluster instances. Prod=3 (HA, ADR-0009 §3); local=1.
-    instances: 1
-    # PostgreSQL image — pinned by tag AND digest, kept in lockstep with
-    # grid/api/deploy/chart/values.yaml so both contexts move major versions
-    # in the same operator window. See that file for the major-upgrade
-    # rationale (cnpg admission webhook enforces single-major-step in-place
-    # upgrades).
-    imageName: "ghcr.io/cloudnative-pg/postgresql:18.1-system-bookworm@sha256:61654dc3b1aa2191e083288caf332e60daa342817a64a285283e69e31f1c854d"
-    storage:
-      size: 10Gi
-      # Empty = cluster default. Prod "hcloud-volumes"; local "local-path".
-      storageClass: ""
-    bootstrap: {database: game, owner: game}
-  backups:
-    # Off by default. Prod turns this on; local stays off.
-    enabled: false
-    # S3-compatible bucket. ADR-0010 §1: "<project>-cnpg-backups".
-    bucket: ""
-    # S3 endpoint URL. Hetzner OS FSN1 in prod (ADR-0010 §2).
-    endpoint: ""
-    # CNPG retention policy notation (e.g. "30d").
-    retentionPolicy: "30d"
+  # CNPG cluster name. Matches the `bliss-game-api-pg` Helm release's
+  # name, since the db chart sets `.metadata.name = .Release.Name`.
+  # CNPG auto-creates `<name>-app` (Secret) and `<name>-rw` (Service).
+  clusterName: "wordsparrow-game-api-pg"
+  # Image used by the wait-for-postgres init container. Duplicated
+  # from db-chart/values.yaml so the init container reuses the node-
+  # cached CNPG postgres image (pg_isready binary) without depending
+  # on the db chart's value file at template-render time. Bump both
+  # together when CNPG ships a new postgres tag.
+  waitImage: "ghcr.io/cloudnative-pg/postgresql:18.1-system-bookworm@sha256:61654dc3b1aa2191e083288caf332e60daa342817a64a285283e69e31f1c854d"
 service:
   type: ClusterIP
   # Prod listens on 8081. Local-dev default in Main.kt is 7778; the chart
