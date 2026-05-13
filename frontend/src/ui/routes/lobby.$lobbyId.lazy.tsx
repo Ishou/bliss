@@ -152,6 +152,10 @@ function LobbyPage() {
   const gameClient = ctx.gameClient!;
   const getSession = ctx.getSession!;
   const setPersistedPseudonym = ctx.setPseudonym;
+  // Mirror in a ref so the long-lived subscribe handler persists the
+  // server-confirmed pseudonym without re-attaching on every render.
+  const setPersistedPseudonymRef = useRef(setPersistedPseudonym);
+  setPersistedPseudonymRef.current = setPersistedPseudonym;
   const lobbyJoinCodeStash = ctx.lobbyJoinCodeStash!;
   const navigate = useNavigate();
 
@@ -231,6 +235,9 @@ function LobbyPage() {
         setPseudonymError(event.detail ?? event.title);
       } else if (event.type === 'playerRenamed' && event.sessionId === sessionId) {
         setPseudonymError(null);
+        // Persist only after the server confirms — server is the source
+        // of truth for the pseudonym, localStorage is the cache.
+        setPersistedPseudonymRef.current?.(event.newPseudonym);
       }
       if (event.type === 'error' &&
         event.errorType === 'https://bliss.example/errors/wrong-code') {
@@ -381,11 +388,11 @@ function LobbyPage() {
   }, [gameClient, sessionId, lobby.players, announcer]);
 
   const handleRename = useCallback((newPseudonym: Pseudonym) => {
+    // Server is the source of truth: send the rename and let the
+    // `playerRenamed` confirmation persist to localStorage. A rejected
+    // pseudonym (`invalid-pseudonym`) must never poison the cache.
     gameClient.renameSelf(newPseudonym);
-    // Persist via the context-supplied writer — never touches
-    // `infrastructure/session/` from this layer (boundary rule).
-    setPersistedPseudonym?.(newPseudonym);
-  }, [gameClient, setPersistedPseudonym]);
+  }, [gameClient]);
 
   const handleSetGridConfig = useCallback((width: number, height: number) => {
     gameClient.setGridConfig({ width, height });
