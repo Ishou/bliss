@@ -125,19 +125,7 @@ class RotateLobbyCodeUseCase(
     }
 }
 
-/**
- * Idempotent join — re-joining with the same sessionId emits no event (reconnect path).
- *
- * ADR-0027: new joiners must present `code` matching `lobby.code`; the
- * mutator records `wrongCode = true` on a mismatch so the post-mutate
- * branch can return [UseCaseError.WrongCode] without conflating it with
- * `LobbyFull` (both leave the lobby unchanged). Reconnects (sessionId
- * already a member) AND owner re-entry (ADR-0039: owner remains
- * `ownerSessionId` after leave but is absent from `players` until they
- * return) bypass the check by construction — auth is by sessionId
- * match, identical posture across both. Outsiders without a valid code
- * remain rejected.
- */
+/** Idempotent join — reconnects and owner re-entries bypass the code check; outsiders need a valid code. */
 class JoinLobbyUseCase(
     private val repo: LobbyRepository,
     private val clock: Clock,

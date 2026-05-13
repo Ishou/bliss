@@ -246,6 +246,20 @@ class LobbyUseCasesTest {
             assertThat((out as UseCaseOutcome.Failure).error).isEqualTo(UseCaseError.WrongCode)
         }
 
+    @Test
+    fun `JoinLobby owner who left cannot rejoin a full lobby and gets LobbyFull`() =
+        runTest {
+            val h = harness()
+            val lobby = h.create(sessionA, alice).value
+            h.leave(lobby.id, sessionA).requireSuccess()
+            // Fill all 8 slots with non-owner sessions.
+            repeat(8) { i ->
+                h.join(lobby.id, validSession(i), Pseudonym("P$i")).requireSuccess()
+            }
+            val out = h.joinWithCode(lobby.id, sessionA, alice, code = null)
+            assertThat((out as UseCaseOutcome.Failure).error).isEqualTo(UseCaseError.LobbyFull)
+        }
+
     // ADR-0029 — owner-only rotation. Tests verify the owner gate, the
     // in-place code update, and that the OLD code stops working.
 
