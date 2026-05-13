@@ -108,12 +108,19 @@ fun Route.puzzles(
         // any client-supplied X-Session-Id header (ADR-0031). The endpoint
         // ignores that header by design.
         // Dispatchers.IO: PuzzleRepository is blocking JDBC; keep it off the Netty event loop.
+        val startedAtNs = System.nanoTime()
         val stored =
             withContext(Dispatchers.IO) {
                 loadOrGenerate.execute(puzzleId, sessionId = ClueCooldownRepository.DAILY_SCOPE_ID)
             }
+        val elapsedMs = (System.nanoTime() - startedAtNs) / 1_000_000
         if (stored == null) {
-            log.warn("daily_puzzle_generation_failed date={} puzzle_id={}", date, puzzleId)
+            log.warn(
+                "daily_puzzle_generation_failed date={} puzzle_id={} elapsed_ms={}",
+                date,
+                puzzleId,
+                elapsedMs,
+            )
             call.respondProblem(
                 status = HttpStatusCode.UnprocessableEntity,
                 title = "Échec de la génération de grille",
