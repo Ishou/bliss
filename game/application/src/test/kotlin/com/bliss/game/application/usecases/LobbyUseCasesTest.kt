@@ -211,6 +211,50 @@ class LobbyUseCasesTest {
             assertThat(out.events).hasSize(0)
         }
 
+    // ADR-0039 — owner who has left the lobby (no longer in `players`)
+    // but remains `ownerSessionId` returns via "Mes parties" with no code
+    // (the CTA stash is unpopulated). Must succeed - auth is by
+    // ownerSessionId match, same posture as the member-reconnect bypass.
+
+    @Test
+    fun `JoinLobby owner who left re-enters without code and is re-added as player`() =
+        runTest {
+            val h = harness()
+            val lobby = h.create(sessionA, alice).value
+            h.start(lobby.id, sessionA).requireSuccess()
+            h.leave(lobby.id, sessionA).requireSuccess()
+            // Owner is now absent from players but still the owner.
+            val out = h.joinWithCode(lobby.id, sessionA, alice, code = null).requireSuccess()
+            assertThat(out.value.ownerSessionId).isEqualTo(sessionA)
+            assertThat(out.value.players[sessionA]).isNotNull()
+            assertThat(out.events).hasSize(1)
+            assertThat(out.events[0]).isInstanceOf(LobbyEvent.PlayerJoined::class)
+        }
+
+    @Test
+    fun `JoinLobby owner who left re-enters even when code is wrong`() =
+        runTest {
+            val h = harness()
+            val lobby = h.create(sessionA, alice).value
+            h.start(lobby.id, sessionA).requireSuccess()
+            h.leave(lobby.id, sessionA).requireSuccess()
+            // A stale or mistyped code from the owner's client must not lock
+            // them out of their own lobby.
+            val out = h.joinWithCode(lobby.id, sessionA, alice, code = "WRONG2").requireSuccess()
+            assertThat(out.value.players[sessionA]).isNotNull()
+        }
+
+    @Test
+    fun `JoinLobby outsider with wrong code is still rejected (owner bypass does not widen auth)`() =
+        runTest {
+            val h = harness()
+            val lobby = h.create(sessionA, alice).value
+            // A non-owner non-member presenting a wrong code must still get
+            // WrongCode - the owner bypass is gated on ownerSessionId match.
+            val out = h.joinWithCode(lobby.id, sessionC, Pseudonym("Carol"), code = "WRONG2")
+            assertThat((out as UseCaseOutcome.Failure).error).isEqualTo(UseCaseError.WrongCode)
+        }
+
     // ADR-0029 — owner-only rotation. Tests verify the owner gate, the
     // in-place code update, and that the OLD code stops working.
 

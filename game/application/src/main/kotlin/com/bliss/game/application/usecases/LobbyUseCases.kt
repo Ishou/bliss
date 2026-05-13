@@ -132,8 +132,11 @@ class RotateLobbyCodeUseCase(
  * mutator records `wrongCode = true` on a mismatch so the post-mutate
  * branch can return [UseCaseError.WrongCode] without conflating it with
  * `LobbyFull` (both leave the lobby unchanged). Reconnects (sessionId
- * already a member) bypass the check by construction — no code is ever
- * read on that branch.
+ * already a member) AND owner re-entry (ADR-0039: owner remains
+ * `ownerSessionId` after leave but is absent from `players` until they
+ * return) bypass the check by construction — auth is by sessionId
+ * match, identical posture across both. Outsiders without a valid code
+ * remain rejected.
  */
 class JoinLobbyUseCase(
     private val repo: LobbyRepository,
@@ -154,6 +157,18 @@ class JoinLobbyUseCase(
                     // Reconnect path: bump lastActivityAt so an idle re-open keeps the lobby alive.
                     // Code is intentionally NOT checked here — see ADR-0027.
                     lobby.hasJoined(sessionId) -> lobby.touched(clock.now())
+                    // Owner re-entry (ADR-0039): owner left and returns via "Mes parties"
+                    // with no code. Re-add as player; auth is by ownerSessionId match.
+                    lobby.isOwner(sessionId) -> {
+                        if (lobby.isFull()) {
+                            lobby
+                        } else {
+                            val now = clock.now()
+                            val player = Player(sessionId, pseudonym, now)
+                            emitted = LobbyEvent.PlayerJoined(player)
+                            lobby.copy(players = lobby.players + (sessionId to player), lastActivityAt = now)
+                        }
+                    }
                     code != lobby.code.value -> {
                         wrongCode = true
                         lobby
