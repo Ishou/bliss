@@ -38,8 +38,10 @@ class LoadOrGeneratePuzzleUseCase(
         width: Int? = null,
         height: Int? = null,
         sessionId: UUID? = null,
-    ): StoredPuzzle? =
-        puzzleRepository.getOrCompute(puzzleId) {
+    ): StoredPuzzle? {
+        // Fast path: skip lambda allocation on hit; miss path races atomically on INSERT.
+        puzzleRepository.get(puzzleId)?.let { return it }
+        return puzzleRepository.getOrCompute(puzzleId) {
             val cooldown = cooldownRepository
             val cooldownActive = cooldown != null && sessionId != null
             val onCooldownBefore =
@@ -91,6 +93,7 @@ class LoadOrGeneratePuzzleUseCase(
                 createdAt = clock.instant(),
             )
         }
+    }
 
     companion object {
         const val DEFAULT_HINTS_ALLOWED: Int = 3
