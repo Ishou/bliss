@@ -12,11 +12,7 @@ import com.bliss.grid.domain.model.Grid
 import org.slf4j.LoggerFactory
 import kotlin.random.Random
 
-/**
- * Seam used by [GeneratePuzzleUseCase] to invoke the underlying CSP-driven
- * generator. Default impl delegates to a real [GridGenerator]; tests can
- * substitute a fake to drive the strict/relaxed retry path deterministically.
- */
+// Internal seam; tests substitute a RecordingGenerator to control strict/relaxed results.
 internal fun interface PuzzleGridGenerator {
     fun generate(
         constraints: GridConstraints,
@@ -120,11 +116,7 @@ class GeneratePuzzleUseCase(
             )
         if (strictOutcome.grid != null) return strictOutcome
 
-        // Strict pass exhausted its budget without finding a grid. Try ONE
-        // more pass with the pre-#381 relaxed BLACK rule. This restores
-        // service for hard seeds (e.g. 15×12 production) at the cost of
-        // potentially producing a decorative (arrow-less) black cell.
-        // Operational metric: filter logs for event=puzzle_generation_fallback.
+        // Strict budget exhausted — retry once with relaxed BLACK rule (may produce decorative blacks).
         log.warn(
             "event=puzzle_generation_fallback reason=strict_black_unsatisfiable width={} height={} strict_attempts={} strict_total_ms={}",
             constraints.width,

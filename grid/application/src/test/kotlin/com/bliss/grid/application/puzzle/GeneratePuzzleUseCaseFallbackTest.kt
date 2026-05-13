@@ -14,14 +14,7 @@ import com.bliss.grid.domain.model.Word
 import org.junit.jupiter.api.Test
 import kotlin.random.Random
 
-/**
- * Regression guard for the strict-BLACK fallback added after PR #381 starved
- * the 15x12 daily on some seeds.
- *
- * When the strict CSP pass exhausts its budget and returns null, the use case
- * must retry the full attempt loop ONCE with strictFunctionalBlackCells=false
- * (the pre-#381 BLACK rule). The relaxed grid is what the caller sees.
- */
+// Verifies the strict-BLACK fallback path in GeneratePuzzleUseCase.
 class GeneratePuzzleUseCaseFallbackTest {
     @Test
     fun `relaxed retry runs once when the strict pass exhausts its budget`() {
