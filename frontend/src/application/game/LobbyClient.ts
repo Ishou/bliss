@@ -72,9 +72,6 @@ export interface LobbySummary {
   readonly title?: string;
 }
 
-// Puzzle progress projection. `solvedCells` counts letter cells whose
-// typed entry matches the canonical answer; `totalCells` is the count of
-// answerable letter cells in the puzzle.
 export interface LobbyProgress {
   readonly solvedCells: number;
   readonly totalCells: number;

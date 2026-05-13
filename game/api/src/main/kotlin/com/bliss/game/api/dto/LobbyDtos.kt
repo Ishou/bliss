@@ -160,10 +160,6 @@ data class LobbySummaryDto(
     val title: String? = null,
 )
 
-/**
- * `LobbyProgress` schema — puzzle progress projection driving the per-row
- * progress bar on the Accueil "Mes parties" surface.
- */
 @Serializable
 data class LobbyProgressDto(
     val solvedCells: Int,

@@ -290,9 +290,6 @@ class ListLobbiesForSessionTest {
             assertThat(out.map { it.id }).containsExactly(ownedButNotJoined.id)
         }
 
-    // Progress is derived from the GameSession on IN_PROGRESS / COMPLETED
-    // lobbies. Samples.puzzle() has 2 answerable letter cells; with no entries
-    // typed, solvedCells = 0 and totalCells = 2.
     @Test
     fun `summary progress reports zero solved cells when no entries are typed`() =
         runTest {

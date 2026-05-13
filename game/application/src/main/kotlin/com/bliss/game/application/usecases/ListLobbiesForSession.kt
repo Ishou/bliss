@@ -32,12 +32,6 @@ data class LobbySummary(
     val title: LobbyTitle?,
 )
 
-/**
- * Puzzle progress projection. `solvedCells` is the count of letter cells whose
- * typed entry matches the canonical answer; `totalCells` is the count of
- * answerable letter cells in the puzzle. Drives the per-row progress bar on
- * the Accueil "Mes parties" surface.
- */
 data class LobbyProgress(
     val solvedCells: Int,
     val totalCells: Int,
@@ -80,8 +74,7 @@ private fun Lobby.toSummary(): LobbySummary =
         gridConfig = gridConfig,
         playerCount = players.size,
         lastActivityAt = lastActivityAt,
-        // `game` is required for IN_PROGRESS / COMPLETED (Lobby init invariant);
-        // ListLobbiesForSession excludes WAITING so `game!!` is safe here.
+        // WAITING is excluded above; IN_PROGRESS/COMPLETED always carry a GameSession.
         progress = game!!.toProgress(),
         title = title,
     )
