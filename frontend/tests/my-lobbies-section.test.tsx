@@ -11,12 +11,6 @@ import type { LobbySummary } from '@/application/game';
 import type { LobbyId } from '@/domain/game';
 import { MyLobbiesSection } from '@/ui/components/lobby/MyLobbiesSection';
 
-// `MyLobbiesSection` renders TanStack `<Link>` per row, so the tests
-// mount it inside a one-route memory router. Three UI behaviours are
-// verified: the join code is masked by default and click-to-reveal
-// toggles, the copy button writes to the clipboard, and the player
-// count renders as "X / Y joueurs".
-
 const lobby: LobbySummary = {
   id: 'AAAA1111BBBB2222CCCC3333' as LobbyId,
   code: 'A2B3C4',

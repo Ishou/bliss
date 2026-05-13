@@ -117,13 +117,9 @@ const copyFeedbackStyles = css({
   color: 'accent',
 });
 
-// Six bullet glyphs — matches the canonical join-code length used
-// elsewhere (PinInput's LOBBY_CODE_LENGTH). Kept local to avoid
-// reaching across layers for a single rendering constant.
+// 6 bullets match LOBBY_CODE_LENGTH
 const MASK_GLYPHS = '••••••';
 
-// Inline feedback duration after a successful clipboard write. Mirrors
-// the WaitingRoom "Lien copié !" timing.
 const COPY_FEEDBACK_MS = 2000;
 
 // Date-only fr-FR rendering — matches `formatTodayFr` in accueil.tsx in
@@ -170,8 +166,6 @@ export function MyLobbiesSection({ lobbies }: MyLobbiesSectionProps) {
   );
 }
 
-// Per-row subcomponent so the reveal / copied state is local to each
-// card rather than promoted to a Map keyed by lobby id.
 function LobbyRow({ lobby }: { readonly lobby: LobbySummary }) {
   const [revealed, setRevealed] = useState(false);
   const [justCopied, setJustCopied] = useState(false);
@@ -183,8 +177,7 @@ function LobbyRow({ lobby }: { readonly lobby: LobbySummary }) {
     [],
   );
 
-  // Stop propagation so clicking either icon button does not trigger
-  // the surrounding `Link` navigation to `/lobby/$lobbyId`.
+  // prevent Link navigation
   const handleToggle = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -254,9 +247,6 @@ function LobbyRow({ lobby }: { readonly lobby: LobbySummary }) {
   );
 }
 
-// Minimal copy glyph kept local — adding a project-wide CopyIcon to
-// `components/icons.tsx` would be a separate concern and we only need
-// it here today.
 function CopyGlyph() {
   return (
     <svg
