@@ -52,19 +52,39 @@ const fillStyles = css({
   transition: 'width 220ms ease-out',
 });
 
+// Pending segment — letters the player has typed but that have not yet
+// auto-validated. Sits in the track immediately after the sage fill, in
+// the muted `border` token (neutral.500 — one notch lighter than the
+// track's `surfaceElevated`, distinct from both the sage accent and the
+// track). Rendered BEFORE `fillStyles` in JSX so the sage paints on top
+// and there is no sub-pixel seam at the boundary.
+const pendingFillStyles = css({
+  position: 'absolute',
+  top: 0,
+  bottom: 0,
+  height: '100%',
+  bg: 'border',
+  transition: 'width 220ms ease-out, left 220ms ease-out',
+});
+
 export interface ProgressBarProps {
   readonly value: number;
   readonly total: number;
   readonly label?: string;
+  readonly pending?: number;
 }
 
-export function ProgressBar({ value, total, label = 'Progression' }: ProgressBarProps) {
+export function ProgressBar({ value, total, label = 'Progression', pending = 0 }: ProgressBarProps) {
   // Defensive clamp: if `total` is 0 the puzzle has no letter cells (an
   // edge case that should never reach here in practice); render an empty
   // bar rather than a NaN width.
   const safeTotal = Math.max(total, 0);
   const safeValue = Math.max(0, Math.min(value, safeTotal));
+  // Pending is bounded by the remaining track (total − validated) so the
+  // gray segment never overflows past 100 %. Negative pending clamps to 0.
+  const safePending = Math.max(0, Math.min(pending, safeTotal - safeValue));
   const pct = safeTotal === 0 ? 0 : (safeValue / safeTotal) * 100;
+  const pendingPct = safeTotal === 0 ? 0 : (safePending / safeTotal) * 100;
   return (
     <div className={wrapperStyles} data-testid="puzzle-progress">
       <div className={labelRowStyles}>
@@ -81,6 +101,12 @@ export function ProgressBar({ value, total, label = 'Progression' }: ProgressBar
         aria-valuemin={0}
         aria-valuemax={safeTotal}
       >
+        {/* Pending FIRST so the sage paints on top — kills sub-pixel seams. */}
+        <div
+          className={pendingFillStyles}
+          data-testid="puzzle-progress-pending"
+          style={{ left: `${pct}%`, width: `${pendingPct}%` }}
+        />
         <div className={fillStyles} style={{ width: `${pct}%` }} />
       </div>
     </div>

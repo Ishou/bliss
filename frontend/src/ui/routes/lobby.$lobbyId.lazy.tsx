@@ -703,6 +703,68 @@ function InGameView({
     [puzzle.cells],
   );
 
+  // Track filled-but-not-yet-validated cells for the progress bar's gray
+  // "pending" segment. Seeded from the `initialEntries` prop (snapshot
+  // replay on join / reconnect), then updated through two seams:
+  //   • local writes — `onCellChange` (wrapped below).
+  //   • remote writes — `cellUpdated` events delivered via the same
+  //     `subscribeToRemoteCellUpdates` registrar the grid consumes.
+  // Re-seed when `initialEntries` changes reference (server snapshot replay).
+  const [filledPositions, setFilledPositions] = useState<ReadonlySet<string>>(
+    () => new Set(initialEntries.map((e) => `${e.row},${e.column}`)),
+  );
+  useEffect(() => {
+    setFilledPositions(new Set(initialEntries.map((e) => `${e.row},${e.column}`)));
+  }, [initialEntries]);
+  useEffect(() => {
+    const unsubscribe = subscribeToRemoteCellUpdates((event) => {
+      if (event.type !== 'cellUpdated') return;
+      const key = `${event.row},${event.column}`;
+      setFilledPositions((prev) => {
+        if (event.letter === null) {
+          if (!prev.has(key)) return prev;
+          const next = new Set(prev);
+          next.delete(key);
+          return next;
+        }
+        if (prev.has(key)) return prev;
+        const next = new Set(prev);
+        next.add(key);
+        return next;
+      });
+    });
+    return unsubscribe;
+  }, [subscribeToRemoteCellUpdates]);
+
+  // Wrap the parent's `onCellChange` so local writes mirror into
+  // `filledPositions` alongside the WS broadcast.
+  const handleLocalCellChange = useCallback(
+    (row: number, col: number, letter: string | null) => {
+      onCellChange(row, col, letter);
+      const key = `${row},${col}`;
+      setFilledPositions((prev) => {
+        if (letter === null) {
+          if (!prev.has(key)) return prev;
+          const next = new Set(prev);
+          next.delete(key);
+          return next;
+        }
+        if (prev.has(key)) return prev;
+        const next = new Set(prev);
+        next.add(key);
+        return next;
+      });
+    },
+    [onCellChange],
+  );
+
+  // Pending = filled ∖ validated (set difference, not size subtraction).
+  const pending = useMemo(() => {
+    let count = 0;
+    for (const k of filledPositions) if (!validatedPositions.has(k)) count++;
+    return count;
+  }, [filledPositions, validatedPositions]);
+
   // Multiplayer presence-state derived from the typing / idle /
   // connectionLost / presenceUpdated event stream. One subscription owns
   // the aggregation; both the roster pill (`typingSessionIds` /
@@ -751,7 +813,7 @@ function InGameView({
         <Grid
           puzzle={puzzle}
           validatedPositions={validatedPositions}
-          onCellChange={isCompleted ? undefined : onCellChange}
+          onCellChange={isCompleted ? undefined : handleLocalCellChange}
           subscribeToRemoteCellUpdates={subscribeToRemoteCellUpdates}
           initialEntries={initialEntries}
           onLocalFocusChange={isCompleted ? undefined : onLocalFocusChange}
@@ -764,6 +826,7 @@ function InGameView({
       <ProgressBar
         value={validatedPositions.size}
         total={totalLetterCells}
+        pending={pending}
       />
     </>
   );

@@ -217,15 +217,28 @@ function HomePage() {
     return soloEntriesStore.load(puzzle.id);
   }, [puzzle.id, refreshCount, soloEntriesStore]);
 
+  // Track filled letter cells for the progress bar's gray "pending"
+  // segment (letters typed but not yet auto-validated). Seeded from the
+  // persisted entries — the grid is uncontrolled (ADR-0002 §4) so we
+  // mirror the keystroke seam (`handleCellChange`) into this Set rather
+  // than reading the DOM at render time.
+  const [filledPositions, setFilledPositions] = useState<ReadonlySet<string>>(
+    () => new Set(initialEntries.map((e) => `${e.row},${e.column}`)),
+  );
+
   // Mirror the `initialEntries` posture for the locked-cell state:
   // re-read storage on every refreshCount bump so `clearForPuzzle`
   // (Actualiser) propagates into the React state. Without
   // `refreshCount` in the deps the effect was bound to `[puzzle.id]`
   // alone — locks survived the storage clear and the cells stayed
   // sage-tinted until a full reload.
+  // Also re-seed `filledPositions` from the freshly-loaded entries so
+  // Actualiser wipes the gray segment in the progress bar.
   useEffect(() => {
     const persisted = soloEntriesStore.loadLockedCells(puzzle.id);
     setLockedHintCells(new Set(persisted.map((c) => `${c.row},${c.column}`)));
+    const persistedEntries = soloEntriesStore.load(puzzle.id);
+    setFilledPositions(new Set(persistedEntries.map((e) => `${e.row},${e.column}`)));
   }, [puzzle.id, refreshCount, soloEntriesStore]);
 
   // Word-by-word auto-validation: when the player completes a word,
@@ -257,6 +270,19 @@ function HomePage() {
   const handleCellChange = useCallback(
     (row: number, col: number, letter: string | null) => {
       soloEntriesStore.save(puzzle.id, row, col, letter);
+      const key = `${row},${col}`;
+      setFilledPositions((prev) => {
+        if (letter === null) {
+          if (!prev.has(key)) return prev;
+          const next = new Set(prev);
+          next.delete(key);
+          return next;
+        }
+        if (prev.has(key)) return prev;
+        const next = new Set(prev);
+        next.add(key);
+        return next;
+      });
     },
     [soloEntriesStore, puzzle.id],
   );
@@ -276,6 +302,16 @@ function HomePage() {
     for (const k of lockedHintCells) merged.add(k);
     return merged;
   }, [autoValidation.validated, lockedHintCells]);
+
+  // Progress-bar "pending" count = filled cells minus validated cells.
+  // Computed as a set difference (not a size subtraction) so a hint
+  // reveal — which lands in `validatedPositions` without flowing through
+  // `onCellChange` — does not under-count.
+  const pending = useMemo(() => {
+    let count = 0;
+    for (const k of filledPositions) if (!validatedPositions.has(k)) count++;
+    return count;
+  }, [filledPositions, validatedPositions]);
 
   // Read the currently focused cell's coordinates + lock state. The
   // focus ref is updated on every `onLocalFocusChange` callback (no
@@ -331,6 +367,7 @@ function HomePage() {
       <ProgressBar
         value={validatedPositions.size}
         total={totalLetterCells}
+        pending={pending}
       />
       {isMultiplayerEnabled() ? <CreateLobbyButton /> : null}
       <SoloTour tour={tour} />
