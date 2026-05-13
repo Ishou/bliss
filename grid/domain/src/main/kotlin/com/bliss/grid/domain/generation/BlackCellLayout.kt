@@ -295,8 +295,7 @@ internal object BlackCellLayout {
                         changed = true
                         continue
                     }
-                    // Last resort: blacken the orphan. In strict mode only when
-                    // the resulting black is functional; in relaxed mode always.
+                    // Last resort: blacken the orphan (strict: only if functional; relaxed: always).
                     cells.set(r, c, CellArray.BLACK)
                     if (strictFunctionalBlackCells && !isFunctional(cells, r, c, minLen)) {
                         cells.set(r, c, CellArray.EMPTY)

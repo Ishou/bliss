@@ -59,7 +59,7 @@ class GeneratePuzzleUseCase(
 ) {
     private val log = LoggerFactory.getLogger(GeneratePuzzleUseCase::class.java)
 
-    // Tests inject a fake via [withGenerator]; production code never touches this seam.
+    // Tests inject a fake by assigning this property directly; production code never touches this seam.
     internal var generator: PuzzleGridGenerator =
         GridGenerator(wordRepository, clock).let { delegate ->
             PuzzleGridGenerator { constraints, random, metrics, timeoutMs, cooldownPolicy, strict ->

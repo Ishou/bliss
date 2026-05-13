@@ -220,8 +220,7 @@ internal object SlotRegistry {
         // position of at least one slot. A BLACK that hosts no arrow is
         // a "dead" cell — the renderer shows it as an unmarked dark
         // square, breaking the mots-fléchés contract. Reject so the
-        // driver perturbs and tries again. Skipped under the relaxed
-        // fallback path (see GeneratePuzzleUseCase).
+        // driver perturbs and tries again. Skipped when strict-mode is off.
         if (strictFunctionalBlackCells) {
             val cluePositions = HashSet<Position>(slots.size * 2)
             for (slot in slots) cluePositions += slot.cluePosition
