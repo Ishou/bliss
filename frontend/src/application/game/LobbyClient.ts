@@ -59,7 +59,8 @@ export interface LobbyClient {
 // server-side adapter computes `playerCount` so the summary endpoint
 // avoids loading the full player list (and to keep this seam thin).
 // `title` is absent when the owner did not set one at creation; per
-// ADR-0003 §6 optional means absent on the wire, never `null`.
+// ADR-0003 §6 optional means absent on the wire, never `null`. `progress`
+// drives the per-row progress bar.
 export interface LobbySummary {
   readonly id: LobbyId;
   readonly code: string;
@@ -67,7 +68,13 @@ export interface LobbySummary {
   readonly gridConfig: { readonly width: number; readonly height: number };
   readonly playerCount: number;
   readonly lastActivityAt: string;
+  readonly progress: LobbyProgress;
   readonly title?: string;
+}
+
+export interface LobbyProgress {
+  readonly solvedCells: number;
+  readonly totalCells: number;
 }
 
 // Typed error envelope. One concrete `Error` subclass with a `kind`

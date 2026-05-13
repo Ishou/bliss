@@ -37,6 +37,7 @@ interface WireLobbySummary {
   gridConfig: { width: number; height: number };
   playerCount: number;
   lastActivityAt: string;
+  progress: { solvedCells: number; totalCells: number };
   title?: string;
 }
 
@@ -127,6 +128,7 @@ test('Mes parties renders one list item per lobby returned by the API', async ({
       gridConfig: { width: 15, height: 12 },
       playerCount: 3,
       lastActivityAt: '2026-05-10T18:00:00Z',
+      progress: { solvedCells: 12, totalCells: 50 },
       title: 'Partie du soir',
     },
     {
@@ -136,6 +138,7 @@ test('Mes parties renders one list item per lobby returned by the API', async ({
       gridConfig: { width: 7, height: 7 },
       playerCount: 1,
       lastActivityAt: '2026-05-09T12:00:00Z',
+      progress: { solvedCells: 0, totalCells: 20 },
     },
   ]);
   await gotoAccueil(page);
@@ -171,6 +174,7 @@ test('clicking a Mes parties item navigates to /lobby/<id>', async ({ page }) =>
       gridConfig: { width: 15, height: 12 },
       playerCount: 2,
       lastActivityAt: '2026-05-10T18:00:00Z',
+      progress: { solvedCells: 5, totalCells: 30 },
       title: 'Partie du soir',
     },
   ]);

@@ -191,6 +191,10 @@ function wireToSummary(wire: WireLobbySummary): LobbySummary {
     gridConfig: { width: wire.gridConfig.width, height: wire.gridConfig.height },
     playerCount: wire.playerCount,
     lastActivityAt: wire.lastActivityAt,
+    progress: {
+      solvedCells: wire.progress.solvedCells,
+      totalCells: wire.progress.totalCells,
+    },
     ...(wire.title != null ? { title: wire.title } : {}),
   };
 }

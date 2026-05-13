@@ -18,6 +18,7 @@ const lobby: LobbySummary = {
   gridConfig: { width: 7, height: 7 },
   playerCount: 3,
   lastActivityAt: '2026-05-12T10:00:00Z',
+  progress: { solvedCells: 12, totalCells: 50 },
 };
 
 function renderAt(node: React.ReactNode) {
@@ -96,6 +97,16 @@ describe('<MyLobbiesSection> — player count', () => {
     const players = await screen.findByTestId('lobby-players');
     expect(players.textContent).toContain('3 / 8');
     expect(players.textContent).toMatch(/joueurs/);
+  });
+});
+
+describe('<MyLobbiesSection> — progress bar', () => {
+  it('renders a progress bar with the solved/total cells ratio from the summary', async () => {
+    renderAt(<MyLobbiesSection lobbies={[lobby]} />);
+    const bar = await screen.findByRole('progressbar');
+    expect(bar.getAttribute('aria-valuenow')).toBe('12');
+    expect(bar.getAttribute('aria-valuemax')).toBe('50');
+    expect(screen.getByTestId('puzzle-progress').textContent).toContain('12 / 50');
   });
 });
 

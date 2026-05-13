@@ -156,5 +156,12 @@ data class LobbySummaryDto(
     val gridConfig: GridConfigDto,
     val playerCount: Int,
     val lastActivityAt: String,
+    val progress: LobbyProgressDto,
     val title: String? = null,
+)
+
+@Serializable
+data class LobbyProgressDto(
+    val solvedCells: Int,
+    val totalCells: Int,
 )

@@ -155,5 +155,11 @@ fun com.bliss.game.application.usecases.LobbySummary.toDto(): com.bliss.game.api
                 .GridConfigDto(gridConfig.width, gridConfig.height),
         playerCount = playerCount,
         lastActivityAt = ISO.format(lastActivityAt),
+        progress =
+            com.bliss.game.api.dto
+                .LobbyProgressDto(
+                    solvedCells = progress.solvedCells,
+                    totalCells = progress.totalCells,
+                ),
         title = title?.value,
     )

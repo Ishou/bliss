@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { css } from 'styled-system/css';
 import type { LobbySummary } from '@/application/game';
 import { EyeIcon, EyeOffIcon } from '@/ui/components/icons';
+import { ProgressBar } from '@/ui/components/layout/ProgressBar';
 import { MAX_PLAYERS } from './PlayerList';
 
 // "Mes parties" surface (ADR-0039). Read-only list of the calling
@@ -216,6 +217,10 @@ function LobbyRow({ lobby }: { readonly lobby: LobbySummary }) {
             {lobby.playerCount} / {MAX_PLAYERS} joueurs
           </span>
         </span>
+        <ProgressBar
+          value={lobby.progress.solvedCells}
+          total={lobby.progress.totalCells}
+        />
       </Link>
       <span className={codeGroupStyles}>
         <span

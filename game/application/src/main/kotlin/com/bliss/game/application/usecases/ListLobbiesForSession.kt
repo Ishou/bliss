@@ -1,7 +1,9 @@
 package com.bliss.game.application.usecases
 
 import com.bliss.game.application.ports.LobbyRepository
+import com.bliss.game.domain.GameSession
 import com.bliss.game.domain.GridConfig
+import com.bliss.game.domain.LetterCell
 import com.bliss.game.domain.Lobby
 import com.bliss.game.domain.LobbyCode
 import com.bliss.game.domain.LobbyId
@@ -26,8 +28,22 @@ data class LobbySummary(
     val gridConfig: GridConfig,
     val playerCount: Int,
     val lastActivityAt: Instant,
+    val progress: LobbyProgress,
     val title: LobbyTitle?,
 )
+
+data class LobbyProgress(
+    val solvedCells: Int,
+    val totalCells: Int,
+) {
+    init {
+        require(solvedCells >= 0) { "solvedCells must be non-negative, was $solvedCells" }
+        require(totalCells >= 0) { "totalCells must be non-negative, was $totalCells" }
+        require(solvedCells <= totalCells) {
+            "solvedCells ($solvedCells) must not exceed totalCells ($totalCells)"
+        }
+    }
+}
 
 /**
  * Returns a session's lobbies as light-weight summaries, ordered by
@@ -58,5 +74,16 @@ private fun Lobby.toSummary(): LobbySummary =
         gridConfig = gridConfig,
         playerCount = players.size,
         lastActivityAt = lastActivityAt,
+        // WAITING is excluded above; IN_PROGRESS/COMPLETED always carry a GameSession.
+        progress = game!!.toProgress(),
         title = title,
     )
+
+private fun GameSession.toProgress(): LobbyProgress {
+    val totalCells =
+        puzzle.cells
+            .asSequence()
+            .filterIsInstance<LetterCell>()
+            .count { it.answer != null }
+    return LobbyProgress(solvedCells = solvedPositions().size, totalCells = totalCells)
+}
