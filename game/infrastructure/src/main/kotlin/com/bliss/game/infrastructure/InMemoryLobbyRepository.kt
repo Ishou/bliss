@@ -29,13 +29,17 @@ class InMemoryLobbyRepository : LobbyRepository {
     // adapter would index `(session_id, state)` via the membership table for this lookup.
     // ConcurrentHashMap.values() is weakly consistent — fine: this is a read-only projection
     // for the "Mes parties" surface (ADR-0039), and a concurrently mutating lobby simply
-    // lands in the next call. WAITING lobbies are excluded per the 2026-05-12 amendment:
-    // un-started lobbies are not "parties" and surface confusing 404 toasts when their TTL
-    // elapses between the list fetch and a rejoin click.
+    // lands in the next call. WAITING lobbies are excluded per the 2026-05-12 amendment.
+    // The session counts as "in" the lobby if it is the owner OR currently in the players
+    // map — per ADR-0039 (Lobby.kt:108-111) ownership persists after the owner's WS
+    // disconnects + leave-grace removes them from players, so the listing must keep
+    // exposing the lobby until they can re-enter via the LobbySummary's `code`.
     override suspend fun findBySessionId(sessionId: SessionId): List<Lobby> =
         store.values
-            .filter { it.players.containsKey(sessionId) && it.state != LobbyLifecycleState.WAITING }
-            .sortedByDescending { it.lastActivityAt }
+            .filter {
+                (it.ownerSessionId == sessionId || it.players.containsKey(sessionId)) &&
+                    it.state != LobbyLifecycleState.WAITING
+            }.sortedByDescending { it.lastActivityAt }
 
     override suspend fun save(lobby: Lobby): Lobby =
         lockFor(lobby.id).withLock {

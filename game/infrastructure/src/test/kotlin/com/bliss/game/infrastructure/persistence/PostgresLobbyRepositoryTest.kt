@@ -340,6 +340,59 @@ class PostgresLobbyRepositoryTest {
             assertThat(repo.findBySessionId(sessionB)).isEmpty()
         }
 
+    // ADR-0039 amendment 2026-05-13: a lobby surfaces in "Mes parties"
+    // for its owner even after the owner's WS disconnects and the
+    // leave-grace coroutine has removed them from lobby_players. The
+    // owner returns via the listing's LobbySummary `code` (the new-joiner
+    // branch of JoinLobbyUseCase adds them back to lobby_players).
+    @Test
+    fun `findBySessionId returns lobbies the session owns even after they left lobby_players`() =
+        runTest {
+            // sessionA owns the lobby; players map is non-empty (sessionB only)
+            // — mirrors the state where the owner has disconnected long enough
+            // for the leave-grace to elapse.
+            val ownedButLeft =
+                Lobby(
+                    id = LobbyId.generate(),
+                    ownerSessionId = sessionA,
+                    players = mapOf(sessionB to Player(sessionB, Pseudonym("Bob"), baseInstant)),
+                    state = LobbyLifecycleState.IN_PROGRESS,
+                    gridConfig = GridConfig(samplePuzzle().width, samplePuzzle().height),
+                    game =
+                        GameSession(
+                            puzzle = samplePuzzle(),
+                            entries = emptyMap(),
+                            startedAt = baseInstant,
+                            completedAt = null,
+                            lockedPositions = emptySet(),
+                        ),
+                    lastActivityAt = baseInstant.plusSeconds(30),
+                    code = LobbyCode.generate(),
+                )
+            repo.save(ownedButLeft)
+
+            val result = repo.findBySessionId(sessionA)
+
+            assertThat(result.map { it.id }).containsExactly(ownedButLeft.id)
+            // The loaded lobby reflects the actual lobby_players state:
+            // sessionA is NOT a player even though they own it. The frontend
+            // re-joins via the LobbySummary `code` on click.
+            assertThat(result[0].ownerSessionId).isEqualTo(sessionA)
+            assertThat(result[0].players.keys).containsOnly(sessionB)
+        }
+
+    @Test
+    fun `findBySessionId does not duplicate when session is both owner and player`() =
+        runTest {
+            // The default inProgressLobby fixture sets owner = players[0].
+            val ownedAndJoined = inProgressLobby(id = LobbyId.generate(), owner = sessionA)
+            repo.save(ownedAndJoined)
+
+            val result = repo.findBySessionId(sessionA)
+
+            assertThat(result.map { it.id }).containsExactly(ownedAndJoined.id)
+        }
+
     @Test
     fun `delete removes the lobby and cascades to players and entries`() =
         runTest {

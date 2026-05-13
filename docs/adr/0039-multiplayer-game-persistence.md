@@ -277,6 +277,45 @@ its CNPG cluster has been live and healthy since the original
 cutover, so the same destructive loop has never bitten it. Splitting
 grid's chart is a follow-up.
 
+## Amendment 2026-05-13 — listing includes owner-only memberships
+
+The original §d query joined `lobby_players` only:
+
+```sql
+SELECT l.id FROM lobbies l
+JOIN lobby_players lp ON lp.lobby_id = l.id
+WHERE lp.session_id = ?
+  AND l.state IN ('IN_PROGRESS', 'COMPLETED')
+ORDER BY l.last_activity_at DESC
+```
+
+Combined with the leave-grace coroutine that removes the owner from
+`lobby_players` after their WS disconnect, this meant an owner who
+refreshed mid-game lost their lobby from "Mes parties" until a
+co-player rejoined. The `Lobby` domain invariant at `Lobby.kt:108-111`
+already documents that the owner may be absent from `players` after
+they leave, with `ownerSessionId` preserved precisely so they can
+return via "My-games" — but the query never honored it.
+
+The query now keeps a lobby in the listing for its owner regardless
+of `lobby_players` membership:
+
+```sql
+SELECT l.id FROM lobbies l
+WHERE (l.owner_session_id = ?
+       OR EXISTS (SELECT 1 FROM lobby_players lp
+                  WHERE lp.lobby_id = l.id AND lp.session_id = ?))
+  AND l.state IN ('IN_PROGRESS', 'COMPLETED')
+ORDER BY l.last_activity_at DESC
+```
+
+The `LobbySummaryDto` returned by the listing endpoint already
+carries `code`, so the owner re-joins via the new-joiner branch of
+`JoinLobbyUseCase` (which adds them back to `lobby_players`); no
+additional owner-bypass in the join path is required. `EXISTS`
+avoids row duplication when the session is both the owner and
+present in `lobby_players`.
+
 ## References
 
 - [ADR-0001 — Parallel-agent development workflow](./0001-parallel-agent-development-workflow.md)
