@@ -694,10 +694,7 @@ describe('Lobby route Wave H integration', () => {
   });
 
   it('opens EndGameModal when the REST loader returns a COMPLETED lobby', async () => {
-    // Hard refresh on a completed game: the REST snapshot already
-    // carries state=COMPLETED + completedAt; the WS replay (if any)
-    // arrives after first paint, so the modal must derive its time
-    // from the loader payload synchronously on mount.
+    // REST snapshot is COMPLETED on mount; no live gameSolved will arrive.
     const completedLobby: Lobby = {
       ...baseLobby,
       state: 'COMPLETED',
@@ -718,12 +715,7 @@ describe('Lobby route Wave H integration', () => {
   });
 
   it('opens EndGameModal on a COMPLETED lobbyState snapshot (post-reload reconnect)', async () => {
-    // Reload-after-completion: the user opens the lobby AFTER the game
-    // solved and the live `gameSolved` event was broadcast. The REST
-    // loader / WS `lobbyState` snapshot carries `state: COMPLETED` and
-    // `game.startedAt` + `game.completedAt`, but the user never
-    // receives a `gameSolved` event so `durationMs` must be derived
-    // from the snapshot.
+    // lobbyState snapshot arrives COMPLETED; gameSolved was never received.
     const gameClient = makeFakeGameClient();
     renderLobby({ gameClient });
     await screen.findByRole('heading', { name: /WordSparrow/ });
