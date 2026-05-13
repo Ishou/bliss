@@ -23,6 +23,7 @@ COPY grid/domain/build.gradle.kts grid/domain/
 COPY grid/application/build.gradle.kts grid/application/
 COPY grid/infrastructure/build.gradle.kts grid/infrastructure/
 COPY grid/api/build.gradle.kts grid/api/
+COPY grid/worker/build.gradle.kts grid/worker/
 
 # Same gotcha for :game:* modules — every project directory must exist.
 COPY game/domain/build.gradle.kts game/domain/
