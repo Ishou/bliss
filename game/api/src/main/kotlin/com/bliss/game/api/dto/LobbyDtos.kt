@@ -156,5 +156,16 @@ data class LobbySummaryDto(
     val gridConfig: GridConfigDto,
     val playerCount: Int,
     val lastActivityAt: String,
+    val progress: LobbyProgressDto,
     val title: String? = null,
+)
+
+/**
+ * `LobbyProgress` schema — puzzle progress projection driving the per-row
+ * progress bar on the Accueil "Mes parties" surface.
+ */
+@Serializable
+data class LobbyProgressDto(
+    val solvedCells: Int,
+    val totalCells: Int,
 )

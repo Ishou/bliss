@@ -607,6 +607,7 @@ export function lobbySummaryFixture(
     gridConfig: { width: 15, height: 12 },
     playerCount: 2,
     lastActivityAt: '2026-05-10T18:00:00Z',
+    progress: { solvedCells: 0, totalCells: 0 },
     ...overrides,
   };
 }

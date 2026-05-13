@@ -173,6 +173,7 @@ describe('HttpLobbyClient.listMyLobbies', () => {
     gridConfig: { width: 15, height: 12 },
     playerCount: 2,
     lastActivityAt: '2026-05-10T18:00:00Z',
+    progress: { solvedCells: 7, totalCells: 42 },
     title: 'Mardi soir',
   };
 
@@ -196,6 +197,7 @@ describe('HttpLobbyClient.listMyLobbies', () => {
       gridConfig: summaryFixture.gridConfig,
       playerCount: summaryFixture.playerCount,
       lastActivityAt: summaryFixture.lastActivityAt,
+      progress: summaryFixture.progress,
       title: summaryFixture.title,
     });
   });

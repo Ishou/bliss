@@ -25,6 +25,7 @@ export {
   LobbyClientError,
   type LobbyClient,
   type LobbyClientErrorKind,
+  type LobbyProgress,
   type LobbySummary,
   type ProblemDetails,
 } from './LobbyClient';

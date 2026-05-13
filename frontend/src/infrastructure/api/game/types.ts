@@ -482,11 +482,11 @@ export interface components {
         /**
          * @description Compact view of a lobby for the "Mes parties" listing. Carries just
          *     enough to render a row in the Accueil card (label, code, grid size,
-         *     recency) without paying the cost of the full `Lobby` snapshot — the
-         *     `game` payload is intentionally omitted. The frontend hydrates the
-         *     full lobby through `GET /v1/lobbies/{lobbyId}` when the player
-         *     clicks through. `title` is optional with the same wire semantics as
-         *     `Lobby.title` (absent OR present, never `null`).
+         *     recency, puzzle progress) without paying the cost of the full
+         *     `Lobby` snapshot — the `game` payload is intentionally omitted. The
+         *     frontend hydrates the full lobby through `GET /v1/lobbies/{lobbyId}`
+         *     when the player clicks through. `title` is optional with the same
+         *     wire semantics as `Lobby.title` (absent OR present, never `null`).
          */
         LobbySummary: {
             id: components["schemas"]["LobbyId"];
@@ -507,12 +507,34 @@ export interface components {
              */
             playerCount: number;
             lastActivityAt: components["schemas"]["Instant"];
+            progress: components["schemas"]["LobbyProgress"];
             /**
              * @description Optional label mirroring `Lobby.title`. Absent when the owner
              *     did not set one at creation; never `null` on the wire.
              * @example Mardi soir
              */
             title?: string;
+        };
+        /**
+         * @description Puzzle progress projection for a lobby's `GameSession`. `solvedCells`
+         *     counts letter cells whose typed entry matches the canonical answer;
+         *     `totalCells` counts answerable letter cells in the puzzle. Always
+         *     present in `LobbySummary` because the endpoint only lists
+         *     `IN_PROGRESS` / `COMPLETED` lobbies, both of which carry a
+         *     `GameSession`. Drives the per-row progress bar on the Accueil "Mes
+         *     parties" surface.
+         */
+        LobbyProgress: {
+            /**
+             * @description Letter cells whose typed entry matches the canonical answer.
+             * @example 12
+             */
+            solvedCells: number;
+            /**
+             * @description Letter cells in the puzzle that have an answer to be solved.
+             * @example 50
+             */
+            totalCells: number;
         };
         /**
          * @description Request body for `POST /v1/lobbies`.
