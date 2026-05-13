@@ -53,12 +53,13 @@ const fillStyles = css({
 });
 
 // Rendered before fillStyles so sage paints on top, hiding sub-pixel seams.
+// `progressTrackPending` clears WCAG 2.1 SC 1.4.11 (3:1 non-text contrast)
 const pendingFillStyles = css({
   position: 'absolute',
   top: 0,
   bottom: 0,
   height: '100%',
-  bg: 'border',
+  bg: 'progressTrackPending',
   transition: 'width 220ms ease-out, left 220ms ease-out',
 });
 

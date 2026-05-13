@@ -71,4 +71,13 @@ describe('ProgressBar', () => {
     expect(sage!.style.width).toBe('0%');
     expect(pending!.style.width).toBe('0%');
   });
+
+  it('pending segment uses the WCAG-AA `progressTrackPending` token, not `border`', () => {
+    // regression guard: pending segment must use WCAG-AA token, not `border`
+    const { container } = render(<ProgressBar value={3} total={10} pending={2} />);
+    const pending = getPendingDiv(container);
+    expect(pending).not.toBeNull();
+    expect(pending!.className).toContain('bg_progressTrackPending');
+    expect(pending!.className).not.toContain('bg_border');
+  });
 });

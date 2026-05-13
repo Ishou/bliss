@@ -189,6 +189,8 @@ export default defineConfig({
         // sage fill). Useful when a secondary surface is needed without
         // taking on the rose clue colour.
         surfaceElevated:{ value: '{colors.neutral.600}' },
+        // Component-specific token; keeps track tweaks isolated from `border` uses
+        progressTrackPending: { value: '{colors.neutral.300}' },
 
         // ── Foreground ──────────────────────────────────────────────
         fg:                 { value: '{colors.neutral.50}' },   // primary text on charcoal surfaces
