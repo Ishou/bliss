@@ -16,6 +16,7 @@ COPY grid/domain/build.gradle.kts grid/domain/
 COPY grid/application/build.gradle.kts grid/application/
 COPY grid/infrastructure/build.gradle.kts grid/infrastructure/
 COPY grid/api/build.gradle.kts grid/api/
+COPY grid/worker/build.gradle.kts grid/worker/
 # settings.gradle.kts includes :game:* modules. Gradle's configuration step
 # requires those project directories to exist before any task can run.
 # :grid:api:shadowJar has no dependency on game/, so the build script alone
