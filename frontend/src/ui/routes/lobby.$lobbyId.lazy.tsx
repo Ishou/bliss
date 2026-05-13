@@ -30,9 +30,11 @@ import type {
   GameCell,
   GameDefinitionCell,
   GamePuzzle,
+  GameSession,
   Letter,
   Lobby,
   LobbyId,
+  LobbyLifecycleState,
   Player,
   Position as GamePosition,
   PresenceEntry,
@@ -157,7 +159,8 @@ function LobbyPage() {
 
   const [view, setView] = useState<LobbyView>(() => ({
     lobby: initialLobby,
-    durationMs: null,
+    // Seed `durationMs` from the loader snapshot so the modal opens on a hard refresh into a COMPLETED lobby (no live `gameSolved` arrives in that path).
+    durationMs: deriveDurationMs(null, initialLobby.state, initialLobby.game),
     modalDismissed: false,
   }));
   const [connectionState, setConnectionState] = useState<ConnectionState>('connecting');
@@ -825,6 +828,21 @@ function InGameView({
   );
 }
 
+// Fallback for the reload-after-completion path: derive `durationMs` from `completedAt − startedAt` when no live `gameSolved` reaches this client; live event still wins (returns `current` when set).
+function deriveDurationMs(
+  current: number | null,
+  state: LobbyLifecycleState,
+  game: GameSession | null,
+): number | null {
+  if (current !== null) return current;
+  if (state !== 'COMPLETED' || !game || game.completedAt == null) return current;
+  const startedMs = Date.parse(game.startedAt);
+  const completedMs = Date.parse(game.completedAt);
+  if (!Number.isFinite(startedMs) || !Number.isFinite(completedMs)) return current;
+  const diff = completedMs - startedMs;
+  return diff >= 0 ? diff : 0;
+}
+
 // Folds a server→client `GameEvent` into the locally-cached `LobbyView`.
 // Membership events update `lobby.players`; `gameStarted` flips the
 // state to `IN_PROGRESS` and embeds the `GameSession`; `gameSolved`
@@ -835,9 +853,9 @@ function InGameView({
 // no React render is triggered per keystroke (ADR-0002 §4).
 function applyEvent(current: LobbyView, event: GameEvent): LobbyView {
   switch (event.type) {
-    case 'lobbyState':
-      // `code` is now first-class on the snapshot — take it from the
-      // event so future server-side mutations propagate.
+    case 'lobbyState': {
+      // `code` is first-class on the snapshot. `durationMs` is filled from the snapshot only when no live `gameSolved` has populated it yet (reload-into-COMPLETED path); see `deriveDurationMs`.
+      const derivedDurationMs = deriveDurationMs(current.durationMs, event.state, event.game);
       return {
         ...current,
         lobby: {
@@ -845,7 +863,9 @@ function applyEvent(current: LobbyView, event: GameEvent): LobbyView {
           state: event.state, gridConfig: event.gridConfig, game: event.game,
           code: event.code,
         },
+        durationMs: derivedDurationMs,
       };
+    }
     case 'playerJoined':
       if (current.lobby.players.some((p) => p.sessionId === event.sessionId)) return current;
       return {

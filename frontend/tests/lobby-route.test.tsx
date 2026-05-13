@@ -693,6 +693,57 @@ describe('Lobby route Wave H integration', () => {
     expect(screen.getByTestId('end-game-modal-duration')).toHaveTextContent('01:05');
   });
 
+  it('opens EndGameModal when the REST loader returns a COMPLETED lobby', async () => {
+    // REST snapshot is COMPLETED on mount; no live gameSolved will arrive.
+    const completedLobby: Lobby = {
+      ...baseLobby,
+      state: 'COMPLETED',
+      game: {
+        puzzle: buildGamePuzzle(),
+        entries: [],
+        lockedPositions: [],
+        startedAt: '2026-05-02T15:30:00Z',
+        completedAt: '2026-05-02T15:32:30Z',
+      },
+    };
+    renderLobby({ initialLobby: completedLobby });
+
+    const modal = await screen.findByTestId('end-game-modal');
+    expect(modal).toBeInTheDocument();
+    // 150_000 ms between startedAt and completedAt → 02:30.
+    expect(screen.getByTestId('end-game-modal-duration')).toHaveTextContent('02:30');
+  });
+
+  it('opens EndGameModal on a COMPLETED lobbyState snapshot (post-reload reconnect)', async () => {
+    // lobbyState snapshot arrives COMPLETED; gameSolved was never received.
+    const gameClient = makeFakeGameClient();
+    renderLobby({ gameClient });
+    await screen.findByRole('heading', { name: /WordSparrow/ });
+
+    act(() => {
+      gameClient.dispatch({
+        type: 'lobbyState',
+        players: [{ sessionId, pseudonym, joinedAt: '2026-05-02T15:30:00Z' }],
+        ownerSessionId: sessionId,
+        state: 'COMPLETED',
+        gridConfig: { width: 3, height: 3 },
+        code: 'A2B3C4',
+        game: {
+          puzzle: buildGamePuzzle(),
+          entries: [],
+          lockedPositions: [],
+          startedAt: '2026-05-02T15:30:00Z',
+          completedAt: '2026-05-02T15:31:05Z',
+        },
+      });
+    });
+
+    const modal = await screen.findByTestId('end-game-modal');
+    expect(modal).toBeInTheDocument();
+    // 65_000 ms between startedAt and completedAt → 01:05.
+    expect(screen.getByTestId('end-game-modal-duration')).toHaveTextContent('01:05');
+  });
+
   it('dismisses the EndGameModal on Fermer without leaving the page', async () => {
     const gameClient = makeFakeGameClient();
     renderLobby({ gameClient });
