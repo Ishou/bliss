@@ -39,7 +39,7 @@ class LoadOrGeneratePuzzleUseCase(
         height: Int? = null,
         sessionId: UUID? = null,
     ): StoredPuzzle? {
-        // Fast path: skip lambda allocation on hit; miss path races atomically on INSERT (ADR-0013).
+        // Fast path: skip lambda allocation on hit; miss path races atomically on INSERT.
         puzzleRepository.get(puzzleId)?.let { return it }
         return puzzleRepository.getOrCompute(puzzleId) {
             val cooldown = cooldownRepository
