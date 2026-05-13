@@ -303,10 +303,7 @@ class ListLobbiesForSessionTest {
             assertThat(out[0].progress.totalCells).isEqualTo(2)
         }
 
-    // Server-validated locks (`lockedPositions`) are the source of truth for
-    // solved cells — `GameSession.solvedPositions()` is unusable in
-    // production because grid strips `LetterCell.answer` from the wire so
-    // the browser cannot cheat. See `toProgress` in ListLobbiesForSession.kt.
+    // lockedPositions — not solvedPositions() — because answer is null on the wire.
     @Test
     fun `summary progress counts server-validated locked positions as solved`() =
         runTest {
@@ -344,20 +341,12 @@ class ListLobbiesForSessionTest {
             assertThat(out[0].progress.totalCells).isEqualTo(2)
         }
 
-    // Regression guard: in production grid strips `LetterCell.answer` from
-    // the wire (see `WordValidator` in Ports.kt) so every LetterCell on a
-    // game-side puzzle has `answer == null`. The progress projection MUST
-    // still count those cells towards `totalCells`, otherwise every "Mes
-    // parties" card displays "0 / 0" forever.
     @Test
     fun `summary progress totalCells counts LetterCell instances even when answer is stripped`() =
         runTest {
             val repo = InMemoryLobbyRepository()
             val lobbyId = LobbyId.generate()
             val players = mapOf(sessionA to Player(sessionA, alice, baseInstant))
-            // Production-shaped puzzle: every LetterCell carries answer = null
-            // because grid stripped them on the wire (security: client never
-            // sees the solution).
             val strippedPuzzle =
                 Samples
                     .puzzle()
@@ -388,8 +377,6 @@ class ListLobbiesForSessionTest {
 
             assertThat(out).hasSize(1)
             assertThat(out[0].progress.solvedCells).isEqualTo(0)
-            // The two LetterCell instances still count even though both
-            // have answer = null on the wire.
             assertThat(out[0].progress.totalCells).isEqualTo(2)
         }
 

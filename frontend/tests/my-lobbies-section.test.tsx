@@ -108,9 +108,7 @@ describe('<MyLobbiesSection> — progress bar', () => {
     expect(bar.getAttribute('aria-valuemax')).toBe('50');
     const text = screen.getByTestId('puzzle-progress').textContent ?? '';
     expect(text).toContain('12 / 50');
-    // FR label/value convention: NBSP + colon separates label from value
-    // so the two read as one phrase even when the surrounding card is
-    // narrow (regression guard for "Progression0 / 0 cases").
+    // Regression guard: NBSP+colon separator prevents "Progression0 / 0 cases" collapse.
     expect(text).toMatch(/Progression\u00a0:\s*12 \/ 50 cases/);
   });
 });

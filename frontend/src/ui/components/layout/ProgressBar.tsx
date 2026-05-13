@@ -87,9 +87,6 @@ export function ProgressBar({ value, total, label = 'Progression', pending = 0 }
   return (
     <div className={wrapperStyles} data-testid="puzzle-progress">
       <div className={labelRowStyles}>
-        {/* French label/value convention: NBSP + colon between label and
-            value so screen readers and visible text both read as one
-            phrase ("Progression : 12 / 50 cases"). */}
         <span className={labelMutedStyles}>{label}{' :'}</span>
         <span className={labelCountStyles}>
           {safeValue} / {safeTotal} cases
