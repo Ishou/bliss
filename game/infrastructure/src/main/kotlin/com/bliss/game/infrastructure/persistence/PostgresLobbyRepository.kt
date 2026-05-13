@@ -86,15 +86,20 @@ class PostgresLobbyRepository(
         withContext(Dispatchers.IO) {
             ds.connection.use { conn ->
                 val ids = mutableListOf<LobbyId>()
+                // owner arm keeps lobby visible after leave-grace drops owner from lobby_players (ADR-0039).
                 conn
                     .prepareStatement(
                         "SELECT l.id FROM lobbies l " +
-                            "JOIN lobby_players lp ON lp.lobby_id = l.id " +
-                            "WHERE lp.session_id = ? " +
+                            "WHERE (l.owner_session_id = ? OR EXISTS (" +
+                            "  SELECT 1 FROM lobby_players lp " +
+                            "  WHERE lp.lobby_id = l.id AND lp.session_id = ?" +
+                            ")) " +
                             "AND l.state IN ('IN_PROGRESS', 'COMPLETED') " +
                             "ORDER BY l.last_activity_at DESC",
                     ).use { ps ->
-                        ps.setObject(1, UUID.fromString(sessionId.value))
+                        val sidUuid = UUID.fromString(sessionId.value)
+                        ps.setObject(1, sidUuid)
+                        ps.setObject(2, sidUuid)
                         ps.executeQuery().use { rs ->
                             while (rs.next()) ids += LobbyId(rs.getString("id"))
                         }

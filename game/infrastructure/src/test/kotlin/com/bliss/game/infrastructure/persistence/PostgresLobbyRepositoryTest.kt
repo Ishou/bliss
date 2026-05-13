@@ -341,6 +341,47 @@ class PostgresLobbyRepositoryTest {
         }
 
     @Test
+    fun `findBySessionId returns lobbies the session owns even after they left lobby_players`() =
+        runTest {
+            val ownedButLeft =
+                Lobby(
+                    id = LobbyId.generate(),
+                    ownerSessionId = sessionA,
+                    players = mapOf(sessionB to Player(sessionB, Pseudonym("Bob"), baseInstant)),
+                    state = LobbyLifecycleState.IN_PROGRESS,
+                    gridConfig = GridConfig(samplePuzzle().width, samplePuzzle().height),
+                    game =
+                        GameSession(
+                            puzzle = samplePuzzle(),
+                            entries = emptyMap(),
+                            startedAt = baseInstant,
+                            completedAt = null,
+                            lockedPositions = emptySet(),
+                        ),
+                    lastActivityAt = baseInstant.plusSeconds(30),
+                    code = LobbyCode.generate(),
+                )
+            repo.save(ownedButLeft)
+
+            val result = repo.findBySessionId(sessionA)
+
+            assertThat(result.map { it.id }).containsExactly(ownedButLeft.id)
+            assertThat(result[0].ownerSessionId).isEqualTo(sessionA)
+            assertThat(result[0].players.keys).containsOnly(sessionB)
+        }
+
+    @Test
+    fun `findBySessionId does not duplicate when session is both owner and player`() =
+        runTest {
+            val ownedAndJoined = inProgressLobby(id = LobbyId.generate(), owner = sessionA)
+            repo.save(ownedAndJoined)
+
+            val result = repo.findBySessionId(sessionA)
+
+            assertThat(result.map { it.id }).containsExactly(ownedAndJoined.id)
+        }
+
+    @Test
     fun `delete removes the lobby and cascades to players and entries`() =
         runTest {
             val lobby = inProgressLobby(id = LobbyId.generate())
