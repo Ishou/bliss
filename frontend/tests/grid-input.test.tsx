@@ -1084,17 +1084,10 @@ describe('Grid pan/zoom does not touch focus', () => {
   });
 });
 
-// Space-bar toggles solving direction at the focused cell. Desktop runs
-// through the keydown branch (case ' '); mobile soft keyboards (Android
-// Gboard, iOS) fire keydown with key === 'Unidentified' for printable
-// characters, so the real space only shows up in the `input` event with
-// inputType === 'insertText' and data === ' '. Both paths must flip
-// direction without writing the space to the cell.
 describe('Grid keyboard interactions — space-bar direction toggle', () => {
   it('desktop space keydown at an intersection toggles direction', () => {
     const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
-    // (1,2) sits on both across-2 (focused after the click via the
-    // starting-clue preference) and down-1. Click selects down-1 first.
+    // (1,2) is an intersection; click selects down-1 via the starting-clue preference.
     const target = inputAt(container, 1, 2)!;
     click(target);
     expect(wrapAt(container, 2, 2)?.dataset.inWord).toBe('true');
@@ -1111,8 +1104,7 @@ describe('Grid keyboard interactions — space-bar direction toggle', () => {
     const target = inputAt(container, 1, 2)!;
     click(target);
     expect(wrapAt(container, 2, 2)?.dataset.inWord).toBe('true');
-    // Soft keyboard inserts a space — the browser stuffed ' ' into
-    // target.value; the input event carries data === ' '.
+    // Mobile: browser stuffs ' ' into target.value; input event carries data === ' '.
     target.value = ' ';
     act(() => {
       target.dispatchEvent(new InputEvent('input', { inputType: 'insertText', data: ' ', bubbles: true }));
@@ -1128,9 +1120,7 @@ describe('Grid keyboard interactions — space-bar direction toggle', () => {
   });
 
   it('mobile soft-keyboard space input on a single-clue cell is a no-op', () => {
-    // (0,1) only has across-1 passing through; toggling direction would
-    // strand the user on a perpendicular axis with no word. The handler
-    // matches the desktop branch and bails before the setDirection call.
+    // (0,1) is on a single clue — toggling direction would strand the user; handler bails.
     const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
     const target = inputAt(container, 0, 1)!;
     click(target);
@@ -1144,8 +1134,7 @@ describe('Grid keyboard interactions — space-bar direction toggle', () => {
   });
 
   it('mobile soft-keyboard space on a filled cell does not erase the letter', () => {
-    // Regression: the space-detection branch runs BEFORE the
-    // non-letter blanking branch so a typed letter survives the toggle.
+    // Space-detection runs before the non-letter blanking branch — typed letter survives.
     const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
     const target = inputAt(container, 1, 2)!;
     click(target);
@@ -1163,11 +1152,6 @@ describe('Grid keyboard interactions — space-bar direction toggle', () => {
   });
 });
 
-// Validated cells render with `readOnly` — the spec locks them as soon
-// as `Vérifier` confirms the letter. Tapping a readOnly <input> on
-// Android / iOS dismisses the soft keyboard (no editable target to
-// attach to), so the click handler must skip the focus move and keep
-// the previously-focused mutable cell active.
 describe('Grid keyboard interactions — validated cells preserve focus', () => {
   it('tapping a validated cell does not move focus off the previously focused mutable cell', () => {
     const validated = new Set<string>(['1,3']);
@@ -1180,8 +1164,7 @@ describe('Grid keyboard interactions — validated cells preserve focus', () => 
     // Sanity: the targeted cell really is readOnly.
     const locked = inputAt(container, 1, 3)!;
     expect(locked.readOnly).toBe(true);
-    // Tap the wrapper around the validated cell — this is the touch
-    // target on mobile (pointerEvents: 'none' on the input itself).
+    // Tap the wrapper — touch target on mobile (input has pointerEvents: 'none').
     const lockedWrapper = wrapAt(container, 1, 3)!;
     fireEvent.mouseDown(lockedWrapper);
     fireEvent.click(lockedWrapper);
