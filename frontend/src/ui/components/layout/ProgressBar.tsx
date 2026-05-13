@@ -1,14 +1,6 @@
 import { css } from 'styled-system/css';
 
-// Puzzle progress bar — ADR-0005 §6 component spec.
-//
-// Track in `surfaceElevated` (raised neutral), fill in sage. A label row
-// above pairs muted "Progression" with a sage "X / Y cases" count using
-// the French label/value convention (NBSP + colon between them) so the
-// two read as one phrase even in narrow cards (e.g. the "Mes parties"
-// surface) where flex space-between would otherwise let the two spans
-// collide. Spec calls for 4–5 px track height; we ship 5 px. Fill
-// animates 220 ms ease-out, matching the brief's motion table.
+// Puzzle progress bar — ADR-0005 §6 component spec. Track: surfaceElevated; fill: sage; 5 px height; 220 ms ease-out.
 
 const wrapperStyles = css({
   display: 'flex',
