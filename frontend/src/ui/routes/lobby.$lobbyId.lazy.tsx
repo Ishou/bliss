@@ -703,13 +703,7 @@ function InGameView({
     [puzzle.cells],
   );
 
-  // Track filled-but-not-yet-validated cells for the progress bar's gray
-  // "pending" segment. Seeded from the `initialEntries` prop (snapshot
-  // replay on join / reconnect), then updated through two seams:
-  //   • local writes — `onCellChange` (wrapped below).
-  //   • remote writes — `cellUpdated` events delivered via the same
-  //     `subscribeToRemoteCellUpdates` registrar the grid consumes.
-  // Re-seed when `initialEntries` changes reference (server snapshot replay).
+  // Updated via local onCellChange wrapper and remote cellUpdated events.
   const [filledPositions, setFilledPositions] = useState<ReadonlySet<string>>(
     () => new Set(initialEntries.map((e) => `${e.row},${e.column}`)),
   );

@@ -257,9 +257,7 @@ function GrilleDuJourReadyBody({ puzzle }: { readonly puzzle: Puzzle }) {
     (n, c) => (c.kind === 'letter' ? n + 1 : n),
     0,
   );
-  // Single-pass form: load entries + locked cells once, then derive the
-  // gray "pending" count (filled ∖ locked). Mirrors the live progress
-  // bar inside the grille route.
+  // Derive pending (filled ∖ locked) in one pass.
   const lockedKeys = new Set(
     soloEntriesStore.loadLockedCells(puzzle.id).map((c) => `${c.row},${c.column}`),
   );

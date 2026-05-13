@@ -2,11 +2,6 @@ import { render, screen } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
 import { ProgressBar } from '@/ui/components/layout';
 
-// `ProgressBar` paints two absolutely-positioned segments inside a track:
-// the sage `fill` (validated cells) and the gray `pending` (letters typed
-// but not yet auto-validated). The gray is a passive indicator — the
-// load-bearing semantic is `aria-valuenow`, which stays bound to `value`.
-
 const PENDING_TESTID = 'puzzle-progress-pending';
 
 function getPendingDiv(container: HTMLElement): HTMLElement | null {
@@ -14,8 +9,6 @@ function getPendingDiv(container: HTMLElement): HTMLElement | null {
 }
 
 function getSageDiv(container: HTMLElement): HTMLElement | null {
-  // The sage fill is the last child of the track; we read its style
-  // directly. The pending div carries a `data-testid`; the sage does not.
   const track = container.querySelector<HTMLElement>('[role="progressbar"]');
   if (!track) return null;
   const children = Array.from(track.children) as HTMLElement[];
@@ -30,9 +23,6 @@ describe('ProgressBar', () => {
     const pending = getPendingDiv(container);
     expect(sage).not.toBeNull();
     expect(pending).not.toBeNull();
-    // sage = 30 %, pending = 0 % (still in the DOM so the JSX order keeps
-    // the sage on top — eliminates the sub-pixel seam — but its width is
-    // 0 so it is invisible).
     expect(sage!.style.width).toBe('30%');
     expect(pending!.style.width).toBe('0%');
     expect(pending!.style.left).toBe('30%');

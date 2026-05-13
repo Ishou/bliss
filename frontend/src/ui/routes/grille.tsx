@@ -217,11 +217,7 @@ function HomePage() {
     return soloEntriesStore.load(puzzle.id);
   }, [puzzle.id, refreshCount, soloEntriesStore]);
 
-  // Track filled letter cells for the progress bar's gray "pending"
-  // segment (letters typed but not yet auto-validated). Seeded from the
-  // persisted entries — the grid is uncontrolled (ADR-0002 §4) so we
-  // mirror the keystroke seam (`handleCellChange`) into this Set rather
-  // than reading the DOM at render time.
+  // Mirrors keystrokes into a Set; grid is uncontrolled (ADR-0002 §4).
   const [filledPositions, setFilledPositions] = useState<ReadonlySet<string>>(
     () => new Set(initialEntries.map((e) => `${e.row},${e.column}`)),
   );
@@ -232,8 +228,7 @@ function HomePage() {
   // `refreshCount` in the deps the effect was bound to `[puzzle.id]`
   // alone — locks survived the storage clear and the cells stayed
   // sage-tinted until a full reload.
-  // Also re-seed `filledPositions` from the freshly-loaded entries so
-  // Actualiser wipes the gray segment in the progress bar.
+  // Re-seed so Actualiser wipes the pending segment.
   useEffect(() => {
     const persisted = soloEntriesStore.loadLockedCells(puzzle.id);
     setLockedHintCells(new Set(persisted.map((c) => `${c.row},${c.column}`)));
@@ -303,10 +298,7 @@ function HomePage() {
     return merged;
   }, [autoValidation.validated, lockedHintCells]);
 
-  // Progress-bar "pending" count = filled cells minus validated cells.
-  // Computed as a set difference (not a size subtraction) so a hint
-  // reveal — which lands in `validatedPositions` without flowing through
-  // `onCellChange` — does not under-count.
+  // Set difference, not size subtraction: hint reveals bypass onCellChange.
   const pending = useMemo(() => {
     let count = 0;
     for (const k of filledPositions) if (!validatedPositions.has(k)) count++;
