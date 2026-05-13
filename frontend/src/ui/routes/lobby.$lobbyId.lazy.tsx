@@ -154,6 +154,9 @@ function LobbyPage() {
   const gameClient = ctx.gameClient!;
   const getSession = ctx.getSession!;
   const setPersistedPseudonym = ctx.setPseudonym;
+  // Ref keeps the subscribe handler stable across re-renders.
+  const setPersistedPseudonymRef = useRef(setPersistedPseudonym);
+  setPersistedPseudonymRef.current = setPersistedPseudonym;
   const lobbyJoinCodeStash = ctx.lobbyJoinCodeStash!;
   const navigate = useNavigate();
 
@@ -234,6 +237,8 @@ function LobbyPage() {
         setPseudonymError(event.detail ?? event.title);
       } else if (event.type === 'playerRenamed' && event.sessionId === sessionId) {
         setPseudonymError(null);
+        // Persist server-confirmed value; rejected pseudonym must never reach cache.
+        setPersistedPseudonymRef.current?.(event.newPseudonym);
       }
       if (event.type === 'error' &&
         event.errorType === 'https://bliss.example/errors/wrong-code') {
@@ -384,11 +389,9 @@ function LobbyPage() {
   }, [gameClient, sessionId, lobby.players, announcer]);
 
   const handleRename = useCallback((newPseudonym: Pseudonym) => {
+    // Server is authoritative; let playerRenamed persist to localStorage.
     gameClient.renameSelf(newPseudonym);
-    // Persist via the context-supplied writer — never touches
-    // `infrastructure/session/` from this layer (boundary rule).
-    setPersistedPseudonym?.(newPseudonym);
-  }, [gameClient, setPersistedPseudonym]);
+  }, [gameClient]);
 
   const handleSetGridConfig = useCallback((width: number, height: number) => {
     gameClient.setGridConfig({ width, height });

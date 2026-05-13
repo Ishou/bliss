@@ -449,14 +449,12 @@ describe('Lobby route Wave H integration', () => {
     expect(gameClient.setGridConfigCalls).toEqual([{ width: 9, height: 9 }]);
   });
 
-  it('persists the new pseudonym via setPseudonym and forwards to renameSelf', async () => {
+  it('forwards rename to renameSelf and persists only after the server confirms via playerRenamed', async () => {
     const gameClient = makeFakeGameClient();
     const setPseudonymSpy = vi.fn();
     renderLobby({ gameClient, setPseudonym: setPseudonymSpy });
     await screen.findByRole('heading', { name: /WordSparrow/ });
 
-    // The pseudonym editor shows the current name as a button; click
-    // reveals the input.
     const pseudonymButton = screen.getByRole('button', {
       name: /Modifier votre pseudonyme/i,
     });
@@ -466,7 +464,79 @@ describe('Lobby route Wave H integration', () => {
     fireEvent.keyDown(input, { key: 'Enter' });
 
     expect(gameClient.renameCalls).toEqual(['Nouveau']);
+    expect(setPseudonymSpy).not.toHaveBeenCalled();
+
+    act(() => {
+      gameClient.dispatch({
+        type: 'playerRenamed',
+        sessionId,
+        newPseudonym: 'Nouveau' as Pseudonym,
+      });
+    });
+
     expect(setPseudonymSpy).toHaveBeenCalledWith('Nouveau');
+  });
+
+  it('does NOT persist to localStorage when the server rejects the rename with invalid-pseudonym', async () => {
+    const gameClient = makeFakeGameClient();
+    const setPseudonymSpy = vi.fn();
+    renderLobby({ gameClient, setPseudonym: setPseudonymSpy });
+    await screen.findByRole('heading', { name: /WordSparrow/ });
+
+    const pseudonymButton = screen.getByRole('button', {
+      name: /Modifier votre pseudonyme/i,
+    });
+    fireEvent.click(pseudonymButton);
+    const input = screen.getByLabelText(/Votre pseudonyme/i) as HTMLInputElement;
+    fireEvent.change(input, { target: { value: 'PseudoInvalide' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+
+    expect(gameClient.renameCalls).toEqual(['PseudoInvalide']);
+
+    act(() => {
+      gameClient.dispatch({
+        type: 'error',
+        errorType: 'https://bliss.example/errors/invalid-pseudonym',
+        title: 'Invalid pseudonym',
+        detail: 'Pseudonyme déjà pris.',
+      });
+    });
+
+    expect(setPseudonymSpy).not.toHaveBeenCalled();
+  });
+
+  it('persists the server-broadcast pseudonym verbatim on playerRenamed (server is the source of truth)', async () => {
+    const gameClient = makeFakeGameClient();
+    const setPseudonymSpy = vi.fn();
+    renderLobby({ gameClient, setPseudonym: setPseudonymSpy });
+    await screen.findByRole('heading', { name: /WordSparrow/ });
+
+    act(() => {
+      gameClient.dispatch({
+        type: 'playerRenamed',
+        sessionId,
+        newPseudonym: 'PseudoCanonique' as Pseudonym,
+      });
+    });
+
+    expect(setPseudonymSpy).toHaveBeenCalledWith('PseudoCanonique');
+  });
+
+  it('does NOT persist the local pseudonym when a different player is renamed', async () => {
+    const gameClient = makeFakeGameClient();
+    const setPseudonymSpy = vi.fn();
+    renderLobby({ gameClient, setPseudonym: setPseudonymSpy });
+    await screen.findByRole('heading', { name: /WordSparrow/ });
+
+    act(() => {
+      gameClient.dispatch({
+        type: 'playerRenamed',
+        sessionId: 'other-session-id' as SessionId,
+        newPseudonym: 'AutrePseudo' as Pseudonym,
+      });
+    });
+
+    expect(setPseudonymSpy).not.toHaveBeenCalled();
   });
 
   it('writes the current page URL to the clipboard on Copier le lien', async () => {
