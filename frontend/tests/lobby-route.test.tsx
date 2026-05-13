@@ -464,8 +464,6 @@ describe('Lobby route Wave H integration', () => {
     fireEvent.keyDown(input, { key: 'Enter' });
 
     expect(gameClient.renameCalls).toEqual(['Nouveau']);
-    // Server is the source of truth: localStorage must NOT be written
-    // optimistically (a rejected pseudonym would otherwise poison the cache).
     expect(setPseudonymSpy).not.toHaveBeenCalled();
 
     act(() => {
@@ -508,9 +506,6 @@ describe('Lobby route Wave H integration', () => {
   });
 
   it('persists the server-broadcast pseudonym verbatim on playerRenamed (server is the source of truth)', async () => {
-    // The server may normalise the pseudonym (trim, NFC-normalise, etc.)
-    // and broadcast its canonical form. The client must persist the
-    // server-broadcast value, not the value it sent.
     const gameClient = makeFakeGameClient();
     const setPseudonymSpy = vi.fn();
     renderLobby({ gameClient, setPseudonym: setPseudonymSpy });
