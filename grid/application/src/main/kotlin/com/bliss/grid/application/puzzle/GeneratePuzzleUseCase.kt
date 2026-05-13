@@ -13,6 +13,22 @@ import org.slf4j.LoggerFactory
 import kotlin.random.Random
 
 /**
+ * Seam used by [GeneratePuzzleUseCase] to invoke the underlying CSP-driven
+ * generator. Default impl delegates to a real [GridGenerator]; tests can
+ * substitute a fake to drive the strict/relaxed retry path deterministically.
+ */
+internal fun interface PuzzleGridGenerator {
+    fun generate(
+        constraints: GridConstraints,
+        random: Random,
+        metrics: GenerationMetrics,
+        timeoutMs: Long,
+        cooldownPolicy: ClueCooldownPolicy,
+        strictFunctionalBlackCells: Boolean,
+    ): Grid?
+}
+
+/**
  * Generates a fresh interlocked grid for a single puzzle request.
  *
  * Strategy: early-abandon + retry with a *self-calibrating* per-attempt
@@ -46,7 +62,21 @@ class GeneratePuzzleUseCase(
     private val clock: Clock = SystemClock,
 ) {
     private val log = LoggerFactory.getLogger(GeneratePuzzleUseCase::class.java)
-    private val generator = GridGenerator(wordRepository, clock)
+
+    // Tests inject a fake via [withGenerator]; production code never touches this seam.
+    internal var generator: PuzzleGridGenerator =
+        GridGenerator(wordRepository, clock).let { delegate ->
+            PuzzleGridGenerator { constraints, random, metrics, timeoutMs, cooldownPolicy, strict ->
+                delegate.generate(
+                    constraints = constraints,
+                    random = random,
+                    metrics = metrics,
+                    timeoutMs = timeoutMs,
+                    cooldownPolicy = cooldownPolicy,
+                    strictFunctionalBlackCells = strict,
+                )
+            }
+        }
 
     /**
      * Recent successful attempt wall times (ms). Kept synchronized — callers
@@ -81,6 +111,41 @@ class GeneratePuzzleUseCase(
                 width = width ?: defaults.width,
                 height = height ?: defaults.height,
             )
+        val strictOutcome =
+            runAttempts(
+                constraints = constraints,
+                cooldownPolicy = cooldownPolicy,
+                randomFactory = randomFactory,
+                strictFunctionalBlackCells = true,
+            )
+        if (strictOutcome.grid != null) return strictOutcome
+
+        // Strict pass exhausted its budget without finding a grid. Try ONE
+        // more pass with the pre-#381 relaxed BLACK rule. This restores
+        // service for hard seeds (e.g. 15×12 production) at the cost of
+        // potentially producing a decorative (arrow-less) black cell.
+        // Operational metric: filter logs for event=puzzle_generation_fallback.
+        log.warn(
+            "event=puzzle_generation_fallback reason=strict_black_unsatisfiable width={} height={} strict_attempts={} strict_total_ms={}",
+            constraints.width,
+            constraints.height,
+            strictOutcome.attempts,
+            strictOutcome.totalMs,
+        )
+        return runAttempts(
+            constraints = constraints,
+            cooldownPolicy = cooldownPolicy,
+            randomFactory = randomFactory,
+            strictFunctionalBlackCells = false,
+        )
+    }
+
+    private fun runAttempts(
+        constraints: GridConstraints,
+        cooldownPolicy: ClueCooldownPolicy,
+        randomFactory: (attempt: Int) -> Random,
+        strictFunctionalBlackCells: Boolean,
+    ): AttemptOutcome {
         val perAttemptMs = ArrayList<Long>(maxAttempts)
         val perAttemptMetrics = ArrayList<GenerationMetrics>(maxAttempts)
         repeat(maxAttempts) { attempt ->
@@ -90,11 +155,12 @@ class GeneratePuzzleUseCase(
             val metrics = GenerationMetrics()
             val grid =
                 generator.generate(
-                    constraints,
-                    random,
+                    constraints = constraints,
+                    random = random,
                     metrics = metrics,
                     timeoutMs = timeoutMs,
                     cooldownPolicy = cooldownPolicy,
+                    strictFunctionalBlackCells = strictFunctionalBlackCells,
                 )
             val elapsed = clock.currentTimeMillis() - started
             perAttemptMs += elapsed
@@ -110,11 +176,12 @@ class GeneratePuzzleUseCase(
                 )
             }
             log.warn(
-                "puzzle_generation_retry attempt={} width={} height={} timeout_ms={}",
+                "puzzle_generation_retry attempt={} width={} height={} timeout_ms={} strict={}",
                 attempt + 1,
                 constraints.width,
                 constraints.height,
                 timeoutMs,
+                strictFunctionalBlackCells,
             )
         }
         return AttemptOutcome(

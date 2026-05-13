@@ -50,6 +50,7 @@ class GridGenerator(
         metrics: GenerationMetrics? = null,
         timeoutMs: Long = DEFAULT_GENERATION_TIMEOUT_MS,
         cooldownPolicy: ClueCooldownPolicy = ClueCooldownPolicy.Inert,
+        strictFunctionalBlackCells: Boolean = true,
     ): Grid? {
         val w = constraints.width
         val h = constraints.height
@@ -74,6 +75,7 @@ class GridGenerator(
                 lUseful = lUseful,
                 blackRatio = GenerationKnobs.DEFAULT_BLACK_RATIO,
                 random = random,
+                strictFunctionalBlackCells = strictFunctionalBlackCells,
             )
         metrics?.skeletonMs = (clock.nanoTime() - layoutStart) / NS_PER_MS
 
@@ -84,7 +86,7 @@ class GridGenerator(
 
         while (attempts < GenerationKnobs.MAX_RESTARTS && clock.nanoTime() < deadlineNs) {
             attempts++
-            val build = SlotRegistry.build(cells, lex, constraints.minWordLength)
+            val build = SlotRegistry.build(cells, lex, constraints.minWordLength, strictFunctionalBlackCells)
             if (build == null) {
                 consecFails++
                 cells =
@@ -98,6 +100,7 @@ class GridGenerator(
                         hotCells = emptyList(),
                         consecFails = consecFails,
                         random = random,
+                        strictFunctionalBlackCells = strictFunctionalBlackCells,
                     )
                 perturbations++
                 continue
@@ -117,6 +120,7 @@ class GridGenerator(
                         hotCells = emptyList(),
                         consecFails = consecFails,
                         random = random,
+                        strictFunctionalBlackCells = strictFunctionalBlackCells,
                     )
                 perturbations++
                 continue
@@ -160,6 +164,7 @@ class GridGenerator(
                     hotCells = hot,
                     consecFails = consecFails,
                     random = random,
+                    strictFunctionalBlackCells = strictFunctionalBlackCells,
                 )
             perturbations++
         }
@@ -179,6 +184,7 @@ class GridGenerator(
         hotCells: List<Pair<Int, Int>>,
         consecFails: Int,
         random: Random,
+        strictFunctionalBlackCells: Boolean = true,
     ): CellArray {
         if (consecFails > 0 && consecFails % GenerationKnobs.CONSEC_RESEED == 0) {
             return BlackCellLayout.seed(
@@ -189,6 +195,7 @@ class GridGenerator(
                 lUseful = lUseful,
                 blackRatio = GenerationKnobs.DEFAULT_BLACK_RATIO,
                 random = random,
+                strictFunctionalBlackCells = strictFunctionalBlackCells,
             )
         }
         BlackCellLayout.perturb(
@@ -198,6 +205,7 @@ class GridGenerator(
             hotCells = hotCells,
             intensity = GenerationKnobs.PERTURB_INTENSITY,
             random = random,
+            strictFunctionalBlackCells = strictFunctionalBlackCells,
         )
         return cells
     }

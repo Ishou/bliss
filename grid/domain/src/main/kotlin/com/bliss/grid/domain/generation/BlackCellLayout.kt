@@ -31,6 +31,7 @@ internal object BlackCellLayout {
         lUseful: Int,
         blackRatio: Double,
         random: Random,
+        strictFunctionalBlackCells: Boolean = true,
     ): CellArray {
         require(minLen >= 2) { "minLen must be ≥ 2, was $minLen" }
         require(lTarget in minLen..lUseful) { "lTarget=$lTarget not in [minLen=$minLen, lUseful=$lUseful]" }
@@ -42,31 +43,39 @@ internal object BlackCellLayout {
         // Passes 1+2: cap long runs at lTarget by midpoint-splitting.
         repeat(8) {
             var changed = false
-            for (r in 0 until height) if (capLongHorizontalRuns(cells, r, minLen, lTarget, random)) changed = true
-            for (c in 0 until width) if (capLongVerticalRuns(cells, c, minLen, lTarget, random)) changed = true
+            for (r in 0 until height) {
+                if (capLongHorizontalRuns(cells, r, minLen, lTarget, random, strictFunctionalBlackCells)) changed = true
+            }
+            for (c in 0 until width) {
+                if (capLongVerticalRuns(cells, c, minLen, lTarget, random, strictFunctionalBlackCells)) changed = true
+            }
             if (!changed) return@repeat
         }
         // Pass 3: final guard at lUseful.
         repeat(3) {
             var changed = false
-            for (r in 0 until height) if (capLongHorizontalRuns(cells, r, minLen, lUseful, random)) changed = true
-            for (c in 0 until width) if (capLongVerticalRuns(cells, c, minLen, lUseful, random)) changed = true
+            for (r in 0 until height) {
+                if (capLongHorizontalRuns(cells, r, minLen, lUseful, random, strictFunctionalBlackCells)) changed = true
+            }
+            for (c in 0 until width) {
+                if (capLongVerticalRuns(cells, c, minLen, lUseful, random, strictFunctionalBlackCells)) changed = true
+            }
             if (!changed) return@repeat
         }
 
         // Pass 4: repair orphan whites by whitening a neighbour rather
         // than blackening the orphan (which would always produce a dead
         // black).
-        repairOrphanWhites(cells, minLen, lUseful)
+        repairOrphanWhites(cells, minLen, lUseful, strictFunctionalBlackCells)
 
         // Pass 5: density sprinkle, gated by canPlaceBlack.
-        densitySprinkle(cells, minLen, blackRatio, random)
+        densitySprinkle(cells, minLen, blackRatio, random, strictFunctionalBlackCells)
 
         // Pass 4 again — sprinkling may have introduced new orphans.
-        repairOrphanWhites(cells, minLen, lUseful)
+        repairOrphanWhites(cells, minLen, lUseful, strictFunctionalBlackCells)
 
-        // Pass 6: dead-cell cleanup.
-        removeDeadBlacks(cells, minLen, lUseful)
+        // Pass 6: dead-cell cleanup. Relaxed mode tolerates decorative blacks.
+        if (strictFunctionalBlackCells) removeDeadBlacks(cells, minLen, lUseful)
 
         return cells
     }
@@ -85,13 +94,14 @@ internal object BlackCellLayout {
         hotCells: List<Pair<Int, Int>>,
         intensity: Double,
         random: Random,
+        strictFunctionalBlackCells: Boolean = true,
     ) {
         val area = cells.width * cells.height
         var moves = max(2, (intensity * area).toInt())
 
         for ((r, c) in hotCells.take(2)) {
             if (moves <= 0) break
-            if (!cells.isBlack(r, c) && canPlaceBlack(cells, r, c, minLen)) {
+            if (!cells.isBlack(r, c) && canPlaceBlack(cells, r, c, minLen, strictFunctionalBlackCells)) {
                 cells.set(r, c, CellArray.BLACK)
                 moves--
             }
@@ -104,17 +114,19 @@ internal object BlackCellLayout {
             val c = random.nextInt(cells.width)
             if (r == 0 && c == 0) continue // corner must stay BLACK
             if (cells.isBlack(r, c)) {
-                if (random.nextDouble() < 0.4 && tryWhitenSafely(cells, r, c, minLen, lUseful)) {
+                if (random.nextDouble() < 0.4 &&
+                    tryWhitenSafely(cells, r, c, minLen, lUseful, strictFunctionalBlackCells)
+                ) {
                     moves--
                 }
-            } else if (canPlaceBlack(cells, r, c, minLen)) {
+            } else if (canPlaceBlack(cells, r, c, minLen, strictFunctionalBlackCells)) {
                 cells.set(r, c, CellArray.BLACK)
                 moves--
             }
         }
 
-        repairOrphanWhites(cells, minLen, lUseful)
-        removeDeadBlacks(cells, minLen, lUseful)
+        repairOrphanWhites(cells, minLen, lUseful, strictFunctionalBlackCells)
+        if (strictFunctionalBlackCells) removeDeadBlacks(cells, minLen, lUseful)
     }
 
     // ---- Predicates ----
@@ -184,6 +196,7 @@ internal object BlackCellLayout {
         r: Int,
         c: Int,
         minLen: Int,
+        strictFunctionalBlackCells: Boolean = true,
     ): Boolean {
         if (cells.isBlack(r, c)) return false
         val prior = cells.get(r, c)
@@ -200,6 +213,7 @@ internal object BlackCellLayout {
                 if (cells.isBlack(rr, c)) continue
                 if (runLengthVertical(cells, rr, c) < minLen) return false
             }
+            if (!strictFunctionalBlackCells) return true
             // Check 2: the new black must itself be functional.
             if (!isFunctional(cells, r, c, minLen)) return false
             // Check 3: existing neighbouring blacks must remain functional.
@@ -224,6 +238,7 @@ internal object BlackCellLayout {
         c: Int,
         minLen: Int,
         lUseful: Int,
+        strictFunctionalBlackCells: Boolean = true,
     ): Boolean {
         if (r == 0 && c == 0) return false
         if (!cells.isBlack(r, c)) return false
@@ -234,6 +249,7 @@ internal object BlackCellLayout {
             cells.set(r, c, CellArray.BLACK)
             return false
         }
+        if (!strictFunctionalBlackCells) return true
         val nbrs = listOf(r to (c - 1), r to (c + 1), (r - 1) to c, (r + 1) to c)
         for ((nr, nc) in nbrs) {
             if (nr !in 0 until cells.height || nc !in 0 until cells.width) continue
@@ -261,6 +277,7 @@ internal object BlackCellLayout {
         cells: CellArray,
         minLen: Int,
         lUseful: Int,
+        strictFunctionalBlackCells: Boolean = true,
     ) {
         var changed = true
         var guard = cells.width * cells.height
@@ -270,19 +287,18 @@ internal object BlackCellLayout {
                 for (c in 0 until cells.width) {
                     if (cells.isBlack(r, c)) continue
                     if (hasWhiteNeighbour(cells, r, c)) continue
-                    if (tryWhitenOneNeighbour(cells, r, c, minLen, lUseful)) {
+                    if (tryWhitenOneNeighbour(cells, r, c, minLen, lUseful, strictFunctionalBlackCells)) {
                         changed = true
                         continue
                     }
-                    if (tryWhitenTwoNeighbours(cells, r, c, minLen, lUseful)) {
+                    if (tryWhitenTwoNeighbours(cells, r, c, minLen, lUseful, strictFunctionalBlackCells)) {
                         changed = true
                         continue
                     }
-                    // Last resort: blacken the orphan IFF the resulting
-                    // black is functional. If not, leave the orphan in
-                    // place; SlotRegistry will reject.
+                    // Last resort: blacken the orphan. In strict mode only when
+                    // the resulting black is functional; in relaxed mode always.
                     cells.set(r, c, CellArray.BLACK)
-                    if (!isFunctional(cells, r, c, minLen)) {
+                    if (strictFunctionalBlackCells && !isFunctional(cells, r, c, minLen)) {
                         cells.set(r, c, CellArray.EMPTY)
                     } else {
                         changed = true
@@ -298,13 +314,14 @@ internal object BlackCellLayout {
         c: Int,
         minLen: Int,
         lUseful: Int,
+        strictFunctionalBlackCells: Boolean = true,
     ): Boolean {
         val candidates = listOf(r to (c - 1), r to (c + 1), (r - 1) to c, (r + 1) to c)
         for ((nr, nc) in candidates) {
             if (nr !in 0 until cells.height || nc !in 0 until cells.width) continue
             if (!cells.isBlack(nr, nc)) continue
             if (nr == 0 && nc == 0) continue
-            if (tryWhitenSafely(cells, nr, nc, minLen, lUseful)) return true
+            if (tryWhitenSafely(cells, nr, nc, minLen, lUseful, strictFunctionalBlackCells)) return true
         }
         return false
     }
@@ -315,6 +332,7 @@ internal object BlackCellLayout {
         c: Int,
         minLen: Int,
         lUseful: Int,
+        strictFunctionalBlackCells: Boolean = true,
     ): Boolean {
         val candidates =
             listOf(r to (c - 1), r to (c + 1), (r - 1) to c, (r + 1) to c)
@@ -322,12 +340,12 @@ internal object BlackCellLayout {
                 .filter { (nr, nc) -> cells.isBlack(nr, nc) && !(nr == 0 && nc == 0) }
         for (i in candidates.indices) {
             val (r1, c1) = candidates[i]
-            if (!tryWhitenSafely(cells, r1, c1, minLen, lUseful)) continue
+            if (!tryWhitenSafely(cells, r1, c1, minLen, lUseful, strictFunctionalBlackCells)) continue
             for (j in candidates.indices) {
                 if (j == i) continue
                 val (r2, c2) = candidates[j]
                 if (!cells.isBlack(r2, c2)) continue
-                if (tryWhitenSafely(cells, r2, c2, minLen, lUseful)) return true
+                if (tryWhitenSafely(cells, r2, c2, minLen, lUseful, strictFunctionalBlackCells)) return true
             }
             cells.set(r1, c1, CellArray.BLACK)
         }
@@ -370,6 +388,7 @@ internal object BlackCellLayout {
         minLen: Int,
         blackRatio: Double,
         random: Random,
+        strictFunctionalBlackCells: Boolean = true,
     ) {
         val area = cells.width * cells.height
         val target = (blackRatio * area).toInt().coerceAtLeast(1)
@@ -383,7 +402,7 @@ internal object BlackCellLayout {
         var i = 0
         while (cells.countBlack() < target && i < candidates.size) {
             val (r, c) = candidates[i++]
-            if (canPlaceBlack(cells, r, c, minLen)) {
+            if (canPlaceBlack(cells, r, c, minLen, strictFunctionalBlackCells)) {
                 cells.set(r, c, CellArray.BLACK)
             }
         }
@@ -395,6 +414,7 @@ internal object BlackCellLayout {
         minLen: Int,
         lCap: Int,
         random: Random,
+        strictFunctionalBlackCells: Boolean = true,
     ): Boolean {
         var changed = false
         var c = 0
@@ -407,7 +427,10 @@ internal object BlackCellLayout {
             while (c < cells.width && !cells.isBlack(r, c)) c++
             val length = c - start
             if (length > lCap) {
-                val pos = insertNearMidpoint(start, length, random) { p -> canPlaceBlack(cells, r, p, minLen) }
+                val pos =
+                    insertNearMidpoint(start, length, random) { p ->
+                        canPlaceBlack(cells, r, p, minLen, strictFunctionalBlackCells)
+                    }
                 if (pos != null) {
                     cells.set(r, pos, CellArray.BLACK)
                     changed = true
@@ -423,6 +446,7 @@ internal object BlackCellLayout {
         minLen: Int,
         lCap: Int,
         random: Random,
+        strictFunctionalBlackCells: Boolean = true,
     ): Boolean {
         var changed = false
         var r = 0
@@ -435,7 +459,10 @@ internal object BlackCellLayout {
             while (r < cells.height && !cells.isBlack(r, c)) r++
             val length = r - start
             if (length > lCap) {
-                val pos = insertNearMidpoint(start, length, random) { p -> canPlaceBlack(cells, p, c, minLen) }
+                val pos =
+                    insertNearMidpoint(start, length, random) { p ->
+                        canPlaceBlack(cells, p, c, minLen, strictFunctionalBlackCells)
+                    }
                 if (pos != null) {
                     cells.set(pos, c, CellArray.BLACK)
                     changed = true
