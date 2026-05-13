@@ -50,10 +50,7 @@ class InMemoryLobbyRepository : LobbyRepository {
             store.values.firstOrNull { it.code == code }
         }
 
-    // Mirrors the production adapter. WAITING lobbies are excluded
-    // (ADR-0039 amendment 2026-05-12); ownership keeps the lobby listed
-    // after the owner's WS disconnects and leave-grace removes them from
-    // `players` (ADR-0039 amendment 2026-05-13).
+    // owner OR member, state != WAITING (ADR-0039, 2026-05-13 amendment).
     override suspend fun findBySessionId(sessionId: SessionId): List<Lobby> =
         storeLock.withLock {
             store.values

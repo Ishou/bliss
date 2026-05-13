@@ -269,17 +269,10 @@ class ListLobbiesForSessionTest {
             assertThat(forC).isEmpty()
         }
 
-    // ADR-0039 (Lobby.kt:108-111) keeps `ownerSessionId` after the owner's
-    // WS disconnects and the leave-grace removes them from `players`. The
-    // listing must still expose the lobby so the owner can return via
-    // "Mes parties" — without this, an owner who refreshed mid-game lost
-    // their lobby from the surface until a co-player rejoined.
     @Test
     fun `returns lobbies the queried session owns even when not in the players map`() =
         runTest {
             val repo = InMemoryLobbyRepository()
-            // sessionA owns this lobby but is NOT in members (mirrors the
-            // owner-disconnected, leave-grace-elapsed state).
             val ownedButNotJoined =
                 lobby(
                     LobbyId.generate(),

@@ -86,16 +86,7 @@ class PostgresLobbyRepository(
         withContext(Dispatchers.IO) {
             ds.connection.use { conn ->
                 val ids = mutableListOf<LobbyId>()
-                // Owner OR currently-a-player. ADR-0039 (Lobby.kt:108-111)
-                // keeps `ownerSessionId` after the owner's WS disconnects and
-                // they're removed from `players` by the leave-grace coroutine;
-                // without the owner arm of this query, an owner who refreshed
-                // mid-game lost the lobby from "Mes parties" until a co-player
-                // rejoined. The returned LobbySummary carries `code`, so the
-                // listing is sufficient for the owner to re-enter — the join
-                // then falls through to the new-joiner branch with a valid
-                // code. EXISTS avoids row duplication when the session is both
-                // the owner and present in lobby_players.
+                // owner arm keeps lobby visible after leave-grace drops owner from lobby_players (ADR-0039).
                 conn
                     .prepareStatement(
                         "SELECT l.id FROM lobbies l " +
