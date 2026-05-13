@@ -10,24 +10,7 @@ import java.time.LocalDate
 import java.util.UUID
 import kotlin.random.Random
 
-/**
- * Pre-generates and persists daily grids for a rolling [windowDays] window
- * starting at the supplied `today`. Invoked by the `grid-worker --ensure-dailies`
- * CLI which runs as a Kubernetes CronJob (PR C). The HTTP daily route (PR D)
- * will read the persisted-only path so user requests never wait on generation.
- *
- * Sequential execution is mandatory: each successful generation may bump the
- * `DAILY_SCOPE_ID` cooldown counter via [ClueCooldownRepository.recordGeneration],
- * and the next day's generator reads that snapshot to bias clue picks. Running
- * the days in parallel would interleave reads and writes against the shared
- * bucket and corrupt the cooldown ordering, so each date strictly waits for the
- * previous one.
- *
- * A failed day does not abort the loop — `today+6` still gets a chance even if
- * `today+3` exhausts attempts. The caller (worker CLI) decides whether the
- * presence of failed dates warrants a non-zero exit, which the CronJob (PR C)
- * uses to decide whether to alert.
- */
+// Sequential: cooldown snapshot from day N biases day N+1; parallel runs corrupt the ordering.
 class EnsureUpcomingDailiesUseCase(
     private val puzzleRepository: PuzzleRepository,
     private val gridGenerationPort: GridGenerationPort,
@@ -129,11 +112,7 @@ class EnsureUpcomingDailiesUseCase(
         }
     }
 
-    /**
-     * Per-attempt random seed for [date]. Multiplying the epoch day by 1000 leaves
-     * 1000 distinct seeds per day; the worker CLI runs at most `maxAttempts=20`,
-     * so seeds for adjacent days never collide in the attempt range.
-     */
+    // Stride 1000: 20 attempts per day never overlaps adjacent days' seed range.
     internal fun seedFor(
         date: LocalDate,
         attempt: Int,
@@ -154,17 +133,7 @@ class EnsureUpcomingDailiesUseCase(
     }
 }
 
-/**
- * Application-layer port that wraps a single grid-generation attempt with a
- * caller-supplied seed. The wiring layer (`grid-worker`'s `Main.kt` /
- * `grid-api`'s `Module.kt`) adapts this onto [GeneratePuzzleUseCase] which owns
- * the concrete generator + word repository.
- *
- * Defining a port here (instead of taking [GeneratePuzzleUseCase] directly)
- * keeps `EnsureUpcomingDailiesUseCase` testable without spinning up the full
- * CSP-solver stack — tests can pass a stub that returns a precanned grid or
- * `null` to drive the success / exhaustion paths.
- */
+// Port: decouples EnsureUpcomingDailiesUseCase from the CSP solver so tests can stub it.
 fun interface GridGenerationPort {
     fun generate(
         randomSeed: Long,
@@ -172,12 +141,6 @@ fun interface GridGenerationPort {
     ): Grid?
 }
 
-/**
- * Adapter that drives [GeneratePuzzleUseCase] with a single seeded attempt.
- * The outer retry loop in [EnsureUpcomingDailiesUseCase] handles the per-day
- * attempt budget; this adapter constructs a one-shot `randomFactory` so the
- * generator doesn't double up on retries.
- */
 fun GeneratePuzzleUseCase.asGridGenerationPort(): GridGenerationPort =
     GridGenerationPort { randomSeed, cooldownPolicy ->
         executeWithOutcome(

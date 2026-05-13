@@ -4,11 +4,6 @@ import com.lemonappdev.konsist.api.Konsist
 import com.lemonappdev.konsist.api.verify.assertFalse
 import org.junit.jupiter.api.Test
 
-/**
- * Enforces the worker-layer dependency rules. The worker is the outermost
- * layer (peer of `:grid:api`) and may import domain / application /
- * infrastructure, but must not pull in another bounded context.
- */
 class WorkerArchitectureTest {
     private val workerScope = Konsist.scopeFromModule("grid/worker")
 

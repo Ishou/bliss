@@ -1,7 +1,4 @@
-// grid/worker — local-dev / CronJob CLI for batch grid generation (ADR-0013).
-// Hosts the `--ensure-dailies` entry point invoked by the Kubernetes CronJob
-// (PR C). Composes the application use case with production adapters from
-// :grid:infrastructure (Postgres via Hikari, Flyway-migrated by BlissDatabase).
+// grid/worker — CronJob CLI for daily puzzle pre-generation (ADR-0042).
 
 plugins {
     kotlin("jvm")

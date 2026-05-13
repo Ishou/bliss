@@ -18,18 +18,7 @@ import java.time.LocalDate
 import java.time.ZoneOffset
 import kotlin.system.exitProcess
 
-/**
- * `grid-worker` CLI entry point. Currently routes a single command:
- *   `grid-worker --ensure-dailies` — pre-generates the rolling 7-day window of
- *   daily puzzles and persists them, so the HTTP daily route (PR D) can serve
- *   them from cache.
- *
- * Exit codes:
- *  - 0 — every requested day was already persisted or was newly generated.
- *  - 1 — at least one date is in `failedDates`; the CronJob (PR C) treats this
- *        as an alertable signal.
- *  - 2 — invalid invocation (unknown flag, missing arg).
- */
+// Exit codes: 0=all persisted/generated, 1=failedDates non-empty (CronJob alert signal), 2=invalid invocation.
 private val log = LoggerFactory.getLogger("com.bliss.grid.worker.Main")
 
 fun main(args: Array<String>) {
@@ -71,7 +60,7 @@ private fun runEnsureDailies(): Int {
         val gridGenerationPort = productionGridGenerationPort()
         executeAndExit(puzzleRepository, cooldownRepository, gridGenerationPort)
     } finally {
-        database.stopForTesting()
+        database.stop()
     }
 }
 
