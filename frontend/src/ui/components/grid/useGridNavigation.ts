@@ -809,10 +809,7 @@ export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOpt
       // Mobile (Gboard/iOS) delivers space as InputEvent.data, not keydown — flip direction here too.
       if (data === ' ') {
         const p = posOf(target);
-        // The soft keyboard's space insertion mutated `target.value`
-        // (typically appending " " to the existing letter). Restore it
-        // to whatever the cell mirror has so the visible glyph matches
-        // the stored letter — never let a stray space land in the DOM.
+        // Restore target.value from the cell mirror — space must not land in the DOM.
         const stored = p ? cellValuesRef.current.get(key(p)) ?? '' : '';
         if (target.value !== stored) target.value = stored;
         if (!p) return;
