@@ -233,7 +233,13 @@ fun Application.module() {
 
     routing {
         health(version)
-        puzzles(loadOrGenerate, revealCellHint, validatePuzzle, dailyPuzzleSelector = dailyPuzzleSelector)
+        puzzles(
+            loadOrGenerate,
+            revealCellHint,
+            validatePuzzle,
+            puzzleRepository = puzzleRepository,
+            dailyPuzzleSelector = dailyPuzzleSelector,
+        )
         deleteSession(deleteSession)
     }
 }

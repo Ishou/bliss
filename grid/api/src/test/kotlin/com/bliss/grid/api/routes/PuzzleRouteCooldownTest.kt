@@ -54,6 +54,7 @@ class PuzzleRouteCooldownTest {
                         ),
                     revealCellHint = RevealCellHintUseCase(puzzleRepo, hintUsageRepo),
                     validatePuzzle = ValidatePuzzleUseCase(puzzleRepo),
+                    puzzleRepository = puzzleRepo,
                 )
             }
         }
@@ -119,32 +120,10 @@ class PuzzleRouteCooldownTest {
             assertThat(cooldown.snapshot(daily).currentSeq).isEqualTo(0L)
         }
 
-    @Test
-    fun `GET puzzles daily records the generation under DAILY_SCOPE_ID`() =
-        testApplication {
-            val cooldown = InMemoryClueCooldownRepository()
-            mountPuzzlesRoute(cooldown)
-
-            val response = client.get("/v1/puzzles/daily?date=2026-05-10")
-            assertThat(response.status).isEqualTo(HttpStatusCode.OK)
-            assertThat(cooldown.snapshot(daily).currentSeq).isEqualTo(1L)
-        }
-
-    @Test
-    fun `GET puzzles daily ignores X-Session-Id header`() =
-        testApplication {
-            val cooldown = InMemoryClueCooldownRepository()
-            mountPuzzlesRoute(cooldown)
-
-            val response =
-                client.get("/v1/puzzles/daily?date=2026-05-11") {
-                    header("X-Session-Id", playerSession)
-                }
-            assertThat(response.status).isEqualTo(HttpStatusCode.OK)
-            // Daily bucket bumped, player session bucket untouched.
-            assertThat(cooldown.snapshot(daily).currentSeq).isEqualTo(1L)
-            assertThat(cooldown.snapshot(UUID.fromString(playerSession)).currentSeq).isEqualTo(0L)
-        }
+    // Daily-bucket cooldown coverage moved with the worker (ADR-0042 / PR D):
+    // the daily route is a pure read against the persisted row and no longer
+    // touches the cooldown repository. The DAILY_SCOPE_ID bookkeeping lives
+    // in `EnsureUpcomingDailiesUseCase` and is covered by its own tests.
 
     @Test
     fun `null cooldown repository keeps GET puzzle behavior unchanged`() =

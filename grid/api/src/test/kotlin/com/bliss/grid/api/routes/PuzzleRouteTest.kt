@@ -10,11 +10,13 @@ import assertk.assertions.isTrue
 import assertk.assertions.startsWith
 import com.bliss.grid.api.dto.PuzzleResponse
 import com.bliss.grid.api.module
+import com.bliss.grid.application.puzzle.DailyPuzzleSelector
 import com.bliss.grid.application.puzzle.GeneratePuzzleUseCase
 import com.bliss.grid.application.puzzle.LoadOrGeneratePuzzleUseCase
 import com.bliss.grid.application.puzzle.PUZZLE_HEIGHT
 import com.bliss.grid.application.puzzle.PUZZLE_WIDTH
 import com.bliss.grid.application.puzzle.RevealCellHintUseCase
+import com.bliss.grid.application.puzzle.StoredPuzzle
 import com.bliss.grid.application.puzzle.ValidatePuzzleUseCase
 import com.bliss.grid.application.puzzle.defaultPuzzleConstraints
 import com.bliss.grid.domain.generation.WordRepository
@@ -33,6 +35,7 @@ import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import org.junit.jupiter.api.Test
+import java.time.LocalDate
 
 /** Wire-path tests for `GET /v1/puzzles/{puzzleId}` via Ktor [testApplication]. */
 class PuzzleRouteTest {
@@ -203,10 +206,20 @@ class PuzzleRouteTest {
             assertThat(json.containsKey("gridNumber")).isEqualTo(false)
         }
 
+    // Daily route is a pure read against the persisted row (ADR-0042).
+    // Pre-warm by GETting `/v1/puzzles/{daily-id}` first — `module()` shares
+    // a single InMemoryPuzzleRepository between routes, so loadOrGenerate's
+    // store insert is observable to the daily endpoint's `repository.get`.
+    private val daily20260509Id: String =
+        DailyPuzzleSelector().puzzleIdForDate(LocalDate.parse("2026-05-09")).toString()
+    private val dailyPrelaunchId: String =
+        DailyPuzzleSelector().puzzleIdForDate(LocalDate.parse("2025-12-31")).toString()
+
     @Test
     fun `daily endpoint responds 200 with populated difficulty and gridNumber`() =
         testApplication {
             application { module() }
+            client.get("/v1/puzzles/$daily20260509Id")
 
             val response = client.get("/v1/puzzles/daily?date=2026-05-09")
 
@@ -223,6 +236,7 @@ class PuzzleRouteTest {
     fun `daily endpoint returns a 15x12 landscape grid`() =
         testApplication {
             application { module() }
+            client.get("/v1/puzzles/$daily20260509Id")
 
             val response = client.get("/v1/puzzles/daily?date=2026-05-09")
 
@@ -236,6 +250,7 @@ class PuzzleRouteTest {
     fun `daily endpoint returns the same puzzle id for the same date`() =
         testApplication {
             application { module() }
+            client.get("/v1/puzzles/$daily20260509Id")
 
             val first = Json.parseToJsonElement(client.get("/v1/puzzles/daily?date=2026-05-09").bodyAsText()).jsonObject
             val second = Json.parseToJsonElement(client.get("/v1/puzzles/daily?date=2026-05-09").bodyAsText()).jsonObject
@@ -260,6 +275,7 @@ class PuzzleRouteTest {
     fun `daily endpoint omits gridNumber for a pre-launch date`() =
         testApplication {
             application { module() }
+            client.get("/v1/puzzles/$dailyPrelaunchId")
 
             val response = client.get("/v1/puzzles/daily?date=2025-12-31")
 
@@ -267,6 +283,75 @@ class PuzzleRouteTest {
             val json = Json.parseToJsonElement(response.bodyAsText()).jsonObject
             assertThat(json.containsKey("gridNumber")).isEqualTo(false)
         }
+
+    @Test
+    fun `daily endpoint responds 404 with RFC 7807 problem when no row is persisted`() =
+        testApplication {
+            application {
+                val puzzleRepo = InMemoryPuzzleRepository()
+                val hintUsageRepo = InMemoryHintUsageRepository()
+                val gen = GeneratePuzzleUseCase(EmptyWordRepository, defaultPuzzleConstraints())
+                routing {
+                    puzzles(
+                        loadOrGenerate = LoadOrGeneratePuzzleUseCase(puzzleRepo, gen),
+                        revealCellHint = RevealCellHintUseCase(puzzleRepo, hintUsageRepo),
+                        validatePuzzle = ValidatePuzzleUseCase(puzzleRepo),
+                        puzzleRepository = puzzleRepo,
+                    )
+                }
+            }
+
+            val response = client.get("/v1/puzzles/daily?date=2026-05-09")
+
+            assertThat(response.status).isEqualTo(HttpStatusCode.NotFound)
+            assertThat(response.headers["Content-Type"]!!).startsWith("application/problem+json")
+            val json = Json.parseToJsonElement(response.bodyAsText()).jsonObject
+            assertThat(json["type"]!!.jsonPrimitive.content)
+                .isEqualTo("https://bliss.example/errors/no-daily-puzzle")
+            assertThat(json["status"]!!.jsonPrimitive.content.toInt()).isEqualTo(404)
+        }
+
+    @Test
+    fun `daily endpoint responds 404 when repository returns null - fake repo`() =
+        testApplication {
+            application {
+                val nullRepo =
+                    object : com.bliss.grid.application.puzzle.PuzzleRepository {
+                        override fun get(puzzleId: java.util.UUID): StoredPuzzle? = null
+
+                        override fun getOrCompute(
+                            puzzleId: java.util.UUID,
+                            factory: () -> StoredPuzzle?,
+                        ): StoredPuzzle? = null
+                    }
+                val hintUsageRepo = InMemoryHintUsageRepository()
+                val gen = GeneratePuzzleUseCase(EmptyWordRepository, defaultPuzzleConstraints())
+                routing {
+                    puzzles(
+                        loadOrGenerate = LoadOrGeneratePuzzleUseCase(nullRepo, gen),
+                        revealCellHint = RevealCellHintUseCase(nullRepo, hintUsageRepo),
+                        validatePuzzle = ValidatePuzzleUseCase(nullRepo),
+                        puzzleRepository = nullRepo,
+                    )
+                }
+            }
+
+            val response = client.get("/v1/puzzles/daily?date=2026-05-09")
+
+            assertThat(response.status).isEqualTo(HttpStatusCode.NotFound)
+            assertThat(response.bodyAsText()).contains("no-daily-puzzle")
+        }
+
+    private object EmptyWordRepository : WordRepository {
+        override fun findByLength(length: Int): List<Word> = emptyList()
+
+        override fun findByLengthAndPattern(
+            length: Int,
+            pattern: Map<Int, Char>,
+        ): List<Word> = emptyList()
+
+        override fun containsLemma(text: String): Boolean = false
+    }
 
     @Test
     fun `LetterCells in the response carry no canonical letter`() =
@@ -366,6 +451,7 @@ class PuzzleRouteTest {
                         loadOrGenerate = LoadOrGeneratePuzzleUseCase(puzzleRepo, gen),
                         revealCellHint = RevealCellHintUseCase(puzzleRepo, hintUsageRepo),
                         validatePuzzle = ValidatePuzzleUseCase(puzzleRepo),
+                        puzzleRepository = puzzleRepo,
                     )
                 }
             }

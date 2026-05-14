@@ -60,6 +60,7 @@ class PuzzleRouteDispatcherTest {
                         loadOrGenerate = LoadOrGeneratePuzzleUseCase(recordingRepo, gen),
                         revealCellHint = RevealCellHintUseCase(recordingRepo, hintUsageRepo),
                         validatePuzzle = ValidatePuzzleUseCase(recordingRepo),
+                        puzzleRepository = recordingRepo,
                     )
                 }
             }
@@ -67,7 +68,7 @@ class PuzzleRouteDispatcherTest {
         try {
             HttpClient(CIO).use { client ->
                 kotlinx.coroutines.runBlocking {
-                    // 422 expected; spy only needs to record the thread.
+                    // 404 expected (no row persisted); spy only needs to record the thread.
                     client.get("http://127.0.0.1:$port/v1/puzzles/daily?date=2026-05-09")
                 }
             }
