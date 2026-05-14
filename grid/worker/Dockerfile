@@ -1,0 +1,69 @@
+# syntax=docker/dockerfile:1
+# grid-worker container image (ADR-0042). Multi-stage: JDK builder produces
+# the application-plugin install layout (bin/ launcher + lib/*.jar); JRE
+# runtime image runs it. The chart's CronJob (templates/cronjob-ensure-dailies.yaml)
+# invokes /app/bin/grid-worker --ensure-dailies. Base images pinned to
+# digest per MANIFESTO; bump digest and tag together.
+
+# ---- Stage 1: build ------------------------------------------------------
+# eclipse-temurin:21.0.10_7-jdk-alpine-3.22
+FROM eclipse-temurin:21.0.10_7-jdk-alpine-3.22@sha256:45df4ae087e53ba551d35d5142a2ba6837eaa52592882745ee4377b12c1655f2 AS build
+
+WORKDIR /workspace
+
+# Build scripts first so source-only edits keep the dep-resolve layer cached.
+COPY gradlew settings.gradle.kts build.gradle.kts ./
+COPY gradle ./gradle
+COPY grid/domain/build.gradle.kts grid/domain/
+COPY grid/application/build.gradle.kts grid/application/
+COPY grid/infrastructure/build.gradle.kts grid/infrastructure/
+COPY grid/api/build.gradle.kts grid/api/
+COPY grid/worker/build.gradle.kts grid/worker/
+# settings.gradle.kts includes :game:* modules. Gradle's configuration step
+# requires those project directories to exist before any task can run.
+# :grid:worker:installDist has no dependency on game/, so the build script
+# alone is enough; src/ is intentionally not copied.
+COPY game/domain/build.gradle.kts game/domain/
+COPY game/application/build.gradle.kts game/application/
+COPY game/infrastructure/build.gradle.kts game/infrastructure/
+COPY game/api/build.gradle.kts game/api/
+
+COPY grid/domain/src grid/domain/src
+COPY grid/application/src grid/application/src
+COPY grid/infrastructure/src grid/infrastructure/src
+COPY grid/worker/src grid/worker/src
+
+# `installDist` lays out bin/ + lib/ under build/install/worker/. The
+# application plugin's launcher script wires the CLASSPATH for us, so no
+# shadowJar is needed; the chart invokes /app/bin/grid-worker directly.
+RUN chmod +x gradlew && ./gradlew :grid:worker:installDist --no-daemon --stacktrace
+
+# ---- Stage 2: runtime ----------------------------------------------------
+# eclipse-temurin:21.0.10_7-jre-alpine-3.22
+FROM eclipse-temurin:21.0.10_7-jre-alpine-3.22@sha256:b08e4d2ef04cda3786f38cc92f96005c0e32361c353d109a6be0f03c3e9a157f
+
+WORKDIR /app
+
+# Copy the install layout into /app, preserving bin/ + lib/. The chart
+# CronJob references /app/bin/grid-worker; the application plugin emits
+# the launcher under the project name (worker), so symlink to the
+# chart-expected name without touching :grid:worker's build.gradle.kts.
+COPY --from=build /workspace/grid/worker/build/install/worker/ /app/
+RUN ln -s /app/bin/worker /app/bin/grid-worker
+
+# Run as non-root. K8s pod security context requires runAsNonRoot=true (see chart's
+# values.yaml); without an explicit USER here, kubelet refused to start with
+# "container has runAsNonRoot and image will run as root".
+RUN addgroup --system --gid 1000 ktor \
+ && adduser --system --uid 1000 --ingroup ktor --no-create-home --shell /sbin/nologin ktor \
+ && chown -R 1000:1000 /app
+USER 1000:1000
+
+ENTRYPOINT ["/app/bin/grid-worker"]
+CMD ["--help"]
+
+# OCI Image Annotations: link the GHCR package back to source and surface
+# basic metadata (description, license) on the package page.
+LABEL org.opencontainers.image.source="https://github.com/Ishou/bliss"
+LABEL org.opencontainers.image.description="WordSparrow JVM worker (daily-grid pre-generation CLI)"
+LABEL org.opencontainers.image.licenses="FSL-1.1-MIT"
