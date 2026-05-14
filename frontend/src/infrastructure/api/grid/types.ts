@@ -679,8 +679,9 @@ export interface operations {
             query?: {
                 /**
                  * @description ISO-8601 calendar date (`YYYY-MM-DD`) in UTC. When omitted the
-                 *     server uses today's UTC date. Future dates are accepted and
-                 *     generate the puzzle ahead of time.
+                 *     server uses today's UTC date. Future dates are accepted; the
+                 *     endpoint returns 404 if the daily worker has not yet produced a
+                 *     row for that date (see endpoint description).
                  */
                 date?: string;
             };
