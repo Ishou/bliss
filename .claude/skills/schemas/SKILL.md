@@ -111,13 +111,13 @@ pnpm api:generate    # runs openapi-typescript against both specs
 
 Commit the regenerated `frontend/src/infrastructure/api/{grid,game}/types.ts` in the **same PR** as the schema change. The CI check is `regen-and-diff` (workflow `openapi-typescript-drift.yml`): it reinstalls deps via `pnpm install --frozen-lockfile`, runs `pnpm api:generate`, then `git diff --exit-code` on both generated files. Either being stale fails the build.
 
-**Pre-push self-check** — `pnpm api:check` is the one-liner that mirrors CI byte-for-byte:
+**Pre-push self-check** (mirrors CI exactly):
 
 ```
-cd frontend && pnpm api:check
+cd frontend && pnpm install --frozen-lockfile && pnpm api:check
 ```
 
-If it passes locally, the CI check will pass too. Run it on every schema PR before pushing. The most common cause of a `regen-and-diff` red is "I edited the spec but didn't regenerate" — `pnpm api:check` catches that in five seconds.
+Run it on every schema PR before pushing. The most common cause of a `regen-and-diff` red is "I edited the spec but didn't regenerate" — `pnpm api:check` catches that in five seconds.
 
 Generated code is **excluded from ADR-0001 §4's line cap** — the regenerated `types.ts` doesn't count against the 400-line budget. That means: if your schema change produces a 600-line `types.ts` diff, you still pass §4 as long as the hand-written diff is under 400 lines.
 

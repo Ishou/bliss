@@ -117,13 +117,13 @@ Two important properties:
 **Pre-push check pattern (recommended):**
 
 ```
-./gradlew :<scope>:check :<scope>:spotlessCheck
+./gradlew :<scope>:spotlessApply && ./gradlew :<scope>:spotlessCheck
 ```
 
-Or repo-wide:
+Or repo-wide (what CI runs):
 
 ```
-./gradlew check    # runs spotlessCheck on every module as part of check
+./gradlew spotlessCheck     # run by CI before build; check depends on this too
 ```
 
 If you're inside the §6a fixer loop and Spotless is the only CI failure, the fix is usually a one-line commit: `./gradlew spotlessApply && git add -u && git commit -s -m "chore(<scope>): apply spotless"`. Don't suppress ktlint findings; the formatter is the authority per CLAUDE.md.

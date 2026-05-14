@@ -91,10 +91,10 @@ Workflow when an OpenAPI spec changes:
 2. In the consumer PR, run `cd frontend && pnpm api:generate`.
 3. Commit the regenerated `types.ts`. ADR-0001 §4 excludes generated code from the line cap, so the diff doesn't count against you.
 
-**Pre-push self-check** — `pnpm api:check` runs the generator AND `git diff --exit-code`, exactly mirroring CI. If it passes locally, `regen-and-diff` will pass in CI:
+**Pre-push self-check** (mirrors CI exactly):
 
 ```
-cd frontend && pnpm api:check
+cd frontend && pnpm install --frozen-lockfile && pnpm api:check
 ```
 
 Run this any time you've touched `grid/api/openapi.yaml`, `game/api/openapi.yaml`, OR added a new endpoint that uses generated types — even if you "just regenerated five minutes ago", because a rebase / a teammate's merge / a `pnpm install` that pulled a new `openapi-typescript` patch version can change the output.
