@@ -100,14 +100,39 @@ JVM-arg workarounds (`-Dfile.encoding=UTF-8`, `-Dsun.jnu.encoding=UTF-8`) **do n
 
 ## Spotless ktlint
 
-Spotless runs as a Gradle check task. To auto-format before pushing:
+Spotless (ktlint 1.5.0, applied to every subproject in the root `build.gradle.kts`) runs on `src/**/*.kt` and `*.gradle.kts`. It's the single most frequent CI failure on Kotlin PRs because the muscle-memory is "compile and push" — but `compileKotlin` doesn't run Spotless, so the violation only surfaces in CI.
+
+**Always `spotlessApply` before pushing, not just `spotlessCheck`.**
 
 ```
-./gradlew spotlessApply
-./gradlew spotlessCheck   # verify
+./gradlew spotlessApply        # auto-fix
+./gradlew spotlessCheck        # verify (this is what CI runs)
 ```
 
-Don't suppress ktlint findings. The formatter is the authority (CLAUDE.md).
+Two important properties:
+
+- **CI runs `spotlessCheck` on every module**, not just the modules you touched. So a stale violation introduced by a prior PR (rare, but happens after a ktlint version bump) will fail your build too. If `spotlessCheck` fails on a module your PR didn't touch, run `spotlessApply` repo-wide and commit the result as a separate `chore(spotless): re-format after ktlint bump` commit — don't mix it into the feature PR's diff.
+- **Spotless target** = `src/**/*.kt` (test + main) + `*.gradle.kts`. Test files count. New `*.gradle.kts` at a new module's root counts too.
+
+**Pre-push check pattern (recommended):**
+
+```
+./gradlew :<scope>:spotlessApply && ./gradlew :<scope>:spotlessCheck
+```
+
+Or repo-wide (what CI runs):
+
+```
+./gradlew spotlessCheck     # run by CI before build; check depends on this too
+```
+
+If you're inside the §6a fixer loop and Spotless is the only CI failure, the fix is usually a one-line commit: `./gradlew spotlessApply && git add -u && git commit -s -m "chore(<scope>): apply spotless"`. Don't suppress ktlint findings; the formatter is the authority per CLAUDE.md.
+
+**Common triggers** (in order of frequency):
+- Import sort / unused-import removal after adding-then-removing a class.
+- Trailing comma missing in multi-line argument lists (ktlint 1.5 prefers them).
+- Blank-line conventions around top-level / nested function declarations.
+- `*.gradle.kts` files (often the new module's build script is committed unformatted).
 
 ## Build commands
 

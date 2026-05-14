@@ -102,18 +102,26 @@ CI gate: the `spectral` GitHub Actions job runs the same rulesets. A green local
 
 ## Frontend type regeneration
 
-After every change to `grid/api/openapi.yaml`:
+After every change to `grid/api/openapi.yaml` **or** `game/api/openapi.yaml`:
 
 ```
 cd frontend
-pnpm api:generate    # runs openapi-typescript against the spec
+pnpm api:generate    # runs openapi-typescript against both specs
 ```
 
-Commit the regenerated `frontend/src/infrastructure/api/grid/types.ts` with the schema change. CI's `regen-and-diff` job re-runs the generator and fails if the file drifts.
+Commit the regenerated `frontend/src/infrastructure/api/{grid,game}/types.ts` in the **same PR** as the schema change. The CI check is `regen-and-diff` (workflow `openapi-typescript-drift.yml`): it reinstalls deps via `pnpm install --frozen-lockfile`, runs `pnpm api:generate`, then `git diff --exit-code` on both generated files. Either being stale fails the build.
 
-Generated code is **excluded from ADR-0001 §4's line cap** — the regenerated `types.ts` doesn't count against the 400-line budget.
+**Pre-push self-check** (mirrors CI exactly):
 
-AsyncAPI doesn't have a comparable codegen step in this repo yet. When Wave E adds the WebSocket client, codegen-from-AsyncAPI will be a separate concern.
+```
+cd frontend && pnpm install --frozen-lockfile && pnpm api:check
+```
+
+Run it on every schema PR before pushing. The most common cause of a `regen-and-diff` red is "I edited the spec but didn't regenerate" — `pnpm api:check` catches that in five seconds.
+
+Generated code is **excluded from ADR-0001 §4's line cap** — the regenerated `types.ts` doesn't count against the 400-line budget. That means: if your schema change produces a 600-line `types.ts` diff, you still pass §4 as long as the hand-written diff is under 400 lines.
+
+AsyncAPI is **not** in this drift check. `game/api/asyncapi.yaml` does not have a comparable codegen step in this repo today; when Wave E adds the WebSocket client, codegen-from-AsyncAPI will be a separate concern (and a separate workflow).
 
 ## Versioning + path
 
