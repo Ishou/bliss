@@ -512,8 +512,7 @@ function GrilleDuJourErrorBody({ onRetry }: { readonly onRetry: () => void }) {
   );
 }
 
-// Daily worker (ADR-0042 / PR D) hasn't produced today's row yet. role="status"
-// (not "alert") so AT users hear it as a calm update, not a warning.
+// role="status" (not "alert"): AT users hear a calm update, not a warning (ADR-0042 / 404 path).
 function GrilleDuJourUnavailableBody() {
   return (
     <p

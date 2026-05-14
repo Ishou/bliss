@@ -120,10 +120,7 @@ class PuzzleRouteCooldownTest {
             assertThat(cooldown.snapshot(daily).currentSeq).isEqualTo(0L)
         }
 
-    // Daily-bucket cooldown coverage moved with the worker (ADR-0042 / PR D):
-    // the daily route is a pure read against the persisted row and no longer
-    // touches the cooldown repository. The DAILY_SCOPE_ID bookkeeping lives
-    // in `EnsureUpcomingDailiesUseCase` and is covered by its own tests.
+    // Pure-read route no longer touches cooldown; DAILY_SCOPE_ID coverage lives in EnsureUpcomingDailiesUseCase tests (ADR-0042).
 
     @Test
     fun `null cooldown repository keeps GET puzzle behavior unchanged`() =
