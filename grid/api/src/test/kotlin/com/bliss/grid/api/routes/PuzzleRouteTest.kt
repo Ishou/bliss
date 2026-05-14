@@ -16,7 +16,6 @@ import com.bliss.grid.application.puzzle.LoadOrGeneratePuzzleUseCase
 import com.bliss.grid.application.puzzle.PUZZLE_HEIGHT
 import com.bliss.grid.application.puzzle.PUZZLE_WIDTH
 import com.bliss.grid.application.puzzle.RevealCellHintUseCase
-import com.bliss.grid.application.puzzle.StoredPuzzle
 import com.bliss.grid.application.puzzle.ValidatePuzzleUseCase
 import com.bliss.grid.application.puzzle.defaultPuzzleConstraints
 import com.bliss.grid.domain.generation.WordRepository
@@ -309,37 +308,6 @@ class PuzzleRouteTest {
             assertThat(json["type"]!!.jsonPrimitive.content)
                 .isEqualTo("https://bliss.example/errors/no-daily-puzzle")
             assertThat(json["status"]!!.jsonPrimitive.content.toInt()).isEqualTo(404)
-        }
-
-    @Test
-    fun `daily endpoint responds 404 when repository returns null - fake repo`() =
-        testApplication {
-            application {
-                val nullRepo =
-                    object : com.bliss.grid.application.puzzle.PuzzleRepository {
-                        override fun get(puzzleId: java.util.UUID): StoredPuzzle? = null
-
-                        override fun getOrCompute(
-                            puzzleId: java.util.UUID,
-                            factory: () -> StoredPuzzle?,
-                        ): StoredPuzzle? = null
-                    }
-                val hintUsageRepo = InMemoryHintUsageRepository()
-                val gen = GeneratePuzzleUseCase(EmptyWordRepository, defaultPuzzleConstraints())
-                routing {
-                    puzzles(
-                        loadOrGenerate = LoadOrGeneratePuzzleUseCase(nullRepo, gen),
-                        revealCellHint = RevealCellHintUseCase(nullRepo, hintUsageRepo),
-                        validatePuzzle = ValidatePuzzleUseCase(nullRepo),
-                        puzzleRepository = nullRepo,
-                    )
-                }
-            }
-
-            val response = client.get("/v1/puzzles/daily?date=2026-05-09")
-
-            assertThat(response.status).isEqualTo(HttpStatusCode.NotFound)
-            assertThat(response.bodyAsText()).contains("no-daily-puzzle")
         }
 
     private object EmptyWordRepository : WordRepository {
