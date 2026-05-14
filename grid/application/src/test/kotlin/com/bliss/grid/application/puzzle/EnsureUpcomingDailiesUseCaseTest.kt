@@ -66,9 +66,7 @@ class EnsureUpcomingDailiesUseCaseTest {
 
     @Test
     fun `loop stops on first failed day and marks subsequent days as skipped`() {
-        // Cooldowns propagate forward; if day N fails (no clues recorded) and day N+1 succeeds,
-        // a later retry of day N would compute against day N-1 + N+1's clues, contradicting
-        // what was persisted for day N+1. Stop-on-failure preserves cooldown causality.
+        // Stop-on-failure preserves cooldown causality: a retry of day N must not observe day N+1's clues.
         val repo = TrackingPuzzleRepository()
         val day3 = today.plusDays(2)
         val day3Seed = day3.toEpochDay() * 1000L
