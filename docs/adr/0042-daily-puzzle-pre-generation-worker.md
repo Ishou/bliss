@@ -1,7 +1,7 @@
 # ADR-0042: Daily-puzzle pre-generation worker
 
 ## Status
-Proposed
+Accepted
 
 ## Context
 - Today, `GET /v1/puzzles/daily` runs the bitmask-CSP generator
