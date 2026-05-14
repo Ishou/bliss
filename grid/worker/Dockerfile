@@ -33,9 +33,9 @@ COPY grid/application/src grid/application/src
 COPY grid/infrastructure/src grid/infrastructure/src
 COPY grid/worker/src grid/worker/src
 
-# `installDist` lays out bin/ + lib/ under build/install/worker/. The
-# application plugin's launcher script wires the CLASSPATH for us, so no
-# shadowJar is needed; the chart invokes /app/bin/grid-worker directly.
+# `installDist` lays out bin/ + lib/ under build/install/grid-worker/
+# (applicationName = "grid-worker" in build.gradle.kts). The application
+# plugin's launcher script wires the CLASSPATH; no shadowJar is needed.
 RUN chmod +x gradlew && ./gradlew :grid:worker:installDist --no-daemon --stacktrace
 
 # ---- Stage 2: runtime ----------------------------------------------------
@@ -44,12 +44,17 @@ FROM eclipse-temurin:21.0.10_7-jre-alpine-3.22@sha256:b08e4d2ef04cda3786f38cc92f
 
 WORKDIR /app
 
-# Copy the install layout into /app, preserving bin/ + lib/. The chart
-# CronJob references /app/bin/grid-worker; the application plugin emits
-# the launcher under the project name (worker), so symlink to the
-# chart-expected name without touching :grid:worker's build.gradle.kts.
-COPY --from=build /workspace/grid/worker/build/install/worker/ /app/
-RUN ln -s /app/bin/worker /app/bin/grid-worker
+# Copy the install layout into /app, preserving bin/ + lib/. applicationName
+# is set to "grid-worker" in build.gradle.kts so installDist emits the
+# launcher directly as bin/grid-worker — no symlink needed.
+COPY --from=build /workspace/grid/worker/build/install/grid-worker/ /app/
+
+# OpenTelemetry Java agent (ADR-0027). Activated via JAVA_TOOL_OPTIONS in
+# values.yaml under ensureDailies.env; the agent instruments JDBC calls.
+ADD --chmod=0644 \
+    --checksum=sha256:bd01fea1304e8c8803fff827a0bdda02b2266742a85c62548053c6761474bb5b \
+    https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/v2.27.0/opentelemetry-javaagent.jar \
+    /app/otel.jar
 
 # Run as non-root. K8s pod security context requires runAsNonRoot=true (see chart's
 # values.yaml); without an explicit USER here, kubelet refused to start with
