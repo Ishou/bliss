@@ -136,7 +136,7 @@ class EnsureUpcomingDailiesUseCase(
         val persistedDates: List<LocalDate>,
         val generatedDates: List<LocalDate>,
         val failedDates: List<LocalDate>,
-        val skippedDates: List<LocalDate> = emptyList(),
+        val skippedDates: List<LocalDate>,
     )
 
     companion object {
