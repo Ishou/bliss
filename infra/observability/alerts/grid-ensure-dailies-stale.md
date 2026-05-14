@@ -27,8 +27,8 @@ a single missed run.
 | Evaluation freq  | every 5 minutes                              |
 | Pending duration | 1 evaluation                                 |
 | Window           | instantaneous (gauge age check)              |
-| Threshold        | 93600 seconds (26 hours)                     |
-| Comparator       | `>`                                          |
+| Threshold        | 93600 seconds (26 hours), or metric absent   |
+| Comparator       | `>` (stale branch) / `absent()` (no-data branch) |
 
 ## Query (PromQL via kube-state-metrics)
 
@@ -37,14 +37,24 @@ as the Unix timestamp of the most recent successful Job; subtracting
 from `time()` gives staleness in seconds.
 
 ```promql
-time()
-  - max(
-      kube_cronjob_status_last_successful_time{
-        namespace="grid",
-        cronjob="wordsparrow-api-ensure-dailies"
-      }
-    )
+(
+  time()
+    - max(
+        kube_cronjob_status_last_successful_time{
+          namespace="grid",
+          cronjob="wordsparrow-api-ensure-dailies"
+        }
+      )
   > 93600
+)
+or (
+  absent(
+    kube_cronjob_status_last_successful_time{
+      namespace="grid",
+      cronjob="wordsparrow-api-ensure-dailies"
+    }
+  )
+)
 ```
 
 > If `kube-state-metrics` is not yet deployed in the observability
