@@ -23,7 +23,7 @@ object Database {
 
     fun start(): Unit = delegate.start()
 
-    fun stopForTesting(): Unit = delegate.stopForTesting()
+    fun stop(): Unit = delegate.stop()
 
     /** Test seam — production callers don't need URL parsing. */
     internal fun toJdbcUrl(raw: String): String = BlissDatabase.toJdbcUrl(raw)
