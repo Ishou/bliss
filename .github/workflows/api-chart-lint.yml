@@ -81,11 +81,16 @@ jobs:
       # check (`sha256:` prefix + 64 hex chars) without referring to a
       # real image. The lint never pulls or runs anything; it only
       # renders manifests, so the placeholder is harmless.
+      # `ensureDailies.image.digest` is set unconditionally — only the grid chart
+      # consumes it (ADR-0042 daily pre-generation CronJob), but `helm --set`
+      # tolerates an unused key, so the same flag works against the game chart
+      # too without per-matrix branching.
       - name: helm lint (prod values)
         run: |
           helm lint ${{ matrix.chart.path }}/ \
             -f ${{ matrix.chart.path }}/values-prod.yaml \
-            --set image.digest=sha256:0000000000000000000000000000000000000000000000000000000000000000
+            --set image.digest=sha256:0000000000000000000000000000000000000000000000000000000000000000 \
+            --set ensureDailies.image.digest=sha256:0000000000000000000000000000000000000000000000000000000000000000
 
       - name: helm lint (local values)
         run: |
@@ -104,6 +109,7 @@ jobs:
           helm template ${{ matrix.chart.release }} ${{ matrix.chart.path }}/ \
             -f ${{ matrix.chart.path }}/values-prod.yaml \
             --set image.digest=sha256:0000000000000000000000000000000000000000000000000000000000000000 \
+            --set ensureDailies.image.digest=sha256:0000000000000000000000000000000000000000000000000000000000000000 \
           | kubeconform -strict -ignore-missing-schemas -summary -
 
       - name: helm template + kubeconform (local values)

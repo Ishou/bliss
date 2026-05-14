@@ -59,3 +59,8 @@ retention:
       # this file rather than injected by CD: the CD workflow only resolves
       # the grid-api digest. Bump alongside the `tag` in values.yaml.
       digest: "sha256:4e6e670bb069649261c9c18031f0aded7bb249a5b6664ddec29c013a89310d50"
+ensureDailies:
+  enabled: false  # flip to true in follow-up PR once worker image + CD digest wiring land
+  image:
+    requireDigest: true
+    digest: ""
