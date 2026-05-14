@@ -205,10 +205,7 @@ class PuzzleRouteTest {
             assertThat(json.containsKey("gridNumber")).isEqualTo(false)
         }
 
-    // Daily route is a pure read against the persisted row (ADR-0042).
-    // Pre-warm by GETting `/v1/puzzles/{daily-id}` first — `module()` shares
-    // a single InMemoryPuzzleRepository between routes, so loadOrGenerate's
-    // store insert is observable to the daily endpoint's `repository.get`.
+    // Pre-warm: GET /{daily-id} first so InMemoryPuzzleRepository has a row for the daily endpoint.
     private val daily20260509Id: String =
         DailyPuzzleSelector().puzzleIdForDate(LocalDate.parse("2026-05-09")).toString()
     private val dailyPrelaunchId: String =

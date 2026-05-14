@@ -23,11 +23,7 @@ export interface AccueilLoaderData {
   readonly lobbies: readonly LobbySummary[];
 }
 
-// Mirrors a Result union with an explicit `loading` arm so the
-// component renders deterministically without a separate boolean.
-// `unavailable` is the daily-worker-not-ready arm (ADR-0042 / 404):
-// distinct from `error` so the UI shows a calm "pas encore disponible"
-// message rather than the harsher "indisponible. Réessayez" + retry CTA.
+// `unavailable` arm (ADR-0042 / 404) shows calm "pas encore disponible" instead of error toast.
 type DailyState =
   | { readonly status: 'loading' }
   | { readonly status: 'ok'; readonly puzzle: Puzzle }

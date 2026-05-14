@@ -110,10 +110,7 @@ fun Route.puzzles(
             }
 
         val puzzleId = dailyPuzzleSelector.puzzleIdForDate(date)
-        // Pure read against the persisted row populated by the daily worker
-        // (ADR-0042). On-demand generation moved to the worker; the route
-        // is now a 200/404 lookup. Dispatchers.IO: PuzzleRepository is
-        // blocking JDBC; keep it off the Netty event loop.
+        // Pure read of the persisted daily row (ADR-0042); Dispatchers.IO keeps JDBC off the event loop.
         val stored = withContext(Dispatchers.IO) { puzzleRepository.get(puzzleId) }
         if (stored == null) {
             call.respondProblem(

@@ -109,9 +109,7 @@ function PageShell({ children }: { children: React.ReactNode }) {
   );
 }
 
-// Rendered when the daily worker (ADR-0042) has not yet produced a row
-// for the requested date. The repo returns `null` on 404 so this is a
-// regular render path — not the error boundary, no toast, no redirect.
+// null from repo (ADR-0042 / 404) renders this instead of error boundary — no toast, no redirect.
 const dailyUnavailableStyles = css({
   fontSize: 'body',
   margin: 0,
@@ -134,10 +132,7 @@ function DailyUnavailable() {
 }
 
 function HomePage() {
-  // Pre-hooks early return is the only React-safe way to short-circuit
-  // here: every hook below this line MUST run on every render. Calling
-  // `useLoaderData` THEN bailing is fine; calling `useRouter` after a
-  // conditional return is not. So `LoadedHomePage` owns the rest.
+  // Hooks below MUST run on every render; bail after useLoaderData (pre-hooks early return).
   const loaded = Route.useLoaderData() as Puzzle | null;
   if (loaded === null) return <DailyUnavailable />;
   return <LoadedHomePage puzzle={loaded} />;
