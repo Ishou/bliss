@@ -32,7 +32,7 @@ spec:
             app.kubernetes.io/component: ensure-dailies
         spec:
           serviceAccountName: {{ include "wordsparrow-api.serviceAccountName" . }}
-          restartPolicy: OnFailure
+          restartPolicy: Never
           securityContext: {{- toYaml .Values.podSecurityContext | nindent 12 }}
           containers:
             - name: worker
@@ -51,10 +51,6 @@ spec:
                 {{- with .Values.ensureDailies.env }}
                 {{- toYaml . | nindent 16 }}
                 {{- end }}
-              {{- with .Values.envFromSecret }}
-              envFrom:
-                - secretRef: {name: {{ . }}}
-              {{- end }}
               {{- with .Values.ensureDailies.resources }}
               resources: {{- toYaml . | nindent 16 }}
               {{- end }}
