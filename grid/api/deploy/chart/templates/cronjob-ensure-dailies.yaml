@@ -1,0 +1,66 @@
+{{- if .Values.ensureDailies.enabled -}}
+{{/*
+Daily pre-generation of the next 7 days of puzzles (ADR-0042).
+
+Runs the `:grid:worker` `--ensure-dailies` CLI on a CronJob. Reuses the
+CNPG-issued `<cluster>-app` Secret for the database connection (same
+wiring as the api Deployment's DATABASE_URL). The container image is
+parameterized so the worker image — published independently from the
+api image — can be pinned to digest in prod via values-prod.yaml.
+*/}}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "wordsparrow-api.fullname" . }}-ensure-dailies
+  labels: {{- include "wordsparrow-api.labels" . | nindent 4 }}
+    app.kubernetes.io/component: ensure-dailies
+spec:
+  schedule: {{ .Values.ensureDailies.schedule | quote }}
+  # Forbid: ADR-0042 sequential walk shares clue-cooldown state across days; an overlapping run would corrupt ordering.
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 5
+  jobTemplate:
+    spec:
+      # 90 minutes covers the ~70-minute worst case from ADR-0042 (7 days × ~10 min) with headroom.
+      activeDeadlineSeconds: {{ .Values.ensureDailies.activeDeadlineSeconds }}
+      # No retries: the next day's CronJob will pick up the work; an in-day retry would just burn the same budget twice.
+      backoffLimit: 0
+      template:
+        metadata:
+          labels: {{- include "wordsparrow-api.selectorLabels" . | nindent 12 }}
+            app.kubernetes.io/component: ensure-dailies
+        spec:
+          serviceAccountName: {{ include "wordsparrow-api.serviceAccountName" . }}
+          restartPolicy: OnFailure
+          securityContext: {{- toYaml .Values.podSecurityContext | nindent 12 }}
+          containers:
+            - name: worker
+              image: {{ include "wordsparrow-api.workerImage" . | quote }}
+              imagePullPolicy: {{ .Values.ensureDailies.image.pullPolicy }}
+              securityContext: {{- toYaml .Values.containerSecurityContext | nindent 16 }}
+              command: ["/app/bin/grid-worker"]
+              args: ["--ensure-dailies"]
+              env:
+                # CNPG-managed connection string (same key the api Deployment uses).
+                - name: DATABASE_URL
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ include "wordsparrow-api.pgClusterName" . }}-app
+                      key: uri
+                {{- with .Values.ensureDailies.env }}
+                {{- toYaml . | nindent 16 }}
+                {{- end }}
+              {{- with .Values.envFromSecret }}
+              envFrom:
+                - secretRef: {name: {{ . }}}
+              {{- end }}
+              {{- with .Values.ensureDailies.resources }}
+              resources: {{- toYaml . | nindent 16 }}
+              {{- end }}
+              # readOnlyRootFilesystem requires a writable /tmp (JVM PerfData etc).
+              volumeMounts:
+                - {name: tmp, mountPath: /tmp}
+          volumes:
+            - {name: tmp, emptyDir: {}}
+{{- end }}

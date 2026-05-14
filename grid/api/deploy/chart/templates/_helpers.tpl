@@ -62,3 +62,15 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- printf "%s:%s" .Values.image.repository .Values.image.tag -}}
 {{- end -}}
 {{- end -}}
+{{/* :grid:worker image (ADR-0042). Same digest-or-tag pattern as the api image. */}}
+{{- define "wordsparrow-api.workerImage" -}}
+{{- $img := .Values.ensureDailies.image -}}
+{{- if and (not $img.digest) $img.requireDigest -}}
+{{- fail "ensureDailies.image.digest must be set for production — MANIFESTO reproducible builds" -}}
+{{- end -}}
+{{- if $img.digest -}}
+{{- printf "%s@%s" $img.repository $img.digest -}}
+{{- else -}}
+{{- printf "%s:%s" $img.repository $img.tag -}}
+{{- end -}}
+{{- end -}}

@@ -13,6 +13,12 @@ fronts it.
 - CloudNativePG `Cluster` CR for the Postgres backing store.
 - CloudNativePG `ScheduledBackup` (prod only — `postgres.backups.enabled=true`)
   pointing at `bliss-cnpg-backups` on Hetzner Object Storage (ADR-0010 §5).
+- `CronJob` for the `:grid:worker` `--ensure-dailies` daily pre-generation
+  (prod only — `ensureDailies.enabled=true`, ADR-0042). Runs at 03:00 UTC,
+  reuses the CNPG-issued `<cluster>-app` Secret for `DATABASE_URL`. To
+  backfill manually: `kubectl create job
+  --from=cronjob/wordsparrow-api-ensure-dailies
+  ensure-dailies-backfill-$(date +%Y%m%d) -n grid`.
 
 Out of scope: the cluster (step 3 — `terraform/k8s/` + operators), the
 image build (sibling PR), and the CD workflow (step 5).

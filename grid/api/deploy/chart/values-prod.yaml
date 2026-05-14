@@ -59,3 +59,11 @@ retention:
       # this file rather than injected by CD: the CD workflow only resolves
       # the grid-api digest. Bump alongside the `tag` in values.yaml.
       digest: "sha256:4e6e670bb069649261c9c18031f0aded7bb249a5b6664ddec29c013a89310d50"
+ensureDailies:
+  enabled: true
+  image:
+    # Fail-fast guard: helm aborts if digest is empty (see _helpers.tpl).
+    # CD workflow injects the worker image digest at deploy time once the
+    # worker image-build matrix row lands (follow-up PR).
+    requireDigest: true
+    digest: ""

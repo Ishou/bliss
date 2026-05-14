@@ -142,3 +142,32 @@ retention:
       digest: ""
       # When true, helm install/upgrade fails fast if digest is empty (mirrors main image guard).
       requireDigest: false
+# Daily puzzle pre-generation CronJob (ADR-0042). Runs the :grid:worker
+# `--ensure-dailies` CLI; `templates/cronjob-ensure-dailies.yaml` owns
+# the rendering. Off by default so local-dev installs don't try to pull
+# an image that may not exist on a contributor laptop; prod enables.
+ensureDailies:
+  enabled: false
+  # 03:00 UTC — between low-traffic hours and the European morning playtime, after the 02:00 CNPG backup.
+  schedule: "0 3 * * *"
+  # 90 minutes covers ADR-0042's ~70-minute worst case (7 days × ~10 min each) with headroom.
+  activeDeadlineSeconds: 5400
+  # Worker is short-lived per run but the bitmask-CSP solver is CPU-bound; mirrors the api's prod request shape.
+  resources:
+    requests: {cpu: 250m, memory: 512Mi}
+    limits: {cpu: 1000m, memory: 1Gi}
+  # Worker image. Built independently of the api image (separate Dockerfile / matrix row, follow-up); pin to digest in prod.
+  image:
+    repository: ghcr.io/ishou/bliss/wordsparrow-worker
+    tag: "main"
+    digest: ""
+    pullPolicy: IfNotPresent
+    requireDigest: false
+  # Inline env vars beyond DATABASE_URL (which is wired from the CNPG `<cluster>-app` Secret in the template).
+  env:
+    - name: JAVA_TOOL_OPTIONS
+      value: "-XX:MaxRAMPercentage=75.0"
+    - name: OTEL_SERVICE_NAME
+      value: "grid-worker"
+    - name: OTEL_RESOURCE_ATTRIBUTES
+      value: "bounded_context=grid"
