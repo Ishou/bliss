@@ -109,8 +109,41 @@ function PageShell({ children }: { children: React.ReactNode }) {
   );
 }
 
+// Rendered when the daily worker (ADR-0042) has not yet produced a row
+// for the requested date. The repo returns `null` on 404 so this is a
+// regular render path — not the error boundary, no toast, no redirect.
+const dailyUnavailableStyles = css({
+  fontSize: 'body',
+  margin: 0,
+  textAlign: 'center',
+  color: 'fg',
+  padding: 'lg',
+});
+
+function DailyUnavailable() {
+  return (
+    <PageShell>
+      <h1 lang="fr" className={srOnly}>
+        Grille de mots fléchés du jour — <span lang="en">WordSparrow</span>
+      </h1>
+      <p className={dailyUnavailableStyles} role="status" data-testid="daily-not-available">
+        La grille du jour n&apos;est pas encore disponible. Réessayez dans quelques minutes.
+      </p>
+    </PageShell>
+  );
+}
+
 function HomePage() {
-  const puzzle = Route.useLoaderData() as Puzzle;
+  // Pre-hooks early return is the only React-safe way to short-circuit
+  // here: every hook below this line MUST run on every render. Calling
+  // `useLoaderData` THEN bailing is fine; calling `useRouter` after a
+  // conditional return is not. So `LoadedHomePage` owns the rest.
+  const loaded = Route.useLoaderData() as Puzzle | null;
+  if (loaded === null) return <DailyUnavailable />;
+  return <LoadedHomePage puzzle={loaded} />;
+}
+
+function LoadedHomePage({ puzzle }: { readonly puzzle: Puzzle }) {
   const router = useRouter();
   const navigate = useNavigate();
   const { puzzleSolver, soloEntriesStore, tourSeenStore } = Route.useRouteContext();
@@ -671,7 +704,7 @@ export const Route = createRoute({
   path: '/grille',
   validateSearch: (search: Record<string, unknown>): IndexSearch =>
     search.tour === 1 || search.tour === '1' ? { tour: 1 } : {},
-  loader: ({ context }): Promise<Puzzle> => context.puzzleRepository.fetchDaily(),
+  loader: ({ context }): Promise<Puzzle | null> => context.puzzleRepository.fetchDaily(),
   component: HomePage,
   // pendingMs: TanStack Router defaults to Infinity (pendingComponent
   // never renders). 200 ms is the sweet spot — fast navs (<200 ms)

@@ -61,6 +61,18 @@ describe('Grille route loader', () => {
     expect(fetchById).not.toHaveBeenCalled();
   });
 
+  it('renders the friendly "daily not yet available" message when fetchDaily resolves to null (ADR-0042)', async () => {
+    const fetchDaily = vi.fn().mockResolvedValue(null);
+    const fetchById = vi.fn().mockRejectedValue(new Error('unused'));
+    renderWith({ fetchById, fetchDaily });
+    const status = await screen.findByTestId('daily-not-available');
+    expect(status).toHaveTextContent(/pas encore disponible/i);
+    // Friendly status, NOT the error boundary or a toast.
+    expect(status.getAttribute('role')).toBe('status');
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.queryByRole('grid')).toBeNull();
+  });
+
   it('renders the error component when the repository rejects', async () => {
     renderWith({
       fetchById: vi.fn().mockRejectedValue(new Error('unused')),

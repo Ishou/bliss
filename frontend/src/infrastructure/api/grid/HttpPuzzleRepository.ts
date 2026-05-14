@@ -33,10 +33,15 @@ export function createHttpPuzzleRepository(
       }
       return apiPuzzleToDomain(data);
     },
-    async fetchDaily(date?: string): Promise<Puzzle> {
+    async fetchDaily(date?: string): Promise<Puzzle | null> {
       const { data, error, response } = await client.GET('/v1/puzzles/daily', {
         params: { query: date != null ? { date } : {} },
       });
+      // 404 is the worker-not-yet-ready sentinel (ADR-0042); the
+      // application port returns null so the Grille route can render a
+      // graceful message instead of going through the error boundary.
+      // Every other failure (400, 5xx, network) still rejects.
+      if (response.status === 404) return null;
       if (error) {
         const detail = error.detail ?? error.title ?? `HTTP ${response.status}`;
         throw new Error(`daily puzzle fetch failed: ${detail}`);

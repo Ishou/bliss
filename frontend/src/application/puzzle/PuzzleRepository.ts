@@ -12,5 +12,12 @@ export interface PuzzleRepository {
   // the server falls back to today's UTC date when the parameter is
   // omitted. The Accueil and Grille route loaders both call this so the
   // two surfaces converge on the same canonical puzzleId for the day.
-  fetchDaily(date?: string): Promise<Puzzle>;
+  //
+  // Resolves to `null` when the daily worker has not yet produced a
+  // row for the requested date (404, RFC 7807 type
+  // `https://bliss.example/errors/no-daily-puzzle` per ADR-0042); the
+  // route component renders a graceful "daily not yet available"
+  // message instead of an error toast. Other failures (network,
+  // 4xx/5xx other than 404) reject as before.
+  fetchDaily(date?: string): Promise<Puzzle | null>;
 }
