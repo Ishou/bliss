@@ -67,13 +67,15 @@ class MainTest {
     }
 
     @Test
-    fun `executeAndExit returns 1 and logs failed_dates when at least one day fails`() {
+    fun `executeAndExit returns 1 and logs failed plus skipped dates when first day fails`() {
         val repo = PreseededRepo()
         val failingPort =
             object : GridGenerationPort {
                 override fun generate(
                     randomSeed: Long,
                     cooldownPolicy: ClueCooldownPolicy,
+                    attempts: Int,
+                    perAttemptTimeoutMs: Long,
                 ): Grid? = null
             }
 
@@ -81,7 +83,9 @@ class MainTest {
 
         assertThat(exit).isEqualTo(1)
         val summary = appender.list.single { it.formattedMessage.contains("event=ensure_upcoming_dailies_summary") }
-        assertThat(summary.formattedMessage).contains("failed_count=7")
+        // Stop-on-failure: day 1 fails, days 2..7 are skipped (never attempted) so cooldown ordering stays consistent.
+        assertThat(summary.formattedMessage).contains("failed_count=1")
+        assertThat(summary.formattedMessage).contains("skipped_count=6")
         assertThat(summary.formattedMessage).contains(today.toString())
     }
 
@@ -141,6 +145,8 @@ class MainTest {
         override fun generate(
             randomSeed: Long,
             cooldownPolicy: ClueCooldownPolicy,
+            attempts: Int,
+            perAttemptTimeoutMs: Long,
         ): Grid = error("GridGenerationPort.generate must not be called when every day is already persisted")
     }
 }

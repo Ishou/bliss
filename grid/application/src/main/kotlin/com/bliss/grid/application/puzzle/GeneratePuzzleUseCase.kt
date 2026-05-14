@@ -75,17 +75,20 @@ class GeneratePuzzleUseCase(
         height: Int? = null,
         cooldownPolicy: ClueCooldownPolicy = ClueCooldownPolicy.Inert,
         randomFactory: (attempt: Int) -> Random = { Random(clock.nanoTime() + it) },
+        attemptsOverride: Int? = null,
+        perAttemptTimeoutMsOverride: Long? = null,
     ): AttemptOutcome {
         val constraints =
             defaults.copy(
                 width = width ?: defaults.width,
                 height = height ?: defaults.height,
             )
-        val perAttemptMs = ArrayList<Long>(maxAttempts)
-        val perAttemptMetrics = ArrayList<GenerationMetrics>(maxAttempts)
-        repeat(maxAttempts) { attempt ->
+        val effectiveAttempts = attemptsOverride ?: maxAttempts
+        val perAttemptMs = ArrayList<Long>(effectiveAttempts)
+        val perAttemptMetrics = ArrayList<GenerationMetrics>(effectiveAttempts)
+        repeat(effectiveAttempts) { attempt ->
             val random = randomFactory(attempt)
-            val timeoutMs = perAttemptTimeoutMs()
+            val timeoutMs = perAttemptTimeoutMsOverride ?: perAttemptTimeoutMs()
             val started = clock.currentTimeMillis()
             val metrics = GenerationMetrics()
             val grid =
@@ -119,7 +122,7 @@ class GeneratePuzzleUseCase(
         }
         return AttemptOutcome(
             grid = null,
-            attempts = maxAttempts,
+            attempts = effectiveAttempts,
             perAttemptMs = perAttemptMs.toList(),
             perAttemptMetrics = perAttemptMetrics.toList(),
             totalMs = perAttemptMs.sum(),
