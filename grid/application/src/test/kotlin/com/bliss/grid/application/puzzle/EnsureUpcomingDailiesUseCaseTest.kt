@@ -108,8 +108,10 @@ class EnsureUpcomingDailiesUseCaseTest {
         useCase.execute(today)
 
         assertThat(port.calls).hasSize(3)
-        assertThat(port.calls.all { it.attempts == 42 }).isEqualTo(true)
-        assertThat(port.calls.all { it.perAttemptTimeoutMs == 7_777L }).isEqualTo(true)
+        port.calls.forEach { call ->
+            assertThat(call.attempts).isEqualTo(42)
+            assertThat(call.perAttemptTimeoutMs).isEqualTo(7_777L)
+        }
     }
 
     @Test
