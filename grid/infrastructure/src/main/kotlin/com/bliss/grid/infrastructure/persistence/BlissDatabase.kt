@@ -63,7 +63,7 @@ class BlissDatabase(
     }
 
     @Synchronized
-    fun stopForTesting() {
+    fun stop() {
         dataSource?.close()
         dataSource = null
     }
