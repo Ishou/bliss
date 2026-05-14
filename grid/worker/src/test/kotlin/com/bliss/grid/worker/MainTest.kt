@@ -28,7 +28,6 @@ import org.slf4j.LoggerFactory
 import java.time.Instant
 import java.time.LocalDate
 import java.util.UUID
-import java.util.concurrent.ConcurrentHashMap
 
 class MainTest {
     private val today: LocalDate = LocalDate.of(2026, 5, 13)
@@ -105,7 +104,7 @@ class MainTest {
     }
 
     private class PreseededRepo : PuzzleRepository {
-        private val store = ConcurrentHashMap<UUID, StoredPuzzle>()
+        private val store = HashMap<UUID, StoredPuzzle>()
 
         fun put(
             id: UUID,

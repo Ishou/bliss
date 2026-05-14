@@ -1,5 +1,8 @@
 package com.bliss.grid.worker
 
+import assertk.assertThat
+import assertk.assertions.hasSize
+import assertk.assertions.isEqualTo
 import com.lemonappdev.konsist.api.Konsist
 import com.lemonappdev.konsist.api.verify.assertFalse
 import org.junit.jupiter.api.Test
@@ -30,12 +33,7 @@ class WorkerArchitectureTest {
             workerScope
                 .functions()
                 .filter { it.name == "main" && it.isTopLevel }
-        check(mains.size == 1) {
-            "expected exactly one top-level main(), found ${mains.size}: ${mains.map { it.location }}"
-        }
-        val main = mains.single()
-        check(main.containingFile.name == "Main") {
-            "main() must live in Main.kt, found in ${main.containingFile.name}.kt"
-        }
+        assertThat(mains).hasSize(1)
+        assertThat(mains.single().containingFile.name).isEqualTo("Main")
     }
 }

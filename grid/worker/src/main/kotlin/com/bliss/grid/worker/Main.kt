@@ -81,7 +81,7 @@ private fun productionGridGenerationPort(): GridGenerationPort {
 
 internal fun executeAndExit(
     puzzleRepository: PuzzleRepository,
-    cooldownRepository: ClueCooldownRepository?,
+    cooldownRepository: ClueCooldownRepository,
     gridGenerationPort: GridGenerationPort,
     today: LocalDate = LocalDate.now(ZoneOffset.UTC),
 ): Int {
