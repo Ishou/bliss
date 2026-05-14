@@ -69,8 +69,7 @@ private fun runEnsureDailies(): Int {
 
 private fun productionGridGenerationPort(): GridGenerationPort {
     val wordRepository = CsvWordRepository.frenchFromClasspath()
-    // EnsureUpcomingDailiesUseCase passes per-call attempts and timeout overrides to
-    // GeneratePuzzleUseCase via the port, so the constructor maxAttempts is unused at runtime.
+    // Per-call overrides from EnsureUpcomingDailiesUseCase replace the constructor maxAttempts at runtime.
     val generatePuzzle =
         GeneratePuzzleUseCase(
             wordRepository = wordRepository,
