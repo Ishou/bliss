@@ -109,8 +109,36 @@ function PageShell({ children }: { children: React.ReactNode }) {
   );
 }
 
+// null from repo (ADR-0042 / 404) renders this instead of error boundary — no toast, no redirect.
+const dailyUnavailableStyles = css({
+  fontSize: 'body',
+  margin: 0,
+  textAlign: 'center',
+  color: 'fg',
+  padding: 'lg',
+});
+
+function DailyUnavailable() {
+  return (
+    <PageShell>
+      <h1 lang="fr" className={srOnly}>
+        Grille de mots fléchés du jour — <span lang="en">WordSparrow</span>
+      </h1>
+      <p className={dailyUnavailableStyles} role="status" data-testid="daily-not-available">
+        La grille du jour n&apos;est pas encore disponible. Réessayez dans quelques minutes.
+      </p>
+    </PageShell>
+  );
+}
+
 function HomePage() {
-  const puzzle = Route.useLoaderData() as Puzzle;
+  // Hooks below MUST run on every render; bail after useLoaderData (pre-hooks early return).
+  const loaded = Route.useLoaderData() as Puzzle | null;
+  if (loaded === null) return <DailyUnavailable />;
+  return <LoadedHomePage puzzle={loaded} />;
+}
+
+function LoadedHomePage({ puzzle }: { readonly puzzle: Puzzle }) {
   const router = useRouter();
   const navigate = useNavigate();
   const { puzzleSolver, soloEntriesStore, tourSeenStore } = Route.useRouteContext();
@@ -671,7 +699,7 @@ export const Route = createRoute({
   path: '/grille',
   validateSearch: (search: Record<string, unknown>): IndexSearch =>
     search.tour === 1 || search.tour === '1' ? { tour: 1 } : {},
-  loader: ({ context }): Promise<Puzzle> => context.puzzleRepository.fetchDaily(),
+  loader: ({ context }): Promise<Puzzle | null> => context.puzzleRepository.fetchDaily(),
   component: HomePage,
   // pendingMs: TanStack Router defaults to Infinity (pendingComponent
   // never renders). 200 ms is the sweet spot — fast navs (<200 ms)

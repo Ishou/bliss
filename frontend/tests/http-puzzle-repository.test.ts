@@ -126,9 +126,29 @@ describe('HttpPuzzleRepository', () => {
     const call = fetchSpy.mock.calls[0][0];
     const url = call instanceof Request ? call.url : String(call);
     expect(url).toBe('https://api.example.test/v1/puzzles/daily');
-    expect(puzzle.id).toBe(apiFixture.id);
-    expect(puzzle.gridNumber).toBe(apiFixture.gridNumber);
-    expect(puzzle.difficulty).toBe(apiFixture.difficulty);
+    expect(puzzle).not.toBeNull();
+    expect(puzzle!.id).toBe(apiFixture.id);
+    expect(puzzle!.gridNumber).toBe(apiFixture.gridNumber);
+    expect(puzzle!.difficulty).toBe(apiFixture.difficulty);
+  });
+
+  it('resolves to null when fetchDaily receives a 404 (worker not yet ready, ADR-0042)', async () => {
+    const repo = createHttpPuzzleRepository({
+      baseUrl: 'https://api.example.test',
+      fetch: vi.fn().mockResolvedValue(
+        json(
+          {
+            type: 'https://bliss.example/errors/no-daily-puzzle',
+            title: 'Aucune grille du jour disponible',
+            status: 404,
+            detail: "La grille du jour n'a pas encore été générée pour cette date.",
+          },
+          404,
+          'application/problem+json',
+        ),
+      ),
+    });
+    await expect(repo.fetchDaily()).resolves.toBeNull();
   });
 
   it('GETs /v1/puzzles/daily?date=... when date is provided', async () => {

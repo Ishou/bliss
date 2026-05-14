@@ -49,22 +49,20 @@ export interface paths {
          *     / "Commencer".
          *
          *     The server derives a deterministic UUID v7 from the date and
-         *     delegates to the same `loadOrGenerate` path as `GET /v1/puzzles/{
-         *     puzzleId}` — so subsequent hint / validate calls keyed by the
-         *     returned `id` resolve to the same canonical grid.
+         *     performs a pure read against the persisted puzzle row populated
+         *     ahead of time by the daily-puzzle worker (ADR-0042). Subsequent
+         *     hint / validate calls keyed by the returned `id` resolve to the
+         *     same canonical grid. When no row exists for the requested date —
+         *     worker has not yet run, or persistently failed — the endpoint
+         *     returns 404; clients SHOULD retry shortly or surface the
+         *     "daily not yet available" message.
          *
          *     `gridNumber` and `difficulty` on the response are populated from
          *     the date (sequence number from a launch-day anchor; difficulty
          *     is `facile` until heuristics land in a follow-up). Other fields
-         *     match the `Puzzle` schema.
-         *
-         *     Clue selection on the **first** generation of each new daily
-         *     date is biased away from clues used in recent daily grids, per
-         *     ADR-0031 "shared daily-bucket cooldown" (sentinel UUID
-         *     `00000000-0000-7000-8000-000000000000`). Subsequent same-day
-         *     fetches hit the cache and return the persisted grid unchanged.
-         *     The endpoint ignores any client-supplied `X-Session-Id` header —
-         *     the daily bucket is global by design.
+         *     match the `Puzzle` schema. The endpoint ignores any
+         *     client-supplied `X-Session-Id` header — the daily bucket is
+         *     global by design.
          */
         get: operations["getDailyPuzzle"];
         put?: never;
@@ -681,8 +679,9 @@ export interface operations {
             query?: {
                 /**
                  * @description ISO-8601 calendar date (`YYYY-MM-DD`) in UTC. When omitted the
-                 *     server uses today's UTC date. Future dates are accepted and
-                 *     generate the puzzle ahead of time.
+                 *     server uses today's UTC date. Future dates are accepted; the
+                 *     endpoint returns 404 if the daily worker has not yet produced a
+                 *     row for that date (see endpoint description).
                  */
                 date?: string;
             };
@@ -733,18 +732,6 @@ export interface operations {
                      *       "detail": "La grille du jour n'a pas encore été générée pour cette date."
                      *     }
                      */
-                    "application/problem+json": components["schemas"]["Problem"];
-                };
-            };
-            /**
-             * @description Generation failed for the requested date. Same shape as the
-             *     `getPuzzle` 422.
-             */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
                     "application/problem+json": components["schemas"]["Problem"];
                 };
             };

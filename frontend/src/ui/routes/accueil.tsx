@@ -23,11 +23,11 @@ export interface AccueilLoaderData {
   readonly lobbies: readonly LobbySummary[];
 }
 
-// Mirrors a Result union with an explicit `loading` arm so the
-// component renders deterministically without a separate boolean.
+// `unavailable` arm (ADR-0042 / 404) shows calm "pas encore disponible" instead of error toast.
 type DailyState =
   | { readonly status: 'loading' }
   | { readonly status: 'ok'; readonly puzzle: Puzzle }
+  | { readonly status: 'unavailable' }
   | { readonly status: 'error' };
 
 // Accueil (home) — landing page introduced after the action-bar
@@ -227,7 +227,9 @@ function GrilleDuJourCard() {
     puzzleRepository
       .fetchDaily()
       .then((puzzle) => {
-        if (!cancelled) setState({ status: 'ok', puzzle });
+        if (cancelled) return;
+        if (puzzle === null) setState({ status: 'unavailable' });
+        else setState({ status: 'ok', puzzle });
       })
       .catch(() => {
         if (!cancelled) setState({ status: 'error' });
@@ -242,6 +244,8 @@ function GrilleDuJourCard() {
         <GrilleDuJourLoadingBody />
       ) : state.status === 'error' ? (
         <GrilleDuJourErrorBody onRetry={() => setTick((n) => n + 1)} />
+      ) : state.status === 'unavailable' ? (
+        <GrilleDuJourUnavailableBody />
       ) : (
         <GrilleDuJourReadyBody puzzle={state.puzzle} />
       )}
@@ -505,6 +509,19 @@ function GrilleDuJourErrorBody({ onRetry }: { readonly onRetry: () => void }) {
         <Button variant="ghost" onClick={onRetry}>Réessayer</Button>
       </div>
     </>
+  );
+}
+
+// role="status" (not "alert"): AT users hear a calm update, not a warning (ADR-0042 / 404 path).
+function GrilleDuJourUnavailableBody() {
+  return (
+    <p
+      className={cardSubtitleStyles}
+      role="status"
+      data-testid="daily-not-available"
+    >
+      La grille du jour n&apos;est pas encore disponible. Réessayez dans quelques minutes.
+    </p>
   );
 }
 

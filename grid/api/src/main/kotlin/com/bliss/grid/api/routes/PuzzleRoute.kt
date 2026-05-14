@@ -11,6 +11,7 @@ import com.bliss.grid.api.mapper.GridToPuzzleMapper
 import com.bliss.grid.application.puzzle.DailyPuzzleSelector
 import com.bliss.grid.application.puzzle.FilledCellInput
 import com.bliss.grid.application.puzzle.LoadOrGeneratePuzzleUseCase
+import com.bliss.grid.application.puzzle.PuzzleRepository
 import com.bliss.grid.application.puzzle.RevealCellHintOutcome
 import com.bliss.grid.application.puzzle.RevealCellHintUseCase
 import com.bliss.grid.application.puzzle.ValidatePuzzleOutcome
@@ -47,6 +48,8 @@ private const val INVALID_PUZZLE_DATE_TYPE: String =
     "https://bliss.example/errors/invalid-puzzle-date"
 private const val PUZZLE_NOT_FOUND_TYPE: String =
     "https://bliss.example/errors/puzzle-not-found"
+private const val NO_DAILY_PUZZLE_TYPE: String =
+    "https://bliss.example/errors/no-daily-puzzle"
 private const val PUZZLE_GENERATION_FAILED_TYPE: String =
     "https://bliss.example/errors/puzzle-generation-failed"
 private const val INVALID_SESSION_ID_TYPE: String =
@@ -61,7 +64,9 @@ private const val HINT_BUDGET_EXHAUSTED_TYPE: String =
     "https://bliss.example/errors/hint-budget-exhausted"
 
 /**
- * Grid bounded-context HTTP surface (ADR-0003 §4). Three endpoints:
+ * Grid bounded-context HTTP surface (ADR-0003 §4). Endpoints:
+ *  - GET  `/v1/puzzles/daily` — pure read of the persisted daily row;
+ *    404 when the worker has not yet produced it (ADR-0042).
  *  - GET  `/v1/puzzles/{puzzleId}` — idempotent puzzle fetch (lookup-or-generate).
  *  - POST `/v1/puzzles/{puzzleId}/hints` — spend a hint to reveal the
  *    canonical letter at a `(row, column)` cell.
@@ -78,6 +83,7 @@ fun Route.puzzles(
     loadOrGenerate: LoadOrGeneratePuzzleUseCase,
     revealCellHint: RevealCellHintUseCase,
     validatePuzzle: ValidatePuzzleUseCase,
+    puzzleRepository: PuzzleRepository,
     mapper: GridToPuzzleMapper = GridToPuzzleMapper(),
     dailyPuzzleSelector: DailyPuzzleSelector = DailyPuzzleSelector(),
     clock: Clock = Clock.systemUTC(),
@@ -104,28 +110,14 @@ fun Route.puzzles(
             }
 
         val puzzleId = dailyPuzzleSelector.puzzleIdForDate(date)
-        // Daily endpoint uses the shared DAILY_SCOPE_ID bucket regardless of
-        // any client-supplied X-Session-Id header (ADR-0031). The endpoint
-        // ignores that header by design.
-        // Dispatchers.IO: PuzzleRepository is blocking JDBC; keep it off the Netty event loop.
-        val startedAtNs = System.nanoTime()
-        val stored =
-            withContext(Dispatchers.IO) {
-                loadOrGenerate.execute(puzzleId, sessionId = ClueCooldownRepository.DAILY_SCOPE_ID)
-            }
-        val elapsedMs = (System.nanoTime() - startedAtNs) / 1_000_000
+        // Pure read of the persisted daily row (ADR-0042); Dispatchers.IO keeps JDBC off the event loop.
+        val stored = withContext(Dispatchers.IO) { puzzleRepository.get(puzzleId) }
         if (stored == null) {
-            log.warn(
-                "daily_puzzle_generation_failed date={} puzzle_id={} elapsed_ms={}",
-                date,
-                puzzleId,
-                elapsedMs,
-            )
             call.respondProblem(
-                status = HttpStatusCode.UnprocessableEntity,
-                title = "Échec de la génération de grille",
-                type = PUZZLE_GENERATION_FAILED_TYPE,
-                detail = "Le générateur n'a pas pu satisfaire les contraintes demandées.",
+                status = HttpStatusCode.NotFound,
+                title = "Aucune grille du jour disponible",
+                type = NO_DAILY_PUZZLE_TYPE,
+                detail = "La grille du jour n'a pas encore été générée pour cette date.",
             )
             return@get
         }
