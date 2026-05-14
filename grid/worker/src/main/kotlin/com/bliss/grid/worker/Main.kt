@@ -69,12 +69,11 @@ private fun runEnsureDailies(): Int {
 
 private fun productionGridGenerationPort(): GridGenerationPort {
     val wordRepository = CsvWordRepository.frenchFromClasspath()
-    // maxAttempts=1: the EnsureUpcomingDailiesUseCase owns the per-day attempt budget.
+    // Per-call overrides from EnsureUpcomingDailiesUseCase replace the constructor maxAttempts at runtime.
     val generatePuzzle =
         GeneratePuzzleUseCase(
             wordRepository = wordRepository,
             defaults = defaultPuzzleConstraints(),
-            maxAttempts = 1,
         )
     return generatePuzzle.asGridGenerationPort()
 }
@@ -98,11 +97,13 @@ internal fun executeAndExit(
         )
     val summary = useCase.execute(today)
     log.info(
-        "event=ensure_upcoming_dailies_summary persisted_count={} generated_count={} failed_count={} failed_dates=[{}]",
+        "event=ensure_upcoming_dailies_summary persisted_count={} generated_count={} failed_count={} skipped_count={} failed_dates=[{}] skipped_dates=[{}]",
         summary.persistedDates.size,
         summary.generatedDates.size,
         summary.failedDates.size,
+        summary.skippedDates.size,
         summary.failedDates.joinToString(separator = ","),
+        summary.skippedDates.joinToString(separator = ","),
     )
-    return if (summary.failedDates.isEmpty()) 0 else 1
+    return if (summary.failedDates.isEmpty() && summary.skippedDates.isEmpty()) 0 else 1
 }

@@ -1,7 +1,6 @@
 package com.bliss.grid.application.puzzle
 
 import assertk.assertThat
-import assertk.assertions.contains
 import assertk.assertions.containsExactly
 import assertk.assertions.hasSize
 import assertk.assertions.isEmpty
@@ -39,6 +38,7 @@ class EnsureUpcomingDailiesUseCaseTest {
         assertThat(summary.persistedDates).hasSize(7)
         assertThat(summary.generatedDates).isEmpty()
         assertThat(summary.failedDates).isEmpty()
+        assertThat(summary.skippedDates).isEmpty()
         assertThat(port.calls).isEmpty()
         assertThat(repo.getOrComputeCalls).isEmpty()
     }
@@ -54,6 +54,7 @@ class EnsureUpcomingDailiesUseCaseTest {
         val expectedDates = (0L until 7L).map { today.plusDays(it) }
         assertThat(summary.generatedDates).containsExactly(*expectedDates.toTypedArray())
         assertThat(summary.failedDates).isEmpty()
+        assertThat(summary.skippedDates).isEmpty()
         assertThat(summary.persistedDates).isEmpty()
         val seenSeeds = port.calls.map { it.seed }
         val expectedSeeds = expectedDates.map { it.toEpochDay() * 1000L }
@@ -64,7 +65,8 @@ class EnsureUpcomingDailiesUseCaseTest {
     }
 
     @Test
-    fun `day three exhausts attempts and subsequent days still attempted`() {
+    fun `loop stops on first failed day and marks subsequent days as skipped`() {
+        // Stop-on-failure preserves cooldown causality: a retry of day N must not observe day N+1's clues.
         val repo = TrackingPuzzleRepository()
         val day3 = today.plusDays(2)
         val day3Seed = day3.toEpochDay() * 1000L
@@ -77,19 +79,39 @@ class EnsureUpcomingDailiesUseCaseTest {
         val summary = useCase.execute(today)
 
         assertThat(summary.failedDates).containsExactly(day3)
-        val expectedSurvivors =
-            listOf(
-                today,
-                today.plusDays(1),
-                today.plusDays(3),
-                today.plusDays(4),
-                today.plusDays(5),
-                today.plusDays(6),
+        assertThat(summary.skippedDates).containsExactly(
+            today.plusDays(3),
+            today.plusDays(4),
+            today.plusDays(5),
+            today.plusDays(6),
+        )
+        assertThat(summary.generatedDates).containsExactly(today, today.plusDays(1))
+        // 2 successes (today, today+1) + 20 exhausted attempts on day 3; day 4..7 never call the port.
+        assertThat(port.calls).hasSize(22)
+        assertThat(repo.getOrComputeCalls).hasSize(2)
+    }
+
+    @Test
+    fun `inner attempts and per attempt timeout are propagated to the port`() {
+        val repo = TrackingPuzzleRepository()
+        val port = RecordingPort(grids = { _ -> successfulGrid() })
+        val useCase =
+            EnsureUpcomingDailiesUseCase(
+                puzzleRepository = repo,
+                gridGenerationPort = port,
+                dailyPuzzleSelector = selector,
+                windowDays = 3,
+                innerAttempts = 42,
+                perAttemptTimeoutMs = 7_777L,
             )
-        assertThat(summary.generatedDates).containsExactly(*expectedSurvivors.toTypedArray())
-        assertThat(port.calls.count { it.seed in day3Seed until day3Seed + 20 }).isEqualTo(20)
-        assertThat(port.calls.count { it.seed !in day3Seed until day3Seed + 20 }).isEqualTo(6)
-        assertThat(repo.getOrComputeCalls).hasSize(6)
+
+        useCase.execute(today)
+
+        assertThat(port.calls).hasSize(3)
+        port.calls.forEach { call ->
+            assertThat(call.attempts).isEqualTo(42)
+            assertThat(call.perAttemptTimeoutMs).isEqualTo(7_777L)
+        }
     }
 
     @Test
@@ -111,16 +133,15 @@ class EnsureUpcomingDailiesUseCaseTest {
     }
 
     @Test
-    fun `failed days are not persisted`() {
+    fun `first day failure stops loop and remaining days are skipped not failed`() {
         val repo = TrackingPuzzleRepository()
         val port = RecordingPort(grids = { _ -> null })
         val useCase = newUseCase(repo, port, windowDays = 2)
 
         val summary = useCase.execute(today)
 
-        assertThat(summary.failedDates).hasSize(2)
-        assertThat(summary.failedDates).contains(today)
-        assertThat(summary.failedDates).contains(today.plusDays(1))
+        assertThat(summary.failedDates).containsExactly(today)
+        assertThat(summary.skippedDates).containsExactly(today.plusDays(1))
         assertThat(repo.getOrComputeCalls).isEmpty()
     }
 
@@ -183,6 +204,8 @@ class EnsureUpcomingDailiesUseCaseTest {
     private data class PortCall(
         val seed: Long,
         val cooldownPolicy: ClueCooldownPolicy,
+        val attempts: Int,
+        val perAttemptTimeoutMs: Long,
     )
 
     private class RecordingPort(
@@ -193,8 +216,10 @@ class EnsureUpcomingDailiesUseCaseTest {
         override fun generate(
             randomSeed: Long,
             cooldownPolicy: ClueCooldownPolicy,
+            attempts: Int,
+            perAttemptTimeoutMs: Long,
         ): Grid? {
-            val call = PortCall(randomSeed, cooldownPolicy)
+            val call = PortCall(randomSeed, cooldownPolicy, attempts, perAttemptTimeoutMs)
             calls += call
             return grids(call)
         }

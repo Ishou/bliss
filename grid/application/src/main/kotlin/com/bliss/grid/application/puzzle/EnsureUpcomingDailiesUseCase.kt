@@ -23,6 +23,8 @@ class EnsureUpcomingDailiesUseCase(
     private val language: String = LoadOrGeneratePuzzleUseCase.DEFAULT_LANGUAGE,
     private val hintsAllowed: Int = LoadOrGeneratePuzzleUseCase.DEFAULT_HINTS_ALLOWED,
     private val windowDays: Int = DEFAULT_WINDOW_DAYS,
+    private val innerAttempts: Int = DEFAULT_INNER_ATTEMPTS,
+    private val perAttemptTimeoutMs: Long = DEFAULT_PER_ATTEMPT_TIMEOUT_MS,
 ) {
     private val log = LoggerFactory.getLogger(EnsureUpcomingDailiesUseCase::class.java)
 
@@ -30,10 +32,17 @@ class EnsureUpcomingDailiesUseCase(
         val persistedDates = mutableListOf<LocalDate>()
         val generatedDates = mutableListOf<LocalDate>()
         val failedDates = mutableListOf<LocalDate>()
+        val skippedDates = mutableListOf<LocalDate>()
 
         // Sequential: cooldown snapshot from day N biases day N+1; parallel runs corrupt the ordering.
+        // Stop on first failure so day N+1 never persists with a snapshot that ignores day N's clues.
+        var stopped = false
         for (offset in 0 until windowDays) {
             val date = today.plusDays(offset.toLong())
+            if (stopped) {
+                skippedDates += date
+                continue
+            }
             val puzzleId = dailyPuzzleSelector.puzzleIdForDate(date)
             if (puzzleRepository.get(puzzleId) != null) {
                 log.info("daily_already_persisted date={} puzzle_id={}", date, puzzleId)
@@ -52,6 +61,7 @@ class EnsureUpcomingDailiesUseCase(
                     elapsedMs,
                 )
                 failedDates += date
+                stopped = true
                 continue
             }
             persistGenerated(puzzleId, grid)
@@ -68,6 +78,7 @@ class EnsureUpcomingDailiesUseCase(
             persistedDates = persistedDates.toList(),
             generatedDates = generatedDates.toList(),
             failedDates = failedDates.toList(),
+            skippedDates = skippedDates.toList(),
         )
     }
 
@@ -78,6 +89,8 @@ class EnsureUpcomingDailiesUseCase(
                 gridGenerationPort.generate(
                     randomSeed = seedFor(date, attempt),
                     cooldownPolicy = cooldownPolicy,
+                    attempts = innerAttempts,
+                    perAttemptTimeoutMs = perAttemptTimeoutMs,
                 )
             if (grid != null) return grid to (attempt + 1)
         }
@@ -123,12 +136,19 @@ class EnsureUpcomingDailiesUseCase(
         val persistedDates: List<LocalDate>,
         val generatedDates: List<LocalDate>,
         val failedDates: List<LocalDate>,
+        val skippedDates: List<LocalDate>,
     )
 
     companion object {
         const val DEFAULT_WINDOW_DAYS: Int = 7
         const val DEFAULT_MAX_ATTEMPTS: Int = 20
         const val SEED_DAY_MULTIPLIER: Long = 1000L
+
+        /** Cron has time; 50 inner Luby restarts per outer seed is the production-grade budget. */
+        const val DEFAULT_INNER_ATTEMPTS: Int = 50
+
+        /** Cron-friendly per-attempt timeout (vs production route's 5s default). */
+        const val DEFAULT_PER_ATTEMPT_TIMEOUT_MS: Long = 15_000L
     }
 }
 
@@ -137,13 +157,17 @@ fun interface GridGenerationPort {
     fun generate(
         randomSeed: Long,
         cooldownPolicy: ClueCooldownPolicy,
+        attempts: Int,
+        perAttemptTimeoutMs: Long,
     ): Grid?
 }
 
 fun GeneratePuzzleUseCase.asGridGenerationPort(): GridGenerationPort =
-    GridGenerationPort { randomSeed, cooldownPolicy ->
+    GridGenerationPort { randomSeed, cooldownPolicy, attempts, perAttemptTimeoutMs ->
         executeWithOutcome(
             cooldownPolicy = cooldownPolicy,
             randomFactory = { attempt -> Random(randomSeed + attempt) },
+            attemptsOverride = attempts,
+            perAttemptTimeoutMsOverride = perAttemptTimeoutMs,
         ).grid
     }
