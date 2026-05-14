@@ -14,18 +14,26 @@ import com.bliss.grid.infrastructure.persistence.CsvWordRepository
 import com.bliss.grid.infrastructure.persistence.PostgresClueCooldownRepository
 import com.bliss.grid.infrastructure.persistence.PostgresPuzzleRepository
 import org.slf4j.LoggerFactory
+import org.slf4j.MDC
 import java.time.LocalDate
 import java.time.ZoneOffset
+import java.util.UUID
 import kotlin.system.exitProcess
 
 private val log = LoggerFactory.getLogger("com.bliss.grid.worker.Main")
 
 fun main(args: Array<String>) {
+    MDC.put("run_id", UUID.randomUUID().toString())
     val exit =
         when {
-            args.contains("--help") || args.contains("-h") || args.isEmpty() -> {
+            args.contains("--help") || args.contains("-h") -> {
                 printUsage()
                 0
+            }
+            args.isEmpty() -> {
+                log.error("event=worker_no_arguments")
+                printUsage()
+                1
             }
             args.contains("--ensure-dailies") -> runEnsureDailies()
             else -> {
