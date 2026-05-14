@@ -64,6 +64,8 @@ class MainTest {
         assertThat(summary.formattedMessage).contains("generated_count=0")
         assertThat(summary.formattedMessage).contains("failed_count=0")
         assertThat(summary.formattedMessage).contains("failed_dates=[]")
+        assertThat(summary.formattedMessage).contains("skipped_count=0")
+        assertThat(summary.formattedMessage).contains("skipped_dates=[]")
     }
 
     @Test
