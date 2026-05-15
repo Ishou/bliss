@@ -13,23 +13,6 @@ data class GridConstraints(
      */
     val themeLimits: Map<String, Int> = DEFAULT_THEME_LIMITS,
     /**
-     * When true, reserve a long anchor slot — the longer of horizontal
-     * (row 0 from `(0, 1)`) or vertical (column 0 from `(1, 0)`). Only
-     * ONE direction is active at a time; activating both would force
-     * four slots to converge on the clue host at `(0, 0)` and exceed
-     * the 2-clue cap on `ClueCell`.
-     *
-     * Disabled by default until virtual edge clue support (spec §9) is
-     * implemented or the `ClueCell` cap is relaxed across grid + game +
-     * AsyncAPI schemas — both out of scope for the initial length-bias PR.
-     * The seeding, perturbation, and priority-selection plumbing is in
-     * place; flipping the default is a one-line follow-up once the
-     * downstream constraints catch up.
-     */
-    val featureSlots: Boolean = false,
-    /** Cap on feature-slot length. Above ~12 most French dictionaries are too thin. */
-    val maxFeatureLen: Int = 12,
-    /**
      * Soft bias in `[0.0, 1.0]` (clamped internally to `[0.0, 0.6]`) that
      * shifts the mean slot length upward (spec §4.5.2). Values above 0.6
      * have no benefit; restart cascades amplify the layout's edges.
@@ -59,7 +42,6 @@ data class GridConstraints(
         require(minWordLength >= 2) { "minWordLength must be at least 2" }
         require(themeLimits.values.all { it >= 0 }) { "theme caps must be non-negative" }
         require(longWordBias in 0.0..1.0) { "longWordBias must be in [0.0, 1.0]" }
-        require(maxFeatureLen >= 0) { "maxFeatureLen must be non-negative" }
         require(lengthTwoPenalty >= 0.0) { "lengthTwoPenalty must be non-negative" }
     }
 }

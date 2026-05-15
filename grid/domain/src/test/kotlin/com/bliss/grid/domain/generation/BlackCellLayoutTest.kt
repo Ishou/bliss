@@ -7,6 +7,7 @@ import assertk.assertions.isGreaterThan
 import assertk.assertions.isLessThanOrEqualTo
 import assertk.assertions.isTrue
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.fail
 import kotlin.math.abs
 import kotlin.random.Random
 
@@ -90,6 +91,34 @@ class BlackCellLayoutTest {
             cc += dc
         }
         return lo + 1 + hi
+    }
+
+    private fun assertNoHorizontalTriples(cells: CellArray) {
+        for (r in 0 until cells.height) {
+            var run = 0
+            for (c in 0 until cells.width) {
+                if (cells.isBlack(r, c)) {
+                    run++
+                    if (run >= 3) fail("horizontal triple-black at row=$r col=${c - 2}")
+                } else {
+                    run = 0
+                }
+            }
+        }
+    }
+
+    private fun assertNoVerticalTriples(cells: CellArray) {
+        for (c in 0 until cells.width) {
+            var run = 0
+            for (r in 0 until cells.height) {
+                if (cells.isBlack(r, c)) {
+                    run++
+                    if (run >= 3) fail("vertical triple-black at col=$c row=${r - 2}")
+                } else {
+                    run = 0
+                }
+            }
+        }
     }
 
     @Test
@@ -317,6 +346,24 @@ class BlackCellLayoutTest {
                 if (r == 0 && c == 0) continue
                 assertThat(BlackCellLayout.isFunctional(cells, r, c, 2)).isTrue()
             }
+        }
+    }
+
+    @Test
+    fun `seeded layout contains no triple-black runs`() {
+        repeat(20) { seed ->
+            val cells =
+                BlackCellLayout.seed(
+                    width = 15,
+                    height = 12,
+                    minLen = 2,
+                    lTarget = 6,
+                    lUseful = 15,
+                    blackRatio = GenerationKnobs.DEFAULT_BLACK_RATIO,
+                    random = Random(seed.toLong()),
+                )
+            assertNoHorizontalTriples(cells)
+            assertNoVerticalTriples(cells)
         }
     }
 

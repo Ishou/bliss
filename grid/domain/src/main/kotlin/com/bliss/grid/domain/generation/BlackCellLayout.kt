@@ -22,13 +22,6 @@ import kotlin.random.Random
  *  6.   Dead-cell cleanup: whiten any black that became non-functional
  *       via downstream changes.
  *
- * When [seed]'s `protectedCells` parameter is non-empty, a feature-aware
- * boundary is laid down first: ONE anchor slot — either horizontal
- * (cells `(0, 1..hFeat)`) or vertical (cells `(1..vFeat, 0)`) — is
- * reserved as the printed-mots-fléchés "anchor" slot, terminated by a
- * black at `(0, hFeat+1)` or `(vFeat+1, 0)`. Both directions cannot be
- * active simultaneously under the current `ClueCell` 2-clue cap. Every
- * later helper skips protected cells.
  */
 internal object BlackCellLayout {
     fun seed(
@@ -39,7 +32,6 @@ internal object BlackCellLayout {
         lUseful: Int,
         blackRatio: Double,
         random: Random,
-        protectedCells: Set<Pair<Int, Int>> = emptySet(),
         lMinGood: Int = minLen,
         lengthTwoPenalty: Double = 0.0,
     ): CellArray {
@@ -48,22 +40,18 @@ internal object BlackCellLayout {
         require(blackRatio in 0.0..0.5) { "blackRatio $blackRatio out of [0.0, 0.5]" }
 
         val cells = CellArray(width, height)
-        if (protectedCells.isEmpty()) {
-            seedBoundarySkeleton(cells, width, height)
-        } else {
-            seedBoundaryWithFeatures(cells, width, height, protectedCells, minLen)
-        }
+        seedBoundarySkeleton(cells, width, height)
 
         // Passes 1+2: cap long runs at lTarget by midpoint-splitting.
         repeat(8) {
             var changed = false
             for (r in 0 until height) {
-                if (capLongHorizontalRuns(cells, r, minLen, lTarget, protectedCells, lengthTwoPenalty, random)) {
+                if (capLongHorizontalRuns(cells, r, minLen, lTarget, lengthTwoPenalty, random)) {
                     changed = true
                 }
             }
             for (c in 0 until width) {
-                if (capLongVerticalRuns(cells, c, minLen, lTarget, protectedCells, lengthTwoPenalty, random)) {
+                if (capLongVerticalRuns(cells, c, minLen, lTarget, lengthTwoPenalty, random)) {
                     changed = true
                 }
             }
@@ -73,12 +61,12 @@ internal object BlackCellLayout {
         repeat(3) {
             var changed = false
             for (r in 0 until height) {
-                if (capLongHorizontalRuns(cells, r, minLen, lUseful, protectedCells, lengthTwoPenalty, random)) {
+                if (capLongHorizontalRuns(cells, r, minLen, lUseful, lengthTwoPenalty, random)) {
                     changed = true
                 }
             }
             for (c in 0 until width) {
-                if (capLongVerticalRuns(cells, c, minLen, lUseful, protectedCells, lengthTwoPenalty, random)) {
+                if (capLongVerticalRuns(cells, c, minLen, lUseful, lengthTwoPenalty, random)) {
                     changed = true
                 }
             }
@@ -88,7 +76,7 @@ internal object BlackCellLayout {
         // Pass 4: repair orphan whites by whitening a neighbour rather
         // than blackening the orphan (which would always produce a dead
         // black).
-        repairOrphanWhites(cells, minLen, lUseful, protectedCells)
+        repairOrphanWhites(cells, minLen, lUseful)
 
         // Pass 5: density sprinkle, gated by canPlaceBlack.
         if (lMinGood > minLen || lengthTwoPenalty > 0.0) {
@@ -98,15 +86,14 @@ internal object BlackCellLayout {
                 blackRatio = blackRatio,
                 lMinGood = lMinGood,
                 lengthTwoPenalty = lengthTwoPenalty,
-                protectedCells = protectedCells,
                 random = random,
             )
         } else {
-            densitySprinkle(cells, minLen, blackRatio, protectedCells, random)
+            densitySprinkle(cells, minLen, blackRatio, random)
         }
 
         // Pass 4 again — sprinkling may have introduced new orphans.
-        repairOrphanWhites(cells, minLen, lUseful, protectedCells)
+        repairOrphanWhites(cells, minLen, lUseful)
 
         // Pass 6: dead-cell cleanup.
         removeDeadBlacks(cells, minLen, lUseful)
@@ -128,7 +115,6 @@ internal object BlackCellLayout {
         hotCells: List<Pair<Int, Int>>,
         intensity: Double,
         random: Random,
-        protectedCells: Set<Pair<Int, Int>> = emptySet(),
         whitenProbability: Double = 0.4,
     ) {
         val area = cells.width * cells.height
@@ -136,7 +122,6 @@ internal object BlackCellLayout {
 
         for ((r, c) in hotCells.take(2)) {
             if (moves <= 0) break
-            if ((r to c) in protectedCells) continue
             if (!cells.isBlack(r, c) && canPlaceBlack(cells, r, c, minLen)) {
                 cells.set(r, c, CellArray.BLACK)
                 moves--
@@ -149,7 +134,6 @@ internal object BlackCellLayout {
             val r = random.nextInt(cells.height)
             val c = random.nextInt(cells.width)
             if (r == 0 && c == 0) continue // corner must stay BLACK
-            if ((r to c) in protectedCells) continue
             if (cells.isBlack(r, c)) {
                 if (random.nextDouble() < whitenProbability &&
                     tryWhitenSafely(cells, r, c, minLen, lUseful)
@@ -162,7 +146,7 @@ internal object BlackCellLayout {
             }
         }
 
-        repairOrphanWhites(cells, minLen, lUseful, protectedCells)
+        repairOrphanWhites(cells, minLen, lUseful)
         removeDeadBlacks(cells, minLen, lUseful)
     }
 
@@ -344,7 +328,6 @@ internal object BlackCellLayout {
         cells: CellArray,
         minLen: Int,
         lUseful: Int,
-        protectedCells: Set<Pair<Int, Int>>,
     ) {
         var changed = true
         var guard = cells.width * cells.height
@@ -365,7 +348,6 @@ internal object BlackCellLayout {
                     // Last resort: blacken the orphan IFF the resulting
                     // black is functional. If not, leave the orphan in
                     // place; SlotRegistry will reject.
-                    if ((r to c) in protectedCells) continue
                     cells.set(r, c, CellArray.BLACK)
                     if (!isFunctional(cells, r, c, minLen)) {
                         cells.set(r, c, CellArray.EMPTY)
@@ -454,7 +436,6 @@ internal object BlackCellLayout {
         cells: CellArray,
         minLen: Int,
         blackRatio: Double,
-        protectedCells: Set<Pair<Int, Int>>,
         random: Random,
     ) {
         val area = cells.width * cells.height
@@ -463,7 +444,6 @@ internal object BlackCellLayout {
         for (r in 0 until cells.height) {
             for (c in 0 until cells.width) {
                 if (cells.isBlack(r, c)) continue
-                if ((r to c) in protectedCells) continue
                 candidates += r to c
             }
         }
@@ -489,7 +469,6 @@ internal object BlackCellLayout {
         blackRatio: Double,
         lMinGood: Int,
         lengthTwoPenalty: Double,
-        protectedCells: Set<Pair<Int, Int>>,
         random: Random,
     ) {
         val area = cells.width * cells.height
@@ -505,7 +484,6 @@ internal object BlackCellLayout {
         for (r in 0 until cells.height) {
             for (c in 0 until cells.width) {
                 if (cells.isBlack(r, c)) continue
-                if ((r to c) in protectedCells) continue
                 if (!canPlaceBlack(cells, r, c, minLen)) continue
                 val s = splitScore(cells, r, c, lMinGood)
                 scored += Scored(r, c, s.good, s.shortfall + lengthTwoPenalty * s.len2Count)
@@ -570,7 +548,6 @@ internal object BlackCellLayout {
         r: Int,
         minLen: Int,
         lCap: Int,
-        protectedCells: Set<Pair<Int, Int>>,
         lengthTwoPenalty: Double,
         random: Random,
     ): Boolean {
@@ -593,7 +570,6 @@ internal object BlackCellLayout {
                         length = length,
                         minLen = minLen,
                         lengthTwoPenalty = lengthTwoPenalty,
-                        protectedCells = protectedCells,
                         random = random,
                     )
                 if (pos != null) {
@@ -610,7 +586,6 @@ internal object BlackCellLayout {
         c: Int,
         minLen: Int,
         lCap: Int,
-        protectedCells: Set<Pair<Int, Int>>,
         lengthTwoPenalty: Double,
         random: Random,
     ): Boolean {
@@ -633,7 +608,6 @@ internal object BlackCellLayout {
                         length = length,
                         minLen = minLen,
                         lengthTwoPenalty = lengthTwoPenalty,
-                        protectedCells = protectedCells,
                         random = random,
                     )
                 if (pos != null) {
@@ -659,17 +633,16 @@ internal object BlackCellLayout {
         length: Int,
         minLen: Int,
         lengthTwoPenalty: Double,
-        protectedCells: Set<Pair<Int, Int>>,
         random: Random,
     ): Int? {
         if (lengthTwoPenalty <= 0.0) {
             return insertNearMidpoint(start, length, random) { p ->
-                (r to p) !in protectedCells && canPlaceBlack(cells, r, p, minLen)
+                canPlaceBlack(cells, r, p, minLen)
             }
         }
         val feasible =
             (start until start + length).filter { p ->
-                (r to p) !in protectedCells && canPlaceBlack(cells, r, p, minLen)
+                canPlaceBlack(cells, r, p, minLen)
             }
         if (feasible.isEmpty()) return null
         val scored =
@@ -687,17 +660,16 @@ internal object BlackCellLayout {
         length: Int,
         minLen: Int,
         lengthTwoPenalty: Double,
-        protectedCells: Set<Pair<Int, Int>>,
         random: Random,
     ): Int? {
         if (lengthTwoPenalty <= 0.0) {
             return insertNearMidpoint(start, length, random) { p ->
-                (p to c) !in protectedCells && canPlaceBlack(cells, p, c, minLen)
+                canPlaceBlack(cells, p, c, minLen)
             }
         }
         val feasible =
             (start until start + length).filter { p ->
-                (p to c) !in protectedCells && canPlaceBlack(cells, p, c, minLen)
+                canPlaceBlack(cells, p, c, minLen)
             }
         if (feasible.isEmpty()) return null
         val scored =
@@ -756,81 +728,6 @@ internal object BlackCellLayout {
             r += 2
         }
         if (height % 2 == 1) cells.set(height - 1, 0, CellArray.BLACK)
-    }
-
-    /**
-     * Feature-aware boundary: exactly ONE feature anchor — either an H
-     * anchor (row 0 from `(0, 1)` of length `hFeat`) or a V anchor
-     * (column 0 from `(1, 0)` of length `vFeat`), never both. Caller
-     * ensures exclusivity via [protectedCells].
-     *
-     * Single-direction is a deliberate constraint: with both features
-     * active, four slots (H anchor, V anchor, row-1 H, col-1 V) would
-     * converge on `(0, 0)` and exceed the 2-clue cap on `ClueCell`.
-     * Single-direction restricts the corner to at most two clues.
-     *
-     * Forced blacks (H-only case shown; V-only is symmetric):
-     *  - `(0, 0)` — corner / clue host for the H anchor (RIGHT).
-     *  - `(0, hFeat + 1)` — H terminator (if in bounds).
-     *  - `(1, c)` for `c in 1..hFeat` — required so each column `c`
-     *    above `(1, c)` doesn't form an unclueable V slot at row 0,
-     *    and so row 1 doesn't form an unclueable H slot at column 0.
-     *    `removeDeadBlacks` cleans up any that end up dead (rare).
-     */
-    private fun seedBoundaryWithFeatures(
-        cells: CellArray,
-        width: Int,
-        height: Int,
-        protectedCells: Set<Pair<Int, Int>>,
-        minLen: Int,
-    ) {
-        val hFeat = (1 until width).filter { (0 to it) in protectedCells }.maxOrNull() ?: 0
-        val vFeat = (1 until height).filter { (it to 0) in protectedCells }.maxOrNull() ?: 0
-
-        cells.set(0, 0, CellArray.BLACK)
-        if (hFeat > 0) {
-            if (hFeat + 1 < width) cells.set(0, hFeat + 1, CellArray.BLACK)
-            if (height > 1) {
-                for (c in 1..hFeat) {
-                    if (c < width) cells.set(1, c, CellArray.BLACK)
-                }
-            }
-            // Column 0 past the corner uses the regular every-other pattern.
-            var r = 2
-            while (r <= height - 2) {
-                cells.set(r, 0, CellArray.BLACK)
-                r += 2
-            }
-            if (height % 2 == 1) cells.set(height - 1, 0, CellArray.BLACK)
-            // Row 0 past the terminator continues every-other.
-            val rowStart = hFeat + 3
-            var c = rowStart
-            while (c <= width - 2) {
-                cells.set(0, c, CellArray.BLACK)
-                c += 2
-            }
-            if (width % 2 == 1 && width - 1 > hFeat + 1) cells.set(0, width - 1, CellArray.BLACK)
-        } else if (vFeat > 0) {
-            if (vFeat + 1 < height) cells.set(vFeat + 1, 0, CellArray.BLACK)
-            if (width > 1) {
-                for (r in 1..vFeat) {
-                    if (r < height) cells.set(r, 1, CellArray.BLACK)
-                }
-            }
-            var c = 2
-            while (c <= width - 2) {
-                cells.set(0, c, CellArray.BLACK)
-                c += 2
-            }
-            if (width % 2 == 1) cells.set(0, width - 1, CellArray.BLACK)
-            val colStart = vFeat + 3
-            var r = colStart
-            while (r <= height - 2) {
-                cells.set(r, 0, CellArray.BLACK)
-                r += 2
-            }
-            if (height % 2 == 1 && height - 1 > vFeat + 1) cells.set(height - 1, 0, CellArray.BLACK)
-        }
     }
 
     // ---- Helpers ----

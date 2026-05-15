@@ -101,23 +101,6 @@ internal class Lexicon(
     /** Number of words at length [l]. */
     fun count(l: Int): Int = if (l in 0..maxLength) countByLen[l] else 0
 
-    /**
-     * Longest length `L ≤ [maxLen]` with `count(L) ≥ [threshold]`, or `0`
-     * if no length in `[minLen, maxLen]` clears the threshold. Used to size
-     * feature slots to what the corpus can actually fill.
-     */
-    fun featureFeasibleLength(
-        maxLen: Int,
-        minLen: Int,
-        threshold: Int = GenerationKnobs.FEATURE_DICT_THRESHOLD,
-    ): Int {
-        val upper = maxLen.coerceAtMost(maxLength)
-        for (l in upper downTo minLen) {
-            if (countByLen[l] >= threshold) return l
-        }
-        return 0
-    }
-
     /** Fresh defensive copy of the all-bits-set mask for length [l]. */
     fun initialMask(l: Int): LongArray {
         require(l in 2..maxLength) { "length $l out of range [2, $maxLength]" }

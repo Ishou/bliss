@@ -76,9 +76,6 @@ internal object GenerationKnobs {
     /** Maximum word length the lexicon will index. Bigger lengths are dropped at construction. */
     const val LEXICON_MAX_LEN: Int = 18
 
-    /** Minimum corpus count at a length for it to count as a viable feature slot. */
-    const val FEATURE_DICT_THRESHOLD: Int = 20
-
     /** Internal cap on `longWordBias`. Past this, restarts make grids worse on average. */
     const val LONG_WORD_BIAS_CAP: Double = 0.6
 }
