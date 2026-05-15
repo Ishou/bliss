@@ -149,7 +149,35 @@ dependencies {
 }
 
 tasks.test {
-    useJUnitPlatform()
+    // Default lane: skip `@Tag("stress")` and `@Tag("bench")` tests. Those
+    // exercise the production corpus end-to-end and dominate CI wall time
+    // (the stress test alone takes >20 min). Run them on demand via the
+    // dedicated `stressTest` / `benchTest` tasks below.
+    useJUnitPlatform {
+        excludeTags("stress", "bench")
+    }
+}
+
+val stressTest by tasks.registering(Test::class) {
+    description = "Runs @Tag(\"stress\") tests against the production corpus."
+    group = "verification"
+    testClassesDirs = sourceSets["test"].output.classesDirs
+    classpath = sourceSets["test"].runtimeClasspath
+    useJUnitPlatform {
+        includeTags("stress")
+    }
+    shouldRunAfter(tasks.test)
+}
+
+val benchTest by tasks.registering(Test::class) {
+    description = "Runs @Tag(\"bench\") tests against the production corpus."
+    group = "verification"
+    testClassesDirs = sourceSets["test"].output.classesDirs
+    classpath = sourceSets["test"].runtimeClasspath
+    useJUnitPlatform {
+        includeTags("bench")
+    }
+    shouldRunAfter(tasks.test)
 }
 
 tasks.shadowJar {
