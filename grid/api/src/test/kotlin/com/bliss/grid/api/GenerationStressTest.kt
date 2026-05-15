@@ -41,17 +41,14 @@ class GenerationStressTest {
         val min = timings[0]
         val max = timings[99]
         // Single-attempt success rate is loose because GeneratePuzzleUseCase's
-        // outer retry loop (DEFAULT_MAX_ATTEMPTS = 10) covers single-attempt
-        // failures — an API-level success rate of 99%+ is typical even when
-        // direct GridGenerator.generate single-attempt is in the 35-50% band
-        // at the default 15x12 dimensions. PR #368 (bitmask-CSP, ADR-0039)
-        // moved the generator to a cell-state CSP with Luby restarts; the
-        // useful productivity bar is `GeneratePuzzleUseCase` wall time
-        // (covered by domain/application benches) rather than direct
-        // single-attempt success rate. Ratchet the threshold down only if
-        // these regress further.
+        // outer retry loop covers single-attempt failures — an API-level
+        // success rate of ~100 % is typical even when direct
+        // GridGenerator.generate single-attempt is in the 35–50 % band at
+        // the default 15×12 dimensions. The useful productivity bar is
+        // per-attempt wall time (failed attempts must abandon fast so
+        // retries can amortise the budget), not single-attempt success.
         check(p50 < 3_000) {
-            "median latency ${p50}ms exceeds 3s budget " +
+            "median per-attempt latency ${p50}ms exceeds 3s budget " +
                 "(success=$successCount/100 min=${min}ms p95=${p95}ms max=${max}ms)"
         }
         check(successCount >= 30) {

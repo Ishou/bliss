@@ -59,7 +59,15 @@ class GridGenerator(
         val lex = lexicon()
         val lUseful = lex.usefulLength
         if (lUseful < constraints.minWordLength) return null
-        val lTarget = min(GenerationKnobs.DEFAULT_L_TARGET, lUseful)
+
+        val bias = clampedBias(constraints.longWordBias)
+        val biasedLTarget = lTargetFor(bias, lUseful, constraints.minWordLength)
+        val lTarget = min(maxOf(GenerationKnobs.DEFAULT_L_TARGET, biasedLTarget), lUseful)
+        val lMinGood = lMinGood(bias, lUseful, constraints.minWordLength)
+        val effectiveBlackRatio = GenerationKnobs.DEFAULT_BLACK_RATIO * densityFactor(bias)
+        val whitenP = whitenProbability(bias)
+
+        val (hFeat, vFeat, protectedCells) = computeFeatureCells(w, h, constraints, lex)
 
         val perAttemptSec = perAttemptSeconds(w * h)
         val perAttemptNs = (perAttemptSec * 1e9).toLong()
@@ -72,8 +80,11 @@ class GridGenerator(
                 minLen = constraints.minWordLength,
                 lTarget = lTarget,
                 lUseful = lUseful,
-                blackRatio = GenerationKnobs.DEFAULT_BLACK_RATIO,
+                blackRatio = effectiveBlackRatio,
                 random = random,
+                protectedCells = protectedCells,
+                lMinGood = lMinGood,
+                lengthTwoPenalty = constraints.lengthTwoPenalty,
             )
         metrics?.skeletonMs = (clock.nanoTime() - layoutStart) / NS_PER_MS
 
@@ -98,12 +109,18 @@ class GridGenerator(
                         hotCells = emptyList(),
                         consecFails = consecFails,
                         random = random,
+                        blackRatio = effectiveBlackRatio,
+                        protectedCells = protectedCells,
+                        lMinGood = lMinGood,
+                        whitenP = whitenP,
+                        lengthTwoPenalty = constraints.lengthTwoPenalty,
                     )
                 perturbations++
                 continue
             }
+            val prioritySids = priorityForFeatures(build, hFeat, vFeat)
             val acceptor = WordAcceptor(constraints.themeLimits, cooldownPolicy)
-            val csp = BitmaskCsp(build.slots, lex, acceptor, clock, random)
+            val csp = BitmaskCsp(build.slots, lex, acceptor, clock, random, prioritySids)
             if (!csp.initialArcConsistency()) {
                 consecFails++
                 cells =
@@ -117,6 +134,11 @@ class GridGenerator(
                         hotCells = emptyList(),
                         consecFails = consecFails,
                         random = random,
+                        blackRatio = effectiveBlackRatio,
+                        protectedCells = protectedCells,
+                        lMinGood = lMinGood,
+                        whitenP = whitenP,
+                        lengthTwoPenalty = constraints.lengthTwoPenalty,
                     )
                 perturbations++
                 continue
@@ -160,6 +182,11 @@ class GridGenerator(
                     hotCells = hot,
                     consecFails = consecFails,
                     random = random,
+                    blackRatio = effectiveBlackRatio,
+                    protectedCells = protectedCells,
+                    lMinGood = lMinGood,
+                    whitenP = whitenP,
+                    lengthTwoPenalty = constraints.lengthTwoPenalty,
                 )
             perturbations++
         }
@@ -179,6 +206,11 @@ class GridGenerator(
         hotCells: List<Pair<Int, Int>>,
         consecFails: Int,
         random: Random,
+        blackRatio: Double,
+        protectedCells: Set<Pair<Int, Int>>,
+        lMinGood: Int,
+        whitenP: Double,
+        lengthTwoPenalty: Double,
     ): CellArray {
         if (consecFails > 0 && consecFails % GenerationKnobs.CONSEC_RESEED == 0) {
             return BlackCellLayout.seed(
@@ -187,8 +219,11 @@ class GridGenerator(
                 minLen = minLen,
                 lTarget = lTarget,
                 lUseful = lUseful,
-                blackRatio = GenerationKnobs.DEFAULT_BLACK_RATIO,
+                blackRatio = blackRatio,
                 random = random,
+                protectedCells = protectedCells,
+                lMinGood = lMinGood,
+                lengthTwoPenalty = lengthTwoPenalty,
             )
         }
         BlackCellLayout.perturb(
@@ -198,7 +233,70 @@ class GridGenerator(
             hotCells = hotCells,
             intensity = GenerationKnobs.PERTURB_INTENSITY,
             random = random,
+            protectedCells = protectedCells,
+            whitenProbability = whitenP,
         )
         return cells
+    }
+
+    /**
+     * Build the protected-cell set for the feature slot, plus its length.
+     *
+     * Only ONE feature direction is active at a time: the longer of the
+     * two corpus-feasible lengths (ties prefer horizontal). The 4-slot
+     * convergence at `(0, 0)` (H feature, V feature, row-1 H slot, col-1
+     * V slot) would otherwise exceed the 2-clue cap on `ClueCell`.
+     *
+     * Returns `(0, 0, emptySet)` if features are disabled or the corpus
+     * has no length that clears [GenerationKnobs.FEATURE_DICT_THRESHOLD].
+     */
+    private fun computeFeatureCells(
+        width: Int,
+        height: Int,
+        constraints: GridConstraints,
+        lex: Lexicon,
+    ): Triple<Int, Int, Set<Pair<Int, Int>>> {
+        if (!constraints.featureSlots) return Triple(0, 0, emptySet())
+        val hMax = min(width - 1, constraints.maxFeatureLen)
+        val vMax = min(height - 1, constraints.maxFeatureLen)
+        val hCandidate = lex.featureFeasibleLength(hMax, constraints.minWordLength)
+        val vCandidate = lex.featureFeasibleLength(vMax, constraints.minWordLength)
+        val hFeat: Int
+        val vFeat: Int
+        if (hCandidate == 0 && vCandidate == 0) return Triple(0, 0, emptySet())
+        if (hCandidate >= vCandidate) {
+            hFeat = hCandidate
+            vFeat = 0
+        } else {
+            hFeat = 0
+            vFeat = vCandidate
+        }
+        val cells = mutableSetOf<Pair<Int, Int>>()
+        for (c in 1..hFeat) cells += 0 to c
+        for (r in 1..vFeat) cells += r to 0
+        return Triple(hFeat, vFeat, cells)
+    }
+
+    /**
+     * Resolve the sids of the H and V feature slots from the cell-to-slot
+     * index. Returns the subset that exists (a feature slot may be absent
+     * if the boundary cleanup pass whitened a cell that shrank or split it).
+     */
+    private fun priorityForFeatures(
+        build: SlotRegistry.Build,
+        hFeat: Int,
+        vFeat: Int,
+    ): IntArray {
+        if (hFeat == 0 && vFeat == 0) return IntArray(0)
+        val sids = mutableListOf<Int>()
+        if (hFeat > 0) {
+            val sid = build.horizontalSlotAt(0, 1)
+            if (sid >= 0) sids += sid
+        }
+        if (vFeat > 0) {
+            val sid = build.verticalSlotAt(1, 0)
+            if (sid >= 0) sids += sid
+        }
+        return sids.toIntArray()
     }
 }

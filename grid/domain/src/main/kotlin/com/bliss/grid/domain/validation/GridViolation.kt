@@ -50,4 +50,15 @@ sealed interface GridViolation {
         val inHorizontal: Boolean,
         val inVertical: Boolean,
     ) : GridViolation
+
+    /**
+     * Three or more consecutive clue (black) cells in a row or column.
+     * Real mots fléchés never pack clue cells 3 or more in a line (spec
+     * §4.1 C2) — pairs are fine and common, triples are visually heavy
+     * and not used in printed grids.
+     */
+    data class BlackTriple(
+        val start: Position,
+        val axis: com.bliss.grid.domain.model.WordAxis,
+    ) : GridViolation
 }

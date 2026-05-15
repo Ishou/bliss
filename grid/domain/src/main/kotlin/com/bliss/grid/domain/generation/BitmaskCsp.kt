@@ -23,6 +23,7 @@ internal class BitmaskCsp(
     private val acceptor: WordAcceptor,
     private val clock: Clock,
     private val random: Random,
+    private val prioritySids: IntArray = IntArray(0),
 ) {
     /** Trail of inverse mutations. */
     private val trail: ArrayDeque<TrailEntry> = ArrayDeque()
@@ -149,11 +150,36 @@ internal class BitmaskCsp(
     // ---- selection heuristics ----
 
     /**
-     * MRV (minimum remaining values): smallest live domain; ties broken
-     * by highest crossing degree; remaining ties broken at random.
-     * Returns -1 if no unassigned slot remains.
+     * Priority-then-MRV slot selection.
+     *
+     * Priority phase: while any [prioritySids] slot is unassigned, pick
+     * the longest one (ties: smaller live domain). Anchors the search on
+     * the feature slots so the rest of the grid is constrained early.
+     *
+     * Fallback: MRV — smallest live domain, ties broken by highest
+     * crossing degree, then random. Returns `-1` only if every slot is
+     * already assigned.
      */
     internal fun selectSlot(): Int {
+        var bestPrio = -1
+        var bestPrioLen = -1
+        var bestPrioSize = Int.MAX_VALUE
+        for (sid in prioritySids) {
+            val s = slots[sid]
+            if (s.isAssigned) continue
+            val size = lexicon.popcount(s.domain)
+            if (size == 0) return sid // dead-end signal
+            val better =
+                s.length > bestPrioLen ||
+                    (s.length == bestPrioLen && size < bestPrioSize)
+            if (better) {
+                bestPrio = sid
+                bestPrioLen = s.length
+                bestPrioSize = size
+            }
+        }
+        if (bestPrio >= 0) return bestPrio
+
         var bestSid = -1
         var bestSize = Int.MAX_VALUE
         var bestDeg = -1

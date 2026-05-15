@@ -1,9 +1,11 @@
 package com.bliss.grid.domain.validation
 
 import com.bliss.grid.domain.model.ClueCell
+import com.bliss.grid.domain.model.Column
 import com.bliss.grid.domain.model.Grid
 import com.bliss.grid.domain.model.LetterCell
 import com.bliss.grid.domain.model.Position
+import com.bliss.grid.domain.model.Row
 import com.bliss.grid.domain.model.WordAxis
 
 class GridValidator {
@@ -49,7 +51,59 @@ class GridValidator {
             violations += uncrossedCells(grid)
         }
 
+        violations += blackTriples(grid)
+
         return violations.distinct()
+    }
+
+    /**
+     * Find every horizontal or vertical run of 3+ consecutive [ClueCell]s.
+     * Reports the leftmost / topmost position of each maximal triple-run
+     * once per axis (spec §4.1 C2).
+     */
+    private fun blackTriples(grid: Grid): List<GridViolation.BlackTriple> {
+        val violations = mutableListOf<GridViolation.BlackTriple>()
+        for (r in 0 until grid.height) {
+            var run = 0
+            var start = -1
+            for (c in 0 until grid.width) {
+                val isBlack = grid.cells[Position(Row(r), Column(c))] is ClueCell
+                if (isBlack) {
+                    if (run == 0) start = c
+                    run++
+                    if (run == 3) {
+                        violations +=
+                            GridViolation.BlackTriple(
+                                start = Position(Row(r), Column(start)),
+                                axis = WordAxis.HORIZONTAL,
+                            )
+                    }
+                } else {
+                    run = 0
+                }
+            }
+        }
+        for (c in 0 until grid.width) {
+            var run = 0
+            var start = -1
+            for (r in 0 until grid.height) {
+                val isBlack = grid.cells[Position(Row(r), Column(c))] is ClueCell
+                if (isBlack) {
+                    if (run == 0) start = r
+                    run++
+                    if (run == 3) {
+                        violations +=
+                            GridViolation.BlackTriple(
+                                start = Position(Row(start), Column(c)),
+                                axis = WordAxis.VERTICAL,
+                            )
+                    }
+                } else {
+                    run = 0
+                }
+            }
+        }
+        return violations
     }
 
     companion object {
