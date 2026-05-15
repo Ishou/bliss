@@ -6,7 +6,7 @@ package com.bliss.grid.domain.generation
  * to any tracked theme — the common case for ordinary vocabulary.
  *
  * Theme tags come from **hand-curated** files only — one CSV per theme
- * under `grid/api/src/main/resources/words/themed/<theme>.csv`. There is no auto-detection;
+ * under `grid/infrastructure/src/main/resources/words/themed/<theme>.csv`. There is no auto-detection;
  * if a word isn't on a curated themed list, it doesn't carry a theme,
  * and the per-grid cap doesn't apply to it.
  *
