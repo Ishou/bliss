@@ -65,6 +65,11 @@ on:
         description: 'Image digest to deploy, format "sha256:..." (manual rollback / redeploy).'
         required: true
         type: string
+      worker-digest:
+        description: ':grid:worker image digest, format "sha256:..." — required when context=grid (ensure-dailies CronJob, ADR-0042). Ignored otherwise.'
+        required: false
+        type: string
+        default: ""
 
 concurrency:
   # Serialize prod deploys: a second push mid-deploy queues rather than
@@ -121,6 +126,10 @@ jobs:
             chart-path: grid/api/deploy/chart/
             values-file: grid/api/deploy/chart/values-prod.yaml
             digest-artifact: image-digest-grid
+            # Grid chart also pins the :grid:worker image used by the
+            # ensure-dailies CronJob (ADR-0042); empty for contexts that
+            # don't ship a worker so the download/resolve steps no-op.
+            worker-digest-artifact: image-digest-grid-worker
             health-url: https://api.wordsparrow.io/v1/health
             # grid's CNPG cluster is still owned by its api chart;
             # the split mirrors game-api but is a follow-up PR. Empty
@@ -133,6 +142,7 @@ jobs:
             chart-path: game/api/deploy/chart/
             values-file: game/api/deploy/chart/values-prod.yaml
             digest-artifact: image-digest-game
+            worker-digest-artifact: ""
             health-url: https://game.wordsparrow.io/v1/health
             # CNPG Cluster lifecycle is split out of the api chart so a
             # failed api deploy's auto-rollback can never destroy the
@@ -226,6 +236,47 @@ jobs:
           echo "digest=$digest" >> "$GITHUB_OUTPUT"
           echo "Resolved digest: $digest"
 
+      - name: Download worker digest artifact (workflow_run)
+        # ADR-0042: contexts that ship a :grid:worker pin its image
+        # alongside the api image. Same cross-workflow handoff as the
+        # main digest above. No-op for rows whose worker-digest-artifact
+        # is empty (e.g. game).
+        if: env.RUN_ROW == 'true' && github.event_name == 'workflow_run' && matrix.worker-digest-artifact != ''
+        # actions/download-artifact v4.3.0 — same SHA as above.
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: ${{ matrix.worker-digest-artifact }}
+          path: worker-artifact
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Resolve worker image digest
+        if: env.RUN_ROW == 'true' && matrix.worker-digest-artifact != ''
+        id: worker-digest
+        env:
+          DISPATCH_WORKER_DIGEST: ${{ inputs.worker-digest }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            digest="$DISPATCH_WORKER_DIGEST"
+          else
+            digest="$(cat worker-artifact/digest.txt)"
+          fi
+          if [ -z "$digest" ]; then
+            echo "::error::worker digest is empty — pass 'worker-digest' input on dispatch (required for grid)"
+            exit 1
+          fi
+          case "$digest" in
+            sha256:*) ;;
+            *)
+              echo "::error::worker digest must start with 'sha256:'; got '$digest'"
+              exit 1
+              ;;
+          esac
+          echo "digest=$digest" >> "$GITHUB_OUTPUT"
+          echo "Resolved worker digest: $digest"
+
       - name: Configure kubeconfig
         if: env.RUN_ROW == 'true'
         env:
@@ -281,6 +332,9 @@ jobs:
         id: helm
         env:
           DIGEST: ${{ steps.digest.outputs.digest }}
+          # Empty for rows without a worker (game); the conditional `--set`
+          # below skips the flag in that case.
+          WORKER_DIGEST: ${{ steps.worker-digest.outputs.digest }}
           RELEASE: ${{ matrix.release-name }}
           CHART: ${{ matrix.chart-path }}
           VALUES: ${{ matrix.values-file }}
@@ -298,11 +352,19 @@ jobs:
         # no headroom needed for cluster bootstrap.
         run: |
           set -euo pipefail
-          helm upgrade --install "$RELEASE" "$CHART" \
+          # Build the helm args incrementally so the worker `--set` is
+          # only injected for contexts that ship one (ADR-0042 grid
+          # ensure-dailies CronJob); otherwise the flag would still
+          # apply harmlessly but we keep the command surface minimal.
+          set -- helm upgrade --install "$RELEASE" "$CHART" \
             -n wordsparrow --create-namespace \
             -f "$VALUES" \
-            --set image.digest="$DIGEST" \
-            --wait --timeout 5m
+            --set image.digest="$DIGEST"
+          if [ -n "$WORKER_DIGEST" ]; then
+            set -- "$@" --set "ensureDailies.image.digest=$WORKER_DIGEST"
+          fi
+          set -- "$@" --wait --timeout 5m
+          "$@"
 
       - name: Capture failure diagnostics
         # Only runs when the helm step failed. `set +e` so we don't

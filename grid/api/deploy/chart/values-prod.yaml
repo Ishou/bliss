@@ -60,7 +60,10 @@ retention:
       # the grid-api digest. Bump alongside the `tag` in values.yaml.
       digest: "sha256:4e6e670bb069649261c9c18031f0aded7bb249a5b6664ddec29c013a89310d50"
 ensureDailies:
-  enabled: false  # flip to true in follow-up PR once worker image + CD digest wiring land
+  enabled: true
   image:
+    # MANIFESTO: prod images pin to digest. Injected by the CD workflow
+    # (deploy-api-k8s.yml) per push from the wordsparrow-worker build
+    # matrix row's `image-digest-grid-worker` artifact.
     requireDigest: true
     digest: ""
