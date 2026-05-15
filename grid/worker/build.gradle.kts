@@ -9,6 +9,7 @@ kotlin {
 
 application {
     mainClass.set("com.bliss.grid.worker.MainKt")
+    applicationName = "grid-worker"
 }
 
 val logbackVersion = "1.5.32"

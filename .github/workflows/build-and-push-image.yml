@@ -3,8 +3,9 @@ name: Build and Push Image
 # Builds the WordSparrow service container images and publishes them to
 # GHCR. As of Wave G PR (this commit) the workflow is a matrix job that
 # fans out over the {grid, game} bounded contexts:
-#   - ghcr.io/${owner}/bliss/wordsparrow-api       (grid/api/Dockerfile)
-#   - ghcr.io/${owner}/bliss/wordsparrow-game-api  (game/api/Dockerfile)
+#   - ghcr.io/${owner}/bliss/wordsparrow-api        (grid/api/Dockerfile)
+#   - ghcr.io/${owner}/bliss/wordsparrow-game-api   (game/api/Dockerfile)
+#   - ghcr.io/${owner}/bliss/wordsparrow-worker     (grid/worker/Dockerfile)
 # Pull requests build-only (verifies each Dockerfile still works on every
 # PR touching the relevant context); pushes to main also tag and push the
 # digest. Each matrix row uploads its own digest artifact named
@@ -30,6 +31,7 @@ name: Build and Push Image
 # Packages that need the flip:
 #   - bliss/wordsparrow-api      (already public)
 #   - bliss/wordsparrow-game-api (NEW — first main push will create it)
+#   - bliss/wordsparrow-worker   (NEW — first main push will create it)
 
 on:
   push:
@@ -44,6 +46,7 @@ on:
       - 'grid/domain/**'
       - 'grid/application/**'
       - 'grid/infrastructure/**'
+      - 'grid/worker/**'
       - 'game/api/**'
       - 'game/domain/**'
       - 'game/application/**'
@@ -59,6 +62,7 @@ on:
       - 'grid/domain/**'
       - 'grid/application/**'
       - 'grid/infrastructure/**'
+      - 'grid/worker/**'
       - 'game/api/**'
       - 'game/domain/**'
       - 'game/application/**'
@@ -97,6 +101,14 @@ jobs:
             dockerfile: game/api/Dockerfile
             image-name: wordsparrow-game-api
             digest-artifact: image-digest-game
+          # ADR-0042: :grid:worker daily-puzzle pre-generation CLI shipped as a
+          # CronJob (grid/api/deploy/chart/templates/cronjob-ensure-dailies.yaml).
+          # Separate image so the worker can be tagged + rolled independently
+          # of the api Deployment.
+          - context: grid-worker
+            dockerfile: grid/worker/Dockerfile
+            image-name: wordsparrow-worker
+            digest-artifact: image-digest-grid-worker
     permissions:
       contents: read
       packages: write

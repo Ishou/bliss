@@ -165,9 +165,20 @@ ensureDailies:
     requireDigest: false
   # Inline env vars beyond DATABASE_URL (which is wired from the CNPG `<cluster>-app` Secret in the template).
   env:
+    # `-javaagent:/app/otel.jar` activates the OpenTelemetry Java agent baked
+    # into the worker image (Dockerfile §"Stage 2", ADR-0027). Instruments JDBC
+    # calls made by the grid infrastructure adapters on every --ensure-dailies run.
     - name: JAVA_TOOL_OPTIONS
-      value: "-XX:MaxRAMPercentage=75.0"
+      value: "-javaagent:/app/otel.jar -XX:MaxRAMPercentage=75.0"
     - name: OTEL_SERVICE_NAME
       value: "grid-worker"
     - name: OTEL_RESOURCE_ATTRIBUTES
       value: "bounded_context=grid"
+    - name: OTEL_EXPORTER_OTLP_ENDPOINT
+      value: "http://observability-signoz-otel-collector.observability:4317"
+    - name: OTEL_EXPORTER_OTLP_PROTOCOL
+      value: "grpc"
+    - name: OTEL_TRACES_SAMPLER
+      value: "parentbased_traceidratio"
+    - name: OTEL_TRACES_SAMPLER_ARG
+      value: "1.0"
