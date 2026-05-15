@@ -5,6 +5,7 @@ import assertk.assertions.containsExactly
 import assertk.assertions.hasSize
 import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
+import assertk.assertions.isLessThan
 import com.bliss.grid.domain.generation.ClueCooldownPolicy
 import com.bliss.grid.domain.model.Column
 import com.bliss.grid.domain.model.Direction
@@ -140,7 +141,7 @@ class EnsureUpcomingDailiesUseCaseTest {
 
         val outer0Last = useCase.seedFor(today, 0) + (innerAttempts - 1)
         val outer1First = useCase.seedFor(today, 1)
-        assertThat(outer0Last < outer1First).isEqualTo(true)
+        assertThat(outer0Last).isLessThan(outer1First)
     }
 
     @Test
@@ -151,7 +152,7 @@ class EnsureUpcomingDailiesUseCaseTest {
 
         val lastOuterLastInner = useCase.seedFor(today, maxAttempts - 1) + (innerAttempts - 1)
         val nextDayFirst = useCase.seedFor(today.plusDays(1), 0)
-        assertThat(lastOuterLastInner < nextDayFirst).isEqualTo(true)
+        assertThat(lastOuterLastInner).isLessThan(nextDayFirst)
     }
 
     @Test
