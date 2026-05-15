@@ -201,7 +201,7 @@ separate dependency graph (per the bounded-context rule in
 - **`export-words`** — selects all rows where `clue IS NOT NULL`
   for the configured language (default `fr`), writes them to a
   CSV at `--output <path>` (default
-  `grid/api/src/main/resources/words/words-<lang>.csv`). Sorted by
+  `grid/infrastructure/src/main/resources/words/words-<lang>.csv`). Sorted by
   `(language, word)` for stable git diffs. Idempotent — re-running
   on the same DB state produces a byte-identical file. The CSV is
   the production source of truth for `grid-api` (see §8).
@@ -219,7 +219,7 @@ zero remote autonomous LLM spend or rate-limit risk on the
 running services.
 
 The production grid-api reads from
-`grid/api/src/main/resources/words/words-<lang>.csv` via a
+`grid/infrastructure/src/main/resources/words/words-<lang>.csv` via a
 classpath-backed `CsvWordRepository`. The CSV's columns mirror
 the persisted columns of the `words` table that are relevant to
 the API (no DB-internal `id` / `word_id` / `created_at`):
@@ -245,6 +245,11 @@ place.
 > operates entirely in the Python layer; no Postgres schema is required.
 > Developers with V1–V7 already applied should
 > `DROP SCHEMA public CASCADE; CREATE SCHEMA public;` on next start.
+
+> **Update (2026-05-15 — PR #439):** The words corpus (`words/` tree) was moved
+> from `:grid:api`'s resources to `:grid:infrastructure`'s resources so that
+> `:grid:worker` (which depends on infrastructure but not api) can find the
+> corpus on its classpath at runtime. Paths above reflect the new location.
 
 `fr.json` is removed in the same PR that introduces the CSV.
 There is no `WORDS_SOURCE` flag and no fallback path: keeping two
@@ -340,7 +345,7 @@ PRs and a deferred follow-up:
 4. **CSV reader + `export-words` PR (this PR).** Adds
    `export-words` (§7), swaps the API's `ResourceWordRepository`
    for a `CsvWordRepository` reading
-   `grid/api/src/main/resources/words/words-fr.csv`, deletes
+   `grid/infrastructure/src/main/resources/words/words-fr.csv`, deletes
    `fr.json`. No flag, no fallback — see §8.
 
 The previously-planned **PR5 (initial seed run + Dockerfile +
