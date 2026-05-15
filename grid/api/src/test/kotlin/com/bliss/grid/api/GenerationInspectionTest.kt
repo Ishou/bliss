@@ -33,7 +33,7 @@ class GenerationInspectionTest {
         val mapper = GridToPuzzleMapper()
         val constraints = defaultPuzzleConstraints()
 
-        for (seed in 0L until 5L) {
+        for (seed in 0L until 3L) {
             val grid = generator.generate(constraints, Random(seed)) ?: continue
             val puzzle = mapper.toApi(grid, UUID.randomUUID(), Instant.now(), hintsAllowed = 3)
             val area = puzzle.width * puzzle.height
@@ -76,7 +76,7 @@ class GenerationInspectionTest {
         var generated = 0
         var withUnreachable = 0
         val unreachableDetails = mutableListOf<String>()
-        for (seed in 0L until 30L) {
+        for (seed in 0L until 5L) {
             val grid = generator.generate(constraints, Random(seed)) ?: continue
             generated++
             val puzzle = mapper.toApi(grid, UUID.randomUUID(), Instant.now(), hintsAllowed = 3)

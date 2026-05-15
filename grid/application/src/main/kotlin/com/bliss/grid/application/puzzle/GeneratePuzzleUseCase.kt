@@ -2,7 +2,6 @@ package com.bliss.grid.application.puzzle
 
 import com.bliss.grid.domain.generation.Clock
 import com.bliss.grid.domain.generation.ClueCooldownPolicy
-import com.bliss.grid.domain.generation.DEFAULT_GENERATION_TIMEOUT_MS
 import com.bliss.grid.domain.generation.GenerationMetrics
 import com.bliss.grid.domain.generation.GridConstraints
 import com.bliss.grid.domain.generation.GridGenerator
@@ -29,7 +28,7 @@ import kotlin.random.Random
  * ratio. No tunable that needs per-machine adjustment.
  *
  * Cold start (no successes recorded yet): uses
- * [DEFAULT_GENERATION_TIMEOUT_MS] (5s) for the first few attempts. Once
+ * [DEFAULT_MAX_ATTEMPT_TIMEOUT_MS] for the first few attempts. Once
  * [warmupCount] successes are captured, switches to the calibrated
  * cutoff = [cutoffMultiplier] × observed median, clamped to
  * [[minAttemptTimeoutMs], [maxAttemptTimeoutMs]].
@@ -40,7 +39,7 @@ class GeneratePuzzleUseCase(
     private val maxAttempts: Int = DEFAULT_MAX_ATTEMPTS,
     private val cutoffMultiplier: Int = 10,
     private val minAttemptTimeoutMs: Long = 200,
-    private val maxAttemptTimeoutMs: Long = DEFAULT_GENERATION_TIMEOUT_MS,
+    private val maxAttemptTimeoutMs: Long = DEFAULT_MAX_ATTEMPT_TIMEOUT_MS,
     private val warmupCount: Int = 3,
     private val rollingWindow: Int = 20,
     private val clock: Clock = SystemClock,
@@ -149,6 +148,21 @@ class GeneratePuzzleUseCase(
     }
 
     companion object {
+        /**
+         * Default retry cap. With the shipped layout defaults
+         * ([GenerationKnobs.DEFAULT_BLACK_RATIO] = 0.14, no bias) measured
+         * avg attempts-to-success is ~3, so 10 leaves ample headroom.
+         * Callers opting into [GridConstraints.longWordBias] should pass
+         * a higher value (`50`) to absorb the longer tail.
+         */
         const val DEFAULT_MAX_ATTEMPTS: Int = 10
+
+        /**
+         * Default per-attempt deadline. Single-attempt p90 ≈ 4.5s under
+         * the shipped defaults; 5s is the right ceiling for a Luby
+         * attempt to either land or give up so the next retry can start
+         * with a fresh seed.
+         */
+        const val DEFAULT_MAX_ATTEMPT_TIMEOUT_MS: Long = 5_000L
     }
 }

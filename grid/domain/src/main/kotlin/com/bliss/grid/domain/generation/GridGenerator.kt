@@ -59,7 +59,13 @@ class GridGenerator(
         val lex = lexicon()
         val lUseful = lex.usefulLength
         if (lUseful < constraints.minWordLength) return null
-        val lTarget = min(GenerationKnobs.DEFAULT_L_TARGET, lUseful)
+
+        val bias = clampedBias(constraints.longWordBias)
+        val biasedLTarget = lTargetFor(bias, lUseful, constraints.minWordLength)
+        val lTarget = min(maxOf(GenerationKnobs.DEFAULT_L_TARGET, biasedLTarget), lUseful)
+        val lMinGood = lMinGood(bias, lUseful, constraints.minWordLength)
+        val effectiveBlackRatio = GenerationKnobs.DEFAULT_BLACK_RATIO * densityFactor(bias)
+        val whitenP = whitenProbability(bias)
 
         val perAttemptSec = perAttemptSeconds(w * h)
         val perAttemptNs = (perAttemptSec * 1e9).toLong()
@@ -72,8 +78,10 @@ class GridGenerator(
                 minLen = constraints.minWordLength,
                 lTarget = lTarget,
                 lUseful = lUseful,
-                blackRatio = GenerationKnobs.DEFAULT_BLACK_RATIO,
+                blackRatio = effectiveBlackRatio,
                 random = random,
+                lMinGood = lMinGood,
+                lengthTwoPenalty = constraints.lengthTwoPenalty,
             )
         metrics?.skeletonMs = (clock.nanoTime() - layoutStart) / NS_PER_MS
 
@@ -98,6 +106,10 @@ class GridGenerator(
                         hotCells = emptyList(),
                         consecFails = consecFails,
                         random = random,
+                        blackRatio = effectiveBlackRatio,
+                        lMinGood = lMinGood,
+                        whitenP = whitenP,
+                        lengthTwoPenalty = constraints.lengthTwoPenalty,
                     )
                 perturbations++
                 continue
@@ -117,6 +129,10 @@ class GridGenerator(
                         hotCells = emptyList(),
                         consecFails = consecFails,
                         random = random,
+                        blackRatio = effectiveBlackRatio,
+                        lMinGood = lMinGood,
+                        whitenP = whitenP,
+                        lengthTwoPenalty = constraints.lengthTwoPenalty,
                     )
                 perturbations++
                 continue
@@ -160,6 +176,10 @@ class GridGenerator(
                     hotCells = hot,
                     consecFails = consecFails,
                     random = random,
+                    blackRatio = effectiveBlackRatio,
+                    lMinGood = lMinGood,
+                    whitenP = whitenP,
+                    lengthTwoPenalty = constraints.lengthTwoPenalty,
                 )
             perturbations++
         }
@@ -179,6 +199,10 @@ class GridGenerator(
         hotCells: List<Pair<Int, Int>>,
         consecFails: Int,
         random: Random,
+        blackRatio: Double,
+        lMinGood: Int,
+        whitenP: Double,
+        lengthTwoPenalty: Double,
     ): CellArray {
         if (consecFails > 0 && consecFails % GenerationKnobs.CONSEC_RESEED == 0) {
             return BlackCellLayout.seed(
@@ -187,8 +211,10 @@ class GridGenerator(
                 minLen = minLen,
                 lTarget = lTarget,
                 lUseful = lUseful,
-                blackRatio = GenerationKnobs.DEFAULT_BLACK_RATIO,
+                blackRatio = blackRatio,
                 random = random,
+                lMinGood = lMinGood,
+                lengthTwoPenalty = lengthTwoPenalty,
             )
         }
         BlackCellLayout.perturb(
@@ -198,6 +224,7 @@ class GridGenerator(
             hotCells = hotCells,
             intensity = GenerationKnobs.PERTURB_INTENSITY,
             random = random,
+            whitenProbability = whitenP,
         )
         return cells
     }

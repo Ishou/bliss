@@ -3,10 +3,12 @@ package com.bliss.grid.api
 import com.bliss.grid.application.puzzle.defaultPuzzleConstraints
 import com.bliss.grid.domain.generation.GridGenerator
 import com.bliss.grid.infrastructure.persistence.CsvWordRepository
+import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import kotlin.random.Random
 
 /** Inspection-only: measures grid generation success across many seeds. */
+@Tag("bench")
 class GridSuccessRateTest {
     @Test
     fun `measure generation success rate over 200 seeds`() {

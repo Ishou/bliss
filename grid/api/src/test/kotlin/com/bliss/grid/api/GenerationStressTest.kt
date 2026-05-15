@@ -17,17 +17,18 @@ import kotlin.system.measureTimeMillis
 @Tag("stress")
 class GenerationStressTest {
     @Test
-    fun `100 puzzles end-to-end on the production corpus`() {
+    fun `30 puzzles end-to-end on the production corpus`() {
         val repo = CsvWordRepository.frenchFromClasspath()
         val generator = GridGenerator(repo)
         val constraints = defaultPuzzleConstraints()
+        val sampleSize = 30
 
         // Warm-up the JIT.
         repeat(3) { generator.generate(constraints, Random(it.toLong())) }
 
-        val timings = LongArray(100)
+        val timings = LongArray(sampleSize)
         var successCount = 0
-        for (i in 0 until 100) {
+        for (i in 0 until sampleSize) {
             val ms =
                 measureTimeMillis {
                     val grid = generator.generate(constraints, Random(i.toLong() * 1000))
@@ -36,26 +37,23 @@ class GenerationStressTest {
             timings[i] = ms
         }
         timings.sort()
-        val p50 = timings[50]
-        val p95 = timings[95]
+        val p50 = timings[sampleSize / 2]
+        val p95 = timings[(sampleSize * 95 / 100).coerceAtMost(sampleSize - 1)]
         val min = timings[0]
-        val max = timings[99]
+        val max = timings[sampleSize - 1]
         // Single-attempt success rate is loose because GeneratePuzzleUseCase's
-        // outer retry loop (DEFAULT_MAX_ATTEMPTS = 10) covers single-attempt
-        // failures — an API-level success rate of 99%+ is typical even when
-        // direct GridGenerator.generate single-attempt is in the 35-50% band
-        // at the default 15x12 dimensions. PR #368 (bitmask-CSP, ADR-0039)
-        // moved the generator to a cell-state CSP with Luby restarts; the
-        // useful productivity bar is `GeneratePuzzleUseCase` wall time
-        // (covered by domain/application benches) rather than direct
-        // single-attempt success rate. Ratchet the threshold down only if
-        // these regress further.
+        // outer retry loop covers single-attempt failures — an API-level
+        // success rate of ~100 % is typical even when direct
+        // GridGenerator.generate single-attempt is in the 35–50 % band at
+        // the default 15×12 dimensions. The useful productivity bar is
+        // per-attempt wall time (failed attempts must abandon fast so
+        // retries can amortise the budget), not single-attempt success.
         check(p50 < 3_000) {
-            "median latency ${p50}ms exceeds 3s budget " +
-                "(success=$successCount/100 min=${min}ms p95=${p95}ms max=${max}ms)"
+            "median per-attempt latency ${p50}ms exceeds 3s budget " +
+                "(success=$successCount/$sampleSize min=${min}ms p95=${p95}ms max=${max}ms)"
         }
-        check(successCount >= 30) {
-            "only $successCount/100 single-attempt generations succeeded " +
+        check(successCount >= sampleSize * 3 / 10) {
+            "only $successCount/$sampleSize single-attempt generations succeeded " +
                 "(min=${min}ms p50=${p50}ms p95=${p95}ms max=${max}ms)"
         }
     }

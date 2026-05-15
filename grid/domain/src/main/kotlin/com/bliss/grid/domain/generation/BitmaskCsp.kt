@@ -149,9 +149,9 @@ internal class BitmaskCsp(
     // ---- selection heuristics ----
 
     /**
-     * MRV (minimum remaining values): smallest live domain; ties broken
-     * by highest crossing degree; remaining ties broken at random.
-     * Returns -1 if no unassigned slot remains.
+     * MRV slot selection: smallest live domain, ties broken by highest
+     * crossing degree, then random. Returns `-1` only if every slot is
+     * already assigned.
      */
     internal fun selectSlot(): Int {
         var bestSid = -1

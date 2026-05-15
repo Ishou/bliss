@@ -2,6 +2,7 @@ package com.bliss.grid.domain.validation
 
 import com.bliss.grid.domain.model.Position
 import com.bliss.grid.domain.model.Word
+import com.bliss.grid.domain.model.WordAxis
 
 sealed interface GridViolation {
     data class OutOfBounds(
@@ -49,5 +50,16 @@ sealed interface GridViolation {
         val position: Position,
         val inHorizontal: Boolean,
         val inVertical: Boolean,
+    ) : GridViolation
+
+    /**
+     * Three or more consecutive clue (black) cells in a row or column.
+     * Real mots fléchés never pack clue cells 3 or more in a line (spec
+     * §4.1 C2) — pairs are fine and common, triples are visually heavy
+     * and not used in printed grids.
+     */
+    data class BlackTriple(
+        val start: Position,
+        val axis: WordAxis,
     ) : GridViolation
 }

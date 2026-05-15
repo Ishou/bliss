@@ -21,6 +21,7 @@ import kotlin.random.Random
  *  5.   Density sprinkle to `blackRatio`, gated by [canPlaceBlack].
  *  6.   Dead-cell cleanup: whiten any black that became non-functional
  *       via downstream changes.
+ *
  */
 internal object BlackCellLayout {
     fun seed(
@@ -31,6 +32,8 @@ internal object BlackCellLayout {
         lUseful: Int,
         blackRatio: Double,
         random: Random,
+        lMinGood: Int = minLen,
+        lengthTwoPenalty: Double = 0.0,
     ): CellArray {
         require(minLen >= 2) { "minLen must be ≥ 2, was $minLen" }
         require(lTarget in minLen..lUseful) { "lTarget=$lTarget not in [minLen=$minLen, lUseful=$lUseful]" }
@@ -42,15 +45,31 @@ internal object BlackCellLayout {
         // Passes 1+2: cap long runs at lTarget by midpoint-splitting.
         repeat(8) {
             var changed = false
-            for (r in 0 until height) if (capLongHorizontalRuns(cells, r, minLen, lTarget, random)) changed = true
-            for (c in 0 until width) if (capLongVerticalRuns(cells, c, minLen, lTarget, random)) changed = true
+            for (r in 0 until height) {
+                if (capLongHorizontalRuns(cells, r, minLen, lTarget, lengthTwoPenalty, random)) {
+                    changed = true
+                }
+            }
+            for (c in 0 until width) {
+                if (capLongVerticalRuns(cells, c, minLen, lTarget, lengthTwoPenalty, random)) {
+                    changed = true
+                }
+            }
             if (!changed) return@repeat
         }
         // Pass 3: final guard at lUseful.
         repeat(3) {
             var changed = false
-            for (r in 0 until height) if (capLongHorizontalRuns(cells, r, minLen, lUseful, random)) changed = true
-            for (c in 0 until width) if (capLongVerticalRuns(cells, c, minLen, lUseful, random)) changed = true
+            for (r in 0 until height) {
+                if (capLongHorizontalRuns(cells, r, minLen, lUseful, lengthTwoPenalty, random)) {
+                    changed = true
+                }
+            }
+            for (c in 0 until width) {
+                if (capLongVerticalRuns(cells, c, minLen, lUseful, lengthTwoPenalty, random)) {
+                    changed = true
+                }
+            }
             if (!changed) return@repeat
         }
 
@@ -60,7 +79,18 @@ internal object BlackCellLayout {
         repairOrphanWhites(cells, minLen, lUseful)
 
         // Pass 5: density sprinkle, gated by canPlaceBlack.
-        densitySprinkle(cells, minLen, blackRatio, random)
+        if (lMinGood > minLen || lengthTwoPenalty > 0.0) {
+            densitySprinkleScored(
+                cells = cells,
+                minLen = minLen,
+                blackRatio = blackRatio,
+                lMinGood = lMinGood,
+                lengthTwoPenalty = lengthTwoPenalty,
+                random = random,
+            )
+        } else {
+            densitySprinkle(cells, minLen, blackRatio, random)
+        }
 
         // Pass 4 again — sprinkling may have introduced new orphans.
         repairOrphanWhites(cells, minLen, lUseful)
@@ -85,6 +115,7 @@ internal object BlackCellLayout {
         hotCells: List<Pair<Int, Int>>,
         intensity: Double,
         random: Random,
+        whitenProbability: Double = 0.4,
     ) {
         val area = cells.width * cells.height
         var moves = max(2, (intensity * area).toInt())
@@ -104,7 +135,9 @@ internal object BlackCellLayout {
             val c = random.nextInt(cells.width)
             if (r == 0 && c == 0) continue // corner must stay BLACK
             if (cells.isBlack(r, c)) {
-                if (random.nextDouble() < 0.4 && tryWhitenSafely(cells, r, c, minLen, lUseful)) {
+                if (random.nextDouble() < whitenProbability &&
+                    tryWhitenSafely(cells, r, c, minLen, lUseful)
+                ) {
                     moves--
                 }
             } else if (canPlaceBlack(cells, r, c, minLen)) {
@@ -207,10 +240,44 @@ internal object BlackCellLayout {
             // RIGHT-arrow target) and (r-1, c) (loses its DOWN-arrow target).
             if (c - 1 >= 0 && cells.isBlack(r, c - 1) && !isFunctional(cells, r, c - 1, minLen)) return false
             if (r - 1 >= 0 && cells.isBlack(r - 1, c) && !isFunctional(cells, r - 1, c, minLen)) return false
+            // Check 4: no 3-in-a-row block of black cells. Spec §4.1 C2 —
+            // pairs are fine, triples are visually heavy and never appear
+            // in printed mots fléchés.
+            if (countBlackRun(cells, r, c, dr = 0, dc = 1) >= 3) return false
+            if (countBlackRun(cells, r, c, dr = 1, dc = 0) >= 3) return false
             return true
         } finally {
             cells.set(r, c, prior)
         }
+    }
+
+    /**
+     * Length of the maximal black run through `(r, c)` in direction `(dr, dc)`.
+     * `(r, c)` must be BLACK when called; counts itself.
+     */
+    private fun countBlackRun(
+        cells: CellArray,
+        r: Int,
+        c: Int,
+        dr: Int,
+        dc: Int,
+    ): Int {
+        var count = 1
+        var rr = r - dr
+        var cc = c - dc
+        while (rr in 0 until cells.height && cc in 0 until cells.width && cells.isBlack(rr, cc)) {
+            count++
+            rr -= dr
+            cc -= dc
+        }
+        rr = r + dr
+        cc = c + dc
+        while (rr in 0 until cells.height && cc in 0 until cells.width && cells.isBlack(rr, cc)) {
+            count++
+            rr += dr
+            cc += dc
+        }
+        return count
     }
 
     /**
@@ -376,7 +443,8 @@ internal object BlackCellLayout {
         val candidates = mutableListOf<Pair<Int, Int>>()
         for (r in 0 until cells.height) {
             for (c in 0 until cells.width) {
-                if (!cells.isBlack(r, c)) candidates += r to c
+                if (cells.isBlack(r, c)) continue
+                candidates += r to c
             }
         }
         candidates.shuffle(random)
@@ -389,11 +457,98 @@ internal object BlackCellLayout {
         }
     }
 
+    /**
+     * Bias-aware density sprinkle (spec §4.4 pass 5 scored variant). Prefers
+     * placements that don't shorten any neighbouring run below [lMinGood]
+     * and that don't create length-2 neighbours. Score: `(good, -cost)` where
+     * `cost = shortfall + lengthTwoPenalty × len2Count` (spec §4.5.3).
+     */
+    private fun densitySprinkleScored(
+        cells: CellArray,
+        minLen: Int,
+        blackRatio: Double,
+        lMinGood: Int,
+        lengthTwoPenalty: Double,
+        random: Random,
+    ) {
+        val area = cells.width * cells.height
+        val target = (blackRatio * area).toInt().coerceAtLeast(1)
+
+        data class Scored(
+            val r: Int,
+            val c: Int,
+            val good: Int,
+            val cost: Double,
+        )
+        val scored = mutableListOf<Scored>()
+        for (r in 0 until cells.height) {
+            for (c in 0 until cells.width) {
+                if (cells.isBlack(r, c)) continue
+                if (!canPlaceBlack(cells, r, c, minLen)) continue
+                val s = splitScore(cells, r, c, lMinGood)
+                scored += Scored(r, c, s.good, s.shortfall + lengthTwoPenalty * s.len2Count)
+            }
+        }
+        scored.shuffle(random)
+        scored.sortWith(compareByDescending<Scored> { it.good }.thenBy { it.cost })
+        var i = 0
+        while (cells.countBlack() < target && i < scored.size) {
+            val s = scored[i++]
+            if (canPlaceBlack(cells, s.r, s.c, minLen)) {
+                cells.set(s.r, s.c, CellArray.BLACK)
+            }
+        }
+    }
+
+    /**
+     * Score a candidate placement at `(r, c)`:
+     *  - `good`: neighbouring runs that would remain ≥ [lMinGood].
+     *  - `shortfall`: total `max(0, lMinGood − run)` across neighbours.
+     *  - `len2Count`: neighbouring runs that would be exactly length 2
+     *    (spec §4.5.3).
+     */
+    private data class CellScore(
+        val good: Int,
+        val shortfall: Int,
+        val len2Count: Int,
+    )
+
+    private fun splitScore(
+        cells: CellArray,
+        r: Int,
+        c: Int,
+        lMinGood: Int,
+    ): CellScore {
+        val prior = cells.get(r, c)
+        cells.set(r, c, CellArray.BLACK)
+        try {
+            var good = 0
+            var shortfall = 0
+            var len2 = 0
+            val neighbours =
+                intArrayOf(
+                    if (c - 1 >= 0 && !cells.isBlack(r, c - 1)) runLengthHorizontal(cells, r, c - 1) else -1,
+                    if (c + 1 < cells.width && !cells.isBlack(r, c + 1)) runLengthHorizontal(cells, r, c + 1) else -1,
+                    if (r - 1 >= 0 && !cells.isBlack(r - 1, c)) runLengthVertical(cells, r - 1, c) else -1,
+                    if (r + 1 < cells.height && !cells.isBlack(r + 1, c)) runLengthVertical(cells, r + 1, c) else -1,
+                )
+            for (len in neighbours) {
+                if (len < 0) continue
+                if (len == 2) len2++
+                if (len >= lMinGood) good++ else shortfall += (lMinGood - len)
+            }
+            return CellScore(good, shortfall, len2)
+        } finally {
+            cells.set(r, c, prior)
+        }
+    }
+
     private fun capLongHorizontalRuns(
         cells: CellArray,
         r: Int,
         minLen: Int,
         lCap: Int,
+        lengthTwoPenalty: Double,
         random: Random,
     ): Boolean {
         var changed = false
@@ -407,7 +562,16 @@ internal object BlackCellLayout {
             while (c < cells.width && !cells.isBlack(r, c)) c++
             val length = c - start
             if (length > lCap) {
-                val pos = insertNearMidpoint(start, length, random) { p -> canPlaceBlack(cells, r, p, minLen) }
+                val pos =
+                    pickInsertColumn(
+                        cells = cells,
+                        r = r,
+                        start = start,
+                        length = length,
+                        minLen = minLen,
+                        lengthTwoPenalty = lengthTwoPenalty,
+                        random = random,
+                    )
                 if (pos != null) {
                     cells.set(r, pos, CellArray.BLACK)
                     changed = true
@@ -422,6 +586,7 @@ internal object BlackCellLayout {
         c: Int,
         minLen: Int,
         lCap: Int,
+        lengthTwoPenalty: Double,
         random: Random,
     ): Boolean {
         var changed = false
@@ -435,7 +600,16 @@ internal object BlackCellLayout {
             while (r < cells.height && !cells.isBlack(r, c)) r++
             val length = r - start
             if (length > lCap) {
-                val pos = insertNearMidpoint(start, length, random) { p -> canPlaceBlack(cells, p, c, minLen) }
+                val pos =
+                    pickInsertRow(
+                        cells = cells,
+                        c = c,
+                        start = start,
+                        length = length,
+                        minLen = minLen,
+                        lengthTwoPenalty = lengthTwoPenalty,
+                        random = random,
+                    )
                 if (pos != null) {
                     cells.set(pos, c, CellArray.BLACK)
                     changed = true
@@ -443,6 +617,67 @@ internal object BlackCellLayout {
             }
         }
         return changed
+    }
+
+    /**
+     * Pick the column to split a long horizontal run by. When
+     * [lengthTwoPenalty] is `0`, falls through to midpoint-first random
+     * order (the original behaviour). Otherwise scores each feasible
+     * candidate by `-(shortfall + lengthTwoPenalty × len2Count)` and
+     * picks the highest-scoring one (spec §4.5.3).
+     */
+    private fun pickInsertColumn(
+        cells: CellArray,
+        r: Int,
+        start: Int,
+        length: Int,
+        minLen: Int,
+        lengthTwoPenalty: Double,
+        random: Random,
+    ): Int? {
+        if (lengthTwoPenalty <= 0.0) {
+            return insertNearMidpoint(start, length, random) { p ->
+                canPlaceBlack(cells, r, p, minLen)
+            }
+        }
+        val feasible =
+            (start until start + length).filter { p ->
+                canPlaceBlack(cells, r, p, minLen)
+            }
+        if (feasible.isEmpty()) return null
+        val scored =
+            feasible.map { p ->
+                val s = splitScore(cells, r, p, minLen)
+                Triple(p, s.shortfall + lengthTwoPenalty * s.len2Count, random.nextInt())
+            }
+        return scored.minWith(compareBy({ it.second }, { it.third })).first
+    }
+
+    private fun pickInsertRow(
+        cells: CellArray,
+        c: Int,
+        start: Int,
+        length: Int,
+        minLen: Int,
+        lengthTwoPenalty: Double,
+        random: Random,
+    ): Int? {
+        if (lengthTwoPenalty <= 0.0) {
+            return insertNearMidpoint(start, length, random) { p ->
+                canPlaceBlack(cells, p, c, minLen)
+            }
+        }
+        val feasible =
+            (start until start + length).filter { p ->
+                canPlaceBlack(cells, p, c, minLen)
+            }
+        if (feasible.isEmpty()) return null
+        val scored =
+            feasible.map { p ->
+                val s = splitScore(cells, p, c, minLen)
+                Triple(p, s.shortfall + lengthTwoPenalty * s.len2Count, random.nextInt())
+            }
+        return scored.minWith(compareBy({ it.second }, { it.third })).first
     }
 
     /**

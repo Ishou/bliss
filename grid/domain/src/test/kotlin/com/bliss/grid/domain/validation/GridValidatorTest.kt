@@ -14,6 +14,7 @@ import com.bliss.grid.domain.model.LetterCell
 import com.bliss.grid.domain.model.Position
 import com.bliss.grid.domain.model.Row
 import com.bliss.grid.domain.model.Word
+import com.bliss.grid.domain.model.WordAxis
 import com.bliss.grid.domain.model.WordPlacement
 import org.junit.jupiter.api.Test
 
@@ -245,5 +246,48 @@ class GridValidatorTest {
         assertThat(validator.validate(grid)).contains(
             GridViolation.OrphanedLetterCell(Position(Row(2), Column(2))),
         )
+    }
+
+    @Test
+    fun `three-in-a-row horizontal blacks are reported`() {
+        val cells: Map<Position, Cell> =
+            mapOf(
+                Position(Row(0), Column(0)) to ClueCell(listOf(Clue("x", Direction.RIGHT))),
+                Position(Row(0), Column(1)) to ClueCell(listOf(Clue("y", Direction.RIGHT))),
+                Position(Row(0), Column(2)) to ClueCell(listOf(Clue("z", Direction.RIGHT))),
+            )
+        val grid = Grid(width = 4, height = 1, cells = cells, placements = emptyList())
+        assertThat(validator.validate(grid)).contains(
+            GridViolation.BlackTriple(Position(Row(0), Column(0)), WordAxis.HORIZONTAL),
+        )
+    }
+
+    @Test
+    fun `three-in-a-row vertical blacks are reported`() {
+        val cells: Map<Position, Cell> =
+            mapOf(
+                Position(Row(0), Column(0)) to ClueCell(listOf(Clue("x", Direction.DOWN))),
+                Position(Row(1), Column(0)) to ClueCell(listOf(Clue("y", Direction.DOWN))),
+                Position(Row(2), Column(0)) to ClueCell(listOf(Clue("z", Direction.DOWN))),
+            )
+        val grid = Grid(width = 1, height = 4, cells = cells, placements = emptyList())
+        assertThat(validator.validate(grid)).contains(
+            GridViolation.BlackTriple(Position(Row(0), Column(0)), WordAxis.VERTICAL),
+        )
+    }
+
+    @Test
+    fun `pairs of adjacent blacks are not reported as triples`() {
+        val placement = WordPlacement(Word("OR", "x"), Position(Row(0), Column(0)), Direction.RIGHT)
+        val cells: Map<Position, Cell> =
+            mapOf(
+                Position(Row(0), Column(0)) to ClueCell(listOf(Clue("x", Direction.RIGHT))),
+                Position(Row(0), Column(1)) to LetterCell('O'),
+                Position(Row(0), Column(2)) to LetterCell('R'),
+                Position(Row(1), Column(0)) to ClueCell(listOf(Clue("y", Direction.DOWN))),
+            )
+        val grid = Grid(width = 3, height = 2, cells = cells, placements = listOf(placement))
+        val violations = validator.validate(grid)
+        assertThat(violations.filterIsInstance<GridViolation.BlackTriple>()).isEmpty()
     }
 }
