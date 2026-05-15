@@ -2,6 +2,7 @@ package com.bliss.grid.domain.validation
 
 import com.bliss.grid.domain.model.Position
 import com.bliss.grid.domain.model.Word
+import com.bliss.grid.domain.model.WordAxis
 
 sealed interface GridViolation {
     data class OutOfBounds(
@@ -59,6 +60,6 @@ sealed interface GridViolation {
      */
     data class BlackTriple(
         val start: Position,
-        val axis: com.bliss.grid.domain.model.WordAxis,
+        val axis: WordAxis,
     ) : GridViolation
 }
