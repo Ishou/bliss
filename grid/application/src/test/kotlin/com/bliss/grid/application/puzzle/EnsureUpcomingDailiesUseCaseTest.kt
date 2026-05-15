@@ -57,7 +57,7 @@ class EnsureUpcomingDailiesUseCaseTest {
         assertThat(summary.skippedDates).isEmpty()
         assertThat(summary.persistedDates).isEmpty()
         val seenSeeds = port.calls.map { it.seed }
-        val expectedSeeds = expectedDates.map { it.toEpochDay() * 1000L }
+        val expectedSeeds = expectedDates.map { it.toEpochDay() * 1_000_000_000L }
         assertThat(seenSeeds).containsExactly(*expectedSeeds.toTypedArray())
         val writtenIds = repo.getOrComputeCalls.toList()
         val expectedIds = expectedDates.map { selector.puzzleIdForDate(it) }
@@ -69,10 +69,10 @@ class EnsureUpcomingDailiesUseCaseTest {
         // Stop-on-failure preserves cooldown causality: a retry of day N must not observe day N+1's clues.
         val repo = TrackingPuzzleRepository()
         val day3 = today.plusDays(2)
-        val day3Seed = day3.toEpochDay() * 1000L
+        val day3Seed = day3.toEpochDay() * 1_000_000_000L
         val port =
             RecordingPort(
-                grids = { call -> if (call.seed in day3Seed until day3Seed + 20) null else successfulGrid() },
+                grids = { call -> if (call.seed in day3Seed until day3Seed + 1000L) null else successfulGrid() },
             )
         val useCase = newUseCase(repo, port)
 
@@ -121,15 +121,37 @@ class EnsureUpcomingDailiesUseCaseTest {
         val targetEpochDay = targetDate.toEpochDay()
         val port =
             RecordingPort(
-                grids = { call -> if (call.seed < targetEpochDay * 1000L + 5) null else successfulGrid() },
+                grids = { call -> if (call.seed < targetEpochDay * 1_000_000_000L + 250L) null else successfulGrid() },
             )
         val useCase = newUseCase(repo, port, windowDays = 1)
 
         useCase.execute(targetDate)
 
         val seenSeeds = port.calls.map { it.seed }
-        val expectedSeeds = (0..5).map { targetEpochDay * 1000L + it }
+        val innerStride = EnsureUpcomingDailiesUseCase.DEFAULT_INNER_ATTEMPTS.toLong()
+        val expectedSeeds = (0..5).map { targetEpochDay * 1_000_000_000L + it * innerStride }
         assertThat(seenSeeds).containsExactly(*expectedSeeds.toTypedArray())
+    }
+
+    @Test
+    fun `seedFor produces non-overlapping inner-seed blocks across consecutive outer attempts`() {
+        val useCase = newUseCase(TrackingPuzzleRepository(), RecordingPort(grids = { _ -> null }))
+        val innerAttempts = EnsureUpcomingDailiesUseCase.DEFAULT_INNER_ATTEMPTS
+
+        val outer0Last = useCase.seedFor(today, 0) + (innerAttempts - 1)
+        val outer1First = useCase.seedFor(today, 1)
+        assertThat(outer0Last < outer1First).isEqualTo(true)
+    }
+
+    @Test
+    fun `seedFor avoids cross-date collision even at the last outer attempt`() {
+        val useCase = newUseCase(TrackingPuzzleRepository(), RecordingPort(grids = { _ -> null }))
+        val maxAttempts = EnsureUpcomingDailiesUseCase.DEFAULT_MAX_ATTEMPTS
+        val innerAttempts = EnsureUpcomingDailiesUseCase.DEFAULT_INNER_ATTEMPTS
+
+        val lastOuterLastInner = useCase.seedFor(today, maxAttempts - 1) + (innerAttempts - 1)
+        val nextDayFirst = useCase.seedFor(today.plusDays(1), 0)
+        assertThat(lastOuterLastInner < nextDayFirst).isEqualTo(true)
     }
 
     @Test

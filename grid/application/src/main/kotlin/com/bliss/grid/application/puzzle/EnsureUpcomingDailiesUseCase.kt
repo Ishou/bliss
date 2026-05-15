@@ -126,11 +126,11 @@ class EnsureUpcomingDailiesUseCase(
         }
     }
 
-    /** Stride 1000 keeps adjacent days' seed ranges disjoint at maxAttempts <= 1000. */
+    /** Outer stride = innerAttempts so each outer attempt owns a disjoint inner-seed block; 1e9 day stride dwarfs any reasonable outer*inner. */
     internal fun seedFor(
         date: LocalDate,
         attempt: Int,
-    ): Long = date.toEpochDay() * SEED_DAY_MULTIPLIER + attempt
+    ): Long = date.toEpochDay() * SEED_DAY_MULTIPLIER + attempt.toLong() * innerAttempts.toLong()
 
     data class Summary(
         val persistedDates: List<LocalDate>,
@@ -142,7 +142,7 @@ class EnsureUpcomingDailiesUseCase(
     companion object {
         const val DEFAULT_WINDOW_DAYS: Int = 7
         const val DEFAULT_MAX_ATTEMPTS: Int = 20
-        const val SEED_DAY_MULTIPLIER: Long = 1000L
+        const val SEED_DAY_MULTIPLIER: Long = 1_000_000_000L
 
         /** Cron has time; 50 inner Luby restarts per outer seed is the production-grade budget. */
         const val DEFAULT_INNER_ATTEMPTS: Int = 50
