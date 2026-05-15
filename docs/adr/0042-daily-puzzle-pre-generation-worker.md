@@ -33,8 +33,15 @@ Concretely:
   walks `[today, today+6]` **sequentially**. For each missing puzzle
   id, it runs the generator under the strict BLACK rule with seed
   iteration — varying the random source via
-  `Random(date.toEpochDay() * 1000L + attempt)` — up to N attempts
-  until convergence. On success it persists.
+  `seedFor(date, attempt) = date.toEpochDay() * 1_000_000_000L + attempt * innerAttempts`
+  — up to N outer attempts until convergence; each outer attempt owns
+  `innerAttempts` (default 50) contiguous inner seeds passed to the
+  CSP solver's Luby restarts. `SEED_DAY_MULTIPLIER = 1_000_000_000L`
+  was chosen so that even the last outer attempt's last inner seed for
+  a given day cannot reach the first seed of the next day (fixed from
+  the original `1_000L`, which caused inner-seed blocks from
+  consecutive outer attempts to collide once `attempt * innerAttempts`
+  exceeded `1_000`). On success it persists.
 - New worker entry in `:grid:worker` (`--ensure-dailies`) wires the
   use case to the production repositories. Exit code 0 on full
   success, 1 if any date in the window fails after exhausting
