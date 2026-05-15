@@ -7,6 +7,7 @@ import com.bliss.grid.api.mapper.GridToPuzzleMapper
 import com.bliss.grid.application.puzzle.defaultPuzzleConstraints
 import com.bliss.grid.domain.generation.GridGenerator
 import com.bliss.grid.infrastructure.persistence.CsvWordRepository
+import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import java.time.Instant
 import java.util.UUID
@@ -16,6 +17,7 @@ import kotlin.random.Random
  * Inspection-only test that prints a real generated puzzle to stdout so a
  * human can eyeball clue + grid quality after a corpus update. Always passes.
  */
+@Tag("bench")
 class GridSmokePrintTest {
     @Test
     fun `print one generated puzzle for visual inspection`() {
