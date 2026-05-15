@@ -4,7 +4,6 @@ import com.bliss.grid.application.puzzle.DailyPuzzleSelector
 import com.bliss.grid.application.puzzle.EnsureUpcomingDailiesUseCase
 import com.bliss.grid.application.puzzle.GeneratePuzzleUseCase
 import com.bliss.grid.application.puzzle.GridGenerationPort
-import com.bliss.grid.application.puzzle.LoadOrGeneratePuzzleUseCase
 import com.bliss.grid.application.puzzle.PuzzleRepository
 import com.bliss.grid.application.puzzle.asGridGenerationPort
 import com.bliss.grid.application.puzzle.defaultPuzzleConstraints
@@ -86,7 +85,7 @@ internal fun executeAndExit(
 ): Int {
     val cooldownMax =
         System.getenv("GRID_CLUE_COOLDOWN_MAX")?.toIntOrNull()
-            ?: LoadOrGeneratePuzzleUseCase.DEFAULT_COOLDOWN_MAX
+            ?: EnsureUpcomingDailiesUseCase.DAILY_COOLDOWN_MAX
     val useCase =
         EnsureUpcomingDailiesUseCase(
             puzzleRepository = puzzleRepository,

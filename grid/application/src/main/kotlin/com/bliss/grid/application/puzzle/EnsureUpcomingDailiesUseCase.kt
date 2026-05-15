@@ -16,7 +16,7 @@ class EnsureUpcomingDailiesUseCase(
     private val gridGenerationPort: GridGenerationPort,
     private val dailyPuzzleSelector: DailyPuzzleSelector,
     private val cooldownRepository: ClueCooldownRepository? = null,
-    private val cooldownMax: Int = LoadOrGeneratePuzzleUseCase.DEFAULT_COOLDOWN_MAX,
+    private val cooldownMax: Int = DAILY_COOLDOWN_MAX,
     private val maxAttempts: Int = DEFAULT_MAX_ATTEMPTS,
     private val clock: Clock = Clock.systemUTC(),
     private val title: String = LoadOrGeneratePuzzleUseCase.DEFAULT_TITLE,
@@ -143,6 +143,9 @@ class EnsureUpcomingDailiesUseCase(
         const val DEFAULT_WINDOW_DAYS: Int = 7
         const val DEFAULT_MAX_ATTEMPTS: Int = 20
         const val SEED_DAY_MULTIPLIER: Long = 1_000_000_000L
+
+        /** rand(1..1): daily clue stays cooled through exactly the next generation; bucket never grows past one day. */
+        const val DAILY_COOLDOWN_MAX: Int = 1
 
         /** Cron has time; 50 inner Luby restarts per outer seed is the production-grade budget. */
         const val DEFAULT_INNER_ATTEMPTS: Int = 50

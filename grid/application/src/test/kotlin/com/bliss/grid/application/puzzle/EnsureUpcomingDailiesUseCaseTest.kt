@@ -6,7 +6,10 @@ import assertk.assertions.hasSize
 import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
 import assertk.assertions.isLessThan
+import assertk.assertions.isNotEqualTo
 import com.bliss.grid.domain.generation.ClueCooldownPolicy
+import com.bliss.grid.domain.generation.ClueCooldownRepository
+import com.bliss.grid.domain.generation.ClueId
 import com.bliss.grid.domain.model.Column
 import com.bliss.grid.domain.model.Direction
 import com.bliss.grid.domain.model.Grid
@@ -156,6 +159,29 @@ class EnsureUpcomingDailiesUseCaseTest {
     }
 
     @Test
+    fun `default cooldownMax is the daily-specific value, not the solo default`() {
+        val repo = TrackingPuzzleRepository()
+        val port = RecordingPort(grids = { _ -> successfulGrid() })
+        val cooldown = RecordingCooldownRepository()
+        val useCase =
+            EnsureUpcomingDailiesUseCase(
+                puzzleRepository = repo,
+                gridGenerationPort = port,
+                dailyPuzzleSelector = selector,
+                cooldownRepository = cooldown,
+                windowDays = 1,
+            )
+
+        useCase.execute(today)
+
+        assertThat(cooldown.records).hasSize(1)
+        val (bucketId, rollMaxInclusive) = cooldown.records.single()
+        assertThat(bucketId).isEqualTo(ClueCooldownRepository.DAILY_SCOPE_ID)
+        assertThat(rollMaxInclusive).isEqualTo(EnsureUpcomingDailiesUseCase.DAILY_COOLDOWN_MAX)
+        assertThat(rollMaxInclusive).isNotEqualTo(LoadOrGeneratePuzzleUseCase.DEFAULT_COOLDOWN_MAX)
+    }
+
+    @Test
     fun `first day failure stops loop and remaining days are skipped not failed`() {
         val repo = TrackingPuzzleRepository()
         val port = RecordingPort(grids = { _ -> null })
@@ -222,6 +248,24 @@ class EnsureUpcomingDailiesUseCaseTest {
             getOrComputeCalls += puzzleId
             return store.computeIfAbsent(puzzleId) { produced }
         }
+    }
+
+    private class RecordingCooldownRepository : ClueCooldownRepository {
+        val records = mutableListOf<Pair<UUID, Int>>()
+
+        override fun snapshot(bucketId: UUID): ClueCooldownRepository.Snapshot =
+            ClueCooldownRepository.Snapshot(currentSeq = 0L, onCooldown = emptySet())
+
+        override fun recordGeneration(
+            bucketId: UUID,
+            usedClues: Collection<ClueId>,
+            rollMaxInclusive: Int,
+        ): Long {
+            records += bucketId to rollMaxInclusive
+            return records.size.toLong()
+        }
+
+        override fun deleteBySession(bucketId: UUID): Int = 0
     }
 
     private data class PortCall(
