@@ -177,19 +177,14 @@ enableMocks()
       }),
       getSessionId: getOrCreateSessionId,
       clearLocalSession: () => {
-        // Sweep every scoped + legacy solo-entries key before clearing
-        // the session id; otherwise the RGPD Art. 17 erase would leave
-        // per-grid progress data on disk under the soon-to-be-orphaned
-        // session key. Tour flag and session id clear after the sweep.
+        // Sweep all solo-entries keys first; RGPD Art. 17 would orphan per-grid data under the old session id otherwise.
         clearAllSoloEntriesForEverySession();
         clearSession();
         clearTourSeen();
       },
     };
 
-    // Adapts localStorage helpers to the SoloEntriesStorage port; the
-    // store factory binds the current session id at every call so
-    // session rotation (RGPD erase → reseed) is transparent to ui/.
+    // Lazy session-id binding makes session rotation (RGPD erase → reseed) transparent to ui/.
     const soloEntriesStorage: SoloEntriesStorage = {
       loadEntries: loadSoloEntries,
       saveLetter: saveSoloLetter,

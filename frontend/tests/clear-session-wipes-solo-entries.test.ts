@@ -1,10 +1,4 @@
-// RGPD Art. 17 erase-chain guard.
-//
-// `clearLocalSession()` in the composition root (main.tsx) delegates the
-// solo-entries sweep to `clearAllSoloEntriesForEverySession()`. This test
-// pins down that sweep so a future refactor can't silently regress to a
-// single-session removal that would leak per-grid progress data under the
-// orphaned key.
+// RGPD Art. 17 erase-chain guard: pins clearAllSoloEntriesForEverySession so a refactor can't silently regress to single-session removal.
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -47,8 +41,7 @@ describe('clearAllSoloEntriesForEverySession (RGPD Art. 17 erase chain)', () => 
 
     clearAllSoloEntriesForEverySession();
 
-    // The sweep is scoped: identity-layer keys are erased separately by
-    // `clearSession()` / `clearTourSeen()` in the same composition-root step.
+    // Identity-layer keys are erased separately by clearSession() / clearTourSeen().
     expect(globalThis.localStorage.getItem('bliss.session.id')).toBe('keep-me');
     expect(globalThis.localStorage.getItem('bliss.session.pseudonym')).toBe('Renard 123');
     expect(globalThis.localStorage.getItem('bliss.tour.seen')).toBe('true');
