@@ -65,11 +65,59 @@ Add a top-level bounded context `identity/` peer to `grid/` and
 Schema-first per ADR-0003: `identity/api/openapi.yaml` is the contract
 that `grid/api`, `game/api`, and the frontend consume.
 
-Ingress host: `auth.wordsparrow.io` (cookie domain `.wordsparrow.io`
-so the cookie travels to `api.wordsparrow.io` and the frontend).
+Ingress host: `auth.wordsparrow.io`. The `__Host-ws_session` cookie
+carries no `Domain` attribute (required by the `__Host-` prefix) and
+is therefore bound to `auth.wordsparrow.io` only. `grid/api` and
+`game/api` verify sessions by calling `identity-api`; the
+30-second cookie-verify cache documented in Consequences mitigates
+request-amplification.
 
 OIDC scopes: `openid` only on both Google and Apple. The "no email,
-no name" data-minimization stance is documented in ADR-0045.
+no name" data-minimization stance will be documented in
+ADR-0045 (companion ADR, to be merged before the schema PR).
+
+## Threat Model
+
+The following threats were considered for the OIDC sign-in surface.
+
+**Session cookie theft** — `__Host-ws_session` is set `Secure; HttpOnly;
+SameSite=Lax` with the `__Host-` prefix, which additionally enforces
+`Path=/` and no `Domain` attribute. An attacker on another subdomain
+cannot receive the cookie; JavaScript cannot read it. `SameSite=Lax`
+blocks cross-site POST-based CSRF while allowing top-level navigations
+needed for the OIDC redirect.
+
+**OIDC redirect-URI fixation / open redirector** — redirect URIs are
+registered statically with each IDP (Google Cloud Console / Apple
+Developer). The identity-api validates the `redirect_uri` parameter
+against its allowlist before initiating the flow; mismatches are
+rejected with 400. No dynamic redirect construction is performed.
+
+**ID-token replay** — before issuing a session the identity-api
+validates `aud` (must match the registered client ID), `iss` (must
+match the IDP's well-known issuer), token expiry, and `nonce` (tied to
+the authorization request stored server-side). A replayed token with a
+previously consumed nonce is rejected.
+
+**Account-linking abuse** — linking an additional provider to an
+existing account requires an already-authenticated session. An
+unauthenticated request to the link endpoint is rejected. The link is
+recorded as `(existing_user_id, provider, subject)`, so an attacker
+cannot redirect a link flow to a victim's account without first
+compromising the victim's session.
+
+**Account enumeration** — the sign-in response is uniform regardless
+of whether the `(provider, subject)` pair is new or known: a session
+cookie is always issued and the account is created on first sight.
+There is no distinct "account not found" path that could leak
+existence.
+
+**RGPD Article 17 (right to erasure)** — the only PII retained is the
+opaque `(provider, subject)` pair; no email address or display name is
+stored (per data-minimisation stance, ADR-0045). Deletion scope is
+bounded to that key plus all associated session records. The
+`identity/` context is the sole owner, so there is no cross-context
+PII fan-out to coordinate.
 
 ## Consequences
 
