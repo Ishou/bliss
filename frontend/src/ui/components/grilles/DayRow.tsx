@@ -84,11 +84,12 @@ export function DayRow({ summary, soloEntriesStore, ctaRef }: DayRowProps) {
       ) : null}
       <Link
         ref={ctaRef}
+        aria-label={`${cta} la grille du ${formatLongDateFr(summary.date)} · n°${summary.gridNumber}`}
         to="/grille"
         search={{ date: summary.date }}
         className={ctaStyles}
       >
-        {cta} →
+        <span aria-hidden="true">{cta} →</span>
       </Link>
     </article>
   );
