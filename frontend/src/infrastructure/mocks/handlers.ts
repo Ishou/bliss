@@ -46,6 +46,7 @@ type Puzzle = components['schemas']['Puzzle'];
 type Position = components['schemas']['Position'];
 type ValidatePuzzleRequest = components['schemas']['ValidatePuzzleRequest'];
 type RevealCellHintRequest = components['schemas']['RevealCellHintRequest'];
+type PuzzleSummary = components['schemas']['PuzzleSummary'];
 
 // Cast through `unknown` because Vite's JSON import returns the
 // inferred literal type; the cast is structurally validated at runtime
@@ -94,6 +95,39 @@ const HINT_PROBLEM_INVALID_COORD = {
  * URL) and any same-origin proxy a future ADR introduces.
  */
 const gridHandlers = [
+  // GET /v1/puzzles/daily/list — must precede the `/v1/puzzles/daily`
+  // and `:puzzleId` handlers (MSW dispatches the first match). Builds a
+  // DESC-by-date slice clamped to today UTC and the 2026-01-01 launch
+  // anchor; caps at 100 items and reports `hasMore` against the full
+  // clamped range, matching the server's envelope contract.
+  http.get('*/v1/puzzles/daily/list', ({ request }) => {
+    const url = new URL(request.url);
+    const fromRaw = url.searchParams.get('from');
+    const toRaw = url.searchParams.get('to');
+    const launchAnchorMs = Date.parse('2026-01-01T00:00:00Z');
+    const todayMs = Date.parse(new Date().toISOString().slice(0, 10) + 'T00:00:00Z');
+    const toMs = Math.min(toRaw ? Date.parse(`${toRaw}T00:00:00Z`) : todayMs, todayMs);
+    const fromMs = Math.max(
+      fromRaw ? Date.parse(`${fromRaw}T00:00:00Z`) : toMs - 31 * 86_400_000,
+      launchAnchorMs,
+    );
+    const items: PuzzleSummary[] = [];
+    for (let ms = toMs; ms >= fromMs; ms -= 86_400_000) {
+      const date = new Date(ms).toISOString().slice(0, 10);
+      const gridNumber = Math.floor((ms - launchAnchorMs) / 86_400_000) + 1;
+      items.push({
+        id: `00000000-0000-7000-8000-${String(gridNumber).padStart(12, '0')}`,
+        date,
+        gridNumber,
+        difficulty: 'facile',
+        totalLetterCells: 28,
+      });
+      if (items.length >= 100) break;
+    }
+    const fullRangeDays = Math.floor((toMs - fromMs) / 86_400_000) + 1;
+    return HttpResponse.json({ items, hasMore: fullRangeDays > items.length });
+  }),
+
   // GET /v1/puzzles/daily — must match before the `:puzzleId` catch-all
   // below; MSW dispatches the first matching handler. Preview returns the
   // fixture with the requested date's gridNumber + the fixture's default

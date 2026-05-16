@@ -17,7 +17,13 @@ const stubSolver: PuzzleSolver = {
   requestHint: vi.fn().mockRejectedValue(new Error('not used')),
 };
 
-const renderWith = (repository: PuzzleRepository) => {
+const renderWith = (partial: Partial<PuzzleRepository>) => {
+  const repository: PuzzleRepository = {
+    fetchById: vi.fn().mockRejectedValue(new Error('unused')),
+    fetchDaily: vi.fn().mockRejectedValue(new Error('unused')),
+    listDailySummaries: vi.fn().mockResolvedValue({ items: [], hasMore: false }),
+    ...partial,
+  };
   const routeTree = RootRoute.addChildren([IndexRoute]);
   const router = createRouter({
     routeTree,

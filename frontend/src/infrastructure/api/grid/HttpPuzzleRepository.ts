@@ -1,7 +1,11 @@
-import type { PuzzleRepository } from '@/application';
+import type {
+  DailySummariesPage,
+  ListDailySummariesOptions,
+  PuzzleRepository,
+} from '@/application';
 import type { Puzzle } from '@/domain';
 import { createGridApiClient, type GridApiClient } from './client';
-import { apiPuzzleToDomain } from './mapper';
+import { apiPuzzleSummaryToDomain, apiPuzzleToDomain } from './mapper';
 
 // HTTP adapter for the application-layer `PuzzleRepository` port. Wraps
 // `createGridApiClient` and the wire→domain mapper, lifting RFC 7807
@@ -44,6 +48,24 @@ export function createHttpPuzzleRepository(
         throw new Error(`daily puzzle fetch failed: ${detail}`);
       }
       return apiPuzzleToDomain(data);
+    },
+    async listDailySummaries(
+      opts: ListDailySummariesOptions = {},
+    ): Promise<DailySummariesPage> {
+      const query: { from?: string; to?: string } = {};
+      if (opts.from != null) query.from = opts.from;
+      if (opts.to != null) query.to = opts.to;
+      const { data, error, response } = await client.GET('/v1/puzzles/daily/list', {
+        params: { query },
+      });
+      if (error) {
+        const detail = error.detail ?? error.title ?? `HTTP ${response.status}`;
+        throw new Error(`daily puzzle list failed: ${detail}`);
+      }
+      return {
+        items: data.items.map(apiPuzzleSummaryToDomain),
+        hasMore: data.hasMore,
+      };
     },
   };
 }

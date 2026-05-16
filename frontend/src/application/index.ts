@@ -2,10 +2,13 @@
 // and ports orchestrating domain types and infrastructure ports. It
 // depends on `domain/` only; concrete adapters live in `infrastructure/`.
 export type {
+  DailySummariesPage,
+  DailySummary,
   FilledCellInput,
   HintErrorKind,
   HintResult,
   IncorrectCell,
+  ListDailySummariesOptions,
   PuzzleRepository,
   PuzzleSolver,
   ValidationResult,
