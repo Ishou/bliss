@@ -49,6 +49,7 @@ paths:
         '302':
           description: Redirect to the IdP authorise endpoint.
           headers:
+            Set-Cookie: { schema: { type: string } }
             Location: { schema: { type: string, format: uri } }
         '400': { $ref: '#/components/responses/ProblemDetails' }
 
@@ -231,6 +232,8 @@ paths:
       responses:
         '200':
           description: Returns the IdP authorise URL for the frontend to navigate the browser to.
+          headers:
+            Set-Cookie: { schema: { type: string } }
           content:
             application/json:
               schema: { $ref: '#/components/schemas/BeginLinkResponse' }
@@ -284,7 +287,7 @@ components:
       required: [userId, displayName]
       properties:
         userId: { type: string, format: uuid }
-        displayName: { type: string }
+        displayName: { type: string, minLength: 1, maxLength: 30 }
 
     BeginLinkResponse:
       type: object
@@ -309,14 +312,4 @@ components:
         application/problem+json:
           schema: { $ref: '#/components/schemas/ProblemDetails' }
 
-# Domain event published when a user is deleted. grid-api and game-api consume this and wipe their user-scoped rows.
-# Documented inline because identity/api currently exposes only OpenAPI; if/when AsyncAPI is added for identity, this moves there.
-x-domain-events:
-  UserDeleted:
-    summary: A user has been hard-deleted; downstream consumers must remove their user-scoped rows.
-    payload:
-      type: object
-      required: [userId, deletedAt]
-      properties:
-        userId: { type: string, format: uuid }
-        deletedAt: { type: string, format: date-time }
+# Domain events: see identity/api/events/

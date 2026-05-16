@@ -1,0 +1,7 @@
+summary: A user has been hard-deleted; downstream consumers must remove their user-scoped rows.
+payload:
+  type: object
+  required: [userId, deletedAt]
+  properties:
+    userId: { type: string, format: uuid }
+    deletedAt: { type: string, format: date-time }
