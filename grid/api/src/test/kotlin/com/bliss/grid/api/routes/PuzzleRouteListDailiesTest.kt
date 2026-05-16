@@ -59,7 +59,6 @@ class PuzzleRouteListDailiesTest {
             assertThat(response.status).isEqualTo(HttpStatusCode.OK)
             assertThat(response.headers["Content-Type"]!!).startsWith("application/json")
             val body: ListDailyPuzzlesResponseDto = json.decodeFromString(response.bodyAsText())
-            // 5 days inclusive: 12, 13, 14, 15, 16. DESC by date.
             assertThat(body.items.map { it.date }).containsExactly(
                 "2026-05-16",
                 "2026-05-15",
@@ -123,7 +122,6 @@ class PuzzleRouteListDailiesTest {
     @Test
     fun `returns hasMore true when range exceeds maxItems`() =
         testApplication {
-            // 7 seeded days; ask the use case to cap at 3.
             application { listDailyPuzzlesModule(seed = LocalDate.parse("2026-05-10")..today, maxItems = 3) }
 
             val response = client.get("/v1/puzzles/daily/list?from=2026-05-10&to=2026-05-16")
@@ -132,7 +130,6 @@ class PuzzleRouteListDailiesTest {
             val body: ListDailyPuzzlesResponseDto = json.decodeFromString(response.bodyAsText())
             assertThat(body.items).hasSize(3)
             assertThat(body.hasMore).isTrue()
-            // Newest three.
             assertThat(body.items.map { it.date }).containsExactly("2026-05-16", "2026-05-15", "2026-05-14")
         }
 
@@ -144,7 +141,6 @@ class PuzzleRouteListDailiesTest {
             val body: ListDailyPuzzlesResponseDto =
                 json.decodeFromString(client.get("/v1/puzzles/daily/list").bodyAsText())
 
-            // Stub puzzle has a single 5-letter word; totalLetterCells == 5.
             assertThat(body.items.all { it.totalLetterCells == 5 }).isTrue()
         }
 

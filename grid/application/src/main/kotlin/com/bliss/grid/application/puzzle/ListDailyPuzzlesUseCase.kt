@@ -21,7 +21,6 @@ class ListDailyPuzzlesUseCase(
                 .coerceAtLeast(launchAnchor)
         if (clampedFrom.isAfter(clampedTo)) return Result(items = emptyList(), hasMore = false)
 
-        // Build the date list newest-first.
         val dates =
             buildList<LocalDate> {
                 var d = clampedTo

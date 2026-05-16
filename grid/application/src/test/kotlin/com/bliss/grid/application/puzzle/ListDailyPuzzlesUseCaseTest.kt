@@ -104,7 +104,6 @@ class ListDailyPuzzlesUseCaseTest {
 
     @Test
     fun `missing rows in the range are omitted from the result`() {
-        // Seed only even-day dailies between 2026-05-02 and today.
         var d = LocalDate.parse("2026-05-01")
         while (!d.isAfter(today)) {
             if (d.dayOfMonth % 2 == 0) seedRows(d..d)
@@ -165,7 +164,6 @@ class ListDailyPuzzlesUseCaseTest {
                 today = today,
             )
 
-        // Newest first: day 3, 2, 1.
         assertThat(result.items.map { it.gridNumber }).containsExactly(3, 2, 1)
         val difficulties = result.items.map { it.difficulty }
         assertThat(difficulties.all { it == null }).isTrue()
