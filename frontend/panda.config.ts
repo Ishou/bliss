@@ -154,8 +154,7 @@ export default defineConfig({
         // reflow when the woff2 swaps in. The remaining system-ui
         // chain stays as a hard fallback if the build-time face is
         // ever absent (e.g., during dev or in a stale-cache PWA).
-        // (Typography pivot to Fraunces + Outfit lands in a follow-up
-        // PR per ADR-0043 §3 + rollout plan.)
+        // (Typography pivot to Fraunces + Outfit per ADR-0043 §3 — not yet implemented.)
         body: { value: '"Nunito Variable", "Nunito Variable fallback", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif' },
         heading: { value: '"Nunito Variable", "Nunito Variable fallback", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif' },
         // Monospace — used ONLY for def-cell clue text (Cell.tsx
