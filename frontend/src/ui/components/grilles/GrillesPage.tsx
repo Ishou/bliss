@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { css } from 'styled-system/css';
 import type {
   DailySummariesPage,
@@ -58,15 +58,14 @@ interface MonthBucket {
   readonly rows: DailySummary[];
 }
 
+const MONTH_FMT = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' });
+
 // Items arrive DESC; preserve order so MonthSection renders newest-first.
 function groupByMonth(items: ReadonlyArray<DailySummary>): MonthBucket[] {
   const buckets = new Map<string, MonthBucket>();
   for (const it of items) {
     const d = new Date(`${it.date}T00:00:00Z`);
-    const monthLabelRaw = new Intl.DateTimeFormat('fr-FR', {
-      month: 'long',
-      year: 'numeric',
-    }).format(d);
+    const monthLabelRaw = MONTH_FMT.format(d);
     const month = monthLabelRaw.charAt(0).toUpperCase() + monthLabelRaw.slice(1);
     const slug = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
     let bucket = buckets.get(slug);
@@ -99,12 +98,13 @@ export function GrillesPage({
   const [hasMore, setHasMore] = useState<boolean>(initialPage.hasMore);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [exhausted, setExhausted] = useState(false);
   const newRowCtaRef = useRef<HTMLAnchorElement | null>(null);
   const justLoadedRef = useRef(false);
 
   const oldest = items.length === 0 ? null : items[items.length - 1].date;
   const canLoadOlder = oldest != null && oldest > launchAnchor;
-  const showLoadMore = hasMore || canLoadOlder;
+  const showLoadMore = (hasMore || canLoadOlder) && !exhausted;
 
   const loadOlder = useCallback(async () => {
     if (oldest == null) return;
@@ -120,6 +120,7 @@ export function GrillesPage({
       });
       setItems((prev) => [...prev, ...page.items]);
       setHasMore(page.hasMore);
+      if (page.items.length === 0) setExhausted(true);
       justLoadedRef.current = page.items.length > 0;
     } catch {
       setError('Impossible de charger le mois précédent. Réessayez.');
@@ -135,7 +136,7 @@ export function GrillesPage({
     }
   });
 
-  const groups = groupByMonth(items);
+  const groups = useMemo(() => groupByMonth(items), [items]);
 
   return (
     <ContentPage>

@@ -172,6 +172,31 @@ describe('Grilles archive route', () => {
     });
   });
 
+  it('hides "Charger mois précédent" when server returns an empty-items range', async () => {
+    // Reproduces the infinite-loop bug: oldest > launchAnchor so canLoadOlder
+    // stays true, but the server acknowledges the gap is empty. The exhausted
+    // sentinel must flip the button off after the first empty response.
+    const initial: DailySummary = {
+      id: '00000000-0000-7000-8000-000000000010',
+      date: '2026-01-15',
+      gridNumber: 15,
+      difficulty: null,
+      totalLetterCells: 3,
+    };
+    const listDailySummaries = vi
+      .fn()
+      .mockResolvedValueOnce({ items: [initial], hasMore: false } satisfies DailySummariesPage)
+      .mockResolvedValueOnce({ items: [], hasMore: false } satisfies DailySummariesPage);
+    renderGrilles({ listDailySummaries });
+    const button = await screen.findByRole('button', { name: /charger mois précédent/i });
+    await act(async () => { button.click(); });
+    // After the empty response, the button must disappear (no infinite loop).
+    await vi.waitFor(() => {
+      expect(screen.queryByRole('button', { name: /charger mois précédent/i })).toBeNull();
+    });
+    expect(listDailySummaries).toHaveBeenCalledTimes(2);
+  });
+
   it('hides "Charger mois précédent" when hasMore=false AND oldest is at launch anchor', async () => {
     const anchor: DailySummary = {
       id: '00000000-0000-7000-8000-000000000001',
