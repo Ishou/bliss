@@ -34,6 +34,14 @@ export const INDEXABLE_ROUTES: ReadonlyArray<IndexableRoute> = [
     ogImagePath: '/og-grille.png',
   },
   {
+    path: '/grilles',
+    title: 'Anciennes grilles — WordSparrow',
+    description:
+      'Toutes les grilles passées de WordSparrow, avec votre progression.',
+    // Reuses the Accueil OG image until a dedicated archive asset ships.
+    ogImagePath: '/og-accueil.png',
+  },
+  {
     path: '/aide',
     title: 'Aide — WordSparrow',
     description:

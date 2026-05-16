@@ -687,19 +687,32 @@ export function makeHintRevealHandler(
   };
 }
 
-// `?tour=1` re-opens the onboarding tour from the Aide page. Any other
-// value (or absence) parses to `undefined`, which the home page reads
-// as "not forced open".
+// `?tour=1` re-opens the onboarding tour from the Aide page. `?date=`
+// replays a past daily via the archive (`/grilles`) — the loader forwards
+// it to `fetchDaily(date)`, which the server resolves the same way the
+// archive index keys its rows. Any other / malformed value parses to
+// `undefined`, which the loader treats as "today".
 export interface IndexSearch {
   readonly tour?: 1;
+  readonly date?: string;
 }
+
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 export const Route = createRoute({
   getParentRoute: () => RootRoute,
   path: '/grille',
-  validateSearch: (search: Record<string, unknown>): IndexSearch =>
-    search.tour === 1 || search.tour === '1' ? { tour: 1 } : {},
-  loader: ({ context }): Promise<Puzzle | null> => context.puzzleRepository.fetchDaily(),
+  validateSearch: (search: Record<string, unknown>): IndexSearch => {
+    const out: { tour?: 1; date?: string } = {};
+    if (search.tour === 1 || search.tour === '1') out.tour = 1;
+    if (typeof search.date === 'string' && ISO_DATE.test(search.date)) {
+      out.date = search.date;
+    }
+    return out;
+  },
+  loaderDeps: ({ search }) => ({ date: search.date }),
+  loader: ({ context, deps }): Promise<Puzzle | null> =>
+    context.puzzleRepository.fetchDaily(deps.date),
   component: HomePage,
   // pendingMs: TanStack Router defaults to Infinity (pendingComponent
   // never renders). 200 ms is the sweet spot — fast navs (<200 ms)
