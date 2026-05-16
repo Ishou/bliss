@@ -33,7 +33,7 @@ the same user.
 | `user_providers.email_at_link` | **Optional** — populated only on explicit player opt-in at a one-shot post-sign-in consent screen ("Let WordSparrow keep your email for account recovery?"). Defaults NULL. | Player choice; never required. The email is entered by the player at the consent screen — not fetched from the IdP; no `email` OAuth scope is requested. |
 | Real name from IdP | Never | Not requested. |
 | Profile picture | Never | Not requested. |
-| Client IP | Never logged in `identity-api`. The OTel collector layer masks the last 2 octets (IPv4) / last 80 bits (IPv6) before anything reaches SigNoz, in the same spirit as Matomo's IPv4 masking (ADR-0025); the exact OTel collector rule lands with the Phase 4 collector-config patch. | Operator does not need raw client IPs; ingress-nginx rate-limits already cover abuse (ADR-0028 §4). |
+| Client IP | Never logged in application code (`identity-api`). Collector-layer IP masking (last 2 octets IPv4 / last 80 bits IPv6, mirroring ADR-0025) is pending the Phase 4 OTel collector-config patch. Until that patch lands, raw IPs traverse the collector→SigNoz path; **`identity-api` must not go to production before Phase 4 is deployed.** | Operator does not need raw client IPs; ingress-nginx rate-limits already cover abuse (ADR-0028 §4, superseded by ADR-0030; rate-limiting behaviour unchanged). |
 
 ### Cookie
 
