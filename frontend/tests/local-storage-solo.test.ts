@@ -1,13 +1,11 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import {
-  clearAllSoloEntriesForSession,
-  clearSoloEntriesForPuzzle,
-  loadSoloEntries,
-  loadSoloHintsUsed,
-  recordSoloHintUsed,
-  saveSoloLetter,
-  __resetLegacyMigrationFlagForTests,
-} from '@/infrastructure/session/localStorageSolo';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+type SoloModule = typeof import('@/infrastructure/session/localStorageSolo');
+
+async function loadFresh(): Promise<SoloModule> {
+  vi.resetModules();
+  return await import('@/infrastructure/session/localStorageSolo');
+}
 
 const SESSION = '01234567-89ab-7000-8000-000000000000';
 const KEY = `bliss.solo.entries.${SESSION}`;
@@ -17,7 +15,6 @@ const PUZZLE_B = '0190e3a4-7a2c-7c9e-8f1a-aaaaaaaaaaaa';
 describe('localStorageSolo', () => {
   beforeEach(() => {
     window.localStorage.clear();
-    __resetLegacyMigrationFlagForTests();
   });
 
   afterEach(() => {
@@ -25,11 +22,13 @@ describe('localStorageSolo', () => {
   });
 
   describe('loadSoloEntries', () => {
-    it('returns an empty array when nothing has been stored', () => {
+    it('returns an empty array when nothing has been stored', async () => {
+      const { loadSoloEntries } = await loadFresh();
       expect(loadSoloEntries(SESSION, PUZZLE_A)).toEqual([]);
     });
 
-    it('returns previously saved entries for the puzzle', () => {
+    it('returns previously saved entries for the puzzle', async () => {
+      const { saveSoloLetter, loadSoloEntries } = await loadFresh();
       saveSoloLetter(SESSION, PUZZLE_A, 0, 0, 'A');
       saveSoloLetter(SESSION, PUZZLE_A, 1, 2, 'B');
 
@@ -41,7 +40,8 @@ describe('localStorageSolo', () => {
       ]);
     });
 
-    it('isolates entries between puzzles', () => {
+    it('isolates entries between puzzles', async () => {
+      const { saveSoloLetter, loadSoloEntries } = await loadFresh();
       saveSoloLetter(SESSION, PUZZLE_A, 0, 0, 'A');
       saveSoloLetter(SESSION, PUZZLE_B, 1, 1, 'Z');
 
@@ -53,12 +53,14 @@ describe('localStorageSolo', () => {
       ]);
     });
 
-    it('returns an empty array on a malformed store', () => {
+    it('returns an empty array on a malformed store', async () => {
+      const { loadSoloEntries } = await loadFresh();
       window.localStorage.setItem(KEY, '{not json');
       expect(loadSoloEntries(SESSION, PUZZLE_A)).toEqual([]);
     });
 
-    it('skips entries that fail the shape check', () => {
+    it('skips entries that fail the shape check', async () => {
+      const { loadSoloEntries } = await loadFresh();
       window.localStorage.setItem(
         KEY,
         JSON.stringify({
@@ -78,7 +80,8 @@ describe('localStorageSolo', () => {
   });
 
   describe('saveSoloLetter', () => {
-    it('upserts existing positions instead of duplicating them', () => {
+    it('upserts existing positions instead of duplicating them', async () => {
+      const { saveSoloLetter, loadSoloEntries } = await loadFresh();
       saveSoloLetter(SESSION, PUZZLE_A, 0, 0, 'A');
       saveSoloLetter(SESSION, PUZZLE_A, 0, 0, 'B');
 
@@ -87,21 +90,24 @@ describe('localStorageSolo', () => {
       ]);
     });
 
-    it('removes the entry when letter is null', () => {
+    it('removes the entry when letter is null', async () => {
+      const { saveSoloLetter, loadSoloEntries } = await loadFresh();
       saveSoloLetter(SESSION, PUZZLE_A, 0, 0, 'A');
       saveSoloLetter(SESSION, PUZZLE_A, 0, 0, null);
 
       expect(loadSoloEntries(SESSION, PUZZLE_A)).toEqual([]);
     });
 
-    it('removes the entry when letter is the empty string', () => {
+    it('removes the entry when letter is the empty string', async () => {
+      const { saveSoloLetter, loadSoloEntries } = await loadFresh();
       saveSoloLetter(SESSION, PUZZLE_A, 0, 0, 'A');
       saveSoloLetter(SESSION, PUZZLE_A, 0, 0, '');
 
       expect(loadSoloEntries(SESSION, PUZZLE_A)).toEqual([]);
     });
 
-    it('drops the puzzle key entirely once its last entry is removed', () => {
+    it('drops the puzzle key entirely once its last entry is removed', async () => {
+      const { saveSoloLetter } = await loadFresh();
       saveSoloLetter(SESSION, PUZZLE_A, 0, 0, 'A');
       saveSoloLetter(SESSION, PUZZLE_A, 0, 0, null);
 
@@ -113,7 +119,8 @@ describe('localStorageSolo', () => {
   });
 
   describe('clearSoloEntriesForPuzzle', () => {
-    it('drops only the targeted puzzle', () => {
+    it('drops only the targeted puzzle', async () => {
+      const { saveSoloLetter, loadSoloEntries, clearSoloEntriesForPuzzle } = await loadFresh();
       saveSoloLetter(SESSION, PUZZLE_A, 0, 0, 'A');
       saveSoloLetter(SESSION, PUZZLE_B, 1, 1, 'Z');
 
@@ -125,49 +132,42 @@ describe('localStorageSolo', () => {
       ]);
     });
 
-    it('is a no-op when the puzzle has no entries', () => {
+    it('is a no-op when the puzzle has no entries', async () => {
+      const { loadSoloEntries, clearSoloEntriesForPuzzle } = await loadFresh();
       expect(() => clearSoloEntriesForPuzzle(SESSION, PUZZLE_A)).not.toThrow();
       expect(loadSoloEntries(SESSION, PUZZLE_A)).toEqual([]);
     });
   });
 
-  describe('clearAllSoloEntriesForSession', () => {
-    it('drops every entry across every puzzle for the session', () => {
-      saveSoloLetter(SESSION, PUZZLE_A, 0, 0, 'A');
-      saveSoloLetter(SESSION, PUZZLE_B, 1, 1, 'Z');
-
-      clearAllSoloEntriesForSession(SESSION);
-
-      expect(loadSoloEntries(SESSION, PUZZLE_A)).toEqual([]);
-      expect(loadSoloEntries(SESSION, PUZZLE_B)).toEqual([]);
-      expect(window.localStorage.getItem(KEY)).toBeNull();
-    });
-  });
-
   describe('hintsUsed persistence', () => {
-    it('returns 0 when nothing has been recorded', () => {
+    it('returns 0 when nothing has been recorded', async () => {
+      const { loadSoloHintsUsed } = await loadFresh();
       expect(loadSoloHintsUsed(SESSION, PUZZLE_A)).toBe(0);
     });
 
-    it('increments and survives a fresh read (page reload analog)', () => {
+    it('increments and survives a fresh read (page reload analog)', async () => {
+      const { recordSoloHintUsed, loadSoloHintsUsed } = await loadFresh();
       recordSoloHintUsed(SESSION, PUZZLE_A);
       recordSoloHintUsed(SESSION, PUZZLE_A);
       expect(loadSoloHintsUsed(SESSION, PUZZLE_A)).toBe(2);
     });
 
-    it('preserves entries and lockedCells when incremented', () => {
+    it('preserves entries and lockedCells when incremented', async () => {
+      const { saveSoloLetter, recordSoloHintUsed, loadSoloEntries, loadSoloHintsUsed } = await loadFresh();
       saveSoloLetter(SESSION, PUZZLE_A, 0, 0, 'A');
       recordSoloHintUsed(SESSION, PUZZLE_A);
       expect(loadSoloEntries(SESSION, PUZZLE_A)).toEqual([{ row: 0, column: 0, letter: 'A' }]);
       expect(loadSoloHintsUsed(SESSION, PUZZLE_A)).toBe(1);
     });
 
-    it('isolates hintsUsed between puzzles', () => {
+    it('isolates hintsUsed between puzzles', async () => {
+      const { recordSoloHintUsed, loadSoloHintsUsed } = await loadFresh();
       recordSoloHintUsed(SESSION, PUZZLE_A);
       expect(loadSoloHintsUsed(SESSION, PUZZLE_B)).toBe(0);
     });
 
-    it('clearForPuzzle resets the hintsUsed counter', () => {
+    it('clearForPuzzle resets the hintsUsed counter', async () => {
+      const { recordSoloHintUsed, clearSoloEntriesForPuzzle, loadSoloHintsUsed } = await loadFresh();
       recordSoloHintUsed(SESSION, PUZZLE_A);
       clearSoloEntriesForPuzzle(SESSION, PUZZLE_A);
       expect(loadSoloHintsUsed(SESSION, PUZZLE_A)).toBe(0);

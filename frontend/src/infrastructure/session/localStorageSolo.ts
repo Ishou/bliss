@@ -200,14 +200,6 @@ export function clearSoloEntriesForPuzzle(
   writeStore(sessionId, store);
 }
 
-export function clearAllSoloEntriesForSession(sessionId: string): void {
-  try {
-    globalThis.localStorage?.removeItem(keyFor(sessionId));
-  } catch {
-    // No-op.
-  }
-}
-
 /** Defensive sweep used by RGPD Art. 17 erase — removes every scoped + legacy key. */
 export function clearAllSoloEntriesForEverySession(): void {
   try {
@@ -223,8 +215,4 @@ export function clearAllSoloEntriesForEverySession(): void {
   } catch {
     // No-op.
   }
-}
-
-export function __resetLegacyMigrationFlagForTests(): void {
-  legacyMigrationAttempted = false;
 }
