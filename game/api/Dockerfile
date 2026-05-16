@@ -31,6 +31,12 @@ COPY game/application/build.gradle.kts game/application/
 COPY game/infrastructure/build.gradle.kts game/infrastructure/
 COPY game/api/build.gradle.kts game/api/
 
+# Same gotcha for :identity:* modules introduced in ADR-0044.
+COPY identity/domain/build.gradle.kts identity/domain/
+COPY identity/application/build.gradle.kts identity/application/
+COPY identity/infrastructure/build.gradle.kts identity/infrastructure/
+COPY identity/api/build.gradle.kts identity/api/
+
 # Source for the game/ context only — shadowJar transitively pulls
 # :game:domain, :game:application, :game:infrastructure.
 COPY game/domain/src game/domain/src
