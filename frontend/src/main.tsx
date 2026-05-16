@@ -29,7 +29,7 @@ import {
   setPseudonym,
 } from '@/infrastructure/session/localStorageSession';
 import {
-  clearAllSoloEntries,
+  clearAllSoloEntriesForEverySession,
   clearSoloEntriesForPuzzle,
   loadSoloEntries,
   loadSoloHintsUsed,
@@ -43,7 +43,11 @@ import {
   getTourSeen,
   setTourSeen,
 } from '@/infrastructure/session/localStorageTour';
-import type { SoloEntriesStore } from '@/application/solo/SoloEntriesStore';
+import {
+  createSoloEntriesStore,
+  type SoloEntriesStorage,
+  type SoloEntriesStore,
+} from '@/application/solo/SoloEntriesStore';
 import type { TourSeenStore } from '@/application/tour/TourSeenStore';
 import type { SessionClient } from '@/application/session/SessionClient';
 import { registerServiceWorker } from '@/infrastructure/pwa';
@@ -173,22 +177,32 @@ enableMocks()
       }),
       getSessionId: getOrCreateSessionId,
       clearLocalSession: () => {
+        // Sweep every scoped + legacy solo-entries key before clearing
+        // the session id; otherwise the RGPD Art. 17 erase would leave
+        // per-grid progress data on disk under the soon-to-be-orphaned
+        // session key. Tour flag and session id clear after the sweep.
+        clearAllSoloEntriesForEverySession();
         clearSession();
-        clearAllSoloEntries();
         clearTourSeen();
       },
     };
 
-    // Adapts localStorage helpers to the SoloEntriesStore port; ui/ must not import infrastructure/ directly.
-    const soloEntriesStore: SoloEntriesStore = {
-      load: loadSoloEntries,
-      save: saveSoloLetter,
-      loadLockedCells: loadSoloLockedCells,
+    // Adapts localStorage helpers to the SoloEntriesStorage port; the
+    // store factory binds the current session id at every call so
+    // session rotation (RGPD erase → reseed) is transparent to ui/.
+    const soloEntriesStorage: SoloEntriesStorage = {
+      loadEntries: loadSoloEntries,
+      saveLetter: saveSoloLetter,
+      loadLocked: loadSoloLockedCells,
       lockCell: saveSoloLockedCell,
       loadHintsUsed: loadSoloHintsUsed,
       recordHintUsed: recordSoloHintUsed,
       clearForPuzzle: clearSoloEntriesForPuzzle,
     };
+    const soloEntriesStore: SoloEntriesStore = createSoloEntriesStore({
+      getSessionId: getOrCreateSessionId,
+      storage: soloEntriesStorage,
+    });
 
     // Onboarding-tour completion flag. Same indirection rationale as
     // SoloEntriesStore — keep the localStorage seam outside ui/.

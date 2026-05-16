@@ -24,3 +24,51 @@ export interface SoloEntriesStore {
   recordHintUsed(puzzleId: string): void;
   clearForPuzzle(puzzleId: string): void;
 }
+
+export interface SoloEntriesStoreDeps {
+  readonly getSessionId: () => string;
+  readonly storage: SoloEntriesStorage;
+}
+
+/**
+ * Lower-level surface the store delegates to. The infrastructure
+ * adapter wires this with the real localStorage-backed functions; tests
+ * can pass an in-memory implementation.
+ */
+export interface SoloEntriesStorage {
+  loadEntries(sessionId: string, puzzleId: string): ReadonlyArray<SoloEntry>;
+  saveLetter(
+    sessionId: string,
+    puzzleId: string,
+    row: number,
+    column: number,
+    letter: string | null,
+  ): void;
+  loadLocked(sessionId: string, puzzleId: string): ReadonlyArray<SoloLockedCell>;
+  lockCell(sessionId: string, puzzleId: string, row: number, column: number): void;
+  loadHintsUsed(sessionId: string, puzzleId: string): number;
+  recordHintUsed(sessionId: string, puzzleId: string): void;
+  clearForPuzzle(sessionId: string, puzzleId: string): void;
+}
+
+/**
+ * Builds a session-bound store. The resolver is called on every
+ * operation so a session rotation (RGPD erase → reseed) is transparent
+ * to consumers. The application layer never imports infrastructure
+ * directly — the storage adapter is injected by the composition root,
+ * which keeps the `eslint-plugin-boundaries` invariants intact.
+ */
+export function createSoloEntriesStore(deps: SoloEntriesStoreDeps): SoloEntriesStore {
+  const { getSessionId, storage } = deps;
+  return {
+    load: (puzzleId) => storage.loadEntries(getSessionId(), puzzleId),
+    save: (puzzleId, row, column, letter) =>
+      storage.saveLetter(getSessionId(), puzzleId, row, column, letter),
+    loadLockedCells: (puzzleId) => storage.loadLocked(getSessionId(), puzzleId),
+    lockCell: (puzzleId, row, column) =>
+      storage.lockCell(getSessionId(), puzzleId, row, column),
+    loadHintsUsed: (puzzleId) => storage.loadHintsUsed(getSessionId(), puzzleId),
+    recordHintUsed: (puzzleId) => storage.recordHintUsed(getSessionId(), puzzleId),
+    clearForPuzzle: (puzzleId) => storage.clearForPuzzle(getSessionId(), puzzleId),
+  };
+}

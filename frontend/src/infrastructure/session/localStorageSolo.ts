@@ -1,8 +1,14 @@
 // storage failures are non-fatal — every helper degrades to a no-op rather than throw.
+//
+// Solo-entries storage is scoped by session id (groundwork for the
+// server-side-progress workstream queued after this PR). A one-shot
+// migration on first read moves the legacy unscoped `bliss.solo.entries`
+// blob into the current session's key and deletes the legacy key.
 
 import type { SoloEntry, SoloLockedCell } from '@/application/solo/SoloEntriesStore';
 
-const SOLO_ENTRIES_KEY = 'bliss.solo.entries';
+const KEY_PREFIX = 'bliss.solo.entries.';
+const LEGACY_KEY = 'bliss.solo.entries';
 
 interface StoredEntry {
   r: number;
@@ -26,9 +32,31 @@ interface StoredPuzzle {
 type StoredPuzzleBucket = StoredEntry[] | StoredPuzzle;
 type SoloStore = Record<string, StoredPuzzleBucket>;
 
-function readStore(): SoloStore {
+const keyFor = (sessionId: string): string => `${KEY_PREFIX}${sessionId}`;
+
+let legacyMigrationAttempted = false;
+
+function migrateLegacyOnce(sessionId: string): void {
+  if (legacyMigrationAttempted) return;
+  legacyMigrationAttempted = true;
   try {
-    const raw = globalThis.localStorage?.getItem(SOLO_ENTRIES_KEY);
+    const legacy = globalThis.localStorage?.getItem(LEGACY_KEY);
+    if (legacy == null) return;
+    const targetKey = keyFor(sessionId);
+    const existing = globalThis.localStorage?.getItem(targetKey);
+    if (existing == null) {
+      globalThis.localStorage?.setItem(targetKey, legacy);
+    }
+    globalThis.localStorage?.removeItem(LEGACY_KEY);
+  } catch {
+    // best-effort migration
+  }
+}
+
+function readStore(sessionId: string): SoloStore {
+  migrateLegacyOnce(sessionId);
+  try {
+    const raw = globalThis.localStorage?.getItem(keyFor(sessionId));
     if (!raw) return {};
     const parsed = JSON.parse(raw) as unknown;
     if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
@@ -40,12 +68,9 @@ function readStore(): SoloStore {
   return {};
 }
 
-function writeStore(store: SoloStore): void {
+function writeStore(sessionId: string, store: SoloStore): void {
   try {
-    globalThis.localStorage?.setItem(
-      SOLO_ENTRIES_KEY,
-      JSON.stringify(store),
-    );
+    globalThis.localStorage?.setItem(keyFor(sessionId), JSON.stringify(store));
   } catch {
     // Private mode / quota exhausted / sandboxed: drop silently.
   }
@@ -79,8 +104,8 @@ function persistBucket(
 }
 
 /** Load the persisted entries for a puzzle, or `[]` if none. */
-export function loadSoloEntries(puzzleId: string): SoloEntry[] {
-  const store = readStore();
+export function loadSoloEntries(sessionId: string, puzzleId: string): SoloEntry[] {
+  const store = readStore(sessionId);
   const bucket = readBucket(store, puzzleId);
   return bucket.entries
     .filter((e): e is StoredEntry =>
@@ -94,12 +119,13 @@ export function loadSoloEntries(puzzleId: string): SoloEntry[] {
 
 // null or '' for letter removes the entry.
 export function saveSoloLetter(
+  sessionId: string,
   puzzleId: string,
   row: number,
   column: number,
   letter: string | null,
 ): void {
-  const store = readStore();
+  const store = readStore(sessionId);
   const bucket = readBucket(store, puzzleId);
   const next = bucket.entries.filter((e) => !(e.r === row && e.c === column));
   if (letter && letter.length > 0) {
@@ -110,12 +136,15 @@ export function saveSoloLetter(
     lockedCells: bucket.lockedCells,
     hintsUsed: bucket.hintsUsed,
   });
-  writeStore(store);
+  writeStore(sessionId, store);
 }
 
 /** Load the locked-cell coordinates for a puzzle, or `[]` if none. */
-export function loadSoloLockedCells(puzzleId: string): SoloLockedCell[] {
-  const store = readStore();
+export function loadSoloLockedCells(
+  sessionId: string,
+  puzzleId: string,
+): SoloLockedCell[] {
+  const store = readStore(sessionId);
   const bucket = readBucket(store, puzzleId);
   return (bucket.lockedCells ?? [])
     .filter(
@@ -125,11 +154,12 @@ export function loadSoloLockedCells(puzzleId: string): SoloLockedCell[] {
 }
 
 export function saveSoloLockedCell(
+  sessionId: string,
   puzzleId: string,
   row: number,
   column: number,
 ): void {
-  const store = readStore();
+  const store = readStore(sessionId);
   const bucket = readBucket(store, puzzleId);
   const existing = bucket.lockedCells ?? [];
   if (existing.some((e) => e.r === row && e.c === column)) return;
@@ -138,39 +168,63 @@ export function saveSoloLockedCell(
     lockedCells: [...existing, { r: row, c: column }],
     hintsUsed: bucket.hintsUsed,
   });
-  writeStore(store);
+  writeStore(sessionId, store);
 }
 
-export function loadSoloHintsUsed(puzzleId: string): number {
-  const store = readStore();
+export function loadSoloHintsUsed(sessionId: string, puzzleId: string): number {
+  const store = readStore(sessionId);
   const bucket = readBucket(store, puzzleId);
   return typeof bucket.hintsUsed === 'number' && bucket.hintsUsed >= 0
     ? bucket.hintsUsed
     : 0;
 }
 
-export function recordSoloHintUsed(puzzleId: string): void {
-  const store = readStore();
+export function recordSoloHintUsed(sessionId: string, puzzleId: string): void {
+  const store = readStore(sessionId);
   const bucket = readBucket(store, puzzleId);
   persistBucket(store, puzzleId, {
     entries: bucket.entries,
     lockedCells: bucket.lockedCells,
     hintsUsed: (bucket.hintsUsed ?? 0) + 1,
   });
-  writeStore(store);
+  writeStore(sessionId, store);
 }
 
-export function clearSoloEntriesForPuzzle(puzzleId: string): void {
-  const store = readStore();
+export function clearSoloEntriesForPuzzle(
+  sessionId: string,
+  puzzleId: string,
+): void {
+  const store = readStore(sessionId);
   if (!(puzzleId in store)) return;
   delete store[puzzleId];
-  writeStore(store);
+  writeStore(sessionId, store);
 }
 
-export function clearAllSoloEntries(): void {
+export function clearAllSoloEntriesForSession(sessionId: string): void {
   try {
-    globalThis.localStorage?.removeItem(SOLO_ENTRIES_KEY);
+    globalThis.localStorage?.removeItem(keyFor(sessionId));
   } catch {
     // No-op.
   }
+}
+
+/** Defensive sweep used by RGPD Art. 17 erase — removes every scoped + legacy key. */
+export function clearAllSoloEntriesForEverySession(): void {
+  try {
+    const ls = globalThis.localStorage;
+    if (ls == null) return;
+    const toDelete: string[] = [];
+    for (let i = 0; i < ls.length; i += 1) {
+      const key = ls.key(i);
+      if (key != null && key.startsWith(KEY_PREFIX)) toDelete.push(key);
+    }
+    toDelete.forEach((k) => ls.removeItem(k));
+    ls.removeItem(LEGACY_KEY);
+  } catch {
+    // No-op.
+  }
+}
+
+export function __resetLegacyMigrationFlagForTests(): void {
+  legacyMigrationAttempted = false;
 }
