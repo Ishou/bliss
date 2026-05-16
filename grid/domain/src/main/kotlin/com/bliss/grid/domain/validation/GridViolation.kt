@@ -62,4 +62,20 @@ sealed interface GridViolation {
         val start: Position,
         val axis: WordAxis,
     ) : GridViolation
+
+    /**
+     * A closed clamp: two parallel length-2 slots wedged between aligned
+     * black pairs (spec §4.1 C7). The trapped letter cells participate
+     * in only one direction's slot while the clue text crowds them on
+     * the other side; real printed mots fléchés never use these
+     * micro-clamps.
+     *
+     * `axis` is the clamp's long axis:
+     * - `VERTICAL` → 3-row × 2-col region (`BB / .. / BB`).
+     * - `HORIZONTAL` → 2-row × 3-col region (`B.B / B.B`).
+     */
+    data class ClosedClamp(
+        val topLeft: Position,
+        val axis: WordAxis,
+    ) : GridViolation
 }

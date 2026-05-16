@@ -52,9 +52,69 @@ class GridValidator {
         }
 
         violations += blackTriples(grid)
+        violations += closedClamps(grid)
 
         return violations.distinct()
     }
+
+    /**
+     * Detect every closed clamp on the grid. A clamp traps a length-2
+     * slot between aligned black pairs; printed mots fléchés never use
+     * the pattern (spec §4.1 C7). Reports each clamp once, keyed by its
+     * top-left corner.
+     */
+    private fun closedClamps(grid: Grid): List<GridViolation.ClosedClamp> {
+        val violations = mutableListOf<GridViolation.ClosedClamp>()
+        // Vertical clamp: 3 rows x 2 cols, BB / .. / BB.
+        for (r in 0 until grid.height - 2) {
+            for (c in 0 until grid.width - 1) {
+                if (isClue(grid, r, c) &&
+                    isClue(grid, r, c + 1) &&
+                    isLetter(grid, r + 1, c) &&
+                    isLetter(grid, r + 1, c + 1) &&
+                    isClue(grid, r + 2, c) &&
+                    isClue(grid, r + 2, c + 1)
+                ) {
+                    violations +=
+                        GridViolation.ClosedClamp(
+                            topLeft = Position(Row(r), Column(c)),
+                            axis = WordAxis.VERTICAL,
+                        )
+                }
+            }
+        }
+        // Horizontal clamp: 2 rows x 3 cols, B.B / B.B.
+        for (r in 0 until grid.height - 1) {
+            for (c in 0 until grid.width - 2) {
+                if (isClue(grid, r, c) &&
+                    isLetter(grid, r, c + 1) &&
+                    isClue(grid, r, c + 2) &&
+                    isClue(grid, r + 1, c) &&
+                    isLetter(grid, r + 1, c + 1) &&
+                    isClue(grid, r + 1, c + 2)
+                ) {
+                    violations +=
+                        GridViolation.ClosedClamp(
+                            topLeft = Position(Row(r), Column(c)),
+                            axis = WordAxis.HORIZONTAL,
+                        )
+                }
+            }
+        }
+        return violations
+    }
+
+    private fun isClue(
+        grid: Grid,
+        r: Int,
+        c: Int,
+    ): Boolean = grid.cells[Position(Row(r), Column(c))] is ClueCell
+
+    private fun isLetter(
+        grid: Grid,
+        r: Int,
+        c: Int,
+    ): Boolean = grid.cells[Position(Row(r), Column(c))] is LetterCell
 
     /**
      * Find every horizontal or vertical run of 3+ consecutive [ClueCell]s.
