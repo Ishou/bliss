@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted
+Accepted. Superseded in part by ADR-0043 (§4 palette and §5 typography; §3a definition-cell rules and §6–7 remain active).
 
 ## Context
 
