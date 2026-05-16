@@ -155,12 +155,11 @@ test.describe('nature/forest theme palette (ADR-0043)', () => {
   test('wordmark `Sparrow` half resolves to mousse `accent`', async ({ page }) => {
     await bootstrap(page);
 
-    // ADR-0043 §4: the wordmark stays bicolor — `Word` in primary fg
-    // (forêt profonde), `Sparrow` in mousse. The accent span carries
-    // `data-testid="wordmark-sage"` (testid name kept for stability;
-    // the colour role is now mousse not sage). We only assert that
-    // half here — the `Word` half inherits its colour from the parent
-    // span's `fg` and is exercised by the surface-text contrast tests
+    // The wordmark is bicolor — `Word` in primary fg, `Sparrow` in accent.
+    // `data-testid="wordmark-sage"` carries the charbon-era colour name and
+    // must not be renamed — the actual colour follows the current palette,
+    // the testid does not. We assert only the accent half here; the `Word`
+    // half inherits `fg` and is exercised by the surface-text contrast tests
     // below.
     const sparrowColor = await computedColor(
       page,
