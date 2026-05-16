@@ -417,6 +417,28 @@ class BlackCellLayoutTest {
     }
 
     @Test
+    fun `canPlaceBlack rejects placement that closes a vertical clamp`() {
+        // minLen=1 lets Check 1 pass (run-of-1 letter cells are fine) so
+        // Check 5 (formsClamp) is the deciding factor, not Check 1.
+        val cells = CellArray(4, 4)
+        cells.set(0, 0, CellArray.BLACK)
+        cells.set(0, 1, CellArray.BLACK)
+        cells.set(2, 0, CellArray.BLACK)
+        assertThat(BlackCellLayout.canPlaceBlack(cells, 2, 1, minLen = 1)).isFalse()
+    }
+
+    @Test
+    fun `canPlaceBlack rejects placement that closes a horizontal clamp`() {
+        // minLen=1 lets Check 1 pass (run-of-1 letter cells are fine) so
+        // Check 5 (formsClamp) is the deciding factor, not Check 1.
+        val cells = CellArray(4, 3)
+        cells.set(0, 0, CellArray.BLACK)
+        cells.set(0, 2, CellArray.BLACK)
+        cells.set(1, 0, CellArray.BLACK)
+        assertThat(BlackCellLayout.canPlaceBlack(cells, 1, 2, minLen = 1)).isFalse()
+    }
+
+    @Test
     fun `seed never produces closed clamps`() {
         // Sweep a few seeds; spec §4.1 C7 must hold for every seed.
         for (seed in 0..9) {

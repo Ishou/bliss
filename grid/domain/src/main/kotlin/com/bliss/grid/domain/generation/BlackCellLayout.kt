@@ -298,9 +298,12 @@ internal object BlackCellLayout {
         c0: Int,
     ): Boolean {
         if (r0 < 0 || c0 < 0 || r0 + 2 >= cells.height || c0 + 1 >= cells.width) return false
-        return cells.isBlack(r0, c0) && cells.isBlack(r0, c0 + 1) &&
-            !cells.isBlack(r0 + 1, c0) && !cells.isBlack(r0 + 1, c0 + 1) &&
-            cells.isBlack(r0 + 2, c0) && cells.isBlack(r0 + 2, c0 + 1)
+        return cells.isBlack(r0, c0) &&
+            cells.isBlack(r0, c0 + 1) &&
+            !cells.isBlack(r0 + 1, c0) &&
+            !cells.isBlack(r0 + 1, c0 + 1) &&
+            cells.isBlack(r0 + 2, c0) &&
+            cells.isBlack(r0 + 2, c0 + 1)
     }
 
     /**
@@ -316,8 +319,12 @@ internal object BlackCellLayout {
         c0: Int,
     ): Boolean {
         if (r0 < 0 || c0 < 0 || r0 + 1 >= cells.height || c0 + 2 >= cells.width) return false
-        return cells.isBlack(r0, c0) && !cells.isBlack(r0, c0 + 1) && cells.isBlack(r0, c0 + 2) &&
-            cells.isBlack(r0 + 1, c0) && !cells.isBlack(r0 + 1, c0 + 1) && cells.isBlack(r0 + 1, c0 + 2)
+        return cells.isBlack(r0, c0) &&
+            !cells.isBlack(r0, c0 + 1) &&
+            cells.isBlack(r0, c0 + 2) &&
+            cells.isBlack(r0 + 1, c0) &&
+            !cells.isBlack(r0 + 1, c0 + 1) &&
+            cells.isBlack(r0 + 1, c0 + 2)
     }
 
     /**
