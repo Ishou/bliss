@@ -8,7 +8,7 @@
 // alone — no route-aware guard needed.
 //
 // All variants use currentColor so Panda's `accent` semantic token (mousse,
-// `#3f6431`) controls hue. Opacity defaults to 0.5 because dark moss at
+// `#3f6431`) controls hue. Opacity defaults to 0.4 because dark moss at
 // full strength is LOUD on the cream background and these illustrations
 // are meant to sit quietly in the periphery.
 
@@ -25,16 +25,16 @@ export type HerbierVariant = 'lance' | 'oval' | 'twig' | 'single' | 'cluster';
 
 export interface HerbierCornerProps {
   readonly corner: HerbierCornerPosition;
-  /** Which botanical variant. Defaults rotate by corner so callers don't have to pick. */
+  /** Which botanical variant. Omit to use the default `cluster` motif for every corner. */
   readonly variant?: HerbierVariant;
-  /** Visual weight knob. 0.5 keeps the drawing quiet against cream. */
+  /** Visual weight knob. 0.4 keeps the drawing quiet against cream. */
   readonly opacity?: number;
 }
 
 const baseStyles = css({
   position: 'absolute',
   // Small enough to sit in the periphery without competing with content.
-  // The earlier 80px size dragged the eye to the corners; ~48 px on
+  // The earlier 80px size dragged the eye to the corners; ~52 px on
   // desktop reads as a margin doodle, not a feature.
   width: { base: '36px', md: '52px' },
   height: { base: '36px', md: '52px' },
