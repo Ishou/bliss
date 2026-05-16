@@ -300,8 +300,8 @@ const defText = css({
   // `fontFamily: 'mono'` (Lekton) is the load-bearing piece of the
   // gate-decoupling refactor: Lekton's constant glyph advance lets
   // `scripts/eval/clue_metrics.py` be a deterministic predicate on
-  // `len(clue)` rather than mirroring the browser's PIL/Nunito layout.
-  // See ADR-0005 §5 amendment. Bold (700) is the only Lekton weight
+  // `len(clue)` rather than mirroring the browser's PIL layout. See
+  // ADR-0005 §5 amendment. Bold (700) is the only Lekton weight
   // loaded — clues read more distinctly bold at the small fontSizes
   // dense grids force.
   fontFamily: 'mono',
