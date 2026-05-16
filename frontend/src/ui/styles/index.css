@@ -31,16 +31,20 @@ html, body {
 }
 
 /* Paper-grain texture — ADR-0043 §5. An SVG `feTurbulence` noise filter
- * tinted with a sage-warm colour matrix and baked at ~12% intensity via
- * the last column of `feColorMatrix`. The pattern tiles at 280×280 px so
- * it never reads as a repeated motif; at 12% on the cream `bg` it sits
- * silently as paper fibre. The `#` inside the data URI (`%23n`) must be
- * URL-encoded or browsers reject the SVG; `feColorMatrix` values stay
- * raw because they are inside an attribute, not a URL fragment. Applies
- * to body so every route (including `/grille`) gets it — the ADR §5
- * restriction is *on* the grid cells, not *behind* them. */
+ * tinted with a forest-warm colour matrix and baked at ~22% intensity
+ * via the last column of `feColorMatrix`. The pattern tiles at 280×280
+ * px so it never reads as a repeated motif. The 12% first cut was
+ * imperceptible at typical viewing distance on bright displays; 22%
+ * makes the fibre visible without distracting from content. The `#`
+ * inside the data URI (`%23n`) must be URL-encoded or browsers reject
+ * the SVG; `feColorMatrix` values stay raw because they are inside an
+ * attribute, not a URL fragment. `baseFrequency` 0.65 gives a slightly
+ * coarser grain than the mockup's 0.85 — reads more as cold-pressed
+ * paper, less as TV-static. Applies to body so every route (including
+ * `/grille`) gets it — the ADR §5 restriction is *on* the grid cells,
+ * not *behind* them. */
 body {
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='280' height='280'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.22  0 0 0 0 0.26  0 0 0 0 0.18  0 0 0 0.12 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='280' height='280'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.22  0 0 0 0 0.26  0 0 0 0 0.18  0 0 0 0.22 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
   background-repeat: repeat;
 }
 

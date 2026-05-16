@@ -33,28 +33,39 @@ export interface HerbierCornerProps {
 
 const baseStyles = css({
   position: 'absolute',
-  width: { base: '56px', md: '80px' },
-  height: { base: '56px', md: '80px' },
+  // Small enough to sit in the periphery without competing with content.
+  // The earlier 80px size dragged the eye to the corners; ~48 px on
+  // desktop reads as a margin doodle, not a feature.
+  width: { base: '36px', md: '52px' },
+  height: { base: '36px', md: '52px' },
   pointerEvents: 'none',
   color: 'accent',
   // Lift above the page background but stay below any interactive UI.
   zIndex: 0,
 });
 
+// Generous inset from the page edge so the doodle reads as "in the
+// margin" rather than "clipped to the corner". The actual offset uses
+// page-level paddings (`lg` ≈ 32 px) instead of the previous `md` ≈ 16 px.
 const cornerStyles: Record<HerbierCornerPosition, string> = {
-  'top-left': css({ top: 'md', left: 'md', transform: 'rotate(0deg)' }),
-  'top-right': css({ top: 'md', right: 'md', transform: 'scaleX(-1)' }),
-  'bottom-left': css({ bottom: 'md', left: 'md', transform: 'scaleY(-1)' }),
-  'bottom-right': css({ bottom: 'md', right: 'md', transform: 'scale(-1, -1)' }),
+  'top-left': css({ top: 'lg', left: 'lg', transform: 'rotate(-15deg)' }),
+  'top-right': css({ top: 'lg', right: 'lg', transform: 'rotate(110deg)' }),
+  'bottom-left': css({ bottom: 'lg', left: 'lg', transform: 'rotate(-110deg)' }),
+  'bottom-right': css({ bottom: 'lg', right: 'lg', transform: 'rotate(150deg)' }),
 };
 
-// Default variant per corner. Same defaults read distinct in each corner
-// thanks to cornerStyles' transforms, so callers can pass just `corner`.
+// Default variant per corner. All four corners now share the small
+// `cluster` variant — three little leaves at varied angles — and only
+// the rotation differs (see cornerStyles). The previous mix of
+// lance/oval/twig at 80 px read as four disparate plants squatting in
+// the corners; uniform clusters with per-corner rotation read as a
+// single decorative motif applied four times. The `lance`/`oval`/
+// `twig`/`single` variants stay available for explicit-prop callers.
 const variantByCorner: Record<HerbierCornerPosition, HerbierVariant> = {
-  'top-left': 'lance',
-  'top-right': 'oval',
+  'top-left': 'cluster',
+  'top-right': 'cluster',
   'bottom-left': 'cluster',
-  'bottom-right': 'twig',
+  'bottom-right': 'cluster',
 };
 
 // SVG path data is verbatim from the wordsparrow-textures mockup (ADR-0043
@@ -169,7 +180,7 @@ const VARIANTS: Record<HerbierVariant, React.ReactElement> = {
   ),
 };
 
-export function HerbierCorner({ corner, variant, opacity = 0.5 }: HerbierCornerProps) {
+export function HerbierCorner({ corner, variant, opacity = 0.4 }: HerbierCornerProps) {
   const resolved = variant ?? variantByCorner[corner];
   return (
     <div

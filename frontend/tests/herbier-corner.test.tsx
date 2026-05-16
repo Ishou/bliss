@@ -33,14 +33,17 @@ describe('HerbierCorner', () => {
     expect(node.style.opacity).toBe('0.25');
   });
 
-  it('rotates the default variant by corner', () => {
+  it('uses the cluster variant in every corner by default', () => {
+    // Earlier iterations rotated lance / oval / cluster / twig per corner;
+    // the resulting visual weight differed too much between corners and
+    // the big single-leaf variants overpowered the layout. The current
+    // intent is one small motif applied uniformly, with corner-specific
+    // CSS rotation providing the variety.
     const observed = CORNERS.map((corner) => {
       const { getByTestId } = render(<HerbierCorner corner={corner} />);
       return getByTestId(`herbier-corner-${corner}`).dataset.variant;
     });
-    // Each corner yields a distinct default.
-    expect(new Set(observed).size).toBe(CORNERS.length);
-    expect(observed).toEqual(['lance', 'oval', 'cluster', 'twig']);
+    expect(observed).toEqual(['cluster', 'cluster', 'cluster', 'cluster']);
   });
 
   it('renders the twig variant with multiple ellipses (twig leaves)', () => {
