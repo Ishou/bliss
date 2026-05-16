@@ -1,5 +1,5 @@
 /**
- * Charbon + sage theme — palette assertion.
+ * Nature/forest theme — palette assertion (ADR-0043).
  *
  * Probes the rendered DOM and asserts that the role-token graph
  * resolves to the expected hex values for every visually load-bearing
@@ -12,12 +12,12 @@
  * pixel-perfect screenshots — so theme refinements that change a
  * specific role mapping fail fast with a useful diff:
  *
- *     expected rgb(33, 34, 42) for letter cell bg, got rgb(48, 50, 61)
- *     → `surface` is mapping to neutral.500 instead of neutral.700
+ *     expected rgb(255, 255, 255) for letter cell bg, got rgb(245, 239, 224)
+ *     → `surface` is mapping to neutral.100 instead of pure white
  *
- * If the project ever ships a second theme, copy this file and assert
- * the alternative palette's hex values; the role names in the
- * selectors don't change, only the expected values do.
+ * If the palette ever swaps again, update this file's PALETTE
+ * constant; the role names in the selectors don't change, only the
+ * expected values do.
  */
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -33,20 +33,21 @@ const STRESS_FIXTURE = JSON.parse(
   readFileSync(STRESS_FIXTURE_PATH, 'utf-8'),
 ) as Record<string, unknown>;
 
-// Charbon + sage palette — every value below is what the role-token
-// graph in `panda.config.ts` should produce. Browsers normalise CSS
-// colours to `rgb(...)` / `rgba(...)`, so we keep these in that form
-// to avoid double conversion in every assertion.
+// Nature/forest palette (ADR-0043) — every value below is what the
+// role-token graph in `panda.config.ts` should produce. Browsers
+// normalise CSS colours to `rgb(...)` / `rgba(...)`, so we keep these
+// in that form to avoid double conversion in every assertion.
 const PALETTE = {
-  bg:               'rgb(23, 24, 29)',     // #17181D — page bg (neutral.800)
-  surface:          'rgb(33, 34, 42)',     // #21222A — letter cell (neutral.700)
-  surfaceVariant:   'rgb(58, 20, 30)',     // #3A141E — clue cell (secondary.900, dark plum)
-  onSurfaceVariant: 'rgb(232, 163, 179)',  // #E8A3B3 — text on clue (secondary.400, light dusty pink)
-  fg:               'rgb(232, 232, 235)',  // #E8E8EB — text on charcoal (neutral.50)
-  accent:           'rgb(160, 179, 148)',  // #A0B394 — sage (primary.500)
-  border:           'rgb(48, 50, 61)',     // #30323D — border / gridLine (neutral.500)
-  focusBg:          'rgb(42, 28, 34)',     // #2A1C22 — focused-cell bg
-  focusRingPink:    'rgb(232, 163, 179)',  // #E8A3B3 — same hex as secondary.400
+  bg:               'rgb(250, 246, 235)',  // #faf6eb — page bg (neutral.50, papier crème)
+  surface:          'rgb(255, 255, 255)',  // #ffffff — letter cell (pure white "cellule")
+  surfaceVariant:   'rgb(251, 237, 208)',  // #fbedd0 — clue cell (secondary.100, miel pâle)
+  onSurfaceVariant: 'rgb(122, 78, 26)',    // #7a4e1a — text on clue (secondary.700, miel profond)
+  fg:               'rgb(31, 46, 37)',     // #1f2e25 — text on paper (neutral.900, forêt profonde)
+  accent:           'rgb(63, 100, 49)',    // #3f6431 — mousse (primary.500, AA-tuned from ADR-0043 #5a8a4a anchor)
+  border:           'rgb(224, 216, 196)',  // #e0d8c4 — border (neutral.200, bordure sable)
+  gridLine:         'rgb(212, 204, 184)',  // #d4ccb8 — grid line (neutral.300, trait de grille)
+  focusBg:          'rgb(251, 237, 208)',  // #fbedd0 — focused-cell bg (secondary.100, miel pâle)
+  focusRingHoney:   'rgb(200, 148, 86)',   // #c89456 — focused-cell ring (secondary.500, miel main)
 };
 
 async function bootstrap(page: Page, viewport = { width: 1440, height: 900 }) {
@@ -80,7 +81,7 @@ async function computedColor(page: Page, selector: string, prop: 'background-col
   }, { sel: selector, p: prop });
 }
 
-test.describe('charbon + sage theme palette', () => {
+test.describe('nature/forest theme palette (ADR-0043)', () => {
   test('static surfaces resolve to the expected hex values', async ({ page }) => {
     await bootstrap(page);
 
@@ -107,20 +108,20 @@ test.describe('charbon + sage theme palette', () => {
       'color',
     );
 
-    expect(pageBg, 'page <main> bg = neutral.800').toBe(PALETTE.bg);
-    expect(letterCellBg, 'letter cell bg = surface (neutral.700)').toBe(PALETTE.surface);
-    expect(defCellBg, 'def cell bg = surfaceVariant (secondary.900 dark plum)').toBe(PALETTE.surfaceVariant);
-    expect(defCellText, 'def cell text = onSurfaceVariant (secondary.400 light dusty pink)').toBe(PALETTE.onSurfaceVariant);
+    expect(pageBg, 'page <main> bg = neutral.50 (papier crème)').toBe(PALETTE.bg);
+    expect(letterCellBg, 'letter cell bg = surface (pure white cellule)').toBe(PALETTE.surface);
+    expect(defCellBg, 'def cell bg = surfaceVariant (secondary.100 miel pâle)').toBe(PALETTE.surfaceVariant);
+    expect(defCellText, 'def cell text = onSurfaceVariant (secondary.700 miel profond)').toBe(PALETTE.onSurfaceVariant);
   });
 
   test('grid container background is the gridLine token (paints internal lines)', async ({ page }) => {
     await bootstrap(page);
     const gridBg = await computedColor(page, '[role="grid"]', 'background-color');
-    // gridLine is aliased to neutral.500 (same as `border`).
-    expect(gridBg, 'grid container bg = gridLine (neutral.500), shows in 1 px gaps as cell-divider lines').toBe(PALETTE.border);
+    // gridLine is aliased to neutral.300 (trait de grille — sand mid-tone).
+    expect(gridBg, 'grid container bg = gridLine (neutral.300), shows in 1 px gaps as cell-divider lines').toBe(PALETTE.gridLine);
   });
 
-  test('focused letter cell uses focusBg + inset pink ring', async ({ page }) => {
+  test('focused letter cell uses focusBg + inset honey ring', async ({ page }) => {
     await bootstrap(page);
 
     // Click the first interactive letter cell input and probe its
@@ -141,29 +142,31 @@ test.describe('charbon + sage theme palette', () => {
     });
 
     expect(focused, 'a letter cell input is focused').not.toBeNull();
-    expect(focused!.bg, 'focused-cell bg = focusBg (#2A1C22)').toBe(PALETTE.focusBg);
-    expect(focused!.color, 'focused-cell text = fg (#E8E8EB)').toBe(PALETTE.fg);
-    // box-shadow inset pink ring: ~1.5 px solid token(focusRing).
+    expect(focused!.bg, 'focused-cell bg = focusBg (secondary.100 miel pâle)').toBe(PALETTE.focusBg);
+    expect(focused!.color, 'focused-cell text = fg (#1f2e25 forêt profonde)').toBe(PALETTE.fg);
+    // box-shadow inset honey ring: ~1.5 px solid token(focusRing).
     // `getComputedStyle.boxShadow` returns the resolved colour first
     // followed by offsets and the `inset` keyword. We just check the
-    // pink rgb() string is present and the `inset` keyword is set.
+    // honey rgb() string is present and the `inset` keyword is set.
     expect(focused!.boxShadow, 'focused-cell carries an inset shadow').toContain('inset');
-    expect(focused!.boxShadow, 'focused-cell ring colour = focusRing (light pink)').toContain(PALETTE.focusRingPink);
+    expect(focused!.boxShadow, 'focused-cell ring colour = focusRing (miel main)').toContain(PALETTE.focusRingHoney);
   });
 
-  test('wordmark `Sparrow` half resolves to sage `accent`', async ({ page }) => {
+  test('wordmark `Sparrow` half resolves to mousse `accent`', async ({ page }) => {
     await bootstrap(page);
 
-    // ADR-0005 §6: the wordmark is bicolor — `Word` in primary fg,
-    // `Sparrow` in sage. The sage span carries `data-testid="wordmark-
-    // sage"`; we only assert that half here (the `Word` half inherits
-    // its colour from the parent span's `fg` and is exercised by the
-    // surface-text contrast tests below).
+    // ADR-0043 §4: the wordmark stays bicolor — `Word` in primary fg
+    // (forêt profonde), `Sparrow` in mousse. The accent span carries
+    // `data-testid="wordmark-sage"` (testid name kept for stability;
+    // the colour role is now mousse not sage). We only assert that
+    // half here — the `Word` half inherits its colour from the parent
+    // span's `fg` and is exercised by the surface-text contrast tests
+    // below.
     const sparrowColor = await computedColor(
       page,
       '[data-testid="wordmark-sage"]',
       'color',
     );
-    expect(sparrowColor, '"Sparrow" half = accent (sage primary.500)').toBe(PALETTE.accent);
+    expect(sparrowColor, '"Sparrow" half = accent (mousse primary.500)').toBe(PALETTE.accent);
   });
 });
