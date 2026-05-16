@@ -43,7 +43,8 @@ const emptyPanel = css({
   gap: '10px',
   // Single, fixed mini height — the empty banner reads as a label.
   minHeight: '52px',
-  color: 'neutral.200',
+  // `fgMuted` (semantic token) — survives palette swaps; a raw ramp stop wouldn't.
+  color: 'fgMuted',
   fontSize: 'sm',
 });
 

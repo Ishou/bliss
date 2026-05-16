@@ -1,39 +1,44 @@
 import { defineConfig } from '@pandacss/dev';
 
-// Panda CSS — ADR-0002 §3 + ADR-0005 (WordSparrow brand).
+// Panda CSS — ADR-0002 §3 + ADR-0043 (WordSparrow nature/forest visual
+// direction; supersedes ADR-0005 §4 palette).
 //
 // Three-tier color system:
 //
-//   1. **Ramps** (`tokens.colors`): three 50–900 tonal scales.
-//      - `primary`   — brand green (lime-leaf family).
-//      - `secondary` — brand pink (dusty rose / sakura family).
-//      - `neutral`   — surface tonal ramp; powers all dark surfaces and
-//                      text. Slight pink tint at .500–.700 transitions
-//                      to neutral gray at .800–.900 (intentional;
-//                      "page background is hue-less" is a brand brief).
+//   1. **Ramps** (`tokens.colors`): four tonal scales (primary / secondary /
+//      neutral at 50–900; terra sparse at 100–900 — error has narrower usage
+//      than brand ramps).
+//      - `primary`   — mousse (moss-green brand + success).
+//      - `secondary` — miel (honey amber — cursor, in-progress, focus).
+//      - `neutral`   — papier + encre (cream paper bg, forest-deep ink
+//                      text, sand bordure mid-tones). Warm, paper-toned.
+//      - `terra`     — terracotta (error). Distinct hue from secondary,
+//                      so error stops aliasing onto the honey ramp.
 //
 //   2. **Semantic role tokens** (`semanticTokens.colors`): every UI role
 //      maps to a ramp shade here. Components reference these names, not
 //      ramp shades directly — that's the whole indirection point.
-//      Adding a new role is one line below; theme-swapping is changing
+//      Adding a new role is one line below; palette-swapping is changing
 //      this file ONLY.
 //
 //   3. **Components**: reference role tokens (`bg: 'surface'`, `color:
 //      'accent'`) or, when a state derivation needs a specific shade
-//      (`_hover: { bg: 'primary.800' }`), the renamed ramp.
+//      (`_hover: { bg: 'primary.700' }`), the renamed ramp.
 //
-// Theme-swap workflow:
-//   1. Re-tune ramps for the new palette (primary / secondary / neutral).
-//   2. If the new theme inverts dark↔light, re-map semantic roles to
-//      different ramp shades (e.g. `accentText: primary.400` on dark
-//      becomes `primary.700` on light; `bg: neutral.800` becomes
-//      `neutral.50`). No component code changes required.
+// Palette-swap workflow (this file is the only edit point for visual
+// re-themes):
+//   1. Re-tune ramps for the new palette (primary / secondary / neutral
+//      / terra). Anchors are the load-bearing stops cited in the ADR;
+//      interpolated stops are best-effort perceptual ramps.
+//   2. Re-map semantic roles to whichever ramp stop carries the right
+//      shade for that role. No component code changes required.
 //
 // Accessibility: WCAG AA contrast is verified at every brand-color
-// usage site in the components that consume the role tokens. The
-// `accent` / `accentText` / `accentBg` family is calibrated for
-// readable text on dark surfaces; if the theme inverts, the calibration
-// must be re-run (see ADR-0005 §4).
+// usage site via `pnpm a11y` (axe-core through Playwright). ADR-0043's
+// verification matrix calls out the borderline pairs; if axe-core
+// fails one, tune the affected stop in the interpolated ramp range
+// rather than touching anchor hexes. See ADR-0034 for the a11y
+// baseline policy.
 export default defineConfig({
   preflight: true,
   include: ['./src/**/*.{ts,tsx}'],
@@ -43,63 +48,84 @@ export default defineConfig({
   theme: {
     tokens: {
       colors: {
-        // Primary ramp — brand sage (validation, CTA, accent). The
-        // "charbon + sage" palette uses sage as both the brand colour
-        // AND the success/validation signal — they share the same
-        // visual language ("you completed something", "this is the
-        // primary action"). Anchors:
-        //   .500 = #A0B394 (sage main — solid CTA, timer, accent text)
-        //   .800 = #1F2820 (dark sage tint — validated cell bg)
-        //   .900 = #1A2218 (very dark sage — text on solid sage)
+        // Primary ramp — mousse (moss-green brand + success/validation).
+        // ADR-0043 anchors:
+        //   .100 = #dfeacb (mousse pâle — accentBg, validated cell bg)
+        //   .500 = #3f6431 (mousse main — wordmark, CTA, accent text)
+        //                   AA tune: ADR anchor #5a8a4a (~4.5:1 on bg)
+        //                   below AA threshold; darkened to ~6.3:1.
+        //                   Hue unchanged; luminance shift only.
+        //   .700 = #2d4920 (mousse profonde — hover, success text)
+        //                   Proportionally darkened to preserve the
+        //                   .500 → .700 visual separation.
         primary: {
-          50:  { value: '#ECF1E8' },
-          100: { value: '#DBE3D2' },
-          200: { value: '#C5D2B7' },
-          300: { value: '#B3C2A4' },
-          400: { value: '#ABBC9D' },
-          500: { value: '#A0B394' },
-          600: { value: '#88A07A' },
-          700: { value: '#5A6B52' },
-          800: { value: '#1F2820' },
-          900: { value: '#1A2218' },
+          50:  { value: '#f0f5e8' },
+          100: { value: '#dfeacb' },
+          200: { value: '#c5d7a5' },
+          300: { value: '#a8c180' },
+          400: { value: '#6a9358' },
+          500: { value: '#3f6431' },
+          600: { value: '#365528' },
+          700: { value: '#2d4920' },
+          800: { value: '#1f3517' },
+          900: { value: '#13230f' },
         },
-        // Secondary ramp — clue pink (def-cell surface + focus ring).
-        // Anchors:
-        //   .400 = #E8A3B3 (clue cell surface — light dusty pink)
-        //   .900 = #3A141E (text on clue cells — dark plum)
+        // Secondary ramp — miel (honey amber — cursor, in-progress,
+        // focus, clue-cell surface). ADR-0043 anchors:
+        //   .100 = #fbedd0 (miel pâle — secondaryBg, focusBg, clue bg)
+        //   .500 = #c89456 (miel main — secondaryAccent, focusRing)
+        //   .700 = #7a4e1a (miel profond — secondaryText, clue text)
         secondary: {
-          50:  { value: '#FBF1F2' },
-          100: { value: '#F8E4E7' },
-          200: { value: '#F2C6CC' },
-          300: { value: '#ECB5BE' },
-          400: { value: '#E8A3B3' },
-          500: { value: '#DC88A1' },
-          600: { value: '#C46A87' },
-          700: { value: '#985166' },
-          800: { value: '#5C2B3A' },
-          900: { value: '#3A141E' },
+          50:  { value: '#fef7e6' },
+          100: { value: '#fbedd0' },
+          200: { value: '#f5dca8' },
+          300: { value: '#eac480' },
+          400: { value: '#dba968' },
+          500: { value: '#c89456' },
+          600: { value: '#a87538' },
+          700: { value: '#7a4e1a' },
+          800: { value: '#5a3a14' },
+          900: { value: '#3d270c' },
         },
-        // Neutral ramp — charbon (cool charcoal grays). Anchors:
-        //   .50  = #E8E8EB (text)
-        //   .300 = #80818B (muted text)
-        //   .500 = #30323D (line / border)
-        //   .600 = #292B34 (surface-2, elevated panels, progress bg)
-        //   .700 = #21222A (letter-cell surface)
-        //   .800 = #17181D (page bg)
-        //   .900 = #0E0F12 (block / void)
-        // Slight cool-blue lean (vs warm-pink in prior twilight ramp)
-        // is intentional — keeps the cool-and-pink contrast crisp.
+        // Neutral ramp — papier + encre (warm cream paper through
+        // sand bordure to forest-deep ink). The page background is
+        // paper, not hue-less; the warm cream is intentional ("le
+        // papier" anchors the brand). ADR-0043 anchors:
+        //   .50  = #faf6eb (papier crème — bg)
+        //   .100 = #f5efe0 (papier chaud — surfaceElevated)
+        //   .200 = #e0d8c4 (bordure sable — border)
+        //   .300 = #d4ccb8 (trait de grille — gridLine)
+        //   .500 = #5a655a (encre sourde — fgMuted)
+        //                   AA tune: ADR anchor #6a7565 (~4.6:1) was
+        //                   borderline; darkened to ~5.6:1. Hue unchanged.
+        //   .900 = #1f2e25 (forêt profonde — fg, primary text)
         neutral: {
-          50:  { value: '#E8E8EB' },
-          100: { value: '#C0C0C5' },
-          200: { value: '#9A9BA3' },
-          300: { value: '#80818B' },
-          400: { value: '#5E5F69' },
-          500: { value: '#30323D' },
-          600: { value: '#292B34' },
-          700: { value: '#21222A' },
-          800: { value: '#17181D' },
-          900: { value: '#0E0F12' },
+          50:  { value: '#faf6eb' },
+          100: { value: '#f5efe0' },
+          200: { value: '#e0d8c4' },
+          300: { value: '#d4ccb8' },
+          400: { value: '#a8a89a' },
+          500: { value: '#5a655a' },
+          600: { value: '#4a5450' },
+          700: { value: '#2f3a35' },
+          800: { value: '#262e2a' },
+          900: { value: '#1f2e25' },
+        },
+        // Terra ramp — terracotta (error). Kept separate from secondary (honey)
+        // — error must not share a hue with cursor/focus signals (ADR-0043).
+        // Sparse stops only — error has narrower usage than brand ramps.
+        // Anchors:
+        //   .100 = #f5dccc (terracotta pâle — errorBg)
+        //   .500 = #b85540 (terracotta main — error icon, accent)
+        //   .700 = #9b3f2a (terracotta foncée — errorText; darkened
+        //                   from #b85540 per ADR-0043 Option (a) so
+        //                   errorText-on-errorBg clears AA small text)
+        terra: {
+          100: { value: '#f5dccc' },
+          300: { value: '#e2967c' },
+          500: { value: '#b85540' },
+          700: { value: '#9b3f2a' },
+          900: { value: '#5a2417' },
         },
         // (Note: `focusBg` is defined as a *semantic* token only —
         // see `semanticTokens.colors` below. We don't ship a
@@ -127,6 +153,7 @@ export default defineConfig({
         // reflow when the woff2 swaps in. The remaining system-ui
         // chain stays as a hard fallback if the build-time face is
         // ever absent (e.g., during dev or in a stale-cache PWA).
+        // (Typography pivot to Fraunces + Outfit per ADR-0043 §3 — not yet implemented.)
         body: { value: '"Nunito Variable", "Nunito Variable fallback", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif' },
         heading: { value: '"Nunito Variable", "Nunito Variable fallback", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif' },
         // Monospace — used ONLY for def-cell clue text (Cell.tsx
@@ -166,91 +193,80 @@ export default defineConfig({
       shadows: {
         // Subtle near-black glow under floating surfaces (toggle,
         // dialog, dropdown). The rgba is intentionally not bound to
-        // a token — it's a shadow tint, not a theme-swap dimension;
-        // shadows on dark surfaces always want this near-black-with-
-        // a-touch-of-warmth, regardless of brand hue.
+        // a token — it's a shadow tint, not a palette-swap dimension;
+        // a light cream surface still wants a near-black-with-warmth
+        // shadow rather than a tinted one.
         floating: { value: '0 2px 4px rgba(10, 10, 12, 0.6)' },
       },
     },
     semanticTokens: {
       colors: {
         // ── Surfaces ────────────────────────────────────────────────
-        bg:             { value: '{colors.neutral.800}' },  // page background (charbon)
-        surface:        { value: '{colors.neutral.700}' },  // letter cell ("slot") — neutral charcoal
-        // `surfaceVariant` is the def-cell ("clue") surface. The charbon
-        // palette pairs a DARK plum surface with a LIGHT dusty-pink
-        // text — the inverse of the spec's "rose bg / dark-rose text"
-        // initial cut, picked after a side-by-side review preferred the
-        // dark plum reading on the charbon page. Both halves stay in
-        // the secondary ramp so the clue surface keeps its rose family.
-        surfaceVariant: { value: '{colors.secondary.900}' }, // def cell — dark plum
-        surfaceMuted:   { value: '{colors.neutral.900}' },   // block / inert-cell void
-        // Elevated charcoal surface (e.g. progress-bar track behind a
-        // sage fill). Useful when a secondary surface is needed without
-        // taking on the rose clue colour.
-        surfaceElevated:{ value: '{colors.neutral.600}' },
+        bg:             { value: '{colors.neutral.50}' },     // page background (papier crème)
+        surface:        { value: '#ffffff' },                 // letter cell ("cellule") — pure white paper
+        // `surfaceVariant` is the def-cell ("clue") surface. The nature/
+        // forest palette pairs a honey-pale fill (`secondary.100`) with
+        // a honey-deep text (`secondary.700`) — the "indice fond / indice
+        // texte" pair from the ADR-0043 mockup. Both halves stay in the
+        // secondary ramp so the clue surface keeps its honey family.
+        surfaceVariant: { value: '{colors.secondary.100}' },  // def cell — miel pâle
+        surfaceMuted:   { value: '{colors.neutral.200}' },    // block / inert-cell — bordure sable
+        // Elevated cream surface (e.g. progress-bar track behind a moss
+        // fill). Slightly warmer than the page bg so layered panels read.
+        surfaceElevated:{ value: '{colors.neutral.100}' },
         // Component-specific token; keeps track tweaks isolated from `border` uses
         progressTrackPending: { value: '{colors.neutral.300}' },
 
         // ── Foreground ──────────────────────────────────────────────
-        fg:                 { value: '{colors.neutral.50}' },   // primary text on charcoal surfaces
-        // Was `neutral.300` (#80818B); bumped to `neutral.200`
-        // (#9A9BA3) so de-emphasized body text (`fontSize: sm`,
-        // `fontWeight: 400`) clears WCAG AA's 4.5:1 threshold on every
-        // surface in the palette: 6.44:1 on `bg`, 5.76:1 on `surface`,
-        // 5.03:1 on `surfaceElevated`. The previous value rendered the
-        // accueil progress widget at 4.09:1 — visibly low and a
-        // serious axe violation. See ADR-0034.
-        fgMuted:            { value: '{colors.neutral.200}' },  // de-emphasized text (timer label, "Grille n°")
-        // Text colour on the dark-plum clue surface. `secondary.400`
-        // (the light dusty pink that USED to be the surface) gives a
-        // ~7:1 contrast on `surfaceVariant`'s plum — well clear of AA.
-        onSurfaceVariant:   { value: '{colors.secondary.400}' },
+        fg:                 { value: '{colors.neutral.900}' },  // primary text — forêt profonde on papier
+        fgMuted:            { value: '{colors.neutral.500}' },  // encre sourde — ~5.6:1 on bg; AA-safe for de-emphasized small text
+        // Text colour on the honey-pale clue surface — honey-deep at
+        // ~7.5:1 contrast on `surfaceVariant`'s miel pâle. Comfortably AA.
+        onSurfaceVariant:   { value: '{colors.secondary.700}' },
 
         // ── Lines ───────────────────────────────────────────────────
-        border:         { value: '{colors.neutral.500}' },  // UI borders (lobby, primitives)
-        gridLine:       { value: '{colors.neutral.500}' },  // grid cell perimeter + stack divider
-        muted:          { value: '{colors.neutral.500}' },  // legacy alias of border (used by some lobby code)
+        border:         { value: '{colors.neutral.200}' },  // UI borders — bordure sable
+        gridLine:       { value: '{colors.neutral.300}' },  // grid cell perimeter + stack divider — trait de grille
+        muted:          { value: '{colors.neutral.200}' },  // legacy alias of border (used by some lobby code)
 
-        // ── Brand · primary (sage — also the success colour) ────────
+        // ── Brand · primary (mousse — moss-green, also the success colour) ──
         // `accent` / `accentText` are aliases — same value, different
         // semantic intent at the call site (one reads as "the brand
         // colour", the other as "the colour for branded text").
-        accent:         { value: '{colors.primary.500}' },  // sage — wordmark, current-clue, timer
+        accent:         { value: '{colors.primary.500}' },  // mousse — wordmark, current-clue, timer
         accentText:     { value: '{colors.primary.500}' },  // alias for clarity
-        accentBg:       { value: '{colors.primary.800}' },  // dark-sage tint (letter-in-word bg, validated cell bg)
-        accentHover:    { value: '{colors.primary.700}' },  // hover state of solid primary CTAs
+        accentBg:       { value: '{colors.primary.100}' },  // mousse pâle (letter-in-word bg, validated cell bg)
+        accentHover:    { value: '{colors.primary.700}' },  // mousse profonde — hover state of solid primary CTAs
 
-        // ── Brand · secondary (pink — clue surface + focus ring) ────
+        // ── Brand · secondary (miel — honey amber, cursor + focus) ──
         secondaryAccent:{ value: '{colors.secondary.500}' },
-        secondaryText:  { value: '{colors.secondary.300}' },
-        secondaryBg:    { value: '{colors.secondary.800}' },
+        secondaryText:  { value: '{colors.secondary.700}' },
+        secondaryBg:    { value: '{colors.secondary.100}' },
 
         // ── Status ─────────────────────────────────────────────────
-        // `success` aliased onto sage primary (validation cells,
-        // progress, timer). `error` keeps secondary (pink) for now;
-        // could move to a dedicated signal ramp later.
+        // `success` aliased onto mousse primary (validation cells,
+        // progress, timer). `error` uses the dedicated `terra` ramp — kept
+        // separate from secondary (honey) so error and focus carry distinct hues.
         success:        { value: '{colors.primary.500}' },
-        successBg:      { value: '{colors.primary.800}' },
-        successText:    { value: '{colors.primary.500}' },
-        error:          { value: '{colors.secondary.500}' },
-        errorBg:        { value: '{colors.secondary.800}' },
-        errorText:      { value: '{colors.secondary.300}' },
+        successBg:      { value: '{colors.primary.100}' },
+        successText:    { value: '{colors.primary.700}' },
+        error:          { value: '{colors.terra.500}' },
+        errorBg:        { value: '{colors.terra.100}' },
+        errorText:      { value: '{colors.terra.700}' },     // #9b3f2a per ADR-0043 Option (a)
 
         // ── On-bg foregrounds ───────────────────────────────────────
         // Text colors paired with specific solid backgrounds.
-        onAccent:       { value: '{colors.primary.900}' },  // text on solid sage CTA / "Vérifier" button
-        onSecondary:    { value: '{colors.neutral.50}' },   // text on solid secondary bg
+        onAccent:       { value: '#ffffff' },                  // text on solid mousse CTA / "Vérifier" button — pure white "sur mousse"
+        onSecondary:    { value: '{colors.secondary.700}' },   // text on solid honey bg — miel profond
 
         // ── Focus ───────────────────────────────────────────────────
-        // The focused letter cell uses `focusBg` for its background
-        // and an inset 1.5 px `focusRing` (pink) for the visual
-        // signal — see Cell.tsx letterInput `_focus`. `focusBg` is a
-        // literal hex (the warm charcoal-with-pink-hint that escapes
-        // the ramps); a future theme can replace the value here
-        // without touching components.
-        focusBg:        { value: '#2A1C22' },
-        focusRing:      { value: '{colors.secondary.400}' },
+        // The focused letter cell uses `focusBg` (honey-pale wash) for
+        // its background and an inset 1.5 px `focusRing` (honey main) for
+        // the visual signal — see Cell.tsx letterInput `_focus`. Both
+        // alias the secondary ramp; honey IS the cursor colour per
+        // ADR-0043's semantic intent ("miel — calme action, en cours").
+        focusBg:        { value: '{colors.secondary.100}' },
+        focusRing:      { value: '{colors.secondary.500}' },
       },
     },
   },

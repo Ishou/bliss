@@ -54,12 +54,11 @@ const itemStyles = css({
   fontSize: 'sm',
   fontWeight: 'semibold',
   cursor: 'pointer',
-  // Highlight the pressed option so the picker reads at a glance.
-  // Ark sets `data-state="on"` on the selected (pressed) item.
+  // `onAccent` — white on the dark-moss accentHover fill; `fg` is dark ink and would disappear.
   '&[data-state="on"]': {
     bg: 'accentHover',
     borderColor: 'accentHover',
-    color: 'fg',
+    color: 'onAccent',
   },
   _focusVisible: {
     outline: '3px solid token(colors.focusRing)',
