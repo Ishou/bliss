@@ -15,15 +15,15 @@
  * browser's default white. The first-paint flash also disappears
  * because the bg is set before the React tree mounts.
  *
- * `color-scheme` is intentionally omitted — ADR-0043 drops dark mode
- * and the site is light-only. Letting the browser pick its default
- * (`normal`) is correct for a light-only palette and avoids forcing
- * a dark-variant form control under cream paper.
+ * `color-scheme: light` — site is light-only (ADR-0043 §2); forces
+ * system UI (scrollbars, form controls, focus outlines) to always
+ * render in their light variant regardless of OS preference.
  *
  * Outside Panda's `@layer base` so the rule is unconditional — Panda
  * preflight resets ride the same layer and would otherwise tie the
  * specificity dance to whatever order the codegen emits. */
 :root {
+  color-scheme: light;
   background-color: var(--colors-bg);
 }
 html, body {

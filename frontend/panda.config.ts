@@ -5,7 +5,9 @@ import { defineConfig } from '@pandacss/dev';
 //
 // Three-tier color system:
 //
-//   1. **Ramps** (`tokens.colors`): four 50–900 tonal scales.
+//   1. **Ramps** (`tokens.colors`): four tonal scales (primary / secondary /
+//      neutral at 50–900; terra sparse at 100–900 — error has narrower usage
+//      than brand ramps).
 //      - `primary`   — mousse (moss-green brand + success).
 //      - `secondary` — miel (honey amber — cursor, in-progress, focus).
 //      - `neutral`   — papier + encre (cream paper bg, forest-deep ink
