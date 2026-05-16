@@ -3,12 +3,21 @@ package com.bliss.identity.domain.auth
 import assertk.assertFailure
 import assertk.assertThat
 import assertk.assertions.hasLength
+import assertk.assertions.isEqualTo
 import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotEqualTo
-import assertk.assertions.isTrue
+import io.kotest.common.ExperimentalKotest
+import io.kotest.property.Arb
+import io.kotest.property.PropTestConfig
+import io.kotest.property.arbitrary.Codepoint
+import io.kotest.property.arbitrary.printableAscii
+import io.kotest.property.arbitrary.string
+import io.kotest.property.checkAll
+import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Test
 import java.security.SecureRandom
 
+@OptIn(ExperimentalKotest::class)
 class StateTest {
     private val rng = SecureRandom()
 
@@ -42,12 +51,11 @@ class StateTest {
     }
 
     @Test
-    fun `property - every generated state is 43 base64url characters without padding`() {
-        val base64Url = Regex("^[A-Za-z0-9_-]+$")
-        repeat(200) {
-            val state = State.generate(rng)
-            assertThat(state.value).hasLength(43)
-            assertThat(base64Url.matches(state.value)).isTrue()
+    fun `property - of round-trips any token of sufficient length`() {
+        runBlocking {
+            checkAll(PropTestConfig(iterations = 200), Arb.string(32..200, Codepoint.printableAscii())) { raw ->
+                assertThat(State.of(raw).value).isEqualTo(raw)
+            }
         }
     }
 }

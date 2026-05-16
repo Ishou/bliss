@@ -6,11 +6,18 @@ import assertk.assertions.hasLength
 import assertk.assertions.isEqualTo
 import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotEqualTo
+import io.kotest.common.ExperimentalKotest
+import io.kotest.property.Arb
+import io.kotest.property.PropTestConfig
+import io.kotest.property.arbitrary.string
+import io.kotest.property.checkAll
+import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Test
 import java.security.MessageDigest
 import java.security.SecureRandom
 import java.util.Base64
 
+@OptIn(ExperimentalKotest::class)
 class PkceVerifierTest {
     private val rng = SecureRandom()
 
@@ -66,14 +73,17 @@ class PkceVerifierTest {
     }
 
     @Test
-    fun `property - challenge satisfies the RFC 7636 S256 relation for generated verifiers`() {
-        repeat(200) {
-            val v = PkceVerifier.generate(rng)
-            val expected =
-                Base64.getUrlEncoder().withoutPadding().encodeToString(
-                    MessageDigest.getInstance("SHA-256").digest(v.value.toByteArray(Charsets.US_ASCII)),
-                )
-            assertThat(v.challenge()).isEqualTo(expected)
+    fun `property - challenge satisfies the RFC 7636 S256 relation for arbitrary valid verifiers`() {
+        val unreservedAlphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~"
+        runBlocking {
+            checkAll(PropTestConfig(iterations = 200), Arb.string(43..128, unreservedAlphabet)) { raw ->
+                val v = PkceVerifier.of(raw)
+                val expected =
+                    Base64.getUrlEncoder().withoutPadding().encodeToString(
+                        MessageDigest.getInstance("SHA-256").digest(raw.toByteArray(Charsets.US_ASCII)),
+                    )
+                assertThat(v.challenge()).isEqualTo(expected)
+            }
         }
     }
 }
