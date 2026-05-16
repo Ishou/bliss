@@ -33,6 +33,15 @@ import java.text.Normalizer
  * yet covered. The `export-words` pipeline sets these to empty (empty-clue
  * convention) rather than a placeholder; `toWordWithFreq` returns `null`
  * and the grid generator never sees unclueable words.
+ *
+ * No frequency floor is applied at load time. The Python build pipeline
+ * (lemma-anchored admission in `scripts/clue_generation/`) is the
+ * gatekeeper for what gets into `words-fr.csv`: a surface ships only if
+ * its lemma already has at least one row in the corpus and its
+ * grammalecte tag isn't in the obscure-form blocklist (passé simple,
+ * subjonctif imparfait, conditionnel 1pl/2pl). The blank-clue drop
+ * remains the runtime fallback for any surface the inflater couldn't
+ * upgrade past the `clue == word` placeholder.
  */
 class CsvWordRepository(
     words: List<Word>,
@@ -138,25 +147,6 @@ class CsvWordRepository(
             listOf("word", "language", "length", "frequency", "difficulty", "clue", "source", "source_license")
         private const val OPTIONAL_LEMMA_HEADER = "lemma"
         private const val OPTIONAL_THEME_HEADER = "theme"
-
-        /**
-         * Frequency cutoff applied at load time. Drops the long tail of rare/technical
-         * forms (`attoampère`, `aalénien`, etc.) that bloat the CSP solver's branching
-         * factor without contributing crossword-relevant vocabulary. Rationale:
-         *
-         * | threshold | rows kept |
-         * |-----------|-----------|
-         * | 0         | 454k (full corpus) |
-         * | 1,000     | 161k |
-         * | 10,000    |  89k |
-         * | 100,000   |  36k |
-         *
-         * 1,000 is the sweet spot — keeps every common form including 3-letter staples
-         * (le/de/à have billions, "ire"/"ami"/"art" still rank above 100k), drops the
-         * obscure long tail. Override via `-Dwords.minFrequency=N` for tuning.
-         */
-        private val MIN_FREQUENCY: Long =
-            System.getProperty("words.minFrequency")?.toLongOrNull() ?: 1_000L
 
         /**
          * Loads the bundled French CSV corpus from the JVM classpath.
@@ -305,12 +295,7 @@ class CsvWordRepository(
         ): Pair<Word, Long>? {
             val text = record.get("word")
             require(text.isNotBlank()) { "CSV $path row ${record.recordNumber}: empty word" }
-            // Frequency filter runs before clue validation — a rare-frequency word with a
-            // blank clue would be silently dropped here regardless, so failing the entire
-            // load on its blank clue would be a false alarm. Only enforce the clue invariant
-            // for rows that actually make it past the filter.
             val frequency = record.get("frequency").toLongOrNull() ?: 0L
-            if (frequency < MIN_FREQUENCY) return null
             val clue = record.get("clue")
             // Blank clue means "no clue available" — silently drop the row from
             // the usable corpus. The grid generator can't place an unclued
