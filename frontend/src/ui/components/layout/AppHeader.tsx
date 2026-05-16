@@ -99,6 +99,24 @@ const lockupSlotStyles = css({
   display: 'flex',
   justifyContent: 'flex-start',
   alignItems: 'center',
+  gap: '8px',
+});
+
+const alphaBadgeStyles = css({
+  display: 'inline-flex',
+  alignItems: 'center',
+  fontFamily: 'body',
+  fontSize: 'xxs',
+  fontWeight: 'bold',
+  lineHeight: 1,
+  letterSpacing: '0.08em',
+  textTransform: 'uppercase',
+  color: 'secondaryText',
+  border: '1px solid token(colors.secondaryText)',
+  borderRadius: 'sm',
+  paddingInline: '6px',
+  paddingBlock: '3px',
+  userSelect: 'none',
 });
 
 const navStyles = css({
@@ -218,6 +236,9 @@ export function AppHeader({ activeNavId }: AppHeaderProps = {}) {
             <Lockup size="desktop" />
           </span>
         </Link>
+        <span className={alphaBadgeStyles} role="img" aria-label="version alpha">
+          Alpha
+        </span>
       </div>
       <nav className={navStyles} aria-label="Navigation principale">
         {NAV_LINKS.map((link) => {
