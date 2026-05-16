@@ -74,4 +74,25 @@ class InMemorySessionRepositoryTest {
             assertThat(repo.findById(a.id)).isNull()
             assertThat(repo.findById(b.id)).isNull()
         }
+
+    @Test
+    fun `deleteForUser leaves sessions for other users untouched`() =
+        runTest {
+            val repo = InMemorySessionRepository()
+            val otherUserId = UserId(UUID.randomUUID())
+            val mine = session()
+            val theirs =
+                Session(
+                    id = SessionId(UUID.randomUUID()),
+                    userId = otherUserId,
+                    createdAt = now,
+                    lastSeenAt = now,
+                    revokedAt = null,
+                )
+            repo.create(mine)
+            repo.create(theirs)
+            repo.deleteForUser(userId)
+            assertThat(repo.findById(mine.id)).isNull()
+            assertThat(repo.findById(theirs.id)).isEqualTo(theirs)
+        }
 }

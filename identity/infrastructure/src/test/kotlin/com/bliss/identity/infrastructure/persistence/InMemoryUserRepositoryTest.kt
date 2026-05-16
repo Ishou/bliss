@@ -50,6 +50,14 @@ class InMemoryUserRepositoryTest {
         }
 
     @Test
+    fun `updateLastSeenAt is a no-op for an unknown user`() =
+        runTest {
+            val repo = InMemoryUserRepository()
+            repo.updateLastSeenAt(UserId(UUID.randomUUID()), now)
+            // No throw, no row created.
+        }
+
+    @Test
     fun `delete removes the user`() =
         runTest {
             val repo = InMemoryUserRepository()

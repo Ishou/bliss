@@ -9,6 +9,10 @@ interface UserRepository {
 
     suspend fun findById(id: UserId): User?
 
+    /**
+     * Update the user's last-seen timestamp. No-op if the user does not exist —
+     * a returning session for a deleted user gracefully degrades rather than throwing.
+     */
     suspend fun updateLastSeenAt(
         id: UserId,
         at: Instant,

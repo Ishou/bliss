@@ -74,4 +74,18 @@ class InMemoryUserProviderRepositoryTest {
             repo.deleteForUser(userId)
             assertThat(repo.listForUser(userId)).isEmpty()
         }
+
+    @Test
+    fun `deleteForUser leaves linkages for other users untouched`() =
+        runTest {
+            val repo = InMemoryUserProviderRepository()
+            val otherUserId = UserId(UUID.randomUUID())
+            val mine = userProvider(provider = Provider.GOOGLE, subject = "g-1")
+            val theirs = userProvider(user = otherUserId, provider = Provider.APPLE, subject = "a-other")
+            repo.link(mine)
+            repo.link(theirs)
+            repo.deleteForUser(userId)
+            assertThat(repo.listForUser(userId)).isEmpty()
+            assertThat(repo.listForUser(otherUserId)).containsExactlyInAnyOrder(theirs)
+        }
 }
