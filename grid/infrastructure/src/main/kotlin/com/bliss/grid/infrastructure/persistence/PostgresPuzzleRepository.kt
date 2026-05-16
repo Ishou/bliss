@@ -53,6 +53,7 @@ class PostgresPuzzleRepository(
                 stmt.setObject(6, jsonbOf(produced))
                 stmt.setInt(7, produced.hintsAllowed)
                 stmt.setTimestamp(8, Timestamp.from(produced.createdAt))
+                stmt.setInt(9, produced.totalLetterCells)
                 stmt.executeUpdate()
             }
         }
@@ -81,12 +82,14 @@ class PostgresPuzzleRepository(
 
     companion object {
         private const val SELECT_SQL =
-            "SELECT puzzle_id, width, height, language, title, payload, hints_allowed, created_at " +
+            "SELECT puzzle_id, width, height, language, title, payload, hints_allowed, created_at, " +
+                "total_letter_cells " +
                 "FROM puzzles WHERE puzzle_id = ?"
 
         private const val INSERT_SQL =
             "INSERT INTO puzzles " +
-                "(puzzle_id, width, height, language, title, payload, hints_allowed, created_at) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT (puzzle_id) DO NOTHING"
+                "(puzzle_id, width, height, language, title, payload, hints_allowed, created_at, " +
+                "total_letter_cells) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT (puzzle_id) DO NOTHING"
     }
 }

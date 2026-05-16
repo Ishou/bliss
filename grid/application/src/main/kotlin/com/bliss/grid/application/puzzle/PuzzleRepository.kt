@@ -1,6 +1,7 @@
 package com.bliss.grid.application.puzzle
 
 import com.bliss.grid.domain.model.Grid
+import com.bliss.grid.domain.model.LetterCell
 import java.time.Instant
 import java.util.UUID
 
@@ -40,6 +41,9 @@ interface PuzzleRepository {
  * Server-side puzzle snapshot. Carries the canonical [Grid] (with its
  * letters — server-private, never serialized to clients) plus the wire-side
  * fields needed to render the response on subsequent GETs.
+ *
+ * `totalLetterCells` is denormalised here so the list endpoint can return
+ * thin summaries without re-reading every payload JSON document.
  */
 data class StoredPuzzle(
     val grid: Grid,
@@ -47,4 +51,6 @@ data class StoredPuzzle(
     val language: String,
     val hintsAllowed: Int,
     val createdAt: Instant,
-)
+) {
+    val totalLetterCells: Int = grid.cells.values.count { it is LetterCell }
+}
