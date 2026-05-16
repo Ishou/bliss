@@ -105,8 +105,7 @@ class PostgresPuzzleRepository(
 
     companion object {
         private const val SELECT_SQL =
-            "SELECT puzzle_id, width, height, language, title, payload, hints_allowed, created_at, " +
-                "total_letter_cells " +
+            "SELECT puzzle_id, width, height, language, title, payload, hints_allowed, created_at " +
                 "FROM puzzles WHERE puzzle_id = ?"
 
         private const val INSERT_SQL =
