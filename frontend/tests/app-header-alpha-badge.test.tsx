@@ -28,7 +28,7 @@ describe('AppHeader alpha indicator', () => {
     renderAtPath('/grille');
     await screen.findByText('body');
     const banner = screen.getByRole('banner');
-    const badge = screen.getByLabelText('version alpha');
+    const badge = screen.getByRole('img', { name: 'version alpha' });
     expect(banner.contains(badge)).toBe(true);
     expect(badge.textContent).toBe('Alpha');
   });
