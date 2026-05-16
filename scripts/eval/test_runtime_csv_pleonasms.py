@@ -3,7 +3,7 @@ clues. The wordsparrow.io live grid bug tracked here was that lemma=unir
 shipped with clue 'Associer ensemble', visibly redundant on the live grid.
 
 This test guards three things at once:
-1. No row in `grid/api/src/main/resources/words/words-fr.csv` trips
+1. No row in `grid/infrastructure/src/main/resources/words/words-fr.csv` trips
    `validate_clue._find_pleonasm`. If a future LoRA run regresses, the
    pipeline's validator gate now catches it; this test catches the
    merged-but-not-validated artifact case (e.g. someone editing the CSV
@@ -27,7 +27,12 @@ sys.path.insert(0, str(Path(__file__).parent))
 from validate_clue import _find_pleonasm  # noqa: E402
 
 REPO = Path(__file__).resolve().parents[2]
-WORDLIST = REPO / "grid" / "api" / "src" / "main" / "resources" / "words" / "words-fr.csv"
+# Corpus moved from grid/api/.../resources to grid/infrastructure/...
+# in PR #439. Prefer the current location; fall back to the old one
+# only when present (vacuous skip if neither exists).
+_NEW_WORDLIST = REPO / "grid" / "infrastructure" / "src" / "main" / "resources" / "words" / "words-fr.csv"
+_OLD_WORDLIST = REPO / "grid" / "api" / "src" / "main" / "resources" / "words" / "words-fr.csv"
+WORDLIST = _NEW_WORDLIST if _NEW_WORDLIST.exists() else _OLD_WORDLIST
 SHIPPED_LEMMA = REPO / "data" / "eval" / "production" / "lemma_clues_shipped.csv"
 SHIPPED_SURFACE = REPO / "data" / "eval" / "production" / "surface_clues.csv"
 
