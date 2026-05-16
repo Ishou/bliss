@@ -156,6 +156,11 @@ Full rationale is in MANIFESTO.md.
   dates.
 - **Accessibility is a requirement** (WCAG AA, ADR-0034), not a
   follow-up ticket.
+- **Secrets never in code.** Injected at runtime. Git hooks and
+  `secret-scan` (gitleaks, listed in CI gates above) prevent accidental
+  commits.
+- **Auth/authz changes need a threat model.** ADR or PR body must
+  include one before the PR is reviewed.
 
 ## Things to never do without explicit approval
 
