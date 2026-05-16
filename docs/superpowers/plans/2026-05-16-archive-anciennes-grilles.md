@@ -1582,26 +1582,26 @@ export interface SoloEntriesStore {
   clearForPuzzle(puzzleId: string): void;
 }
 
+export interface SoloStorage {
+  loadSoloEntries(sessionId: string, puzzleId: string): Record<string, string>;
+  saveSoloLetter(sessionId: string, puzzleId: string, row: number, col: number, letter: string): void;
+  loadSoloLockedCells(sessionId: string, puzzleId: string): Array<[number, number]>;
+  saveSoloLockedCell(sessionId: string, puzzleId: string, row: number, col: number): void;
+  loadSoloHintsUsed(sessionId: string, puzzleId: string): number;
+  recordSoloHintUsed(sessionId: string, puzzleId: string): void;
+  clearSoloEntriesForPuzzle(sessionId: string, puzzleId: string): void;
+}
+
 export interface SoloEntriesStoreDeps {
   readonly getSessionId: () => string;
-  readonly storage: Pick<
-    typeof import('@/infrastructure/session/localStorageSolo'),
-    | 'loadSoloEntries'
-    | 'saveSoloLetter'
-    | 'loadSoloLockedCells'
-    | 'saveSoloLockedCell'
-    | 'loadSoloHintsUsed'
-    | 'recordSoloHintUsed'
-    | 'clearSoloEntriesForPuzzle'
-  >;
+  readonly storage: SoloStorage;
 }
 
 /**
  * Constructs a session-bound store. The resolver is called on every
  * operation so a session rotation (RGPD erase → reseed) is transparent
- * to consumers. Infrastructure functions are injected via `deps.storage`
- * so the application layer holds no static import from infrastructure
- * (eslint-plugin-boundaries enforces this as a CI gate).
+ * to consumers. Infrastructure functions are injected via `deps.storage`;
+ * `SoloStorage` is declared in application/ with no import from infrastructure.
  */
 export function createSoloEntriesStore(deps: SoloEntriesStoreDeps): SoloEntriesStore {
   return {
