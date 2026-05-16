@@ -3,24 +3,12 @@ package com.bliss.grid.application.puzzle
 import java.time.LocalDate
 import java.util.UUID
 
-/**
- * Returns a thin, newest-first list of daily puzzles for the `/grilles`
- * archive route. Date-to-id mapping is the deterministic
- * [DailyPuzzleSelector]; the repository projects to
- * (id, totalLetterCells). Per-user progress is computed client-side from
- * the solo-entries store and is intentionally absent from this contract.
- *
- * `hasMore` is true when the clamped range contains more rows than
- * [maxItems]; clients paginate by re-issuing the request with `to` set
- * to one day before the oldest returned `date`.
- */
 class ListDailyPuzzlesUseCase(
     private val puzzleRepository: PuzzleRepository,
     private val dailyPuzzleSelector: DailyPuzzleSelector = DailyPuzzleSelector(),
     private val launchAnchor: LocalDate = DEFAULT_LAUNCH_ANCHOR,
     private val defaultRangeDays: Int = DEFAULT_RANGE_DAYS,
     private val maxItems: Int = DEFAULT_MAX_ITEMS,
-    private val defaultDifficulty: String? = DEFAULT_DIFFICULTY,
 ) {
     fun execute(
         from: LocalDate?,
@@ -47,14 +35,13 @@ class ListDailyPuzzlesUseCase(
             puzzleRepository.findSummariesByIds(ids).associateBy { it.puzzleId }
 
         val mapped =
-            dates.mapNotNull { date ->
-                val id = dailyPuzzleSelector.puzzleIdForDate(date)
+            dates.zip(ids).mapNotNull { (date, id) ->
                 val summary = summariesById[id] ?: return@mapNotNull null
                 Item(
                     id = id,
                     date = date,
                     gridNumber = dailyPuzzleSelector.gridNumberForDate(date),
-                    difficulty = defaultDifficulty,
+                    difficulty = null,
                     totalLetterCells = summary.totalLetterCells,
                 )
             }
@@ -81,6 +68,5 @@ class ListDailyPuzzlesUseCase(
         val DEFAULT_LAUNCH_ANCHOR: LocalDate = LocalDate.parse("2026-01-01")
         const val DEFAULT_RANGE_DAYS: Int = 31
         const val DEFAULT_MAX_ITEMS: Int = 100
-        val DEFAULT_DIFFICULTY: String? = null
     }
 }

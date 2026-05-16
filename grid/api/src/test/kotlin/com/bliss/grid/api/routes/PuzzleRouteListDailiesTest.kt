@@ -44,11 +44,6 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
 
-/**
- * Wire-path tests for `GET /v1/puzzles/daily/list`. The route is wired with
- * a fixed clock (today = 2026-05-16) and an in-memory repository that has
- * been seeded by walking [DailyPuzzleSelector] over a curated date range.
- */
 class PuzzleRouteListDailiesTest {
     private val today = LocalDate.parse("2026-05-16")
     private val fixedClock: Clock = Clock.fixed(today.atStartOfDay(ZoneOffset.UTC).toInstant(), ZoneOffset.UTC)
@@ -153,12 +148,6 @@ class PuzzleRouteListDailiesTest {
             assertThat(body.items.all { it.totalLetterCells == 5 }).isTrue()
         }
 
-    /**
-     * Wires the puzzle route in isolation with an in-memory repo seeded
-     * from [seed] (inclusive on both ends) and a fixed clock pinned to
-     * [today]. Avoids the full `module()` so the test stays hermetic
-     * (no CsvWordRepository load, no PuzzleGenerator).
-     */
     private fun Application.listDailyPuzzlesModule(
         seed: ClosedRange<LocalDate>,
         maxItems: Int = ListDailyPuzzlesUseCase.DEFAULT_MAX_ITEMS,

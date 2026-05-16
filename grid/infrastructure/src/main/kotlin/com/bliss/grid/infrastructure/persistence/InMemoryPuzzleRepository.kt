@@ -36,8 +36,4 @@ class InMemoryPuzzleRepository : PuzzleRepository {
         return store.putIfAbsent(puzzleId, produced) ?: produced
     }
 
-    // `findSummariesByIds` inherits the interface default, which calls
-    // `get(id)` per id and derives the summary from `StoredPuzzle.totalLetterCells`.
-    // Map walk over ConcurrentHashMap is O(N) for N requested ids, fine
-    // for the in-memory adapter's local-dev / test posture.
 }

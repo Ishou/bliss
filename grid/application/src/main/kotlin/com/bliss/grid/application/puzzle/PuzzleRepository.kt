@@ -36,18 +36,7 @@ interface PuzzleRepository {
         factory: () -> StoredPuzzle?,
     ): StoredPuzzle?
 
-    /**
-     * Returns thin (id, totalLetterCells) summaries for the supplied ids,
-     * in unspecified order. Missing ids — no row, or a pre-V4 row whose
-     * `total_letter_cells` column is still NULL — are silently absent from
-     * the result. The list endpoint zips the response back against its
-     * request date list, so missing ids drop out of the wire output too.
-     *
-     * Default implementation falls back to `get(id)` on each id, deriving
-     * the summary from `StoredPuzzle.totalLetterCells`. Production adapters
-     * override with a single SQL round trip; test fakes that don't care
-     * about the list endpoint inherit the default for free.
-     */
+    /** Missing ids (no row or NULL total_letter_cells) are silently absent from the result. */
     fun findSummariesByIds(puzzleIds: List<UUID>): List<StoredSummary> =
         puzzleIds.mapNotNull { id ->
             val stored = get(id) ?: return@mapNotNull null
@@ -55,10 +44,7 @@ interface PuzzleRepository {
         }
 }
 
-/**
- * Thin projection over the puzzles table for the archive endpoint.
- * See [PuzzleRepository.findSummariesByIds].
- */
+/** Thin projection used by the archive list endpoint. */
 data class StoredSummary(
     val puzzleId: UUID,
     val totalLetterCells: Int,
@@ -68,9 +54,7 @@ data class StoredSummary(
  * Server-side puzzle snapshot. Carries the canonical [Grid] (with its
  * letters — server-private, never serialized to clients) plus the wire-side
  * fields needed to render the response on subsequent GETs.
- *
- * `totalLetterCells` is denormalised here so the list endpoint can return
- * thin summaries without re-reading every payload JSON document.
+ * `totalLetterCells` is denormalised so the archive list endpoint skips re-reading payload JSONB.
  */
 data class StoredPuzzle(
     val grid: Grid,
