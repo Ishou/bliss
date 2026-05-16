@@ -136,21 +136,27 @@ Notes:
 
 ### Migration
 
+The current `puzzles` table (V1) keys by `puzzle_id` only — there is no `puzzle_date` column. The daily endpoint maps `LocalDate → UUID v7` via the existing `DailyPuzzleSelector` (deterministic) and looks up by primary key. The archive uses the same map: compute the UUID v7 for each day in `[from, to]` in Kotlin, then `SELECT ... WHERE puzzle_id = ANY(?)`. No new index, no new date column.
+
+Only `total_letter_cells` is added — it's not derivable cheaply at query time and the list endpoint needs it. The payload JSONB carries `cells[].kind` for the backfill.
+
 ```sql
--- V<next>__add_total_letter_cells.sql
+-- V4__add_total_letter_cells.sql  (must be added to BOTH
+-- grid/api/src/main/resources/db/migration/ AND
+-- grid/infrastructure/src/test/resources/db/migration/)
 ALTER TABLE puzzles
   ADD COLUMN total_letter_cells INTEGER;
 
 UPDATE puzzles
 SET total_letter_cells = (
   SELECT count(*)
-  FROM jsonb_array_elements(puzzle_json -> 'cells') c
+  FROM jsonb_array_elements(payload -> 'cells') c
   WHERE c ->> 'kind' = 'letter'
 )
 WHERE total_letter_cells IS NULL;
 ```
 
-Expand-and-contract: column is nullable to keep the migration reversible. The daily-puzzle worker is updated in this PR to populate the column on every new insert; the backfill covers existing rows in one statement. No new index — `puzzles(puzzle_date)` already covers the range scan.
+Expand-and-contract: column is nullable to keep the migration reversible. `LoadOrGeneratePuzzleUseCase` (the existing write path) is updated in this PR to populate the column on every new insert; the backfill covers existing rows in one statement.
 
 ### Use case (`grid/application/`)
 
@@ -162,21 +168,27 @@ Expand-and-contract: column is nullable to keep the migration reversible. The da
 
 ### Repository (`grid/infrastructure/`)
 
+New port method on `PuzzleRepository`:
+
 ```kotlin
-fun findSummariesInRange(from: LocalDate, to: LocalDate, limit: Int): List<PuzzleSummary>
+fun findSummariesByIds(puzzleIds: List<UUID>): List<StoredSummary>
+
+data class StoredSummary(
+    val puzzleId: UUID,
+    val totalLetterCells: Int,
+)
 ```
 
-Single SELECT:
+Single SELECT (Postgres adapter):
 
 ```sql
-SELECT id, puzzle_date, grid_number, difficulty, total_letter_cells
+SELECT puzzle_id, total_letter_cells
 FROM puzzles
-WHERE puzzle_date BETWEEN ? AND ?
-ORDER BY puzzle_date DESC
-LIMIT ?;
+WHERE puzzle_id = ANY(?)
+  AND total_letter_cells IS NOT NULL;
 ```
 
-Rows with `total_letter_cells IS NULL` are filtered out at the application layer (should never happen post-backfill; treated as defensive).
+The use case (not the repo) builds the UUID list from the date range via `DailyPuzzleSelector.puzzleIdForDate(date)` (existing in `application/puzzle/`), passes it to the repo, and zips the returned `StoredSummary` set back with the date list to produce `PuzzleSummary` items (date, gridNumber, difficulty derived in Kotlin like the existing daily endpoint does). Missing dates (no row) and rows with null `total_letter_cells` (defensive — should never occur post-backfill) are dropped.
 
 ### HTTP route
 
@@ -186,8 +198,8 @@ Rows with `total_letter_cells IS NULL` are filtered out at the application layer
 
 - Use-case (in-memory repo, table-driven): default range, explicit range, `from > to`, `from < launch anchor` (clamped), `to > today` (clamped), empty range.
 - Property-based: arbitrary date pairs always yield `from <= to <= today` after clamping.
-- HTTP (Ktor `testApplication` against a Flyway-migrated test DB, no mocks per CLAUDE.md): 200 ordering, 200 default range, 400 on garbage date, 400 problem-detail shape.
-- Worker write path: a newly inserted puzzle has `total_letter_cells` set.
+- HTTP (Ktor `testApplication` against a Flyway-migrated test DB, no mocks per CLAUDE.md): 200 ordering (DESC by date), 200 default range, 400 on garbage date, 400 problem-detail shape, 200 empty `items` when range is empty.
+- Write path: a puzzle persisted through `LoadOrGeneratePuzzleUseCase` after this PR has `total_letter_cells` populated; an existing row written pre-migration is filled by the backfill.
 - Konsist: no JDBC imports in `domain/` or `application/`.
 
 ## PR 3 — frontend solo refactor (`frontend/`)
