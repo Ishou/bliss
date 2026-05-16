@@ -191,7 +191,6 @@ class ListDailyPuzzlesUseCaseTest {
             val produced = factory() ?: return null
             return store.putIfAbsent(puzzleId, produced) ?: produced
         }
-        // findSummariesByIds inherits the interface default (per-id get + derive).
     }
 
     private fun sampleStoredPuzzle(): StoredPuzzle {
