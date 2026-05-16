@@ -20,6 +20,7 @@
 
 import * as React from 'react';
 import { css } from 'styled-system/css';
+import { HerbierCorner } from '../decorations/HerbierCorner';
 import { AppHeader } from './AppHeader';
 import { Footer } from './Footer';
 
@@ -41,6 +42,10 @@ const contentMainStyles = css({
   alignItems: 'center',
   width: '100%',
   bg: 'bg',
+  // Anchor for absolutely-positioned <HerbierCorner> decorations
+  // (ADR-0043 §5). ViewportPage's variant intentionally omits this —
+  // the /grille and lobby playing surfaces stay clean.
+  position: 'relative',
 });
 
 // Viewport variant: <main> absorbs leftover height (flex:1 1 0;
@@ -170,6 +175,12 @@ export function ContentPage({ headerActiveNavId, children }: ContentPageProps) {
       headerActiveNavId={headerActiveNavId}
       mainClassName={contentMainStyles}
     >
+      {/* Asymmetric-diagonal placement (top-left + bottom-right) reads as
+       * editorial margin notes rather than a boxy frame. ViewportPage
+       * intentionally omits decorations — the grille / lobby playing
+       * surfaces stay clean per ADR-0043 §5. */}
+      <HerbierCorner corner="top-left" />
+      <HerbierCorner corner="bottom-right" />
       <div className={contentWrapperStyles}>{children}</div>
     </PageChrome>
   );
