@@ -89,9 +89,7 @@ class PostgresPuzzleRepositorySummariesTest {
     @Test
     fun `findSummariesByIds excludes rows where total_letter_cells is null`() {
         val id = UUID.randomUUID()
-        // Pre-backfill leftover: bypass the repo and write a row with a NULL
-        // total_letter_cells column to simulate a row inserted before V4 ran
-        // (or under a future rollback).
+        // Simulate a pre-V4 row (total_letter_cells NULL) by bypassing the repo's INSERT.
         dataSource.connection.use { c ->
             c
                 .prepareStatement(

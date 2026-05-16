@@ -35,5 +35,4 @@ class InMemoryPuzzleRepository : PuzzleRepository {
         // generated grid is discarded.
         return store.putIfAbsent(puzzleId, produced) ?: produced
     }
-
 }
