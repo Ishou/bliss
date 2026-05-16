@@ -17,6 +17,7 @@ import type { Lobby, LobbyId, Pseudonym, SessionId } from '@/domain/game';
 import { Route as RootRoute } from '@/ui/routes/__root';
 import { Route as AccueilRoute } from '@/ui/routes/accueil';
 import { Route as GrilleRoute } from '@/ui/routes/grille';
+import { Route as GrillesRoute } from '@/ui/routes/grilles';
 import { Route as LobbyRoute } from '@/ui/routes/lobby.$lobbyId';
 
 // 5×3 fixture with 9 letter cells and 6 black cells — small enough to
@@ -133,7 +134,7 @@ const renderAccueil = (options: RenderOptions = {}) => {
     listDailySummaries: () => Promise.resolve({ items: [], hasMore: false }),
     ...options.puzzleRepository,
   };
-  const routeTree = RootRoute.addChildren([AccueilRoute, GrilleRoute, LobbyRoute]);
+  const routeTree = RootRoute.addChildren([AccueilRoute, GrilleRoute, GrillesRoute, LobbyRoute]);
   const router = createRouter({
     routeTree,
     history: createMemoryHistory({ initialEntries: [options.initialEntry ?? '/'] }),
@@ -267,10 +268,14 @@ describe('Accueil route', () => {
     });
   });
 
-  it('disables the "Anciennes grilles" link', async () => {
-    renderAccueil();
+  it('navigates to /grilles when "Anciennes grilles" is clicked', async () => {
+    const { router } = renderAccueil();
     const link = await screen.findByRole('button', { name: 'Voir les anciennes grilles →' });
-    expect(link).toBeDisabled();
+    expect(link).not.toBeDisabled();
+    await act(async () => { link.click(); });
+    await vi.waitFor(() => {
+      expect(router.state.location.pathname).toBe('/grilles');
+    });
   });
 
   it('omits the gridNumber and difficulty meta when both are null', async () => {

@@ -710,7 +710,16 @@ export const Route = createRoute({
     }
     return out;
   },
-  loaderDeps: ({ search }) => ({ date: search.date }),
+  // Strict-search read: TanStack's preMatchSearch is parent-merged and
+  // surfaces the *raw* value for keys our `validateSearch` filters out
+  // (e.g. `?date=not-a-date`). We re-validate here so malformed dates
+  // resolve to "today" rather than reaching the wire.
+  loaderDeps: ({ search }) => ({
+    date:
+      typeof search.date === 'string' && ISO_DATE.test(search.date)
+        ? search.date
+        : undefined,
+  }),
   loader: ({ context, deps }): Promise<Puzzle | null> =>
     context.puzzleRepository.fetchDaily(deps.date),
   component: HomePage,
