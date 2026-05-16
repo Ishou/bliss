@@ -73,6 +73,32 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/puzzles/daily/list": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List past + current daily puzzles.
+         * @description Returns thin summaries of dailies in the requested range, newest
+         *     first. Always excludes future dates; clamps `from` to the launch
+         *     anchor (2026-01-01 UTC) and `to` to today UTC. If `from` is later
+         *     than `to` after clamping, the response is 200 with an empty `items`
+         *     array. Per-user progress is NOT included — clients derive it locally
+         *     from the solo-entries store keyed by `id`. The response is bounded
+         *     at 100 items.
+         */
+        get: operations["listDailyPuzzles"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/puzzles/{puzzleId}/hints": {
         parameters: {
             query?: never;
@@ -255,6 +281,57 @@ export interface components {
              * @example 2026-04-24T15:30:00Z
              */
             createdAt: string;
+        };
+        /**
+         * @description Envelope returned by `listDailyPuzzles`. The `items` array is
+         *     capped at 100 entries; clients paginate by issuing successive
+         *     requests with narrower `from`/`to` ranges.
+         */
+        ListDailyPuzzlesResponse: {
+            items: components["schemas"]["PuzzleSummary"][];
+            /**
+             * @description `true` when the requested range contained more than 100 items
+             *     and results were truncated to the newest 100. Clients may
+             *     re-query with `to` set to one day before the oldest returned
+             *     `date` to page further back.
+             */
+            hasMore: boolean;
+        };
+        /**
+         * @description Thin daily-puzzle summary returned by `listDailyPuzzles`. Carries
+         *     only the fields the archive UI needs to render a row; the full
+         *     `Puzzle` document is fetched lazily via `getDailyPuzzle` when the
+         *     player opens a past grid. `id` is the deterministic UUID v7
+         *     derived from `date`, matching what `getDailyPuzzle?date=` returns.
+         */
+        PuzzleSummary: {
+            id: components["schemas"]["PuzzleId"];
+            /**
+             * Format: date
+             * @example 2026-05-05
+             */
+            date: string;
+            /**
+             * @description Sequence number from the launch anchor (day 1 = 2026-01-01
+             *     UTC). Always present on daily summaries; see
+             *     `Puzzle.gridNumber` for the optional/nullable shape on the
+             *     full puzzle document.
+             * @example 125
+             */
+            gridNumber: number;
+            /**
+             * @description Difficulty tier for the daily. Mirrors `Puzzle.difficulty`
+             *     for the same date; `null` means no tier was assigned (clients
+             *     should render no badge).
+             * @example facile
+             * @enum {string|null}
+             */
+            difficulty?: "facile" | "moyen" | "difficile" | null;
+            /**
+             * @description Count of letter cells in the puzzle (denominator for client-side progress bars).
+             * @example 28
+             */
+            totalLetterCells: number;
         };
         /**
          * @description Grid cell variant. `kind` discriminates: `letter` (answer cell,
@@ -732,6 +809,55 @@ export interface operations {
                      *       "detail": "La grille du jour n'a pas encore été générée pour cette date."
                      *     }
                      */
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    listDailyPuzzles: {
+        parameters: {
+            query?: {
+                /**
+                 * @description ISO-8601 calendar date inclusive. Defaults to 31 days before
+                 *     `to` when omitted. Values earlier than the launch anchor are
+                 *     clamped to the anchor.
+                 */
+                from?: string;
+                /**
+                 * @description ISO-8601 calendar date inclusive. Defaults to today UTC.
+                 *     Future values are clamped to today.
+                 */
+                to?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /**
+             * @description List resolved. `items` is sorted DESC by `date`. May be empty
+             *     (e.g. range entirely before launch anchor, or no row exists
+             *     for any date in the range because the worker hasn't filled it
+             *     yet).
+             */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListDailyPuzzlesResponse"];
+                };
+            };
+            /**
+             * @description `from` or `to` is not a valid ISO-8601 date. RFC 7807;
+             *     `type` is `https://bliss.example/errors/invalid-puzzle-date`.
+             */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
                     "application/problem+json": components["schemas"]["Problem"];
                 };
             };
