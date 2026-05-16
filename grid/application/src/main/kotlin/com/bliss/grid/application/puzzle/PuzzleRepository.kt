@@ -35,7 +35,34 @@ interface PuzzleRepository {
         puzzleId: UUID,
         factory: () -> StoredPuzzle?,
     ): StoredPuzzle?
+
+    /**
+     * Returns thin (id, totalLetterCells) summaries for the supplied ids,
+     * in unspecified order. Missing ids — no row, or a pre-V4 row whose
+     * `total_letter_cells` column is still NULL — are silently absent from
+     * the result. The list endpoint zips the response back against its
+     * request date list, so missing ids drop out of the wire output too.
+     *
+     * Default implementation falls back to `get(id)` on each id, deriving
+     * the summary from `StoredPuzzle.totalLetterCells`. Production adapters
+     * override with a single SQL round trip; test fakes that don't care
+     * about the list endpoint inherit the default for free.
+     */
+    fun findSummariesByIds(puzzleIds: List<UUID>): List<StoredSummary> =
+        puzzleIds.mapNotNull { id ->
+            val stored = get(id) ?: return@mapNotNull null
+            StoredSummary(puzzleId = id, totalLetterCells = stored.totalLetterCells)
+        }
 }
+
+/**
+ * Thin projection over the puzzles table for the archive endpoint.
+ * See [PuzzleRepository.findSummariesByIds].
+ */
+data class StoredSummary(
+    val puzzleId: UUID,
+    val totalLetterCells: Int,
+)
 
 /**
  * Server-side puzzle snapshot. Carries the canonical [Grid] (with its
