@@ -10,7 +10,7 @@ This skill is for the **orchestrator** role: a Claude session that doesn't write
 ## When this skill applies
 
 - The user describes a feature spanning many files, languages, and bounded contexts (e.g. "lobbies + multiplayer game", "new bounded context").
-- The user references a plan file at `/root/.claude/plans/<name>.md` and expects you to follow it.
+- The user references a plan file at `docs/superpowers/plans/<name>.md` and expects you to follow it.
 - The user mentions "waves", "batch work", "parallel agents", "fixer loop", or asks you to "relaunch a reviewer".
 - An in-flight PR is failing CI and the user asks you to fix it (or the auto-fix loop hit its cap).
 
@@ -27,7 +27,7 @@ Read these before doing anything substantial. They override anything in this ski
 - `docs/adr/0006-jvm-http-framework.md` — Ktor + Kotlin; SSE for v1, WebSocket deferred until multiplayer (the multiplayer rollout resolves that defer).
 - `docs/adr/0009-self-managed-k8s-deployment.md` — Helm chart layout + CNPG.
 - `docs/adr/0018-game-bounded-context-and-realtime.md` — multiplayer architecture.
-- The current plan file (`/root/.claude/plans/<adjective-adjective-noun>.md`) — the wave-by-wave rollout map.
+- The current plan file (`docs/superpowers/plans/<date>-<slug>.md`) — the wave-by-wave rollout map.
 
 ## Bounded contexts
 
@@ -109,7 +109,7 @@ The skills are project-level (`.claude/skills/<name>/SKILL.md`) so every agent d
 
 - **Branches**: `<type>/<short-description>` where `<type>` is one of `feat|fix|chore|refactor|test|docs`. Enforced by the `branch-name` CI check. The Claude bot uses the `chore/claude-` prefix (e.g. `chore/claude-game-domain-scoring`) so its branches satisfy the conventional-type requirement per CLAUDE.md. (Historical note: ADR-0001 §2 used `claude/<context>-<slug>-<id>`; CLAUDE.md is the current authority.)
 - **Commit messages**: Conventional Commits, single scope (no commas — commitlint rejects `fix(grid-api,grid-worker):`). Use `fix(grid):` if the change spans multiple submodules of the same context.
-- **Commit type allowlist**: `.commitlintrc.yml` `type-enum` is closed: `[feat, fix, chore, refactor, test, docs]`. **`perf` and `style` are NOT allowed** — PR #368 took three review cycles on this (commits `perf(grid): …` then `style(grid): spotless …`). Use `refactor:` for algorithm/perf tweaks; `chore:` for auto-format. No `build:` / `ci:` / `revert:` either.
+- **Commit type allowlist**: `.commitlintrc.yml` `type-enum` is closed: `[feat, fix, chore, refactor, test, docs]`. **`perf`, `style`, and `wip` are NOT allowed** — PR #368 took three review cycles on `perf:`/`style:` (commits `perf(grid): …` then `style(grid): spotless …`). Use `refactor:` for algorithm/perf tweaks; `chore:` for auto-format; **`chore(<scope>): wip ...` for work-in-progress** (`wip(...)` as the type is rejected). No `build:` / `ci:` / `revert:` either.
 - **DCO sign-off**: `git commit -s` adds `Signed-off-by: <name> <email>`. Required by the `dco` CI check. To fix a missing trailer: `git commit -s --amend --no-edit && git push --force-with-lease`.
 
 ## CI auto-fix loop (paste verbatim into every dispatched agent prompt)
@@ -217,7 +217,7 @@ You are an implementation agent. **PR #<N> of Wave <X>** in the
 <feature> rollout: <one-paragraph goal>.
 
 ## Background
-Plan: `/root/.claude/plans/<plan>.md`. Read §<sections> first.
+Plan: `docs/superpowers/plans/<plan>.md`. Read §<sections> first.
 Relevant ADRs: <list>. Relevant existing modules: <list>.
 
 ## Your scope
@@ -264,10 +264,10 @@ DO NOT: <scope caps>.
 
 ## Worktree hygiene
 
-Agents that finish leave their worktree at `/home/user/bliss/.claude/worktrees/agent-<id>/` with the branch checked out. To free a branch (so you can `git checkout` it from the main repo):
+Agents that finish leave their worktree at `.claude/worktrees/agent-<id>/` (repo-relative) with the branch checked out. To free a branch (so you can `git checkout` it from the main repo):
 
 ```
-git worktree remove /home/user/bliss/.claude/worktrees/agent-<id> -f -f
+git worktree remove .claude/worktrees/agent-<id> -f -f
 ```
 
 The double `-f -f` overrides the agent-process lock. Worktrees with no commits auto-clean on agent exit; ones with commits persist until manually removed.

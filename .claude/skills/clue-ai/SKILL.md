@@ -13,7 +13,7 @@ For everything in the offline French clue-generation pipeline: corpus building, 
 - `docs/adr/0013-words-clues-worker.md` — the offline-batch shape, the §5 clue rules (length cap, retry-on-overrun, drop on repeated overrun), the worker subcommand surface, and the §8 amendment that made the committed CSV the production source of truth (no DB read path in prod). The hosted-LLM lane described in §5 has been retired in favour of pure-LoRA generation; only the local Python pipeline produces clues today.
 - `docs/adr/0023-dbnary-lexical-data-source.md` — the CC BY-SA constraints. Read constraint #1 and #2 word-for-word before touching anything that surfaces DBnary content (definition_text, synonyms, gloss).
 - `docs/adr/0024-dbnary-synonym-lemma-as-direct-clue-candidate.md` — the **narrow** relaxation that authorises a capitalized `synonym_lemma` as `clue_text` with `source = 'dbnary-synonym'`. Definitions are still off-limits. Don't extend the relaxation by analogy.
-- `docs/eval/clue-gen-v0.md` — the live eval logbook. Iter1 → iter12 with acceptance numbers, failure-mode taxonomy, variance-at-N analysis, and the ranked next-step list. Append a new iter section here for any change you ship; do not silently overwrite an iter's row.
+- `docs/eval/clue-gen-v0.md` — the live eval logbook. Iter1 → iter17+ (and counting) with acceptance numbers, failure-mode taxonomy, variance-at-N analysis, and the ranked next-step list. **This logbook is the source of truth for which LoRA adapter and which filter are currently production.** Read the latest iter row before invoking the pipeline; the `run_production.sh` defaults below drift behind. Append a new iter section here for any change you ship; do not silently overwrite an iter's row.
 - `NOTICE.md` — attribution surface. The Hunspell-fr / DBnary entries here are load-bearing for licence compliance; don't drop one without an ADR.
 
 ## Pipeline at a glance
@@ -32,7 +32,7 @@ words-fr.csv (lemma list) ────────► sample top-X per length, l
                           │           scripts/eval/validate_clue.py  (structural gates)
                           │                              │
                           ▼                              ▼
-              scripts/eval/synonym_clues.py     CamemBERT filter (models/filter-camembert-v5)
+              scripts/eval/synonym_clues.py     CamemBERT filter (models/filter-camembert-vN; latest in eval logbook)
               (DBnary synonym → capitalized clue)         │
                           │                              ▼
                           ▼                    threshold split (T≈0.65) → lemma_clues_shipped.csv
@@ -60,8 +60,8 @@ The two ingestion lanes (LoRA-generated + dbnary-synonym) live side-by-side in `
 | Concern | Choice | Notes |
 |---|---|---|
 | Base LLM (LoRA target) | `mlx-community/c4ai-command-r-08-2024-4bit` | 32B, ~17 GB on disk, runs natively on Apple Silicon. Pinned; bumping is an ADR-class change. **Local inference only — there is no hosted-LLM lane.** |
-| Fine-tuning | mlx-lm `lora` | LoRA + DPO. Configs at `scripts/clue_generation/lora_iter*.yaml`. |
-| Filter / ranker | `sentence-transformers` w/ CamemBERT base | Triplet contrastive on (lemma, y-clue, n-clue). Latest = `models/filter-camembert-v5`. |
+| Fine-tuning | mlx-lm `lora` | LoRA + DPO. Configs at `scripts/clue_generation/lora_iter*.yaml` (iter9 through iter18 at last count; new iters land alongside, never overwrite). |
+| Filter / ranker | `sentence-transformers` w/ CamemBERT base | Triplet contrastive on (lemma, y-clue, n-clue). **Current production filter is whichever the latest eval-logbook iter row promoted** — `ls models/filter-camembert-v*` for the inventory. |
 | Morphology | grammalecte lexique 7.7 | `lexique-grammalecte-fr-v7.7.txt` (MPL-2.0). Drives `validate_clue` head/POS lookup. |
 | Lexical data (synonyms, defs) | DBnary (Wiktionary RDF) | CC BY-SA. **definition_text** never leaves the offline pipeline. **synonym_lemma** allowed as direct clue per ADR-0024. |
 | Validator | `scripts/eval/validate_clue.py` | Pure Python, no model. Output flags listed below — used as a gate before scoring. |
@@ -82,8 +82,8 @@ data/
 ├── lora_filter/                 # filter contrastive corpus.
 └── lora_dpo/                    # mined preference pairs (chosen, rejected) from rated iters.
 models/
-├── lora-clue-v1..v5/            # SFT adapters. v3 = iter10. v5 = iter12 DPO refinement.
-├── filter-camembert-v1..v5/     # ranker checkpoints. v5 = current production.
+├── lora-clue-v1..vN/            # SFT + DPO adapters. v3 = iter10 SFT base; later v's are DPO on top of v3. Cross-reference `docs/eval/clue-gen-v0.md` to map version → iter; **production stitches the latest promoted adapter with a prior-version fallback** (verify before dispatching — defaults in `run_production.sh` drift behind).
+├── filter-camembert-v1..vN/     # ranker checkpoints. Current production = latest promoted in the eval logbook.
 └── filter-crossencoder-v1/      # alt cross-encoder explored; not the production path.
 ```
 
@@ -112,7 +112,7 @@ Configs live at `scripts/clue_generation/lora_iter*.yaml`. The pattern from iter
 - `num_layers: 16`, `batch_size: 2` for SFT; `batch_size: 4` if rank ≥ 32.
 - SFT learning rate ≈ `1e-5`. **DPO learning rate ≈ `1e-6`** (sigmoid loss, β = 0.1) — orders of magnitude lower than SFT. Mixing the two will silently overfit.
 - `iters` short enough to stop before val loss climbs. iter10's best was iter 100 (val loss 0.815); iter8's best was iter 200. Always promote the **best-val-loss adapter**, not the last one — train loss keeps falling on a small corpus.
-- `resume_adapter_file:` for DPO points at the SFT adapter (`models/lora-clue-v3/adapters.safetensors`). DPO refines preference; it does not replace SFT.
+- `resume_adapter_file:` for DPO points at the SFT base adapter (today: `models/lora-clue-v3/adapters.safetensors` — the iter10 SFT). DPO refines preference; it does not replace SFT. Every promoted DPO iter (iter12, iter13.2, iter14, iter17, …) re-DPO'd from `v3` rather than chaining DPO-on-DPO — iter13.1 is the documented counter-example of why chaining drifts.
 
 Train via `scripts/clue_generation/train_lora.sh` or directly:
 
@@ -127,12 +127,12 @@ When you ship a new adapter:
 
 ## Filter (CamemBERT) — what it does + thresholds
 
-The filter (`models/filter-camembert-v5`) is a sentence-transformers bi-encoder over CamemBERT base, contrastively trained on:
+The filter (`models/filter-camembert-vN`) is a sentence-transformers bi-encoder over CamemBERT base, contrastively trained on:
 - DBnary `(lemma, sense)` positive pairs (in-batch random negatives).
 - Round-2 hand-authored same-lemma `(y, n)` triplets (subtle wrong-sense / polysemic-wrong negatives — exactly the failure modes the validator can't catch).
 - Iter `(y, b/n)` pairs from the rated eval CSVs (excluding the held-out `eval_human.jsonl` rows used for measurement).
 
-At inference (`run_production.sh` phase 3), the filter encodes lemma and `lemma_clue` separately and uses cosine similarity as `filter_score`. The default ship threshold is `T = 0.65` (env var `THRESHOLD`). Below T, clue is dropped. Above T **and** validator flag = `ok`, clue is shipped.
+At inference (`run_production.sh` phase 3), the filter encodes lemma and `lemma_clue` separately and uses cosine similarity as `filter_score`. The default ship threshold is `T = 0.65` (env var `THRESHOLD`). Below T, clue is dropped. Above T **and** validator flag = `ok`, clue is shipped. The hardcoded `FILTER=` default in `run_production.sh` lags production — override on the command line with the version named in the latest eval-logbook iter row.
 
 Don't push T below 0.6 without a fresh held-out eval — the filter starts admitting wrong-sense negatives that look syntactically clean. Don't push T above 0.75 without a fresh eval either — recall on legitimate metaphor / pun clues collapses (`amende → "Contravention financière"` style).
 
@@ -174,10 +174,13 @@ That table is the gate for shipping a new adapter into the production pipeline; 
 Three phases. Resume-safe by design (each phase rewrites its output file in place):
 
 ```
+# Replace vN with the LoRA adapter + filter version named in the latest
+# `docs/eval/clue-gen-v0.md` iter row that promoted a production change.
+# The script's own GEN_ADAPTER / FILTER defaults are stale — always override.
 X=5000 THRESHOLD=0.65 \
 GEN_MODEL=mlx-community/c4ai-command-r-08-2024-4bit \
-GEN_ADAPTER=models/lora-clue-v3 \
-FILTER=models/filter-camembert-v5 \
+GEN_ADAPTER=models/lora-clue-vN \
+FILTER=models/filter-camembert-vN \
   ./scripts/clue_generation/run_production.sh
 ```
 
@@ -185,7 +188,7 @@ FILTER=models/filter-camembert-v5 \
 2. **Batched LoRA generation.** `generate_clues_lora_batched.py` runs `mlx_lm.batch_generate` at `batch=16` (M4 Max 64 GB fits comfortably with command-r 4-bit; bump cautiously). The batched path skips per-prompt validate-and-retry — validator runs once and non-`ok` rows are kept with the flag for the filter to drop.
 3. **Filter score + threshold split.** Encodes lemma and clue with the filter, writes `filter_score`, then splits into `lemma_clues_shipped.csv` (score ≥ T **and** validator `ok`) and `lemma_clues_dropped.csv`.
 
-The `shipped` CSV is what feeds `bliss-worker ingest-clue-candidates --source <model_version>`. Tag the source consistently (e.g. `command-r-lora-v3-iter10`) so downstream `findTopBySourcePriority` can prefer or demote it relative to other sources.
+The `shipped` CSV is what feeds `bliss-worker ingest-clue-candidates --source <model_version>`. Tag the source consistently (e.g. `command-r-lora-vN-iterMM`) so downstream `findTopBySourcePriority` can prefer or demote it relative to other sources.
 
 ## Lemma → surface inflation (the lemma-to-grid bridge)
 

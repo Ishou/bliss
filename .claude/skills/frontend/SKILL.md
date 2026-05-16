@@ -146,10 +146,6 @@ pnpm test                                     # full suite
 pnpm build
 ```
 
-## Known pre-existing failure
-
-`tests/http-puzzle-repository.test.ts` expects `puzzle.width === 5` but the canonical fixture is 10×10 since #106. This fails on every PR. Note in your PR body as known-pre-existing-on-main; do not fix from an unrelated PR.
-
 ## Common failure modes
 
 | Symptom | Cause | Fix |
