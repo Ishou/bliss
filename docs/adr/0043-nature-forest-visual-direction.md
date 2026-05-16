@@ -6,7 +6,7 @@ Accepted, 2026-05-16. Supersedes ADR-0005 §4 (palette) and §5 (typography); su
 
 ## Context
 
-The first-cut WordSparrow look — charbon background, sage/dusty-pink accents, Nunito Variable everywhere — reads as "developer-themed" to the maintainer. Two design mockups (handed in via `~/Downloads/wordsparrow-light-direction.html` and `wordsparrow-textures.html`, transcribed inline below for permanence) pivot the brand toward a paper-and-forest aesthetic: cream paper, forest-deep ink, moss-green brand, honey cursor, terracotta error, Fraunces+Outfit+Lekton typography, a redrawn sparrow, and a signature texture combining a silent grain layer with sparse botanical line drawings.
+The first-cut WordSparrow look — charbon background, sage/dusty-pink accents, Nunito Variable everywhere — reads as "developer-themed" to the maintainer. Two design mockups (handed in via `~/Downloads/wordsparrow-light-direction.html` and `wordsparrow-textures.html`; key decisions extracted below) pivot the brand toward a paper-and-forest aesthetic: cream paper, forest-deep ink, moss-green brand, honey cursor, terracotta error, Fraunces+Outfit+Lekton typography, a redrawn sparrow, and a signature texture combining a silent grain layer with sparse botanical line drawings.
 
 This change is non-trivial — it supersedes the palette and typography decisions in ADR-0005 — and warrants an ADR per ADR-0001 §7 and CLAUDE.md.
 
@@ -64,7 +64,7 @@ The sparrow keeps its 5-shape, 36×24 viewBox construction but adopts the mockup
 <ellipse cx="15" cy="13" rx="9" ry="6"/>    <!-- body -->
 <circle cx="23" cy="9" r="5"/>               <!-- head -->
 <path d="M 27 8 L 33 9 L 27 10 Z"/>          <!-- beak -->
-<circle cx="24" cy="8" r="0.95" fill="paper"/> <!-- eye -->
+<circle cx="24" cy="8" r="0.95" fill="var(--colors-bg)"/> <!-- eye: bg token (papier crème) -->
 ```
 
 Body parts: `fill="currentColor"` → resolves to `accent` (moss). Eye fill: `bg` (papier crème) so it reads as cut paper.
@@ -117,7 +117,7 @@ All values are SI estimates; the load-bearing gate is `pnpm a11y` against the as
 
 ## Rollout
 
-PR 0 (this ADR) lands first per ADR-0001 §7. Implementation follows in four PRs as scoped in `docs/superpowers/plans/eager-cuddling-gem.md` (note: that plan is brainstorm-private; the implementation PR descriptions will summarise the relevant slice). Order:
+PR 0 (this ADR) lands first per ADR-0001 §7. Implementation follows in four PRs (the scoping plan is brainstorm-private; each implementation PR description will summarise its slice). Order:
 
 1. PR 1 — palette swap in `panda.config.ts` + `index.css` + `manifest.webmanifest` + `index.html` theme-color.
 2. PR 2 — fonts (Fraunces + Outfit) self-hosted; Nunito files removed; token rename.

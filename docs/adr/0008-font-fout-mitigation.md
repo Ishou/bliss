@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted
+Accepted. Superseded in part by ADR-0043 (Nunito-specific FOUT mitigation retired; the self-host + fontaine + font-display:swap strategy is inherited by Fraunces and Outfit).
 
 ## Context
 
