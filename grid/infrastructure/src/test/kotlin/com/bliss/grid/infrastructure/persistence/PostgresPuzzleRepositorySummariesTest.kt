@@ -120,7 +120,6 @@ class PostgresPuzzleRepositorySummariesTest {
 
     private fun sampleStoredPuzzle(letterCount: Int): StoredPuzzle {
         require(letterCount in 1..15) { "test helper supports 1..15 letters, asked for $letterCount" }
-        // ABCDEFGHIJKLMNO has 15 letters; truncate to letterCount.
         val text = "ABCDEFGHIJKLMNO".take(letterCount)
         val word = Word(text = text, definition = "test")
         val placement =
