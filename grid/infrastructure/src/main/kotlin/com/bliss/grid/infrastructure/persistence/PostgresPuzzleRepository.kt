@@ -2,6 +2,7 @@ package com.bliss.grid.infrastructure.persistence
 
 import com.bliss.grid.application.puzzle.PuzzleRepository
 import com.bliss.grid.application.puzzle.StoredPuzzle
+import com.bliss.grid.application.puzzle.StoredSummary
 import kotlinx.serialization.json.Json
 import org.postgresql.util.PGobject
 import java.sql.ResultSet
@@ -53,12 +54,35 @@ class PostgresPuzzleRepository(
                 stmt.setObject(6, jsonbOf(produced))
                 stmt.setInt(7, produced.hintsAllowed)
                 stmt.setTimestamp(8, Timestamp.from(produced.createdAt))
+                stmt.setInt(9, produced.totalLetterCells)
                 stmt.executeUpdate()
             }
         }
         // A concurrent inserter may have won the race — read back the
         // canonical row so all callers observe identical state.
         return get(puzzleId) ?: produced
+    }
+
+    override fun findSummariesByIds(puzzleIds: List<UUID>): List<StoredSummary> {
+        if (puzzleIds.isEmpty()) return emptyList()
+        return dataSource.connection.use { conn ->
+            val arr = conn.createArrayOf("uuid", puzzleIds.toTypedArray())
+            conn.prepareStatement(SUMMARIES_SQL).use { stmt ->
+                stmt.setArray(1, arr)
+                stmt.executeQuery().use { rs ->
+                    buildList {
+                        while (rs.next()) {
+                            add(
+                                StoredSummary(
+                                    puzzleId = rs.getObject("puzzle_id", UUID::class.java),
+                                    totalLetterCells = rs.getInt("total_letter_cells"),
+                                ),
+                            )
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private fun jsonbOf(stored: StoredPuzzle): PGobject =
@@ -86,7 +110,13 @@ class PostgresPuzzleRepository(
 
         private const val INSERT_SQL =
             "INSERT INTO puzzles " +
-                "(puzzle_id, width, height, language, title, payload, hints_allowed, created_at) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT (puzzle_id) DO NOTHING"
+                "(puzzle_id, width, height, language, title, payload, hints_allowed, created_at, " +
+                "total_letter_cells) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT (puzzle_id) DO NOTHING"
+
+        private const val SUMMARIES_SQL =
+            "SELECT puzzle_id, total_letter_cells " +
+                "FROM puzzles " +
+                "WHERE puzzle_id = ANY(?) AND total_letter_cells IS NOT NULL"
     }
 }

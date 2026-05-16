@@ -1,6 +1,7 @@
 package com.bliss.grid.application.puzzle
 
 import com.bliss.grid.domain.model.Grid
+import com.bliss.grid.domain.model.LetterCell
 import java.time.Instant
 import java.util.UUID
 
@@ -34,17 +35,28 @@ interface PuzzleRepository {
         puzzleId: UUID,
         factory: () -> StoredPuzzle?,
     ): StoredPuzzle?
+
+    /** Missing ids (no row or NULL total_letter_cells) are silently absent from the result. */
+    fun findSummariesByIds(puzzleIds: List<UUID>): List<StoredSummary> =
+        puzzleIds.mapNotNull { id ->
+            val stored = get(id) ?: return@mapNotNull null
+            StoredSummary(puzzleId = id, totalLetterCells = stored.totalLetterCells)
+        }
 }
 
-/**
- * Server-side puzzle snapshot. Carries the canonical [Grid] (with its
- * letters — server-private, never serialized to clients) plus the wire-side
- * fields needed to render the response on subsequent GETs.
- */
+/** Thin projection used by the archive list endpoint. */
+data class StoredSummary(
+    val puzzleId: UUID,
+    val totalLetterCells: Int,
+)
+
+/** Server-private snapshot (Grid letters never serialised); totalLetterCells denormalised for archive queries. */
 data class StoredPuzzle(
     val grid: Grid,
     val title: String,
     val language: String,
     val hintsAllowed: Int,
     val createdAt: Instant,
-)
+) {
+    val totalLetterCells: Int = grid.cells.values.count { it is LetterCell }
+}

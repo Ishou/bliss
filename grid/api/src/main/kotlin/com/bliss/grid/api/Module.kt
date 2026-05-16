@@ -10,6 +10,7 @@ import com.bliss.grid.application.puzzle.DailyPuzzleSelector
 import com.bliss.grid.application.puzzle.DeleteSessionUseCase
 import com.bliss.grid.application.puzzle.GeneratePuzzleUseCase
 import com.bliss.grid.application.puzzle.HintUsageRepository
+import com.bliss.grid.application.puzzle.ListDailyPuzzlesUseCase
 import com.bliss.grid.application.puzzle.LoadOrGeneratePuzzleUseCase
 import com.bliss.grid.application.puzzle.PuzzleRepository
 import com.bliss.grid.application.puzzle.RevealCellHintUseCase
@@ -230,6 +231,11 @@ fun Application.module() {
     val validatePuzzle = ValidatePuzzleUseCase(puzzleRepository)
     val deleteSession = DeleteSessionUseCase(hintUsageRepository, cooldownRepository)
     val dailyPuzzleSelector = DailyPuzzleSelector()
+    val listDailyPuzzles =
+        ListDailyPuzzlesUseCase(
+            puzzleRepository = puzzleRepository,
+            dailyPuzzleSelector = dailyPuzzleSelector,
+        )
 
     routing {
         health(version)
@@ -238,6 +244,7 @@ fun Application.module() {
             revealCellHint,
             validatePuzzle,
             puzzleRepository = puzzleRepository,
+            listDailyPuzzles = listDailyPuzzles,
             dailyPuzzleSelector = dailyPuzzleSelector,
         )
         deleteSession(deleteSession)
