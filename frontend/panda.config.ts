@@ -111,10 +111,9 @@ export default defineConfig({
           800: { value: '#262e2a' },
           900: { value: '#1f2e25' },
         },
-        // Terra ramp — terracotta (error). New family in ADR-0043;
-        // previously `error` aliased onto secondary, but the honey-
-        // and-terracotta pivot makes those two distinct hues. Sparse
-        // stops only — error has narrower usage than primary/secondary.
+        // Terra ramp — terracotta (error). Kept separate from secondary (honey)
+        // — error must not share a hue with cursor/focus signals (ADR-0043).
+        // Sparse stops only — error has narrower usage than brand ramps.
         // Anchors:
         //   .100 = #f5dccc (terracotta pâle — errorBg)
         //   .500 = #b85540 (terracotta main — error icon, accent)
@@ -246,9 +245,8 @@ export default defineConfig({
 
         // ── Status ─────────────────────────────────────────────────
         // `success` aliased onto mousse primary (validation cells,
-        // progress, timer). `error` moves to the dedicated `terra` ramp
-        // — used to alias onto secondary, but ADR-0043 makes honey
-        // (secondary) and terracotta (error) two distinct hues.
+        // progress, timer). `error` uses the dedicated `terra` ramp — kept
+        // separate from secondary (honey) so error and focus carry distinct hues.
         success:        { value: '{colors.primary.500}' },
         successBg:      { value: '{colors.primary.100}' },
         successText:    { value: '{colors.primary.700}' },
