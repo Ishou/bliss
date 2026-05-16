@@ -43,13 +43,7 @@ const emptyPanel = css({
   gap: '10px',
   // Single, fixed mini height — the empty banner reads as a label.
   minHeight: '52px',
-  // De-emphasized label text — `fgMuted` (semantic) instead of a raw
-  // ramp stop. Was `neutral.200` under the charbon palette, which
-  // resolved to a light grey on dark bg; under ADR-0043's papier
-  // palette `neutral.200` is sand bordure (`#e0d8c4`) and reads
-  // unreadable on cream. The `fgMuted` token is the role this
-  // string always meant; routing through the semantic layer keeps
-  // future palette swaps from breaking this site again.
+  // `fgMuted` (semantic token) — survives palette swaps; a raw ramp stop wouldn't.
   color: 'fgMuted',
   fontSize: 'sm',
 });

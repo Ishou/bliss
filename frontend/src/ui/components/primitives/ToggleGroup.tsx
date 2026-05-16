@@ -54,13 +54,7 @@ const itemStyles = css({
   fontSize: 'sm',
   fontWeight: 'semibold',
   cursor: 'pointer',
-  // Highlight the pressed option so the picker reads at a glance.
-  // Ark sets `data-state="on"` on the selected (pressed) item.
-  // Pressed-state text uses `onAccent` (white) so it stays readable
-  // on the dark-moss fill. Was `fg` under the charbon palette
-  // (where `fg` was light text on dark surfaces); under ADR-0043's
-  // papier palette `fg` is forêt profonde and would be invisible on
-  // deep moss. `onAccent` is the role this string always meant.
+  // `onAccent` — white on the dark-moss accentHover fill; `fg` is dark ink and would disappear.
   '&[data-state="on"]': {
     bg: 'accentHover',
     borderColor: 'accentHover',

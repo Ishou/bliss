@@ -50,22 +50,12 @@ export default defineConfig({
         // ADR-0043 anchors:
         //   .100 = #dfeacb (mousse pâle — accentBg, validated cell bg)
         //   .500 = #3f6431 (mousse main — wordmark, CTA, accent text)
-        //                   AA tune: darkened from the ADR's #5a8a4a
-        //                   anchor (~4.5:1 on bg) to ~6.3:1 on `bg`
-        //                   (papier crème) after axe-core flagged the
-        //                   color-contrast rule on every site using
-        //                   `c_accent` — the wordmark "Sparrow" span,
-        //                   the active-nav border-bottom, the
-        //                   HintControl pill label, the TimerPill
-        //                   label. The ADR's verification matrix
-        //                   pre-flagged this pair as borderline; this
-        //                   PR commits to the darker stop. Hue
-        //                   unchanged (still mousse); only luminance
-        //                   shifts. The deeper hover/profonde stop at
-        //                   .700 retains its role.
+        //                   AA tune: ADR anchor #5a8a4a (~4.5:1 on bg)
+        //                   below AA threshold; darkened to ~6.3:1.
+        //                   Hue unchanged; luminance shift only.
         //   .700 = #2d4920 (mousse profonde — hover, success text)
-        //                   Also darkened proportionally so the
-        //                   .500 → .700 separation reads visually.
+        //                   Proportionally darkened to preserve the
+        //                   .500 → .700 visual separation.
         primary: {
           50:  { value: '#f0f5e8' },
           100: { value: '#dfeacb' },
@@ -104,12 +94,8 @@ export default defineConfig({
         //   .200 = #e0d8c4 (bordure sable — border)
         //   .300 = #d4ccb8 (trait de grille — gridLine)
         //   .500 = #5a655a (encre sourde — fgMuted)
-        //                   AA tune: darkened from the ADR's #6a7565
-        //                   anchor (~4.6:1 on bg — failed axe-core on
-        //                   the nav links which use `fgMuted` for
-        //                   small-text body) to ~5.6:1. Hue + tone
-        //                   unchanged (still cool olive-grey); only
-        //                   luminance shifts.
+        //                   AA tune: ADR anchor #6a7565 (~4.6:1) was
+        //                   borderline; darkened to ~5.6:1. Hue unchanged.
         //   .900 = #1f2e25 (forêt profonde — fg, primary text)
         neutral: {
           50:  { value: '#faf6eb' },
@@ -233,8 +219,7 @@ export default defineConfig({
 
         // ── Foreground ──────────────────────────────────────────────
         fg:                 { value: '{colors.neutral.900}' },  // primary text — forêt profonde on papier
-        fgMuted:            { value: '{colors.neutral.500}' },  // de-emphasized text — encre sourde. ~4.6:1 on bg
-                                                                // per ADR-0043's verification matrix (borderline; verified by `pnpm a11y`).
+        fgMuted:            { value: '{colors.neutral.500}' },  // encre sourde — borderline AA (~4.6:1 on bg), intentional
         // Text colour on the honey-pale clue surface — honey-deep at
         // ~7.5:1 contrast on `surfaceVariant`'s miel pâle. Comfortably AA.
         onSurfaceVariant:   { value: '{colors.secondary.700}' },
