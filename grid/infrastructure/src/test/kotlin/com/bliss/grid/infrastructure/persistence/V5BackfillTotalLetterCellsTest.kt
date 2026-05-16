@@ -93,7 +93,6 @@ class V5BackfillTotalLetterCellsTest {
                 fixture(width = 5, height = 5, placements = emptyList(), expected = null),
             )
 
-        // 3. Seed all fixtures into the puzzles table with NULL total_letter_cells.
         dataSource.connection.use { conn ->
             conn
                 .prepareStatement(
@@ -118,10 +117,8 @@ class V5BackfillTotalLetterCellsTest {
 
         val ids = fixtures.map { it.id }
 
-        // Pre-state sanity: every seeded row has total_letter_cells = NULL.
         assertThat(countTotalLetterCellsNull(ids)).isEqualTo(ids.size)
 
-        // 4. Apply V5.
         Flyway
             .configure()
             .dataSource(dataSource)
@@ -129,7 +126,6 @@ class V5BackfillTotalLetterCellsTest {
             .load()
             .migrate()
 
-        // 5. Each row's total_letter_cells matches the hand-computed expected value.
         val actual = readTotalLetterCells(ids)
         val expected = fixtures.map { it.id to it.expected }
         assertThat(actual).containsExactlyInAnyOrder(*expected.toTypedArray())
