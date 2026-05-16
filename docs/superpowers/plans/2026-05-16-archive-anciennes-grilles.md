@@ -866,7 +866,6 @@ class ListDailyPuzzlesUseCase(
     private val launchAnchor: LocalDate = DEFAULT_LAUNCH_ANCHOR,
     private val defaultRangeDays: Int = DEFAULT_RANGE_DAYS,
     private val maxItems: Int = DEFAULT_MAX_ITEMS,
-    private val defaultDifficulty: String = DEFAULT_DIFFICULTY,
 ) {
     fun execute(
         from: LocalDate?,
@@ -897,7 +896,7 @@ class ListDailyPuzzlesUseCase(
                     id = id,
                     date = date,
                     gridNumber = gridNumberFor(date),
-                    difficulty = defaultDifficulty,
+                    difficulty = dailyPuzzleSelector.difficultyForDate(date),
                     totalLetterCells = summary.totalLetterCells,
                 )
             }
@@ -923,7 +922,6 @@ class ListDailyPuzzlesUseCase(
         val DEFAULT_LAUNCH_ANCHOR: LocalDate = LocalDate.parse("2026-01-01")
         const val DEFAULT_RANGE_DAYS: Int = 31
         const val DEFAULT_MAX_ITEMS: Int = 100
-        const val DEFAULT_DIFFICULTY: String = "facile"
     }
 }
 ```
@@ -1081,6 +1079,7 @@ Open `grid/api/src/main/kotlin/com/bliss/grid/api/routes/PuzzleRoute.kt`. After 
 
 ```kotlin
 get("/v1/puzzles/daily/list") {
+    val started = clock.millis()
     val today = LocalDate.ofInstant(clock.instant(), ZoneOffset.UTC)
 
     val from = call.parameters["from"]?.let { raw ->
@@ -1119,7 +1118,6 @@ get("/v1/puzzles/daily/list") {
             totalLetterCells = it.totalLetterCells,
         )
     }
-    val started = clock.millis()
     call.respond(ListDailyPuzzlesResponseDto(items = items))
     log.info(
         "list_daily_puzzles from={} to={} items_returned={} latency_ms={}",
@@ -1501,28 +1499,44 @@ export function clearAllSoloEntriesForEverySession(): void {
   } catch { /* no-op */ }
 }
 
-// Reset for tests.
-export function __resetLegacyMigrationFlagForTests(): void {
-  legacyMigrationAttempted = false;
+```
+
+Do **not** add a named export to the production module surface. Gate the reset behind `import.meta.vitest` (defined only during Vitest runs; tree-shaken out of production builds by Vite):
+
+- [ ] **Step 4: Gate the migration reset on `import.meta.vitest` and update the test**
+
+At the **bottom** of `localStorageSolo.ts`, replace the unconditional export:
+
+```ts
+// Remove this unconditional export:
+// export function __resetLegacyMigrationFlagForTests(): void {
+//   legacyMigrationAttempted = false;
+// }
+
+// Replace with a test-only block (tree-shaken in production builds):
+if (import.meta.vitest) {
+  const { beforeEach } = import.meta.vitest;
+  beforeEach(() => { legacyMigrationAttempted = false; });
 }
 ```
 
-- [ ] **Step 4: Add `__resetLegacyMigrationFlagForTests` to the test's `beforeEach`**
+This is Vite's idiomatic in-source test helper pattern. The `legacyMigrationAttempted` flag is automatically reset before every test case without any test-side import of a production escape hatch.
 
-Edit `frontend/tests/solo-entries-store-session-scope.test.ts`:
+Update `frontend/tests/solo-entries-store-session-scope.test.ts` — remove the `__resetLegacyMigrationFlagForTests` import and its `beforeEach` call; the in-source block now handles the reset:
 
 ```ts
+import { beforeEach, describe, expect, it } from 'vitest';
 import {
   clearAllSoloEntriesForSession,
   loadSoloEntries,
   saveSoloLetter,
-  __resetLegacyMigrationFlagForTests,
 } from '@/infrastructure/session/localStorageSolo';
 
 // inside describe:
 beforeEach(() => {
   globalThis.localStorage.clear();
-  __resetLegacyMigrationFlagForTests();
+  // No manual reset needed — the in-source beforeEach inside localStorageSolo.ts
+  // resets legacyMigrationAttempted before every test case.
 });
 ```
 
@@ -1570,52 +1584,42 @@ export interface SoloEntriesStore {
 
 export interface SoloEntriesStoreDeps {
   readonly getSessionId: () => string;
+  readonly storage: Pick<
+    typeof import('@/infrastructure/session/localStorageSolo'),
+    | 'loadSoloEntries'
+    | 'saveSoloLetter'
+    | 'loadSoloLockedCells'
+    | 'saveSoloLockedCell'
+    | 'loadSoloHintsUsed'
+    | 'recordSoloHintUsed'
+    | 'clearSoloEntriesForPuzzle'
+  >;
 }
 
 /**
  * Constructs a session-bound store. The resolver is called on every
  * operation so a session rotation (RGPD erase → reseed) is transparent
- * to consumers.
+ * to consumers. Infrastructure functions are injected via `deps.storage`
+ * so the application layer holds no static import from infrastructure
+ * (eslint-plugin-boundaries enforces this as a CI gate).
  */
 export function createSoloEntriesStore(deps: SoloEntriesStoreDeps): SoloEntriesStore {
-  // Lazy import keeps the application layer free of infrastructure
-  // symbols at module-load time (the boundaries lint config forbids
-  // src/application/* importing src/infrastructure/* statically).
   return {
-    load: (puzzleId) => {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const m = require('@/infrastructure/session/localStorageSolo');
-      return m.loadSoloEntries(deps.getSessionId(), puzzleId);
-    },
-    save: (puzzleId, row, column, letter) => {
-      const m = require('@/infrastructure/session/localStorageSolo');
-      m.saveSoloLetter(deps.getSessionId(), puzzleId, row, column, letter);
-    },
-    loadLockedCells: (puzzleId) => {
-      const m = require('@/infrastructure/session/localStorageSolo');
-      return m.loadSoloLockedCells(deps.getSessionId(), puzzleId);
-    },
-    lockCell: (puzzleId, row, column) => {
-      const m = require('@/infrastructure/session/localStorageSolo');
-      m.saveSoloLockedCell(deps.getSessionId(), puzzleId, row, column);
-    },
-    loadHintsUsed: (puzzleId) => {
-      const m = require('@/infrastructure/session/localStorageSolo');
-      return m.loadSoloHintsUsed(deps.getSessionId(), puzzleId);
-    },
-    recordHintUsed: (puzzleId) => {
-      const m = require('@/infrastructure/session/localStorageSolo');
-      m.recordSoloHintUsed(deps.getSessionId(), puzzleId);
-    },
-    clearForPuzzle: (puzzleId) => {
-      const m = require('@/infrastructure/session/localStorageSolo');
-      m.clearSoloEntriesForPuzzle(deps.getSessionId(), puzzleId);
-    },
+    load: (puzzleId) => deps.storage.loadSoloEntries(deps.getSessionId(), puzzleId),
+    save: (puzzleId, row, column, letter) =>
+      deps.storage.saveSoloLetter(deps.getSessionId(), puzzleId, row, column, letter),
+    loadLockedCells: (puzzleId) =>
+      deps.storage.loadSoloLockedCells(deps.getSessionId(), puzzleId),
+    lockCell: (puzzleId, row, column) =>
+      deps.storage.saveSoloLockedCell(deps.getSessionId(), puzzleId, row, column),
+    loadHintsUsed: (puzzleId) =>
+      deps.storage.loadSoloHintsUsed(deps.getSessionId(), puzzleId),
+    recordHintUsed: (puzzleId) =>
+      deps.storage.recordSoloHintUsed(deps.getSessionId(), puzzleId),
+    clearForPuzzle: (puzzleId) =>
+      deps.storage.clearSoloEntriesForPuzzle(deps.getSessionId(), puzzleId),
   };
 }
-```
-
-NOTE: `require` inside the factory works because Vite's `@vitest/web` and Vite-React both polyfill `require` for these synchronous needs. If the boundaries lint complains, replace with an injected dependency object on `createSoloEntriesStore` and wire the real functions from the composition root — the test above will still pass.
 
 - [ ] **Step 2: Update the composition root**
 
@@ -1624,9 +1628,11 @@ Open `frontend/src/main.tsx`. Find where `soloEntriesStore` is constructed (sear
 ```ts
 import { createSoloEntriesStore } from '@/application/solo/SoloEntriesStore';
 import { getOrCreateSessionId } from '@/infrastructure/session/localStorageSession';
+import * as localStorageSolo from '@/infrastructure/session/localStorageSolo';
 
 const soloEntriesStore = createSoloEntriesStore({
   getSessionId: () => getOrCreateSessionId(),
+  storage: localStorageSolo,
 });
 ```
 
@@ -1638,7 +1644,21 @@ The router context shape is unchanged; consumers (`accueil.tsx`, `grille.tsx`) k
 pnpm test
 ```
 
-Expected: PASS (every test). Pre-existing accueil/grille tests should be untouched. If a test fails because it constructs a `SoloEntriesStore` directly, update its factory call to use `createSoloEntriesStore({ getSessionId: () => 'test-session' })`.
+Expected: PASS (every test). Pre-existing accueil/grille tests should be untouched. If a test fails because it constructs a `SoloEntriesStore` directly, update its factory call to pass a stub `storage` object alongside `getSessionId`:
+```ts
+createSoloEntriesStore({
+  getSessionId: () => 'test-session',
+  storage: {
+    loadSoloEntries: () => [],
+    saveSoloLetter: () => {},
+    loadSoloLockedCells: () => [],
+    saveSoloLockedCell: () => {},
+    loadSoloHintsUsed: () => 0,
+    recordSoloHintUsed: () => {},
+    clearSoloEntriesForPuzzle: () => {},
+  },
+})
+```
 
 - [ ] **Step 4: Commit**
 
@@ -1679,14 +1699,15 @@ Path: `frontend/tests/clear-session-wipes-solo-entries.test.ts`
 
 ```ts
 import { beforeEach, describe, expect, it } from 'vitest';
-import { saveSoloLetter, __resetLegacyMigrationFlagForTests } from '@/infrastructure/session/localStorageSolo';
+import { saveSoloLetter } from '@/infrastructure/session/localStorageSolo';
 import { /* the concrete SessionClient impl factory */ } from '@/infrastructure/session/HttpSessionClient';
 import { getOrCreateSessionId } from '@/infrastructure/session/localStorageSession';
 
 describe('clearLocalSession wipes solo entries', () => {
   beforeEach(() => {
     globalThis.localStorage.clear();
-    __resetLegacyMigrationFlagForTests();
+    // legacyMigrationAttempted is auto-reset by the in-source beforeEach
+    // inside localStorageSolo.ts (import.meta.vitest block).
   });
 
   it('removes all bliss.solo.entries.* keys, including stale prefixes', () => {

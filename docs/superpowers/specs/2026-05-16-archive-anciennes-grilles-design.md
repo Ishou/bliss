@@ -1,6 +1,6 @@
 # Voir les anciennes grilles
 
-**Status**: design approved 2026-05-16, awaiting implementation plan.
+**Status**: design approved 2026-05-16; implementation plan at `docs/superpowers/plans/2026-05-16-archive-anciennes-grilles.md`.
 
 ## Why
 
