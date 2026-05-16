@@ -219,7 +219,7 @@ export default defineConfig({
 
         // ── Foreground ──────────────────────────────────────────────
         fg:                 { value: '{colors.neutral.900}' },  // primary text — forêt profonde on papier
-        fgMuted:            { value: '{colors.neutral.500}' },  // encre sourde — borderline AA (~4.6:1 on bg), intentional
+        fgMuted:            { value: '{colors.neutral.500}' },  // encre sourde — ~5.6:1 on bg; AA-safe for de-emphasized small text
         // Text colour on the honey-pale clue surface — honey-deep at
         // ~7.5:1 contrast on `surfaceVariant`'s miel pâle. Comfortably AA.
         onSurfaceVariant:   { value: '{colors.secondary.700}' },
