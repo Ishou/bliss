@@ -25,7 +25,8 @@
   },
   "dependencies": {
     "@ark-ui/react": "^5.36.2",
-    "@fontsource-variable/nunito": "^5.2.7",
+    "@fontsource-variable/fraunces": "^5.2.9",
+    "@fontsource-variable/outfit": "^5.2.8",
     "@fontsource/lekton": "^5.2.8",
     "@opentelemetry/api": "^1.9.0",
     "@opentelemetry/exporter-trace-otlp-http": "^0.217.0",
