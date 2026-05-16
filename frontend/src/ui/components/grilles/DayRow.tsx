@@ -47,13 +47,15 @@ const ctaStyles = css({
   },
 });
 
+const LONG_DATE_FMT = new Intl.DateTimeFormat('fr-FR', {
+  weekday: 'long',
+  day: 'numeric',
+  month: 'long',
+});
+
 // Capitalised French long date — "Mardi 5 mai" — matching the Accueil card.
 function formatLongDateFr(date: string): string {
-  const formatted = new Intl.DateTimeFormat('fr-FR', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-  }).format(new Date(`${date}T00:00:00Z`));
+  const formatted = LONG_DATE_FMT.format(new Date(`${date}T00:00:00Z`));
   return formatted.charAt(0).toUpperCase() + formatted.slice(1);
 }
 
@@ -73,7 +75,8 @@ export function DayRow({ summary, soloEntriesStore, ctaRef }: DayRowProps) {
   else if (lockedCount < total) cta = 'Reprendre';
   else cta = 'Revoir';
 
-  const heading = `${formatLongDateFr(summary.date)} · n°${summary.gridNumber}`;
+  const formattedDate = formatLongDateFr(summary.date);
+  const heading = `${formattedDate} · n°${summary.gridNumber}`;
   const headingId = `grilles-row-${summary.date}`;
 
   return (
@@ -84,7 +87,7 @@ export function DayRow({ summary, soloEntriesStore, ctaRef }: DayRowProps) {
       ) : null}
       <Link
         ref={ctaRef}
-        aria-label={`${cta} la grille du ${formatLongDateFr(summary.date)} · n°${summary.gridNumber}`}
+        aria-label={`${cta} la grille du ${formattedDate} · n°${summary.gridNumber}`}
         to="/grille"
         search={{ date: summary.date }}
         className={ctaStyles}
