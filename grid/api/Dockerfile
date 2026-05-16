@@ -25,6 +25,11 @@ COPY game/domain/build.gradle.kts game/domain/
 COPY game/application/build.gradle.kts game/application/
 COPY game/infrastructure/build.gradle.kts game/infrastructure/
 COPY game/api/build.gradle.kts game/api/
+# Same gotcha for :identity:* modules introduced in ADR-0044.
+COPY identity/domain/build.gradle.kts identity/domain/
+COPY identity/application/build.gradle.kts identity/application/
+COPY identity/infrastructure/build.gradle.kts identity/infrastructure/
+COPY identity/api/build.gradle.kts identity/api/
 
 COPY grid/domain/src grid/domain/src
 COPY grid/application/src grid/application/src
