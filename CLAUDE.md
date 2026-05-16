@@ -1,119 +1,188 @@
-# Bliss — Engineering Rules
+# Bliss — Project Context for Claude
 
-> These rules are derived from [`MANIFESTO.md`](./MANIFESTO.md). Read it for rationale. This file is what you follow.
+> Rationale lives in [`MANIFESTO.md`](./MANIFESTO.md). Decisions live in
+> [`docs/adr/`](./docs/adr/). Onboarding lives in
+> [`CONTRIBUTING.md`](./CONTRIBUTING.md),
+> [`docs/local-development.md`](./docs/local-development.md), and
+> [`docs/deploy.md`](./docs/deploy.md). **This file is the operational
+> map**: where things live, which commands to run, what never to do.
+> If something is binding here, follow it; if rationale is missing, the
+> ADR or MANIFESTO has it.
 
-## Architecture
+## What this repo is
 
-- Domain layer has ZERO dependencies on infrastructure. No DB annotations, no HTTP, no framework imports in domain code.
-- Every bounded context: `domain/` → `application/` → `infrastructure/` → `api/`.
-- Domain depends on nothing. Application defines ports (interfaces). Infrastructure implements adapters.
-- Never import from another bounded context's domain or application package. Communicate through domain events only.
-- No vendor SDK imports in `domain/` or `application/`. Cloud services go through adapters.
-- API schemas (OpenAPI, protobuf, AsyncAPI) exist before implementation. Code is generated from schemas.
-- APIs are versioned from day one.
+- "Bliss" is the working codename; the product is **WordSparrow**
+  (ADR-0005), a French *mots fléchés* puzzle game.
+- Live: <https://bliss-cb4.pages.dev>. Status: sandbox / pre-alpha.
+- Single-maintainer + a fleet of AI agents working in parallel
+  (ADR-0001). Most operational rules below exist because they make
+  that fleet tractable.
 
-## Testing
+## Bounded contexts
 
-- TDD: write a failing test first, then make it pass, then refactor. No exceptions for domain logic.
-- Do not write tests for trivial code (getters, setters, simple delegation). Test behavior, not structure.
-- Domain logic: near-100% mutation coverage.
-- Application services: integration tests with real adapters (testcontainers).
-- Infrastructure adapters: contract tests against real schemas/APIs.
-- E2E tests: few, covering critical user journeys only.
-- No project-wide line-coverage thresholds.
-- Mock external boundaries only. Never mock classes you wrote — use real instances or in-memory implementations.
-- Property-based tests for serialization, parsing, and validation.
+| Path        | Layers                                      | Stack                                                                          | Schema                                                          |
+|-------------|---------------------------------------------|--------------------------------------------------------------------------------|-----------------------------------------------------------------|
+| `grid/`     | `domain/` `application/` `infrastructure/` `api/` `worker/` | Kotlin 2.3.21 + Ktor on JDK 21; Postgres via CNPG + Flyway                     | `grid/api/openapi.yaml`                                         |
+| `game/`     | `domain/` `application/` `infrastructure/` `api/`           | Kotlin/JVM + Ktor REST + WebSocket (ADR-0018)                                  | `game/api/openapi.yaml` + `game/api/asyncapi.yaml` (ADR-0019)   |
+| `frontend/` | `domain/` `application/` `infrastructure/` `ui/`            | Vite + React 19 + TS + Panda CSS + Ark UI + TanStack Router + OTel (ADR-0002)  | consumes both; types generated from the YAMLs                   |
 
-## Code Quality
+Hexagonal: `domain/` depends on nothing; `application/` defines ports;
+`infrastructure/` implements adapters; `api/` is the HTTP/WS edge. No
+vendor SDK imports in `domain/` or `application/`. Cross-context imports
+are forbidden — communicate via merged schemas or domain events.
 
-- Automated formatting. No style debates. Formatter is the authority.
-- Architecture tests (ArchUnit or equivalent) enforce dependency rules. These are not optional.
-- Each module builds and tests independently.
-- Small PRs (under 400 lines). Never bundle unrelated changes.
-- Conventional commits: `feat:`, `fix:`, `chore:`, `refactor:`, `test:`, `docs:`. Enforced in CI (commitlint).
-- Branch names: `<type>/<short-description>` where `<type>` is one of the conventional types above. Enforced in CI. Bot-managed prefixes `dependabot/` and `renovate/` are exempt; the Claude bot uses `chore/claude-` so its branches satisfy the rule.
+Architecture tests enforce this in CI:
+- JVM: **Konsist** (`*ArchitectureTest.kt` under each module's `test/`).
+- TS: `eslint-plugin-boundaries` (`frontend/eslint.config.js`).
 
-## CI/CD
+## Commands
 
-- CI target: under 5 minutes for affected modules. Incremental builds, parallelized tests, aggressive caching.
-- CI is the only path to production. No deploying from dev machines. No `--no-verify`.
-- Feature flags: deploy dark, release bright. Flags have expiration dates — expired flags fail CI.
-- Rollback is always one click.
-- Database migrations must be backward-compatible (expand-and-contract).
+### Local cluster (mirrors prod k3s via k3d — see [`docs/local-development.md`](./docs/local-development.md))
 
-## Developer Experience
+```sh
+make cluster-up         # create k3d cluster (idempotent)
+make cluster-bootstrap  # install ingress-nginx, cert-manager, CNPG
+make deploy-local       # build grid-api, import into k3d, helm install
+make dev                # API hot reload + Vite HMR (FORCE=1 kills strays on 7777/7778/5173)
+make cluster-status     # kubectl get nodes,pods -A
+```
 
-- One command after clone to have everything running. Target: under 10 minutes.
-- Dev/prod parity: same DB engine, same runtime, same container images locally and in production.
-- Everything needed to build, test, and deploy lives in the repo. No tribal knowledge.
-- Lock files committed. Container images pinned to digest. Builds are deterministic.
+### JVM (`grid/`, `game/`) — from repo root
 
-## Infrastructure
+```sh
+./gradlew build --parallel --build-cache      # all contexts, what CI runs
+./gradlew :grid:application:test --parallel   # one module
+./gradlew spotlessCheck                       # CI gate; spotlessApply to fix in place
+```
 
-- All infrastructure defined in code, in the repo. No manual infra changes.
-- Same IaC for ephemeral, staging, and production — parameterized, not duplicated.
-- Immutable deployments. Never patch running instances. Never SSH into prod to fix things.
-- GitOps: repo is the source of truth for system state.
+### Frontend — from `frontend/`
+
+```sh
+pnpm dev          # Vite + Panda codegen
+pnpm test         # vitest
+pnpm e2e          # Playwright
+pnpm a11y         # axe-core via Playwright (ADR-0034 a11y baseline)
+pnpm typecheck    # tsc -b (panda codegen runs first)
+pnpm api:check    # regenerate OpenAPI types and fail on drift — run after schema edits
+```
+
+## Schema-first workflow (ADR-0001 §3, ADR-0003)
+
+The schema is the contract; do not hand-edit generated types.
+
+1. Open a **schema-only PR** touching `<ctx>/api/openapi.yaml` (or
+   `asyncapi.yaml`) with no implementation. CI gate: `openapi-lint`.
+2. After it merges, producer and consumer PRs land in parallel.
+3. Frontend regenerates types via `pnpm api:check`; the
+   `openapi-typescript-drift` gate fails any PR whose
+   `frontend/src/infrastructure/api/{grid,game}/types.ts` is out of sync.
+
+## CI gates (must be green to merge)
+
+Workflows in [`.github/workflows/`](./.github/workflows/):
+
+- `ci` — Gradle build, tests, Spotless, Konsist arch tests.
+- `commitlint`, `dco`, `branch-name`, `secret-scan` (gitleaks).
+- `openapi-lint`, `openapi-typescript-drift`, `helm-lint`, `api-chart-lint`.
+- `codeql`, `dependency-review`.
+- `claude-code-review` — automated §6a review/fix cycle on PRs.
+
+Never bypass: no `--no-verify`, no `--no-gpg-sign`, no force-push to
+`main` or to another agent's branch.
+
+## Branches, commits, PRs
+
+- **Branch:** `<type>/<short-description>` where `<type>` ∈
+  {`feat`, `fix`, `chore`, `refactor`, `test`, `docs`}. Enforced by
+  `branch-name.yml`. **This supersedes ADR-0001 §2's
+  `claude/<context>-...` form.** Bot exemptions: `dependabot/`,
+  `renovate/`, `chore/claude-`.
+- **Commit:** conventional, with bounded-context scope (and layer when
+  it sharpens the message):
+  - `feat(grid-application): score puzzles by interlock density`
+  - `fix(frontend-grid): handle empty cell on backspace`
+  - `chore(api-game): regenerate openapi types`
+  - **WIP commits must use a valid type** — `wip(...)` is rejected by
+    commitlint. Use `chore(<scope>): wip ...`.
+- **PR:** one workstream per PR. Hard cap **400 lines of diff**,
+  excluding generated code and blank lines (ADR-0001 §4, 2026-04-26
+  addendum). The body names the workstream, the bounded context and
+  layer, and any schemas shipped first. No PR modifies files outside
+  its declared scope.
+- **DCO:** every commit is signed off (`git commit -s`). Bot-authored
+  commits (`*[bot]`) are exempt.
+
+## Deployment
+
+- **Frontend** → Cloudflare Pages (ADR-0004) via
+  `.github/workflows/deploy-frontend.yml`.
+- **API + worker** → self-managed k3s on Hetzner (ADR-0009) via
+  `.github/workflows/deploy-api-k8s.yml`. Helm charts in
+  `infra/platform/charts/`. Provisioning is OpenTofu in `terraform/`
+  (ADR-0010, ADR-0011).
+- **Daily-puzzle pre-generation** is a k8s CronJob (ADR-0042).
+  **Words/clues batch worker** is ADR-0013.
+- Secrets inventory & recovery: [`docs/secrets.md`](./docs/secrets.md).
+  Deploy bindings: [`docs/deploy.md`](./docs/deploy.md).
 
 ## Observability
 
-- Structured logging (JSON). Every log: correlation ID, service name, bounded context.
-- No println/console.log. No string concatenation in log messages.
-- Distributed tracing (OpenTelemetry) from day 1. Every external call is a span.
-- RED metrics on every service endpoint. No vanity metrics.
-- Alert on symptoms (error rate, latency), not causes (CPU, disk).
+- Structured JSON logs with correlation IDs. **No `println` / no
+  `console.log`. No string concatenation in log messages.**
+- OpenTelemetry from day 1; the frontend ships traces via a public
+  ingest (ADR-0033).
+- Backend: **SigNoz on ClickHouse** (ADR-0027, ADR-0041), with a
+  dedicated worker topology (ADR-0040).
+- Alerts on **symptoms** (API 5xx via Gmail SMTP, ADR-0032), not
+  causes.
 
-## Security
+## Engineering rules with operational bite
 
-- SAST + dependency scanning in CI on every PR. Critical vulnerabilities fail the build.
-- Secrets never in code. Injected at runtime. Git hooks prevent accidental commits.
-- Least privilege: every service gets its own credentials with minimal permissions.
-- Auth/authz changes always get a threat model.
+These are the principles that change *what an agent does in this repo*.
+Full rationale is in MANIFESTO.md.
 
-## Ethics
+- **TDD for domain logic.** Failing test first, then implementation,
+  then refactor. Don't test trivial getters/delegation. Domain logic
+  targets near-100% mutation coverage.
+- **Mock only at external boundaries.** Never mock a class you wrote
+  — use the real instance or an in-memory implementation.
+- **Property-based tests** for serialization, parsing, validation.
+- **Small PRs, one workstream.** See the 400-line cap above.
+- **ADR before non-trivial change.** A new dependency, a new bounded
+  context, a contract change spanning contexts, a build-system or
+  deploy-target change — ADR merges first (ADR-0001 §7).
+- **Migrations are expand-and-contract**, backward-compatible.
+- **Feature flags** deploy dark, release bright; flags carry expiry
+  dates.
+- **Accessibility is a requirement** (WCAG AA, ADR-0034), not a
+  follow-up ticket.
 
-- Fair, transparent pricing. No dark patterns, no manipulative psychology.
-- Accessibility is a requirement (WCAG AA minimum), not a follow-up ticket.
-- Privacy by design: collect minimum data, explain why, provide export and deletion.
-- Inclusive language in code, docs, and UI. Design for the edges.
-- Efficient code, right-sized infra. Tear down unused environments.
-- Open-source non-competitive components. Contribute upstream.
+## Things to never do without explicit approval
 
-## AI Collaboration Rules
+- Add or remove a top-level bounded context.
+- Add a new runtime language (Kotlin and TypeScript are in scope).
+- Introduce a paid third-party service.
+- Modify `MANIFESTO.md` or this `CLAUDE.md`.
+- Push directly to `main`, force-push a shared branch, or run
+  destructive git on shared history.
 
-- Challenge bad ideas. Say "this is a bad idea because..." — don't just execute.
-- Every recommendation includes trade-offs: why this, what else was considered, downsides.
-- Push back on requests that violate this manifesto. Explain which principle and why.
-- No sycophancy. No "Great question!" when it isn't. Be honest, respectful, direct.
-- Think before coding. Check if it already exists. Ask if this is the simplest solution.
-- Say "I don't know" rather than guessing. Verify claims by reading actual files.
-- All suggestions must align with this manifesto. Exceptions require explicit justification and an ADR.
+## How to collaborate with the maintainer
 
-## Continuous Improvement
+- **Challenge bad ideas.** "This is a bad idea because…" — don't just
+  execute. Every recommendation names trade-offs (what else was
+  considered, downsides).
+- **No sycophancy.** Skip "great question." Be honest, respectful,
+  direct.
+- **Verify, don't guess.** Read the file. Run the build. Say "I don't
+  know" rather than guessing.
+- **Read the ADR before non-trivial work.** Recent landmarks: 0001
+  (workflow), 0003 (cross-language API), 0009 (k3s deploy), 0018
+  (game context), 0034 (a11y), 0039 (bitmask-CSP grid generator),
+  0042 (daily pre-gen worker). Numbering has a few collisions
+  (0027, 0032, 0034, 0035, 0036, 0039 each have two ADRs at
+  different titles); read by filename, not number alone.
 
-- This manifesto is a living document. Challenge it, amend it via PR + ADR.
-- Blameless post-mortems after incidents. Action items, not blame.
-- Track DORA metrics. Review quarterly. If a principle causes consistent friction, revise it.
-- Principles with 3+ documented exceptions get reviewed for revision.
-
-## Project Structure
-
-```
-bliss/
-├── CLAUDE.md              ← this file (AI rules)
-├── MANIFESTO.md            ← full rationale
-├── docs/
-│   ├── adr/               ← architecture decision records
-│   └── incidents/         ← post-mortem reports
-├── <bounded-context-1>/
-│   ├── domain/
-│   ├── application/
-│   ├── infrastructure/
-│   └── api/
-└── <bounded-context-n>/
-```
-
-## ADR Format
+## ADR template
 
 ```
 # ADR-NNNN: Title
