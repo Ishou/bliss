@@ -1,14 +1,10 @@
-package com.bliss.identity.infrastructure.auth
+package com.bliss.identity.application.testdoubles
 
 import com.bliss.identity.application.ports.RandomFactory
 import com.bliss.identity.domain.auth.PkceVerifier
 import com.bliss.identity.domain.auth.State
 
-/**
- * Test double — returns the values in the configured sequence. Production
- * binding (`SecureRandomFactory`, wrapping `java.security.SecureRandom`)
- * lands in Phase 3.
- */
+/** Returns values in the configured sequence; throws when a sequence is exhausted. */
 class FixedRandomFactory(
     states: List<State> = emptyList(),
     pkceVerifiers: List<PkceVerifier> = emptyList(),

@@ -1,12 +1,9 @@
-package com.bliss.identity.infrastructure.time
+package com.bliss.identity.application.testdoubles
 
 import com.bliss.identity.application.ports.Clock
 import java.time.Instant
 
-/**
- * Test double — returns a fixed `Instant`, optionally advanced manually.
- * Production binding (`SystemClock`) lands in Phase 3.
- */
+/** Returns a fixed [Instant], optionally advanced manually. */
 class FixedClock(
     private var current: Instant,
 ) : Clock {

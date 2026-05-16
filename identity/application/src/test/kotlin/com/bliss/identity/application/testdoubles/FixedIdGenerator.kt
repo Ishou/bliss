@@ -1,4 +1,4 @@
-package com.bliss.identity.infrastructure.id
+package com.bliss.identity.application.testdoubles
 
 import com.bliss.identity.application.ports.IdGenerator
 import com.bliss.identity.domain.auth.AuthAttemptId
@@ -6,11 +6,7 @@ import com.bliss.identity.domain.session.SessionId
 import com.bliss.identity.domain.user.UserId
 import java.util.UUID
 
-/**
- * Test double — returns the IDs in the configured sequence. Throws if the
- * caller asks for more IDs of a given kind than were configured. Production
- * binding (UUIDv7 generator) lands in Phase 3.
- */
+/** Returns IDs in the configured sequence; throws when a sequence is exhausted. */
 class FixedIdGenerator(
     userIds: List<UUID> = emptyList(),
     sessionIds: List<UUID> = emptyList(),
