@@ -2,7 +2,9 @@ package com.bliss.grid.api.routes
 
 import com.bliss.grid.api.dto.CellDto
 import com.bliss.grid.api.dto.DifficultyDto
+import com.bliss.grid.api.dto.ListDailyPuzzlesResponseDto
 import com.bliss.grid.api.dto.ProblemDetails
+import com.bliss.grid.api.dto.PuzzleSummaryDto
 import com.bliss.grid.api.dto.RevealCellHintRequest
 import com.bliss.grid.api.dto.RevealCellHintResult
 import com.bliss.grid.api.dto.ValidatePuzzleRequest
@@ -10,6 +12,7 @@ import com.bliss.grid.api.dto.ValidatePuzzleResult
 import com.bliss.grid.api.mapper.GridToPuzzleMapper
 import com.bliss.grid.application.puzzle.DailyPuzzleSelector
 import com.bliss.grid.application.puzzle.FilledCellInput
+import com.bliss.grid.application.puzzle.ListDailyPuzzlesUseCase
 import com.bliss.grid.application.puzzle.LoadOrGeneratePuzzleUseCase
 import com.bliss.grid.application.puzzle.PuzzleRepository
 import com.bliss.grid.application.puzzle.RevealCellHintOutcome
@@ -84,6 +87,7 @@ fun Route.puzzles(
     revealCellHint: RevealCellHintUseCase,
     validatePuzzle: ValidatePuzzleUseCase,
     puzzleRepository: PuzzleRepository,
+    listDailyPuzzles: ListDailyPuzzlesUseCase = ListDailyPuzzlesUseCase(puzzleRepository),
     mapper: GridToPuzzleMapper = GridToPuzzleMapper(),
     dailyPuzzleSelector: DailyPuzzleSelector = DailyPuzzleSelector(),
     clock: Clock = Clock.systemUTC(),
@@ -135,6 +139,58 @@ fun Route.puzzles(
                 difficulty = difficulty,
                 gridNumber = gridNumber,
             ),
+        )
+    }
+
+    get("/v1/puzzles/daily/list") {
+        val today = LocalDate.ofInstant(clock.instant(), ZoneOffset.UTC)
+        val from =
+            when (val parsed = parseOptionalDate(call.parameters["from"], "from")) {
+                is DateParse.Invalid -> {
+                    call.respondProblem(
+                        status = HttpStatusCode.BadRequest,
+                        title = "Date invalide",
+                        type = INVALID_PUZZLE_DATE_TYPE,
+                        detail = parsed.detail,
+                    )
+                    return@get
+                }
+                is DateParse.Ok -> parsed.value
+            }
+        val to =
+            when (val parsed = parseOptionalDate(call.parameters["to"], "to")) {
+                is DateParse.Invalid -> {
+                    call.respondProblem(
+                        status = HttpStatusCode.BadRequest,
+                        title = "Date invalide",
+                        type = INVALID_PUZZLE_DATE_TYPE,
+                        detail = parsed.detail,
+                    )
+                    return@get
+                }
+                is DateParse.Ok -> parsed.value
+            }
+
+        val started = clock.millis()
+        val result = withContext(Dispatchers.IO) { listDailyPuzzles.execute(from = from, to = to, today = today) }
+        val items =
+            result.items.map { item ->
+                PuzzleSummaryDto(
+                    id = item.id.toString(),
+                    date = item.date.toString(),
+                    gridNumber = item.gridNumber,
+                    difficulty = item.difficulty?.let(DifficultyDto::fromWire),
+                    totalLetterCells = item.totalLetterCells,
+                )
+            }
+        call.respond(ListDailyPuzzlesResponseDto(items = items, hasMore = result.hasMore))
+        log.info(
+            "list_daily_puzzles from={} to={} items_returned={} has_more={} latency_ms={}",
+            from ?: "(default)",
+            to ?: "(default)",
+            items.size,
+            result.hasMore,
+            clock.millis() - started,
         )
     }
 
@@ -383,6 +439,30 @@ private fun parseDimension(
         )
     }
     return DimensionParse.Ok(parsed)
+}
+
+private sealed interface DateParse {
+    data class Ok(
+        val value: LocalDate?,
+    ) : DateParse
+
+    data class Invalid(
+        val detail: String,
+    ) : DateParse
+}
+
+private fun parseOptionalDate(
+    raw: String?,
+    name: String,
+): DateParse {
+    if (raw.isNullOrBlank()) return DateParse.Ok(null)
+    return try {
+        DateParse.Ok(LocalDate.parse(raw))
+    } catch (_: DateTimeParseException) {
+        DateParse.Invalid(
+            "Le paramètre $name doit être au format ISO-8601 YYYY-MM-DD, reçu : '$raw'.",
+        )
+    }
 }
 
 private fun parseUuid(raw: String): UUID? =

@@ -93,20 +93,21 @@ class PostgresPuzzleRepositorySummariesTest {
         // total_letter_cells column to simulate a row inserted before V4 ran
         // (or under a future rollback).
         dataSource.connection.use { c ->
-            c.prepareStatement(
-                "INSERT INTO puzzles (puzzle_id, width, height, language, title, payload, hints_allowed) " +
-                    "VALUES (?, 5, 5, 'fr', 't', ?, 3)",
-            ).use { s ->
-                s.setObject(1, id)
-                s.setObject(
-                    2,
-                    PGobject().apply {
-                        type = "jsonb"
-                        value = "{\"width\":5,\"height\":5,\"placements\":[]}"
-                    },
-                )
-                s.executeUpdate()
-            }
+            c
+                .prepareStatement(
+                    "INSERT INTO puzzles (puzzle_id, width, height, language, title, payload, hints_allowed) " +
+                        "VALUES (?, 5, 5, 'fr', 't', ?, 3)",
+                ).use { s ->
+                    s.setObject(1, id)
+                    s.setObject(
+                        2,
+                        PGobject().apply {
+                            type = "jsonb"
+                            value = "{\"width\":5,\"height\":5,\"placements\":[]}"
+                        },
+                    )
+                    s.executeUpdate()
+                }
         }
 
         val summaries: List<StoredSummary> = repo.findSummariesByIds(listOf(id))

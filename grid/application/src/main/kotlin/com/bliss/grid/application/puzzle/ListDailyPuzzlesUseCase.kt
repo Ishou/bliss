@@ -64,7 +64,10 @@ class ListDailyPuzzlesUseCase(
         return Result(items = items, hasMore = hasMore)
     }
 
-    data class Result(val items: List<Item>, val hasMore: Boolean)
+    data class Result(
+        val items: List<Item>,
+        val hasMore: Boolean,
+    )
 
     data class Item(
         val id: UUID,
