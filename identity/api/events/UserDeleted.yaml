@@ -1,0 +1,11 @@
+# AsyncAPI 2.6 message fragment. Not CI-linted: the project has no asyncapi-lint
+# workflow yet (same posture as game/api/asyncapi.yaml per ADR-0019). A future
+# PR can wire @stoplight/spectral-cli with an AsyncAPI ruleset to cover this
+# file and game/api/asyncapi.yaml together.
+summary: A user has been hard-deleted; downstream consumers must remove their user-scoped rows.
+payload:
+  type: object
+  required: [userId, deletedAt]
+  properties:
+    userId: { type: string, format: uuid }
+    deletedAt: { type: string, format: date-time }

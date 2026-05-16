@@ -59,3 +59,15 @@ jobs:
           file_glob: game/api/openapi.yaml
           spectral_ruleset: .spectral.yaml
           fail_severity: warn
+
+      - name: Lint identity/api/openapi.yaml
+        # Same Spectral pin / posture as the grid and game steps above. OIDC
+        # sign-in REST surface (ADR-0044). The cross-context event payload at
+        # identity/api/events/UserDeleted.yaml is an AsyncAPI 2.6 message
+        # fragment and is intentionally not linted here yet (same posture as
+        # game/api/asyncapi.yaml; no `asyncapi-lint` workflow exists in v1).
+        uses: stoplightio/spectral-action@6416fd018ae38e60136775066eb3e98172143141 # v0.8.13
+        with:
+          file_glob: identity/api/openapi.yaml
+          spectral_ruleset: .spectral.yaml
+          fail_severity: warn
