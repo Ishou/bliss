@@ -367,19 +367,76 @@ Tests live flat under `frontend/tests/` (existing convention — see
   initial position.
 - Zoom out → both disappear after the fade.
 
-### E2E (Playwright)
+### E2E (Playwright) — must exercise real human-like pointer behavior
 
-`frontend/e2e/grid-scrollbars-and-minimap.spec.ts`:
+`frontend/e2e/grid-scrollbars-and-minimap.spec.ts`.
 
-- Open a puzzle, click `+` zoom button twice → assert scrollbars and
-  minimap visible.
-- Drag the vertical scrollbar thumb halfway down → assert the focused
-  cell's `getBoundingClientRect().top` has moved up (the grid has
-  scrolled).
-- Click in the minimap → assert the viewport rect re-centers there
-  and the grid pans correspondingly.
-- Click `1:1` → assert scrollbars and minimap fade out (not in the
-  DOM after the transition).
+**Hard requirement:** every interaction is a real Playwright pointer
+gesture — `mouse.move` + `mouse.down` + a sequence of intermediate
+`mouse.move` steps + `mouse.up`, or `page.touchscreen.tap` /
+`page.locator(...).dragTo(...)` with multiple intermediate stops via
+`steps:`. **No** direct `click()`-then-teleport, **no** synthetic
+events dispatched into the DOM, **no** library calls to
+`setTransform` from inside the test. The test must move the cursor
+through space the way a human's hand does, so behaviors that depend
+on `pointermove` cadence (rAF coalescing, drag-threshold gating,
+focus-revert flow) are actually exercised.
+
+Test cases:
+
+1. **Scrollbar drag from rest** — open a puzzle, click the `+` zoom
+   button twice (real button clicks). Assert scrollbars and minimap
+   are visible. Then:
+   - `mouse.move` to the centre of the vertical scrollbar thumb.
+   - `mouse.down`.
+   - `mouse.move` to a point ~40% down the track, with
+     `{ steps: 20 }` so 20 intermediate pointermove events fire
+     (≈ what a real drag produces at 60 Hz over ~300 ms).
+   - `mouse.up`.
+   - Assert the focused cell's `getBoundingClientRect().top` has
+     decreased (the grid has scrolled up to expose the now-visible
+     area). Assert the thumb's `aria-valuenow` matches the new
+     progress.
+
+2. **Minimap drag continuously re-centers** — at the same zoom level:
+   - `mouse.down` on the minimap, at a point ~25 % from the top-left.
+   - Slow `mouse.move` over 10 steps to a point ~75 % from the
+     top-left, asserting after each step that the visible viewport
+     has moved (read the focused cell's rect at each step).
+   - `mouse.up`.
+   - Assert the final viewport rect on the minimap visually
+     surrounds the now-visible area (compare bounding boxes).
+
+3. **Drag past bounds clamps cleanly** — drag the horizontal
+   scrollbar thumb far past the right edge (target x = viewport
+   width + 500 px). Assert `positionX` ends at the library's
+   bound, not beyond; assert no error in `page.on('pageerror')`.
+
+4. **Touch interaction on mobile viewport** — set
+   `page.setViewportSize({ width: 390, height: 844 })` (iPhone 14
+   class). Pinch-zoom into the grid via
+   `page.touchscreen.tap` + `dispatchEvent` for the touch pinch is
+   acceptable here as Playwright lacks first-class pinch — falls
+   back to clicking the `+` zoom button twice. Then perform a touch
+   drag on the minimap via `page.touchscreen` `tap` + manual move
+   sequence (one touchstart, several touchmoves, one touchend).
+   Assert the viewport moves.
+
+5. **Click `1:1`** → assert scrollbars and minimap fade out (not in
+   the DOM after the 150 ms transition; wait via
+   `expect(locator).not.toBeVisible({ timeout: 500 })`).
+
+6. **Regression guard: tap-to-focus still works during the zoomed
+   state** — at scale 2, tap on a letter cell that is visible (not
+   under a scrollbar or the minimap). Assert the cell receives DOM
+   focus. This proves the new overlays' `stopPropagation` /
+   `touch-action: none` rules don't accidentally swallow taps in
+   the main grid area.
+
+If any of these cannot be made reliable with real pointer events in
+Playwright (e.g. multi-touch pinch is genuinely impossible to drive),
+the implementation plan should flag it explicitly and propose the
+closest faithful alternative — not silently drop the test.
 
 ### A11y
 
