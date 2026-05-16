@@ -139,7 +139,6 @@ class ListDailyPuzzlesUseCaseTest {
 
     @Test
     fun `hasMore is false when fetched size equals maxItems exactly with no surplus`() {
-        // 2026-05-12..2026-05-16 inclusive = 5 days.
         seedRows(LocalDate.parse("2026-05-12")..today)
 
         val result =
