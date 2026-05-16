@@ -32,7 +32,12 @@ value class PkceVerifier private constructor(
         }
 
         fun of(raw: String): PkceVerifier {
-            require(raw.isNotBlank()) { "PKCE verifier must not be blank." }
+            require(raw.length in 43..128) {
+                "PKCE verifier must be 43–128 characters (RFC 7636 §4.1), got ${raw.length}."
+            }
+            require(raw.all { it.isLetterOrDigit() || it in "-._~" }) {
+                "PKCE verifier must use only unreserved characters (RFC 7636 §4.1)."
+            }
             return PkceVerifier(raw)
         }
     }

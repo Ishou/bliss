@@ -6,17 +6,20 @@ import assertk.assertions.isTrue
 import com.bliss.identity.domain.provider.Provider
 import com.bliss.identity.domain.user.UserId
 import org.junit.jupiter.api.Test
+import java.security.SecureRandom
 import java.time.Instant
 import java.util.UUID
 
 class AuthAttemptTest {
     private val expiresAt: Instant = Instant.parse("2026-05-16T12:00:00Z")
 
+    private val rng = SecureRandom()
+
     private fun attempt(linkToUserId: UserId? = null): AuthAttempt =
         AuthAttempt(
             id = AuthAttemptId(UUID.randomUUID()),
-            state = State.of("s"),
-            pkceVerifier = PkceVerifier.of("v"),
+            state = State.generate(rng),
+            pkceVerifier = PkceVerifier.generate(rng),
             provider = Provider.GOOGLE,
             returnTo = "https://example/",
             linkToUserId = linkToUserId,

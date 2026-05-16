@@ -22,7 +22,7 @@ value class State private constructor(
         }
 
         fun of(raw: String): State {
-            require(raw.isNotBlank()) { "State must not be blank." }
+            require(raw.length >= 32) { "State token must be at least 32 characters for adequate CSRF entropy." }
             return State(raw)
         }
     }
