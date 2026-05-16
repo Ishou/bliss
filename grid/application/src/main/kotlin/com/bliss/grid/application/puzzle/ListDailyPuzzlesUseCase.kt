@@ -20,7 +20,7 @@ class ListDailyPuzzlesUseCase(
     private val launchAnchor: LocalDate = DEFAULT_LAUNCH_ANCHOR,
     private val defaultRangeDays: Int = DEFAULT_RANGE_DAYS,
     private val maxItems: Int = DEFAULT_MAX_ITEMS,
-    private val defaultDifficulty: String = DEFAULT_DIFFICULTY,
+    private val defaultDifficulty: String? = DEFAULT_DIFFICULTY,
 ) {
     fun execute(
         from: LocalDate?,
@@ -81,6 +81,6 @@ class ListDailyPuzzlesUseCase(
         val DEFAULT_LAUNCH_ANCHOR: LocalDate = LocalDate.parse("2026-01-01")
         const val DEFAULT_RANGE_DAYS: Int = 31
         const val DEFAULT_MAX_ITEMS: Int = 100
-        const val DEFAULT_DIFFICULTY: String = "facile"
+        val DEFAULT_DIFFICULTY: String? = null
     }
 }

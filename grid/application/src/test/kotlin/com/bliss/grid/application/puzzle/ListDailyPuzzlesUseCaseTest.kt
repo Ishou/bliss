@@ -155,7 +155,7 @@ class ListDailyPuzzlesUseCaseTest {
     }
 
     @Test
-    fun `gridNumber is computed from launch anchor and difficulty defaults to facile`() {
+    fun `gridNumber is computed from launch anchor and difficulty is null when untiered`() {
         seedRows(LocalDate.parse("2026-01-01")..LocalDate.parse("2026-01-03"))
 
         val result =
@@ -168,7 +168,7 @@ class ListDailyPuzzlesUseCaseTest {
         // Newest first: day 3, 2, 1.
         assertThat(result.items.map { it.gridNumber }).containsExactly(3, 2, 1)
         val difficulties = result.items.map { it.difficulty }
-        assertThat(difficulties.all { it == "facile" }).isTrue()
+        assertThat(difficulties.all { it == null }).isTrue()
     }
 
     private fun seedRows(range: ClosedRange<LocalDate>) {
