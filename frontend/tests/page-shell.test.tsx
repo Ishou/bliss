@@ -75,10 +75,10 @@ describe('<ViewportPage>', () => {
 
   it('forwards headerActiveNavId to AppHeader', async () => {
     renderPage(
-      <ViewportPage headerActiveNavId="grille">body</ViewportPage>,
+      <ViewportPage headerActiveNavId="grilles">body</ViewportPage>,
     );
-    const grilleLink = await screen.findByRole('link', { name: 'Grille' });
-    expect(grilleLink.getAttribute('aria-current')).toBe('page');
+    const grillesLink = await screen.findByRole('link', { name: 'Grilles' });
+    expect(grillesLink.getAttribute('aria-current')).toBe('page');
   });
 
   it('renders an optional skip link with the supplied handler', async () => {
