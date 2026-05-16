@@ -84,15 +84,15 @@ class LexiconTest {
 
     @Test
     fun `usefulLength returns largest length with floor-meeting count`() {
-        // L_USEFUL_FLOOR = 20: build a corpus where length-5 has 25 words
-        // (passes) and length-6 has 10 (fails), length-7 has 0.
+        // Pin to exact boundary: length-5 at L_USEFUL_FLOOR passes, length-6 at L_USEFUL_FLOOR - 1 fails.
+        val floor = GenerationKnobs.L_USEFUL_FLOOR
         val w5varied =
-            (0 until 25).map { i ->
+            (0 until floor).map { i ->
                 val s = "ABCD" + ('A' + (i % 26))
                 Word(text = s, clues = listOf(WordClue("c$i")))
             }
         val w6 =
-            (0 until 10).map { i ->
+            (0 until floor - 1).map { i ->
                 val s = "ABCDE" + ('A' + (i % 26))
                 Word(text = s, clues = listOf(WordClue("c$i")))
             }
