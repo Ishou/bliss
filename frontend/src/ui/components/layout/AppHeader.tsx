@@ -236,7 +236,7 @@ export function AppHeader({ activeNavId }: AppHeaderProps = {}) {
             <Lockup size="desktop" />
           </span>
         </Link>
-        <span className={alphaBadgeStyles} aria-label="version alpha">
+        <span className={alphaBadgeStyles} role="img" aria-label="version alpha">
           Alpha
         </span>
       </div>
