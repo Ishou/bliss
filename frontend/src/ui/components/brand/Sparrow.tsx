@@ -49,7 +49,7 @@ export function Sparrow({ width = 24, eye = 'bg', className }: SparrowProps) {
       <ellipse cx="15" cy="13" rx="9" ry="6" fill="currentColor" />
       <circle cx="23" cy="9" r="5" fill="currentColor" />
       <path d="M 27 8 L 33 9 L 27 10 Z" fill="currentColor" />
-      <circle cx="24" cy="8" r="0.85" fill={eyeFillByToken[eye]} />
+      <circle cx="24" cy="8" r="0.95" fill={eyeFillByToken[eye]} />
     </svg>
   );
 }
