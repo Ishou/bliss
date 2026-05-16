@@ -186,7 +186,6 @@ Per ADR-0001 §6a, the **implementer is not the reviewer**. If you need a manual
 - Hexagonal layers: `src/domain/`, `src/application/`, `src/infrastructure/`, `src/ui/`. eslint-plugin-boundaries enforces the layering — don't violate it.
 - Generated OpenAPI types live at `src/infrastructure/api/<context>/types.ts`. CI's `regen-and-diff` job rebuilds them and fails if stale.
 - Tests use Vitest + Testing Library. `pnpm test --run tests/<file>.test.tsx` for a single file.
-- A pre-existing failure in `tests/http-puzzle-repository.test.ts` (`width:5` vs the 10×10 fixture) is unrelated to most PRs — note it in PR bodies as known-pre-existing-on-main. Don't try to fix it from an unrelated PR.
 
 ## Backend (JVM) conventions
 
