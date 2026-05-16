@@ -152,9 +152,10 @@ export default defineConfig({
         //                 cells, lobby surfaces, body copy, buttons.
         //   - `heading` → Fraunces Variable (opsz 9–144 + wght axis,
         //                 roman + italic). Used for h1–h3, section
-        //                 eyebrows, the wordmark (italic Fraunces for
-        //                 the "Sparrow" half — see Wordmark.tsx for the
-        //                 `font-variation-settings: 'opsz' 144` set).
+        //                 eyebrows, and the wordmark — the `full` subset
+        //                 ships the `opsz` axis required for the wordmark's
+        //                 display sizing at `opsz 144` (ADR-0043 §4,
+        //                 deferred to PR 3).
         //   - `mono`    → Lekton (unchanged). Def-cell clue text only.
         //
         // `"<Family> Variable fallback"` is a metrics-matched face

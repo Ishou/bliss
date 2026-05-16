@@ -3,9 +3,10 @@
  *
  *   - **Fraunces Variable** — display / headings. Variable axes
  *     opsz 9–144 + wght 100–900 + roman/italic. The `full` fontsource
- *     subset carries every axis the brand uses (the wordmark sets
- *     `font-variation-settings: 'opsz' 144` for the "Sparrow" half,
- *     ADR-0043 §4). Heavier than the `wght`-only file (~120 KB vs
+ *     subset carries every axis the brand uses; the wordmark will
+ *     set `font-variation-settings: 'opsz' 144` for the "Sparrow"
+ *     half (ADR-0043 §4, deferred to PR 3). Heavier than the
+ *     `wght`-only file (~120 KB vs
  *     ~37 KB for latin) — accepted because the opsz axis is load-
  *     bearing for the wordmark's display sizing.
  *
