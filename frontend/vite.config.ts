@@ -10,8 +10,7 @@ import { VitePWA } from 'vite-plugin-pwa';
 // See ADR-0002 for the stack rationale.
 //
 // Two FOUT-mitigation pieces are wired here (originally introduced by
-// `fix/frontend-font-flicker`; the three-family roster lands with
-// ADR-0043 §3):
+// `fix/frontend-font-flicker`; three-family roster per ADR-0043 §3):
 //
 //   1. `FontaineTransform` rewrites every `@font-face` rule in
 //      `src/ui/styles/fonts.css` to add a sibling face named

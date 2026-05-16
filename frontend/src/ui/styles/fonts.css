@@ -11,8 +11,8 @@
  *     bearing for the wordmark's display sizing.
  *
  *   - **Outfit Variable** — body / UI. Variable wght axis only
- *     (no italic shipped by upstream fontsource at the time of this
- *     PR; if italic is needed later, swap the import).
+ *     (upstream fontsource ships no italic file for this family;
+ *     if italic is needed later, swap the import).
  *
  *   - **Lekton** — monospace (UNCHANGED from ADR-0008). Bold 700 only.
  *     Used exclusively for def-cell clue text (Cell.tsx
