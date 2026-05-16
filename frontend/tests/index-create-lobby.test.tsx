@@ -31,6 +31,7 @@ const samplePuzzle: Puzzle = {
 const stubPuzzleRepository: PuzzleRepository = {
   fetchById: () => Promise.resolve(samplePuzzle),
   fetchDaily: () => Promise.resolve(samplePuzzle),
+  listDailySummaries: () => Promise.resolve({ items: [], hasMore: false }),
 };
 const stubPuzzleSolver: PuzzleSolver = {
   validate: () => Promise.resolve({ solved: false, incorrectCells: [] }),

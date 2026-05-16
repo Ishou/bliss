@@ -17,7 +17,7 @@ const samplePuzzle: Puzzle = {
   title: 'WordSparrow', language: 'fr', width: 1, height: 1, hintsAllowed: 3,
   cells: [{ kind: 'letter', position: { row: 0, col: 0 }, entry: '' }],
 };
-const puzzleRepository: PuzzleRepository = { fetchById: () => Promise.resolve(samplePuzzle), fetchDaily: () => Promise.resolve(samplePuzzle) };
+const puzzleRepository: PuzzleRepository = { fetchById: () => Promise.resolve(samplePuzzle), fetchDaily: () => Promise.resolve(samplePuzzle), listDailySummaries: () => Promise.resolve({ items: [], hasMore: false }) };
 const puzzleSolver: PuzzleSolver = {
   validate: vi.fn().mockResolvedValue({ solved: false, incorrectCells: [] }),
   requestHint: vi.fn().mockRejectedValue(new Error('not used')),

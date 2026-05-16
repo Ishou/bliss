@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { INDEXABLE_ROUTES, SITE_BASE_URL } from '@/ui/seo';
 import { Route as AccueilRoute } from '@/ui/routes/accueil';
 import { Route as GrilleRoute } from '@/ui/routes/grille';
+import { Route as GrillesRoute } from '@/ui/routes/grilles';
 import { Route as AideRoute } from '@/ui/routes/aide';
 import { Route as MentionsLegalesRoute } from '@/ui/routes/mentions-legales';
 import { Route as ConfidentialiteRoute } from '@/ui/routes/confidentialite';
@@ -12,6 +13,7 @@ import { Route as JoinRoute } from '@/ui/routes/join.$code';
 const ROUTE_BY_PATH: Record<string, { options: { head?: () => unknown } }> = {
   '/': AccueilRoute as unknown as { options: { head?: () => unknown } },
   '/grille': GrilleRoute as unknown as { options: { head?: () => unknown } },
+  '/grilles': GrillesRoute as unknown as { options: { head?: () => unknown } },
   '/aide': AideRoute as unknown as { options: { head?: () => unknown } },
   '/mentions-legales': MentionsLegalesRoute as unknown as { options: { head?: () => unknown } },
   '/confidentialite': ConfidentialiteRoute as unknown as { options: { head?: () => unknown } },

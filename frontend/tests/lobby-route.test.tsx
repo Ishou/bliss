@@ -135,6 +135,7 @@ const makeFakeGameClient = (): FakeGameClient => {
 const stubPuzzleRepository: PuzzleRepository = {
   fetchById: vi.fn().mockRejectedValue(new Error('unused in lobby tests')),
   fetchDaily: vi.fn().mockRejectedValue(new Error('unused in lobby tests')),
+  listDailySummaries: vi.fn().mockResolvedValue({ items: [], hasMore: false }),
 };
 const stubPuzzleSolver: PuzzleSolver = {
   validate: vi.fn().mockRejectedValue(new Error('unused in lobby tests')),

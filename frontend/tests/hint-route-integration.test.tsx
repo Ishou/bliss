@@ -102,6 +102,7 @@ const renderHomeRoute = (
   const repository: PuzzleRepository = {
     fetchById: vi.fn().mockResolvedValue(puzzle),
     fetchDaily: vi.fn().mockResolvedValue(puzzle),
+    listDailySummaries: vi.fn().mockResolvedValue({ items: [], hasMore: false }),
   };
   const routeTree = RootRoute.addChildren([IndexRoute]);
   const router = createRouter({

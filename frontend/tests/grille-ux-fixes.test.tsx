@@ -47,6 +47,7 @@ const renderHomeRoute = (puzzle: Puzzle) => {
   const repository: PuzzleRepository = {
     fetchById: vi.fn().mockResolvedValue(puzzle),
     fetchDaily: vi.fn().mockResolvedValue(puzzle),
+    listDailySummaries: vi.fn().mockResolvedValue({ items: [], hasMore: false }),
   };
   const solver: PuzzleSolver = {
     validate: vi.fn().mockResolvedValue({ solved: false, incorrectCells: [] }),

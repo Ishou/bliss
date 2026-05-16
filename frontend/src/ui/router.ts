@@ -3,6 +3,7 @@ import type { AppRouterContext } from './routes/__root';
 import { Route as RootRoute } from './routes/__root';
 import { Route as AccueilRoute } from './routes/accueil';
 import { Route as GrilleRoute } from './routes/grille';
+import { Route as GrillesRoute } from './routes/grilles';
 import { Route as AideRoute } from './routes/aide';
 import { Route as JoinRoute } from './routes/join.$code';
 import { Route as LobbyRoute } from './routes/lobby.$lobbyId';
@@ -24,6 +25,7 @@ export function createAppRouter({ context, multiplayer }: CreateAppRouterOptions
   const baseChildren = [
     AccueilRoute,
     GrilleRoute,
+    GrillesRoute,
     AideRoute,
     ConfidentialiteRoute,
     PrivacyRoute,

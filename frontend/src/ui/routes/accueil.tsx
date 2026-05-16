@@ -36,7 +36,6 @@ type DailyState =
 // (create + disabled join-by-code).
 //
 // Backend gaps the UI defers to follow-up PRs:
-//  - No archive route — the "Anciennes grilles" link renders disabled.
 //  - No join-by-code endpoint — input + Rejoindre render disabled.
 
 const isMultiplayerEnabled = (): boolean =>
@@ -297,9 +296,8 @@ function GrilleDuJourReadyBody({ puzzle }: { readonly puzzle: Puzzle }) {
         </Button>
         <button
           type="button"
-          disabled
-          title="Bientôt"
           className={tertiaryLinkStyles}
+          onClick={() => { void navigate({ to: '/grilles' }); }}
         >
           Voir les anciennes grilles →
         </button>

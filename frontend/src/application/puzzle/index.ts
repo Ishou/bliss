@@ -1,4 +1,9 @@
-export type { PuzzleRepository } from './PuzzleRepository';
+export type {
+  DailySummariesPage,
+  DailySummary,
+  ListDailySummariesOptions,
+  PuzzleRepository,
+} from './PuzzleRepository';
 export type {
   FilledCellInput,
   HintErrorKind,

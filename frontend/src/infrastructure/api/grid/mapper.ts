@@ -5,6 +5,7 @@
 // may import the generated types.
 import type { components } from './types';
 import type { ArrowDirection, Cell, DefinitionCell, DefinitionClue, HorizontalArrow, Puzzle, VerticalArrow } from '@/domain';
+import type { DailySummary } from '@/application';
 
 type ApiPuzzle = components['schemas']['Puzzle'];
 type ApiLetterCell = components['schemas']['LetterCell'];
@@ -82,5 +83,18 @@ export function apiPuzzleToDomain(api: ApiPuzzle): Puzzle {
     cells,
     difficulty: api.difficulty ?? null,
     gridNumber: api.gridNumber ?? null,
+  };
+}
+
+/** Translate a Grid API `PuzzleSummary` into the application's `DailySummary`. */
+export function apiPuzzleSummaryToDomain(
+  api: components['schemas']['PuzzleSummary'],
+): DailySummary {
+  return {
+    id: api.id,
+    date: api.date,
+    gridNumber: api.gridNumber,
+    difficulty: api.difficulty ?? null,
+    totalLetterCells: api.totalLetterCells,
   };
 }

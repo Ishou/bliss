@@ -28,6 +28,7 @@ const buildContext = (tourSeenStore: TourSeenStore) => ({
   puzzleRepository: {
     fetchById: vi.fn().mockResolvedValue(stubPuzzle),
     fetchDaily: vi.fn().mockResolvedValue(stubPuzzle),
+    listDailySummaries: vi.fn().mockResolvedValue({ items: [], hasMore: false }),
   },
   puzzleSolver: {
     validate: vi.fn().mockResolvedValue({ solved: false, incorrectCells: [] }),
