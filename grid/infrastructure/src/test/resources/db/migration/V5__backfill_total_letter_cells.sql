@@ -1,33 +1,4 @@
--- Backfill total_letter_cells for puzzles inserted before the write-path
--- update landed in V4 / PR #450. V4 added the column as nullable with no
--- backfill because, at the time, deriving the count in SQL was deemed
--- non-viable. In production the result is that historical rows remain
--- NULL forever, and findSummariesByIds filters NULLs defensively, which
--- collapses /v1/puzzles/daily/list (and the /grilles archive) to empty.
---
--- The payload JSONB shape is payload.placements[] — see
--- grid/infrastructure/.../persistence/PuzzlePayload.kt. We can derive
--- the cell count purely from the placement geometry: each placement
--- covers char_length(wordText) cells starting at one neighbour of
--- (cluePositionRow, cluePositionColumn) and stepping in the placement's
--- direction. The total letter-cell count for a puzzle is the number of
--- distinct (row, col) tuples covered by any placement (intersections
--- collapse, matching Grid.fromPlacements which de-duplicates positions
--- via the letters map).
---
--- Direction → cell-offset formula verified against
--- grid/domain/.../model/Direction.kt (startOffset + step * i) and
--- WordPlacement.letterPositions():
---   RIGHT       (startOffset (0,1), step (0,1)) → (r,     c+1+i)
---   DOWN        (startOffset (1,0), step (1,0)) → (r+1+i, c)
---   DOWN_RIGHT  (startOffset (1,0), step (0,1)) → (r+1,   c+i)
---   RIGHT_DOWN  (startOffset (0,1), step (1,0)) → (r+i,   c+1)
--- where i ∈ [0, char_length(wordText)).
---
--- wordText is constrained to A–Z in the domain (see Word.kt invariants),
--- so char_length is one cell per char with no normalisation surprises.
---
--- Idempotent: only touches rows where total_letter_cells IS NULL.
+-- Backfill total_letter_cells IS NULL rows from placement geometry (V4 shipped the column without a backfill).
 
 WITH placement_cells AS (
     SELECT

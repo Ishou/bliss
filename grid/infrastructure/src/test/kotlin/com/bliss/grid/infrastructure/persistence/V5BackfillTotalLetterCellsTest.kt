@@ -17,19 +17,7 @@ import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.utility.DockerImageName
 import java.util.UUID
 
-/**
- * Proves V5 backfills `total_letter_cells` from `payload.placements[]`
- * geometry for rows inserted before the write-path knew to populate the
- * column.
- *
- * Strategy:
- *  1. Apply V1..V4 only (Flyway target=4).
- *  2. INSERT synthetic rows with known payloads and `total_letter_cells`
- *     left NULL (matching the pre-V5 production state).
- *  3. Run Flyway with default target, which applies V5.
- *  4. Read back each row and assert the populated count equals the
- *     hand-computed distinct-cell count for that fixture.
- */
+// Migrates only to V4, seeds NULL rows, then applies V5 to verify placement-geometry backfill.
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class V5BackfillTotalLetterCellsTest {
     private lateinit var pg: PostgreSQLContainer<*>
@@ -66,10 +54,7 @@ class V5BackfillTotalLetterCellsTest {
             .load()
             .migrate()
 
-        // 2. Each fixture = (payload JSON, expected distinct-cell count, width, height).
-        //    Expected counts are hand-computed from
-        //    Direction.startOffset + i * Direction.step and de-duplicated
-        //    (mots-fléchés rule: intersecting cells count once).
+        // Hand-computed distinct-cell counts, one fixture per direction and for disjoint/intersecting pairs.
         val fixtures =
             listOf(
                 // a) Single RIGHT word "ABC" at clue (0,0), L=3 → (0,1)(0,2)(0,3) → 3.
@@ -169,11 +154,6 @@ class V5BackfillTotalLetterCellsTest {
         return Fixture(UUID.randomUUID(), payload, expected, width, height)
     }
 
-    /**
-     * Builds the raw JSON for one SerializedPlacement. Only the fields V5
-     * reads are populated faithfully; the rest are placeholders so the
-     * row is a valid PuzzlePayload shape if anyone round-trips it.
-     */
     private fun placement(
         wordText: String,
         clueRow: Int,
