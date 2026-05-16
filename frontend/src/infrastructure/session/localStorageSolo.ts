@@ -1,9 +1,4 @@
 // storage failures are non-fatal — every helper degrades to a no-op rather than throw.
-//
-// Solo-entries storage is scoped by session id (groundwork for the
-// server-side-progress workstream queued after this PR). A one-shot
-// migration on first read moves the legacy unscoped `bliss.solo.entries`
-// blob into the current session's key and deletes the legacy key.
 
 import type { SoloEntry, SoloLockedCell } from '@/application/solo/SoloEntriesStore';
 

@@ -30,11 +30,7 @@ export interface SoloEntriesStoreDeps {
   readonly storage: SoloEntriesStorage;
 }
 
-/**
- * Lower-level surface the store delegates to. The infrastructure
- * adapter wires this with the real localStorage-backed functions; tests
- * can pass an in-memory implementation.
- */
+// Port implemented by infrastructure; tests inject an in-memory version.
 export interface SoloEntriesStorage {
   loadEntries(sessionId: string, puzzleId: string): ReadonlyArray<SoloEntry>;
   saveLetter(
@@ -51,13 +47,7 @@ export interface SoloEntriesStorage {
   clearForPuzzle(sessionId: string, puzzleId: string): void;
 }
 
-/**
- * Builds a session-bound store. The resolver is called on every
- * operation so a session rotation (RGPD erase → reseed) is transparent
- * to consumers. The application layer never imports infrastructure
- * directly — the storage adapter is injected by the composition root,
- * which keeps the `eslint-plugin-boundaries` invariants intact.
- */
+// getSessionId() is called on every op so session rotation (RGPD erase → reseed) is transparent.
 export function createSoloEntriesStore(deps: SoloEntriesStoreDeps): SoloEntriesStore {
   const { getSessionId, storage } = deps;
   return {
