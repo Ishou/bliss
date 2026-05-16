@@ -290,4 +290,48 @@ class GridValidatorTest {
         val violations = validator.validate(grid)
         assertThat(violations.filterIsInstance<GridViolation.BlackTriple>()).isEmpty()
     }
+
+    @Test
+    fun `vertical closed clamp is reported`() {
+        // 3 rows x 2 cols, BB / .. / BB.
+        val cells: Map<Position, Cell> =
+            mapOf(
+                Position(Row(0), Column(0)) to ClueCell(listOf(Clue("a", Direction.DOWN))),
+                Position(Row(0), Column(1)) to ClueCell(listOf(Clue("b", Direction.DOWN))),
+                Position(Row(1), Column(0)) to LetterCell('A'),
+                Position(Row(1), Column(1)) to LetterCell('B'),
+                Position(Row(2), Column(0)) to ClueCell(listOf(Clue("c", Direction.DOWN))),
+                Position(Row(2), Column(1)) to ClueCell(listOf(Clue("d", Direction.DOWN))),
+            )
+        val grid = Grid(width = 2, height = 3, cells = cells, placements = emptyList())
+        assertThat(validator.validate(grid)).contains(
+            GridViolation.ClosedClamp(Position(Row(0), Column(0)), WordAxis.VERTICAL),
+        )
+    }
+
+    @Test
+    fun `horizontal closed clamp is reported`() {
+        // 2 rows x 3 cols, B.B / B.B.
+        val cells: Map<Position, Cell> =
+            mapOf(
+                Position(Row(0), Column(0)) to ClueCell(listOf(Clue("a", Direction.DOWN))),
+                Position(Row(0), Column(1)) to LetterCell('A'),
+                Position(Row(0), Column(2)) to ClueCell(listOf(Clue("b", Direction.DOWN))),
+                Position(Row(1), Column(0)) to ClueCell(listOf(Clue("c", Direction.DOWN))),
+                Position(Row(1), Column(1)) to LetterCell('B'),
+                Position(Row(1), Column(2)) to ClueCell(listOf(Clue("d", Direction.DOWN))),
+            )
+        val grid = Grid(width = 3, height = 2, cells = cells, placements = emptyList())
+        assertThat(validator.validate(grid)).contains(
+            GridViolation.ClosedClamp(Position(Row(0), Column(0)), WordAxis.HORIZONTAL),
+        )
+    }
+
+    @Test
+    fun `grid without clamps reports no ClosedClamp violations`() {
+        // Single horizontal word, no clamped letter cells.
+        val placement = WordPlacement(Word("OR", "x"), Position(Row(0), Column(0)), Direction.RIGHT)
+        val grid = Grid.fromPlacements(width = 3, height = 1, placements = listOf(placement))
+        assertThat(validator.validate(grid).filterIsInstance<GridViolation.ClosedClamp>()).isEmpty()
+    }
 }

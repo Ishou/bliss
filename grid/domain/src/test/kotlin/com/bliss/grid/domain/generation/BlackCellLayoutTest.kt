@@ -395,4 +395,51 @@ class BlackCellLayoutTest {
             }
         }
     }
+
+    @Test
+    fun `isVerticalClamp detects BB-dotdot-BB`() {
+        val cells = CellArray(2, 3)
+        cells.set(0, 0, CellArray.BLACK)
+        cells.set(0, 1, CellArray.BLACK)
+        cells.set(2, 0, CellArray.BLACK)
+        cells.set(2, 1, CellArray.BLACK)
+        assertThat(BlackCellLayout.isVerticalClamp(cells, 0, 0)).isTrue()
+    }
+
+    @Test
+    fun `isHorizontalClamp detects B-dot-B over B-dot-B`() {
+        val cells = CellArray(3, 2)
+        cells.set(0, 0, CellArray.BLACK)
+        cells.set(0, 2, CellArray.BLACK)
+        cells.set(1, 0, CellArray.BLACK)
+        cells.set(1, 2, CellArray.BLACK)
+        assertThat(BlackCellLayout.isHorizontalClamp(cells, 0, 0)).isTrue()
+    }
+
+    @Test
+    fun `seed never produces closed clamps`() {
+        // Sweep a few seeds; spec §4.1 C7 must hold for every seed.
+        for (seed in 0..9) {
+            val cells =
+                BlackCellLayout.seed(
+                    width = 12,
+                    height = 12,
+                    minLen = 2,
+                    lTarget = 9,
+                    lUseful = 12,
+                    blackRatio = 0.20,
+                    random = Random(seed.toLong()),
+                )
+            for (r in 0 until cells.height - 2) {
+                for (c in 0 until cells.width - 1) {
+                    assertThat(BlackCellLayout.isVerticalClamp(cells, r, c)).isFalse()
+                }
+            }
+            for (r in 0 until cells.height - 1) {
+                for (c in 0 until cells.width - 2) {
+                    assertThat(BlackCellLayout.isHorizontalClamp(cells, r, c)).isFalse()
+                }
+            }
+        }
+    }
 }

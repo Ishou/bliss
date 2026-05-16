@@ -202,13 +202,15 @@ internal object BlackCellLayout {
     }
 
     /**
-     * Predicate gating every black-cell placement. Spec §4.3 — three
-     * checks:
+     * Predicate gating every black-cell placement. Spec §4.3:
      *  - **Check 1**: every adjacent white run (in the affected axis)
      *    remains ≥ minLen.
      *  - **Check 2**: the new black is itself functional.
      *  - **Check 3**: no existing neighbouring black becomes dead as a
      *    side effect of this placement.
+     *  - **Check 4**: no 3-in-a-row block of black cells (§4.1 C2).
+     *  - **Check 5**: no closed clamp formed (§4.1 C7) — letter cells
+     *    enclosed by aligned black pairs.
      *
      * Tentatively mutates [cells] and reverts before returning.
      */
@@ -245,10 +247,77 @@ internal object BlackCellLayout {
             // in printed mots fléchés.
             if (countBlackRun(cells, r, c, dr = 0, dc = 1) >= 3) return false
             if (countBlackRun(cells, r, c, dr = 1, dc = 0) >= 3) return false
+            // Check 5: no closed clamp formed. Spec §4.1 C7 — letter cells
+            // wedged between aligned black pairs (BB/../BB vertically, or
+            // B.B/B.B horizontally) crowd the clue text and never appear
+            // in printed mots fléchés.
+            if (formsClamp(cells, r, c)) return false
             return true
         } finally {
             cells.set(r, c, prior)
         }
+    }
+
+    /**
+     * True iff `(r, c)` (currently BLACK) is a corner of any 3×2 vertical
+     * or 2×3 horizontal closed clamp. The placement is rejected by
+     * [canPlaceBlack] in that case.
+     */
+    private fun formsClamp(
+        cells: CellArray,
+        r: Int,
+        c: Int,
+    ): Boolean {
+        // Vertical clamp (3 rows × 2 cols, BB / .. / BB): `(r, c)` can be
+        // any of the four BLACK corners — top-left at one of these origins.
+        for (r0 in intArrayOf(r, r - 2)) {
+            for (c0 in intArrayOf(c, c - 1)) {
+                if (isVerticalClamp(cells, r0, c0)) return true
+            }
+        }
+        // Horizontal clamp (2 rows × 3 cols, B.B / B.B): same idea.
+        for (r0 in intArrayOf(r, r - 1)) {
+            for (c0 in intArrayOf(c, c - 2)) {
+                if (isHorizontalClamp(cells, r0, c0)) return true
+            }
+        }
+        return false
+    }
+
+    /**
+     * Detects a 3-row × 2-col closed clamp anchored at `(r0, c0)`:
+     * ```
+     * B B
+     * . .   ← length-2 horizontal slots
+     * B B
+     * ```
+     */
+    internal fun isVerticalClamp(
+        cells: CellArray,
+        r0: Int,
+        c0: Int,
+    ): Boolean {
+        if (r0 < 0 || c0 < 0 || r0 + 2 >= cells.height || c0 + 1 >= cells.width) return false
+        return cells.isBlack(r0, c0) && cells.isBlack(r0, c0 + 1) &&
+            !cells.isBlack(r0 + 1, c0) && !cells.isBlack(r0 + 1, c0 + 1) &&
+            cells.isBlack(r0 + 2, c0) && cells.isBlack(r0 + 2, c0 + 1)
+    }
+
+    /**
+     * Detects a 2-row × 3-col closed clamp anchored at `(r0, c0)`:
+     * ```
+     * B . B
+     * B . B    ← length-2 vertical slots
+     * ```
+     */
+    internal fun isHorizontalClamp(
+        cells: CellArray,
+        r0: Int,
+        c0: Int,
+    ): Boolean {
+        if (r0 < 0 || c0 < 0 || r0 + 1 >= cells.height || c0 + 2 >= cells.width) return false
+        return cells.isBlack(r0, c0) && !cells.isBlack(r0, c0 + 1) && cells.isBlack(r0, c0 + 2) &&
+            cells.isBlack(r0 + 1, c0) && !cells.isBlack(r0 + 1, c0 + 1) && cells.isBlack(r0 + 1, c0 + 2)
     }
 
     /**
