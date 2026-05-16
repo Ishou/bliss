@@ -106,7 +106,7 @@ const alphaBadgeStyles = css({
   display: 'inline-flex',
   alignItems: 'center',
   fontFamily: 'body',
-  fontSize: '10px',
+  fontSize: 'xxs',
   fontWeight: 'bold',
   lineHeight: 1,
   letterSpacing: '0.08em',
