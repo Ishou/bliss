@@ -2,6 +2,18 @@ package com.bliss.identity.application.ports
 
 import com.bliss.identity.domain.provider.Provider
 
+enum class OidcResponseMode {
+    QUERY,
+    FORM_POST,
+    ;
+
+    fun toWire(): String =
+        when (this) {
+            QUERY -> "query"
+            FORM_POST -> "form_post"
+        }
+}
+
 /**
  * Per-provider OIDC configuration loaded from environment / k8s Secrets at
  * runtime. The application layer is agnostic to where the values come from;
@@ -11,8 +23,6 @@ import com.bliss.identity.domain.provider.Provider
  * `responseMode` is `QUERY` for Google (the OIDC default) and `FORM_POST`
  * for Apple — Apple posts the callback with `application/x-www-form-urlencoded`.
  */
-enum class ResponseMode { QUERY, FORM_POST }
-
 data class OidcProviderConfig(
     val provider: Provider,
     val issuer: String,
@@ -22,7 +32,7 @@ data class OidcProviderConfig(
     val tokenUrl: String,
     val jwksUri: String,
     val redirectUri: String,
-    val responseMode: ResponseMode,
+    val responseMode: OidcResponseMode,
 )
 
 fun interface OidcProviderConfigSource {
