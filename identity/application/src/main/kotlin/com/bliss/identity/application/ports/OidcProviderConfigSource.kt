@@ -8,9 +8,11 @@ import com.bliss.identity.domain.provider.Provider
  * the infrastructure layer ships the production `OidcProviderConfigSource`
  * binding in Phase 4 (wired from `application.conf` / env vars).
  *
- * `responseMode` is `query` for Google (the OIDC default) and `form_post`
+ * `responseMode` is `QUERY` for Google (the OIDC default) and `FORM_POST`
  * for Apple — Apple posts the callback with `application/x-www-form-urlencoded`.
  */
+enum class ResponseMode { QUERY, FORM_POST }
+
 data class OidcProviderConfig(
     val provider: Provider,
     val issuer: String,
@@ -20,7 +22,7 @@ data class OidcProviderConfig(
     val tokenUrl: String,
     val jwksUri: String,
     val redirectUri: String,
-    val responseMode: String,
+    val responseMode: ResponseMode,
 )
 
 fun interface OidcProviderConfigSource {

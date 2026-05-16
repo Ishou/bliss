@@ -5,6 +5,7 @@ import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.isInstanceOf
 import com.bliss.identity.application.ports.OidcProviderConfig
+import com.bliss.identity.application.ports.ResponseMode
 import com.bliss.identity.domain.provider.Provider
 import org.junit.jupiter.api.Test
 
@@ -19,7 +20,7 @@ class StaticOidcProviderConfigSourceTest {
             tokenUrl = "https://oauth2.googleapis.com/token",
             jwksUri = "https://www.googleapis.com/oauth2/v3/certs",
             redirectUri = "https://auth.wordsparrow.io/v1/auth/google/callback",
-            responseMode = "query",
+            responseMode = ResponseMode.QUERY,
         )
 
     private val appleConfig =
@@ -32,7 +33,7 @@ class StaticOidcProviderConfigSourceTest {
             tokenUrl = "https://appleid.apple.com/auth/token",
             jwksUri = "https://appleid.apple.com/auth/keys",
             redirectUri = "https://auth.wordsparrow.io/v1/auth/apple/callback",
-            responseMode = "form_post",
+            responseMode = ResponseMode.FORM_POST,
         )
 
     @Test
