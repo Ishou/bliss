@@ -31,9 +31,9 @@ internal object GenerationKnobs {
 
     /**
      * Minimum corpus count for a length to be considered "fillable" when
-     * computing `Lexicon.usefulLength`. Set well below the French corpus's
-     * thinnest long-length bucket so lengths up to 15 always qualify; still
-     * high enough to keep noise-only lengths out of the CSP search.
+     * computing `Lexicon.usefulLength`. Set low enough that sparse long-length
+     * buckets in thinner locales still qualify; high enough to keep
+     * noise-only lengths out of the CSP search.
      */
     const val L_USEFUL_FLOOR: Int = 20
 
