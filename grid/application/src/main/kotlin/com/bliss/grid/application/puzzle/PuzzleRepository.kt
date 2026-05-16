@@ -50,12 +50,7 @@ data class StoredSummary(
     val totalLetterCells: Int,
 )
 
-/**
- * Server-side puzzle snapshot. Carries the canonical [Grid] (with its
- * letters — server-private, never serialized to clients) plus the wire-side
- * fields needed to render the response on subsequent GETs.
- * `totalLetterCells` is denormalised so the archive list endpoint skips re-reading payload JSONB.
- */
+/** Server-private snapshot (Grid letters never serialised); totalLetterCells denormalised for archive queries. */
 data class StoredPuzzle(
     val grid: Grid,
     val title: String,

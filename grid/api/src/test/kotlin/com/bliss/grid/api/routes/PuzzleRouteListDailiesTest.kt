@@ -164,7 +164,6 @@ class PuzzleRouteListDailiesTest {
         val hintRepo = InMemoryHintUsageRepository()
         val selector = DailyPuzzleSelector()
 
-        // Walk the date range; persist a stub StoredPuzzle for each.
         var d = seed.start
         while (!d.isAfter(seed.endInclusive)) {
             val id = selector.puzzleIdForDate(d)

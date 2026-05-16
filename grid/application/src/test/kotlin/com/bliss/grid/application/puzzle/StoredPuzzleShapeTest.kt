@@ -15,8 +15,7 @@ import java.time.Instant
 class StoredPuzzleShapeTest {
     @Test
     fun `StoredPuzzle exposes totalLetterCells derived from the grid`() {
-        // A single 5-letter word placed DOWN_RIGHT contributes 5 letter cells
-        // (its `letterPositions()` walks the diagonal one step per character).
+        // DOWN_RIGHT walks one diagonal step per character, so 5-letter word → 5 letter cells.
         val word = Word(text = "ABCDE", definition = "test")
         val placement =
             WordPlacement(
