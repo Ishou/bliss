@@ -1,8 +1,36 @@
 import { createRoute } from '@tanstack/react-router';
+import { css } from 'styled-system/css';
 import { GrillesPage } from '@/ui/components/grilles/GrillesPage';
 import { GrillesSkeleton } from '@/ui/components/grilles/GrillesSkeleton';
+import { ContentPage } from '@/ui/components/layout';
 import { buildHead, INDEXABLE_ROUTES, SITE_BASE_URL } from '@/ui/seo';
 import { Route as RootRoute } from './__root';
+
+const srOnly = css({
+  position: 'absolute',
+  width: '1px',
+  height: '1px',
+  padding: 0,
+  margin: '-1px',
+  overflow: 'hidden',
+  clip: 'rect(0, 0, 0, 0)',
+  whiteSpace: 'nowrap',
+  border: 0,
+});
+
+function GrillesErrorFallback() {
+  return (
+    <ContentPage>
+      <h1 className={srOnly}>Anciennes grilles</h1>
+      <p role="alert">
+        Impossible de charger les grilles.{' '}
+        <button type="button" onClick={() => window.location.reload()}>
+          Réessayer
+        </button>
+      </p>
+    </ContentPage>
+  );
+}
 
 // `/grilles` — archive of past dailies. Loader fetches the first DESC
 // page (newest 100); the page component owns subsequent "Charger mois
@@ -31,10 +59,7 @@ export const Route = createRoute({
   // skeleton's role="status" sentinel before snapshotting HTML.
   pendingMs: 200,
   pendingComponent: GrillesSkeleton,
-  // Loader failures fall back to the skeleton plus the calm empty
-  // status the page renders when it has no items — the archive is a
-  // tertiary surface and a global error boundary would feel heavy.
-  errorComponent: () => <GrillesSkeleton />,
+  errorComponent: GrillesErrorFallback,
   head: () => {
     const r = INDEXABLE_ROUTES.find((x) => x.path === '/grilles')!;
     return buildHead({
