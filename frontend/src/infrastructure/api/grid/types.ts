@@ -289,6 +289,13 @@ export interface components {
          */
         ListDailyPuzzlesResponse: {
             items: components["schemas"]["PuzzleSummary"][];
+            /**
+             * @description `true` when the requested range contained more than 100 items
+             *     and results were truncated to the newest 100. Clients may
+             *     re-query with `to` set to one day before the oldest returned
+             *     `date` to page further back.
+             */
+            hasMore: boolean;
         };
         /**
          * @description Thin daily-puzzle summary returned by `listDailyPuzzles`. Carries

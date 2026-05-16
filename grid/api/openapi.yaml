@@ -591,13 +591,20 @@ components:
         Envelope returned by `listDailyPuzzles`. The `items` array is
         capped at 100 entries; clients paginate by issuing successive
         requests with narrower `from`/`to` ranges.
-      required: [items]
+      required: [items, hasMore]
       properties:
         items:
           type: array
           maxItems: 100
           items:
             $ref: '#/components/schemas/PuzzleSummary'
+        hasMore:
+          type: boolean
+          description: |
+            `true` when the requested range contained more than 100 items
+            and results were truncated to the newest 100. Clients may
+            re-query with `to` set to one day before the oldest returned
+            `date` to page further back.
 
     PuzzleSummary:
       type: object
