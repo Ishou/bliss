@@ -99,22 +99,6 @@ def is_obscure_tag(tag_str: str) -> str | None:
 # Kept as a local helper rather than importing the Kotlin rule because
 # this script runs offline without a JVM; the rules are identical
 # (NFD strip + œ/æ expansion + uppercase, must end up entirely A-Z).
-_DIACRITICS = {
-    "À": "A", "Á": "A", "Â": "A", "Ã": "A", "Ä": "A", "Å": "A",
-    "Ç": "C", "È": "E", "É": "E", "Ê": "E", "Ë": "E",
-    "Ì": "I", "Í": "I", "Î": "I", "Ï": "I",
-    "Ò": "O", "Ó": "O", "Ô": "O", "Õ": "O", "Ö": "O",
-    "Ù": "U", "Ú": "U", "Û": "U", "Ü": "U",
-    "Ý": "Y", "Ÿ": "Y", "Ñ": "N",
-    "à": "a", "á": "a", "â": "a", "ã": "a", "ä": "a", "å": "a",
-    "ç": "c", "è": "e", "é": "e", "ê": "e", "ë": "e",
-    "ì": "i", "í": "i", "î": "i", "ï": "i",
-    "ò": "o", "ó": "o", "ô": "o", "õ": "o", "ö": "o",
-    "ù": "u", "ú": "u", "û": "u", "ü": "u",
-    "ý": "y", "ÿ": "y", "ñ": "n",
-}
-
-
 def _fold_to_ascii(text: str) -> str:
     import unicodedata
     nfd = unicodedata.normalize("NFD", text)

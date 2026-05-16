@@ -3,7 +3,7 @@ clues. The wordsparrow.io live grid bug tracked here was that lemma=unir
 shipped with clue 'Associer ensemble', visibly redundant on the live grid.
 
 This test guards three things at once:
-1. No row in `grid/api/src/main/resources/words/words-fr.csv` trips
+1. No row in `grid/infrastructure/src/main/resources/words/words-fr.csv` trips
    `validate_clue._find_pleonasm`. If a future LoRA run regresses, the
    pipeline's validator gate now catches it; this test catches the
    merged-but-not-validated artifact case (e.g. someone editing the CSV
