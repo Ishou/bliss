@@ -90,6 +90,17 @@ test.describe('WCAG 2.2 A + AA accessibility', () => {
     await runAxe(page, 'grille');
   });
 
+  test('grilles route (archive list)', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/grilles');
+    // MSW serves the daily/list handler; wait for at least one day-row
+    // article to confirm the archive list has hydrated before axe runs.
+    await page.waitForSelector('[role="article"]');
+    await page.evaluate(() => document.fonts.ready);
+
+    await runAxe(page, 'grilles');
+  });
+
   test('not-found route', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     // `networkidle` so React hydrates and sets `document.title` via
