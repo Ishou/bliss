@@ -84,21 +84,19 @@ class LexiconTest {
 
     @Test
     fun `usefulLength returns largest length with floor-meeting count`() {
-        // Generate a corpus where length 5 has 60 words, length 6 has 30, length 7 has 0.
-        val w5 = (0 until 60).map { Word(text = "A" + "BCDE".take(4), clues = listOf(WordClue("c$it"))) }
-        // 60 length-5 words all named "ABCDE" would dedupe — vary them
+        // Pin to exact boundary: length-5 at L_USEFUL_FLOOR passes, length-6 at L_USEFUL_FLOOR - 1 fails.
+        val floor = GenerationKnobs.L_USEFUL_FLOOR
         val w5varied =
-            (0 until 60).map { i ->
+            (0 until floor).map { i ->
                 val s = "ABCD" + ('A' + (i % 26))
                 Word(text = s, clues = listOf(WordClue("c$i")))
             }
         val w6 =
-            (0 until 30).map { i ->
+            (0 until floor - 1).map { i ->
                 val s = "ABCDE" + ('A' + (i % 26))
                 Word(text = s, clues = listOf(WordClue("c$i")))
             }
         val lex = Lexicon(ListWordRepository(w5varied + w6))
-        // L_USEFUL_FLOOR = 50; length-5 has 60 (passes), length-6 has 30 (fails).
         assertThat(lex.usefulLength).isEqualTo(5)
     }
 

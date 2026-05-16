@@ -31,10 +31,11 @@ internal object GenerationKnobs {
 
     /**
      * Minimum corpus count for a length to be considered "fillable" when
-     * computing `Lexicon.usefulLength`. Below this, lengths are too sparse
-     * to support intersected CSP search.
+     * computing `Lexicon.usefulLength`. Set low enough that sparse long-length
+     * buckets in thinner locales still qualify; high enough to keep
+     * noise-only lengths out of the CSP search.
      */
-    const val L_USEFUL_FLOOR: Int = 50
+    const val L_USEFUL_FLOOR: Int = 20
 
     /** Base backtrack budget per restart, multiplied by `luby(attempt + 1)`. */
     const val BASE_BUDGET_BACKTRACKS: Int = 200
