@@ -29,7 +29,7 @@ import {
   setPseudonym,
 } from '@/infrastructure/session/localStorageSession';
 import {
-  clearAllSoloEntries,
+  clearAllSoloEntriesForEverySession,
   clearSoloEntriesForPuzzle,
   loadSoloEntries,
   loadSoloHintsUsed,
@@ -43,7 +43,11 @@ import {
   getTourSeen,
   setTourSeen,
 } from '@/infrastructure/session/localStorageTour';
-import type { SoloEntriesStore } from '@/application/solo/SoloEntriesStore';
+import {
+  createSoloEntriesStore,
+  type SoloEntriesStorage,
+  type SoloEntriesStore,
+} from '@/application/solo/SoloEntriesStore';
 import type { TourSeenStore } from '@/application/tour/TourSeenStore';
 import type { SessionClient } from '@/application/session/SessionClient';
 import { registerServiceWorker } from '@/infrastructure/pwa';
@@ -173,22 +177,27 @@ enableMocks()
       }),
       getSessionId: getOrCreateSessionId,
       clearLocalSession: () => {
+        // Sweep all solo-entries keys first; RGPD Art. 17 would orphan per-grid data under the old session id otherwise.
+        clearAllSoloEntriesForEverySession();
         clearSession();
-        clearAllSoloEntries();
         clearTourSeen();
       },
     };
 
-    // Adapts localStorage helpers to the SoloEntriesStore port; ui/ must not import infrastructure/ directly.
-    const soloEntriesStore: SoloEntriesStore = {
-      load: loadSoloEntries,
-      save: saveSoloLetter,
-      loadLockedCells: loadSoloLockedCells,
+    // Lazy session-id binding makes session rotation (RGPD erase → reseed) transparent to ui/.
+    const soloEntriesStorage: SoloEntriesStorage = {
+      loadEntries: loadSoloEntries,
+      saveLetter: saveSoloLetter,
+      loadLocked: loadSoloLockedCells,
       lockCell: saveSoloLockedCell,
       loadHintsUsed: loadSoloHintsUsed,
       recordHintUsed: recordSoloHintUsed,
       clearForPuzzle: clearSoloEntriesForPuzzle,
     };
+    const soloEntriesStore: SoloEntriesStore = createSoloEntriesStore({
+      getSessionId: getOrCreateSessionId,
+      storage: soloEntriesStorage,
+    });
 
     // Onboarding-tour completion flag. Same indirection rationale as
     // SoloEntriesStore — keep the localStorage seam outside ui/.

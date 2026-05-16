@@ -151,7 +151,7 @@ const frStrings = {
     'Confirmer l\'effacement ? Votre identifiant de session, votre pseudonyme et l\'historique des indices côté serveur seront supprimés immédiatement.',
   eraseTitle: 'Effacer mes données',
   eraseDescription:
-    'Supprime votre identifiant de session, votre pseudonyme et toutes les demandes d\'indices enregistrées sur le serveur. Vous serez redirigé·e vers l\'accueil après l\'effacement.',
+    'Supprime votre identifiant de session, votre pseudonyme et toutes les demandes d\'indices enregistrées sur le serveur. Le cache local de votre progression est également supprimé. Vous serez redirigé·e vers l\'accueil après l\'effacement.',
   eraseButton: 'Effacer mes données',
   erasing: 'Effacement en cours…',
   successMessage: 'Données effacées. Redirection…',
@@ -164,7 +164,7 @@ const enStrings = {
     'Confirm erase? Your session id, pseudonym, and server-side hint history will be removed immediately.',
   eraseTitle: 'Erase my data',
   eraseDescription:
-    'Removes your session id, pseudonym, and every recorded hint request on the server. You will be redirected home after the erase completes.',
+    'Removes your session id, pseudonym, and every recorded hint request on the server. Your local progress cache is also removed. You will be redirected home after the erase completes.',
   eraseButton: 'Erase my data',
   erasing: 'Erasing…',
   successMessage: 'Data erased. Redirecting…',
@@ -212,6 +212,17 @@ function FrenchContent() {
             <td>Indices demandés par grille</td>
             <td>Limiter le nombre d’indices par grille</td>
             <td>90 jours après la dernière demande</td>
+          </tr>
+          <tr>
+            <td>
+              Lettres saisies et cases validées par grille, indexées par
+              identifiant de session, dans <code>localStorage</code>
+            </td>
+            <td>
+              Reprendre une grille en cours et afficher votre progression
+              dans « Anciennes grilles »
+            </td>
+            <td>Jusqu’à effacement</td>
           </tr>
           <tr>
             <td>
@@ -327,6 +338,17 @@ function EnglishContent() {
             <td>Hints used per puzzle</td>
             <td>Cap hints per puzzle</td>
             <td>90 days from last request</td>
+          </tr>
+          <tr>
+            <td>
+              Letters entered and validated cells per puzzle, keyed by
+              session id, in <code>localStorage</code>
+            </td>
+            <td>
+              Resume an in-progress puzzle and show progress on
+              &ldquo;Past puzzles&rdquo;
+            </td>
+            <td>Until erased</td>
           </tr>
           <tr>
             <td>
