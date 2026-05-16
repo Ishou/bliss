@@ -9,7 +9,10 @@ interface UserRepository {
 
     suspend fun findById(id: UserId): User?
 
-    suspend fun updateLastSeenAt(id: UserId, at: Instant)
+    suspend fun updateLastSeenAt(
+        id: UserId,
+        at: Instant,
+    )
 
     suspend fun delete(id: UserId)
 }

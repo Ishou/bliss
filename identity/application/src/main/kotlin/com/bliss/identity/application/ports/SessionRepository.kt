@@ -10,7 +10,10 @@ interface SessionRepository {
 
     suspend fun findById(id: SessionId): Session?
 
-    suspend fun revoke(id: SessionId, at: Instant)
+    suspend fun revoke(
+        id: SessionId,
+        at: Instant,
+    )
 
     suspend fun deleteForUser(userId: UserId)
 }

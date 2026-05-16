@@ -8,7 +8,10 @@ import com.bliss.identity.domain.user.UserId
 import java.util.concurrent.ConcurrentHashMap
 
 class InMemoryUserProviderRepository : UserProviderRepository {
-    private data class Key(val provider: Provider, val subject: Subject)
+    private data class Key(
+        val provider: Provider,
+        val subject: Subject,
+    )
 
     private val byProviderSubject = ConcurrentHashMap<Key, UserProvider>()
 
@@ -16,11 +19,12 @@ class InMemoryUserProviderRepository : UserProviderRepository {
         byProviderSubject[Key(userProvider.provider, userProvider.subject)] = userProvider
     }
 
-    override suspend fun findByProviderAndSubject(provider: Provider, subject: Subject): UserProvider? =
-        byProviderSubject[Key(provider, subject)]
+    override suspend fun findByProviderAndSubject(
+        provider: Provider,
+        subject: Subject,
+    ): UserProvider? = byProviderSubject[Key(provider, subject)]
 
-    override suspend fun listForUser(userId: UserId): List<UserProvider> =
-        byProviderSubject.values.filter { it.userId == userId }
+    override suspend fun listForUser(userId: UserId): List<UserProvider> = byProviderSubject.values.filter { it.userId == userId }
 
     override suspend fun deleteForUser(userId: UserId) {
         byProviderSubject.values

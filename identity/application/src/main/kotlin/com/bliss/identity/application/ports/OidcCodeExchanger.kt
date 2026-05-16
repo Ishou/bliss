@@ -10,7 +10,9 @@ import com.bliss.identity.domain.provider.Provider
  * The returned ID token is a raw JWT string; signature/claims verification
  * is performed separately by `com.bliss.identity.domain.oidc.OidcVerifier`.
  */
-data class OidcExchangeResult(val idToken: String)
+data class OidcExchangeResult(
+    val idToken: String,
+)
 
 fun interface OidcCodeExchanger {
     suspend fun exchange(

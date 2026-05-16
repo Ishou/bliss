@@ -15,7 +15,10 @@ class InMemoryUserRepository : UserRepository {
 
     override suspend fun findById(id: UserId): User? = byId[id]
 
-    override suspend fun updateLastSeenAt(id: UserId, at: Instant) {
+    override suspend fun updateLastSeenAt(
+        id: UserId,
+        at: Instant,
+    ) {
         byId.computeIfPresent(id) { _, existing -> existing.copy(lastSeenAt = at) }
     }
 

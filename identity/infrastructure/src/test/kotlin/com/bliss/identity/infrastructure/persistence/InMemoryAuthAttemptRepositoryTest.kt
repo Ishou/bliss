@@ -30,32 +30,36 @@ class InMemoryAuthAttemptRepositoryTest {
         )
 
     @Test
-    fun `findByState returns null when empty`() = runTest {
-        val repo = InMemoryAuthAttemptRepository()
-        assertThat(repo.findByState(State.generate(random))).isNull()
-    }
+    fun `findByState returns null when empty`() =
+        runTest {
+            val repo = InMemoryAuthAttemptRepository()
+            assertThat(repo.findByState(State.generate(random))).isNull()
+        }
 
     @Test
-    fun `create then findByState round-trips`() = runTest {
-        val repo = InMemoryAuthAttemptRepository()
-        val a = attempt()
-        repo.create(a)
-        assertThat(repo.findByState(a.state)).isEqualTo(a)
-    }
+    fun `create then findByState round-trips`() =
+        runTest {
+            val repo = InMemoryAuthAttemptRepository()
+            val a = attempt()
+            repo.create(a)
+            assertThat(repo.findByState(a.state)).isEqualTo(a)
+        }
 
     @Test
-    fun `deleteByState removes the row`() = runTest {
-        val repo = InMemoryAuthAttemptRepository()
-        val a = attempt()
-        repo.create(a)
-        repo.deleteByState(a.state)
-        assertThat(repo.findByState(a.state)).isNull()
-    }
+    fun `deleteByState removes the row`() =
+        runTest {
+            val repo = InMemoryAuthAttemptRepository()
+            val a = attempt()
+            repo.create(a)
+            repo.deleteByState(a.state)
+            assertThat(repo.findByState(a.state)).isNull()
+        }
 
     @Test
-    fun `deleteByState is a no-op when the state is unknown`() = runTest {
-        val repo = InMemoryAuthAttemptRepository()
-        repo.deleteByState(State.generate(random))
-        // No throw.
-    }
+    fun `deleteByState is a no-op when the state is unknown`() =
+        runTest {
+            val repo = InMemoryAuthAttemptRepository()
+            repo.deleteByState(State.generate(random))
+            // No throw.
+        }
 }

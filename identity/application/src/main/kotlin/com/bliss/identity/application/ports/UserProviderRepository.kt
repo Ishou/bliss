@@ -8,7 +8,10 @@ import com.bliss.identity.domain.user.UserId
 interface UserProviderRepository {
     suspend fun link(userProvider: UserProvider)
 
-    suspend fun findByProviderAndSubject(provider: Provider, subject: Subject): UserProvider?
+    suspend fun findByProviderAndSubject(
+        provider: Provider,
+        subject: Subject,
+    ): UserProvider?
 
     suspend fun listForUser(userId: UserId): List<UserProvider>
 

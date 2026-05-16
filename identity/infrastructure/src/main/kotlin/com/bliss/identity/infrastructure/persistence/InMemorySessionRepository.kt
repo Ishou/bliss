@@ -16,7 +16,10 @@ class InMemorySessionRepository : SessionRepository {
 
     override suspend fun findById(id: SessionId): Session? = byId[id]
 
-    override suspend fun revoke(id: SessionId, at: Instant) {
+    override suspend fun revoke(
+        id: SessionId,
+        at: Instant,
+    ) {
         byId.computeIfPresent(id) { _, existing -> existing.copy(revokedAt = at) }
     }
 
