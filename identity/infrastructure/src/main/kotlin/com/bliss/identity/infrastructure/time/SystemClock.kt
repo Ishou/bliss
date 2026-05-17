@@ -8,6 +8,6 @@ import java.time.Instant
  * Tests inject `FixedClock` (from testFixtures) instead so time is
  * deterministic.
  */
-class SystemClock : Clock {
+object SystemClock : Clock {
     override fun now(): Instant = Instant.now()
 }

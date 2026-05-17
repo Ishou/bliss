@@ -35,7 +35,7 @@ class UuidV7IdGeneratorTest {
     fun `later id sorts greater than earlier id`() {
         val gen = UuidV7IdGenerator()
         val first = gen.newUserId().value
-        Thread.sleep(2) // UUIDv7's millisecond timestamp grants ordering only across ms boundaries.
+        Thread.sleep(10) // UUIDv7's millisecond timestamp grants ordering only across ms boundaries; 10ms is generous on slow CI.
         val second = gen.newUserId().value
         assertThat(second).isGreaterThan(first)
     }
