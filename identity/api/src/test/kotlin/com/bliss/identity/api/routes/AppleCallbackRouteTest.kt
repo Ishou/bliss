@@ -12,6 +12,7 @@ import com.bliss.identity.api.config.IdentityApiConfig
 import com.bliss.identity.api.module
 import com.bliss.identity.application.ports.ClientAuth
 import com.bliss.identity.application.ports.OidcCodeExchanger
+import com.bliss.identity.application.ports.OidcExchangeError
 import com.bliss.identity.application.ports.OidcExchangeResult
 import com.bliss.identity.application.ports.OidcProviderConfig
 import com.bliss.identity.application.ports.OidcResponseMode
@@ -21,9 +22,12 @@ import com.bliss.identity.domain.auth.AuthAttemptId
 import com.bliss.identity.domain.auth.PkceVerifier
 import com.bliss.identity.domain.auth.State
 import com.bliss.identity.domain.oidc.OidcIdToken
+import com.bliss.identity.domain.oidc.OidcVerificationError
 import com.bliss.identity.domain.oidc.OidcVerifier
 import com.bliss.identity.domain.provider.Provider
 import com.bliss.identity.domain.provider.Subject
+import com.bliss.identity.domain.provider.UserProvider
+import com.bliss.identity.domain.user.UserId
 import com.bliss.identity.infrastructure.oidc.StaticOidcProviderConfigSource
 import com.bliss.identity.infrastructure.persistence.InMemoryAuthAttemptRepository
 import com.bliss.identity.infrastructure.persistence.InMemorySessionRepository
@@ -218,5 +222,154 @@ class AppleCallbackRouteTest {
             val session = cookies.firstOrNull { it.name == SessionCookies.NAME }
             assertThat(session).isNotNull()
             assertThat(session!!.value).isEqualTo(newSessionId.toString())
+        }
+
+    @Test
+    fun `expired state maps to 400`() =
+        testApplication {
+            val expired = happyAttempt().copy(expiresAt = now.minusSeconds(1))
+            val useCase = newCompleteUseCase(attempt = expired)
+            val wiring = Wiring.forTesting(completeOidcLogin = useCase)
+            application { module(wiring, testConfig) }
+            val client = createClient { followRedirects = false }
+            val response =
+                client.submitForm(
+                    url = "/v1/auth/apple/callback",
+                    formParameters =
+                        Parameters.build {
+                            append("code", "auth-code")
+                            append("state", state.value)
+                        },
+                )
+            assertThat(response.status).isEqualTo(HttpStatusCode.BadRequest)
+        }
+
+    @Test
+    fun `linking mode maps to 409`() =
+        testApplication {
+            val linking = happyAttempt().copy(linkToUserId = UserId(newUserId))
+            val useCase = newCompleteUseCase(attempt = linking)
+            val wiring = Wiring.forTesting(completeOidcLogin = useCase)
+            application { module(wiring, testConfig) }
+            val client = createClient { followRedirects = false }
+            val response =
+                client.submitForm(
+                    url = "/v1/auth/apple/callback",
+                    formParameters =
+                        Parameters.build {
+                            append("code", "auth-code")
+                            append("state", state.value)
+                        },
+                )
+            assertThat(response.status).isEqualTo(HttpStatusCode.Conflict)
+        }
+
+    @Test
+    fun `exchange rejected maps to 503`() =
+        testApplication {
+            val rejectingExchanger =
+                OidcCodeExchanger { _, _, _, _ ->
+                    throw OidcExchangeError.TokenEndpointRejected(Provider.APPLE, 400, RuntimeException("rejected"))
+                }
+            val useCase = newCompleteUseCase(codeExchanger = rejectingExchanger)
+            val wiring = Wiring.forTesting(completeOidcLogin = useCase)
+            application { module(wiring, testConfig) }
+            val client = createClient { followRedirects = false }
+            val response =
+                client.submitForm(
+                    url = "/v1/auth/apple/callback",
+                    formParameters =
+                        Parameters.build {
+                            append("code", "auth-code")
+                            append("state", state.value)
+                        },
+                )
+            assertThat(response.status).isEqualTo(HttpStatusCode.ServiceUnavailable)
+        }
+
+    @Test
+    fun `jwks unavailable maps to 503`() =
+        testApplication {
+            val unavailableVerifier =
+                OidcVerifier { _, _ -> throw OidcVerificationError.JwksUnavailable(RuntimeException("network error")) }
+            val useCase = newCompleteUseCase(verifier = unavailableVerifier)
+            val wiring = Wiring.forTesting(completeOidcLogin = useCase)
+            application { module(wiring, testConfig) }
+            val client = createClient { followRedirects = false }
+            val response =
+                client.submitForm(
+                    url = "/v1/auth/apple/callback",
+                    formParameters =
+                        Parameters.build {
+                            append("code", "auth-code")
+                            append("state", state.value)
+                        },
+                )
+            assertThat(response.status).isEqualTo(HttpStatusCode.ServiceUnavailable)
+        }
+
+    @Test
+    fun `invalid token signature maps to 500`() =
+        testApplication {
+            val badSigVerifier = OidcVerifier { _, _ -> throw OidcVerificationError.InvalidSignature() }
+            val useCase = newCompleteUseCase(verifier = badSigVerifier)
+            val wiring = Wiring.forTesting(completeOidcLogin = useCase)
+            application { module(wiring, testConfig) }
+            val client = createClient { followRedirects = false }
+            val response =
+                client.submitForm(
+                    url = "/v1/auth/apple/callback",
+                    formParameters =
+                        Parameters.build {
+                            append("code", "auth-code")
+                            append("state", state.value)
+                        },
+                )
+            assertThat(response.status).isEqualTo(HttpStatusCode.InternalServerError)
+        }
+
+    @Test
+    fun `orphaned link maps to 500`() =
+        testApplication {
+            val ghostUserId = UserId(UUID.fromString("01890c5e-0000-7000-8000-00000000dd02"))
+            val seedProviders = InMemoryUserProviderRepository()
+            runBlocking {
+                seedProviders.link(
+                    UserProvider(
+                        userId = ghostUserId,
+                        provider = Provider.APPLE,
+                        subject = Subject.of("apple-sub-1"),
+                        emailAtLink = null,
+                        linkedAt = now,
+                    ),
+                )
+            }
+            val attempts = InMemoryAuthAttemptRepository()
+            runBlocking { attempts.create(happyAttempt()) }
+            val useCase =
+                CompleteOidcLoginUseCase(
+                    attempts = attempts,
+                    codeExchanger = happyExchanger,
+                    verifier = happyVerifier,
+                    configSource = StaticOidcProviderConfigSource(mapOf(Provider.APPLE to appleConfig)),
+                    users = InMemoryUserRepository(),
+                    userProviders = seedProviders,
+                    sessions = InMemorySessionRepository(),
+                    idGenerator = FixedIdGenerator(userIds = listOf(newUserId), sessionIds = listOf(newSessionId)),
+                    clock = FixedClock(now),
+                )
+            val wiring = Wiring.forTesting(completeOidcLogin = useCase)
+            application { module(wiring, testConfig) }
+            val client = createClient { followRedirects = false }
+            val response =
+                client.submitForm(
+                    url = "/v1/auth/apple/callback",
+                    formParameters =
+                        Parameters.build {
+                            append("code", "auth-code")
+                            append("state", state.value)
+                        },
+                )
+            assertThat(response.status).isEqualTo(HttpStatusCode.InternalServerError)
         }
 }
