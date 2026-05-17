@@ -110,6 +110,26 @@ const posOf = (el: HTMLElement): Position | null => {
 // ASCII A–Z plus French diacritics the puzzle ships with.
 const LETTER_RE = /^[a-zA-ZàâçéèêëîïôûùüÿñæœÀÂÇÉÈÊËÎÏÔÛÙÜŸÑÆŒ]$/;
 
+// True when every letter cell of `clue` strictly before `p` carries a
+// filled value in `values`. The clicked cell's own value and any cells
+// after it are irrelevant. When `p` is the first cell of `clue` the
+// prefix is empty and the predicate is vacuously true — so every
+// real-start automatically also counts as a smart-start. Returns false
+// defensively if `p` is not part of `clue.cells` (callers should only
+// pass clues actually passing through `p`).
+const prefixFilled = (
+  clue: Clue,
+  p: Position,
+  values: Map<string, string>,
+): boolean => {
+  const idx = clue.cells.findIndex((c) => same(c.position, p));
+  if (idx < 0) return false;
+  for (let i = 0; i < idx; i++) {
+    if (!values.has(key(clue.cells[i].position))) return false;
+  }
+  return true;
+};
+
 // Display-form normalization for a single accepted keystroke. Strips
 // combining diacritics (NFD then drops U+0300–U+036F) and uppercases
 // — so 'é' renders as 'E', 'ç' as 'C', etc. Mots fléchés grids are
@@ -441,14 +461,22 @@ export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOpt
           else next = allClues[0].direction;
         }
       } else {
-        // First click on this cell — prefer a clue that STARTS here. When
-        // the user taps the first letter of a word, that word's clue takes
-        // precedence over the user's previous direction; otherwise typing
-        // would pick up mid-answer in an unrelated clue that happens to
-        // pass through. Cells with NO starting clue fall back to the
-        // existing "pick by current direction / first clue" logic.
+        // First click on this cell — pick a clue using a three-tier
+        // priority. Tier 1 (smart-start): clues whose every letter cell
+        // before `p` is already filled. The player has been working on
+        // that word, so the click should keep them there. Tier 2
+        // (real-start): structural word-boundary preference (the cell is
+        // the first letter of the clue). Tier 3: every clue passing
+        // through `p`. Real-start is a subset of smart-start (empty
+        // prefix is vacuously filled), so smart-start widens the
+        // candidate set rather than overriding real-start when both
+        // apply — the existing tiebreak then decides.
+        const values = cellValuesRef.current;
+        const smart = allClues.filter((c) => prefixFilled(c, p, values));
         const starting = allClues.filter((c) => same(c.cells[0].position, p));
-        const candidates = starting.length > 0 ? starting : allClues;
+        const candidates = smart.length > 0
+          ? smart
+          : starting.length > 0 ? starting : allClues;
         if (candidates.length === 1) {
           next = candidates[0].direction;
         } else if (candidates.length > 1) {
