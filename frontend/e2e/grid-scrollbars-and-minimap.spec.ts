@@ -239,4 +239,65 @@ test.describe('Grid scrollbars + minimap', () => {
       expect(progress).toBeGreaterThan(0);
     },
   );
+
+  test('minimap does NOT overlap the grid bounding box (desktop viewport)', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await gridReady(page);
+    await zoomIn(page, 2);
+
+    const stage = page.getByTestId('grid-stage');
+    const minimap = page.getByRole('img', { name: /aperçu de la grille/i });
+    const stageBox = await stage.boundingBox();
+    const miniBox = await minimap.boundingBox();
+    if (!stageBox || !miniBox) throw new Error('stage or minimap missing bounding box');
+
+    const stageBottom = stageBox.y + stageBox.height;
+    expect(
+      miniBox.y,
+      `minimap.y=${miniBox.y} should be >= stage.bottom=${stageBottom}; stage=${JSON.stringify(stageBox)}; mini=${JSON.stringify(miniBox)}`,
+    ).toBeGreaterThanOrEqual(stageBottom);
+  });
+
+  test('typing a letter into a cell tints it on the minimap', async ({ page }) => {
+    await gridReady(page);
+    await zoomIn(page, 2);
+
+    // Find the first visible letter cell, focus it, type a letter.
+    const firstLetter = page.locator('input[data-cell-kind="letter"]').first();
+    await firstLetter.focus();
+    const row = await firstLetter.getAttribute('data-row');
+    const col = await firstLetter.getAttribute('data-col');
+    if (row === null || col === null) throw new Error('cell missing data-row/col');
+
+    // Dispatch a real input event the same way the existing word-auto-validate
+    // e2e does — synthetic InputEvent is the established repo pattern because
+    // keyboard.press doesn't reliably fire on this wrapped <input>. (NOT a
+    // synthetic POINTER event — pointer interactions must still be real.)
+    await page.evaluate(({ row, col }) => {
+      const sel = `input[data-cell-kind="letter"][data-row="${row}"][data-col="${col}"]`;
+      const el = document.querySelector<HTMLInputElement>(sel);
+      if (!el) return;
+      el.focus();
+      el.dispatchEvent(new InputEvent('beforeinput', { inputType: 'insertText', data: 'A', bubbles: true, cancelable: true }));
+      el.dispatchEvent(new InputEvent('input', { inputType: 'insertText', data: 'A', bubbles: true }));
+    }, { row, col });
+
+    const filledRect = page.locator(`svg rect[data-cell-kind="letter"][data-row="${row}"][data-col="${col}"]`);
+    await expect(filledRect).toHaveAttribute('data-filled', 'true');
+  });
+
+  test('focusing a cell renders a focus-marker on the minimap', async ({ page }) => {
+    await gridReady(page);
+    await zoomIn(page, 2);
+
+    const firstLetter = page.locator('input[data-cell-kind="letter"]').first();
+    await firstLetter.focus();
+    const row = await firstLetter.getAttribute('data-row');
+    const col = await firstLetter.getAttribute('data-col');
+    if (row === null || col === null) throw new Error('cell missing data-row/col');
+
+    const marker = page.locator('svg rect[data-role="focus-marker"]');
+    await expect(marker).toHaveAttribute('x', col);
+    await expect(marker).toHaveAttribute('y', row);
+  });
 });

@@ -144,4 +144,100 @@ describe('GridMinimap', () => {
     );
     expect(rect).toHaveAttribute('data-validated', 'true');
   });
+
+  it('renders in-word cells with data-in-word="true"', () => {
+    const { ref } = makeRef();
+    const letterCell = SAMPLE_PUZZLE.cells.find((c) => c.kind === 'letter');
+    if (!letterCell) throw new Error('sample puzzle has no letter cell');
+    const key = `${letterCell.position.row},${letterCell.position.col}`;
+    const { container } = render(
+      <GridMinimap
+        puzzle={SAMPLE_PUZZLE}
+        validatedPositions={new Set()}
+        currentWordKeys={new Set([key])}
+        transformRef={ref}
+        scale={2}
+        positionX={0}
+        positionY={0}
+        contentWidth={200}
+        contentHeight={200}
+      />,
+    );
+    const rect = container.querySelector(
+      `rect[data-cell-kind="letter"][data-row="${letterCell.position.row}"][data-col="${letterCell.position.col}"]`,
+    );
+    expect(rect).toHaveAttribute('data-in-word', 'true');
+  });
+
+  it('renders filled cells with data-filled="true"', () => {
+    const { ref } = makeRef();
+    const letterCell = SAMPLE_PUZZLE.cells.find((c) => c.kind === 'letter');
+    if (!letterCell) throw new Error('sample puzzle has no letter cell');
+    const key = `${letterCell.position.row},${letterCell.position.col}`;
+    const { container } = render(
+      <GridMinimap
+        puzzle={SAMPLE_PUZZLE}
+        validatedPositions={new Set()}
+        filledPositions={new Set([key])}
+        transformRef={ref}
+        scale={2}
+        positionX={0}
+        positionY={0}
+        contentWidth={200}
+        contentHeight={200}
+      />,
+    );
+    const rect = container.querySelector(
+      `rect[data-cell-kind="letter"][data-row="${letterCell.position.row}"][data-col="${letterCell.position.col}"]`,
+    );
+    expect(rect).toHaveAttribute('data-filled', 'true');
+  });
+
+  it('precedence: validated wins over in-word', () => {
+    const { ref } = makeRef();
+    const letterCell = SAMPLE_PUZZLE.cells.find((c) => c.kind === 'letter');
+    if (!letterCell) throw new Error('sample puzzle has no letter cell');
+    const key = `${letterCell.position.row},${letterCell.position.col}`;
+    const { container } = render(
+      <GridMinimap
+        puzzle={SAMPLE_PUZZLE}
+        validatedPositions={new Set([key])}
+        currentWordKeys={new Set([key])}
+        transformRef={ref}
+        scale={2}
+        positionX={0}
+        positionY={0}
+        contentWidth={200}
+        contentHeight={200}
+      />,
+    );
+    const rect = container.querySelector(
+      `rect[data-cell-kind="letter"][data-row="${letterCell.position.row}"][data-col="${letterCell.position.col}"]`,
+    );
+    expect(rect).toHaveAttribute('data-validated', 'true');
+    expect(rect).not.toHaveAttribute('data-in-word');
+  });
+
+  it('renders a focus-marker rect at the localCursor position', () => {
+    const { ref } = makeRef();
+    const letterCell = SAMPLE_PUZZLE.cells.find((c) => c.kind === 'letter');
+    if (!letterCell) throw new Error('sample puzzle has no letter cell');
+    const { container } = render(
+      <GridMinimap
+        puzzle={SAMPLE_PUZZLE}
+        validatedPositions={new Set()}
+        localCursor={{ position: letterCell.position, direction: 'across' }}
+        transformRef={ref}
+        scale={2}
+        positionX={0}
+        positionY={0}
+        contentWidth={200}
+        contentHeight={200}
+      />,
+    );
+    const marker = container.querySelector('rect[data-role="focus-marker"]');
+    expect(marker).toBeInTheDocument();
+    expect(marker).toHaveAttribute('x', String(letterCell.position.col));
+    expect(marker).toHaveAttribute('y', String(letterCell.position.row));
+  });
 });

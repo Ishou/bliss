@@ -80,6 +80,24 @@ const gridShellStyles = css({
   containerType: 'size',
 });
 
+// Outer wrapper around gridShell + the in-flow minimap. Absorbs the
+// same flex slack as gridShell did before this wrapper existed —
+// `flex: 1 1 0; minHeight: 0` keeps the route's flex column from
+// overflowing. gridShell keeps its own `flex: 1 1 0` so it stretches
+// to fill gridArea.
+//
+// `position: relative` is currently unused (the minimap is in-flow,
+// not absolutely positioned). Kept as defensive scaffolding in case
+// an absolute child is added here later.
+const gridAreaStyles = css({
+  position: 'relative',
+  flex: '1 1 0',
+  minHeight: 0,
+  width: '100%',
+  display: 'flex',
+  flexDirection: 'column',
+});
+
 // Base inline style for the `TransformComponent` wrapper. The wrapper
 // is a `puzzle.width × puzzle.height` rectangle (aspect-ratio derived
 // from the puzzle dims) sized to fit whichever container axis binds
@@ -407,6 +425,33 @@ export function Grid({
     validatedPositions,
     typingSessionIds,
   ]);
+
+  // Set of "row,col" keys covered by the current clue's word — pre-
+  // computed so GridMinimap stays a dumb renderer.
+  const currentWordKeys = useMemo(() => {
+    const s = new Set<string>();
+    if (!nav.currentClue) return s;
+    for (const c of nav.currentClue.cells) {
+      s.add(`${c.position.row},${c.position.col}`);
+    }
+    return s;
+  }, [nav.currentClue]);
+
+  // Letter cells the player has filled but not yet validated. Re-runs
+  // on every entry write because nav.getEntryAt's callback identity
+  // changes on every write (via the hook's internal version counter —
+  // see useGridNavigation.ts:340-347).
+  const filledPositions = useMemo(() => {
+    const s = new Set<string>();
+    const validated = validatedPositions ?? new Set<string>();
+    for (const cell of puzzle.cells) {
+      if (cell.kind !== 'letter') continue;
+      const k = `${cell.position.row},${cell.position.col}`;
+      if (validated.has(k)) continue;
+      if (nav.getEntryAt(cell.position.row, cell.position.col) !== '') s.add(k);
+    }
+    return s;
+  }, [puzzle.cells, validatedPositions, nav.getEntryAt]);
 
   // Zoom in / out centered on the currently-focused cell. When the
   // user has a slot focused, the library's `zoomToElement` keeps that
@@ -948,6 +993,7 @@ export function Grid({
         - `panning.disabled` is reactively bound to `!isZoomedIn` —
           gates touch panning (still library-driven) at scale 1.
       */}
+      <div className={gridAreaStyles}>
       <div
         ref={gridShellRef}
         className={gridShellStyles}
@@ -962,7 +1008,7 @@ export function Grid({
         the `margin: 0 auto` on transformWrapperStyle as the centering
         box inside the flex shell.
       */}
-      <div style={stageStyle}>
+      <div style={stageStyle} data-testid="grid-stage">
       <TransformWrapper
         ref={transformWrapperRef}
         minScale={1}
@@ -1123,20 +1169,26 @@ export function Grid({
             contentWidth={gridFramePx.width}
             contentHeight={gridFramePx.height}
           />
-          <GridMinimap
-            puzzle={puzzle}
-            validatedPositions={validatedPositions ?? new Set()}
-            transformRef={transformWrapperRef}
-            scale={transformState.scale}
-            positionX={transformState.positionX}
-            positionY={transformState.positionY}
-            contentWidth={gridFramePx.width}
-            contentHeight={gridFramePx.height}
-          />
         </div>
       )}
       </div>{/* stage */}
       </div>{/* gridShell */}
+      {isZoomedIn && gridFramePx.width > 0 && gridFramePx.height > 0 && (
+        <GridMinimap
+          puzzle={puzzle}
+          validatedPositions={validatedPositions ?? new Set()}
+          filledPositions={filledPositions}
+          currentWordKeys={currentWordKeys}
+          localCursor={nav.localCursor}
+          transformRef={transformWrapperRef}
+          scale={transformState.scale}
+          positionX={transformState.positionX}
+          positionY={transformState.positionY}
+          contentWidth={gridFramePx.width}
+          contentHeight={gridFramePx.height}
+        />
+      )}
+      </div>{/* gridArea */}
       <GridZoomControls
         canZoomIn={!isMaxZoom}
         canZoomOut={isZoomedIn}

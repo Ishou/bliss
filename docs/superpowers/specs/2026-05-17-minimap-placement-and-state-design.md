@@ -164,6 +164,19 @@ already chosen to zoom in (where the minimap matters most), so the
 trade is fine. The `GridZoomControls` row below stays put; the
 minimap inserts above it.
 
+**Update (implementation):** The "desktop: right-of-grid, mobile:
+below-grid" strategy described above was abandoned during
+implementation. The route applies a max-width to its page content;
+on a 1440-px viewport the gridArea is ~1048 px and the stage centers
+at 720 px, leaving only ~164 px of margin on each side — not the
+~360 px assumed above (120-px minimap + 12-px gap fits, but the
+`gridArea`'s own constraint clips it, causing ~38 px of visual
+overlap with the stage). The simpler fix: place the minimap
+**in-flow below the grid on ALL viewports** (`position: static;
+margin: 8px auto 0`). This works regardless of route layout width
+and eliminates the breakpoint split entirely. The 480-px breakpoint
+for size adjustment (desktop 120 px vs mobile 80 px) is kept.
+
 ## Test plan
 
 - **Component tests** (`grid-minimap.test.tsx`):
