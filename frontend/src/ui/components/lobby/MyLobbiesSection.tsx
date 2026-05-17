@@ -197,7 +197,9 @@ function LobbyRow({ lobby }: { readonly lobby: LobbySummary }) {
     setRevealed((v) => !v);
   };
   const handleCopy = () => {
-    void navigator.clipboard?.writeText(lobby.code);
+    // ADR-0027: invite URL is `/join/$code`, not the bare code.
+    const shareUrl = `${window.location.origin}/join/${lobby.code}`;
+    void navigator.clipboard?.writeText(shareUrl);
     if (copyTimerRef.current !== null) clearTimeout(copyTimerRef.current);
     setJustCopied(true);
     copyTimerRef.current = setTimeout(() => {
