@@ -1,0 +1,86 @@
+package com.bliss.identity.infrastructure.persistence
+
+import com.bliss.identity.application.ports.UserRepository
+import com.bliss.identity.domain.user.DisplayName
+import com.bliss.identity.domain.user.User
+import com.bliss.identity.domain.user.UserId
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import java.sql.ResultSet
+import java.time.Instant
+import java.util.UUID
+import javax.sql.DataSource
+
+/**
+ * Postgres-backed [UserRepository]. JDBC is blocking; every method wraps its
+ * calls in `withContext(Dispatchers.IO)` to keep the suspend port honest under
+ * coroutine scopes (Ktor route handlers run on a limited dispatcher).
+ */
+class PostgresUserRepository(
+    private val dataSource: DataSource,
+) : UserRepository {
+    override suspend fun create(user: User): Unit =
+        withContext(Dispatchers.IO) {
+            dataSource.connection.use { conn ->
+                conn.prepareStatement(INSERT_SQL).use { stmt ->
+                    stmt.setObject(1, user.id.value)
+                    stmt.setString(2, user.displayName.value)
+                    stmt.setObject(3, user.createdAt)
+                    stmt.setObject(4, user.lastSeenAt)
+                    stmt.executeUpdate()
+                }
+            }
+        }
+
+    override suspend fun findById(id: UserId): User? =
+        withContext(Dispatchers.IO) {
+            dataSource.connection.use { conn ->
+                conn.prepareStatement(SELECT_SQL).use { stmt ->
+                    stmt.setObject(1, id.value)
+                    stmt.executeQuery().use { rs -> if (rs.next()) rs.toUser() else null }
+                }
+            }
+        }
+
+    override suspend fun updateLastSeenAt(
+        id: UserId,
+        at: Instant,
+    ): Unit =
+        withContext(Dispatchers.IO) {
+            dataSource.connection.use { conn ->
+                conn.prepareStatement(UPDATE_LAST_SEEN_SQL).use { stmt ->
+                    stmt.setObject(1, at)
+                    stmt.setObject(2, id.value)
+                    stmt.executeUpdate()
+                }
+            }
+        }
+
+    override suspend fun delete(id: UserId): Unit =
+        withContext(Dispatchers.IO) {
+            dataSource.connection.use { conn ->
+                conn.prepareStatement(DELETE_SQL).use { stmt ->
+                    stmt.setObject(1, id.value)
+                    stmt.executeUpdate()
+                }
+            }
+        }
+
+    private fun ResultSet.toUser(): User =
+        User(
+            id = UserId(getObject("user_id", UUID::class.java)),
+            displayName = DisplayName.of(getString("display_name")),
+            createdAt = getObject("created_at", Instant::class.java),
+            lastSeenAt = getObject("last_seen_at", Instant::class.java),
+        )
+
+    companion object {
+        private const val INSERT_SQL =
+            "INSERT INTO identity_users (user_id, display_name, created_at, last_seen_at) VALUES (?, ?, ?, ?)"
+        private const val SELECT_SQL =
+            "SELECT user_id, display_name, created_at, last_seen_at FROM identity_users WHERE user_id = ?"
+        private const val UPDATE_LAST_SEEN_SQL =
+            "UPDATE identity_users SET last_seen_at = ? WHERE user_id = ?"
+        private const val DELETE_SQL = "DELETE FROM identity_users WHERE user_id = ?"
+    }
+}
