@@ -1,8 +1,10 @@
 package com.bliss.identity.api
 
+import com.bliss.identity.api.auth.ReturnToValidator
 import com.bliss.identity.api.config.IdentityApiConfig
 import com.bliss.identity.api.dto.ProblemDetails
 import com.bliss.identity.api.routes.health
+import com.bliss.identity.api.routes.login
 import com.bliss.identity.api.routes.whoAmI
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
@@ -27,8 +29,10 @@ import java.util.UUID
 // game/api so correlation IDs flow into both the access log and error responses.
 fun Application.module(
     wiring: Wiring,
-    @Suppress("UNUSED_PARAMETER") config: IdentityApiConfig,
+    config: IdentityApiConfig,
 ) {
+    val returnToValidator = ReturnToValidator(config.allowedReturnOrigins)
+
     install(CallId) {
         header(HttpHeaders.XRequestId)
         generate { UUID.randomUUID().toString() }
@@ -91,7 +95,8 @@ fun Application.module(
 
     routing {
         health()
-        whoAmI(wiring.whoAmI)
+        wiring.whoAmIOrNull?.let { whoAmI(it) }
+        wiring.beginOidcLoginOrNull?.let { login(it, returnToValidator) }
     }
 }
 
