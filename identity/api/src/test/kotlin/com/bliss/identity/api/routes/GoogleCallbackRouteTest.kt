@@ -26,6 +26,7 @@ import com.bliss.identity.domain.oidc.OidcVerificationError
 import com.bliss.identity.domain.oidc.OidcVerifier
 import com.bliss.identity.domain.provider.Provider
 import com.bliss.identity.domain.provider.Subject
+import com.bliss.identity.domain.provider.UserProvider
 import com.bliss.identity.domain.user.UserId
 import com.bliss.identity.infrastructure.oidc.StaticOidcProviderConfigSource
 import com.bliss.identity.infrastructure.persistence.InMemoryAuthAttemptRepository
@@ -248,6 +249,43 @@ class GoogleCallbackRouteTest {
         testApplication {
             val badSigVerifier = OidcVerifier { _, _ -> throw OidcVerificationError.InvalidSignature() }
             val (useCase, _) = newCompleteUseCase(verifier = badSigVerifier)
+            val wiring = Wiring.forTesting(completeOidcLogin = useCase)
+            application { module(wiring, testConfig) }
+            val client = createClient { followRedirects = false }
+            val response = client.get("/v1/auth/google/callback?code=auth-code&state=${state.value}")
+            assertThat(response.status).isEqualTo(HttpStatusCode.InternalServerError)
+        }
+
+    @Test
+    fun `orphaned link maps to 500`() =
+        testApplication {
+            val ghostUserId = UserId(UUID.fromString("01890c5e-0000-7000-8000-00000000dd01"))
+            val seedProviders = InMemoryUserProviderRepository()
+            runBlocking {
+                seedProviders.link(
+                    UserProvider(
+                        userId = ghostUserId,
+                        provider = Provider.GOOGLE,
+                        subject = Subject.of("google-sub-1"),
+                        emailAtLink = null,
+                        linkedAt = now,
+                    ),
+                )
+            }
+            val attempts = InMemoryAuthAttemptRepository()
+            runBlocking { attempts.create(happyAttempt()) }
+            val useCase =
+                CompleteOidcLoginUseCase(
+                    attempts = attempts,
+                    codeExchanger = happyExchanger,
+                    verifier = happyVerifier,
+                    configSource = StaticOidcProviderConfigSource(mapOf(Provider.GOOGLE to googleConfig)),
+                    users = InMemoryUserRepository(),
+                    userProviders = seedProviders,
+                    sessions = InMemorySessionRepository(),
+                    idGenerator = FixedIdGenerator(userIds = listOf(newUserId), sessionIds = listOf(newSessionId)),
+                    clock = FixedClock(now),
+                )
             val wiring = Wiring.forTesting(completeOidcLogin = useCase)
             application { module(wiring, testConfig) }
             val client = createClient { followRedirects = false }
