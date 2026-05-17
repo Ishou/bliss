@@ -5,6 +5,7 @@ import com.bliss.identity.domain.user.UserId
 import java.time.Instant
 
 interface UserRepository {
+    /** Idempotent — no-op if a user with the same [UserId] already exists. */
     suspend fun create(user: User)
 
     suspend fun findById(id: UserId): User?

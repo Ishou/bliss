@@ -10,7 +10,7 @@ class InMemoryUserRepository : UserRepository {
     private val byId = ConcurrentHashMap<UserId, User>()
 
     override suspend fun create(user: User) {
-        byId[user.id] = user
+        byId.putIfAbsent(user.id, user)
     }
 
     override suspend fun findById(id: UserId): User? = byId[id]

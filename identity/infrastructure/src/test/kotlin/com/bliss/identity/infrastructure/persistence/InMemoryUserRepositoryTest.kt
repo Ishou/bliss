@@ -66,4 +66,22 @@ class InMemoryUserRepositoryTest {
             repo.delete(u.id)
             assertThat(repo.findById(u.id)).isNull()
         }
+
+    @Test
+    fun `delete is a no-op for an unknown user`() =
+        runTest {
+            val repo = InMemoryUserRepository()
+            repo.delete(UserId(UUID.randomUUID()))
+            // No throw, no row created.
+        }
+
+    @Test
+    fun `create is idempotent for an existing user`() =
+        runTest {
+            val repo = InMemoryUserRepository()
+            val u = user()
+            repo.create(u)
+            repo.create(u.copy(displayName = DisplayName.of("Updated")))
+            assertThat(repo.findById(u.id)).isEqualTo(u)
+        }
 }
