@@ -2,6 +2,7 @@ import { useCallback, useMemo, useRef } from 'react';
 import { css } from 'styled-system/css';
 import type { ReactZoomPanPinchContentRef } from 'react-zoom-pan-pinch';
 import type { Puzzle } from '@/domain';
+import type { Direction } from './useGridNavigation';
 import {
   computeViewportRect,
   rectCenterToPosition,
@@ -12,9 +13,15 @@ const MINIMAP_SIZE_DESKTOP_PX = 120;
 const MINIMAP_SIZE_MOBILE_PX = 80;
 
 const minimapContainer = css({
-  position: 'absolute',
-  top: '8px',
-  right: '12px',
+  // Always in-flow below gridShell, centered horizontally.
+  // The previous "position: absolute; right: 12px" desktop strategy
+  // assumed ~140px of horizontal margin beside the centered stage, but
+  // the route's max-width constraint leaves only ~28px of room on a
+  // 1440-px viewport, causing visible overlap. Below-the-grid works
+  // regardless of route layout width.
+  position: 'static',
+  margin: '8px auto 0',
+  display: 'block',
   width: `${MINIMAP_SIZE_DESKTOP_PX}px`,
   height: `${MINIMAP_SIZE_DESKTOP_PX}px`,
   bg: 'bg.canvas',
@@ -25,17 +32,10 @@ const minimapContainer = css({
   touchAction: 'none',
   cursor: 'crosshair',
   transition: 'opacity 150ms ease',
-  // Re-enable pointer events: the overlayFrame wrapper sets
-  // `pointer-events: none` on the containing block so transparent
-  // areas don't swallow grid clicks; the minimap itself must respond.
-  pointerEvents: 'auto',
+  // Keep the smaller size on narrow viewports (≤ 480 px).
   '@media (max-width: 480px)': {
     width: `${MINIMAP_SIZE_MOBILE_PX}px`,
     height: `${MINIMAP_SIZE_MOBILE_PX}px`,
-    top: 'auto',
-    right: 'auto',
-    bottom: '12px',
-    left: '8px',
   },
 });
 
@@ -45,14 +45,35 @@ const minimapContainer = css({
 //   - letter cells: surface = #ffffff
 //   - definition cells: surfaceVariant = secondary.100 = #fbedd0
 //   - validated letter cells: successBg = primary.100 = #dfeacb
+//   - filled (typed but not validated): a subtle blue-gray wash, chosen
+//     to sit clearly between white (empty) and sage (validated) without
+//     colliding with the rose in-word tint. Not a named token — comment
+//     intentionally captures the design rationale.
+//   - in-word cells: pale rose (#fde8e8), deliberately distinct from the
+//     honey-amber definition fill (#fbedd0). The live grid uses focusBg
+//     (honey) for letter cells, but in the SVG minimap definition cells
+//     and in-word letter cells share only color — using the same token
+//     would make them indistinguishable. Rose is visually separate from
+//     both #fbedd0 (definition) and #dfeacb (validated).
+//   - focus-marker stroke: secondary.500 = #c89456 (saturated honey,
+//     visible against all four cell fill states)
 const FILL_BLOCK = '#e0d8c4';
 const FILL_LETTER = '#ffffff';
 const FILL_DEFINITION = '#fbedd0';
 const FILL_VALIDATED = '#dfeacb';
+// Filled-but-not-validated: pale blue-gray, distinct from white/rose/sage.
+const FILL_FILLED = '#e0e8f0';
+// In-word: pale rose — distinct from definition honey (#fbedd0) in SVG context.
+const FILL_IN_WORD = '#fde8e8';
+// Focus-marker outline: secondary.500 = saturated honey amber.
+const STROKE_FOCUS = '#c89456';
 
 export interface GridMinimapProps {
   puzzle: Puzzle;
   validatedPositions: ReadonlySet<string>;
+  filledPositions?: ReadonlySet<string>;
+  currentWordKeys?: ReadonlySet<string>;
+  localCursor?: { position: { row: number; col: number }; direction: Direction } | null;
   transformRef: React.RefObject<ReactZoomPanPinchContentRef | null>;
   scale: number;
   positionX: number;
@@ -64,6 +85,9 @@ export interface GridMinimapProps {
 export function GridMinimap({
   puzzle,
   validatedPositions,
+  filledPositions,
+  currentWordKeys,
+  localCursor,
   transformRef,
   scale,
   positionX,
@@ -150,8 +174,14 @@ export function GridMinimap({
     [],
   );
 
-  // Memoize topology rects: only rebuild when puzzle layout or validated
-  // positions change — not on every pan-driven transformState tick.
+  // Memoize topology rects: only rebuild when puzzle layout, validated,
+  // filled, or in-word positions change — not on every pan-driven tick.
+  //
+  // Precedence (lowest → highest):
+  //   1. Default by kind (block/definition/letter-white)
+  //   2. Filled-but-not-validated (typed, awaiting validation)
+  //   3. In-word (current clue word, rose/honey tint)
+  //   4. Validated (sage — terminal state, wins over all)
   const cellRects = useMemo(() => {
     const rects: React.ReactNode[] = [];
     for (let row = 0; row < puzzle.height; row++) {
@@ -159,14 +189,23 @@ export function GridMinimap({
         const k = `${row},${col}`;
         const cell = cellByKey.get(k);
         const kind = cell?.kind ?? 'block';
-        const validated = kind === 'letter' && validatedPositions.has(k);
+        const isLetter = kind === 'letter';
+        const validated = isLetter && validatedPositions.has(k);
+        const inWord = isLetter && !validated && (currentWordKeys?.has(k) ?? false);
+        const filled = isLetter && !validated && !inWord && (filledPositions?.has(k) ?? false);
+
         const fill = validated
           ? FILL_VALIDATED
+          : inWord
+          ? FILL_IN_WORD
+          : filled
+          ? FILL_FILLED
           : kind === 'block'
           ? FILL_BLOCK
           : kind === 'definition'
           ? FILL_DEFINITION
           : FILL_LETTER;
+
         rects.push(
           <rect
             key={k}
@@ -174,6 +213,8 @@ export function GridMinimap({
             data-row={row}
             data-col={col}
             data-validated={validated || undefined}
+            data-in-word={inWord || undefined}
+            data-filled={filled || undefined}
             x={col}
             y={row}
             width={1}
@@ -184,7 +225,7 @@ export function GridMinimap({
       }
     }
     return rects;
-  }, [puzzle.height, puzzle.width, cellByKey, validatedPositions]);
+  }, [puzzle.height, puzzle.width, cellByKey, validatedPositions, filledPositions, currentWordKeys]);
 
   // Early-return AFTER hooks.
   if (scale <= 1.01) return null;
@@ -219,6 +260,22 @@ export function GridMinimap({
         aria-hidden="true"
       >
         {cellRects}
+        {/* Focus marker: drawn after topology rects, before the viewport
+            overlay, so it appears on top of the cell fill but under the
+            viewport-rect shadow. Stroke-only so the underlying cell color
+            remains visible. */}
+        {localCursor && (
+          <rect
+            data-role="focus-marker"
+            x={localCursor.position.col}
+            y={localCursor.position.row}
+            width={1}
+            height={1}
+            fill="none"
+            stroke={STROKE_FOCUS}
+            strokeWidth={0.15}
+          />
+        )}
         <rect
           data-role="viewport-rect"
           x={rect.x}

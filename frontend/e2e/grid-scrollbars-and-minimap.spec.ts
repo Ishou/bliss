@@ -1,9 +1,16 @@
 /**
  * Grid scrollbars + minimap — real-pointer behavior.
  *
- * Every interaction is a real Playwright pointer gesture (no synthetic
- * events, no library calls), so rAF coalescing, drag thresholds, and
- * the focus-revert flow are actually exercised.
+ * Every *pointer* interaction is a real Playwright pointer gesture (no
+ * synthetic PointerEvent / MouseEvent), so rAF coalescing, drag thresholds,
+ * and the focus-revert flow are actually exercised.
+ *
+ * Exception — keyboard / input events: `keyboard.press` does not reliably
+ * fire on the wrapped `<input>` elements managed by the grid navigation layer
+ * (see limitation B below). Tests that need to simulate typing therefore
+ * dispatch synthetic `InputEvent` via `page.evaluate`. This is scoped only to
+ * tests that explicitly document it; the pointer-gesture constraint above
+ * still applies everywhere else.
  *
  * Known Playwright / architecture limitations (see fixme block below):
  *
@@ -239,4 +246,63 @@ test.describe('Grid scrollbars + minimap', () => {
       expect(progress).toBeGreaterThan(0);
     },
   );
+
+  test('minimap does NOT overlap the grid bounding box (desktop viewport)', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await gridReady(page);
+    await zoomIn(page, 2);
+
+    const stage = page.getByTestId('grid-stage');
+    const minimap = page.getByRole('img', { name: /aperçu de la grille/i });
+    const stageBox = await stage.boundingBox();
+    const miniBox = await minimap.boundingBox();
+    if (!stageBox || !miniBox) throw new Error('stage or minimap missing bounding box');
+
+    const stageBottom = stageBox.y + stageBox.height;
+    expect(
+      miniBox.y,
+      `minimap.y=${miniBox.y} should be >= stage.bottom=${stageBottom}; stage=${JSON.stringify(stageBox)}; mini=${JSON.stringify(miniBox)}`,
+    ).toBeGreaterThanOrEqual(stageBottom);
+  });
+
+  test('typing a letter into a cell tints it on the minimap', async ({ page }) => {
+    await gridReady(page);
+    await zoomIn(page, 2);
+
+    // Find the first visible letter cell, focus it, type a letter.
+    const firstLetter = page.locator('input[data-cell-kind="letter"]').first();
+    await firstLetter.focus();
+    const row = await firstLetter.getAttribute('data-row');
+    const col = await firstLetter.getAttribute('data-col');
+    if (row === null || col === null) throw new Error('cell missing data-row/col');
+
+    // Synthetic InputEvent exception — see file header. keyboard.press does
+    // not reliably fire on this wrapped <input> (architecture limitation B).
+    await page.evaluate(({ row, col }) => {
+      const sel = `input[data-cell-kind="letter"][data-row="${row}"][data-col="${col}"]`;
+      const el = document.querySelector<HTMLInputElement>(sel);
+      if (!el) return;
+      el.focus();
+      el.dispatchEvent(new InputEvent('beforeinput', { inputType: 'insertText', data: 'A', bubbles: true, cancelable: true }));
+      el.dispatchEvent(new InputEvent('input', { inputType: 'insertText', data: 'A', bubbles: true }));
+    }, { row, col });
+
+    const filledRect = page.locator(`svg rect[data-cell-kind="letter"][data-row="${row}"][data-col="${col}"]`);
+    await expect(filledRect).toHaveAttribute('data-filled', 'true');
+  });
+
+  test('focusing a cell renders a focus-marker on the minimap', async ({ page }) => {
+    await gridReady(page);
+    await zoomIn(page, 2);
+
+    const firstLetter = page.locator('input[data-cell-kind="letter"]').first();
+    await firstLetter.focus();
+    const row = await firstLetter.getAttribute('data-row');
+    const col = await firstLetter.getAttribute('data-col');
+    if (row === null || col === null) throw new Error('cell missing data-row/col');
+
+    const marker = page.locator('svg rect[data-role="focus-marker"]');
+    await expect(marker).toHaveAttribute('x', col);
+    await expect(marker).toHaveAttribute('y', row);
+  });
 });
