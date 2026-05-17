@@ -74,8 +74,12 @@ const dividerStyles = css({
 });
 
 const counterStyles = css({
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
   fontFamily: 'mono',
   fontSize: 'xs',
+  lineHeight: '1',
   color: 'fgMuted',
   fontVariantNumeric: 'tabular-nums',
   letterSpacing: '0.02em',
