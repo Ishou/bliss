@@ -160,4 +160,23 @@ class PostgresUserRepositoryTest {
                 repo.delete(u.id)
             }
         }
+
+    @Test
+    fun `updateLastSeenAt round-trips Instant with microsecond precision`() =
+        runTest {
+            val u = user()
+            repo.create(u)
+            checkAll(
+                Arb.long(
+                    Instant.parse("2000-01-01T00:00:00Z").toEpochMilli()..Instant.parse("2100-01-01T00:00:00Z").toEpochMilli(),
+                ),
+                Arb.int(0..999_999),
+            ) { ms, ns ->
+                val truncated =
+                    Instant.ofEpochMilli(ms).plusNanos(ns.toLong()).truncatedTo(ChronoUnit.MICROS)
+                repo.updateLastSeenAt(u.id, truncated)
+                assertThat(repo.findById(u.id)?.lastSeenAt).isEqualTo(truncated)
+            }
+            repo.delete(u.id)
+        }
 }
