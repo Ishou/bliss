@@ -68,6 +68,7 @@ class PostgresUserRepositoryTest {
 
     @BeforeEach
     fun freshRepo() {
+        if (!::dataSource.isInitialized) return
         repo = PostgresUserRepository(dataSource)
     }
 
@@ -107,8 +108,9 @@ class PostgresUserRepositoryTest {
     @Test
     fun `updateLastSeenAt is a no-op for an unknown user`() =
         runTest {
-            repo.updateLastSeenAt(UserId(UUID.randomUUID()), now)
-            // No throw, no row created.
+            val unknownId = UserId(UUID.randomUUID())
+            repo.updateLastSeenAt(unknownId, now)
+            assertThat(repo.findById(unknownId)).isNull()
         }
 
     @Test
