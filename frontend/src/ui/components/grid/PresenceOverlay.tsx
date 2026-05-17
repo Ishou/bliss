@@ -174,7 +174,9 @@ export function buildCellPresenceMap(args: {
 
   // Step 2: layer the local cursor on top. Local always wins on cells it
   // touches — the user expects their own cursor + word tint to be the
-  // visual anchor on their own grid.
+  // visual anchor on their own grid. Local entries carry `isLocal: true`
+  // so Cell paints them with the solo (rose focusBg + ring) classes
+  // instead of the hash-derived per-player hue.
   if (localCursor) {
     const range = wordRange(
       puzzle,
@@ -198,6 +200,7 @@ export function buildCellPresenceMap(args: {
         vars: ensureVars(localCursor.sessionId),
         role: 'word',
         badge: undefined,
+        isLocal: true,
       });
     }
     const activeKey = cellKey(localCursor.position);
@@ -206,6 +209,7 @@ export function buildCellPresenceMap(args: {
         vars: ensureVars(localCursor.sessionId),
         role: 'active',
         badge: undefined,
+        isLocal: true,
       });
     }
   }
