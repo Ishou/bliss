@@ -1,6 +1,8 @@
 package com.bliss.identity.application.usecases
 
-sealed class WhoAmIError(message: String) : RuntimeException(message) {
+sealed class WhoAmIError(
+    message: String,
+) : RuntimeException(message) {
     class SessionNotFound : WhoAmIError("Session does not exist.")
 
     class SessionRevoked : WhoAmIError("Session was revoked.")

@@ -8,7 +8,9 @@ import com.bliss.identity.domain.user.DisplayName
 import com.bliss.identity.domain.user.UserId
 import java.time.Duration
 
-data class WhoAmIQuery(val sessionId: SessionId)
+data class WhoAmIQuery(
+    val sessionId: SessionId,
+)
 
 data class WhoAmIResult(
     val userId: UserId,
@@ -22,13 +24,15 @@ class WhoAmIUseCase(
     private val sessionMaxAge: Duration,
 ) {
     suspend fun execute(query: WhoAmIQuery): WhoAmIResult {
-        val session = sessions.findById(query.sessionId)
-            ?: throw WhoAmIError.SessionNotFound()
+        val session =
+            sessions.findById(query.sessionId)
+                ?: throw WhoAmIError.SessionNotFound()
         if (!session.isActive) throw WhoAmIError.SessionRevoked()
         val age = Duration.between(session.createdAt, clock.now())
         if (age > sessionMaxAge) throw WhoAmIError.SessionExpired()
-        val user = users.findById(session.userId)
-            ?: throw WhoAmIError.OrphanedSession()
+        val user =
+            users.findById(session.userId)
+                ?: throw WhoAmIError.OrphanedSession()
         return WhoAmIResult(user.id, user.displayName)
     }
 }
