@@ -86,6 +86,16 @@ class WhoAmIUseCaseTest {
         }
 
     @Test
+    fun `session exactly at sessionMaxAge is still valid`() =
+        runTest {
+            val (sut, users, sessions) = newCase()
+            val exactlyAtLimit = now.minus(sessionMaxAge)
+            seedUserAndSession(users, sessions, createdAt = exactlyAtLimit)
+            val result = sut.execute(WhoAmIQuery(sessionId))
+            assertThat(result).isEqualTo(WhoAmIResult(userId, DisplayName.of("Alice")))
+        }
+
+    @Test
     fun `happy path returns userId and displayName`() =
         runTest {
             val (sut, users, sessions) = newCase()
