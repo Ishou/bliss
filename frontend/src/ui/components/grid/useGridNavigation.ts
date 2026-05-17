@@ -473,10 +473,13 @@ export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOpt
         // apply — the existing tiebreak then decides.
         const values = cellValuesRef.current;
         const smart = allClues.filter((c) => prefixFilled(c, p, values));
-        const starting = allClues.filter((c) => same(c.cells[0].position, p));
-        const candidates = smart.length > 0
-          ? smart
-          : starting.length > 0 ? starting : allClues;
+        let candidates: readonly Clue[];
+        if (smart.length > 0) {
+          candidates = smart;
+        } else {
+          const starting = allClues.filter((c) => same(c.cells[0].position, p));
+          candidates = starting.length > 0 ? starting : allClues;
+        }
         if (candidates.length === 1) {
           next = candidates[0].direction;
         } else if (candidates.length > 1) {
