@@ -4,11 +4,13 @@ import com.bliss.identity.api.auth.ReturnToValidator
 import com.bliss.identity.api.config.IdentityApiConfig
 import com.bliss.identity.api.dto.ProblemDetails
 import com.bliss.identity.api.routes.appleCallback
+import com.bliss.identity.api.routes.deleteMe
 import com.bliss.identity.api.routes.googleCallback
 import com.bliss.identity.api.routes.health
 import com.bliss.identity.api.routes.login
 import com.bliss.identity.api.routes.logout
 import com.bliss.identity.api.routes.me
+import com.bliss.identity.api.routes.patchMe
 import com.bliss.identity.api.routes.whoAmI
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
@@ -111,6 +113,14 @@ fun Application.module(
         wiring.getMeOrNull?.let { getMe ->
             wiring.whoAmIOrNull?.let { whoAmI ->
                 me(getMe, whoAmI)
+                wiring.updateMeOrNull?.let { updateMe ->
+                    patchMe(updateMe, getMe, whoAmI)
+                }
+            }
+        }
+        wiring.deleteUserOrNull?.let { deleteUser ->
+            wiring.whoAmIOrNull?.let { whoAmI ->
+                deleteMe(deleteUser, whoAmI)
             }
         }
     }

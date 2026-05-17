@@ -58,6 +58,8 @@ class Wiring private constructor(
     internal val whoAmIOrNull: WhoAmIUseCase? get() = _whoAmI
     internal val logoutOrNull: LogoutUseCase? get() = _logout
     internal val getMeOrNull: GetMeUseCase? get() = _getMe
+    internal val updateMeOrNull: UpdateMeUseCase? get() = _updateMe
+    internal val deleteUserOrNull: DeleteUserUseCase? get() = _deleteUser
 
     private fun <T : Any> require(
         value: T?,
