@@ -172,6 +172,7 @@ describe('HttpLobbyClient.listMyLobbies', () => {
     state: 'IN_PROGRESS',
     gridConfig: { width: 15, height: 12 },
     playerCount: 2,
+    connectedCount: 1,
     lastActivityAt: '2026-05-10T18:00:00Z',
     progress: { solvedCells: 7, totalCells: 42 },
     title: 'Mardi soir',
