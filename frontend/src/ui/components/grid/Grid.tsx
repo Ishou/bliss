@@ -15,6 +15,8 @@ import {
   type IncomingArrow,
 } from './Cell';
 import { CurrentCluePanel } from './CurrentCluePanel';
+import { GridMinimap } from './GridMinimap';
+import { GridScrollbar } from './GridScrollbar';
 import { GridZoomControls } from './GridZoomControls';
 import { buildCellPresenceMap, useRemotePresences } from './PresenceOverlay';
 import { useGridNavigation, type Direction } from './useGridNavigation';
@@ -437,6 +439,25 @@ export function Grid({
   // its layer stays pinned to the same pixel bounds as the grid even
   // under pinch-zoom or layout shifts.
   const gridFrameRef = useRef<HTMLDivElement | null>(null);
+
+  // Natural (unscaled) size of the gridFrame in CSS pixels — fed into
+  // the scrollbar / minimap math. We read offsetWidth/offsetHeight
+  // (NOT getBoundingClientRect) because the parent TransformComponent
+  // applies a CSS transform that getBoundingClientRect would multiply
+  // through. offsetWidth/Height reflect the layout box only.
+  const [gridFramePx, setGridFramePx] = useState({ width: 0, height: 0 });
+  useEffect(() => {
+    const el = gridFrameRef.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    const update = () => {
+      setGridFramePx({ width: el.offsetWidth, height: el.offsetHeight });
+    };
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
   // Ref for the `gridShell` div — the keyboard-avoidance effect below
   // applies `maxHeight` here (not on the inner TransformWrapper) because
   // the wrapper is sized via `min(100cqw, 100cqh, …)` against this
@@ -458,6 +479,28 @@ export function Grid({
   // React state because rapid wheel notches would otherwise create
   // setState churn.
   const previousScaleRef = useRef(1);
+
+  // Full transform tuple, rAF-coalesced from onTransform so the
+  // scrollbars and minimap re-render in step with the library's
+  // transform without a setState-per-frame.
+  const [transformState, setTransformState] = useState({
+    scale: 1,
+    positionX: 0,
+    positionY: 0,
+  });
+  const transformRafRef = useRef<number | null>(null);
+
+  // Cancel any in-flight rAF on unmount so a stale callback doesn't
+  // call setState on a torn-down component.
+  useEffect(() => {
+    return () => {
+      if (transformRafRef.current !== null) {
+        cancelAnimationFrame(transformRafRef.current);
+        transformRafRef.current = null;
+      }
+    };
+  }, []);
+
   // No focus side-effects during zoom or pan: gestures and focus state
   // are independent. To enforce that, the panning handlers snapshot the
   // current focus on start and the focusin listener (below) reverts any
@@ -487,6 +530,23 @@ export function Grid({
         if (tw) tw.centerView(1, 150);
       }
       previousScaleRef.current = state.scale;
+
+      // rAF-coalesce the full-tuple state update. Read the latest live
+      // state from the ref inside the rAF callback so we commit the most
+      // recent values the library applied (the library mutates its own
+      // state object on every frame).
+      if (transformRafRef.current === null) {
+        transformRafRef.current = requestAnimationFrame(() => {
+          transformRafRef.current = null;
+          const live = transformWrapperRef.current?.state;
+          if (!live) return;
+          setTransformState({
+            scale: live.scale,
+            positionX: live.positionX,
+            positionY: live.positionY,
+          });
+        });
+      }
     },
     [],
   );
@@ -897,6 +957,7 @@ export function Grid({
           <div ref={gridFrameRef} className={gridFrame}>
             <div
               role="grid"
+              id="puzzle-grid"
               aria-label={puzzle.title}
               lang={puzzle.language}
               className={gridContainer}
@@ -976,6 +1037,38 @@ export function Grid({
                 </div>
               ))}
             </div>
+            {isZoomedIn && gridFramePx.width > 0 && gridFramePx.height > 0 && (
+              <>
+                <GridScrollbar
+                  orientation="vertical"
+                  transformRef={transformWrapperRef}
+                  scale={transformState.scale}
+                  positionX={transformState.positionX}
+                  positionY={transformState.positionY}
+                  contentWidth={gridFramePx.width}
+                  contentHeight={gridFramePx.height}
+                />
+                <GridScrollbar
+                  orientation="horizontal"
+                  transformRef={transformWrapperRef}
+                  scale={transformState.scale}
+                  positionX={transformState.positionX}
+                  positionY={transformState.positionY}
+                  contentWidth={gridFramePx.width}
+                  contentHeight={gridFramePx.height}
+                />
+                <GridMinimap
+                  puzzle={puzzle}
+                  validatedPositions={validatedPositions ?? new Set()}
+                  transformRef={transformWrapperRef}
+                  scale={transformState.scale}
+                  positionX={transformState.positionX}
+                  positionY={transformState.positionY}
+                  contentWidth={gridFramePx.width}
+                  contentHeight={gridFramePx.height}
+                />
+              </>
+            )}
           </div>
         </TransformComponent>
       </TransformWrapper>
