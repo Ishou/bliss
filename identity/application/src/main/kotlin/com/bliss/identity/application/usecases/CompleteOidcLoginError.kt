@@ -1,5 +1,6 @@
 package com.bliss.identity.application.usecases
 
+import com.bliss.identity.domain.provider.Provider
 import com.bliss.identity.domain.user.UserId
 
 sealed class CompleteOidcLoginError(
@@ -19,4 +20,9 @@ sealed class CompleteOidcLoginError(
     ) : CompleteOidcLoginError(
             "UserProvider references a non-existent user (id=$userId).",
         )
+
+    class ExchangeRejected(
+        provider: Provider,
+        httpStatus: Int,
+    ) : CompleteOidcLoginError("Provider $provider rejected the authorisation code: HTTP $httpStatus")
 }

@@ -4,6 +4,7 @@ import assertk.assertFailure
 import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.isInstanceOf
+import com.bliss.identity.application.ports.ClientAuth
 import com.bliss.identity.application.ports.OidcProviderConfig
 import com.bliss.identity.application.ports.OidcResponseMode
 import com.bliss.identity.domain.provider.Provider
@@ -21,6 +22,7 @@ class StaticOidcProviderConfigSourceTest {
             jwksUri = "https://www.googleapis.com/oauth2/v3/certs",
             redirectUri = "https://auth.wordsparrow.io/v1/auth/google/callback",
             responseMode = OidcResponseMode.QUERY,
+            clientAuth = ClientAuth.Secret("test-secret"),
         )
 
     private val appleConfig =
@@ -34,6 +36,7 @@ class StaticOidcProviderConfigSourceTest {
             jwksUri = "https://appleid.apple.com/auth/keys",
             redirectUri = "https://auth.wordsparrow.io/v1/auth/apple/callback",
             responseMode = OidcResponseMode.FORM_POST,
+            clientAuth = ClientAuth.Secret("test-secret"),
         )
 
     @Test
