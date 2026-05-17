@@ -85,12 +85,7 @@ const gridShellStyles = css({
 // `flex: 1 1 0; minHeight: 0` keeps the route's flex column from
 // overflowing. gridShell keeps its own `flex: 1 1 0` so it stretches
 // to fill gridArea.
-//
-// `position: relative` is currently unused (the minimap is in-flow,
-// not absolutely positioned). Kept as defensive scaffolding in case
-// an absolute child is added here later.
 const gridAreaStyles = css({
-  position: 'relative',
   flex: '1 1 0',
   minHeight: 0,
   width: '100%',
@@ -1140,14 +1135,14 @@ export function Grid({
       </TransformWrapper>
       {/*
         overlayFrame: `position: absolute; inset: 0` div that covers the
-        full stage area (the grid's bounding box). Scrollbar tracks and minimap
-        are `position: absolute` children positioned at the grid's edges. This
+        full stage area (the grid's bounding box). Scrollbar tracks are
+        `position: absolute` children positioned at the grid's edges. This
         frame sits OUTSIDE the TransformComponent so the overlays bypass the
         library's `overflow: hidden` wrapper and are NOT subject to the CSS
         transform scaling. `pointer-events: none` on the frame ensures the
         transparent area does not intercept grid clicks; the scrollbar tracks
-        and minimap re-enable pointer events on themselves via
-        `pointer-events: auto` in their CSS classes.
+        re-enable pointer events on themselves via `pointer-events: auto` in
+        their CSS classes.
       */}
       {isZoomedIn && gridFramePx.width > 0 && gridFramePx.height > 0 && (
         <div style={overlayFrameStyle}>

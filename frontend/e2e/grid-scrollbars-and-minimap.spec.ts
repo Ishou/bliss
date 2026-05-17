@@ -1,9 +1,16 @@
 /**
  * Grid scrollbars + minimap — real-pointer behavior.
  *
- * Every interaction is a real Playwright pointer gesture (no synthetic
- * events, no library calls), so rAF coalescing, drag thresholds, and
- * the focus-revert flow are actually exercised.
+ * Every *pointer* interaction is a real Playwright pointer gesture (no
+ * synthetic PointerEvent / MouseEvent), so rAF coalescing, drag thresholds,
+ * and the focus-revert flow are actually exercised.
+ *
+ * Exception — keyboard / input events: `keyboard.press` does not reliably
+ * fire on the wrapped `<input>` elements managed by the grid navigation layer
+ * (see limitation B below). Tests that need to simulate typing therefore
+ * dispatch synthetic `InputEvent` via `page.evaluate`. This is scoped only to
+ * tests that explicitly document it; the pointer-gesture constraint above
+ * still applies everywhere else.
  *
  * Known Playwright / architecture limitations (see fixme block below):
  *
@@ -269,10 +276,8 @@ test.describe('Grid scrollbars + minimap', () => {
     const col = await firstLetter.getAttribute('data-col');
     if (row === null || col === null) throw new Error('cell missing data-row/col');
 
-    // Dispatch a real input event the same way the existing word-auto-validate
-    // e2e does — synthetic InputEvent is the established repo pattern because
-    // keyboard.press doesn't reliably fire on this wrapped <input>. (NOT a
-    // synthetic POINTER event — pointer interactions must still be real.)
+    // Synthetic InputEvent exception — see file header. keyboard.press does
+    // not reliably fire on this wrapped <input> (architecture limitation B).
     await page.evaluate(({ row, col }) => {
       const sel = `input[data-cell-kind="letter"][data-row="${row}"][data-col="${col}"]`;
       const el = document.querySelector<HTMLInputElement>(sel);
