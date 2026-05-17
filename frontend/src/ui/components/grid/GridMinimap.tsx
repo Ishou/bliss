@@ -32,7 +32,6 @@ const minimapContainer = css({
   touchAction: 'none',
   cursor: 'crosshair',
   transition: 'opacity 150ms ease',
-  pointerEvents: 'auto',
   // Keep the smaller size on narrow viewports (≤ 480 px).
   '@media (max-width: 480px)': {
     width: `${MINIMAP_SIZE_MOBILE_PX}px`,

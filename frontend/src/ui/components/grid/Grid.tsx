@@ -879,12 +879,11 @@ export function Grid({
   // Inline style for the overlay div that sits on top of the
   // TransformWrapper (as a sibling inside `stage`, not gridShell).
   // `position: absolute; inset: 0` covers the full stage area which is
-  // sized exactly like the grid — so scrollbars track the grid edges and
-  // the minimap sits in the grid's corner, not the shell's corner.
+  // sized exactly like the grid — so scrollbars track the grid edges.
   // `pointer-events: none` on this container prevents the transparent
-  // area from swallowing grid clicks; the scrollbar tracks and minimap
-  // re-enable pointer events on themselves via `pointer-events: auto`
-  // in their CSS classes.
+  // area from swallowing grid clicks; the scrollbar tracks re-enable
+  // pointer events on themselves via `pointer-events: auto` in their
+  // CSS classes.
   // Note: this overlay does NOT wrap the TransformWrapper — the
   // TransformWrapper is a separate child of `stage` so its pointer
   // events remain fully intact.
@@ -988,7 +987,7 @@ export function Grid({
         - `panning.disabled` is reactively bound to `!isZoomedIn` —
           gates touch panning (still library-driven) at scale 1.
       */}
-      <div className={gridAreaStyles}>
+      <div className={gridAreaStyles} data-testid="grid-area">
       <div
         ref={gridShellRef}
         className={gridShellStyles}
@@ -997,9 +996,9 @@ export function Grid({
       >
       {/*
         stage: same width/aspect-ratio as the grid, `position: relative`,
-        so the absolutely-positioned overlayFrame (and its scrollbar /
-        minimap children) resolve their `inset: 0` against the grid's
-        bounding box rather than the full gridShell. The stage replaces
+        so the absolutely-positioned overlayFrame (and its scrollbar
+        children) resolve their `inset: 0` against the grid's bounding
+        box rather than the full gridShell. The stage replaces
         the `margin: 0 auto` on transformWrapperStyle as the centering
         box inside the flex shell.
       */}
