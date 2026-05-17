@@ -18,7 +18,7 @@ fun Route.logout(
 ) {
     post("/v1/auth/logout") {
         call.authenticated(whoAmI) ?: return@post
-        val sessionId = SessionCookies.read(call.request) ?: return@post
+        val sessionId = SessionCookies.read(call.request)!!
         logout.execute(LogoutCommand(sessionId))
         SessionCookies.clear(call)
         call.respond(HttpStatusCode.NoContent)
