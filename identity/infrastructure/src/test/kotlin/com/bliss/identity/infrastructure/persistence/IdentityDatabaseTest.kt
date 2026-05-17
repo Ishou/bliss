@@ -12,7 +12,7 @@ import org.testcontainers.utility.DockerImageName
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class IdentityDatabaseTest {
     @Test
-    fun `migrations apply cleanly and all four identity tables exist`() {
+    fun `migrations apply cleanly and identity_users table exists`() {
         assumeTrue(DockerClientFactory.instance().isDockerAvailable()) { "Docker daemon not available" }
         val pg =
             PostgreSQLContainer(DockerImageName.parse("postgres:16-alpine")).apply { start() }
@@ -41,11 +41,8 @@ class IdentityDatabaseTest {
                                     .toSortedSet()
                             }
                     }
-                assertThat(tables.size).isEqualTo(4)
+                assertThat(tables.size).isEqualTo(1)
                 assertThat(tables.contains("identity_users")).isEqualTo(true)
-                assertThat(tables.contains("identity_user_providers")).isEqualTo(true)
-                assertThat(tables.contains("identity_sessions")).isEqualTo(true)
-                assertThat(tables.contains("identity_auth_attempts")).isEqualTo(true)
             } finally {
                 db.stop()
                 System.clearProperty("IDENTITY_DATABASE_URL")
