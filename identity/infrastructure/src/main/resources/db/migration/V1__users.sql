@@ -7,7 +7,7 @@
 
 CREATE TABLE identity_users (
     user_id      UUID        PRIMARY KEY,
-    display_name TEXT        NOT NULL,
+    display_name TEXT        NOT NULL CHECK (char_length(trim(display_name)) BETWEEN 1 AND 30),
     created_at   TIMESTAMPTZ NOT NULL,
     last_seen_at TIMESTAMPTZ NOT NULL
 );

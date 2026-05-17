@@ -17,12 +17,9 @@ class IdentityDatabaseTest {
         val pg =
             PostgreSQLContainer(DockerImageName.parse("postgres:16-alpine")).apply { start() }
         try {
-            // Build a CNPG-style `postgres://user:password@host:port/db` URL — IdentityDatabase
-            // strips the userinfo into Hikari's username/password fields. The simpler
-            // `jdbc:` passthrough loses credentials because `extractCredentials` skips JDBC URLs.
-            val rawUrl =
+            val url =
                 "postgres://${pg.username}:${pg.password}@${pg.host}:${pg.getMappedPort(5432)}/${pg.databaseName}"
-            System.setProperty("IDENTITY_DATABASE_URL", rawUrl)
+            System.setProperty("IDENTITY_DATABASE_URL", url)
             val db =
                 IdentityDatabase(
                     poolName = "identity-test",

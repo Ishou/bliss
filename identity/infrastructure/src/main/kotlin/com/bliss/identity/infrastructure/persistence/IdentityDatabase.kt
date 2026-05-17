@@ -7,22 +7,7 @@ import org.slf4j.LoggerFactory
 import java.net.URI
 import javax.sql.DataSource
 
-/**
- * Postgres bootstrap for the identity context (ADR-0044).
- *
- * Env contract: `IDENTITY_DATABASE_URL` carrying the Postgres URI from CNPG's
- * `<cluster>-app` secret, in the form `postgres://<user>:<password>@<host>:<port>/<db>`
- * (alias `postgresql://` accepted). Already-`jdbc:` URLs pass through untouched
- * (the Testcontainers happy path).
- *
- * Uses a dedicated Flyway schema history table (`flyway_schema_history_identity`)
- * so the identity schema can co-exist with grid's history on the same Postgres
- * cluster without collisions.
- *
- * Pass `requireUrl = true` to fail loudly when `IDENTITY_DATABASE_URL` is unset;
- * pass `false` to log-and-skip (useful during early integration when the DB is
- * optional).
- */
+// Postgres bootstrap for the identity context (ADR-0044).
 class IdentityDatabase(
     private val poolName: String,
     private val maxPoolSize: Int,
@@ -112,12 +97,7 @@ class IdentityDatabase(
 
         internal fun readDatabaseUrl(): String? = System.getenv("IDENTITY_DATABASE_URL") ?: System.getProperty("IDENTITY_DATABASE_URL")
 
-        /**
-         * Converts `postgres://user:pw@host:port/db?...` (CNPG-style) into the
-         * JDBC URL Hikari expects: `jdbc:postgresql://host:port/db?...`. Strips
-         * userinfo so passwords never appear in URL-echoing logs. `jdbc:` inputs
-         * pass through (Testcontainers happy path).
-         */
+        // Strips userinfo from postgres:// URLs; jdbc: inputs pass through unchanged.
         fun toJdbcUrl(raw: String): String {
             if (raw.startsWith("jdbc:")) return raw
             val uri = parseUri(raw)
