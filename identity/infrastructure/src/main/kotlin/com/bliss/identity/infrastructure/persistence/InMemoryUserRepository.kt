@@ -1,6 +1,7 @@
 package com.bliss.identity.infrastructure.persistence
 
 import com.bliss.identity.application.ports.UserRepository
+import com.bliss.identity.domain.user.DisplayName
 import com.bliss.identity.domain.user.User
 import com.bliss.identity.domain.user.UserId
 import java.time.Instant
@@ -20,6 +21,13 @@ class InMemoryUserRepository : UserRepository {
         at: Instant,
     ) {
         byId.computeIfPresent(id) { _, existing -> existing.copy(lastSeenAt = at) }
+    }
+
+    override suspend fun updateDisplayName(
+        id: UserId,
+        name: DisplayName,
+    ) {
+        byId.computeIfPresent(id) { _, existing -> existing.copy(displayName = name) }
     }
 
     override suspend fun delete(id: UserId) {

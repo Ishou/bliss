@@ -1,5 +1,6 @@
 package com.bliss.identity.application.ports
 
+import com.bliss.identity.domain.user.DisplayName
 import com.bliss.identity.domain.user.User
 import com.bliss.identity.domain.user.UserId
 import java.time.Instant
@@ -17,6 +18,12 @@ interface UserRepository {
     suspend fun updateLastSeenAt(
         id: UserId,
         at: Instant,
+    )
+
+    /** No-op if [id] does not exist. */
+    suspend fun updateDisplayName(
+        id: UserId,
+        name: DisplayName,
     )
 
     suspend fun delete(id: UserId)
