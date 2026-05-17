@@ -1,11 +1,12 @@
 name: Build and Push Image
 
 # Builds the WordSparrow service container images and publishes them to
-# GHCR. As of Wave G PR (this commit) the workflow is a matrix job that
-# fans out over the {grid, game} bounded contexts:
-#   - ghcr.io/${owner}/bliss/wordsparrow-api        (grid/api/Dockerfile)
-#   - ghcr.io/${owner}/bliss/wordsparrow-game-api   (game/api/Dockerfile)
-#   - ghcr.io/${owner}/bliss/wordsparrow-worker     (grid/worker/Dockerfile)
+# GHCR. The workflow is a matrix job that fans out over the {grid, game,
+# identity} bounded contexts:
+#   - ghcr.io/${owner}/bliss/wordsparrow-api           (grid/api/Dockerfile)
+#   - ghcr.io/${owner}/bliss/wordsparrow-game-api      (game/api/Dockerfile)
+#   - ghcr.io/${owner}/bliss/wordsparrow-identity-api  (identity/api/Dockerfile)
+#   - ghcr.io/${owner}/bliss/wordsparrow-worker        (grid/worker/Dockerfile)
 # Pull requests build-only (verifies each Dockerfile still works on every
 # PR touching the relevant context); pushes to main also tag and push the
 # digest. Each matrix row uploads its own digest artifact named
@@ -29,9 +30,11 @@ name: Build and Push Image
 # anonymously without an imagePullSecret. This is a manual step
 # GitHub does not expose to Actions; it runs once per package.
 # Packages that need the flip:
-#   - bliss/wordsparrow-api      (already public)
-#   - bliss/wordsparrow-game-api (NEW — first main push will create it)
-#   - bliss/wordsparrow-worker   (NEW — first main push will create it)
+#   - bliss/wordsparrow-api           (already public)
+#   - bliss/wordsparrow-game-api      (already public)
+#   - bliss/wordsparrow-worker        (already public)
+#   - bliss/wordsparrow-identity-api  (NEW — first main push will create it;
+#                                      flip after PR 4.5d merges)
 
 on:
   push:
@@ -51,6 +54,10 @@ on:
       - 'game/domain/**'
       - 'game/application/**'
       - 'game/infrastructure/**'
+      - 'identity/api/**'
+      - 'identity/domain/**'
+      - 'identity/application/**'
+      - 'identity/infrastructure/**'
       - 'gradle/**'
       - 'gradlew'
       - 'settings.gradle.kts'
@@ -67,6 +74,10 @@ on:
       - 'game/domain/**'
       - 'game/application/**'
       - 'game/infrastructure/**'
+      - 'identity/api/**'
+      - 'identity/domain/**'
+      - 'identity/application/**'
+      - 'identity/infrastructure/**'
       - 'gradle/**'
       - 'gradlew'
       - 'settings.gradle.kts'
@@ -101,6 +112,13 @@ jobs:
             dockerfile: game/api/Dockerfile
             image-name: wordsparrow-game-api
             digest-artifact: image-digest-game
+          # identity-api (ADR-0044, PR #500). Postgres-backed; no
+          # in-memory state, so the chart at identity/api/deploy/chart/
+          # scales horizontally (replicas: 2).
+          - context: identity
+            dockerfile: identity/api/Dockerfile
+            image-name: wordsparrow-identity-api
+            digest-artifact: image-digest-identity
           # ADR-0042: :grid:worker daily-puzzle pre-generation CLI shipped as a
           # CronJob (grid/api/deploy/chart/templates/cronjob-ensure-dailies.yaml).
           # Separate image so the worker can be tagged + rolled independently
