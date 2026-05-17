@@ -17,8 +17,8 @@ class IdentityDatabaseTest {
         val pg =
             PostgreSQLContainer(DockerImageName.parse("postgres:16-alpine")).apply { start() }
         try {
-            val url =
-                "postgres://${pg.username}:${pg.password}@${pg.host}:${pg.getMappedPort(5432)}/${pg.databaseName}"
+            val sep = if ('?' in pg.jdbcUrl) "&" else "?"
+            val url = "${pg.jdbcUrl}${sep}user=${pg.username}&password=${pg.password}"
             System.setProperty("IDENTITY_DATABASE_URL", url)
             val db =
                 IdentityDatabase(

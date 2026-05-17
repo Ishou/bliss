@@ -16,7 +16,6 @@ dependencies {
     // UUIDv7 generation for UserId / SessionId / AuthAttemptId (ADR-0003 §6).
     implementation("com.fasterxml.uuid:java-uuid-generator:5.2.0")
 
-    // Postgres pool + migrations — used by IdentityDatabase + PostgresUserRepository.
     implementation("org.postgresql:postgresql:42.7.11")
     implementation("com.zaxxer:HikariCP:7.0.2")
     implementation("org.flywaydb:flyway-core:12.6.0")
@@ -35,7 +34,6 @@ dependencies {
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.11.0")
     testImplementation("com.lemonappdev:konsist:0.17.3")
 
-    // Testcontainers — real Postgres for IdentityDatabase + PostgresUserRepository contract tests.
     testImplementation("org.testcontainers:testcontainers:$testcontainersVersion")
     testImplementation("org.testcontainers:junit-jupiter:$testcontainersVersion")
     testImplementation("org.testcontainers:postgresql:$testcontainersVersion")
