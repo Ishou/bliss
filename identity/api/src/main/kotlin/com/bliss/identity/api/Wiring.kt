@@ -54,6 +54,7 @@ class Wiring private constructor(
     // Nullable peek accessors so Module.kt can mount only the routes whose use case is wired,
     // letting tests supply a slim Wiring.forTesting(...) for the route under test.
     internal val beginOidcLoginOrNull: BeginOidcLoginUseCase? get() = _beginOidcLogin
+    internal val completeOidcLoginOrNull: CompleteOidcLoginUseCase? get() = _completeOidcLogin
     internal val whoAmIOrNull: WhoAmIUseCase? get() = _whoAmI
 
     private fun <T : Any> require(
