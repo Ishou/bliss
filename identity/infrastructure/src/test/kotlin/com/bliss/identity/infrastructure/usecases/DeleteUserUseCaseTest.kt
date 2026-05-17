@@ -7,6 +7,7 @@ import assertk.assertions.hasSize
 import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotNull
 import assertk.assertions.isNull
+import assertk.assertions.isSameInstanceAs
 import com.bliss.identity.application.ports.UserDeletedBroadcaster
 import com.bliss.identity.application.usecases.DeleteUserCommand
 import com.bliss.identity.application.usecases.DeleteUserError
@@ -57,17 +58,40 @@ class DeleteUserUseCaseTest {
         runTest {
             val users = InMemoryUserRepository()
             users.create(User(userId, DisplayName.of("Alice"), now, now))
+            val downstreamError = RuntimeException("downstream is down")
             val flakyBroadcaster =
                 object : UserDeletedBroadcaster {
                     override suspend fun broadcast(
                         userId: UserId,
                         deletedAt: Instant,
-                    ): Unit = throw RuntimeException("downstream is down")
+                    ): Unit = throw downstreamError
                 }
             val sut = DeleteUserUseCase(users = users, broadcaster = flakyBroadcaster, clock = FixedClock(now))
-            assertFailure { sut.execute(DeleteUserCommand(userId)) }
-                .isInstanceOf(DeleteUserError.BroadcastFailed::class)
+            val failure = assertFailure { sut.execute(DeleteUserCommand(userId)) }
+            failure.isInstanceOf(DeleteUserError.BroadcastFailed::class)
+            failure.given { thrown ->
+                assertThat((thrown as DeleteUserError.BroadcastFailed).cause).isSameInstanceAs(downstreamError)
+            }
             // User row still present - local delete did not run.
+            assertThat(users.findById(userId)).isNotNull()
+        }
+
+    @Test
+    fun `CancellationException from broadcaster propagates unwrapped`() =
+        runTest {
+            val users = InMemoryUserRepository()
+            users.create(User(userId, DisplayName.of("Alice"), now, now))
+            val cancellingBroadcaster =
+                object : UserDeletedBroadcaster {
+                    override suspend fun broadcast(
+                        userId: UserId,
+                        deletedAt: Instant,
+                    ): Unit = throw kotlin.coroutines.cancellation.CancellationException("cancelled")
+                }
+            val sut = DeleteUserUseCase(users = users, broadcaster = cancellingBroadcaster, clock = FixedClock(now))
+            assertFailure { sut.execute(DeleteUserCommand(userId)) }
+                .isInstanceOf(kotlin.coroutines.cancellation.CancellationException::class)
+            // User still present — cancellation arrived before the local delete.
             assertThat(users.findById(userId)).isNotNull()
         }
 }
