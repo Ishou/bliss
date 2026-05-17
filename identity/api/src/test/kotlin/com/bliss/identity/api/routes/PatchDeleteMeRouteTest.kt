@@ -11,6 +11,7 @@ import com.bliss.identity.api.config.AppleClientConfig
 import com.bliss.identity.api.config.GoogleClientConfig
 import com.bliss.identity.api.config.IdentityApiConfig
 import com.bliss.identity.api.module
+import com.bliss.identity.application.ports.UserDeletedBroadcaster
 import com.bliss.identity.application.usecases.DeleteUserUseCase
 import com.bliss.identity.application.usecases.GetMeUseCase
 import com.bliss.identity.application.usecases.UpdateMeUseCase
@@ -192,5 +193,32 @@ class PatchDeleteMeRouteTest {
             val captured = fixture.broadcaster.captured()
             assertThat(captured.size).isEqualTo(1)
             assertThat(captured[0].first).isEqualTo(userId)
+            // Sessions are not explicitly revoked here; WhoAmIUseCase returns OrphanedSession
+            // for any surviving session row once the user row is gone.
+        }
+
+    @Test
+    fun `delete with failing broadcaster returns 503 and does not delete user or clear cookie`() =
+        testApplication {
+            val users = InMemoryUserRepository()
+            val sessions = InMemorySessionRepository()
+            runBlocking {
+                users.create(User(userId, DisplayName.of("Alice"), now, now))
+                sessions.create(Session(sessionId, userId, now, now, null))
+            }
+            val failingBroadcaster = UserDeletedBroadcaster { _, _ -> throw RuntimeException("downstream is down") }
+            val clock = FixedClock(now)
+            val whoAmI = WhoAmIUseCase(users, sessions, clock, Duration.ofDays(7))
+            val deleteUser = DeleteUserUseCase(users, failingBroadcaster, clock)
+            application { module(Wiring.forTesting(whoAmI = whoAmI, deleteUser = deleteUser), testConfig) }
+            val response =
+                client.delete("/v1/users/me") {
+                    cookie(SessionCookies.NAME, sessionId.value.toString())
+                }
+            assertThat(response.status).isEqualTo(HttpStatusCode.ServiceUnavailable)
+            assertThat(response.bodyAsText()).contains("broadcast_failed")
+            assertThat(runBlocking { users.findById(userId) }).isNotNull()
+            val cleared = response.setCookie().firstOrNull { it.name == SessionCookies.NAME }
+            assertThat(cleared).isNull()
         }
 }

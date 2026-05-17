@@ -217,6 +217,7 @@ paths:
           headers:
             Set-Cookie: { schema: { type: string } }
         '401': { $ref: '#/components/responses/ProblemDetails' }
+        '503': { $ref: '#/components/responses/ProblemDetails' }
 
   /v1/users/me/providers/{provider}/link:
     post:
