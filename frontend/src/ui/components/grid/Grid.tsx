@@ -18,6 +18,7 @@ import { CurrentCluePanel } from './CurrentCluePanel';
 import { GridMinimap } from './GridMinimap';
 import { GridScrollbar } from './GridScrollbar';
 import { GridZoomControls } from './GridZoomControls';
+import { positionKey } from './positionKey';
 import { buildCellPresenceMap, useRemotePresences } from './PresenceOverlay';
 import { useGridNavigation, type Direction } from './useGridNavigation';
 
@@ -127,8 +128,6 @@ const MIN_WRAPPER_HEIGHT_PX = 140;
 const WRAPPER_BOTTOM_MARGIN_PX = 8;
 
 const rowStyles = css({ display: 'contents' });
-
-const positionKey = (p: Position) => `${p.row},${p.col}`;
 
 // v1 interactive grid. Letter inputs are uncontrolled (ADR-0002 §4).
 // `useGridNavigation` orchestrates focus, direction, and highlighting

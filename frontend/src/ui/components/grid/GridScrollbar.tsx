@@ -156,10 +156,7 @@ export function GridScrollbar({
 
   const position = isVertical ? positionY : positionX;
   const contentSize = isVertical ? contentHeight : contentWidth;
-  const trackEl = trackRef.current;
-  const trackSize = trackEl
-    ? (isVertical ? trackEl.getBoundingClientRect().height : trackEl.getBoundingClientRect().width)
-    : contentSize;
+  const trackSize = contentSize;
 
   const { thumbSize, thumbOffset } = computeThumbGeometry({
     scale,

@@ -6,6 +6,7 @@ import {
   computeViewportRect,
   rectCenterToPosition,
 } from './transformMath';
+import { positionKey } from './positionKey';
 
 const MINIMAP_SIZE_DESKTOP_PX = 120;
 const MINIMAP_SIZE_MOBILE_PX = 80;
@@ -37,8 +38,6 @@ const minimapContainer = css({
     left: '8px',
   },
 });
-
-const positionKey = (p: Position) => `${p.row},${p.col}`;
 
 // Resolved color literals for SVG fill attributes.
 // These map to the role tokens used in Cell.tsx:

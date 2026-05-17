@@ -85,7 +85,7 @@ test.describe('Grid scrollbars + minimap', () => {
       await page.mouse.up();
 
       const progress = await readProgress(thumb);
-      expect(progress).not.toBe(50); // must have actually moved
+      expect(progress).toBeGreaterThan(50);
     },
   );
 
