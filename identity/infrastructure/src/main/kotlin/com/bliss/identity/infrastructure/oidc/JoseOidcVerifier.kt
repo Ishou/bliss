@@ -4,6 +4,7 @@ import com.bliss.identity.domain.oidc.OidcIdToken
 import com.bliss.identity.domain.oidc.OidcProvider
 import com.bliss.identity.domain.oidc.OidcVerificationError
 import com.bliss.identity.domain.oidc.OidcVerifier
+import com.bliss.identity.domain.provider.Provider
 import com.bliss.identity.domain.provider.Subject
 import com.nimbusds.jose.JWSAlgorithm
 import com.nimbusds.jose.jwk.source.ImmutableJWKSet
@@ -17,6 +18,12 @@ import com.nimbusds.jwt.proc.DefaultJWTClaimsVerifier
 import com.nimbusds.jwt.proc.DefaultJWTProcessor
 import java.text.ParseException
 import java.time.Instant
+
+private fun Provider.toJWSAlgorithm(): JWSAlgorithm =
+    when (this) {
+        Provider.GOOGLE -> JWSAlgorithm.RS256
+        Provider.APPLE -> JWSAlgorithm.ES256
+    }
 
 class JoseOidcVerifier(
     private val jwksCache: JwksCache,
@@ -36,7 +43,7 @@ class JoseOidcVerifier(
         val processor = DefaultJWTProcessor<SecurityContext>()
         val keySelector =
             JWSVerificationKeySelector(
-                JWSAlgorithm.RS256,
+                provider.provider.toJWSAlgorithm(),
                 ImmutableJWKSet(jwkSet),
             )
         processor.jwsKeySelector = keySelector

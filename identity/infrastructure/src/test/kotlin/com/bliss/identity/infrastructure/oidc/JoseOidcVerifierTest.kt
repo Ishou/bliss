@@ -10,8 +10,11 @@ import com.bliss.identity.domain.oidc.OidcVerificationError
 import com.bliss.identity.domain.provider.Provider
 import com.nimbusds.jose.JWSAlgorithm
 import com.nimbusds.jose.JWSHeader
+import com.nimbusds.jose.crypto.ECDSASigner
 import com.nimbusds.jose.crypto.RSASSASigner
+import com.nimbusds.jose.jwk.Curve
 import com.nimbusds.jose.jwk.JWKSet
+import com.nimbusds.jose.jwk.gen.ECKeyGenerator
 import com.nimbusds.jose.jwk.gen.RSAKeyGenerator
 import com.nimbusds.jwt.JWTClaimsSet
 import com.nimbusds.jwt.SignedJWT
@@ -191,5 +194,36 @@ class JoseOidcVerifierTest {
             // Nimbus truncates to second precision, so compare with that precision.
             assertThat(token.issuedAt).isEqualTo(iat.truncatedTo(ChronoUnit.SECONDS))
             assertThat(token.expiresAt).isEqualTo(exp.truncatedTo(ChronoUnit.SECONDS))
+        }
+
+    @Test
+    fun `Apple ES256 token passes verification`() =
+        runTest {
+            val ecKey = ECKeyGenerator(Curve.P_256).keyID("apple-key-1").generate()
+            val ecSigner = ECDSASigner(ecKey)
+            val appleProvider =
+                OidcProvider(
+                    provider = Provider.APPLE,
+                    issuer = "https://appleid.apple.com",
+                    audience = "com.example.app",
+                    jwksUri = "https://appleid.apple.com/auth/keys",
+                )
+            val header = JWSHeader.Builder(JWSAlgorithm.ES256).keyID("apple-key-1").build()
+            val claims =
+                JWTClaimsSet
+                    .Builder()
+                    .issuer("https://appleid.apple.com")
+                    .audience("com.example.app")
+                    .subject("apple-sub-99")
+                    .issueTime(Date.from(Instant.now().minusSeconds(10)))
+                    .expirationTime(Date.from(Instant.now().plusSeconds(3600)))
+                    .build()
+            val jwt = SignedJWT(header, claims)
+            jwt.sign(ecSigner)
+
+            val cache = JwksCache(ttl = Duration.ofMinutes(5)) { _ -> JWKSet(ecKey.toPublicJWK()) }
+            val verifier = JoseOidcVerifier(cache)
+            val token = verifier.verify(jwt.serialize(), appleProvider)
+            assertThat(token.subject.value).isEqualTo("apple-sub-99")
         }
 }
