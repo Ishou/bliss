@@ -52,42 +52,47 @@ class WhoAmIUseCaseTest {
     }
 
     @Test
-    fun `unknown session throws SessionNotFound`() = runTest {
-        val (sut, _, _) = newCase()
-        assertFailure { sut.execute(WhoAmIQuery(SessionId(UUID.randomUUID()))) }
-            .isInstanceOf(WhoAmIError.SessionNotFound::class)
-    }
+    fun `unknown session throws SessionNotFound`() =
+        runTest {
+            val (sut, _, _) = newCase()
+            assertFailure { sut.execute(WhoAmIQuery(SessionId(UUID.randomUUID()))) }
+                .isInstanceOf(WhoAmIError.SessionNotFound::class)
+        }
 
     @Test
-    fun `revoked session throws SessionRevoked`() = runTest {
-        val (sut, users, sessions) = newCase()
-        seedUserAndSession(users, sessions, revokedAt = now.minusSeconds(30))
-        assertFailure { sut.execute(WhoAmIQuery(sessionId)) }
-            .isInstanceOf(WhoAmIError.SessionRevoked::class)
-    }
+    fun `revoked session throws SessionRevoked`() =
+        runTest {
+            val (sut, users, sessions) = newCase()
+            seedUserAndSession(users, sessions, revokedAt = now.minusSeconds(30))
+            assertFailure { sut.execute(WhoAmIQuery(sessionId)) }
+                .isInstanceOf(WhoAmIError.SessionRevoked::class)
+        }
 
     @Test
-    fun `session older than sessionMaxAge throws SessionExpired`() = runTest {
-        val (sut, users, sessions) = newCase()
-        val tooOld = now.minus(sessionMaxAge).minusSeconds(1)
-        seedUserAndSession(users, sessions, createdAt = tooOld)
-        assertFailure { sut.execute(WhoAmIQuery(sessionId)) }
-            .isInstanceOf(WhoAmIError.SessionExpired::class)
-    }
+    fun `session older than sessionMaxAge throws SessionExpired`() =
+        runTest {
+            val (sut, users, sessions) = newCase()
+            val tooOld = now.minus(sessionMaxAge).minusSeconds(1)
+            seedUserAndSession(users, sessions, createdAt = tooOld)
+            assertFailure { sut.execute(WhoAmIQuery(sessionId)) }
+                .isInstanceOf(WhoAmIError.SessionExpired::class)
+        }
 
     @Test
-    fun `session linked to deleted user throws OrphanedSession`() = runTest {
-        val (sut, _, sessions) = newCase()
-        sessions.create(Session(sessionId, userId, now.minusSeconds(60), now.minusSeconds(60), null))
-        assertFailure { sut.execute(WhoAmIQuery(sessionId)) }
-            .isInstanceOf(WhoAmIError.OrphanedSession::class)
-    }
+    fun `session linked to deleted user throws OrphanedSession`() =
+        runTest {
+            val (sut, _, sessions) = newCase()
+            sessions.create(Session(sessionId, userId, now.minusSeconds(60), now.minusSeconds(60), null))
+            assertFailure { sut.execute(WhoAmIQuery(sessionId)) }
+                .isInstanceOf(WhoAmIError.OrphanedSession::class)
+        }
 
     @Test
-    fun `happy path returns userId and displayName`() = runTest {
-        val (sut, users, sessions) = newCase()
-        seedUserAndSession(users, sessions)
-        val result = sut.execute(WhoAmIQuery(sessionId))
-        assertThat(result).isEqualTo(WhoAmIResult(userId, DisplayName.of("Alice")))
-    }
+    fun `happy path returns userId and displayName`() =
+        runTest {
+            val (sut, users, sessions) = newCase()
+            seedUserAndSession(users, sessions)
+            val result = sut.execute(WhoAmIQuery(sessionId))
+            assertThat(result).isEqualTo(WhoAmIResult(userId, DisplayName.of("Alice")))
+        }
 }
