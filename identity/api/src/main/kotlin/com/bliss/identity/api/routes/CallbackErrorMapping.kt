@@ -2,6 +2,7 @@ package com.bliss.identity.api.routes
 
 import com.bliss.identity.api.dto.ProblemDetails
 import com.bliss.identity.application.usecases.CompleteOidcLoginError
+import com.bliss.identity.application.usecases.CompleteProviderLinkError
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.response.respondText
@@ -20,6 +21,15 @@ internal fun CompleteOidcLoginError.toProblem(): Pair<HttpStatusCode, String> =
             HttpStatusCode.Conflict to "linking_not_supported_here"
         is CompleteOidcLoginError.ExchangeRejected -> HttpStatusCode.ServiceUnavailable to "upstream_error"
         is CompleteOidcLoginError.OrphanedLink -> HttpStatusCode.InternalServerError to "internal_error"
+    }
+
+internal fun CompleteProviderLinkError.toProblem(): Pair<HttpStatusCode, String> =
+    when (this) {
+        is CompleteProviderLinkError.UnknownState -> HttpStatusCode.BadRequest to "invalid_state"
+        is CompleteProviderLinkError.StateExpired -> HttpStatusCode.BadRequest to "state_expired"
+        is CompleteProviderLinkError.NotLinkingMode -> HttpStatusCode.Conflict to "not_linking_mode"
+        is CompleteProviderLinkError.LinkConflict -> HttpStatusCode.Conflict to "provider_linked_to_other_user"
+        is CompleteProviderLinkError.ExchangeRejected -> HttpStatusCode.ServiceUnavailable to "upstream_error"
     }
 
 internal suspend fun RoutingCall.problem(

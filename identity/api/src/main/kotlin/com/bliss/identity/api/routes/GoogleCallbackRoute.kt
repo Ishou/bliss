@@ -3,9 +3,8 @@ package com.bliss.identity.api.routes
 import com.bliss.identity.api.REST_JSON
 import com.bliss.identity.api.auth.SessionCookies
 import com.bliss.identity.api.config.IdentityApiConfig
-import com.bliss.identity.application.usecases.CompleteOidcLoginCommand
 import com.bliss.identity.application.usecases.CompleteOidcLoginError
-import com.bliss.identity.application.usecases.CompleteOidcLoginUseCase
+import com.bliss.identity.application.usecases.CompleteProviderLinkError
 import com.bliss.identity.domain.oidc.OidcVerificationError
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
@@ -18,12 +17,11 @@ import org.slf4j.LoggerFactory
 
 private val log = LoggerFactory.getLogger("com.bliss.identity.api.routes.GoogleCallbackRoute")
 
-// GET /v1/auth/google/callback — ADR-0044. Google posts `code` + `state` as query
-// parameters. Validates inputs, delegates to CompleteOidcLoginUseCase, issues the
-// `__Host-ws_session` cookie via SessionCookies, and 302-redirects to the
-// AuthAttempt's previously validated return_to.
+// GET /v1/auth/google/callback - ADR-0044. Dispatches to login or linking flow
+// based on the persisted AuthAttempt. LoggedIn issues __Host-ws_session + 302;
+// Linked only 302s (the user already has a valid session).
 fun Route.googleCallback(
-    completeOidcLogin: CompleteOidcLoginUseCase,
+    dispatcher: CallbackDispatcher,
     config: IdentityApiConfig,
     json: Json = REST_JSON,
 ) {
@@ -54,7 +52,7 @@ fun Route.googleCallback(
 
         val result =
             try {
-                completeOidcLogin.execute(CompleteOidcLoginCommand(state = state, code = code))
+                dispatcher.dispatch(state = state, code = code)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: CompleteOidcLoginError) {
@@ -62,8 +60,10 @@ fun Route.googleCallback(
                 val detail =
                     if (status == HttpStatusCode.InternalServerError) "Internal error." else e.message ?: status.description
                 return@get call.problem(json, status, type, detail)
+            } catch (e: CompleteProviderLinkError) {
+                val (status, type) = e.toProblem()
+                return@get call.problem(json, status, type, e.message ?: status.description)
             } catch (e: OidcVerificationError) {
-                // when-as-expression on sealed hierarchy: compiler flags any new subclass.
                 return@get when (e) {
                     is OidcVerificationError.JwksUnavailable,
                     is OidcVerificationError.Malformed,
@@ -92,7 +92,14 @@ fun Route.googleCallback(
             }
 
         call.response.headers.append(HttpHeaders.CacheControl, "no-store")
-        SessionCookies.issue(call, result.sessionId, config.sessionMaxAge)
-        call.respondRedirect(url = result.returnTo, permanent = false)
+        when (result) {
+            is CallbackDispatcher.Result.LoggedIn -> {
+                SessionCookies.issue(call, result.sessionId, config.sessionMaxAge)
+                call.respondRedirect(url = result.returnTo, permanent = false)
+            }
+            is CallbackDispatcher.Result.Linked -> {
+                call.respondRedirect(url = result.returnTo, permanent = false)
+            }
+        }
     }
 }

@@ -3,9 +3,8 @@ package com.bliss.identity.api.routes
 import com.bliss.identity.api.REST_JSON
 import com.bliss.identity.api.auth.SessionCookies
 import com.bliss.identity.api.config.IdentityApiConfig
-import com.bliss.identity.application.usecases.CompleteOidcLoginCommand
 import com.bliss.identity.application.usecases.CompleteOidcLoginError
-import com.bliss.identity.application.usecases.CompleteOidcLoginUseCase
+import com.bliss.identity.application.usecases.CompleteProviderLinkError
 import com.bliss.identity.domain.oidc.OidcVerificationError
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
@@ -19,12 +18,12 @@ import org.slf4j.LoggerFactory
 
 private val log = LoggerFactory.getLogger("com.bliss.identity.api.routes.AppleCallbackRoute")
 
-// POST /v1/auth/apple/callback — ADR-0044. Apple uses response_mode=form_post,
-// so `code` + `state` arrive as application/x-www-form-urlencoded body params.
-// Apple may also include a `user` JSON field on first sign-in (name/email) —
-// it is intentionally ignored per ADR-0045 (no PII retention beyond `sub`).
+// POST /v1/auth/apple/callback - ADR-0044. Apple uses response_mode=form_post,
+// so code + state arrive as application/x-www-form-urlencoded body params.
+// Apple may also include a `user` JSON field on first sign-in (name/email) -
+// it is intentionally ignored per ADR-0045 (no PII retention beyond sub).
 fun Route.appleCallback(
-    completeOidcLogin: CompleteOidcLoginUseCase,
+    dispatcher: CallbackDispatcher,
     config: IdentityApiConfig,
     json: Json = REST_JSON,
 ) {
@@ -55,7 +54,7 @@ fun Route.appleCallback(
 
         val result =
             try {
-                completeOidcLogin.execute(CompleteOidcLoginCommand(state = state, code = code))
+                dispatcher.dispatch(state = state, code = code)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: CompleteOidcLoginError) {
@@ -63,8 +62,10 @@ fun Route.appleCallback(
                 val detail =
                     if (status == HttpStatusCode.InternalServerError) "Internal error." else e.message ?: status.description
                 return@post call.problem(json, status, type, detail)
+            } catch (e: CompleteProviderLinkError) {
+                val (status, type) = e.toProblem()
+                return@post call.problem(json, status, type, e.message ?: status.description)
             } catch (e: OidcVerificationError) {
-                // when-as-expression on sealed hierarchy: compiler flags any new subclass.
                 return@post when (e) {
                     is OidcVerificationError.JwksUnavailable,
                     is OidcVerificationError.Malformed,
@@ -93,7 +94,14 @@ fun Route.appleCallback(
             }
 
         call.response.headers.append(HttpHeaders.CacheControl, "no-store")
-        SessionCookies.issue(call, result.sessionId, config.sessionMaxAge)
-        call.respondRedirect(url = result.returnTo, permanent = false)
+        when (result) {
+            is CallbackDispatcher.Result.LoggedIn -> {
+                SessionCookies.issue(call, result.sessionId, config.sessionMaxAge)
+                call.respondRedirect(url = result.returnTo, permanent = false)
+            }
+            is CallbackDispatcher.Result.Linked -> {
+                call.respondRedirect(url = result.returnTo, permanent = false)
+            }
+        }
     }
 }
