@@ -7,6 +7,7 @@ import com.bliss.identity.api.routes.appleCallback
 import com.bliss.identity.api.routes.googleCallback
 import com.bliss.identity.api.routes.health
 import com.bliss.identity.api.routes.login
+import com.bliss.identity.api.routes.logout
 import com.bliss.identity.api.routes.whoAmI
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
@@ -101,6 +102,11 @@ fun Application.module(
         wiring.beginOidcLoginOrNull?.let { login(it, returnToValidator) }
         wiring.completeOidcLoginOrNull?.let { googleCallback(it, config) }
         wiring.completeOidcLoginOrNull?.let { appleCallback(it, config) }
+        wiring.logoutOrNull?.let { logout ->
+            wiring.whoAmIOrNull?.let { whoAmI ->
+                logout(logout, whoAmI)
+            }
+        }
     }
 }
 
