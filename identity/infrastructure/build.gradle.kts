@@ -17,7 +17,7 @@ dependencies {
     implementation("com.fasterxml.uuid:java-uuid-generator:5.2.0")
 
     // JOSE/JWT: ID-token verification and Apple client-assertion signing (ADR-0046).
-    implementation("com.nimbusds:nimbus-jose-jwt:9.40")
+    implementation("com.nimbusds:nimbus-jose-jwt:10.0.2")
 
     implementation("org.postgresql:postgresql:42.7.11")
     implementation("com.zaxxer:HikariCP:7.0.2")
