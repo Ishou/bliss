@@ -94,9 +94,7 @@ class PostgresAuthAttemptRepositoryTest {
     fun truncate() {
         if (::dataSource.isInitialized) {
             dataSource.connection.use { conn ->
-                // CASCADE handles identity_auth_attempts automatically
                 conn.prepareStatement("TRUNCATE identity_users CASCADE").use { it.executeUpdate() }
-                conn.prepareStatement("TRUNCATE identity_auth_attempts").use { it.executeUpdate() }
             }
         }
     }
