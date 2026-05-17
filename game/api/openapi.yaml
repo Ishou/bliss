@@ -791,6 +791,7 @@ components:
         connectedCount:
           type: integer
           minimum: 0
+          maximum: 8
           description: |
             Subset of `playerCount` whose WebSocket session is currently
             connected. Drives the `X / Y` display on the Accueil "Mes
