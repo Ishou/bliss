@@ -21,15 +21,14 @@ import { INDEXABLE_ROUTES } from '../src/ui/seo/routeManifest.ts';
 
 const DIST = resolve(import.meta.dirname, '../dist');
 
-// Routes whose loader fetches the daily puzzle. Their prerendered HTML
-// must NOT bake the fixture-puzzle body — the real puzzle (size,
-// number, difficulty, persisted progress) differs, and on F5 the user
-// would see a fixture-then-real swap. We render these in two passes
-// (see `prerenderRoute`): pass A loads with the fixture so head() fires
-// and produces the real meta / OG / JSON-LD; pass B leaves the puzzle
-// endpoint hanging so the route's pendingComponent (skeleton) renders;
-// we graft pass A's <head> onto pass B's body.
-const PUZZLE_LOADING_ROUTES: ReadonlySet<string> = new Set(['/', '/grille']);
+// Routes whose loader hits the puzzle API. Their prerendered HTML must
+// NOT bake the fixture body — on F5 the user would see a fixture→real
+// swap. We render these in two passes (see `prerenderRoute`): pass A
+// loads with the fixture so head() fires and produces the real meta /
+// OG / JSON-LD; pass B leaves the puzzle endpoint hanging so the
+// route's pendingComponent (skeleton) renders; we graft pass A's
+// <head> onto pass B's body.
+const PUZZLE_LOADING_ROUTES: ReadonlySet<string> = new Set(['/', '/grille', '/grilles']);
 
 const MIME: Record<string, string> = {
   '.html': 'text/html; charset=utf-8',
@@ -148,13 +147,13 @@ async function loadRoute(
     // route handler has highest priority. The puzzle stub runs before
     // the broader catch-all above.
     if (puzzleStub === 'fixture') {
-      await page.route('**/v1/puzzles/**', (route_) =>
-        route_.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: PUZZLE_FIXTURE_BODY,
-        }),
-      );
+      await page.route('**/v1/puzzles/**', (route_) => {
+        // /daily/list expects a `{items, hasMore}` envelope; puzzle-shaped body crashes the /grilles loader.
+        const body = route_.request().url().includes('/v1/puzzles/daily/list')
+          ? '{"items":[],"hasMore":false}'
+          : PUZZLE_FIXTURE_BODY;
+        return route_.fulfill({ status: 200, contentType: 'application/json', body });
+      });
     } else {
       await page.route('**/v1/puzzles/**', () => {
         // Intentional no-op: leave the request hanging so the route's
