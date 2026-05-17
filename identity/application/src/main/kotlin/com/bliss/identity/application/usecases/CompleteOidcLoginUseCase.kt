@@ -82,6 +82,10 @@ class CompleteOidcLoginUseCase(
                         jwksUri = config.jwksUri,
                     ),
             )
+        // TODO(phase-3): On Postgres, wrap `users.create` + `userProviders.link` + `sessions.create`
+        // in a single transaction. The attempt has already been consumed, so a partial failure
+        // strands the user (their attempt is gone, their record is half-written, and they can't
+        // retry). The in-memory adapter masks this because it never throws.
         val existingLink = userProviders.findByProviderAndSubject(attempt.provider, verified.subject)
         val user: User =
             if (existingLink != null) {
