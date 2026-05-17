@@ -11,6 +11,9 @@ dependencies {
     implementation(project(":identity:domain"))
     implementation(project(":identity:application"))
 
+    // UUIDv7 generation for UserId / SessionId / AuthAttemptId (ADR-0003 §6).
+    implementation("com.fasterxml.uuid:java-uuid-generator:5.2.0")
+
     testFixturesImplementation(project(":identity:domain"))
     testFixturesImplementation(project(":identity:application"))
 
