@@ -352,7 +352,7 @@ jobs:
           # `gh run list` / `gh run view --log-failed`. `Bash(jq:*)` is
           # used to parse the run listing.
           claude_args: >-
-            --allowed-tools "Read,Glob,Grep,Edit,Write,Bash(git:*),Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh run:*),Bash(jq:*),Bash(pnpm:*),Bash(npm:*),Bash(npx:*),Bash(node:*),Bash(./gradlew:*),Bash(gradle:*),Bash(cat:*),Bash(ls:*),Bash(test:*),Bash(true)"
+            --allowed-tools "Read,Glob,Grep,Edit,Write,Bash(git:*),Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh pr edit:*),Bash(gh run:*),Bash(jq:*),Bash(pnpm:*),Bash(npm:*),Bash(npx:*),Bash(node:*),Bash(./gradlew:*),Bash(gradle:*),Bash(cat:*),Bash(ls:*),Bash(test:*),Bash(true)"
           prompt: |
             You are the §6a fixer agent for PR #${{ github.event.pull_request.number }}
             on the bliss repository (${{ github.repository }}).
@@ -536,6 +536,32 @@ jobs:
             for the area you actually changed (e.g. `fix(grid-api): …`,
             not `fix(ci): …`). Remember the disallowed types:
             `perf|style|build|ci|revert` — use `refactor:` or `chore:`.
+
+            ## Handling PR title/body findings
+
+            The reviewer may flag findings that live in the PR title or
+            body rather than the diff (e.g. "PR body still claims X;
+            the current diff no longer shows X" — see PR #358 cycle 4).
+            For those, edit the PR metadata directly with `gh pr edit`
+            instead of (or in addition to) changing files:
+
+            - Title: `gh pr edit "$PR_NUMBER" --title "<new title>"`
+            - Body:  write the new body to `/tmp/pr-body.md` with the
+              Write tool, then
+              `gh pr edit "$PR_NUMBER" --body-file /tmp/pr-body.md`.
+              Do not pass the body inline via `--body "..."` — it
+              mangles newlines and breaks markdown.
+
+            Edit the minimum needed to resolve the finding; preserve
+            the rest of the body verbatim (fetch the current body
+            first with `gh pr view "$PR_NUMBER" --json body --jq .body`).
+            PR-metadata edits do NOT produce a commit, so note them in
+            your `/tmp/reply.md` as `pr-body updated` / `pr-title
+            updated` rather than `fixed in <sha>`. They also do not
+            fire a `synchronize` event, so if you ONLY edit the PR
+            body/title and push nothing else, the workflow will not
+            re-trigger — that is expected, since the next reviewer
+            pass would just re-read the same metadata.
 
             ## Constraints
 
