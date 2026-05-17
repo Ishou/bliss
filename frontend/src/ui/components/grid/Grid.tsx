@@ -804,14 +804,58 @@ export function Grid({
       // user is mid-drag, switch to `grabbing` for the closed-fist feel.
       const cursor = isPanning ? 'grabbing' : (isZoomedIn ? 'grab' : 'auto');
       return {
+        // Keep width/aspect-ratio here as a defensive pass-through:
+        // the stage now provides the bounding box, but having these
+        // on the TransformWrapper too keeps the library's internal
+        // geometry consistent and avoids any pinch/pan regressions.
+        // `margin: 0 auto` is intentionally omitted — the stage handles
+        // centering inside gridShell now.
         width: `min(100cqw, calc(100cqh * ${puzzle.width} / ${puzzle.height}), 720px)`,
         aspectRatio: `${puzzle.width} / ${puzzle.height}`,
-        margin: '0 auto',
         touchAction,
         cursor,
       } as const;
     },
     [isZoomedIn, isPanning, puzzle.width, puzzle.height],
+  );
+
+  // "stage" box: wraps TransformWrapper AND the overlay siblings so the
+  // overlay's `position: absolute; inset: 0` resolves relative to the
+  // grid's bounding box rather than the full gridShell. Sized identically
+  // to transformWrapperStyle's width / aspect-ratio so both children share
+  // the same containing block. `position: relative` makes it the
+  // positioned ancestor for the absolutely-positioned overlayFrame.
+  // `margin: 0 auto` re-centers the stage inside the flex gridShell
+  // (mirrors the `margin: 0 auto` that was on transformWrapperStyle).
+  const stageStyle = useMemo(
+    () => ({
+      width: `min(100cqw, calc(100cqh * ${puzzle.width} / ${puzzle.height}), 720px)`,
+      aspectRatio: `${puzzle.width} / ${puzzle.height}`,
+      margin: '0 auto',
+      position: 'relative' as const,
+    }),
+    [puzzle.width, puzzle.height],
+  );
+
+  // Inline style for the overlay div that sits on top of the
+  // TransformWrapper (as a sibling inside `stage`, not gridShell).
+  // `position: absolute; inset: 0` covers the full stage area which is
+  // sized exactly like the grid — so scrollbars track the grid edges and
+  // the minimap sits in the grid's corner, not the shell's corner.
+  // `pointer-events: none` on this container prevents the transparent
+  // area from swallowing grid clicks; the scrollbar tracks and minimap
+  // re-enable pointer events on themselves via `pointer-events: auto`
+  // in their CSS classes.
+  // Note: this overlay does NOT wrap the TransformWrapper — the
+  // TransformWrapper is a separate child of `stage` so its pointer
+  // events remain fully intact.
+  const overlayFrameStyle = useMemo(
+    () => ({
+      position: 'absolute' as const,
+      inset: 0,
+      pointerEvents: 'none' as const,
+    }),
+    [],
   );
   // Shell maxHeight override — only set when the soft keyboard is open
   // (see the keyboard-avoidance effect above). Inline so React mutates
@@ -911,6 +955,15 @@ export function Grid({
         style={shellInlineStyle}
         data-testid="grid-shell"
       >
+      {/*
+        stage: same width/aspect-ratio as the grid, `position: relative`,
+        so the absolutely-positioned overlayFrame (and its scrollbar /
+        minimap children) resolve their `inset: 0` against the grid's
+        bounding box rather than the full gridShell. The stage replaces
+        the `margin: 0 auto` on transformWrapperStyle as the centering
+        box inside the flex shell.
+      */}
+      <div style={stageStyle}>
       <TransformWrapper
         ref={transformWrapperRef}
         minScale={1}
@@ -1037,42 +1090,54 @@ export function Grid({
                 </div>
               ))}
             </div>
-            {isZoomedIn && gridFramePx.width > 0 && gridFramePx.height > 0 && (
-              <>
-                <GridScrollbar
-                  orientation="vertical"
-                  transformRef={transformWrapperRef}
-                  scale={transformState.scale}
-                  positionX={transformState.positionX}
-                  positionY={transformState.positionY}
-                  contentWidth={gridFramePx.width}
-                  contentHeight={gridFramePx.height}
-                />
-                <GridScrollbar
-                  orientation="horizontal"
-                  transformRef={transformWrapperRef}
-                  scale={transformState.scale}
-                  positionX={transformState.positionX}
-                  positionY={transformState.positionY}
-                  contentWidth={gridFramePx.width}
-                  contentHeight={gridFramePx.height}
-                />
-                <GridMinimap
-                  puzzle={puzzle}
-                  validatedPositions={validatedPositions ?? new Set()}
-                  transformRef={transformWrapperRef}
-                  scale={transformState.scale}
-                  positionX={transformState.positionX}
-                  positionY={transformState.positionY}
-                  contentWidth={gridFramePx.width}
-                  contentHeight={gridFramePx.height}
-                />
-              </>
-            )}
           </div>
         </TransformComponent>
       </TransformWrapper>
-      </div>
+      {/*
+        overlayFrame: `position: absolute; inset: 0` div that covers the
+        full stage area (the grid's bounding box). Scrollbar tracks and minimap
+        are `position: absolute` children positioned at the grid's edges. This
+        frame sits OUTSIDE the TransformComponent so the overlays bypass the
+        library's `overflow: hidden` wrapper and are NOT subject to the CSS
+        transform scaling. `pointer-events: none` on the frame ensures the
+        transparent area does not intercept grid clicks; the scrollbar tracks
+        and minimap re-enable pointer events on themselves via
+        `pointer-events: auto` in their CSS classes.
+      */}
+      {isZoomedIn && gridFramePx.width > 0 && gridFramePx.height > 0 && (
+        <div style={overlayFrameStyle}>
+          <GridScrollbar
+            orientation="vertical"
+            transformRef={transformWrapperRef}
+            scale={transformState.scale}
+            positionX={transformState.positionX}
+            positionY={transformState.positionY}
+            contentWidth={gridFramePx.width}
+            contentHeight={gridFramePx.height}
+          />
+          <GridScrollbar
+            orientation="horizontal"
+            transformRef={transformWrapperRef}
+            scale={transformState.scale}
+            positionX={transformState.positionX}
+            positionY={transformState.positionY}
+            contentWidth={gridFramePx.width}
+            contentHeight={gridFramePx.height}
+          />
+          <GridMinimap
+            puzzle={puzzle}
+            validatedPositions={validatedPositions ?? new Set()}
+            transformRef={transformWrapperRef}
+            scale={transformState.scale}
+            positionX={transformState.positionX}
+            positionY={transformState.positionY}
+            contentWidth={gridFramePx.width}
+            contentHeight={gridFramePx.height}
+          />
+        </div>
+      )}
+      </div>{/* stage */}
+      </div>{/* gridShell */}
       <GridZoomControls
         canZoomIn={!isMaxZoom}
         canZoomOut={isZoomedIn}

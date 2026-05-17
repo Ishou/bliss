@@ -24,6 +24,10 @@ const minimapContainer = css({
   touchAction: 'none',
   cursor: 'crosshair',
   transition: 'opacity 150ms ease',
+  // Re-enable pointer events: the overlayFrame wrapper sets
+  // `pointer-events: none` on the containing block so transparent
+  // areas don't swallow grid clicks; the minimap itself must respond.
+  pointerEvents: 'auto',
   '@media (max-width: 480px)': {
     width: `${MINIMAP_SIZE_MOBILE_PX}px`,
     height: `${MINIMAP_SIZE_MOBILE_PX}px`,

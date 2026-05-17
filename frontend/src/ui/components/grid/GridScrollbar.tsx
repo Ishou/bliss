@@ -10,6 +10,11 @@ const trackBase = css({
   position: 'absolute',
   bg: 'rgba(212, 204, 184, 0.15)',
   touchAction: 'none',
+  // Re-enable pointer events: the overlayFrame wrapper that contains
+  // this track sets `pointer-events: none` so its transparent area
+  // doesn't swallow grid clicks. The track itself must respond to
+  // pointer gestures for drag-scrolling to work.
+  pointerEvents: 'auto',
 });
 
 const trackVertical = css({
