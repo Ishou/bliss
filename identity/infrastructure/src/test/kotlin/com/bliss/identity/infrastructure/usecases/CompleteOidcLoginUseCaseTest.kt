@@ -271,4 +271,19 @@ class CompleteOidcLoginUseCaseTest {
                 .isInstanceOf(OidcVerificationError.InvalidSignature::class)
             assertThat(bundle.attempts.findByState(state)).isNull()
         }
+
+    @Test
+    fun `exchange failure after attempt is consumed propagates the error`() =
+        runTest {
+            val attempts = InMemoryAuthAttemptRepository()
+            attempts.create(attempt())
+            val failingExchanger =
+                OidcCodeExchanger { _, _, _, _ ->
+                    throw RuntimeException("token endpoint unreachable")
+                }
+            val (sut, bundle) = newUseCase(attempts = attempts, codeExchanger = failingExchanger)
+            assertFailure { sut.execute(CompleteOidcLoginCommand(state.value, "code-1")) }
+                .isInstanceOf(RuntimeException::class)
+            assertThat(bundle.attempts.findByState(state)).isNull()
+        }
 }
