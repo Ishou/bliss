@@ -8,18 +8,18 @@ data class UpdateMeCommand(
     val userId: UserId,
     val displayName: String?,
     /** Intentionally a no-op in v1 — storage model + OIDC re-prompt design deferred. */
-    @Suppress("unused")
     val emailOptIn: Boolean? = null,
 )
 
 sealed class UpdateMeError(
     message: String,
-) : RuntimeException(message) {
+    cause: Throwable? = null,
+) : RuntimeException(message, cause) {
     class UserNotFound : UpdateMeError("User does not exist.")
 
     class InvalidDisplayName(
-        cause: String,
-    ) : UpdateMeError(cause)
+        cause: Throwable,
+    ) : UpdateMeError("Invalid display name: ${cause.message}", cause)
 }
 
 class UpdateMeUseCase(
@@ -31,7 +31,7 @@ class UpdateMeUseCase(
         command.displayName?.let { raw ->
             val name =
                 runCatching { DisplayName.of(raw) }
-                    .getOrElse { e -> throw UpdateMeError.InvalidDisplayName(e.message ?: "Invalid display name.") }
+                    .getOrElse { e -> throw UpdateMeError.InvalidDisplayName(e) }
             users.updateDisplayName(command.userId, name)
         }
     }

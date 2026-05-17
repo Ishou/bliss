@@ -99,7 +99,8 @@ class InMemoryUserRepositoryTest {
     fun `updateDisplayName is a no-op for an unknown user`() =
         runTest {
             val repo = InMemoryUserRepository()
-            repo.updateDisplayName(UserId(UUID.randomUUID()), DisplayName.of("Ghost"))
-            // No throw, no row created.
+            val unknownId = UserId(UUID.randomUUID())
+            repo.updateDisplayName(unknownId, DisplayName.of("Ghost"))
+            assertThat(repo.findById(unknownId)).isNull()
         }
 }
