@@ -11,7 +11,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.sql.ResultSet
 import java.sql.Types
-import java.time.Instant
+import java.time.OffsetDateTime
+import java.time.ZoneOffset
+import java.time.temporal.ChronoUnit
 import java.util.UUID
 import javax.sql.DataSource
 
@@ -35,7 +37,7 @@ class PostgresUserProviderRepository(
                     } else {
                         stmt.setNull(4, Types.VARCHAR)
                     }
-                    stmt.setObject(5, userProvider.linkedAt)
+                    stmt.setObject(5, userProvider.linkedAt.truncatedTo(ChronoUnit.MICROS).atOffset(ZoneOffset.UTC))
                     stmt.executeUpdate()
                 }
             }
@@ -85,7 +87,7 @@ class PostgresUserProviderRepository(
             provider = getString("provider").toProvider(),
             subject = Subject.of(getString("subject")),
             emailAtLink = getString("email_at_link"),
-            linkedAt = getObject("linked_at", Instant::class.java),
+            linkedAt = getObject("linked_at", OffsetDateTime::class.java).toInstant(),
         )
 
     companion object {
