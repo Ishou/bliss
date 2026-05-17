@@ -48,6 +48,53 @@ No other module imports nimbus-jose-jwt. The `domain/` and
 `application/` layers remain dependency-free; only the port interfaces
 cross the layer boundary.
 
+## Threat Model
+
+The following threats are specific to the nimbus-jose-jwt implementation
+layer. Protocol-level threats (session theft, token replay, redirect
+fixation, account-linking abuse) are covered in ADR-0044's threat model
+and are not duplicated here.
+
+**Algorithm confusion (alg:none / HMAC substitution)** — nimbus-jose-jwt
+accepts any algorithm by default if the verifier is not constrained.
+An attacker who can supply a crafted token with `"alg": "none"` or swap
+an asymmetric algorithm for HMAC could forge signatures against naive
+configurations. Mitigation: `JoseOidcVerifier` pins the accepted
+algorithm per IDP at construction time — RS256 for Google (RSA + SHA-256
+from Google's JWKS) and ES256 for Apple (EC + SHA-256 from Apple's JWKS)
+— and passes only the pinned `JWSAlgorithm` to the verifier. Tokens
+whose header carries any other algorithm are rejected before the
+signature is checked. The same pinning applies to
+`AppleClientAssertionSigner`, which signs exclusively with ES256.
+
+**JWKS endpoint unavailability (fail-open risk)** — the automatic-refresh
+`RemoteJWKSet` client is a benefit for key rotation but introduces an
+availability dependency. If the JWKS endpoint is unreachable or returns
+an unexpected payload, the verifier must not fall back to accepting
+unsigned or previously cached tokens beyond the configured TTL.
+Mitigation: `JoseOidcVerifier` constructs `RemoteJWKSet` with a finite
+cache TTL and no fail-open override. When the endpoint is unreachable and
+the cache is empty or expired, `JoseOidcVerifier` propagates the
+exception, causing the verification port to return a failure — the
+caller (identity-application) treats any non-success as
+unauthenticated. This is fail-closed: a JWKS outage degrades
+availability, not security.
+
+**`DefaultJWTClaimsVerifier` misconfiguration (widened claim set)** —
+nimbus-jose-jwt's `DefaultJWTClaimsVerifier` accepts a map of exact
+claims to match; omitting a claim from that map means it is not
+validated. An incorrectly configured verifier could accept tokens from
+unexpected issuers or with a mismatched audience. Mitigation: the
+implementation PR must pass all four required claims explicitly:
+`iss` (IDP issuer URL), `aud` (registered client ID), and `exp`
+(expiry, validated automatically) are exact-match; `nonce` is verified
+against the server-side value stored during the authorization request
+(see ADR-0044). No optional or additional claims are accepted as
+substitutes. This is enforced via the `DefaultJWTClaimsVerifier`
+constructor overload that takes both a required-claim set and an
+exact-match map, leaving the prohibited-claim set empty (no claims
+are silently ignored).
+
 ## Consequences
 
 **Easier:**
