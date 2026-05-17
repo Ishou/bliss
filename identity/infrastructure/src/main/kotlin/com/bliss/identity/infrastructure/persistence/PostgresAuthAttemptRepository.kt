@@ -12,7 +12,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.sql.ResultSet
 import java.sql.Types
-import java.time.Instant
+import java.time.OffsetDateTime
+import java.time.ZoneOffset
+import java.time.temporal.ChronoUnit
 import java.util.UUID
 import javax.sql.DataSource
 
@@ -39,7 +41,7 @@ class PostgresAuthAttemptRepository(
                     } else {
                         stmt.setNull(6, Types.OTHER)
                     }
-                    stmt.setObject(7, attempt.expiresAt)
+                    stmt.setObject(7, attempt.expiresAt.truncatedTo(ChronoUnit.MICROS).atOffset(ZoneOffset.UTC))
                     stmt.executeUpdate()
                 }
             }
@@ -74,7 +76,7 @@ class PostgresAuthAttemptRepository(
             provider = getString("provider").toProvider(),
             returnTo = getString("return_to"),
             linkToUserId = linkToUserIdRaw?.let { UserId(it) },
-            expiresAt = getObject("expires_at", Instant::class.java),
+            expiresAt = getObject("expires_at", OffsetDateTime::class.java).toInstant(),
         )
     }
 

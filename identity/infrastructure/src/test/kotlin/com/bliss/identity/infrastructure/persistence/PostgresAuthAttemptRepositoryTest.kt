@@ -143,7 +143,7 @@ class PostgresAuthAttemptRepositoryTest {
         }
 
     @Test
-    fun `linking-mode null link_to_user_id round-trips`() =
+    fun `null link_to_user_id round-trips for a sign-in attempt`() =
         runTest {
             val a = attempt(linkTo = null)
             repo.create(a)
