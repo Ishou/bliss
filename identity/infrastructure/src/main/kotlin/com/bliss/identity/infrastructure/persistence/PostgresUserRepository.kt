@@ -8,6 +8,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.sql.ResultSet
 import java.time.Instant
+import java.time.OffsetDateTime
+import java.time.ZoneOffset
 import java.time.temporal.ChronoUnit
 import java.util.UUID
 import javax.sql.DataSource
@@ -26,8 +28,8 @@ class PostgresUserRepository(
                 conn.prepareStatement(INSERT_SQL).use { stmt ->
                     stmt.setObject(1, user.id.value)
                     stmt.setString(2, user.displayName.value)
-                    stmt.setObject(3, user.createdAt.truncatedTo(ChronoUnit.MICROS))
-                    stmt.setObject(4, user.lastSeenAt.truncatedTo(ChronoUnit.MICROS))
+                    stmt.setObject(3, user.createdAt.truncatedTo(ChronoUnit.MICROS).atOffset(ZoneOffset.UTC))
+                    stmt.setObject(4, user.lastSeenAt.truncatedTo(ChronoUnit.MICROS).atOffset(ZoneOffset.UTC))
                     stmt.executeUpdate()
                 }
             }
@@ -50,7 +52,7 @@ class PostgresUserRepository(
         withContext(Dispatchers.IO) {
             dataSource.connection.use { conn ->
                 conn.prepareStatement(UPDATE_LAST_SEEN_SQL).use { stmt ->
-                    stmt.setObject(1, at.truncatedTo(ChronoUnit.MICROS))
+                    stmt.setObject(1, at.truncatedTo(ChronoUnit.MICROS).atOffset(ZoneOffset.UTC))
                     stmt.setObject(2, id.value)
                     stmt.executeUpdate()
                 }
@@ -79,8 +81,8 @@ class PostgresUserRepository(
         User(
             id = UserId(getObject("user_id", UUID::class.java)),
             displayName = DisplayName.of(getString("display_name")),
-            createdAt = getObject("created_at", Instant::class.java),
-            lastSeenAt = getObject("last_seen_at", Instant::class.java),
+            createdAt = getObject("created_at", OffsetDateTime::class.java).toInstant(),
+            lastSeenAt = getObject("last_seen_at", OffsetDateTime::class.java).toInstant(),
         )
 
     companion object {
