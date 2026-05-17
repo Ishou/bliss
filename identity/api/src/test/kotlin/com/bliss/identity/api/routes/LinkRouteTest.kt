@@ -77,7 +77,12 @@ class LinkRouteTest {
             clientAuth = ClientAuth.Secret("g-secret"),
         )
 
-    private fun newWiring(): Wiring {
+    private data class WiringFixture(
+        val wiring: Wiring,
+        val attempts: InMemoryAuthAttemptRepository,
+    )
+
+    private fun newWiring(): WiringFixture {
         val users = InMemoryUserRepository()
         val sessions = InMemorySessionRepository()
         runBlocking {
@@ -88,22 +93,26 @@ class LinkRouteTest {
         val state = State.of("test-state-aaaabbbbccccddddeeeeffffgggghhhh")
         val pkce = PkceVerifier.of("test-pkce-verifier-abcdefghijklmnopqrstuvwxyz0123456")
         val attemptId = UUID.fromString("01890c5e-0000-7000-8000-00000000aa01")
+        val attempts = InMemoryAuthAttemptRepository()
         val beginOidcLogin =
             BeginOidcLoginUseCase(
                 configSource = StaticOidcProviderConfigSource(mapOf(Provider.GOOGLE to googleConfig)),
                 randomFactory = FixedRandomFactory(states = listOf(state), pkceVerifiers = listOf(pkce)),
                 idGenerator = FixedIdGenerator(authAttemptIds = listOf(attemptId)),
-                attempts = InMemoryAuthAttemptRepository(),
+                attempts = attempts,
                 clock = FixedClock(now),
                 attemptTtl = Duration.ofMinutes(5),
             )
-        return Wiring.forTesting(beginOidcLogin = beginOidcLogin, whoAmI = whoAmI)
+        return WiringFixture(
+            wiring = Wiring.forTesting(beginOidcLogin = beginOidcLogin, whoAmI = whoAmI),
+            attempts = attempts,
+        )
     }
 
     @Test
     fun `no cookie returns 401`() =
         testApplication {
-            application { module(newWiring(), testConfig) }
+            application { module(newWiring().wiring, testConfig) }
             val response =
                 client.post("/v1/users/me/providers/google/link") {
                     contentType(ContentType.Application.Json)
@@ -115,7 +124,7 @@ class LinkRouteTest {
     @Test
     fun `unknown provider returns 400`() =
         testApplication {
-            application { module(newWiring(), testConfig) }
+            application { module(newWiring().wiring, testConfig) }
             val response =
                 client.post("/v1/users/me/providers/facebook/link") {
                     cookie(SessionCookies.NAME, sessionId.value.toString())
@@ -128,7 +137,7 @@ class LinkRouteTest {
     @Test
     fun `missing body returns 400`() =
         testApplication {
-            application { module(newWiring(), testConfig) }
+            application { module(newWiring().wiring, testConfig) }
             val response =
                 client.post("/v1/users/me/providers/google/link") {
                     cookie(SessionCookies.NAME, sessionId.value.toString())
@@ -140,7 +149,7 @@ class LinkRouteTest {
     @Test
     fun `disallowed returnTo returns 400`() =
         testApplication {
-            application { module(newWiring(), testConfig) }
+            application { module(newWiring().wiring, testConfig) }
             val response =
                 client.post("/v1/users/me/providers/google/link") {
                     cookie(SessionCookies.NAME, sessionId.value.toString())
@@ -153,7 +162,8 @@ class LinkRouteTest {
     @Test
     fun `valid request returns 200 with authorizeUrl`() =
         testApplication {
-            application { module(newWiring(), testConfig) }
+            val fixture = newWiring()
+            application { module(fixture.wiring, testConfig) }
             val response =
                 client.post("/v1/users/me/providers/google/link") {
                     cookie(SessionCookies.NAME, sessionId.value.toString())
@@ -164,5 +174,8 @@ class LinkRouteTest {
             val body = response.bodyAsText()
             assertThat(body).contains("authorizeUrl")
             assertThat(body).contains("accounts.google.com")
+            val state = State.of("test-state-aaaabbbbccccddddeeeeffffgggghhhh")
+            val attempt = runBlocking { fixture.attempts.findByState(state) }
+            assertThat(attempt?.linkToUserId).isEqualTo(userId)
         }
 }
