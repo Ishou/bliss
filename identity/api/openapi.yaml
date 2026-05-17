@@ -120,6 +120,7 @@ paths:
             Location: { schema: { type: string, format: uri } }
         '400': { $ref: '#/components/responses/ProblemDetails' }
         '409': { $ref: '#/components/responses/ProblemDetails' }
+        '500': { $ref: '#/components/responses/ProblemDetails' }
         '503': { $ref: '#/components/responses/ProblemDetails' }
 
   /v1/auth/whoami:
