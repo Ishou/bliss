@@ -51,6 +51,11 @@ class Wiring private constructor(
     val updateMe: UpdateMeUseCase get() = require(_updateMe, "UpdateMeUseCase")
     val deleteUser: DeleteUserUseCase get() = require(_deleteUser, "DeleteUserUseCase")
 
+    // Nullable peek accessors so Module.kt can mount only the routes whose use case is wired,
+    // letting tests supply a slim Wiring.forTesting(...) for the route under test.
+    internal val beginOidcLoginOrNull: BeginOidcLoginUseCase? get() = _beginOidcLogin
+    internal val whoAmIOrNull: WhoAmIUseCase? get() = _whoAmI
+
     private fun <T : Any> require(
         value: T?,
         name: String,
