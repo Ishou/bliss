@@ -18,10 +18,7 @@ import io.ktor.server.routing.post
 import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.json.Json
 
-// POST /v1/users/me/providers/{provider}/link — ADR-0044. Auth-gated; passes
-// the current user as linkToUserId to BeginOidcLoginUseCase so the eventual
-// callback (PR 4i) dispatches into CompleteProviderLinkUseCase. Returns the
-// IdP authorize URL; the frontend navigates the browser to it.
+// linkToUserId non-null distinguishes linking from plain login at callback dispatch time (ADR-0044).
 fun Route.link(
     beginOidcLogin: BeginOidcLoginUseCase,
     whoAmI: WhoAmIUseCase,
