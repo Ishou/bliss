@@ -642,3 +642,146 @@ The durable fix is to wire the chart's `envFrom` directly to CNPG's
 manual pass-2 swap. Tracked as a follow-up PR against
 `grid/api/deploy/chart/`.
 
+
+# Identity service bootstrap (one-time)
+
+Run before the first identity-api deploy. The identity context
+(ADR-0044, ADR-0045) needs three external setup items before the
+chart can reach `Ready=True`:
+
+1. OIDC client registrations at Google + Apple — these issue the
+   client IDs/secrets the identity-api uses for sign-in.
+2. `bliss-identity-api-env` Secret carrying those credentials plus
+   the identity API's public host (`COOKIE_DOMAIN` — used for redirect
+   URIs, not a cookie `Domain` attribute) and the return-origin allow-list.
+3. GHCR package `bliss/wordsparrow-identity-api` flipped to PUBLIC
+   (one-time visibility change after the first main push creates
+   the package — see `.github/workflows/build-and-push-image.yml`).
+
+The DB connection (`IDENTITY_DATABASE_URL`) is *not* in the env
+Secret. The chart's deployment template sources it from the
+CNPG-managed `wordsparrow-identity-api-pg-app` Secret via
+`secretKeyRef.key: uri` (see `identity/api/deploy/chart/templates/
+deployment.yaml`), so no two-pass swap is needed — unlike
+`wordsparrow-api-env` for grid.
+
+> **Prerequisite — Phase 4 IP masking:** ADR-0045 §Persisted columns
+> prohibits running `identity-api` in production until the Phase 4 OTel
+> collector-config patch for collector-layer IP masking is deployed.
+> Confirm that patch is live before completing §5's production smoke test.
+
+## 1. Register the Google OIDC client
+
+In Google Cloud Console (<https://console.cloud.google.com>):
+
+1. Create or select a project (e.g. "WordSparrow Production").
+2. **APIs & Services → OAuth consent screen**: External; app name
+   "WordSparrow"; support email; scopes `openid` only (per
+   ADR-0045 no email/profile/name — we keep PII out of our store).
+3. **Credentials → Create credentials → OAuth client ID → Web
+   application**:
+   - Name: "WordSparrow Identity API".
+   - Authorized redirect URIs:
+     `https://auth.wordsparrow.io/v1/auth/google/callback`.
+4. Note the **Client ID** + **Client secret** for step 3 below.
+
+## 2. Register the Apple OIDC client
+
+In Apple Developer (<https://developer.apple.com>):
+
+1. **Certificates, Identifiers & Profiles → Identifiers**:
+   register a new **Services ID** (e.g.
+   `io.wordsparrow.auth`). Enable **Sign in with Apple**:
+   - Primary App ID: bind to an existing App ID (create one if
+     needed; Sign in with Apple must be enabled on the App ID
+     first).
+   - Domains and Subdomains: `auth.wordsparrow.io`.
+   - Return URLs:
+     `https://auth.wordsparrow.io/v1/auth/apple/callback`.
+2. **Keys → register a new key**: name "WordSparrow Identity",
+   enable **Sign in with Apple**, bind to the same primary App
+   ID. Download the `.p8` private key — Apple shows it once. Note
+   the **Key ID** from the key's detail page.
+3. Note the **Team ID** (Account → Membership) and **Services
+   ID** (= the client ID; the value chosen in step 1).
+
+Per-callback path the identity-api expects: Apple uses
+`response_mode=form_post`, so the callback is `POST
+/v1/auth/apple/callback`. Both URLs above are kept lockstep with
+`identity/api/openapi.yaml` and the route handlers; do not change
+without a schema-PR + redeploy.
+
+## 3. Bootstrap `bliss-identity-api-env`
+
+The chart's `values-prod.yaml` carries `envFromSecret:
+"bliss-identity-api-env"`. The Secret holds the OIDC client config
+gathered in steps 1 + 2, plus the identity API's public host (used to
+build OIDC redirect URIs — not a cookie `Domain` attribute; the
+`__Host-` prefix forbids that) and the return-origin allow-list. Run
+from a workstation with `KUBECONFIG` pointed at the prod cluster:
+
+```sh
+# Save the Apple .p8 alongside this command (download from step 2).
+# The PEM contents are passed as-is; multi-line values work.
+kubectl create namespace wordsparrow || true
+kubectl -n wordsparrow create secret generic bliss-identity-api-env \
+  --from-literal=COOKIE_DOMAIN="auth.wordsparrow.io" \
+  --from-literal=ALLOWED_RETURN_ORIGINS="https://wordsparrow.io,https://www.wordsparrow.io" \
+  --from-literal=GOOGLE_OAUTH_CLIENT_ID="<client id from §1>" \
+  --from-literal=GOOGLE_OAUTH_CLIENT_SECRET="<client secret from §1>" \
+  --from-literal=APPLE_SERVICE_ID="<services id from §2>" \
+  --from-literal=APPLE_TEAM_ID="<team id from §2>" \
+  --from-literal=APPLE_KEY_ID="<key id from §2>" \
+  --from-literal=APPLE_PRIVATE_KEY_PEM="$(cat AuthKey_XXXXXXXXXX.p8)"
+```
+
+Rotating a credential later is the same command with
+`--dry-run=client -o yaml | kubectl apply -f -` + a
+`kubectl rollout restart deployment/wordsparrow-identity-api`.
+
+## 4. Flip the GHCR package to PUBLIC
+
+The first main push that builds `wordsparrow-identity-api`
+creates the GHCR package as PRIVATE. The cluster pulls anonymously
+(no `imagePullSecret`), so the package must be public before the
+first deploy can succeed.
+
+Visit
+<https://github.com/users/Ishou/packages/container/bliss%2Fwordsparrow-identity-api/settings>,
+scroll to **Danger Zone → Change package visibility**, select
+**Public**, confirm. This is a one-time step per package.
+
+## 5. Verify
+
+```sh
+kubectl -n wordsparrow get secret bliss-identity-api-env
+kubectl -n wordsparrow get cluster wordsparrow-identity-api-pg \
+  -o jsonpath='{.status.phase}{"\n"}'   # "Cluster in healthy state"
+kubectl -n wordsparrow rollout status deployment/wordsparrow-identity-api
+curl -fsS https://auth.wordsparrow.io/v1/health
+```
+
+Then visit <https://auth.wordsparrow.io/v1/auth/google/login?return_to=https://wordsparrow.io/>
+in a browser to drive the end-to-end sign-in. A successful flow
+ends with the browser at `https://wordsparrow.io/` carrying a
+`__Host-ws_session` cookie (DevTools → Application → Cookies).
+
+## Troubleshooting (identity)
+
+- **`ImagePullBackOff` on the identity pod**: the GHCR package is
+  still private. Complete §4.
+- **Pod stuck `CreateContainerConfigError` referencing
+  `bliss-identity-api-env`**: §3 wasn't run. Create the Secret
+  and the pod recovers on its next sync.
+- **OIDC callback returns 400 `invalid_state`**: the cluster's
+  attempts repo expired the state (TTL 5 min). User retries.
+- **OIDC callback returns 503 `upstream_error`**: token-exchange
+  or JWKS fetch failed. Check identity-api logs for the upstream
+  error; common causes are clock skew (>5 min off NTP) or a
+  rotated Apple key not yet propagated.
+- **Browser blocks `__Host-ws_session` cookie**: the cookie's
+  `__Host-` prefix forbids the `Domain` attribute (RFC 6265bis
+  §4.1.3); the chart never sets one. If the cookie is missing
+  from DevTools, check the response is served over HTTPS (the
+  prefix also requires `Secure`).
+
