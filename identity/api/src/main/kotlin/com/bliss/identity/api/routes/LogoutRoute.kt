@@ -10,7 +10,6 @@ import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.post
 
-// POST /v1/auth/logout — auth-gated; revokes the session and clears the __Host-ws_session cookie.
 // WhoAmIResult does not expose sessionId; the cookie value (a UUID) is the session id by design.
 fun Route.logout(
     logout: LogoutUseCase,
