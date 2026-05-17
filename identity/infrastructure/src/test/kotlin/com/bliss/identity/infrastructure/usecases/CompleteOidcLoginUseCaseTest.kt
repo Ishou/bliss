@@ -7,6 +7,7 @@ import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotNull
 import assertk.assertions.isNull
 import assertk.assertions.isTrue
+import com.bliss.identity.application.ports.ClientAuth
 import com.bliss.identity.application.ports.OidcCodeExchanger
 import com.bliss.identity.application.ports.OidcExchangeResult
 import com.bliss.identity.application.ports.OidcProviderConfig
@@ -60,6 +61,7 @@ class CompleteOidcLoginUseCaseTest {
             jwksUri = "https://www.googleapis.com/oauth2/v3/certs",
             redirectUri = "https://auth.wordsparrow.io/v1/auth/google/callback",
             responseMode = OidcResponseMode.QUERY,
+            clientAuth = ClientAuth.Secret("test-secret"),
         )
 
     private fun attempt(linkTo: UserId? = null): AuthAttempt =

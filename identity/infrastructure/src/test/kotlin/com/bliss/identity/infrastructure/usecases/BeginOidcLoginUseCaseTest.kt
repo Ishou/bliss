@@ -5,6 +5,7 @@ import assertk.assertions.contains
 import assertk.assertions.isEqualTo
 import assertk.assertions.isNotNull
 import assertk.assertions.startsWith
+import com.bliss.identity.application.ports.ClientAuth
 import com.bliss.identity.application.ports.OidcProviderConfig
 import com.bliss.identity.application.ports.OidcResponseMode
 import com.bliss.identity.application.usecases.BeginOidcLoginCommand
@@ -43,6 +44,7 @@ class BeginOidcLoginUseCaseTest {
             jwksUri = "https://www.googleapis.com/oauth2/v3/certs",
             redirectUri = "https://auth.wordsparrow.io/v1/auth/google/callback",
             responseMode = OidcResponseMode.QUERY,
+            clientAuth = ClientAuth.Secret("test-secret"),
         )
     private val appleConfig =
         googleConfig.copy(

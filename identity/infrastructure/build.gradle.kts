@@ -1,7 +1,10 @@
 plugins {
     kotlin("jvm")
+    kotlin("plugin.serialization") version "2.3.21"
     `java-test-fixtures`
 }
+
+val ktorVersion = "3.4.3"
 
 kotlin {
     jvmToolchain(21)
@@ -18,6 +21,13 @@ dependencies {
 
     // JOSE/JWT: ID-token verification and Apple client-assertion signing (ADR-0046).
     implementation("com.nimbusds:nimbus-jose-jwt:9.40")
+
+    // Ktor HTTP client — token-endpoint code exchange (ADR-0006).
+    implementation("io.ktor:ktor-client-core:$ktorVersion")
+    implementation("io.ktor:ktor-client-cio:$ktorVersion")
+    implementation("io.ktor:ktor-client-content-negotiation:$ktorVersion")
+    implementation("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
 
     implementation("org.postgresql:postgresql:42.7.11")
     implementation("com.zaxxer:HikariCP:7.0.2")
@@ -40,6 +50,8 @@ dependencies {
     testImplementation("org.testcontainers:testcontainers:$testcontainersVersion")
     testImplementation("org.testcontainers:junit-jupiter:$testcontainersVersion")
     testImplementation("org.testcontainers:postgresql:$testcontainersVersion")
+
+    testImplementation("io.ktor:ktor-client-mock:$ktorVersion")
 }
 
 tasks.test {

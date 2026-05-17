@@ -4,6 +4,7 @@ import com.bliss.identity.application.ports.AuthAttemptRepository
 import com.bliss.identity.application.ports.Clock
 import com.bliss.identity.application.ports.IdGenerator
 import com.bliss.identity.application.ports.OidcCodeExchanger
+import com.bliss.identity.application.ports.OidcExchangeError
 import com.bliss.identity.application.ports.OidcProviderConfigSource
 import com.bliss.identity.application.ports.SessionRepository
 import com.bliss.identity.application.ports.UserProviderRepository
@@ -65,12 +66,16 @@ class CompleteOidcLoginUseCase(
 
         val config = configSource.get(attempt.provider)
         val exchange =
-            codeExchanger.exchange(
-                provider = attempt.provider,
-                code = command.code,
-                pkceVerifier = attempt.pkceVerifier,
-                redirectUri = config.redirectUri,
-            )
+            try {
+                codeExchanger.exchange(
+                    provider = attempt.provider,
+                    code = command.code,
+                    pkceVerifier = attempt.pkceVerifier,
+                    redirectUri = config.redirectUri,
+                )
+            } catch (e: OidcExchangeError.TokenEndpointRejected) {
+                throw CompleteOidcLoginError.ExchangeRejected(attempt.provider, e.httpStatus)
+            }
         val verified: OidcIdToken =
             verifier.verify(
                 rawIdToken = exchange.idToken,
