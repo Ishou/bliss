@@ -14,11 +14,7 @@ import java.time.ZoneOffset
 import java.util.UUID
 import javax.sql.DataSource
 
-/**
- * Postgres-backed [SessionRepository]. JDBC is blocking; every method wraps its
- * calls in `withContext(Dispatchers.IO)` to keep the suspend port honest under
- * coroutine scopes (Ktor route handlers run on a limited dispatcher).
- */
+/** Postgres-backed [SessionRepository]; JDBC blocks so every method dispatches on [kotlinx.coroutines.Dispatchers.IO]. */
 class PostgresSessionRepository(
     private val dataSource: DataSource,
 ) : SessionRepository {
@@ -30,8 +26,9 @@ class PostgresSessionRepository(
                     stmt.setObject(2, session.userId.value)
                     stmt.setObject(3, session.createdAt.atOffset(ZoneOffset.UTC))
                     stmt.setObject(4, session.lastSeenAt.atOffset(ZoneOffset.UTC))
-                    if (session.revokedAt != null) {
-                        stmt.setObject(5, session.revokedAt!!.atOffset(ZoneOffset.UTC))
+                    val revokedAt = session.revokedAt
+                    if (revokedAt != null) {
+                        stmt.setObject(5, revokedAt.atOffset(ZoneOffset.UTC))
                     } else {
                         stmt.setNull(5, Types.TIMESTAMP_WITH_TIMEZONE)
                     }

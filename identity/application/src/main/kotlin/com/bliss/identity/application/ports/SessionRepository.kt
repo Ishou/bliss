@@ -10,10 +10,7 @@ interface SessionRepository {
 
     suspend fun findById(id: SessionId): Session?
 
-    /**
-     * Revoke a session. Idempotent: a second call on an already-revoked session is a no-op
-     * (the original `revokedAt` is preserved, not overwritten). No-op for an unknown session id.
-     */
+    /** Revoke a session — idempotent: a second call preserves the original revokedAt; no-op for unknown id. */
     suspend fun revoke(
         id: SessionId,
         at: Instant,
