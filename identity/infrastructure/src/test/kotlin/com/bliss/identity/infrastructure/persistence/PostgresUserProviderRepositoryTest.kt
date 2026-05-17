@@ -1,9 +1,11 @@
 package com.bliss.identity.infrastructure.persistence
 
+import assertk.assertFailure
 import assertk.assertThat
 import assertk.assertions.containsExactlyInAnyOrder
 import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
+import assertk.assertions.isInstanceOf
 import assertk.assertions.isNull
 import com.bliss.identity.domain.provider.Provider
 import com.bliss.identity.domain.provider.Subject
@@ -192,5 +194,30 @@ class PostgresUserProviderRepositoryTest {
             repo.link(userProvider(userId = u.id, provider = Provider.GOOGLE, subject = "g-cascade"))
             userRepo.delete(u.id)
             assertThat(repo.findByProviderAndSubject(Provider.GOOGLE, Subject.of("g-cascade"))).isNull()
+        }
+
+    @Test
+    fun `linking the same provider twice for one user violates the PK`() =
+        runTest {
+            val u = user()
+            userRepo.create(u)
+            val first = userProvider(userId = u.id, provider = Provider.GOOGLE, subject = "g-1")
+            val second = userProvider(userId = u.id, provider = Provider.GOOGLE, subject = "g-2")
+            repo.link(first)
+            assertFailure { repo.link(second) }.isInstanceOf(java.sql.SQLException::class)
+        }
+
+    @Test
+    fun `linking the same provider-subject to a second user violates the UNIQUE constraint`() =
+        runTest {
+            val u1 = user()
+            userRepo.create(u1)
+            val u1Link = userProvider(userId = u1.id, provider = Provider.GOOGLE, subject = "g-1")
+            repo.link(u1Link)
+
+            val otherUserId = UserId(UUID.randomUUID())
+            userRepo.create(User(otherUserId, DisplayName.of("Bob"), now, now))
+            val u2SameSub = userProvider(userId = otherUserId, provider = Provider.GOOGLE, subject = "g-1")
+            assertFailure { repo.link(u2SameSub) }.isInstanceOf(java.sql.SQLException::class)
         }
 }

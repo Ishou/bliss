@@ -10,6 +10,7 @@ import com.bliss.identity.infrastructure.provider.toWire
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.sql.ResultSet
+import java.sql.Types
 import java.time.Instant
 import java.util.UUID
 import javax.sql.DataSource
@@ -29,7 +30,11 @@ class PostgresUserProviderRepository(
                     stmt.setObject(1, userProvider.userId.value)
                     stmt.setString(2, userProvider.provider.toWire())
                     stmt.setString(3, userProvider.subject.value)
-                    stmt.setString(4, userProvider.emailAtLink)
+                    if (userProvider.emailAtLink != null) {
+                        stmt.setString(4, userProvider.emailAtLink)
+                    } else {
+                        stmt.setNull(4, Types.VARCHAR)
+                    }
                     stmt.setObject(5, userProvider.linkedAt)
                     stmt.executeUpdate()
                 }
