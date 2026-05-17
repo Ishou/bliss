@@ -1,9 +1,11 @@
 package com.bliss.identity.infrastructure.persistence
 
+import assertk.assertFailure
 import assertk.assertThat
 import assertk.assertions.containsExactlyInAnyOrder
 import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
+import assertk.assertions.isInstanceOf
 import assertk.assertions.isNull
 import com.bliss.identity.domain.provider.Provider
 import com.bliss.identity.domain.provider.Subject
@@ -87,5 +89,26 @@ class InMemoryUserProviderRepositoryTest {
             repo.deleteForUser(userId)
             assertThat(repo.listForUser(userId)).isEmpty()
             assertThat(repo.listForUser(otherUserId)).containsExactlyInAnyOrder(theirs)
+        }
+
+    @Test
+    fun `linking the same provider twice for one user throws`() =
+        runTest {
+            val repo = InMemoryUserProviderRepository()
+            val first = userProvider(provider = Provider.GOOGLE, subject = "g-1")
+            val second = userProvider(provider = Provider.GOOGLE, subject = "g-2")
+            repo.link(first)
+            assertFailure { repo.link(second) }.isInstanceOf(IllegalStateException::class)
+        }
+
+    @Test
+    fun `linking the same provider-subject to a second user throws`() =
+        runTest {
+            val repo = InMemoryUserProviderRepository()
+            val otherUserId = UserId(UUID.randomUUID())
+            val first = userProvider(user = userId, provider = Provider.GOOGLE, subject = "g-1")
+            val second = userProvider(user = otherUserId, provider = Provider.GOOGLE, subject = "g-1")
+            repo.link(first)
+            assertFailure { repo.link(second) }.isInstanceOf(IllegalStateException::class)
         }
 }
