@@ -29,6 +29,7 @@ class KtorOidcCodeExchanger(
 ) : OidcCodeExchanger {
     private val client =
         HttpClient(engine) {
+            expectSuccess = false // non-2xx handled via explicit status check in exchange()
             install(ContentNegotiation) {
                 json(
                     Json {
