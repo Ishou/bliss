@@ -4,6 +4,7 @@ import com.bliss.identity.application.ports.Clock
 import com.bliss.identity.application.ports.UserDeletedBroadcaster
 import com.bliss.identity.application.ports.UserRepository
 import com.bliss.identity.domain.user.UserId
+import kotlinx.coroutines.CancellationException
 
 data class DeleteUserCommand(
     val userId: UserId,
@@ -30,6 +31,8 @@ class DeleteUserUseCase(
         val now = clock.now()
         try {
             broadcaster.broadcast(command.userId, now)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             throw DeleteUserError.BroadcastFailed(e)
         }
