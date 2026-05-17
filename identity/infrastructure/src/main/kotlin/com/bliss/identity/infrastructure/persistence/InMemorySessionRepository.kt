@@ -20,7 +20,9 @@ class InMemorySessionRepository : SessionRepository {
         id: SessionId,
         at: Instant,
     ) {
-        byId.computeIfPresent(id) { _, existing -> existing.copy(revokedAt = at) }
+        byId.computeIfPresent(id) { _, existing ->
+            if (existing.revokedAt == null) existing.copy(revokedAt = at) else existing
+        }
     }
 
     override suspend fun deleteForUser(userId: UserId) {
