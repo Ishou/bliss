@@ -751,7 +751,7 @@ components:
 
     LobbySummary:
       type: object
-      required: [id, code, state, gridConfig, playerCount, lastActivityAt, progress]
+      required: [id, code, state, gridConfig, playerCount, connectedCount, lastActivityAt, progress]
       description: |
         Compact view of a lobby for the "Mes parties" listing. Carries just
         enough to render a row in the Accueil card (label, code, grid size,
@@ -782,10 +782,25 @@ components:
           minimum: 1
           maximum: 8
           description: |
-            Number of players currently holding a slot. Computed by the
-            adapter so the summary endpoint avoids loading the full player
-            list.
+            Number of players currently holding a slot — the total roster
+            size, including players who are offline right now. Computed by
+            the adapter so the summary endpoint avoids loading the full
+            player list. Contrast with `connectedCount`, which counts only
+            the subset whose WebSocket session is live.
           example: 3
+        connectedCount:
+          type: integer
+          minimum: 0
+          maximum: 8
+          description: |
+            Subset of `playerCount` whose WebSocket session is currently
+            connected. Drives the `X / Y` display on the Accueil "Mes
+            parties" surface where X = connected, Y = `playerCount` (total
+            roster including offline). When the backend has no connection
+            registry signal for a player, that player is treated as
+            disconnected (conservative). Minimum 0; maximum `playerCount`
+            (frontend may clamp defensively but server must enforce).
+          example: 2
         lastActivityAt:
           $ref: '#/components/schemas/Instant'
         progress:

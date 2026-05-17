@@ -500,12 +500,25 @@ export interface components {
             state: components["schemas"]["LobbyLifecycleState"];
             gridConfig: components["schemas"]["GridConfig"];
             /**
-             * @description Number of players currently holding a slot. Computed by the
-             *     adapter so the summary endpoint avoids loading the full player
-             *     list.
+             * @description Number of players currently holding a slot — the total roster
+             *     size, including players who are offline right now. Computed by
+             *     the adapter so the summary endpoint avoids loading the full
+             *     player list. Contrast with `connectedCount`, which counts only
+             *     the subset whose WebSocket session is live.
              * @example 3
              */
             playerCount: number;
+            /**
+             * @description Subset of `playerCount` whose WebSocket session is currently
+             *     connected. Drives the `X / Y` display on the Accueil "Mes
+             *     parties" surface where X = connected, Y = `playerCount` (total
+             *     roster including offline). When the backend has no connection
+             *     registry signal for a player, that player is treated as
+             *     disconnected (conservative). Minimum 0; maximum `playerCount`
+             *     (frontend may clamp defensively but server must enforce).
+             * @example 2
+             */
+            connectedCount: number;
             lastActivityAt: components["schemas"]["Instant"];
             progress: components["schemas"]["LobbyProgress"];
             /**
