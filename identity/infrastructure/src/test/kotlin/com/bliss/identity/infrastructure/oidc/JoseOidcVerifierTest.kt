@@ -16,7 +16,6 @@ import com.nimbusds.jose.jwk.gen.RSAKeyGenerator
 import com.nimbusds.jwt.JWTClaimsSet
 import com.nimbusds.jwt.SignedJWT
 import kotlinx.coroutines.test.runTest
-import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import java.time.Duration
 import java.time.Instant
@@ -47,12 +46,6 @@ class JoseOidcVerifierTest {
 
         private val signer = RSASSASigner(rsaKey)
 
-        @JvmStatic
-        @BeforeAll
-        fun generateKey() {
-            // key is generated at field init above; no additional setup needed.
-        }
-
         private fun signedJwt(
             iss: String = ISS,
             aud: String = AUD,
@@ -77,10 +70,10 @@ class JoseOidcVerifierTest {
             return jwt.serialize()
         }
 
-        private fun makeVerifier(): JoseOidcVerifier {
+        private fun makeVerifier(clock: () -> Instant = Instant::now): JoseOidcVerifier {
             val cache =
                 JwksCache(ttl = Duration.ofMinutes(5)) { _ -> publicJwkSet }
-            return JoseOidcVerifier(cache)
+            return JoseOidcVerifier(cache, clock)
         }
     }
 
@@ -154,6 +147,20 @@ class JoseOidcVerifierTest {
         runTest {
             assertFailure { makeVerifier().verify("not-a-jwt", provider) }
                 .isInstanceOf(OidcVerificationError.Malformed::class)
+        }
+
+    @Test
+    fun `JwksUnavailable thrown when JWKS fetch fails`() =
+        runTest {
+            val failingCache =
+                JwksCache(
+                    ttl = Duration.ofMinutes(5),
+                    fetch = { throw RuntimeException("network down") },
+                )
+            val verifier = JoseOidcVerifier(failingCache)
+            val token = signedJwt()
+            assertFailure { verifier.verify(token, provider) }
+                .isInstanceOf(OidcVerificationError.JwksUnavailable::class)
         }
 
     @Test

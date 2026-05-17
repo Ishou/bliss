@@ -11,6 +11,7 @@ import com.nimbusds.jose.proc.BadJOSEException
 import com.nimbusds.jose.proc.JWSVerificationKeySelector
 import com.nimbusds.jose.proc.SecurityContext
 import com.nimbusds.jwt.JWTClaimsSet
+import com.nimbusds.jwt.SignedJWT
 import com.nimbusds.jwt.proc.BadJWTException
 import com.nimbusds.jwt.proc.DefaultJWTClaimsVerifier
 import com.nimbusds.jwt.proc.DefaultJWTProcessor
@@ -19,6 +20,7 @@ import java.time.Instant
 
 class JoseOidcVerifier(
     private val jwksCache: JwksCache,
+    private val clock: () -> Instant = Instant::now,
 ) : OidcVerifier {
     override suspend fun verify(
         rawIdToken: String,
@@ -48,13 +50,23 @@ class JoseOidcVerifier(
                 setOf("sub", "iat", "exp"),
             )
 
+        val unverifiedExp: Instant? =
+            try {
+                SignedJWT
+                    .parse(rawIdToken)
+                    .jwtClaimsSet.expirationTime
+                    ?.toInstant()
+            } catch (_: ParseException) {
+                null
+            }
+
         val claims =
             try {
                 processor.process(rawIdToken, null)
             } catch (e: ParseException) {
                 throw OidcVerificationError.Malformed(e)
             } catch (e: BadJWTException) {
-                mapBadJwtException(e, provider)
+                mapBadJwtException(e, provider, unverifiedExp)
             } catch (e: BadJOSEException) {
                 throw OidcVerificationError.InvalidSignature()
             } catch (e: Exception) {
@@ -64,12 +76,19 @@ class JoseOidcVerifier(
         val sub = claims.subject ?: throw OidcVerificationError.MissingSubject()
         if (sub.isBlank()) throw OidcVerificationError.MissingSubject()
 
+        val iat =
+            claims.issueTime?.toInstant()
+                ?: throw OidcVerificationError.Malformed(IllegalStateException("Missing iat claim after verification"))
+        val exp =
+            claims.expirationTime?.toInstant()
+                ?: throw OidcVerificationError.Malformed(IllegalStateException("Missing exp claim after verification"))
+
         return OidcIdToken(
             subject = Subject.of(sub),
             issuer = claims.issuer,
             audience = claims.audience.firstOrNull() ?: provider.audience,
-            issuedAt = claims.issueTime?.toInstant() ?: Instant.now(),
-            expiresAt = claims.expirationTime.toInstant(),
+            issuedAt = iat,
+            expiresAt = exp,
             nonce = claims.getStringClaim("nonce"),
         )
     }
@@ -77,11 +96,12 @@ class JoseOidcVerifier(
     private fun mapBadJwtException(
         e: BadJWTException,
         provider: OidcProvider,
+        exp: Instant?,
     ): Nothing {
         val message = e.message ?: ""
         throw when {
             message.contains("expir", ignoreCase = true) ->
-                OidcVerificationError.TokenExpired(Instant.now())
+                OidcVerificationError.TokenExpired(exp ?: clock())
             message.contains(" iss ", ignoreCase = true) || message.startsWith("JWT iss ") ->
                 OidcVerificationError.IssuerMismatch(
                     expected = provider.issuer,
