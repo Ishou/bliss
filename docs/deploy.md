@@ -652,7 +652,8 @@ chart can reach `Ready=True`:
 1. OIDC client registrations at Google + Apple — these issue the
    client IDs/secrets the identity-api uses for sign-in.
 2. `bliss-identity-api-env` Secret carrying those credentials plus
-   the cookie domain + return-origin allow-list.
+   the identity API's public host (`COOKIE_DOMAIN` — used for redirect
+   URIs, not a cookie `Domain` attribute) and the return-origin allow-list.
 3. GHCR package `bliss/wordsparrow-identity-api` flipped to PUBLIC
    (one-time visibility change after the first main push creates
    the package — see `.github/workflows/build-and-push-image.yml`).
