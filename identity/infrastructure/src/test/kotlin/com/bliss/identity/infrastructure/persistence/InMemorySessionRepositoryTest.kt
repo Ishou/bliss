@@ -63,6 +63,19 @@ class InMemorySessionRepositoryTest {
         }
 
     @Test
+    fun `revoke is idempotent — second call preserves the original revokedAt`() =
+        runTest {
+            val repo = InMemorySessionRepository()
+            val s = session()
+            repo.create(s)
+            val firstRevoke = now.plusSeconds(60)
+            val secondRevoke = now.plusSeconds(120)
+            repo.revoke(s.id, firstRevoke)
+            repo.revoke(s.id, secondRevoke)
+            assertThat(repo.findById(s.id)?.revokedAt).isEqualTo(firstRevoke)
+        }
+
+    @Test
     fun `deleteForUser removes every session for the user`() =
         runTest {
             val repo = InMemorySessionRepository()
