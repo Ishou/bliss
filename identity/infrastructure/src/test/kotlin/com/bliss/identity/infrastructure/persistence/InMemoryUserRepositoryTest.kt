@@ -81,7 +81,7 @@ class InMemoryUserRepositoryTest {
             val repo = InMemoryUserRepository()
             val u = user()
             repo.create(u)
-            repo.create(u)
+            repo.create(u.copy(displayName = DisplayName.of("Updated")))
             assertThat(repo.findById(u.id)).isEqualTo(u)
         }
 }
