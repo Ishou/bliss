@@ -6,7 +6,6 @@ import com.bliss.identity.domain.session.SessionId
 import com.bliss.identity.domain.user.UserId
 import java.util.UUID
 
-// Mirrors com.bliss.identity.application.testdoubles.FixedIdGenerator. See FixedClock for the rationale.
 class FixedIdGenerator(
     userIds: List<UUID> = emptyList(),
     sessionIds: List<UUID> = emptyList(),

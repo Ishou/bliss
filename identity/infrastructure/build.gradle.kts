@@ -1,5 +1,6 @@
 plugins {
     kotlin("jvm")
+    `java-test-fixtures`
 }
 
 kotlin {
@@ -9,6 +10,9 @@ kotlin {
 dependencies {
     implementation(project(":identity:domain"))
     implementation(project(":identity:application"))
+
+    testFixturesImplementation(project(":identity:domain"))
+    testFixturesImplementation(project(":identity:application"))
 
     testImplementation(platform("org.junit:junit-bom:5.11.4"))
     testImplementation("org.junit.jupiter:junit-jupiter")

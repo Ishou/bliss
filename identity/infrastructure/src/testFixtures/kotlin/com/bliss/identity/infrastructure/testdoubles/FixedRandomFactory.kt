@@ -4,7 +4,6 @@ import com.bliss.identity.application.ports.RandomFactory
 import com.bliss.identity.domain.auth.PkceVerifier
 import com.bliss.identity.domain.auth.State
 
-// Mirrors com.bliss.identity.application.testdoubles.FixedRandomFactory. See FixedClock for the rationale.
 class FixedRandomFactory(
     states: List<State> = emptyList(),
     pkceVerifiers: List<PkceVerifier> = emptyList(),
