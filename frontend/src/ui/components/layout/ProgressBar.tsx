@@ -55,6 +55,7 @@ const pendingFillStyles = css({
   top: 0,
   bottom: 0,
   height: '100%',
+  borderRadius: '999px',
   bg: 'progressTrackPending',
   transition: 'width 220ms ease-out, left 220ms ease-out',
 });
@@ -87,7 +88,7 @@ export function ProgressBar({
   return (
     <div className={wrapperStyles} data-testid="puzzle-progress">
       <div className={labelRowStyles}>
-        {showLabel ? <span className={labelMutedStyles}>{label}{' :'}</span> : null}
+        {showLabel ? <span className={labelMutedStyles}>{label}{' : '}</span> : null}
         <span className={labelCountStyles}>
           {safeValue} / {safeTotal} cases
         </span>
