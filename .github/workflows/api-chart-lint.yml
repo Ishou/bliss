@@ -50,11 +50,19 @@ jobs:
         chart:
           - path: grid/api/deploy/chart
             release: wordsparrow-api
+            hasProdValues: true
           # game-api chart (Wave F PR #11). No CNPG resources — game/
           # is in-memory v1 per ADR-0018 §3, so the prod values file's
           # requireDigest gate is the only -set flag still needed.
           - path: game/api/deploy/chart
             release: bliss-game-api
+            hasProdValues: true
+          # identity-api chart (PR #500). values-prod.yaml lands in
+          # PR 4.5b alongside DNS + cert-manager wiring; until then the
+          # prod-values steps are skipped via hasProdValues=false.
+          - path: identity/api/deploy/chart
+            release: wordsparrow-identity-api
+            hasProdValues: false
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
@@ -86,6 +94,7 @@ jobs:
       # tolerates an unused key, so the same flag works against the game chart
       # too without per-matrix branching.
       - name: helm lint (prod values)
+        if: matrix.chart.hasProdValues
         run: |
           helm lint ${{ matrix.chart.path }}/ \
             -f ${{ matrix.chart.path }}/values-prod.yaml \
@@ -105,6 +114,7 @@ jobs:
       # version to the operator version. Standard kinds (Deployment,
       # Service, Ingress, ServiceAccount) are still strictly checked.
       - name: helm template + kubeconform (prod values)
+        if: matrix.chart.hasProdValues
         run: |
           helm template ${{ matrix.chart.release }} ${{ matrix.chart.path }}/ \
             -f ${{ matrix.chart.path }}/values-prod.yaml \
