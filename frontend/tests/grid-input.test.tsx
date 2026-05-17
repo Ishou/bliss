@@ -1243,4 +1243,59 @@ describe('Grid smart-focus on click', () => {
     expect(defAt(container, 1, 0)?.dataset.currentClue).toBe('true');  // across-B
     expect(defAt(container, 0, 3)?.dataset.currentClue).toBe('false'); // down-A
   });
+
+  it('with empty prefix, still routes to the perpendicular real-start (regression guard)', () => {
+    // No typing — cells (1,1) and (1,2) are empty. across-B has no
+    // smart-start at (1,3) because the prefix is empty (and (1,3) is
+    // not the first cell of across-B). down-A is a real-start →
+    // vacuously a smart-start. Only down-A is a candidate → switch
+    // direction to down.
+    const { container } = render(<Grid puzzle={SMART_PUZZLE} />);
+    click(inputAt(container, 1, 1)!);  // direction = 'across'
+    click(inputAt(container, 1, 3)!);
+    expect(wrapAt(container, 2, 3)?.dataset.inWord).toBe('true');  // down-A
+    expect(wrapAt(container, 3, 3)?.dataset.inWord).toBe('true');
+    expect(wrapAt(container, 1, 4)?.dataset.inWord).toBe('false'); // not across-B
+    expect(defAt(container, 0, 3)?.dataset.currentClue).toBe('true');  // down-A def
+    expect(defAt(container, 1, 0)?.dataset.currentClue).toBe('false'); // across-B def
+  });
+
+  it('partial prefix does not trigger smart-start', () => {
+    // Fill only (1,1), leave (1,2) empty. across-B prefix at (1,3) has
+    // a gap → smart-start fails. down-A vacuously smart-start → wins.
+    const { container } = render(<Grid puzzle={SMART_PUZZLE} />);
+    click(inputAt(container, 1, 1)!);
+    typeChar(inputAt(container, 1, 1)!, 'h');
+    // Auto-advance landed focus on (1,2); click (1,3) directly without
+    // typing into (1,2).
+    click(inputAt(container, 1, 3)!);
+    expect(wrapAt(container, 2, 3)?.dataset.inWord).toBe('true');  // down-A wins
+    expect(wrapAt(container, 1, 4)?.dataset.inWord).toBe('false');
+    expect(defAt(container, 0, 3)?.dataset.currentClue).toBe('true');
+  });
+
+  it('both directions smart-start: current direction sticks via tiebreak', () => {
+    // Fill across-B's prefix to make across-B a smart-start at (1,3).
+    // down-A is always smart-start at (1,3) (vacuous). Move direction to
+    // 'down' before the click by tapping a cell that's only on down-A
+    // (cell (2,3) — row 2 has no across clue, so the only clue
+    // through (2,3) is down-A). Then click (1,3): both candidates
+    // include the current direction (down) → keep down.
+    const { container } = render(<Grid puzzle={SMART_PUZZLE} />);
+    click(inputAt(container, 1, 1)!);
+    typeChar(inputAt(container, 1, 1)!, 'h');
+    typeChar(inputAt(container, 1, 2)!, 'e');
+    // Direction is now 'across' with focus on (1,3). Click (2,3) — a
+    // down-only cell — to set direction = 'down'.
+    click(inputAt(container, 2, 3)!);
+    expect(wrapAt(container, 1, 3)?.dataset.inWord).toBe('true');  // down-A
+    expect(wrapAt(container, 3, 3)?.dataset.inWord).toBe('true');
+    // Now click (1,3). Both across-B and down-A are smart-starts. Current
+    // direction (down) matches down-A → keep down.
+    click(inputAt(container, 1, 3)!);
+    expect(wrapAt(container, 2, 3)?.dataset.inWord).toBe('true');  // still down
+    expect(wrapAt(container, 3, 3)?.dataset.inWord).toBe('true');
+    expect(wrapAt(container, 1, 4)?.dataset.inWord).toBe('false'); // not across
+    expect(defAt(container, 0, 3)?.dataset.currentClue).toBe('true');  // down-A
+  });
 });
