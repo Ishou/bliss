@@ -110,20 +110,19 @@ const posOf = (el: HTMLElement): Position | null => {
 // ASCII A–Z plus French diacritics the puzzle ships with.
 const LETTER_RE = /^[a-zA-ZàâçéèêëîïôûùüÿñæœÀÂÇÉÈÊËÎÏÔÛÙÜŸÑÆŒ]$/;
 
-// True when every letter cell of `clue` strictly before `p` carries a
-// filled value in `values`. The clicked cell's own value and any cells
-// after it are irrelevant. When `p` is the first cell of `clue` the
-// prefix is empty and the predicate is vacuously true — so every
-// real-start automatically also counts as a smart-start. Returns false
-// defensively if `p` is not part of `clue.cells` (callers should only
-// pass clues actually passing through `p`).
+// True when `p` is at least the second letter of `clue` AND every cell
+// strictly before `p` carries a filled value in `values`. Returns false
+// when `p` is the clue's first cell (idx 0 — no real progress to
+// detect; the structural-start case is handled by the `starting` tier
+// in handleClick) and when `p` is not part of `clue.cells` at all
+// (defensive — callers should only pass clues actually containing `p`).
 const prefixFilled = (
   clue: Clue,
   p: Position,
   values: Map<string, string>,
 ): boolean => {
   const idx = clue.cells.findIndex((c) => same(c.position, p));
-  if (idx < 0) return false;
+  if (idx <= 0) return false;
   for (let i = 0; i < idx; i++) {
     if (!values.has(key(clue.cells[i].position))) return false;
   }
@@ -462,15 +461,15 @@ export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOpt
         }
       } else {
         // First click on this cell — pick a clue using a three-tier
-        // priority. Tier 1 (smart-start): clues whose every letter cell
-        // before `p` is already filled. The player has been working on
-        // that word, so the click should keep them there. Tier 2
-        // (real-start): structural word-boundary preference (the cell is
-        // the first letter of the clue). Tier 3: every clue passing
-        // through `p`. Real-start is a subset of smart-start (empty
-        // prefix is vacuously filled), so smart-start widens the
-        // candidate set rather than overriding real-start when both
-        // apply — the existing tiebreak then decides.
+        // priority. Tier 1 (smart-start): clues where the player has
+        // already filled every prefix cell — `prefixFilled` returns
+        // true only when there is at least one prefix cell, so a real-
+        // start at `p` does NOT qualify. Tier 2 (real-start): the cell
+        // is the first letter of the clue (structural word-boundary
+        // preference). Tier 3: every clue passing through `p`. Smart-
+        // start signals real progress and ranks above the merely
+        // structural real-start, fixing the case where the global
+        // current direction overrode obvious horizontal progress.
         const values = cellValuesRef.current;
         const smart = allClues.filter((c) => prefixFilled(c, p, values));
         let candidates: readonly Clue[];

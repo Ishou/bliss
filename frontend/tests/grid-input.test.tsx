@@ -1276,28 +1276,30 @@ describe('Grid smart-focus on click', () => {
     expect(defAt(container, 1, 0)?.dataset.currentClue).toBe('false'); // across-B def not current
   });
 
-  it('both directions smart-start: current direction sticks via tiebreak', () => {
-    // Fill across-B's prefix to make across-B a smart-start at (1,3).
-    // down-A is always smart-start at (1,3) (vacuous). Move direction to
-    // 'down' before the click by tapping a cell that's only on down-A
-    // (cell (2,3) — row 2 has no across clue, so the only clue
-    // through (2,3) is down-A). Then click (1,3): both candidates
-    // include the current direction (down) → keep down.
+  it('filled-prefix smart-start outranks a perpendicular real-start, even when current direction matches the real-start', () => {
+    // Reported bug: with HE filled on across-B and direction set to
+    // 'down' from working elsewhere, clicking (1,3) used to land on
+    // down-A because the global current direction (down) matched the
+    // vacuous real-start at (1,3). The fix: real-starts are NOT smart-
+    // starts — only clues with at least one filled prefix cell are.
+    // So across-B's non-vacuous smart-start outranks down-A's real-
+    // start regardless of current direction.
     const { container } = render(<Grid puzzle={SMART_PUZZLE} />);
     click(inputAt(container, 1, 1)!);
     typeChar(inputAt(container, 1, 1)!, 'h');
     typeChar(inputAt(container, 1, 2)!, 'e');
-    // Direction is now 'across' with focus on (1,3). Click (2,3) — a
-    // down-only cell — to set direction = 'down'.
+    // Move direction to 'down' via a down-only cell (cell (2,3) — row
+    // 2 has no across clue, so only down-A passes through).
     click(inputAt(container, 2, 3)!);
-    expect(wrapAt(container, 1, 3)?.dataset.inWord).toBe('true');  // down-A
-    expect(wrapAt(container, 3, 3)?.dataset.inWord).toBe('true');
-    // Now click (1,3). Both across-B and down-A are smart-starts. Current
-    // direction (down) matches down-A → keep down.
+    expect(wrapAt(container, 1, 3)?.dataset.inWord).toBe('true');  // sanity: down-A active
+    // Now click (1,3). across-B has filled prefix (smart-start);
+    // down-A has only a real-start (vacuous, no longer a smart-start).
+    // across-B wins — current direction is overridden.
     click(inputAt(container, 1, 3)!);
-    expect(wrapAt(container, 2, 3)?.dataset.inWord).toBe('true');  // still down
-    expect(wrapAt(container, 3, 3)?.dataset.inWord).toBe('true');
-    expect(wrapAt(container, 1, 4)?.dataset.inWord).toBe('false'); // not across
-    expect(defAt(container, 0, 3)?.dataset.currentClue).toBe('true');  // down-A
+    expect(wrapAt(container, 1, 4)?.dataset.inWord).toBe('true');  // across-B
+    expect(wrapAt(container, 2, 3)?.dataset.inWord).toBe('false'); // not down-A
+    expect(wrapAt(container, 3, 3)?.dataset.inWord).toBe('false');
+    expect(defAt(container, 1, 0)?.dataset.currentClue).toBe('true');  // across-B def
+    expect(defAt(container, 0, 3)?.dataset.currentClue).toBe('false'); // down-A def
   });
 });
