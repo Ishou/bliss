@@ -47,11 +47,17 @@ export function registerServiceWorker(): void {
   if (!('serviceWorker' in navigator)) return;
   if (import.meta.env.DEV) return;
   // Preview mode runs MSW's own service worker at scope `/`. Registering
-  // workbox here would override it (same scope, last registration
-  // wins), and the preview deploy would stop replaying the OpenAPI
-  // example fixtures. Skip in mock mode — production builds set
-  // VITE_USE_MOCK_API=false so this gate is open there.
-  if (import.meta.env.VITE_USE_MOCK_API === 'true') return;
+  // workbox here would race MSW for that scope: workbox's `controlling`
+  // event would fire on every page load, the fresh-load reload window
+  // would trigger `location.reload()`, and the preview would refresh
+  // forever. Match `main.tsx`'s MSW gate exactly — skip whenever either
+  // surface mock is on. Production sets both to `false` in `.env`.
+  if (
+    import.meta.env.VITE_MOCK_GRID_API === 'true' ||
+    import.meta.env.VITE_MOCK_GAME_API === 'true'
+  ) {
+    return;
+  }
 
   installChunkMismatchGuard();
 

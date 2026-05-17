@@ -64,7 +64,8 @@ describe('registerServiceWorker — update strategy', () => {
     // Production-like env so the early-returns don't short-circuit
     // registration.
     vi.stubEnv('DEV', false);
-    vi.stubEnv('VITE_USE_MOCK_API', 'false');
+    vi.stubEnv('VITE_MOCK_GRID_API', 'false');
+    vi.stubEnv('VITE_MOCK_GAME_API', 'false');
 
     vi.useFakeTimers();
   });
@@ -160,5 +161,23 @@ describe('registerServiceWorker — update strategy', () => {
     registerServiceWorker();
     window.dispatchEvent(new Event('vite:preloadError'));
     expect(reloadMock).not.toHaveBeenCalled();
+  });
+
+  // Preview deploys set VITE_MOCK_GRID_API/VITE_MOCK_GAME_API='true' so
+  // MSW's own service worker takes scope `/`. Registering Workbox here
+  // would race MSW for that scope; the resulting `controlling` event
+  // would fire reloadOnce() inside the fresh-load window, triggering an
+  // infinite reload loop on every preview URL (regression caught on
+  // https://11593b5f.bliss-cb4.pages.dev/ — page refreshed every ~1.5 s).
+  it('skips registration when VITE_MOCK_GRID_API is true', () => {
+    vi.stubEnv('VITE_MOCK_GRID_API', 'true');
+    registerServiceWorker();
+    expect(constructorCalls).toHaveLength(0);
+  });
+
+  it('skips registration when VITE_MOCK_GAME_API is true', () => {
+    vi.stubEnv('VITE_MOCK_GAME_API', 'true');
+    registerServiceWorker();
+    expect(constructorCalls).toHaveLength(0);
   });
 });
