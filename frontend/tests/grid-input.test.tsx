@@ -60,6 +60,29 @@ const TEST_PUZZLE: Puzzle = {
   ],
 };
 
+// Fixture for smart-focus tests. 5×4 grid laid out so cell (1,3) is the
+// middle of an across word (across-B, starting at (1,1)) AND the first
+// letter of a down word (down-A). Smart-focus widens the candidate set
+// when the prefix of across-B (cells (1,1) and (1,2)) is fully filled.
+//
+//   D→  X   X   D↓  X      across-A: (0,1),(0,2);  down-A: (1,3),(2,3),(3,3)
+//   D→  X   X   X   X      across-B: (1,1),(1,2),(1,3),(1,4)
+//   X   X   X   X   X
+//   X   X   X   X   X
+const SMART_PUZZLE: Puzzle = {
+  id: 'smart', title: 'smart', language: 'fr', width: 5, height: 4, hintsAllowed: 3,
+  cells: [
+    { kind: 'definition', position: { row: 0, col: 0 }, clues: [{ text: 'across-A', arrow: 'right' }] },
+    L(0, 1), L(0, 2),
+    { kind: 'definition', position: { row: 0, col: 3 }, clues: [{ text: 'down-A', arrow: 'down' }] },
+    L(0, 4),
+    { kind: 'definition', position: { row: 1, col: 0 }, clues: [{ text: 'across-B', arrow: 'right' }] },
+    L(1, 1), L(1, 2), L(1, 3), L(1, 4),
+    L(2, 0), L(2, 1), L(2, 2), L(2, 3), L(2, 4),
+    L(3, 0), L(3, 1), L(3, 2), L(3, 3), L(3, 4),
+  ],
+};
+
 const inputAt = (root: HTMLElement, row: number, col: number) =>
   root.querySelector<HTMLInputElement>(`[data-cell-kind="letter"][data-row="${row}"][data-col="${col}"]`);
 const wrapAt = (root: HTMLElement, row: number, col: number) =>
@@ -1187,5 +1210,37 @@ describe('Grid keyboard interactions — validated cells preserve focus', () => 
     // across-2 still active — (1,4) still in-word, (2,2) not.
     expect(wrapAt(container, 1, 4)?.dataset.inWord).toBe('true');
     expect(wrapAt(container, 2, 2)?.dataset.inWord).toBe('false');
+  });
+});
+
+// Smart-focus on first click. When the player has filled the prefix of a
+// word that passes through the clicked cell, the click should route them
+// into THAT word — even if the cell is the structural start of a
+// perpendicular word. Without smart-focus, the existing handleClick
+// picks the perpendicular real-start, kicking the player off the streak
+// they were on. See docs/superpowers/specs/2026-05-17-grid-smart-focus-design.md.
+describe('Grid smart-focus on click', () => {
+  it('routes click into the clue with a fully filled prefix', () => {
+    // Setup: type 'H' 'E' on across-B so cells (1,1) and (1,2) are
+    // filled. Auto-advance leaves focus at (1,3) with direction
+    // 'across'. Then click (1,3) — which is also the first letter of
+    // down-A. Smart-focus must keep direction 'across' because
+    // across-B's prefix is fully filled at (1,3).
+    const { container } = render(<Grid puzzle={SMART_PUZZLE} />);
+    const start = inputAt(container, 1, 1)!;
+    click(start);
+    typeChar(start, 'h');
+    const c12 = inputAt(container, 1, 2)!;
+    typeChar(c12, 'e');
+    // After two auto-advances, focus is at (1,3). Click it.
+    const c13 = inputAt(container, 1, 3)!;
+    click(c13);
+    // across-B remains current → cells (1,4) along the row are in-word,
+    // and down-A's cells (2,3)/(3,3) are NOT in-word.
+    expect(wrapAt(container, 1, 4)?.dataset.inWord).toBe('true');
+    expect(wrapAt(container, 2, 3)?.dataset.inWord).toBe('false');
+    expect(wrapAt(container, 3, 3)?.dataset.inWord).toBe('false');
+    expect(defAt(container, 1, 0)?.dataset.currentClue).toBe('true');  // across-B
+    expect(defAt(container, 0, 3)?.dataset.currentClue).toBe('false'); // down-A
   });
 });
