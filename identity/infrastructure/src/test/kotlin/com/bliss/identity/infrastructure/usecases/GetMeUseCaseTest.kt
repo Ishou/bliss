@@ -11,7 +11,6 @@ import com.bliss.identity.application.usecases.GetMeError
 import com.bliss.identity.application.usecases.GetMeQuery
 import com.bliss.identity.application.usecases.GetMeResult
 import com.bliss.identity.application.usecases.GetMeUseCase
-import com.bliss.identity.application.usecases.LinkedProviderView
 import com.bliss.identity.domain.provider.Provider
 import com.bliss.identity.domain.provider.Subject
 import com.bliss.identity.domain.provider.UserProvider

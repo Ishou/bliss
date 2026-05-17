@@ -26,7 +26,9 @@ data class GetMeResult(
     val linkedProviders: List<LinkedProviderView>,
 )
 
-sealed class GetMeError(message: String) : RuntimeException(message) {
+sealed class GetMeError(
+    message: String,
+) : RuntimeException(message) {
     class UserNotFound : GetMeError("User does not exist.")
 }
 
