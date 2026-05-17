@@ -36,8 +36,15 @@ service:
   # Prod listens on 8082. Grid owns 8080, game owns 8081. Main.kt default
   # (7779) is local-dev; chart pins PORT=8082 via env block below.
   port: 8082
-# Ingress lands in PR 4.5b alongside values-prod.yaml + DNS/TLS work,
-# so prod routing is reviewed in one shot.
+ingress:
+  enabled: true
+  className: nginx
+  # REQUIRED per env (auth.wordsparrow.io prod, localhost local).
+  host: ""
+  # TLS Secret name created by cert-manager from the ingress annotation.
+  tlsSecretName: ""
+  # Env files set cert-manager and external-dns annotations here.
+  annotations: {}
 serviceAccount:
   create: true
   name: ""

@@ -8,5 +8,11 @@ image:
   pullPolicy: Never
 # No limits locally — k3d node is small; JVM honours UseContainerSupport.
 resources: {}
+ingress:
+  enabled: true
+  host: "localhost"
+  tlsSecretName: "bliss-identity-api-tls"
+  annotations:
+    cert-manager.io/cluster-issuer: "selfsigned"
 # Carries OIDC client credentials + COOKIE_DOMAIN + ALLOWED_RETURN_ORIGINS.
 envFromSecret: "bliss-identity-api-env"

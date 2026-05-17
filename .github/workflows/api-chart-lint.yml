@@ -1,7 +1,7 @@
 name: API Chart Lint
 
 # Tier-1 pre-merge gate for per-context API Helm charts at
-# <context>/api/deploy/chart/ (currently grid/ and game/) — counterpart
+# <context>/api/deploy/chart/ (grid/, game/, identity/) — counterpart
 # to helm-lint.yml (which lints the infra/platform/ umbrella chart
 # only). Catches:
 #   - chart structure / template syntax bugs (`helm lint`),
@@ -57,12 +57,12 @@ jobs:
           - path: game/api/deploy/chart
             release: bliss-game-api
             hasProdValues: true
-          # identity-api chart (PR #500). values-prod.yaml lands in
-          # PR 4.5b alongside DNS + cert-manager wiring; until then the
-          # prod-values steps are skipped via hasProdValues=false.
+          # identity-api chart (PR #500 + #4.5b). CNPG cluster lives in the
+          # sibling db-chart (`identity/api/deploy/db-chart/`), same chart-split
+          # pattern used by grid/ and game/.
           - path: identity/api/deploy/chart
             release: wordsparrow-identity-api
-            hasProdValues: false
+            hasProdValues: true
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:

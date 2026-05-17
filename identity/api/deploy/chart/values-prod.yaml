@@ -1,0 +1,49 @@
+# Production overrides — Hetzner k3s cluster (ADR-0009 §2).
+# Identity has no in-memory session state (ADR-0044), so replicaCount stays
+# at the chart default (2) for horizontal scaling.
+
+# Pin the K8s resource name to the release name so the CD workflow's
+# `kubectl rollout status deployment/wordsparrow-identity-api` line resolves
+# without per-context name arithmetic. Without this, helm's default
+# fullname is `<release>-<chart>` = `wordsparrow-identity-api-bliss-identity-api`
+# (since the release name doesn't contain the chart name `bliss-identity-api`).
+fullnameOverride: "wordsparrow-identity-api"
+
+image:
+  # Fail-fast guard: helm aborts if digest is empty (see _helpers.tpl).
+  requireDigest: true
+  # Set by the CD workflow per push (ADR-0009 §8 step 5). Format "sha256:...".
+  digest: ""
+database:
+  # CNPG cluster lives in the sibling `wordsparrow-identity-api-pg` Helm release
+  # (chart `identity/api/deploy/db-chart/`, deployed first by the workflow).
+  # Bounded-context separation extends to storage AND to deploy-time lifecycle
+  # so an api deploy can never destroy the cluster — same chart-split pattern
+  # used by grid/ and game/.
+  enabled: true
+ingress:
+  host: "auth.wordsparrow.io"
+  tlsSecretName: "bliss-identity-api-tls"
+  # Issuer + external-dns provider installed by cluster bring-up (ADR-0009 §3).
+  #
+  # `external-dns.alpha.kubernetes.io/target` pins the public Hetzner
+  # floating IP (ADR-0012) instead of letting external-dns read the
+  # ClusterIP from `status.loadBalancer.ingress[*].ip` — the
+  # ingress-nginx Service's ClusterIP would land in Cloudflare as a
+  # reserved-range A record (Cloudflare flags it "DNS only - reserved
+  # IP"), which Let's Encrypt can't reach for HTTP-01 validation.
+  # Pinning is the explicit cure (same pattern as game/api).
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    external-dns.alpha.kubernetes.io/hostname: "auth.wordsparrow.io"
+    external-dns.alpha.kubernetes.io/target: "116.202.180.82"
+    # Per-IP rate limiting at the ingress (leaky-bucket). Identity is an
+    # auth-flow REST surface (OAuth callback, session refresh, logout) —
+    # generous-but-bounded, parity with game/api defaults.
+    nginx.ingress.kubernetes.io/limit-rps: "5"
+    nginx.ingress.kubernetes.io/limit-burst-multiplier: "5"
+    nginx.ingress.kubernetes.io/limit-connections: "30"
+# Bootstrapped via `kubectl create secret generic bliss-identity-api-env ...`
+# (ADR-0009 §10). Recipe lands in PR 4.5e. Carries OIDC client credentials
+# (Google + Apple), COOKIE_DOMAIN, and ALLOWED_RETURN_ORIGINS.
+envFromSecret: "bliss-identity-api-env"
