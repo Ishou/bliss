@@ -19,7 +19,7 @@ Extend `handleClick`'s first-click branch with a **smart-start** concept that cl
 
 For each clue `C` passing through clicked cell `P`, define:
 
-- **smart-start(C, P)** ⇔ every letter cell of `C` strictly before `P` carries a non-empty value in `cellValuesRef`. The clicked cell's own value and any cells after it are irrelevant. When `P` is the first cell of `C`, the prefix is empty and the predicate is vacuously true — so every real-start is also a smart-start.
+- **smart-start(C, P)** ⇔ `P` is at least the second letter of `C` AND every cell of `C` strictly before `P` carries a non-empty value in `cellValuesRef`. When `P` is the clue's first cell, smart-start is FALSE (there is no prefix to have filled — that's a structural real-start, handled by tier 2). The clicked cell's own value and any cells after it are irrelevant.
 - **real-start(C, P)** ⇔ `P` is the first letter of `C` (existing notion).
 
 Candidate selection at the clicked cell:
@@ -30,9 +30,7 @@ candidates = clues where smart-start(C, P)
            else all clues passing through P
 ```
 
-Then apply the existing tiebreak unchanged: if exactly one candidate, take it; else if the current solving direction matches one of the candidates, keep it; else the first by `orderedClues` puzzle order (across before down).
-
-Smart-start outranks real-start: when the user has clearly been making progress on one word, that signal wins over a structural word-boundary in the other direction.
+Then apply the existing tiebreak (Q3): if exactly one, take it; if current direction matches one, keep it; else first by puzzle order (across before down). **Smart-start outranks real-start: a clue where the player has been making real progress wins over a clue whose only signal is a structural word-boundary, regardless of the global current direction.**
 
 ### Worked examples
 
@@ -41,9 +39,10 @@ Smart-start outranks real-start: when the user has clearly been making progress 
 | Across `H E . . .`, click idx 2; no down clue                                  | Across (prev dir or fallback) | Across (smart-start) |
 | Across all-empty `. . . . .`, click idx 2; idx 2 is also a down-start          | Down (real-start) | Down (no smart-start on either; real-start wins) |
 | Across `H E . . .`, click idx 2; idx 2 is also a down-start                    | Down (real-start) | **Across (smart-start beats real-start)** |
+| Across `H E . . .`, click idx 2; idx 2 is also a down-start; current direction was `down` (from elsewhere) | Down (current dir wins) | **Across (smart-start beats real-start regardless of current direction)** |
 | Across `H . . . .`, click idx 2 (partial prefix); idx 2 is a down-start        | Down (real-start) | Down (across smart-start fails; real-start wins) |
 | Both across and across+down have full filled prefixes at clicked cell          | (varies)         | Existing tiebreak: current direction if it's a candidate, else across |
-| Click the first cell of a word, empty prefix                                   | That word        | That word (real-start = smart-start when prefix is empty) |
+| Click the first cell of a word, empty prefix                                   | That word        | That word (real-start via tier 2; smart-start does not apply at idx 0) |
 
 The third row is the deliberate behavior change. The maintainer confirmed this is the intended trade.
 
@@ -76,15 +75,15 @@ Add cases to `frontend/tests/grid-input.test.tsx` near the existing starting-clu
 2. **Smart-start beats real-start** — cell is the start of a down word AND middle of across with full filled prefix. Assert: across wins. This is the new behavior — a dedicated test guards the deliberate change.
 3. **Partial prefix does not trigger smart-start** — across word with only one of two preceding cells filled, clicked cell is a down-start. Assert: down wins (existing behavior preserved).
 4. **Empty prefix does not trigger smart-start** — the historical "good case." Assert: down wins.
-5. **Both directions have smart-start, current direction is one of them** — assert current direction sticks.
-6. **Both directions have smart-start, current direction is neither** — assert across wins (puzzle-order tiebreak).
+5. **Filled-prefix smart-start beats real-start regardless of current direction** — the reported bug fix.
+6. **(Both directions filled-prefix smart-start tiebreak: not exercisable in SMART_PUZZLE — would require a cell where each of two directions has at least one filled prefix cell. Documented for future fixtures.)**
 7. **Real-start with empty prefix still works** — regression guard.
 
 Existing tests at lines 248–266 ("clicking the first cell of a word focuses that word, then toggles on repeat") and the repeat-click toggle test must continue to pass unchanged.
 
 ## Edge cases
 
-- **Clicked cell is the word's first cell**: prefix is empty → smart-start vacuously true → identical to real-start. No special case required.
+- **Clicked cell is the word's first cell**: `prefixFilled` returns false (idx = 0 guard). The clue falls into the `starting` tier (real-start), which is the correct structural behavior. No special case required.
 - **Clicked cell is filled itself**: only the prefix is inspected, so a filled clicked cell does not affect smart-start classification.
 - **Repeat-click**: unchanged. Smart-start does not affect the toggle path.
 - **No clues at the clicked cell**: unreachable in practice for letter cells; the existing fallback (`allClues` empty → leave direction as-is) still applies.
