@@ -161,9 +161,8 @@ class PostgresAuthAttemptRepositoryTest {
         }
 
     @Test
-    fun `delete of parent user nullifies link_to_user_id via ON DELETE CASCADE`() =
+    fun `deleting the linked user deletes the attempt via ON DELETE CASCADE`() =
         runTest {
-            // V4 spec uses CASCADE (not SET NULL) for link_to_user_id — confirm cascade actually wipes the row.
             val userId = UserId(UUID.randomUUID())
             users.create(User(userId, DisplayName.of("Alice"), now, now))
             val a = attempt(linkTo = userId)
