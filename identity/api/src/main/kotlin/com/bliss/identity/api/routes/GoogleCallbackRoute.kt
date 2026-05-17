@@ -63,7 +63,9 @@ fun Route.googleCallback(
                 throw e
             } catch (e: CompleteOidcLoginError) {
                 val (status, type) = e.toProblem()
-                return@get call.problem(json, status, type, e.message ?: status.description)
+                val detail =
+                    if (status == HttpStatusCode.InternalServerError) "Internal error." else e.message ?: status.description
+                return@get call.problem(json, status, type, detail)
             } catch (e: OidcVerificationError) {
                 // when-as-expression on sealed hierarchy: compiler flags any new subclass.
                 return@get when (e) {
@@ -87,7 +89,7 @@ fun Route.googleCallback(
                             json,
                             HttpStatusCode.InternalServerError,
                             "internal_error",
-                            e.message ?: "ID token verification failed.",
+                            "ID token verification failed.",
                         )
                     }
                 }
