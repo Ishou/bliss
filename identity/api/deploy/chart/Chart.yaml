@@ -1,0 +1,17 @@
+apiVersion: v2
+name: bliss-identity-api
+description: "Bliss player identity backend (Ktor REST + OIDC)"
+type: application
+# Chart version. Bump when chart shape changes.
+version: 0.1.0
+# App version. Overridden per-deploy by the CD workflow (ADR-0009 §4).
+appVersion: "0.1.0"
+# Cluster operators (cert-manager, ingress-nginx, external-dns) are
+# cluster-installed once via the bring-up workstream (ADR-0009 §3), not
+# pulled in as subchart dependencies here. The CNPG `Cluster` that backs
+# this api lives in a separate Helm chart at `identity/api/deploy/db-chart/`
+# (chart `bliss-identity-api-pg`, release `wordsparrow-identity-api-pg`) —
+# different lifecycle from the api Deployment (long-lived infra vs rolling
+# app). See ADR-0039 amendment 2026-05-13 for the split rationale; the
+# db-chart itself lands in PR 4.5c.
+dependencies: []

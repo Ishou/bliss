@@ -1,0 +1,96 @@
+# Shared defaults. Per-env files override what differs.
+image:
+  # GHCR image built by the sibling image-build pipeline.
+  repository: ghcr.io/ishou/bliss/wordsparrow-identity-api
+  # Required by manifesto ("pin to digest"). Empty -> tag fallback. Format "sha256:...".
+  digest: ""
+  tag: "0.1.0"
+  pullPolicy: IfNotPresent
+  # Overridden to true in values-prod.yaml (PR 4.5b) so helm install/upgrade
+  # aborts when CD forgot to inject the digest.
+  requireDigest: false
+# Identity has no in-memory session state — sessions are in Postgres (ADR-0044).
+# Scales horizontally. Default 2; values-local drops to 1.
+replicaCount: 2
+resources:
+  requests: {cpu: 100m, memory: 256Mi}
+  limits: {cpu: 1000m, memory: 512Mi}
+database:
+  # Wires IDENTITY_DATABASE_URL from the sibling CNPG cluster
+  # (chart `identity/api/deploy/db-chart/`, Helm release
+  # `wordsparrow-identity-api-pg`) and the wait-for-postgres init
+  # container. Off by default so local-dev `helm install` against k3d
+  # boots without a Cluster; prod turns this on. The db-chart itself
+  # lands in PR 4.5c.
+  enabled: false
+  # CNPG cluster name. Equals the db chart's Helm release name; the
+  # operator-managed `<clusterName>-app` Secret and `<clusterName>-rw`
+  # Service names resolve from this.
+  clusterName: "wordsparrow-identity-api-pg"
+  # Image used by the wait-for-postgres init container. Duplicated from
+  # db-chart/values.yaml so the init container reuses the node-cached
+  # CNPG postgres image without depending on db-chart at render time.
+  waitImage: "ghcr.io/cloudnative-pg/postgresql:18.1-system-bookworm@sha256:61654dc3b1aa2191e083288caf332e60daa342817a64a285283e69e31f1c854d"
+service:
+  type: ClusterIP
+  # Prod listens on 8082. Grid owns 8080, game owns 8081. Main.kt default
+  # (7779) is local-dev; chart pins PORT=8082 via env block below.
+  port: 8082
+# Ingress lands in PR 4.5b alongside values-prod.yaml + DNS/TLS work,
+# so prod routing is reviewed in one shot.
+serviceAccount:
+  create: true
+  name: ""
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities: {drop: [ALL]}
+probes:
+  liveness:
+    path: "/v1/health"
+    periodSeconds: 15
+    timeoutSeconds: 5
+    failureThreshold: 3
+  readiness:
+    path: "/v1/health"
+    periodSeconds: 10
+    timeoutSeconds: 3
+    failureThreshold: 2
+  # 30 × 5 s = 150 s startup budget covers Flyway migration + Ktor boot.
+  startup:
+    path: "/v1/health"
+    periodSeconds: 5
+    timeoutSeconds: 3
+    failureThreshold: 30
+# Inline env vars. Prefer envFromSecret for anything sensitive.
+# OpenJDK MaxRAMPercentage default 25 -> ~128 MB on 512Mi; 75% -> ~384 MB heap.
+env:
+  # `-javaagent:/app/otel.jar` activates the OpenTelemetry Java agent baked
+  # into the runtime image (Dockerfile §"Stage 2"). ADR-0027.
+  - name: JAVA_TOOL_OPTIONS
+    value: "-javaagent:/app/otel.jar -XX:MaxRAMPercentage=75.0"
+  # Pin prod port; Main.kt default is 7779 (local-dev).
+  - name: PORT
+    value: "8082"
+  - name: OTEL_EXPORTER_OTLP_ENDPOINT
+    value: "http://observability-signoz-otel-collector.observability:4317"
+  - name: OTEL_EXPORTER_OTLP_PROTOCOL
+    value: "grpc"
+  - name: OTEL_SERVICE_NAME
+    value: "identity-api"
+  - name: OTEL_RESOURCE_ATTRIBUTES
+    value: "bounded_context=identity"
+  - name: OTEL_TRACES_SAMPLER
+    value: "parentbased_traceidratio"
+  - name: OTEL_TRACES_SAMPLER_ARG
+    value: "1.0"
+# Name of a Kubernetes Secret to envFrom into the pod. ADR-0009 §10:
+# bootstrapped via `kubectl create secret`, never committed. Carries OIDC
+# client credentials (Google + Apple), COOKIE_DOMAIN, and
+# ALLOWED_RETURN_ORIGINS. Bootstrap recipe lands in PR 4.5e.
+envFromSecret: ""

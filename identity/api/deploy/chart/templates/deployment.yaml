@@ -1,0 +1,112 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "bliss-identity-api.fullname" . }}
+  labels: {{- include "bliss-identity-api.labels" . | nindent 4 }}
+spec:
+  # Identity has NO in-memory session state — sessions are in Postgres
+  # (ADR-0044). Scales horizontally; replicas overridable per env. Default
+  # 2 for prod-grade availability; values-local drops to 1.
+  replicas: {{ .Values.replicaCount | default 2 }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels: {{- include "bliss-identity-api.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels: {{- include "bliss-identity-api.selectorLabels" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ include "bliss-identity-api.serviceAccountName" . }}
+      securityContext: {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      # Mirrors grid/api / game/api grace window. Identity is REST-only so
+      # a shorter grace would do; 30 s keeps operational parity.
+      terminationGracePeriodSeconds: 30
+      {{- if .Values.database.enabled }}
+      # Block the api container until the CNPG `-rw` Service accepts
+      # connections. The Cluster CRD is owned by a sibling Helm release
+      # (`bliss-identity-api-pg`, chart `identity/api/deploy/db-chart/`);
+      # deploy workflow installs it first. Without this, Flyway's TCP
+      # connect hangs, startup probe sees `connection refused`, Helm
+      # times out.
+      #
+      # `-U identity -d identity` are NOT optional: the container runs as
+      # UID 1000 and the cnpg-postgres image has no `/etc/passwd` entry
+      # for that UID. Without explicit user + db, libpq calls
+      # `getpwuid(1000)`, gets NULL, and pg_isready exits with "could not
+      # look up effective user" before any TCP attempt. The `identity`
+      # user + database are created by the db-chart's bootstrap (PR 4.5c).
+      initContainers:
+        - name: wait-for-postgres
+          image: {{ .Values.database.waitImage | quote }}
+          imagePullPolicy: IfNotPresent
+          securityContext: {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+          command:
+            - /bin/sh
+            - -c
+            - |
+              until pg_isready -h {{ .Values.database.clusterName }}-rw -p 5432 -U identity -d identity; do
+                echo "wait-for-postgres: not ready yet"
+                sleep 2
+              done
+              echo "wait-for-postgres: ready"
+      {{- end }}
+      containers:
+        - name: api
+          image: {{ include "bliss-identity-api.image" . | quote }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext: {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+          ports:
+            - {name: http, containerPort: {{ .Values.service.port }}, protocol: TCP}
+          env:
+            {{- if .Values.database.enabled }}
+            # IDENTITY_DATABASE_URL from CNPG's auto-generated
+            # `<clusterName>-app` Secret (key: `uri`). The Cluster lives
+            # in a sibling Helm release (`bliss-identity-api-pg`); this
+            # chart does not own its lifecycle but the Secret name is
+            # deterministic from `clusterName`. The app reads
+            # IDENTITY_DATABASE_URL (not DATABASE_URL) —
+            # IdentityDatabase.requireUrl = true.
+            - name: IDENTITY_DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.database.clusterName }}-app
+                  key: uri
+            {{- end }}
+            {{- with .Values.env }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- with .Values.envFromSecret }}
+          envFrom:
+            # Operator-supplied envs (OIDC client credentials, cookie
+            # domain, allowed return origins) bootstrapped per ADR-0009
+            # §10 via `kubectl create secret`. Recipe lands in PR 4.5e.
+            - secretRef: {name: {{ . }}}
+          {{- end }}
+          {{- with .Values.probes.startup }}
+          startupProbe:
+            httpGet: {path: {{ .path }}, port: http}
+            periodSeconds: {{ .periodSeconds | default 5 }}
+            timeoutSeconds: {{ .timeoutSeconds | default 3 }}
+            failureThreshold: {{ .failureThreshold | default 30 }}
+          {{- end }}
+          livenessProbe:
+            httpGet: {path: {{ .Values.probes.liveness.path }}, port: http}
+            periodSeconds: {{ .Values.probes.liveness.periodSeconds | default 15 }}
+            timeoutSeconds: {{ .Values.probes.liveness.timeoutSeconds | default 5 }}
+            failureThreshold: {{ .Values.probes.liveness.failureThreshold | default 3 }}
+          readinessProbe:
+            httpGet: {path: {{ .Values.probes.readiness.path }}, port: http}
+            periodSeconds: {{ .Values.probes.readiness.periodSeconds | default 10 }}
+            timeoutSeconds: {{ .Values.probes.readiness.timeoutSeconds | default 3 }}
+            failureThreshold: {{ .Values.probes.readiness.failureThreshold | default 2 }}
+          {{- with .Values.resources }}
+          resources: {{- toYaml . | nindent 12 }}
+          {{- end }}
+          # readOnlyRootFilesystem requires a writable /tmp (JVM PerfData etc).
+          volumeMounts:
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - {name: tmp, emptyDir: {}}
