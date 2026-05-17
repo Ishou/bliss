@@ -67,18 +67,19 @@ whose header carries any other algorithm are rejected before the
 signature is checked. The same pinning applies to
 `AppleClientAssertionSigner`, which signs exclusively with ES256.
 
-**JWKS endpoint unavailability (fail-open risk)** — the automatic-refresh
-`RemoteJWKSet` client is a benefit for key rotation but introduces an
-availability dependency. If the JWKS endpoint is unreachable or returns
-an unexpected payload, the verifier must not fall back to accepting
-unsigned or previously cached tokens beyond the configured TTL.
-Mitigation: `JoseOidcVerifier` constructs `RemoteJWKSet` with a finite
-cache TTL and no fail-open override. When the endpoint is unreachable and
-the cache is empty or expired, `JoseOidcVerifier` propagates the
-exception, causing the verification port to return a failure — the
-caller (identity-application) treats any non-success as
-unauthenticated. This is fail-closed: a JWKS outage degrades
-availability, not security.
+**JWKS endpoint unavailability (fail-open risk)** — if the JWKS endpoint
+is unreachable or returns an unexpected payload, the verifier must not
+fall back to accepting unsigned or previously cached tokens beyond the
+configured TTL.
+Mitigation: `JoseOidcVerifier` delegates JWKS fetching to `JwksCache` —
+a `ConcurrentHashMap`-backed TTL cache with an injectable fetch lambda.
+On each verification call, `JwksCache` returns the cached `JWKSet` if
+it is within TTL; on expiry or cold start the lambda re-fetches. When
+the endpoint is unreachable and the cache is empty or expired, the fetch
+exception propagates and `JoseOidcVerifier` maps it to
+`OidcVerificationError.JwksUnavailable` — the caller treats any
+non-success as unauthenticated. This is fail-closed: a JWKS outage
+degrades availability, not security.
 
 **`DefaultJWTClaimsVerifier` misconfiguration (widened claim set)** —
 nimbus-jose-jwt's `DefaultJWTClaimsVerifier` accepts a map of exact
@@ -101,8 +102,12 @@ are silently ignored).
 
 - ID-token verification and client-assertion signing are implemented
   with audited, well-tested primitives rather than hand-rolled crypto.
-- JWKS key rotation is handled by the library's remote JWK-set client
-  with automatic refresh — no bespoke caching code.
+- JWKS key material is cached in-memory by `JwksCache` — a
+  `ConcurrentHashMap`-backed TTL cache with an injectable fetch lambda.
+  The library's `RemoteJWKSet` was not used because the injectable-lambda
+  design is required for deterministic unit tests. Key rotation is handled
+  naturally: once the TTL elapses the lambda re-fetches fresh key material
+  from the IDP.
 - One dependency covers both Phase 3f (`JoseOidcVerifier`) and Phase
   3g (`AppleClientAssertionSigner`).
 
