@@ -2,6 +2,7 @@ package com.bliss.identity.infrastructure.usecases
 
 import assertk.assertFailure
 import assertk.assertThat
+import assertk.assertions.containsExactly
 import assertk.assertions.isEqualTo
 import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotNull
@@ -14,6 +15,7 @@ import com.bliss.identity.application.ports.OidcProviderConfig
 import com.bliss.identity.application.ports.OidcResponseMode
 import com.bliss.identity.application.usecases.CompleteProviderLinkCommand
 import com.bliss.identity.application.usecases.CompleteProviderLinkError
+import com.bliss.identity.application.usecases.CompleteProviderLinkResult
 import com.bliss.identity.application.usecases.CompleteProviderLinkUseCase
 import com.bliss.identity.domain.auth.AuthAttempt
 import com.bliss.identity.domain.auth.AuthAttemptId
@@ -25,13 +27,10 @@ import com.bliss.identity.domain.oidc.OidcVerifier
 import com.bliss.identity.domain.provider.Provider
 import com.bliss.identity.domain.provider.Subject
 import com.bliss.identity.domain.provider.UserProvider
-import com.bliss.identity.domain.user.DisplayName
-import com.bliss.identity.domain.user.User
 import com.bliss.identity.domain.user.UserId
 import com.bliss.identity.infrastructure.oidc.StaticOidcProviderConfigSource
 import com.bliss.identity.infrastructure.persistence.InMemoryAuthAttemptRepository
 import com.bliss.identity.infrastructure.persistence.InMemoryUserProviderRepository
-import com.bliss.identity.infrastructure.persistence.InMemoryUserRepository
 import com.bliss.identity.infrastructure.testdoubles.FixedClock
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Test
@@ -97,9 +96,12 @@ class CompleteProviderLinkUseCaseTest {
             )
         }
 
+    private data class Bundle(
+        val userProviders: InMemoryUserProviderRepository,
+    )
+
     private fun newUseCase(
         attempts: InMemoryAuthAttemptRepository = InMemoryAuthAttemptRepository(),
-        users: InMemoryUserRepository = InMemoryUserRepository(),
         userProviders: InMemoryUserProviderRepository = InMemoryUserProviderRepository(),
         codeExchanger: OidcCodeExchanger = happyExchanger,
         verifier: OidcVerifier = happyVerifier(),
@@ -111,9 +113,26 @@ class CompleteProviderLinkUseCaseTest {
             verifier = verifier,
             configSource = StaticOidcProviderConfigSource(mapOf(Provider.GOOGLE to googleConfig)),
             userProviders = userProviders,
-            users = users,
             clock = clock,
         )
+
+    private fun newCase(
+        attempts: InMemoryAuthAttemptRepository = InMemoryAuthAttemptRepository(),
+        userProviders: InMemoryUserProviderRepository = InMemoryUserProviderRepository(),
+        codeExchanger: OidcCodeExchanger = happyExchanger,
+        verifier: OidcVerifier = happyVerifier(),
+        clock: FixedClock = FixedClock(now),
+    ): Pair<CompleteProviderLinkUseCase, Bundle> {
+        val sut =
+            newUseCase(
+                attempts = attempts,
+                userProviders = userProviders,
+                codeExchanger = codeExchanger,
+                verifier = verifier,
+                clock = clock,
+            )
+        return Pair(sut, Bundle(userProviders = userProviders))
+    }
 
     @Test
     fun `unknown state throws UnknownState`() =
@@ -148,15 +167,16 @@ class CompleteProviderLinkUseCaseTest {
         }
 
     @Test
-    fun `happy path inserts provider link and returns`() =
+    fun `happy path inserts provider link and returns result`() =
         runTest {
             val attempts = InMemoryAuthAttemptRepository()
             attempts.create(linkAttempt())
-            val users = InMemoryUserRepository()
-            users.create(User(linkUserId, DisplayName.of("Alice"), now.minusSeconds(86_400), now.minusSeconds(86_400)))
             val userProviders = InMemoryUserProviderRepository()
-            val sut = newUseCase(attempts = attempts, users = users, userProviders = userProviders)
-            sut.execute(CompleteProviderLinkCommand(state.value, "code-1"))
+            val sut = newUseCase(attempts = attempts, userProviders = userProviders)
+            val result = sut.execute(CompleteProviderLinkCommand(state.value, "code-1"))
+            assertThat(result).isEqualTo(
+                CompleteProviderLinkResult(linkUserId, "https://wordsparrow.example/return"),
+            )
             val link = userProviders.findByProviderAndSubject(Provider.GOOGLE, Subject.of("google-sub-link-1"))
             assertThat(link).isNotNull()
             assertThat(link!!.userId).isEqualTo(linkUserId)
@@ -181,9 +201,7 @@ class CompleteProviderLinkUseCaseTest {
                         ),
                     )
                 }
-            val users = InMemoryUserRepository()
-            users.create(User(linkUserId, DisplayName.of("Alice"), now.minusSeconds(86_400), now.minusSeconds(86_400)))
-            val sut = newUseCase(attempts = attempts, users = users, userProviders = userProviders)
+            val sut = newUseCase(attempts = attempts, userProviders = userProviders)
             val failure = assertFailure { sut.execute(CompleteProviderLinkCommand(state.value, "code-1")) }
             failure.isInstanceOf(CompleteProviderLinkError.LinkConflict::class)
             failure.given { thrown ->
@@ -197,13 +215,32 @@ class CompleteProviderLinkUseCaseTest {
         runTest {
             val attempts = InMemoryAuthAttemptRepository()
             attempts.create(linkAttempt())
-            val users = InMemoryUserRepository()
-            users.create(User(linkUserId, DisplayName.of("Alice"), now.minusSeconds(86_400), now.minusSeconds(86_400)))
             val cancellation = CancellationException("cancelled")
             val cancellingExchanger = OidcCodeExchanger { _, _, _, _ -> throw cancellation }
-            val sut = newUseCase(attempts = attempts, users = users, codeExchanger = cancellingExchanger)
+            val sut = newUseCase(attempts = attempts, codeExchanger = cancellingExchanger)
             val failure = assertFailure { sut.execute(CompleteProviderLinkCommand(state.value, "code-1")) }
             failure.isInstanceOf(CancellationException::class)
             failure.given { thrown -> assertThat(thrown).isSameInstanceAs(cancellation) }
+        }
+
+    @Test
+    fun `same-user re-link is idempotent — no duplicate insert, returns success`() =
+        runTest {
+            val attempts = InMemoryAuthAttemptRepository()
+            attempts.create(linkAttempt())
+            val existing =
+                UserProvider(
+                    userId = linkUserId,
+                    provider = Provider.GOOGLE,
+                    subject = Subject.of("google-sub-link-1"),
+                    emailAtLink = null,
+                    linkedAt = now.minusSeconds(86_400),
+                )
+            val userProviders = InMemoryUserProviderRepository().apply { link(existing) }
+            val (sut, bundle) = newCase(attempts = attempts, userProviders = userProviders)
+            val result = sut.execute(CompleteProviderLinkCommand(state.value, "code-1"))
+            assertThat(result.userId).isEqualTo(linkUserId)
+            // The original link is unchanged — no duplicate row, linkedAt preserved.
+            assertThat(bundle.userProviders.listForUser(linkUserId)).containsExactly(existing)
         }
 }

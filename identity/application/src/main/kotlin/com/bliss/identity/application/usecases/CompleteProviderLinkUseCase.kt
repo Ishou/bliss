@@ -6,16 +6,21 @@ import com.bliss.identity.application.ports.OidcCodeExchanger
 import com.bliss.identity.application.ports.OidcExchangeError
 import com.bliss.identity.application.ports.OidcProviderConfigSource
 import com.bliss.identity.application.ports.UserProviderRepository
-import com.bliss.identity.application.ports.UserRepository
 import com.bliss.identity.domain.auth.State
 import com.bliss.identity.domain.oidc.OidcProvider
 import com.bliss.identity.domain.oidc.OidcVerifier
 import com.bliss.identity.domain.provider.UserProvider
+import com.bliss.identity.domain.user.UserId
 import kotlin.coroutines.cancellation.CancellationException
 
 data class CompleteProviderLinkCommand(
     val state: String,
     val code: String,
+)
+
+data class CompleteProviderLinkResult(
+    val userId: UserId,
+    val returnTo: String,
 )
 
 class CompleteProviderLinkUseCase(
@@ -24,10 +29,9 @@ class CompleteProviderLinkUseCase(
     private val verifier: OidcVerifier,
     private val configSource: OidcProviderConfigSource,
     private val userProviders: UserProviderRepository,
-    private val users: UserRepository,
     private val clock: Clock,
 ) {
-    suspend fun execute(command: CompleteProviderLinkCommand) {
+    suspend fun execute(command: CompleteProviderLinkCommand): CompleteProviderLinkResult {
         val state =
             try {
                 State.of(command.state)
@@ -54,7 +58,7 @@ class CompleteProviderLinkUseCase(
                 codeExchanger.exchange(attempt.provider, command.code, attempt.pkceVerifier, config.redirectUri)
             } catch (e: CancellationException) {
                 throw e
-            } catch (e: OidcExchangeError) {
+            } catch (e: OidcExchangeError.TokenEndpointRejected) {
                 throw CompleteProviderLinkError.ExchangeRejected(e)
             }
         val verified =
@@ -74,7 +78,7 @@ class CompleteProviderLinkUseCase(
                 throw CompleteProviderLinkError.LinkConflict(existingLink.userId)
             }
             // Same user already linked to this provider - idempotent no-op.
-            return
+            return CompleteProviderLinkResult(userId = linkToUserId, returnTo = attempt.returnTo)
         }
         userProviders.link(
             UserProvider(
@@ -85,5 +89,6 @@ class CompleteProviderLinkUseCase(
                 linkedAt = now,
             ),
         )
+        return CompleteProviderLinkResult(userId = linkToUserId, returnTo = attempt.returnTo)
     }
 }
