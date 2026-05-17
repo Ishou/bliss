@@ -82,11 +82,11 @@ describe('<MyLobbiesSection> — copy button', () => {
     // Leave navigator.clipboard defined for other suites; no-op.
   });
 
-  it('writes the lobby code to the clipboard on click', async () => {
+  it('writes the full invite URL to the clipboard on click', async () => {
     renderAt(<MyLobbiesSection lobbies={[lobby]} />);
-    const copy = await screen.findByRole('button', { name: /copier le code/i });
+    const copy = await screen.findByRole('button', { name: /copier le lien/i });
     act(() => { fireEvent.click(copy); });
-    expect(writeText).toHaveBeenCalledWith(lobby.code);
+    expect(writeText).toHaveBeenCalledWith(`${window.location.origin}/join/${lobby.code}`);
     expect(await screen.findByRole('status')).toHaveTextContent(/copi/i);
   });
 });

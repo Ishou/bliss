@@ -197,7 +197,9 @@ function LobbyRow({ lobby }: { readonly lobby: LobbySummary }) {
     setRevealed((v) => !v);
   };
   const handleCopy = () => {
-    void navigator.clipboard?.writeText(lobby.code);
+    // ADR-0027: invite URL is `/join/$code`, not the bare code.
+    const shareUrl = `${window.location.origin}/join/${lobby.code}`;
+    void navigator.clipboard?.writeText(shareUrl);
     if (copyTimerRef.current !== null) clearTimeout(copyTimerRef.current);
     setJustCopied(true);
     copyTimerRef.current = setTimeout(() => {
@@ -245,7 +247,7 @@ function LobbyRow({ lobby }: { readonly lobby: LobbySummary }) {
           <button
             type="button"
             className={iconButtonStyles}
-            aria-label="Copier le code"
+            aria-label="Copier le lien"
             onClick={handleCopy}
           >
             <CopyGlyph />
