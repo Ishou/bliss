@@ -664,6 +664,11 @@ CNPG-managed `wordsparrow-identity-api-pg-app` Secret via
 deployment.yaml`), so no two-pass swap is needed — unlike
 `wordsparrow-api-env` for grid.
 
+> **Prerequisite — Phase 4 IP masking:** ADR-0045 §Persisted columns
+> prohibits running `identity-api` in production until the Phase 4 OTel
+> collector-config patch for collector-layer IP masking is deployed.
+> Confirm that patch is live before completing §5's production smoke test.
+
 ## 1. Register the Google OIDC client
 
 In Google Cloud Console (<https://console.cloud.google.com>):
@@ -709,9 +714,10 @@ without a schema-PR + redeploy.
 
 The chart's `values-prod.yaml` carries `envFromSecret:
 "bliss-identity-api-env"`. The Secret holds the OIDC client config
-gathered in steps 1 + 2, plus the cookie domain and return-origin
-allow-list. Run from a workstation with `KUBECONFIG` pointed at
-the prod cluster:
+gathered in steps 1 + 2, plus the identity API's public host (used to
+build OIDC redirect URIs — not a cookie `Domain` attribute; the
+`__Host-` prefix forbids that) and the return-origin allow-list. Run
+from a workstation with `KUBECONFIG` pointed at the prod cluster:
 
 ```sh
 # Save the Apple .p8 alongside this command (download from step 2).
