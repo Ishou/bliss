@@ -48,20 +48,24 @@ const minimapContainer = css({
 //   - validated letter cells: successBg = primary.100 = #dfeacb
 //   - filled (typed but not validated): a subtle blue-gray wash, chosen
 //     to sit clearly between white (empty) and sage (validated) without
-//     colliding with the honey in-word tint. Not a named token — comment
+//     colliding with the rose in-word tint. Not a named token — comment
 //     intentionally captures the design rationale.
-//   - in-word cells: focusBg = secondary.100 = #fbedd0 (honey-pale,
-//     matching letterCellInWord in Cell.tsx which uses `bg: 'focusBg'`)
+//   - in-word cells: pale rose (#fde8e8), deliberately distinct from the
+//     honey-amber definition fill (#fbedd0). The live grid uses focusBg
+//     (honey) for letter cells, but in the SVG minimap definition cells
+//     and in-word letter cells share only color — using the same token
+//     would make them indistinguishable. Rose is visually separate from
+//     both #fbedd0 (definition) and #dfeacb (validated).
 //   - focus-marker stroke: secondary.500 = #c89456 (saturated honey,
 //     visible against all four cell fill states)
 const FILL_BLOCK = '#e0d8c4';
 const FILL_LETTER = '#ffffff';
 const FILL_DEFINITION = '#fbedd0';
 const FILL_VALIDATED = '#dfeacb';
-// Filled-but-not-validated: pale blue-gray, distinct from white/honey/sage.
+// Filled-but-not-validated: pale blue-gray, distinct from white/rose/sage.
 const FILL_FILLED = '#e0e8f0';
-// In-word: focusBg = secondary.100 = honey-pale (matches letterCellInWord).
-const FILL_IN_WORD = '#fbedd0';
+// In-word: pale rose — distinct from definition honey (#fbedd0) in SVG context.
+const FILL_IN_WORD = '#fde8e8';
 // Focus-marker outline: secondary.500 = saturated honey amber.
 const STROKE_FOCUS = '#c89456';
 
