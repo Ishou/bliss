@@ -113,12 +113,10 @@ const letterCell = css({ bg: 'surface' });
 // which made the "you're solving this word" cue indistinguishable
 // from "this letter is locked in".
 //
-// `letterCellInWord` is the SOLO-PLAY fallback used when no `presence`
-// prop is provided (single-player puzzles have no per-player tinting).
-// Multiplayer routes pass `presence` for every cell that any player —
-// local or remote — currently occupies; in that path the local player's
-// own word picks up their hash-derived `--player-word-bg`, so this
-// class never paints.
+// Used by SOLO play AND by the local player in multiplayer — the
+// local user's active word always reads as the same rose tint they
+// see in single-player so the cue is consistent across modes. Remote
+// peers paint via `letterCellPlayerWord` (per-hash hue).
 const letterCellInWord = css({ bg: 'focusBg' });
 // Solo-mode focused-cell ring driven by React state (not the input's
 // `:focus` pseudo-class). Lets the visual persist when DOM focus
@@ -635,7 +633,8 @@ const letterInput = css({
 export interface CellPresence {
   // CSS vars from `playerColorVars(sessionId)` — spread on the wrapper
   // div's inline `style` so `letterCellPlayerActive` /
-  // `letterCellPlayerWord` resolve.
+  // `letterCellPlayerWord` resolve. Unused (and not spread) when
+  // `isLocal` is true since the local player paints with solo classes.
   readonly vars: Record<string, string>;
   // 'active' = this is the player's cursor cell; 'word' = the cell is
   // part of the player's active word but not their cursor.
@@ -648,6 +647,11 @@ export interface CellPresence {
   // by the Grid when the peer is actively typing (within ~1.5 s of the
   // last incoming letter), false otherwise. Static badge by default.
   readonly typing?: boolean;
+  // True when this presence belongs to the local player — Cell paints
+  // it with the solo classes (rose focusBg + rose ring) so the local
+  // user sees the same cue in multiplayer as in single-player. Remote
+  // peers keep their hash-derived hues (ADR-0018 §Presence).
+  readonly isLocal?: boolean;
 }
 
 export const LetterCellView = memo(function LetterCellView({
@@ -735,18 +739,21 @@ export const LetterCellView = memo(function LetterCellView({
   // > soloFocused > inWord > default. Validated is terminal (the cell is
   // locked); error is transient and only composes with the regular
   // surface so the shake reads against the unhighlighted background.
-  // The presence branches replace the legacy `inWord` rose tint with a
-  // per-player hue when multiplayer is active — the Grid passes a
-  // `presence` for the local player too. `soloFocused` paints the
-  // focused-cell ring from React state in single-player so the visual
-  // persists when DOM focus leaves the input (hint button, page
-  // chrome); skipped under multiplayer because `presence.active`
-  // already covers the local cursor.
+  // The presence branches paint REMOTE peers with their hash-derived
+  // hue; the LOCAL player falls through to the solo classes so their
+  // own cue stays the rose focusBg + ring they see in single-player.
+  // `soloFocused` paints the focused-cell ring from React state in
+  // single-player so the visual persists when DOM focus leaves the
+  // input (hint button, page chrome); reused for local presence too.
   const presenceClass =
     presence?.role === 'active'
-      ? letterCellPlayerActive
+      ? presence.isLocal
+        ? letterCellSoloFocused
+        : letterCellPlayerActive
       : presence?.role === 'word'
-      ? letterCellPlayerWord
+      ? presence.isLocal
+        ? letterCellInWord
+        : letterCellPlayerWord
       : null;
   const stateClass = validated
     ? letterCellValidated
@@ -761,12 +768,16 @@ export const LetterCellView = memo(function LetterCellView({
     : letterCell;
 
   // Spread player CSS vars on the wrapper so the cell's modifier class
-  // resolves them. Only set when a presence is actually painting on
-  // this cell — leaves untouched cells free of stale vars.
+  // resolves them. Skipped for the local player (solo classes don't
+  // read `--player-*` vars) and for unvalidated cells without a
+  // presence — leaves untouched cells free of stale vars.
   const wrapperStyle =
-    !validated && presence ? presence.vars : undefined;
+    !validated && presence && !presence.isLocal ? presence.vars : undefined;
   const showBadge =
-    !validated && presence?.role === 'active' && presence.badge !== undefined;
+    !validated &&
+    presence?.role === 'active' &&
+    presence.isLocal !== true &&
+    presence.badge !== undefined;
 
   return (
     <div

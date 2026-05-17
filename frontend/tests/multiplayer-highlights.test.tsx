@@ -13,8 +13,9 @@ import { Grid } from '@/ui/components/grid';
 // Pins the precedence rules the redesign promises:
 //   - Sage validation overrides every player treatment (no ring, no
 //     word-tint, no badge on a validated cell).
-//   - The local player's own word picks up player-vars (validated by
-//     reading the data attributes on the cells around the focused one).
+//   - The local player paints with the SOLO classes (rose focusBg +
+//     ring) so the cue stays consistent with single-player. Remote
+//     peers keep their hash-derived hue (ADR-0018 §Presence).
 //   - Most-recent-active wins on a shared word cell when the active
 //     cells of two remote players don't collide.
 
@@ -134,6 +135,46 @@ describe('Multiplayer highlights — local cursor', () => {
     // None of these word cells should carry a badge — local player gets
     // no badge per the spec.
     expect(container.querySelectorAll('[data-player-badge="true"]')).toHaveLength(0);
+  });
+
+  it('local active cell does NOT carry per-player CSS vars on its wrapper (paints with solo classes)', () => {
+    const stream = makeFakeStream();
+    const { container } = render(
+      <Grid
+        puzzle={TEST_PUZZLE}
+        subscribeToRemotePresence={stream.subscribe}
+        playersBySessionId={players}
+        currentSessionId={SESSION_LOCAL}
+      />,
+    );
+    act(() => click(inputAt(container, 1, 3)!));
+    const active = cellAt(container, 1, 3)!;
+    // Local-player cells never spread the hash-derived `--player-*`
+    // vars on their wrapper — those are remote-only.
+    expect(active.style.getPropertyValue('--player-color')).toBe('');
+    expect(active.style.getPropertyValue('--player-active-bg')).toBe('');
+    expect(active.style.getPropertyValue('--player-word-bg')).toBe('');
+    const wordCell = cellAt(container, 1, 1)!;
+    expect(wordCell.style.getPropertyValue('--player-word-bg')).toBe('');
+  });
+
+  it('remote active cell still carries per-player CSS vars on its wrapper', () => {
+    const stream = makeFakeStream();
+    const { container } = render(
+      <Grid
+        puzzle={TEST_PUZZLE}
+        subscribeToRemotePresence={stream.subscribe}
+        playersBySessionId={players}
+        currentSessionId={SESSION_LOCAL}
+      />,
+    );
+    act(() => stream.dispatch(presence(SESSION_ALICE, 1, 2, 'across')));
+    const remoteActive = cellAt(container, 1, 2)!;
+    // Remote peers keep their hash-derived hue (ADR-0018 §Presence).
+    expect(remoteActive.style.getPropertyValue('--player-color')).not.toBe('');
+    expect(remoteActive.style.getPropertyValue('--player-active-bg')).not.toBe('');
+    // And the remote-active cell carries a badge.
+    expect(container.querySelectorAll('[data-player-badge="true"]')).toHaveLength(1);
   });
 
   it('local active cell wins precedence over a remote whose word covers it', () => {
