@@ -51,7 +51,6 @@ dependencies {
     testImplementation("org.testcontainers:junit-jupiter:$testcontainersVersion")
     testImplementation("org.testcontainers:postgresql:$testcontainersVersion")
 
-    testImplementation("org.wiremock:wiremock-standalone:3.9.2")
     testImplementation("io.ktor:ktor-client-mock:$ktorVersion")
 }
 
