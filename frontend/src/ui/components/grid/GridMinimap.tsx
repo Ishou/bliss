@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useRef } from 'react';
 import { css } from 'styled-system/css';
 import type { ReactZoomPanPinchContentRef } from 'react-zoom-pan-pinch';
-import type { Position, Puzzle } from '@/domain';
+import type { Puzzle } from '@/domain';
 import {
   computeViewportRect,
   rectCenterToPosition,
