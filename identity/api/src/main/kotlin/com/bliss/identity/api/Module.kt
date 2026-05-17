@@ -104,8 +104,10 @@ fun Application.module(
         health()
         wiring.whoAmIOrNull?.let { whoAmI(it) }
         wiring.beginOidcLoginOrNull?.let { login(it, returnToValidator) }
-        wiring.completeOidcLoginOrNull?.let { googleCallback(it, config) }
-        wiring.completeOidcLoginOrNull?.let { appleCallback(it, config) }
+        wiring.callbackDispatcherOrNull?.let { dispatcher ->
+            googleCallback(dispatcher, config)
+            appleCallback(dispatcher, config)
+        }
         wiring.logoutOrNull?.let { logout ->
             wiring.whoAmIOrNull?.let { whoAmI ->
                 logout(logout, whoAmI)

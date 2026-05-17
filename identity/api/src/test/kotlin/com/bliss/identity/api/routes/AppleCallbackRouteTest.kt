@@ -4,6 +4,7 @@ import assertk.assertThat
 import assertk.assertions.contains
 import assertk.assertions.isEqualTo
 import assertk.assertions.isNotNull
+import assertk.assertions.isNull
 import com.bliss.identity.api.Wiring
 import com.bliss.identity.api.auth.SessionCookies
 import com.bliss.identity.api.config.AppleClientConfig
@@ -17,6 +18,7 @@ import com.bliss.identity.application.ports.OidcExchangeResult
 import com.bliss.identity.application.ports.OidcProviderConfig
 import com.bliss.identity.application.ports.OidcResponseMode
 import com.bliss.identity.application.usecases.CompleteOidcLoginUseCase
+import com.bliss.identity.application.usecases.CompleteProviderLinkUseCase
 import com.bliss.identity.domain.auth.AuthAttempt
 import com.bliss.identity.domain.auth.AuthAttemptId
 import com.bliss.identity.domain.auth.PkceVerifier
@@ -27,6 +29,8 @@ import com.bliss.identity.domain.oidc.OidcVerifier
 import com.bliss.identity.domain.provider.Provider
 import com.bliss.identity.domain.provider.Subject
 import com.bliss.identity.domain.provider.UserProvider
+import com.bliss.identity.domain.user.DisplayName
+import com.bliss.identity.domain.user.User
 import com.bliss.identity.domain.user.UserId
 import com.bliss.identity.infrastructure.oidc.StaticOidcProviderConfigSource
 import com.bliss.identity.infrastructure.persistence.InMemoryAuthAttemptRepository
@@ -109,32 +113,54 @@ class AppleCallbackRouteTest {
             )
         }
 
-    private fun newCompleteUseCase(
+    private data class Fixtures(
+        val dispatcher: CallbackDispatcher,
+        val attempts: InMemoryAuthAttemptRepository,
+        val userProviders: InMemoryUserProviderRepository,
+        val users: InMemoryUserRepository,
+    )
+
+    private fun newDispatcher(
         seedAttempt: Boolean = true,
         attempt: AuthAttempt = happyAttempt(),
         codeExchanger: OidcCodeExchanger = happyExchanger,
         verifier: OidcVerifier = happyVerifier,
-    ): CompleteOidcLoginUseCase {
+        userProviders: InMemoryUserProviderRepository = InMemoryUserProviderRepository(),
+        users: InMemoryUserRepository = InMemoryUserRepository(),
+    ): Fixtures {
         val attempts = InMemoryAuthAttemptRepository()
         if (seedAttempt) runBlocking { attempts.create(attempt) }
-        return CompleteOidcLoginUseCase(
-            attempts = attempts,
-            codeExchanger = codeExchanger,
-            verifier = verifier,
-            configSource = StaticOidcProviderConfigSource(mapOf(Provider.APPLE to appleConfig)),
-            users = InMemoryUserRepository(),
-            userProviders = InMemoryUserProviderRepository(),
-            sessions = InMemorySessionRepository(),
-            idGenerator = FixedIdGenerator(userIds = listOf(newUserId), sessionIds = listOf(newSessionId)),
-            clock = FixedClock(now),
-        )
+        val configSource = StaticOidcProviderConfigSource(mapOf(Provider.APPLE to appleConfig))
+        val clock = FixedClock(now)
+        val login =
+            CompleteOidcLoginUseCase(
+                attempts = attempts,
+                codeExchanger = codeExchanger,
+                verifier = verifier,
+                configSource = configSource,
+                users = users,
+                userProviders = userProviders,
+                sessions = InMemorySessionRepository(),
+                idGenerator = FixedIdGenerator(userIds = listOf(newUserId), sessionIds = listOf(newSessionId)),
+                clock = clock,
+            )
+        val link =
+            CompleteProviderLinkUseCase(
+                attempts = attempts,
+                codeExchanger = codeExchanger,
+                verifier = verifier,
+                configSource = configSource,
+                userProviders = userProviders,
+                clock = clock,
+            )
+        return Fixtures(CallbackDispatcher(attempts, login, link), attempts, userProviders, users)
     }
 
     @Test
     fun `provider error returns 400`() =
         testApplication {
-            val useCase = newCompleteUseCase(seedAttempt = false)
-            val wiring = Wiring.forTesting(completeOidcLogin = useCase)
+            val fx = newDispatcher(seedAttempt = false)
+            val wiring = Wiring.forTesting(callbackDispatcher = fx.dispatcher)
             application { module(wiring, testConfig) }
             val client = createClient { followRedirects = false }
             val response =
@@ -148,8 +174,8 @@ class AppleCallbackRouteTest {
     @Test
     fun `missing code returns 400`() =
         testApplication {
-            val useCase = newCompleteUseCase(seedAttempt = false)
-            val wiring = Wiring.forTesting(completeOidcLogin = useCase)
+            val fx = newDispatcher(seedAttempt = false)
+            val wiring = Wiring.forTesting(callbackDispatcher = fx.dispatcher)
             application { module(wiring, testConfig) }
             val client = createClient { followRedirects = false }
             val response =
@@ -163,8 +189,8 @@ class AppleCallbackRouteTest {
     @Test
     fun `missing state returns 400`() =
         testApplication {
-            val useCase = newCompleteUseCase(seedAttempt = false)
-            val wiring = Wiring.forTesting(completeOidcLogin = useCase)
+            val fx = newDispatcher(seedAttempt = false)
+            val wiring = Wiring.forTesting(callbackDispatcher = fx.dispatcher)
             application { module(wiring, testConfig) }
             val client = createClient { followRedirects = false }
             val response =
@@ -178,8 +204,8 @@ class AppleCallbackRouteTest {
     @Test
     fun `unknown state maps to 400`() =
         testApplication {
-            val useCase = newCompleteUseCase(seedAttempt = false)
-            val wiring = Wiring.forTesting(completeOidcLogin = useCase)
+            val fx = newDispatcher(seedAttempt = false)
+            val wiring = Wiring.forTesting(callbackDispatcher = fx.dispatcher)
             application { module(wiring, testConfig) }
             val client = createClient { followRedirects = false }
             val response =
@@ -197,8 +223,8 @@ class AppleCallbackRouteTest {
     @Test
     fun `valid callback issues session cookie and 302s to return_to`() =
         testApplication {
-            val useCase = newCompleteUseCase(seedAttempt = true)
-            val wiring = Wiring.forTesting(completeOidcLogin = useCase)
+            val fx = newDispatcher(seedAttempt = true)
+            val wiring = Wiring.forTesting(callbackDispatcher = fx.dispatcher)
             application { module(wiring, testConfig) }
             val client = createClient { followRedirects = false }
             val response =
@@ -208,7 +234,6 @@ class AppleCallbackRouteTest {
                         Parameters.build {
                             append("code", "auth-code")
                             append("state", state.value)
-                            // Apple's first-sign-in `user` JSON field — verify it is silently ignored.
                             append(
                                 "user",
                                 """{"name":{"firstName":"X","lastName":"Y"},"email":"x@y.example"}""",
@@ -225,11 +250,55 @@ class AppleCallbackRouteTest {
         }
 
     @Test
+    fun `linking-mode valid callback 302s without issuing a session cookie`() =
+        testApplication {
+            val existingUserId = UserId(UUID.fromString("01890c5e-0000-7000-8000-00000000ee02"))
+            val users = InMemoryUserRepository()
+            runBlocking {
+                users.create(
+                    User(
+                        id = existingUserId,
+                        displayName = DisplayName.of("Joueur"),
+                        createdAt = now.minusSeconds(60),
+                        lastSeenAt = now.minusSeconds(60),
+                    ),
+                )
+            }
+            val userProviders = InMemoryUserProviderRepository()
+            val linkingAttempt = happyAttempt().copy(linkToUserId = existingUserId)
+            val fx =
+                newDispatcher(
+                    attempt = linkingAttempt,
+                    userProviders = userProviders,
+                    users = users,
+                )
+            val wiring = Wiring.forTesting(callbackDispatcher = fx.dispatcher)
+            application { module(wiring, testConfig) }
+            val client = createClient { followRedirects = false }
+            val response =
+                client.submitForm(
+                    url = "/v1/auth/apple/callback",
+                    formParameters =
+                        Parameters.build {
+                            append("code", "auth-code")
+                            append("state", state.value)
+                        },
+                )
+            assertThat(response.status).isEqualTo(HttpStatusCode.Found)
+            assertThat(response.headers["Location"]).isEqualTo(returnTo)
+            val cookies = response.setCookie()
+            assertThat(cookies.firstOrNull { it.name == SessionCookies.NAME }).isNull()
+            val linked = runBlocking { userProviders.findByProviderAndSubject(Provider.APPLE, Subject.of("apple-sub-1")) }
+            assertThat(linked).isNotNull()
+            assertThat(linked!!.userId).isEqualTo(existingUserId)
+        }
+
+    @Test
     fun `expired state maps to 400`() =
         testApplication {
             val expired = happyAttempt().copy(expiresAt = now.minusSeconds(1))
-            val useCase = newCompleteUseCase(attempt = expired)
-            val wiring = Wiring.forTesting(completeOidcLogin = useCase)
+            val fx = newDispatcher(attempt = expired)
+            val wiring = Wiring.forTesting(callbackDispatcher = fx.dispatcher)
             application { module(wiring, testConfig) }
             val client = createClient { followRedirects = false }
             val response =
@@ -245,34 +314,14 @@ class AppleCallbackRouteTest {
         }
 
     @Test
-    fun `linking mode maps to 409`() =
-        testApplication {
-            val linking = happyAttempt().copy(linkToUserId = UserId(newUserId))
-            val useCase = newCompleteUseCase(attempt = linking)
-            val wiring = Wiring.forTesting(completeOidcLogin = useCase)
-            application { module(wiring, testConfig) }
-            val client = createClient { followRedirects = false }
-            val response =
-                client.submitForm(
-                    url = "/v1/auth/apple/callback",
-                    formParameters =
-                        Parameters.build {
-                            append("code", "auth-code")
-                            append("state", state.value)
-                        },
-                )
-            assertThat(response.status).isEqualTo(HttpStatusCode.Conflict)
-        }
-
-    @Test
     fun `exchange rejected maps to 503`() =
         testApplication {
             val rejectingExchanger =
                 OidcCodeExchanger { _, _, _, _ ->
                     throw OidcExchangeError.TokenEndpointRejected(Provider.APPLE, 400, RuntimeException("rejected"))
                 }
-            val useCase = newCompleteUseCase(codeExchanger = rejectingExchanger)
-            val wiring = Wiring.forTesting(completeOidcLogin = useCase)
+            val fx = newDispatcher(codeExchanger = rejectingExchanger)
+            val wiring = Wiring.forTesting(callbackDispatcher = fx.dispatcher)
             application { module(wiring, testConfig) }
             val client = createClient { followRedirects = false }
             val response =
@@ -292,8 +341,8 @@ class AppleCallbackRouteTest {
         testApplication {
             val unavailableVerifier =
                 OidcVerifier { _, _ -> throw OidcVerificationError.JwksUnavailable(RuntimeException("network error")) }
-            val useCase = newCompleteUseCase(verifier = unavailableVerifier)
-            val wiring = Wiring.forTesting(completeOidcLogin = useCase)
+            val fx = newDispatcher(verifier = unavailableVerifier)
+            val wiring = Wiring.forTesting(callbackDispatcher = fx.dispatcher)
             application { module(wiring, testConfig) }
             val client = createClient { followRedirects = false }
             val response =
@@ -312,8 +361,8 @@ class AppleCallbackRouteTest {
     fun `invalid token signature maps to 500`() =
         testApplication {
             val badSigVerifier = OidcVerifier { _, _ -> throw OidcVerificationError.InvalidSignature() }
-            val useCase = newCompleteUseCase(verifier = badSigVerifier)
-            val wiring = Wiring.forTesting(completeOidcLogin = useCase)
+            val fx = newDispatcher(verifier = badSigVerifier)
+            val wiring = Wiring.forTesting(callbackDispatcher = fx.dispatcher)
             application { module(wiring, testConfig) }
             val client = createClient { followRedirects = false }
             val response =
@@ -344,21 +393,8 @@ class AppleCallbackRouteTest {
                     ),
                 )
             }
-            val attempts = InMemoryAuthAttemptRepository()
-            runBlocking { attempts.create(happyAttempt()) }
-            val useCase =
-                CompleteOidcLoginUseCase(
-                    attempts = attempts,
-                    codeExchanger = happyExchanger,
-                    verifier = happyVerifier,
-                    configSource = StaticOidcProviderConfigSource(mapOf(Provider.APPLE to appleConfig)),
-                    users = InMemoryUserRepository(),
-                    userProviders = seedProviders,
-                    sessions = InMemorySessionRepository(),
-                    idGenerator = FixedIdGenerator(userIds = listOf(newUserId), sessionIds = listOf(newSessionId)),
-                    clock = FixedClock(now),
-                )
-            val wiring = Wiring.forTesting(completeOidcLogin = useCase)
+            val fx = newDispatcher(userProviders = seedProviders)
+            val wiring = Wiring.forTesting(callbackDispatcher = fx.dispatcher)
             application { module(wiring, testConfig) }
             val client = createClient { followRedirects = false }
             val response =

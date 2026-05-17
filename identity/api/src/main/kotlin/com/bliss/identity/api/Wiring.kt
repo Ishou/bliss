@@ -1,6 +1,7 @@
 package com.bliss.identity.api
 
 import com.bliss.identity.api.config.IdentityApiConfig
+import com.bliss.identity.api.routes.CallbackDispatcher
 import com.bliss.identity.application.ports.OidcProviderConfig
 import com.bliss.identity.application.ports.OidcResponseMode
 import com.bliss.identity.application.usecases.BeginOidcLoginUseCase
@@ -41,6 +42,7 @@ class Wiring private constructor(
     private val _getMe: GetMeUseCase?,
     private val _updateMe: UpdateMeUseCase?,
     private val _deleteUser: DeleteUserUseCase?,
+    private val _callbackDispatcher: CallbackDispatcher?,
 ) {
     val beginOidcLogin: BeginOidcLoginUseCase get() = require(_beginOidcLogin, "BeginOidcLoginUseCase")
     val completeOidcLogin: CompleteOidcLoginUseCase get() = require(_completeOidcLogin, "CompleteOidcLoginUseCase")
@@ -50,6 +52,7 @@ class Wiring private constructor(
     val getMe: GetMeUseCase get() = require(_getMe, "GetMeUseCase")
     val updateMe: UpdateMeUseCase get() = require(_updateMe, "UpdateMeUseCase")
     val deleteUser: DeleteUserUseCase get() = require(_deleteUser, "DeleteUserUseCase")
+    val callbackDispatcher: CallbackDispatcher get() = require(_callbackDispatcher, "CallbackDispatcher")
 
     // Nullable peek accessors so Module.kt can mount only the routes whose use case is wired,
     // letting tests supply a slim Wiring.forTesting(...) for the route under test.
@@ -60,6 +63,7 @@ class Wiring private constructor(
     internal val getMeOrNull: GetMeUseCase? get() = _getMe
     internal val updateMeOrNull: UpdateMeUseCase? get() = _updateMe
     internal val deleteUserOrNull: DeleteUserUseCase? get() = _deleteUser
+    internal val callbackDispatcherOrNull: CallbackDispatcher? get() = _callbackDispatcher
 
     private fun <T : Any> require(
         value: T?,
@@ -130,6 +134,34 @@ class Wiring private constructor(
             // TODO(phase-6): replace with HttpUserDeletedBroadcaster fanning out to grid + game.
             val broadcaster = InMemoryUserDeletedBroadcaster()
 
+            val completeOidcLoginUseCase =
+                CompleteOidcLoginUseCase(
+                    attempts,
+                    codeExchanger,
+                    verifier,
+                    configSource,
+                    users,
+                    userProviders,
+                    sessions,
+                    idGen,
+                    clock,
+                )
+            val completeProviderLinkUseCase =
+                CompleteProviderLinkUseCase(
+                    attempts,
+                    codeExchanger,
+                    verifier,
+                    configSource,
+                    userProviders,
+                    clock,
+                )
+            val callbackDispatcher =
+                CallbackDispatcher(
+                    attempts = attempts,
+                    completeOidcLogin = completeOidcLoginUseCase,
+                    completeProviderLink = completeProviderLinkUseCase,
+                )
+
             return Wiring(
                 _beginOidcLogin =
                     BeginOidcLoginUseCase(
@@ -140,32 +172,14 @@ class Wiring private constructor(
                         clock,
                         config.attemptTtl,
                     ),
-                _completeOidcLogin =
-                    CompleteOidcLoginUseCase(
-                        attempts,
-                        codeExchanger,
-                        verifier,
-                        configSource,
-                        users,
-                        userProviders,
-                        sessions,
-                        idGen,
-                        clock,
-                    ),
-                _completeProviderLink =
-                    CompleteProviderLinkUseCase(
-                        attempts,
-                        codeExchanger,
-                        verifier,
-                        configSource,
-                        userProviders,
-                        clock,
-                    ),
+                _completeOidcLogin = completeOidcLoginUseCase,
+                _completeProviderLink = completeProviderLinkUseCase,
                 _whoAmI = WhoAmIUseCase(users, sessions, clock, config.sessionMaxAge),
                 _logout = LogoutUseCase(sessions, clock),
                 _getMe = GetMeUseCase(users, userProviders),
                 _updateMe = UpdateMeUseCase(users),
                 _deleteUser = DeleteUserUseCase(users, broadcaster, clock),
+                _callbackDispatcher = callbackDispatcher,
             )
         }
 
@@ -178,6 +192,7 @@ class Wiring private constructor(
             getMe: GetMeUseCase? = null,
             updateMe: UpdateMeUseCase? = null,
             deleteUser: DeleteUserUseCase? = null,
+            callbackDispatcher: CallbackDispatcher? = null,
         ): Wiring =
             Wiring(
                 _beginOidcLogin = beginOidcLogin,
@@ -188,6 +203,7 @@ class Wiring private constructor(
                 _getMe = getMe,
                 _updateMe = updateMe,
                 _deleteUser = deleteUser,
+                _callbackDispatcher = callbackDispatcher,
             )
     }
 }
