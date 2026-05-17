@@ -239,7 +239,9 @@ class CompleteProviderLinkUseCaseTest {
             val userProviders = InMemoryUserProviderRepository().apply { link(existing) }
             val (sut, bundle) = newCase(attempts = attempts, userProviders = userProviders)
             val result = sut.execute(CompleteProviderLinkCommand(state.value, "code-1"))
-            assertThat(result.userId).isEqualTo(linkUserId)
+            assertThat(result).isEqualTo(
+                CompleteProviderLinkResult(linkUserId, "https://wordsparrow.example/return"),
+            )
             // The original link is unchanged — no duplicate row, linkedAt preserved.
             assertThat(bundle.userProviders.listForUser(linkUserId)).containsExactly(existing)
         }
