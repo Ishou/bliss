@@ -9,28 +9,29 @@ import com.bliss.identity.application.usecases.CompleteOidcLoginUseCase
 import com.bliss.identity.domain.oidc.OidcVerificationError
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
+import io.ktor.server.request.receiveParameters
 import io.ktor.server.response.respondRedirect
 import io.ktor.server.routing.Route
-import io.ktor.server.routing.get
+import io.ktor.server.routing.post
 import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
 
-private val log = LoggerFactory.getLogger("com.bliss.identity.api.routes.GoogleCallbackRoute")
+private val log = LoggerFactory.getLogger("com.bliss.identity.api.routes.AppleCallbackRoute")
 
-// GET /v1/auth/google/callback — ADR-0044. Google posts `code` + `state` as query
-// parameters. Validates inputs, delegates to CompleteOidcLoginUseCase, issues the
-// `__Host-ws_session` cookie via SessionCookies, and 302-redirects to the
-// AuthAttempt's previously validated return_to.
-fun Route.googleCallback(
+// POST /v1/auth/apple/callback — ADR-0044. Apple uses response_mode=form_post,
+// so `code` + `state` arrive as application/x-www-form-urlencoded body params.
+// Apple may also include a `user` JSON field on first sign-in (name/email) —
+// it is intentionally ignored per ADR-0045 (no PII retention beyond `sub`).
+fun Route.appleCallback(
     completeOidcLogin: CompleteOidcLoginUseCase,
     config: IdentityApiConfig,
     json: Json = REST_JSON,
 ) {
-    get("/v1/auth/google/callback") {
-        val params = call.request.queryParameters
+    post("/v1/auth/apple/callback") {
+        val params = call.receiveParameters()
         params["error"]?.let { providerError ->
-            return@get call.problem(
+            return@post call.problem(
                 json,
                 HttpStatusCode.BadRequest,
                 "provider_error",
@@ -38,18 +39,18 @@ fun Route.googleCallback(
             )
         }
         val code =
-            params["code"] ?: return@get call.problem(
+            params["code"] ?: return@post call.problem(
                 json,
                 HttpStatusCode.BadRequest,
                 "missing_code",
-                "code query parameter is required.",
+                "code form parameter is required.",
             )
         val state =
-            params["state"] ?: return@get call.problem(
+            params["state"] ?: return@post call.problem(
                 json,
                 HttpStatusCode.BadRequest,
                 "missing_state",
-                "state query parameter is required.",
+                "state form parameter is required.",
             )
 
         val result =
@@ -61,10 +62,10 @@ fun Route.googleCallback(
                 val (status, type) = e.toProblem()
                 val detail =
                     if (status == HttpStatusCode.InternalServerError) "Internal error." else e.message ?: status.description
-                return@get call.problem(json, status, type, detail)
+                return@post call.problem(json, status, type, detail)
             } catch (e: OidcVerificationError) {
                 // when-as-expression on sealed hierarchy: compiler flags any new subclass.
-                return@get when (e) {
+                return@post when (e) {
                     is OidcVerificationError.JwksUnavailable,
                     is OidcVerificationError.Malformed,
                     ->
