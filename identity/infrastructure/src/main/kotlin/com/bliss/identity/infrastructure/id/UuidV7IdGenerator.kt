@@ -6,11 +6,7 @@ import com.bliss.identity.domain.session.SessionId
 import com.bliss.identity.domain.user.UserId
 import com.fasterxml.uuid.Generators
 
-/**
- * Production binding of [IdGenerator] — uses `com.fasterxml.uuid:java-uuid-generator`
- * UUIDv7 generator (time-ordered, RFC 9562). Same generator instance is reused per
- * call site for monotonic clock-seq behaviour.
- */
+// Private generator reused for monotonic clock-seq; thread-safe per java-uuid-generator contract.
 class UuidV7IdGenerator : IdGenerator {
     private val generator = Generators.timeBasedEpochGenerator()
 

@@ -5,13 +5,7 @@ import com.bliss.identity.domain.auth.PkceVerifier
 import com.bliss.identity.domain.auth.State
 import java.security.SecureRandom
 
-/**
- * Production binding of [RandomFactory] — backed by a single shared
- * [SecureRandom] instance (thread-safe; the JVM's default
- * `SecureRandom.getInstanceStrong()` is intentionally not used because it can
- * block on `/dev/random` on Linux servers, and the non-strong default is
- * already cryptographically suitable per OWASP's PKCE guidance).
- */
+// Not getInstanceStrong(): blocks /dev/random on Linux; default SecureRandom is OWASP-compliant for PKCE.
 class SecureRandomFactory : RandomFactory {
     private val random = SecureRandom()
 
