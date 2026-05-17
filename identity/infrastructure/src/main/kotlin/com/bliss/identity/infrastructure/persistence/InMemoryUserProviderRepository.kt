@@ -16,6 +16,12 @@ class InMemoryUserProviderRepository : UserProviderRepository {
     private val byProviderSubject = ConcurrentHashMap<Key, UserProvider>()
 
     override suspend fun link(userProvider: UserProvider) {
+        check(byProviderSubject.values.none { it.userId == userProvider.userId && it.provider == userProvider.provider }) {
+            "Duplicate link for (${userProvider.userId}, ${userProvider.provider})"
+        }
+        check(byProviderSubject[Key(userProvider.provider, userProvider.subject)] == null) {
+            "Subject ${userProvider.subject.value} already linked to a different account"
+        }
         byProviderSubject[Key(userProvider.provider, userProvider.subject)] = userProvider
     }
 

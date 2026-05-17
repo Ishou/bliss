@@ -6,6 +6,12 @@ import com.bliss.identity.domain.provider.UserProvider
 import com.bliss.identity.domain.user.UserId
 
 interface UserProviderRepository {
+    /**
+     * Records a new provider link for the given user.
+     * Callers must ensure no existing row for (userId, provider) exists;
+     * a second call for the same pair is undefined behaviour and implementations
+     * may throw.
+     */
     suspend fun link(userProvider: UserProvider)
 
     suspend fun findByProviderAndSubject(
