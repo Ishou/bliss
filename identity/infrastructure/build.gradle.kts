@@ -16,6 +16,9 @@ dependencies {
     // UUIDv7 generation for UserId / SessionId / AuthAttemptId (ADR-0003 §6).
     implementation("com.fasterxml.uuid:java-uuid-generator:5.2.0")
 
+    // JOSE/JWT: ID-token verification and Apple client-assertion signing (ADR-0046).
+    implementation("com.nimbusds:nimbus-jose-jwt:9.40")
+
     implementation("org.postgresql:postgresql:42.7.11")
     implementation("com.zaxxer:HikariCP:7.0.2")
     implementation("org.flywaydb:flyway-core:12.6.0")
@@ -37,6 +40,8 @@ dependencies {
     testImplementation("org.testcontainers:testcontainers:$testcontainersVersion")
     testImplementation("org.testcontainers:junit-jupiter:$testcontainersVersion")
     testImplementation("org.testcontainers:postgresql:$testcontainersVersion")
+
+    testImplementation("org.wiremock:wiremock-standalone:3.9.2")
 }
 
 tasks.test {
