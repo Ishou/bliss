@@ -12,6 +12,7 @@ import com.bliss.identity.api.config.IdentityApiConfig
 import com.bliss.identity.api.module
 import com.bliss.identity.application.ports.ClientAuth
 import com.bliss.identity.application.ports.OidcCodeExchanger
+import com.bliss.identity.application.ports.OidcExchangeError
 import com.bliss.identity.application.ports.OidcExchangeResult
 import com.bliss.identity.application.ports.OidcProviderConfig
 import com.bliss.identity.application.ports.OidcResponseMode
@@ -21,9 +22,11 @@ import com.bliss.identity.domain.auth.AuthAttemptId
 import com.bliss.identity.domain.auth.PkceVerifier
 import com.bliss.identity.domain.auth.State
 import com.bliss.identity.domain.oidc.OidcIdToken
+import com.bliss.identity.domain.oidc.OidcVerificationError
 import com.bliss.identity.domain.oidc.OidcVerifier
 import com.bliss.identity.domain.provider.Provider
 import com.bliss.identity.domain.provider.Subject
+import com.bliss.identity.domain.user.UserId
 import com.bliss.identity.infrastructure.oidc.StaticOidcProviderConfigSource
 import com.bliss.identity.infrastructure.persistence.InMemoryAuthAttemptRepository
 import com.bliss.identity.infrastructure.persistence.InMemorySessionRepository
@@ -104,14 +107,19 @@ class GoogleCallbackRouteTest {
             )
         }
 
-    private fun newCompleteUseCase(seedAttempt: Boolean = true): Pair<CompleteOidcLoginUseCase, InMemoryAuthAttemptRepository> {
+    private fun newCompleteUseCase(
+        seedAttempt: Boolean = true,
+        attempt: AuthAttempt = happyAttempt(),
+        codeExchanger: OidcCodeExchanger = happyExchanger,
+        verifier: OidcVerifier = happyVerifier,
+    ): Pair<CompleteOidcLoginUseCase, InMemoryAuthAttemptRepository> {
         val attempts = InMemoryAuthAttemptRepository()
-        if (seedAttempt) runBlocking { attempts.create(happyAttempt()) }
+        if (seedAttempt) runBlocking { attempts.create(attempt) }
         val sut =
             CompleteOidcLoginUseCase(
                 attempts = attempts,
-                codeExchanger = happyExchanger,
-                verifier = happyVerifier,
+                codeExchanger = codeExchanger,
+                verifier = verifier,
                 configSource = StaticOidcProviderConfigSource(mapOf(Provider.GOOGLE to googleConfig)),
                 users = InMemoryUserRepository(),
                 userProviders = InMemoryUserProviderRepository(),
@@ -181,5 +189,69 @@ class GoogleCallbackRouteTest {
             val session = cookies.firstOrNull { it.name == SessionCookies.NAME }
             assertThat(session).isNotNull()
             assertThat(session!!.value).isEqualTo(newSessionId.toString())
+        }
+
+    @Test
+    fun `expired state maps to 400`() =
+        testApplication {
+            val expired = happyAttempt().copy(expiresAt = now.minusSeconds(1))
+            val (useCase, _) = newCompleteUseCase(attempt = expired)
+            val wiring = Wiring.forTesting(completeOidcLogin = useCase)
+            application { module(wiring, testConfig) }
+            val client = createClient { followRedirects = false }
+            val response = client.get("/v1/auth/google/callback?code=auth-code&state=${state.value}")
+            assertThat(response.status).isEqualTo(HttpStatusCode.BadRequest)
+        }
+
+    @Test
+    fun `linking mode maps to 409`() =
+        testApplication {
+            val linking = happyAttempt().copy(linkToUserId = UserId(newUserId))
+            val (useCase, _) = newCompleteUseCase(attempt = linking)
+            val wiring = Wiring.forTesting(completeOidcLogin = useCase)
+            application { module(wiring, testConfig) }
+            val client = createClient { followRedirects = false }
+            val response = client.get("/v1/auth/google/callback?code=auth-code&state=${state.value}")
+            assertThat(response.status).isEqualTo(HttpStatusCode.Conflict)
+        }
+
+    @Test
+    fun `exchange rejected maps to 503`() =
+        testApplication {
+            val rejectingExchanger =
+                OidcCodeExchanger { _, _, _, _ ->
+                    throw OidcExchangeError.TokenEndpointRejected(Provider.GOOGLE, 400, RuntimeException("rejected"))
+                }
+            val (useCase, _) = newCompleteUseCase(codeExchanger = rejectingExchanger)
+            val wiring = Wiring.forTesting(completeOidcLogin = useCase)
+            application { module(wiring, testConfig) }
+            val client = createClient { followRedirects = false }
+            val response = client.get("/v1/auth/google/callback?code=auth-code&state=${state.value}")
+            assertThat(response.status).isEqualTo(HttpStatusCode.ServiceUnavailable)
+        }
+
+    @Test
+    fun `jwks unavailable maps to 503`() =
+        testApplication {
+            val unavailableVerifier =
+                OidcVerifier { _, _ -> throw OidcVerificationError.JwksUnavailable(RuntimeException("network error")) }
+            val (useCase, _) = newCompleteUseCase(verifier = unavailableVerifier)
+            val wiring = Wiring.forTesting(completeOidcLogin = useCase)
+            application { module(wiring, testConfig) }
+            val client = createClient { followRedirects = false }
+            val response = client.get("/v1/auth/google/callback?code=auth-code&state=${state.value}")
+            assertThat(response.status).isEqualTo(HttpStatusCode.ServiceUnavailable)
+        }
+
+    @Test
+    fun `invalid token signature maps to 500`() =
+        testApplication {
+            val badSigVerifier = OidcVerifier { _, _ -> throw OidcVerificationError.InvalidSignature() }
+            val (useCase, _) = newCompleteUseCase(verifier = badSigVerifier)
+            val wiring = Wiring.forTesting(completeOidcLogin = useCase)
+            application { module(wiring, testConfig) }
+            val client = createClient { followRedirects = false }
+            val response = client.get("/v1/auth/google/callback?code=auth-code&state=${state.value}")
+            assertThat(response.status).isEqualTo(HttpStatusCode.InternalServerError)
         }
 }
