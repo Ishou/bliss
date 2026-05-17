@@ -84,4 +84,23 @@ class InMemoryUserRepositoryTest {
             repo.create(u.copy(displayName = DisplayName.of("Updated")))
             assertThat(repo.findById(u.id)).isEqualTo(u)
         }
+
+    @Test
+    fun `updateDisplayName updates the stored name`() =
+        runTest {
+            val repo = InMemoryUserRepository()
+            val u = user()
+            repo.create(u)
+            repo.updateDisplayName(u.id, DisplayName.of("Bob"))
+            assertThat(repo.findById(u.id)?.displayName).isEqualTo(DisplayName.of("Bob"))
+        }
+
+    @Test
+    fun `updateDisplayName is a no-op for an unknown user`() =
+        runTest {
+            val repo = InMemoryUserRepository()
+            val unknownId = UserId(UUID.randomUUID())
+            repo.updateDisplayName(unknownId, DisplayName.of("Ghost"))
+            assertThat(repo.findById(unknownId)).isNull()
+        }
 }

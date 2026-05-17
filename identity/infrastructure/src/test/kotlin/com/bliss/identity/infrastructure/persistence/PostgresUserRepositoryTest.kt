@@ -179,4 +179,21 @@ class PostgresUserRepositoryTest {
             }
             repo.delete(u.id)
         }
+
+    @Test
+    fun `updateDisplayName updates the stored name`() =
+        runTest {
+            val u = user()
+            repo.create(u)
+            repo.updateDisplayName(u.id, DisplayName.of("Bob"))
+            assertThat(repo.findById(u.id)?.displayName).isEqualTo(DisplayName.of("Bob"))
+        }
+
+    @Test
+    fun `updateDisplayName is a no-op for an unknown user`() =
+        runTest {
+            val unknownId = UserId(UUID.randomUUID())
+            repo.updateDisplayName(unknownId, DisplayName.of("Ghost"))
+            assertThat(repo.findById(unknownId)).isNull()
+        }
 }

@@ -59,6 +59,20 @@ class PostgresUserRepository(
             }
         }
 
+    override suspend fun updateDisplayName(
+        id: UserId,
+        name: DisplayName,
+    ): Unit =
+        withContext(Dispatchers.IO) {
+            dataSource.connection.use { conn ->
+                conn.prepareStatement(UPDATE_DISPLAY_NAME_SQL).use { stmt ->
+                    stmt.setString(1, name.value)
+                    stmt.setObject(2, id.value)
+                    stmt.executeUpdate()
+                }
+            }
+        }
+
     override suspend fun delete(id: UserId): Unit =
         withContext(Dispatchers.IO) {
             dataSource.connection.use { conn ->
@@ -93,6 +107,8 @@ class PostgresUserRepository(
             "SELECT user_id, display_name, created_at, last_seen_at FROM identity_users WHERE user_id = ?"
         private const val UPDATE_LAST_SEEN_SQL =
             "UPDATE identity_users SET last_seen_at = ? WHERE user_id = ?"
+        private const val UPDATE_DISPLAY_NAME_SQL =
+            "UPDATE identity_users SET display_name = ? WHERE user_id = ?"
         private const val DELETE_SQL = "DELETE FROM identity_users WHERE user_id = ?"
     }
 }
