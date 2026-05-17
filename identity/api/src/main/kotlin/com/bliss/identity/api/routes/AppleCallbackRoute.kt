@@ -64,7 +64,13 @@ fun Route.appleCallback(
                 return@post call.problem(json, status, type, detail)
             } catch (e: CompleteProviderLinkError) {
                 val (status, type) = e.toProblem()
-                return@post call.problem(json, status, type, e.message ?: status.description)
+                val detail =
+                    if (e is CompleteProviderLinkError.LinkConflict) {
+                        "This provider account is already linked to another user."
+                    } else {
+                        e.message ?: status.description
+                    }
+                return@post call.problem(json, status, type, detail)
             } catch (e: OidcVerificationError) {
                 return@post when (e) {
                     is OidcVerificationError.JwksUnavailable,

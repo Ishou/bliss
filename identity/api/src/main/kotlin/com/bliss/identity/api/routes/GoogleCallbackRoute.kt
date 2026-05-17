@@ -62,7 +62,13 @@ fun Route.googleCallback(
                 return@get call.problem(json, status, type, detail)
             } catch (e: CompleteProviderLinkError) {
                 val (status, type) = e.toProblem()
-                return@get call.problem(json, status, type, e.message ?: status.description)
+                val detail =
+                    if (e is CompleteProviderLinkError.LinkConflict) {
+                        "This provider account is already linked to another user."
+                    } else {
+                        e.message ?: status.description
+                    }
+                return@get call.problem(json, status, type, detail)
             } catch (e: OidcVerificationError) {
                 return@get when (e) {
                     is OidcVerificationError.JwksUnavailable,
