@@ -233,14 +233,22 @@ paths:
         - sessionCookie: []
       parameters:
         - $ref: '#/components/parameters/ProviderPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [returnTo]
+              properties:
+                returnTo: { type: string, format: uri }
       responses:
         '200':
           description: Returns the IdP authorise URL for the frontend to navigate the browser to.
-          headers:
-            Set-Cookie: { schema: { type: string } }
           content:
             application/json:
               schema: { $ref: '#/components/schemas/BeginLinkResponse' }
+        '400': { $ref: '#/components/responses/ProblemDetails' }
         '401': { $ref: '#/components/responses/ProblemDetails' }
 
 components:

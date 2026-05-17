@@ -7,6 +7,7 @@ import com.bliss.identity.api.routes.appleCallback
 import com.bliss.identity.api.routes.deleteMe
 import com.bliss.identity.api.routes.googleCallback
 import com.bliss.identity.api.routes.health
+import com.bliss.identity.api.routes.link
 import com.bliss.identity.api.routes.login
 import com.bliss.identity.api.routes.logout
 import com.bliss.identity.api.routes.me
@@ -121,6 +122,11 @@ fun Application.module(
         wiring.deleteUserOrNull?.let { deleteUser ->
             wiring.whoAmIOrNull?.let { whoAmI ->
                 deleteMe(deleteUser, whoAmI)
+            }
+        }
+        wiring.beginOidcLoginOrNull?.let { begin ->
+            wiring.whoAmIOrNull?.let { whoAmI ->
+                link(begin, whoAmI, returnToValidator)
             }
         }
     }
