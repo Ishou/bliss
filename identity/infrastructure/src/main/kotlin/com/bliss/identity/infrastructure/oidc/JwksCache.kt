@@ -1,6 +1,7 @@
 package com.bliss.identity.infrastructure.oidc
 
 import com.nimbusds.jose.jwk.JWKSet
+import java.net.URL
 import java.time.Duration
 import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
@@ -29,5 +30,15 @@ class JwksCache(
         val fresh = fetch(uri)
         cache[uri] = Entry(fresh, now)
         return fresh
+    }
+
+    companion object {
+        // Production factory — fetches via `JWKSet.load(URL(uri))`, blocking the calling
+        // coroutine. Acceptable: JWKS fetches are sporadic (TTL'd) and happen on a Ktor
+        // dispatcher that tolerates short blocking calls.
+        fun defaultProduction(
+            ttl: Duration,
+            clock: () -> Instant = Instant::now,
+        ): JwksCache = JwksCache(ttl = ttl, clock = clock, fetch = { uri -> JWKSet.load(URL(uri)) })
     }
 }
