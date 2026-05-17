@@ -5,7 +5,6 @@ import com.bliss.identity.domain.user.UserId
 import java.time.Instant
 import java.util.concurrent.CopyOnWriteArrayList
 
-/** Test double. Captures every broadcast for assertion. Production binding (HTTP fan-out) lands in Phase 6. */
 class InMemoryUserDeletedBroadcaster : UserDeletedBroadcaster {
     private val events = CopyOnWriteArrayList<Pair<UserId, Instant>>()
 
