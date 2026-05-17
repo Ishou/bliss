@@ -247,7 +247,7 @@ function LobbyRow({ lobby }: { readonly lobby: LobbySummary }) {
           <button
             type="button"
             className={iconButtonStyles}
-            aria-label="Copier le code"
+            aria-label="Copier le lien"
             onClick={handleCopy}
           >
             <CopyGlyph />
