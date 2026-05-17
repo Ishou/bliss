@@ -229,6 +229,38 @@ class CompleteOidcLoginUseCaseTest {
         }
 
     @Test
+    fun `orphaned user_providers link throws OrphanedLink`() =
+        runTest {
+            val attempts = InMemoryAuthAttemptRepository()
+            attempts.create(attempt())
+            val orphanUserId = UserId(UUID.fromString("01890c5e-0000-7000-8000-00000000ee01"))
+            val linkRepo =
+                InMemoryUserProviderRepository().apply {
+                    link(
+                        UserProvider(
+                            userId = orphanUserId,
+                            provider = Provider.GOOGLE,
+                            subject = Subject.of("google-sub-1"),
+                            emailAtLink = null,
+                            linkedAt = now.minusSeconds(86_400),
+                        ),
+                    )
+                }
+            // users repo is empty - the link points at a nonexistent user.
+            val (sut, bundle) =
+                newUseCase(
+                    attempts = attempts,
+                    userProviders = linkRepo,
+                    userIds = emptyList(),
+                    sessionIds = emptyList(),
+                )
+            val failure = assertFailure { sut.execute(CompleteOidcLoginCommand(state.value, "code-1")) }
+            failure.isInstanceOf(CompleteOidcLoginError.OrphanedLink::class)
+            // attempt was consumed before the orphan detection (after the linking-mode check)
+            assertThat(bundle.attempts.findByState(state)).isNull()
+        }
+
+    @Test
     fun `OidcVerificationError from the verifier propagates`() =
         runTest {
             val attempts = InMemoryAuthAttemptRepository()

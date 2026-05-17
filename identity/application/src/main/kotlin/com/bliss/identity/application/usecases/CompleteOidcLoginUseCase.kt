@@ -87,7 +87,7 @@ class CompleteOidcLoginUseCase(
             if (existingLink != null) {
                 users.updateLastSeenAt(existingLink.userId, now)
                 users.findById(existingLink.userId)
-                    ?: error("UserProvider points at a missing user (id=${existingLink.userId}).")
+                    ?: throw CompleteOidcLoginError.OrphanedLink(existingLink.userId)
             } else {
                 val created =
                     User(
