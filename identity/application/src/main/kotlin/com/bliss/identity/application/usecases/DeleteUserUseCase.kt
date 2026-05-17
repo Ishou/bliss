@@ -33,7 +33,7 @@ class DeleteUserUseCase(
             broadcaster.broadcast(command.userId, now)
         } catch (e: CancellationException) {
             throw e
-        } catch (e: Throwable) {
+        } catch (e: Exception) {
             throw DeleteUserError.BroadcastFailed(e)
         }
         users.delete(command.userId)

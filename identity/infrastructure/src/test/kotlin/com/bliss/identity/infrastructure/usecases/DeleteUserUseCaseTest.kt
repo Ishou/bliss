@@ -72,7 +72,6 @@ class DeleteUserUseCaseTest {
             failure.given { thrown ->
                 assertThat((thrown as DeleteUserError.BroadcastFailed).cause).isSameInstanceAs(downstreamError)
             }
-            // User row still present - local delete did not run.
             assertThat(users.findById(userId)).isNotNull()
         }
 
@@ -91,7 +90,6 @@ class DeleteUserUseCaseTest {
             val sut = DeleteUserUseCase(users = users, broadcaster = cancellingBroadcaster, clock = FixedClock(now))
             assertFailure { sut.execute(DeleteUserCommand(userId)) }
                 .isInstanceOf(kotlin.coroutines.cancellation.CancellationException::class)
-            // User still present — cancellation arrived before the local delete.
             assertThat(users.findById(userId)).isNotNull()
         }
 }
