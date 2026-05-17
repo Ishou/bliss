@@ -20,7 +20,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
-import { test } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 import { runAxe } from './lib/axeRun';
 import { startMultiplayerGame } from './lib/multiHelpers';
@@ -118,5 +118,47 @@ test.describe('WCAG 2.2 A + AA accessibility', () => {
     await page.evaluate(() => document.fonts.ready);
 
     await runAxe(page, 'multi-waiting-room');
+  });
+
+  test('grille route — zoomed in (scrollbars + minimap in DOM)', async ({ page }) => {
+    // Same 1440 × 900 viewport used by the rest of the suite; GridZoomControls
+    // is only rendered at ≥ 768 px (md breakpoint), so this viewport is fine.
+    await page.setViewportSize({ width: 1440, height: 900 });
+    // Pre-seed tour-seen so the SoloTour backdrop does not block the zoom
+    // controls — same pattern as the steady-state grille test above and
+    // the Task 5 E2E (grid-scrollbars-and-minimap.spec.ts).
+    await page.addInitScript(() => {
+      window.localStorage.setItem('wordsparrow.tour.seen', 'true');
+    });
+    await page.route(/\/v1\/puzzles\//, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(STRESS_FIXTURE),
+      });
+    });
+    await page.goto('/grille');
+    await page.waitForSelector('[role="grid"]', { state: 'visible' });
+    await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => r(null))));
+
+    // Zoom in twice — same aria-label and iteration pattern as zoomIn() in
+    // grid-scrollbars-and-minimap.spec.ts.  Inline here to avoid coupling
+    // the a11y suite to Task-5 helpers.
+    const zoomInBtn = page.getByRole('button', { name: /zoom in/i });
+    for (let i = 0; i < 2; i++) {
+      await zoomInBtn.click();
+      await page.waitForTimeout(180); // library animation is 150 ms
+    }
+
+    // Confirm the new overlays are in the DOM before running axe so the
+    // scan actually covers GridScrollbar and GridMinimap.
+    await expect(page.getByRole('scrollbar', { name: /vertical/i })).toBeVisible();
+    await expect(page.getByRole('scrollbar', { name: /horizontal/i })).toBeVisible();
+    await expect(page.getByRole('img', { name: /aperçu de la grille/i })).toBeVisible();
+
+    await page.evaluate(() => document.fonts.ready);
+    await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => r(null))));
+
+    await runAxe(page, 'grille-zoomed');
   });
 });
