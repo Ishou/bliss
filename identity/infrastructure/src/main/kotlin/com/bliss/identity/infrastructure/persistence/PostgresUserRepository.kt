@@ -8,6 +8,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.sql.ResultSet
 import java.time.Instant
+import java.time.temporal.ChronoUnit
 import java.util.UUID
 import javax.sql.DataSource
 
@@ -25,8 +26,8 @@ class PostgresUserRepository(
                 conn.prepareStatement(INSERT_SQL).use { stmt ->
                     stmt.setObject(1, user.id.value)
                     stmt.setString(2, user.displayName.value)
-                    stmt.setObject(3, user.createdAt)
-                    stmt.setObject(4, user.lastSeenAt)
+                    stmt.setObject(3, user.createdAt.truncatedTo(ChronoUnit.MICROS))
+                    stmt.setObject(4, user.lastSeenAt.truncatedTo(ChronoUnit.MICROS))
                     stmt.executeUpdate()
                 }
             }
@@ -49,7 +50,7 @@ class PostgresUserRepository(
         withContext(Dispatchers.IO) {
             dataSource.connection.use { conn ->
                 conn.prepareStatement(UPDATE_LAST_SEEN_SQL).use { stmt ->
-                    stmt.setObject(1, at)
+                    stmt.setObject(1, at.truncatedTo(ChronoUnit.MICROS))
                     stmt.setObject(2, id.value)
                     stmt.executeUpdate()
                 }
@@ -84,7 +85,8 @@ class PostgresUserRepository(
 
     companion object {
         private const val INSERT_SQL =
-            "INSERT INTO identity_users (user_id, display_name, created_at, last_seen_at) VALUES (?, ?, ?, ?)"
+            "INSERT INTO identity_users (user_id, display_name, created_at, last_seen_at) " +
+                "VALUES (?, ?, ?, ?) ON CONFLICT (user_id) DO NOTHING"
         private const val SELECT_SQL =
             "SELECT user_id, display_name, created_at, last_seen_at FROM identity_users WHERE user_id = ?"
         private const val UPDATE_LAST_SEEN_SQL =
