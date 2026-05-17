@@ -10,6 +10,7 @@ import assertk.assertions.isNull
 import assertk.assertions.isSameInstanceAs
 import com.bliss.identity.application.ports.ClientAuth
 import com.bliss.identity.application.ports.OidcCodeExchanger
+import com.bliss.identity.application.ports.OidcExchangeError
 import com.bliss.identity.application.ports.OidcExchangeResult
 import com.bliss.identity.application.ports.OidcProviderConfig
 import com.bliss.identity.application.ports.OidcResponseMode
@@ -221,6 +222,19 @@ class CompleteProviderLinkUseCaseTest {
             val failure = assertFailure { sut.execute(CompleteProviderLinkCommand(state.value, "code-1")) }
             failure.isInstanceOf(CancellationException::class)
             failure.given { thrown -> assertThat(thrown).isSameInstanceAs(cancellation) }
+        }
+
+    @Test
+    fun `TokenEndpointRejected is wrapped as ExchangeRejected preserving cause`() =
+        runTest {
+            val attempts = InMemoryAuthAttemptRepository()
+            attempts.create(linkAttempt())
+            val rejection = OidcExchangeError.TokenEndpointRejected(Provider.GOOGLE, 401, RuntimeException("rejected"))
+            val rejectingExchanger = OidcCodeExchanger { _, _, _, _ -> throw rejection }
+            val sut = newUseCase(attempts = attempts, codeExchanger = rejectingExchanger)
+            val failure = assertFailure { sut.execute(CompleteProviderLinkCommand(state.value, "code-1")) }
+            failure.isInstanceOf(CompleteProviderLinkError.ExchangeRejected::class)
+            failure.given { thrown -> assertThat(thrown.cause).isSameInstanceAs(rejection) }
         }
 
     @Test
