@@ -16,6 +16,7 @@ import com.nimbusds.jwt.SignedJWT
 import com.nimbusds.jwt.proc.BadJWTException
 import com.nimbusds.jwt.proc.DefaultJWTClaimsVerifier
 import com.nimbusds.jwt.proc.DefaultJWTProcessor
+import kotlinx.coroutines.CancellationException
 import java.text.ParseException
 import java.time.Instant
 
@@ -36,6 +37,8 @@ class JoseOidcVerifier(
         val jwkSet =
             try {
                 jwksCache.get(provider.jwksUri)
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 throw OidcVerificationError.JwksUnavailable(e)
             }
