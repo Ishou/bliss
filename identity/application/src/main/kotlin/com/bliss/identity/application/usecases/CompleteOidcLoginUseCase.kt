@@ -82,6 +82,13 @@ class CompleteOidcLoginUseCase(
                         jwksUri = config.jwksUri,
                     ),
             )
+        // Nonce validation deferred: ADR-0044 §"ID-token replay" promises nonce is tied to the
+        // attempt and rejected on mismatch. Full implementation requires a `nonce` field on
+        // AuthAttempt, generated in BeginOidcLoginUseCase and included in the authorize URL, then
+        // validated as `verified.nonce == attempt.nonce` here (with NonceMismatch error). PKCE
+        // mitigates authorization-code replay in the interim; ADR-0044 will be amended when
+        // this follow-up workstream lands.
+        // TODO(phase-nonce): add AuthAttempt.nonce, BeginOidcLoginUseCase nonce param, validate here.
         // TODO(phase-3): On Postgres, wrap `users.create` + `userProviders.link` + `sessions.create`
         // in a single transaction. The attempt has already been consumed, so a partial failure
         // strands the user (their attempt is gone, their record is half-written, and they can't
