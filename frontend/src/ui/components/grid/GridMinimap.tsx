@@ -151,6 +151,42 @@ export function GridMinimap({
     [],
   );
 
+  // Memoize topology rects: only rebuild when puzzle layout or validated
+  // positions change — not on every pan-driven transformState tick.
+  const cellRects = useMemo(() => {
+    const rects: React.ReactNode[] = [];
+    for (let row = 0; row < puzzle.height; row++) {
+      for (let col = 0; col < puzzle.width; col++) {
+        const k = `${row},${col}`;
+        const cell = cellByKey.get(k);
+        const kind = cell?.kind ?? 'block';
+        const validated = kind === 'letter' && validatedPositions.has(k);
+        const fill = validated
+          ? FILL_VALIDATED
+          : kind === 'block'
+          ? FILL_BLOCK
+          : kind === 'definition'
+          ? FILL_DEFINITION
+          : FILL_LETTER;
+        rects.push(
+          <rect
+            key={k}
+            data-cell-kind={kind}
+            data-row={row}
+            data-col={col}
+            data-validated={validated || undefined}
+            x={col}
+            y={row}
+            width={1}
+            height={1}
+            fill={fill}
+          />,
+        );
+      }
+    }
+    return rects;
+  }, [puzzle.height, puzzle.width, cellByKey, validatedPositions]);
+
   // Early-return AFTER hooks.
   if (scale <= 1.01) return null;
 
@@ -163,40 +199,6 @@ export function GridMinimap({
     minimapWidth: viewBoxW,
     minimapHeight: viewBoxH,
   });
-
-  // Build the topology rects. Every (row, col) within puzzle bounds gets
-  // a rect — empty positions render as a block cell (mirrors the main
-  // grid's BlockCellView fallback).
-  const cellRects: React.ReactNode[] = [];
-  for (let row = 0; row < puzzle.height; row++) {
-    for (let col = 0; col < puzzle.width; col++) {
-      const k = `${row},${col}`;
-      const cell = cellByKey.get(k);
-      const kind = cell?.kind ?? 'block';
-      const validated = kind === 'letter' && validatedPositions.has(k);
-      const fill = validated
-        ? FILL_VALIDATED
-        : kind === 'block'
-        ? FILL_BLOCK
-        : kind === 'definition'
-        ? FILL_DEFINITION
-        : FILL_LETTER;
-      cellRects.push(
-        <rect
-          key={k}
-          data-cell-kind={kind}
-          data-row={row}
-          data-col={col}
-          data-validated={validated || undefined}
-          x={col}
-          y={row}
-          width={1}
-          height={1}
-          fill={fill}
-        />,
-      );
-    }
-  }
 
   return (
     <div
