@@ -3,10 +3,11 @@ name: Deploy API (k8s)
 # Implements ADR-0009 §8 step 5: continuous delivery of the WordSparrow
 # services to the Hetzner k3s cluster (FSN1, 1 CP + 1 worker, ADR-0009 §2).
 #
-# As of Wave G PR (this commit) the workflow is a matrix that fans out
-# over the {grid, game} bounded contexts:
-#   - wordsparrow-api      → grid/api/deploy/chart, api.wordsparrow.io
-#   - wordsparrow-game-api → game/api/deploy/chart, game.wordsparrow.io
+# The workflow is a matrix that fans out over the {grid, game, identity}
+# bounded contexts:
+#   - wordsparrow-api          → grid/api/deploy/chart,     api.wordsparrow.io
+#   - wordsparrow-game-api     → game/api/deploy/chart,     game.wordsparrow.io
+#   - wordsparrow-identity-api → identity/api/deploy/chart, auth.wordsparrow.io
 #
 # Triggered by `Build and Push Image` (build-and-push-image.yml) on every
 # successful main push: each matrix row of the build workflow uploads
@@ -40,10 +41,15 @@ name: Deploy API (k8s)
 #   - Per-context env secrets exist in the `wordsparrow` namespace:
 #       - `wordsparrow-api-env` (grid)            (ADR-0009 §10)
 #       - `bliss-game-api-env` (game)             (ADR-0018, see chart values)
+#       - `bliss-identity-api-env` (identity)     (ADR-0045; carries OIDC client
+#                                                  creds + COOKIE_DOMAIN +
+#                                                  ALLOWED_RETURN_ORIGINS;
+#                                                  bootstrap recipe in PR 4.5e)
 #   - The GHCR packages are PUBLIC (one-time visibility flip per
 #     build-and-push-image.yml's header):
-#       - bliss/wordsparrow-api      (already public)
-#       - bliss/wordsparrow-game-api (NEW — must be flipped after first push)
+#       - bliss/wordsparrow-api          (already public)
+#       - bliss/wordsparrow-game-api     (already public)
+#       - bliss/wordsparrow-identity-api (NEW — must be flipped after first push)
 
 on:
   workflow_run:
@@ -60,6 +66,7 @@ on:
         options:
           - grid
           - game
+          - identity
         default: grid
       digest:
         description: 'Image digest to deploy, format "sha256:..." (manual rollback / redeploy).'
@@ -155,6 +162,23 @@ jobs:
             db-release-name: wordsparrow-game-api-pg
             db-chart-path: game/api/deploy/db-chart/
             db-values-file: game/api/deploy/db-chart/values-prod.yaml
+          # identity-api (ADR-0044, PR #500). Same chart-split pattern as
+          # game-api. Pre-merge gates: PR 4.5e bootstraps the
+          # `bliss-identity-api-env` Secret and flips the GHCR package
+          # visibility — until then, the first identity-context run on
+          # main may fail at "wait-for-postgres" (Secret missing) or
+          # ImagePullBackOff (package private). Both are recoverable
+          # by completing PR 4.5e's manual steps.
+          - context: identity
+            release-name: wordsparrow-identity-api
+            chart-path: identity/api/deploy/chart/
+            values-file: identity/api/deploy/chart/values-prod.yaml
+            digest-artifact: image-digest-identity
+            worker-digest-artifact: ""
+            health-url: https://auth.wordsparrow.io/v1/health
+            db-release-name: wordsparrow-identity-api-pg
+            db-chart-path: identity/api/deploy/db-chart/
+            db-values-file: identity/api/deploy/db-chart/values-prod.yaml
     environment:
       # Per-context environment so each appears separately in the GitHub
       # Environments UI and required-reviewer rules can be applied
