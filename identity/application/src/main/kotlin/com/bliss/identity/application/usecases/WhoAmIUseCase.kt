@@ -23,6 +23,12 @@ class WhoAmIUseCase(
     private val clock: Clock,
     private val sessionMaxAge: Duration,
 ) {
+    init {
+        require(!sessionMaxAge.isNegative && !sessionMaxAge.isZero) {
+            "sessionMaxAge must be positive; got $sessionMaxAge"
+        }
+    }
+
     suspend fun execute(query: WhoAmIQuery): WhoAmIResult {
         val session =
             sessions.findById(query.sessionId)

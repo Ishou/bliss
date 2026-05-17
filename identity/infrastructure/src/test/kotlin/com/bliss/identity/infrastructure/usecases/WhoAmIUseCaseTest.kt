@@ -39,16 +39,14 @@ class WhoAmIUseCaseTest {
             sessions,
         )
 
-    private fun seedUserAndSession(
+    private suspend fun seedUserAndSession(
         users: InMemoryUserRepository,
         sessions: InMemorySessionRepository,
         createdAt: Instant = now.minusSeconds(60),
         revokedAt: Instant? = null,
     ) {
-        runTest {
-            users.create(User(userId, DisplayName.of("Alice"), createdAt, createdAt))
-            sessions.create(Session(sessionId, userId, createdAt, createdAt, revokedAt))
-        }
+        users.create(User(userId, DisplayName.of("Alice"), createdAt, createdAt))
+        sessions.create(Session(sessionId, userId, createdAt, createdAt, revokedAt))
     }
 
     @Test
@@ -95,4 +93,17 @@ class WhoAmIUseCaseTest {
             val result = sut.execute(WhoAmIQuery(sessionId))
             assertThat(result).isEqualTo(WhoAmIResult(userId, DisplayName.of("Alice")))
         }
+
+    @Test
+    fun `constructor rejects non-positive sessionMaxAge`() {
+        val users = InMemoryUserRepository()
+        val sessions = InMemorySessionRepository()
+        val clock = FixedClock(now)
+        assertFailure {
+            WhoAmIUseCase(users, sessions, clock, Duration.ZERO)
+        }.isInstanceOf(IllegalArgumentException::class)
+        assertFailure {
+            WhoAmIUseCase(users, sessions, clock, Duration.ofSeconds(-1))
+        }.isInstanceOf(IllegalArgumentException::class)
+    }
 }
