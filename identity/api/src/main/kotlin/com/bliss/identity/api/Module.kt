@@ -3,6 +3,7 @@ package com.bliss.identity.api
 import com.bliss.identity.api.auth.ReturnToValidator
 import com.bliss.identity.api.config.IdentityApiConfig
 import com.bliss.identity.api.dto.ProblemDetails
+import com.bliss.identity.api.routes.googleCallback
 import com.bliss.identity.api.routes.health
 import com.bliss.identity.api.routes.login
 import com.bliss.identity.api.routes.whoAmI
@@ -97,6 +98,7 @@ fun Application.module(
         health()
         wiring.whoAmIOrNull?.let { whoAmI(it) }
         wiring.beginOidcLoginOrNull?.let { login(it, returnToValidator) }
+        wiring.completeOidcLoginOrNull?.let { googleCallback(it, config) }
     }
 }
 
