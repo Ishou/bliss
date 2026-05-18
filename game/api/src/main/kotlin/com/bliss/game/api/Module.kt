@@ -101,11 +101,7 @@ fun Application.module() {
         // Local dev — Vite default port 5173 (mirrors grid/api).
         allowHost("localhost:5173", schemes = listOf("http"))
 
-        // Phase 6c: lobby rebind/unbind endpoints are cookie-authed against the
-        // `__Secure-ws_session` cookie issued by identity-api with
-        // `Domain=wordsparrow.io`. CORS must permit credentials so browsers
-        // attach the cookie cross-origin from wordsparrow.io / www to
-        // game.wordsparrow.io.
+        // Cookie-authed rebind/unbind endpoints: __Secure-ws_session must travel cross-origin from wordsparrow.io origins.
         allowCredentials = true
         maxAgeInSeconds = 86400 // cache preflight for 24h
 
@@ -236,9 +232,7 @@ fun Application.module() {
     val puzzleProvider = HttpPuzzleProvider(sharedHttpClient, gridBaseUrl)
     val wordValidator = HttpWordValidator(sharedHttpClient, gridBaseUrl)
 
-    // Phase 6c cookie verification. In-cluster Service DNS by default; an
-    // explicit env var overrides for non-cluster deploys + local dev where
-    // identity-api may run on a different host.
+    // Phase 6c: in-cluster Service DNS default; IDENTITY_API_BASE_URL overrides for non-cluster deploys.
     val identityApiBaseUrl =
         System.getenv("IDENTITY_API_BASE_URL")
             ?: "http://wordsparrow-identity-api.wordsparrow:8082"

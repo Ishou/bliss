@@ -90,25 +90,14 @@ interface LobbyRepository {
      */
     suspend fun findIdleCompleted(cutoff: Instant): List<Lobby>
 
-    /**
-     * Anon→authed transition. Updates every [com.bliss.game.domain.Player] whose
-     * `sessionId == anonSessionId AND userId == null` to carry [userId] and
-     * [newPseudonym]. Idempotent — re-running with the same args is a no-op.
-     * Returns the set of lobby ids whose roster actually changed (suitable for
-     * WebSocket roster-broadcast scheduling).
-     */
+    /** Anon→authed: sets userId + pseudonym on seats where sessionId == anonSessionId AND userId == null. Idempotent. Returns touched lobby ids. */
     suspend fun rebindAnonSeats(
         anonSessionId: SessionId,
         userId: UserId,
         newPseudonym: Pseudonym,
     ): Set<LobbyId>
 
-    /**
-     * Sign-out reversal of [rebindAnonSeats]. Updates every Player whose
-     * `userId == this user` to clear `userId` back to null and revert
-     * `pseudonym` to the supplied anon pseudonym. Idempotent.
-     * Returns the set of touched lobby ids.
-     */
+    /** Sign-out reversal of rebindAnonSeats: clears userId and reverts pseudonym on all seats for this user. Idempotent. Returns touched lobby ids. */
     suspend fun unbindUserSeats(
         userId: UserId,
         anonPseudonym: Pseudonym,

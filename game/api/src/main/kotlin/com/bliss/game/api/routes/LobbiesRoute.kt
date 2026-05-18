@@ -64,12 +64,6 @@ fun Route.lobbies(
             val ownerSessionId =
                 runCatching { SessionId(request.ownerSessionId) }
                     .getOrElse { return@post call.respondInvalidCreate(it.message) }
-            // Phase 6c: when the caller is authed, use the verified
-            // identity displayName + userId so the new lobby seat persists
-            // with the signed-in user's identity. Anon callers keep the
-            // localStorage pseudonym from the request body. Verifier
-            // returns null on missing/invalid cookie (fail-closed) so
-            // anon flow stays unchanged.
             val rawCookie = call.request.cookies[CookieNames.SESSION]
             val whoAmI = cookieVerifier.verify(rawCookie)
             val ownerPseudonym =

@@ -30,11 +30,6 @@ import kotlinx.serialization.json.Json
 import org.junit.jupiter.api.Test
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation as ServerContentNegotiation
 
-/**
- * Wire-path tests for POST /v1/lobbies/players/rebind and
- * /v1/lobbies/players/unbind. Covers auth gating (401), success (204),
- * and invalid-input (400) paths. ASCII-only test names.
- */
 class LobbyRebindRouteTest {
     private val anonSessionId = "0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6b"
     private val userId = "0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6c"
