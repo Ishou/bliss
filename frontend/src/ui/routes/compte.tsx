@@ -124,6 +124,7 @@ function ComptePage() {
       const fresh = await authClient.getMe();
       setMe(fresh);
       await refresh();
+      toast.show({ text: 'Pseudonyme mis à jour.' });
     } catch (err) {
       setSaveError(
         err instanceof InvalidDisplayNameError
