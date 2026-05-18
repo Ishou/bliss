@@ -88,8 +88,9 @@ New port in `game/application/`:
 interface CookieVerifier {
     /**
      * Resolves the session cookie to the authenticated user.
-     * Returns null when no cookie / cookie invalid / identity-api returns 401.
-     * Throws on network error after retries — caller decides fail-open / fail-closed.
+     * Returns null when: no cookie present, cookie is blank, identity-api
+     * returns 401, identity-api returns 5xx, or a network error occurs.
+     * Fail-closed in all error cases. Never throws.
      */
     suspend fun verify(rawCookieValue: String?): WhoAmI?
 }
