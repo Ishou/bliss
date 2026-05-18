@@ -268,7 +268,10 @@ function FrenchContent() {
       </section>
       <h2>Ce que nous ne collectons pas</h2>
       <ul>
-        <li>Aucun compte, aucun mot de passe, aucune adresse e-mail.</li>
+        <li>
+          Pas de compte obligatoire, aucun mot de passe, aucune adresse e-mail — la connexion via
+          Google est facultative et crée un compte joueur tel que décrit ci-dessus.
+        </li>
         <li>Aucun cookie de tracking publicitaire.</li>
         <li>Aucune adresse IP n’est conservée (Matomo l’anonymise au niveau des deux derniers octets).</li>
         <li>Aucun partage avec des régies publicitaires ou des courtiers en données.</li>
@@ -280,11 +283,19 @@ function FrenchContent() {
         les conditions de l’exemption : adresse IP anonymisée, absence de recoupement avec
         d’autres traitements, pas de transmission à des tiers, pas de profilage individuel.
       </p>
+      <p>
+        <strong>Consentement</strong> (RGPD article 6.1.a). Le traitement des données d’identité
+        (UUID interne, pseudonyme, horodatages, cookie de session) lié à un compte joueur repose
+        sur votre consentement donné lors de la connexion via Google. Vous pouvez retirer ce
+        consentement à tout moment en supprimant votre compte via <code>/compte</code>.
+      </p>
       <h2>Cookies</h2>
       <p>
-        WordSparrow <strong>n’utilise pas</strong> de cookies. Le service stocke un identifiant de
-        session anonyme dans le <code>localStorage</code> de votre navigateur (technologie
-        distincte des cookies). Matomo fonctionne en mode sans cookie.
+        Pour les utilisateurs anonymes, WordSparrow <strong>n’utilise pas</strong> de cookies. Le
+        service stocke un identifiant de session anonyme dans le <code>localStorage</code> de votre
+        navigateur (technologie distincte des cookies). Matomo fonctionne en mode sans cookie. Si
+        vous vous connectez via Google, le cookie <code>__Host-ws_session</code> (HttpOnly, Secure,
+        durée 7 jours) est posé — voir la section « Compte joueur et connexion » ci-dessus.
       </p>
       <h2>Vos droits</h2>
       <ul>
@@ -419,7 +430,10 @@ function EnglishContent() {
       </section>
       <h2>What we do not collect</h2>
       <ul>
-        <li>No accounts, no passwords, no email addresses.</li>
+        <li>
+          No mandatory accounts, no passwords, no email addresses — sign-in with Google is optional
+          and creates a player account as described above.
+        </li>
         <li>No advertising or tracking cookies.</li>
         <li>No IP addresses retained (Matomo anonymizes the last two octets).</li>
         <li>No sharing with ad networks or data brokers.</li>
@@ -431,11 +445,19 @@ function EnglishContent() {
         exemption conditions (anonymized IP, no cross-site profiling, no third-party sharing, no
         individual profiling).
       </p>
+      <p>
+        <strong>Consent</strong> (GDPR Article 6.1.a). Processing of identity data (internal UUID,
+        display name, timestamps, session cookie) associated with a player account is based on your
+        consent given during Google sign-in. You may withdraw this consent at any time by deleting
+        your account via <code>/compte</code>.
+      </p>
       <h2>Cookies</h2>
       <p>
-        WordSparrow does <strong>not</strong> set cookies. The service stores an anonymous session
-        identifier in your browser&apos;s <code>localStorage</code> (distinct from cookies). Matomo
-        runs in cookieless mode.
+        For anonymous users, WordSparrow does <strong>not</strong> set cookies. The service stores
+        an anonymous session identifier in your browser&apos;s <code>localStorage</code> (distinct
+        from cookies). Matomo runs in cookieless mode. If you sign in with Google, the{' '}
+        <code>__Host-ws_session</code> cookie (HttpOnly, Secure, 7-day lifetime) is set — see the
+        &ldquo;Player account and sign-in&rdquo; section above.
       </p>
       <h2>Your rights</h2>
       <ul>
