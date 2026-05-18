@@ -1,0 +1,20 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "bliss-nats.fullname" . }}
+  labels: {{- include "bliss-nats.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels: {{- include "bliss-nats.selectorLabels" . | nindent 6 }}
+  policyTypes: [Ingress]
+  ingress:
+    # Only identity-api + game-api (+ future grid-api in 6b) can reach the
+    # NATS port. The stream-init Job's pod carries selectorLabels so the
+    # last from rule covers it without loosening the policy further.
+    - from:
+        - podSelector: { matchLabels: { app.kubernetes.io/name: bliss-identity-api } }
+        - podSelector: { matchLabels: { app.kubernetes.io/name: bliss-game-api } }
+        - podSelector: { matchLabels: { app.kubernetes.io/name: bliss-grid-api } }
+        - podSelector: { matchLabels: { app.kubernetes.io/name: bliss-nats } }  # stream-init Job
+      ports:
+        - { protocol: TCP, port: {{ .Values.config.port }} }

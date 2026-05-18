@@ -25,12 +25,14 @@ on:
     paths:
       - '*/api/deploy/chart/**'
       - '*/api/deploy/db-chart/**'
+      - 'infra/nats/**'
       - '.github/workflows/api-chart-lint.yml'
   push:
     branches: [main]
     paths:
       - '*/api/deploy/chart/**'
       - '*/api/deploy/db-chart/**'
+      - 'infra/nats/**'
       - '.github/workflows/api-chart-lint.yml'
 
 concurrency:
@@ -79,6 +81,15 @@ jobs:
             localValuesFile: values.yaml
           - path: identity/api/deploy/db-chart
             release: wordsparrow-identity-api-pg
+            hasProdValues: true
+            localValuesFile: values.yaml
+          # NATS JetStream chart (ADR-0049). Sits under `infra/nats/` rather
+          # than `<ctx>/api/deploy/` because it is shared infrastructure with
+          # no owning bounded context. Ships values.yaml (local defaults) +
+          # values-prod.yaml (Hetzner overrides); same hasProdValues=true
+          # posture as the db-charts.
+          - path: infra/nats
+            release: bliss-nats
             hasProdValues: true
             localValuesFile: values.yaml
     steps:

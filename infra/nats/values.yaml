@@ -1,0 +1,49 @@
+image:
+  # nats:2.10-alpine. Pinned by digest in values-prod.yaml.
+  repository: nats
+  tag: "2.10-alpine"
+  digest: ""
+  pullPolicy: IfNotPresent
+
+streamInit:
+  image:
+    # natsio/nats-box bundles the nats CLI used to bootstrap the stream.
+    repository: natsio/nats-box
+    tag: "0.14"
+    digest: ""
+
+# JetStream stream storage. 1Gi covers ~10M small events at alpha volume.
+storage:
+  size: 1Gi
+  # Empty -> cluster default. Prod sets "hcloud-volumes" per ADR-0010.
+  storageClass: ""
+
+# Server config — JetStream enabled, file storage on the PVC, no auth in v1.
+config:
+  port: 4222
+  monitorPort: 8222
+  jetstreamMaxMemory: "256M"
+  jetstreamMaxFile: "1Gi"
+
+# Stream definition applied at startup via the bootstrap Job.
+stream:
+  name: WORDSPARROW_USER_EVENTS
+  subjects: ["wordsparrow.user.>"]
+  maxAge: "168h"   # 7 days
+  storage: file
+  replicas: 1
+  discardPolicy: old
+
+resources:
+  requests: { cpu: 100m, memory: 128Mi }
+  limits: { cpu: 500m, memory: 384Mi }
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities: { drop: [ALL] }
