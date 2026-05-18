@@ -92,8 +92,8 @@ fun Application.module(
         // predicate variant.
         //
         // The actual security perimeter remains origin allow-list + per-IP
-        // rate limit at ingress (mirrors grid/game). ADR-0034 amendment to
-        // cover identity-api lands in a follow-up doc PR.
+        // rate limit at ingress (mirrors grid/game). Credentialed-variant
+        // rationale documented in ADR-0048.
         allowHeaders { true }
 
         // PATCH /v1/users/me sends `Content-Type: application/json`, which
