@@ -29,7 +29,7 @@ Phase 4 spec referenced this work under "Out of scope (Phase 6) — anon ↔ aut
 | Decision | Choice |
 |---|---|
 | Phase 6 ordering | 6a skipped (FK cascade already handles session orphans; broadcaster contract already minimal). 6c first (most user-visible bug — Marmotte→Isho). 6b in parallel later. 6d folds into 6c since GDPR delete demands reliable delivery. |
-| Cookie-verify pattern | HTTP call from game-api to identity-api `GET /v1/auth/whoami` with 30s LRU cache keyed on `sessionId`. Cache 401 results too. 5xx → fail closed (treat as anon). WebSocket connections verify at upgrade only. |
+| Cookie-verify pattern | HTTP call from game-api to identity-api `GET /v1/auth/whoami` with 30s LRU cache keyed on the raw cookie value (`rawCookieValue`). Cache 401 results too. 5xx → fail closed (treat as anon). WebSocket connections verify at upgrade only. |
 | Display name resolution in lobbies | Denormalize at join time + invalidate via `user.renamed` event. Lobby player records carry the snapshot at join (or rebind), and NATS-delivered rename events refresh them. |
 | Anon → authed mid-game | Server rebinds the existing seat (set `userId`, refresh `pseudonym` from `whoami.displayName`). Same WebSocket connection, same lobby seat, new identity. Other clients see the rename on next state-update broadcast. |
 | Authed → anon (logout) | Frontend calls `unbind` (cookie-authed) BEFORE `logout` clears the cookie. Game-api clears `userId` and resets `pseudonym` to the localStorage anon name supplied by the request body. Best-effort; if unbind fails, the next page refresh shows stale-named seats. |
@@ -122,13 +122,13 @@ In-memory only (ADR-0018 §3). No migration. The field defaults to null so exist
 ### Game-api lobby endpoints
 
 **Existing endpoints** (`POST /v1/lobbies`, `POST /v1/lobbies/by-code/{code}/join`, etc.):
-- Each handler now extracts the cookie, calls `cookieVerifier.verify(sessionId)`.
+- Each handler now extracts the cookie, calls `cookieVerifier.verify(rawCookieValue)`.
 - If verify returns a `WhoAmI`: `LobbyPlayer.userId = whoami.userId`, `pseudonym = whoami.displayName`. The `pseudonym` in the request body is **ignored when authed** (server is source of truth).
 - If verify returns null: behavior unchanged from today.
 
 **New `POST /v1/lobbies/players/rebind`** (cookie-authed):
 - Body: `{ anonSessionId: string }`.
-- Server calls `cookieVerifier.verify(cookie.sessionId)` → `WhoAmI`.
+- Server calls `cookieVerifier.verify(rawCookieValue)` → `WhoAmI`.
 - Finds all `LobbyPlayer` rows where `sessionId == anonSessionId` AND `userId == null`. For each: set `userId = whoami.userId`, set `pseudonym = whoami.displayName`. Schedule WebSocket roster broadcasts for affected lobbies.
 - Returns 204. Idempotent (re-running with rows already bound is a no-op).
 
