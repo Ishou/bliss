@@ -18,7 +18,8 @@ fun main() {
             requireUrl = true,
         ).apply { start() }
     val dataSource = db.dataSource() ?: error("IdentityDatabase did not produce a DataSource.")
-    val wiring = Wiring.forProduction(config, dataSource, CIO.create())
+    val natsUrl = System.getenv("NATS_URL") ?: "nats://bliss-nats.wordsparrow:4222"
+    val wiring = Wiring.forProduction(config, dataSource, CIO.create(), natsUrl)
 
     embeddedServer(Netty, port = port, host = "0.0.0.0") {
         module(wiring, config)

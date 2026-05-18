@@ -9,6 +9,7 @@ kotlin {
 dependencies {
     implementation(project(":identity:domain"))
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")
+    implementation("org.slf4j:slf4j-api:2.0.16")
 
     testImplementation(platform("org.junit:junit-bom:5.11.4"))
     testImplementation("org.junit.jupiter:junit-jupiter")

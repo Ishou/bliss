@@ -4,6 +4,8 @@ import com.bliss.identity.api.config.IdentityApiConfig
 import com.bliss.identity.api.routes.CallbackDispatcher
 import com.bliss.identity.application.ports.OidcProviderConfig
 import com.bliss.identity.application.ports.OidcResponseMode
+import com.bliss.identity.application.ports.UserDeletedBroadcaster
+import com.bliss.identity.application.ports.UserRenamedBroadcaster
 import com.bliss.identity.application.usecases.BeginOidcLoginUseCase
 import com.bliss.identity.application.usecases.CompleteOidcLoginUseCase
 import com.bliss.identity.application.usecases.CompleteProviderLinkUseCase
@@ -15,7 +17,9 @@ import com.bliss.identity.application.usecases.WhoAmIUseCase
 import com.bliss.identity.domain.oidc.OidcVerifier
 import com.bliss.identity.domain.provider.Provider
 import com.bliss.identity.infrastructure.auth.SecureRandomFactory
-import com.bliss.identity.infrastructure.events.InMemoryUserDeletedBroadcaster
+import com.bliss.identity.infrastructure.events.NatsConnectionFactory
+import com.bliss.identity.infrastructure.events.NatsUserDeletedBroadcaster
+import com.bliss.identity.infrastructure.events.NatsUserRenamedBroadcaster
 import com.bliss.identity.infrastructure.id.UuidV7IdGenerator
 import com.bliss.identity.infrastructure.oidc.JoseOidcVerifier
 import com.bliss.identity.infrastructure.oidc.JwksCache
@@ -75,6 +79,7 @@ class Wiring private constructor(
             config: IdentityApiConfig,
             dataSource: DataSource,
             httpClientEngine: HttpClientEngine,
+            natsUrl: String,
         ): Wiring {
             val clock = SystemClock
             val idGen = UuidV7IdGenerator()
@@ -131,8 +136,12 @@ class Wiring private constructor(
                     clock = clock,
                 )
 
-            // TODO(phase-6): replace with HttpUserDeletedBroadcaster fanning out to grid + game.
-            val broadcaster = InMemoryUserDeletedBroadcaster()
+            // NATS publishers (ADR-0049). user.deleted is publish-ack-required; user.renamed
+            // is fire-and-forget. Connection is opened synchronously; if NATS is unreachable
+            // boot aborts and k8s restarts the pod.
+            val (_, jetStream) = NatsConnectionFactory(natsUrl).connect()
+            val deletedBroadcaster: UserDeletedBroadcaster = NatsUserDeletedBroadcaster(jetStream)
+            val renamedBroadcaster: UserRenamedBroadcaster = NatsUserRenamedBroadcaster(jetStream)
 
             val completeOidcLoginUseCase =
                 CompleteOidcLoginUseCase(
@@ -177,8 +186,8 @@ class Wiring private constructor(
                 _whoAmI = WhoAmIUseCase(users, sessions, clock, config.sessionMaxAge),
                 _logout = LogoutUseCase(sessions, clock),
                 _getMe = GetMeUseCase(users, userProviders),
-                _updateMe = UpdateMeUseCase(users),
-                _deleteUser = DeleteUserUseCase(users, broadcaster, clock),
+                _updateMe = UpdateMeUseCase(users, renamedBroadcaster, clock),
+                _deleteUser = DeleteUserUseCase(users, deletedBroadcaster, clock),
                 _callbackDispatcher = callbackDispatcher,
             )
         }

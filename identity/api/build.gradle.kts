@@ -62,6 +62,11 @@ dependencies {
     implementation(project(":identity:application"))
     implementation(project(":identity:infrastructure"))
 
+    // NATS client — Wiring.forProduction directly references Connection + JetStream
+    // to construct the publisher adapters (ADR-0049). Gradle implementation scope
+    // is not transitive upward; identity:infrastructure cannot expose this to api.
+    implementation("io.nats:jnats:2.20.6")
+
     // Ktor server core + Netty engine.
     implementation("io.ktor:ktor-server-core:$ktorVersion")
     implementation("io.ktor:ktor-server-netty:$ktorVersion")

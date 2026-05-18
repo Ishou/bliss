@@ -24,6 +24,8 @@ import com.bliss.game.infrastructure.HttpWordValidator
 import com.bliss.game.infrastructure.InMemoryLobbyRepository
 import com.bliss.game.infrastructure.analytics.MatomoAnalyticsAdapter
 import com.bliss.game.infrastructure.analytics.NoopAnalyticsAdapter
+import com.bliss.game.infrastructure.events.NatsConnectionFactory
+import com.bliss.game.infrastructure.events.UserEventSubscribers
 import com.bliss.game.infrastructure.persistence.BlissDatabase
 import com.bliss.game.infrastructure.persistence.PostgresLobbyRepository
 import io.ktor.client.HttpClient
@@ -231,6 +233,24 @@ fun Application.module() {
     val analyticsScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     monitor.subscribe(ApplicationStopped) { analyticsScope.cancel() }
     val analyticsEventSink: AnalyticsEventSink = createAnalyticsEventSink(analyticsScope)
+
+    // NATS JetStream subscribers (ADR-0049, Phase 6c.1). Log-only in this PR;
+    // PR 6c.3 swaps the handlers to drive lobby state. Off by default so the
+    // test harness (which doesn't run a NATS server) boots end-to-end; the
+    // prod chart sets NATS_URL explicitly via the values.yaml env block.
+    val natsUrl = System.getenv("NATS_URL")?.takeIf { it.isNotBlank() }
+    if (natsUrl != null) {
+        val (natsConnection, jetStream) = NatsConnectionFactory(natsUrl).connect()
+        val userEventSubscribers = UserEventSubscribers(jetStream)
+        userEventSubscribers.start()
+        monitor.subscribe(ApplicationStopped) {
+            userEventSubscribers.close()
+            natsConnection.close()
+        }
+        moduleLog.info("game-api NATS subscribers started against {}", natsUrl)
+    } else {
+        moduleLog.info("game-api NATS subscribers disabled (NATS_URL unset)")
+    }
 
     val useCases =
         LobbyUseCases(
