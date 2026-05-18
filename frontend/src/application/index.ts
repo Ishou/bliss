@@ -14,3 +14,10 @@ export type {
   ValidationResult,
 } from './puzzle';
 export { HintRequestError } from './puzzle';
+export type {
+  AuthClient,
+  GetMeResult,
+  LinkedProvider,
+  WhoAmIResult,
+} from './auth';
+export { InvalidDisplayNameError } from './auth';
