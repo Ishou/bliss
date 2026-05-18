@@ -29,6 +29,7 @@ interface MswHandle {
       path: string,
       resolver: (args: { request: Request }) => unknown,
     ) => unknown;
+    delete: (path: string, resolver: () => unknown) => unknown;
   };
   HttpResponse: {
     json: (body: unknown) => unknown;
@@ -39,7 +40,10 @@ interface MswHandle {
 async function seedAuth(
   page: Page,
   mode: 'authed' | 'anon',
-  patchBehavior?: { kind: 'stateful-update' } | { kind: 'fixed-error'; detail: string },
+  patchBehavior?:
+    | { kind: 'stateful-update' }
+    | { kind: 'fixed-error'; detail: string }
+    | { kind: 'delete-flow' },
 ): Promise<void> {
   await page.addInitScript(
     ({ kind, user, me, patch }) => {
@@ -70,6 +74,26 @@ async function seedAuth(
                   }
                   current.whoami = { ...current.whoami, displayName: next };
                   current.me = { ...current.me, displayName: next };
+                  return new HttpResponse(null, { status: 204 });
+                }),
+              );
+            } else if (patch?.kind === 'delete-flow') {
+              // Stateful delete: after DELETE /v1/users/me succeeds, swap
+              // the whoami handler to 401 so AuthProvider.refresh() flips
+              // the header back to anon and the redirect target shows
+              // the sign-in button.
+              worker.use(
+                http.get('*/v1/auth/whoami', () => HttpResponse.json(user)),
+                http.get('*/v1/users/me', () => HttpResponse.json(me)),
+                http.delete('*/v1/users/me', () => {
+                  worker.use(
+                    http.get('*/v1/auth/whoami', () =>
+                      new HttpResponse(
+                        JSON.stringify({ type: 'about:blank', title: 'unauthenticated', status: 401 }),
+                        { status: 401, headers: { 'content-type': 'application/problem+json' } },
+                      ),
+                    ),
+                  );
                   return new HttpResponse(null, { status: 204 });
                 }),
               );
@@ -230,5 +254,33 @@ test('Se déconnecter navigates to / and shows sign-in button', async ({ page })
   await page.waitForURL('**/');
   expect(new URL(page.url()).pathname).toBe('/');
   // Sign-in button re-appears after auth refresh resolves to anon.
+  await expect(page.getByRole('button', { name: /Se connecter/i })).toBeVisible({ timeout: 3000 });
+});
+
+test('/compte delete: confirm button disabled until display name matches', async ({ page }) => {
+  await seedAuth(page, 'authed', { kind: 'delete-flow' });
+  await page.goto('/compte');
+
+  await page.getByRole('button', { name: 'Supprimer mon compte' }).click();
+  const confirmButton = page.getByRole('button', { name: 'Supprimer', exact: true });
+  await expect(confirmButton).toBeDisabled();
+
+  await page.getByRole('textbox', { name: 'Confirmation du pseudonyme' }).fill('Lapin');
+  await expect(confirmButton).toBeDisabled();
+
+  await page.getByRole('textbox', { name: 'Confirmation du pseudonyme' }).fill('Lapin 472');
+  await expect(confirmButton).toBeEnabled();
+});
+
+test('/compte delete: confirming redirects to / and restores anon sign-in button', async ({ page }) => {
+  await seedAuth(page, 'authed', { kind: 'delete-flow' });
+  await page.goto('/compte');
+
+  await page.getByRole('button', { name: 'Supprimer mon compte' }).click();
+  await page.getByRole('textbox', { name: 'Confirmation du pseudonyme' }).fill('Lapin 472');
+  await page.getByRole('button', { name: 'Supprimer', exact: true }).click();
+
+  await page.waitForURL('**/');
+  expect(new URL(page.url()).pathname).toBe('/');
   await expect(page.getByRole('button', { name: /Se connecter/i })).toBeVisible({ timeout: 3000 });
 });
