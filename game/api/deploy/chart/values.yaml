@@ -158,9 +158,7 @@ env:
   # chart in the `wordsparrow` namespace (Phase 6c.0, PR #523).
   - name: NATS_URL
     value: "nats://bliss-nats.wordsparrow:4222"
-  # Phase 6c: identity-api whoami endpoint for cookie verification on
-  # cookie-authed lobby endpoints. In-cluster Service DNS for the
-  # wordsparrow-identity-api chart.
+  # Phase 6c: identity-api whoami; in-cluster Service DNS default.
   - name: IDENTITY_API_BASE_URL
     value: "http://wordsparrow-identity-api.wordsparrow:8082"
 # Name of a Kubernetes Secret to envFrom into the pod. ADR-0009 §10:

@@ -200,9 +200,6 @@ class LobbiesRouteTest {
                     ),
                 ),
         ) { client, repo ->
-            // Anon pseudonym in the body would normally land on the player row.
-            // With a valid cookie, the verifier wins: the player row should
-            // carry whoami.displayName + whoami.userId.
             val response =
                 client.post("/v1/lobbies") {
                     cookie(name = "__Secure-ws_session", value = "stub-cookie")
