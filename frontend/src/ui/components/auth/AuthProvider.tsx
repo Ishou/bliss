@@ -31,18 +31,17 @@ export interface AuthProviderProps {
   readonly authClient: AuthClient;
   readonly getPseudonym: () => string;
   /**
-   * Anon session id source. Phase 6c: fires {@link AuthProviderProps.onAuthed}
-   * on the anon→authed transition with this value so the composition root
-   * can rebind lobby seats. Optional — when omitted, the rebind hook is
-   * skipped (no multiplayer feature flag, or test environments).
+   * Anon session id source. Fires {@link AuthProviderProps.onAuthed} on the
+   * anon→authed transition with this value so the composition root can rebind
+   * lobby seats. Optional — when omitted, the rebind hook is skipped (no
+   * multiplayer feature flag, or test environments).
    */
   readonly getLocalSessionId?: () => string;
   /**
-   * Fired exactly once per page load on the anon→authed transition. The
-   * latch resets whenever the user signs back out, so a re-sign-in after
-   * sign-out re-fires this hook. Failures inside the callback are swallowed
-   * by the caller — AuthProvider clears the latch if the callback rejects
-   * so the next state read retries.
+   * Fired once per sign-in event. The latch resets on sign-out so a
+   * re-sign-in on the same page re-fires this hook. Failures inside the
+   * callback are swallowed — AuthProvider clears the latch on rejection so
+   * the next state change retries.
    */
   readonly onAuthed?: (anonSessionId: string) => Promise<void> | void;
   readonly children: ReactNode;
@@ -64,9 +63,8 @@ export function AuthProvider({
   // Idempotency latch — guarantees the first-sign-in PATCH fires at
   // most once per page load, even if two visibilitychange events race.
   const carryOverAttempted = useRef(false);
-  // Phase 6c anon→authed rebind latch. Cleared on sign-out so a
-  // re-sign-in re-fires the hook; cleared on callback rejection so the
-  // next render retries.
+  // Anon→authed rebind latch. Cleared on sign-out so a re-sign-in
+  // re-fires the hook; cleared on callback rejection so the next render retries.
   const onAuthedLatch = useRef(false);
 
   const checkSession = useCallback(async (): Promise<WhoAmIResult | null> => {

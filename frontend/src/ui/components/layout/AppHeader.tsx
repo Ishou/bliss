@@ -214,10 +214,10 @@ export function AppHeader({ activeNavId }: AppHeaderProps = {}) {
   // <Link>/<navigate> prevents full-page reload + prerender-flash on header clicks.
   const navigate = useNavigate();
   const { authClient, lobbyClient, getPseudonym } = useRouteContext({ from: '__root__' });
-  // Phase 6c: pre-logout hook calls `unbindLobbySessions` so authed lobby
-  // seats revert to the anon pseudonym before the session cookie clears.
-  // Only wired when both adapters are present in context (multiplayer flag
-  // on + AuthProvider mounted by main.tsx).
+  // Pre-logout hook calls `unbindLobbySessions` so authed lobby seats revert
+  // to the anon pseudonym before the session cookie clears. Only wired when
+  // both adapters are present in context (multiplayer flag on + AuthProvider
+  // mounted by main.tsx).
   const onBeforeLogout =
     lobbyClient && getPseudonym
       ? async () => {

@@ -59,10 +59,10 @@ export interface AvatarMenuProps {
   readonly authClient: AuthClient;
   readonly whoami: WhoAmIResult;
   /**
-   * Optional pre-logout hook. Phase 6c wires this to
-   * `lobbyClient.unbindLobbySessions` so authed lobby seats revert to the
-   * anon pseudonym before the session cookie is cleared. Failures are
-   * swallowed locally and logged — logout proceeds regardless.
+   * Optional pre-logout hook wired to `lobbyClient.unbindLobbySessions` so
+   * authed lobby seats revert to the anon pseudonym before the session cookie
+   * is cleared. Failures are swallowed locally and logged — logout proceeds
+   * regardless.
    */
   readonly onBeforeLogout?: () => Promise<void>;
 }

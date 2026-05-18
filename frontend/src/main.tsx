@@ -281,9 +281,8 @@ enableMocks()
       tracker.trackPageView(url, document.title || undefined);
     });
 
-    // Phase 6c: bind anon lobby seats to the authed user once whoami flips
-    // from anon to authed. `multiplayer`-gated so non-multiplayer bundles
-    // don't pull `lobbyClient` through here.
+    // Multiplayer-gated so non-multiplayer bundles don't pull `lobbyClient`
+    // through here.
     const onAuthed =
       multiplayer && 'lobbyClient' in context
         ? async (anonSessionId: string) => {
