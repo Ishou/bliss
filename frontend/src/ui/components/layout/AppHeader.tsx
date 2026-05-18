@@ -195,10 +195,12 @@ function skipLinkLabelForPath(pathname: string): string {
 // callers that need that pass `activeNavId` explicitly.
 //
 // Pathname is normalized by stripping a trailing slash (except for `/`
-// itself). Cloudflare Pages serves a prerendered `dist/grilles/index.html`
-// for `/grilles` and canonicalizes the URL to `/grilles/` on hard refresh,
-// while SPA navigation via <Link to="/grilles"> keeps the slash off.
-// Without normalization the underline silently drops after a hard refresh.
+// itself). The prerender emits `dist/<slug>.html` so Pages serves
+// `/<slug>` directly (no redirect), and `_redirects` rules send any
+// `/<slug>/` traffic back to `/<slug>` with a 308 — so SPA navigation
+// (Link to="/grilles") and hard refreshes both land on the canonical
+// no-trailing form. The normalization remains as defense in depth in
+// case a caller passes a trailing slash explicitly.
 export function activeIdForPath(pathname: string): string | undefined {
   const normalized = pathname.length > 1 && pathname.endsWith('/')
     ? pathname.slice(0, -1)
