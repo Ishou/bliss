@@ -140,7 +140,17 @@ const MIN_WRAPPER_HEIGHT_PX = 140;
 // 8 px keeps the cell visually clear.
 const WRAPPER_BOTTOM_MARGIN_PX = 8;
 
-const rowStyles = css({ display: 'contents' });
+// Cells are rendered as direct children of the `role="grid"` container,
+// not wrapped in `<div role="row">` elements. Row wrappers used to carry
+// `display: contents` so they collapsed into the parent CSS Grid's track
+// layout — but iOS Safari mishandles `display: contents` inside CSS
+// Grid: the wrapper is dropped from the box tree, yet WebKit fails to
+// re-parent the children as grid items. The cells then fall out of
+// their tracks and the rows visually wrap. Flattening sidesteps the bug
+// entirely; row semantics are preserved by `aria-rowindex` /
+// `aria-colindex` on each cell against the container's
+// `aria-rowcount` / `aria-colcount` (the standard ARIA pattern when DOM
+// rows aren't structurally present).
 
 // v1 interactive grid. Letter inputs are uncontrolled (ADR-0002 §4).
 // `useGridNavigation` orchestrates focus, direction, and highlighting
@@ -1051,83 +1061,92 @@ export function Grid({
               role="grid"
               id="puzzle-grid"
               aria-label={puzzle.title}
+              aria-rowcount={puzzle.height}
+              aria-colcount={puzzle.width}
               lang={puzzle.language}
               className={gridContainer}
               style={templateStyle}
             >
-              {rows.map(({ row, cells }) => (
-                <div key={row} role="row" className={rowStyles}>
-                  {cells.map((cell, col) => {
-                    if (cell === null) {
+              {rows.flatMap(({ row, cells }) =>
+                cells.map((cell, col) => {
+                  // ARIA row/col indices are 1-indexed per the WAI-ARIA
+                  // grid pattern (and what AT announces). Domain row/col
+                  // are 0-indexed.
+                  const ariaRow = row + 1;
+                  const ariaCol = col + 1;
+                  if (cell === null) {
+                    return (
+                      <BlockCellView
+                        key={`empty-${row}-${col}`}
+                        cell={{ kind: 'block', position: { row, col } }}
+                      />
+                    );
+                  }
+                  const key = positionKey(cell.position);
+                  switch (cell.kind) {
+                    case 'letter': {
+                      const highlight = nav.highlightFor(cell.position);
+                      const validated = validatedPositions?.has(key) ?? false;
+                      const error = errorPositions?.has(key) ?? false;
+                      const incomingArrows = incomingArrowsByLetter.get(key);
+                      const presence = presenceMap?.get(key);
+                      const inWord = highlight.currentWord;
+                      const wordIndex =
+                        inWord && nav.currentClue
+                          ? nav.currentClue.cells.findIndex(
+                              (c) =>
+                                c.position.row === cell.position.row &&
+                                c.position.col === cell.position.col,
+                            )
+                          : -1;
+                      const letter = nav.getEntryAt(
+                        cell.position.row,
+                        cell.position.col,
+                      );
+                      const ordinal = (n: number) => (n === 1 ? '1ère' : `${n}ème`);
+                      const ariaLabel =
+                        wordIndex >= 0
+                          ? `${ordinal(wordIndex + 1)} lettre : ${letter !== '' ? letter : 'vide'}`
+                          : `Case ligne ${cell.position.row + 1}, colonne ${cell.position.col + 1}`;
                       return (
-                        <BlockCellView
-                          key={`empty-${row}-${col}`}
-                          cell={{ kind: 'block', position: { row, col } }}
+                        <LetterCellView
+                          key={key}
+                          cell={cell}
+                          ariaLabel={ariaLabel}
+                          ariaRowIndex={ariaRow}
+                          ariaColIndex={ariaCol}
+                          inWord={highlight.currentWord}
+                          focused={highlight.focused}
+                          validated={validated}
+                          error={error}
+                          presence={presence}
+                          incomingArrows={incomingArrows}
+                          inputRef={nav.registerCellRef}
+                          onClick={nav.handleClick}
+                          onFocus={nav.handleFocus}
+                          onBlur={nav.handleBlur}
+                          onKeyDown={nav.handleKeyDown}
+                          onInput={nav.handleInput}
                         />
                       );
                     }
-                    const key = positionKey(cell.position);
-                    switch (cell.kind) {
-                      case 'letter': {
-                        const highlight = nav.highlightFor(cell.position);
-                        const validated = validatedPositions?.has(key) ?? false;
-                        const error = errorPositions?.has(key) ?? false;
-                        const incomingArrows = incomingArrowsByLetter.get(key);
-                        const presence = presenceMap?.get(key);
-                        const inWord = highlight.currentWord;
-                        const wordIndex =
-                          inWord && nav.currentClue
-                            ? nav.currentClue.cells.findIndex(
-                                (c) =>
-                                  c.position.row === cell.position.row &&
-                                  c.position.col === cell.position.col,
-                              )
-                            : -1;
-                        const letter = nav.getEntryAt(
-                          cell.position.row,
-                          cell.position.col,
-                        );
-                        const ordinal = (n: number) => (n === 1 ? '1ère' : `${n}ème`);
-                        const ariaLabel =
-                          wordIndex >= 0
-                            ? `${ordinal(wordIndex + 1)} lettre : ${letter !== '' ? letter : 'vide'}`
-                            : `Case ligne ${cell.position.row + 1}, colonne ${cell.position.col + 1}`;
-                        return (
-                          <LetterCellView
-                            key={key}
-                            cell={cell}
-                            ariaLabel={ariaLabel}
-                            inWord={highlight.currentWord}
-                            focused={highlight.focused}
-                            validated={validated}
-                            error={error}
-                            presence={presence}
-                            incomingArrows={incomingArrows}
-                            inputRef={nav.registerCellRef}
-                            onClick={nav.handleClick}
-                            onFocus={nav.handleFocus}
-                            onBlur={nav.handleBlur}
-                            onKeyDown={nav.handleKeyDown}
-                            onInput={nav.handleInput}
-                          />
-                        );
-                      }
-                      case 'definition': {
-                        const highlight = nav.highlightFor(cell.position);
-                        return (
-                          <DefinitionCellView
-                            key={key}
-                            cell={cell}
-                            currentArrow={highlight.currentArrow}
-                          />
-                        );
-                      }
-                      case 'block':
-                        return <BlockCellView key={key} cell={cell} />;
+                    case 'definition': {
+                      const highlight = nav.highlightFor(cell.position);
+                      return (
+                        <DefinitionCellView
+                          key={key}
+                          cell={cell}
+                          currentArrow={highlight.currentArrow}
+                          ariaRowIndex={ariaRow}
+                          ariaColIndex={ariaCol}
+                        />
+                      );
                     }
-                  })}
-                </div>
-              ))}
+                    case 'block':
+                      return <BlockCellView key={key} cell={cell} />;
+                  }
+                }),
+              )}
             </div>
           </div>
         </TransformComponent>

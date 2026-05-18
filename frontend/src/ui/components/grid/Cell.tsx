@@ -655,10 +655,17 @@ export interface CellPresence {
 }
 
 export const LetterCellView = memo(function LetterCellView({
-  cell, ariaLabel, inWord, focused, validated, error, presence, incomingArrows, inputRef, onClick, onKeyDown, onFocus, onBlur, onInput,
+  cell, ariaLabel, ariaRowIndex, ariaColIndex, inWord, focused, validated, error, presence, incomingArrows, inputRef, onClick, onKeyDown, onFocus, onBlur, onInput,
 }: {
   cell: LetterCell;
   ariaLabel: string;
+  // 1-indexed grid row/col, set on the gridcell element. Required when
+  // the grid container omits DOM `role="row"` wrappers — the indices
+  // re-establish row/column structure for assistive tech (see
+  // `Grid.tsx` for the why: `display: contents` row wrappers broke
+  // CSS Grid layout on iOS Safari).
+  ariaRowIndex: number;
+  ariaColIndex: number;
   inWord: boolean;
   // Solo-mode "this is the focused cell" — driven by React state so the
   // ring persists when DOM focus leaves the grid. Multiplayer ignores
@@ -782,6 +789,8 @@ export const LetterCellView = memo(function LetterCellView({
   return (
     <div
       role="gridcell"
+      aria-rowindex={ariaRowIndex}
+      aria-colindex={ariaColIndex}
       className={`${cellBase} ${stateClass}`}
       style={wrapperStyle}
       data-in-word={inWord ? 'true' : 'false'}
@@ -905,8 +914,14 @@ function StackedClue({ clue, isCurrent }: { clue: DefinitionClue; isCurrent: boo
 }
 
 export const DefinitionCellView = memo(function DefinitionCellView({
-  cell, currentArrow,
-}: { cell: DefinitionCell; currentArrow: ArrowDirection | null }) {
+  cell, currentArrow, ariaRowIndex, ariaColIndex,
+}: {
+  cell: DefinitionCell;
+  currentArrow: ArrowDirection | null;
+  // 1-indexed grid row/col — see LetterCellView for the rationale.
+  ariaRowIndex: number;
+  ariaColIndex: number;
+}) {
   if (cell.clues.length === 1) {
     const clue = cell.clues[0];
     const isCurrent = currentArrow === clue.arrow;
@@ -917,6 +932,8 @@ export const DefinitionCellView = memo(function DefinitionCellView({
     return (
       <div
         role="gridcell"
+        aria-rowindex={ariaRowIndex}
+        aria-colindex={ariaColIndex}
         className={`${cellBase} ${defCell}${currentClass ? ` ${currentClass}` : ''}`}
         data-row={cell.position.row}
         data-col={cell.position.col}
@@ -953,6 +970,8 @@ export const DefinitionCellView = memo(function DefinitionCellView({
   return (
     <div
       role="gridcell"
+      aria-rowindex={ariaRowIndex}
+      aria-colindex={ariaColIndex}
       className={`${cellBase} ${defCell}`}
       data-row={cell.position.row}
       data-col={cell.position.col}

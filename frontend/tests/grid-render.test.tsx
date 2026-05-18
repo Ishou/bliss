@@ -178,7 +178,7 @@ describe('Grid render', () => {
         { text: 'Saison chaude', arrow: 'down' },
       ],
     };
-    render(<DefinitionCellView cell={stacked} currentArrow={null} />);
+    render(<DefinitionCellView cell={stacked} currentArrow={null} ariaRowIndex={1} ariaColIndex={1} />);
     const root = screen.getByRole('gridcell');
     expect(root).toHaveAttribute('data-clue-count', '2');
     // Both clue texts present, in DOM order matching stack order.
@@ -230,7 +230,7 @@ describe('Grid render', () => {
         { text: 'Tracer des mots', arrow: 'down' },
       ],
     };
-    render(<DefinitionCellView cell={stacked} currentArrow={null} />);
+    render(<DefinitionCellView cell={stacked} currentArrow={null} ariaRowIndex={1} ariaColIndex={1} />);
     // Both clue texts must be in the DOM (not just the first one).
     expect(screen.getByText('Volatile à long cou')).toBeInTheDocument();
     expect(screen.getByText('Tracer des mots')).toBeInTheDocument();
@@ -413,7 +413,7 @@ describe('Grid render', () => {
         { text: 'Bottom-clue', arrow: 'down' },
       ],
     };
-    const { container } = render(<DefinitionCellView cell={cell} currentArrow={null} />);
+    const { container } = render(<DefinitionCellView cell={cell} currentArrow={null} ariaRowIndex={1} ariaColIndex={1} />);
     expect(container.querySelector('[title="Top-clue"]')).not.toBeNull();
     expect(container.querySelector('[title="Bottom-clue"]')).not.toBeNull();
     const html = container.innerHTML;
