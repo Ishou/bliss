@@ -5,8 +5,6 @@ import com.bliss.identity.application.ports.UserRenamedBroadcaster
 import com.bliss.identity.application.ports.UserRepository
 import com.bliss.identity.domain.user.DisplayName
 import com.bliss.identity.domain.user.UserId
-import org.slf4j.LoggerFactory
-import kotlin.coroutines.cancellation.CancellationException
 
 data class UpdateMeCommand(
     val userId: UserId,
@@ -40,18 +38,6 @@ class UpdateMeUseCase(
                 .getOrElse { e -> throw UpdateMeError.InvalidDisplayName(e) }
         if (name == current.displayName) return
         users.updateDisplayName(command.userId, name)
-        try {
-            broadcaster.broadcast(command.userId, name, clock.now())
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Throwable) {
-            // Fire-and-forget per ADR-0049. Local rename already succeeded;
-            // transport failure is logged and swallowed.
-            log.warn("user.renamed broadcast failed for {}", command.userId, e)
-        }
-    }
-
-    companion object {
-        private val log = LoggerFactory.getLogger(UpdateMeUseCase::class.java)
+        broadcaster.broadcast(command.userId, name, clock.now())
     }
 }

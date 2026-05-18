@@ -5,6 +5,7 @@ import assertk.assertThat
 import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
 import assertk.assertions.isInstanceOf
+import com.bliss.identity.application.ports.UserRenamedBroadcaster
 import com.bliss.identity.application.usecases.UpdateMeCommand
 import com.bliss.identity.application.usecases.UpdateMeError
 import com.bliss.identity.application.usecases.UpdateMeUseCase
@@ -116,5 +117,23 @@ class UpdateMeUseCaseTest {
             sut.useCase.execute(UpdateMeCommand(userId, null, emailOptIn = true))
             assertThat(sut.users.findById(userId)?.displayName).isEqualTo(DisplayName.of("Alice"))
             assertThat(sut.broadcaster.captured()).isEmpty()
+        }
+
+    @Test
+    fun `broadcaster that swallows internally does not surface errors from execute`() =
+        runTest {
+            val users = InMemoryUserRepository()
+            seedUser(users)
+            // Simulates NatsUserRenamedBroadcaster: catches transport errors internally per ADR-0049
+            val swallowingBroadcaster =
+                UserRenamedBroadcaster { _, _, _ ->
+                    try {
+                        error("NATS unreachable")
+                    } catch (_: Throwable) {
+                        // swallowed per ADR-0049 fire-and-forget contract
+                    }
+                }
+            val useCase = UpdateMeUseCase(users, swallowingBroadcaster, FixedClock(now))
+            useCase.execute(UpdateMeCommand(userId, "Bob"))
         }
 }

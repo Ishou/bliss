@@ -17,7 +17,6 @@ import com.bliss.identity.application.usecases.WhoAmIUseCase
 import com.bliss.identity.domain.oidc.OidcVerifier
 import com.bliss.identity.domain.provider.Provider
 import com.bliss.identity.infrastructure.auth.SecureRandomFactory
-import com.bliss.identity.infrastructure.events.NatsConnectionFactory
 import com.bliss.identity.infrastructure.events.NatsUserDeletedBroadcaster
 import com.bliss.identity.infrastructure.events.NatsUserRenamedBroadcaster
 import com.bliss.identity.infrastructure.id.UuidV7IdGenerator
@@ -31,6 +30,7 @@ import com.bliss.identity.infrastructure.persistence.PostgresUserProviderReposit
 import com.bliss.identity.infrastructure.persistence.PostgresUserRepository
 import com.bliss.identity.infrastructure.time.SystemClock
 import io.ktor.client.engine.HttpClientEngine
+import io.nats.client.JetStream
 import java.time.Duration
 import javax.sql.DataSource
 
@@ -79,7 +79,7 @@ class Wiring private constructor(
             config: IdentityApiConfig,
             dataSource: DataSource,
             httpClientEngine: HttpClientEngine,
-            natsUrl: String,
+            jetStream: JetStream,
         ): Wiring {
             val clock = SystemClock
             val idGen = UuidV7IdGenerator()
@@ -137,9 +137,8 @@ class Wiring private constructor(
                 )
 
             // NATS publishers (ADR-0049). user.deleted is publish-ack-required; user.renamed
-            // is fire-and-forget. Connection is opened synchronously; if NATS is unreachable
-            // boot aborts and k8s restarts the pod.
-            val (_, jetStream) = NatsConnectionFactory(natsUrl).connect()
+            // is fire-and-forget. The connection is created and closed by Module.kt so the
+            // ApplicationStopped lifecycle hook can drain it on graceful shutdown.
             val deletedBroadcaster: UserDeletedBroadcaster = NatsUserDeletedBroadcaster(jetStream)
             val renamedBroadcaster: UserRenamedBroadcaster = NatsUserRenamedBroadcaster(jetStream)
 

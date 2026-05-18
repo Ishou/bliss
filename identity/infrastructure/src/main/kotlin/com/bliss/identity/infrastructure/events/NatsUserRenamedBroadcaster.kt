@@ -4,10 +4,9 @@ import com.bliss.identity.application.ports.UserRenamedBroadcaster
 import com.bliss.identity.domain.user.DisplayName
 import com.bliss.identity.domain.user.UserId
 import io.nats.client.JetStream
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import org.slf4j.LoggerFactory
 import java.time.Instant
 
 @Serializable
@@ -21,6 +20,7 @@ private data class UserRenamedPayload(
  * Publishes `wordsparrow.user.renamed` fire-and-forget per ADR-0049. The
  * `CompletableFuture<PublishAck>` returned by `publishAsync` is discarded; we
  * do not block on the server ack. JetStream covers transient consumer downtime.
+ * Transport failures are logged and swallowed — the port contract is "never throws".
  */
 class NatsUserRenamedBroadcaster(
     private val jetStream: JetStream,
@@ -40,12 +40,15 @@ class NatsUserRenamedBroadcaster(
                     renamedAt = renamedAt.toString(),
                 ),
             )
-        withContext(Dispatchers.IO) {
+        try {
             jetStream.publishAsync(SUBJECT, payload.toByteArray(Charsets.UTF_8))
+        } catch (e: Throwable) {
+            log.warn("user.renamed publish failed for {}", userId.value, e)
         }
     }
 
     companion object {
         const val SUBJECT: String = "wordsparrow.user.renamed"
+        private val log = LoggerFactory.getLogger(NatsUserRenamedBroadcaster::class.java)
     }
 }
