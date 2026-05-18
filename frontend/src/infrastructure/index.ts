@@ -36,3 +36,12 @@ export {
   createReconnectingGameClient,
   type ReconnectingGameClientOptions,
 } from './game/ReconnectingGameClient';
+export {
+  createIdentityApiClient,
+  type IdentityApiClient,
+  type IdentityApiClientOptions,
+} from './api/identity/client';
+export {
+  createHttpAuthClient,
+  type HttpAuthClientOptions,
+} from './auth/HttpAuthClient';
