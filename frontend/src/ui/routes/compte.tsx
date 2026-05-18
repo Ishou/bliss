@@ -1,10 +1,10 @@
 import { createRoute, useNavigate } from '@tanstack/react-router';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { css, cx } from 'styled-system/css';
-import { InvalidDisplayNameError, type GetMeResult } from '@/application/auth';
+import { InvalidDisplayNameError, type AuthClient, type GetMeResult } from '@/application/auth';
 import { useAuth } from '@/ui/components/auth';
 import { ContentPage } from '@/ui/components/layout';
-import { Button, TextField, useToast } from '@/ui/components/primitives';
+import { Button, Dialog, DialogDescription, TextField, useToast } from '@/ui/components/primitives';
 import { buildHead, SITE_BASE_URL } from '@/ui/seo';
 import { Route as RootRoute } from './__root';
 
@@ -38,6 +38,22 @@ const statusStyles = css({ fontSize: 'body', color: 'fgMuted', margin: 0 });
 const formStyles = css({ display: 'flex', flexDirection: 'column', gap: 'sm' });
 const submitRowStyles = css({ display: 'flex', justifyContent: 'flex-end' });
 
+const dangerSectionStyles = css({
+  bg: 'surface', borderRadius: 'md', border: '1px solid token(colors.errorText)',
+  padding: 'lg', display: 'flex', flexDirection: 'column', gap: 'sm',
+});
+const dangerTitleStyles = css({
+  fontSize: 'lg', fontWeight: 'semibold', margin: 0, color: 'errorText',
+});
+const dangerButtonStyles = css({
+  bg: 'transparent', color: 'errorText',
+  border: '1px solid token(colors.errorText)',
+  _hover: { bg: 'errorBg' },
+});
+const dialogActionsStyles = css({
+  display: 'flex', gap: 'sm', flexWrap: 'wrap', justifyContent: 'flex-end', marginTop: 'sm',
+});
+
 function formatLinkedDate(iso: string): string {
   const date = new Date(iso);
   return date.toLocaleDateString('fr-FR', {
@@ -45,6 +61,96 @@ function formatLinkedDate(iso: string): string {
     month: 'long',
     year: 'numeric',
   });
+}
+
+function DangerZone({
+  me,
+  authClient,
+  onDeleted,
+  onDeleteStart,
+}: {
+  readonly me: GetMeResult;
+  readonly authClient: AuthClient;
+  readonly onDeleted: () => Promise<void>;
+  readonly onDeleteStart: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [typed, setTyped] = useState('');
+  const [deleting, setDeleting] = useState(false);
+  const navigate = useNavigate();
+  const toast = useToast();
+
+  const canConfirm = typed === me.displayName && !deleting;
+
+  function onClose(): void {
+    if (deleting) return;
+    setOpen(false);
+    setTyped('');
+  }
+
+  async function onConfirm(): Promise<void> {
+    setDeleting(true);
+    try {
+      await authClient.deleteMe();
+    } catch {
+      toast.show({ text: 'La suppression a échoué. Réessayez.', tone: 'error' });
+      setDeleting(false);
+      return;
+    }
+    onDeleteStart();
+    toast.show({ text: 'Compte supprimé.', tone: 'info' });
+    await onDeleted().catch(() => { /* refresh failure is non-fatal; account is gone */ });
+    setOpen(false);
+    setTyped('');
+    void navigate({ to: '/' });
+  }
+
+  return (
+    <section className={dangerSectionStyles} aria-labelledby="compte-danger-title">
+      <h2 id="compte-danger-title" className={dangerTitleStyles}>Zone de danger</h2>
+      <p className={statusStyles}>
+        La suppression de votre compte est immédiate et définitive.
+      </p>
+      <div className={submitRowStyles}>
+        <Button
+          variant="secondary"
+          className={dangerButtonStyles}
+          onClick={() => setOpen(true)}
+        >
+          Supprimer mon compte
+        </Button>
+      </div>
+      <Dialog
+        open={open}
+        onClose={onClose}
+        title="Supprimer définitivement votre compte"
+      >
+        <DialogDescription>
+          Cette action est irréversible. Tapez votre pseudonyme (<strong>{me.displayName}</strong>) pour confirmer.
+        </DialogDescription>
+        <TextField
+          label="Confirmation du pseudonyme"
+          value={typed}
+          onChange={(e) => setTyped(e.target.value)}
+          autoComplete="off"
+          disabled={deleting}
+        />
+        <div className={dialogActionsStyles}>
+          <Button variant="secondary" onClick={onClose} disabled={deleting}>
+            Annuler
+          </Button>
+          <Button
+            variant="primary"
+            className={dangerButtonStyles}
+            onClick={onConfirm}
+            disabled={!canConfirm}
+          >
+            {deleting ? 'Suppression…' : 'Supprimer'}
+          </Button>
+        </div>
+      </Dialog>
+    </section>
+  );
 }
 
 function ComptePage() {
@@ -57,10 +163,14 @@ function ComptePage() {
   const inputRef = useRef<HTMLInputElement>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  // Set by DangerZone when a successful delete is in flight, so the
+  // anon-guard effect below doesn't clobber the "Compte supprimé." toast
+  // with the "Connectez-vous..." redirect toast when state flips to anon.
+  const deletedRef = useRef(false);
 
   // Anon guard: state-driven redirect (Phase 5 §Testing). No beforeLoad.
   useEffect(() => {
-    if (state.status === 'anon') {
+    if (state.status === 'anon' && !deletedRef.current) {
       toast.show({
         text: 'Connectez-vous pour accéder à votre compte.',
         tone: 'info',
@@ -109,6 +219,7 @@ function ComptePage() {
     );
   }
 
+  if (!authClient) throw new Error('authClient not wired despite authed state');
   const google = me.providers.find((p) => p.provider === 'google');
 
   async function onSubmit(e: FormEvent<HTMLFormElement>): Promise<void> {
@@ -181,6 +292,13 @@ function ComptePage() {
             </li>
           </ul>
         </section>
+
+        <DangerZone
+          me={me}
+          authClient={authClient}
+          onDeleted={refresh}
+          onDeleteStart={() => { deletedRef.current = true; }}
+        />
       </article>
     </ContentPage>
   );
