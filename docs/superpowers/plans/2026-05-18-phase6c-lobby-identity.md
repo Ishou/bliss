@@ -1205,7 +1205,7 @@ gh pr create --base main \
 ## Summary
 - Adds `UserRenamedBroadcaster` port in `identity/application/` (parallel to existing `UserDeletedBroadcaster`). `UpdateMeUseCase` invokes it on successful rename; fire-and-forget per ADR-<NNNN>.
 - Adds production NATS adapters `NatsUserDeletedBroadcaster` (publish-ack required, GDPR-grade) + `NatsUserRenamedBroadcaster` (fire-and-forget) in `identity/infrastructure/`. Replaces `InMemoryUserDeletedBroadcaster` in `Wiring.forProduction`.
-- Adds `io.nats:jnats:2.20.4` to identity-api + game-api.
+- Adds `io.nats:jnats:2.20.4` to `identity/infrastructure` and `identity/api` (adapter + wiring, respectively) and `game/infrastructure` (and `game/api` if `Wiring.kt` directly references `Connection`/`JetStream` types).
 - Game-api: log-only subscribers for `wordsparrow.user.deleted` + `wordsparrow.user.renamed`. Each is a durable JetStream consumer with explicit ack. PR 6c.3 swaps the bodies to drive lobby state changes.
 - Both contexts pull NATS URL from `NATS_URL` env, defaulting to `nats://bliss-nats.wordsparrow:4222`.
 
