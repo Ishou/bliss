@@ -240,6 +240,32 @@ function FrenchContent() {
           </tr>
         </tbody>
       </table>
+      <section aria-labelledby="fr-account-heading">
+        <h2 id="fr-account-heading">Compte joueur et connexion</h2>
+        <p>
+          <strong>Compte joueur.</strong> Si vous vous connectez via Google, nous créons un compte
+          joueur avec : un identifiant interne (UUID, sans lien avec votre compte Google) ; un
+          pseudonyme modifiable (par défaut : un nom d’animal aléatoire repris de votre session
+          anonyme) ; la date de création et de dernière connexion. Nous ne stockons{' '}
+          <strong>pas</strong> votre email, votre nom, votre photo de profil ou toute autre donnée
+          de votre compte Google. Le périmètre OAuth utilisé est <code>openid</code> uniquement
+          (ADR-0045).
+        </p>
+        <p>
+          <strong>Sessions.</strong> Un cookie <code>__Host-ws_session</code> (HttpOnly, Secure,
+          durée 7 jours) contient un identifiant de session opaque (UUID, pas un JWT). Il est
+          révoqué à la déconnexion et supprimé lors de la suppression du compte.
+        </p>
+        <p>
+          <strong>Sous-traitants.</strong> Lors de la connexion, Google reçoit votre choix
+          d’autorisation. Aucune donnée n’est partagée en dehors du flux OAuth.
+        </p>
+        <p>
+          <strong>Droit à l’effacement.</strong> « Supprimer mon compte » dans <code>/compte</code>{' '}
+          supprime immédiatement vos données identité — pas de période de rétention, pas de
+          soft-delete.
+        </p>
+      </section>
       <h2>Ce que nous ne collectons pas</h2>
       <ul>
         <li>Aucun compte, aucun mot de passe, aucune adresse e-mail.</li>
@@ -366,6 +392,31 @@ function EnglishContent() {
           </tr>
         </tbody>
       </table>
+      <section aria-labelledby="en-account-heading">
+        <h2 id="en-account-heading">Player account and sign-in</h2>
+        <p>
+          <strong>Player account.</strong> When you sign in with Google we create a player account
+          with: an internal identifier (UUID, unrelated to your Google account ID); an editable
+          display name (defaulting to a random animal name carried over from your anonymous
+          session); creation and last-seen timestamps. We do <strong>not</strong> store your
+          email, name, profile picture, or any other Google account data. The OAuth scope is{' '}
+          <code>openid</code> only (ADR-0045).
+        </p>
+        <p>
+          <strong>Sessions.</strong> A <code>__Host-ws_session</code> cookie (HttpOnly, Secure,
+          7-day lifetime) holds an opaque session ID (UUID, not a JWT). It is revoked on sign-out
+          and deleted when the account is deleted.
+        </p>
+        <p>
+          <strong>Sub-processors.</strong> During sign-in Google receives your authorisation
+          choice. No data is shared outside the OAuth flow itself.
+        </p>
+        <p>
+          <strong>Right to erasure.</strong> &ldquo;Delete my account&rdquo; in{' '}
+          <code>/compte</code> immediately deletes your identity data — no retention period, no
+          soft-delete.
+        </p>
+      </section>
       <h2>What we do not collect</h2>
       <ul>
         <li>No accounts, no passwords, no email addresses.</li>
