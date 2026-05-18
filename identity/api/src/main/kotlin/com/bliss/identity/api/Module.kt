@@ -77,10 +77,9 @@ fun Application.module(
         // Default permitted request headers don't include Content-Type — needed
         // for the JSON bodies on PATCH /v1/users/me + the link route.
         allowHeader(HttpHeaders.ContentType)
-        // The frontend openapi-fetch client attaches a uuidv7 X-Request-Id on
-        // every request (frontend/src/infrastructure/api/identity/client.ts).
-        // Without this allow-listing, the preflight returns 403 and the
-        // browser blocks /v1/auth/whoami + every other cookie-bearing call.
+        // X-Request-Id is sent by the API client on every request for distributed tracing.
+        // Without this allow-listing, the CORS preflight returns 403 and the
+        // browser blocks all cookie-bearing calls.
         allowHeader(HttpHeaders.XRequestId)
 
         allowCredentials = true
