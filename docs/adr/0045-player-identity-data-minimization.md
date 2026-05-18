@@ -37,7 +37,8 @@ the same user.
 
 ### Cookie
 
-`__Host-ws_session` is strictly necessary for authentication and is
+`__Secure-ws_session` (renamed from `__Host-ws_session` per ADR-0044
+amendment 2026-05-18) is strictly necessary for authentication and is
 therefore not subject to the RGPD cookie-banner regime. ADR-0025's
 cookieless analytics posture is preserved — `identity-api` adds no
 tracking cookies.

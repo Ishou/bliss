@@ -25,7 +25,7 @@ export class InvalidDisplayNameError extends Error {
   }
 }
 
-// Cookie-bearing calls require `__Host-ws_session`; the adapter sets
+// Cookie-bearing calls require `__Secure-ws_session`; the adapter sets
 // `credentials: 'include'` per call.
 export interface AuthClient {
   whoami(): Promise<WhoAmIResult | null>; // null on 401

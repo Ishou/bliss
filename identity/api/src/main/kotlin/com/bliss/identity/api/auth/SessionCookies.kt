@@ -8,13 +8,10 @@ import io.ktor.server.request.ApplicationRequest
 import java.time.Duration
 import java.util.UUID
 
-// Session-cookie issuer/clearer/reader for the `__Host-ws_session` cookie.
-//
-// RFC 6265bis §4.1.3: `__Host-` prefix REQUIRES `Path=/; Secure` and FORBIDS the
-// `Domain` attribute. The cookie is host-locked to whichever host issued it; no
-// `domain=...` is set here. Browsers reject `__Host-` cookies that carry a Domain.
+// Session-cookie issuer/clearer/reader for `__Secure-ws_session`; see ADR-0044 amendment 2026-05-18.
 object SessionCookies {
-    const val NAME = "__Host-ws_session"
+    const val NAME = "__Secure-ws_session"
+    const val DOMAIN = "wordsparrow.io"
 
     fun issue(
         call: ApplicationCall,
@@ -25,6 +22,7 @@ object SessionCookies {
             Cookie(
                 name = NAME,
                 value = sessionId.value.toString(),
+                domain = DOMAIN,
                 path = "/",
                 httpOnly = true,
                 secure = true,
@@ -40,6 +38,7 @@ object SessionCookies {
             Cookie(
                 name = NAME,
                 value = "",
+                domain = DOMAIN,
                 path = "/",
                 httpOnly = true,
                 secure = true,

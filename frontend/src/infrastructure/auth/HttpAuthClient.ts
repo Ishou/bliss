@@ -1,5 +1,5 @@
 // HTTP adapter for the `AuthClient` port (ADR-0002 §7, Phase 5).
-// Cookie-bearing calls pass `credentials: 'include'` so `__Host-ws_session`
+// Cookie-bearing calls pass `credentials: 'include'` so `__Secure-ws_session`
 // is sent cross-origin; identity-api CORS permits the frontend origins.
 import type { AuthClient, GetMeResult } from '@/application/auth';
 import { InvalidDisplayNameError } from '@/application/auth';
