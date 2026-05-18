@@ -254,6 +254,10 @@ app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end -}}
+{{- define "bliss-nats.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "bliss-nats.name" . }}
+app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end -}}
 {{- define "bliss-nats.image" -}}
 {{- if .Values.image.digest -}}
 {{- printf "%s:%s@%s" .Values.image.repository .Values.image.tag .Values.image.digest -}}
@@ -302,7 +306,7 @@ spec:
   replicas: 1
   serviceName: {{ include "bliss-nats.fullname" . }}
   selector:
-    matchLabels: {{- include "bliss-nats.labels" . | nindent 6 }}
+    matchLabels: {{- include "bliss-nats.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       labels: {{- include "bliss-nats.labels" . | nindent 8 }}
@@ -358,7 +362,7 @@ spec:
   ports:
     - { name: client,  port: {{ .Values.config.port }},        targetPort: client }
     - { name: monitor, port: {{ .Values.config.monitorPort }}, targetPort: monitor }
-  selector: {{- include "bliss-nats.labels" . | nindent 4 }}
+  selector: {{- include "bliss-nats.selectorLabels" . | nindent 4 }}
 ```
 
 - [ ] **Create** `infra/nats/templates/stream-bootstrap-job.yaml` — runs once to declare the JetStream stream:
@@ -380,6 +384,8 @@ spec:
   ttlSecondsAfterFinished: 600
   backoffLimit: 3
   template:
+    metadata:
+      labels: {{- include "bliss-nats.selectorLabels" . | nindent 8 }}
     spec:
       restartPolicy: Never
       containers:
@@ -426,7 +432,7 @@ metadata:
   labels: {{- include "bliss-nats.labels" . | nindent 4 }}
 spec:
   podSelector:
-    matchLabels: {{- include "bliss-nats.labels" . | nindent 6 }}
+    matchLabels: {{- include "bliss-nats.selectorLabels" . | nindent 6 }}
   policyTypes: [Ingress]
   ingress:
     # Only identity-api + game-api (+ future grid-api in 6b) can reach the
@@ -773,7 +779,7 @@ class NatsUserDeletedBroadcaster(
         withContext(Dispatchers.IO) {
             val future = jetStream.publishAsync("wordsparrow.user.deleted", payload.toByteArray(Charsets.UTF_8))
             val ack: PublishAck = future.orTimeout(publishTimeout.toMillis(), java.util.concurrent.TimeUnit.MILLISECONDS).get()
-            check(!ack.isDuplicate || ack.seqno > 0) { "user.deleted publish returned no sequence number" }
+            check(ack.seqno > 0) { "user.deleted publish returned no sequence number; ack=$ack" }
         }
     }
 }
@@ -1316,13 +1322,16 @@ Expected: regen-and-diff stays clean (the `name:` field is in the spec but doesn
 ```kotlin
 package com.bliss.game.application.auth
 
+import com.bliss.game.domain.lobby.Pseudonym
+import com.bliss.game.domain.user.UserId
+
 /**
  * Verifies the `__Secure-ws_session` cookie against identity-api's whoami.
  * Returns null for missing/invalid cookies, for identity-api 401, or when
  * identity-api is unreachable (fail-closed: treat as anon).
  *
  * Implementations should:
- *   - Cache the result for [DEFAULT_CACHE_TTL] (30s) keyed on sessionId.
+ *   - Cache the result for [DEFAULT_CACHE_TTL] (30s) keyed on rawCookieValue.
  *   - Cache 401 results too (avoid hammering identity-api on anon traffic).
  *   - Log warnings on 5xx; do not throw.
  */
@@ -1331,8 +1340,8 @@ interface CookieVerifier {
 }
 
 data class WhoAmI(
-    val userId: String,         // UserId.value.toString() at the wire boundary
-    val displayName: String,
+    val userId: UserId,
+    val displayName: Pseudonym,
 )
 ```
 
@@ -1343,6 +1352,8 @@ package com.bliss.game.infrastructure.auth
 
 import com.bliss.game.application.auth.CookieVerifier
 import com.bliss.game.application.auth.WhoAmI
+import com.bliss.game.domain.lobby.Pseudonym
+import com.bliss.game.domain.user.UserId
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.get
@@ -1353,6 +1364,7 @@ import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
 import java.time.Duration
 import java.time.Instant
+import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 
 @Serializable
@@ -1398,7 +1410,7 @@ class HttpCookieVerifier(
             HttpStatusCode.OK -> {
                 val body = response.body<String>()
                 val parsed = json.decodeFromString(WhoAmIResponse.serializer(), body)
-                val result = WhoAmI(parsed.userId, parsed.displayName)
+                val result = WhoAmI(UserId(UUID.fromString(parsed.userId)), Pseudonym.of(parsed.displayName))
                 cache[cookie] = Entry(result, current.plus(cacheTtl))
                 result
             }

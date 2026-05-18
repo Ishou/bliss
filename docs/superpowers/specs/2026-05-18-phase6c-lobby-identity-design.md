@@ -47,14 +47,16 @@ infra/nats/                                # New Helm chart
 ├── values.yaml
 ├── values-prod.yaml
 └── templates/
-    ├── statefulset.yaml                   # NATS server with JetStream
+    ├── _helpers.tpl
+    ├── configmap.yaml                     # NATS server config (nats.conf)
+    ├── statefulset.yaml                   # NATS server with JetStream + volumeClaimTemplates
     ├── service.yaml                       # ClusterIP only (no Ingress)
-    ├── pvc.yaml                           # JetStream stream storage
-    └── stream-bootstrap.yaml              # ConfigMap declaring WORDSPARROW_USER_EVENTS
+    ├── networkpolicy.yaml                 # Defense-in-depth ingress restriction
+    └── stream-bootstrap-job.yaml          # post-install Job declaring WORDSPARROW_USER_EVENTS
 ```
 
-- **NATS server:** official `nats:2.10` image, JetStream enabled, single replica (alpha; ADR notes the future upgrade path to 3 replicas).
-- **Stream `WORDSPARROW_USER_EVENTS`:** subjects matching `wordsparrow.user.*`. Retention: `MaxAge=7d` (covers transient consumer downtime). Storage: `file` on the PVC. Replicas: 1. Discard policy: `old` (oldest message dropped when stream limit hit; not expected in alpha volume).
+- **NATS server:** official `nats:2.10` image, JetStream enabled, single replica (alpha; ADR notes the future upgrade path to 3 replicas). JetStream stream storage uses `volumeClaimTemplates` in the StatefulSet (per-replica PVC provisioning, no separate `pvc.yaml`).
+- **Stream `WORDSPARROW_USER_EVENTS`:** subjects matching `wordsparrow.user.*`. Retention: `MaxAge=7d` (covers transient consumer downtime). Storage: `file` on the PVC. Replicas: 1. Discard policy: `old` (oldest message dropped when stream limit hit; not expected in alpha volume). Declared by a post-install Kubernetes `Job` (`stream-bootstrap-job.yaml`), not a ConfigMap.
 - **Service:** `nats.wordsparrow:4222` (ClusterIP). No Ingress, no LoadBalancer. Cluster-internal only.
 - **NetworkPolicy (optional, defense-in-depth):** restrict ingress to identity-api + game-api + grid-api service accounts only.
 
@@ -89,7 +91,7 @@ interface CookieVerifier {
      * Returns null when no cookie / cookie invalid / identity-api returns 401.
      * Throws on network error after retries — caller decides fail-open / fail-closed.
      */
-    suspend fun verify(sessionId: String): WhoAmI?
+    suspend fun verify(rawCookieValue: String?): WhoAmI?
 }
 
 data class WhoAmI(val userId: UserId, val displayName: Pseudonym)
@@ -159,8 +161,8 @@ Wired in `Module.kt` at startup. Each consumer runs as a long-lived suspend job 
 ## Data flows
 
 ### Authed user creates a lobby
-1. `POST /v1/lobbies` with `__Host-ws_session` cookie.
-2. `cookieVerifier.verify(sessionId)` → cache miss → HTTP `GET /v1/auth/whoami` → cache write → returns `{ userId, displayName }`.
+1. `POST /v1/lobbies` with `__Secure-ws_session` cookie.
+2. `cookieVerifier.verify(rawCookieValue)` → cache miss → HTTP `GET /v1/auth/whoami` → cache write → returns `{ userId, displayName }`.
 3. Owner record: `LobbyPlayer(sessionId, pseudonym = displayName, userId = userId, joinedAt = now)`.
 4. Response unchanged from today.
 
@@ -266,7 +268,7 @@ Wired in `Module.kt` at startup. Each consumer runs as a long-lived suspend job 
 Four sub-PRs, decomposed at writing-plans time. Each independently shippable; 6c.0 must land first.
 
 ### 6c.0 — NATS infrastructure + ADR
-- `infra/nats/` Helm chart (`StatefulSet`, `Service`, `PVC`, stream-bootstrap `ConfigMap`).
+- `infra/nats/` Helm chart (`StatefulSet` with `volumeClaimTemplates`, `Service`, stream-bootstrap `Job`, `NetworkPolicy`).
 - `infra/nats/values.yaml` + `values-prod.yaml`.
 - `infra/nats/README.md` covering install / stream report / dump+restore.
 - ADR-00XX (next free number): "Lightweight eventing via NATS JetStream for cross-context user events".
