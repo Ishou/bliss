@@ -2,6 +2,7 @@ import { HeadContent, Outlet, createRootRouteWithContext } from '@tanstack/react
 import { useLayoutEffect } from 'react';
 import { css } from 'styled-system/css';
 import type { PuzzleRepository, PuzzleSolver } from '@/application';
+import type { AuthClient } from '@/application/auth';
 import type { GameClient, LobbyClient } from '@/application/game';
 import type { LobbyJoinCodeStash } from '@/application/session/LobbyJoinCodeStash';
 import type { SessionClient } from '@/application/session/SessionClient';
@@ -38,6 +39,15 @@ export interface AppRouterContext {
   readonly sessionClient: SessionClient;
   readonly soloEntriesStore: SoloEntriesStore;
   readonly tourSeenStore: TourSeenStore;
+  // Phase 5 — identity-api adapter + a thin getter over the anon
+  // localStorage pseudonym. Wired in `main.tsx`; `ui/` consumers read
+  // both via this context so `infrastructure/` stays out of `ui/`.
+  // Optional so route-level Vitest fixtures don't have to stub them
+  // (the auth surface is composed at the root via <AuthProvider>;
+  // tests that don't wrap in <AuthProvider> simply omit the header
+  // auth slot — see `AppHeader.tsx`).
+  readonly authClient?: AuthClient;
+  readonly getPseudonym?: () => string;
   readonly lobbyClient?: LobbyClient;
   readonly gameClient?: GameClient;
   readonly getSession?: () => AppSession;

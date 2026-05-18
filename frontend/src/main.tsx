@@ -6,6 +6,7 @@ import { createRoot } from 'react-dom/client';
 import { App } from '@/ui/App';
 import { createAppRouter } from '@/ui/router';
 import {
+  createHttpAuthClient,
   createHttpLobbyClient,
   createHttpPuzzleRepository,
   createHttpPuzzleSolver,
@@ -13,6 +14,7 @@ import {
   createWebSocketGameClient,
 } from '@/infrastructure';
 import { createHttpSessionClient } from '@/infrastructure/api/grid/HttpSessionClient';
+import { AuthProvider } from '@/ui/components/auth';
 import {
   createMatomoTracker,
   readMatomoConfigFromEnv,
@@ -215,7 +217,15 @@ enableMocks()
     // the runtime flag is on. Production flips this to `'true'` after
     // the game-api Helm chart is live and the smoke tests pass; the
     // flag expires no later than 2026-08-02 per .env.
+    // Identity-api adapter. Defaults to the production host so the
+    // bundle works even if the env var is unset; preview / dev override
+    // via .env.preview / .env.development.local.
+    const identityApiBaseUrl =
+      import.meta.env.VITE_IDENTITY_API_BASE_URL ?? 'https://auth.wordsparrow.io';
+    const authClient = createHttpAuthClient({ baseUrl: identityApiBaseUrl });
+
     const multiplayer = import.meta.env.VITE_FEATURE_MULTIPLAYER === 'true';
+    const baseContext = { authClient, getPseudonym };
     const context = multiplayer
       ? (() => {
           const gameApiBaseUrl = import.meta.env.VITE_GAME_API_BASE_URL;
@@ -245,6 +255,7 @@ enableMocks()
             setPseudonym(pseudonym);
           };
           return {
+            ...baseContext,
             puzzleRepository,
             puzzleSolver,
             sessionClient,
@@ -257,7 +268,7 @@ enableMocks()
             lobbyJoinCodeStash: sessionStorageLobbyJoinCodeStash,
           };
         })()
-      : { puzzleRepository, puzzleSolver, sessionClient, soloEntriesStore, tourSeenStore };
+      : { ...baseContext, puzzleRepository, puzzleSolver, sessionClient, soloEntriesStore, tourSeenStore };
     const router = createAppRouter({ context, multiplayer });
 
     // Track page views on every route resolution. `onResolved` fires after
@@ -281,7 +292,9 @@ enableMocks()
       },
     }).render(
       <StrictMode>
-        <App router={router} />
+        <AuthProvider authClient={authClient} getPseudonym={getPseudonym}>
+          <App router={router} />
+        </AuthProvider>
       </StrictMode>,
     );
 

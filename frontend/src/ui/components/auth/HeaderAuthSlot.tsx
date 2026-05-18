@@ -1,0 +1,31 @@
+import { css } from 'styled-system/css';
+import type { AuthClient } from '@/application/auth';
+import { SignInButton } from './SignInButton';
+import { useAuth } from './AuthProvider';
+
+// Visual placeholder while AuthProvider is resolving whoami. Not informative
+// to screen readers (aria-hidden) — the header's purpose is unchanged.
+const skeletonStyles = css({
+  display: 'inline-block',
+  width: '28px',
+  height: '28px',
+  borderRadius: 'full',
+  bg: 'surface',
+  opacity: 0.5,
+});
+
+export interface HeaderAuthSlotProps {
+  readonly authClient: AuthClient;
+}
+
+export function HeaderAuthSlot({ authClient }: HeaderAuthSlotProps) {
+  const { state } = useAuth();
+  if (state.status === 'loading') {
+    return <span className={skeletonStyles} aria-hidden="true" />;
+  }
+  if (state.status === 'anon') {
+    return <SignInButton authClient={authClient} />;
+  }
+  // Authed avatar chip deferred to sub-PR 3b (AvatarMenu + /compte route).
+  return null;
+}
