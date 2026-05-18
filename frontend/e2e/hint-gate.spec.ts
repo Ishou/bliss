@@ -1,15 +1,4 @@
-/**
- * Hint-gate e2e — Phase 5 sub-PR 7. The hint button must be disabled
- * with a sign-in tooltip when the user is not authenticated; the
- * authed path leaves the existing button behaviour untouched (ADR-0045
- * §Hint-gate).
- *
- * Auth state is seeded via MSW (`worker.use(...)`) to match the
- * handshake used in `auth-authed.spec.ts` — the preview build's MSW
- * service worker intercepts cross-origin fetches before Playwright's
- * CDP layer sees them. The puzzle fetch keeps using `page.route` for
- * the same-origin `/v1/puzzles/...` call (see `hint.spec.ts`).
- */
+// E2e: disabled hint button for anon; authed path leaves button behaviour untouched.
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
