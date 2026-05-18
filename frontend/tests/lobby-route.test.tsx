@@ -155,6 +155,8 @@ const renderLobby = (overrides: RenderLobbyOverrides) => {
     getLobby: vi.fn().mockResolvedValue(overrides.initialLobby ?? baseLobby),
     findByCode: vi.fn().mockRejectedValue(new Error('unused')),
     listMyLobbies: vi.fn().mockResolvedValue([]),
+    rebindLobbySessions: vi.fn().mockResolvedValue(undefined),
+    unbindLobbySessions: vi.fn().mockResolvedValue(undefined),
     ...overrides.lobbyClient,
   };
   const gameClient = overrides.gameClient ?? makeFakeGameClient();

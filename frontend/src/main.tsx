@@ -281,6 +281,16 @@ enableMocks()
       tracker.trackPageView(url, document.title || undefined);
     });
 
+    // Phase 6c: bind anon lobby seats to the authed user once whoami flips
+    // from anon to authed. `multiplayer`-gated so non-multiplayer bundles
+    // don't pull `lobbyClient` through here.
+    const onAuthed =
+      multiplayer && 'lobbyClient' in context
+        ? async (anonSessionId: string) => {
+            await context.lobbyClient.rebindLobbySessions(anonSessionId as SessionId);
+          }
+        : undefined;
+
     // onCaughtError only: onUncaughtError would double-emit via the window.error handler.
     createRoot(container, {
       onCaughtError: (error, errorInfo) => {
@@ -292,7 +302,12 @@ enableMocks()
       },
     }).render(
       <StrictMode>
-        <AuthProvider authClient={authClient} getPseudonym={getPseudonym}>
+        <AuthProvider
+          authClient={authClient}
+          getPseudonym={getPseudonym}
+          getLocalSessionId={getOrCreateSessionId}
+          onAuthed={onAuthed}
+        >
           <App router={router} />
         </AuthProvider>
       </StrictMode>,

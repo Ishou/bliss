@@ -213,7 +213,17 @@ export function AppHeader({ activeNavId }: AppHeaderProps = {}) {
   const resolvedActiveId = activeNavId ?? activeIdForPath(pathname);
   // <Link>/<navigate> prevents full-page reload + prerender-flash on header clicks.
   const navigate = useNavigate();
-  const { authClient } = useRouteContext({ from: '__root__' });
+  const { authClient, lobbyClient, getPseudonym } = useRouteContext({ from: '__root__' });
+  // Phase 6c: pre-logout hook calls `unbindLobbySessions` so authed lobby
+  // seats revert to the anon pseudonym before the session cookie clears.
+  // Only wired when both adapters are present in context (multiplayer flag
+  // on + AuthProvider mounted by main.tsx).
+  const onBeforeLogout =
+    lobbyClient && getPseudonym
+      ? async () => {
+          await lobbyClient.unbindLobbySessions(getPseudonym());
+        }
+      : undefined;
   return (
     <header className={headerOuterStyles} role="banner">
       <a href="#main-content" className={skipLinkStyles}>
@@ -262,7 +272,7 @@ export function AppHeader({ activeNavId }: AppHeaderProps = {}) {
         })}
       </nav>
         <div className={rightSlotStyles}>
-          {authClient ? <HeaderAuthSlot authClient={authClient} /> : null}
+          {authClient ? <HeaderAuthSlot authClient={authClient} onBeforeLogout={onBeforeLogout} /> : null}
           <span className={mobileNavSlotStyles}>
             <OverflowMenu
               triggerLabel="Ouvrir le menu"

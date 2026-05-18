@@ -17,9 +17,10 @@ const skeletonStyles = css({
 
 export interface HeaderAuthSlotProps {
   readonly authClient: AuthClient;
+  readonly onBeforeLogout?: () => Promise<void>;
 }
 
-export function HeaderAuthSlot({ authClient }: HeaderAuthSlotProps) {
+export function HeaderAuthSlot({ authClient, onBeforeLogout }: HeaderAuthSlotProps) {
   const { state } = useAuth();
   if (state.status === 'loading') {
     return <span className={skeletonStyles} aria-hidden="true" />;
@@ -27,5 +28,5 @@ export function HeaderAuthSlot({ authClient }: HeaderAuthSlotProps) {
   if (state.status === 'anon') {
     return <SignInButton authClient={authClient} />;
   }
-  return <AvatarMenu authClient={authClient} whoami={state.whoami} />;
+  return <AvatarMenu authClient={authClient} whoami={state.whoami} onBeforeLogout={onBeforeLogout} />;
 }

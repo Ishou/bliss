@@ -53,6 +53,21 @@ export interface LobbyClient {
    * played. Not paginated.
    */
   listMyLobbies(sessionId: SessionId): Promise<readonly LobbySummary[]>;
+
+  /**
+   * `POST /v1/lobbies/players/rebind`. Cookie-authed (`__Secure-ws_session`).
+   * Called on the anon→authed transition so existing lobby seats keyed by
+   * the local session id are linked to the now-signed-in user. Idempotent;
+   * resolves on 204. Rejects on 401 (no/invalid cookie) or 5xx.
+   */
+  rebindLobbySessions(anonSessionId: SessionId): Promise<void>;
+
+  /**
+   * `POST /v1/lobbies/players/unbind`. Cookie-authed. Called before
+   * `authClient.logout()` so the seat reverts to the anon pseudonym
+   * the user will see again after sign-out. Idempotent.
+   */
+  unbindLobbySessions(anonPseudonym: string): Promise<void>;
 }
 
 // Lightweight projection of a lobby for the "Mes parties" list. The

@@ -58,14 +58,28 @@ function initialFor(displayName: string): string {
 export interface AvatarMenuProps {
   readonly authClient: AuthClient;
   readonly whoami: WhoAmIResult;
+  /**
+   * Optional pre-logout hook. Phase 6c wires this to
+   * `lobbyClient.unbindLobbySessions` so authed lobby seats revert to the
+   * anon pseudonym before the session cookie is cleared. Failures are
+   * swallowed locally and logged — logout proceeds regardless.
+   */
+  readonly onBeforeLogout?: () => Promise<void>;
 }
 
-export function AvatarMenu({ authClient, whoami }: AvatarMenuProps) {
+export function AvatarMenu({ authClient, whoami, onBeforeLogout }: AvatarMenuProps) {
   const { refresh } = useAuth();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
 
   const handleLogout = async () => {
+    if (onBeforeLogout) {
+      try {
+        await onBeforeLogout();
+      } catch (cause) {
+        console.warn('lobby unbind failed; logging out anyway', cause);
+      }
+    }
     try {
       await authClient.logout();
       setOpen(false);
