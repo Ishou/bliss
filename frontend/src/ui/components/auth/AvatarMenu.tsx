@@ -68,10 +68,11 @@ export function AvatarMenu({ authClient, whoami }: AvatarMenuProps) {
   const handleLogout = async () => {
     try {
       await authClient.logout();
-    } finally {
       setOpen(false);
       await refresh();
       void navigate({ to: '/' });
+    } catch {
+      setOpen(false);
     }
   };
 
