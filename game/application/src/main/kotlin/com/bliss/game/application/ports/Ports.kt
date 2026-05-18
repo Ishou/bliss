@@ -6,7 +6,9 @@ import com.bliss.game.domain.Lobby
 import com.bliss.game.domain.LobbyCode
 import com.bliss.game.domain.LobbyId
 import com.bliss.game.domain.Position
+import com.bliss.game.domain.Pseudonym
 import com.bliss.game.domain.SessionId
+import com.bliss.game.domain.UserId
 import com.bliss.game.domain.analytics.AnalyticsEvent
 import java.time.Instant
 import java.util.UUID
@@ -87,6 +89,30 @@ interface LobbyRepository {
      * [mutate] (or [delete]) to avoid TOCTOU between the scan and the eviction.
      */
     suspend fun findIdleCompleted(cutoff: Instant): List<Lobby>
+
+    /**
+     * Anon→authed transition. Updates every [com.bliss.game.domain.Player] whose
+     * `sessionId == anonSessionId AND userId == null` to carry [userId] and
+     * [newPseudonym]. Idempotent — re-running with the same args is a no-op.
+     * Returns the set of lobby ids whose roster actually changed (suitable for
+     * WebSocket roster-broadcast scheduling).
+     */
+    suspend fun rebindAnonSeats(
+        anonSessionId: SessionId,
+        userId: UserId,
+        newPseudonym: Pseudonym,
+    ): Set<LobbyId>
+
+    /**
+     * Sign-out reversal of [rebindAnonSeats]. Updates every Player whose
+     * `userId == this user` to clear `userId` back to null and revert
+     * `pseudonym` to the supplied anon pseudonym. Idempotent.
+     * Returns the set of touched lobby ids.
+     */
+    suspend fun unbindUserSeats(
+        userId: UserId,
+        anonPseudonym: Pseudonym,
+    ): Set<LobbyId>
 }
 
 /**

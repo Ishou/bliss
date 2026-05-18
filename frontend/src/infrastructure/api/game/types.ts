@@ -151,6 +151,52 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/lobbies/players/rebind": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Rebind anon lobby seats to the authenticated user.
+         * @description Cookie-authed. Updates every lobby seat where `sessionId == anonSessionId`
+         *     AND `userId` is null: sets `userId` to the authenticated user and
+         *     refreshes the seat pseudonym from the user's current displayName.
+         *     Idempotent — re-running with the same body is a no-op.
+         */
+        post: operations["rebindLobbySessions"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/lobbies/players/unbind": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Unbind authenticated lobby seats before sign-out.
+         * @description Cookie-authed. Updates every lobby seat where `userId == cookie.userId`:
+         *     clears `userId` and sets the seat pseudonym to the supplied
+         *     `anonPseudonym`. Called by the frontend before invoking
+         *     `POST /v1/auth/logout`. Idempotent.
+         */
+        post: operations["unbindLobbySessions"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -866,6 +912,72 @@ export interface operations {
              *     `type` is `https://bliss.example/errors/invalid-session-id`.
              */
             400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    rebindLobbySessions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    anonSessionId: components["schemas"]["SessionId"];
+                };
+            };
+        };
+        responses: {
+            /** @description Rebind complete (idempotent; zero rows touched is also success). */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Cookie missing, expired, or rejected by identity-api. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    unbindLobbySessions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    anonPseudonym: components["schemas"]["Pseudonym"];
+                };
+            };
+        };
+        responses: {
+            /** @description Unbind complete (idempotent). */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Cookie missing, expired, or rejected by identity-api. */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };

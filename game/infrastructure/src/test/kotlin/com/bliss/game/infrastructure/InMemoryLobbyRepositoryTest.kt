@@ -17,6 +17,7 @@ import com.bliss.game.domain.LobbyLifecycleState
 import com.bliss.game.domain.Player
 import com.bliss.game.domain.Pseudonym
 import com.bliss.game.domain.SessionId
+import com.bliss.game.domain.UserId
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -309,4 +310,67 @@ class InMemoryLobbyRepositoryTest {
             code = LobbyCode.generate(),
         )
     }
+
+    private val userIdAlice = UserId("0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6c")
+    private val newDisplayName = Pseudonym("AliceSignedIn")
+
+    @Test
+    fun `rebindAnonSeats sets userId and pseudonym on matching seats and returns touched lobby ids`() =
+        runTest {
+            val repo = InMemoryLobbyRepository()
+            val lobby1 = lobbyAt(LobbyId.generate())
+            val lobby2 = lobbyAt(LobbyId.generate())
+            repo.save(lobby1)
+            repo.save(lobby2)
+
+            val touched = repo.rebindAnonSeats(sessionA, userIdAlice, newDisplayName)
+
+            assertThat(touched).containsExactlyInAnyOrder(lobby1.id, lobby2.id)
+            val updated = repo.findById(lobby1.id)!!
+            val seat = updated.players[sessionA]!!
+            assertThat(seat.userId).isEqualTo(userIdAlice)
+            assertThat(seat.pseudonym).isEqualTo(newDisplayName)
+        }
+
+    @Test
+    fun `rebindAnonSeats is idempotent — already-bound seats are not touched twice`() =
+        runTest {
+            val repo = InMemoryLobbyRepository()
+            val lobby = lobbyAt(LobbyId.generate())
+            repo.save(lobby)
+            repo.rebindAnonSeats(sessionA, userIdAlice, newDisplayName)
+
+            val touchedAgain = repo.rebindAnonSeats(sessionA, userIdAlice, newDisplayName)
+
+            assertThat(touchedAgain).isEmpty()
+        }
+
+    @Test
+    fun `unbindUserSeats clears userId and reverts pseudonym, returns touched ids`() =
+        runTest {
+            val repo = InMemoryLobbyRepository()
+            val lobby = lobbyAt(LobbyId.generate())
+            repo.save(lobby)
+            repo.rebindAnonSeats(sessionA, userIdAlice, newDisplayName)
+
+            val anonName = Pseudonym("Marmotte 900")
+            val touched = repo.unbindUserSeats(userIdAlice, anonName)
+
+            assertThat(touched).containsExactlyInAnyOrder(lobby.id)
+            val seat = repo.findById(lobby.id)!!.players[sessionA]!!
+            assertThat(seat.userId).isNull()
+            assertThat(seat.pseudonym).isEqualTo(anonName)
+        }
+
+    @Test
+    fun `unbindUserSeats is idempotent — no userId matches returns empty`() =
+        runTest {
+            val repo = InMemoryLobbyRepository()
+            val lobby = lobbyAt(LobbyId.generate())
+            repo.save(lobby)
+
+            val touched = repo.unbindUserSeats(userIdAlice, Pseudonym("Marmotte 900"))
+
+            assertThat(touched).isEmpty()
+        }
 }

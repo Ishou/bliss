@@ -3,8 +3,10 @@ package com.bliss.game.api
 import com.bliss.game.api.dto.ProblemDetails
 import com.bliss.game.api.routes.health
 import com.bliss.game.api.routes.lobbies
+import com.bliss.game.api.routes.lobbyRebind
 import com.bliss.game.api.routes.lobbyWebSocketRoute
 import com.bliss.game.api.routes.sessions
+import com.bliss.game.application.auth.CookieVerifier
 import com.bliss.game.application.ports.AnalyticsEventSink
 import com.bliss.game.application.ports.LobbyRepository
 import com.bliss.game.application.usecases.CreateLobbyUseCase
@@ -24,6 +26,7 @@ import com.bliss.game.infrastructure.HttpWordValidator
 import com.bliss.game.infrastructure.InMemoryLobbyRepository
 import com.bliss.game.infrastructure.analytics.MatomoAnalyticsAdapter
 import com.bliss.game.infrastructure.analytics.NoopAnalyticsAdapter
+import com.bliss.game.infrastructure.auth.HttpCookieVerifier
 import com.bliss.game.infrastructure.events.NatsConnectionFactory
 import com.bliss.game.infrastructure.events.UserEventSubscribers
 import com.bliss.game.infrastructure.persistence.BlissDatabase
@@ -92,12 +95,18 @@ fun Application.module() {
         // Production frontends (Cloudflare Pages serving wordsparrow.io).
         allowHost("wordsparrow.io", schemes = listOf("https"))
         allowHost("www.wordsparrow.io", schemes = listOf("https"))
+        // Cloudflare Pages preview origin — also served the production bundle pre-domain-cut.
+        allowHost("bliss-cb4.pages.dev", schemes = listOf("https"))
 
         // Local dev — Vite default port 5173 (mirrors grid/api).
         allowHost("localhost:5173", schemes = listOf("http"))
 
-        // No credentials = no cookies. Sessions are sessionId-in-localStorage.
-        allowCredentials = false
+        // Phase 6c: lobby rebind/unbind endpoints are cookie-authed against the
+        // `__Secure-ws_session` cookie issued by identity-api with
+        // `Domain=wordsparrow.io`. CORS must permit credentials so browsers
+        // attach the cookie cross-origin from wordsparrow.io / www to
+        // game.wordsparrow.io.
+        allowCredentials = true
         maxAgeInSeconds = 86400 // cache preflight for 24h
 
         // POST /v1/lobbies sends `Content-Type: application/json`, which the
@@ -227,6 +236,14 @@ fun Application.module() {
     val puzzleProvider = HttpPuzzleProvider(sharedHttpClient, gridBaseUrl)
     val wordValidator = HttpWordValidator(sharedHttpClient, gridBaseUrl)
 
+    // Phase 6c cookie verification. In-cluster Service DNS by default; an
+    // explicit env var overrides for non-cluster deploys + local dev where
+    // identity-api may run on a different host.
+    val identityApiBaseUrl =
+        System.getenv("IDENTITY_API_BASE_URL")
+            ?: "http://wordsparrow-identity-api.wordsparrow:8082"
+    val cookieVerifier: CookieVerifier = HttpCookieVerifier(sharedHttpClient, identityApiBaseUrl)
+
     // Fire-and-forget analytics scope (ADR-0025). Cancelled on app stop so in-flight
     // posts don't outlive the JVM. Adapter falls back to a no-op when the three
     // MATOMO_* env vars are unset, so dev / pre-Matomo prod work unchanged.
@@ -294,6 +311,7 @@ fun Application.module() {
         health(APP_VERSION)
         lobbies(createLobby = useCases.createLobby, repo = lobbyRepository, sessionManager = sessionManager)
         sessions(ListLobbiesForSession(lobbyRepository), EraseSessionUseCase(lobbyRepository))
+        lobbyRebind(cookieVerifier, lobbyRepository)
         lobbyWebSocketRoute(sessionManager, useCases, lobbyRepository, presenceAggregator)
     }
 }

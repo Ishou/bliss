@@ -24,6 +24,7 @@ import com.bliss.game.domain.Player
 import com.bliss.game.domain.Position
 import com.bliss.game.domain.Pseudonym
 import com.bliss.game.domain.SessionId
+import com.bliss.game.domain.UserId
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
@@ -366,6 +367,22 @@ class PostgresLobbyRepository(
                 ids.mapNotNull { loadLobby(conn, it) }
             }
         }
+
+    // Phase 6c lobby-identity rebind/unbind. The lobby_players table does not yet
+    // carry user_id; the Flyway migration that adds it is a separate sub-PR.
+    // Until then prod returns an empty touched-set (no-op) so the wire endpoint
+    // is safe to call and idempotent — in-memory dev/test paths exercise the
+    // real logic via InMemoryLobbyRepository.
+    override suspend fun rebindAnonSeats(
+        anonSessionId: SessionId,
+        userId: UserId,
+        newPseudonym: Pseudonym,
+    ): Set<LobbyId> = emptySet()
+
+    override suspend fun unbindUserSeats(
+        userId: UserId,
+        anonPseudonym: Pseudonym,
+    ): Set<LobbyId> = emptySet()
 
     // ---- internals -----------------------------------------------------
 
