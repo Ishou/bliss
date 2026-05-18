@@ -659,7 +659,7 @@ export const LetterCellView = memo(function LetterCellView({
 }: {
   cell: LetterCell;
   ariaLabel: string;
-  // 1-indexed; no role="row" wrappers — see Grid.tsx for rationale.
+  // 1-indexed; see Grid.tsx for the row-wrapper layout rationale.
   ariaRowIndex: number;
   ariaColIndex: number;
   inWord: boolean;

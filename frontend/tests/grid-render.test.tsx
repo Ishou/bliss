@@ -11,6 +11,7 @@ import type {
 import { Grid } from '@/ui/components/grid';
 import { DefinitionCellView } from '@/ui/components/grid/Cell';
 import { GRID_TRACK_WIDTH } from '@/ui/components/grid/layout';
+import { expectAxeClean } from '@/test/a11y';
 
 // Walks the answer path of one clue inside a definition cell: starting
 // from the cell adjacent to the def (per arrow direction) and continuing
@@ -71,6 +72,11 @@ describe('Grid render', () => {
     render(<Grid puzzle={SAMPLE_PUZZLE} />);
     const grid = screen.getByRole('grid', { name: SAMPLE_PUZZLE.title });
     expect(grid).toHaveAttribute('lang', SAMPLE_PUZZLE.language);
+  });
+
+  it('satisfies axe-core WCAG 2.2 A/AA (no critical/serious violations)', async () => {
+    const { container } = render(<Grid puzzle={SAMPLE_PUZZLE} />);
+    await expectAxeClean(container);
   });
 
   // Track template scales to puzzle dims; rows are 1fr (not auto) so a
