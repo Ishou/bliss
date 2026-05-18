@@ -89,9 +89,9 @@ composition-root pattern used for `setPseudonym` in `__root.tsx`.
 `isDefaultPseudonym` is a pure domain predicate (`domain/session/pseudonym.ts`)
 with no I/O or infrastructure dependencies. `AuthProvider` imports it
 directly — `ui/` is permitted to import `domain/` under the
-`boundaries:element-types` rule (ADR-0002 §7). It is co-located with
-the pseudonym generation logic in the domain layer rather than inside
-`localStorageSession.ts`, so no boundary violation arises.
+`boundaries:element-types` rule (ADR-0002 §7). The predicate is implemented as a pure pattern check
+(e.g. `/^\S+ \d{3}$/.test(name)`) with no dependency on `ANIMAL_NAMES` or
+`generateDefaultPseudonym` — `localStorageSession.ts` is not modified.
 
 `AuthClient` surface:
 
