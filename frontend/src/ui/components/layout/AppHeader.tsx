@@ -1,6 +1,7 @@
-import { Link, useNavigate, useRouterState } from '@tanstack/react-router';
+import { Link, useNavigate, useRouterState, useRouteContext } from '@tanstack/react-router';
 import { css, cx } from 'styled-system/css';
 import { Lockup } from '@/ui/components/brand';
+import { HeaderAuthSlot } from '@/ui/components/auth';
 import { OverflowMenu } from '@/ui/components/primitives';
 import { HamburgerIcon } from '@/ui/components/icons';
 
@@ -161,6 +162,7 @@ const rightSlotStyles = css({
   display: 'flex',
   justifyContent: 'flex-end',
   alignItems: 'center',
+  gap: '8px',
 });
 
 const mobileNavSlotStyles = css({
@@ -209,6 +211,7 @@ export function AppHeader({ activeNavId }: AppHeaderProps = {}) {
   const resolvedActiveId = activeNavId ?? activeIdForPath(pathname);
   // <Link>/<navigate> prevents full-page reload + prerender-flash on header clicks.
   const navigate = useNavigate();
+  const { authClient } = useRouteContext({ from: '__root__' });
   return (
     <header className={headerOuterStyles} role="banner">
       <a href="#main-content" className={skipLinkStyles}>
@@ -257,6 +260,7 @@ export function AppHeader({ activeNavId }: AppHeaderProps = {}) {
         })}
       </nav>
         <div className={rightSlotStyles}>
+          {authClient ? <HeaderAuthSlot authClient={authClient} /> : null}
           <span className={mobileNavSlotStyles}>
             <OverflowMenu
               triggerLabel="Ouvrir le menu"
