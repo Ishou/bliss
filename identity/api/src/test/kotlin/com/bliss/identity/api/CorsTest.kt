@@ -94,4 +94,21 @@ class CorsTest {
             assertThat(response.status).isEqualTo(HttpStatusCode.OK)
             assertThat(response.headers[HttpHeaders.AccessControlAllowMethods] ?: "").contains("DELETE")
         }
+
+    @Test
+    fun `preflight allows X-Request-Id header on whoami`() =
+        testApplication {
+            application { module(Wiring.forTesting(), testConfig) }
+            val response =
+                client.options("/v1/auth/whoami") {
+                    headers {
+                        append(HttpHeaders.Origin, "https://wordsparrow.io")
+                        append(HttpHeaders.AccessControlRequestMethod, "GET")
+                        append(HttpHeaders.AccessControlRequestHeaders, "x-request-id")
+                    }
+                }
+            assertThat(response.status).isEqualTo(HttpStatusCode.OK)
+            assertThat(response.headers[HttpHeaders.AccessControlAllowHeaders] ?: "")
+                .contains("X-Request-ID")
+        }
 }
