@@ -72,9 +72,11 @@ class CorsTest {
                     headers {
                         append(HttpHeaders.Origin, "https://wordsparrow.io")
                         append(HttpHeaders.AccessControlRequestMethod, "PATCH")
+                        append(HttpHeaders.AccessControlRequestHeaders, "Content-Type")
                     }
                 }
             assertThat(response.status).isEqualTo(HttpStatusCode.OK)
             assertThat(response.headers[HttpHeaders.AccessControlAllowMethods] ?: "").contains("PATCH")
+            assertThat(response.headers[HttpHeaders.AccessControlAllowHeaders] ?: "").contains("Content-Type")
         }
 }
