@@ -170,8 +170,14 @@ Three sections, vertically stacked, max-width matching the puzzle page.
 ```tsx
 const { status } = useAuth();
 const disabled = status !== 'authed';
+const tooltipContent =
+  status === 'loading'
+    ? 'Chargement…'
+    : disabled
+    ? 'Connectez-vous pour utiliser les indices.'
+    : null;
 return (
-  <Tooltip content={disabled ? 'Connectez-vous pour utiliser les indices.' : null}>
+  <Tooltip content={tooltipContent}>
     <button disabled={disabled} aria-label={…}>
       Indice ({hintsRemaining})
     </button>
@@ -234,7 +240,7 @@ Total addition per page: ~30 lines including markup.
 - **Vitest** (frontend unit):
   - `HttpAuthClient` mocked via MSW — happy path + 401 → null + 400 InvalidDisplayName.
   - `AuthProvider` state transitions on mock whoami responses.
-  - `HintGate` renders disabled when status='anon' and enabled when 'authed'.
+  - `HintGate` renders disabled + `'Chargement…'` tooltip when status=`'loading'`, disabled + sign-in tooltip when status=`'anon'`, enabled with no tooltip when status=`'authed'`.
 - **Playwright** (e2e, in `frontend/tests/`):
   - Unauthenticated user sees "Se connecter" button.
   - Hint button is disabled + tooltip visible on hover.
