@@ -1,0 +1,10 @@
+# Production overrides — Hetzner k3s (ADR-0009 §2).
+image:
+  # Pin the latest 2.10-alpine digest. The CD workflow's `helm upgrade`
+  # step injects the resolved digest via `--set image.digest=<resolved>`;
+  # the placeholder below keeps the file shape consistent without
+  # claiming a real image hash.
+  digest: "sha256:<resolve at deploy time>"
+storage:
+  size: 5Gi
+  storageClass: "hcloud-volumes"

@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "bliss-nats.fullname" . }}-config
+  labels: {{- include "bliss-nats.labels" . | nindent 4 }}
+data:
+  nats.conf: |
+    port: {{ .Values.config.port }}
+    http_port: {{ .Values.config.monitorPort }}
+
+    # JetStream — file-backed persistence for cross-context user events.
+    # Storage paths point at the PVC mounted on /data; the server creates
+    # subdirectories per stream.
+    jetstream {
+      store_dir: "/data/jetstream"
+      max_memory_store: {{ .Values.config.jetstreamMaxMemory | quote }}
+      max_file_store: {{ .Values.config.jetstreamMaxFile | quote }}
+    }
+
+    # No auth for v1 (ADR-0049). Reachable only from inside the cluster
+    # network; NetworkPolicy below restricts further to the three service
+    # accounts. Auth hardening is a follow-up.

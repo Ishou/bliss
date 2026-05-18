@@ -1,0 +1,8 @@
+apiVersion: v2
+name: bliss-nats
+description: "NATS Server with JetStream for cross-context user events (ADR-0049)"
+type: application
+version: 0.1.0
+appVersion: "2.10"
+# No subchart dependencies. JetStream is enabled via the server's own config.
+dependencies: []

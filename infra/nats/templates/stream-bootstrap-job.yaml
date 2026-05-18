@@ -1,0 +1,50 @@
+{{- if .Values.stream.name }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "bliss-nats.fullname" . }}-stream-init
+  labels: {{- include "bliss-nats.labels" . | nindent 4 }}
+  annotations:
+    # Re-run when the chart upgrades — `nats stream add` is idempotent
+    # against an existing stream with the same spec; differing spec
+    # would error and surface in the helm output.
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+spec:
+  ttlSecondsAfterFinished: 600
+  backoffLimit: 3
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: stream-init
+          # `nats` CLI image (synadia/nats-box) — bundles the CLI we need.
+          image: natsio/nats-box:0.14
+          securityContext: {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+          env:
+            - { name: NATS_URL, value: "nats://{{ include "bliss-nats.fullname" . }}:{{ .Values.config.port }}" }
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -euo pipefail
+              # Wait until JetStream is ready. The NATS pod's readiness gate
+              # requires JetStream; this loop covers the small delay between
+              # the StatefulSet being Ready and JetStream listing as enabled.
+              until nats account info > /dev/null 2>&1; do
+                echo "waiting for NATS JetStream..."
+                sleep 2
+              done
+              # Add the stream. Idempotent — same spec produces no diff.
+              nats stream add {{ .Values.stream.name }} \
+                --subjects '{{ join "," .Values.stream.subjects }}' \
+                --max-age {{ .Values.stream.maxAge }} \
+                --storage {{ .Values.stream.storage }} \
+                --replicas {{ .Values.stream.replicas }} \
+                --discard {{ .Values.stream.discardPolicy }} \
+                --retention limits \
+                --max-bytes -1 \
+                --max-msgs -1 \
+                --dupe-window 2m \
+                --defaults
+              nats stream info {{ .Values.stream.name }}
+{{- end }}
