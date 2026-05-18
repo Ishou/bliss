@@ -93,11 +93,7 @@ describe('<MyLobbiesSection> — copy button', () => {
 });
 
 describe('<MyLobbiesSection> — player count', () => {
-  // X = connectedCount (live WS sessions), Y = playerCount (full roster
-  // including offline). Drives the "Mes parties" surface — see the
-  // LobbySummary OpenAPI schema. The previous wiring rendered the
-  // 8-player MAX_PLAYERS constant as Y, which surfaced as "1 / 8" for a
-  // solo lobby instead of "1 / 1".
+  // X = connectedCount (live WS sessions), Y = playerCount (full roster)
   it('renders "connectedCount / playerCount joueurs"', async () => {
     renderAt(<MyLobbiesSection lobbies={[lobby]} />);
     const players = await screen.findByTestId('lobby-players');

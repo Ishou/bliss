@@ -58,9 +58,7 @@ export interface LobbyClient {
 // Lightweight projection of a lobby for the "Mes parties" list. The
 // server-side adapter computes `playerCount` so the summary endpoint
 // avoids loading the full player list (and to keep this seam thin).
-// `connectedCount` is the subset of `playerCount` whose WebSocket
-// session is currently live — drives the `X / Y` display on the surface
-// where X = connected, Y = playerCount.
+// `connectedCount` is the live-WS subset of `playerCount` — drives the X / Y display.
 // `title` is absent when the owner did not set one at creation; per
 // ADR-0003 §6 optional means absent on the wire, never `null`. `progress`
 // drives the per-row progress bar.
