@@ -298,6 +298,14 @@ paths:
       responses:
         '204':
           description: Rebind complete (idempotent; zero rows touched is also success).
+        '400':
+          description: |
+            Request body is malformed or contains an invalid field value
+            (e.g. `anonSessionId` is not a UUID v7). RFC 7807.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
         '401':
           description: Cookie missing, expired, or rejected by identity-api.
           content:
@@ -330,6 +338,14 @@ paths:
       responses:
         '204':
           description: Unbind complete (idempotent).
+        '400':
+          description: |
+            Request body is malformed or contains an invalid field value
+            (e.g. `anonPseudonym` is empty or exceeds 32 characters). RFC 7807.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
         '401':
           description: Cookie missing, expired, or rejected by identity-api.
           content:

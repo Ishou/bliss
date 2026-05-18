@@ -943,6 +943,18 @@ export interface operations {
                 };
                 content?: never;
             };
+            /**
+             * @description Request body is malformed or contains an invalid field value
+             *     (e.g. `anonSessionId` is not a UUID v7). RFC 7807.
+             */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
             /** @description Cookie missing, expired, or rejected by identity-api. */
             401: {
                 headers: {
@@ -975,6 +987,18 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /**
+             * @description Request body is malformed or contains an invalid field value
+             *     (e.g. `anonPseudonym` is empty or exceeds 32 characters). RFC 7807.
+             */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
             };
             /** @description Cookie missing, expired, or rejected by identity-api. */
             401: {
