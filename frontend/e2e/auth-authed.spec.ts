@@ -165,15 +165,52 @@ test('/compte rename: typing a new name and saving updates the header avatar ini
   await expect(trigger).toHaveText('Z');
 });
 
-test('/compte rename: empty input shows inline error with role=alert', async ({ page }) => {
-  await seedAuth(page, 'authed');
+test('/compte rename: empty input shows RFC 7807 detail via role=alert', async ({ page }) => {
+  await page.addInitScript(
+    ({ user, me }) => {
+      const w = window as unknown as {
+        __msw__?: MswHandle;
+        __mswReady__?: Promise<void>;
+      };
+      let resolveReady: () => void = () => {};
+      w.__mswReady__ = new Promise<void>((res) => { resolveReady = res; });
+      const tick = (): void => {
+        if (w.__msw__ != null) {
+          const { worker, http, HttpResponse } = w.__msw__;
+          worker.use(
+            http.get('*/v1/auth/whoami', () => HttpResponse.json(user)),
+            http.get('*/v1/users/me', () => HttpResponse.json(me)),
+            http.patch('*/v1/users/me', () =>
+              new HttpResponse(
+                JSON.stringify({
+                  type: 'about:blank',
+                  title: 'invalid display name',
+                  status: 400,
+                  detail: 'Le pseudo doit faire entre 1 et 30 caractères.',
+                }),
+                { status: 400, headers: { 'content-type': 'application/problem+json' } },
+              ),
+            ),
+          );
+          resolveReady();
+          return;
+        }
+        setTimeout(tick, 10);
+      };
+      tick();
+    },
+    { user: AUTHED_USER, me: ME_PAYLOAD },
+  );
+
   await page.goto('/compte');
 
   const input = page.getByRole('textbox', { name: 'Pseudonyme' });
   await input.fill('');
   await page.getByRole('button', { name: 'Enregistrer' }).click();
 
-  await expect(page.getByRole('alert')).toBeVisible();
+  const alert = page.getByRole('alert');
+  await expect(alert).toBeVisible();
+  await expect(alert).toHaveText('Le pseudo doit faire entre 1 et 30 caractères.');
 });
 
 test('/compte redirects anon users back to /', async ({ page }) => {
