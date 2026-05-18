@@ -101,7 +101,7 @@ interface GetMeResult {
   id: string;
   displayName: string;
   createdAt: string;
-  linkedProviders: ReadonlyArray<{
+  providers: ReadonlyArray<{
     provider: 'google' | 'apple';
     linkedAt: string;
     emailOptIn: boolean;
