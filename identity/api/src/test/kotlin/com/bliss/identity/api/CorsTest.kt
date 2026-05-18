@@ -59,6 +59,7 @@ class CorsTest {
                     }
                 }
             // Ktor's CORS plugin returns 403 for disallowed origins on preflight.
+            assertThat(response.status).isEqualTo(HttpStatusCode.Forbidden)
             assertThat(response.headers[HttpHeaders.AccessControlAllowOrigin]).isEqualTo(null)
         }
 
