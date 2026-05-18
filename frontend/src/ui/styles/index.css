@@ -19,12 +19,26 @@
  * system UI (scrollbars, form controls, focus outlines) to always
  * render in their light variant regardless of OS preference.
  *
+ * `text-size-adjust: 100%` — opts out of iOS Safari's auto text
+ * inflation heuristic, which silently grows multi-line text in
+ * elements it judges too narrow. That fires on clue cells (multi-line
+ * French definitions) but not letter slots (single character), which
+ * stretches grid rows past their `aspect-ratio: 1/1` and leaves a
+ * cream gap below the squares. Blink/Chromium does not inflate by
+ * default — that is why we could not reproduce the bug in DevTools
+ * iPhone emulation. The `100%` value (not `none`) preserves the user's
+ * ability to pinch-zoom; the `-webkit-` prefix is required because
+ * Safari only recognises the prefixed form, the unprefixed name is
+ * the spec'd standard. MDN: `text-size-adjust`.
+ *
  * Outside Panda's `@layer base` so the rule is unconditional — Panda
  * preflight resets ride the same layer and would otherwise tie the
  * specificity dance to whatever order the codegen emits. */
 :root {
   color-scheme: light;
   background-color: var(--colors-bg);
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 html, body {
   background-color: var(--colors-bg);
