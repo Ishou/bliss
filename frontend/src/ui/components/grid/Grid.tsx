@@ -322,33 +322,10 @@ export function Grid({
 
   const templateStyle = useMemo(
     () => ({
-      // `minmax(0, 1fr)`, not bare `1fr`: bare `1fr` desugars to
-      // `minmax(auto, 1fr)`, and the `auto` min is content-based — a
-      // track is never allowed to shrink below the intrinsic min size
-      // of its contents. iOS Safari measures the wrapped multi-line
-      // clue text (e.g. "Tempête électrique / Partirait") wider than
-      // Chrome/Android does (different font fallback + subpixel
-      // rounding), pushing the track past its 1fr share and inflating
-      // every cell in that column/row. The cell's own `aspect-ratio: 1`
-      // can't recover from an externally-imposed track width.
-      // `minmax(0, 1fr)` strips the content floor, so tracks divide the
-      // grid purely by fr-shares and cells stay square on iOS.
+      // minmax(0,1fr): strips auto min so iOS WebKit clue text can't inflate a track past its fr-share.
       gridTemplateColumns: `repeat(${puzzle.width}, minmax(0, 1fr))`,
       gridTemplateRows: `repeat(${puzzle.height}, minmax(0, 1fr))`,
-      // `aspect-ratio` directly on the grid container, not just on the
-      // outer TransformComponent wrapper. The wrapper above derives its
-      // height from its width via aspect-ratio, but that derived height
-      // doesn't propagate through the library's content div (which has
-      // only `width: 100%`) down to this grid. Without a definite block-
-      // size here, `minmax(0, 1fr)` rows have no fr-space to divide and
-      // fall back to intrinsic content sizing — and on iOS WebKit, an
-      // aspect-ratio'd box with automatic block-size honors descendant
-      // intrinsic block-size over its aspect-ratio (so clue cells with
-      // wrapped text inflate their row even though the cell asks for
-      // aspect-ratio: 1). Setting aspect-ratio on the grid container
-      // itself makes it self-sizing: column width × W/H gives a definite
-      // height, fr-rows divide it evenly, every cell ends up exactly
-      // square regardless of clue content size.
+      // aspect-ratio here (not just on the TransformWrapper) gives fr-rows a definite height on iOS WebKit.
       aspectRatio: `${puzzle.width} / ${puzzle.height}`,
     }),
     [puzzle.height, puzzle.width],
@@ -988,11 +965,10 @@ export function Grid({
         - `centerOnInit` — first paint puts the grid centered in the
           wrapper. Without this the library can leave a small offset from
           its bounds-padding logic on certain initial sizes.
-        - `wheel.step: 0.05` — desktop mouse wheel zooms the grid. The
-          default 0.2 is jumpy; 0.05 (5% per notch) is smooth and close
-          to native trackpad pinch. To gate behind a modifier
-          (ctrl+wheel = zoom, plain wheel = page scroll) set
-          `activationKeys: ['Control', 'Meta']`.
+        - `wheel.step: 0.1` — 10 % per notch; paired with `smooth: false` (flat
+          delta, no `|deltaY|` multiply) so WebKit's high deltaY values don't
+          overshoot. Chrome trackpad emits many small events; Safari emits one
+          large one — flat step normalises them.
         - `doubleClick.disabled` — a double-tap on a cell would otherwise
           zoom-in on that cell, fighting the focus + cursor behavior we
           rely on for letter input. Disabled keeps taps purely about focus.
@@ -1031,26 +1007,9 @@ export function Grid({
         maxScale={4}
         initialScale={1}
         centerOnInit
-        // `smooth: false` so the wheel handler treats `step` as a flat
-        // per-event zoom delta instead of multiplying it by
-        // `Math.abs(event.deltaY)`. WebKit (macOS Safari + iOS) emits
-        // wheel `deltaY` values an order of magnitude larger than
-        // Blink (raw pixel-scroll deltas in the 50-100+ range versus
-        // Chrome's normalized 1-3 per notch); with the default
-        // `smooth: true` each WebKit wheel event applied a 50-100× zoom
-        // step, blowing past the scale clamp and feeling laggy + skippy
-        // as the library's 160 ms wheelStop timer swallowed follow-ups.
-        // A flat step gives identical behavior across engines. Side
-        // effect: the +/− button zoom now uses `scale + delta*step`
-        // (linear) instead of `scale * exp(delta*step)` (exponential) —
-        // imperceptible at our 5% step.
+        // smooth: false — WebKit deltaY is ~50–100×; flat step normalises zoom speed across engines.
         smooth={false}
-        // step: 0.1 = 10 % zoom per wheel event. Paired with
-        // `smooth: false` (each event applies `step` directly, not
-        // `step × |deltaY|`), so a mouse-wheel notch on Safari/iOS
-        // (1 event per notch with high deltaY) and a trackpad swipe on
-        // Chrome (many events per gesture) both feel responsive without
-        // the WebKit overshoot the deltaY multiplication caused.
+        // 0.1 per notch with smooth:false; matches feel across WebKit (1 event/notch, high deltaY) and Blink.
         wheel={{ step: 0.1 }}
         doubleClick={{ disabled: true }}
         panning={{

@@ -225,19 +225,7 @@ const defCell = css({
   color: 'onSurfaceVariant',
   containerType: 'inline-size',
   lineHeight: '1.05',
-  // Hard clip at the cell box. Inherits `overflow: visible` from
-  // cellBase (which letter cells need so their absolute-positioned
-  // border arrows can paint outside the cell — see `letterArrowBase`).
-  // Def cells host no escaping children: their inline clue-direction
-  // arrow paints inside the cell, and the incoming-from-clue arrows
-  // live on adjacent letter cells. iOS WebKit hyphenates French clue
-  // text more aggressively than Blink (e.g. "Symbole de l'aluminium"
-  // breaks to one more line on iOS), and the half-cell's inner
-  // overflow:hidden + FitText's scrollHeight clamp don't always catch
-  // the extra line before paint — the leftover text rendered into
-  // the cell below. `overflow: clip` clips at the cell box itself
-  // without creating a new BFC or stacking context, so the inline-
-  // size containment and the surrounding grid layout are unaffected.
+  // overflow: clip — iOS WebKit hyphenates lang="fr" more aggressively; clips the extra line without a new stacking context.
   overflow: 'clip',
   // Slightly larger padding now that the arrows have moved off the
   // def cell — the freed-up real estate goes to breathing room
