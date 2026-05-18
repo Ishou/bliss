@@ -1,6 +1,6 @@
 import { createRoute, useNavigate } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
-import { css } from 'styled-system/css';
+import { css, cx } from 'styled-system/css';
 import type { GetMeResult } from '@/application/auth';
 import { useAuth } from '@/ui/components/auth';
 import { ContentPage } from '@/ui/components/layout';
@@ -81,6 +81,13 @@ function ComptePage() {
     return () => { cancelled = true; };
   }, [authClient, state.status]);
 
+  if (state.status === 'loading') {
+    return (
+      <ContentPage>
+        <p role="status" className={statusStyles}>Chargement…</p>
+      </ContentPage>
+    );
+  }
   if (state.status !== 'authed') return null;
 
   if (error != null) {
@@ -126,7 +133,7 @@ function ComptePage() {
                 ) : null}
               </li>
             ) : null}
-            <li className={`${providerRowStyles} ${providerRowDisabledStyles}`}>
+            <li className={cx(providerRowStyles, providerRowDisabledStyles)}>
               Apple · bientôt disponible
             </li>
           </ul>

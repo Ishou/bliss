@@ -108,3 +108,52 @@ test('/compte redirects anon users back to /', async ({ page }) => {
   await page.waitForURL('**/');
   expect(new URL(page.url()).pathname).toBe('/');
 });
+
+test('Se déconnecter navigates to / and shows sign-in button', async ({ page }) => {
+  // Stateful MSW: logout POST handler overrides whoami to 401 so that
+  // refresh() resolves to anon and the sign-in button re-appears.
+  await page.addInitScript(
+    ({ user, me }) => {
+      const w = window as unknown as {
+        __msw__?: MswHandle;
+        __mswReady__?: Promise<void>;
+      };
+      let resolveReady: () => void = () => {};
+      w.__mswReady__ = new Promise<void>((res) => { resolveReady = res; });
+      const tick = (): void => {
+        if (w.__msw__ != null) {
+          const { worker, http, HttpResponse } = w.__msw__;
+          worker.use(
+            http.get('*/v1/auth/whoami', () => HttpResponse.json(user)),
+            http.get('*/v1/users/me', () => HttpResponse.json(me)),
+            http.post('*/v1/auth/logout', () => {
+              worker.use(
+                http.get('*/v1/auth/whoami', () =>
+                  new HttpResponse(
+                    JSON.stringify({ type: 'about:blank', title: 'unauthenticated', status: 401 }),
+                    { status: 401, headers: { 'content-type': 'application/problem+json' } },
+                  ),
+                ),
+              );
+              return new HttpResponse(null, { status: 204 });
+            }),
+          );
+          resolveReady();
+          return;
+        }
+        setTimeout(tick, 10);
+      };
+      tick();
+    },
+    { user: AUTHED_USER, me: ME_PAYLOAD },
+  );
+
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Compte' }).click();
+  await page.getByRole('button', { name: 'Se déconnecter' }).click();
+
+  await page.waitForURL('**/');
+  expect(new URL(page.url()).pathname).toBe('/');
+  // Sign-in button re-appears after auth refresh resolves to anon.
+  await expect(page.getByRole('button', { name: /Se connecter/i })).toBeVisible({ timeout: 3000 });
+});
