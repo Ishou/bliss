@@ -706,24 +706,35 @@ class UpdateMeUseCase(
 
 (If the existing `UpdateMeUseCase` has additional fields or shape, preserve them — only the broadcaster wiring is new.)
 
-### 6c.1.2 — Add jnats dependency to identity-api
+### 6c.1.2 — Add jnats dependency to identity-infrastructure and identity-api
 
-- [ ] **Modify** `identity/api/build.gradle.kts`. In the existing `dependencies { … }` block, add:
+- [ ] **Modify** `identity/infrastructure/build.gradle.kts`. In the existing `dependencies { … }` block, add:
 
 ```kotlin
 implementation("io.nats:jnats:2.20.4")
 implementation("io.github.microutils:kotlin-logging-jvm:3.0.5") // if not already present
 ```
 
+The adapter classes (`NatsUserDeletedBroadcaster`, `NatsUserRenamedBroadcaster`, `NatsConnectionFactory`) all directly `import io.nats.client.*`, so the dependency must be declared on the module that owns them. Gradle's `implementation` scope is not transitive upward — `identity/infrastructure` cannot see `identity/api`'s dependencies.
+
+- [ ] **Also modify** `identity/api/build.gradle.kts`. Add the same `jnats` line:
+
+```kotlin
+implementation("io.nats:jnats:2.20.4")
+```
+
+`Wiring.kt` in `identity/api` references `Connection` and `JetStream` directly (e.g. `val (natsConnection, jetStream) = NatsConnectionFactory(natsUrl).connect()`), so the api module also needs the dependency on its own classpath.
+
 (Check whether the codebase uses `mu.KotlinLogging` or `org.slf4j.LoggerFactory`. Match the existing convention in the same module. The `UpdateMeUseCase` snippet above uses `mu.KotlinLogging`; if the project uses raw slf4j, switch to that.)
 
-- [ ] **Verify** Gradle resolves:
+- [ ] **Verify** Gradle resolves for both modules:
 
 ```bash
+./gradlew :identity:infrastructure:dependencies --configuration compileClasspath --quiet | grep jnats
 ./gradlew :identity:api:dependencies --configuration compileClasspath --quiet | grep jnats
 ```
 
-Expected: shows `+--- io.nats:jnats:2.20.4` (or a transitive resolution).
+Expected: each shows `+--- io.nats:jnats:2.20.4` (or a transitive resolution).
 
 ### 6c.1.3 — Production NATS adapters in identity-infrastructure
 
@@ -832,8 +843,10 @@ class NatsUserRenamedBroadcaster(
             ),
         )
         withContext(Dispatchers.IO) {
-            // Fire-and-forget: don't await the ack future. JetStream persists
-            // the message before the publish call returns.
+            // Fire-and-forget: discard the ack future. publishAsync sends the message
+            // to the JetStream server but does not block on the server's ack.
+            // JetStream's at-least-once delivery covers the recovery path once
+            // the publish request reaches the server.
             jetStream.publishAsync("wordsparrow.user.renamed", payload.toByteArray(Charsets.UTF_8))
         }
     }
@@ -925,7 +938,15 @@ env:
 
 ### 6c.1.5 — Game-api: NATS subscriber skeleton (log-only)
 
-- [ ] **Add jnats** to `game/api/build.gradle.kts`:
+- [ ] **Add jnats** to `game/infrastructure/build.gradle.kts`:
+
+```kotlin
+implementation("io.nats:jnats:2.20.4")
+```
+
+`NatsConnectionFactory` and `UserEventSubscribers` in `game/infrastructure` directly `import io.nats.client.*`; the dependency must live on the module that owns those classes.
+
+- [ ] **Also add jnats** to `game/api/build.gradle.kts` if `Wiring.kt` in `game/api` references `Connection` or `JetStream` types directly (check the wiring class after task 6c.1.5 is drafted). If `game/api` only instantiates the factory via its return type `Pair<Connection, JetStream>`, the api module needs the dependency too:
 
 ```kotlin
 implementation("io.nats:jnats:2.20.4")
