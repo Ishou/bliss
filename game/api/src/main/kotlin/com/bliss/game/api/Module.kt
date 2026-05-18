@@ -234,10 +234,7 @@ fun Application.module() {
     monitor.subscribe(ApplicationStopped) { analyticsScope.cancel() }
     val analyticsEventSink: AnalyticsEventSink = createAnalyticsEventSink(analyticsScope)
 
-    // NATS JetStream subscribers (ADR-0049, Phase 6c.1). Log-only in this PR;
-    // PR 6c.3 swaps the handlers to drive lobby state. Off by default so the
-    // test harness (which doesn't run a NATS server) boots end-to-end; the
-    // prod chart sets NATS_URL explicitly via the values.yaml env block.
+    // NATS JetStream subscribers (ADR-0049); gated on NATS_URL so test harness boots without a NATS server.
     val natsUrl = System.getenv("NATS_URL")?.takeIf { it.isNotBlank() }
     if (natsUrl != null) {
         val (natsConnection, jetStream) = NatsConnectionFactory(natsUrl).connect()

@@ -18,11 +18,7 @@ private data class UserDeletedPayload(
     val deletedAt: String,
 )
 
-/**
- * Publishes `wordsparrow.user.deleted` with publish-ack required (3s timeout).
- * GDPR-critical: a missing ack or seqno == 0 throws so `DeleteUserUseCase` aborts
- * the local delete (ADR-0049).
- */
+/** Publishes user.deleted with publish-ack required; seqno==0 → throw so caller rolls back (ADR-0049 GDPR). */
 class NatsUserDeletedBroadcaster(
     private val jetStream: JetStream,
     private val publishTimeout: Duration = Duration.ofSeconds(3),

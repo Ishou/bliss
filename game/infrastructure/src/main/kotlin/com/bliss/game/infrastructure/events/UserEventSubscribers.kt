@@ -16,10 +16,7 @@ import kotlinx.coroutines.launch
 import org.slf4j.LoggerFactory
 import java.time.Duration
 
-/**
- * Log-only JetStream subscribers for `wordsparrow.user.{deleted,renamed}`
- * (ADR-0049, Phase 6c.1). Two durable consumers, explicit-ack, maxDeliver=5.
- */
+/** Durable JetStream push consumers for user.{deleted,renamed}; explicit-ack, maxDeliver=5 (ADR-0049, Phase 6c.1). */
 class UserEventSubscribers(
     private val jetStream: JetStream,
 ) {

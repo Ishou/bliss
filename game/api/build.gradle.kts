@@ -65,9 +65,7 @@ dependencies {
     implementation(project(":game:application"))
     implementation(project(":game:infrastructure"))
 
-    // NATS client — Module.kt holds the Connection/JetStream returned by the factory
-    // to register an ApplicationStopped close-hook (ADR-0049). Gradle implementation
-    // scope is not transitive across module boundaries.
+    // NATS client — Module.kt holds Connection to register ApplicationStopped close-hook (ADR-0049).
     implementation("io.nats:jnats:2.20.6")
 
     // Ktor server core + Netty engine (ADR-0006 §1).

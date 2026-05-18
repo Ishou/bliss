@@ -62,9 +62,7 @@ dependencies {
     implementation(project(":identity:application"))
     implementation(project(":identity:infrastructure"))
 
-    // NATS client — Module.kt creates the Connection + JetStream and registers the
-    // ApplicationStopped close hook (ADR-0049). Gradle implementation scope is not
-    // transitive upward; identity:infrastructure cannot expose this to api.
+    // NATS client — Module.kt creates Connection + JetStream, registers ApplicationStopped close hook (ADR-0049).
     implementation("io.nats:jnats:2.20.6")
 
     // Ktor server core + Netty engine.

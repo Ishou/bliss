@@ -37,9 +37,7 @@ import org.slf4j.event.Level
 import java.util.UUID
 import javax.sql.DataSource
 
-// Production entry point: creates the NATS connection, registers the ApplicationStopped close
-// hook so the TCP connection is drained cleanly on k8s SIGTERM, then delegates to the
-// wiring-based overload below. Tests use the wiring overload directly with Wiring.forTesting.
+// Production entry point: opens NATS connection, registers ApplicationStopped close hook (SIGTERM drain), delegates to wiring overload.
 fun Application.module(
     config: IdentityApiConfig,
     dataSource: DataSource,

@@ -16,12 +16,7 @@ private data class UserRenamedPayload(
     val renamedAt: String,
 )
 
-/**
- * Publishes `wordsparrow.user.renamed` fire-and-forget per ADR-0049. The
- * `CompletableFuture<PublishAck>` returned by `publishAsync` is discarded; we
- * do not block on the server ack. JetStream covers transient consumer downtime.
- * Transport failures are logged and swallowed — the port contract is "never throws".
- */
+/** Publishes user.renamed fire-and-forget; discards ack future; transport errors logged and swallowed (ADR-0049). */
 class NatsUserRenamedBroadcaster(
     private val jetStream: JetStream,
     private val json: Json = Json,

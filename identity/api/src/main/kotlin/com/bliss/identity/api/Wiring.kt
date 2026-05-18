@@ -136,9 +136,7 @@ class Wiring private constructor(
                     clock = clock,
                 )
 
-            // NATS publishers (ADR-0049). user.deleted is publish-ack-required; user.renamed
-            // is fire-and-forget. The connection is created and closed by Module.kt so the
-            // ApplicationStopped lifecycle hook can drain it on graceful shutdown.
+            // NATS publishers (ADR-0049): user.deleted is ack-required; user.renamed is fire-and-forget.
             val deletedBroadcaster: UserDeletedBroadcaster = NatsUserDeletedBroadcaster(jetStream)
             val renamedBroadcaster: UserRenamedBroadcaster = NatsUserRenamedBroadcaster(jetStream)
 
