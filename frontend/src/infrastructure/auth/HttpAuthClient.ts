@@ -82,14 +82,15 @@ export function createHttpAuthClient(
       const { error, response } = await client.POST('/v1/auth/logout', {
         credentials: 'include',
       });
+      if (response.status === 401) return; // already logged out
       if (error) {
         const detail = error.detail ?? error.title ?? `HTTP ${response.status}`;
         throw new Error(`logout failed: ${detail}`);
       }
     },
 
-    signInUrl(returnTo: string): string {
-      const url = new URL('/v1/auth/google/login', baseUrl);
+    signInUrl(provider: 'google' | 'apple', returnTo: string): string {
+      const url = new URL(`/v1/auth/${provider}/login`, baseUrl);
       url.searchParams.set('return_to', returnTo);
       return url.toString();
     },

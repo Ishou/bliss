@@ -118,11 +118,16 @@ describe('HttpAuthClient.logout', () => {
 
     expect(await client.whoami()).toBeNull();
   });
+
+  it('resolves when already logged out (anon session)', async () => {
+    setAnon();
+    await expect(makeClient().logout()).resolves.toBeUndefined();
+  });
 });
 
 describe('HttpAuthClient.signInUrl', () => {
   it('builds the Google login URL with the encoded return_to', () => {
-    const url = makeClient().signInUrl('https://wordsparrow.io/grille/42?foo=bar');
+    const url = makeClient().signInUrl('google', 'https://wordsparrow.io/grille/42?foo=bar');
 
     const parsed = new URL(url);
     expect(parsed.origin).toBe(TEST_BASE_URL);
@@ -130,5 +135,14 @@ describe('HttpAuthClient.signInUrl', () => {
     expect(parsed.searchParams.get('return_to')).toBe(
       'https://wordsparrow.io/grille/42?foo=bar',
     );
+  });
+
+  it('builds the Apple login URL with the encoded return_to', () => {
+    const url = makeClient().signInUrl('apple', 'https://wordsparrow.io/');
+
+    const parsed = new URL(url);
+    expect(parsed.origin).toBe(TEST_BASE_URL);
+    expect(parsed.pathname).toBe('/v1/auth/apple/login');
+    expect(parsed.searchParams.get('return_to')).toBe('https://wordsparrow.io/');
   });
 });

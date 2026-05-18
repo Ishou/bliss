@@ -33,5 +33,5 @@ export interface AuthClient {
   updateMe(displayName: string): Promise<void>; // throws InvalidDisplayNameError on 400
   deleteMe(): Promise<void>;
   logout(): Promise<void>;
-  signInUrl(returnTo: string): string;
+  signInUrl(provider: 'google' | 'apple', returnTo: string): string;
 }
