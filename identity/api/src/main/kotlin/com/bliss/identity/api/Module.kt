@@ -63,9 +63,6 @@ fun Application.module(
     }
 
     install(CORS) {
-        // Cookie-bearing requests require allowCredentials = true + explicit
-        // origins; browsers reject Access-Control-Allow-Origin: * with
-        // credentials.
         allowHost("wordsparrow.io", schemes = listOf("https"))
         allowHost("www.wordsparrow.io", schemes = listOf("https"))
         allowHost("bliss-cb4.pages.dev", schemes = listOf("https"))
