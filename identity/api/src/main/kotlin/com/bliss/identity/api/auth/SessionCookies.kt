@@ -8,13 +8,7 @@ import io.ktor.server.request.ApplicationRequest
 import java.time.Duration
 import java.util.UUID
 
-// Session-cookie issuer/clearer/reader for the `__Secure-ws_session` cookie.
-//
-// RFC 6265bis §4.1.3.2: `__Secure-` prefix REQUIRES `Secure` but PERMITS `Domain`.
-// Scoping to `wordsparrow.io` lets the cookie travel to every subdomain
-// (`auth.`, `game.`, `api.`, apex + www). The previous `__Host-` prefix
-// host-locked the cookie to `auth.wordsparrow.io`, blocking cross-subdomain
-// cookie-based authentication. See ADR-0044 amendment + Phase 6c spec.
+// Session-cookie issuer/clearer/reader for `__Secure-ws_session`; see ADR-0044 amendment 2026-05-18.
 object SessionCookies {
     const val NAME = "__Secure-ws_session"
     const val DOMAIN = "wordsparrow.io"
