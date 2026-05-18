@@ -21,7 +21,6 @@
 /aide                /aide.html                200
 /mentions-legales    /mentions-legales.html    200
 /confidentialite     /confidentialite.html     200
-/privacy             /privacy.html             200
 
 # Trailing-slash collapse for any legacy inbound link. These fire AFTER
 # Pages' canonicalizer because the bare path is already claimed above
