@@ -80,6 +80,9 @@ dependencies {
     // Referrer-Policy, X-Frame-Options) on every response.
     implementation("io.ktor:ktor-server-default-headers:$ktorVersion")
 
+    // CORS — cross-origin fetches from the frontend (ADR-0044 Phase 5).
+    implementation("io.ktor:ktor-server-cors:$ktorVersion")
+
     // Ktor client + CIO engine — KtorOidcCodeExchanger (infrastructure) needs an engine;
     // implementation deps aren't transitive across module boundaries so api declares its own.
     implementation("io.ktor:ktor-client-core:$ktorVersion")
