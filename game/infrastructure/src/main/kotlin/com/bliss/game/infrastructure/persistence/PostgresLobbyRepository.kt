@@ -368,21 +368,57 @@ class PostgresLobbyRepository(
             }
         }
 
-    // Phase 6c lobby-identity rebind/unbind. The lobby_players table does not yet
-    // carry user_id; the Flyway migration that adds it is a separate sub-PR.
-    // Until then prod returns an empty touched-set (no-op) so the wire endpoint
-    // is safe to call and idempotent — in-memory dev/test paths exercise the
-    // real logic via InMemoryLobbyRepository.
+    // Phase 6c lobby-identity rebind/unbind. The UPDATE ... RETURNING lobby_id
+    // pattern flips the row in a single statement and collects the touched
+    // lobby ids in one round-trip; matches the in-memory adapter's atomic
+    // per-player update under a per-lobby lock.
     override suspend fun rebindAnonSeats(
         anonSessionId: SessionId,
         userId: UserId,
         newPseudonym: Pseudonym,
-    ): Set<LobbyId> = emptySet()
+    ): Set<LobbyId> =
+        withContext(Dispatchers.IO) {
+            ds.connection.use { conn ->
+                val touched = mutableSetOf<LobbyId>()
+                conn
+                    .prepareStatement(
+                        "UPDATE lobby_players SET user_id = ?, pseudonym = ? " +
+                            "WHERE session_id = ? AND user_id IS NULL " +
+                            "RETURNING lobby_id",
+                    ).use { ps ->
+                        ps.setObject(1, UUID.fromString(userId.value))
+                        ps.setString(2, newPseudonym.value)
+                        ps.setObject(3, UUID.fromString(anonSessionId.value))
+                        ps.executeQuery().use { rs ->
+                            while (rs.next()) touched += LobbyId(rs.getString("lobby_id"))
+                        }
+                    }
+                touched
+            }
+        }
 
     override suspend fun unbindUserSeats(
         userId: UserId,
         anonPseudonym: Pseudonym,
-    ): Set<LobbyId> = emptySet()
+    ): Set<LobbyId> =
+        withContext(Dispatchers.IO) {
+            ds.connection.use { conn ->
+                val touched = mutableSetOf<LobbyId>()
+                conn
+                    .prepareStatement(
+                        "UPDATE lobby_players SET user_id = NULL, pseudonym = ? " +
+                            "WHERE user_id = ? " +
+                            "RETURNING lobby_id",
+                    ).use { ps ->
+                        ps.setString(1, anonPseudonym.value)
+                        ps.setObject(2, UUID.fromString(userId.value))
+                        ps.executeQuery().use { rs ->
+                            while (rs.next()) touched += LobbyId(rs.getString("lobby_id"))
+                        }
+                    }
+                touched
+            }
+        }
 
     // ---- internals -----------------------------------------------------
 
@@ -458,18 +494,20 @@ class PostgresLobbyRepository(
         val out = LinkedHashMap<SessionId, Player>()
         conn
             .prepareStatement(
-                "SELECT session_id, pseudonym, joined_at FROM lobby_players " +
+                "SELECT session_id, pseudonym, joined_at, user_id FROM lobby_players " +
                     "WHERE lobby_id = ? ORDER BY joined_at ASC",
             ).use { ps ->
                 ps.setString(1, id.value)
                 ps.executeQuery().use { rs ->
                     while (rs.next()) {
                         val sid = SessionId(rs.getObject("session_id", UUID::class.java).toString())
+                        val rawUserId = rs.getObject("user_id", UUID::class.java)
                         out[sid] =
                             Player(
                                 sessionId = sid,
                                 pseudonym = Pseudonym(rs.getString("pseudonym")),
                                 joinedAt = rs.getTimestamp("joined_at").toInstant(),
+                                userId = rawUserId?.let { UserId(it.toString()) },
                             )
                     }
                 }
@@ -561,14 +599,20 @@ class PostgresLobbyRepository(
         if (lobby.players.isNotEmpty()) {
             conn
                 .prepareStatement(
-                    "INSERT INTO lobby_players (lobby_id, session_id, pseudonym, joined_at) " +
-                        "VALUES (?, ?, ?, ?)",
+                    "INSERT INTO lobby_players (lobby_id, session_id, pseudonym, joined_at, user_id) " +
+                        "VALUES (?, ?, ?, ?, ?)",
                 ).use { ps ->
                     for (p in lobby.players.values) {
                         ps.setString(1, lobby.id.value)
                         ps.setObject(2, UUID.fromString(p.sessionId.value))
                         ps.setString(3, p.pseudonym.value)
                         ps.setTimestamp(4, Timestamp.from(p.joinedAt))
+                        val uid = p.userId
+                        if (uid != null) {
+                            ps.setObject(5, UUID.fromString(uid.value))
+                        } else {
+                            ps.setNull(5, java.sql.Types.OTHER)
+                        }
                         ps.addBatch()
                     }
                     ps.executeBatch()
