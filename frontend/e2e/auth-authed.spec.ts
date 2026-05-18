@@ -36,9 +36,13 @@ interface MswHandle {
   };
 }
 
-async function seedAuth(page: Page, mode: 'authed' | 'anon'): Promise<void> {
+async function seedAuth(
+  page: Page,
+  mode: 'authed' | 'anon',
+  patchBehavior?: { kind: 'stateful-update' } | { kind: 'fixed-error'; detail: string },
+): Promise<void> {
   await page.addInitScript(
-    ({ kind, user, me }) => {
+    ({ kind, user, me, patch }) => {
       const w = window as unknown as {
         __msw__?: MswHandle;
         __mswReady__?: Promise<void>;
@@ -49,14 +53,49 @@ async function seedAuth(page: Page, mode: 'authed' | 'anon'): Promise<void> {
         if (w.__msw__ != null) {
           const { worker, http, HttpResponse } = w.__msw__;
           if (kind === 'authed') {
-            worker.use(
-              http.get('*/v1/auth/whoami', () => HttpResponse.json(user)),
-              http.get('*/v1/users/me', () => HttpResponse.json(me)),
-              http.post(
-                '*/v1/auth/logout',
-                () => new HttpResponse(null, { status: 204 }),
-              ),
-            );
+            if (patch?.kind === 'stateful-update') {
+              const current = { whoami: { ...user }, me: { ...me } };
+              worker.use(
+                http.get('*/v1/auth/whoami', () => HttpResponse.json(current.whoami)),
+                http.get('*/v1/users/me', () => HttpResponse.json(current.me)),
+                http.post('*/v1/auth/logout', () => new HttpResponse(null, { status: 204 })),
+                http.patch('*/v1/users/me', async ({ request }) => {
+                  const body = (await request.json()) as { displayName?: string };
+                  const next = body.displayName ?? '';
+                  if (next.length < 1 || next.length > 30) {
+                    return new HttpResponse(
+                      JSON.stringify({ type: 'about:blank', title: 'invalid display name', status: 400, detail: 'Le pseudo doit faire entre 1 et 30 caractères.' }),
+                      { status: 400, headers: { 'content-type': 'application/problem+json' } },
+                    );
+                  }
+                  current.whoami = { ...current.whoami, displayName: next };
+                  current.me = { ...current.me, displayName: next };
+                  return new HttpResponse(null, { status: 204 });
+                }),
+              );
+            } else if (patch?.kind === 'fixed-error') {
+              const { detail } = patch;
+              worker.use(
+                http.get('*/v1/auth/whoami', () => HttpResponse.json(user)),
+                http.get('*/v1/users/me', () => HttpResponse.json(me)),
+                http.post('*/v1/auth/logout', () => new HttpResponse(null, { status: 204 })),
+                http.patch('*/v1/users/me', () =>
+                  new HttpResponse(
+                    JSON.stringify({ type: 'about:blank', title: 'invalid display name', status: 400, detail }),
+                    { status: 400, headers: { 'content-type': 'application/problem+json' } },
+                  ),
+                ),
+              );
+            } else {
+              worker.use(
+                http.get('*/v1/auth/whoami', () => HttpResponse.json(user)),
+                http.get('*/v1/users/me', () => HttpResponse.json(me)),
+                http.post(
+                  '*/v1/auth/logout',
+                  () => new HttpResponse(null, { status: 204 }),
+                ),
+              );
+            }
           } else {
             worker.use(
               http.get(
@@ -76,7 +115,7 @@ async function seedAuth(page: Page, mode: 'authed' | 'anon'): Promise<void> {
       };
       tick();
     },
-    { kind: mode, user: AUTHED_USER, me: ME_PAYLOAD },
+    { kind: mode, user: AUTHED_USER, me: ME_PAYLOAD, patch: patchBehavior },
   );
 }
 
@@ -109,49 +148,7 @@ test('/compte rename: typing a new name and saving updates the header avatar ini
   // Stateful MSW: PATCH /v1/users/me mutates the in-page state object so
   // subsequent whoami / getMe reflect the new display name (the refresh()
   // call drives the header avatar to re-render with the new initial).
-  await page.addInitScript(
-    ({ user, me }) => {
-      const w = window as unknown as {
-        __msw__?: MswHandle;
-        __mswReady__?: Promise<void>;
-      };
-      let resolveReady: () => void = () => {};
-      w.__mswReady__ = new Promise<void>((res) => { resolveReady = res; });
-      const tick = (): void => {
-        if (w.__msw__ != null) {
-          const { worker, http, HttpResponse } = w.__msw__;
-          const current = { whoami: { ...user }, me: { ...me } };
-          worker.use(
-            http.get('*/v1/auth/whoami', () => HttpResponse.json(current.whoami)),
-            http.get('*/v1/users/me', () => HttpResponse.json(current.me)),
-            http.patch('*/v1/users/me', async ({ request }) => {
-              const body = (await request.json()) as { displayName?: string };
-              const next = body.displayName ?? '';
-              if (next.length < 1 || next.length > 30) {
-                return new HttpResponse(
-                  JSON.stringify({
-                    type: 'about:blank',
-                    title: 'invalid display name',
-                    status: 400,
-                    detail: 'Le pseudo doit faire entre 1 et 30 caractères.',
-                  }),
-                  { status: 400, headers: { 'content-type': 'application/problem+json' } },
-                );
-              }
-              current.whoami = { ...current.whoami, displayName: next };
-              current.me = { ...current.me, displayName: next };
-              return new HttpResponse(null, { status: 204 });
-            }),
-          );
-          resolveReady();
-          return;
-        }
-        setTimeout(tick, 10);
-      };
-      tick();
-    },
-    { user: AUTHED_USER, me: ME_PAYLOAD },
-  );
+  await seedAuth(page, 'authed', { kind: 'stateful-update' });
 
   await page.goto('/compte');
 
@@ -166,41 +163,7 @@ test('/compte rename: typing a new name and saving updates the header avatar ini
 });
 
 test('/compte rename: empty input shows RFC 7807 detail via role=alert', async ({ page }) => {
-  await page.addInitScript(
-    ({ user, me }) => {
-      const w = window as unknown as {
-        __msw__?: MswHandle;
-        __mswReady__?: Promise<void>;
-      };
-      let resolveReady: () => void = () => {};
-      w.__mswReady__ = new Promise<void>((res) => { resolveReady = res; });
-      const tick = (): void => {
-        if (w.__msw__ != null) {
-          const { worker, http, HttpResponse } = w.__msw__;
-          worker.use(
-            http.get('*/v1/auth/whoami', () => HttpResponse.json(user)),
-            http.get('*/v1/users/me', () => HttpResponse.json(me)),
-            http.patch('*/v1/users/me', () =>
-              new HttpResponse(
-                JSON.stringify({
-                  type: 'about:blank',
-                  title: 'invalid display name',
-                  status: 400,
-                  detail: 'Le pseudo doit faire entre 1 et 30 caractères.',
-                }),
-                { status: 400, headers: { 'content-type': 'application/problem+json' } },
-              ),
-            ),
-          );
-          resolveReady();
-          return;
-        }
-        setTimeout(tick, 10);
-      };
-      tick();
-    },
-    { user: AUTHED_USER, me: ME_PAYLOAD },
-  );
+  await seedAuth(page, 'authed', { kind: 'fixed-error', detail: 'Le pseudo doit faire entre 1 et 30 caractères.' });
 
   await page.goto('/compte');
 

@@ -8,8 +8,6 @@ import { Button, TextField, useToast } from '@/ui/components/primitives';
 import { buildHead, SITE_BASE_URL } from '@/ui/seo';
 import { Route as RootRoute } from './__root';
 
-// Phase 5 sub-PR 5 — editable Pseudonyme; read-only providers list.
-
 const articleStyles = css({
   display: 'flex', flexDirection: 'column', gap: 'lg', width: '100%', maxWidth: '640px',
 });
