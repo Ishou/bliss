@@ -2,8 +2,9 @@ name: OpenAPI TypeScript Drift
 
 # Implements ADR-0003 §8.2: regenerate the TypeScript clients from the
 # bounded contexts' OpenAPI specs (`grid/api/openapi.yaml`,
-# `game/api/openapi.yaml`) and fail the build if the committed generated
-# files (`frontend/src/infrastructure/api/{grid,game}/types.ts`) differ
+# `game/api/openapi.yaml`, `identity/api/openapi.yaml`) and fail the build
+# if the committed generated files
+# (`frontend/src/infrastructure/api/{grid,game,identity}/types.ts`) differ
 # from the regen output. Guarantees the committed generated code is always
 # in sync with the spec — no drift slips through review.
 #
@@ -65,7 +66,8 @@ jobs:
           set -euo pipefail
           if ! git diff --exit-code -- \
             frontend/src/infrastructure/api/grid/types.ts \
-            frontend/src/infrastructure/api/game/types.ts; then
+            frontend/src/infrastructure/api/game/types.ts \
+            frontend/src/infrastructure/api/identity/types.ts; then
             echo "::error::A generated frontend/src/infrastructure/api/<context>/types.ts is out of sync with its OpenAPI spec."
             echo "::error::Fix: run 'cd frontend && pnpm api:generate' (or 'frontend/scripts/generate-api-client.sh') and commit the updated file(s)."
             exit 1
