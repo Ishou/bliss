@@ -14,6 +14,7 @@ data class Player(
     val sessionId: SessionId,
     val pseudonym: Pseudonym,
     val joinedAt: Instant,
+    val userId: UserId? = null,
 )
 
 /**

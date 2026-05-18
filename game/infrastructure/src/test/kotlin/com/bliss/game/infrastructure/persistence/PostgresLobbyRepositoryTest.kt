@@ -31,6 +31,7 @@ import com.bliss.game.domain.Player
 import com.bliss.game.domain.Position
 import com.bliss.game.domain.Pseudonym
 import com.bliss.game.domain.SessionId
+import com.bliss.game.domain.UserId
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import kotlinx.coroutines.Dispatchers
@@ -553,6 +554,121 @@ class PostgresLobbyRepositoryTest {
     fun `eraseSession returns Empty when the session is in no lobby`() =
         runTest {
             assertThat(repo.eraseSession(sessionA).deletedLobbies).isEqualTo(0)
+        }
+
+    @Test
+    fun `rebindAnonSeats updates only matching anon seats and returns touched lobby ids`() =
+        runTest {
+            val userId = UserId("11111111-1111-1111-1111-111111111111")
+            // Lobby A: sessionA is anon (no userId). Should be rebound.
+            val lobbyA = waitingLobby(id = LobbyId.generate(), owner = sessionA)
+            // Lobby B: sessionA is already authed (userId != null). Should NOT be touched.
+            val lobbyBOwner = Player(sessionA, Pseudonym("Alice"), baseInstant, userId = userId)
+            val lobbyB =
+                waitingLobby(id = LobbyId.generate(), owner = sessionA).copy(
+                    players = mapOf(sessionA to lobbyBOwner),
+                )
+            // Lobby C: a different anon session. Should NOT be touched.
+            val lobbyC = waitingLobby(id = LobbyId.generate(), owner = sessionB)
+            repo.save(lobbyA)
+            repo.save(lobbyB)
+            repo.save(lobbyC)
+
+            val touched = repo.rebindAnonSeats(sessionA, userId, Pseudonym("Isho"))
+
+            assertThat(touched).isEqualTo(setOf(lobbyA.id))
+            val afterA = repo.findById(lobbyA.id)!!
+            val seatA = afterA.players[sessionA]!!
+            assertThat(seatA.userId).isEqualTo(userId)
+            assertThat(seatA.pseudonym).isEqualTo(Pseudonym("Isho"))
+            // Already-authed seat is untouched: pseudonym + userId unchanged.
+            val afterB = repo.findById(lobbyB.id)!!
+            assertThat(afterB.players[sessionA]!!.pseudonym).isEqualTo(Pseudonym("Alice"))
+            assertThat(afterB.players[sessionA]!!.userId).isEqualTo(userId)
+        }
+
+    @Test
+    fun `rebindAnonSeats is idempotent - second call returns empty set`() =
+        runTest {
+            val userId = UserId("11111111-1111-1111-1111-111111111111")
+            val lobby = waitingLobby(id = LobbyId.generate(), owner = sessionA)
+            repo.save(lobby)
+
+            val first = repo.rebindAnonSeats(sessionA, userId, Pseudonym("Isho"))
+            val second = repo.rebindAnonSeats(sessionA, userId, Pseudonym("Isho"))
+
+            assertThat(first).isEqualTo(setOf(lobby.id))
+            assertThat(second).isEmpty()
+        }
+
+    @Test
+    fun `unbindUserSeats reverts authed seats back to anon and returns touched lobby ids`() =
+        runTest {
+            val userId = UserId("11111111-1111-1111-1111-111111111111")
+            // Lobby A: seat carries userId. Should be unbound.
+            val authedSeat = Player(sessionA, Pseudonym("Isho"), baseInstant, userId = userId)
+            val lobbyA =
+                waitingLobby(id = LobbyId.generate(), owner = sessionA).copy(
+                    players = mapOf(sessionA to authedSeat),
+                )
+            // Lobby B: anon seat with different userId. Should NOT be touched.
+            val otherUserId = UserId("22222222-2222-2222-2222-222222222222")
+            val otherSeat = Player(sessionB, Pseudonym("Bob"), baseInstant, userId = otherUserId)
+            val lobbyB =
+                waitingLobby(id = LobbyId.generate(), owner = sessionB).copy(
+                    players = mapOf(sessionB to otherSeat),
+                )
+            // Lobby C: pure-anon seat (null userId). Should NOT be touched.
+            val lobbyC = waitingLobby(id = LobbyId.generate(), owner = sessionC)
+            repo.save(lobbyA)
+            repo.save(lobbyB)
+            repo.save(lobbyC)
+
+            val touched = repo.unbindUserSeats(userId, Pseudonym("Marmotte"))
+
+            assertThat(touched).isEqualTo(setOf(lobbyA.id))
+            val afterA = repo.findById(lobbyA.id)!!
+            val seatA = afterA.players[sessionA]!!
+            assertThat(seatA.userId).isEqualTo(null)
+            assertThat(seatA.pseudonym).isEqualTo(Pseudonym("Marmotte"))
+            // Other user's seat is untouched.
+            val afterB = repo.findById(lobbyB.id)!!
+            assertThat(afterB.players[sessionB]!!.userId).isEqualTo(otherUserId)
+            assertThat(afterB.players[sessionB]!!.pseudonym).isEqualTo(Pseudonym("Bob"))
+        }
+
+    @Test
+    fun `unbindUserSeats is idempotent - second call returns empty set`() =
+        runTest {
+            val userId = UserId("11111111-1111-1111-1111-111111111111")
+            val authedSeat = Player(sessionA, Pseudonym("Isho"), baseInstant, userId = userId)
+            val lobby =
+                waitingLobby(id = LobbyId.generate(), owner = sessionA).copy(
+                    players = mapOf(sessionA to authedSeat),
+                )
+            repo.save(lobby)
+
+            val first = repo.unbindUserSeats(userId, Pseudonym("Marmotte"))
+            val second = repo.unbindUserSeats(userId, Pseudonym("Marmotte"))
+
+            assertThat(first).isEqualTo(setOf(lobby.id))
+            assertThat(second).isEmpty()
+        }
+
+    @Test
+    fun `save persists user_id and findById round-trips it`() =
+        runTest {
+            val userId = UserId("11111111-1111-1111-1111-111111111111")
+            val authedSeat = Player(sessionA, Pseudonym("Isho"), baseInstant, userId = userId)
+            val lobby =
+                waitingLobby(id = LobbyId.generate(), owner = sessionA).copy(
+                    players = mapOf(sessionA to authedSeat),
+                )
+            repo.save(lobby)
+
+            val loaded = repo.findById(lobby.id)!!
+
+            assertThat(loaded.players[sessionA]!!.userId).isEqualTo(userId)
         }
 
     @Test

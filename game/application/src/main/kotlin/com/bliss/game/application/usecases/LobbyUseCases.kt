@@ -18,6 +18,7 @@ import com.bliss.game.domain.Player
 import com.bliss.game.domain.Position
 import com.bliss.game.domain.Pseudonym
 import com.bliss.game.domain.SessionId
+import com.bliss.game.domain.UserId
 import com.bliss.game.domain.analytics.AnalyticsEvent
 import com.bliss.game.domain.wordsContaining
 import kotlinx.coroutines.CancellationException
@@ -68,12 +69,13 @@ class CreateLobbyUseCase(
     suspend operator fun invoke(
         ownerSessionId: SessionId,
         ownerPseudonym: Pseudonym,
+        ownerUserId: UserId? = null,
     ): UseCaseResult<Lobby> {
         repo.findWaitingByOwnerSession(ownerSessionId)?.let { existing ->
             return UseCaseResult(existing, emptyList())
         }
         val now = clock.now()
-        val owner = Player(ownerSessionId, ownerPseudonym, now)
+        val owner = Player(ownerSessionId, ownerPseudonym, now, userId = ownerUserId)
         val code = mintUniqueCode(repo)
         val lobby =
             Lobby(

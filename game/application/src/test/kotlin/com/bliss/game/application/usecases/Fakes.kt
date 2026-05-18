@@ -16,6 +16,7 @@ import com.bliss.game.domain.LobbyLifecycleState
 import com.bliss.game.domain.Position
 import com.bliss.game.domain.Pseudonym
 import com.bliss.game.domain.SessionId
+import com.bliss.game.domain.UserId
 import java.time.Duration
 import java.time.Instant
 import java.util.UUID
@@ -169,6 +170,44 @@ class InMemoryLobbyRepository : LobbyRepository {
             }
         }
         return EraseSessionResult(deletedLobbies, transferredLobbies, removedPlayerships, anonymisedEntries)
+    }
+
+    override suspend fun rebindAnonSeats(
+        anonSessionId: SessionId,
+        userId: UserId,
+        newPseudonym: Pseudonym,
+    ): Set<LobbyId> {
+        val touched = mutableSetOf<LobbyId>()
+        storeLock.withLock {
+            store.entries.forEach { (id, lobby) ->
+                val seat = lobby.players[anonSessionId] ?: return@forEach
+                if (seat.userId != null) return@forEach
+                val updated = seat.copy(userId = userId, pseudonym = newPseudonym)
+                store[id] = lobby.copy(players = lobby.players + (anonSessionId to updated))
+                touched += id
+            }
+        }
+        return touched
+    }
+
+    override suspend fun unbindUserSeats(
+        userId: UserId,
+        anonPseudonym: Pseudonym,
+    ): Set<LobbyId> {
+        val touched = mutableSetOf<LobbyId>()
+        storeLock.withLock {
+            store.entries.forEach { (id, lobby) ->
+                val matches = lobby.players.values.any { it.userId == userId }
+                if (!matches) return@forEach
+                val newPlayers =
+                    lobby.players.mapValues { (_, p) ->
+                        if (p.userId == userId) p.copy(userId = null, pseudonym = anonPseudonym) else p
+                    }
+                store[id] = lobby.copy(players = newPlayers)
+                touched += id
+            }
+        }
+        return touched
     }
 }
 

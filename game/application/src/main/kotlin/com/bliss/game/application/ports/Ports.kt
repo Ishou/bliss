@@ -6,7 +6,9 @@ import com.bliss.game.domain.Lobby
 import com.bliss.game.domain.LobbyCode
 import com.bliss.game.domain.LobbyId
 import com.bliss.game.domain.Position
+import com.bliss.game.domain.Pseudonym
 import com.bliss.game.domain.SessionId
+import com.bliss.game.domain.UserId
 import com.bliss.game.domain.analytics.AnalyticsEvent
 import java.time.Instant
 import java.util.UUID
@@ -87,6 +89,19 @@ interface LobbyRepository {
      * [mutate] (or [delete]) to avoid TOCTOU between the scan and the eviction.
      */
     suspend fun findIdleCompleted(cutoff: Instant): List<Lobby>
+
+    /** Anon→authed: sets userId + pseudonym on seats where sessionId == anonSessionId AND userId == null. Idempotent. Returns touched lobby ids. */
+    suspend fun rebindAnonSeats(
+        anonSessionId: SessionId,
+        userId: UserId,
+        newPseudonym: Pseudonym,
+    ): Set<LobbyId>
+
+    /** Sign-out reversal of rebindAnonSeats: clears userId and reverts pseudonym on all seats for this user. Idempotent. Returns touched lobby ids. */
+    suspend fun unbindUserSeats(
+        userId: UserId,
+        anonPseudonym: Pseudonym,
+    ): Set<LobbyId>
 }
 
 /**

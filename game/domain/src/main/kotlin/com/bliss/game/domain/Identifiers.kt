@@ -92,6 +92,21 @@ value class SessionId(
     }
 }
 
+private val USER_ID_REGEX =
+    Regex("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
+
+/** Identity-context user id projected into game/. Phase 6c cookie-verifier landing. */
+@JvmInline
+value class UserId(
+    val value: String,
+) {
+    init {
+        require(USER_ID_REGEX.matches(value)) {
+            "UserId must be a UUID string, was '$value'"
+        }
+    }
+}
+
 @JvmInline
 value class Pseudonym(
     val value: String,

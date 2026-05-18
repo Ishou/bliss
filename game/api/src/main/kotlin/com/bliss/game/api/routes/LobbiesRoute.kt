@@ -9,9 +9,11 @@
 package com.bliss.game.api.routes
 
 import com.bliss.game.api.SessionManager
+import com.bliss.game.api.auth.CookieNames
 import com.bliss.game.api.dto.CreateLobbyRequestDto
 import com.bliss.game.api.dto.ProblemDetails
 import com.bliss.game.api.mapper.toResponseDto
+import com.bliss.game.application.auth.CookieVerifier
 import com.bliss.game.application.ports.LobbyRepository
 import com.bliss.game.application.usecases.CreateLobbyUseCase
 import com.bliss.game.domain.LobbyCode
@@ -49,6 +51,7 @@ fun Route.lobbies(
     createLobby: CreateLobbyUseCase,
     repo: LobbyRepository,
     sessionManager: SessionManager,
+    cookieVerifier: CookieVerifier,
 ) {
     route("/v1/lobbies") {
         post {
@@ -61,11 +64,14 @@ fun Route.lobbies(
             val ownerSessionId =
                 runCatching { SessionId(request.ownerSessionId) }
                     .getOrElse { return@post call.respondInvalidCreate(it.message) }
+            val rawCookie = call.request.cookies[CookieNames.SESSION]
+            val whoAmI = cookieVerifier.verify(rawCookie)
             val ownerPseudonym =
-                runCatching { Pseudonym(request.ownerPseudonym) }
-                    .getOrElse { return@post call.respondInvalidCreate(it.message) }
+                whoAmI?.displayName
+                    ?: runCatching { Pseudonym(request.ownerPseudonym) }
+                        .getOrElse { return@post call.respondInvalidCreate(it.message) }
 
-            val lobby = createLobby(ownerSessionId, ownerPseudonym).value
+            val lobby = createLobby(ownerSessionId, ownerPseudonym, whoAmI?.userId).value
             call.response.header(HttpHeaders.Location, "/v1/lobbies/${lobby.id.value}")
             // Newly-created lobby has no live WS sessions yet; presence is empty.
             call.respond(HttpStatusCode.Created, lobby.toResponseDto())

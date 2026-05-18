@@ -6,7 +6,9 @@ import com.bliss.game.domain.Lobby
 import com.bliss.game.domain.LobbyCode
 import com.bliss.game.domain.LobbyId
 import com.bliss.game.domain.LobbyLifecycleState
+import com.bliss.game.domain.Pseudonym
 import com.bliss.game.domain.SessionId
+import com.bliss.game.domain.UserId
 import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.locks.ReentrantLock
@@ -132,5 +134,47 @@ class InMemoryLobbyRepository : LobbyRepository {
             }
         }
         return EraseSessionResult(deletedLobbies, transferredLobbies, removedPlayerships, anonymisedEntries)
+    }
+
+    override suspend fun rebindAnonSeats(
+        anonSessionId: SessionId,
+        userId: UserId,
+        newPseudonym: Pseudonym,
+    ): Set<LobbyId> {
+        val touched = mutableSetOf<LobbyId>()
+        val targets = store.values.filter { it.players[anonSessionId]?.userId == null }.map { it.id }
+        for (id in targets) {
+            lockFor(id).withLock {
+                val current = store[id] ?: return@withLock
+                val seat = current.players[anonSessionId] ?: return@withLock
+                if (seat.userId != null) return@withLock
+                val updated = seat.copy(userId = userId, pseudonym = newPseudonym)
+                store[id] = current.copy(players = current.players + (anonSessionId to updated))
+                touched += id
+            }
+        }
+        return touched
+    }
+
+    override suspend fun unbindUserSeats(
+        userId: UserId,
+        anonPseudonym: Pseudonym,
+    ): Set<LobbyId> {
+        val touched = mutableSetOf<LobbyId>()
+        val targets = store.values.filter { lobby -> lobby.players.values.any { it.userId == userId } }.map { it.id }
+        for (id in targets) {
+            lockFor(id).withLock {
+                val current = store[id] ?: return@withLock
+                val matches = current.players.values.filter { it.userId == userId }
+                if (matches.isEmpty()) return@withLock
+                val newPlayers =
+                    current.players.mapValues { (_, player) ->
+                        if (player.userId == userId) player.copy(userId = null, pseudonym = anonPseudonym) else player
+                    }
+                store[id] = current.copy(players = newPlayers)
+                touched += id
+            }
+        }
+        return touched
     }
 }

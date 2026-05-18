@@ -6,10 +6,19 @@ import assertk.assertions.isEqualTo
 import assertk.assertions.isNotNull
 import assertk.assertions.matches
 import assertk.assertions.startsWith
+import com.bliss.game.api.SessionManager
 import com.bliss.game.api.dto.CreateLobbyRequestDto
 import com.bliss.game.api.dto.LobbyResponseDto
 import com.bliss.game.api.module
+import com.bliss.game.application.auth.CookieVerifier
+import com.bliss.game.application.auth.WhoAmI
+import com.bliss.game.application.ports.Clock
+import com.bliss.game.application.usecases.CreateLobbyUseCase
+import com.bliss.game.domain.Pseudonym
+import com.bliss.game.domain.UserId
+import com.bliss.game.infrastructure.InMemoryLobbyRepository
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.request.cookie
 import io.ktor.client.request.get
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
@@ -19,11 +28,15 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.json.json
+import io.ktor.server.application.install
+import io.ktor.server.routing.routing
 import io.ktor.server.testing.ApplicationTestBuilder
 import io.ktor.server.testing.testApplication
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import org.junit.jupiter.api.Test
+import java.time.Instant
+import io.ktor.server.plugins.contentnegotiation.ContentNegotiation as ServerContentNegotiation
 
 /**
  * Wire-path tests for `/v1/lobbies` via Ktor [testApplication]. Asserts the
@@ -175,6 +188,97 @@ class LobbiesRouteTest {
 
             assertProblem(response, HttpStatusCode.BadRequest, "https://bliss.example/errors/invalid-lobby-code")
         }
+
+    @Test
+    fun `POST with a valid session cookie uses the cookie pseudonym and userId, ignoring the request body pseudonym`() =
+        testApplicationWithVerifier(
+            verifier =
+                stubVerifier(
+                    WhoAmI(
+                        userId = UserId("11111111-1111-1111-1111-111111111111"),
+                        displayName = Pseudonym("Isho"),
+                    ),
+                ),
+        ) { client, repo ->
+            val response =
+                client.post("/v1/lobbies") {
+                    cookie(name = "__Secure-ws_session", value = "stub-cookie")
+                    jsonBody(CreateLobbyRequestDto(ownerSessionId, "Marmotte"))
+                }
+
+            assertThat(response.status).isEqualTo(HttpStatusCode.Created)
+            val lobby = JSON.decodeFromString<LobbyResponseDto>(response.bodyAsText())
+            assertThat(lobby.players[0].pseudonym).isEqualTo("Isho")
+            // Domain-level invariant: the persisted owner Player carries the verified userId.
+            val saved =
+                repo.findById(
+                    com.bliss.game.domain
+                        .LobbyId(lobby.id),
+                )!!
+            val owner =
+                saved.players[
+                    com.bliss.game.domain
+                        .SessionId(ownerSessionId),
+                ]!!
+            assertThat(owner.userId).isEqualTo(UserId("11111111-1111-1111-1111-111111111111"))
+            assertThat(owner.pseudonym).isEqualTo(Pseudonym("Isho"))
+        }
+
+    @Test
+    fun `POST with no cookie keeps anon pseudonym from the request body and leaves userId null`() =
+        testApplicationWithVerifier(verifier = stubVerifier(null)) { client, repo ->
+            val response =
+                client.post("/v1/lobbies") {
+                    jsonBody(CreateLobbyRequestDto(ownerSessionId, "Marmotte"))
+                }
+
+            assertThat(response.status).isEqualTo(HttpStatusCode.Created)
+            val lobby = JSON.decodeFromString<LobbyResponseDto>(response.bodyAsText())
+            assertThat(lobby.players[0].pseudonym).isEqualTo("Marmotte")
+            val saved =
+                repo.findById(
+                    com.bliss.game.domain
+                        .LobbyId(lobby.id),
+                )!!
+            val owner =
+                saved.players[
+                    com.bliss.game.domain
+                        .SessionId(ownerSessionId),
+                ]!!
+            assertThat(owner.userId).isEqualTo(null)
+            assertThat(owner.pseudonym).isEqualTo(Pseudonym("Marmotte"))
+        }
+
+    private fun stubVerifier(returning: WhoAmI?): CookieVerifier =
+        object : CookieVerifier {
+            override suspend fun verify(rawCookieValue: String?): WhoAmI? = returning
+        }
+
+    private fun testApplicationWithVerifier(
+        verifier: CookieVerifier,
+        block: suspend (io.ktor.client.HttpClient, InMemoryLobbyRepository) -> Unit,
+    ) = testApplication {
+        val repo = InMemoryLobbyRepository()
+        val clock =
+            object : Clock {
+                override fun now(): Instant = Instant.parse("2026-05-18T12:00:00Z")
+            }
+        val createLobby = CreateLobbyUseCase(repo, clock)
+        val sessionManager = SessionManager()
+        application {
+            install(ServerContentNegotiation) { json(JSON) }
+            routing {
+                lobbies(
+                    createLobby = createLobby,
+                    repo = repo,
+                    sessionManager = sessionManager,
+                    cookieVerifier = verifier,
+                )
+            }
+        }
+        val client = createClient { install(ContentNegotiation) { json(JSON) } }
+        block(client, repo)
+    }
 
     private suspend fun assertProblem(
         response: io.ktor.client.statement.HttpResponse,

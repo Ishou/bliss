@@ -273,7 +273,97 @@ paths:
               schema:
                 $ref: '#/components/schemas/Problem'
 
+  /v1/lobbies/players/rebind:
+    post:
+      operationId: rebindLobbySessions
+      summary: Rebind anon lobby seats to the authenticated user.
+      description: |
+        Cookie-authed. Updates every lobby seat where `sessionId == anonSessionId`
+        AND `userId` is null: sets `userId` to the authenticated user and
+        refreshes the seat pseudonym from the user's current displayName.
+        Idempotent — re-running with the same body is a no-op.
+      tags: [lobbies]
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [anonSessionId]
+              properties:
+                anonSessionId:
+                  $ref: '#/components/schemas/SessionId'
+      responses:
+        '204':
+          description: Rebind complete (idempotent; zero rows touched is also success).
+        '400':
+          description: |
+            Request body is malformed or contains an invalid field value
+            (e.g. `anonSessionId` is not a UUID v7). RFC 7807.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '401':
+          description: Cookie missing, expired, or rejected by identity-api.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+
+  /v1/lobbies/players/unbind:
+    post:
+      operationId: unbindLobbySessions
+      summary: Unbind authenticated lobby seats before sign-out.
+      description: |
+        Cookie-authed. Updates every lobby seat where `userId == cookie.userId`:
+        clears `userId` and sets the seat pseudonym to the supplied
+        `anonPseudonym`. Called by the frontend before invoking
+        `POST /v1/auth/logout`. Idempotent.
+      tags: [lobbies]
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [anonPseudonym]
+              properties:
+                anonPseudonym:
+                  $ref: '#/components/schemas/Pseudonym'
+      responses:
+        '204':
+          description: Unbind complete (idempotent).
+        '400':
+          description: |
+            Request body is malformed or contains an invalid field value
+            (e.g. `anonPseudonym` is empty or exceeds 32 characters). RFC 7807.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '401':
+          description: Cookie missing, expired, or rejected by identity-api.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+
 components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: __Secure-ws_session
+      description: |
+        Cross-subdomain session cookie issued by identity-api. Validated
+        against `GET /v1/auth/whoami` by the game-api cookie verifier
+        (30 s cache). 401 if missing / expired / unreachable identity-api.
+
   parameters:
     LobbyIdPath:
       name: lobbyId
