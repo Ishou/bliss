@@ -92,16 +92,17 @@ function DangerZone({
     setDeleting(true);
     try {
       await authClient.deleteMe();
-      onDeleteStart();
-      toast.show({ text: 'Compte supprimé.', tone: 'info' });
-      await onDeleted();
-      setOpen(false);
-      setTyped('');
-      void navigate({ to: '/' });
     } catch {
       toast.show({ text: 'La suppression a échoué. Réessayez.', tone: 'error' });
       setDeleting(false);
+      return;
     }
+    onDeleteStart();
+    toast.show({ text: 'Compte supprimé.', tone: 'info' });
+    await onDeleted().catch(() => { /* refresh failure is non-fatal; account is gone */ });
+    setOpen(false);
+    setTyped('');
+    void navigate({ to: '/' });
   }
 
   return (
