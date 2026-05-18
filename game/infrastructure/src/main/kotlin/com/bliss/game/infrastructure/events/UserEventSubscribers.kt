@@ -52,15 +52,17 @@ class UserEventSubscribers(
             PushSubscribeOptions
                 .builder()
                 .durable(durable)
+                .deliverGroup(QUEUE_GROUP)
                 .configuration(
                     ConsumerConfiguration
                         .builder()
                         .durable(durable)
                         .ackPolicy(AckPolicy.Explicit)
                         .maxDeliver(5)
+                        .deliverGroup(QUEUE_GROUP)
                         .build(),
                 ).build()
-        val sub = jetStream.subscribe(subject, opts)
+        val sub = jetStream.subscribe(subject, QUEUE_GROUP, opts)
         scope.launch {
             while (isActive) {
                 runCatching {
@@ -88,5 +90,6 @@ class UserEventSubscribers(
         const val SUBJECT_RENAMED: String = "wordsparrow.user.renamed"
         private const val DURABLE_DELETED: String = "game-api-user-deleted"
         private const val DURABLE_RENAMED: String = "game-api-user-renamed"
+        private const val QUEUE_GROUP: String = "game-api-user-events"
     }
 }

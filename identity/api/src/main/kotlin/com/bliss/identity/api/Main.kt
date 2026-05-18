@@ -18,7 +18,7 @@ fun main() {
             requireUrl = true,
         ).apply { start() }
     val dataSource = db.dataSource() ?: error("IdentityDatabase did not produce a DataSource.")
-    val natsUrl = System.getenv("NATS_URL") ?: "nats://bliss-nats.wordsparrow:4222"
+    val natsUrl = System.getenv("NATS_URL") ?: error("NATS_URL env var is required")
 
     embeddedServer(Netty, port = port, host = "0.0.0.0") {
         module(config, dataSource, CIO.create(), natsUrl)
