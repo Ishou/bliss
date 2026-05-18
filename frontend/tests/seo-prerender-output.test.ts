@@ -101,13 +101,13 @@ describe.skipIf(!existsSync(resolve(DIST, 'index.html')))(
 
     it('does NOT embed Organization JSON-LD on non-homepage routes', () => {
       for (const path of ['grille', 'aide', 'mentions-legales', 'confidentialite']) {
-        const html = readFileSync(resolve(DIST, path, 'index.html'), 'utf8');
+        const html = readFileSync(resolve(DIST, `${path}.html`), 'utf8');
         expect(html).not.toContain('"@type":"Organization"');
       }
     });
 
     it('embeds a FAQPage with one Question per HELP_SECTIONS entry on /aide', () => {
-      const html = readFileSync(resolve(DIST, 'aide', 'index.html'), 'utf8');
+      const html = readFileSync(resolve(DIST, 'aide.html'), 'utf8');
       expect(html).toContain('"@type":"FAQPage"');
       // 5 HELP_SECTIONS entries → exactly 5 Question objects.
       const questionMatches = html.match(/"@type":"Question"/g) ?? [];
@@ -120,7 +120,7 @@ describe.skipIf(!existsSync(resolve(DIST, 'index.html')))(
       ['mentions-legales', '/mentions-legales'],
       ['confidentialite', '/confidentialite'],
     ])('embeds BreadcrumbList JSON-LD on /%s', (dir) => {
-      const html = readFileSync(resolve(DIST, dir, 'index.html'), 'utf8');
+      const html = readFileSync(resolve(DIST, `${dir}.html`), 'utf8');
       expect(html).toContain('"@type":"BreadcrumbList"');
     });
 
@@ -130,7 +130,7 @@ describe.skipIf(!existsSync(resolve(DIST, 'index.html')))(
     });
 
     it('embeds Game JSON-LD on /grille', () => {
-      const html = readFileSync(resolve(DIST, 'grille', 'index.html'), 'utf8');
+      const html = readFileSync(resolve(DIST, 'grille.html'), 'utf8');
       expect(html).toContain('"@type":"Game"');
       expect(html).toContain('"genre":"Word puzzle"');
       expect(html).toContain('"gamePlatform":"Web browser"');
@@ -199,14 +199,14 @@ describe.skipIf(!existsSync(resolve(DIST, 'index.html')))(
     });
 
     it('grille H1 carries the "grille de mots fléchés du jour" target phrase', () => {
-      const html = readFileSync(resolve(DIST, 'grille', 'index.html'), 'utf8');
+      const html = readFileSync(resolve(DIST, 'grille.html'), 'utf8');
       expect(html).toMatch(
         /<h1\b[^>]*lang="fr"[^>]*>[\s\S]*?Grille de mots fléchés du jour[\s\S]*?<\/h1>/,
       );
     });
 
     it('aide H1 carries the "comment jouer aux mots fléchés en ligne" target phrase', () => {
-      const html = readFileSync(resolve(DIST, 'aide', 'index.html'), 'utf8');
+      const html = readFileSync(resolve(DIST, 'aide.html'), 'utf8');
       expect(html).toMatch(
         /<h1\b[^>]*>[^<]*Comment jouer aux mots fléchés en ligne[^<]*<\/h1>/,
       );
@@ -216,7 +216,7 @@ describe.skipIf(!existsSync(resolve(DIST, 'index.html')))(
     // prerender browser starts with empty localStorage; without the
     // `wordsparrow.tour.seen` seed in `scripts/prerender.ts`,
     // `useSoloTour` auto-opens the welcome step and the Portal-rendered
-    // tour parts get baked into `dist/grille/index.html` as
+    // tour parts get baked into `dist/grille.html` as
     // `data-state="open"` markup. Real visitors then load that static
     // HTML and see a tour with no React handlers attached (Portal
     // content is outside the route's hydratable subtree, so the
