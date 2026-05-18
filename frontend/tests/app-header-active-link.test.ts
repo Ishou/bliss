@@ -1,11 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import { activeIdForPath } from '@/ui/components/layout/AppHeader';
 
-// Cloudflare Pages serves `dist/grilles/index.html` and canonicalizes
-// the URL to `/grilles/` (trailing slash) on a hard refresh, while SPA
-// `<a href="/grilles">` navigation gives `/grilles` (no slash). The
-// active-link logic must treat both as the same destination — without
-// normalization, the underline silently drops after a hard refresh.
+// The prerender emits `dist/grilles.html` so Pages serves `/grilles`
+// directly (200, no redirect). `_redirects` sends `/grilles/` back to
+// `/grilles` with 308. SPA `<Link to="/grilles">` navigation gives
+// `/grilles` (no slash). Normalization remains as defense in depth so
+// any caller that passes a trailing slash still produces the right
+// active id.
 describe('activeIdForPath', () => {
   it('matches the exact NAV_LINKS href', () => {
     expect(activeIdForPath('/')).toBe('accueil');

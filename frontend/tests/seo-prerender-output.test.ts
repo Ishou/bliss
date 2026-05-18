@@ -11,11 +11,11 @@ const DIST = resolve(__dirname, '../dist');
 describe.skipIf(!existsSync(resolve(DIST, 'index.html')))(
   'prerender output (post-build)',
   () => {
-    it.each(INDEXABLE_ROUTES)('emits dist/$path/index.html', (route) => {
+    it.each(INDEXABLE_ROUTES)('emits dist/$path.html (or dist/index.html for /)', (route) => {
       const expectedPath =
         route.path === '/'
           ? resolve(DIST, 'index.html')
-          : resolve(DIST, route.path.slice(1), 'index.html');
+          : resolve(DIST, `${route.path.slice(1)}.html`);
       expect(existsSync(expectedPath)).toBe(true);
     });
 
@@ -23,7 +23,7 @@ describe.skipIf(!existsSync(resolve(DIST, 'index.html')))(
       const file =
         route.path === '/'
           ? resolve(DIST, 'index.html')
-          : resolve(DIST, route.path.slice(1), 'index.html');
+          : resolve(DIST, `${route.path.slice(1)}.html`);
       const html = readFileSync(file, 'utf8');
       expect(html).toContain(`<title>${route.title}</title>`);
     });
@@ -32,7 +32,7 @@ describe.skipIf(!existsSync(resolve(DIST, 'index.html')))(
       const file =
         route.path === '/'
           ? resolve(DIST, 'index.html')
-          : resolve(DIST, route.path.slice(1), 'index.html');
+          : resolve(DIST, `${route.path.slice(1)}.html`);
       const html = readFileSync(file, 'utf8');
       expect(html).toContain(`content="${route.description}"`);
     });
@@ -41,7 +41,7 @@ describe.skipIf(!existsSync(resolve(DIST, 'index.html')))(
       const file =
         route.path === '/'
           ? resolve(DIST, 'index.html')
-          : resolve(DIST, route.path.slice(1), 'index.html');
+          : resolve(DIST, `${route.path.slice(1)}.html`);
       const html = readFileSync(file, 'utf8');
       expect(html).toContain(`href="${SITE_BASE_URL}${route.path}"`);
     });
@@ -145,7 +145,7 @@ describe.skipIf(!existsSync(resolve(DIST, 'index.html')))(
       const file =
         route.path === '/'
           ? resolve(DIST, 'index.html')
-          : resolve(DIST, route.path.slice(1), 'index.html');
+          : resolve(DIST, `${route.path.slice(1)}.html`);
       const html = readFileSync(file, 'utf8');
       const titleCount = (html.match(/<title>/g) ?? []).length;
       expect(titleCount).toBe(1);
@@ -155,7 +155,7 @@ describe.skipIf(!existsSync(resolve(DIST, 'index.html')))(
       const file =
         route.path === '/'
           ? resolve(DIST, 'index.html')
-          : resolve(DIST, route.path.slice(1), 'index.html');
+          : resolve(DIST, `${route.path.slice(1)}.html`);
       const html = readFileSync(file, 'utf8');
       const ogImageCount = (html.match(/property="og:image"/g) ?? []).length;
       expect(ogImageCount).toBe(1);
@@ -165,7 +165,7 @@ describe.skipIf(!existsSync(resolve(DIST, 'index.html')))(
       const file =
         route.path === '/'
           ? resolve(DIST, 'index.html')
-          : resolve(DIST, route.path.slice(1), 'index.html');
+          : resolve(DIST, `${route.path.slice(1)}.html`);
       const html = readFileSync(file, 'utf8');
       const canonicalCount = (html.match(/rel="canonical"/g) ?? []).length;
       expect(canonicalCount).toBe(1);
@@ -177,7 +177,7 @@ describe.skipIf(!existsSync(resolve(DIST, 'index.html')))(
         const file =
           route.path === '/'
             ? resolve(DIST, 'index.html')
-            : resolve(DIST, route.path.slice(1), 'index.html');
+            : resolve(DIST, `${route.path.slice(1)}.html`);
         const html = readFileSync(file, 'utf8');
         const expected = `${SITE_BASE_URL}${route.ogImagePath}`;
         expect(html).toContain(`property="og:image" content="${expected}"`);
@@ -231,7 +231,7 @@ describe.skipIf(!existsSync(resolve(DIST, 'index.html')))(
         const file =
           route.path === '/'
             ? resolve(DIST, 'index.html')
-            : resolve(DIST, route.path.slice(1), 'index.html');
+            : resolve(DIST, `${route.path.slice(1)}.html`);
         const html = readFileSync(file, 'utf8');
         // Only the open-state portal markup signals the bug. The
         // closed-state Tour.Content (hidden, with the always-rendered

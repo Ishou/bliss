@@ -4,7 +4,15 @@
 //   2. open the route in headless chromium (Playwright dev dep)
 //   3. wait for hydration → <HeadContent /> populates the document head
 //   4. dump document.documentElement.outerHTML
-//   5. write to dist/<route>/index.html (or dist/index.html for '/')
+//   5. write to dist/<slug>.html (or dist/index.html for '/')
+//
+// The dist/<slug>.html file layout is deliberate: Cloudflare Pages
+// serves it directly on requests to `/<slug>` with no redirect. The
+// alternative dist/<slug>/index.html layout triggers Pages' default
+// 308 to add a trailing slash on `/<slug>` requests, which Search
+// Console flags as "page avec redirection" on every crawled URL.
+// The companion `frontend/public/_redirects` rule sends `/<slug>/`
+// traffic back to `/<slug>` so both forms resolve cleanly.
 //
 // Fails the build if any indexable route does not surface its
 // per-route title (catches hydration bugs / route regressions).
@@ -237,7 +245,7 @@ async function prerenderRoute(
     }
     const outPath = route.path === '/'
       ? join(DIST, 'index.html')
-      : join(DIST, route.path.slice(1), 'index.html');
+      : join(DIST, `${route.path.slice(1)}.html`);
     mkdirSync(dirname(outPath), { recursive: true });
     writeFileSync(outPath, html, 'utf8');
     console.warn(`[prerender] ok ${route.path} -> ${outPath.replace(DIST, 'dist')}`);

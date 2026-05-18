@@ -1,0 +1,21 @@
+# Cloudflare Pages _redirects. Copied verbatim from `frontend/public/` into
+# `dist/` at build time by Vite's static-asset pass.
+#
+# Trailing-slash → non-trailing canonical. The build emits `dist/<slug>.html`
+# (file, not directory) for every indexable route (see scripts/prerender.ts),
+# so Pages serves `/<slug>` with 200 directly. Anyone who lands on `/<slug>/`
+# — old inbound links, third-party share tools that auto-append `/` —
+# gets a 308 to the canonical no-trailing form. Search Console previously
+# flagged the (old) `/<slug>` → `/<slug>/` 308 chain as "page avec
+# redirection", suppressing the indexable URL.
+#
+# 308 (not 301) preserves the request method on rewrite; matches the
+# default Cloudflare Pages emits for the inverse rule.
+
+/grille/             /grille             308
+/grilles/            /grilles            308
+/aide/               /aide               308
+/mentions-legales/   /mentions-legales   308
+/confidentialite/    /confidentialite    308
+/privacy/            /privacy            308
+/compte/             /compte             308
