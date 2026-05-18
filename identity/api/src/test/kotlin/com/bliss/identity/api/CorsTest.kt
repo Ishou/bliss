@@ -99,12 +99,6 @@ class CorsTest {
     fun `preflight allows arbitrary frontend headers via predicate wildcard`() =
         testApplication {
             application { module(Wiring.forTesting(), testConfig) }
-            // Headers the frontend actually attaches via openapi-fetch + OTel
-            // browser SDK: X-Request-Id (correlation), traceparent + tracestate
-            // (W3C Trace Context). The pre-ADR-0034 allow-list missed these
-            // and broke /v1/auth/whoami in production within an hour of the
-            // identity-api going live. The wildcard predicate covers them
-            // plus any future middleware-attached header.
             val response =
                 client.options("/v1/auth/whoami") {
                     headers {

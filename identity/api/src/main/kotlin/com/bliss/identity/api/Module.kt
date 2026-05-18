@@ -75,33 +75,10 @@ fun Application.module(
         allowMethod(HttpMethod.Patch)
         allowMethod(HttpMethod.Delete)
 
-        // Headers: wildcard-predicate per ADR-0034. The explicit `allowHeader`
-        // approach this replaces caused two production incidents within hours
-        // of the identity-api going live: X-Request-Id missing (#513) and
-        // traceparent / tracestate missing (this PR) — the exact same shape
-        // ADR-0034 documents for grid + game (PR-F.2). Each one a frontend
-        // middleware silently attaching an outbound header.
-        //
-        // Credential-CORS safety: Ktor's `allowHeaders { true }` is a
-        // PREDICATE — the plugin echoes back the specific headers requested
-        // via Access-Control-Request-Headers, NOT a literal `*`. Browsers
-        // accept the response with `Access-Control-Allow-Credentials: true`
-        // because the emitted `Access-Control-Allow-Headers` enumerates each
-        // header by name. The ADR-0034 warning about wildcard-incompatibility
-        // with credentials applies to the literal `*` form, not Ktor's
-        // predicate variant.
-        //
-        // The actual security perimeter remains origin allow-list + per-IP
-        // rate limit at ingress (mirrors grid/game). Credentialed-variant
-        // rationale documented in ADR-0048.
+        // wildcard predicate (echoes request headers, not literal "*") — ADR-0048
         allowHeaders { true }
 
-        // PATCH /v1/users/me sends `Content-Type: application/json`, which
-        // the CORS spec classifies as non-simple. Without this flag, Ktor
-        // rejects the actual (post-preflight) request with 403 + no
-        // Access-Control-Allow-Origin, surfacing as the same misleading
-        // "No 'Access-Control-Allow-Origin' header" error in the browser.
-        // Mirrors grid/api Module.kt + game/api Module.kt.
+        // non-simple Content-Type (application/json on PATCH); mirrors grid/game
         allowNonSimpleContentTypes = true
 
         allowCredentials = true
