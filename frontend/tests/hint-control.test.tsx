@@ -2,6 +2,8 @@ import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { HintControl } from '@/ui/components/grid/HintControl';
 
+// No AuthProvider in tree: gate is inactive; hook branches tested in hint-gate.test.tsx.
+
 const focusedAt = (row: number, column: number, isLocked = false) =>
   () => ({ row, column, isLocked });
 

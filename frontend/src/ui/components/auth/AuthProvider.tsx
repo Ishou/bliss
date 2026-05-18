@@ -112,3 +112,8 @@ export function useAuth(): AuthContextValue {
   }
   return ctx;
 }
+
+// Returns null outside an AuthProvider so callers can degrade gracefully.
+export function useOptionalAuth(): AuthContextValue | null {
+  return useContext(AuthContext);
+}
