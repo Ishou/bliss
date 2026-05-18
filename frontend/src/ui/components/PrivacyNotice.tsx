@@ -178,8 +178,8 @@ function FrenchContent() {
       <h1>Politique de confidentialité</h1>
       <p>
         <strong>WordSparrow</strong> (mots fléchés en ligne) collecte le strict minimum nécessaire pour
-        faire fonctionner le service. Aucun compte, aucun cookie publicitaire, aucun partage avec
-        des annonceurs.
+        faire fonctionner le service. Aucun compte obligatoire (la connexion via Google est
+        facultative), aucun cookie publicitaire, aucun partage avec des annonceurs.
       </p>
       <h2>Responsable du traitement</h2>
       <p>
@@ -326,6 +326,10 @@ function FrenchContent() {
           <strong>Cloudflare, Inc.</strong> (États-Unis) — DNS et CDN. Voit votre IP lors de la
           livraison des pages, traitée selon son propre Data Processing Addendum.
         </li>
+        <li>
+          <strong>Google LLC</strong> (États-Unis) — fournisseur d'identité OAuth. Reçoit votre
+          choix d'autorisation lors de la connexion ; traité selon son propre DPA RGPD.
+        </li>
       </ul>
       <p>
         <Link to="/privacy" hrefLang="en">
@@ -342,7 +346,8 @@ function EnglishContent() {
       <h1>Privacy Policy</h1>
       <p>
         <strong>WordSparrow</strong> (online French crossword puzzles) collects the minimum needed to
-        run the service. No accounts, no advertising cookies, no sharing with advertisers.
+        run the service. No mandatory accounts (Google sign-in is optional), no advertising
+        cookies, no sharing with advertisers.
       </p>
       <h2>Data controller</h2>
       <p>
@@ -486,6 +491,10 @@ function EnglishContent() {
         <li>
           <strong>Cloudflare, Inc.</strong> (USA) — DNS and CDN. Sees your IP when serving pages,
           processed under its own DPA.
+        </li>
+        <li>
+          <strong>Google LLC</strong> (USA) — OAuth identity provider. Receives your authorisation
+          choice at sign-in; processed under its own GDPR DPA.
         </li>
       </ul>
       <p>
