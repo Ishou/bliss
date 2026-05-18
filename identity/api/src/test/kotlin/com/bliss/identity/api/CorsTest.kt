@@ -96,7 +96,7 @@ class CorsTest {
         }
 
     @Test
-    fun `preflight allows X-Request-Id header on whoami`() =
+    fun `preflight allows arbitrary frontend headers via predicate wildcard`() =
         testApplication {
             application { module(Wiring.forTesting(), testConfig) }
             val response =
@@ -104,11 +104,16 @@ class CorsTest {
                     headers {
                         append(HttpHeaders.Origin, "https://wordsparrow.io")
                         append(HttpHeaders.AccessControlRequestMethod, "GET")
-                        append(HttpHeaders.AccessControlRequestHeaders, "x-request-id")
+                        append(
+                            HttpHeaders.AccessControlRequestHeaders,
+                            "x-request-id,traceparent,tracestate",
+                        )
                     }
                 }
             assertThat(response.status).isEqualTo(HttpStatusCode.OK)
-            assertThat(response.headers[HttpHeaders.AccessControlAllowHeaders] ?: "")
-                .contains("X-Request-ID")
+            val allowed = response.headers[HttpHeaders.AccessControlAllowHeaders] ?: ""
+            assertThat(allowed).contains("x-request-id")
+            assertThat(allowed).contains("traceparent")
+            assertThat(allowed).contains("tracestate")
         }
 }

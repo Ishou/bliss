@@ -63,8 +63,6 @@ fun Application.module(
     }
 
     install(CORS) {
-        // Cookie-bearing requests require allowCredentials = true + explicit origins;
-        // browsers reject Access-Control-Allow-Origin: * with credentials.
         allowHost("wordsparrow.io", schemes = listOf("https"))
         allowHost("www.wordsparrow.io", schemes = listOf("https"))
         allowHost("bliss-cb4.pages.dev", schemes = listOf("https"))
@@ -74,13 +72,11 @@ fun Application.module(
         allowMethod(HttpMethod.Patch)
         allowMethod(HttpMethod.Delete)
 
-        // Default permitted request headers don't include Content-Type — needed
-        // for the JSON bodies on PATCH /v1/users/me + the link route.
-        allowHeader(HttpHeaders.ContentType)
-        // X-Request-Id is sent by the API client on every request for distributed tracing.
-        // Without this allow-listing, the CORS preflight returns 403 and the
-        // browser blocks all cookie-bearing calls.
-        allowHeader(HttpHeaders.XRequestId)
+        // wildcard predicate (echoes request headers, not literal "*") — ADR-0048
+        allowHeaders { true }
+
+        // non-simple Content-Type (application/json on PATCH); mirrors grid/game
+        allowNonSimpleContentTypes = true
 
         allowCredentials = true
         maxAgeInSeconds = 600
