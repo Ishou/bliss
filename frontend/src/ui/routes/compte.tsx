@@ -1,14 +1,14 @@
 import { createRoute, useNavigate } from '@tanstack/react-router';
-import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { useEffect, useState } from 'react';
 import { css, cx } from 'styled-system/css';
-import { InvalidDisplayNameError, type GetMeResult } from '@/application/auth';
+import type { GetMeResult } from '@/application/auth';
 import { useAuth } from '@/ui/components/auth';
 import { ContentPage } from '@/ui/components/layout';
-import { Button, TextField, useToast } from '@/ui/components/primitives';
+import { useToast } from '@/ui/components/primitives';
 import { buildHead, SITE_BASE_URL } from '@/ui/seo';
 import { Route as RootRoute } from './__root';
 
-// Phase 5 sub-PR 5 — editable Pseudonyme; read-only providers list.
+// Phase 5 sub-PR 4 — /compte foundation: read-only Pseudonyme + providers.
 
 const articleStyles = css({
   display: 'flex', flexDirection: 'column', gap: 'lg', width: '100%', maxWidth: '640px',
@@ -23,6 +23,7 @@ const sectionStyles = css({
 const sectionTitleStyles = css({
   fontSize: 'lg', fontWeight: 'semibold', margin: 0, color: 'fg',
 });
+const fieldValueStyles = css({ fontSize: 'body', color: 'fg', margin: 0 });
 const providerListStyles = css({
   display: 'flex', flexDirection: 'column', gap: 'sm', margin: 0, padding: 0, listStyle: 'none',
 });
@@ -37,9 +38,6 @@ const badgeStyles = css({
 });
 const statusStyles = css({ fontSize: 'body', color: 'fgMuted', margin: 0 });
 
-const formStyles = css({ display: 'flex', flexDirection: 'column', gap: 'sm' });
-const submitRowStyles = css({ display: 'flex', justifyContent: 'flex-end' });
-
 function formatLinkedDate(iso: string): string {
   const date = new Date(iso);
   return date.toLocaleDateString('fr-FR', {
@@ -51,14 +49,11 @@ function formatLinkedDate(iso: string): string {
 
 function ComptePage() {
   const { authClient } = Route.useRouteContext();
-  const { state, refresh } = useAuth();
+  const { state } = useAuth();
   const navigate = useNavigate();
   const toast = useToast();
   const [me, setMe] = useState<GetMeResult | null>(null);
-  const [loadError, setLoadError] = useState<string | null>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const [saveError, setSaveError] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Anon guard: state-driven redirect (Phase 5 §Testing). No beforeLoad.
   useEffect(() => {
@@ -81,7 +76,7 @@ function ComptePage() {
         if (!cancelled) setMe(result);
       })
       .catch(() => {
-        if (!cancelled) setLoadError('Impossible de charger votre compte. Réessayez.');
+        if (!cancelled) setError('Impossible de charger votre compte. Réessayez.');
       });
     return () => { cancelled = true; };
   }, [authClient, state.status]);
@@ -95,10 +90,10 @@ function ComptePage() {
   }
   if (state.status !== 'authed') return null;
 
-  if (loadError != null) {
+  if (error != null) {
     return (
       <ContentPage>
-        <p role="alert" className={statusStyles}>{loadError}</p>
+        <p role="alert" className={statusStyles}>{error}</p>
       </ContentPage>
     );
   }
@@ -113,28 +108,6 @@ function ComptePage() {
 
   const google = me.providers.find((p) => p.provider === 'google');
 
-  async function onSubmit(e: FormEvent<HTMLFormElement>): Promise<void> {
-    e.preventDefault();
-    if (!authClient) throw new Error('authClient not wired despite authed state');
-    const value = inputRef.current?.value.trim() ?? '';
-    setSaveError(null);
-    setSaving(true);
-    try {
-      await authClient.updateMe(value);
-      const fresh = await authClient.getMe();
-      setMe(fresh);
-      await refresh();
-    } catch (err) {
-      setSaveError(
-        err instanceof InvalidDisplayNameError
-          ? err.message
-          : 'Une erreur est survenue. Réessayez.',
-      );
-    } finally {
-      setSaving(false);
-    }
-  }
-
   return (
     <ContentPage>
       <article className={articleStyles}>
@@ -144,25 +117,7 @@ function ComptePage() {
           <h2 id="compte-pseudo-title" className={sectionTitleStyles}>
             Pseudonyme
           </h2>
-          <form className={formStyles} onSubmit={onSubmit} noValidate>
-            <TextField
-              ref={inputRef}
-              name="displayName"
-              label="Pseudonyme"
-              defaultValue={me.displayName}
-              maxLength={30}
-              minLength={1}
-              required
-              autoComplete="off"
-              invalid={saveError != null}
-              errorText={saveError ?? undefined}
-            />
-            <div className={submitRowStyles}>
-              <Button type="submit" variant="primary" disabled={saving}>
-                {saving ? 'Enregistrement…' : 'Enregistrer'}
-              </Button>
-            </div>
-          </form>
+          <p className={fieldValueStyles}>{me.displayName}</p>
         </section>
 
         <section className={sectionStyles} aria-labelledby="compte-providers-title">
