@@ -323,11 +323,18 @@ export function Grid({
   const templateStyle = useMemo(
     () => ({
       gridTemplateColumns: `repeat(${puzzle.width}, 1fr)`,
-      // 1fr (not auto) so rows divide the wrapper's height evenly when
-      // the puzzle aspect doesn't match the wrapper's. Cells carry their
-      // own aspect-ratio: 1, which keeps them square inside the
-      // 1fr × 1fr track they receive.
+      // 1fr (not auto) so rows divide the container's height evenly. With
+      // the `aspectRatio` lock below, container height = width × H/W, so
+      // each row track is exactly `width/W` tall — matching the cells'
+      // own `aspect-ratio: 1` derived from their `width: 100%` column
+      // slot. Without the aspectRatio lock the container's height was
+      // free to follow whatever the `TransformComponent` ancestor handed
+      // down; on a tall mobile viewport iOS Safari resolved that to the
+      // full flex slot, leaving each cell square inside a much taller
+      // row track and painting the gridLine bg between cells as a "huge
+      // horizontal stripe" (the iPhone bug PR #520 chased).
       gridTemplateRows: `repeat(${puzzle.height}, 1fr)`,
+      aspectRatio: `${puzzle.width} / ${puzzle.height}`,
     }),
     [puzzle.height, puzzle.width],
   );
