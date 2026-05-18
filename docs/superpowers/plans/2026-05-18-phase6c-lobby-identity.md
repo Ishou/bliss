@@ -1041,6 +1041,7 @@ class UserEventSubscribers(
                 ConsumerConfiguration.builder()
                     .durable(durable)
                     .ackPolicy(AckPolicy.Explicit)
+                    .maxDeliver(5)
                     .build(),
             )
             .build()
