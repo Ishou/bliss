@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { css, cx } from 'styled-system/css';
-import { HintGate } from '@/ui/components/auth';
+import { useHintGate } from '@/ui/components/auth';
 import { HintIcon } from '@/ui/components/icons';
 import type { HintLastResult } from './useHintRequest';
 
@@ -177,31 +177,31 @@ export function HintControl({
     event.preventDefault();
   }, []);
 
+  const gate = useHintGate();
   const status = renderStatus({ lastResult, errorMessage, exhausted });
 
   return (
     <div className={containerStyles}>
-      <HintGate>
-        <button
-          type="button"
-          className={pillStyles}
-          aria-label="Demander un indice"
-          title="Demander un indice"
-          onClick={handleClick}
-          onMouseDown={handleMouseDown}
-          disabled={exhausted || pending}
+      <button
+        type="button"
+        className={pillStyles}
+        aria-label="Demander un indice"
+        title={gate?.title ?? 'Demander un indice'}
+        onClick={handleClick}
+        onMouseDown={handleMouseDown}
+        disabled={exhausted || pending || (gate?.disabled ?? false)}
+        aria-disabled={gate?.['aria-disabled']}
+      >
+        <HintIcon />
+        <span className={labelStyles}>Indice</span>
+        <span className={dividerStyles} aria-hidden="true" />
+        <span
+          className={counterStyles}
+          aria-label={`${hintsRemaining} sur ${hintsAllowed} indices restants`}
         >
-          <HintIcon />
-          <span className={labelStyles}>Indice</span>
-          <span className={dividerStyles} aria-hidden="true" />
-          <span
-            className={counterStyles}
-            aria-label={`${hintsRemaining} sur ${hintsAllowed} indices restants`}
-          >
-            {hintsRemaining}/{hintsAllowed}
-          </span>
-        </button>
-      </HintGate>
+          {hintsRemaining}/{hintsAllowed}
+        </span>
+      </button>
       {status ? (
         <span
           className={cx(statusBaseStyles, status.className)}

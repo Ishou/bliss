@@ -1,5 +1,5 @@
 export { AuthProvider, useAuth, type AuthState } from './AuthProvider';
 export { AvatarMenu } from './AvatarMenu';
 export { HeaderAuthSlot } from './HeaderAuthSlot';
-export { HintGate } from './HintGate';
+export { useHintGate } from './useHintGate';
 export { SignInButton } from './SignInButton';

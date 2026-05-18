@@ -1,7 +1,8 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { renderHook, waitFor } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
+import type { ReactNode } from 'react';
 import type { AuthClient, WhoAmIResult } from '@/application/auth';
-import { AuthProvider, HintGate } from '@/ui/components/auth';
+import { AuthProvider, useHintGate } from '@/ui/components/auth';
 
 const USER: WhoAmIResult = {
   userId: '0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6b',
@@ -25,68 +26,54 @@ function makeClient(opts: { whoami: WhoAmIResult | null | Error; latch?: Promise
   };
 }
 
-describe('HintGate', () => {
-  it('disables the child + sets the sign-in tooltip when status=anon', async () => {
-    render(
-      <AuthProvider authClient={makeClient({ whoami: null })} getPseudonym={() => 'Renard 423'}>
-        <HintGate>
-          <button type="button" data-testid="hint-button">Indice</button>
-        </HintGate>
-      </AuthProvider>,
+function withAuth(client: AuthClient) {
+  return function Wrapper({ children }: { children: ReactNode }) {
+    return (
+      <AuthProvider authClient={client} getPseudonym={() => 'Renard 423'}>
+        {children}
+      </AuthProvider>
     );
-    const button = await screen.findByTestId('hint-button');
-    await waitFor(() => expect(button).toBeDisabled());
-    expect(button).toHaveAttribute('title', 'Connectez-vous pour utiliser les indices.');
-    expect(button).toHaveAttribute('aria-disabled', 'true');
+  };
+}
+
+describe('useHintGate', () => {
+  it('returns disabled gate props with sign-in tooltip when status=anon', async () => {
+    const { result } = renderHook(
+      () => useHintGate(),
+      { wrapper: withAuth(makeClient({ whoami: null })) },
+    );
+    await waitFor(() =>
+      expect(result.current).toMatchObject({
+        disabled: true,
+        'aria-disabled': true,
+        title: 'Connectez-vous pour utiliser les indices.',
+      }),
+    );
   });
 
-  it('disables with "Chargement…" tooltip while status=loading', () => {
-    // Never-resolving whoami keeps state pinned at loading.
+  it('returns disabled gate props with loading tooltip while status=loading', () => {
     const latch = new Promise<void>(() => {});
-    render(
-      <AuthProvider authClient={makeClient({ whoami: null, latch })} getPseudonym={() => 'Renard 423'}>
-        <HintGate>
-          <button type="button" data-testid="hint-button">Indice</button>
-        </HintGate>
-      </AuthProvider>,
+    const { result } = renderHook(
+      () => useHintGate(),
+      { wrapper: withAuth(makeClient({ whoami: null, latch })) },
     );
-    const button = screen.getByTestId('hint-button');
-    expect(button).toBeDisabled();
-    expect(button).toHaveAttribute('title', 'Chargement…');
-    expect(button).toHaveAttribute('aria-disabled', 'true');
-  });
-
-  it('renders the child unchanged when status=authed', async () => {
-    render(
-      <AuthProvider authClient={makeClient({ whoami: USER })} getPseudonym={() => 'Lapin 472'}>
-        <HintGate>
-          <button type="button" data-testid="hint-button" disabled={false} title="Demander un indice">
-            Indice
-          </button>
-        </HintGate>
-      </AuthProvider>,
-    );
-    // Re-query each iteration: the gate's loading branch clones the
-    // child, then the authed branch swaps it back to the unmodified
-    // element, so the DOM node identity changes across the transition.
-    await waitFor(() => {
-      const button = screen.getByTestId('hint-button');
-      expect(button).not.toBeDisabled();
-      expect(button).toHaveAttribute('title', 'Demander un indice');
-      expect(button).not.toHaveAttribute('aria-disabled', 'true');
+    expect(result.current).toMatchObject({
+      disabled: true,
+      'aria-disabled': true,
+      title: 'Chargement…',
     });
   });
 
-  it('passes through unchanged when rendered outside an AuthProvider', () => {
-    render(
-      <HintGate>
-        <button type="button" data-testid="hint-button" title="Demander un indice">
-          Indice
-        </button>
-      </HintGate>,
+  it('returns null when status=authed', async () => {
+    const { result } = renderHook(
+      () => useHintGate(),
+      { wrapper: withAuth(makeClient({ whoami: USER })) },
     );
-    const button = screen.getByTestId('hint-button');
-    expect(button).not.toBeDisabled();
-    expect(button).toHaveAttribute('title', 'Demander un indice');
+    await waitFor(() => expect(result.current).toBeNull());
+  });
+
+  it('returns null when rendered outside an AuthProvider', () => {
+    const { result } = renderHook(() => useHintGate());
+    expect(result.current).toBeNull();
   });
 });
