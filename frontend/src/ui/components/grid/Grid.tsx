@@ -140,17 +140,7 @@ const MIN_WRAPPER_HEIGHT_PX = 140;
 // 8 px keeps the cell visually clear.
 const WRAPPER_BOTTOM_MARGIN_PX = 8;
 
-// Cells are rendered as direct children of the `role="grid"` container,
-// not wrapped in `<div role="row">` elements. Row wrappers used to carry
-// `display: contents` so they collapsed into the parent CSS Grid's track
-// layout — but iOS Safari mishandles `display: contents` inside CSS
-// Grid: the wrapper is dropped from the box tree, yet WebKit fails to
-// re-parent the children as grid items. The cells then fall out of
-// their tracks and the rows visually wrap. Flattening sidesteps the bug
-// entirely; row semantics are preserved by `aria-rowindex` /
-// `aria-colindex` on each cell against the container's
-// `aria-rowcount` / `aria-colcount` (the standard ARIA pattern when DOM
-// rows aren't structurally present).
+// Cells are direct grid children; no role="row" wrappers — iOS Safari mishandles display:contents inside CSS Grid.
 
 // v1 interactive grid. Letter inputs are uncontrolled (ADR-0002 §4).
 // `useGridNavigation` orchestrates focus, direction, and highlighting
@@ -1069,9 +1059,7 @@ export function Grid({
             >
               {rows.flatMap(({ row, cells }) =>
                 cells.map((cell, col) => {
-                  // ARIA row/col indices are 1-indexed per the WAI-ARIA
-                  // grid pattern (and what AT announces). Domain row/col
-                  // are 0-indexed.
+                  // ARIA indices are 1-based; domain positions are 0-based.
                   const ariaRow = row + 1;
                   const ariaCol = col + 1;
                   if (cell === null) {

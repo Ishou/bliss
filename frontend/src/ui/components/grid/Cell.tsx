@@ -659,11 +659,7 @@ export const LetterCellView = memo(function LetterCellView({
 }: {
   cell: LetterCell;
   ariaLabel: string;
-  // 1-indexed grid row/col, set on the gridcell element. Required when
-  // the grid container omits DOM `role="row"` wrappers — the indices
-  // re-establish row/column structure for assistive tech (see
-  // `Grid.tsx` for the why: `display: contents` row wrappers broke
-  // CSS Grid layout on iOS Safari).
+  // 1-indexed; no role="row" wrappers — see Grid.tsx for rationale.
   ariaRowIndex: number;
   ariaColIndex: number;
   inWord: boolean;
