@@ -13,12 +13,15 @@ import com.bliss.identity.api.routes.logout
 import com.bliss.identity.api.routes.me
 import com.bliss.identity.api.routes.patchMe
 import com.bliss.identity.api.routes.whoAmI
+import com.bliss.identity.infrastructure.events.NatsConnectionFactory
+import io.ktor.client.engine.HttpClientEngine
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.Application
+import io.ktor.server.application.ApplicationStopped
 import io.ktor.server.application.install
 import io.ktor.server.plugins.callid.CallId
 import io.ktor.server.plugins.callid.callIdMdc
@@ -32,6 +35,19 @@ import io.ktor.server.routing.routing
 import kotlinx.serialization.json.Json
 import org.slf4j.event.Level
 import java.util.UUID
+import javax.sql.DataSource
+
+// Production entry point: opens NATS connection, registers ApplicationStopped close hook (SIGTERM drain), delegates to wiring overload.
+fun Application.module(
+    config: IdentityApiConfig,
+    dataSource: DataSource,
+    httpClientEngine: HttpClientEngine,
+    natsUrl: String,
+) {
+    val (natsConnection, jetStream) = NatsConnectionFactory(natsUrl).connect()
+    monitor.subscribe(ApplicationStopped) { natsConnection.close() }
+    module(Wiring.forProduction(config, dataSource, httpClientEngine, jetStream), config)
+}
 
 // Wires Ktor plugins + routes for the identity bounded context (ADR-0044).
 // Plugin install order — CallId → CallLogging → DefaultHeaders → ContentNegotiation → StatusPages — mirrors

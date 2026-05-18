@@ -36,6 +36,9 @@ dependencies {
     implementation("org.slf4j:slf4j-api:2.0.16")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")
 
+    // NATS JetStream client — cross-context eventing publishers (ADR-0049).
+    implementation("io.nats:jnats:2.20.6")
+
     testFixturesImplementation(project(":identity:domain"))
     testFixturesImplementation(project(":identity:application"))
 

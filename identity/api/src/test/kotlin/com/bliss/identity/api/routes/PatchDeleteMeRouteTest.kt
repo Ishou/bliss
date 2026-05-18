@@ -22,6 +22,7 @@ import com.bliss.identity.domain.user.DisplayName
 import com.bliss.identity.domain.user.User
 import com.bliss.identity.domain.user.UserId
 import com.bliss.identity.infrastructure.events.InMemoryUserDeletedBroadcaster
+import com.bliss.identity.infrastructure.events.InMemoryUserRenamedBroadcaster
 import com.bliss.identity.infrastructure.persistence.InMemorySessionRepository
 import com.bliss.identity.infrastructure.persistence.InMemoryUserProviderRepository
 import com.bliss.identity.infrastructure.persistence.InMemoryUserRepository
@@ -75,7 +76,7 @@ class PatchDeleteMeRouteTest {
         val clock = FixedClock(now)
         val whoAmI = WhoAmIUseCase(users, sessions, clock, Duration.ofDays(7))
         val getMe = GetMeUseCase(users, userProviders)
-        val updateMe = UpdateMeUseCase(users)
+        val updateMe = UpdateMeUseCase(users, InMemoryUserRenamedBroadcaster(), clock)
         val deleteUser = DeleteUserUseCase(users, broadcaster, clock)
         return Fixture(
             wiring =

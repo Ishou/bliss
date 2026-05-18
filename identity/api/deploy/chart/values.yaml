@@ -96,6 +96,11 @@ env:
     value: "parentbased_traceidratio"
   - name: OTEL_TRACES_SAMPLER_ARG
     value: "1.0"
+  # NATS JetStream URL for cross-context event publishers (ADR-0049).
+  # `bliss-nats` is the cluster-internal Service installed by the wordsparrow-nats
+  # chart in the `wordsparrow` namespace (Phase 6c.0, PR #523).
+  - name: NATS_URL
+    value: "nats://bliss-nats.wordsparrow:4222"
 # Name of a Kubernetes Secret to envFrom into the pod. ADR-0009 §10:
 # bootstrapped via `kubectl create secret`, never committed. Carries OIDC
 # client credentials (Google + Apple), COOKIE_DOMAIN, and

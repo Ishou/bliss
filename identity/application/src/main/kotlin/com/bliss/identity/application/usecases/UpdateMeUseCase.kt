@@ -1,5 +1,7 @@
 package com.bliss.identity.application.usecases
 
+import com.bliss.identity.application.ports.Clock
+import com.bliss.identity.application.ports.UserRenamedBroadcaster
 import com.bliss.identity.application.ports.UserRepository
 import com.bliss.identity.domain.user.DisplayName
 import com.bliss.identity.domain.user.UserId
@@ -24,15 +26,18 @@ sealed class UpdateMeError(
 
 class UpdateMeUseCase(
     private val users: UserRepository,
+    private val broadcaster: UserRenamedBroadcaster,
+    private val clock: Clock,
 ) {
     suspend fun execute(command: UpdateMeCommand) {
-        users.findById(command.userId) ?: throw UpdateMeError.UserNotFound()
+        val current = users.findById(command.userId) ?: throw UpdateMeError.UserNotFound()
 
-        command.displayName?.let { raw ->
-            val name =
-                runCatching { DisplayName.of(raw) }
-                    .getOrElse { e -> throw UpdateMeError.InvalidDisplayName(e) }
-            users.updateDisplayName(command.userId, name)
-        }
+        val raw = command.displayName ?: return
+        val name =
+            runCatching { DisplayName.of(raw) }
+                .getOrElse { e -> throw UpdateMeError.InvalidDisplayName(e) }
+        if (name == current.displayName) return
+        users.updateDisplayName(command.userId, name)
+        broadcaster.broadcast(command.userId, name, clock.now())
     }
 }

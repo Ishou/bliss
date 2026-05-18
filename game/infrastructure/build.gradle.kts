@@ -36,6 +36,9 @@ dependencies {
     // UUID v7 generation for fresh PuzzleIds (ADR-0003 §6).
     implementation("com.fasterxml.uuid:java-uuid-generator:$javaUuidGeneratorVersion")
 
+    // NATS JetStream client — cross-context event subscribers (ADR-0049).
+    implementation("io.nats:jnats:2.20.6")
+
     // Postgres pool + Flyway — staged for PostgresLobbyRepository (PR #5).
     // Today these only back the V1 Flyway migration + MigrationTest; the Konsist
     // production-source ban in InfrastructureArchitectureTest keeps them out of
