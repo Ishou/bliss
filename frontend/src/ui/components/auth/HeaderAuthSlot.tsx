@@ -1,6 +1,5 @@
 import { css } from 'styled-system/css';
 import type { AuthClient } from '@/application/auth';
-import { AvatarMenu } from './AvatarMenu';
 import { SignInButton } from './SignInButton';
 import { useAuth } from './AuthProvider';
 
@@ -20,20 +19,13 @@ export interface HeaderAuthSlotProps {
 }
 
 export function HeaderAuthSlot({ authClient }: HeaderAuthSlotProps) {
-  const { state, refresh } = useAuth();
+  const { state } = useAuth();
   if (state.status === 'loading') {
     return <span className={skeletonStyles} aria-hidden="true" />;
   }
   if (state.status === 'anon') {
     return <SignInButton authClient={authClient} />;
   }
-  return (
-    <AvatarMenu
-      authClient={authClient}
-      whoami={state.whoami}
-      onSignedOut={() => {
-        void refresh();
-      }}
-    />
-  );
+  // Authed avatar chip deferred to sub-PR 3b (AvatarMenu + /compte route).
+  return null;
 }

@@ -19,7 +19,7 @@ export type AuthState =
   | { readonly status: 'anon' }
   | { readonly status: 'authed'; readonly whoami: WhoAmIResult };
 
-export interface AuthContextValue extends Record<string, unknown> {
+export interface AuthContextValue {
   readonly state: AuthState;
   readonly status: AuthState['status'];
   readonly refresh: () => Promise<void>;
