@@ -436,9 +436,9 @@ spec:
   policyTypes: [Ingress]
   ingress:
     # Only identity-api + game-api (+ future grid-api in 6b) can reach the
-    # NATS port. The stream-init Job's pod runs with no label match and
-    # would be blocked; allowing same-namespace ingress at port 4222 keeps
-    # the bootstrap simple while still excluding cross-namespace traffic.
+    # NATS port. The stream-init Job's pods carry app.kubernetes.io/name=bliss-nats
+    # (via selectorLabels), matching the fourth from-selector below, so they
+    # can connect at install time. Cross-namespace traffic remains excluded.
     - from:
         - podSelector: { matchLabels: { app.kubernetes.io/name: bliss-identity-api } }
         - podSelector: { matchLabels: { app.kubernetes.io/name: bliss-game-api } }
@@ -475,7 +475,7 @@ monitoring), and a post-install Job that declares the
 ## Verify
 
 ```sh
-kubectl -n wordsparrow exec -it deploy/bliss-nats -- \
+kubectl -n wordsparrow exec -it sts/bliss-nats -- \
   nats stream info WORDSPARROW_USER_EVENTS
 ```
 
@@ -486,13 +486,13 @@ limit, file storage.
 
 ```sh
 # Dump
-kubectl -n wordsparrow exec deploy/bliss-nats -- \
+kubectl -n wordsparrow exec sts/bliss-nats -- \
   nats stream backup WORDSPARROW_USER_EVENTS /data/backup
 kubectl -n wordsparrow cp wordsparrow/<pod>:/data/backup ./backup
 
 # Restore (on a fresh cluster)
 kubectl -n wordsparrow cp ./backup wordsparrow/<pod>:/data/backup
-kubectl -n wordsparrow exec deploy/bliss-nats -- \
+kubectl -n wordsparrow exec sts/bliss-nats -- \
   nats stream restore /data/backup
 ```
 
@@ -596,7 +596,7 @@ gh pr create --base main \
 ## Test plan
 - [x] `helm lint infra/nats/ --strict` green.
 - [x] `helm template` + `kubeconform -strict -ignore-missing-schemas` green (5 resources).
-- [ ] After deploy: `kubectl -n wordsparrow exec deploy/bliss-nats -- nats stream info WORDSPARROW_USER_EVENTS` shows the stream with the right subjects + retention.
+- [ ] After deploy: `kubectl -n wordsparrow exec sts/bliss-nats -- nats stream info WORDSPARROW_USER_EVENTS` shows the stream with the right subjects + retention.
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
 BODY
@@ -1440,7 +1440,7 @@ class HttpCookieVerifier(
 val rawCookie = call.request.cookies[SessionCookies.NAME_GAME_VIEW] // see helper below
 val whoAmI = cookieVerifier.verify(rawCookie)
 val (sessionId, pseudonym, userId) = if (whoAmI != null) {
-    Triple(extractSessionIdFromBody(call), Pseudonym.of(whoAmI.displayName), UserId(UUID.fromString(whoAmI.userId)))
+    Triple(extractSessionIdFromBody(call), whoAmI.displayName, whoAmI.userId)
 } else {
     Triple(extractSessionIdFromBody(call), Pseudonym.of(extractPseudonymFromBody(call)), null)
 }
@@ -1537,11 +1537,11 @@ fun Route.lobbyRebind(verifier: CookieVerifier, lobbies: LobbyRepository) {
         val whoAmI = verifier.verify(rawCookie) ?: return@post call.respond(HttpStatusCode.Unauthorized)
         val req = call.receive<RebindRequest>()
         val anonSessionId = SessionId(UUID.fromString(req.anonSessionId))
-        val userId = UserId(UUID.fromString(whoAmI.userId))
+        val userId = whoAmI.userId
         val updated = lobbies.rebindAnonSeats(
             anonSessionId = anonSessionId,
             userId = userId,
-            newPseudonym = Pseudonym.of(whoAmI.displayName),
+            newPseudonym = whoAmI.displayName,
         )
         // updated is the set of LobbyIds whose roster changed; schedule WS broadcasts.
         updated.forEach { /* lobbyBroadcaster.notifyRosterChanged(it) */ }
@@ -1552,7 +1552,7 @@ fun Route.lobbyRebind(verifier: CookieVerifier, lobbies: LobbyRepository) {
         val rawCookie = call.request.cookies[CookieNames.SESSION]
         val whoAmI = verifier.verify(rawCookie) ?: return@post call.respond(HttpStatusCode.Unauthorized)
         val req = call.receive<UnbindRequest>()
-        val userId = UserId(UUID.fromString(whoAmI.userId))
+        val userId = whoAmI.userId
         val updated = lobbies.unbindUserSeats(
             userId = userId,
             anonPseudonym = Pseudonym.of(req.anonPseudonym),
