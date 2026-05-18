@@ -141,7 +141,7 @@ Sign-out: `POST /v1/auth/logout` with `credentials: 'include'`. On 204, `AuthPro
 
 Three sections, vertically stacked, max-width matching the puzzle page.
 
-1. **Display name.** Single-line input pre-filled from `getMe().displayName`. Save button → `PATCH /v1/users/me { displayName }` (only the `displayName` field; `emailOptIn` is part of the OpenAPI `UserUpdate` schema but the frontend does not surface it in Phase 5 — we don't collect emails per ADR-0045). Inline error message on 400 `invalid_display_name` ("Le pseudo doit faire entre 1 et 30 caractères."). Optimistic update on 200; refresh `AuthProvider`'s `whoami` state on success.
+1. **Display name.** Single-line input pre-filled from `getMe().displayName`. Save button → `PATCH /v1/users/me { displayName }` (only the `displayName` field; `emailOptIn` is part of the OpenAPI `UserUpdate` schema but the frontend does not surface it in Phase 5 — the opt-in consent screen is out of Phase 5 scope (deferred workstream)). Inline error message on 400 `invalid_display_name` ("Le pseudo doit faire entre 1 et 30 caractères."). Optimistic update on 200; refresh `AuthProvider`'s `whoami` state on success.
 
 2. **Comptes liés.** Read-only list:
    - "Google · lié le 17 mai 2026" with a check-circle icon. If `emailOptIn` is true (data we stored at link time when the user consented to email), show a small "Reçoit les emails" badge.
@@ -227,7 +227,7 @@ Total addition per page: ~30 lines including markup.
 - **Playwright** (e2e, in `frontend/tests/`):
   - Unauthenticated user sees "Se connecter" button.
   - Hint button is disabled + tooltip visible on hover.
-  - `/compte` when anon: route loader checks `AuthProvider.status`, renders an empty layout and navigates to `/` with a toast `"Connectez-vous pour accéder à votre compte."` (TanStack Router's `beforeLoad` is the natural hook). No 404 — the route exists for everyone, the gate is auth-state-driven.
+  - `/compte` when anon: the route component calls `const { status } = useAuth()` and in a `useEffect` navigates to `/` with a toast `"Connectez-vous pour accéder à votre compte."` when `status === 'anon'`. No 404 — the route exists for everyone, the gate is component-level and state-driven (consistent with how other routes in this codebase are guarded; no `beforeLoad` is used).
   - Authenticated path stubs the OAuth round-trip (MSW + a fixture cookie) and verifies the avatar popover + display-name edit + delete-account modal flow.
 - **a11y (axe-core via Playwright):** the avatar popover, the typed-confirm dialog, and the `/compte` form all pass WCAG AA per ADR-0034.
 - **Spec compliance:** the design's "Decisions" table is the contract — every row must be covered by either a Vitest or Playwright assertion.
