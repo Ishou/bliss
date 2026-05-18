@@ -5,6 +5,7 @@ import { Route as AccueilRoute } from './routes/accueil';
 import { Route as GrilleRoute } from './routes/grille';
 import { Route as GrillesRoute } from './routes/grilles';
 import { Route as AideRoute } from './routes/aide';
+import { Route as CompteRoute } from './routes/compte';
 import { Route as JoinRoute } from './routes/join.$code';
 import { Route as LobbyRoute } from './routes/lobby.$lobbyId';
 import { Route as ConfidentialiteRoute } from './routes/confidentialite';
@@ -27,6 +28,7 @@ export function createAppRouter({ context, multiplayer }: CreateAppRouterOptions
     GrilleRoute,
     GrillesRoute,
     AideRoute,
+    CompteRoute,
     ConfidentialiteRoute,
     PrivacyRoute,
     LegalNoticeRoute,
