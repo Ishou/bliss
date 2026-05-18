@@ -11,7 +11,7 @@ const DIST = resolve(__dirname, '../dist');
 describe.skipIf(!existsSync(resolve(DIST, 'index.html')))(
   'prerender output (post-build)',
   () => {
-    it.each(INDEXABLE_ROUTES)('emits dist/$path.html (or dist/index.html for /)', (route) => {
+    it.each(INDEXABLE_ROUTES)('emits prerender HTML for $path', (route) => {
       const expectedPath =
         route.path === '/'
           ? resolve(DIST, 'index.html')
