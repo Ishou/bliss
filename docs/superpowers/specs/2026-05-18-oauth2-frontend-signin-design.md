@@ -86,6 +86,13 @@ wired in `main.tsx` to `localStorageSession.getPseudonym`. This keeps
 `AuthProvider` free of infrastructure imports — the same
 composition-root pattern used for `setPseudonym` in `__root.tsx`.
 
+`isDefaultPseudonym` is a pure domain predicate (`domain/session/pseudonym.ts`)
+with no I/O or infrastructure dependencies. `AuthProvider` imports it
+directly — `ui/` is permitted to import `domain/` under the
+`boundaries:element-types` rule (ADR-0002 §7). It is co-located with
+the pseudonym generation logic in the domain layer rather than inside
+`localStorageSession.ts`, so no boundary violation arises.
+
 `AuthClient` surface:
 
 ```ts
@@ -94,7 +101,6 @@ interface GetMeResult {
   id: string;
   displayName: string;
   createdAt: string;
-  lastSeenAt: string;
   linkedProviders: ReadonlyArray<{
     provider: 'google' | 'apple';
     linkedAt: string;
