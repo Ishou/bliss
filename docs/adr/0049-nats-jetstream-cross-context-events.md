@@ -40,7 +40,7 @@ Single replica (alpha; upgrade to 3 when the cluster grows). ClusterIP
 service, no Ingress, no LoadBalancer. PVC for JetStream stream data.
 
 One stream `WORDSPARROW_USER_EVENTS` covering subjects
-`wordsparrow.user.*`. Retention `MaxAge=7d`, storage `file`, replicas `1`,
+`wordsparrow.user.>`. Retention `MaxAge=7d`, storage `file`, replicas `1`,
 discard policy `old`.
 
 Producers (identity-api today; future contexts later) publish to subjects.

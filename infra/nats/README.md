@@ -20,7 +20,7 @@ monitoring), and a post-install Job that declares the
 ## Verify
 
 ```sh
-kubectl -n wordsparrow exec -it deploy/bliss-nats -- \
+kubectl -n wordsparrow exec -it bliss-nats-0 -- \
   nats stream info WORDSPARROW_USER_EVENTS
 ```
 
@@ -31,13 +31,13 @@ limit, file storage.
 
 ```sh
 # Dump
-kubectl -n wordsparrow exec deploy/bliss-nats -- \
+kubectl -n wordsparrow exec bliss-nats-0 -- \
   nats stream backup WORDSPARROW_USER_EVENTS /data/backup
-kubectl -n wordsparrow cp wordsparrow/<pod>:/data/backup ./backup
+kubectl -n wordsparrow cp wordsparrow/bliss-nats-0:/data/backup ./backup
 
 # Restore (on a fresh cluster)
-kubectl -n wordsparrow cp ./backup wordsparrow/<pod>:/data/backup
-kubectl -n wordsparrow exec deploy/bliss-nats -- \
+kubectl -n wordsparrow cp ./backup wordsparrow/bliss-nats-0:/data/backup
+kubectl -n wordsparrow exec bliss-nats-0 -- \
   nats stream restore /data/backup
 ```
 
