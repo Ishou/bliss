@@ -63,8 +63,9 @@ fun Application.module(
     }
 
     install(CORS) {
-        // Cookie-bearing requests require allowCredentials = true + explicit origins;
-        // browsers reject Access-Control-Allow-Origin: * with credentials.
+        // Cookie-bearing requests require allowCredentials = true + explicit
+        // origins; browsers reject Access-Control-Allow-Origin: * with
+        // credentials.
         allowHost("wordsparrow.io", schemes = listOf("https"))
         allowHost("www.wordsparrow.io", schemes = listOf("https"))
         allowHost("bliss-cb4.pages.dev", schemes = listOf("https"))
@@ -74,13 +75,34 @@ fun Application.module(
         allowMethod(HttpMethod.Patch)
         allowMethod(HttpMethod.Delete)
 
-        // Default permitted request headers don't include Content-Type — needed
-        // for the JSON bodies on PATCH /v1/users/me + the link route.
-        allowHeader(HttpHeaders.ContentType)
-        // X-Request-Id is sent by the API client on every request for distributed tracing.
-        // Without this allow-listing, the CORS preflight returns 403 and the
-        // browser blocks all cookie-bearing calls.
-        allowHeader(HttpHeaders.XRequestId)
+        // Headers: wildcard-predicate per ADR-0034. The explicit `allowHeader`
+        // approach this replaces caused two production incidents within hours
+        // of the identity-api going live: X-Request-Id missing (#513) and
+        // traceparent / tracestate missing (this PR) — the exact same shape
+        // ADR-0034 documents for grid + game (PR-F.2). Each one a frontend
+        // middleware silently attaching an outbound header.
+        //
+        // Credential-CORS safety: Ktor's `allowHeaders { true }` is a
+        // PREDICATE — the plugin echoes back the specific headers requested
+        // via Access-Control-Request-Headers, NOT a literal `*`. Browsers
+        // accept the response with `Access-Control-Allow-Credentials: true`
+        // because the emitted `Access-Control-Allow-Headers` enumerates each
+        // header by name. The ADR-0034 warning about wildcard-incompatibility
+        // with credentials applies to the literal `*` form, not Ktor's
+        // predicate variant.
+        //
+        // The actual security perimeter remains origin allow-list + per-IP
+        // rate limit at ingress (mirrors grid/game). ADR-0034 amendment to
+        // cover identity-api lands in a follow-up doc PR.
+        allowHeaders { true }
+
+        // PATCH /v1/users/me sends `Content-Type: application/json`, which
+        // the CORS spec classifies as non-simple. Without this flag, Ktor
+        // rejects the actual (post-preflight) request with 403 + no
+        // Access-Control-Allow-Origin, surfacing as the same misleading
+        // "No 'Access-Control-Allow-Origin' header" error in the browser.
+        // Mirrors grid/api Module.kt + game/api Module.kt.
+        allowNonSimpleContentTypes = true
 
         allowCredentials = true
         maxAgeInSeconds = 600
