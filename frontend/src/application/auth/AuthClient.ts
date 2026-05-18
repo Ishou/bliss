@@ -14,7 +14,7 @@ export interface GetMeResult {
   readonly id: string;
   readonly displayName: string;
   readonly createdAt: string;
-  readonly linkedProviders: ReadonlyArray<LinkedProvider>;
+  readonly providers: ReadonlyArray<LinkedProvider>;
 }
 
 // Thrown by `updateMe` on HTTP 400; carries the server's RFC 7807 `detail`.

@@ -45,7 +45,7 @@ export function createHttpAuthClient(
         id: data.id,
         displayName: data.displayName,
         createdAt: data.createdAt,
-        linkedProviders: data.providers.map((p) => ({
+        providers: data.providers.map((p) => ({
           provider: p.provider,
           linkedAt: p.linkedAt,
           emailOptIn: p.emailOptIn,

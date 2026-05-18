@@ -43,7 +43,7 @@ describe('HttpAuthClient.whoami', () => {
 });
 
 describe('HttpAuthClient.getMe', () => {
-  it('returns the full user profile and remaps `providers` → `linkedProviders`', async () => {
+  it('returns the full user profile with `providers` preserved from the wire', async () => {
     setAuthed(
       { userId, displayName: 'Lapin 472' },
       {
@@ -62,7 +62,7 @@ describe('HttpAuthClient.getMe', () => {
       id: userId,
       displayName: 'Lapin 472',
       createdAt: '2026-05-01T10:00:00Z',
-      linkedProviders: [
+      providers: [
         { provider: 'google', linkedAt: '2026-05-01T10:00:00Z', emailOptIn: true },
       ],
     });
