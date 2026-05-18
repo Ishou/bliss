@@ -52,6 +52,20 @@ const PHASE2_FLOOR_FACTOR = 0.5;
 // what the user sees.
 const FIT_EPSILON_PX = 0.25;
 
+// Block-axis headroom on the fits-test. iOS WebKit hyphenates French
+// (lang="fr") more aggressively than Blink — a clue like "Symbole de
+// l'aluminium" breaks at one more boundary on iOS than on Chrome, so
+// a font sized to fit `n` lines on Chrome renders `n + 1` lines on
+// iOS, and the last line either overflows or (with the def-cell
+// `overflow: clip`) gets hidden. Subtracting one line of headroom
+// from the available height when bisecting forces FitText to commit
+// a font small enough that iOS's extra wrap still has room to paint.
+// `1.15` is line-height × leading slack — slightly above the cell's
+// `line-height: 1.05` so a single full line of ink + descenders
+// fits. Costs ~1 line of unused vertical space on Chrome at the same
+// font choice; net win is identical text on both engines.
+const LINE_HEADROOM_FACTOR = 1.15;
+
 // Width-axis slop on the fits-test. Even with fractional content
 // measurement (Range.getBoundingClientRect) and fractional container
 // measurement (Element.getBoundingClientRect), there's residual noise
@@ -155,7 +169,10 @@ export function FitText({
       el.style.fontSize = `${font}px`;
       const w = measureContentWidth();
       const h = el.scrollHeight;
-      return w <= cw + SLOP_PX && h <= ch;
+      // Reserve one line of vertical headroom for iOS WebKit's more
+      // aggressive French hyphenation. See LINE_HEADROOM_FACTOR.
+      const chSafe = ch - font * LINE_HEADROOM_FACTOR;
+      return w <= cw + SLOP_PX && h <= chSafe;
     };
 
     const fit = () => {
