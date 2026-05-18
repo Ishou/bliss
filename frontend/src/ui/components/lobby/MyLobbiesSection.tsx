@@ -4,7 +4,6 @@ import { css } from 'styled-system/css';
 import type { LobbySummary } from '@/application/game';
 import { EyeIcon, EyeOffIcon } from '@/ui/components/icons';
 import { ProgressBar } from '@/ui/components/layout/ProgressBar';
-import { MAX_PLAYERS } from './PlayerList';
 
 // "Mes parties" surface (ADR-0039). Read-only list of the calling
 // session's lobbies, rendered inside the Accueil Multijoueur card below
@@ -223,7 +222,7 @@ function LobbyRow({ lobby }: { readonly lobby: LobbySummary }) {
             </span>
             <span>·</span>
             <span data-testid="lobby-players">
-              {lobby.playerCount} / {MAX_PLAYERS} joueurs
+              {lobby.connectedCount} / {lobby.playerCount} joueurs
             </span>
           </span>
         </Link>
