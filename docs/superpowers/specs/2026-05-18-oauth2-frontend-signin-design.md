@@ -118,7 +118,7 @@ interface AuthClient {
 }
 ```
 
-`AuthProvider` keeps three states: `loading | { status: 'anon' } |
+`AuthProvider` keeps three states: `{ status: 'loading' } | { status: 'anon' } |
 { status: 'authed'; whoami: WhoAmIResult }`. On mount it calls
 `whoami()`. On `visibilitychange → visible` it re-calls so a sign-in
 in another tab updates this tab without manual reload.
