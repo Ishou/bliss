@@ -309,7 +309,12 @@ fun Application.module() {
 
     routing {
         health(APP_VERSION)
-        lobbies(createLobby = useCases.createLobby, repo = lobbyRepository, sessionManager = sessionManager)
+        lobbies(
+            createLobby = useCases.createLobby,
+            repo = lobbyRepository,
+            sessionManager = sessionManager,
+            cookieVerifier = cookieVerifier,
+        )
         sessions(ListLobbiesForSession(lobbyRepository), EraseSessionUseCase(lobbyRepository))
         lobbyRebind(cookieVerifier, lobbyRepository)
         lobbyWebSocketRoute(sessionManager, useCases, lobbyRepository, presenceAggregator)
