@@ -15,6 +15,7 @@ import com.bliss.identity.api.routes.patchMe
 import com.bliss.identity.api.routes.whoAmI
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.Application
@@ -23,6 +24,7 @@ import io.ktor.server.plugins.callid.CallId
 import io.ktor.server.plugins.callid.callIdMdc
 import io.ktor.server.plugins.calllogging.CallLogging
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.server.plugins.cors.routing.CORS
 import io.ktor.server.plugins.defaultheaders.DefaultHeaders
 import io.ktor.server.plugins.statuspages.StatusPages
 import io.ktor.server.response.respondText
@@ -58,6 +60,26 @@ fun Application.module(
         header("Referrer-Policy", "strict-origin-when-cross-origin")
         header("X-Frame-Options", "DENY")
         header(HttpHeaders.Server, "WordSparrow")
+    }
+
+    install(CORS) {
+        // Cookie-bearing requests require allowCredentials = true + explicit origins;
+        // browsers reject Access-Control-Allow-Origin: * with credentials.
+        allowHost("wordsparrow.io", schemes = listOf("https"))
+        allowHost("www.wordsparrow.io", schemes = listOf("https"))
+        allowHost("bliss-cb4.pages.dev", schemes = listOf("https"))
+        allowHost("localhost:5173", schemes = listOf("http"))
+
+        // Ktor's CORS default covers GET/POST/HEAD/OPTIONS.
+        allowMethod(HttpMethod.Patch)
+        allowMethod(HttpMethod.Delete)
+
+        // Default permitted request headers don't include Content-Type — needed
+        // for the JSON bodies on PATCH /v1/users/me + the link route.
+        allowHeader(HttpHeaders.ContentType)
+
+        allowCredentials = true
+        maxAgeInSeconds = 600
     }
 
     install(ContentNegotiation) {
