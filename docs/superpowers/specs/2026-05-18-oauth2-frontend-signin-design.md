@@ -78,7 +78,7 @@ ui/routes/
 `ui/` only depends on the application port `AuthClient`. The
 `HttpAuthClient` is wired in `main.tsx` and threaded through
 `AppRouterContext` next to `sessionClient`, `puzzleRepository`, etc.
-The `boundaries:element-types` ESLint rule (ADR-0002 §7) keeps the
+The `boundaries/dependencies` ESLint rule (ADR-0002 §7) keeps the
 hexagonal cut clean.
 
 `AuthProvider` also receives a `getLocalPseudonym: () => string` prop,
@@ -89,7 +89,7 @@ composition-root pattern used for `setPseudonym` in `__root.tsx`.
 `isDefaultPseudonym` is a pure domain predicate (`domain/session/pseudonym.ts`)
 with no I/O or infrastructure dependencies. `AuthProvider` imports it
 directly — `ui/` is permitted to import `domain/` under the
-`boundaries:element-types` rule (ADR-0002 §7). The predicate is implemented as a pure pattern check
+`boundaries/dependencies` rule (ADR-0002 §7). The predicate is implemented as a pure pattern check
 (e.g. `/^\S+ \d{3}$/.test(name)`) with no dependency on `ANIMAL_NAMES` or
 `generateDefaultPseudonym` — `localStorageSession.ts` is not modified.
 
