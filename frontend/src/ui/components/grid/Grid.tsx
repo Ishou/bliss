@@ -322,12 +322,11 @@ export function Grid({
 
   const templateStyle = useMemo(
     () => ({
-      gridTemplateColumns: `repeat(${puzzle.width}, 1fr)`,
-      // 1fr (not auto) so rows divide the wrapper's height evenly when
-      // the puzzle aspect doesn't match the wrapper's. Cells carry their
-      // own aspect-ratio: 1, which keeps them square inside the
-      // 1fr × 1fr track they receive.
-      gridTemplateRows: `repeat(${puzzle.height}, 1fr)`,
+      // minmax(0,1fr): strips auto min so iOS WebKit clue text can't inflate a track past its fr-share.
+      gridTemplateColumns: `repeat(${puzzle.width}, minmax(0, 1fr))`,
+      gridTemplateRows: `repeat(${puzzle.height}, minmax(0, 1fr))`,
+      // aspect-ratio here (not just on the TransformWrapper) gives fr-rows a definite height on iOS WebKit.
+      aspectRatio: `${puzzle.width} / ${puzzle.height}`,
     }),
     [puzzle.height, puzzle.width],
   );
@@ -966,11 +965,10 @@ export function Grid({
         - `centerOnInit` — first paint puts the grid centered in the
           wrapper. Without this the library can leave a small offset from
           its bounds-padding logic on certain initial sizes.
-        - `wheel.step: 0.05` — desktop mouse wheel zooms the grid. The
-          default 0.2 is jumpy; 0.05 (5% per notch) is smooth and close
-          to native trackpad pinch. To gate behind a modifier
-          (ctrl+wheel = zoom, plain wheel = page scroll) set
-          `activationKeys: ['Control', 'Meta']`.
+        - `wheel.step: 0.1` — 10 % per notch; paired with `smooth: false` (flat
+          delta, no `|deltaY|` multiply) so WebKit's high deltaY values don't
+          overshoot. Chrome trackpad emits many small events; Safari emits one
+          large one — flat step normalises them.
         - `doubleClick.disabled` — a double-tap on a cell would otherwise
           zoom-in on that cell, fighting the focus + cursor behavior we
           rely on for letter input. Disabled keeps taps purely about focus.
@@ -1009,7 +1007,10 @@ export function Grid({
         maxScale={4}
         initialScale={1}
         centerOnInit
-        wheel={{ step: 0.05 }}
+        // smooth: false — WebKit deltaY is ~50–100×; flat step normalises zoom speed across engines.
+        smooth={false}
+        // 0.1 per notch with smooth:false; matches feel across WebKit (1 event/notch, high deltaY) and Blink.
+        wheel={{ step: 0.1 }}
         doubleClick={{ disabled: true }}
         panning={{
           velocityDisabled: true,

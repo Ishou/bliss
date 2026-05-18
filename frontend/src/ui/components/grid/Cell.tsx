@@ -225,6 +225,8 @@ const defCell = css({
   color: 'onSurfaceVariant',
   containerType: 'inline-size',
   lineHeight: '1.05',
+  // overflow: clip — iOS WebKit hyphenates lang="fr" more aggressively; clips the extra line without a new stacking context.
+  overflow: 'clip',
   // Slightly larger padding now that the arrows have moved off the
   // def cell — the freed-up real estate goes to breathing room
   // around the clue text rather than back into FitText's font sizing.

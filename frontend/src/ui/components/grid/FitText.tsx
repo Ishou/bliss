@@ -52,6 +52,9 @@ const PHASE2_FLOOR_FACTOR = 0.5;
 // what the user sees.
 const FIT_EPSILON_PX = 0.25;
 
+// iOS WebKit hyphenates lang="fr" more aggressively; reserve one line of headroom so both engines fit.
+const LINE_HEADROOM_FACTOR = 1.15;
+
 // Width-axis slop on the fits-test. Even with fractional content
 // measurement (Range.getBoundingClientRect) and fractional container
 // measurement (Element.getBoundingClientRect), there's residual noise
@@ -155,7 +158,9 @@ export function FitText({
       el.style.fontSize = `${font}px`;
       const w = measureContentWidth();
       const h = el.scrollHeight;
-      return w <= cw + SLOP_PX && h <= ch;
+      // Reserve one line of headroom for iOS WebKit's more aggressive French hyphenation; see LINE_HEADROOM_FACTOR.
+      const chSafe = ch - font * LINE_HEADROOM_FACTOR;
+      return w <= cw + SLOP_PX && h <= chSafe;
     };
 
     const fit = () => {
