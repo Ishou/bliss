@@ -1,5 +1,6 @@
 import { css } from 'styled-system/css';
 import type { AuthClient } from '@/application/auth';
+import { AvatarMenu } from './AvatarMenu';
 import { SignInButton } from './SignInButton';
 import { useAuth } from './AuthProvider';
 
@@ -26,6 +27,5 @@ export function HeaderAuthSlot({ authClient }: HeaderAuthSlotProps) {
   if (state.status === 'anon') {
     return <SignInButton authClient={authClient} />;
   }
-  // Authed avatar chip deferred to sub-PR 3b (AvatarMenu + /compte route).
-  return null;
+  return <AvatarMenu authClient={authClient} whoami={state.whoami} />;
 }
