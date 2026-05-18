@@ -83,6 +83,7 @@ class LogoutRouteTest {
             val cleared = response.setCookie().firstOrNull { it.name == SessionCookies.NAME }
             assertThat(cleared).isNotNull()
             assertThat(cleared!!.maxAge).isEqualTo(0)
+            assertThat(cleared.domain).isEqualTo(SessionCookies.DOMAIN)
             val persisted = runBlocking { fixture.sessions.findById(sessionId) }
             assertThat(persisted).isNotNull()
             assertThat(persisted!!.revokedAt).isNotNull()

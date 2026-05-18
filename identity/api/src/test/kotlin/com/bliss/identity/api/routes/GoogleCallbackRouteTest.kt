@@ -214,6 +214,7 @@ class GoogleCallbackRouteTest {
             val session = cookies.firstOrNull { it.name == SessionCookies.NAME }
             assertThat(session).isNotNull()
             assertThat(session!!.value).isEqualTo(newSessionId.toString())
+            assertThat(session.domain).isEqualTo(SessionCookies.DOMAIN)
         }
 
     @Test
