@@ -123,4 +123,18 @@ class HttpCookieVerifierTest {
             assertThat(verifier.verify("   ")).isNull()
             assertThat(calls.get()).isEqualTo(0)
         }
+
+    @Test
+    fun `200 with malformed body fails closed without throwing`() =
+        runTest {
+            val calls = AtomicInteger()
+            val http =
+                client(calls) { _ -> { respond("{}", HttpStatusCode.OK, jsonHeaders) } }
+            val verifier = HttpCookieVerifier(http, baseUrl)
+
+            val result = verifier.verify("cookie-value")
+
+            assertThat(result).isNull()
+            assertThat(calls.get()).isEqualTo(1)
+        }
 }

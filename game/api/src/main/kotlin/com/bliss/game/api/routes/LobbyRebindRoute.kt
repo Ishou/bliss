@@ -1,8 +1,3 @@
-// Cookie-authed lobby rebind/unbind. Phase 6c: anon→authed transition links
-// existing lobby seats to the signed-in user; the inverse runs before sign-out.
-//
-// POST /v1/lobbies/players/rebind  — sessionCookie auth
-// POST /v1/lobbies/players/unbind  — sessionCookie auth
 package com.bliss.game.api.routes
 
 import com.bliss.game.api.auth.CookieNames
@@ -27,12 +22,7 @@ data class UnbindRequest(
     val anonPseudonym: String,
 )
 
-/**
- * Mounts both endpoints. The route never throws — `verify` returns null on
- * cookie absence / 401 / unreachable identity-api, so the handler answers 401.
- * Domain value-class `IllegalArgumentException`s (malformed session id or
- * pseudonym) fall through to the StatusPages handler in [com.bliss.game.api.module].
- */
+/** Mounts rebind/unbind; verify() returns null on missing/invalid cookie so routes respond 401. */
 fun Route.lobbyRebind(
     verifier: CookieVerifier,
     lobbies: LobbyRepository,

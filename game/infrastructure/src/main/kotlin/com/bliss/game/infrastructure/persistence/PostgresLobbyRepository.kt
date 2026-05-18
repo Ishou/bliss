@@ -368,10 +368,7 @@ class PostgresLobbyRepository(
             }
         }
 
-    // Phase 6c lobby-identity rebind/unbind. The UPDATE ... RETURNING lobby_id
-    // pattern flips the row in a single statement and collects the touched
-    // lobby ids in one round-trip; matches the in-memory adapter's atomic
-    // per-player update under a per-lobby lock.
+    // UPDATE … RETURNING collects touched lobby ids in one round-trip; matches in-memory adapter's atomic per-player lock.
     override suspend fun rebindAnonSeats(
         anonSessionId: SessionId,
         userId: UserId,
