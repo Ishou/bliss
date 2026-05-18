@@ -118,6 +118,7 @@ class CorsTest {
                 }
             assertThat(response.status).isEqualTo(HttpStatusCode.OK)
             val allowed = response.headers[HttpHeaders.AccessControlAllowHeaders] ?: ""
+            assertThat(allowed).contains("x-request-id")
             assertThat(allowed).contains("traceparent")
             assertThat(allowed).contains("tracestate")
         }
