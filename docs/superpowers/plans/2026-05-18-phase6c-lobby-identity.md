@@ -1182,11 +1182,13 @@ class NatsUserDeletedBroadcasterIT {
 ```bash
 git add identity/application/src/main/kotlin/com/bliss/identity/application/ports/UserRenamedBroadcaster.kt \
         identity/application/src/main/kotlin/com/bliss/identity/application/usecases/UpdateMeUseCase.kt \
+        identity/infrastructure/build.gradle.kts \
         identity/infrastructure/src/main/kotlin/com/bliss/identity/infrastructure/events/ \
         identity/api/build.gradle.kts \
         identity/api/src/main/kotlin/com/bliss/identity/api/Wiring.kt \
         identity/api/src/main/kotlin/com/bliss/identity/api/Main.kt \
         identity/api/deploy/chart/values.yaml \
+        game/infrastructure/build.gradle.kts \
         game/api/build.gradle.kts \
         game/infrastructure/src/main/kotlin/com/bliss/game/infrastructure/events/ \
         game/api/src/main/kotlin/com/bliss/game/api/Module.kt \
