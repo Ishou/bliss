@@ -99,10 +99,10 @@ data class WhoAmI(val userId: UserId, val displayName: Pseudonym)
 
 Production adapter `HttpCookieVerifier` in `game/infrastructure/`:
 - Wraps a Ktor `HttpClient` configured for the in-cluster identity-api service DNS (`http://wordsparrow-identity-api.wordsparrow:8082/v1/auth/whoami`).
-- 30s LRU cache (size: 10,000 entries) keyed on `sessionId`. Cache hits for both authed and 401 results. Cache miss → HTTP call.
+- 30s LRU cache (size: 10,000 entries) keyed on the raw cookie value (`rawCookieValue`). Cache hits for both authed and 401 results. Cache miss → HTTP call.
 - 5xx → returns null (fail closed, treats as anon). Logged at WARN.
 
-Wiring: route handlers call `cookieVerifier.verify(sessionId)`. WebSocket upgrade handler calls it once on connection establish; the resulting `WhoAmI?` is stored on the connection state.
+Wiring: route handlers call `cookieVerifier.verify(rawCookieValue)`. WebSocket upgrade handler calls it once on connection establish; the resulting `WhoAmI?` is stored on the connection state.
 
 ### Game-api `LobbyPlayer` model change
 
