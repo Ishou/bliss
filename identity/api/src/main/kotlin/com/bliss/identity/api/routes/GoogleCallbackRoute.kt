@@ -18,7 +18,7 @@ import org.slf4j.LoggerFactory
 private val log = LoggerFactory.getLogger("com.bliss.identity.api.routes.GoogleCallbackRoute")
 
 // GET /v1/auth/google/callback - ADR-0044. Dispatches to login or linking flow
-// based on the persisted AuthAttempt. LoggedIn issues __Host-ws_session + 302;
+// based on the persisted AuthAttempt. LoggedIn issues __Secure-ws_session + 302;
 // Linked only 302s (the user already has a valid session).
 fun Route.googleCallback(
     dispatcher: CallbackDispatcher,

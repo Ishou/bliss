@@ -5,9 +5,10 @@ info:
   summary: Player identity via Google + Apple OIDC.
   description: |
     Player identity via Google + Apple OIDC. Scopes: `openid` only.
-    Cookie: `__Host-ws_session` (HttpOnly, Secure, SameSite=Lax, Path=/).
-    The `__Host-` prefix locks the cookie to the exact request host with no
-    Domain attribute — see RFC 6265bis §4.1.3. See ADR-0044 and ADR-0045.
+    Cookie: `__Secure-ws_session` (HttpOnly, Secure, SameSite=Lax, Path=/,
+    `Domain=wordsparrow.io`). The `__Secure-` prefix permits the `Domain`
+    attribute so the cookie travels to every subdomain — see RFC 6265bis
+    §4.1.3.2. See ADR-0044 (amended) and ADR-0045.
   contact:
     name: Bliss maintainers
     url: https://github.com/Ishou/bliss
@@ -256,7 +257,7 @@ components:
     sessionCookie:
       type: apiKey
       in: cookie
-      name: __Host-ws_session
+      name: __Secure-ws_session
 
   parameters:
     ProviderPath:

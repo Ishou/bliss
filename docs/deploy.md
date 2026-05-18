@@ -764,7 +764,8 @@ curl -fsS https://auth.wordsparrow.io/v1/health
 Then visit <https://auth.wordsparrow.io/v1/auth/google/login?return_to=https://wordsparrow.io/>
 in a browser to drive the end-to-end sign-in. A successful flow
 ends with the browser at `https://wordsparrow.io/` carrying a
-`__Host-ws_session` cookie (DevTools → Application → Cookies).
+`__Secure-ws_session` cookie scoped to `Domain=wordsparrow.io`
+(DevTools → Application → Cookies).
 
 ## Troubleshooting (identity)
 
@@ -779,9 +780,8 @@ ends with the browser at `https://wordsparrow.io/` carrying a
   or JWKS fetch failed. Check identity-api logs for the upstream
   error; common causes are clock skew (>5 min off NTP) or a
   rotated Apple key not yet propagated.
-- **Browser blocks `__Host-ws_session` cookie**: the cookie's
-  `__Host-` prefix forbids the `Domain` attribute (RFC 6265bis
-  §4.1.3); the chart never sets one. If the cookie is missing
-  from DevTools, check the response is served over HTTPS (the
-  prefix also requires `Secure`).
+- **Browser blocks `__Secure-ws_session` cookie**: the cookie's
+  `__Secure-` prefix requires HTTPS (RFC 6265bis §4.1.3.2). If the
+  cookie is missing from DevTools, confirm the response is served
+  over HTTPS and the response carries `Domain=wordsparrow.io`.
 

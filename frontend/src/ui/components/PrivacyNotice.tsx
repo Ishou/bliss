@@ -252,7 +252,7 @@ function FrenchContent() {
           (ADR-0045).
         </p>
         <p>
-          <strong>Sessions.</strong> Un cookie <code>__Host-ws_session</code> (HttpOnly, Secure,
+          <strong>Sessions.</strong> Un cookie <code>__Secure-ws_session</code> (HttpOnly, Secure,
           durée 7 jours) contient un identifiant de session opaque (UUID, pas un JWT). Il est
           révoqué à la déconnexion et supprimé lors de la suppression du compte.
         </p>
@@ -294,7 +294,7 @@ function FrenchContent() {
         Pour les utilisateurs anonymes, WordSparrow <strong>n’utilise pas</strong> de cookies. Le
         service stocke un identifiant de session anonyme dans le <code>localStorage</code> de votre
         navigateur (technologie distincte des cookies). Matomo fonctionne en mode sans cookie. Si
-        vous vous connectez via Google, le cookie <code>__Host-ws_session</code> (HttpOnly, Secure,
+        vous vous connectez via Google, le cookie <code>__Secure-ws_session</code> (HttpOnly, Secure,
         durée 7 jours) est posé — voir la section « Compte joueur et connexion » ci-dessus.
       </p>
       <h2>Vos droits</h2>
@@ -419,7 +419,7 @@ function EnglishContent() {
           <code>openid</code> only (ADR-0045).
         </p>
         <p>
-          <strong>Sessions.</strong> A <code>__Host-ws_session</code> cookie (HttpOnly, Secure,
+          <strong>Sessions.</strong> A <code>__Secure-ws_session</code> cookie (HttpOnly, Secure,
           7-day lifetime) holds an opaque session ID (UUID, not a JWT). It is revoked on sign-out
           and deleted when the account is deleted.
         </p>
@@ -461,7 +461,7 @@ function EnglishContent() {
         For anonymous users, WordSparrow does <strong>not</strong> set cookies. The service stores
         an anonymous session identifier in your browser&apos;s <code>localStorage</code> (distinct
         from cookies). Matomo runs in cookieless mode. If you sign in with Google, the{' '}
-        <code>__Host-ws_session</code> cookie (HttpOnly, Secure, 7-day lifetime) is set — see the
+        <code>__Secure-ws_session</code> cookie (HttpOnly, Secure, 7-day lifetime) is set — see the
         &ldquo;Player account and sign-in&rdquo; section above.
       </p>
       <h2>Your rights</h2>

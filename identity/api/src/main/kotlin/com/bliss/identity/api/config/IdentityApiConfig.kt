@@ -15,9 +15,9 @@ data class AppleClientConfig(
     val privateKeyPem: String,
 )
 
-// Public host for redirect URIs (e.g. `auth.wordsparrow.io`). NOT a cookie scope:
-// `__Host-` prefix cookies are host-locked and forbid the `Domain` attribute
-// (RFC 6265bis §4.1.3), so SessionCookies emit no `Domain=...`.
+// Public host for redirect URIs (e.g. `auth.wordsparrow.io`). The session cookie
+// uses the `__Secure-` prefix and scopes to the registrable domain
+// `wordsparrow.io` (see SessionCookies); see ADR-0044 amendment + Phase 6c spec.
 data class IdentityApiConfig(
     val port: Int = 7779,
     val publicHost: String,

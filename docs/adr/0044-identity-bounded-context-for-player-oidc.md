@@ -139,3 +139,26 @@ PII fan-out to coordinate.
 - An end-to-end flow now traverses three contexts (frontend →
   identity-api → grid-api). The 30-second cookie-verify cache in
   `grid/api` and `game/api` mitigates request-amplification.
+
+## Amendment 2026-05-18 — `__Host-` → `__Secure-` prefix
+
+The original decision shipped `__Host-ws_session`, host-locked to
+`auth.wordsparrow.io` per RFC 6265bis §4.1.3. That prefix forbids the
+`Domain` attribute, so the browser refuses to send the cookie to
+`game.wordsparrow.io` or `api.wordsparrow.io`. Game-api and grid-api
+cannot cookie-verify a session they cannot receive.
+
+The cookie is renamed to `__Secure-ws_session` with
+`Domain=wordsparrow.io`. The `__Secure-` prefix (RFC 6265bis §4.1.3.2)
+requires `Secure` but permits `Domain`, letting the cookie travel to
+every subdomain under our control.
+
+Trade-off: lose host-locking. We control the entire `.wordsparrow.io`
+namespace via Cloudflare-managed DNS, so the practical risk equals
+that of any registrable-domain-scoped session cookie (e.g.
+`*.google.com`). `HttpOnly`, `Secure`, and `SameSite=Lax` are unchanged.
+
+Migration: existing `__Host-ws_session` cookies in users' browsers are
+silently invalidated on deploy — the new server reads
+`__Secure-ws_session`, doesn't find it, and treats the user as anon.
+Affected users re-sign-in on next visit. One-time disruption.
