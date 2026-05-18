@@ -81,6 +81,11 @@ ui/routes/
 The `boundaries:element-types` ESLint rule (ADR-0002 §7) keeps the
 hexagonal cut clean.
 
+`AuthProvider` also receives a `getLocalPseudonym: () => string` prop,
+wired in `main.tsx` to `localStorageSession.getPseudonym`. This keeps
+`AuthProvider` free of infrastructure imports — the same
+composition-root pattern used for `setPseudonym` in `__root.tsx`.
+
 `AuthClient` surface:
 
 ```ts
@@ -119,7 +124,7 @@ in another tab updates this tab without manual reload.
 1. User clicks "Se connecter" — a real `<a href="https://auth.wordsparrow.io/v1/auth/google/login?return_to=<currentURL>">`. Full-page navigation (the 302 chain and Set-Cookie need browser semantics; fetch doesn't follow cross-origin 302s and CORS would block them anyway).
 2. Google consent → callback to identity-api → `Set-Cookie: __Host-ws_session=…; HttpOnly; Secure; SameSite=Lax; Max-Age=604800` → 302 to `return_to`.
 3. Browser lands back on the page the user came from. AppShell mounts. `AuthProvider` calls `whoami()` → 200. Avatar replaces the "Se connecter" button.
-4. **First-sign-in detection.** `AuthProvider` is the owner. After a successful `whoami()`, if `whoami.displayName === 'Joueur'` (the server default) AND `localStorageSession.getPseudonym()` returns an auto-generated default animal name (i.e. `isDefaultPseudonym(local)` returns `true`), it calls `updateMe(localStoragePseudonym)` once and refreshes its own state from the response. Idempotent and self-disabling on subsequent boots (after the patch, `displayName !== 'Joueur'`).
+4. **First-sign-in detection.** `AuthProvider` is the owner. After a successful `whoami()`, if `whoami.displayName === 'Joueur'` (the server default) AND `getLocalPseudonym()` returns an auto-generated default animal name (i.e. `isDefaultPseudonym(local)` returns `true`), it calls `updateMe(localStoragePseudonym)` once, then re-calls `whoami()` to refresh state. Idempotent and self-disabling on subsequent boots (after the PATCH, `displayName !== 'Joueur'`, so the heuristic no longer triggers).
 
 ### Avatar popover
 
