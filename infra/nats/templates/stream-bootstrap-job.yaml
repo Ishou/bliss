@@ -14,12 +14,15 @@ spec:
   ttlSecondsAfterFinished: 600
   backoffLimit: 3
   template:
+    metadata:
+      labels: {{- include "bliss-nats.selectorLabels" . | nindent 8 }}
     spec:
+      securityContext: {{- toYaml .Values.podSecurityContext | nindent 8 }}
       restartPolicy: Never
       containers:
         - name: stream-init
-          # `nats` CLI image (synadia/nats-box) — bundles the CLI we need.
-          image: natsio/nats-box:0.14
+          # `nats` CLI image (natsio/nats-box) — bundles the CLI we need.
+          image: {{ include "bliss-nats.streamInitImage" . | quote }}
           securityContext: {{- toYaml .Values.containerSecurityContext | nindent 12 }}
           env:
             - { name: NATS_URL, value: "nats://{{ include "bliss-nats.fullname" . }}:{{ .Values.config.port }}" }

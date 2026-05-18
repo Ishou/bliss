@@ -8,3 +8,6 @@ image:
 storage:
   size: 5Gi
   storageClass: "hcloud-volumes"
+streamInit:
+  image:
+    digest: "sha256:<resolve at deploy time>"

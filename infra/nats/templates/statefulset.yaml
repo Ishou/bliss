@@ -7,7 +7,7 @@ spec:
   replicas: 1
   serviceName: {{ include "bliss-nats.fullname" . }}
   selector:
-    matchLabels: {{- include "bliss-nats.labels" . | nindent 6 }}
+    matchLabels: {{- include "bliss-nats.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       labels: {{- include "bliss-nats.labels" . | nindent 8 }}

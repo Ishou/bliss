@@ -25,10 +25,21 @@ app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end -}}
+{{- define "bliss-nats.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "bliss-nats.name" . }}
+app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end -}}
 {{- define "bliss-nats.image" -}}
 {{- if .Values.image.digest -}}
 {{- printf "%s:%s@%s" .Values.image.repository .Values.image.tag .Values.image.digest -}}
 {{- else -}}
 {{- printf "%s:%s" .Values.image.repository .Values.image.tag -}}
+{{- end -}}
+{{- end -}}
+{{- define "bliss-nats.streamInitImage" -}}
+{{- if .Values.streamInit.image.digest -}}
+{{- printf "%s:%s@%s" .Values.streamInit.image.repository .Values.streamInit.image.tag .Values.streamInit.image.digest -}}
+{{- else -}}
+{{- printf "%s:%s" .Values.streamInit.image.repository .Values.streamInit.image.tag -}}
 {{- end -}}
 {{- end -}}
