@@ -79,4 +79,19 @@ class CorsTest {
             assertThat(response.headers[HttpHeaders.AccessControlAllowMethods] ?: "").contains("PATCH")
             assertThat(response.headers[HttpHeaders.AccessControlAllowHeaders] ?: "").contains("Content-Type")
         }
+
+    @Test
+    fun `preflight allows DELETE on users-me`() =
+        testApplication {
+            application { module(Wiring.forTesting(), testConfig) }
+            val response =
+                client.options("/v1/users/me") {
+                    headers {
+                        append(HttpHeaders.Origin, "https://wordsparrow.io")
+                        append(HttpHeaders.AccessControlRequestMethod, "DELETE")
+                    }
+                }
+            assertThat(response.status).isEqualTo(HttpStatusCode.OK)
+            assertThat(response.headers[HttpHeaders.AccessControlAllowMethods] ?: "").contains("DELETE")
+        }
 }
