@@ -5,6 +5,7 @@ import type { GetMeResult } from '@/application/auth';
 import { useAuth } from '@/ui/components/auth';
 import { ContentPage } from '@/ui/components/layout';
 import { useToast } from '@/ui/components/primitives';
+import { buildHead, SITE_BASE_URL } from '@/ui/seo';
 import { Route as RootRoute } from './__root';
 
 // Phase 5 sub-PR 4 — /compte foundation: read-only Pseudonyme + providers.
@@ -66,7 +67,8 @@ function ComptePage() {
   }, [state.status, navigate, toast]);
 
   useEffect(() => {
-    if (state.status !== 'authed' || !authClient) return;
+    if (state.status !== 'authed') return;
+    if (!authClient) throw new Error('authClient not wired despite authed state');
     let cancelled = false;
     authClient
       .getMe()
@@ -137,5 +139,12 @@ function ComptePage() {
 export const Route = createRoute({
   getParentRoute: () => RootRoute,
   path: '/compte',
+  head: () =>
+    buildHead({
+      title: 'Mon compte — WordSparrow',
+      description: 'Gérez votre pseudonyme et vos comptes liés sur WordSparrow.',
+      canonical: `${SITE_BASE_URL}/compte`,
+      noindex: true,
+    }),
   component: ComptePage,
 });
