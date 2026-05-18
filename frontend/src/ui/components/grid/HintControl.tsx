@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import { css, cx } from 'styled-system/css';
+import { HintGate } from '@/ui/components/auth';
 import { HintIcon } from '@/ui/components/icons';
 import type { HintLastResult } from './useHintRequest';
 
@@ -180,25 +181,27 @@ export function HintControl({
 
   return (
     <div className={containerStyles}>
-      <button
-        type="button"
-        className={pillStyles}
-        aria-label="Demander un indice"
-        title="Demander un indice"
-        onClick={handleClick}
-        onMouseDown={handleMouseDown}
-        disabled={exhausted || pending}
-      >
-        <HintIcon />
-        <span className={labelStyles}>Indice</span>
-        <span className={dividerStyles} aria-hidden="true" />
-        <span
-          className={counterStyles}
-          aria-label={`${hintsRemaining} sur ${hintsAllowed} indices restants`}
+      <HintGate>
+        <button
+          type="button"
+          className={pillStyles}
+          aria-label="Demander un indice"
+          title="Demander un indice"
+          onClick={handleClick}
+          onMouseDown={handleMouseDown}
+          disabled={exhausted || pending}
         >
-          {hintsRemaining}/{hintsAllowed}
-        </span>
-      </button>
+          <HintIcon />
+          <span className={labelStyles}>Indice</span>
+          <span className={dividerStyles} aria-hidden="true" />
+          <span
+            className={counterStyles}
+            aria-label={`${hintsRemaining} sur ${hintsAllowed} indices restants`}
+          >
+            {hintsRemaining}/{hintsAllowed}
+          </span>
+        </button>
+      </HintGate>
       {status ? (
         <span
           className={cx(statusBaseStyles, status.className)}

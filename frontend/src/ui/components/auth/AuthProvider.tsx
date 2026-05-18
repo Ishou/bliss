@@ -112,3 +112,10 @@ export function useAuth(): AuthContextValue {
   }
   return ctx;
 }
+
+// Optional variant for components that may render outside an AuthProvider
+// (e.g. test fixtures that mount a sub-route without wiring auth). Returns
+// `null` instead of throwing so the caller can degrade gracefully.
+export function useOptionalAuth(): AuthContextValue | null {
+  return useContext(AuthContext);
+}

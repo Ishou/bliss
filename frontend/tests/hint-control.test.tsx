@@ -2,6 +2,11 @@ import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { HintControl } from '@/ui/components/grid/HintControl';
 
+// HintGate (wrapped inside HintControl) is a pass-through when there's
+// no AuthProvider in the tree — existing assertions stay valid. The
+// gate's anon / loading / authed branches are covered separately in
+// `hint-gate.test.tsx`.
+
 const focusedAt = (row: number, column: number, isLocked = false) =>
   () => ({ row, column, isLocked });
 
