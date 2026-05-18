@@ -1,0 +1,62 @@
+name: Auto-merge on §6a LGTM
+
+# When the §6a reviewer agent (claude[bot]) submits a review whose first
+# line is `LGTM`, enable GitHub's auto-merge on the PR. Auto-merge waits
+# for any required status checks to pass before merging; if no branch
+# protection enforces required checks, the PR merges immediately.
+#
+# Conventions encoded:
+#   - §6a output format (ADR-0001 §6a 2026-04-26 amendment): the first
+#     line is either `LGTM` (converged) or `Findings:` (more cycles).
+#     Only the `LGTM` case fires auto-merge.
+#   - Author gate: `github.event.review.user.login == 'claude[bot]'` — a
+#     human writing "LGTM" in a review body does NOT trigger auto-merge.
+#     Humans approve via the normal review-approval UI.
+#   - Squash merge + delete branch (matches the manual pattern used
+#     throughout the OAuth2 workstream).
+#
+# Triggers on `pull_request_review.submitted` only — the reviewer agent
+# posts via `gh pr review --comment`, which produces a review object.
+#
+# Failure modes:
+#   - Repo Settings → General → Pull Requests → "Allow auto-merge" must
+#     be ON. `gh pr merge --auto` errors otherwise. One-time human fix.
+#   - If the base branch has protection rules requiring HUMAN approval,
+#     auto-merge waits indefinitely — claude[bot]'s review is "Commented",
+#     not "Approved". Intentional: the workflow does not bypass human
+#     approval where one is required.
+#
+# Untrusted-input safety per the GitHub Actions injection guide: the
+# review body and PR title are not interpolated into the shell script;
+# they live in env vars and are dereferenced as $VAR. printf '%s' keeps
+# embedded `%` literals from being read as format directives.
+
+on:
+  pull_request_review:
+    types: [submitted]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  enable-auto-merge:
+    name: Enable auto-merge if §6a converged
+    if: github.event.review.user.login == 'claude[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Enable auto-merge when review starts with LGTM
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REVIEW_BODY: ${{ github.event.review.body }}
+        run: |
+          set -euo pipefail
+          first_line=$(printf '%s' "$REVIEW_BODY" | head -n 1)
+          if echo "$first_line" | grep -q '^LGTM'; then
+            echo "::notice::§6a review converged on LGTM; enabling auto-merge on PR #$PR_NUMBER"
+            gh pr merge "$PR_NUMBER" --auto --squash --delete-branch
+          else
+            echo "::notice::Review did not converge; auto-merge not enabled."
+          fi
