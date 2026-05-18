@@ -17,6 +17,7 @@ const lobby: LobbySummary = {
   state: 'WAITING',
   gridConfig: { width: 7, height: 7 },
   playerCount: 3,
+  connectedCount: 2,
   lastActivityAt: '2026-05-12T10:00:00Z',
   progress: { solvedCells: 12, totalCells: 50 },
 };
@@ -92,10 +93,15 @@ describe('<MyLobbiesSection> — copy button', () => {
 });
 
 describe('<MyLobbiesSection> — player count', () => {
-  it('renders "X / 8 joueurs" using the canonical 8-player cap', async () => {
+  // X = connectedCount (live WS sessions), Y = playerCount (full roster
+  // including offline). Drives the "Mes parties" surface — see the
+  // LobbySummary OpenAPI schema. The previous wiring rendered the
+  // 8-player MAX_PLAYERS constant as Y, which surfaced as "1 / 8" for a
+  // solo lobby instead of "1 / 1".
+  it('renders "connectedCount / playerCount joueurs"', async () => {
     renderAt(<MyLobbiesSection lobbies={[lobby]} />);
     const players = await screen.findByTestId('lobby-players');
-    expect(players.textContent).toContain('3 / 8');
+    expect(players.textContent).toContain('2 / 3');
     expect(players.textContent).toMatch(/joueurs/);
   });
 });

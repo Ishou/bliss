@@ -190,6 +190,7 @@ function wireToSummary(wire: WireLobbySummary): LobbySummary {
     state: wire.state,
     gridConfig: { width: wire.gridConfig.width, height: wire.gridConfig.height },
     playerCount: wire.playerCount,
+    connectedCount: wire.connectedCount,
     lastActivityAt: wire.lastActivityAt,
     progress: {
       solvedCells: wire.progress.solvedCells,
