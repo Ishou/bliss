@@ -8,6 +8,7 @@ import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.get
 import io.ktor.client.request.header
+import io.ktor.client.statement.HttpResponse
 import io.ktor.http.HttpStatusCode
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -44,17 +45,41 @@ class HttpCookieVerifier(
         val cached = cache[cookie]
         if (cached != null && cached.expiresAt.isAfter(current)) return cached.value
 
-        val response =
-            try {
-                http.get("$identityApiBaseUrl/v1/auth/whoami") {
-                    header("Cookie", "__Secure-ws_session=$cookie")
-                }
-            } catch (cause: Throwable) {
-                log.warn("identity-api whoami unreachable; failing closed", cause)
-                return null
-            }
+        val response = whoamiCall(cookie, fresh = false) ?: return null
+        return interpret(cookie, current, response, fresh = false)
+    }
 
-        return try {
+    override suspend fun verifyFresh(rawCookieValue: String?): WhoAmI? {
+        val cookie = rawCookieValue?.takeIf { it.isNotBlank() } ?: return null
+        val current = now()
+        val response = whoamiCall(cookie, fresh = true) ?: return null
+        return interpret(cookie, current, response, fresh = true)
+    }
+
+    private suspend fun whoamiCall(
+        cookie: String,
+        fresh: Boolean,
+    ): HttpResponse? =
+        try {
+            http.get("$identityApiBaseUrl/v1/auth/whoami") {
+                header("Cookie", "__Secure-ws_session=$cookie")
+            }
+        } catch (cause: Throwable) {
+            if (fresh) {
+                log.warn("identity-api whoami unreachable (verifyFresh); failing closed", cause)
+            } else {
+                log.warn("identity-api whoami unreachable; failing closed", cause)
+            }
+            null
+        }
+
+    private suspend fun interpret(
+        cookie: String,
+        current: Instant,
+        response: HttpResponse,
+        fresh: Boolean,
+    ): WhoAmI? =
+        try {
             when (response.status) {
                 HttpStatusCode.OK -> {
                     val body = response.body<String>()
@@ -68,13 +93,23 @@ class HttpCookieVerifier(
                     null
                 }
                 else -> {
-                    log.warn("identity-api whoami returned {}; failing closed", response.status.value)
+                    if (fresh) {
+                        log.warn(
+                            "identity-api whoami returned {} (verifyFresh); failing closed",
+                            response.status.value,
+                        )
+                    } else {
+                        log.warn("identity-api whoami returned {}; failing closed", response.status.value)
+                    }
                     null
                 }
             }
         } catch (cause: Throwable) {
-            log.warn("identity-api whoami response unreadable/unparseable; failing closed", cause)
+            if (fresh) {
+                log.warn("identity-api whoami response unparseable (verifyFresh); failing closed", cause)
+            } else {
+                log.warn("identity-api whoami response unreadable/unparseable; failing closed", cause)
+            }
             null
         }
-    }
 }
