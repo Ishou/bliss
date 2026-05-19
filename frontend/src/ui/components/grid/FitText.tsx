@@ -52,12 +52,6 @@ const PHASE2_FLOOR_FACTOR = 0.5;
 // what the user sees.
 const FIT_EPSILON_PX = 0.25;
 
-// Safari (iOS + macOS) hyphenates lang="fr" more aggressively than Blink; headroom prevents def-cell clip. SSR-safe.
-const IS_WEBKIT = typeof navigator !== 'undefined'
-  && /AppleWebKit/.test(navigator.userAgent)
-  && !/Chrome|Chromium|Android/.test(navigator.userAgent);
-const LINE_HEADROOM_FACTOR = IS_WEBKIT ? 1.15 : 0;
-
 // Width-axis slop on the fits-test. Even with fractional content
 // measurement (Range.getBoundingClientRect) and fractional container
 // measurement (Element.getBoundingClientRect), there's residual noise
@@ -161,9 +155,7 @@ export function FitText({
       el.style.fontSize = `${font}px`;
       const w = measureContentWidth();
       const h = el.scrollHeight;
-      // Reserve one line of headroom for iOS WebKit's more aggressive French hyphenation; see LINE_HEADROOM_FACTOR.
-      const chSafe = ch - font * LINE_HEADROOM_FACTOR;
-      return w <= cw + SLOP_PX && h <= chSafe;
+      return w <= cw + SLOP_PX && h <= ch;
     };
 
     const fit = () => {
