@@ -17,6 +17,7 @@ import com.bliss.game.application.usecases.CreateLobbyUseCase
 import com.bliss.game.domain.Pseudonym
 import com.bliss.game.domain.UserId
 import com.bliss.game.infrastructure.InMemoryLobbyRepository
+import com.bliss.game.infrastructure.InMemoryLobbyWriteCoordinator
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.cookie
 import io.ktor.client.request.get
@@ -249,11 +250,45 @@ class LobbiesRouteTest {
             assertThat(owner.pseudonym).isEqualTo(Pseudonym("Marmotte"))
         }
 
+    @Test
+    fun `POST with authed cookie returns 401 when verifyFresh diverges from verify (revoked session)`() =
+        testApplicationWithVerifier(
+            verifier =
+                divergentVerifier(
+                    cached =
+                        WhoAmI(
+                            userId = UserId("11111111-1111-1111-1111-111111111111"),
+                            displayName = Pseudonym("Isho"),
+                        ),
+                    fresh = null,
+                ),
+        ) { client, _ ->
+            val response =
+                client.post("/v1/lobbies") {
+                    cookie(name = "__Secure-ws_session", value = "stale-cookie")
+                    jsonBody(CreateLobbyRequestDto(ownerSessionId, "Marmotte"))
+                }
+
+            assertThat(response.status).isEqualTo(HttpStatusCode.Unauthorized)
+            assertThat(response.headers["Content-Type"]!!).startsWith("application/problem+json")
+            assertThat(response.bodyAsText()).contains("auth-required")
+        }
+
     private fun stubVerifier(returning: WhoAmI?): CookieVerifier =
         object : CookieVerifier {
             override suspend fun verify(rawCookieValue: String?): WhoAmI? = returning
 
             override suspend fun verifyFresh(rawCookieValue: String?): WhoAmI? = returning
+        }
+
+    private fun divergentVerifier(
+        cached: WhoAmI?,
+        fresh: WhoAmI?,
+    ): CookieVerifier =
+        object : CookieVerifier {
+            override suspend fun verify(rawCookieValue: String?): WhoAmI? = cached
+
+            override suspend fun verifyFresh(rawCookieValue: String?): WhoAmI? = fresh
         }
 
     private fun testApplicationWithVerifier(
@@ -275,6 +310,7 @@ class LobbiesRouteTest {
                     repo = repo,
                     sessionManager = sessionManager,
                     cookieVerifier = verifier,
+                    coordinator = InMemoryLobbyWriteCoordinator(),
                 )
             }
         }

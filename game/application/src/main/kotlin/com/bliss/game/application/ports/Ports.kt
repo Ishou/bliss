@@ -10,6 +10,7 @@ import com.bliss.game.domain.Pseudonym
 import com.bliss.game.domain.SessionId
 import com.bliss.game.domain.UserId
 import com.bliss.game.domain.analytics.AnalyticsEvent
+import java.sql.Connection
 import java.time.Instant
 import java.util.UUID
 
@@ -90,27 +91,31 @@ interface LobbyRepository {
      */
     suspend fun findIdleCompleted(cutoff: Instant): List<Lobby>
 
-    /** Anon→authed: sets userId + pseudonym on seats where sessionId == anonSessionId AND userId == null. Idempotent. Returns touched lobby ids. */
+    /** Anon→authed: sets userId + pseudonym on seats where sessionId == anonSessionId AND userId == null. Must be called on a [LobbyWriteCoordinator]-locked [conn]. Idempotent. Returns touched lobby ids. */
     suspend fun rebindAnonSeats(
+        conn: Connection,
         anonSessionId: SessionId,
         userId: UserId,
         newPseudonym: Pseudonym,
     ): Set<LobbyId>
 
-    /** Sign-out reversal of rebindAnonSeats: clears userId and reverts pseudonym on all seats for this user. Idempotent. Returns touched lobby ids. */
+    /** Sign-out reversal of rebindAnonSeats: clears userId and reverts pseudonym on all seats for this user. Must be called on a [LobbyWriteCoordinator]-locked [conn]. Idempotent. Returns touched lobby ids. */
     suspend fun unbindUserSeats(
+        conn: Connection,
         userId: UserId,
         anonPseudonym: Pseudonym,
     ): Set<LobbyId>
 
-    /** ADR-0049 RGPD Article 17 user deletion: clear userId and replace pseudonym on every matching seat. Idempotent. Returns touched lobby ids. */
+    /** ADR-0049 RGPD Article 17 user deletion: clear userId and replace pseudonym on every matching seat. Must be called on a [LobbyWriteCoordinator]-locked [conn]. Idempotent. Returns touched lobby ids. */
     suspend fun anonymizeUserSeats(
+        conn: Connection,
         userId: UserId,
         replacementPseudonym: Pseudonym,
     ): Set<LobbyId>
 
-    /** ADR-0049 user.renamed: refresh pseudonym on every seat for this userId without changing userId. Idempotent -- unchanged seats not returned. Returns touched lobby ids. */
+    /** ADR-0049 user.renamed: refresh pseudonym on every seat for this userId without changing userId. Must be called on a [LobbyWriteCoordinator]-locked [conn]. Idempotent -- unchanged seats not returned. Returns touched lobby ids. */
     suspend fun refreshUserPseudonym(
+        conn: Connection,
         userId: UserId,
         newPseudonym: Pseudonym,
     ): Set<LobbyId>

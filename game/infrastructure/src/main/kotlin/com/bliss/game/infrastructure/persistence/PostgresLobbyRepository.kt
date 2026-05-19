@@ -368,103 +368,95 @@ class PostgresLobbyRepository(
             }
         }
 
-    // UPDATE … RETURNING collects touched lobby ids in one round-trip; matches in-memory adapter's atomic per-player lock.
+    // UPDATE … RETURNING collects touched lobby ids in one round-trip; runs on the advisory-locked [conn] from LobbyWriteCoordinator.
     override suspend fun rebindAnonSeats(
+        conn: Connection,
         anonSessionId: SessionId,
         userId: UserId,
         newPseudonym: Pseudonym,
-    ): Set<LobbyId> =
-        withContext(Dispatchers.IO) {
-            ds.connection.use { conn ->
-                val touched = mutableSetOf<LobbyId>()
-                conn
-                    .prepareStatement(
-                        "UPDATE lobby_players SET user_id = ?, pseudonym = ? " +
-                            "WHERE session_id = ? AND user_id IS NULL " +
-                            "RETURNING lobby_id",
-                    ).use { ps ->
-                        ps.setObject(1, UUID.fromString(userId.value))
-                        ps.setString(2, newPseudonym.value)
-                        ps.setObject(3, UUID.fromString(anonSessionId.value))
-                        ps.executeQuery().use { rs ->
-                            while (rs.next()) touched += LobbyId(rs.getString("lobby_id"))
-                        }
-                    }
-                touched
+    ): Set<LobbyId> {
+        val touched = mutableSetOf<LobbyId>()
+        conn
+            .prepareStatement(
+                "UPDATE lobby_players SET user_id = ?, pseudonym = ? " +
+                    "WHERE session_id = ? AND user_id IS NULL " +
+                    "RETURNING lobby_id",
+            ).use { ps ->
+                ps.setObject(1, UUID.fromString(userId.value))
+                ps.setString(2, newPseudonym.value)
+                ps.setObject(3, UUID.fromString(anonSessionId.value))
+                ps.executeQuery().use { rs ->
+                    while (rs.next()) touched += LobbyId(rs.getString("lobby_id"))
+                }
             }
-        }
+        return touched
+    }
 
     override suspend fun unbindUserSeats(
+        conn: Connection,
         userId: UserId,
         anonPseudonym: Pseudonym,
-    ): Set<LobbyId> =
-        withContext(Dispatchers.IO) {
-            ds.connection.use { conn ->
-                val touched = mutableSetOf<LobbyId>()
-                conn
-                    .prepareStatement(
-                        "UPDATE lobby_players SET user_id = NULL, pseudonym = ? " +
-                            "WHERE user_id = ? " +
-                            "RETURNING lobby_id",
-                    ).use { ps ->
-                        ps.setString(1, anonPseudonym.value)
-                        ps.setObject(2, UUID.fromString(userId.value))
-                        ps.executeQuery().use { rs ->
-                            while (rs.next()) touched += LobbyId(rs.getString("lobby_id"))
-                        }
-                    }
-                touched
+    ): Set<LobbyId> {
+        val touched = mutableSetOf<LobbyId>()
+        conn
+            .prepareStatement(
+                "UPDATE lobby_players SET user_id = NULL, pseudonym = ? " +
+                    "WHERE user_id = ? " +
+                    "RETURNING lobby_id",
+            ).use { ps ->
+                ps.setString(1, anonPseudonym.value)
+                ps.setObject(2, UUID.fromString(userId.value))
+                ps.executeQuery().use { rs ->
+                    while (rs.next()) touched += LobbyId(rs.getString("lobby_id"))
+                }
             }
-        }
+        return touched
+    }
 
     // ADR-0049 user.deleted: NULL user_id and replace pseudonym atomically; idempotent on retry.
     override suspend fun anonymizeUserSeats(
+        conn: Connection,
         userId: UserId,
         replacementPseudonym: Pseudonym,
-    ): Set<LobbyId> =
-        withContext(Dispatchers.IO) {
-            ds.connection.use { conn ->
-                val touched = mutableSetOf<LobbyId>()
-                conn
-                    .prepareStatement(
-                        "UPDATE lobby_players SET user_id = NULL, pseudonym = ? " +
-                            "WHERE user_id = ? " +
-                            "RETURNING lobby_id",
-                    ).use { ps ->
-                        ps.setString(1, replacementPseudonym.value)
-                        ps.setObject(2, UUID.fromString(userId.value))
-                        ps.executeQuery().use { rs ->
-                            while (rs.next()) touched += LobbyId(rs.getString("lobby_id"))
-                        }
-                    }
-                touched
+    ): Set<LobbyId> {
+        val touched = mutableSetOf<LobbyId>()
+        conn
+            .prepareStatement(
+                "UPDATE lobby_players SET user_id = NULL, pseudonym = ? " +
+                    "WHERE user_id = ? " +
+                    "RETURNING lobby_id",
+            ).use { ps ->
+                ps.setString(1, replacementPseudonym.value)
+                ps.setObject(2, UUID.fromString(userId.value))
+                ps.executeQuery().use { rs ->
+                    while (rs.next()) touched += LobbyId(rs.getString("lobby_id"))
+                }
             }
-        }
+        return touched
+    }
 
     // ADR-0049 user.renamed: refresh pseudonym only; WHERE excludes already-renamed rows so retry returns empty.
     override suspend fun refreshUserPseudonym(
+        conn: Connection,
         userId: UserId,
         newPseudonym: Pseudonym,
-    ): Set<LobbyId> =
-        withContext(Dispatchers.IO) {
-            ds.connection.use { conn ->
-                val touched = mutableSetOf<LobbyId>()
-                conn
-                    .prepareStatement(
-                        "UPDATE lobby_players SET pseudonym = ? " +
-                            "WHERE user_id = ? AND pseudonym <> ? " +
-                            "RETURNING lobby_id",
-                    ).use { ps ->
-                        ps.setString(1, newPseudonym.value)
-                        ps.setObject(2, UUID.fromString(userId.value))
-                        ps.setString(3, newPseudonym.value)
-                        ps.executeQuery().use { rs ->
-                            while (rs.next()) touched += LobbyId(rs.getString("lobby_id"))
-                        }
-                    }
-                touched
+    ): Set<LobbyId> {
+        val touched = mutableSetOf<LobbyId>()
+        conn
+            .prepareStatement(
+                "UPDATE lobby_players SET pseudonym = ? " +
+                    "WHERE user_id = ? AND pseudonym <> ? " +
+                    "RETURNING lobby_id",
+            ).use { ps ->
+                ps.setString(1, newPseudonym.value)
+                ps.setObject(2, UUID.fromString(userId.value))
+                ps.setString(3, newPseudonym.value)
+                ps.executeQuery().use { rs ->
+                    while (rs.next()) touched += LobbyId(rs.getString("lobby_id"))
+                }
             }
-        }
+        return touched
+    }
 
     // ---- internals -----------------------------------------------------
 

@@ -7,6 +7,7 @@ import com.bliss.game.api.routes.lobbyRebind
 import com.bliss.game.api.routes.lobbyWebSocketRoute
 import com.bliss.game.api.routes.sessions
 import com.bliss.game.application.auth.CookieVerifier
+import com.bliss.game.application.lobby.LobbyWriteCoordinator
 import com.bliss.game.application.ports.AnalyticsEventSink
 import com.bliss.game.application.ports.LobbyRepository
 import com.bliss.game.application.usecases.CreateLobbyUseCase
@@ -24,6 +25,7 @@ import com.bliss.game.application.usecases.UpdateCellUseCase
 import com.bliss.game.infrastructure.HttpPuzzleProvider
 import com.bliss.game.infrastructure.HttpWordValidator
 import com.bliss.game.infrastructure.InMemoryLobbyRepository
+import com.bliss.game.infrastructure.InMemoryLobbyWriteCoordinator
 import com.bliss.game.infrastructure.analytics.MatomoAnalyticsAdapter
 import com.bliss.game.infrastructure.analytics.NoopAnalyticsAdapter
 import com.bliss.game.infrastructure.auth.HttpCookieVerifier
@@ -31,6 +33,7 @@ import com.bliss.game.infrastructure.events.NatsConnectionFactory
 import com.bliss.game.infrastructure.events.UserEventSubscribers
 import com.bliss.game.infrastructure.persistence.BlissDatabase
 import com.bliss.game.infrastructure.persistence.PostgresLobbyRepository
+import com.bliss.game.infrastructure.persistence.PostgresLobbyWriteCoordinator
 import io.ktor.client.HttpClient
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
@@ -218,6 +221,12 @@ fun Application.module() {
         } else {
             InMemoryLobbyRepository()
         }
+    val lobbyWriteCoordinator: LobbyWriteCoordinator =
+        if (pgDataSource != null) {
+            PostgresLobbyWriteCoordinator(pgDataSource)
+        } else {
+            InMemoryLobbyWriteCoordinator()
+        }
     moduleLog.info(
         "game-api LobbyRepository backend: {}",
         if (pgDataSource != null) "postgres" else "in-memory",
@@ -252,7 +261,7 @@ fun Application.module() {
     val natsUrl = System.getenv("NATS_URL")?.takeIf { it.isNotBlank() }
     if (natsUrl != null) {
         val (natsConnection, jetStream) = NatsConnectionFactory(natsUrl).connect()
-        val userEventSubscribers = UserEventSubscribers(jetStream, lobbyRepository, rosterBroadcaster)
+        val userEventSubscribers = UserEventSubscribers(jetStream, lobbyRepository, rosterBroadcaster, lobbyWriteCoordinator)
         userEventSubscribers.start()
         monitor.subscribe(ApplicationStopped) {
             userEventSubscribers.close()
@@ -310,9 +319,10 @@ fun Application.module() {
             repo = lobbyRepository,
             sessionManager = sessionManager,
             cookieVerifier = cookieVerifier,
+            coordinator = lobbyWriteCoordinator,
         )
         sessions(ListLobbiesForSession(lobbyRepository), EraseSessionUseCase(lobbyRepository))
-        lobbyRebind(cookieVerifier, lobbyRepository)
+        lobbyRebind(cookieVerifier, lobbyRepository, lobbyWriteCoordinator)
         lobbyWebSocketRoute(sessionManager, useCases, lobbyRepository, presenceAggregator)
     }
 }

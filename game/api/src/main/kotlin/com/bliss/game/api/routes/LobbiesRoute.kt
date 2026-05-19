@@ -14,6 +14,7 @@ import com.bliss.game.api.dto.CreateLobbyRequestDto
 import com.bliss.game.api.dto.ProblemDetails
 import com.bliss.game.api.mapper.toResponseDto
 import com.bliss.game.application.auth.CookieVerifier
+import com.bliss.game.application.lobby.LobbyWriteCoordinator
 import com.bliss.game.application.ports.LobbyRepository
 import com.bliss.game.application.usecases.CreateLobbyUseCase
 import com.bliss.game.domain.LobbyCode
@@ -39,6 +40,7 @@ private const val INVALID_CREATE_TYPE = "https://bliss.example/errors/invalid-lo
 private const val INVALID_LOBBY_ID_TYPE = "https://bliss.example/errors/invalid-lobby-id"
 private const val INVALID_LOBBY_CODE_TYPE = "https://bliss.example/errors/invalid-lobby-code"
 private const val LOBBY_NOT_FOUND_TYPE = "https://bliss.example/errors/lobby-not-found"
+private const val AUTH_REQUIRED_TYPE = "https://bliss.example/errors/auth-required"
 
 /**
  * `POST /v1/lobbies` + `GET /v1/lobbies/{lobbyId}`. The route owns DTO ↔
@@ -52,6 +54,7 @@ fun Route.lobbies(
     repo: LobbyRepository,
     sessionManager: SessionManager,
     cookieVerifier: CookieVerifier,
+    coordinator: LobbyWriteCoordinator,
 ) {
     route("/v1/lobbies") {
         post {
@@ -66,12 +69,35 @@ fun Route.lobbies(
                     .getOrElse { return@post call.respondInvalidCreate(it.message) }
             val rawCookie = call.request.cookies[CookieNames.SESSION]
             val whoAmI = cookieVerifier.verify(rawCookie)
-            val ownerPseudonym =
-                whoAmI?.displayName
-                    ?: runCatching { Pseudonym(request.ownerPseudonym) }
-                        .getOrElse { return@post call.respondInvalidCreate(it.message) }
 
-            val lobby = createLobby(ownerSessionId, ownerPseudonym, whoAmI?.userId).value
+            val lobby =
+                if (whoAmI != null) {
+                    // Authed create: serialise against user.deleted under the user advisory lock; verifyFresh closes the stale-cache window.
+                    val result =
+                        coordinator.withUserLock(whoAmI.userId) { _ ->
+                            val fresh = cookieVerifier.verifyFresh(rawCookie)
+                            if (fresh == null || fresh.userId != whoAmI.userId) {
+                                null
+                            } else {
+                                createLobby(ownerSessionId, fresh.displayName, fresh.userId).value
+                            }
+                        }
+                    if (result == null) {
+                        return@post call.respondProblem(
+                            HttpStatusCode.Unauthorized,
+                            "Authentification requise",
+                            AUTH_REQUIRED_TYPE,
+                            "Votre session a été invalidée.",
+                        )
+                    }
+                    result
+                } else {
+                    val ownerPseudonym =
+                        runCatching { Pseudonym(request.ownerPseudonym) }
+                            .getOrElse { return@post call.respondInvalidCreate(it.message) }
+                    createLobby(ownerSessionId, ownerPseudonym, null).value
+                }
+
             call.response.header(HttpHeaders.Location, "/v1/lobbies/${lobby.id.value}")
             // Newly-created lobby has no live WS sessions yet; presence is empty.
             call.respond(HttpStatusCode.Created, lobby.toResponseDto())
