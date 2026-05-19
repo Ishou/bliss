@@ -12,10 +12,7 @@ streamInit:
   image:
     digest: "sha256:<resolve at deploy time>"
 
-# Prometheus exporter sidecar — on in prod. Digest pinned to the
-# multi-arch image index for natsio/prometheus-nats-exporter:0.15.0,
-# resolved via the Docker Hub registry v2 manifest endpoint (see PR body
-# for the exact lookup command). Manifesto: deterministic builds.
+# Prometheus exporter sidecar — on in prod; digest pinned to multi-arch image index for natsio/prometheus-nats-exporter:0.15.0.
 metricsExporter:
   enabled: true
   image:
