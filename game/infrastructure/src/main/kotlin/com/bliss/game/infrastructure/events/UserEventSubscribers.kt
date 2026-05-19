@@ -1,5 +1,9 @@
 package com.bliss.game.infrastructure.events
 
+import com.bliss.game.application.ports.LobbyRepository
+import com.bliss.game.application.ports.LobbyRosterBroadcaster
+import com.bliss.game.domain.Pseudonym
+import com.bliss.game.domain.UserId
 import io.nats.client.JetStream
 import io.nats.client.JetStreamSubscription
 import io.nats.client.Message
@@ -13,13 +17,40 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
 import java.time.Duration
 
-/** Durable JetStream push consumers for user.{deleted,renamed}; explicit-ack, maxDeliver=5 (ADR-0049, Phase 6c.1). */
+/**
+ * Durable JetStream push consumers for `wordsparrow.user.{deleted,renamed}` (ADR-0049).
+ *
+ * Explicit-ack, maxDeliver=5. PR 6c.1 shipped log-only bodies; this revision (Phase 6c.3)
+ * swaps in the real handlers: `user.deleted` anonymises every seat that referenced the
+ * deleted user and broadcasts a fresh roster snapshot to live WebSocket clients;
+ * `user.renamed` refreshes the pseudonym on every matching seat with the same broadcast
+ * path. A handler that throws naks the message so JetStream redelivers (up to maxDeliver).
+ */
 class UserEventSubscribers(
     private val jetStream: JetStream,
+    private val lobbies: LobbyRepository,
+    private val rosterBroadcaster: LobbyRosterBroadcaster,
+    private val json: Json = Json { ignoreUnknownKeys = true },
 ) {
+    @Serializable
+    internal data class UserDeletedPayload(
+        val userId: String,
+        val deletedAt: String,
+    )
+
+    @Serializable
+    internal data class UserRenamedPayload(
+        val userId: String,
+        val newDisplayName: String,
+        val renamedAt: String,
+    )
+
     private val log = LoggerFactory.getLogger(UserEventSubscribers::class.java)
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val subs = mutableListOf<JetStreamSubscription>()
@@ -27,11 +58,24 @@ class UserEventSubscribers(
     fun start() {
         subs +=
             subscribe(SUBJECT_DELETED, DURABLE_DELETED) { msg ->
-                log.info("user.deleted received: {}", String(msg.data, Charsets.UTF_8))
+                val event = json.decodeFromString(UserDeletedPayload.serializer(), String(msg.data, Charsets.UTF_8))
+                val userId = UserId(event.userId)
+                val touched = runBlocking { lobbies.anonymizeUserSeats(userId, REPLACEMENT_PSEUDONYM) }
+                runBlocking {
+                    touched.forEach { rosterBroadcaster.notifyRosterChanged(it) }
+                }
+                log.info("user.deleted processed: userId={} touched={} lobbies", event.userId, touched.size)
             }
         subs +=
             subscribe(SUBJECT_RENAMED, DURABLE_RENAMED) { msg ->
-                log.info("user.renamed received: {}", String(msg.data, Charsets.UTF_8))
+                val event = json.decodeFromString(UserRenamedPayload.serializer(), String(msg.data, Charsets.UTF_8))
+                val userId = UserId(event.userId)
+                val newPseudonym = Pseudonym.of(event.newDisplayName)
+                val touched = runBlocking { lobbies.refreshUserPseudonym(userId, newPseudonym) }
+                runBlocking {
+                    touched.forEach { rosterBroadcaster.notifyRosterChanged(it) }
+                }
+                log.info("user.renamed processed: userId={} touched={} lobbies", event.userId, touched.size)
             }
     }
 
@@ -88,5 +132,8 @@ class UserEventSubscribers(
         private const val DURABLE_DELETED: String = "game-api-user-deleted"
         private const val DURABLE_RENAMED: String = "game-api-user-renamed"
         private const val QUEUE_GROUP: String = "game-api-user-events"
+
+        /** Fixed replacement pseudonym for seats whose owner deleted their account (ADR-0049). */
+        internal val REPLACEMENT_PSEUDONYM: Pseudonym = Pseudonym.of("Joueur supprimé")
     }
 }

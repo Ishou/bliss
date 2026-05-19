@@ -245,11 +245,14 @@ fun Application.module() {
     monitor.subscribe(ApplicationStopped) { analyticsScope.cancel() }
     val analyticsEventSink: AnalyticsEventSink = createAnalyticsEventSink(analyticsScope)
 
+    val sessionManager = SessionManager()
+    val rosterBroadcaster = WebSocketLobbyRosterBroadcaster(lobbyRepository, sessionManager)
+
     // NATS JetStream subscribers (ADR-0049); gated on NATS_URL so test harness boots without a NATS server.
     val natsUrl = System.getenv("NATS_URL")?.takeIf { it.isNotBlank() }
     if (natsUrl != null) {
         val (natsConnection, jetStream) = NatsConnectionFactory(natsUrl).connect()
-        val userEventSubscribers = UserEventSubscribers(jetStream)
+        val userEventSubscribers = UserEventSubscribers(jetStream, lobbyRepository, rosterBroadcaster)
         userEventSubscribers.start()
         monitor.subscribe(ApplicationStopped) {
             userEventSubscribers.close()
@@ -271,7 +274,6 @@ fun Application.module() {
             leaveLobby = LeaveLobbyUseCase(lobbyRepository, SystemClock, analyticsEventSink = analyticsEventSink),
             rotateCode = RotateLobbyCodeUseCase(lobbyRepository, SystemClock, analyticsEventSink = analyticsEventSink),
         )
-    val sessionManager = SessionManager()
 
     // Lobby garbage collector — ADR-0039 GC matrix:
     //   - WAITING     → evicted after 24h. Replaces the v1 30-minute knob: with multi-day

@@ -177,4 +177,57 @@ class InMemoryLobbyRepository : LobbyRepository {
         }
         return touched
     }
+
+    // Mirror of unbindUserSeats but driven by cross-context user.deleted (ADR-0049) — the seat
+    // is anonymised with a fixed replacement pseudonym so the roster keeps a stable cell shape.
+    override suspend fun anonymizeUserSeats(
+        userId: UserId,
+        replacementPseudonym: Pseudonym,
+    ): Set<LobbyId> {
+        val touched = mutableSetOf<LobbyId>()
+        val targets = store.values.filter { lobby -> lobby.players.values.any { it.userId == userId } }.map { it.id }
+        for (id in targets) {
+            lockFor(id).withLock {
+                val current = store[id] ?: return@withLock
+                if (current.players.values.none { it.userId == userId }) return@withLock
+                val newPlayers =
+                    current.players.mapValues { (_, player) ->
+                        if (player.userId == userId) player.copy(userId = null, pseudonym = replacementPseudonym) else player
+                    }
+                store[id] = current.copy(players = newPlayers)
+                touched += id
+            }
+        }
+        return touched
+    }
+
+    // user.renamed (ADR-0049) — refresh pseudonym only; leave userId in place. No-op rows
+    // (already on the new pseudonym) do not count as touched so a retried delivery is a no-op.
+    override suspend fun refreshUserPseudonym(
+        userId: UserId,
+        newPseudonym: Pseudonym,
+    ): Set<LobbyId> {
+        val touched = mutableSetOf<LobbyId>()
+        val targets =
+            store.values
+                .filter { lobby -> lobby.players.values.any { it.userId == userId && it.pseudonym != newPseudonym } }
+                .map { it.id }
+        for (id in targets) {
+            lockFor(id).withLock {
+                val current = store[id] ?: return@withLock
+                if (current.players.values.none { it.userId == userId && it.pseudonym != newPseudonym }) return@withLock
+                val newPlayers =
+                    current.players.mapValues { (_, player) ->
+                        if (player.userId == userId && player.pseudonym != newPseudonym) {
+                            player.copy(pseudonym = newPseudonym)
+                        } else {
+                            player
+                        }
+                    }
+                store[id] = current.copy(players = newPlayers)
+                touched += id
+            }
+        }
+        return touched
+    }
 }

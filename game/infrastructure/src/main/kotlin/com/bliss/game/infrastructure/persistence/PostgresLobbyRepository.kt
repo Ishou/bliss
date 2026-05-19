@@ -417,6 +417,57 @@ class PostgresLobbyRepository(
             }
         }
 
+    // ADR-0049 user.deleted: NULL out the FK and replace pseudonym in one statement so a
+    // retried event hits the same idempotent shape as the in-memory adapter.
+    override suspend fun anonymizeUserSeats(
+        userId: UserId,
+        replacementPseudonym: Pseudonym,
+    ): Set<LobbyId> =
+        withContext(Dispatchers.IO) {
+            ds.connection.use { conn ->
+                val touched = mutableSetOf<LobbyId>()
+                conn
+                    .prepareStatement(
+                        "UPDATE lobby_players SET user_id = NULL, pseudonym = ? " +
+                            "WHERE user_id = ? " +
+                            "RETURNING lobby_id",
+                    ).use { ps ->
+                        ps.setString(1, replacementPseudonym.value)
+                        ps.setObject(2, UUID.fromString(userId.value))
+                        ps.executeQuery().use { rs ->
+                            while (rs.next()) touched += LobbyId(rs.getString("lobby_id"))
+                        }
+                    }
+                touched
+            }
+        }
+
+    // ADR-0049 user.renamed: refresh pseudonym only, leave user_id in place. WHERE clause
+    // excludes rows already on the new pseudonym so a redelivered event returns an empty set.
+    override suspend fun refreshUserPseudonym(
+        userId: UserId,
+        newPseudonym: Pseudonym,
+    ): Set<LobbyId> =
+        withContext(Dispatchers.IO) {
+            ds.connection.use { conn ->
+                val touched = mutableSetOf<LobbyId>()
+                conn
+                    .prepareStatement(
+                        "UPDATE lobby_players SET pseudonym = ? " +
+                            "WHERE user_id = ? AND pseudonym <> ? " +
+                            "RETURNING lobby_id",
+                    ).use { ps ->
+                        ps.setString(1, newPseudonym.value)
+                        ps.setObject(2, UUID.fromString(userId.value))
+                        ps.setString(3, newPseudonym.value)
+                        ps.executeQuery().use { rs ->
+                            while (rs.next()) touched += LobbyId(rs.getString("lobby_id"))
+                        }
+                    }
+                touched
+            }
+        }
+
     // ---- internals -----------------------------------------------------
 
     private fun selectIdByCode(
