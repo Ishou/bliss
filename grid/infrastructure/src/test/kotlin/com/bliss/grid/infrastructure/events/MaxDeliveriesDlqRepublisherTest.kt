@@ -1,7 +1,6 @@
 package com.bliss.grid.infrastructure.events
 
 import assertk.assertThat
-import assertk.assertions.hasSize
 import assertk.assertions.isEqualTo
 import assertk.assertions.isNotNull
 import io.nats.client.Connection
@@ -42,7 +41,6 @@ class MaxDeliveriesDlqRepublisherTest {
 
         republisher.handleAdvisory(advisoryJson.toByteArray(Charsets.UTF_8))
 
-        assertThat(captured).hasSize(1)
         val call = captured.single()
         assertThat(call.subject).isEqualTo("wordsparrow.dlq.wordsparrow.user.deleted")
         assertThat(call.body.size).isEqualTo(0)
