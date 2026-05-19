@@ -213,7 +213,7 @@ fun Application.module() {
             ?.getString()
             ?.takeIf { it.isNotBlank() }
             ?: System.getenv("IDENTITY_API_BASE_URL")?.takeIf { it.isNotBlank() }
-            ?: "http://identity-api:8080"
+            ?: "http://wordsparrow-identity-api.wordsparrow:8082"
 
     @Suppress("UNUSED_VARIABLE")
     val cookieVerifier: CookieVerifier = HttpCookieVerifier(HttpClient(), identityApiBaseUrl)
