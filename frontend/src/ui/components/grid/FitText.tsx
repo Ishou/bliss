@@ -52,8 +52,11 @@ const PHASE2_FLOOR_FACTOR = 0.5;
 // what the user sees.
 const FIT_EPSILON_PX = 0.25;
 
-// iOS WebKit hyphenates lang="fr" more aggressively; reserve one line of headroom so both engines fit.
-const LINE_HEADROOM_FACTOR = 1.15;
+// Safari (iOS + macOS) hyphenates lang="fr" more aggressively than Blink; headroom prevents def-cell clip. SSR-safe.
+const IS_WEBKIT = typeof navigator !== 'undefined'
+  && /AppleWebKit/.test(navigator.userAgent)
+  && !/Chrome|Chromium|Android/.test(navigator.userAgent);
+const LINE_HEADROOM_FACTOR = IS_WEBKIT ? 1.15 : 0;
 
 // Width-axis slop on the fits-test. Even with fractional content
 // measurement (Range.getBoundingClientRect) and fractional container
