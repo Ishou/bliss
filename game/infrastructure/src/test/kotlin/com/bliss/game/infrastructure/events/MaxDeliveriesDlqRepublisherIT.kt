@@ -118,19 +118,9 @@ class MaxDeliveriesDlqRepublisherIT {
             )
         republisher.start()
 
-        // Subscribe to the DLQ subject BEFORE publishing so we don't race the republish.
-        val dlqStreamSub =
-            connection.jetStream().subscribe(
-                "wordsparrow.dlq.>",
-                PushSubscribeOptions
-                    .builder()
-                    .configuration(
-                        ConsumerConfiguration
-                            .builder()
-                            .ackPolicy(AckPolicy.None)
-                            .build(),
-                    ).build(),
-            )
+        // Republisher uses core Connection.publish; a JetStream consumer would never receive it.
+        val dlqStreamSub = connection.subscribe("wordsparrow.dlq.>")
+        connection.flush(Duration.ofSeconds(5))
 
         val userId = UUID.randomUUID().toString()
         val payload = """{"userId":"$userId","newDisplayName":"Renomé","renamedAt":"2026-05-19T12:00:00Z"}"""

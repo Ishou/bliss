@@ -40,7 +40,7 @@ class MaxDeliveriesDlqRepublisher(
         if (dispatcher != null) return
         val d = connection.createDispatcher { msg -> handleAdvisory(msg.data) }
         consumerNames.forEach { consumer ->
-            d.subscribe("\$JS.EVENT.ADVISORY.MAX_DELIVERIES.$streamName.$consumer")
+            d.subscribe("\$JS.EVENT.ADVISORY.CONSUMER.MAX_DELIVERIES.$streamName.$consumer")
             log.info("DLQ republisher subscribed to MAX_DELIVERIES advisory for {}/{}", streamName, consumer)
         }
         dispatcher = d
