@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted, 2026-05-16. Supersedes ADR-0005 §4 (palette) and §5 (typography); supersedes ADR-0008 (Nunito FOUT strategy). Cites ADR-0034 (a11y baseline) for the contrast verification matrix below.
+Accepted, 2026-05-16. Supersedes ADR-0005 §4 (palette) and §5 (typography); supersedes ADR-0008 (Nunito FOUT strategy). Cites ADR-0050 (a11y baseline) for the contrast verification matrix below.
 
 ## Context
 
@@ -130,5 +130,5 @@ PR 5 (OG image regeneration) is optional follow-up.
 
 - Supersedes ADR-0005 §4 (six-color palette) and §5 (single-typeface Nunito justification).
 - Supersedes ADR-0008 in part: Nunito-specific FOUT mitigation is retired; Fraunces + Outfit inherit the same self-hosted + `fontaine` + `font-display: swap` strategy. The shape of ADR-0008 (self-host + fallback metrics + `swap`) stands; only the family roster changes.
-- Cites ADR-0034 (a11y baseline) for the AA contrast targets the verification matrix must satisfy.
+- Cites ADR-0050 (a11y baseline) for the AA contrast targets the verification matrix must satisfy.
 - Does not affect ADR-0002 (frontend stack — Panda CSS stays), ADR-0001 §3 (schema-first — irrelevant to a frontend visual change), ADR-0025 (RGPD — irrelevant).

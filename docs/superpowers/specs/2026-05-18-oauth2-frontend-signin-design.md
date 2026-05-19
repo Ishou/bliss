@@ -246,7 +246,7 @@ Total addition per page: ~30 lines including markup.
   - Hint button is disabled + tooltip visible on hover.
   - `/compte` when anon: the route component calls `const { status } = useAuth()` and in a `useEffect` navigates to `/` with a toast `"Connectez-vous pour accéder à votre compte."` when `status === 'anon'`. No 404 — the route exists for everyone, the gate is component-level and state-driven (consistent with how other routes in this codebase are guarded; no `beforeLoad` is used).
   - Authenticated path stubs the OAuth round-trip (MSW + a fixture cookie) and verifies the avatar popover + display-name edit + delete-account modal flow.
-- **a11y (axe-core via Playwright):** the avatar popover, the typed-confirm dialog, and the `/compte` form all pass WCAG AA per ADR-0034.
+- **a11y (axe-core via Playwright):** the avatar popover, the typed-confirm dialog, and the `/compte` form all pass WCAG AA per ADR-0050.
 - **Spec compliance:** the design's "Decisions" table is the contract — every row must be covered by either a Vitest or Playwright assertion.
 
 ## Risks / open questions

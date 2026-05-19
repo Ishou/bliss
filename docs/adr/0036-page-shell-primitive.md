@@ -14,7 +14,7 @@ Accepted
 > prior to any implementation commit and approved by the user before
 > the plan was written. The ADR is the first commit of the PR and
 > reviewers see it before any code. Documented one-off matching the
-> precedent set by ADR-0034.
+> precedent set by ADR-0050.
 
 Before this ADR, every route in `frontend/src/ui/routes/` reimplemented
 its own page shell inline (`pageStyles` + `mainStyles` + `contentStyles`

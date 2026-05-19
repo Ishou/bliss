@@ -61,7 +61,7 @@ make cluster-status     # kubectl get nodes,pods -A
 pnpm dev          # Vite + Panda codegen
 pnpm test         # vitest
 pnpm e2e          # Playwright
-pnpm a11y         # axe-core via Playwright (ADR-0034 a11y baseline)
+pnpm a11y         # axe-core via Playwright (ADR-0050 a11y baseline)
 pnpm typecheck    # tsc -b (panda codegen runs first)
 pnpm api:check    # regenerate OpenAPI types and fail on drift — run after schema edits
 ```
@@ -154,7 +154,7 @@ Full rationale is in MANIFESTO.md.
 - **Migrations are expand-and-contract**, backward-compatible.
 - **Feature flags** deploy dark, release bright; flags carry expiry
   dates.
-- **Accessibility is a requirement** (WCAG AA, ADR-0034), not a
+- **Accessibility is a requirement** (WCAG AA, ADR-0050), not a
   follow-up ticket.
 - **Secrets never in code.** Injected at runtime. Git hooks and
   `secret-scan` (gitleaks, listed in CI gates above) prevent accidental
