@@ -1,26 +1,6 @@
-/**
- * Anon → authed lobby rebind handshake.
- *
- * Closes the FOLLOW_UP gap from PR #529: the AuthProvider's onAuthed
- * effect fires `POST /v1/lobbies/players/rebind` exactly once on the
- * anon→authed transition, carrying the local anon `sessionId` in the
- * body so the server can re-stamp the player's anon seats with the
- * authed `user_id` it derives from the cookie.
- *
- * MSW handshake (mirrors my-lobbies.spec.ts + auth-authed.spec.ts):
- * the per-test init script seeds a deferred `__mswReady__` promise that
- * `main.tsx` awaits, then registers two stateful handlers through
- * `worker.use(...)`: a flip-able `/v1/auth/whoami` that starts 401 and
- * a recorder for `/v1/lobbies/players/rebind` that pushes every body
- * onto `window.__rebindCalls__`. Flipping whoami to 200 plus a
- * synthetic `visibilitychange` drives AuthProvider through its
- * anon→authed transition.
- */
 import { expect, test, type Page } from '@playwright/test';
 
-// Hardcoded anon sessionId pre-seeded into localStorage so the AuthProvider's
-// `getLocalSessionId` callback returns a deterministic value. UUID v7 shape
-// matches the production `getOrCreateSessionId` invariant.
+// Pre-seed anon sessionId so getOrCreateSessionId returns a deterministic value.
 const ANON_SESSION_ID = '0192f000-0000-7000-8000-000000000001';
 const AUTHED_USER = { userId: 'u-rebind-1', displayName: 'Renard 123' };
 
@@ -39,10 +19,7 @@ interface MswHandle {
   };
 }
 
-// Pre-seed the anon sessionId in localStorage BEFORE the app boots so
-// `getOrCreateSessionId()` returns the known value when the AuthProvider
-// reads it inside the onAuthed callback. Also suppress the SoloTour
-// backdrop (mirrors my-lobbies.spec.ts).
+// Seeds anon sessionId before app boot and suppresses the SoloTour backdrop.
 async function seedAnonSession(page: Page, sessionId: string): Promise<void> {
   await page.addInitScript((id) => {
     window.localStorage.setItem('bliss.session.id', id);
@@ -50,10 +27,7 @@ async function seedAnonSession(page: Page, sessionId: string): Promise<void> {
   }, sessionId);
 }
 
-// Install the MSW handlers. `window.__authedFlag__` is mutable from the
-// test body via `page.evaluate(...)` so a single goto can drive both the
-// initial anon settle and the later anon→authed transition without
-// re-routing. The rebind handler records every request body.
+// Installs MSW handlers: flip-able whoami and rebind call recorder.
 async function seedHandlers(page: Page, user: typeof AUTHED_USER): Promise<void> {
   await page.addInitScript((authedUser) => {
     type RebindBody = { anonSessionId: string };
@@ -116,23 +90,15 @@ test('AuthProvider fires POST /v1/lobbies/players/rebind on anon→authed transi
   // Wait for the AuthProvider to settle into the anon steady state.
   await expect(page.getByRole('link', { name: 'Se connecter' })).toBeVisible();
 
-  // Flip the simulated cookie state to authed and force AuthProvider
-  // to refetch whoami. dispatchEvent on visibilitychange triggers the
-  // `refresh()` path bound in the AuthProvider's useEffect.
+  // Flip to authed and trigger AuthProvider refresh via visibilitychange.
   await page.evaluate(() => {
     (window as unknown as { __authedFlag__: boolean }).__authedFlag__ = true;
     document.dispatchEvent(new Event('visibilitychange'));
   });
 
-  // The header re-renders to authed once refresh() resolves; this is a
-  // visible proxy for the anon→authed state transition the onAuthed
-  // effect listens to.
   await expect(page.getByRole('button', { name: 'Compte' })).toBeVisible();
 
-  // The rebind POST should have fired exactly once, carrying the anon
-  // sessionId pre-seeded in localStorage. Polled via expect.poll so the
-  // assertion survives the microtask gap between the React state flip
-  // and the network round-trip.
+  // Poll for rebind POST to survive microtask gap between state flip and network.
   await expect
     .poll(async () =>
       page.evaluate(() => {
@@ -167,15 +133,12 @@ test('rebind hook does not refire on subsequent visibilitychange while still aut
   });
   await expect(page.getByRole('button', { name: 'Compte' })).toBeVisible();
 
-  // Second visibilitychange while still authed must NOT re-trigger the
-  // rebind — the AuthProvider's `onAuthedLatch` ref pins it to one shot
-  // per anon→authed cycle.
+  // Second visibilitychange must not re-trigger the rebind.
   await page.evaluate(() => {
     document.dispatchEvent(new Event('visibilitychange'));
   });
 
-  // Give a beat for any (incorrect) second POST to land, then assert
-  // the count is still exactly one.
+  // Wait for any incorrect second POST to land, then assert still exactly one.
   await page.waitForTimeout(150);
   const calls = await page.evaluate(
     () =>
