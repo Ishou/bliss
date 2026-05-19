@@ -656,6 +656,84 @@ class PostgresLobbyRepositoryTest {
         }
 
     @Test
+    fun `anonymizeUserSeats clears userId and replaces pseudonym, returns touched lobby ids`() =
+        runTest {
+            val userId = UserId("33333333-3333-3333-3333-333333333333")
+            val authedSeat = Player(sessionA, Pseudonym("Alice"), baseInstant, userId = userId)
+            val lobby =
+                waitingLobby(id = LobbyId.generate(), owner = sessionA).copy(
+                    players = mapOf(sessionA to authedSeat),
+                )
+            repo.save(lobby)
+
+            val replacement = Pseudonym("Joueur supprime")
+            val touched = repo.anonymizeUserSeats(userId, replacement)
+
+            assertThat(touched).isEqualTo(setOf(lobby.id))
+            val seat = repo.findById(lobby.id)!!.players[sessionA]!!
+            assertThat(seat.userId).isNull()
+            assertThat(seat.pseudonym).isEqualTo(replacement)
+        }
+
+    @Test
+    fun `anonymizeUserSeats is idempotent - second call on already-anon seat returns empty set`() =
+        runTest {
+            val userId = UserId("33333333-3333-3333-3333-333333333333")
+            val authedSeat = Player(sessionA, Pseudonym("Alice"), baseInstant, userId = userId)
+            val lobby =
+                waitingLobby(id = LobbyId.generate(), owner = sessionA).copy(
+                    players = mapOf(sessionA to authedSeat),
+                )
+            repo.save(lobby)
+
+            val replacement = Pseudonym("Joueur supprime")
+            val first = repo.anonymizeUserSeats(userId, replacement)
+            val second = repo.anonymizeUserSeats(userId, replacement)
+
+            assertThat(first).isEqualTo(setOf(lobby.id))
+            assertThat(second).isEmpty()
+        }
+
+    @Test
+    fun `refreshUserPseudonym updates pseudonym and returns touched ids`() =
+        runTest {
+            val userId = UserId("44444444-4444-4444-4444-444444444444")
+            val authedSeat = Player(sessionA, Pseudonym("Isho"), baseInstant, userId = userId)
+            val lobby =
+                waitingLobby(id = LobbyId.generate(), owner = sessionA).copy(
+                    players = mapOf(sessionA to authedSeat),
+                )
+            repo.save(lobby)
+
+            val newPseudonym = Pseudonym("IshoRenamed")
+            val touched = repo.refreshUserPseudonym(userId, newPseudonym)
+
+            assertThat(touched).isEqualTo(setOf(lobby.id))
+            val seat = repo.findById(lobby.id)!!.players[sessionA]!!
+            assertThat(seat.userId).isEqualTo(userId)
+            assertThat(seat.pseudonym).isEqualTo(newPseudonym)
+        }
+
+    @Test
+    fun `refreshUserPseudonym is idempotent - seat already on new pseudonym returns empty set`() =
+        runTest {
+            val userId = UserId("44444444-4444-4444-4444-444444444444")
+            val authedSeat = Player(sessionA, Pseudonym("Isho"), baseInstant, userId = userId)
+            val lobby =
+                waitingLobby(id = LobbyId.generate(), owner = sessionA).copy(
+                    players = mapOf(sessionA to authedSeat),
+                )
+            repo.save(lobby)
+
+            val newPseudonym = Pseudonym("IshoRenamed")
+            val first = repo.refreshUserPseudonym(userId, newPseudonym)
+            val second = repo.refreshUserPseudonym(userId, newPseudonym)
+
+            assertThat(first).isEqualTo(setOf(lobby.id))
+            assertThat(second).isEmpty()
+        }
+
+    @Test
     fun `save persists user_id and findById round-trips it`() =
         runTest {
             val userId = UserId("11111111-1111-1111-1111-111111111111")

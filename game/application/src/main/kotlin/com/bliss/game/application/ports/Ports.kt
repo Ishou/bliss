@@ -102,6 +102,18 @@ interface LobbyRepository {
         userId: UserId,
         anonPseudonym: Pseudonym,
     ): Set<LobbyId>
+
+    /** ADR-0049 RGPD Article 17 user deletion: clear userId and replace pseudonym on every matching seat. Idempotent. Returns touched lobby ids. */
+    suspend fun anonymizeUserSeats(
+        userId: UserId,
+        replacementPseudonym: Pseudonym,
+    ): Set<LobbyId>
+
+    /** ADR-0049 user.renamed: refresh pseudonym on every seat for this userId without changing userId. Idempotent -- unchanged seats not returned. Returns touched lobby ids. */
+    suspend fun refreshUserPseudonym(
+        userId: UserId,
+        newPseudonym: Pseudonym,
+    ): Set<LobbyId>
 }
 
 /**
@@ -119,6 +131,11 @@ interface PuzzleProvider {
 /** Testable time. `SystemClock` lives in infrastructure (Wave D). */
 interface Clock {
     fun now(): Instant
+}
+
+/** ADR-0049 out-bound port: called with touched lobby ids after anonymizeUserSeats/refreshUserPseudonym to push fresh LobbyState snapshots to live clients. */
+interface LobbyRosterBroadcaster {
+    suspend fun notifyRosterChanged(lobbyId: LobbyId)
 }
 
 /**

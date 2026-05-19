@@ -177,4 +177,55 @@ class InMemoryLobbyRepository : LobbyRepository {
         }
         return touched
     }
+
+    // ADR-0049 user.deleted: anonymise seat with fixed replacement pseudonym; mirror of unbindUserSeats.
+    override suspend fun anonymizeUserSeats(
+        userId: UserId,
+        replacementPseudonym: Pseudonym,
+    ): Set<LobbyId> {
+        val touched = mutableSetOf<LobbyId>()
+        val targets = store.values.filter { lobby -> lobby.players.values.any { it.userId == userId } }.map { it.id }
+        for (id in targets) {
+            lockFor(id).withLock {
+                val current = store[id] ?: return@withLock
+                if (current.players.values.none { it.userId == userId }) return@withLock
+                val newPlayers =
+                    current.players.mapValues { (_, player) ->
+                        if (player.userId == userId) player.copy(userId = null, pseudonym = replacementPseudonym) else player
+                    }
+                store[id] = current.copy(players = newPlayers)
+                touched += id
+            }
+        }
+        return touched
+    }
+
+    // ADR-0049 user.renamed: refresh pseudonym only; no-op rows do not count as touched.
+    override suspend fun refreshUserPseudonym(
+        userId: UserId,
+        newPseudonym: Pseudonym,
+    ): Set<LobbyId> {
+        val touched = mutableSetOf<LobbyId>()
+        val targets =
+            store.values
+                .filter { lobby -> lobby.players.values.any { it.userId == userId && it.pseudonym != newPseudonym } }
+                .map { it.id }
+        for (id in targets) {
+            lockFor(id).withLock {
+                val current = store[id] ?: return@withLock
+                if (current.players.values.none { it.userId == userId && it.pseudonym != newPseudonym }) return@withLock
+                val newPlayers =
+                    current.players.mapValues { (_, player) ->
+                        if (player.userId == userId && player.pseudonym != newPseudonym) {
+                            player.copy(pseudonym = newPseudonym)
+                        } else {
+                            player
+                        }
+                    }
+                store[id] = current.copy(players = newPlayers)
+                touched += id
+            }
+        }
+        return touched
+    }
 }

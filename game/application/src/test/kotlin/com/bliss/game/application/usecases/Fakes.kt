@@ -209,6 +209,44 @@ class InMemoryLobbyRepository : LobbyRepository {
         }
         return touched
     }
+
+    override suspend fun anonymizeUserSeats(
+        userId: UserId,
+        replacementPseudonym: Pseudonym,
+    ): Set<LobbyId> {
+        val touched = mutableSetOf<LobbyId>()
+        storeLock.withLock {
+            store.entries.forEach { (id, lobby) ->
+                if (lobby.players.values.none { it.userId == userId }) return@forEach
+                val newPlayers =
+                    lobby.players.mapValues { (_, p) ->
+                        if (p.userId == userId) p.copy(userId = null, pseudonym = replacementPseudonym) else p
+                    }
+                store[id] = lobby.copy(players = newPlayers)
+                touched += id
+            }
+        }
+        return touched
+    }
+
+    override suspend fun refreshUserPseudonym(
+        userId: UserId,
+        newPseudonym: Pseudonym,
+    ): Set<LobbyId> {
+        val touched = mutableSetOf<LobbyId>()
+        storeLock.withLock {
+            store.entries.forEach { (id, lobby) ->
+                if (lobby.players.values.none { it.userId == userId && it.pseudonym != newPseudonym }) return@forEach
+                val newPlayers =
+                    lobby.players.mapValues { (_, p) ->
+                        if (p.userId == userId && p.pseudonym != newPseudonym) p.copy(pseudonym = newPseudonym) else p
+                    }
+                store[id] = lobby.copy(players = newPlayers)
+                touched += id
+            }
+        }
+        return touched
+    }
 }
 
 /** Returns the puzzle handed at construction time, regardless of width/height. */
