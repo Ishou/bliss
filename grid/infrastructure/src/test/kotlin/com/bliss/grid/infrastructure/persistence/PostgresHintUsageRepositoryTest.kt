@@ -23,6 +23,7 @@ import org.junit.jupiter.api.TestInstance
 import org.testcontainers.DockerClientFactory
 import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.utility.DockerImageName
+import java.sql.Connection
 import java.time.Instant
 import java.util.UUID
 
@@ -71,35 +72,74 @@ class PostgresHintUsageRepositoryTest {
 
     @Test
     fun `trySpend below cap returns increasing hints_used`() {
-        val (puzzleId, sessionId) = setup()
-        assertThat(hintUsage.trySpend(puzzleId, sessionId, hintsAllowed = 3)).isEqualTo(1)
-        assertThat(hintUsage.trySpend(puzzleId, sessionId, hintsAllowed = 3)).isEqualTo(2)
-        assertThat(hintUsage.trySpend(puzzleId, sessionId, hintsAllowed = 3)).isEqualTo(3)
+        val (puzzleId, userId) = setup()
+        withConnection { conn ->
+            assertThat(hintUsage.trySpend(conn, puzzleId, userId, hintsAllowed = 3)).isEqualTo(1)
+            assertThat(hintUsage.trySpend(conn, puzzleId, userId, hintsAllowed = 3)).isEqualTo(2)
+            assertThat(hintUsage.trySpend(conn, puzzleId, userId, hintsAllowed = 3)).isEqualTo(3)
+        }
     }
 
     @Test
     fun `trySpend at cap returns null without changing the row`() {
-        val (puzzleId, sessionId) = setup()
-        repeat(3) { hintUsage.trySpend(puzzleId, sessionId, hintsAllowed = 3) }
-        assertThat(hintUsage.trySpend(puzzleId, sessionId, hintsAllowed = 3)).isNull()
-        // And again — still null, still no change.
-        assertThat(hintUsage.trySpend(puzzleId, sessionId, hintsAllowed = 3)).isNull()
+        val (puzzleId, userId) = setup()
+        withConnection { conn ->
+            repeat(3) { hintUsage.trySpend(conn, puzzleId, userId, hintsAllowed = 3) }
+            assertThat(hintUsage.trySpend(conn, puzzleId, userId, hintsAllowed = 3)).isNull()
+            assertThat(hintUsage.trySpend(conn, puzzleId, userId, hintsAllowed = 3)).isNull()
+        }
     }
 
     @Test
-    fun `trySpend keeps separate counters per session`() {
+    fun `trySpend keeps separate counters per user`() {
         val (puzzleId, _) = setup()
-        val sessionA = UUID.randomUUID()
-        val sessionB = UUID.randomUUID()
-        assertThat(hintUsage.trySpend(puzzleId, sessionA, hintsAllowed = 3)).isEqualTo(1)
-        assertThat(hintUsage.trySpend(puzzleId, sessionA, hintsAllowed = 3)).isEqualTo(2)
-        assertThat(hintUsage.trySpend(puzzleId, sessionB, hintsAllowed = 3)).isEqualTo(1)
+        val userA = UUID.randomUUID()
+        val userB = UUID.randomUUID()
+        withConnection { conn ->
+            assertThat(hintUsage.trySpend(conn, puzzleId, userA, hintsAllowed = 3)).isEqualTo(1)
+            assertThat(hintUsage.trySpend(conn, puzzleId, userA, hintsAllowed = 3)).isEqualTo(2)
+            assertThat(hintUsage.trySpend(conn, puzzleId, userB, hintsAllowed = 3)).isEqualTo(1)
+        }
     }
 
     @Test
     fun `trySpend with hintsAllowed=0 returns null without inserting`() {
-        val (puzzleId, sessionId) = setup()
-        assertThat(hintUsage.trySpend(puzzleId, sessionId, hintsAllowed = 0)).isNull()
+        val (puzzleId, userId) = setup()
+        withConnection { conn ->
+            assertThat(hintUsage.trySpend(conn, puzzleId, userId, hintsAllowed = 0)).isNull()
+        }
+        assertThat(hintUsage.usedFor(puzzleId, userId)).isEqualTo(0)
+    }
+
+    @Test
+    fun `usedFor returns zero when there is no row`() {
+        val (puzzleId, userId) = setup()
+        assertThat(hintUsage.usedFor(puzzleId, userId)).isEqualTo(0)
+    }
+
+    @Test
+    fun `usedFor returns the current hints_used after a spend`() {
+        val (puzzleId, userId) = setup()
+        withConnection { conn ->
+            hintUsage.trySpend(conn, puzzleId, userId, hintsAllowed = 3)
+            hintUsage.trySpend(conn, puzzleId, userId, hintsAllowed = 3)
+        }
+        assertThat(hintUsage.usedFor(puzzleId, userId)).isEqualTo(2)
+    }
+
+    @Test
+    fun `deleteByUser removes every row for the user and is idempotent`() {
+        val (puzzleId, userA) = setup()
+        val userB = UUID.randomUUID()
+        withConnection { conn ->
+            hintUsage.trySpend(conn, puzzleId, userA, hintsAllowed = 3)
+            hintUsage.trySpend(conn, puzzleId, userB, hintsAllowed = 3)
+        }
+        assertThat(hintUsage.deleteByUser(userA)).isEqualTo(1)
+        assertThat(hintUsage.usedFor(puzzleId, userA)).isEqualTo(0)
+        assertThat(hintUsage.usedFor(puzzleId, userB)).isEqualTo(1)
+        // Idempotent: second call deletes nothing.
+        assertThat(hintUsage.deleteByUser(userA)).isEqualTo(0)
     }
 
     private fun setup(): Pair<UUID, UUID> {
@@ -121,4 +161,17 @@ class PostgresHintUsageRepositoryTest {
         puzzles.getOrCompute(puzzleId) { stored }
         return puzzleId to UUID.randomUUID()
     }
+
+    private fun <T> withConnection(block: (Connection) -> T): T =
+        dataSource.connection.use { conn ->
+            conn.autoCommit = false
+            try {
+                val result = block(conn)
+                conn.commit()
+                result
+            } catch (t: Throwable) {
+                conn.rollback()
+                throw t
+            }
+        }
 }

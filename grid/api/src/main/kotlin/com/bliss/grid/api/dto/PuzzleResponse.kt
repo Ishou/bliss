@@ -44,6 +44,7 @@ data class PuzzleResponse(
     val cells: List<CellDto>,
     val clues: List<ClueDto>,
     val hintsAllowed: Int,
+    val hintsRemaining: Int,
     val createdAt: String,
     val difficulty: DifficultyDto? = null,
     val gridNumber: Int? = null,

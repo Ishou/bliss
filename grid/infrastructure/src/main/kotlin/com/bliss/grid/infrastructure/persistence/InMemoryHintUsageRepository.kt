@@ -1,6 +1,7 @@
 package com.bliss.grid.infrastructure.persistence
 
 import com.bliss.grid.application.puzzle.HintUsageRepository
+import java.sql.Connection
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
@@ -10,33 +11,45 @@ import java.util.concurrent.atomic.AtomicInteger
  * [InMemoryPuzzleRepository] in local dev / tests; not used in production
  * (the [PostgresHintUsageRepository] is the durable path).
  *
- * Atomic spend uses `AtomicInteger.compareAndSet` against a per-key counter
- * — concurrent spends on the same `(puzzleId, sessionId)` race cleanly
- * without locks, and a spend that would exceed the cap is rejected.
- *
- * Lost on restart, like the puzzle store. A player whose hints were all
- * spent gets a fresh budget after a process restart (degraded gracefully
- * — solo play, low stakes).
+ * The [Connection] parameter is ignored — there is no transactional state
+ * to thread through; concurrency is handled with `AtomicInteger.CAS`.
  */
 class InMemoryHintUsageRepository : HintUsageRepository {
     private val counters = ConcurrentHashMap<Pair<UUID, UUID>, AtomicInteger>()
 
     override fun trySpend(
+        conn: Connection,
         puzzleId: UUID,
-        sessionId: UUID,
+        userId: UUID,
+        hintsAllowed: Int,
+    ): Int? = spend(puzzleId, userId, hintsAllowed)
+
+    fun trySpend(
+        puzzleId: UUID,
+        userId: UUID,
+        hintsAllowed: Int,
+    ): Int? = spend(puzzleId, userId, hintsAllowed)
+
+    private fun spend(
+        puzzleId: UUID,
+        userId: UUID,
         hintsAllowed: Int,
     ): Int? {
-        val counter = counters.computeIfAbsent(puzzleId to sessionId) { AtomicInteger(0) }
+        val counter = counters.computeIfAbsent(puzzleId to userId) { AtomicInteger(0) }
         while (true) {
             val current = counter.get()
             if (current >= hintsAllowed) return null
             if (counter.compareAndSet(current, current + 1)) return current + 1
-            // CAS failed — another spend won the race; loop and re-read.
         }
     }
 
-    override fun deleteBySession(sessionId: UUID): Int {
-        val keys = counters.keys.filter { it.second == sessionId }
+    override fun usedFor(
+        puzzleId: UUID,
+        userId: UUID,
+    ): Int = counters[puzzleId to userId]?.get() ?: 0
+
+    override fun deleteByUser(userId: UUID): Int {
+        val keys = counters.keys.filter { it.second == userId }
         keys.forEach { counters.remove(it) }
         return keys.size
     }

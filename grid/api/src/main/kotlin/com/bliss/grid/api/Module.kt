@@ -11,6 +11,7 @@ import com.bliss.grid.application.puzzle.DailyPuzzleSelector
 import com.bliss.grid.application.puzzle.DeleteSessionUseCase
 import com.bliss.grid.application.puzzle.GeneratePuzzleUseCase
 import com.bliss.grid.application.puzzle.HintUsageRepository
+import com.bliss.grid.application.puzzle.HintWriteCoordinator
 import com.bliss.grid.application.puzzle.ListDailyPuzzlesUseCase
 import com.bliss.grid.application.puzzle.LoadOrGeneratePuzzleUseCase
 import com.bliss.grid.application.puzzle.PuzzleRepository
@@ -24,9 +25,11 @@ import com.bliss.grid.infrastructure.auth.HttpCookieVerifier
 import com.bliss.grid.infrastructure.persistence.CsvWordRepository
 import com.bliss.grid.infrastructure.persistence.InMemoryClueCooldownRepository
 import com.bliss.grid.infrastructure.persistence.InMemoryHintUsageRepository
+import com.bliss.grid.infrastructure.persistence.InMemoryHintWriteCoordinator
 import com.bliss.grid.infrastructure.persistence.InMemoryPuzzleRepository
 import com.bliss.grid.infrastructure.persistence.PostgresClueCooldownRepository
 import com.bliss.grid.infrastructure.persistence.PostgresHintUsageRepository
+import com.bliss.grid.infrastructure.persistence.PostgresHintWriteCoordinator
 import com.bliss.grid.infrastructure.persistence.PostgresPuzzleRepository
 import io.ktor.client.HttpClient
 import io.ktor.http.ContentType
@@ -190,10 +193,20 @@ fun Application.module() {
     // (Helm chart guarantees it) and gets the durable Postgres path. Local
     // dev / route tests run without a DB and use the in-memory pair so the
     // wire path stays exercisable without spinning up Testcontainers.
-    val (puzzleRepository, hintUsageRepository) =
+    val (puzzleRepository, hintUsageRepository, hintWriteCoordinator) =
         when (val ds = Database.dataSource()) {
-            null -> InMemoryPuzzleRepository() as PuzzleRepository to InMemoryHintUsageRepository() as HintUsageRepository
-            else -> PostgresPuzzleRepository(ds) as PuzzleRepository to PostgresHintUsageRepository(ds) as HintUsageRepository
+            null ->
+                Triple(
+                    InMemoryPuzzleRepository() as PuzzleRepository,
+                    InMemoryHintUsageRepository() as HintUsageRepository,
+                    InMemoryHintWriteCoordinator() as HintWriteCoordinator,
+                )
+            else ->
+                Triple(
+                    PostgresPuzzleRepository(ds) as PuzzleRepository,
+                    PostgresHintUsageRepository(ds) as HintUsageRepository,
+                    PostgresHintWriteCoordinator(ds) as HintWriteCoordinator,
+                )
         }
     // Fire-and-forget analytics scope (ADR-0025). Cancelled on app stop so in-flight
     // posts don't outlive the JVM. The adapter falls back to a no-op when MATOMO_URL /
@@ -213,7 +226,6 @@ fun Application.module() {
 
     val verifierHttpClient = HttpClient()
     monitor.subscribe(ApplicationStopped) { verifierHttpClient.close() }
-    @Suppress("UNUSED_VARIABLE")
     val cookieVerifier: CookieVerifier = HttpCookieVerifier(verifierHttpClient, identityApiBaseUrl)
 
     // Clue cooldown (ADR-0031). On by default — set GRID_CLUE_COOLDOWN_ENABLED=false
@@ -244,7 +256,7 @@ fun Application.module() {
     val revealCellHint =
         RevealCellHintUseCase(puzzleRepository, hintUsageRepository, analyticsEventSink = analyticsEventSink)
     val validatePuzzle = ValidatePuzzleUseCase(puzzleRepository)
-    val deleteSession = DeleteSessionUseCase(hintUsageRepository, cooldownRepository)
+    val deleteSession = DeleteSessionUseCase(cooldownRepository)
     val dailyPuzzleSelector = DailyPuzzleSelector()
     val listDailyPuzzles =
         ListDailyPuzzlesUseCase(
@@ -259,6 +271,9 @@ fun Application.module() {
             revealCellHint,
             validatePuzzle,
             puzzleRepository = puzzleRepository,
+            hintUsageRepository = hintUsageRepository,
+            hintWriteCoordinator = hintWriteCoordinator,
+            cookieVerifier = cookieVerifier,
             listDailyPuzzles = listDailyPuzzles,
             dailyPuzzleSelector = dailyPuzzleSelector,
         )

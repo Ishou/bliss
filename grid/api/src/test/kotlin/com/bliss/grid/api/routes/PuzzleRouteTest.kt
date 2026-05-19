@@ -21,6 +21,7 @@ import com.bliss.grid.application.puzzle.defaultPuzzleConstraints
 import com.bliss.grid.domain.generation.WordRepository
 import com.bliss.grid.domain.model.Word
 import com.bliss.grid.infrastructure.persistence.InMemoryHintUsageRepository
+import com.bliss.grid.infrastructure.persistence.InMemoryHintWriteCoordinator
 import com.bliss.grid.infrastructure.persistence.InMemoryPuzzleRepository
 import io.ktor.client.request.get
 import io.ktor.client.statement.bodyAsText
@@ -293,6 +294,9 @@ class PuzzleRouteTest {
                         revealCellHint = RevealCellHintUseCase(puzzleRepo, hintUsageRepo),
                         validatePuzzle = ValidatePuzzleUseCase(puzzleRepo),
                         puzzleRepository = puzzleRepo,
+                        hintUsageRepository = hintUsageRepo,
+                        hintWriteCoordinator = InMemoryHintWriteCoordinator(),
+                        cookieVerifier = FakeCookieVerifier(),
                     )
                 }
             }
@@ -417,6 +421,9 @@ class PuzzleRouteTest {
                         revealCellHint = RevealCellHintUseCase(puzzleRepo, hintUsageRepo),
                         validatePuzzle = ValidatePuzzleUseCase(puzzleRepo),
                         puzzleRepository = puzzleRepo,
+                        hintUsageRepository = hintUsageRepo,
+                        hintWriteCoordinator = InMemoryHintWriteCoordinator(),
+                        cookieVerifier = FakeCookieVerifier(),
                     )
                 }
             }

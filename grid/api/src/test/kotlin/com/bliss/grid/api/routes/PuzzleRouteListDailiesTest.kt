@@ -27,6 +27,7 @@ import com.bliss.grid.domain.model.Row
 import com.bliss.grid.domain.model.Word
 import com.bliss.grid.domain.model.WordPlacement
 import com.bliss.grid.infrastructure.persistence.InMemoryHintUsageRepository
+import com.bliss.grid.infrastructure.persistence.InMemoryHintWriteCoordinator
 import com.bliss.grid.infrastructure.persistence.InMemoryPuzzleRepository
 import io.ktor.client.request.get
 import io.ktor.client.statement.bodyAsText
@@ -180,6 +181,9 @@ class PuzzleRouteListDailiesTest {
                         maxItems = maxItems,
                     ),
                 puzzleRepository = puzzleRepo,
+                hintUsageRepository = hintRepo,
+                hintWriteCoordinator = InMemoryHintWriteCoordinator(),
+                cookieVerifier = FakeCookieVerifier(),
                 dailyPuzzleSelector = selector,
                 clock = fixedClock,
             )

@@ -5,29 +5,24 @@ import assertk.assertions.contains
 import assertk.assertions.isEqualTo
 import assertk.assertions.startsWith
 import com.bliss.grid.api.module
-import io.ktor.client.HttpClient
 import io.ktor.client.request.delete
-import io.ktor.client.request.get
-import io.ktor.client.request.headers
-import io.ktor.client.request.post
-import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsText
-import io.ktor.http.ContentType
-import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.testing.testApplication
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import org.junit.jupiter.api.Test
 
 /**
  * Wire-path tests for `DELETE /v1/sessions/{sessionId}` via Ktor `testApplication`.
- * Exercises the full stack (DI + use case + in-memory hint repository + serialization).
+ *
+ * After Phase 6b.1 hint-usage rows are no longer session-keyed; the
+ * delete-session endpoint only clears clue-cooldown rows (when the
+ * feature is wired) and is now a no-op for in-memory module wiring
+ * with no cooldown repository.
  */
 class SessionRouteTest {
-    private val puzzleId = "0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6b"
     private val sessionId = "0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6c"
 
     @Test
@@ -43,57 +38,16 @@ class SessionRouteTest {
         }
 
     @Test
-    fun `responds 200 with deleted greater than 0 after the session used a hint`() =
+    fun `is idempotent`() =
         testApplication {
             application { module() }
-            // Bootstrap the puzzle and spend one hint to seed a hint_usage row.
-            spendOneHint(client)
-
-            val response = client.delete("/v1/sessions/$sessionId")
-
-            assertThat(response.status).isEqualTo(HttpStatusCode.OK)
-            val body = Json.parseToJsonElement(response.bodyAsText()).jsonObject
-            assertThat(body["deleted"]!!.jsonPrimitive.content.toInt()).isEqualTo(1)
-        }
-
-    @Test
-    fun `is idempotent - calling twice returns 0 the second time`() =
-        testApplication {
-            application { module() }
-            spendOneHint(client)
 
             val first = client.delete("/v1/sessions/$sessionId")
             val second = client.delete("/v1/sessions/$sessionId")
 
-            val firstBody = Json.parseToJsonElement(first.bodyAsText()).jsonObject
-            val secondBody = Json.parseToJsonElement(second.bodyAsText()).jsonObject
-            assertThat(firstBody["deleted"]!!.jsonPrimitive.content.toInt()).isEqualTo(1)
-            assertThat(secondBody["deleted"]!!.jsonPrimitive.content.toInt()).isEqualTo(0)
+            assertThat(first.status).isEqualTo(HttpStatusCode.OK)
+            assertThat(second.status).isEqualTo(HttpStatusCode.OK)
         }
-
-    /**
-     * Bootstraps the shared `puzzleId` into the in-memory store and spends
-     * exactly one hint against the canonical first letter cell, so the
-     * subsequent DELETE has a `puzzle_hint_usage` row to remove.
-     */
-    private suspend fun spendOneHint(client: HttpClient) {
-        val getResponse = client.get("/v1/puzzles/$puzzleId")
-        val cells = Json.parseToJsonElement(getResponse.bodyAsText()).jsonObject["cells"]!!.jsonArray
-        val letter =
-            cells.firstNotNullOf { element ->
-                val cell = element.jsonObject
-                if (cell["kind"]!!.jsonPrimitive.content == "letter") cell["position"]!!.jsonObject else null
-            }
-        val row = letter["row"]!!.jsonPrimitive.content.toInt()
-        val column = letter["column"]!!.jsonPrimitive.content.toInt()
-        client.post("/v1/puzzles/$puzzleId/hints") {
-            headers {
-                append("X-Session-Id", sessionId)
-                append(HttpHeaders.ContentType, ContentType.Application.Json.toString())
-            }
-            setBody("""{"row":$row,"column":$column}""")
-        }
-    }
 
     @Test
     fun `responds 400 invalid-session-id when sessionId is not a UUID`() =

@@ -7,6 +7,7 @@ const baseHeader: Omit<ApiPuzzle, 'width' | 'height' | 'cells'> = {
   id: '0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6b',
   title: 't', language: 'fr',
   hintsAllowed: 3,
+  hintsRemaining: 3,
   createdAt: '2026-04-24T15:30:00Z',
   clues: [],
 };

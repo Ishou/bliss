@@ -10,8 +10,11 @@ import com.bliss.grid.api.dto.RevealCellHintResult
 import com.bliss.grid.api.dto.ValidatePuzzleRequest
 import com.bliss.grid.api.dto.ValidatePuzzleResult
 import com.bliss.grid.api.mapper.GridToPuzzleMapper
+import com.bliss.grid.application.auth.CookieVerifier
 import com.bliss.grid.application.puzzle.DailyPuzzleSelector
 import com.bliss.grid.application.puzzle.FilledCellInput
+import com.bliss.grid.application.puzzle.HintUsageRepository
+import com.bliss.grid.application.puzzle.HintWriteCoordinator
 import com.bliss.grid.application.puzzle.ListDailyPuzzlesUseCase
 import com.bliss.grid.application.puzzle.LoadOrGeneratePuzzleUseCase
 import com.bliss.grid.application.puzzle.PuzzleRepository
@@ -65,28 +68,26 @@ private const val INVALID_VALIDATE_REQUEST_TYPE: String =
     "https://bliss.example/errors/invalid-validate-request"
 private const val HINT_BUDGET_EXHAUSTED_TYPE: String =
     "https://bliss.example/errors/hint-budget-exhausted"
+private const val AUTH_REQUIRED_TYPE: String =
+    "https://bliss.example/errors/auth-required"
+
+private const val SESSION_COOKIE_NAME: String = "__Secure-ws_session"
 
 /**
  * Grid bounded-context HTTP surface (ADR-0003 §4). Endpoints:
- *  - GET  `/v1/puzzles/daily` — pure read of the persisted daily row;
- *    404 when the worker has not yet produced it (ADR-0042).
+ *  - GET  `/v1/puzzles/daily` — pure read of the persisted daily row.
  *  - GET  `/v1/puzzles/{puzzleId}` — idempotent puzzle fetch (lookup-or-generate).
- *  - POST `/v1/puzzles/{puzzleId}/hints` — spend a hint to reveal the
- *    canonical letter at a `(row, column)` cell.
- *  - POST `/v1/puzzles/{puzzleId}/validate` — verify a filled grid against
- *    the canonical solution; returns position-only diff.
- *
- * GET-time persistence (`LoadOrGeneratePuzzleUseCase`) makes the puzzleId a
- * stable identifier: the first GET allocates and pins a grid, every
- * subsequent operation on the id reads the same grid back. The schema PR
- * (#218) made this a wire promise; the validate endpoint enforces it
- * server-side.
+ *  - POST `/v1/puzzles/{puzzleId}/hints` — spend a hint (authed-only).
+ *  - POST `/v1/puzzles/{puzzleId}/validate` — verify a filled grid.
  */
 fun Route.puzzles(
     loadOrGenerate: LoadOrGeneratePuzzleUseCase,
     revealCellHint: RevealCellHintUseCase,
     validatePuzzle: ValidatePuzzleUseCase,
     puzzleRepository: PuzzleRepository,
+    hintUsageRepository: HintUsageRepository,
+    hintWriteCoordinator: HintWriteCoordinator,
+    cookieVerifier: CookieVerifier,
     listDailyPuzzles: ListDailyPuzzlesUseCase = ListDailyPuzzlesUseCase(puzzleRepository),
     mapper: GridToPuzzleMapper = GridToPuzzleMapper(),
     dailyPuzzleSelector: DailyPuzzleSelector = DailyPuzzleSelector(),
@@ -128,12 +129,21 @@ fun Route.puzzles(
         val difficulty = DifficultyDto.fromWire(dailyPuzzleSelector.difficultyForDate(date))
         val rawGridNumber = dailyPuzzleSelector.gridNumberForDate(date)
         val gridNumber = if (rawGridNumber >= 1) rawGridNumber else null
+        val hintsRemaining =
+            remainingHintsFor(
+                cookieVerifier = cookieVerifier,
+                hintUsageRepository = hintUsageRepository,
+                rawCookie = call.request.cookies[SESSION_COOKIE_NAME],
+                puzzleId = puzzleId,
+                hintsAllowed = stored.hintsAllowed,
+            )
         call.respond(
             mapper.toApi(
                 grid = stored.grid,
                 puzzleId = puzzleId,
                 createdAt = stored.createdAt,
                 hintsAllowed = stored.hintsAllowed,
+                hintsRemaining = hintsRemaining,
                 title = stored.title,
                 language = stored.language,
                 difficulty = difficulty,
@@ -272,12 +282,21 @@ fun Route.puzzles(
             )
             return@get
         }
+        val hintsRemaining =
+            remainingHintsFor(
+                cookieVerifier = cookieVerifier,
+                hintUsageRepository = hintUsageRepository,
+                rawCookie = call.request.cookies[SESSION_COOKIE_NAME],
+                puzzleId = puzzleId,
+                hintsAllowed = stored.hintsAllowed,
+            )
         call.respond(
             mapper.toApi(
                 grid = stored.grid,
                 puzzleId = puzzleId,
                 createdAt = stored.createdAt,
                 hintsAllowed = stored.hintsAllowed,
+                hintsRemaining = hintsRemaining,
                 title = stored.title,
                 language = stored.language,
             ),
@@ -297,14 +316,14 @@ fun Route.puzzles(
                 return@post
             }
 
-        val rawSession = call.request.headers["X-Session-Id"].orEmpty()
-        val sessionId =
-            parseUuid(rawSession) ?: run {
+        val rawCookie = call.request.cookies[SESSION_COOKIE_NAME]
+        val cached =
+            cookieVerifier.verify(rawCookie) ?: run {
                 call.respondProblem(
-                    status = HttpStatusCode.BadRequest,
-                    title = "Identifiant de session invalide",
-                    type = INVALID_SESSION_ID_TYPE,
-                    detail = "L'en-tête X-Session-Id doit être un UUID, reçu : '$rawSession'.",
+                    status = HttpStatusCode.Unauthorized,
+                    title = "Authentification requise",
+                    type = AUTH_REQUIRED_TYPE,
+                    detail = "Cette action nécessite une session valide.",
                 )
                 return@post
             }
@@ -322,7 +341,19 @@ fun Route.puzzles(
                 return@post
             }
 
-        when (val outcome = withContext(Dispatchers.IO) { revealCellHint.execute(puzzleId, sessionId, body.row, body.column) }) {
+        val outcome =
+            hintWriteCoordinator.withUserLock(cached.userId) { conn ->
+                val fresh = cookieVerifier.verifyFresh(rawCookie)
+                if (fresh == null || fresh.userId != cached.userId) {
+                    RevealCellHintOutcome.SessionRevoked
+                } else {
+                    withContext(Dispatchers.IO) {
+                        revealCellHint.execute(conn, puzzleId, fresh.userId, body.row, body.column)
+                    }
+                }
+            }
+
+        when (outcome) {
             is RevealCellHintOutcome.Granted ->
                 call.respond(
                     RevealCellHintResult(
@@ -352,6 +383,13 @@ fun Route.puzzles(
                     title = "Coordonnées invalides",
                     type = INVALID_COORD_TYPE,
                     detail = outcome.reason,
+                )
+            is RevealCellHintOutcome.SessionRevoked ->
+                call.respondProblem(
+                    status = HttpStatusCode.Unauthorized,
+                    title = "Session expirée",
+                    type = AUTH_REQUIRED_TYPE,
+                    detail = "Votre session a été invalidée.",
                 )
         }
     }
@@ -410,6 +448,18 @@ fun Route.puzzles(
                 )
         }
     }
+}
+
+private suspend fun remainingHintsFor(
+    cookieVerifier: CookieVerifier,
+    hintUsageRepository: HintUsageRepository,
+    rawCookie: String?,
+    puzzleId: UUID,
+    hintsAllowed: Int,
+): Int {
+    val who = cookieVerifier.verify(rawCookie) ?: return hintsAllowed
+    val used = withContext(Dispatchers.IO) { hintUsageRepository.usedFor(puzzleId, who.userId) }
+    return (hintsAllowed - used).coerceAtLeast(0)
 }
 
 private sealed interface DimensionParse {

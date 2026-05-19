@@ -1,14 +1,15 @@
 package com.bliss.grid.application.puzzle
 
+import java.sql.Connection
 import java.util.UUID
 
 /**
- * Per-(puzzle, player) hint counter. Decoupled from `PuzzleRepository` so a
+ * Per-(puzzle, user) hint counter. Decoupled from `PuzzleRepository` so a
  * shared puzzleId URL gives every caller their own bucket — a stranger
  * opening the link can't burn hints out from under the original player.
  *
- * The wire schema documents identification as a server concern; v1 keys on
- * the X-Session-Id header (UUID v7, mirrors game/api's SessionId).
+ * Keyed on the authenticated user resolved from the `__Secure-ws_session`
+ * cookie; the hints POST is authed-only.
  */
 interface HintUsageRepository {
     /**
@@ -17,17 +18,28 @@ interface HintUsageRepository {
      * happened — the route maps null to 429). Implementations MUST be
      * single-statement-atomic so two concurrent spends at the cap can
      * never both succeed.
+     *
+     * The write path passes the locked [conn] from
+     * [HintWriteCoordinator.withUserLock] so `trySpend` runs inside the
+     * same transaction as `pg_advisory_xact_lock` and the under-lock
+     * fresh cookie re-verify.
      */
     fun trySpend(
+        conn: Connection,
         puzzleId: UUID,
-        sessionId: UUID,
+        userId: UUID,
         hintsAllowed: Int,
     ): Int?
 
+    /** Returns `hints_used` for ([puzzleId], [userId]), or 0 if no row exists. Used by the read path to embed `hintsRemaining`. */
+    fun usedFor(
+        puzzleId: UUID,
+        userId: UUID,
+    ): Int
+
     /**
-     * Right-to-erasure (RGPD Article 17, ADR-0025 §5). Removes every
-     * hint-usage row tied to [sessionId] across all puzzles. Returns the
-     * number of rows deleted (0 if the session never used a hint).
+     * RGPD Article 17. Removes every hint-usage row tied to [userId]
+     * across all puzzles. Returns the number of rows deleted. Idempotent.
      */
-    fun deleteBySession(sessionId: UUID): Int
+    fun deleteByUser(userId: UUID): Int
 }

@@ -57,6 +57,10 @@ paths:
         clue selection is unaffected — the cooldown machinery is bypassed
         end-to-end. Cache hits return the persisted grid as-is regardless of
         the header, so the same `puzzleId` always yields the same clues.
+
+        When a `__Secure-ws_session` cookie is presented, `hintsRemaining`
+        reflects the authenticated user's per-puzzle remaining hint count;
+        anonymous callers receive `hintsRemaining` equal to `hintsAllowed`.
       tags: [puzzles]
       parameters:
         - $ref: '#/components/parameters/PuzzleId'
@@ -249,17 +253,19 @@ paths:
         request. Brute-forcing the full solution still requires
         `hintsAllowed` calls and is bounded by edge rate limiting.
 
-        Player identity on the wire is the `X-Session-Id` header (UUID v7,
-        same convention as `game/api`'s `SessionId`). The server keeps a
-        per-(puzzle, session) hint counter; absent or malformed values
-        produce a 400 `invalid-session-id` response. Coordinates that
-        point at a non-letter cell (definition or block) or that fall
-        outside the puzzle bounds produce a 400 `invalid-coord` and do
-        NOT decrement the budget.
+        Player identity on the wire is the `__Secure-ws_session` cookie
+        issued by identity-api. The server verifies the cookie against
+        identity-api's whoami endpoint and keys a per-(puzzle, user) hint
+        counter on the resolved `userId`. Missing or revoked cookies
+        produce a 401 `auth-required` response. Coordinates that point at
+        a non-letter cell (definition or block) or that fall outside the
+        puzzle bounds produce a 400 `invalid-coord` and do NOT decrement
+        the budget.
       tags: [hints]
+      security:
+        - sessionCookie: []
       parameters:
         - $ref: '#/components/parameters/PuzzleId'
-        - $ref: '#/components/parameters/SessionId'
       requestBody:
         required: true
         content:
@@ -279,8 +285,6 @@ paths:
         '400':
           description: |
             Request is malformed. RFC 7807. Variants:
-            - `X-Session-Id` absent or not a valid UUID
-              (`type` = `https://bliss.example/errors/invalid-session-id`).
             - Path parameter `puzzleId` is not a valid UUID
               (`type` = `https://bliss.example/errors/invalid-puzzle-id`).
             - Request body missing or unparseable
@@ -288,6 +292,15 @@ paths:
             - `(row, column)` is out of bounds or points at a non-letter
               cell (`type` = `https://bliss.example/errors/invalid-coord`).
               The hint budget is NOT decremented in this case.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '401':
+          description: |
+            No valid `__Secure-ws_session` cookie. The session is missing,
+            unparseable, or has been revoked. RFC 7807;
+            `type` is `https://bliss.example/errors/auth-required`.
           content:
             application/problem+json:
               schema:
@@ -415,6 +428,17 @@ paths:
                 $ref: '#/components/schemas/Problem'
 
 components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: __Secure-ws_session
+      description: |
+        Identity-api session cookie. The server verifies it against
+        identity-api's whoami endpoint and resolves the calling user's
+        `userId`. Missing or revoked cookies produce a 401
+        `auth-required` response on protected operations.
+
   parameters:
     PuzzleId:
       name: puzzleId
@@ -423,19 +447,6 @@ components:
       description: UUID v7 identifier of the puzzle.
       schema:
         $ref: '#/components/schemas/PuzzleId'
-
-    SessionId:
-      name: X-Session-Id
-      in: header
-      required: true
-      description: |
-        UUID v7 identifying the calling player's session. The server uses
-        this to track per-(puzzle, session) hint budgets. Absent or
-        non-UUID values produce a 400 `invalid-session-id` response.
-      schema:
-        type: string
-        format: uuid
-        example: 019186c5-d702-7b3a-a3d4-b40dc2d6d871
 
     OptionalSessionId:
       name: X-Session-Id
@@ -501,7 +512,7 @@ components:
     Puzzle:
       type: object
       description: A complete mots-fléchés puzzle ready to render and play.
-      required: [id, title, language, width, height, cells, clues, hintsAllowed, createdAt]
+      required: [id, title, language, width, height, cells, clues, hintsAllowed, hintsRemaining, createdAt]
       properties:
         id:
           $ref: '#/components/schemas/PuzzleId'
@@ -579,6 +590,16 @@ components:
             the server returns 429. The budget scope (per puzzle, per player)
             is server-defined; the wire contract only carries the cap.
           example: 3
+        hintsRemaining:
+          type: integer
+          minimum: 0
+          description: |
+            Hints still available for this puzzle for the current user;
+            equals `hintsAllowed` for anonymous callers (no
+            `__Secure-ws_session` cookie). When a cookie is presented and
+            verified, this is `hintsAllowed - hintsUsed` for the resolved
+            `userId`.
+          example: 2
         createdAt:
           type: string
           format: date-time
