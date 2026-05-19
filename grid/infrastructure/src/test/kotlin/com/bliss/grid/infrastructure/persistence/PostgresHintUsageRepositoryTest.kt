@@ -2,6 +2,7 @@ package com.bliss.grid.infrastructure.persistence
 
 import assertk.assertThat
 import assertk.assertions.isEqualTo
+import assertk.assertions.isGreaterThanOrEqualTo
 import assertk.assertions.isNull
 import com.bliss.grid.application.puzzle.StoredPuzzle
 import com.bliss.grid.domain.model.Column
@@ -125,6 +126,40 @@ class PostgresHintUsageRepositoryTest {
             hintUsage.trySpend(conn, puzzleId, userId, hintsAllowed = 3)
         }
         assertThat(hintUsage.usedFor(puzzleId, userId)).isEqualTo(2)
+    }
+
+    @Test
+    fun `deleteByUser blocks while another transaction holds the user advisory lock`() {
+        val (puzzleId, userId) = setup()
+        withConnection { conn ->
+            hintUsage.trySpend(conn, puzzleId, userId, hintsAllowed = 3)
+        }
+        val holdMillis = 500L
+        val holderReleased = java.util.concurrent.CountDownLatch(1)
+        val holderStarted = java.util.concurrent.CountDownLatch(1)
+        val holder =
+            Thread {
+                dataSource.connection.use { conn ->
+                    conn.autoCommit = false
+                    conn.prepareStatement("SELECT pg_advisory_xact_lock(hashtext(?))").use { stmt ->
+                        stmt.setString(1, "user:$userId")
+                        stmt.execute()
+                    }
+                    holderStarted.countDown()
+                    Thread.sleep(holdMillis)
+                    conn.commit()
+                    holderReleased.countDown()
+                }
+            }
+        holder.start()
+        holderStarted.await()
+        val startNs = System.nanoTime()
+        val deleted = hintUsage.deleteByUser(userId)
+        val elapsedMs = (System.nanoTime() - startNs) / 1_000_000
+        holder.join()
+        assertThat(deleted).isEqualTo(1)
+        // Lock contention forces deleteByUser to wait at least 450ms while the holder thread sleeps 500ms.
+        assertThat(elapsedMs).isGreaterThanOrEqualTo(450L)
     }
 
     @Test
