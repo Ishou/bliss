@@ -7,6 +7,7 @@ import io.nats.client.Connection
 import io.nats.client.Nats
 import io.nats.client.Options
 import io.nats.client.PushSubscribeOptions
+import io.nats.client.Subscription
 import io.nats.client.api.AckPolicy
 import io.nats.client.api.ConsumerConfiguration
 import io.nats.client.api.StorageType
@@ -119,19 +120,11 @@ class MaxDeliveriesDlqRepublisherIT {
             )
         republisher.start()
 
-        // Subscribe to the DLQ subject BEFORE publishing so we don't race the republish.
-        val dlqStreamSub =
-            connection.jetStream().subscribe(
-                "wordsparrow.dlq.>",
-                PushSubscribeOptions
-                    .builder()
-                    .configuration(
-                        ConsumerConfiguration
-                            .builder()
-                            .ackPolicy(AckPolicy.None)
-                            .build(),
-                    ).build(),
-            )
+        // Core NATS sub on the DLQ subject — the republisher calls Connection.publish (core),
+        // so a core subscriber observes the dead-lettered message directly without needing
+        // a JetStream consumer on the DLQ stream (which has flaky wildcard-stream lookup).
+        val dlqSub: Subscription = connection.subscribe("wordsparrow.dlq.>")
+        connection.flush(Duration.ofSeconds(5))
 
         val userId = UUID.randomUUID().toString()
         val payload = """{"userId":"$userId","deletedAt":"2026-05-19T12:00:00Z"}"""
@@ -139,7 +132,7 @@ class MaxDeliveriesDlqRepublisherIT {
 
         try {
             assumeTrue(attempts.await(20, TimeUnit.SECONDS)) { "max-deliver redeliveries never fired" }
-            val dlqMsg = dlqStreamSub.nextMessage(Duration.ofSeconds(15))
+            val dlqMsg = dlqSub.nextMessage(Duration.ofSeconds(15))
             assertThat(dlqMsg).isNotNull()
             assertThat(dlqMsg.subject).isEqualTo("wordsparrow.dlq.wordsparrow.user.deleted")
             assertThat(String(dlqMsg.data, Charsets.UTF_8)).isEqualTo(payload)
@@ -153,7 +146,7 @@ class MaxDeliveriesDlqRepublisherIT {
             pumpThread.interrupt()
             republisher.close()
             runCatching { sub.unsubscribe() }
-            runCatching { dlqStreamSub.unsubscribe() }
+            runCatching { dlqSub.unsubscribe() }
             runCatching { mgmt.deleteConsumer(STREAM, durable) }
             runCatching { mgmt.purgeStream(STREAM) }
             runCatching { mgmt.purgeStream(DLQ_STREAM) }
