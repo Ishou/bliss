@@ -15,11 +15,12 @@
 | # | Branch | Title |
 | - | --- | --- |
 | 6b.0 | `feat/grid-cookie-verifier` | feat(grid-api): CookieVerifier port + HttpCookieVerifier adapter |
-| 6b.1 | `feat/grid-hint-history-user-id` | feat(grid-api): hint history per user_id + race-free write |
+| 6b.1-schema | `chore/grid-openapi-hint-history` | chore(grid-api): openapi — hintsRemaining + cookie auth on hints POST |
+| 6b.1-impl | `feat/grid-hint-history-user-id` | feat(grid-api): hint history per user_id + race-free write |
 | 6b.2 | `feat/grid-user-deleted-consumer` | feat(grid-events): NATS user.deleted consumer cascade-deletes hint rows |
 | 6b.3 | `feat/frontend-hint-history-server` | feat(frontend-grid): read hintsRemaining from puzzle GET |
 
-Dispatch 6b.0 first. Wait for §6a LGTM + merge before dispatching 6b.1. 6b.2 depends on 6b.1's repository signature. 6b.3 can run in parallel with 6b.2 once 6b.1's OpenAPI is merged.
+Dispatch order: 6b.0 first. Once 6b.0 merges, dispatch 6b.1-schema (schema-first per ADR-0001 §3). Once schema merges, 6b.1-impl and 6b.3 unblock in parallel. 6b.2 starts after 6b.1-impl merges (depends on the repository signature change).
 
 ---
 
@@ -38,38 +39,13 @@ Dispatch 6b.0 first. Wait for §6a LGTM + merge before dispatching 6b.1. 6b.2 de
 
 **Reference:** game-api's `HttpCookieVerifier.kt` (read it in full) — port the same code; the only delta is the additional `verifyFresh` method.
 
-### Task 1: Domain identifiers grid-side
+### Task 1: WhoAmI data class
 
 Grid-domain doesn't have `UserId` or `Pseudonym` yet. Either reuse `java.util.UUID` directly for `UserId` (acceptable — grid's domain is thin and doesn't need a value class for what it just passes through), or mint local value classes mirroring game's. **Decision:** keep it lightweight — use `UUID` directly and a `String` for displayName. The application port surfaces a `WhoAmI(userId: UUID, displayName: String)`.
 
-- [ ] **Step 1: Write failing test for WhoAmI data class**
+No dedicated test — `WhoAmI` is a Kotlin `data class`, so field round-trip is language-guaranteed (CLAUDE.md "Testing": don't test trivial getters/delegation). Behaviour is covered implicitly by `HttpCookieVerifierTest` (Task 3).
 
-`grid/application/src/test/kotlin/com/bliss/grid/application/auth/WhoAmITest.kt`:
-```kotlin
-package com.bliss.grid.application.auth
-
-import assertk.assertThat
-import assertk.assertions.isEqualTo
-import java.util.UUID
-import org.junit.jupiter.api.Test
-
-class WhoAmITest {
-    @Test
-    fun `holds the parsed userId and displayName`() {
-        val id = UUID.randomUUID()
-        val w = WhoAmI(userId = id, displayName = "Isho")
-        assertThat(w.userId).isEqualTo(id)
-        assertThat(w.displayName).isEqualTo("Isho")
-    }
-}
-```
-
-- [ ] **Step 2: Run, expect "unresolved reference WhoAmI"**
-
-Run: `./gradlew :grid:application:test --tests "WhoAmITest"`
-Expected: COMPILATION FAILURE — `WhoAmI` not defined.
-
-- [ ] **Step 3: Implement WhoAmI**
+- [ ] **Step 1: Implement WhoAmI**
 
 `grid/application/src/main/kotlin/com/bliss/grid/application/auth/WhoAmI.kt`:
 ```kotlin
@@ -83,9 +59,9 @@ data class WhoAmI(
 )
 ```
 
-- [ ] **Step 4: Run, expect green**
+- [ ] **Step 2: Compile**
 
-Run: `./gradlew :grid:application:test --tests "WhoAmITest"` → PASS.
+Run: `./gradlew :grid:application:compileKotlin` → PASS.
 
 ### Task 2: CookieVerifier port
 
@@ -217,11 +193,67 @@ gh pr create --title "feat(grid-api): CookieVerifier port + HttpCookieVerifier a
 
 ---
 
-## Sub-PR 6b.1 — Hint history per user_id + race-free write
+## Sub-PR 6b.1-schema — OpenAPI bump (schema-first)
 
-**Branch:** `feat/grid-hint-history-user-id` off `main` (after 6b.0 merges).
+**Branch:** `chore/grid-openapi-hint-history` off `main` (after 6b.0 merges).
 
-**Goal:** Drop session_id from `puzzle_hint_usage`, key on user_id, embed `hintsRemaining` in `GET /v1/puzzles/{id}` when authed, and make the hint POST race-free with the under-lock fresh re-verify pattern.
+**Goal:** Per ADR-0001 §3, schema PRs ship in isolation before implementation. This PR is OpenAPI-only — adds `hintsRemaining` to `PuzzleResponse` and switches the hints POST from `X-Session-Id` header auth to `__Secure-ws_session` cookie auth + 401 response.
+
+**Files:**
+- Modify: `grid/api/openapi.yaml`
+
+### Task 1: PuzzleResponse — add hintsRemaining
+
+- [ ] **Step 1: Edit the schema**
+
+Add `hintsRemaining: { type: integer, minimum: 0, description: "Hints still available for this puzzle for the current user; equals hintsAllowed for anonymous callers." }` to `PuzzleResponse`. Mark required.
+
+### Task 2: POST /v1/puzzles/{puzzleId}/hints — cookie auth + 401
+
+- [ ] **Step 1: Define cookie security scheme**
+
+Under `components.securitySchemes`, add (if not already present from another bounded context's spec):
+```yaml
+sessionCookie:
+  type: apiKey
+  in: cookie
+  name: __Secure-ws_session
+```
+
+- [ ] **Step 2: Apply the scheme to the hints POST**
+
+Remove the `X-Session-Id` header parameter from the operation. Add `security: [{ sessionCookie: [] }]`. Add the `401` response (Problem Details body, reusing the existing Problem schema).
+
+### Task 3: Validate
+
+- [ ] **Step 1: Lint + regenerate clients**
+
+Run: `./gradlew :grid:api:openApiValidate` (or the project's equivalent) → PASS.
+Run: `pnpm --filter frontend run openapi:generate` if the openapi-types path is wired to grid; commit the regenerated TS types alongside the YAML.
+
+### Task 4: Commit + PR
+
+- [ ] **Step 1: Stage + commit**
+
+```bash
+git add grid/api/openapi.yaml frontend/  # if regen produced files
+git commit -m "chore(grid-api): openapi — hintsRemaining + cookie auth on hints POST (Phase 6b.1-schema)"
+```
+
+- [ ] **Step 2: Push + PR**
+
+```bash
+git push -u origin chore/grid-openapi-hint-history
+gh pr create --title "chore(grid-api): openapi — hintsRemaining + cookie auth on hints POST (Phase 6b.1-schema)" --body "Schema-first PR per ADR-0001 §3. Unblocks 6b.1-impl (backend) and 6b.3 (frontend) to run in parallel against the agreed shape."
+```
+
+---
+
+## Sub-PR 6b.1-impl — Hint history per user_id + race-free write
+
+**Branch:** `feat/grid-hint-history-user-id` off `main` (after 6b.1-schema merges).
+
+**Goal:** Drop session_id from `puzzle_hint_usage`, key on user_id, embed `hintsRemaining` in `GET /v1/puzzles/{id}` when authed, and make the hint POST race-free with the under-lock fresh re-verify pattern. The OpenAPI is already merged (6b.1-schema); this PR implements against it.
 
 **Files:**
 - Create: `grid/api/src/main/resources/db/migration/V6__puzzle_hint_usage_user_id.sql`
@@ -402,7 +434,7 @@ post("/v1/puzzles/{puzzleId}/hints") {
 }
 ```
 
-Add the new outcome variant in the use case's sealed class: `data object SessionRevoked : RevealCellHintOutcome()`. Add `AUTH_REQUIRED_TYPE` constant (`"about:blank/auth-required"` or similar — mirror existing problem types).
+Add the new outcome variant in the use case's sealed class: `data object SessionRevoked : RevealCellHintOutcome()`. Add `AUTH_REQUIRED_TYPE = "https://bliss.example/errors/auth-required"` per ADR-0003 §5 — every existing problem type in `PuzzleRoute.kt` uses the `https://bliss.example/errors/<slug>` pattern.
 
 The route + use case + repository need to share one transaction so the advisory lock, the fresh re-verify, and the INSERT all see the same locked state (`pg_advisory_xact_lock` releases on commit). Implementer's choice on layering — two reasonable options:
 
@@ -437,19 +469,7 @@ In `PuzzleRoute.kt` GET handler: after fetching the puzzle, read the cookie, cal
 
 Run: `./gradlew :grid:api:test` → PASS.
 
-### Task 6: OpenAPI bump
-
-- [ ] **Step 1: Update `grid/api/openapi.yaml`**
-
-- Add `hintsRemaining: { type: integer, minimum: 0 }` to `PuzzleResponse` schema, marked required.
-- Change `POST /v1/puzzles/{puzzleId}/hints` security: remove `X-Session-Id` header parameter, add cookie auth scheme `__Secure-ws_session` (define `securitySchemes` if not present; mirror identity-api's schema).
-- Add `401` response to `POST /v1/puzzles/{puzzleId}/hints`.
-
-- [ ] **Step 2: Validate OpenAPI**
-
-Run: `./gradlew :grid:api:openApiValidate` (or whatever the project's validator task is). Expect PASS.
-
-### Task 7: Commit + open PR
+### Task 6: Commit + open PR
 
 - [ ] **Step 1: Stage and commit**
 
@@ -488,7 +508,7 @@ gh pr create --title "feat(grid-api): hint history per user_id + race-free write
 - Create: `grid/infrastructure/src/test/kotlin/com/bliss/grid/infrastructure/events/UserEventSubscribersIT.kt`
 - Modify: `grid/api/src/main/kotlin/com/bliss/grid/api/Module.kt` (wire JetStream subscription on boot, close on shutdown)
 - Modify: `grid/infrastructure/build.gradle.kts` (add `io.nats:jnats` dep if not already present)
-- Modify: `grid/infrastructure/src/main/kotlin/com/bliss/grid/infrastructure/persistence/PostgresHintUsageRepository.kt` — add `deleteByUserUnderLock(userId)` that acquires the lock then deletes in a single transaction. (This is the consumer's entrypoint.)
+- Modify: `grid/infrastructure/src/main/kotlin/com/bliss/grid/infrastructure/persistence/PostgresHintUsageRepository.kt` — `deleteByUser(userId)` (the port method, defined in 6b.1) acquires the advisory lock then deletes in a single transaction. The lock is an adapter implementation detail; the port surface stays clean.
 
 ### Task 1: NatsConnectionFactory + UserEventSubscribers
 
@@ -525,7 +545,7 @@ class GridUserDeletedHandler(
     suspend operator fun invoke(msg: Message) {
         val payload = json.decodeFromString(UserDeletedEvent.serializer(), msg.data.decodeToString())
         val userId = UUID.fromString(payload.userId)
-        repository.deleteByUserUnderLock(userId)
+        repository.deleteByUser(userId)   // port method; adapter takes the advisory lock internally
         msg.ack()
     }
 }
@@ -534,10 +554,12 @@ class GridUserDeletedHandler(
 private data class UserDeletedEvent(val userId: String, val occurredAt: String)
 ```
 
-`PostgresHintUsageRepository.deleteByUserUnderLock(userId)` implementation:
+In 6b.1 the adapter's `deleteByUser` was a single-statement DELETE. In 6b.2 we strengthen it to acquire the advisory lock first, in the same transaction, so it serializes against in-flight `trySpend` calls. The port signature does not change — the lock is purely an adapter implementation detail.
+
+`PostgresHintUsageRepository.deleteByUser(userId)` implementation:
 
 ```kotlin
-fun deleteByUserUnderLock(userId: UUID): Int =
+override fun deleteByUser(userId: UUID): Int =
     dataSource.connection.use { conn ->
         conn.autoCommit = false
         try {
