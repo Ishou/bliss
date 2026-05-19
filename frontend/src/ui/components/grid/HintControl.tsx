@@ -4,12 +4,7 @@ import { useHintGate } from '@/ui/components/auth';
 import { HintIcon } from '@/ui/components/icons';
 import type { HintLastResult } from './useHintRequest';
 
-// Toolbar affordance for the per-puzzle hint budget. Clicking spends one
-// credit to reveal the canonical letter at the currently focused cell.
-// The button is disabled while pending, once the budget hits zero
-// (server-authoritative hintsRemaining), or while the gate locks anon
-// callers out. Focus / locked-cell guards happen in the click handler
-// to preserve the uncontrolled-input contract from ADR-0002 §4.
+// Guards are in the click handler (not disabled prop) to preserve the uncontrolled-input contract (ADR-0002 §4).
 
 const containerStyles = css({
   position: 'relative',

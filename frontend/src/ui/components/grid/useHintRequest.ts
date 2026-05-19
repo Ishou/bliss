@@ -4,12 +4,7 @@ import {
   type PuzzleSolver,
 } from '@/application';
 
-// Owner-side state for the hint affordance. Seeded from the server's
-// `Puzzle.hintsRemaining` on first paint, then overwritten on every
-// successful POST. 429 (`budget-exhausted`) flips `exhausted` and
-// disables the affordance for the rest of this puzzle. 400
-// `invalid-coord` is a stale-focus race; surface as a transient error
-// without changing the budget. Reset when the puzzle reference changes.
+// Seeds from `Puzzle.hintsRemaining`; server overwrites on each POST; 429 flips exhausted; resets on puzzle change.
 
 const RESULT_LINGER_MS = 4_000;
 
