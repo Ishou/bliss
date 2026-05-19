@@ -6,7 +6,7 @@ import io.nats.client.Nats
 import io.nats.client.Options
 import java.time.Duration
 
-/** Synchronous grid-api → NATS connection (ADR-0049); mirrors game-api's helper. */
+/** NATS connection helper for grid-api (ADR-0049). */
 class NatsConnectionFactory(
     private val natsUrl: String,
 ) {
