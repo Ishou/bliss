@@ -105,11 +105,7 @@ fun Route.lobbyWebSocketRoute(
 
         sessionManager.register(lobbyId, this)
 
-        // Resolve signed-in identity from the __Secure-ws_session cookie ONCE
-        // per upgrade. The bind is best-effort: an unreachable identity-api
-        // (verify returns null) falls back to "anonymous for this socket" — the
-        // user can still play, they just won't be force-disconnected on a
-        // future user.deleted event. Anonymous sockets are not indexed.
+        // Best-effort: verify failure → anonymous-for-this-socket (no force-disconnect on revocation).
         if (cookieVerifier != null) {
             val rawCookie = call.request.cookies[CookieNames.SESSION]
             if (!rawCookie.isNullOrBlank()) {

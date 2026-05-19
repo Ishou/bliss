@@ -60,14 +60,7 @@ class SessionManager(
     private val sessionToSessionId = ConcurrentHashMap<LobbyId, MutableMap<DefaultWebSocketServerSession, String>>()
     private val sessionIdToSessions = ConcurrentHashMap<LobbyId, MutableMap<String, MutableSet<DefaultWebSocketServerSession>>>()
 
-    // Cross-lobby index for forced-disconnect on user.deleted (and future
-    // session.revoked) events. Populated only when the WS upgrade resolved a
-    // signed-in identity from the __Secure-ws_session cookie; anonymous
-    // sockets are NOT indexed (nothing to revoke). The reverse map
-    // [sessionToUserId] is used by [unregister] to clean up the index in O(1)
-    // without scanning every user's set. Both are concurrent maps; mutations
-    // are guarded by the per-lobby lock so they observe the same cleanup
-    // ordering as [sessionToSessionId] above.
+    // Cross-lobby user → sockets index for revocation; anonymous sockets are not indexed.
     private val userIdToSessions = ConcurrentHashMap<UserId, MutableSet<DefaultWebSocketServerSession>>()
     private val sessionToUserId = ConcurrentHashMap<DefaultWebSocketServerSession, UserId>()
 
@@ -121,9 +114,6 @@ class SessionManager(
             }
             val set = connections[lobbyId] ?: return@synchronized boundSessionId
             set.remove(session)
-            // Always clear the user-revocation index for this socket, even
-            // when the lobby's connection set itself survives — the userId
-            // index is keyed by socket, not by lobby.
             val boundUserId = sessionToUserId.remove(session)
             if (boundUserId != null) {
                 userIdToSessions[boundUserId]?.let { sockets ->
@@ -143,18 +133,7 @@ class SessionManager(
             boundSessionId
         }
 
-    /**
-     * Records that [session] (upgraded under lobby [lobbyId]) belongs to the
-     * signed-in identity [userId]. Idempotent — re-binding the same pair is a
-     * no-op. A second [bindUserId] call on the same [session] with a different
-     * [userId] replaces the prior binding (the route never does this today,
-     * but the behaviour is documented for future-proofing).
-     *
-     * The bind happens at WS upgrade time, after the cookie is verified once;
-     * the index is then consulted by [closeAllForUser] when a `user.deleted`
-     * / future `session.revoked` NATS event arrives. Anonymous sockets are
-     * never bound — they have no `userId` to revoke against.
-     */
+    /** Indexes [session] under [userId] for revocation; idempotent, anonymous sockets are not bound. */
     fun bindUserId(
         lobbyId: LobbyId,
         session: DefaultWebSocketServerSession,
@@ -174,20 +153,7 @@ class SessionManager(
         }
     }
 
-    /**
-     * Closes every currently-registered socket previously bound to [userId]
-     * via [bindUserId] with a `GOING_AWAY` close frame. Returns the number of
-     * sockets that were ordered to close (0 when the user has no live
-     * sockets). Idempotent — a re-fire after the index is empty is a no-op.
-     *
-     * Implementation: snapshots the per-user set (`toList`) so concurrent
-     * `unregister` calls during the close-fan-out are safe. Per-session close
-     * failures are caught and logged so a single flaky socket cannot block
-     * the fan-out to the rest of the user's sockets. The route's
-     * `finally { unregister(...) }` block clears the indexes once the close
-     * frame is observed by the read loop — this method does NOT remove
-     * entries itself, to keep ownership of cleanup in one place.
-     */
+    /** Sends GOING_AWAY to every socket bound to [userId]; returns the count ordered to close. */
     suspend fun closeAllForUser(userId: UserId): Int {
         val sockets = userIdToSessions[userId]?.toList().orEmpty()
         var closed = 0

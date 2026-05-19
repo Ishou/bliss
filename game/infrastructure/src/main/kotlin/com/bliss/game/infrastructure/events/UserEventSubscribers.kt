@@ -60,11 +60,7 @@ class UserEventSubscribers(
                         lobbies.anonymizeUserSeats(conn, userId, REPLACEMENT_PSEUDONYM)
                     }
                 touched.forEach { rosterBroadcaster.notifyRosterChanged(it) }
-                // Order matters: DB writes commit first under the advisory
-                // lock, then we force-close any live WS sockets bound to the
-                // deleted user so their in-memory LobbyPlayer.userId snapshot
-                // cannot diverge from the now-anonymised seat row. Idempotent;
-                // safe to retry on consumer redelivery.
+                // DB commits first under the advisory lock; WS close runs after for idempotent cleanup.
                 wsRevocation?.disconnectAllForUser(userId)
                 log.info("user.deleted processed: userId={} touched={} lobbies", event.userId, touched.size)
             }

@@ -16,8 +16,6 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeout
 import org.junit.jupiter.api.Test
 import io.ktor.client.plugins.websocket.WebSockets as ClientWebSockets
@@ -34,8 +32,6 @@ class WebSocketRevocationBroadcasterAdapterTest {
             val adapter = WebSocketRevocationBroadcasterAdapter(manager)
             val sessionLatch = CompletableDeferred<DefaultWebSocketServerSession>()
             val serverCloseSignal = CompletableDeferred<Unit>()
-            val received = mutableListOf<String>()
-            val receivedMutex = Mutex()
 
             application {
                 install(WebSockets)
@@ -63,23 +59,16 @@ class WebSocketRevocationBroadcasterAdapterTest {
                     async {
                         client.clientWebSocket("/ws") {
                             for (frame in incoming) {
-                                if (frame is Frame.Text) {
-                                    val text = frame.readText()
-                                    receivedMutex.withLock { received.add(text) }
-                                }
+                                if (frame is Frame.Text) frame.readText()
                             }
                         }
                     }
 
                 withTimeout(5_000) { sessionLatch.await() }
-                // Adapter delegates to SessionManager.closeAllForUser; we
-                // observe the side-effect: the server's finally{} runs.
                 adapter.disconnectAllForUser(userId)
                 withTimeout(5_000) { serverCloseSignal.await() }
                 awaitAll(clientJob)
             }
-            // Sanity: the index was emptied after the close handshake — a
-            // second invocation finds nothing to close (idempotent).
             assertThat(manager.closeAllForUser(userId)).isEqualTo(0)
         }
 }

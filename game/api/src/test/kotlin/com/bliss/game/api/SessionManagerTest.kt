@@ -218,8 +218,6 @@ class SessionManagerTest {
             harness.manager.bindUserId(lobbyId, harness.sessions[1], userId)
             val closed = harness.manager.closeAllForUser(userId)
             assertThat(closed).isEqualTo(2)
-            // The route's finally{} block runs as the close frame is observed;
-            // the harness awaits the server-side close completion.
             harness.awaitClosed(0)
             harness.awaitClosed(1)
         }
@@ -228,7 +226,6 @@ class SessionManagerTest {
     fun `closeAllForUser is a noop when no socket is bound to that user`() =
         withSessions(count = 1) { harness ->
             val userId = UserId("0190e3a4-7a2c-4c9e-8f1a-9b2d3e4f5a6c")
-            // Nothing bound — closing should return 0 and not throw.
             assertThat(harness.manager.closeAllForUser(userId)).isEqualTo(0)
         }
 
@@ -242,9 +239,6 @@ class SessionManagerTest {
             val closed = harness.manager.closeAllForUser(target)
             assertThat(closed).isEqualTo(1)
             harness.awaitClosed(0)
-            // The other user's socket is still alive — connectedCount still
-            // accounts for it (the closed socket's unregister will fire
-            // asynchronously as the close handshake completes).
             assertThat(harness.manager.connectedCount(lobbyId) in 1..2).isTrue()
         }
 
@@ -254,8 +248,6 @@ class SessionManagerTest {
             val userId = UserId("0190e3a4-7a2c-4c9e-8f1a-9b2d3e4f5a6b")
             harness.manager.bindUserId(lobbyId, harness.sessions.single(), userId)
             harness.manager.unregister(lobbyId, harness.sessions.single())
-            // After unregister, the user's index is empty — closeAllForUser
-            // is a no-op, not a stale close attempt against a dead socket.
             assertThat(harness.manager.closeAllForUser(userId)).isEqualTo(0)
         }
 
