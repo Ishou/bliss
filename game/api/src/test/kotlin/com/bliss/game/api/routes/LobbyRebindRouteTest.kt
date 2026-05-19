@@ -168,11 +168,15 @@ class LobbyRebindRouteTest {
 
     private object AlwaysNullVerifier : CookieVerifier {
         override suspend fun verify(rawCookieValue: String?): WhoAmI? = null
+
+        override suspend fun verifyFresh(rawCookieValue: String?): WhoAmI? = null
     }
 
     private class AlwaysValidVerifier(
         private val result: WhoAmI,
     ) : CookieVerifier {
         override suspend fun verify(rawCookieValue: String?): WhoAmI? = result
+
+        override suspend fun verifyFresh(rawCookieValue: String?): WhoAmI? = result
     }
 }

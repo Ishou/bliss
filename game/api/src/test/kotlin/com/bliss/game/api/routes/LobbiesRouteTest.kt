@@ -252,6 +252,8 @@ class LobbiesRouteTest {
     private fun stubVerifier(returning: WhoAmI?): CookieVerifier =
         object : CookieVerifier {
             override suspend fun verify(rawCookieValue: String?): WhoAmI? = returning
+
+            override suspend fun verifyFresh(rawCookieValue: String?): WhoAmI? = returning
         }
 
     private fun testApplicationWithVerifier(

@@ -137,4 +137,63 @@ class HttpCookieVerifierTest {
             assertThat(result).isNull()
             assertThat(calls.get()).isEqualTo(1)
         }
+
+    @Test
+    fun `verifyFresh bypasses the cache even on a hot key`() =
+        runTest {
+            val calls = AtomicInteger()
+            val http =
+                client(calls) { _ -> { respond(okBody, HttpStatusCode.OK, jsonHeaders) } }
+            val verifier = HttpCookieVerifier(http, baseUrl)
+
+            val cached = verifier.verify("cookie-value")
+            val fresh = verifier.verifyFresh("cookie-value")
+
+            assertThat(cached).isNotNull()
+            assertThat(fresh).isEqualTo(cached)
+            assertThat(calls.get()).isEqualTo(2)
+        }
+
+    @Test
+    fun `verifyFresh returns null when identity-api returns 401 and invalidates any positive cache entry`() =
+        runTest {
+            val calls = AtomicInteger()
+            val http =
+                client(calls) { n ->
+                    {
+                        if (n == 1) {
+                            respond(okBody, HttpStatusCode.OK, jsonHeaders)
+                        } else {
+                            respond("", HttpStatusCode.Unauthorized, jsonHeaders)
+                        }
+                    }
+                }
+            val verifier = HttpCookieVerifier(http, baseUrl)
+
+            val positive = verifier.verify("cookie-value")
+            val fresh = verifier.verifyFresh("cookie-value")
+            val afterInvalidation = verifier.verify("cookie-value")
+
+            assertThat(positive).isNotNull()
+            assertThat(fresh).isNull()
+            assertThat(afterInvalidation).isNull()
+            // Two wire calls: the initial verify and the verifyFresh; the third call hits the negative cache.
+            assertThat(calls.get()).isEqualTo(2)
+        }
+
+    @Test
+    fun `verifyFresh fails closed on 5xx without caching`() =
+        runTest {
+            val calls = AtomicInteger()
+            val http =
+                client(calls) { _ -> { respond("", HttpStatusCode.BadGateway, jsonHeaders) } }
+            val verifier = HttpCookieVerifier(http, baseUrl)
+
+            val first = verifier.verifyFresh("flaky")
+            val second = verifier.verifyFresh("flaky")
+
+            assertThat(first).isNull()
+            assertThat(second).isNull()
+            assertThat(calls.get()).isEqualTo(2)
+        }
 }
