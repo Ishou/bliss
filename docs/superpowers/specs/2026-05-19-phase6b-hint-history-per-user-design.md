@@ -96,31 +96,16 @@ OpenAPI: add `hintsRemaining: integer`, always required, to the `PuzzleResponse`
 ```kotlin
 // inside the route handler
 val cached = cookieVerifier.verify(rawCookie) ?: return@post call.respond(401)
-val userId = cached.userId
 
-// transaction with advisory lock + fresh re-verify under lock
-val outcome = withContext(Dispatchers.IO) {
-    dataSource.connection.use { conn ->
-        conn.autoCommit = false
-        try {
-            conn.prepareStatement("SELECT pg_advisory_xact_lock(hashtext('user:' || ?::text))")
-                .use { it.setObject(1, userId); it.execute() }
-
-            // Fresh re-verify under lock — bypasses HttpCookieVerifier's 30 s cache.
-            val fresh = cookieVerifier.verifyFresh(rawCookie)
-                ?: throw SessionRevoked
-            if (fresh.userId != userId) throw SessionRevoked
-
-            revealCellHint.execute(conn, puzzleId, fresh.userId, body.row, body.column)
-                .also { conn.commit() }
-        } catch (e: Throwable) {
-            conn.rollback(); throw e
-        }
-    }
+// Coordinator owns the connection, advisory lock, and commit — route stays free of JDBC types.
+val outcome = hintWriteCoordinator.withUserLock(cached.userId) {
+    cookieVerifier.verifyFresh(rawCookie)?.takeIf { it.userId == cached.userId }
+        ?.let { fresh -> revealCellHint.execute(puzzleId, fresh.userId, body.row, body.column) }
+        ?: RevealCellHintOutcome.SessionRevoked
 }
 ```
 
-`CookieVerifier.verifyFresh(rawCookieValue)` calls identity-api's `/v1/auth/whoami` directly, bypassing the adapter's 30 s LRU cache. The lock + fresh-verify pair is the load-bearing pattern from the feedback memory: **modifying queries must not trust the cookie-verify cache**.
+`hintWriteCoordinator.withUserLock(userId, block)` (application/infrastructure adapter) opens a connection, acquires `pg_advisory_xact_lock('user:$userId')`, runs the closure, and commits — keeping JDBC types out of the application and use-case layers. `CookieVerifier.verifyFresh(rawCookieValue)` calls identity-api's `/v1/auth/whoami` directly, bypassing the adapter's 30 s LRU cache. The lock + fresh-verify pair is the load-bearing pattern from the feedback memory: **modifying queries must not trust the cookie-verify cache**.
 
 ### 4.3 GDPR delete — NATS consumer
 
@@ -128,21 +113,14 @@ JetStream subscription `wordsparrow.user.deleted`, durable consumer `grid-user-d
 
 ```kotlin
 suspend fun handle(msg: Message) {
-    val payload = Json.decodeFromString<UserDeletedPayload>(msg.data.decodeToString())
+    val payload = json.decodeFromString<UserDeletedPayload>(msg.data.decodeToString())
     val userId = UUID.fromString(payload.userId)
-    dataSource.connection.use { conn ->
-        conn.autoCommit = false
-        conn.prepareStatement("SELECT pg_advisory_xact_lock(hashtext('user:' || ?::text))")
-            .use { it.setObject(1, userId); it.execute() }
-        conn.prepareStatement("DELETE FROM puzzle_hint_usage WHERE user_id = ?")
-            .use { it.setObject(1, userId); it.executeUpdate() }
-        conn.commit()
-    }
+    repository.deleteByUser(userId)  // port method; adapter acquires advisory lock internally
     msg.ack()  // explicit ack only on success — redelivery on crash is safe (idempotent DELETE).
 }
 ```
 
-The lock guarantees that any in-flight `trySpend` either (a) committed before this consumer started — its row is deleted here — or (b) executes after this consumer commits and its fresh re-verify returns 401 (session was cascade-revoked by identity-api).
+The advisory lock is acquired inside `PostgresHintUsageRepository.deleteByUser` (the adapter); the subscriber only sees the port interface. The lock guarantees that any in-flight `trySpend` either (a) committed before this consumer started — its row is deleted here — or (b) executes after this consumer commits and its fresh re-verify returns 401 (session was cascade-revoked by identity-api).
 
 ## 5. Race-free write — proof sketch
 
