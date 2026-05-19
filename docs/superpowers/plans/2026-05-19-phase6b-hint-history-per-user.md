@@ -272,9 +272,7 @@ gh pr create --title "chore(grid-api): openapi — hintsRemaining + cookie auth 
 
 `grid/api/src/main/resources/db/migration/V6__puzzle_hint_usage_user_id.sql`:
 ```sql
--- Phase 6b: re-key puzzle_hint_usage from session_id to user_id.
--- Hard cutover (pre-alpha): no rows to preserve.
-
+-- Hard cutover: no production rows to preserve.
 TRUNCATE TABLE puzzle_hint_usage;
 
 ALTER TABLE puzzle_hint_usage DROP CONSTRAINT puzzle_hint_usage_pkey;
@@ -407,21 +405,11 @@ post("/v1/puzzles/{puzzleId}/hints") {
         return@post
     }
 
-    val outcome = withContext(Dispatchers.IO) {
-        dataSource.connection.use { conn ->
-            conn.autoCommit = false
-            try {
-                conn.prepareStatement("SELECT pg_advisory_xact_lock(hashtext('user:' || ?::text))").use {
-                    it.setString(1, cached.userId.toString()); it.execute()
-                }
-                val fresh = cookieVerifier.verifyFresh(rawCookie)
-                if (fresh == null || fresh.userId != cached.userId) {
-                    conn.rollback(); return@use RevealCellHintOutcome.SessionRevoked
-                }
-                val r = revealCellHint.execute(conn, puzzleId, fresh.userId, body.row, body.column)
-                conn.commit(); r
-            } catch (t: Throwable) { conn.rollback(); throw t }
-        }
+    // Option 2 (preferred): coordinator owns the connection lifecycle
+    val outcome = hintWriteCoordinator.withUserLock(cached.userId) {
+        cookieVerifier.verifyFresh(rawCookie)?.takeIf { it.userId == cached.userId }
+            ?.let { fresh -> revealCellHint.execute(puzzleId, fresh.userId, body.row, body.column) }
+            ?: RevealCellHintOutcome.SessionRevoked
     }
 
     when (outcome) {
