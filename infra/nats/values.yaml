@@ -52,12 +52,13 @@ stream:
 # Dead-letter stream for messages that exhaust their consumer's MaxDeliver
 # retry budget (ADR-0049 scaling-readiness requirement). Disabled by default
 # so the existing single-stream install stays unaffected; values-prod.yaml
-# flips this on. Subject naming: wordsparrow.user.events.dlq.<orig>.<userId>
-# (publisher convention; the stream just captures the subject tree).
+# flips this on. Subject naming: wordsparrow.dlq.<orig-subject> — distinct
+# from the primary stream's wordsparrow.user.> tree so JetStream doesn't
+# reject the second stream for subject-tree overlap.
 dlq:
   enabled: false
   name: WORDSPARROW_USER_EVENTS_DLQ
-  subjects: ["wordsparrow.user.events.dlq.>"]
+  subjects: ["wordsparrow.dlq.>"]
   # 30 days — long enough to triage a failure surfaced by the consumer-lag
   # / DLQ alerts (see PrometheusRule below) before storage reclaims it.
   maxAge: "720h"
