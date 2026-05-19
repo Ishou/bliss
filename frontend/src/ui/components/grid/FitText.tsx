@@ -52,8 +52,14 @@ const PHASE2_FLOOR_FACTOR = 0.5;
 // what the user sees.
 const FIT_EPSILON_PX = 0.25;
 
-// iOS WebKit hyphenates lang="fr" more aggressively; reserve one line of headroom so both engines fit.
-const LINE_HEADROOM_FACTOR = 1.15;
+// WebKit (iOS + macOS Safari) hyphenates lang="fr" more aggressively than Blink: a clue sized to fit
+// n lines on Chrome/Android wraps to n+1 on WebKit and the extra line is clipped by the def-cell.
+// We reserve one line of headroom only on WebKit — applying it everywhere makes Android Chrome text
+// microscopic for no benefit. Factor 1.15 covers line-height 1.05 + descender slack. SSR-safe.
+const IS_WEBKIT = typeof navigator !== 'undefined'
+  && /AppleWebKit/.test(navigator.userAgent)
+  && !/Chrome|Chromium|Android/.test(navigator.userAgent);
+const LINE_HEADROOM_FACTOR = IS_WEBKIT ? 1.15 : 0;
 
 // Width-axis slop on the fits-test. Even with fractional content
 // measurement (Range.getBoundingClientRect) and fractional container
