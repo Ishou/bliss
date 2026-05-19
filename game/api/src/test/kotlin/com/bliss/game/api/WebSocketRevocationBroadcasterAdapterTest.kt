@@ -58,9 +58,7 @@ class WebSocketRevocationBroadcasterAdapterTest {
                 val clientJob =
                     async {
                         client.clientWebSocket("/ws") {
-                            for (frame in incoming) {
-                                if (frame is Frame.Text) frame.readText()
-                            }
+                            for (frame in incoming) { }
                         }
                     }
 
