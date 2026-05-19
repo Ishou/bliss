@@ -73,13 +73,7 @@ private const val AUTH_REQUIRED_TYPE: String =
 
 private const val SESSION_COOKIE_NAME: String = "__Secure-ws_session"
 
-/**
- * Grid bounded-context HTTP surface (ADR-0003 §4). Endpoints:
- *  - GET  `/v1/puzzles/daily` — pure read of the persisted daily row.
- *  - GET  `/v1/puzzles/{puzzleId}` — idempotent puzzle fetch (lookup-or-generate).
- *  - POST `/v1/puzzles/{puzzleId}/hints` — spend a hint (authed-only).
- *  - POST `/v1/puzzles/{puzzleId}/validate` — verify a filled grid.
- */
+/** Grid bounded-context HTTP surface (ADR-0003 §4): puzzle GET/daily-GET, hint POST (authed-only), validate POST. */
 fun Route.puzzles(
     loadOrGenerate: LoadOrGeneratePuzzleUseCase,
     revealCellHint: RevealCellHintUseCase,
