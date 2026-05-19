@@ -6,6 +6,7 @@ import com.bliss.grid.api.routes.deleteSession
 import com.bliss.grid.api.routes.health
 import com.bliss.grid.api.routes.puzzles
 import com.bliss.grid.application.analytics.AnalyticsEventSink
+import com.bliss.grid.application.auth.CookieVerifier
 import com.bliss.grid.application.puzzle.DailyPuzzleSelector
 import com.bliss.grid.application.puzzle.DeleteSessionUseCase
 import com.bliss.grid.application.puzzle.GeneratePuzzleUseCase
@@ -19,6 +20,7 @@ import com.bliss.grid.application.puzzle.defaultPuzzleConstraints
 import com.bliss.grid.domain.generation.ClueCooldownRepository
 import com.bliss.grid.infrastructure.analytics.MatomoAnalyticsAdapter
 import com.bliss.grid.infrastructure.analytics.NoopAnalyticsAdapter
+import com.bliss.grid.infrastructure.auth.HttpCookieVerifier
 import com.bliss.grid.infrastructure.persistence.CsvWordRepository
 import com.bliss.grid.infrastructure.persistence.InMemoryClueCooldownRepository
 import com.bliss.grid.infrastructure.persistence.InMemoryHintUsageRepository
@@ -200,6 +202,21 @@ fun Application.module() {
     val analyticsScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     monitor.subscribe(ApplicationStopped) { analyticsScope.cancel() }
     val analyticsEventSink: AnalyticsEventSink = createAnalyticsEventSink(analyticsScope)
+
+    // Phase 6b.0 — cookie verifier port + adapter (mirror of game-api).
+    // Reads from Ktor config `identity.apiBaseUrl` or env `IDENTITY_API_BASE_URL`,
+    // defaulting to the in-cluster Service DNS. Not used by any route yet; Phase 6b.1
+    // wires it into the hint POST under a per-user advisory lock.
+    val identityApiBaseUrl =
+        environment.config
+            .propertyOrNull("identity.apiBaseUrl")
+            ?.getString()
+            ?.takeIf { it.isNotBlank() }
+            ?: System.getenv("IDENTITY_API_BASE_URL")?.takeIf { it.isNotBlank() }
+            ?: "http://identity-api:8080"
+
+    @Suppress("UNUSED_VARIABLE")
+    val cookieVerifier: CookieVerifier = HttpCookieVerifier(HttpClient(), identityApiBaseUrl)
 
     // Clue cooldown (ADR-0031). On by default — set GRID_CLUE_COOLDOWN_ENABLED=false
     // to disable the wiring at the kill-switch level (use case sees null repo,
