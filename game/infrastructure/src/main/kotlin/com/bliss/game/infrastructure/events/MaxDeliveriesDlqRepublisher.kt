@@ -11,7 +11,6 @@ import org.slf4j.LoggerFactory
 import java.io.IOException
 import java.time.Instant
 
-// Subscribes to MAX_DELIVERIES advisories and republishes exhausted messages to the DLQ stream (ADR-0049).
 class MaxDeliveriesDlqRepublisher(
     private val connection: Connection,
     private val jetStreamManagement: JetStreamManagement,
