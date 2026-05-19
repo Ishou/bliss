@@ -11,16 +11,7 @@ import org.slf4j.LoggerFactory
 import java.io.IOException
 import java.time.Instant
 
-/**
- * Subscribes to JetStream MAX_DELIVERIES advisories for this context's durable
- * consumers and republishes the failed message payload to the DLQ subject so
- * the DLQ alert (ADR-0049 + PR #544) actually fires.
- *
- * JetStream emits an advisory on `$JS.EVENT.ADVISORY.MAX_DELIVERIES.<stream>.<consumer>`
- * each time a message exhausts its consumer's MaxDeliver budget. The advisory only
- * carries stream/consumer/sequence — the original payload is fetched via
- * `JetStreamManagement.getMessage(stream, streamSeq)`.
- */
+// Subscribes to MAX_DELIVERIES advisories and republishes exhausted messages to the DLQ stream (ADR-0049).
 class MaxDeliveriesDlqRepublisher(
     private val connection: Connection,
     private val jetStreamManagement: JetStreamManagement,
@@ -135,7 +126,7 @@ class MaxDeliveriesDlqRepublisher(
     }
 
     companion object {
-        const val DEFAULT_DLQ_SUBJECT_PREFIX: String = "wordsparrow.user.events.dlq."
+        const val DEFAULT_DLQ_SUBJECT_PREFIX: String = "wordsparrow.dlq."
         const val HEADER_ORIGINAL_STREAM: String = "X-Original-Stream"
         const val HEADER_ORIGINAL_SEQ: String = "X-Original-Seq"
         const val HEADER_CONSUMER: String = "X-Consumer"
