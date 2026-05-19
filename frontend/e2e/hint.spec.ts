@@ -47,8 +47,8 @@ test('clicking the hint button after typing a word decrements the budget and sho
 
   // Pre-condition: badge starts at 3/3.
   await expect(
-    page.getByLabel('3 sur 3 indices restants'),
-  ).toHaveText('3/3');
+    page.getByRole('button', { name: 'Indice (3 / 3)' }),
+  ).toBeVisible();
 
   // (1,7) is the first cell of the across word at (1,7..9); the
   // starting-clue preference picks across over the down word that also
@@ -67,12 +67,12 @@ test('clicking the hint button after typing a word decrements the budget and sho
 
   // Click the hint button — focus moves off the cell, the cell blurs,
   // React flushes the focus-change effect between blur and click.
-  await page.getByRole('button', { name: 'Demander un indice' }).click();
+  await page.getByRole('button', { name: 'Indice (3 / 3)' }).click();
 
   // Post-condition: budget dropped to 2/3 and a status pill is shown.
   await expect(
-    page.getByLabel('2 sur 3 indices restants'),
-  ).toHaveText('2/3');
+    page.getByRole('button', { name: 'Indice (2 / 3)' }),
+  ).toBeVisible();
   // The toolbar's hint status pill — there are two other `role="status"`
   // regions on the page (the current-clue panel and an sr-only live
   // region), so we scope by the toolbar.

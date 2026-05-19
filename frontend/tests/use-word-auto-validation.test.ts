@@ -14,6 +14,7 @@ const puzzle: Puzzle = {
   width: 5,
   height: 1,
   hintsAllowed: 3,
+  hintsRemaining: 3,
   cells: [
     {
       kind: 'definition',
@@ -213,6 +214,7 @@ describe('useWordAutoValidation', () => {
       width: 5,
       height: 4,
       hintsAllowed: 3,
+      hintsRemaining: 3,
       cells: [
         {
           kind: 'definition',
@@ -258,6 +260,7 @@ describe('useWordAutoValidation', () => {
       width: 4,
       height: 1,
       hintsAllowed: 3,
+      hintsRemaining: 3,
       cells: [
         {
           kind: 'definition',

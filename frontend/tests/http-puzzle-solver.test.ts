@@ -16,7 +16,6 @@ describe('HttpPuzzleSolver — validate', () => {
       json({ solved: false, incorrectCells: [{ row: 1, column: 2 }] }),
     );
     const solver = createHttpPuzzleSolver({
-      sessionId: '019186c5-d702-7b3a-a3d4-b40dc2d6d871',
       baseUrl: 'https://api.example.test',
       fetch: fetchSpy,
     });
@@ -46,7 +45,6 @@ describe('HttpPuzzleSolver — validate', () => {
 
   it('rejects with the RFC 7807 detail on a 400 problem body', async () => {
     const solver = createHttpPuzzleSolver({
-      sessionId: '019186c5-d702-7b3a-a3d4-b40dc2d6d871',
       baseUrl: 'https://api.example.test',
       fetch: vi.fn().mockResolvedValue(
         json(
@@ -73,7 +71,6 @@ describe('HttpPuzzleSolver — requestHint', () => {
       json({ row: 3, column: 5, letter: 'P', hintsRemaining: 2 }),
     );
     const solver = createHttpPuzzleSolver({
-      sessionId: '019186c5-d702-7b3a-a3d4-b40dc2d6d871',
       baseUrl: 'https://api.example.test',
       fetch: fetchSpy,
     });
@@ -91,7 +88,6 @@ describe('HttpPuzzleSolver — requestHint', () => {
 
   it('throws HintRequestError(budget-exhausted) on 429', async () => {
     const solver = createHttpPuzzleSolver({
-      sessionId: '019186c5-d702-7b3a-a3d4-b40dc2d6d871',
       baseUrl: 'https://api.example.test',
       fetch: vi.fn().mockResolvedValue(
         json(
@@ -119,7 +115,6 @@ describe('HttpPuzzleSolver — requestHint', () => {
 
   it('throws HintRequestError(invalid-coord) on 400', async () => {
     const solver = createHttpPuzzleSolver({
-      sessionId: '019186c5-d702-7b3a-a3d4-b40dc2d6d871',
       baseUrl: 'https://api.example.test',
       fetch: vi.fn().mockResolvedValue(
         json(
@@ -145,7 +140,6 @@ describe('HttpPuzzleSolver — requestHint', () => {
 
   it('throws HintRequestError(transient) on 5xx', async () => {
     const solver = createHttpPuzzleSolver({
-      sessionId: '019186c5-d702-7b3a-a3d4-b40dc2d6d871',
       baseUrl: 'https://api.example.test',
       fetch: vi.fn().mockResolvedValue(
         json(

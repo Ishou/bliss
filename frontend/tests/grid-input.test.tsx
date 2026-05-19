@@ -45,7 +45,7 @@ const L = (row: number, col: number): Cell =>
   ({ kind: 'letter', position: { row, col }, entry: '' });
 
 const TEST_PUZZLE: Puzzle = {
-  id: 'test', title: 'test', language: 'fr', width: 5, height: 4, hintsAllowed: 3,
+  id: 'test', title: 'test', language: 'fr', width: 5, height: 4, hintsAllowed: 3, hintsRemaining: 3,
   cells: [
     { kind: 'definition', position: { row: 0, col: 0 }, clues: [{ text: 'across-1', arrow: 'right' }] },
     L(0, 1),
@@ -70,7 +70,7 @@ const TEST_PUZZLE: Puzzle = {
 //   X   X   X   X   X
 //   X   X   X   X   X
 const SMART_PUZZLE: Puzzle = {
-  id: 'smart', title: 'smart', language: 'fr', width: 5, height: 4, hintsAllowed: 3,
+  id: 'smart', title: 'smart', language: 'fr', width: 5, height: 4, hintsAllowed: 3, hintsRemaining: 3,
   cells: [
     { kind: 'definition', position: { row: 0, col: 0 }, clues: [{ text: 'across-A', arrow: 'right' }] },
     L(0, 1), L(0, 2),
@@ -559,7 +559,7 @@ describe('Grid keyboard interactions — Tab / Enter clue cycling', () => {
   it('cycle interleaves across and down by spatial position, not by direction', () => {
     const SPATIAL: Puzzle = {
       id: 'spatial-test', title: 'spatial test', language: 'fr',
-      width: 4, height: 3, hintsAllowed: 3,
+      width: 4, height: 3, hintsAllowed: 3, hintsRemaining: 3,
       cells: [
         // Stacked def at (0,0): across at (0,1)..(0,3) and down at (1,0)..(2,0).
         {

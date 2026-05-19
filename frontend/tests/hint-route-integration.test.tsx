@@ -32,6 +32,7 @@ const puzzle: Puzzle = {
   width: 3,
   height: 1,
   hintsAllowed: 3,
+  hintsRemaining: 3,
   cells: [
     {
       kind: 'definition',
@@ -166,12 +167,12 @@ describe('Index route — hint refused on validated cells', () => {
     // Focus the validated cell and click the hint button.
     click(first);
     act(() => { first.blur(); });
-    const hintButton = screen.getByRole('button', { name: 'Demander un indice' });
+    const hintButton = screen.getByRole('button', { name: 'Indice (3 / 3)' });
     await act(async () => { fireEvent.click(hintButton); });
 
     expect(requestHint).not.toHaveBeenCalled();
     // Counter unchanged.
-    expect(screen.getByLabelText('3 sur 3 indices restants')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Indice (3 / 3)' })).toBeInTheDocument();
   });
 });
 
@@ -214,54 +215,38 @@ describe('Index route — refresh clears the locked-cell state', () => {
   });
 });
 
-// Bug 4 — hint counter was React-state-only; page reload reset it to
-// `hintsAllowed`. The route now reads `loadHintsUsed` on mount and
-// persists each consumed hint via `recordHintUsed`.
-describe('Index route — hint count persists across reloads', () => {
-  it('rehydrates hintsRemaining from hintsUsed and resets it on Actualiser', async () => {
+describe('Index route — hint count sourced from the server', () => {
+  it('seeds hintsRemaining from puzzle.hintsRemaining on mount', async () => {
     const solver: PuzzleSolver = {
       validate: vi.fn().mockResolvedValue({ solved: false, incorrectCells: [] }),
       requestHint: vi.fn(),
     };
-    const store = makeInMemoryStore({ hintsUsed: 2 });
-    renderHomeRoute(solver, store);
-    await screen.findByRole('grid');
-    // 3 allowed - 2 used = 1 remaining (rehydrated).
-    expect(await screen.findByLabelText('1 sur 3 indices restants')).toBeInTheDocument();
-    // Actualiser → clearForPuzzle → hintsUsed back to 0.
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Actualiser la grille' }));
-    });
-    await act(async () => {
-      fireEvent.click(screen.getByTestId('refresh-confirm-accept'));
-    });
-    expect(await screen.findByLabelText('3 sur 3 indices restants')).toBeInTheDocument();
-  });
-
-  it('survives a remount with the same store (F5 analog)', async () => {
-    const solver: PuzzleSolver = {
-      validate: vi.fn().mockResolvedValue({ solved: false, incorrectCells: [] }),
-      requestHint: vi.fn().mockResolvedValue({ row: 0, column: 2, letter: 'B', hintsRemaining: 2 }),
+    const repository: PuzzleRepository = {
+      fetchById: vi.fn().mockResolvedValue({ ...puzzle, hintsRemaining: 1 }),
+      fetchDaily: vi.fn().mockResolvedValue({ ...puzzle, hintsRemaining: 1 }),
+      listDailySummaries: vi.fn().mockResolvedValue({ items: [], hasMore: false }),
     };
-    const store = makeInMemoryStore();
-    const { unmount } = renderHomeRoute(solver, store);
-    await screen.findByRole('grid');
-    expect(await screen.findByLabelText('3 sur 3 indices restants')).toBeInTheDocument();
-    const first = inputAt(0, 1)!;
-    click(first);
-    typeChar(first, 'a');
-    act(() => { inputAt(0, 2)!.blur(); });
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Demander un indice' }));
+    const routeTree = RootRoute.addChildren([IndexRoute]);
+    const router = createRouter({
+      routeTree,
+      history: createMemoryHistory({ initialEntries: ['/grille'] }),
+      context: {
+        puzzleRepository: repository,
+        puzzleSolver: solver,
+        sessionClient: {
+          eraseSession: () => Promise.resolve({ deleted: 0 }),
+          getSessionId: () => 'test-session-id',
+          clearLocalSession: () => {},
+        },
+        soloEntriesStore: makeInMemoryStore(),
+        tourSeenStore: { get: () => true, set: () => {}, clear: () => {} },
+      },
     });
-    await screen.findByLabelText('2 sur 3 indices restants');
-
-    // Simulate F5: tear down the React tree, then re-render with the
-    // same `store` (which models the persistent localStorage).
-    unmount();
-    renderHomeRoute(solver, store);
+    render(<RouterProvider router={router} />);
     await screen.findByRole('grid');
-    expect(await screen.findByLabelText('2 sur 3 indices restants')).toBeInTheDocument();
+    expect(
+      await screen.findByRole('button', { name: 'Indice (1 / 3)' }),
+    ).toBeInTheDocument();
   });
 
   it('persists each consumed hint via recordHintUsed', async () => {
@@ -278,9 +263,9 @@ describe('Index route — hint count persists across reloads', () => {
     typeChar(first, 'a');
     act(() => { inputAt(0, 2)!.blur(); });
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Demander un indice' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Indice (3 / 3)' }));
     });
-    await screen.findByLabelText('2 sur 3 indices restants');
+    await screen.findByRole('button', { name: 'Indice (2 / 3)' });
     expect(recordSpy).toHaveBeenCalledTimes(1);
   });
 });
@@ -321,7 +306,7 @@ describe('Index route — hint button integration', () => {
       second.blur();
     });
 
-    const hintButton = screen.getByRole('button', { name: 'Demander un indice' });
+    const hintButton = screen.getByRole('button', { name: 'Indice (3 / 3)' });
     await act(async () => {
       fireEvent.click(hintButton);
     });
@@ -330,7 +315,7 @@ describe('Index route — hint button integration', () => {
     expect(requestHint).toHaveBeenCalledWith(puzzle.id, 0, 2);
     // The success path writes the new hintsRemaining into the badge
     // and writes the revealed letter into the matching <input>.
-    await screen.findByLabelText('2 sur 3 indices restants');
+    await screen.findByRole('button', { name: 'Indice (2 / 3)' });
     expect(inputAt(0, 2)!.value).toBe('B');
   });
 });

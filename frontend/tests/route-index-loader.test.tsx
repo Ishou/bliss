@@ -8,7 +8,7 @@ import { Route as IndexRoute } from '@/ui/routes/grille';
 
 const puzzle: Puzzle = {
   id: '0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6b',
-  title: 't', language: 'fr', width: 1, height: 1, hintsAllowed: 3,
+  title: 't', language: 'fr', width: 1, height: 1, hintsAllowed: 3, hintsRemaining: 3,
   cells: [{ kind: 'letter', position: { row: 0, col: 0 }, entry: '' }],
 };
 
@@ -95,11 +95,8 @@ describe('Grille route loader', () => {
     const fetchDaily = vi.fn().mockResolvedValue(puzzle);
     renderWith({ fetchById, fetchDaily });
     await screen.findByRole('grid');
-    expect(
-      screen.getByRole('button', { name: 'Demander un indice' }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByLabelText('3 sur 3 indices restants'),
-    ).toHaveTextContent('3/3');
+    const hintButton = screen.getByRole('button', { name: 'Indice (3 / 3)' });
+    expect(hintButton).toBeInTheDocument();
+    expect(hintButton).toHaveTextContent('Indice (3 / 3)');
   });
 });

@@ -20,14 +20,10 @@ import { createGridApiClient, type GridApiClient } from './client';
 export interface HttpPuzzleSolverOptions {
   readonly baseUrl: string;
   readonly fetch?: typeof globalThis.fetch;
-  /** Legacy; ignored on the wire — hints endpoint now authenticates via the __Secure-ws_session cookie. */
-  readonly sessionId?: string;
 }
 
 export function createHttpPuzzleSolver(
-  options:
-    | HttpPuzzleSolverOptions
-    | { readonly client: GridApiClient; readonly sessionId?: string },
+  options: HttpPuzzleSolverOptions | { readonly client: GridApiClient },
 ): PuzzleSolver {
   const client =
     'client' in options

@@ -989,6 +989,7 @@ function gamePuzzleToPuzzle(gamePuzzle: GamePuzzle): Puzzle {
     width: gamePuzzle.width,
     height: gamePuzzle.height,
     hintsAllowed: gamePuzzle.hintsAllowed,
+    hintsRemaining: gamePuzzle.hintsAllowed,
     cells,
   };
 }
