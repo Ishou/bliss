@@ -29,6 +29,7 @@ import com.bliss.game.infrastructure.InMemoryLobbyWriteCoordinator
 import com.bliss.game.infrastructure.analytics.MatomoAnalyticsAdapter
 import com.bliss.game.infrastructure.analytics.NoopAnalyticsAdapter
 import com.bliss.game.infrastructure.auth.HttpCookieVerifier
+import com.bliss.game.infrastructure.events.MaxDeliveriesDlqRepublisher
 import com.bliss.game.infrastructure.events.NatsConnectionFactory
 import com.bliss.game.infrastructure.events.UserEventSubscribers
 import com.bliss.game.infrastructure.persistence.BlissDatabase
@@ -271,7 +272,16 @@ fun Application.module() {
                 wsRevocationBroadcaster,
             )
         userEventSubscribers.start()
+        val dlqRepublisher =
+            MaxDeliveriesDlqRepublisher(
+                connection = natsConnection,
+                jetStreamManagement = natsConnection.jetStreamManagement(),
+                streamName = MaxDeliveriesDlqRepublisher.USER_EVENTS_STREAM,
+                consumerNames = listOf("game-api-user-deleted", "game-api-user-renamed"),
+            )
+        dlqRepublisher.start()
         monitor.subscribe(ApplicationStopped) {
+            dlqRepublisher.close()
             userEventSubscribers.close()
             natsConnection.close()
         }
