@@ -22,6 +22,7 @@ import com.bliss.grid.domain.generation.ClueCooldownRepository
 import com.bliss.grid.infrastructure.analytics.MatomoAnalyticsAdapter
 import com.bliss.grid.infrastructure.analytics.NoopAnalyticsAdapter
 import com.bliss.grid.infrastructure.auth.HttpCookieVerifier
+import com.bliss.grid.infrastructure.events.MaxDeliveriesDlqRepublisher
 import com.bliss.grid.infrastructure.events.NatsConnectionFactory
 import com.bliss.grid.infrastructure.events.UserEventSubscribers
 import com.bliss.grid.infrastructure.persistence.CsvWordRepository
@@ -238,7 +239,17 @@ fun Application.module() {
             .onSuccess { (natsConnection, jetStream) ->
                 val userEventSubscribers = UserEventSubscribers(jetStream, hintUsageRepository)
                 userEventSubscribers.start()
+                // DLQ republisher: routes messages that exhaust MaxDeliver to the DLQ stream (ADR-0049).
+                val dlqRepublisher =
+                    MaxDeliveriesDlqRepublisher(
+                        connection = natsConnection,
+                        jetStreamManagement = natsConnection.jetStreamManagement(),
+                        streamName = MaxDeliveriesDlqRepublisher.USER_EVENTS_STREAM,
+                        consumerNames = listOf("grid-user-deleted"),
+                    )
+                dlqRepublisher.start()
                 monitor.subscribe(ApplicationStopped) {
+                    dlqRepublisher.close()
                     userEventSubscribers.close()
                     natsConnection.close()
                 }
