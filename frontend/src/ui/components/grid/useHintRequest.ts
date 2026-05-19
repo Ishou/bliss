@@ -50,8 +50,7 @@ export function useHintRequest(
     onHintConsumedRef.current = onHintConsumed;
   }, [onHintConsumed]);
 
-  // Reset on puzzle change or when the loader reseeds the remaining
-  // count (e.g. route invalidation after Actualiser).
+  // Reset on puzzle change or loader-triggered `initialHintsRemaining` change.
   useEffect(() => {
     const remaining = Math.max(0, initialHintsRemaining);
     setHintsRemaining(remaining);

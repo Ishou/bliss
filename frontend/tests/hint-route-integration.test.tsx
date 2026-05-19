@@ -215,9 +215,6 @@ describe('Index route — refresh clears the locked-cell state', () => {
   });
 });
 
-// Server is authoritative on hintsRemaining (Phase 6b.3). The route
-// seeds from `puzzle.hintsRemaining` returned by the loader; the hint
-// POST response overwrites it.
 describe('Index route — hint count sourced from the server', () => {
   it('seeds hintsRemaining from puzzle.hintsRemaining on mount', async () => {
     const solver: PuzzleSolver = {

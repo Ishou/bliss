@@ -193,9 +193,7 @@ function LoadedHomePage({ puzzle }: { readonly puzzle: Puzzle }) {
     [puzzle.id, soloEntriesStore, announcer],
   );
 
-  // Server is authoritative on `hintsRemaining`; the loader reseeds it
-  // on Actualiser-triggered invalidation. Local solo-entries tally
-  // stays only to drive Accueil's per-grid progress hint.
+  // Server is authoritative; local tally is kept only for Accueil's per-grid progress display.
   const handleHintConsumed = useCallback(() => {
     soloEntriesStore.recordHintUsed(puzzle.id);
   }, [puzzle.id, soloEntriesStore]);
