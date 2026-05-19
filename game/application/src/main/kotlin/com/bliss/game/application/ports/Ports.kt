@@ -143,6 +143,11 @@ interface LobbyRosterBroadcaster {
     suspend fun notifyRosterChanged(lobbyId: LobbyId)
 }
 
+/** Out-bound port: closes every live WebSocket session previously bound to [userId], on user.deleted / future session.revoked events. Idempotent; closing an already-closed session is a no-op. */
+interface WebSocketRevocationBroadcaster {
+    suspend fun disconnectAllForUser(userId: UserId)
+}
+
 /**
  * Out-bound port for ephemeral presence events ([LobbyEvent.Typing], [LobbyEvent.Idle],
  * [LobbyEvent.ConnectionLost], [LobbyEvent.CursorBumped]). The infrastructure adapter wires this

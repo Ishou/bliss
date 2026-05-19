@@ -3,8 +3,10 @@ package com.bliss.game.api.routes
 import com.bliss.game.api.LobbyUseCases
 import com.bliss.game.api.PresencePosition
 import com.bliss.game.api.SessionManager
+import com.bliss.game.api.auth.CookieNames
 import com.bliss.game.api.dto.ClientToServerFrame
 import com.bliss.game.api.dto.ServerToClientFrame
+import com.bliss.game.application.auth.CookieVerifier
 import com.bliss.game.application.ports.LobbyEvent
 import com.bliss.game.application.ports.LobbyRepository
 import com.bliss.game.application.usecases.PresenceAggregator
@@ -88,6 +90,7 @@ fun Route.lobbyWebSocketRoute(
     presenceAggregator: PresenceAggregator? = null,
     backgroundScope: CoroutineScope = defaultBackgroundScope,
     reconnectGrace: Duration = DEFAULT_RECONNECT_GRACE,
+    cookieVerifier: CookieVerifier? = null,
 ) {
     webSocket("/v1/lobbies/{lobbyId}/ws") {
         val lobbyId = parseLobbyIdOrClose() ?: return@webSocket
@@ -101,6 +104,18 @@ fun Route.lobbyWebSocketRoute(
         }
 
         sessionManager.register(lobbyId, this)
+
+        // Best-effort: verify failure → anonymous-for-this-socket (no force-disconnect on revocation).
+        if (cookieVerifier != null) {
+            val rawCookie = call.request.cookies[CookieNames.SESSION]
+            if (!rawCookie.isNullOrBlank()) {
+                runCatching { cookieVerifier.verify(rawCookie) }
+                    .getOrNull()
+                    ?.let { whoAmI ->
+                        sessionManager.bindUserId(lobbyId, this, whoAmI.userId)
+                    }
+            }
+        }
         // Initial snapshot to this socket only — bootstrap signal for the UI.
         // Carries the current ephemeral presence map so a refreshing client
         // sees peer cursors immediately, before any cellFocus traffic flows.

@@ -2,7 +2,10 @@ package com.bliss.game.api
 
 import com.bliss.game.api.dto.ServerToClientFrame
 import com.bliss.game.domain.LobbyId
+import com.bliss.game.domain.UserId
 import io.ktor.server.websocket.DefaultWebSocketServerSession
+import io.ktor.websocket.CloseReason
+import io.ktor.websocket.close
 import io.ktor.websocket.send
 import kotlinx.serialization.json.Json
 import org.slf4j.Logger
@@ -57,6 +60,10 @@ class SessionManager(
     private val sessionToSessionId = ConcurrentHashMap<LobbyId, MutableMap<DefaultWebSocketServerSession, String>>()
     private val sessionIdToSessions = ConcurrentHashMap<LobbyId, MutableMap<String, MutableSet<DefaultWebSocketServerSession>>>()
 
+    // Cross-lobby user → sockets index for revocation; anonymous sockets are not indexed.
+    private val userIdToSessions = ConcurrentHashMap<UserId, MutableSet<DefaultWebSocketServerSession>>()
+    private val sessionToUserId = ConcurrentHashMap<DefaultWebSocketServerSession, UserId>()
+
     private fun lockFor(lobbyId: LobbyId): Any = perLobbyLock.computeIfAbsent(lobbyId) { Any() }
 
     /**
@@ -107,6 +114,13 @@ class SessionManager(
             }
             val set = connections[lobbyId] ?: return@synchronized boundSessionId
             set.remove(session)
+            val boundUserId = sessionToUserId.remove(session)
+            if (boundUserId != null) {
+                userIdToSessions[boundUserId]?.let { sockets ->
+                    sockets.remove(session)
+                    if (sockets.isEmpty()) userIdToSessions.remove(boundUserId)
+                }
+            }
             if (set.isEmpty()) {
                 connections.remove(lobbyId)
                 perLobbyLock.remove(lobbyId)
@@ -118,6 +132,45 @@ class SessionManager(
             }
             boundSessionId
         }
+
+    /** Indexes [session] under [userId] for revocation; idempotent, anonymous sockets are not bound. */
+    fun bindUserId(
+        lobbyId: LobbyId,
+        session: DefaultWebSocketServerSession,
+        userId: UserId,
+    ) {
+        synchronized(lockFor(lobbyId)) {
+            val previous = sessionToUserId.put(session, userId)
+            if (previous != null && previous != userId) {
+                userIdToSessions[previous]?.let { sockets ->
+                    sockets.remove(session)
+                    if (sockets.isEmpty()) userIdToSessions.remove(previous)
+                }
+            }
+            userIdToSessions
+                .computeIfAbsent(userId) { Collections.newSetFromMap(ConcurrentHashMap()) }
+                .add(session)
+        }
+    }
+
+    /** Sends GOING_AWAY to every socket bound to [userId]; returns the count ordered to close. */
+    suspend fun closeAllForUser(userId: UserId): Int {
+        val sockets = userIdToSessions[userId]?.toList().orEmpty()
+        var closed = 0
+        for (session in sockets) {
+            try {
+                session.close(CloseReason(CloseReason.Codes.GOING_AWAY, "session-revoked"))
+                closed++
+            } catch (cause: Throwable) {
+                log.warn(
+                    "ws.revoke.close_failed userId={} cause={}",
+                    userId.value,
+                    cause.message,
+                )
+            }
+        }
+        return closed
+    }
 
     /**
      * Records that [session] is the transport for the player identified by
