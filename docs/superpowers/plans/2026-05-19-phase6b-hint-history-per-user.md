@@ -10,17 +10,25 @@
 
 **Spec:** `docs/superpowers/specs/2026-05-19-phase6b-hint-history-per-user-design.md`. Read it first.
 
-**Sub-PR phasing** (one branch per sub-PR, ≤400 lines each):
+**Sub-PR phasing** (one branch per sub-PR; **6b.1 exceeds the ≤400-line cap by design** — see rationale below):
 
 | # | Branch | Title |
 | - | --- | --- |
 | 6b.0 | `feat/grid-cookie-verifier` | feat(grid-api): CookieVerifier port + HttpCookieVerifier adapter |
-| 6b.1-schema | `chore/grid-openapi-hint-history` | chore(grid-api): openapi — hintsRemaining + cookie auth on hints POST |
-| 6b.1-impl | `feat/grid-hint-history-user-id` | feat(grid-api): hint history per user_id + race-free write |
+| 6b.1 | `feat/grid-hint-history-user-id` | feat(grid-api): hint history per user_id + race-free write |
 | 6b.2 | `feat/grid-user-deleted-consumer` | feat(grid-events): NATS user.deleted consumer cascade-deletes hint rows |
 | 6b.3 | `feat/frontend-hint-history-server` | feat(frontend-grid): read hintsRemaining from puzzle GET |
 
-Dispatch order: 6b.0 first. Once 6b.0 merges, dispatch 6b.1-schema (schema-first per ADR-0001 §3). Once schema merges, 6b.1-impl and 6b.3 unblock in parallel. 6b.2 starts after 6b.1-impl merges (depends on the repository signature change).
+Dispatch order: 6b.0 first. Once 6b.0 merges, dispatch 6b.1 (combined schema + backend impl + minimal frontend caller migration). 6b.2 starts after 6b.1 merges. 6b.3 (frontend domain `hintsRemaining` plumbing + button state) runs after 6b.1.
+
+### Why 6b.1 bundles schema + impl + caller migration (un-split)
+
+The original plan split 6b.1 into a schema-only PR (`6b.1-schema`) and a Kotlin-impl PR (`6b.1-impl`) per ADR-0001 §3 "schema-first" guidance. We tried that — PR #536 was the schema-only attempt. It does not work in this codebase:
+
+1. **ADR-0003 §8.2 + `.github/workflows/openapi-typescript-drift.yml`** require `frontend/src/infrastructure/api/grid/types.ts` to stay in lockstep with `grid/api/openapi.yaml`. A schema-only PR that touches the YAML must include the regenerated TS types or the drift gate fails.
+2. **`frontend/package.json` build script** = `pnpm panda:codegen && tsc -b && vite build && pnpm seo:postbuild`. The regenerated `types.ts` drops `X-Session-Id` from the hints POST `params.header`; the runtime caller `frontend/src/infrastructure/api/grid/HttpPuzzleSolver.ts` still passes it. `tsc -b` fails → `pnpm build` fails → `deploy-frontend.yml` fails on push to main.
+
+A schema-only PR has no clean path: revert TS regen (drift CI fails), shim with `@ts-expect-error` (ships dead code to prod), or drop X-Session-Id from the caller (breaks live hint POSTs at runtime until 6b.1-impl lands). The honest call: bundle schema + backend impl + the minimal frontend caller migration into one PR. The trade-off is a single oversized PR; the alternative is a sequence of PRs each of which leaves the tree broken or the build red.
 
 ---
 
@@ -193,67 +201,11 @@ gh pr create --title "feat(grid-api): CookieVerifier port + HttpCookieVerifier a
 
 ---
 
-## Sub-PR 6b.1-schema — OpenAPI bump (schema-first)
+## Sub-PR 6b.1 — Hint history per user_id + race-free write (combined)
 
-**Branch:** `chore/grid-openapi-hint-history` off `main` (after 6b.0 merges).
+**Branch:** `feat/grid-hint-history-user-id` off `main` (after 6b.0 merges).
 
-**Goal:** Per ADR-0001 §3, schema PRs ship in isolation before implementation. This PR is OpenAPI-only — adds `hintsRemaining` to `PuzzleResponse` and switches the hints POST from `X-Session-Id` header auth to `__Secure-ws_session` cookie auth + 401 response.
-
-**Files:**
-- Modify: `grid/api/openapi.yaml`
-
-### Task 1: PuzzleResponse — add hintsRemaining
-
-- [ ] **Step 1: Edit the schema**
-
-Add `hintsRemaining: { type: integer, minimum: 0, description: "Hints still available for this puzzle for the current user; equals hintsAllowed for anonymous callers." }` to `PuzzleResponse`. Mark required.
-
-### Task 2: POST /v1/puzzles/{puzzleId}/hints — cookie auth + 401
-
-- [ ] **Step 1: Define cookie security scheme**
-
-Under `components.securitySchemes`, add (if not already present from another bounded context's spec):
-```yaml
-sessionCookie:
-  type: apiKey
-  in: cookie
-  name: __Secure-ws_session
-```
-
-- [ ] **Step 2: Apply the scheme to the hints POST**
-
-Remove the `X-Session-Id` header parameter from the operation. Add `security: [{ sessionCookie: [] }]`. Add the `401` response (Problem Details body, reusing the existing Problem schema).
-
-### Task 3: Validate
-
-- [ ] **Step 1: Lint + regenerate clients**
-
-Run: `./gradlew :grid:api:openApiValidate` (or the project's equivalent) → PASS.
-Run: `pnpm --filter frontend run openapi:generate` if the openapi-types path is wired to grid; commit the regenerated TS types alongside the YAML.
-
-### Task 4: Commit + PR
-
-- [ ] **Step 1: Stage + commit**
-
-```bash
-git add grid/api/openapi.yaml frontend/  # if regen produced files
-git commit -m "chore(grid-api): openapi — hintsRemaining + cookie auth on hints POST (Phase 6b.1-schema)"
-```
-
-- [ ] **Step 2: Push + PR**
-
-```bash
-git push -u origin chore/grid-openapi-hint-history
-gh pr create --title "chore(grid-api): openapi — hintsRemaining + cookie auth on hints POST (Phase 6b.1-schema)" --body "Schema-first PR per ADR-0001 §3. Unblocks 6b.1-impl (backend) and 6b.3 (frontend) to run in parallel against the agreed shape."
-```
-
----
-
-## Sub-PR 6b.1-impl — Hint history per user_id + race-free write
-
-**Branch:** `feat/grid-hint-history-user-id` off `main` (after 6b.1-schema merges).
-
-**Goal:** Drop session_id from `puzzle_hint_usage`, key on user_id, embed `hintsRemaining` in `GET /v1/puzzles/{id}` when authed, and make the hint POST race-free with the under-lock fresh re-verify pattern. The OpenAPI is already merged (6b.1-schema); this PR implements against it.
+**Goal:** OpenAPI bump (drop `X-Session-Id` on hints POST, add `__Secure-ws_session` cookie auth + 401 response, add required `hintsRemaining` to `Puzzle`) + Kotlin implementation (Flyway V6 cutover, repository signature change to `userId`, race-free write coordinator, route cookie-verify with under-lock fresh re-verify, read-path embeds `hintsRemaining`) + minimal frontend caller migration to keep the build green. See the "Why 6b.1 bundles schema + impl + caller migration (un-split)" rationale at the top of this plan.
 
 **Files:**
 - Create: `grid/api/src/main/resources/db/migration/V6__puzzle_hint_usage_user_id.sql`

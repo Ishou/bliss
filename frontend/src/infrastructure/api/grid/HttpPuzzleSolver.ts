@@ -20,25 +20,19 @@ import { createGridApiClient, type GridApiClient } from './client';
 export interface HttpPuzzleSolverOptions {
   readonly baseUrl: string;
   readonly fetch?: typeof globalThis.fetch;
-  /**
-   * UUID v7 identifying the calling player's session, sent as
-   * `X-Session-Id` on the hints endpoint per the OpenAPI spec. The
-   * server keys per-(puzzle, session) hint budgets on this; missing or
-   * non-UUID values produce 400 invalid-session-id at the server.
-   */
-  readonly sessionId: string;
+  /** Legacy; ignored on the wire — hints endpoint now authenticates via the __Secure-ws_session cookie. */
+  readonly sessionId?: string;
 }
 
 export function createHttpPuzzleSolver(
   options:
     | HttpPuzzleSolverOptions
-    | { readonly client: GridApiClient; readonly sessionId: string },
+    | { readonly client: GridApiClient; readonly sessionId?: string },
 ): PuzzleSolver {
   const client =
     'client' in options
       ? options.client
       : createGridApiClient({ baseUrl: options.baseUrl, fetch: options.fetch });
-  const sessionId = options.sessionId;
 
   return {
     async validate(
@@ -76,10 +70,7 @@ export function createHttpPuzzleSolver(
       const { data, error, response } = await client.POST(
         '/v1/puzzles/{puzzleId}/hints',
         {
-          params: {
-            path: { puzzleId },
-            header: { 'X-Session-Id': sessionId },
-          },
+          params: { path: { puzzleId } },
           body: { row, column },
         },
       );

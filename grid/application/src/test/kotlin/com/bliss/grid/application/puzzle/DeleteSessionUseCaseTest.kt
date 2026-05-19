@@ -7,49 +7,26 @@ import com.bliss.grid.domain.generation.ClueId
 import org.junit.jupiter.api.Test
 import java.util.UUID
 
-/** GDPR erasure (ADR-0025 §5) extends to clue cooldown rows when wired — see ADR-0031. */
+/** GDPR erasure (ADR-0025 §5); session endpoint covers clue-cooldown rows only. */
 class DeleteSessionUseCaseTest {
     private val sessionId: UUID = UUID.randomUUID()
 
     @Test
-    fun `without cooldown repository returns only the hint usage count`() {
-        val useCase =
-            DeleteSessionUseCase(
-                hintUsageRepository = StubHintUsage(deleted = 3),
-            )
-        assertThat(useCase.execute(sessionId)).isEqualTo(3)
-    }
-
-    @Test
-    fun `with cooldown repository sums hint usage and cooldown deletions`() {
-        val useCase =
-            DeleteSessionUseCase(
-                hintUsageRepository = StubHintUsage(deleted = 3),
-                cooldownRepository = StubCooldown(deleted = 7),
-            )
-        assertThat(useCase.execute(sessionId)).isEqualTo(10)
-    }
-
-    @Test
-    fun `with cooldown repository and zero cooldown rows returns hint count`() {
-        val useCase =
-            DeleteSessionUseCase(
-                hintUsageRepository = StubHintUsage(deleted = 0),
-                cooldownRepository = StubCooldown(deleted = 0),
-            )
+    fun `without cooldown repository returns zero`() {
+        val useCase = DeleteSessionUseCase()
         assertThat(useCase.execute(sessionId)).isEqualTo(0)
     }
 
-    private class StubHintUsage(
-        private val deleted: Int,
-    ) : HintUsageRepository {
-        override fun trySpend(
-            puzzleId: UUID,
-            sessionId: UUID,
-            hintsAllowed: Int,
-        ): Int? = null
+    @Test
+    fun `with cooldown repository returns cooldown deletions`() {
+        val useCase = DeleteSessionUseCase(cooldownRepository = StubCooldown(deleted = 7))
+        assertThat(useCase.execute(sessionId)).isEqualTo(7)
+    }
 
-        override fun deleteBySession(sessionId: UUID): Int = deleted
+    @Test
+    fun `with cooldown repository and zero cooldown rows returns zero`() {
+        val useCase = DeleteSessionUseCase(cooldownRepository = StubCooldown(deleted = 0))
+        assertThat(useCase.execute(sessionId)).isEqualTo(0)
     }
 
     private class StubCooldown(

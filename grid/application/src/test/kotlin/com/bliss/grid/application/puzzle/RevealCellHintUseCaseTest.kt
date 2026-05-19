@@ -11,6 +11,8 @@ import com.bliss.grid.domain.model.Row
 import com.bliss.grid.domain.model.Word
 import com.bliss.grid.domain.model.WordPlacement
 import org.junit.jupiter.api.Test
+import java.lang.reflect.Proxy
+import java.sql.Connection
 import java.time.Instant
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
@@ -19,11 +21,11 @@ import java.util.concurrent.atomic.AtomicInteger
 class RevealCellHintUseCaseTest {
     @Test
     fun `Granted echoes the canonical letter and decrements remaining budget`() {
-        val (puzzleId, sessionId) = ids()
+        val (puzzleId, userId) = ids()
         // Sample puzzle: "OR" at clue (0,0) going RIGHT → letters at (0,1)='O', (0,2)='R'.
         val outcome =
             RevealCellHintUseCase(fakePuzzleStore(puzzleId), fakeHintUsage())
-                .execute(puzzleId, sessionId, row = 0, column = 1)
+                .execute(STUB_CONN, puzzleId, userId, row = 0, column = 1)
 
         assertThat(outcome).isInstanceOf(RevealCellHintOutcome.Granted::class)
         val granted = outcome as RevealCellHintOutcome.Granted
@@ -35,55 +37,55 @@ class RevealCellHintUseCaseTest {
 
     @Test
     fun `PuzzleNotFound when store has no entry`() {
-        val (puzzleId, sessionId) = ids()
+        val (puzzleId, userId) = ids()
         val outcome =
             RevealCellHintUseCase(fakePuzzleStore(), fakeHintUsage())
-                .execute(puzzleId, sessionId, row = 0, column = 1)
+                .execute(STUB_CONN, puzzleId, userId, row = 0, column = 1)
         assertThat(outcome).isInstanceOf(RevealCellHintOutcome.PuzzleNotFound::class)
     }
 
     @Test
     fun `InvalidCoord when row is out of bounds`() {
-        val (puzzleId, sessionId) = ids()
+        val (puzzleId, userId) = ids()
         val budget = fakeHintUsage()
         val outcome =
             RevealCellHintUseCase(fakePuzzleStore(puzzleId), budget)
-                .execute(puzzleId, sessionId, row = 99, column = 0)
+                .execute(STUB_CONN, puzzleId, userId, row = 99, column = 0)
         assertThat(outcome).isInstanceOf(RevealCellHintOutcome.InvalidCoord::class)
         // Budget MUST NOT decrement on a coordinate validation failure.
-        assertThat(budget.peek(puzzleId, sessionId)).isEqualTo(0)
+        assertThat(budget.peek(puzzleId, userId)).isEqualTo(0)
     }
 
     @Test
     fun `InvalidCoord when coordinate points at a clue cell`() {
-        val (puzzleId, sessionId) = ids()
+        val (puzzleId, userId) = ids()
         val budget = fakeHintUsage()
         // (0, 0) is the clue cell for the sample puzzle's "OR" placement.
         val outcome =
             RevealCellHintUseCase(fakePuzzleStore(puzzleId), budget)
-                .execute(puzzleId, sessionId, row = 0, column = 0)
+                .execute(STUB_CONN, puzzleId, userId, row = 0, column = 0)
         assertThat(outcome).isInstanceOf(RevealCellHintOutcome.InvalidCoord::class)
-        assertThat(budget.peek(puzzleId, sessionId)).isEqualTo(0)
+        assertThat(budget.peek(puzzleId, userId)).isEqualTo(0)
     }
 
     @Test
     fun `InvalidCoord when coordinate points at an empty cell`() {
-        val (puzzleId, sessionId) = ids()
+        val (puzzleId, userId) = ids()
         val budget = fakeHintUsage()
         // Sample 3x3 grid only fills row 0; (1, 1) has no cell entry.
         val outcome =
             RevealCellHintUseCase(fakePuzzleStore(puzzleId), budget)
-                .execute(puzzleId, sessionId, row = 1, column = 1)
+                .execute(STUB_CONN, puzzleId, userId, row = 1, column = 1)
         assertThat(outcome).isInstanceOf(RevealCellHintOutcome.InvalidCoord::class)
-        assertThat(budget.peek(puzzleId, sessionId)).isEqualTo(0)
+        assertThat(budget.peek(puzzleId, userId)).isEqualTo(0)
     }
 
     @Test
     fun `BudgetExhausted on the 4th call with default cap of 3`() {
-        val (puzzleId, sessionId) = ids()
+        val (puzzleId, userId) = ids()
         val useCase = RevealCellHintUseCase(fakePuzzleStore(puzzleId), fakeHintUsage())
-        repeat(3) { useCase.execute(puzzleId, sessionId, row = 0, column = 1) }
-        val outcome = useCase.execute(puzzleId, sessionId, row = 0, column = 1)
+        repeat(3) { useCase.execute(STUB_CONN, puzzleId, userId, row = 0, column = 1) }
+        val outcome = useCase.execute(STUB_CONN, puzzleId, userId, row = 0, column = 1)
         assertThat(outcome).isInstanceOf(RevealCellHintOutcome.BudgetExhausted::class)
     }
 
@@ -110,7 +112,7 @@ class RevealCellHintUseCaseTest {
     private interface PeekableHintUsage : HintUsageRepository {
         fun peek(
             puzzleId: UUID,
-            sessionId: UUID,
+            userId: UUID,
         ): Int
     }
 
@@ -118,11 +120,12 @@ class RevealCellHintUseCaseTest {
         val counters = ConcurrentHashMap<Pair<UUID, UUID>, AtomicInteger>()
         return object : PeekableHintUsage {
             override fun trySpend(
+                conn: Connection,
                 puzzleId: UUID,
-                sessionId: UUID,
+                userId: UUID,
                 hintsAllowed: Int,
             ): Int? {
-                val counter = counters.computeIfAbsent(puzzleId to sessionId) { AtomicInteger(0) }
+                val counter = counters.computeIfAbsent(puzzleId to userId) { AtomicInteger(0) }
                 while (true) {
                     val current = counter.get()
                     if (current >= hintsAllowed) return null
@@ -130,16 +133,21 @@ class RevealCellHintUseCaseTest {
                 }
             }
 
-            override fun deleteBySession(sessionId: UUID): Int {
-                val keys = counters.keys.filter { it.second == sessionId }
+            override fun usedFor(
+                puzzleId: UUID,
+                userId: UUID,
+            ): Int = counters[puzzleId to userId]?.get() ?: 0
+
+            override fun deleteByUser(userId: UUID): Int {
+                val keys = counters.keys.filter { it.second == userId }
                 keys.forEach { counters.remove(it) }
                 return keys.size
             }
 
             override fun peek(
                 puzzleId: UUID,
-                sessionId: UUID,
-            ): Int = counters[puzzleId to sessionId]?.get() ?: 0
+                userId: UUID,
+            ): Int = counters[puzzleId to userId]?.get() ?: 0
         }
     }
 
@@ -163,4 +171,12 @@ class RevealCellHintUseCaseTest {
             hintsAllowed = 3,
             createdAt = Instant.parse("2026-04-24T15:30:00Z"),
         )
+
+    private companion object {
+        private val STUB_CONN: Connection =
+            Proxy.newProxyInstance(
+                Connection::class.java.classLoader,
+                arrayOf(Connection::class.java),
+            ) { _, _, _ -> null } as Connection
+    }
 }

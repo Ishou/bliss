@@ -23,6 +23,10 @@ export interface paths {
          *     clue selection is unaffected — the cooldown machinery is bypassed
          *     end-to-end. Cache hits return the persisted grid as-is regardless of
          *     the header, so the same `puzzleId` always yields the same clues.
+         *
+         *     When a `__Secure-ws_session` cookie is presented, `hintsRemaining`
+         *     reflects the authenticated user's per-puzzle remaining hint count;
+         *     anonymous callers receive `hintsRemaining` equal to `hintsAllowed`.
          */
         get: operations["getPuzzle"];
         put?: never;
@@ -122,13 +126,14 @@ export interface paths {
          *     request. Brute-forcing the full solution still requires
          *     `hintsAllowed` calls and is bounded by edge rate limiting.
          *
-         *     Player identity on the wire is the `X-Session-Id` header (UUID v7,
-         *     same convention as `game/api`'s `SessionId`). The server keeps a
-         *     per-(puzzle, session) hint counter; absent or malformed values
-         *     produce a 400 `invalid-session-id` response. Coordinates that
-         *     point at a non-letter cell (definition or block) or that fall
-         *     outside the puzzle bounds produce a 400 `invalid-coord` and do
-         *     NOT decrement the budget.
+         *     Player identity on the wire is the `__Secure-ws_session` cookie
+         *     issued by identity-api. The server verifies the cookie against
+         *     identity-api's whoami endpoint and keys a per-(puzzle, user) hint
+         *     counter on the resolved `userId`. Missing or revoked cookies
+         *     produce a 401 `auth-required` response. Coordinates that point at
+         *     a non-letter cell (definition or block) or that fall outside the
+         *     puzzle bounds produce a 400 `invalid-coord` and do NOT decrement
+         *     the budget.
          */
         post: operations["revealCellHint"];
         delete?: never;
@@ -275,6 +280,15 @@ export interface components {
              * @example 3
              */
             hintsAllowed: number;
+            /**
+             * @description Hints still available for this puzzle for the current user;
+             *     equals `hintsAllowed` for anonymous callers (no
+             *     `__Secure-ws_session` cookie). When a cookie is presented and
+             *     verified, this is `hintsAllowed - hintsUsed` for the resolved
+             *     `userId`.
+             * @example 2
+             */
+            hintsRemaining: number;
             /**
              * Format: date-time
              * @description ISO-8601 instant with timezone offset.
@@ -613,12 +627,6 @@ export interface components {
         /** @description UUID v7 identifier of the puzzle. */
         PuzzleId: components["schemas"]["PuzzleId"];
         /**
-         * @description UUID v7 identifying the calling player's session. The server uses
-         *     this to track per-(puzzle, session) hint budgets. Absent or
-         *     non-UUID values produce a 400 `invalid-session-id` response.
-         */
-        SessionId: string;
-        /**
          * @description UUID v7 identifying the calling player's session. When present,
          *     the server biases clue selection on cache miss away from clues
          *     recently used by the same session (per ADR-0031 "per-session clue
@@ -866,14 +874,7 @@ export interface operations {
     revealCellHint: {
         parameters: {
             query?: never;
-            header: {
-                /**
-                 * @description UUID v7 identifying the calling player's session. The server uses
-                 *     this to track per-(puzzle, session) hint budgets. Absent or
-                 *     non-UUID values produce a 400 `invalid-session-id` response.
-                 */
-                "X-Session-Id": components["parameters"]["SessionId"];
-            };
+            header?: never;
             path: {
                 /** @description UUID v7 identifier of the puzzle. */
                 puzzleId: components["parameters"]["PuzzleId"];
@@ -901,8 +902,6 @@ export interface operations {
             };
             /**
              * @description Request is malformed. RFC 7807. Variants:
-             *     - `X-Session-Id` absent or not a valid UUID
-             *       (`type` = `https://bliss.example/errors/invalid-session-id`).
              *     - Path parameter `puzzleId` is not a valid UUID
              *       (`type` = `https://bliss.example/errors/invalid-puzzle-id`).
              *     - Request body missing or unparseable
@@ -912,6 +911,19 @@ export interface operations {
              *       The hint budget is NOT decremented in this case.
              */
             400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /**
+             * @description No valid `__Secure-ws_session` cookie. The session is missing,
+             *     unparseable, or has been revoked. RFC 7807;
+             *     `type` is `https://bliss.example/errors/auth-required`.
+             */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };

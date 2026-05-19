@@ -13,6 +13,7 @@ import com.bliss.grid.application.puzzle.defaultPuzzleConstraints
 import com.bliss.grid.domain.generation.WordRepository
 import com.bliss.grid.domain.model.Word
 import com.bliss.grid.infrastructure.persistence.InMemoryHintUsageRepository
+import com.bliss.grid.infrastructure.persistence.InMemoryHintWriteCoordinator
 import com.bliss.grid.infrastructure.persistence.InMemoryPuzzleRepository
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
@@ -61,6 +62,9 @@ class PuzzleRouteDispatcherTest {
                         revealCellHint = RevealCellHintUseCase(recordingRepo, hintUsageRepo),
                         validatePuzzle = ValidatePuzzleUseCase(recordingRepo),
                         puzzleRepository = recordingRepo,
+                        hintUsageRepository = hintUsageRepo,
+                        hintWriteCoordinator = InMemoryHintWriteCoordinator(),
+                        cookieVerifier = FakeCookieVerifier(),
                     )
                 }
             }

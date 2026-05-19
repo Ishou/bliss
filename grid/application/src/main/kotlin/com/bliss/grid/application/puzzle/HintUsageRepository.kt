@@ -1,33 +1,24 @@
 package com.bliss.grid.application.puzzle
 
+import java.sql.Connection
 import java.util.UUID
 
-/**
- * Per-(puzzle, player) hint counter. Decoupled from `PuzzleRepository` so a
- * shared puzzleId URL gives every caller their own bucket — a stranger
- * opening the link can't burn hints out from under the original player.
- *
- * The wire schema documents identification as a server concern; v1 keys on
- * the X-Session-Id header (UUID v7, mirrors game/api's SessionId).
- */
+/** Per-(puzzle, user) hint counter; each user has an independent spend bucket even on a shared puzzleId URL. */
 interface HintUsageRepository {
-    /**
-     * Atomic spend. Returns the new `hints_used` value when a hint was
-     * granted, or `null` when the cap is already reached (no decrement
-     * happened — the route maps null to 429). Implementations MUST be
-     * single-statement-atomic so two concurrent spends at the cap can
-     * never both succeed.
-     */
+    /** Atomic spend; returns new hints_used on success or null when cap reached (maps to 429). Must be called on the advisory-locked [conn]. */
     fun trySpend(
+        conn: Connection,
         puzzleId: UUID,
-        sessionId: UUID,
+        userId: UUID,
         hintsAllowed: Int,
     ): Int?
 
-    /**
-     * Right-to-erasure (RGPD Article 17, ADR-0025 §5). Removes every
-     * hint-usage row tied to [sessionId] across all puzzles. Returns the
-     * number of rows deleted (0 if the session never used a hint).
-     */
-    fun deleteBySession(sessionId: UUID): Int
+    /** Returns `hints_used` for ([puzzleId], [userId]), or 0 if no row exists. Used by the read path to embed `hintsRemaining`. */
+    fun usedFor(
+        puzzleId: UUID,
+        userId: UUID,
+    ): Int
+
+    /** GDPR Article 17; removes all hint rows for [userId] across puzzles. Returns rows deleted. Idempotent. */
+    fun deleteByUser(userId: UUID): Int
 }
