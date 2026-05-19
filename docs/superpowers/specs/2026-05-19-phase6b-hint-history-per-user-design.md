@@ -65,7 +65,7 @@ Identical shape to game-api's `CookieVerifier`, plus the `verifyFresh` sibling r
 Flyway `V6__puzzle_hint_usage_user_id.sql`:
 
 ```sql
--- Hard cutover: pre-alpha, no users to preserve.
+-- Hard cutover: no production rows to preserve.
 TRUNCATE TABLE puzzle_hint_usage;
 
 ALTER TABLE puzzle_hint_usage DROP CONSTRAINT puzzle_hint_usage_pkey;

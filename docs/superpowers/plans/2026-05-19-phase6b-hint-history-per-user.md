@@ -405,7 +405,7 @@ post("/v1/puzzles/{puzzleId}/hints") {
         return@post
     }
 
-    // Option 2 (preferred): coordinator owns the connection lifecycle
+    // Coordinator owns the connection, advisory lock, and commit — route stays free of JDBC types.
     val outcome = hintWriteCoordinator.withUserLock(cached.userId) {
         cookieVerifier.verifyFresh(rawCookie)?.takeIf { it.userId == cached.userId }
             ?.let { fresh -> revealCellHint.execute(puzzleId, fresh.userId, body.row, body.column) }
