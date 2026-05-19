@@ -127,6 +127,14 @@ class CallbackDispatcherTest {
     }
 
     @Test
+    fun `malformed state string is swallowed by peek and routes to login as UnknownState`() {
+        val dispatcher = buildDispatcher(seedAttempt = happyAttempt(linkToUserId = existingUserId))
+        assertThrows<CompleteOidcLoginError.UnknownState> {
+            runBlocking { dispatcher.dispatch(state = "too-short", code = "any-code") }
+        }
+    }
+
+    @Test
     fun `login attempt with null linkToUserId returns LoggedIn`() {
         val dispatcher = buildDispatcher(seedAttempt = happyAttempt(linkToUserId = null))
         val result = runBlocking { dispatcher.dispatch(state = state.value, code = "auth-code") }
