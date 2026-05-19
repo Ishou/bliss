@@ -20,11 +20,7 @@ import { createGridApiClient, type GridApiClient } from './client';
 export interface HttpPuzzleSolverOptions {
   readonly baseUrl: string;
   readonly fetch?: typeof globalThis.fetch;
-  /**
-   * Legacy parameter — retained for callers that still pass it; ignored on
-   * the wire. The hints endpoint now authenticates via the
-   * `__Secure-ws_session` cookie set by identity-api.
-   */
+  /** Legacy; ignored on the wire — hints endpoint now authenticates via the __Secure-ws_session cookie. */
   readonly sessionId?: string;
 }
 
