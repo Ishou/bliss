@@ -7,12 +7,7 @@ import java.sql.Connection
 import java.util.UUID
 import javax.sql.DataSource
 
-/**
- * Postgres-backed [HintWriteCoordinator]. Opens a pooled connection,
- * sets autoCommit off, takes `pg_advisory_xact_lock(hashtext('user:' || userId))`,
- * runs [block] with the locked connection, then commits — or rolls back
- * on any throw. The advisory lock releases on commit/rollback.
- */
+/** Postgres-backed [HintWriteCoordinator]; opens a pooled connection, acquires an advisory lock, runs [block], then commits or rolls back. */
 class PostgresHintWriteCoordinator(
     private val dataSource: DataSource,
 ) : HintWriteCoordinator {

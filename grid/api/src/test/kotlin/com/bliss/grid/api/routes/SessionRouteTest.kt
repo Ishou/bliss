@@ -14,14 +14,7 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import org.junit.jupiter.api.Test
 
-/**
- * Wire-path tests for `DELETE /v1/sessions/{sessionId}` via Ktor `testApplication`.
- *
- * After Phase 6b.1 hint-usage rows are no longer session-keyed; the
- * delete-session endpoint only clears clue-cooldown rows (when the
- * feature is wired) and is now a no-op for in-memory module wiring
- * with no cooldown repository.
- */
+/** Wire-path tests for `DELETE /v1/sessions/{sessionId}` via Ktor `testApplication`. */
 class SessionRouteTest {
     private val sessionId = "0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6c"
 

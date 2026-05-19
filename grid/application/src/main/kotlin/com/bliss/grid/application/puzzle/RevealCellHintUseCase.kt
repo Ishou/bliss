@@ -9,23 +9,7 @@ import com.bliss.grid.domain.model.Row
 import java.sql.Connection
 import java.util.UUID
 
-/**
- * Spends one hint to reveal the canonical solution letter at a single cell.
- *
- * Flow:
- *  1. Resolve the puzzle in the store — `PuzzleNotFound` if it has never
- *     been GET-ed.
- *  2. Validate that `(row, column)` is in bounds and points at a letter
- *     cell. A bad coordinate is rejected as `InvalidCoord` and does NOT
- *     decrement the budget.
- *  3. Spend a hint atomically against `(puzzleId, userId)` on the
- *     caller-supplied [conn] — `BudgetExhausted` when the cap is reached.
- *  4. Read the canonical letter at the cell and echo `(row, column)`.
- *
- * The route wraps this call in [HintWriteCoordinator.withUserLock] so the
- * spend happens inside a per-user advisory-lock transaction; the under-
- * lock fresh cookie re-verify already happened in the route handler.
- */
+/** Spends one hint to reveal the solution letter at a cell; must be invoked inside [HintWriteCoordinator.withUserLock]. */
 class RevealCellHintUseCase(
     private val puzzleRepository: PuzzleRepository,
     private val hintUsageRepository: HintUsageRepository,
@@ -75,11 +59,7 @@ class RevealCellHintUseCase(
 }
 
 sealed class RevealCellHintOutcome {
-    /**
-     * Hint spent successfully. [letter] is the canonical solution letter at
-     * `(row, column)`; [hintsRemaining] is `hintsAllowed - hints_used after
-     * spend` (so 0 means the next call will return `BudgetExhausted`).
-     */
+    /** Hint granted; [letter] is the solution at (row, column), [hintsRemaining] is the budget remaining after this spend. */
     data class Granted(
         val row: Int,
         val column: Int,

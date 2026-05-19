@@ -7,12 +7,7 @@ import com.bliss.grid.domain.generation.ClueId
 import org.junit.jupiter.api.Test
 import java.util.UUID
 
-/**
- * GDPR erasure (ADR-0025 §5) for anonymous session data. Hint-usage rows
- * moved off session_id in Flyway V6 and are handled by the NATS
- * `user.deleted` consumer; the session erasure endpoint now only clears
- * clue-cooldown rows when the feature is wired.
- */
+/** GDPR erasure (ADR-0025 §5); session endpoint covers clue-cooldown rows only. */
 class DeleteSessionUseCaseTest {
     private val sessionId: UUID = UUID.randomUUID()
 

@@ -3,27 +3,9 @@ package com.bliss.grid.application.puzzle
 import java.sql.Connection
 import java.util.UUID
 
-/**
- * Per-(puzzle, user) hint counter. Decoupled from `PuzzleRepository` so a
- * shared puzzleId URL gives every caller their own bucket — a stranger
- * opening the link can't burn hints out from under the original player.
- *
- * Keyed on the authenticated user resolved from the `__Secure-ws_session`
- * cookie; the hints POST is authed-only.
- */
+/** Per-(puzzle, user) hint counter; each user has an independent spend bucket even on a shared puzzleId URL. */
 interface HintUsageRepository {
-    /**
-     * Atomic spend. Returns the new `hints_used` value when a hint was
-     * granted, or `null` when the cap is already reached (no decrement
-     * happened — the route maps null to 429). Implementations MUST be
-     * single-statement-atomic so two concurrent spends at the cap can
-     * never both succeed.
-     *
-     * The write path passes the locked [conn] from
-     * [HintWriteCoordinator.withUserLock] so `trySpend` runs inside the
-     * same transaction as `pg_advisory_xact_lock` and the under-lock
-     * fresh cookie re-verify.
-     */
+    /** Atomic spend; returns new hints_used on success or null when cap reached (maps to 429). Must be called on the advisory-locked [conn]. */
     fun trySpend(
         conn: Connection,
         puzzleId: UUID,

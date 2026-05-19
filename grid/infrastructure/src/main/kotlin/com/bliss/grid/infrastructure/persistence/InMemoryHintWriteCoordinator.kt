@@ -8,12 +8,7 @@ import java.sql.Connection
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 
-/**
- * In-memory adapter for [HintWriteCoordinator]. Holds a per-user
- * [Mutex] so concurrent spends serialise the same way Postgres'
- * `pg_advisory_xact_lock` does in production. Hands the block a stub
- * [Connection] proxy — the in-memory hint repository never invokes it.
- */
+/** In-memory [HintWriteCoordinator]; uses a per-user [Mutex] to mirror advisory-lock serialisation. */
 class InMemoryHintWriteCoordinator : HintWriteCoordinator {
     private val locks = ConcurrentHashMap<UUID, Mutex>()
 

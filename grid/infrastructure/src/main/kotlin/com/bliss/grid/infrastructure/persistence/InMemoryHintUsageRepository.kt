@@ -6,25 +6,12 @@ import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 
-/**
- * In-memory adapter for [HintUsageRepository]. Pairs with
- * [InMemoryPuzzleRepository] in local dev / tests; not used in production
- * (the [PostgresHintUsageRepository] is the durable path).
- *
- * The [Connection] parameter is ignored — there is no transactional state
- * to thread through; concurrency is handled with `AtomicInteger.CAS`.
- */
+/** In-memory [HintUsageRepository]; [Connection] parameter ignored — concurrency via AtomicInteger CAS. */
 class InMemoryHintUsageRepository : HintUsageRepository {
     private val counters = ConcurrentHashMap<Pair<UUID, UUID>, AtomicInteger>()
 
     override fun trySpend(
         conn: Connection,
-        puzzleId: UUID,
-        userId: UUID,
-        hintsAllowed: Int,
-    ): Int? = spend(puzzleId, userId, hintsAllowed)
-
-    fun trySpend(
         puzzleId: UUID,
         userId: UUID,
         hintsAllowed: Int,

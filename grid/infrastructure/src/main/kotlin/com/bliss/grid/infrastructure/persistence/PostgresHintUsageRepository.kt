@@ -5,12 +5,7 @@ import java.sql.Connection
 import java.util.UUID
 import javax.sql.DataSource
 
-/**
- * Postgres-backed [HintUsageRepository]. The single-statement upsert
- * (`INSERT ... ON CONFLICT ... DO UPDATE`) keeps the spend atomic; the
- * write path passes the locked [Connection] from the per-user advisory
- * lock so spend + lock + under-lock fresh re-verify share one transaction.
- */
+/** Postgres-backed [HintUsageRepository]; [trySpend] uses a single-statement upsert and must be called on the advisory-locked connection. */
 class PostgresHintUsageRepository(
     private val dataSource: DataSource,
 ) : HintUsageRepository {

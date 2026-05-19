@@ -39,13 +39,7 @@ import kotlinx.serialization.json.jsonPrimitive
 import org.junit.jupiter.api.Test
 import java.util.UUID
 
-/**
- * Wire-path tests for `POST /v1/puzzles/{puzzleId}/hints` via Ktor `testApplication`.
- *
- * Each test mounts the route with an injected [FakeCookieVerifier] so the
- * cookie-verify outcomes (anon, cached-authed, fresh-revoked) are driven
- * deterministically without hitting identity-api.
- */
+/** Wire-path tests for `POST /v1/puzzles/{puzzleId}/hints` via Ktor `testApplication`. */
 class HintsRouteTest {
     private val puzzleId = "0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6b"
     private val userId = UUID.fromString("0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6c")
