@@ -239,7 +239,6 @@ fun Application.module() {
             .onSuccess { (natsConnection, jetStream) ->
                 val userEventSubscribers = UserEventSubscribers(jetStream, hintUsageRepository)
                 userEventSubscribers.start()
-                // DLQ republisher: routes messages that exhaust MaxDeliver to the DLQ stream (ADR-0049).
                 val dlqRepublisher =
                     MaxDeliveriesDlqRepublisher(
                         connection = natsConnection,
