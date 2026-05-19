@@ -11,6 +11,7 @@ import com.bliss.game.application.auth.WhoAmI
 import com.bliss.game.domain.Pseudonym
 import com.bliss.game.domain.UserId
 import com.bliss.game.infrastructure.InMemoryLobbyRepository
+import com.bliss.game.infrastructure.InMemoryLobbyWriteCoordinator
 import io.ktor.client.request.header
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
@@ -94,6 +95,36 @@ class LobbyRebindRouteTest {
         }
 
     @Test
+    fun `rebind returns 401 when cached verify ok but verifyFresh returns null (revoked session)`() =
+        testApplication {
+            setupApp(StaleCacheVerifier(cached = whoAmI, fresh = null))
+
+            val response =
+                client.post("/v1/lobbies/players/rebind") {
+                    header(HttpHeaders.Cookie, "${CookieNames.SESSION}=stale-token")
+                    contentType(ContentType.Application.Json)
+                    setBody("""{"anonSessionId":"$anonSessionId"}""")
+                }
+
+            assertThat(response.status).isEqualTo(HttpStatusCode.Unauthorized)
+        }
+
+    @Test
+    fun `unbind returns 401 when cached verify ok but verifyFresh returns null (revoked session)`() =
+        testApplication {
+            setupApp(StaleCacheVerifier(cached = whoAmI, fresh = null))
+
+            val response =
+                client.post("/v1/lobbies/players/unbind") {
+                    header(HttpHeaders.Cookie, "${CookieNames.SESSION}=stale-token")
+                    contentType(ContentType.Application.Json)
+                    setBody("""{"anonPseudonym":"Anon 1234"}""")
+                }
+
+            assertThat(response.status).isEqualTo(HttpStatusCode.Unauthorized)
+        }
+
+    @Test
     fun `rebind with valid cookie but invalid anonSessionId returns 400`() =
         testApplication {
             setupApp(AlwaysValidVerifier(whoAmI))
@@ -153,7 +184,7 @@ class LobbyRebindRouteTest {
                 }
             }
             routing {
-                lobbyRebind(verifier, repo)
+                lobbyRebind(verifier, repo, InMemoryLobbyWriteCoordinator())
             }
         }
     }
@@ -178,5 +209,15 @@ class LobbyRebindRouteTest {
         override suspend fun verify(rawCookieValue: String?): WhoAmI? = result
 
         override suspend fun verifyFresh(rawCookieValue: String?): WhoAmI? = result
+    }
+
+    // Cached lookup succeeds (stale cache entry) but fresh re-verify diverges; mirrors a revoked session.
+    private class StaleCacheVerifier(
+        private val cached: WhoAmI?,
+        private val fresh: WhoAmI?,
+    ) : CookieVerifier {
+        override suspend fun verify(rawCookieValue: String?): WhoAmI? = cached
+
+        override suspend fun verifyFresh(rawCookieValue: String?): WhoAmI? = fresh
     }
 }

@@ -51,6 +51,7 @@ import org.junit.jupiter.api.TestInstance
 import org.testcontainers.DockerClientFactory
 import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.utility.DockerImageName
+import java.sql.Connection
 import java.time.Instant
 import java.util.UUID
 
@@ -574,7 +575,7 @@ class PostgresLobbyRepositoryTest {
             repo.save(lobbyB)
             repo.save(lobbyC)
 
-            val touched = repo.rebindAnonSeats(sessionA, userId, Pseudonym("Isho"))
+            val touched = withConn { conn -> repo.rebindAnonSeats(conn, sessionA, userId, Pseudonym("Isho")) }
 
             assertThat(touched).isEqualTo(setOf(lobbyA.id))
             val afterA = repo.findById(lobbyA.id)!!
@@ -594,8 +595,8 @@ class PostgresLobbyRepositoryTest {
             val lobby = waitingLobby(id = LobbyId.generate(), owner = sessionA)
             repo.save(lobby)
 
-            val first = repo.rebindAnonSeats(sessionA, userId, Pseudonym("Isho"))
-            val second = repo.rebindAnonSeats(sessionA, userId, Pseudonym("Isho"))
+            val first = withConn { conn -> repo.rebindAnonSeats(conn, sessionA, userId, Pseudonym("Isho")) }
+            val second = withConn { conn -> repo.rebindAnonSeats(conn, sessionA, userId, Pseudonym("Isho")) }
 
             assertThat(first).isEqualTo(setOf(lobby.id))
             assertThat(second).isEmpty()
@@ -624,7 +625,7 @@ class PostgresLobbyRepositoryTest {
             repo.save(lobbyB)
             repo.save(lobbyC)
 
-            val touched = repo.unbindUserSeats(userId, Pseudonym("Marmotte"))
+            val touched = withConn { conn -> repo.unbindUserSeats(conn, userId, Pseudonym("Marmotte")) }
 
             assertThat(touched).isEqualTo(setOf(lobbyA.id))
             val afterA = repo.findById(lobbyA.id)!!
@@ -648,8 +649,8 @@ class PostgresLobbyRepositoryTest {
                 )
             repo.save(lobby)
 
-            val first = repo.unbindUserSeats(userId, Pseudonym("Marmotte"))
-            val second = repo.unbindUserSeats(userId, Pseudonym("Marmotte"))
+            val first = withConn { conn -> repo.unbindUserSeats(conn, userId, Pseudonym("Marmotte")) }
+            val second = withConn { conn -> repo.unbindUserSeats(conn, userId, Pseudonym("Marmotte")) }
 
             assertThat(first).isEqualTo(setOf(lobby.id))
             assertThat(second).isEmpty()
@@ -667,7 +668,7 @@ class PostgresLobbyRepositoryTest {
             repo.save(lobby)
 
             val replacement = Pseudonym("Joueur supprime")
-            val touched = repo.anonymizeUserSeats(userId, replacement)
+            val touched = withConn { conn -> repo.anonymizeUserSeats(conn, userId, replacement) }
 
             assertThat(touched).isEqualTo(setOf(lobby.id))
             val seat = repo.findById(lobby.id)!!.players[sessionA]!!
@@ -687,8 +688,8 @@ class PostgresLobbyRepositoryTest {
             repo.save(lobby)
 
             val replacement = Pseudonym("Joueur supprime")
-            val first = repo.anonymizeUserSeats(userId, replacement)
-            val second = repo.anonymizeUserSeats(userId, replacement)
+            val first = withConn { conn -> repo.anonymizeUserSeats(conn, userId, replacement) }
+            val second = withConn { conn -> repo.anonymizeUserSeats(conn, userId, replacement) }
 
             assertThat(first).isEqualTo(setOf(lobby.id))
             assertThat(second).isEmpty()
@@ -706,7 +707,7 @@ class PostgresLobbyRepositoryTest {
             repo.save(lobby)
 
             val newPseudonym = Pseudonym("IshoRenamed")
-            val touched = repo.refreshUserPseudonym(userId, newPseudonym)
+            val touched = withConn { conn -> repo.refreshUserPseudonym(conn, userId, newPseudonym) }
 
             assertThat(touched).isEqualTo(setOf(lobby.id))
             val seat = repo.findById(lobby.id)!!.players[sessionA]!!
@@ -726,8 +727,8 @@ class PostgresLobbyRepositoryTest {
             repo.save(lobby)
 
             val newPseudonym = Pseudonym("IshoRenamed")
-            val first = repo.refreshUserPseudonym(userId, newPseudonym)
-            val second = repo.refreshUserPseudonym(userId, newPseudonym)
+            val first = withConn { conn -> repo.refreshUserPseudonym(conn, userId, newPseudonym) }
+            val second = withConn { conn -> repo.refreshUserPseudonym(conn, userId, newPseudonym) }
 
             assertThat(first).isEqualTo(setOf(lobby.id))
             assertThat(second).isEmpty()
@@ -885,6 +886,21 @@ class PostgresLobbyRepositoryTest {
             createdAt = baseInstant.minusSeconds(120),
         )
     }
+
+    private suspend fun <T> withConn(block: suspend (Connection) -> T): T =
+        withContext(Dispatchers.IO) {
+            dataSource.connection.use { conn ->
+                conn.autoCommit = false
+                try {
+                    val result = block(conn)
+                    conn.commit()
+                    result
+                } catch (t: Throwable) {
+                    conn.rollback()
+                    throw t
+                }
+            }
+        }
 
     private suspend fun countChildRows(
         table: String,

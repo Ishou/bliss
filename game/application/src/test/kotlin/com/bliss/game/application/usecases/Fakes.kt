@@ -17,6 +17,7 @@ import com.bliss.game.domain.Position
 import com.bliss.game.domain.Pseudonym
 import com.bliss.game.domain.SessionId
 import com.bliss.game.domain.UserId
+import java.sql.Connection
 import java.time.Duration
 import java.time.Instant
 import java.util.UUID
@@ -173,6 +174,7 @@ class InMemoryLobbyRepository : LobbyRepository {
     }
 
     override suspend fun rebindAnonSeats(
+        conn: Connection,
         anonSessionId: SessionId,
         userId: UserId,
         newPseudonym: Pseudonym,
@@ -191,6 +193,7 @@ class InMemoryLobbyRepository : LobbyRepository {
     }
 
     override suspend fun unbindUserSeats(
+        conn: Connection,
         userId: UserId,
         anonPseudonym: Pseudonym,
     ): Set<LobbyId> {
@@ -211,6 +214,7 @@ class InMemoryLobbyRepository : LobbyRepository {
     }
 
     override suspend fun anonymizeUserSeats(
+        conn: Connection,
         userId: UserId,
         replacementPseudonym: Pseudonym,
     ): Set<LobbyId> {
@@ -230,6 +234,7 @@ class InMemoryLobbyRepository : LobbyRepository {
     }
 
     override suspend fun refreshUserPseudonym(
+        conn: Connection,
         userId: UserId,
         newPseudonym: Pseudonym,
     ): Set<LobbyId> {

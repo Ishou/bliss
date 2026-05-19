@@ -25,8 +25,16 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Test
+import java.lang.reflect.Proxy
+import java.sql.Connection
 import java.time.Instant
 import java.util.UUID
+
+private val STUB_CONN: Connection =
+    Proxy.newProxyInstance(
+        Connection::class.java.classLoader,
+        arrayOf(Connection::class.java),
+    ) { _, _, _ -> null } as Connection
 
 class InMemoryLobbyRepositoryTest {
     private val sessionA = SessionId("0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6b")
@@ -323,7 +331,7 @@ class InMemoryLobbyRepositoryTest {
             repo.save(lobby1)
             repo.save(lobby2)
 
-            val touched = repo.rebindAnonSeats(sessionA, userIdAlice, newDisplayName)
+            val touched = repo.rebindAnonSeats(STUB_CONN, sessionA, userIdAlice, newDisplayName)
 
             assertThat(touched).containsExactlyInAnyOrder(lobby1.id, lobby2.id)
             val updated = repo.findById(lobby1.id)!!
@@ -338,9 +346,9 @@ class InMemoryLobbyRepositoryTest {
             val repo = InMemoryLobbyRepository()
             val lobby = lobbyAt(LobbyId.generate())
             repo.save(lobby)
-            repo.rebindAnonSeats(sessionA, userIdAlice, newDisplayName)
+            repo.rebindAnonSeats(STUB_CONN, sessionA, userIdAlice, newDisplayName)
 
-            val touchedAgain = repo.rebindAnonSeats(sessionA, userIdAlice, newDisplayName)
+            val touchedAgain = repo.rebindAnonSeats(STUB_CONN, sessionA, userIdAlice, newDisplayName)
 
             assertThat(touchedAgain).isEmpty()
         }
@@ -351,10 +359,10 @@ class InMemoryLobbyRepositoryTest {
             val repo = InMemoryLobbyRepository()
             val lobby = lobbyAt(LobbyId.generate())
             repo.save(lobby)
-            repo.rebindAnonSeats(sessionA, userIdAlice, newDisplayName)
+            repo.rebindAnonSeats(STUB_CONN, sessionA, userIdAlice, newDisplayName)
 
             val anonName = Pseudonym("Marmotte 900")
-            val touched = repo.unbindUserSeats(userIdAlice, anonName)
+            val touched = repo.unbindUserSeats(STUB_CONN, userIdAlice, anonName)
 
             assertThat(touched).containsExactlyInAnyOrder(lobby.id)
             val seat = repo.findById(lobby.id)!!.players[sessionA]!!
@@ -369,7 +377,7 @@ class InMemoryLobbyRepositoryTest {
             val lobby = lobbyAt(LobbyId.generate())
             repo.save(lobby)
 
-            val touched = repo.unbindUserSeats(userIdAlice, Pseudonym("Marmotte 900"))
+            val touched = repo.unbindUserSeats(STUB_CONN, userIdAlice, Pseudonym("Marmotte 900"))
 
             assertThat(touched).isEmpty()
         }
@@ -382,9 +390,9 @@ class InMemoryLobbyRepositoryTest {
             val repo = InMemoryLobbyRepository()
             val lobby = lobbyAt(LobbyId.generate())
             repo.save(lobby)
-            repo.rebindAnonSeats(sessionA, userIdAlice, newDisplayName)
+            repo.rebindAnonSeats(STUB_CONN, sessionA, userIdAlice, newDisplayName)
 
-            val touched = repo.anonymizeUserSeats(userIdAlice, replacementPseudonym)
+            val touched = repo.anonymizeUserSeats(STUB_CONN, userIdAlice, replacementPseudonym)
 
             assertThat(touched).containsExactlyInAnyOrder(lobby.id)
             val seat = repo.findById(lobby.id)!!.players[sessionA]!!
@@ -398,10 +406,10 @@ class InMemoryLobbyRepositoryTest {
             val repo = InMemoryLobbyRepository()
             val lobby = lobbyAt(LobbyId.generate())
             repo.save(lobby)
-            repo.rebindAnonSeats(sessionA, userIdAlice, newDisplayName)
-            repo.anonymizeUserSeats(userIdAlice, replacementPseudonym)
+            repo.rebindAnonSeats(STUB_CONN, sessionA, userIdAlice, newDisplayName)
+            repo.anonymizeUserSeats(STUB_CONN, userIdAlice, replacementPseudonym)
 
-            val touchedAgain = repo.anonymizeUserSeats(userIdAlice, replacementPseudonym)
+            val touchedAgain = repo.anonymizeUserSeats(STUB_CONN, userIdAlice, replacementPseudonym)
 
             assertThat(touchedAgain).isEmpty()
         }
@@ -412,10 +420,10 @@ class InMemoryLobbyRepositoryTest {
             val repo = InMemoryLobbyRepository()
             val lobby = lobbyAt(LobbyId.generate())
             repo.save(lobby)
-            repo.rebindAnonSeats(sessionA, userIdAlice, newDisplayName)
+            repo.rebindAnonSeats(STUB_CONN, sessionA, userIdAlice, newDisplayName)
 
             val renamedPseudonym = Pseudonym("AliceRenamed")
-            val touched = repo.refreshUserPseudonym(userIdAlice, renamedPseudonym)
+            val touched = repo.refreshUserPseudonym(STUB_CONN, userIdAlice, renamedPseudonym)
 
             assertThat(touched).containsExactlyInAnyOrder(lobby.id)
             val seat = repo.findById(lobby.id)!!.players[sessionA]!!
@@ -429,12 +437,12 @@ class InMemoryLobbyRepositoryTest {
             val repo = InMemoryLobbyRepository()
             val lobby = lobbyAt(LobbyId.generate())
             repo.save(lobby)
-            repo.rebindAnonSeats(sessionA, userIdAlice, newDisplayName)
+            repo.rebindAnonSeats(STUB_CONN, sessionA, userIdAlice, newDisplayName)
 
             val renamedPseudonym = Pseudonym("AliceRenamed")
-            repo.refreshUserPseudonym(userIdAlice, renamedPseudonym)
+            repo.refreshUserPseudonym(STUB_CONN, userIdAlice, renamedPseudonym)
 
-            val touchedAgain = repo.refreshUserPseudonym(userIdAlice, renamedPseudonym)
+            val touchedAgain = repo.refreshUserPseudonym(STUB_CONN, userIdAlice, renamedPseudonym)
 
             assertThat(touchedAgain).isEmpty()
         }

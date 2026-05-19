@@ -1,5 +1,6 @@
 package com.bliss.game.infrastructure.events
 
+import com.bliss.game.application.lobby.LobbyWriteCoordinator
 import com.bliss.game.application.ports.LobbyRepository
 import com.bliss.game.application.ports.LobbyRosterBroadcaster
 import com.bliss.game.domain.Pseudonym
@@ -27,6 +28,7 @@ class UserEventSubscribers(
     private val jetStream: JetStream,
     private val lobbies: LobbyRepository,
     private val rosterBroadcaster: LobbyRosterBroadcaster,
+    private val coordinator: LobbyWriteCoordinator,
     private val json: Json = Json { ignoreUnknownKeys = true },
 ) {
     @Serializable
@@ -51,7 +53,10 @@ class UserEventSubscribers(
             subscribe(SUBJECT_DELETED, DURABLE_DELETED) { msg ->
                 val event = json.decodeFromString(UserDeletedPayload.serializer(), String(msg.data, Charsets.UTF_8))
                 val userId = UserId(event.userId)
-                val touched = lobbies.anonymizeUserSeats(userId, REPLACEMENT_PSEUDONYM)
+                val touched =
+                    coordinator.withUserLock(userId) { conn ->
+                        lobbies.anonymizeUserSeats(conn, userId, REPLACEMENT_PSEUDONYM)
+                    }
                 touched.forEach { rosterBroadcaster.notifyRosterChanged(it) }
                 log.info("user.deleted processed: userId={} touched={} lobbies", event.userId, touched.size)
             }
@@ -60,7 +65,10 @@ class UserEventSubscribers(
                 val event = json.decodeFromString(UserRenamedPayload.serializer(), String(msg.data, Charsets.UTF_8))
                 val userId = UserId(event.userId)
                 val newPseudonym = Pseudonym.of(event.newDisplayName)
-                val touched = lobbies.refreshUserPseudonym(userId, newPseudonym)
+                val touched =
+                    coordinator.withUserLock(userId) { conn ->
+                        lobbies.refreshUserPseudonym(conn, userId, newPseudonym)
+                    }
                 touched.forEach { rosterBroadcaster.notifyRosterChanged(it) }
                 log.info("user.renamed processed: userId={} touched={} lobbies", event.userId, touched.size)
             }
