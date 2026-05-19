@@ -49,7 +49,7 @@ interface CookieVerifier {
     /** Cache-bypassing verify. Use on write paths under an advisory lock; never trust the cache when mutating user-keyed rows. */
     suspend fun verifyFresh(rawCookieValue: String?): WhoAmI?
 }
-data class WhoAmI(val userId: UserId, val displayName: Pseudonym)
+data class WhoAmI(val userId: UUID, val displayName: String)
 ```
 
 Identical shape to game-api's `CookieVerifier`, plus the `verifyFresh` sibling required by the under-lock re-verify pattern (§5). Each context owns its own copy of the port — no cross-context import (CLAUDE.md "Architecture": never import from another bounded context's domain or application). The game-api port should grow the same `verifyFresh` method as the Phase 6c.1 follow-up — same race, same fix.
@@ -89,7 +89,7 @@ The `ON DELETE CASCADE` from `puzzles(puzzle_id)` stays.
 4. If null (anon): `hintsRemaining = hintsAllowed` (the UI never enables the button, so this is informational only).
 5. Response embeds `hintsRemaining` alongside the existing puzzle fields.
 
-OpenAPI: add optional `hintsRemaining: integer` to the `PuzzleResponse` schema.
+OpenAPI: add `hintsRemaining: integer`, always required, to the `PuzzleResponse` schema (anon callers receive `hintsAllowed` as the value).
 
 ### 4.2 Write path — `POST /v1/puzzles/{puzzleId}/hints`
 
@@ -104,7 +104,7 @@ val outcome = withContext(Dispatchers.IO) {
         conn.autoCommit = false
         try {
             conn.prepareStatement("SELECT pg_advisory_xact_lock(hashtext('user:' || ?::text))")
-                .use { it.setObject(1, userId.value); it.execute() }
+                .use { it.setObject(1, userId); it.execute() }
 
             // Fresh re-verify under lock — bypasses HttpCookieVerifier's 30 s cache.
             val fresh = cookieVerifier.verifyFresh(rawCookie)
@@ -128,13 +128,14 @@ JetStream subscription `wordsparrow.user.deleted`, durable consumer `grid-user-d
 
 ```kotlin
 suspend fun handle(msg: Message) {
-    val userId = parseUserId(msg.data)
+    val payload = Json.decodeFromString<UserDeletedPayload>(msg.data.decodeToString())
+    val userId = UUID.fromString(payload.userId)
     dataSource.connection.use { conn ->
         conn.autoCommit = false
         conn.prepareStatement("SELECT pg_advisory_xact_lock(hashtext('user:' || ?::text))")
-            .use { it.setObject(1, userId.value); it.execute() }
+            .use { it.setObject(1, userId); it.execute() }
         conn.prepareStatement("DELETE FROM puzzle_hint_usage WHERE user_id = ?")
-            .use { it.setObject(1, userId.value); it.executeUpdate() }
+            .use { it.setObject(1, userId); it.executeUpdate() }
         conn.commit()
     }
     msg.ack()  // explicit ack only on success — redelivery on crash is safe (idempotent DELETE).
@@ -164,7 +165,7 @@ This pattern is now durable architectural guidance — see [feedback memory: "Mo
 
 ## 6. Frontend
 
-`PuzzleResponse` now includes `hintsRemaining` when the user is authed. The hint button state machine — already gated on `isAuthed` in Phase 5 — switches its label from "Indice (n / hintsAllowed)" to "Indice (hintsRemaining / hintsAllowed)" and disables when `hintsRemaining === 0`:
+`PuzzleResponse` now always includes `hintsRemaining`; for anonymous callers it equals `hintsAllowed`. The hint button state machine — already gated on `isAuthed` in Phase 5 — switches its label from "Indice (n / hintsAllowed)" to "Indice (hintsRemaining / hintsAllowed)" and disables when `hintsRemaining === 0`:
 
 ```
 disabled + tooltip "vous avez utilisé tous vos indices pour cette grille"
@@ -179,11 +180,12 @@ All sub-PRs target the 400-line cap per CLAUDE.md "Code Quality / Small PRs". Co
 | # | Branch | Scope | Lines (est.) |
 | - | --- | --- | --- |
 | **6b.0** | `feat/grid-cookie-verifier` | Application port `CookieVerifier` + `HttpCookieVerifier` adapter + tests (mirror of game-api). Wires into DI. **No route changes yet.** | ~300 |
-| **6b.1** | `feat/grid-hint-history-user-id` | Flyway V6 migration. `HintUsageRepository` signature change to `userId`. `RevealCellHintUseCase` accepts `userId`. Route uses cookie-verify with advisory-lock + fresh re-verify. Updates `HintsRouteTest` + `PostgresHintUsageRepositoryTest`. Embeds `hintsRemaining` in `GET /v1/puzzles/{id}` when authed. OpenAPI bump. | ~380 |
+| **6b.1-schema** | `chore/grid-api-openapi-hint-history` | OpenAPI bump: add `hintsRemaining: integer` (required) to `PuzzleResponse`; remove `X-Session-Id` from hint POST security. Schema-only — no Kotlin changes. | ~10 |
+| **6b.1-impl** | `feat/grid-hint-history-user-id` | Flyway V6 migration. `HintUsageRepository` signature change to `userId`. `RevealCellHintUseCase` accepts `userId`. Route uses cookie-verify with advisory-lock + fresh re-verify. Updates `HintsRouteTest` + `PostgresHintUsageRepositoryTest`. Embeds `hintsRemaining` in `GET /v1/puzzles/{id}`. Blocked on 6b.1-schema. | ~370 |
 | **6b.2** | `feat/grid-user-deleted-consumer` | `NatsUserDeletedSubscriber` in grid-infrastructure. JetStream wiring in `Module.kt`. `deleteByUser` repository method with advisory lock. Integration test with testcontainers + embedded NATS. | ~350 |
 | **6b.3** | `feat/frontend-hint-history-server` | Frontend reads `hintsRemaining` from puzzle GET response. Button label + disabled state. E2E touch-up. | ~150 |
 
-Dependencies: 6b.0 → 6b.1 → 6b.2 (serial — each depends on the prior). 6b.3 only depends on 6b.1's OpenAPI bump and can land in parallel with 6b.2.
+Dependencies: 6b.0 → 6b.1-schema → (6b.1-impl and 6b.3 in parallel) → 6b.2.
 
 ## 8. Testing strategy
 
