@@ -81,18 +81,16 @@ once the deploy workflow runs, capture the resolved digest into
 ### `dlq.enabled`
 
 Creates a second JetStream stream `WORDSPARROW_USER_EVENTS_DLQ` with
-subject `wordsparrow.user.events.dlq.>` and a 30-day retention. The
+subject `wordsparrow.dlq.>` and a 30-day retention. The subject tree is
+intentionally distinct from the primary `wordsparrow.user.>` tree so
+JetStream does not reject the second stream for subject overlap. The
 stream is provisioned by the same bootstrap Job as the primary stream
 (idempotent re-run on chart upgrade).
 
 Publishing to the DLQ subject is consumer-side: each context subscribes
 to its own JetStream MaxDeliveries advisory
 (`$JS.EVENT.ADVISORY.MAX_DELIVERIES.<stream>.<consumer>`) and republishes
-the failed message envelope under
-`wordsparrow.user.events.dlq.<original-subject>.<userId>`. **FOLLOW_UP**:
-wire the advisory subscriber + republisher in the game / grid contexts
-(this PR ships only the stream + observability hooks; consumer code is a
-separate change to keep the PR ≤400 LOC).
+the failed message envelope under `wordsparrow.dlq.<original-subject>`.
 
 ### `alerts.enabled`
 
