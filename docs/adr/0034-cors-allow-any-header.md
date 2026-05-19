@@ -140,3 +140,32 @@ paying for a defense-in-depth layer that adds no real protection.
 2. If `wordsparrow.io` ever introduces auth, reopen this decision in
    a new ADR — the wildcard is incompatible with credentialed CORS
    under modern browser rules.
+
+> **Update (2026-05-19): predicate vs literal wildcard.** Auth landed
+> on identity-api (PR #514, Phase 5 OAuth2), and the wildcard-vs-
+> credentials caveat in Follow-up #2 needs sharpening before someone
+> re-reads this ADR and concludes `allowHeaders { true }` is unsafe.
+>
+> The original caution holds for the **literal** response value
+> `Access-Control-Allow-Headers: *`. Browsers reject that string
+> whenever `Access-Control-Allow-Credentials: true` is also set — the
+> Fetch spec disallows the literal wildcard in credentialed mode.
+>
+> Ktor's `allowHeaders { true }` is **not** a literal wildcard. It is
+> a predicate the CORS plugin evaluates against the preflight's
+> `Access-Control-Request-Headers` and **echoes the matching values
+> back verbatim**. The wire response on a credentialed preflight is
+> `Access-Control-Allow-Headers: x-request-id, traceparent,
+> tracestate` (or whatever the client actually asked for) — never the
+> literal `*` string. That form is spec-compliant alongside
+> `Allow-Credentials: true`, which is why identity-api can use it.
+> Reference: `identity/api/src/main/kotlin/com/bliss/identity/api/Module.kt`
+> pairs `allowHeaders { true }` with `allowCredentials = true`; PR
+> #514 introduced the combination.
+>
+> Guidance: prefer `allowHeader(...)` (explicit list) when the header
+> surface is small and stable — auth-token APIs usually qualify. Use
+> `allowHeaders { true }` only when the headers vary by client, which
+> is currently the case because the OTel browser SDK (ADR-0033) adds
+> `traceparent` / `tracestate` dynamically and our middleware stack
+> is the recurring-tax surface this ADR was written to address.
