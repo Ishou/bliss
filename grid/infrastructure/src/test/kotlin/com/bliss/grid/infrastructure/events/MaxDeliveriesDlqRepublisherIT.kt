@@ -61,7 +61,7 @@ class MaxDeliveriesDlqRepublisherIT {
             StreamConfiguration
                 .builder()
                 .name(DLQ_STREAM)
-                .subjects("wordsparrow.user.events.dlq.>")
+                .subjects("wordsparrow.dlq.>")
                 .storageType(StorageType.File)
                 .build(),
         )
@@ -122,7 +122,7 @@ class MaxDeliveriesDlqRepublisherIT {
         // Subscribe to the DLQ subject BEFORE publishing so we don't race the republish.
         val dlqStreamSub =
             connection.jetStream().subscribe(
-                "wordsparrow.user.events.dlq.>",
+                "wordsparrow.dlq.>",
                 PushSubscribeOptions
                     .builder()
                     .configuration(
@@ -141,7 +141,7 @@ class MaxDeliveriesDlqRepublisherIT {
             assumeTrue(attempts.await(20, TimeUnit.SECONDS)) { "max-deliver redeliveries never fired" }
             val dlqMsg = dlqStreamSub.nextMessage(Duration.ofSeconds(15))
             assertThat(dlqMsg).isNotNull()
-            assertThat(dlqMsg.subject).isEqualTo("wordsparrow.user.events.dlq.wordsparrow.user.deleted")
+            assertThat(dlqMsg.subject).isEqualTo("wordsparrow.dlq.wordsparrow.user.deleted")
             assertThat(String(dlqMsg.data, Charsets.UTF_8)).isEqualTo(payload)
             val headers = dlqMsg.headers
             assertThat(headers).isNotNull()
