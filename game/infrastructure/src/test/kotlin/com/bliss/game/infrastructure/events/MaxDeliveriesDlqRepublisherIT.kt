@@ -118,8 +118,7 @@ class MaxDeliveriesDlqRepublisherIT {
             )
         republisher.start()
 
-        // Republisher publishes via core Connection.publish, so a core NATS subscriber on the
-        // same subject sees the message directly — no JetStream consumer needed.
+        // Republisher uses core Connection.publish; a JetStream consumer would never receive it.
         val dlqStreamSub = connection.subscribe("wordsparrow.dlq.>")
         connection.flush(Duration.ofSeconds(5))
 
