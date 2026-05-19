@@ -265,7 +265,6 @@ gh pr create --title "chore(grid-api): openapi — hintsRemaining + cookie auth 
 - Modify: `grid/api/src/main/kotlin/com/bliss/grid/api/dto/PuzzleResponse.kt`
 - Modify: `grid/api/src/main/kotlin/com/bliss/grid/api/mapper/GridToPuzzleMapper.kt`
 - Modify: `grid/api/src/test/kotlin/com/bliss/grid/api/routes/HintsRouteTest.kt`
-- Modify: `grid/api/openapi.yaml` (add `hintsRemaining` to PuzzleResponse + cookie-auth on POST hints)
 
 ### Task 1: Flyway migration
 
@@ -329,7 +328,7 @@ Run: `./gradlew :grid:infrastructure:test --tests "PostgresHintUsageRepositoryTe
 
 - [ ] **Step 3: Update the adapter**
 
-`grid/infrastructure/src/main/kotlin/com/bliss/grid/infrastructure/persistence/PostgresHintUsageRepository.kt`: rename parameter and column; add `usedFor` and `deleteByUser`. The `trySpend` SQL is unchanged except for the column name swap. NOTE: this adapter does NOT acquire the advisory lock itself — the lock is acquired by the route handler one level up, around the transaction. Document this in the KDoc.
+`grid/infrastructure/src/main/kotlin/com/bliss/grid/infrastructure/persistence/PostgresHintUsageRepository.kt`: rename parameter and column; add `usedFor` and `deleteByUser`. The `trySpend` SQL is unchanged except for the column name swap. NOTE: `trySpend` does NOT acquire the advisory lock itself — the lock is acquired by the route handler one level up, around the transaction. (`deleteByUser`, implemented in 6b.2, does acquire the lock internally — that is safe because the route handler never calls `deleteByUser`.) Document this in the KDoc.
 
 ```kotlin
 // SQL templates
@@ -478,7 +477,7 @@ git add grid/ docs/
 git commit -m "$(cat <<'EOF'
 feat(grid-api): hint history per user_id with race-free write path
 
-Phase 6b.1 — re-key puzzle_hint_usage from session_id to user_id (hard
+Phase 6b.1-impl — re-key puzzle_hint_usage from session_id to user_id (hard
 cutover, pre-alpha). Hint POST is now authed-only; the write path
 acquires pg_advisory_xact_lock(user:$user_id) and re-verifies the
 cookie freshly under the lock (cannot trust the 30 s LRU cache for
@@ -491,14 +490,14 @@ EOF
 
 ```bash
 git push -u origin feat/grid-hint-history-user-id
-gh pr create --title "feat(grid-api): hint history per user_id + race-free write (Phase 6b.1)" --body "..."
+gh pr create --title "feat(grid-api): hint history per user_id + race-free write (Phase 6b.1-impl)" --body "..."
 ```
 
 ---
 
 ## Sub-PR 6b.2 — NATS user.deleted consumer
 
-**Branch:** `feat/grid-user-deleted-consumer` off `main` (after 6b.1 merges).
+**Branch:** `feat/grid-user-deleted-consumer` off `main` (after 6b.1-impl merges).
 
 **Goal:** Grid-infrastructure subscribes to `wordsparrow.user.deleted` JetStream subject, durable consumer `grid-user-deleted`, deletes hint rows for the user, acks. Acquires the same advisory lock so it serializes against in-flight writes.
 
@@ -616,7 +615,7 @@ gh pr create --title "feat(grid-events): NATS user.deleted consumer cascade-dele
 
 ## Sub-PR 6b.3 — Frontend reads `hintsRemaining` from puzzle GET
 
-**Branch:** `feat/frontend-hint-history-server` off `main` (after 6b.1 merges; OpenAPI types must be regenerated).
+**Branch:** `feat/frontend-hint-history-server` off `main` (after 6b.1-schema merges; OpenAPI types must be regenerated).
 
 **Goal:** The hint button now shows the canonical remaining count from the server on first load instead of computing locally from `hintsAllowed`.
 
