@@ -182,9 +182,9 @@ Full rationale is in MANIFESTO.md.
   know" rather than guessing.
 - **Read the ADR before non-trivial work.** Recent landmarks: 0001
   (workflow), 0003 (cross-language API), 0009 (k3s deploy), 0018
-  (game context), 0034 (a11y), 0039 (bitmask-CSP grid generator),
+  (game context), 0050 (a11y), 0039 (bitmask-CSP grid generator),
   0042 (daily pre-gen worker). Numbering has a few collisions
-  (0027, 0032, 0034, 0035, 0036, 0039 each have two ADRs at
+  (0027, 0032, 0035, 0036, 0039 each have two ADRs at
   different titles); read by filename, not number alone.
 
 ## ADR template
