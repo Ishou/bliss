@@ -120,9 +120,7 @@ class MaxDeliveriesDlqRepublisherIT {
             )
         republisher.start()
 
-        // Core NATS sub on the DLQ subject — the republisher calls Connection.publish (core),
-        // so a core subscriber observes the dead-lettered message directly without needing
-        // a JetStream consumer on the DLQ stream (which has flaky wildcard-stream lookup).
+        // Core NATS sub — republisher uses Connection.publish (core), not JetStream publish.
         val dlqSub: Subscription = connection.subscribe("wordsparrow.dlq.>")
         connection.flush(Duration.ofSeconds(5))
 
