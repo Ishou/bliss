@@ -78,6 +78,84 @@ schema.
   > case: PR #50 (Helm chart skeleton) shipped 13 well-organized files
   > totaling 409 GitHub-counted additions, 394 of which were non-blank.
   > The original text is preserved for historical context.**
+
+  > **Update (2026-05-19): Bundling exceptions to the 400-line cap.**
+  >
+  > The 400 non-blank, non-generated diff line cap (including tests)
+  > remains the default ceiling for every PR. The OAuth2 workstream
+  > surfaced three recurring coupling categories where splitting a PR
+  > would either ship a deploy-broken intermediate state, leave dead
+  > code in the tree, or break CI on a schema-only PR. Each category
+  > below has at least one documented precedent where the maintainer
+  > approved an over-cap PR post-hoc. This addendum codifies those
+  > categories so future PRs in the same shape do not relitigate the
+  > principle from scratch.
+  >
+  > **Recognized exception categories:**
+  >
+  > **(a) Schema-consumer coupling.** When a contract change
+  > (OpenAPI, protobuf, AsyncAPI, SQL migration) is wired through CI
+  > gates that force regenerated consumer code to compile — e.g.
+  > `.github/workflows/openapi-typescript-drift.yml` regenerates
+  > `frontend/src/.../types.ts` and `frontend/package.json` runs
+  > `tsc -b && vite build`, which fails on a TS error — the schema PR
+  > cannot land in isolation: the regenerated consumer types fail to
+  > compile until the consumer caller also migrates. The schema, the
+  > backend implementation, and the minimal consumer caller migration
+  > ship together as one PR. Reference: PR #537 (~592 non-blank lines).
+  >
+  > **(b) Port + first-caller coupling.** When a new port (with its
+  > adapter) is introduced and its first caller is tightly coupled —
+  > the caller's signature must change at the same time, or the port
+  > has no other consumer and would land as dead code in a port-only
+  > PR — the port and its first callers ship together. Reference:
+  > PR #541 (~427 non-blank lines: `LobbyWriteCoordinator` port + its
+  > first callers + the `LobbyRepository` `Connection`-threaded
+  > signature change).
+  >
+  > **(c) Prod-broken-intermediate-state coupling.** When splitting a
+  > PR would leave a release-able intermediate state in a broken or
+  > incoherent runtime configuration — e.g. a write path that does
+  > not actually persist, a feature flag wired to nothing, an
+  > authentication step that no longer issues the credential the next
+  > step consumes — the PR ships as one unit rather than producing a
+  > deploy-broken commit on `main`. Reference: PR #528 (~964 non-blank
+  > lines: Postgres no-op rebind + cookie-verify wiring + Flyway
+  > migration in the lobby create handler).
+  >
+  > **Cap-override process.** When a PR claims an exception, the
+  > implementer:
+  >
+  > 1. States the exception category (a, b, or c) in the PR body
+  >    with a one-paragraph justification of why the coupling cannot
+  >    be unwound by splitting.
+  > 2. Explicitly requests human sign-off (tags the maintainer or
+  >    notes that human approval is required). **Agent self-grants do
+  >    not count.**
+  > 3. Waits for the maintainer to post an explicit approval comment
+  >    on the PR before the §6a reviewer is allowed to converge on
+  >    `LGTM`. The §6a reviewer flags the cap excess as a finding in
+  >    every pass until the maintainer's approval is visible.
+  >
+  > **What is NOT a justified exception:** broad refactors,
+  > "while I'm in here" cleanup, optional polish, doc updates bundled
+  > with code, test additions for unrelated modules, or anything that
+  > could land as a follow-up workstream without breaking the primary
+  > change. If the over-cap volume comes from any of these, the PR is
+  > split, not justified.
+  >
+  > **Soft ceiling even on exception PRs:** ~700 non-blank,
+  > non-generated lines. PRs above this threshold are split further
+  > unless every line above 400 is itself covered by one of categories
+  > (a), (b), or (c). PR #528 exceeded this soft ceiling and is the
+  > worked example of why splitting is still preferable when feasible.
+  >
+  > The cap-override process is recorded here so that the §6a
+  > reviewer, the dispatcher, and the maintainer all read the same
+  > rulebook. Per `MANIFESTO.md`, a principle with three documented
+  > exceptions is reviewed for revision; the three precedents above
+  > are precisely that review, and the outcome is this codification
+  > rather than relaxation of the cap itself.
 - Conventional commits with the bounded-context as scope:
   `feat(grid-application): …`, `fix(frontend-grid): …`,
   `chore(api-grid): regenerate openapi types`.
