@@ -153,6 +153,13 @@ k8s-infra:
     hostMetrics:        {enabled: true}
     kubeletMetrics:     {enabled: true}
     clusterMetrics:     {enabled: true}
+    # prometheus: scrapes prometheus.io/scrape=true pods in wordsparrow/ (annotationsPrefix overrides signoz.io default)
+    prometheus:
+      enabled: true
+      annotationsPrefix: prometheus.io
+      scrapeInterval: 60s
+      namespaces:
+        - wordsparrow
     # Logs from observability/ (SigNoz self-logs), kube-system/ (k3s noise),
     # and platform/ (cert-manager, ingress-nginx, hcloud-csi, external-dns,
     # CNPG controller — all live in this single namespace in our cluster)
