@@ -12,12 +12,14 @@ streamInit:
   image:
     digest: "sha256:<resolve at deploy time>"
 
-# Prometheus exporter sidecar — on in prod. Digest resolved by the CD
-# workflow at deploy time (same pattern as the NATS server image).
+# Prometheus exporter sidecar — on in prod. Digest pinned to the
+# multi-arch image index for natsio/prometheus-nats-exporter:0.15.0,
+# resolved via the Docker Hub registry v2 manifest endpoint (see PR body
+# for the exact lookup command). Manifesto: deterministic builds.
 metricsExporter:
   enabled: true
   image:
-    digest: "sha256:<resolve at deploy time>"
+    digest: "sha256:1f6787754b8b083f271adea4bb699b9c9e21279c89d903f1710f7647c604f145"
 
 # DLQ stream — on in prod (scaling-readiness per ADR-0049).
 dlq:
