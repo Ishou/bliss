@@ -82,7 +82,7 @@ test('anon user sees the hint button disabled with the sign-in tooltip', async (
   await page.goto('/');
   await page.waitForSelector('[role="grid"]', { state: 'visible' });
 
-  const hintButton = page.getByRole('button', { name: 'Demander un indice' });
+  const hintButton = page.getByRole('button', { name: 'Indice (3 / 3)' });
   await expect(hintButton).toBeDisabled();
   await expect(hintButton).toHaveAttribute(
     'title',
@@ -98,7 +98,7 @@ test('authed user sees the hint button enabled with its original tooltip', async
   await page.goto('/');
   await page.waitForSelector('[role="grid"]', { state: 'visible' });
 
-  const hintButton = page.getByRole('button', { name: 'Demander un indice' });
+  const hintButton = page.getByRole('button', { name: 'Indice (3 / 3)' });
   await expect(hintButton).toBeEnabled();
   await expect(hintButton).toHaveAttribute('title', 'Demander un indice');
 });

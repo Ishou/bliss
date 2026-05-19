@@ -14,6 +14,7 @@ const puzzle: Puzzle = {
   width: 4,
   height: 1,
   hintsAllowed: 3,
+  hintsRemaining: 3,
   cells: [
     { kind: 'block', position: { row: 0, col: 0 } },
     { kind: 'letter', position: { row: 0, col: 1 }, entry: '' },

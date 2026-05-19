@@ -4,9 +4,10 @@ import type { Cell } from './Cell';
 // extent; `cells` is a sparse listing — positions absent from `cells` are
 // implicitly empty (renderable as blanks). `language` is a BCP-47 tag and
 // drives the `lang` attribute applied to the rendered grid for assistive
-// tech. `hintsAllowed` is the per-puzzle hint budget the player may spend
-// against `POST /v1/puzzles/{id}/hints`; the server is authoritative on
-// the running counter, this field only seeds the UI.
+// tech. `hintsAllowed` is the per-puzzle hint budget; `hintsRemaining` is
+// the server-derived remaining count for the current user (or
+// `hintsAllowed` for anonymous callers). The server is authoritative on
+// the running counter.
 export type Difficulty = 'facile' | 'moyen' | 'difficile';
 
 export interface Puzzle {
@@ -16,6 +17,7 @@ export interface Puzzle {
   readonly width: number;
   readonly height: number;
   readonly hintsAllowed: number;
+  readonly hintsRemaining: number;
   readonly cells: readonly Cell[];
   readonly difficulty?: Difficulty | null;
   readonly gridNumber?: number | null;

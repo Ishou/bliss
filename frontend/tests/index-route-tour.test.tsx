@@ -21,6 +21,7 @@ const stubPuzzle: Puzzle = {
   width: 1,
   height: 1,
   hintsAllowed: 3,
+  hintsRemaining: 3,
   cells: [{ kind: 'letter', position: { row: 0, col: 0 }, entry: '' }],
 };
 

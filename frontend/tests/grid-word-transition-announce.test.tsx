@@ -16,6 +16,7 @@ const samplePuzzle: Puzzle = {
   width: 5,
   height: 4,
   hintsAllowed: 3,
+  hintsRemaining: 3,
   cells: [
     {
       kind: 'definition',

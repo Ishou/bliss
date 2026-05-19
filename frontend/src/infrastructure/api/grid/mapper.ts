@@ -80,6 +80,7 @@ export function apiPuzzleToDomain(api: ApiPuzzle): Puzzle {
     id: api.id, title: api.title, language: api.language,
     width: api.width, height: api.height,
     hintsAllowed: api.hintsAllowed,
+    hintsRemaining: api.hintsRemaining,
     cells,
     difficulty: api.difficulty ?? null,
     gridNumber: api.gridNumber ?? null,

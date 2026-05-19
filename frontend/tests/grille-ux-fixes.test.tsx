@@ -21,6 +21,7 @@ const buildPuzzle = (overrides: Partial<Puzzle> = {}): Puzzle => ({
   width: 3,
   height: 1,
   hintsAllowed: 3,
+  hintsRemaining: 3,
   cells: [
     {
       kind: 'definition',

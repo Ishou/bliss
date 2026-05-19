@@ -4,13 +4,11 @@ import {
   type PuzzleSolver,
 } from '@/application';
 
-// Owner-side state for the hint affordance. Spends one credit per
-// `request(row, column)` to reveal the canonical letter at that cell;
-// the server is authoritative on the running counter, so a 200 always
-// overwrites `hintsRemaining`. A 429 (`budget-exhausted`) flips
-// `exhausted` and disables the affordance for the rest of this puzzle.
-// 400 `invalid-coord` is a stale-focus race (the focused cell got
-// updated between click and request); surface as a transient error
+// Owner-side state for the hint affordance. Seeded from the server's
+// `Puzzle.hintsRemaining` on first paint, then overwritten on every
+// successful POST. 429 (`budget-exhausted`) flips `exhausted` and
+// disables the affordance for the rest of this puzzle. 400
+// `invalid-coord` is a stale-focus race; surface as a transient error
 // without changing the budget. Reset when the puzzle reference changes.
 
 const RESULT_LINGER_MS = 4_000;
@@ -32,20 +30,16 @@ export interface HintRequestState {
 
 export function useHintRequest(
   puzzleId: string,
-  hintsAllowed: number,
+  initialHintsRemaining: number,
   solver: PuzzleSolver,
   onReveal?: (row: number, column: number, letter: string) => void,
-  // Persisted hints-already-consumed for this puzzle. Lets a page
-  // reload (or an Actualiser bump that resets the value to 0) restore
-  // `hintsRemaining` without losing earlier spend.
-  initialHintsUsed: number = 0,
   // Fired when a hint succeeds so the route can persist the running
   // tally via `soloEntriesStore.recordHintUsed`.
   onHintConsumed?: () => void,
 ): HintRequestState {
-  const initialRemaining = Math.max(0, hintsAllowed - initialHintsUsed);
-  const [hintsRemaining, setHintsRemaining] = useState<number>(initialRemaining);
-  const [exhausted, setExhausted] = useState<boolean>(initialRemaining <= 0);
+  const seed = Math.max(0, initialHintsRemaining);
+  const [hintsRemaining, setHintsRemaining] = useState<number>(seed);
+  const [exhausted, setExhausted] = useState<boolean>(seed <= 0);
   const [pending, setPending] = useState<boolean>(false);
   const [lastResult, setLastResult] = useState<HintLastResult | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -61,11 +55,10 @@ export function useHintRequest(
     onHintConsumedRef.current = onHintConsumed;
   }, [onHintConsumed]);
 
-  // Reset on puzzle change (or hintsAllowed / initialHintsUsed change,
-  // both downstream of either a route swap or a refresh that cleared
-  // the persisted counter).
+  // Reset on puzzle change or when the loader reseeds the remaining
+  // count (e.g. route invalidation after Actualiser).
   useEffect(() => {
-    const remaining = Math.max(0, hintsAllowed - initialHintsUsed);
+    const remaining = Math.max(0, initialHintsRemaining);
     setHintsRemaining(remaining);
     setExhausted(remaining <= 0);
     setPending(false);
@@ -76,7 +69,7 @@ export function useHintRequest(
       window.clearTimeout(lingerTimerRef.current);
       lingerTimerRef.current = null;
     }
-  }, [puzzleId, hintsAllowed, initialHintsUsed]);
+  }, [puzzleId, initialHintsRemaining]);
 
   // Cleanup on unmount.
   useEffect(() => {

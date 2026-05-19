@@ -193,23 +193,18 @@ function LoadedHomePage({ puzzle }: { readonly puzzle: Puzzle }) {
     [puzzle.id, soloEntriesStore, announcer],
   );
 
-  // Persisted hint count survives page reloads and resets on
-  // Actualiser (which calls `clearForPuzzle`). The memo re-reads on
-  // `refreshCount` to mirror `initialEntries`'s rehydrate posture.
-  const initialHintsUsed = useMemo(() => {
-    void refreshCount;
-    return soloEntriesStore.loadHintsUsed(puzzle.id);
-  }, [puzzle.id, refreshCount, soloEntriesStore]);
+  // Server is authoritative on `hintsRemaining`; the loader reseeds it
+  // on Actualiser-triggered invalidation. Local solo-entries tally
+  // stays only to drive Accueil's per-grid progress hint.
   const handleHintConsumed = useCallback(() => {
     soloEntriesStore.recordHintUsed(puzzle.id);
   }, [puzzle.id, soloEntriesStore]);
 
   const hint = useHintRequest(
     puzzle.id,
-    puzzle.hintsAllowed,
+    puzzle.hintsRemaining,
     puzzleSolver,
     handleHintReveal,
-    initialHintsUsed,
     handleHintConsumed,
   );
 

@@ -5,20 +5,11 @@ import { HintIcon } from '@/ui/components/icons';
 import type { HintLastResult } from './useHintRequest';
 
 // Toolbar affordance for the per-puzzle hint budget. Clicking spends one
-// credit to reveal the canonical letter at the currently focused cell;
-// the status pill (aria-live) reports `Lettre révélée` / `Indices
-// épuisés`. The button is disabled while pending or once the budget hit
-// zero (exhausted = server 429 or 200 with hintsRemaining 0, locked for
-// the rest of the puzzle). Focus / locked-cell guards happen in the
-// click handler itself rather than the disabled prop: the focused cell
-// changes on every keystroke (auto-advance), and reflecting that into
-// React state would break the uncontrolled-input contract from
-// ADR-0002 §4. A click on a locked cell is a silent no-op.
-//
-// Visual layer: a single pill button (bulb + "Indice" label + thin
-// divider + counter) sized to match the toolbar's other 36-px
-// affordances. On mobile the label collapses so the pill reads as
-// `bulb 2/3` only — the divider hides with it.
+// credit to reveal the canonical letter at the currently focused cell.
+// The button is disabled while pending, once the budget hits zero
+// (server-authoritative hintsRemaining), or while the gate locks anon
+// callers out. Focus / locked-cell guards happen in the click handler
+// to preserve the uncontrolled-input contract from ADR-0002 §4.
 
 const containerStyles = css({
   position: 'relative',
@@ -64,32 +55,7 @@ const pillStyles = css({
 });
 
 const labelStyles = css({
-  display: { base: 'none', md: 'inline' },
-});
-
-const dividerStyles = css({
-  display: { base: 'none', md: 'inline-block' },
-  width: '1px',
-  height: '16px',
-  bg: 'color-mix(in srgb, token(colors.border) 80%, transparent)',
-});
-
-const counterStyles = css({
-  display: 'inline-flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  fontFamily: 'mono',
-  fontSize: 'xs',
-  lineHeight: '1',
-  color: 'fgMuted',
-  fontVariantNumeric: 'tabular-nums',
-  letterSpacing: '0.02em',
-  // Reserve space for the two-character ratio (e.g. "0/3") so the
-  // pill layout doesn't reflow as the count drops; centred so the
-  // glyph sits visually balanced inside the pill instead of left-
-  // anchored against the divider.
-  minWidth: '2.4em',
-  textAlign: 'center',
+  display: 'inline',
 });
 
 const statusBaseStyles = css({
@@ -179,28 +145,25 @@ export function HintControl({
 
   const gate = useHintGate();
   const status = renderStatus({ lastResult, errorMessage, exhausted });
+  const budgetExhausted = hintsRemaining === 0;
+  const tooltip = budgetExhausted
+    ? 'Vous avez utilisé tous vos indices pour cette grille.'
+    : (gate?.title ?? 'Demander un indice');
 
   return (
     <div className={containerStyles}>
       <button
         type="button"
         className={pillStyles}
-        aria-label="Demander un indice"
-        title={gate?.title ?? 'Demander un indice'}
+        aria-label={`Indice (${hintsRemaining} / ${hintsAllowed})`}
+        title={tooltip}
         onClick={handleClick}
         onMouseDown={handleMouseDown}
-        disabled={exhausted || pending || (gate?.disabled ?? false)}
+        disabled={exhausted || budgetExhausted || pending || (gate?.disabled ?? false)}
         aria-disabled={gate?.['aria-disabled']}
       >
         <HintIcon />
-        <span className={labelStyles}>Indice</span>
-        <span className={dividerStyles} aria-hidden="true" />
-        <span
-          className={counterStyles}
-          aria-label={`${hintsRemaining} sur ${hintsAllowed} indices restants`}
-        >
-          {hintsRemaining}/{hintsAllowed}
-        </span>
+        <span className={labelStyles}>{`Indice (${hintsRemaining} / ${hintsAllowed})`}</span>
       </button>
       {status ? (
         <span

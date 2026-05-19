@@ -29,6 +29,7 @@ const samplePuzzle: Puzzle = {
   width: 5,
   height: 3,
   hintsAllowed: 3,
+  hintsRemaining: 3,
   difficulty: null,
   gridNumber: null,
   cells: [

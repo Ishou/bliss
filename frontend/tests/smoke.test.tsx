@@ -14,7 +14,7 @@ import { Route as IndexRoute } from '@/ui/routes/grille';
 // the test exercises the real loader → component path HTTP-free.
 const samplePuzzle: Puzzle = {
   id: '0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6b',
-  title: 'WordSparrow', language: 'fr', width: 1, height: 1, hintsAllowed: 3,
+  title: 'WordSparrow', language: 'fr', width: 1, height: 1, hintsAllowed: 3, hintsRemaining: 3,
   cells: [{ kind: 'letter', position: { row: 0, col: 0 }, entry: '' }],
 };
 const puzzleRepository: PuzzleRepository = { fetchById: () => Promise.resolve(samplePuzzle), fetchDaily: () => Promise.resolve(samplePuzzle), listDailySummaries: () => Promise.resolve({ items: [], hasMore: false }) };

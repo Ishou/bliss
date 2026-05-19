@@ -104,5 +104,6 @@ export const SAMPLE_PUZZLE: Puzzle = {
   width: 5,
   height: 5,
   hintsAllowed: 3,
+  hintsRemaining: 3,
   cells,
 };
