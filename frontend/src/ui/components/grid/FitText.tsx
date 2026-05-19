@@ -52,10 +52,7 @@ const PHASE2_FLOOR_FACTOR = 0.5;
 // what the user sees.
 const FIT_EPSILON_PX = 0.25;
 
-// WebKit (iOS + macOS Safari) hyphenates lang="fr" more aggressively than Blink: a clue sized to fit
-// n lines on Chrome/Android wraps to n+1 on WebKit and the extra line is clipped by the def-cell.
-// We reserve one line of headroom only on WebKit — applying it everywhere makes Android Chrome text
-// microscopic for no benefit. Factor 1.15 covers line-height 1.05 + descender slack. SSR-safe.
+// Safari (iOS + macOS) hyphenates lang="fr" more aggressively than Blink; headroom prevents def-cell clip. SSR-safe.
 const IS_WEBKIT = typeof navigator !== 'undefined'
   && /AppleWebKit/.test(navigator.userAgent)
   && !/Chrome|Chromium|Android/.test(navigator.userAgent);
