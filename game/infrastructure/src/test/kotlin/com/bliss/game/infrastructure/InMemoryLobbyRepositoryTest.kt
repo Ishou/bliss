@@ -373,4 +373,69 @@ class InMemoryLobbyRepositoryTest {
 
             assertThat(touched).isEmpty()
         }
+
+    private val replacementPseudonym = Pseudonym("Joueur supprime")
+
+    @Test
+    fun `anonymizeUserSeats clears userId and replaces pseudonym, returns touched lobby ids`() =
+        runTest {
+            val repo = InMemoryLobbyRepository()
+            val lobby = lobbyAt(LobbyId.generate())
+            repo.save(lobby)
+            repo.rebindAnonSeats(sessionA, userIdAlice, newDisplayName)
+
+            val touched = repo.anonymizeUserSeats(userIdAlice, replacementPseudonym)
+
+            assertThat(touched).containsExactlyInAnyOrder(lobby.id)
+            val seat = repo.findById(lobby.id)!!.players[sessionA]!!
+            assertThat(seat.userId).isNull()
+            assertThat(seat.pseudonym).isEqualTo(replacementPseudonym)
+        }
+
+    @Test
+    fun `anonymizeUserSeats is idempotent - second call on already-anon seat returns empty set`() =
+        runTest {
+            val repo = InMemoryLobbyRepository()
+            val lobby = lobbyAt(LobbyId.generate())
+            repo.save(lobby)
+            repo.rebindAnonSeats(sessionA, userIdAlice, newDisplayName)
+            repo.anonymizeUserSeats(userIdAlice, replacementPseudonym)
+
+            val touchedAgain = repo.anonymizeUserSeats(userIdAlice, replacementPseudonym)
+
+            assertThat(touchedAgain).isEmpty()
+        }
+
+    @Test
+    fun `refreshUserPseudonym updates pseudonym and returns touched ids`() =
+        runTest {
+            val repo = InMemoryLobbyRepository()
+            val lobby = lobbyAt(LobbyId.generate())
+            repo.save(lobby)
+            repo.rebindAnonSeats(sessionA, userIdAlice, newDisplayName)
+
+            val renamedPseudonym = Pseudonym("AliceRenamed")
+            val touched = repo.refreshUserPseudonym(userIdAlice, renamedPseudonym)
+
+            assertThat(touched).containsExactlyInAnyOrder(lobby.id)
+            val seat = repo.findById(lobby.id)!!.players[sessionA]!!
+            assertThat(seat.userId).isEqualTo(userIdAlice)
+            assertThat(seat.pseudonym).isEqualTo(renamedPseudonym)
+        }
+
+    @Test
+    fun `refreshUserPseudonym is idempotent - seat already on new pseudonym returns empty set`() =
+        runTest {
+            val repo = InMemoryLobbyRepository()
+            val lobby = lobbyAt(LobbyId.generate())
+            repo.save(lobby)
+            repo.rebindAnonSeats(sessionA, userIdAlice, newDisplayName)
+
+            val renamedPseudonym = Pseudonym("AliceRenamed")
+            repo.refreshUserPseudonym(userIdAlice, renamedPseudonym)
+
+            val touchedAgain = repo.refreshUserPseudonym(userIdAlice, renamedPseudonym)
+
+            assertThat(touchedAgain).isEmpty()
+        }
 }

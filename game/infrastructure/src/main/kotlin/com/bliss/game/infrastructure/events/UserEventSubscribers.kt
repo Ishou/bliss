@@ -17,21 +17,12 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
 import java.time.Duration
 
-/**
- * Durable JetStream push consumers for `wordsparrow.user.{deleted,renamed}` (ADR-0049).
- *
- * Explicit-ack, maxDeliver=5. PR 6c.1 shipped log-only bodies; this revision (Phase 6c.3)
- * swaps in the real handlers: `user.deleted` anonymises every seat that referenced the
- * deleted user and broadcasts a fresh roster snapshot to live WebSocket clients;
- * `user.renamed` refreshes the pseudonym on every matching seat with the same broadcast
- * path. A handler that throws naks the message so JetStream redelivers (up to maxDeliver).
- */
+/** ADR-0049 durable JetStream push consumers for wordsparrow.user.{deleted,renamed}. Explicit-ack, maxDeliver=5; handler throws naks for redelivery. */
 class UserEventSubscribers(
     private val jetStream: JetStream,
     private val lobbies: LobbyRepository,
@@ -60,10 +51,8 @@ class UserEventSubscribers(
             subscribe(SUBJECT_DELETED, DURABLE_DELETED) { msg ->
                 val event = json.decodeFromString(UserDeletedPayload.serializer(), String(msg.data, Charsets.UTF_8))
                 val userId = UserId(event.userId)
-                val touched = runBlocking { lobbies.anonymizeUserSeats(userId, REPLACEMENT_PSEUDONYM) }
-                runBlocking {
-                    touched.forEach { rosterBroadcaster.notifyRosterChanged(it) }
-                }
+                val touched = lobbies.anonymizeUserSeats(userId, REPLACEMENT_PSEUDONYM)
+                touched.forEach { rosterBroadcaster.notifyRosterChanged(it) }
                 log.info("user.deleted processed: userId={} touched={} lobbies", event.userId, touched.size)
             }
         subs +=
@@ -71,10 +60,8 @@ class UserEventSubscribers(
                 val event = json.decodeFromString(UserRenamedPayload.serializer(), String(msg.data, Charsets.UTF_8))
                 val userId = UserId(event.userId)
                 val newPseudonym = Pseudonym.of(event.newDisplayName)
-                val touched = runBlocking { lobbies.refreshUserPseudonym(userId, newPseudonym) }
-                runBlocking {
-                    touched.forEach { rosterBroadcaster.notifyRosterChanged(it) }
-                }
+                val touched = lobbies.refreshUserPseudonym(userId, newPseudonym)
+                touched.forEach { rosterBroadcaster.notifyRosterChanged(it) }
                 log.info("user.renamed processed: userId={} touched={} lobbies", event.userId, touched.size)
             }
     }
@@ -87,7 +74,7 @@ class UserEventSubscribers(
     private fun subscribe(
         subject: String,
         durable: String,
-        handle: (Message) -> Unit,
+        handle: suspend (Message) -> Unit,
     ): JetStreamSubscription {
         val opts =
             PushSubscribeOptions

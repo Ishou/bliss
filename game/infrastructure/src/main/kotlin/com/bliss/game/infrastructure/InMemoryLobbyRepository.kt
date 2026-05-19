@@ -178,8 +178,7 @@ class InMemoryLobbyRepository : LobbyRepository {
         return touched
     }
 
-    // Mirror of unbindUserSeats but driven by cross-context user.deleted (ADR-0049) — the seat
-    // is anonymised with a fixed replacement pseudonym so the roster keeps a stable cell shape.
+    // ADR-0049 user.deleted: anonymise seat with fixed replacement pseudonym; mirror of unbindUserSeats.
     override suspend fun anonymizeUserSeats(
         userId: UserId,
         replacementPseudonym: Pseudonym,
@@ -201,8 +200,7 @@ class InMemoryLobbyRepository : LobbyRepository {
         return touched
     }
 
-    // user.renamed (ADR-0049) — refresh pseudonym only; leave userId in place. No-op rows
-    // (already on the new pseudonym) do not count as touched so a retried delivery is a no-op.
+    // ADR-0049 user.renamed: refresh pseudonym only; no-op rows do not count as touched.
     override suspend fun refreshUserPseudonym(
         userId: UserId,
         newPseudonym: Pseudonym,

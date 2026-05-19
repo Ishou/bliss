@@ -103,21 +103,13 @@ interface LobbyRepository {
         anonPseudonym: Pseudonym,
     ): Set<LobbyId>
 
-    /**
-     * RGPD Article 17 user deletion (ADR-0049): on `wordsparrow.user.deleted`, clear userId
-     * and replace pseudonym on every seat that referenced this user. Idempotent. Returns the
-     * set of lobby ids whose roster changed so the caller can broadcast a roster update.
-     */
+    /** ADR-0049 RGPD Article 17 user deletion: clear userId and replace pseudonym on every matching seat. Idempotent. Returns touched lobby ids. */
     suspend fun anonymizeUserSeats(
         userId: UserId,
         replacementPseudonym: Pseudonym,
     ): Set<LobbyId>
 
-    /**
-     * On `wordsparrow.user.renamed`: refresh the pseudonym on every seat carrying this userId
-     * without changing the userId. Idempotent — if the stored pseudonym already matches, the
-     * seat is left untouched and that lobby id is not returned. Returns touched lobby ids.
-     */
+    /** ADR-0049 user.renamed: refresh pseudonym on every seat for this userId without changing userId. Idempotent -- unchanged seats not returned. Returns touched lobby ids. */
     suspend fun refreshUserPseudonym(
         userId: UserId,
         newPseudonym: Pseudonym,
@@ -141,15 +133,7 @@ interface Clock {
     fun now(): Instant
 }
 
-/**
- * Out-bound port driven by cross-context user events (ADR-0049). When a user is deleted or
- * renamed, [com.bliss.game.application.ports.LobbyRepository.anonymizeUserSeats] /
- * [com.bliss.game.application.ports.LobbyRepository.refreshUserPseudonym] return the set of
- * lobby ids whose roster changed; the NATS subscriber loops over that set and calls
- * [notifyRosterChanged] so the WebSocket layer pushes a fresh LobbyState snapshot to live
- * clients. The api-layer adapter (`WebSocketLobbyRosterBroadcaster`) re-reads the lobby and
- * broadcasts; infrastructure does not know transport.
- */
+/** ADR-0049 out-bound port: called with touched lobby ids after anonymizeUserSeats/refreshUserPseudonym to push fresh LobbyState snapshots to live clients. */
 interface LobbyRosterBroadcaster {
     suspend fun notifyRosterChanged(lobbyId: LobbyId)
 }
