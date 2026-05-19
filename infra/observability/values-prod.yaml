@@ -153,6 +153,29 @@ k8s-infra:
     hostMetrics:        {enabled: true}
     kubeletMetrics:     {enabled: true}
     clusterMetrics:     {enabled: true}
+    # Prometheus pod-annotation scraper — discovers pods labelled
+    # `prometheus.io/scrape=true` via kubernetes_sd and scrapes their
+    # `prometheus.io/path` on `prometheus.io/port`. Wired into the
+    # otel-deployment singleton (not the agent DaemonSet) so each pod
+    # is scraped exactly once cluster-wide. Bridges PR #544's
+    # prometheus-nats-exporter sidecar (port 7777, /metrics) into
+    # SigNoz alongside our existing OTLP-push telemetry.
+    #
+    # Scoped to the `wordsparrow` namespace: the only app-owned
+    # namespace with annotated pods today, matching the same
+    # ownership boundary `logsCollection.blacklist` uses below. Add
+    # `matomo` if we later annotate Matomo pods.
+    #
+    # `annotationsPrefix: prometheus.io` matches the de-facto k8s
+    # annotation convention NATS's chart and most exporters ship
+    # with; SigNoz's `signoz.io` default would silently scrape
+    # nothing (no pod uses that prefix in this cluster).
+    prometheus:
+      enabled: true
+      annotationsPrefix: prometheus.io
+      scrapeInterval: 60s
+      namespaces:
+        - wordsparrow
     # Logs from observability/ (SigNoz self-logs), kube-system/ (k3s noise),
     # and platform/ (cert-manager, ingress-nginx, hcloud-csi, external-dns,
     # CNPG controller — all live in this single namespace in our cluster)
