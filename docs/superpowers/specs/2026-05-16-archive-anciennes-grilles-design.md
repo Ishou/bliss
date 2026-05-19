@@ -383,7 +383,7 @@ The prerender script's existing `role="status"` wait mechanism works without cha
 - `/grilles` added to `INDEXABLE_ROUTES`. New OG image follows the existing route convention. No JSON-LD beyond the inherited site-level breadcrumb.
 - Each month is a real `<section aria-labelledby>` with an `<h2>`; each row is an `<article>` with `<h3>`. AT users hear a proper outline.
 - "Charger mois précédent" is a real `<button>` (not a link). After async append, focus moves to the first newly-appended row's CTA — infinite-scroll best practice.
-- Progress bar colour tokens already pass AA contrast (ADR-0034 baseline maintained).
+- Progress bar colour tokens already pass AA contrast (ADR-0050 baseline maintained).
 
 ### Tests
 

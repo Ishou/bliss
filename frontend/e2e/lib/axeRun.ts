@@ -1,8 +1,8 @@
 /**
  * Shared helpers for the WCAG 2.2 A/AA accessibility e2e suite.
- * See ADR-0034 for the baseline rationale and severity policy.
+ * See ADR-0050 for the baseline rationale and severity policy.
  *
- * Severity policy (see ADR-0034 §3):
+ * Severity policy (see ADR-0050 §3):
  *   critical, serious  → fail the test
  *   moderate           → log to stdout, do not fail
  *   minor / unknown    → ignored

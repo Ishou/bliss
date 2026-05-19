@@ -1,4 +1,4 @@
-# ADR-0034: Accessibility baseline (WCAG 2.2 AA + screen-reader playability)
+# ADR-0050: Accessibility baseline (WCAG 2.2 AA + screen-reader playability)
 
 ## Status
 

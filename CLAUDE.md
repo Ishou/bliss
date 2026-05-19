@@ -61,7 +61,7 @@ make cluster-status     # kubectl get nodes,pods -A
 pnpm dev          # Vite + Panda codegen
 pnpm test         # vitest
 pnpm e2e          # Playwright
-pnpm a11y         # axe-core via Playwright (ADR-0034 a11y baseline)
+pnpm a11y         # axe-core via Playwright (ADR-0050 a11y baseline)
 pnpm typecheck    # tsc -b (panda codegen runs first)
 pnpm api:check    # regenerate OpenAPI types and fail on drift — run after schema edits
 ```
@@ -154,7 +154,7 @@ Full rationale is in MANIFESTO.md.
 - **Migrations are expand-and-contract**, backward-compatible.
 - **Feature flags** deploy dark, release bright; flags carry expiry
   dates.
-- **Accessibility is a requirement** (WCAG AA, ADR-0034), not a
+- **Accessibility is a requirement** (WCAG AA, ADR-0050), not a
   follow-up ticket.
 - **Secrets never in code.** Injected at runtime. Git hooks and
   `secret-scan` (gitleaks, listed in CI gates above) prevent accidental
@@ -182,9 +182,9 @@ Full rationale is in MANIFESTO.md.
   know" rather than guessing.
 - **Read the ADR before non-trivial work.** Recent landmarks: 0001
   (workflow), 0003 (cross-language API), 0009 (k3s deploy), 0018
-  (game context), 0034 (a11y), 0039 (bitmask-CSP grid generator),
+  (game context), 0050 (a11y), 0039 (bitmask-CSP grid generator),
   0042 (daily pre-gen worker). Numbering has a few collisions
-  (0027, 0032, 0034, 0035, 0036, 0039 each have two ADRs at
+  (0027, 0032, 0035, 0036, 0039 each have two ADRs at
   different titles); read by filename, not number alone.
 
 ## ADR template

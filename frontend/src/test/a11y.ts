@@ -5,12 +5,12 @@
  * prefer `expectAxeClean(html)` for the consistent severity policy
  * (matches the e2e baseline in `e2e/lib/axeRun.ts`).
  *
- * See ADR-0034 §2 for the WCAG tag set and §3 for the severity policy.
+ * See ADR-0050 §2 for the WCAG tag set and §3 for the severity policy.
  */
 import { axe } from 'vitest-axe';
 import { expect } from 'vitest';
 
-// Must stay in sync with WCAG_TAGS in e2e/lib/axeRun.ts (ADR-0034 §2).
+// Must stay in sync with WCAG_TAGS in e2e/lib/axeRun.ts (ADR-0050 §2).
 // Cross-import is avoided because tsconfig.test.json does not include e2e/.
 const WCAG_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'] as const;
 
