@@ -11,6 +11,16 @@ spec:
   template:
     metadata:
       labels: {{- include "bliss-nats.labels" . | nindent 8 }}
+      {{- if .Values.metricsExporter.enabled }}
+      annotations:
+        # Scrape annotations consumed by the cluster's metrics agent
+        # (SigNoz k8s-infra collector via prometheus_simple receiver, or any
+        # other prometheus.io/* convention scraper). ClusterIP-only Service;
+        # not exposed to the public network.
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "{{ .Values.metricsExporter.port }}"
+        prometheus.io/path: "/metrics"
+      {{- end }}
     spec:
       securityContext: {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
@@ -38,6 +48,25 @@ spec:
               port: monitor
             periodSeconds: 10
           resources: {{- toYaml .Values.resources | nindent 12 }}
+        {{- if .Values.metricsExporter.enabled }}
+        - name: metrics-exporter
+          image: {{ include "bliss-nats.metricsExporterImage" . | quote }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext: {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+          # -jsz=all surfaces per-stream + per-consumer counters
+          # (nats_consumer_num_pending — what the lag alerts query).
+          # -varz / -connz / -healthz round out server health.
+          args:
+            - "-port={{ .Values.metricsExporter.port }}"
+            - "-varz"
+            - "-connz"
+            - "-healthz"
+            - "-jsz=all"
+            - "http://localhost:{{ .Values.config.monitorPort }}"
+          ports:
+            - { name: metrics, containerPort: {{ .Values.metricsExporter.port }} }
+          resources: {{- toYaml .Values.metricsExporter.resources | nindent 12 }}
+        {{- end }}
       volumes:
         - name: config
           configMap:

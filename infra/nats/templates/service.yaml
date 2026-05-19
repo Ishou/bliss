@@ -10,4 +10,7 @@ spec:
   ports:
     - { name: client,  port: {{ .Values.config.port }},        targetPort: client }
     - { name: monitor, port: {{ .Values.config.monitorPort }}, targetPort: monitor }
+    {{- if .Values.metricsExporter.enabled }}
+    - { name: metrics, port: {{ .Values.metricsExporter.port }}, targetPort: metrics }
+    {{- end }}
   selector: {{- include "bliss-nats.selectorLabels" . | nindent 4 }}

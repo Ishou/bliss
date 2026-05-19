@@ -83,9 +83,11 @@ patch without an ADR amendment.
 
 **Harder:**
 - New infrastructure piece to operate. Monitoring NATS health, stream
-  storage, consumer lag — all new ops surface. v1 has no Prometheus
-  exporter or alerting; manual `nats stream report`. Real observability
-  lands in a follow-up phase.
+  storage, consumer lag — all new ops surface. The Prometheus exporter
+  sidecar + consumer-lag PrometheusRule + DLQ stream now ship in the
+  chart (`metricsExporter.enabled`, `dlq.enabled`, `alerts.enabled` —
+  all on in `values-prod.yaml`). Consumer-side advisory→DLQ republisher
+  is a follow-up.
 - Auth model is "anonymous on the cluster network" for alpha. Production
   hardening: per-service NATS accounts + JWT signing. Deferred.
 - Stream replicas = 1; NATS pod outage = events queued until restart. Not

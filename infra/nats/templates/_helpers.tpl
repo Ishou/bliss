@@ -43,3 +43,10 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- printf "%s:%s" .Values.streamInit.image.repository .Values.streamInit.image.tag -}}
 {{- end -}}
 {{- end -}}
+{{- define "bliss-nats.metricsExporterImage" -}}
+{{- if .Values.metricsExporter.image.digest -}}
+{{- printf "%s:%s@%s" .Values.metricsExporter.image.repository .Values.metricsExporter.image.tag .Values.metricsExporter.image.digest -}}
+{{- else -}}
+{{- printf "%s:%s" .Values.metricsExporter.image.repository .Values.metricsExporter.image.tag -}}
+{{- end -}}
+{{- end -}}
