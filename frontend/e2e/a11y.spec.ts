@@ -3,7 +3,7 @@
  *
  * Runs axe-core (via `@axe-core/playwright`) against representative
  * routes at one desktop viewport. Severity policy and tag set live in
- * `lib/axeRun.ts` — see ADR-0034 for the rationale.
+ * `lib/axeRun.ts` — see ADR-0050 for the rationale.
  *
  * Why one viewport (desktop) per route:
  *   - colour-contrast violations are viewport-independent (axe reads

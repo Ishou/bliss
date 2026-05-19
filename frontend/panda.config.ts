@@ -37,7 +37,7 @@ import { defineConfig } from '@pandacss/dev';
 // usage site via `pnpm a11y` (axe-core through Playwright). ADR-0043's
 // verification matrix calls out the borderline pairs; if axe-core
 // fails one, tune the affected stop in the interpolated ramp range
-// rather than touching anchor hexes. See ADR-0034 for the a11y
+// rather than touching anchor hexes. See ADR-0050 for the a11y
 // baseline policy.
 export default defineConfig({
   preflight: true,
