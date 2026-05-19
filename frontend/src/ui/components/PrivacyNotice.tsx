@@ -248,8 +248,7 @@ function FrenchContent() {
           pseudonyme modifiable (par défaut : un nom d’animal aléatoire repris de votre session
           anonyme) ; la date de création et de dernière connexion. Nous ne stockons{' '}
           <strong>pas</strong> votre email, votre nom, votre photo de profil ou toute autre donnée
-          de votre compte Google. Le périmètre OAuth utilisé est <code>openid</code> uniquement
-          (ADR-0045).
+          de votre compte Google. Le périmètre OAuth utilisé est <code>openid</code> uniquement.
         </p>
         <p>
           <strong>Sessions.</strong> Un cookie <code>__Secure-ws_session</code> (HttpOnly, Secure,
@@ -261,9 +260,9 @@ function FrenchContent() {
           d’autorisation. Aucune donnée n’est partagée en dehors du flux OAuth.
         </p>
         <p>
-          <strong>Droit à l’effacement.</strong> « Supprimer mon compte » dans <code>/compte</code>{' '}
-          supprime immédiatement vos données identité — pas de période de rétention, pas de
-          soft-delete.
+          <strong>Droit à l’effacement.</strong> Le bouton « Supprimer mon compte » accessible
+          depuis le menu « Mon compte » (icône en haut à droite) supprime immédiatement vos
+          données identité — pas de période de rétention, pas de soft-delete.
         </p>
       </section>
       <h2>Ce que nous ne collectons pas</h2>
@@ -287,7 +286,7 @@ function FrenchContent() {
         <strong>Consentement</strong> (RGPD article 6.1.a). Le traitement des données d’identité
         (UUID interne, pseudonyme, horodatages, cookie de session) lié à un compte joueur repose
         sur votre consentement donné lors de la connexion via Google. Vous pouvez retirer ce
-        consentement à tout moment en supprimant votre compte via <code>/compte</code>.
+        consentement à tout moment en supprimant votre compte depuis le menu « Mon compte ».
       </p>
       <h2>Cookies</h2>
       <p>
@@ -416,7 +415,7 @@ function EnglishContent() {
           display name (defaulting to a random animal name carried over from your anonymous
           session); creation and last-seen timestamps. We do <strong>not</strong> store your
           email, name, profile picture, or any other Google account data. The OAuth scope is{' '}
-          <code>openid</code> only (ADR-0045).
+          <code>openid</code> only.
         </p>
         <p>
           <strong>Sessions.</strong> A <code>__Secure-ws_session</code> cookie (HttpOnly, Secure,
@@ -428,9 +427,9 @@ function EnglishContent() {
           choice. No data is shared outside the OAuth flow itself.
         </p>
         <p>
-          <strong>Right to erasure.</strong> &ldquo;Delete my account&rdquo; in{' '}
-          <code>/compte</code> immediately deletes your identity data — no retention period, no
-          soft-delete.
+          <strong>Right to erasure.</strong> The &ldquo;Delete my account&rdquo; button in the
+          &ldquo;Mon compte&rdquo; menu (top-right avatar) immediately deletes your identity data
+          — no retention period, no soft-delete.
         </p>
       </section>
       <h2>What we do not collect</h2>
@@ -454,7 +453,7 @@ function EnglishContent() {
         <strong>Consent</strong> (GDPR Article 6.1.a). Processing of identity data (internal UUID,
         display name, timestamps, session cookie) associated with a player account is based on your
         consent given during Google sign-in. You may withdraw this consent at any time by deleting
-        your account via <code>/compte</code>.
+        your account from the &ldquo;Mon compte&rdquo; menu.
       </p>
       <h2>Cookies</h2>
       <p>
