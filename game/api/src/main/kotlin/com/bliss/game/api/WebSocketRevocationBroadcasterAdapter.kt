@@ -4,7 +4,7 @@ import com.bliss.game.application.ports.WebSocketRevocationBroadcaster
 import com.bliss.game.domain.UserId
 import org.slf4j.LoggerFactory
 
-/** Thin adapter that fan-outs forced-disconnect to every WS session bound to [UserId] via [SessionManager.closeAllForUser]. Invoked from the `user.deleted` NATS consumer AFTER the DB anonymisation commits and BEFORE msg.ack(). */
+/** Thin adapter that delegates forced-disconnect for a given user to [SessionManager.closeAllForUser]. */
 class WebSocketRevocationBroadcasterAdapter(
     private val sessions: SessionManager,
 ) : WebSocketRevocationBroadcaster {
