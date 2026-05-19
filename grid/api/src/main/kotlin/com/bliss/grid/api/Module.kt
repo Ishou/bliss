@@ -6,6 +6,7 @@ import com.bliss.grid.api.routes.deleteSession
 import com.bliss.grid.api.routes.health
 import com.bliss.grid.api.routes.puzzles
 import com.bliss.grid.application.analytics.AnalyticsEventSink
+import com.bliss.grid.application.auth.CookieVerifier
 import com.bliss.grid.application.puzzle.DailyPuzzleSelector
 import com.bliss.grid.application.puzzle.DeleteSessionUseCase
 import com.bliss.grid.application.puzzle.GeneratePuzzleUseCase
@@ -19,6 +20,7 @@ import com.bliss.grid.application.puzzle.defaultPuzzleConstraints
 import com.bliss.grid.domain.generation.ClueCooldownRepository
 import com.bliss.grid.infrastructure.analytics.MatomoAnalyticsAdapter
 import com.bliss.grid.infrastructure.analytics.NoopAnalyticsAdapter
+import com.bliss.grid.infrastructure.auth.HttpCookieVerifier
 import com.bliss.grid.infrastructure.persistence.CsvWordRepository
 import com.bliss.grid.infrastructure.persistence.InMemoryClueCooldownRepository
 import com.bliss.grid.infrastructure.persistence.InMemoryHintUsageRepository
@@ -200,6 +202,19 @@ fun Application.module() {
     val analyticsScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     monitor.subscribe(ApplicationStopped) { analyticsScope.cancel() }
     val analyticsEventSink: AnalyticsEventSink = createAnalyticsEventSink(analyticsScope)
+
+    val identityApiBaseUrl =
+        environment.config
+            .propertyOrNull("identity.apiBaseUrl")
+            ?.getString()
+            ?.takeIf { it.isNotBlank() }
+            ?: System.getenv("IDENTITY_API_BASE_URL")?.takeIf { it.isNotBlank() }
+            ?: "http://wordsparrow-identity-api.wordsparrow:8082"
+
+    val verifierHttpClient = HttpClient()
+    monitor.subscribe(ApplicationStopped) { verifierHttpClient.close() }
+    @Suppress("UNUSED_VARIABLE")
+    val cookieVerifier: CookieVerifier = HttpCookieVerifier(verifierHttpClient, identityApiBaseUrl)
 
     // Clue cooldown (ADR-0031). On by default — set GRID_CLUE_COOLDOWN_ENABLED=false
     // to disable the wiring at the kill-switch level (use case sees null repo,
