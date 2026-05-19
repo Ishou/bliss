@@ -203,10 +203,6 @@ fun Application.module() {
     monitor.subscribe(ApplicationStopped) { analyticsScope.cancel() }
     val analyticsEventSink: AnalyticsEventSink = createAnalyticsEventSink(analyticsScope)
 
-    // Phase 6b.0 — cookie verifier port + adapter (mirror of game-api).
-    // Reads from Ktor config `identity.apiBaseUrl` or env `IDENTITY_API_BASE_URL`,
-    // defaulting to the in-cluster Service DNS. Not used by any route yet; Phase 6b.1
-    // wires it into the hint POST under a per-user advisory lock.
     val identityApiBaseUrl =
         environment.config
             .propertyOrNull("identity.apiBaseUrl")
@@ -215,8 +211,10 @@ fun Application.module() {
             ?: System.getenv("IDENTITY_API_BASE_URL")?.takeIf { it.isNotBlank() }
             ?: "http://wordsparrow-identity-api.wordsparrow:8082"
 
+    val verifierHttpClient = HttpClient()
+    monitor.subscribe(ApplicationStopped) { verifierHttpClient.close() }
     @Suppress("UNUSED_VARIABLE")
-    val cookieVerifier: CookieVerifier = HttpCookieVerifier(HttpClient(), identityApiBaseUrl)
+    val cookieVerifier: CookieVerifier = HttpCookieVerifier(verifierHttpClient, identityApiBaseUrl)
 
     // Clue cooldown (ADR-0031). On by default — set GRID_CLUE_COOLDOWN_ENABLED=false
     // to disable the wiring at the kill-switch level (use case sees null repo,

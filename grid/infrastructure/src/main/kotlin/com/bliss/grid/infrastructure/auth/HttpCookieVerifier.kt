@@ -22,20 +22,7 @@ private data class WhoAmIResponse(
     val displayName: String,
 )
 
-/**
- * Calls identity-api's `/v1/auth/whoami` to verify `__Secure-ws_session`.
- *
- * Read path ([verify]) caches both 200 (authed) and 401 (anon) outcomes for
- * [cacheTtl]; fails closed on 5xx / transport / parse errors **without**
- * caching (so the next request retries).
- *
- * Write path ([verifyFresh]) bypasses the cache. On 200 it opportunistically
- * refreshes the cache entry; on 401 it invalidates any cached positive (so a
- * subsequent cached [verify] also returns null). 5xx still fails closed
- * without touching the cache.
- *
- * Mirrors `game/infrastructure/.../auth/HttpCookieVerifier.kt` per Phase 6b.0.
- */
+/** Calls identity-api's `/v1/auth/whoami`; caches authed and anon outcomes; fails closed on errors without caching. */
 class HttpCookieVerifier(
     private val http: HttpClient,
     private val identityApiBaseUrl: String,
@@ -97,14 +84,12 @@ class HttpCookieVerifier(
                     val body = response.body<String>()
                     val parsed = json.decodeFromString(WhoAmIResponse.serializer(), body)
                     val result = WhoAmI(UUID.fromString(parsed.userId), parsed.displayName)
-                    // Both paths populate the cache on 200 — verifyFresh opportunistically
-                    // refreshes the TTL so a following verify() can hit cache.
+                    // verifyFresh also populates the cache so a following verify() can hit it.
                     cache[cookie] = Entry(result, current.plus(cacheTtl))
                     result
                 }
                 HttpStatusCode.Unauthorized -> {
-                    // verifyFresh's 401 must invalidate any positive cached entry so
-                    // future verify() calls also fail closed (revoked session contract).
+                    // 401 invalidates any positive cached entry so verify() also fails closed for revoked sessions.
                     cache[cookie] = Entry(null, current.plus(cacheTtl))
                     null
                 }
