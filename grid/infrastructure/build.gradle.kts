@@ -34,6 +34,9 @@ dependencies {
     // Commons CSV — RFC 4180 reader for the words-<lang>.csv corpus (ADR-0013 §8).
     implementation("org.apache.commons:commons-csv:1.12.0")
 
+    // NATS JetStream client — cross-context event subscribers (ADR-0049).
+    implementation("io.nats:jnats:2.20.6")
+
     testImplementation(platform("org.junit:junit-bom:5.11.4"))
     testImplementation("org.junit.jupiter:junit-jupiter")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")

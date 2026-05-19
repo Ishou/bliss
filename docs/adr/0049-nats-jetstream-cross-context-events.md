@@ -63,6 +63,14 @@ The Kotlin client is `io.nats:jnats:2.20.6` (latest 2.20.x as of
 2026-05-18). Pinning the minor line so renovate/Dependabot can bump the
 patch without an ADR amendment.
 
+### Durable consumers
+
+| Durable name | Subject | Owner |
+| --- | --- | --- |
+| `game-api-user-deleted` | `wordsparrow.user.deleted` | game-api |
+| `game-api-user-renamed` | `wordsparrow.user.renamed` | game-api |
+| `grid-user-deleted` | `wordsparrow.user.deleted` | grid-api |
+
 ## Consequences
 
 **Easier:**

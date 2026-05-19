@@ -131,6 +131,9 @@ dependencies {
     // contract enforced by the same library on both sides.
     implementation("org.apache.commons:commons-csv:$commonsCsvVersion")
 
+    // NATS JetStream client — cross-context event subscribers (ADR-0049).
+    implementation("io.nats:jnats:2.20.6")
+
     testImplementation(platform("org.junit:junit-bom:$junitVersion"))
     testImplementation("org.junit.jupiter:junit-jupiter")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")

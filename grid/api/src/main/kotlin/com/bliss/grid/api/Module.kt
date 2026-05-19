@@ -22,6 +22,8 @@ import com.bliss.grid.domain.generation.ClueCooldownRepository
 import com.bliss.grid.infrastructure.analytics.MatomoAnalyticsAdapter
 import com.bliss.grid.infrastructure.analytics.NoopAnalyticsAdapter
 import com.bliss.grid.infrastructure.auth.HttpCookieVerifier
+import com.bliss.grid.infrastructure.events.NatsConnectionFactory
+import com.bliss.grid.infrastructure.events.UserEventSubscribers
 import com.bliss.grid.infrastructure.persistence.CsvWordRepository
 import com.bliss.grid.infrastructure.persistence.InMemoryClueCooldownRepository
 import com.bliss.grid.infrastructure.persistence.InMemoryHintUsageRepository
@@ -227,6 +229,26 @@ fun Application.module() {
     val verifierHttpClient = HttpClient()
     monitor.subscribe(ApplicationStopped) { verifierHttpClient.close() }
     val cookieVerifier: CookieVerifier = HttpCookieVerifier(verifierHttpClient, identityApiBaseUrl)
+
+    // NATS JetStream subscribers (ADR-0049); gated on NATS_URL so the service boots without a NATS server.
+    val moduleLog = LoggerFactory.getLogger("com.bliss.grid.api.Module")
+    val natsUrl = System.getenv("NATS_URL")?.takeIf { it.isNotBlank() }
+    if (natsUrl != null) {
+        runCatching { NatsConnectionFactory(natsUrl).connect() }
+            .onSuccess { (natsConnection, jetStream) ->
+                val userEventSubscribers = UserEventSubscribers(jetStream, hintUsageRepository)
+                userEventSubscribers.start()
+                monitor.subscribe(ApplicationStopped) {
+                    userEventSubscribers.close()
+                    natsConnection.close()
+                }
+                moduleLog.info("grid-api NATS subscribers started against {}", natsUrl)
+            }.onFailure { cause ->
+                moduleLog.warn("grid-api NATS connection failed at {}; continuing without subscribers", natsUrl, cause)
+            }
+    } else {
+        moduleLog.info("grid-api NATS subscribers disabled (NATS_URL unset)")
+    }
 
     // Clue cooldown (ADR-0031). On by default — set GRID_CLUE_COOLDOWN_ENABLED=false
     // to disable the wiring at the kill-switch level (use case sees null repo,

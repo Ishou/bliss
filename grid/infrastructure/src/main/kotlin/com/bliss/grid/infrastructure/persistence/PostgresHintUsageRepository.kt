@@ -5,7 +5,7 @@ import java.sql.Connection
 import java.util.UUID
 import javax.sql.DataSource
 
-/** Postgres-backed [HintUsageRepository]; [trySpend] uses a single-statement upsert and must be called on the advisory-locked connection. */
+/** Postgres-backed [HintUsageRepository]; [trySpend] runs on the caller's advisory-locked connection, [deleteByUser] takes the lock itself. */
 class PostgresHintUsageRepository(
     private val dataSource: DataSource,
 ) : HintUsageRepository {
@@ -41,9 +41,25 @@ class PostgresHintUsageRepository(
 
     override fun deleteByUser(userId: UUID): Int =
         dataSource.connection.use { conn ->
-            conn.prepareStatement(DELETE_BY_USER_SQL).use { stmt ->
-                stmt.setObject(1, userId)
-                stmt.executeUpdate()
+            val previousAutoCommit = conn.autoCommit
+            conn.autoCommit = false
+            try {
+                conn.prepareStatement(LOCK_SQL).use { stmt ->
+                    stmt.setString(1, "user:$userId")
+                    stmt.execute()
+                }
+                val rows =
+                    conn.prepareStatement(DELETE_BY_USER_SQL).use { stmt ->
+                        stmt.setObject(1, userId)
+                        stmt.executeUpdate()
+                    }
+                conn.commit()
+                rows
+            } catch (cause: Throwable) {
+                conn.rollback()
+                throw cause
+            } finally {
+                conn.autoCommit = previousAutoCommit
             }
         }
 
@@ -64,5 +80,7 @@ class PostgresHintUsageRepository(
 
         private const val DELETE_BY_USER_SQL =
             "DELETE FROM puzzle_hint_usage WHERE user_id = ?"
+
+        private const val LOCK_SQL = "SELECT pg_advisory_xact_lock(hashtext(?))"
     }
 }
