@@ -11,3 +11,20 @@ storage:
 streamInit:
   image:
     digest: "sha256:<resolve at deploy time>"
+
+# Prometheus exporter sidecar — on in prod. Digest resolved by the CD
+# workflow at deploy time (same pattern as the NATS server image).
+metricsExporter:
+  enabled: true
+  image:
+    digest: "sha256:<resolve at deploy time>"
+
+# DLQ stream — on in prod (scaling-readiness per ADR-0049).
+dlq:
+  enabled: true
+
+# Alerts — on in prod. Requires a PrometheusRule-watching operator
+# in-cluster. If the operator isn't yet installed, the CR sits
+# unconsumed (no error); flip to false until it lands if that's noisy.
+alerts:
+  enabled: true

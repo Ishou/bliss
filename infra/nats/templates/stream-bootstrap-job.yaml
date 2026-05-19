@@ -50,4 +50,18 @@ spec:
                 --dupe-window 2m \
                 --defaults
               nats stream info {{ .Values.stream.name }}
+              {{- if .Values.dlq.enabled }}
+              nats stream add {{ .Values.dlq.name }} \
+                --subjects '{{ join "," .Values.dlq.subjects }}' \
+                --max-age {{ .Values.dlq.maxAge }} \
+                --storage {{ .Values.dlq.storage }} \
+                --replicas {{ .Values.dlq.replicas }} \
+                --discard {{ .Values.dlq.discardPolicy }} \
+                --retention limits \
+                --max-bytes -1 \
+                --max-msgs -1 \
+                --dupe-window 2m \
+                --defaults
+              nats stream info {{ .Values.dlq.name }}
+              {{- end }}
 {{- end }}
