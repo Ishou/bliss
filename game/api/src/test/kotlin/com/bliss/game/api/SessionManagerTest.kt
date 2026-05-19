@@ -8,6 +8,7 @@ import assertk.assertions.isNull
 import assertk.assertions.isTrue
 import com.bliss.game.api.dto.ServerToClientFrame
 import com.bliss.game.domain.LobbyId
+import com.bliss.game.domain.UserId
 import io.ktor.server.application.install
 import io.ktor.server.routing.routing
 import io.ktor.server.testing.testApplication
@@ -207,6 +208,55 @@ class SessionManagerTest {
             // Closing the last tab drops the entry.
             harness.manager.unregister(lobbyId, harness.sessions[1])
             assertThat(harness.manager.getPresence(lobbyId)).isEqualTo(emptyMap<String, PresencePosition>())
+        }
+
+    @Test
+    fun `closeAllForUser closes every socket bound to that user`() =
+        withSessions(count = 2) { harness ->
+            val userId = UserId("0190e3a4-7a2c-4c9e-8f1a-9b2d3e4f5a6b")
+            harness.manager.bindUserId(lobbyId, harness.sessions[0], userId)
+            harness.manager.bindUserId(lobbyId, harness.sessions[1], userId)
+            val closed = harness.manager.closeAllForUser(userId)
+            assertThat(closed).isEqualTo(2)
+            // The route's finally{} block runs as the close frame is observed;
+            // the harness awaits the server-side close completion.
+            harness.awaitClosed(0)
+            harness.awaitClosed(1)
+        }
+
+    @Test
+    fun `closeAllForUser is a noop when no socket is bound to that user`() =
+        withSessions(count = 1) { harness ->
+            val userId = UserId("0190e3a4-7a2c-4c9e-8f1a-9b2d3e4f5a6c")
+            // Nothing bound — closing should return 0 and not throw.
+            assertThat(harness.manager.closeAllForUser(userId)).isEqualTo(0)
+        }
+
+    @Test
+    fun `closeAllForUser only closes sockets bound to the target user`() =
+        withSessions(count = 2) { harness ->
+            val target = UserId("0190e3a4-7a2c-4c9e-8f1a-9b2d3e4f5a6b")
+            val other = UserId("0190e3a4-7a2c-4c9e-8f1a-9b2d3e4f5a6d")
+            harness.manager.bindUserId(lobbyId, harness.sessions[0], target)
+            harness.manager.bindUserId(lobbyId, harness.sessions[1], other)
+            val closed = harness.manager.closeAllForUser(target)
+            assertThat(closed).isEqualTo(1)
+            harness.awaitClosed(0)
+            // The other user's socket is still alive — connectedCount still
+            // accounts for it (the closed socket's unregister will fire
+            // asynchronously as the close handshake completes).
+            assertThat(harness.manager.connectedCount(lobbyId) in 1..2).isTrue()
+        }
+
+    @Test
+    fun `unregister clears the userId index so revoke does not target a stale socket`() =
+        withSessions(count = 1) { harness ->
+            val userId = UserId("0190e3a4-7a2c-4c9e-8f1a-9b2d3e4f5a6b")
+            harness.manager.bindUserId(lobbyId, harness.sessions.single(), userId)
+            harness.manager.unregister(lobbyId, harness.sessions.single())
+            // After unregister, the user's index is empty — closeAllForUser
+            // is a no-op, not a stale close attempt against a dead socket.
+            assertThat(harness.manager.closeAllForUser(userId)).isEqualTo(0)
         }
 
     // ---------- harness ----------

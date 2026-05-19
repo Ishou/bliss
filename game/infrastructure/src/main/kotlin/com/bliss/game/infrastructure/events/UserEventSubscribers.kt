@@ -3,6 +3,7 @@ package com.bliss.game.infrastructure.events
 import com.bliss.game.application.lobby.LobbyWriteCoordinator
 import com.bliss.game.application.ports.LobbyRepository
 import com.bliss.game.application.ports.LobbyRosterBroadcaster
+import com.bliss.game.application.ports.WebSocketRevocationBroadcaster
 import com.bliss.game.domain.Pseudonym
 import com.bliss.game.domain.UserId
 import io.nats.client.JetStream
@@ -29,6 +30,7 @@ class UserEventSubscribers(
     private val lobbies: LobbyRepository,
     private val rosterBroadcaster: LobbyRosterBroadcaster,
     private val coordinator: LobbyWriteCoordinator,
+    private val wsRevocation: WebSocketRevocationBroadcaster? = null,
     private val json: Json = Json { ignoreUnknownKeys = true },
 ) {
     @Serializable
@@ -58,6 +60,12 @@ class UserEventSubscribers(
                         lobbies.anonymizeUserSeats(conn, userId, REPLACEMENT_PSEUDONYM)
                     }
                 touched.forEach { rosterBroadcaster.notifyRosterChanged(it) }
+                // Order matters: DB writes commit first under the advisory
+                // lock, then we force-close any live WS sockets bound to the
+                // deleted user so their in-memory LobbyPlayer.userId snapshot
+                // cannot diverge from the now-anonymised seat row. Idempotent;
+                // safe to retry on consumer redelivery.
+                wsRevocation?.disconnectAllForUser(userId)
                 log.info("user.deleted processed: userId={} touched={} lobbies", event.userId, touched.size)
             }
         subs +=

@@ -256,12 +256,20 @@ fun Application.module() {
 
     val sessionManager = SessionManager()
     val rosterBroadcaster = WebSocketLobbyRosterBroadcaster(lobbyRepository, sessionManager)
+    val wsRevocationBroadcaster = WebSocketRevocationBroadcasterAdapter(sessionManager)
 
     // NATS JetStream subscribers (ADR-0049); gated on NATS_URL so test harness boots without a NATS server.
     val natsUrl = System.getenv("NATS_URL")?.takeIf { it.isNotBlank() }
     if (natsUrl != null) {
         val (natsConnection, jetStream) = NatsConnectionFactory(natsUrl).connect()
-        val userEventSubscribers = UserEventSubscribers(jetStream, lobbyRepository, rosterBroadcaster, lobbyWriteCoordinator)
+        val userEventSubscribers =
+            UserEventSubscribers(
+                jetStream,
+                lobbyRepository,
+                rosterBroadcaster,
+                lobbyWriteCoordinator,
+                wsRevocationBroadcaster,
+            )
         userEventSubscribers.start()
         monitor.subscribe(ApplicationStopped) {
             userEventSubscribers.close()
@@ -323,7 +331,13 @@ fun Application.module() {
         )
         sessions(ListLobbiesForSession(lobbyRepository), EraseSessionUseCase(lobbyRepository))
         lobbyRebind(cookieVerifier, lobbyRepository, lobbyWriteCoordinator)
-        lobbyWebSocketRoute(sessionManager, useCases, lobbyRepository, presenceAggregator)
+        lobbyWebSocketRoute(
+            sessionManager,
+            useCases,
+            lobbyRepository,
+            presenceAggregator,
+            cookieVerifier = cookieVerifier,
+        )
     }
 }
 
