@@ -272,7 +272,6 @@ fun Application.module() {
                 wsRevocationBroadcaster,
             )
         userEventSubscribers.start()
-        // DLQ republisher: routes messages that exhaust MaxDeliver to the DLQ stream (ADR-0049).
         val dlqRepublisher =
             MaxDeliveriesDlqRepublisher(
                 connection = natsConnection,
