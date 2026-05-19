@@ -13,10 +13,7 @@ spec:
       labels: {{- include "bliss-nats.labels" . | nindent 8 }}
       {{- if .Values.metricsExporter.enabled }}
       annotations:
-        # Scrape annotations consumed by the cluster's metrics agent
-        # (SigNoz k8s-infra collector via prometheus_simple receiver, or any
-        # other prometheus.io/* convention scraper). ClusterIP-only Service;
-        # not exposed to the public network.
+        # Pod scrape annotations for the cluster's metrics agent.
         prometheus.io/scrape: "true"
         prometheus.io/port: "{{ .Values.metricsExporter.port }}"
         prometheus.io/path: "/metrics"
@@ -53,9 +50,7 @@ spec:
           image: {{ include "bliss-nats.metricsExporterImage" . | quote }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           securityContext: {{- toYaml .Values.containerSecurityContext | nindent 12 }}
-          # -jsz=all surfaces per-stream + per-consumer counters
-          # (nats_consumer_num_pending — what the lag alerts query).
-          # -varz / -connz / -healthz round out server health.
+          # -jsz=all/-varz/-connz/-healthz surface per-consumer, server, and connection counters.
           args:
             - "-port={{ .Values.metricsExporter.port }}"
             - "-varz"

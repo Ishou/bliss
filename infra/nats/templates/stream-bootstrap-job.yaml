@@ -51,9 +51,6 @@ spec:
                 --defaults
               nats stream info {{ .Values.stream.name }}
               {{- if .Values.dlq.enabled }}
-              # Dead-letter stream — captures messages that exhausted their
-              # consumer's MaxDeliver budget. Same idempotent semantics as
-              # the primary stream above.
               nats stream add {{ .Values.dlq.name }} \
                 --subjects '{{ join "," .Values.dlq.subjects }}' \
                 --max-age {{ .Values.dlq.maxAge }} \

@@ -29,9 +29,7 @@ spec:
     - name: bliss-nats.dlq
       rules:
         - alert: BlissNatsDlqNonEmpty
-          # nats_stream_messages is the per-stream message count surfaced by
-          # prometheus-nats-exporter's -jsz collector. Any positive count on
-          # the DLQ stream is a permanent failure that needs triage.
+          # Any positive message count on the DLQ stream is a permanent consumer failure.
           expr: nats_stream_messages{stream_name="{{ .Values.dlq.name }}"} > {{ .Values.alerts.dlqWarn.threshold }}
           for: {{ .Values.alerts.dlqWarn.for }}
           labels:
