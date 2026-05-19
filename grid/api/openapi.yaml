@@ -295,7 +295,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/Problem'
         '401':
-          description: Session cookie missing or invalid.
+          description: |
+            Session cookie missing or invalid. RFC 7807;
+            `type` is `https://bliss.example/errors/invalid-session`.
           content:
             application/problem+json:
               schema:
@@ -429,7 +431,7 @@ components:
       in: cookie
       name: __Secure-ws_session
       description: |
-        Identity-api session cookie set by `/v1/auth/login`. Grid-api verifies
+        Identity-api session cookie set by `/v1/auth/{provider}/login`. Grid-api verifies
         it against identity-api `/v1/auth/whoami` to resolve the calling user.
 
   parameters:

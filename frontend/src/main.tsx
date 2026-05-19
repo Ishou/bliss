@@ -153,13 +153,9 @@ enableMocks()
     const puzzleRepository = createHttpPuzzleRepository({
       baseUrl: gridApiBaseUrl,
     });
-    // Solo + multiplayer both need a stable session id for the hints
-    // endpoint's X-Session-Id header. Generated client-side and persisted
-    // in localStorage on first visit.
     const sessionId = getOrCreateSessionId();
     const puzzleSolver = createHttpPuzzleSolver({
       baseUrl: gridApiBaseUrl,
-      sessionId,
     });
     // Compose the full SessionClient: the HTTP adapter covers eraseSession
     // while the localStorage helpers cover getSessionId/clearLocalSession.

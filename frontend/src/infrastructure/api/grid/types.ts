@@ -913,7 +913,10 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Problem"];
                 };
             };
-            /** @description Session cookie missing or invalid. */
+            /**
+             * @description Session cookie missing or invalid. RFC 7807;
+             *     `type` is `https://bliss.example/errors/invalid-session`.
+             */
             401: {
                 headers: {
                     [name: string]: unknown;
