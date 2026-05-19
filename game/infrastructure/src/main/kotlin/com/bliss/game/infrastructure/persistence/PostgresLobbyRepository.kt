@@ -417,8 +417,7 @@ class PostgresLobbyRepository(
             }
         }
 
-    // ADR-0049 user.deleted: NULL out the FK and replace pseudonym in one statement so a
-    // retried event hits the same idempotent shape as the in-memory adapter.
+    // ADR-0049 user.deleted: NULL user_id and replace pseudonym atomically; idempotent on retry.
     override suspend fun anonymizeUserSeats(
         userId: UserId,
         replacementPseudonym: Pseudonym,
@@ -442,8 +441,7 @@ class PostgresLobbyRepository(
             }
         }
 
-    // ADR-0049 user.renamed: refresh pseudonym only, leave user_id in place. WHERE clause
-    // excludes rows already on the new pseudonym so a redelivered event returns an empty set.
+    // ADR-0049 user.renamed: refresh pseudonym only; WHERE excludes already-renamed rows so retry returns empty.
     override suspend fun refreshUserPseudonym(
         userId: UserId,
         newPseudonym: Pseudonym,
