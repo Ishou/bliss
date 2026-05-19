@@ -19,9 +19,6 @@ interface HintUsageRepository {
         userId: UUID,
     ): Int
 
-    /**
-     * RGPD Article 17. Removes every hint-usage row tied to [userId]
-     * across all puzzles. Returns the number of rows deleted. Idempotent.
-     */
+    /** GDPR Article 17; removes all hint rows for [userId] across puzzles. Returns rows deleted. Idempotent. */
     fun deleteByUser(userId: UUID): Int
 }
