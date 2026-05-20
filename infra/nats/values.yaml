@@ -59,8 +59,7 @@ dlq:
   enabled: false
   name: WORDSPARROW_USER_EVENTS_DLQ
   subjects: ["wordsparrow.dlq.>"]
-  # 30 days — long enough to triage a failure surfaced by the SigNoz consumer-lag
-  # / DLQ alerts (infra/observability/alerts/) before storage reclaims it.
+  # 30 days — enough to triage after an alert fires; alerts in infra/observability/alerts/.
   maxAge: "720h"
   storage: file
   replicas: 1
