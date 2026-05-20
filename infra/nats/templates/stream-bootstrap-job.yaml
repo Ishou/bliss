@@ -26,9 +26,7 @@ spec:
           securityContext: {{- toYaml .Values.containerSecurityContext | nindent 12 }}
           env:
             - { name: NATS_URL, value: "nats://{{ include "bliss-nats.fullname" . }}:{{ .Values.config.port }}" }
-            # nats-box's WORKDIR is /root which is unwritable under
-            # readOnlyRootFilesystem. Point HOME at the writable emptyDir
-            # mounted below so the nats CLI's xdg/context lookups succeed.
+            # /root is unwritable; HOME=/work satisfies the nats CLI's xdg lookups.
             - { name: HOME, value: "/work" }
           command: ["/bin/sh", "-c"]
           args:
@@ -42,10 +40,7 @@ spec:
                 echo "waiting for NATS JetStream..."
                 sleep 2
               done
-              # Add the stream from the projected JSON spec. `nats stream add
-              # --config` is fully non-interactive (no prompts, so no need
-              # for --defaults which the older script relied on). Re-running
-              # against an existing stream with the same spec is a no-op.
+              # --config is non-interactive; re-running against same spec is a no-op.
               nats stream add --config /specs/primary.json
               nats stream info {{ .Values.stream.name }}
               {{- if .Values.dlq.enabled }}

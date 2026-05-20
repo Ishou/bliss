@@ -43,12 +43,7 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- printf "%s:%s" .Values.streamInit.image.repository .Values.streamInit.image.tag -}}
 {{- end -}}
 {{- end -}}
-{{/*
-Convert a duration string like "168h", "30m", "10s" into a nanosecond integer.
-NATS' JSON stream config parses time.Duration fields strictly as int64 nanos —
-the human-readable form is only accepted on CLI flags, not via --config files.
-Supported suffixes (sufficient for this chart's values): h, m, s.
-*/}}
+{{/* durationToNanos: NATS --config JSON requires int64 nanos, not human-readable durations. */}}
 {{- define "bliss-nats.durationToNanos" -}}
 {{- $d := . -}}
 {{- if hasSuffix "h" $d -}}

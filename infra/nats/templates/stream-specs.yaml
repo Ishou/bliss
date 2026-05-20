@@ -1,10 +1,4 @@
 {{- if .Values.stream.name }}
-{{- /*
-JSON stream specs consumed by the post-install Job via `nats stream add
---config <file>`. The CLI's --config path requires nanosecond integers for
-duration fields (Go's time.Duration JSON unmarshaller is strict); the
-durationToNanos helper converts the human-readable values.yaml form.
-*/}}
 apiVersion: v1
 kind: ConfigMap
 metadata:
