@@ -161,6 +161,24 @@ Full rationale is in MANIFESTO.md.
   commits.
 - **Auth/authz changes need a threat model.** ADR or PR body must
   include one before the PR is reviewed.
+- **Configure-in-cluster, not push-from-CI.** When the work is
+  *configure* an app already running in the cluster (apply SigNoz
+  alert rules, create a JetStream stream, seed a feature-flag table),
+  do it with a Helm `post-install,post-upgrade` Job *inside* the
+  chart — mirror `infra/nats/templates/stream-bootstrap-job.yaml`.
+  The Service is directly reachable from a Job in the same namespace;
+  the app's API key lives as a k8s Secret. CI's role is
+  `helm upgrade --install`, not POSTing JSON. **Tell** you're
+  about to make this mistake: you're typing `kubectl port-forward`,
+  `KUBECONFIG_PROD`, or "oauth2-proxy bypass" into a GitHub Actions
+  workflow whose actual job is "send a few HTTP requests to an
+  in-cluster app". Stop and use the chart-Job pattern.
+- **Three patches on the same path = the shape is wrong.** When the
+  same workflow / script / pipeline has needed three local fixes in
+  sequence (each unlocking the next failure), the architecture is
+  wrong, not the patch. Step back and ask "what would I do designing
+  this from scratch today?" — if the answer differs from what you're
+  patching, switch.
 
 ## Things to never do without explicit approval
 
