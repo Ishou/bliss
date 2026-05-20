@@ -1,18 +1,13 @@
 signoz:
-  # Cluster-internal Service URL. No Ingress, no oauth2-proxy — the Job
-  # runs in the observability namespace and reaches the Service directly.
+  # cluster-internal; no Ingress, no oauth2-proxy bypass.
   url: "http://observability-signoz:8080"
 
 apiKey:
-  # Name of the k8s Secret holding the SigNoz API key. The Secret MUST
-  # carry a data key named `apiKey` — envFrom maps it to env $apiKey.
-  # One-time operator bootstrap; see README.
+  # data key must be 'apiKey'; envFrom maps it to $apiKey.
   secretName: signoz-alerts-apply-key
 
 image:
-  # natsio/nats-box bundles curl + jq + sh on Alpine — the same image
-  # used by infra/nats/templates/stream-bootstrap-job.yaml. Reusing it
-  # avoids pulling a second tiny image into the cluster.
+  # same image as infra/nats bootstrap job; bundles curl+jq+sh.
   repository: natsio/nats-box
   tag: "0.19.5"
   digest: "sha256:5d513bf0bb82d6af3fe8363097eb14d2e4ca3242db24140db88df4a4ba082442"

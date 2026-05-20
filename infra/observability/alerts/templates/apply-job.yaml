@@ -4,8 +4,7 @@ metadata:
   name: {{ include "bliss-signoz-alerts.fullname" . }}-apply
   labels: {{- include "bliss-signoz-alerts.labels" . | nindent 4 }}
   annotations:
-    # Reconcile rules on every chart install / upgrade. The script is
-    # idempotent: PUT existing rules by id, POST new ones by name.
+    # post-install,post-upgrade; idempotent (PUT existing / POST new).
     helm.sh/hook: post-install,post-upgrade
     helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
 spec:

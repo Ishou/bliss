@@ -3,10 +3,7 @@ kind: ConfigMap
 metadata:
   name: {{ include "bliss-signoz-alerts.fullname" . }}-rules
   labels: {{- include "bliss-signoz-alerts.labels" . | nindent 4 }}
-# NOT a Helm hook on purpose: the post-install Job below mounts this CM
-# at /rules, so the CM must exist by then. Lesson from PR #557 — hook
-# ordering between two hook objects is fragile; install-phase CM + hook
-# Job is the safe shape.
+# Install-phase (not a hook) so the ConfigMap exists before the post-install Job mounts it.
 data:
 {{- range $path, $_ := .Files.Glob "files/*.json" }}
   {{ base $path }}: |
