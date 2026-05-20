@@ -1,0 +1,45 @@
+{{- if .Values.stream.name }}
+{{- /*
+JSON stream specs consumed by the post-install Job via `nats stream add
+--config <file>`. The CLI's --config path requires nanosecond integers for
+duration fields (Go's time.Duration JSON unmarshaller is strict); the
+durationToNanos helper converts the human-readable values.yaml form.
+*/}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "bliss-nats.fullname" . }}-stream-specs
+  labels: {{- include "bliss-nats.labels" . | nindent 4 }}
+  annotations:
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+data:
+  primary.json: |
+    {
+      "name": {{ .Values.stream.name | quote }},
+      "subjects": {{ toJson .Values.stream.subjects }},
+      "retention": "limits",
+      "storage": {{ .Values.stream.storage | quote }},
+      "max_age": {{ include "bliss-nats.durationToNanos" .Values.stream.maxAge }},
+      "max_bytes": -1,
+      "max_msgs": -1,
+      "num_replicas": {{ .Values.stream.replicas }},
+      "discard": {{ .Values.stream.discardPolicy | quote }},
+      "duplicate_window": {{ include "bliss-nats.durationToNanos" "2m" }}
+    }
+{{- if .Values.dlq.enabled }}
+  dlq.json: |
+    {
+      "name": {{ .Values.dlq.name | quote }},
+      "subjects": {{ toJson .Values.dlq.subjects }},
+      "retention": "limits",
+      "storage": {{ .Values.dlq.storage | quote }},
+      "max_age": {{ include "bliss-nats.durationToNanos" .Values.dlq.maxAge }},
+      "max_bytes": -1,
+      "max_msgs": -1,
+      "num_replicas": {{ .Values.dlq.replicas }},
+      "discard": {{ .Values.dlq.discardPolicy | quote }},
+      "duplicate_window": {{ include "bliss-nats.durationToNanos" "2m" }}
+    }
+{{- end }}
+{{- end }}

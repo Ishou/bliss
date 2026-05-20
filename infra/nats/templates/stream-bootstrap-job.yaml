@@ -26,10 +26,15 @@ spec:
           securityContext: {{- toYaml .Values.containerSecurityContext | nindent 12 }}
           env:
             - { name: NATS_URL, value: "nats://{{ include "bliss-nats.fullname" . }}:{{ .Values.config.port }}" }
+            # nats-box's WORKDIR is /root which is unwritable under
+            # readOnlyRootFilesystem. Point HOME at the writable emptyDir
+            # mounted below so the nats CLI's xdg/context lookups succeed.
+            - { name: HOME, value: "/work" }
           command: ["/bin/sh", "-c"]
           args:
             - |
               set -euo pipefail
+              cd /work
               # Wait until JetStream is ready. The NATS pod's readiness gate
               # requires JetStream; this loop covers the small delay between
               # the StatefulSet being Ready and JetStream listing as enabled.
@@ -37,31 +42,23 @@ spec:
                 echo "waiting for NATS JetStream..."
                 sleep 2
               done
-              # Add the stream. Idempotent — same spec produces no diff.
-              nats stream add {{ .Values.stream.name }} \
-                --subjects '{{ join "," .Values.stream.subjects }}' \
-                --max-age {{ .Values.stream.maxAge }} \
-                --storage {{ .Values.stream.storage }} \
-                --replicas {{ .Values.stream.replicas }} \
-                --discard {{ .Values.stream.discardPolicy }} \
-                --retention limits \
-                --max-bytes -1 \
-                --max-msgs -1 \
-                --dupe-window 2m \
-                --defaults
+              # Add the stream from the projected JSON spec. `nats stream add
+              # --config` is fully non-interactive (no prompts, so no need
+              # for --defaults which the older script relied on). Re-running
+              # against an existing stream with the same spec is a no-op.
+              nats stream add --config /specs/primary.json
               nats stream info {{ .Values.stream.name }}
               {{- if .Values.dlq.enabled }}
-              nats stream add {{ .Values.dlq.name }} \
-                --subjects '{{ join "," .Values.dlq.subjects }}' \
-                --max-age {{ .Values.dlq.maxAge }} \
-                --storage {{ .Values.dlq.storage }} \
-                --replicas {{ .Values.dlq.replicas }} \
-                --discard {{ .Values.dlq.discardPolicy }} \
-                --retention limits \
-                --max-bytes -1 \
-                --max-msgs -1 \
-                --dupe-window 2m \
-                --defaults
+              nats stream add --config /specs/dlq.json
               nats stream info {{ .Values.dlq.name }}
               {{- end }}
+          volumeMounts:
+            - { name: specs, mountPath: /specs, readOnly: true }
+            - { name: work,  mountPath: /work }
+      volumes:
+        - name: specs
+          configMap:
+            name: {{ include "bliss-nats.fullname" . }}-stream-specs
+        - name: work
+          emptyDir: {}
 {{- end }}

@@ -9,7 +9,7 @@ streamInit:
   image:
     # natsio/nats-box bundles the nats CLI used to bootstrap the stream.
     repository: natsio/nats-box
-    tag: "0.14"
+    tag: "0.19.5"
     digest: ""
 
 # prometheus-nats-exporter sidecar — scrapes /varz, /connz, /jsz from the
@@ -38,7 +38,7 @@ config:
   port: 4222
   monitorPort: 8222
   jetstreamMaxMemory: "256M"
-  jetstreamMaxFile: "1Gi"
+  jetstreamMaxFile: "1G"
 
 # Stream definition applied at startup via the bootstrap Job.
 stream:
