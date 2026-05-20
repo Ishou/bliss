@@ -1,0 +1,33 @@
+{
+  "alert": "BlissNatsConsumerLagCritical",
+  "alertType": "METRIC_BASED_ALERT",
+  "ruleType": "threshold_rule",
+  "evalWindow": "1m0s",
+  "frequency": "1m0s",
+  "condition": {
+    "compositeQuery": {
+      "queryType": "promql",
+      "panelType": "graph",
+      "promQueries": {
+        "A": {
+          "name": "A",
+          "query": "max by (consumer_name, stream_name) (nats_consumer_num_pending)",
+          "disabled": false
+        }
+      },
+      "unit": ""
+    },
+    "op": "1",
+    "target": 1000,
+    "matchType": "1",
+    "selectedQueryName": "A"
+  },
+  "labels": {
+    "severity": "critical",
+    "component": "nats"
+  },
+  "annotations": {
+    "summary": "NATS consumer lag above critical threshold",
+    "description": "Consumer {{$labels.consumer_name}} on stream {{$labels.stream_name}} has {{$value}} pending messages (> 1000 for 1m)."
+  }
+}

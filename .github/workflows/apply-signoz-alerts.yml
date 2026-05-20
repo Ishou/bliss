@@ -1,0 +1,57 @@
+name: Apply SigNoz Alerts
+
+# Required repo secrets: SIGNOZ_URL, SIGNOZ_API_KEY (see docs/secrets.md).
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Git ref (branch / tag / SHA) to apply the alerts from.'
+        required: false
+        type: string
+        default: main
+
+concurrency:
+  # cancel-in-progress: false — a mid-PUT cancel leaves a partial rule body in SigNoz.
+  group: apply-signoz-alerts
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  apply:
+    name: apply signoz alerts
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repository at requested ref
+        # actions/checkout v4.3.1 — same SHA as helm-lint.yml + deploy-api-k8s.yml.
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          ref: ${{ inputs.ref }}
+          fetch-depth: 1
+
+      - name: Install jq and curl
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends jq curl
+          jq --version
+          curl --version | head -n1
+
+      - name: Apply SigNoz rules
+        env:
+          SIGNOZ_URL: ${{ secrets.SIGNOZ_URL }}
+          SIGNOZ_API_KEY: ${{ secrets.SIGNOZ_API_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "${SIGNOZ_URL:-}" ]; then
+            echo "::error::SIGNOZ_URL repository secret is not set; see infra/observability/alerts/README.md"
+            exit 1
+          fi
+          if [ -z "${SIGNOZ_API_KEY:-}" ]; then
+            echo "::error::SIGNOZ_API_KEY repository secret is not set; see infra/observability/alerts/README.md"
+            exit 1
+          fi
+          bash infra/observability/alerts/apply.sh
