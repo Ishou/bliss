@@ -1,11 +1,6 @@
 name: Deploy Observability Alerts
 
-# Reconciles SigNoz alert rules via the in-cluster bliss-signoz-alerts
-# Helm chart. The chart's post-install,post-upgrade Job does the actual
-# work against the cluster-internal SigNoz Service — no port-forward, no
-# oauth2-proxy bypass, no SIGNOZ_API_KEY in this workflow. CI's role is
-# `helm upgrade --install`; the API key lives in the in-cluster Secret
-# `signoz-alerts-apply-key` (one-time operator bootstrap; see chart README).
+# Deploys SigNoz alert rules via helm upgrade; API key lives in the in-cluster Secret, not in CI.
 
 on:
   push:
@@ -16,8 +11,7 @@ on:
   workflow_dispatch: {}
 
 concurrency:
-  # cancel-in-progress: false — a mid-helm-install cancel can leave the
-  # post-install hook Job orphaned. Serialize.
+  # cancel-in-progress: false — mid-helm-install cancel can orphan the post-install Job.
   group: deploy-observability-alerts
   cancel-in-progress: false
 
