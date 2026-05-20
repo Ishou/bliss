@@ -17,7 +17,7 @@ unrelated to player auth and must not be confused with it:
 - ADR-0030 (`oauth2-proxy`): a session-cookie wrapper for the SigNoz
   admin UI in htpasswd-only mode. No IDP. Gates admin traffic, not
   player traffic.
-- ADR-0028 (`admin-htpasswd`, now superseded by ADR-0030 for SigNoz; still referenced by ADR-0032 for Matomo): the htpasswd Secret that backs
+- ADR-0028 (`admin-htpasswd`, now superseded by ADR-0030 for SigNoz; still referenced by ADR-0052 for Matomo): the htpasswd Secret that backs
   oauth2-proxy and Matomo.
 
 Neither is in the player auth path.

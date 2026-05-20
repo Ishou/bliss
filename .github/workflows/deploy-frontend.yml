@@ -77,7 +77,7 @@ jobs:
         # uses Playwright's chromium to render each indexable route to
         # static HTML. Browser binaries aren't part of the npm package,
         # so install just chromium with its OS deps before the build.
-        # See ADR-0035.
+        # See ADR-0053.
         working-directory: frontend
         run: pnpm exec playwright install chromium --with-deps
 

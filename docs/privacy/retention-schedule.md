@@ -11,9 +11,9 @@
 | `sessionId` (UUID v7) | Browser `localStorage` | Until the user clears browser storage or clicks "Erase my data" | User-controlled; see ADR-0021 |
 | Pseudonym | Browser `localStorage` | Same as `sessionId` | User-controlled |
 | `puzzle_hint_usage` rows | Postgres (CNPG) | **90 days from `updated_at`** | k8s CronJob (Phase 7), nightly `DELETE WHERE updated_at < now() - interval '90 days'` |
-| Lobby row (`lobbies`) | Postgres (CNPG, `game-api` schema) | WAITING: 30 min idle; IN_PROGRESS: never evicted; COMPLETED: 7 days | k8s CronJob (ADR-0039 §c), nightly sweep |
+| Lobby row (`lobbies`) | Postgres (CNPG, `game-api` schema) | WAITING: 30 min idle; IN_PROGRESS: never evicted; COMPLETED: 7 days | k8s CronJob (ADR-0055 §c), nightly sweep |
 | Lobby membership row (`lobby_players`) | Postgres | Lifetime of the parent lobby (`ON DELETE CASCADE`) | Inherits lobby retention |
-| Cell entry row (`lobby_cell_entries`) | Postgres | Lifetime of the parent lobby; `written_by_session_id` is NULLed on RGPD erasure (letter retained for puzzle coherence, attribution dropped) | Inherits lobby retention; ADR-0039 three-rule cascade for erasure |
+| Cell entry row (`lobby_cell_entries`) | Postgres | Lifetime of the parent lobby; `written_by_session_id` is NULLed on RGPD erasure (letter retained for puzzle coherence, attribution dropped) | Inherits lobby retention; ADR-0055 three-rule cascade for erasure |
 | Matomo visit + event data | MariaDB (k3s, dedicated to Matomo) | **13 months** | Matomo admin UI: Privacy → Anonymize previous logs |
 | Matomo aggregated reports | MariaDB | Indefinite (already aggregated, non-identifying) | n/a |
 | Application logs (Ktor `CallLogging`) | stdout, scraped to log store TBD | Pending observability ADR-0007 | Out of scope here |
@@ -32,7 +32,7 @@ failure surfaces "Veuillez réessayer"):
 2. Backend: `DELETE /v1/sessions/{sessionId}` on `grid/api` removes all
    `puzzle_hint_usage` rows for that session.
 3. Backend: `DELETE /v1/sessions/{sessionId}` on `game/api` applies the
-   ADR-0039 three-rule cascade across every lobby the session is a
+   ADR-0055 three-rule cascade across every lobby the session is a
    member of:
 
    - **Rule 1 — sole-player owner.** When the erased user is the only
