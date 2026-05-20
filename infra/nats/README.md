@@ -21,9 +21,9 @@ user events (ADR-0049).
 ### 2026-05-20 prod incident note
 
 The chart was previously not installable due to five chart bugs (fixed
-in PR #556) plus two hook/ordering bugs (this PR: `alerts.enabled=true`
+in PR #556) plus two hook/ordering bugs (PR #557: `alerts.enabled=true`
 default + `stream-specs` ConfigMap shipped as a post-install hook,
-which raced its consumer Job). After this PR, the prod install is
+which raced its consumer Job). After PR #557, the prod install is
 one-shot:
 
 ```sh
@@ -138,6 +138,10 @@ Requires the Prometheus operator (or a compatible CRD watcher) installed
 in-cluster. If `monitoring.coreos.com/v1` isn't present, set
 `alerts.enabled=false` until the operator lands; the CR is otherwise
 inert (no controller, no consumer).
+
+**FOLLOW_UP**: flip `alerts.enabled` to `true` in `values-prod.yaml`
+once `infra/platform/` ships the Prometheus Operator (or its CRDs
+alone).
 
 ## NetworkPolicy
 
