@@ -29,8 +29,7 @@ today. Helm ignores files outside `Chart.yaml` / `values.yaml` /
 
 ## How it works
 
-The chart bundles `files/*.json` into a ConfigMap (install-phase, NOT
-a hook — so the CM exists before the Job runs; lesson from PR #557).
+The chart bundles `files/*.json` into a ConfigMap (install-phase, not a hook — the CM must exist before the post-install Job mounts it).
 A `post-install,post-upgrade` hook Job mounts the CM at `/rules`,
 reads the API key via `envFrom`, and reconciles each rule: PUT to
 `/api/v1/rules/<id>` if a rule with the same `alert` name exists,
