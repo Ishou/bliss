@@ -54,14 +54,23 @@ are applied via the `Apply SigNoz Alerts` workflow
 2. Optionally set the `ref` input to pin the apply to a specific
    commit / tag (defaults to `main`).
 
-The workflow reads `SIGNOZ_URL` + `SIGNOZ_API_KEY` from GitHub
+The workflow reads `KUBECONFIG_PROD` + `SIGNOZ_API_KEY` from GitHub
 **repository secrets** (one-time human bootstrap; see
 [`docs/secrets.md`](../../../docs/secrets.md) for the general pattern):
 
-| Secret name      | Source |
-| ---------------- | ------ |
-| `SIGNOZ_URL`     | e.g. `https://errors.wordsparrow.io` |
-| `SIGNOZ_API_KEY` | SigNoz UI → Settings → API Keys, or `kubectl -n observability get secret signoz-api-key -o jsonpath='{.data.key}' \| base64 -d` |
+| Secret name       | Source |
+| ----------------- | ------ |
+| `KUBECONFIG_PROD` | Same kubeconfig used by `deploy-api-k8s.yml` (Hetzner k3s, rewritten public IP) |
+| `SIGNOZ_API_KEY`  | SigNoz UI → Settings → API Keys, or `kubectl -n observability get secret signoz-api-key -o jsonpath='{.data.key}' \| base64 -d` |
+
+The SigNoz public Ingress (`errors.wordsparrow.io`) sits behind
+oauth2-proxy → Google login, so unauthenticated API calls receive a
+302 to an HTML page. The workflow therefore reaches the SigNoz API
+cluster-internally: it loads `KUBECONFIG_PROD`, runs `kubectl
+port-forward -n observability svc/observability-signoz 18080:8080`,
+waits until `/api/v1/rules` returns valid JSON, then runs `apply.sh`
+with `SIGNOZ_URL=http://localhost:18080`. The port-forward is killed
+on exit via `trap`.
 
 The workflow serializes runs via the `apply-signoz-alerts` concurrency
 group, so two manual triggers cannot race.
@@ -69,10 +78,16 @@ group, so two manual triggers cannot race.
 ### Fallback: local shell (dev-loop only — not the recommended prod path)
 
 Useful while iterating on the JSON rule bodies against a non-prod
-SigNoz, or for emergency apply if GitHub Actions is unavailable:
+SigNoz, or for emergency apply if GitHub Actions is unavailable. Direct
+curl to `errors.wordsparrow.io` does not work (oauth2-proxy), so the
+local path mirrors the workflow's port-forward:
 
 ```sh
-export SIGNOZ_URL=https://errors.wordsparrow.io       # or dashboard.wordsparrow.io
+# In one shell: forward the cluster-internal SigNoz API to localhost.
+kubectl -n observability port-forward svc/observability-signoz 18080:8080
+
+# In another shell: apply.
+export SIGNOZ_URL=http://localhost:18080
 export SIGNOZ_API_KEY=$(kubectl -n observability get secret signoz-api-key \
   -o jsonpath='{.data.key}' | base64 -d)              # or generate in SigNoz UI -> Settings -> API Keys
 ./apply.sh
