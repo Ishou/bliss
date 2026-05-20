@@ -4,9 +4,6 @@ kind: ConfigMap
 metadata:
   name: {{ include "bliss-nats.fullname" . }}-stream-specs
   labels: {{- include "bliss-nats.labels" . | nindent 4 }}
-  annotations:
-    helm.sh/hook: post-install,post-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation
 data:
   primary.json: |
     {

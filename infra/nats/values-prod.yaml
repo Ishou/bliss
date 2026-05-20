@@ -22,8 +22,9 @@ metricsExporter:
 dlq:
   enabled: true
 
-# Alerts — on in prod. Requires a PrometheusRule-watching operator
-# in-cluster. If the operator isn't yet installed, the CR sits
-# unconsumed (no error); flip to false until it lands if that's noisy.
+# Disabled by default: requires Prometheus Operator CRDs
+# (monitoring.coreos.com/v1 PrometheusRule) which are not yet
+# bootstrapped on prod. Flip to true once infra/platform/ ships the
+# operator (or its CRDs alone).
 alerts:
-  enabled: true
+  enabled: false
