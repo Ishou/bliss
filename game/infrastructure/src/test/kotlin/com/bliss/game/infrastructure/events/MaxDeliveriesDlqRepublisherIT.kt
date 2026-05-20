@@ -127,8 +127,8 @@ class MaxDeliveriesDlqRepublisherIT {
         js.publish("wordsparrow.user.renamed", payload.toByteArray(Charsets.UTF_8))
 
         try {
-            assumeTrue(attempts.await(60, TimeUnit.SECONDS)) { "max-deliver redeliveries never fired" }
-            val dlqMsg = dlqStreamSub.nextMessage(Duration.ofSeconds(60))
+            assumeTrue(attempts.await(20, TimeUnit.SECONDS)) { "max-deliver redeliveries never fired" }
+            val dlqMsg = dlqStreamSub.nextMessage(Duration.ofSeconds(15))
             assertThat(dlqMsg).isNotNull()
             assertThat(dlqMsg.subject).isEqualTo("wordsparrow.dlq.wordsparrow.user.renamed")
             assertThat(String(dlqMsg.data, Charsets.UTF_8)).isEqualTo(payload)
