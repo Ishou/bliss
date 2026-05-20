@@ -59,31 +59,16 @@ dlq:
   enabled: false
   name: WORDSPARROW_USER_EVENTS_DLQ
   subjects: ["wordsparrow.dlq.>"]
-  # 30 days — long enough to triage a failure surfaced by the consumer-lag
-  # / DLQ alerts (see PrometheusRule below) before storage reclaims it.
+  # 30 days — long enough to triage a failure surfaced by the SigNoz consumer-lag
+  # / DLQ alerts (infra/observability/alerts/) before storage reclaims it.
   maxAge: "720h"
   storage: file
   replicas: 1
   discardPolicy: old
 
-# PrometheusRule for the metrics exporter — consumer-lag + DLQ alerts.
-# Requires the Prometheus operator (or compatible CRD watcher) installed
-# in-cluster; gated off in defaults so a missing CRD doesn't error
-# `helm install`. values-prod.yaml flips on once the operator lands.
-alerts:
-  enabled: false
-  # Namespace selector / additionalLabels for the PrometheusRule are left to
-  # the cluster's operator config; the rules themselves are subject-stable.
-  pendingWarn:
-    threshold: 100
-    for: "5m"
-  pendingCritical:
-    threshold: 1000
-    for: "1m"
-  dlqWarn:
-    # Any message in the DLQ is a permanent failure that needs triage.
-    threshold: 0
-    for: "1m"
+# NATS consumer-lag + DLQ alerts are defined as SigNoz rules under
+# infra/observability/alerts/ (applied via apply.sh) rather than as
+# PrometheusRule CRs — this cluster runs SigNoz, not kube-prometheus-stack.
 
 resources:
   requests: { cpu: 100m, memory: 128Mi }

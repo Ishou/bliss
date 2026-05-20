@@ -5,15 +5,6 @@ user events (ADR-0049).
 
 ## Prerequisites
 
-- **Prometheus Operator CRDs** (only when `alerts.enabled=true`). The
-  `alerts` block renders a `monitoring.coreos.com/v1 PrometheusRule`
-  and will fail `helm install` with `no matches for kind
-  "PrometheusRule"` if the CRDs are absent. See
-  https://github.com/prometheus-operator/prometheus-operator.
-  `infra/platform/` does not yet ship the operator; `values-prod.yaml`
-  defaults `alerts.enabled` to `false`. See the **FOLLOW_UP** note
-  under `alerts.enabled` below — flip it on once the operator (or its
-  CRDs alone) lands.
 - **Storage class** — `values-prod.yaml` uses `hcloud-volumes`. See
   `docs/local-development.md` and `docs/deploy.md` for the equivalent
   k3d / Hetzner provisioning.
@@ -81,8 +72,11 @@ kubectl -n wordsparrow exec bliss-nats-0 -- \
 
 ## Metrics + DLQ + alerts
 
-The chart can ship three additional pieces gated by values flags. All
-three default off; `values-prod.yaml` flips them on.
+The chart can ship two additional pieces gated by values flags. Both
+default off; `values-prod.yaml` flips them on. Consumer-lag and DLQ
+alerts are defined as SigNoz rules in
+[`../observability/alerts/`](../observability/alerts/) — this cluster
+runs SigNoz, not kube-prometheus-stack.
 
 ### `metricsExporter.enabled`
 
@@ -122,26 +116,6 @@ Publishing to the DLQ subject is consumer-side: each context subscribes
 to its own JetStream MaxDeliveries advisory
 (`$JS.EVENT.ADVISORY.MAX_DELIVERIES.<stream>.<consumer>`) and republishes
 the failed message envelope under `wordsparrow.dlq.<original-subject>`.
-
-### `alerts.enabled`
-
-Drops a `monitoring.coreos.com/v1 PrometheusRule` named
-`<release>-alerts` with three rules:
-
-| Alert | Expr | For | Severity |
-| --- | --- | --- | --- |
-| `BlissNatsConsumerLagWarning` | `nats_consumer_num_pending > 100` | 5m | warning |
-| `BlissNatsConsumerLagCritical` | `nats_consumer_num_pending > 1000` | 1m | critical |
-| `BlissNatsDlqNonEmpty` | `nats_stream_messages{stream_name="WORDSPARROW_USER_EVENTS_DLQ"} > 0` | 1m | warning |
-
-Requires the Prometheus operator (or a compatible CRD watcher) installed
-in-cluster. If `monitoring.coreos.com/v1` isn't present, set
-`alerts.enabled=false` until the operator lands; the CR is otherwise
-inert (no controller, no consumer).
-
-**FOLLOW_UP**: flip `alerts.enabled` to `true` in `values-prod.yaml`
-once `infra/platform/` ships the Prometheus Operator (or its CRDs
-alone).
 
 ## NetworkPolicy
 

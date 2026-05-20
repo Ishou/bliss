@@ -21,10 +21,3 @@ metricsExporter:
 # DLQ stream — on in prod (scaling-readiness per ADR-0049).
 dlq:
   enabled: true
-
-# Disabled by default: requires Prometheus Operator CRDs
-# (monitoring.coreos.com/v1 PrometheusRule) which are not yet
-# bootstrapped on prod. Flip to true once infra/platform/ ships the
-# operator (or its CRDs alone).
-alerts:
-  enabled: false
