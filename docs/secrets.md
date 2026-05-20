@@ -44,6 +44,7 @@ guard (e.g., losing MariaDB's root password means rebuilding the DB).
 | `matomo-env` | `matomo` | C | `kubectl create secret … --from-literal=MATOMO_DATABASE_PASSWORD=…` | Same value as `mariadb-env`'s `MARIADB_PASSWORD` — save once. |
 | Matomo super-user password | (in MariaDB) | C | Set via Matomo first-run wizard | Recoverable via Matomo CLI (`./console user:reset-password`) as long as MariaDB credentials are intact. |
 | Matomo `MATOMO_ID_SALT` (Phase D, future) | (api namespaces) | C | `openssl rand -hex 24` | Lose it = visitor hashes from before the loss become unmatchable. Acceptable: the daily-rotated hash already changes every day; just generate a fresh salt and continue. |
+| `signoz-alerts-apply-key` | `observability` | A | `kubectl create secret generic signoz-alerts-apply-key -n observability --from-literal=apiKey=…` (`infra/observability/alerts/README.md`) | Mint a fresh key in SigNoz UI → Settings → API Keys (role `signoz-admin`), recreate the k8s secret. The `bliss-signoz-alerts` chart's post-install Job re-reads it on the next `helm upgrade`. |
 
 ## What to put in your password manager today
 

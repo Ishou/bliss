@@ -1,0 +1,34 @@
+signoz:
+  # cluster-internal; no Ingress, no oauth2-proxy bypass.
+  url: "http://observability-signoz:8080"
+
+apiKey:
+  # data key must be 'apiKey'; envFrom maps it to $apiKey.
+  secretName: signoz-alerts-apply-key
+
+image:
+  # same image as infra/nats bootstrap job; bundles curl+jq+sh.
+  repository: natsio/nats-box
+  tag: "0.19.5"
+  digest: "sha256:5d513bf0bb82d6af3fe8363097eb14d2e4ca3242db24140db88df4a4ba082442"
+  pullPolicy: IfNotPresent
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 200m
+    memory: 128Mi
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL

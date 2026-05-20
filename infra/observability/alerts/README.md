@@ -1,125 +1,88 @@
-# SigNoz alerts
+# bliss-signoz-alerts
 
-Version-controlled SigNoz alert rules. Two flavours coexist in this directory:
+A Helm chart that applies SigNoz alert rule definitions via an in-cluster
+`post-install,post-upgrade` hook Job — not via `kubectl port-forward` from a
+GitHub Actions workflow. The 2026-05-20 SigNoz workflow incident (the
+external workflow had to oauth2-proxy-bypass the SigNoz Ingress, then
+port-forward, then curl) is the trigger; the fix is the rule encoded in
+CLAUDE.md: **Configure-in-cluster, not push-from-CI.** The chart-Job
+pattern is the canonical shape (mirrors `infra/nats/templates/stream-bootstrap-job.yaml`).
 
-- **Markdown specs** (`*.md`) — human-curated specs for rules that live in
-  the SigNoz UI (created manually, re-imported from the spec after a
-  reinstall). Used for the launch-symptom alerts in ADR-0032 and the
-  pre-existing frontend / grid-worker checks.
-- **JSON rule definitions** (`*.json`) — declarative SigNoz rule bodies
-  applied via [`apply.sh`](./apply.sh). Used for alerts that have a
-  stable, machine-applyable shape (currently the NATS consumer-lag +
-  DLQ alerts).
-
-## Why NATS alerts live here, not as `PrometheusRule`
-
-The chart `infra/nats/` previously shipped a
-`monitoring.coreos.com/v1 PrometheusRule` (PR #544) gated behind
-`alerts.enabled`. The flag stayed `false` permanently because
-`infra/platform/` does not install kube-prometheus-stack — and won't:
-SigNoz is the observability backend (ADR-0027). The CRD was therefore
-unusable in prod. The PR #557 incident note in `infra/nats/README.md`
-records the trigger for the migration.
-
-The NATS exporter metrics already reach SigNoz: the
-`prometheus-nats-exporter` sidecar exposes
-`nats_consumer_num_pending` + `nats_stream_messages{stream_name=...}`
-on port 7777 of `bliss-nats-0`, and the SigNoz k8s-infra collector's
-`prometheus` preset (PR #549) scrapes pods annotated with
-`prometheus.io/scrape=true`. The metrics are in ClickHouse; the alerts
-are now defined here.
+The external workflow (`apply-signoz-alerts.yml`) and `apply.sh` have been removed.
 
 ## Per-alert spec
 
-| File | Metric | Threshold | Window | Severity |
-| --- | --- | --- | --- | --- |
-| [`nats-consumer-lag-warning.json`](./nats-consumer-lag-warning.json) | `nats_consumer_num_pending` (max by consumer + stream) | `> 100` | 5m | warning |
-| [`nats-consumer-lag-critical.json`](./nats-consumer-lag-critical.json) | `nats_consumer_num_pending` (max by consumer + stream) | `> 1000` | 1m | critical |
-| [`nats-dlq-non-empty.json`](./nats-dlq-non-empty.json) | `nats_stream_messages{stream_name="WORDSPARROW_USER_EVENTS_DLQ"}` | `> 0` | 1m | warning |
+| File                                                                       | Metric                                                                   | Threshold | Window | Severity |
+| -------------------------------------------------------------------------- | ------------------------------------------------------------------------ | --------- | ------ | -------- |
+| [`files/nats-consumer-lag-warning.json`](./files/nats-consumer-lag-warning.json)   | `nats_consumer_num_pending` (max by consumer + stream)                   | `> 100`   | 5m     | warning  |
+| [`files/nats-consumer-lag-critical.json`](./files/nats-consumer-lag-critical.json) | `nats_consumer_num_pending` (max by consumer + stream)                   | `> 1000`  | 1m     | critical |
+| [`files/nats-dlq-non-empty.json`](./files/nats-dlq-non-empty.json)                 | `nats_stream_messages{stream_name="WORDSPARROW_USER_EVENTS_DLQ"}`        | `> 0`     | 1m     | warning  |
 
 All three are `threshold_rule` with `compositeQuery.queryType=promql`,
-`op="1"` (greater-than) and `matchType="1"` (at-least-once during the
-window). Notification channel is bound out-of-band in the SigNoz UI
-(see `api-5xx-error-rate.md` for the `gmail-relay` Email-channel setup).
+`op="1"` (greater-than), and `matchType="1"` (at-least-once during the
+window). Notification channel binding is out-of-band in the SigNoz UI
+(see the sibling `api-5xx-error-rate.md` for the `gmail-relay` channel).
 
-## Applying
+The sibling `*.md` specs document alerts that live in the SigNoz UI
+today. Helm ignores files outside `Chart.yaml` / `values.yaml` /
+`templates/` / `files/`, so they ride along as docs.
 
-### Canonical path: CI workflow (recommended)
+## How it works
 
-Per MANIFESTO.md §6 ("CI is the only path to production"), the alerts
-are applied via the `Apply SigNoz Alerts` workflow
-(`.github/workflows/apply-signoz-alerts.yml`):
+The chart bundles `files/*.json` into a ConfigMap (install-phase, not a hook — the CM must exist before the post-install Job mounts it).
+A `post-install,post-upgrade` hook Job mounts the CM at `/rules`,
+reads the API key via `envFrom`, and reconciles each rule: PUT to
+`/api/v1/rules/<id>` if a rule with the same `alert` name exists,
+POST otherwise. Hook delete policy is
+`before-hook-creation,hook-succeeded`.
 
-1. GitHub → Actions → **Apply SigNoz Alerts** → **Run workflow**.
-2. Optionally set the `ref` input to pin the apply to a specific
-   commit / tag (defaults to `main`).
+## Bootstrap (one-time, per cluster)
 
-The workflow reads `KUBECONFIG_PROD` + `SIGNOZ_API_KEY` from GitHub
-**repository secrets** (one-time human bootstrap; see
-[`docs/secrets.md`](../../../docs/secrets.md) for the general pattern):
-
-| Secret name       | Source |
-| ----------------- | ------ |
-| `KUBECONFIG_PROD` | Same kubeconfig used by `deploy-api-k8s.yml` (Hetzner k3s, rewritten public IP) |
-| `SIGNOZ_API_KEY`  | SigNoz UI → Settings → API Keys, or `kubectl -n observability get secret signoz-api-key -o jsonpath='{.data.key}' \| base64 -d` |
-
-The SigNoz public Ingress (`errors.wordsparrow.io`) sits behind
-oauth2-proxy → Google login, so unauthenticated API calls receive a
-302 to an HTML page. The workflow therefore reaches the SigNoz API
-cluster-internally: it loads `KUBECONFIG_PROD`, runs `kubectl
-port-forward -n observability svc/observability-signoz 18080:8080`,
-waits until `/api/v1/rules` returns valid JSON, then runs `apply.sh`
-with `SIGNOZ_URL=http://localhost:18080`. The port-forward is killed
-on exit via `trap`.
-
-The workflow serializes runs via the `apply-signoz-alerts` concurrency
-group, so two manual triggers cannot race.
-
-### Fallback: local shell (dev-loop only — not the recommended prod path)
-
-Useful while iterating on the JSON rule bodies against a non-prod
-SigNoz, or for emergency apply if GitHub Actions is unavailable. Direct
-curl to `errors.wordsparrow.io` does not work (oauth2-proxy), so the
-local path mirrors the workflow's port-forward:
+The SigNoz API key never leaves the cluster. Create the Secret once:
 
 ```sh
-# In one shell: forward the cluster-internal SigNoz API to localhost.
-kubectl -n observability port-forward svc/observability-signoz 18080:8080
-
-# In another shell: apply.
-export SIGNOZ_URL=http://localhost:18080
-export SIGNOZ_API_KEY=$(kubectl -n observability get secret signoz-api-key \
-  -o jsonpath='{.data.key}' | base64 -d)              # or generate in SigNoz UI -> Settings -> API Keys
-./apply.sh
+kubectl create secret generic signoz-alerts-apply-key \
+  -n observability \
+  --from-literal=apiKey='<paste-SigNoz-API-key>'
 ```
 
-`apply.sh` is idempotent: it lists existing rules, PUTs an update if a
-rule with the same `alert` name exists, POSTs a new one otherwise. Each
-rule reports `ok` or `FAIL` with the HTTP code and response body.
+Get the key from SigNoz UI → **Settings → API Keys** (role:
+`signoz-admin`), or from the in-cluster Secret if you've already issued
+one:
 
-## Viewing + silencing
+```sh
+kubectl -n observability get secret signoz-api-key \
+  -o jsonpath='{.data.key}' | base64 -d
+```
 
-- **View**: SigNoz UI → Alerts. Filter by `component=nats` label.
-- **Silence**: SigNoz UI → Alerts → select rule → "Mute" for a duration.
-  Silences are stored in SigNoz's DB, not in this repo — a planned mute
-  needs re-applying after a SigNoz reinstall.
-- **History**: SigNoz UI → Alerts → rule → "Timeline" shows firings.
+The Secret's data key MUST be `apiKey` — `envFrom` maps it to the
+`$apiKey` env var the Job's script reads.
+
+## Install / upgrade
+
+```sh
+helm upgrade --install bliss-signoz-alerts ./infra/observability/alerts \
+  -n observability --wait --timeout 5m
+```
+
+CI runs the same command — see `.github/workflows/deploy-observability-alerts.yml`,
+which triggers on every push to `main` touching
+`infra/observability/alerts/**`, plus manual `workflow_dispatch`.
+
+## Removing a rule
+
+Delete the JSON file from `files/` and re-run `helm upgrade`. Note that
+Helm does not auto-clean SigNoz rules: the rule will linger in SigNoz's
+DB until manually removed via the UI (Alerts → select rule → Delete) or
+via the SigNoz API (`DELETE /api/v1/rules/<id>`). Accept the orphan
+between deletion and manual cleanup.
 
 ## Schema version
 
-The JSON files were authored against the SigNoz **v0.122** rules API
-shape (the version pinned in `infra/observability/Chart.lock` at the
-time of writing). Field names (`evalWindow`, `frequency`, `condition`,
-`compositeQuery.queryType`, `op`, `matchType`) are stable across the
-0.5x-0.7x line per the SigNoz changelog, but the operator should
-re-verify against the deployed SigNoz version on upgrade. TODO: smoke
-the JSON shape against a live SigNoz POST and fix up if anything
-rejects.
+JSON bodies target SigNoz **v0.122** (pinned in
+`infra/observability/Chart.lock`). Re-verify on upgrade.
 
-## Future
+## Viewing + silencing
 
-If `infra/platform/` ever adds the Prometheus Operator (e.g. to host
-non-SigNoz Alertmanager routing), the same three NATS alerts could
-also be expressed as a `PrometheusRule`. The canonical source remains
-this directory; a `PrometheusRule` would be a secondary export, not a
-replacement.
+SigNoz UI → Alerts. Filter by `component=nats`. Silences live in
+SigNoz's DB; reapply after a SigNoz reinstall.

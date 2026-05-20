@@ -1,0 +1,57 @@
+name: Deploy Observability Alerts
+
+# Deploys SigNoz alert rules via helm upgrade; API key lives in the in-cluster Secret, not in CI.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'infra/observability/alerts/**'
+      - '.github/workflows/deploy-observability-alerts.yml'
+  workflow_dispatch: {}
+
+concurrency:
+  # cancel-in-progress: false — mid-helm-install cancel can orphan the post-install Job.
+  group: deploy-observability-alerts
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: helm upgrade --install bliss-signoz-alerts
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        # actions/checkout v4.3.1 — same SHA as deploy-api-k8s.yml + helm-lint.yml.
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          fetch-depth: 1
+
+      - name: Set up Helm
+        # azure/setup-helm v4.3.1 — same SHA as deploy-api-k8s.yml + helm-lint.yml.
+        uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4 # v4.3.1
+        with:
+          version: v3.16.3
+
+      - name: Configure kubeconfig
+        env:
+          KUBECONFIG_DATA: ${{ secrets.KUBECONFIG_PROD }}
+        run: |
+          set -euo pipefail
+          if [ -z "${KUBECONFIG_DATA:-}" ]; then
+            echo "::error::KUBECONFIG_PROD secret is not set; see docs/deploy.md"
+            exit 1
+          fi
+          mkdir -p ~/.kube
+          printf '%s' "$KUBECONFIG_DATA" > ~/.kube/config
+          chmod 600 ~/.kube/config
+
+      - name: Helm upgrade --install
+        run: |
+          helm upgrade --install bliss-signoz-alerts \
+            ./infra/observability/alerts \
+            -n observability \
+            --wait --timeout 5m

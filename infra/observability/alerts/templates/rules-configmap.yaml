@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "bliss-signoz-alerts.fullname" . }}-rules
+  labels: {{- include "bliss-signoz-alerts.labels" . | nindent 4 }}
+# Install-phase (not a hook) so the ConfigMap exists before the post-install Job mounts it.
+data:
+{{- range $path, $_ := .Files.Glob "files/*.json" }}
+  {{ base $path }}: |
+{{ $.Files.Get $path | indent 4 }}
+{{- end }}
