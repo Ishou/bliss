@@ -1,8 +1,6 @@
 name: Apply SigNoz Alerts
 
-# Required repo secrets: KUBECONFIG_PROD, SIGNOZ_API_KEY (see docs/secrets.md).
-# SigNoz Ingress is gated by oauth2-proxy, so we reach the API cluster-internally
-# via `kubectl port-forward` to observability-signoz.observability:8080.
+# Required repo secrets: KUBECONFIG_PROD, SIGNOZ_API_KEY (see infra/observability/alerts/README.md).
 
 on:
   workflow_dispatch:
