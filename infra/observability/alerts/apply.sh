@@ -1,9 +1,5 @@
 #!/usr/bin/env bash
-# Idempotently apply every *.json rule in this directory to SigNoz.
-# Requires: SIGNOZ_URL (e.g. https://errors.wordsparrow.io) and
-# SIGNOZ_API_KEY. Looks up each rule by name; PUTs when found, POSTs
-# when new. Reports per-rule outcome. Schema verified against SigNoz
-# v0.122 (rules API at /api/v1/rules). Update if upgrading SigNoz.
+# Idempotently apply every *.json rule in this directory to SigNoz (schema: v0.122).
 set -euo pipefail
 
 : "${SIGNOZ_URL:?SIGNOZ_URL must be set (e.g. https://errors.wordsparrow.io)}"

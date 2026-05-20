@@ -1,22 +1,6 @@
 name: Apply SigNoz Alerts
 
-# Canonical path for applying the JSON alert rules under
-# infra/observability/alerts/ to the live SigNoz instance, per
-# MANIFESTO.md §6 ("CI is the only path to production"). Replaces the
-# previous workstation invocation of infra/observability/alerts/apply.sh.
-#
-# Trigger: manual (workflow_dispatch). The `ref` input lets the operator
-# pin the apply to a specific commit / tag / branch (defaults to main).
-#
-# Required repository secrets (one-time human bootstrap; see
-# docs/secrets.md for the general pattern):
-#   - SIGNOZ_URL      e.g. https://errors.wordsparrow.io
-#   - SIGNOZ_API_KEY  generated in SigNoz UI -> Settings -> API Keys,
-#                     or read from the in-cluster `signoz-api-key`
-#                     Secret in the `observability` namespace.
-#
-# The script itself (apply.sh) is idempotent: PUT when a rule with the
-# same `alert` name already exists, POST otherwise. Re-running is safe.
+# Required repo secrets: SIGNOZ_URL, SIGNOZ_API_KEY (see docs/secrets.md).
 
 on:
   workflow_dispatch:
@@ -28,9 +12,7 @@ on:
         default: main
 
 concurrency:
-  # Serialize applies so two manual runs cannot race against the SigNoz
-  # rules API. Queue rather than cancel: a cancelled mid-PUT could leave
-  # a partially-updated rule body in SigNoz.
+  # cancel-in-progress: false — a mid-PUT cancel leaves a partial rule body in SigNoz.
   group: apply-signoz-alerts
   cancel-in-progress: false
 
@@ -51,8 +33,6 @@ jobs:
           fetch-depth: 1
 
       - name: Install jq and curl
-        # Both are preinstalled on ubuntu-latest, but install explicitly
-        # so the workflow stays correct if the runner image ever drops one.
         run: |
           set -euo pipefail
           sudo apt-get update
