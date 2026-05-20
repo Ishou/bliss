@@ -3,6 +3,37 @@
 NATS Server with JetStream — cluster-internal eventing for cross-context
 user events (ADR-0049).
 
+## Prerequisites
+
+- **Prometheus Operator CRDs** (only when `alerts.enabled=true`). The
+  `alerts` block renders a `monitoring.coreos.com/v1 PrometheusRule`
+  and will fail `helm install` with `no matches for kind
+  "PrometheusRule"` if the CRDs are absent. See
+  https://github.com/prometheus-operator/prometheus-operator.
+  `infra/platform/` does not yet ship the operator; `values-prod.yaml`
+  defaults `alerts.enabled` to `false`. See the **FOLLOW_UP** note
+  under `alerts.enabled` below — flip it on once the operator (or its
+  CRDs alone) lands.
+- **Storage class** — `values-prod.yaml` uses `hcloud-volumes`. See
+  `docs/local-development.md` and `docs/deploy.md` for the equivalent
+  k3d / Hetzner provisioning.
+
+### 2026-05-20 prod incident note
+
+The chart was previously not installable due to five chart bugs (fixed
+in PR #556) plus two hook/ordering bugs (this PR: `alerts.enabled=true`
+default + `stream-specs` ConfigMap shipped as a post-install hook,
+which raced its consumer Job). After this PR, the prod install is
+one-shot:
+
+```sh
+KUBECONFIG=~/.kube/wordsparrow-prod helm install bliss-nats ./infra/nats \
+  -n wordsparrow \
+  -f ./infra/nats/values.yaml -f ./infra/nats/values-prod.yaml
+```
+
+No `--set` overrides needed.
+
 ## Install
 
 ```sh
