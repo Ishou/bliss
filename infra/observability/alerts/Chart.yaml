@@ -1,0 +1,10 @@
+apiVersion: v2
+name: bliss-signoz-alerts
+description: |
+  Applies SigNoz alert rule definitions to the in-cluster SigNoz API via a
+  post-install,post-upgrade Helm hook Job. Each rule body lives as a JSON
+  file under files/ and is reconciled idempotently (PUT existing / POST new).
+  Mirrors the chart-Job pattern from infra/nats/templates/stream-bootstrap-job.yaml.
+type: application
+version: 0.1.0
+appVersion: "0.1.0"

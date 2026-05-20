@@ -1,0 +1,76 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "bliss-signoz-alerts.fullname" . }}-apply
+  labels: {{- include "bliss-signoz-alerts.labels" . | nindent 4 }}
+  annotations:
+    # Reconcile rules on every chart install / upgrade. The script is
+    # idempotent: PUT existing rules by id, POST new ones by name.
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+spec:
+  ttlSecondsAfterFinished: 600
+  backoffLimit: 3
+  template:
+    metadata:
+      labels: {{- include "bliss-signoz-alerts.selectorLabels" . | nindent 8 }}
+    spec:
+      securityContext: {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      restartPolicy: Never
+      volumes:
+        - name: rules
+          configMap:
+            name: {{ include "bliss-signoz-alerts.fullname" . }}-rules
+        - name: work
+          emptyDir: {}
+      containers:
+        - name: apply
+          image: {{ include "bliss-signoz-alerts.image" . | quote }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext: {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+          resources: {{- toYaml .Values.resources | nindent 12 }}
+          env:
+            - name: SIGNOZ_URL
+              value: {{ .Values.signoz.url | quote }}
+            - name: HOME
+              value: /work
+          envFrom:
+            # Secret data key MUST be `apiKey`; envFrom maps it to $apiKey.
+            - secretRef:
+                name: {{ .Values.apiKey.secretName }}
+          volumeMounts:
+            - name: rules
+              mountPath: /rules
+              readOnly: true
+            - name: work
+              mountPath: /work
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -eu
+              AUTH="Authorization: SIGNOZ-API-KEY ${apiKey}"
+              CT="Content-Type: application/json"
+              BASE="${SIGNOZ_URL%/}"
+              # Fetch the current rule list once; reuse across files.
+              list=$(curl -fsS -H "$AUTH" "${BASE}/api/v1/rules")
+              applied=0
+              for f in /rules/*.json; do
+                name=$(jq -r .alert "$f")
+                id=$(printf '%s' "$list" | jq -r --arg n "$name" '.data.rules[]? | select(.alert==$n) | .id' | head -n1)
+                if [ -n "$id" ] && [ "$id" != "null" ]; then
+                  code=$(curl -sS -o /work/resp -w '%{http_code}' -X PUT \
+                    -H "$AUTH" -H "$CT" --data-binary "@$f" \
+                    "${BASE}/api/v1/rules/${id}")
+                  op="PUT id=$id"
+                else
+                  code=$(curl -sS -o /work/resp -w '%{http_code}' -X POST \
+                    -H "$AUTH" -H "$CT" --data-binary "@$f" \
+                    "${BASE}/api/v1/rules")
+                  op="POST"
+                fi
+                case "$code" in
+                  2*) echo "ok  ${name}  (${op} -> ${code})"; applied=$((applied+1)) ;;
+                  *)  echo "FAIL ${name}  (${op} -> ${code}): $(cat /work/resp)" >&2; exit 1 ;;
+                esac
+              done
+              echo "applied ${applied} rule(s)"
