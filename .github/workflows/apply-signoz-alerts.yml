@@ -60,7 +60,7 @@ jobs:
           trap 'kill "$PF_PID" 2>/dev/null || true; wait "$PF_PID" 2>/dev/null || true' EXIT
           # Wait up to 30s for the SigNoz rules endpoint to return valid JSON.
           for i in $(seq 1 30); do
-            body=$(curl -fsS -m 2 http://localhost:18080/api/v1/rules 2>/dev/null || true)
+            body=$(curl -sS -m 2 -H "Authorization: SIGNOZ-API-KEY ${SIGNOZ_API_KEY}" http://localhost:18080/api/v1/rules 2>/dev/null || true)
             if [ -n "$body" ] && printf '%s' "$body" | jq -e . >/dev/null 2>&1; then
               echo "port-forward ready after ${i}s"
               break
