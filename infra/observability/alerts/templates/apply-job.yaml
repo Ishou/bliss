@@ -47,7 +47,7 @@ spec:
           args:
             - |
               set -eu
-              AUTH="Authorization: SIGNOZ-API-KEY ${apiKey}"
+              AUTH="SIGNOZ-API-KEY: ${apiKey}"
               CT="Content-Type: application/json"
               BASE="${SIGNOZ_URL%/}"
               # Fetch the current rule list once; reuse across files.
