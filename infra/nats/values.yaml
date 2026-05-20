@@ -66,9 +66,7 @@ dlq:
   replicas: 1
   discardPolicy: old
 
-# NATS consumer-lag + DLQ alerts are defined as SigNoz rules under
-# infra/observability/alerts/ (applied via apply.sh) rather than as
-# PrometheusRule CRs — this cluster runs SigNoz, not kube-prometheus-stack.
+# Alerts live in infra/observability/alerts/ (SigNoz, not PrometheusRule — ADR-0027).
 
 resources:
   requests: { cpu: 100m, memory: 128Mi }

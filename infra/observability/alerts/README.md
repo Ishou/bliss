@@ -44,6 +44,33 @@ window). Notification channel is bound out-of-band in the SigNoz UI
 
 ## Applying
 
+### Canonical path: CI workflow (recommended)
+
+Per MANIFESTO.md §6 ("CI is the only path to production"), the alerts
+are applied via the `Apply SigNoz Alerts` workflow
+(`.github/workflows/apply-signoz-alerts.yml`):
+
+1. GitHub → Actions → **Apply SigNoz Alerts** → **Run workflow**.
+2. Optionally set the `ref` input to pin the apply to a specific
+   commit / tag (defaults to `main`).
+
+The workflow reads `SIGNOZ_URL` + `SIGNOZ_API_KEY` from GitHub
+**repository secrets** (one-time human bootstrap; see
+[`docs/secrets.md`](../../../docs/secrets.md) for the general pattern):
+
+| Secret name      | Source |
+| ---------------- | ------ |
+| `SIGNOZ_URL`     | e.g. `https://errors.wordsparrow.io` |
+| `SIGNOZ_API_KEY` | SigNoz UI → Settings → API Keys, or `kubectl -n observability get secret signoz-api-key -o jsonpath='{.data.key}' \| base64 -d` |
+
+The workflow serializes runs via the `apply-signoz-alerts` concurrency
+group, so two manual triggers cannot race.
+
+### Fallback: local shell (dev-loop only — not the recommended prod path)
+
+Useful while iterating on the JSON rule bodies against a non-prod
+SigNoz, or for emergency apply if GitHub Actions is unavailable:
+
 ```sh
 export SIGNOZ_URL=https://errors.wordsparrow.io       # or dashboard.wordsparrow.io
 export SIGNOZ_API_KEY=$(kubectl -n observability get secret signoz-api-key \

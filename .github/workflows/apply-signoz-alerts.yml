@@ -1,0 +1,77 @@
+name: Apply SigNoz Alerts
+
+# Canonical path for applying the JSON alert rules under
+# infra/observability/alerts/ to the live SigNoz instance, per
+# MANIFESTO.md §6 ("CI is the only path to production"). Replaces the
+# previous workstation invocation of infra/observability/alerts/apply.sh.
+#
+# Trigger: manual (workflow_dispatch). The `ref` input lets the operator
+# pin the apply to a specific commit / tag / branch (defaults to main).
+#
+# Required repository secrets (one-time human bootstrap; see
+# docs/secrets.md for the general pattern):
+#   - SIGNOZ_URL      e.g. https://errors.wordsparrow.io
+#   - SIGNOZ_API_KEY  generated in SigNoz UI -> Settings -> API Keys,
+#                     or read from the in-cluster `signoz-api-key`
+#                     Secret in the `observability` namespace.
+#
+# The script itself (apply.sh) is idempotent: PUT when a rule with the
+# same `alert` name already exists, POST otherwise. Re-running is safe.
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Git ref (branch / tag / SHA) to apply the alerts from.'
+        required: false
+        type: string
+        default: main
+
+concurrency:
+  # Serialize applies so two manual runs cannot race against the SigNoz
+  # rules API. Queue rather than cancel: a cancelled mid-PUT could leave
+  # a partially-updated rule body in SigNoz.
+  group: apply-signoz-alerts
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  apply:
+    name: apply signoz alerts
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repository at requested ref
+        # actions/checkout v4.3.1 — same SHA as helm-lint.yml + deploy-api-k8s.yml.
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          ref: ${{ inputs.ref }}
+          fetch-depth: 1
+
+      - name: Install jq and curl
+        # Both are preinstalled on ubuntu-latest, but install explicitly
+        # so the workflow stays correct if the runner image ever drops one.
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends jq curl
+          jq --version
+          curl --version | head -n1
+
+      - name: Apply SigNoz rules
+        env:
+          SIGNOZ_URL: ${{ secrets.SIGNOZ_URL }}
+          SIGNOZ_API_KEY: ${{ secrets.SIGNOZ_API_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "${SIGNOZ_URL:-}" ]; then
+            echo "::error::SIGNOZ_URL repository secret is not set; see infra/observability/alerts/README.md"
+            exit 1
+          fi
+          if [ -z "${SIGNOZ_API_KEY:-}" ]; then
+            echo "::error::SIGNOZ_API_KEY repository secret is not set; see infra/observability/alerts/README.md"
+            exit 1
+          fi
+          bash infra/observability/alerts/apply.sh
