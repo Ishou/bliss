@@ -8,8 +8,7 @@ port-forward, then curl) is the trigger; the fix is the rule encoded in
 CLAUDE.md: **Configure-in-cluster, not push-from-CI.** The chart-Job
 pattern is the canonical shape (mirrors `infra/nats/templates/stream-bootstrap-job.yaml`).
 
-The previous external workflow (`apply-signoz-alerts.yml`) and the
-external `apply.sh` script are deleted by this PR.
+The external workflow (`apply-signoz-alerts.yml`) and `apply.sh` have been removed.
 
 ## Per-alert spec
 
