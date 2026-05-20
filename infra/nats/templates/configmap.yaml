@@ -13,8 +13,8 @@ data:
     # subdirectories per stream.
     jetstream {
       store_dir: "/data/jetstream"
-      max_memory_store: {{ .Values.config.jetstreamMaxMemory | quote }}
-      max_file_store: {{ .Values.config.jetstreamMaxFile | quote }}
+      max_memory_store: {{ .Values.config.jetstreamMaxMemory }}
+      max_file_store: {{ .Values.config.jetstreamMaxFile }}
     }
 
     # No auth for v1 (ADR-0049). Reachable only from inside the cluster

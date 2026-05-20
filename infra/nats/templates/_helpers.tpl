@@ -43,6 +43,22 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- printf "%s:%s" .Values.streamInit.image.repository .Values.streamInit.image.tag -}}
 {{- end -}}
 {{- end -}}
+{{/* durationToNanos: NATS --config JSON requires int64 nanos, not human-readable durations. */}}
+{{- define "bliss-nats.durationToNanos" -}}
+{{- $d := . -}}
+{{- if hasSuffix "h" $d -}}
+{{- $n := trimSuffix "h" $d | int64 -}}
+{{- mul $n 3600000000000 -}}
+{{- else if hasSuffix "m" $d -}}
+{{- $n := trimSuffix "m" $d | int64 -}}
+{{- mul $n 60000000000 -}}
+{{- else if hasSuffix "s" $d -}}
+{{- $n := trimSuffix "s" $d | int64 -}}
+{{- mul $n 1000000000 -}}
+{{- else -}}
+{{- fail (printf "unsupported duration suffix in %q (expected h, m, or s)" $d) -}}
+{{- end -}}
+{{- end -}}
 {{- define "bliss-nats.metricsExporterImage" -}}
 {{- if .Values.metricsExporter.image.digest -}}
 {{- printf "%s:%s@%s" .Values.metricsExporter.image.repository .Values.metricsExporter.image.tag .Values.metricsExporter.image.digest -}}

@@ -1,16 +1,16 @@
 # Production overrides — Hetzner k3s (ADR-0009 §2).
 image:
-  # Pin the latest 2.10-alpine digest. The CD workflow's `helm upgrade`
-  # step injects the resolved digest via `--set image.digest=<resolved>`;
-  # the placeholder below keeps the file shape consistent without
-  # claiming a real image hash.
-  digest: "sha256:<resolve at deploy time>"
+  # Pinned to the nats:2.10-alpine OCI image index digest resolved on
+  # 2026-05-20. Refresh by re-running the registry digest-lookup against
+  # the 2.10-alpine tag when bumping to a new minor.
+  digest: "sha256:b83efabe3e7def1e0a4a31ec6e078999bb17c80363f881df35edc70fcb6bb927"
 storage:
   size: 5Gi
   storageClass: "hcloud-volumes"
 streamInit:
   image:
-    digest: "sha256:<resolve at deploy time>"
+    # natsio/nats-box:0.19.5 OCI image index digest, resolved 2026-05-20.
+    digest: "sha256:5d513bf0bb82d6af3fe8363097eb14d2e4ca3242db24140db88df4a4ba082442"
 
 # Prometheus exporter sidecar — on in prod; digest pinned to multi-arch image index for natsio/prometheus-nats-exporter:0.15.0.
 metricsExporter:

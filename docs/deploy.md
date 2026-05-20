@@ -643,6 +643,41 @@ manual pass-2 swap. Tracked as a follow-up PR against
 `grid/api/deploy/chart/`.
 
 
+# NATS JetStream chart (`infra/nats/`) — bootstrap and upgrades
+
+The `deploy-api-k8s.yml` matrix covers `{grid, game, identity}` but not
+`infra/nats/`. Until a dedicated workflow is wired, chart installs and
+upgrades are a manual operator step.
+
+**TODO:** add a `workflow_dispatch` / `push` trigger for `infra/nats/**`
+on `main` to `deploy-api-k8s.yml` so the operator can re-run the NATS
+deploy from CI rather than from a local checkout. This is explicitly
+accepted debt; the manual path below is a stopgap.
+
+## One-time bootstrap (or after uninstall)
+
+```sh
+export KUBECONFIG=~/.kube/wordsparrow-prod
+helm install bliss-nats ./infra/nats -n wordsparrow \
+  -f infra/nats/values.yaml -f infra/nats/values-prod.yaml
+```
+
+Wait for the stream-init Job to complete:
+
+```sh
+kubectl -n wordsparrow get pods      # bliss-nats-0 Ready, stream-init Job Completed
+```
+
+## Upgrading the chart
+
+```sh
+helm upgrade bliss-nats ./infra/nats -n wordsparrow \
+  -f infra/nats/values.yaml -f infra/nats/values-prod.yaml
+```
+
+`nats stream add --config` (used by the post-upgrade Job hook) is
+idempotent against an existing stream with the same spec.
+
 # Identity service bootstrap (one-time)
 
 Run before the first identity-api deploy. The identity context
