@@ -1,4 +1,4 @@
-# ADR-0035: Build-time prerender for SEO and link previews
+# ADR-0053: Build-time prerender for SEO and link previews
 
 ## Status
 Accepted

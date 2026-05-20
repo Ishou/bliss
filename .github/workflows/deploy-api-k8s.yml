@@ -154,7 +154,7 @@ jobs:
             # CNPG Cluster lifecycle is split out of the api chart so a
             # failed api deploy's auto-rollback can never destroy the
             # cluster mid-bootstrap (regression observed 2026-05-12,
-            # ADR-0039 amendment). The db chart is install-once-update-
+            # ADR-0055 amendment). The db chart is install-once-update-
             # rarely; idempotent on every workflow run. The release name
             # matches the wordsparrow-* convention so the CNPG-managed
             # Secret/Service (`<release>-app`, `<release>-rw`) line up

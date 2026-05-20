@@ -6,7 +6,7 @@ Accepted
 
 ## Context
 
-ADR-0027 made the WebSocket `joinLobby` frame code-gated and minted the
+ADR-0051 made the WebSocket `joinLobby` frame code-gated and minted the
 lobby's join `code` once at create-time. A leak of that single code
 (streamer reads it aloud, viewer screenshots the WaitingRoom, screen
 share captures the chip) currently leaves the owner with one option:
@@ -14,7 +14,7 @@ abandon the lobby and create a fresh one. That kicks every legitimate
 player and breaks any in-flight share link.
 
 The product wants the multiplayer flow usable on streams.
-ADR-0027 Threat model → Information disclosure explicitly carries a
+ADR-0051 Threat model → Information disclosure explicitly carries a
 residual "members who
 have already joined keep their access" risk, but the worse story today
 is the **non-member** who learns the code from the stream and then
@@ -29,7 +29,7 @@ The user's framing during planning:
   game / waiting room as members experienced it.
 
 The manifesto's *Threat Modeling Before Building* requires a model for
-authn / authz changes. ADR-0027's threat model is updated by reference:
+authn / authz changes. ADR-0051's threat model is updated by reference:
 this ADR adds a *mitigation* for one of its residual risks rather than
 introducing a new attack surface.
 
@@ -72,12 +72,12 @@ Concretely:
    joined across rotations; refresh / tab-recovery still works without
    re-supplying the code.
 
-5. **`code` is never on a URL.** ADR-0027's URL design stays — the
+5. **`code` is never on a URL.** ADR-0051's URL design stays — the
    only share affordance is `/join/$code`, which redirects to
    `/lobby/$lobbyId` with `replace: true`. After rotation, the
    "Copier le lien" button copies a fresh `/join/$NEWCODE` URL; the
    pre-rotation share URL is invalidated by the same gate that
-   ADR-0027 already enforces.
+   ADR-0051 already enforces.
 
 6. **Frontend "Régénérer le code" button** in the WaitingRoom, owner-only,
    adjacent to the readonly PIN slots. Brief `aria-busy` round-trip
@@ -108,7 +108,7 @@ Concretely:
   conclude rotation is a "kick" affordance.
 - The lobby snapshot now leaks `code` to every subscribed socket. This
   is acceptable: every subscribed socket is already a member (the
-  code-gate per ADR-0027 admits no one else), and members already had
+  code-gate per ADR-0051 admits no one else), and members already had
   access via `Lobby` REST anyway (see Threat model → Information disclosure below).
 
 ### Different
@@ -123,7 +123,7 @@ Concretely:
 ## Threat model (STRIDE-lite)
 
 Per the manifesto's *Threat Modeling Before Building*. Categories with
-no delta from ADR-0027 are noted for completeness.
+no delta from ADR-0051 are noted for completeness.
 
 ### Spoofing — *attacker rotates the code without owning the lobby*
 
@@ -146,7 +146,7 @@ inject, suggest, or constrain the value.
 
 ### Repudiation
 
-Out of scope, same as ADR-0027. Rotation is logged at the analytics
+Out of scope, same as ADR-0051. Rotation is logged at the analytics
 sink (`AnalyticsEvent.LobbyCodeRotated`); no audit trail beyond that.
 
 **No delta.**
@@ -159,7 +159,7 @@ Two cases:
    who joined under the old code keeps their seat and learns the new
    code from `lobbyState`. Rotation does not address this and is not
    marketed as doing so.
-2. *Non-member with the old code*: blocked by the existing ADR-0027
+2. *Non-member with the old code*: blocked by the existing ADR-0051
    `wrong-code` gate. Pasting the pre-rotation `/join/$OLDCODE` URL
    resolves the lobby snapshot via REST (no change there) but the WS
    join is rejected. This is the case rotation actually mitigates.
@@ -188,7 +188,7 @@ join code.
 
 ## Notes
 
-- The "streamer-mode toggle" alluded to during ADR-0027's planning
+- The "streamer-mode toggle" alluded to during ADR-0051's planning
   (hide *Copier le lien* entirely behind a per-session preference)
   remains out of scope. It is additive UI on top of this ADR and does
   not change the wire contract.

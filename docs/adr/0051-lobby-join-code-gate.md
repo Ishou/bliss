@@ -1,4 +1,4 @@
-# ADR-0027: Code-gated lobby join (streamer-friendly)
+# ADR-0051: Code-gated lobby join (streamer-friendly)
 
 ## Status
 

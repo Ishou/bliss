@@ -1,4 +1,4 @@
-# ADR-0039: Multiplayer game persistence (Postgres adapter, GC matrix, RGPD erasure cascade)
+# ADR-0055: Multiplayer game persistence (Postgres adapter, GC matrix, RGPD erasure cascade)
 
 ## Status
 

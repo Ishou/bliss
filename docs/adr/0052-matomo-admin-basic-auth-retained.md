@@ -1,4 +1,4 @@
-# ADR-0032: Matomo admin auth — basic-auth retained; oauth2-proxy not applied
+# ADR-0052: Matomo admin auth — basic-auth retained; oauth2-proxy not applied
 
 ## Status
 
