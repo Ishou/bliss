@@ -60,6 +60,9 @@ export interface GridNavigation {
   // direction without touching focus, same effect as a re-tap on an
   // intersection cell.
   readonly toggleDirection: () => void;
+  readonly enterLetter: (char: string) => void;
+  readonly eraseLetter: () => void;
+  readonly cycleClue: (step: 1 | -1) => void;
   // Reads the player's current letter at (row, col) — '' when the cell
   // is empty. The callback identity changes whenever any letter
   // changes (per the version counter inside the hook), so React
@@ -636,6 +639,82 @@ export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOpt
     [focusCell, lookup, puzzle.height, puzzle.width],
   );
 
+  const enterLetter = useCallback(
+    (char: string) => {
+      const { focused: f, direction: dir } = stateRef.current;
+      if (!f) return;
+      const letter = stripDiacritics(char);
+      if (letter.length !== 1 || !LETTER_RE.test(letter)) return;
+      const el = refs.current.get(key(f));
+      if (el && !el.readOnly) {
+        const before = el.value;
+        el.value = letter;
+        if (before !== letter) {
+          cellValuesRef.current.set(key(f), letter);
+          bumpEntries();
+          onCellChangeRef.current?.(f.row, f.col, letter);
+        }
+        onCellFilledRef.current?.(f, dir);
+      }
+      const clue = lookup.clueAt(f.row, f.col, dir);
+      if (!clue) return;
+      const idx = clue.cells.findIndex((c) => same(c.position, f));
+      if (idx >= 0 && idx < clue.cells.length - 1) focusCell(clue.cells[idx + 1].position);
+    },
+    [bumpEntries, focusCell, lookup],
+  );
+
+  const cycleClue = useCallback(
+    (step: 1 | -1) => {
+      const { focused: f, direction: dir } = stateRef.current;
+      const clues = lookup.orderedClues;
+      if (clues.length === 0) return;
+      let nextClue: Clue;
+      if (!f) {
+        nextClue = step === -1 ? clues[clues.length - 1] : clues[0];
+      } else {
+        const here = lookup.cluesAt(f.row, f.col);
+        const current = here.find((h) => h.direction === dir) ?? here[0];
+        const currentIdx = current ? clues.indexOf(current) : -1;
+        const baseIdx = currentIdx < 0 ? (step === -1 ? 0 : -1) : currentIdx;
+        const nextIdx = (baseIdx + step + clues.length) % clues.length;
+        nextClue = clues[nextIdx];
+      }
+      if (nextClue.direction !== stateRef.current.direction) setDirection(nextClue.direction);
+      focusCell(nextClue.cells[0].position);
+    },
+    [focusCell, lookup],
+  );
+
+  const eraseLetter = useCallback(() => {
+    const { focused: f, direction: dir } = stateRef.current;
+    if (!f) return;
+    const el = refs.current.get(key(f));
+    if (el && el.value !== '' && !el.readOnly) {
+      el.value = '';
+      cellValuesRef.current.delete(key(f));
+      bumpEntries();
+      onCellChangeRef.current?.(f.row, f.col, null);
+      return;
+    }
+    const clue = lookup.clueAt(f.row, f.col, dir);
+    if (!clue) return;
+    const idx = clue.cells.findIndex((c) => same(c.position, f));
+    if (idx <= 0) return;
+    const prev = clue.cells[idx - 1].position;
+    const prevEl = refs.current.get(key(prev));
+    if (prevEl && !prevEl.readOnly) {
+      const before = prevEl.value;
+      prevEl.value = '';
+      if (before !== '') {
+        cellValuesRef.current.delete(key(prev));
+        bumpEntries();
+        onCellChangeRef.current?.(prev.row, prev.col, null);
+      }
+    }
+    focusCell(prev);
+  }, [bumpEntries, focusCell, lookup]);
+
   const handleKeyDown = useCallback(
     (event: React.KeyboardEvent<HTMLInputElement>) => {
       const { focused: f, direction: dir } = stateRef.current;
@@ -650,73 +729,13 @@ export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOpt
       // this hook is embedded in a form.
       if (k === 'Tab' || k === 'Enter') {
         event.preventDefault();
-        const clues = lookup.orderedClues;
-        if (clues.length === 0) return;
-        let nextClue: Clue;
-        if (!f) {
-          // No current focus — Shift jumps to the last word, plain to the
-          // first. Keeps the keyboard-first user from getting stuck when
-          // they Tab into the grid before clicking any cell.
-          nextClue = event.shiftKey ? clues[clues.length - 1] : clues[0];
-        } else {
-          // Locate the current word. Prefer the clue matching the active
-          // direction (the same rule `currentClue` uses); fall back to any
-          // clue passing through the focused cell so a stale `direction`
-          // doesn't strand the cycle. If no clue covers the focused cell
-          // at all (defensive — shouldn't happen for letter cells), step
-          // from "before the first / after the last" so the wrap math
-          // still lands somewhere sensible.
-          const here = lookup.cluesAt(f.row, f.col);
-          const current = here.find((h) => h.direction === dir) ?? here[0];
-          const currentIdx = current ? clues.indexOf(current) : -1;
-          const step = event.shiftKey ? -1 : 1;
-          const baseIdx = currentIdx < 0 ? (event.shiftKey ? 0 : -1) : currentIdx;
-          // Modulo-with-wrap (works for negative steps too).
-          const nextIdx = (baseIdx + step + clues.length) % clues.length;
-          nextClue = clues[nextIdx];
-        }
-        // Direction first so the new cell's `currentClue` resolves to the
-        // word we just jumped TO, not the perpendicular clue that may
-        // also pass through its starting cell. React 18 batches the
-        // setDirection + setFocused inside this handler into one render.
-        if (nextClue.direction !== dir) setDirection(nextClue.direction);
-        focusCell(nextClue.cells[0].position);
+        cycleClue(event.shiftKey ? -1 : 1);
         return;
       }
       if (!f) return;
-      // Printable letter — write + advance along the current word.
       if (k.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey && LETTER_RE.test(k)) {
         event.preventDefault();
-        const el = refs.current.get(key(f));
-        const letter = stripDiacritics(k);
-        if (el) {
-          // Validated cells render with `readOnly` (see LetterCellView)
-          // — typing should not overwrite a locked-in correct letter.
-          // The browser already swallows native input on readOnly, but
-          // this manual write path runs from `keydown`, so we have to
-          // gate it explicitly. We still advance focus so the player's
-          // typing flow continues across a partially-solved word.
-          if (!el.readOnly) {
-            const before = el.value;
-            el.value = letter;
-            if (before !== letter) {
-              cellValuesRef.current.set(key(f), letter);
-              bumpEntries();
-              onCellChangeRef.current?.(f.row, f.col, letter);
-            }
-            // The `input` event never fires on this branch (we
-            // preventDefault'd the keydown), so handleInput's
-            // `onCellFilled` path is unreachable from desktop typing.
-            // Fire it here so solo auto-validation runs on every
-            // keystroke regardless of platform — the Android soft-
-            // keyboard path covers the same callback in handleInput.
-            if (!el.readOnly) onCellFilledRef.current?.(f, dir);
-          }
-        }
-        const clue = lookup.clueAt(f.row, f.col, dir);
-        if (!clue) return;
-        const idx = clue.cells.findIndex((c) => same(c.position, f));
-        if (idx >= 0 && idx < clue.cells.length - 1) focusCell(clue.cells[idx + 1].position);
+        enterLetter(k);
         return;
       }
       switch (k) {
@@ -759,40 +778,12 @@ export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOpt
         }
         case 'Backspace': {
           event.preventDefault();
-          const el = refs.current.get(key(f));
-          // Validated cells are locked — Backspace must not erase a
-          // correct letter. Still walk back through the word so a
-          // player who's typing forward and overshoots can recover
-          // by chaining backspaces (the previous editable cell will
-          // get cleared, and focus lands there).
-          if (el && el.value !== '' && !el.readOnly) {
-            el.value = '';
-            cellValuesRef.current.delete(key(f));
-            bumpEntries();
-            onCellChangeRef.current?.(f.row, f.col, null);
-            return;
-          }
-          const clue = lookup.clueAt(f.row, f.col, dir);
-          if (!clue) return;
-          const idx = clue.cells.findIndex((c) => same(c.position, f));
-          if (idx <= 0) return;
-          const prev = clue.cells[idx - 1].position;
-          const prevEl = refs.current.get(key(prev));
-          if (prevEl && !prevEl.readOnly) {
-            const before = prevEl.value;
-            prevEl.value = '';
-            if (before !== '') {
-              cellValuesRef.current.delete(key(prev));
-              bumpEntries();
-              onCellChangeRef.current?.(prev.row, prev.col, null);
-            }
-          }
-          focusCell(prev);
+          eraseLetter();
           return;
         }
       }
     },
-    [bumpEntries, focusCell, lookup, moveByVector],
+    [cycleClue, enterLetter, eraseLetter, focusCell, lookup, moveByVector],
   );
 
   const handleInput = useCallback(
@@ -944,6 +935,9 @@ export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOpt
     currentClueIndex,
     alternateClue,
     toggleDirection,
+    enterLetter,
+    eraseLetter,
+    cycleClue,
     getEntryAt,
     localCursor,
     applyRemoteCellUpdate,
