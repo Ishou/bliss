@@ -26,6 +26,13 @@ const block = css({
 const altBlockTappable = css({
   cursor: 'pointer',
   touchAction: 'manipulation',
+  background: 'none',
+  border: 'none',
+  padding: '0',
+  font: 'inherit',
+  color: 'inherit',
+  textAlign: 'left',
+  width: '100%',
   _active: { transform: 'scale(0.99)' },
 });
 
@@ -108,10 +115,9 @@ export function ClueBanner({
         />
       </div>
       {alternateClue ? (
-        <div
+        <button
+          type="button"
           className={`${block} ${altBlockTappable}`}
-          role="button"
-          tabIndex={0}
           aria-label={`Basculer sur la définition ${arrowLabel[alternateClue.clue.arrow]}`}
           onMouseDown={handleAltMouseDown}
           onClick={onToggleDirection}
@@ -132,7 +138,7 @@ export function ClueBanner({
             getEntryAt={getEntryAt}
             muted
           />
-        </div>
+        </button>
       ) : null}
     </div>
   );
