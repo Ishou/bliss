@@ -1334,6 +1334,35 @@ describe('Grid letter input — inputMode gated by touch-primary', () => {
   });
 });
 
+describe('Grid hides CurrentCluePanel on touch-primary', () => {
+  it('CurrentCluePanel is not rendered on touch-primary; rendered on desktop', () => {
+    const original = window.matchMedia;
+    const setMatches = (v: boolean) => {
+      window.matchMedia = vi.fn().mockReturnValue({
+        matches: v,
+        media: '(any-pointer: coarse) and (any-hover: none)',
+        onchange: null,
+        addEventListener: () => undefined,
+        removeEventListener: () => undefined,
+        addListener: () => undefined,
+        removeListener: () => undefined,
+        dispatchEvent: () => true,
+      } as MediaQueryList);
+    };
+    try {
+      setMatches(true);
+      const r1 = render(<Grid puzzle={TEST_PUZZLE} />);
+      expect(r1.queryByTestId('current-clue-panel')).toBeNull();
+      r1.unmount();
+      setMatches(false);
+      const r2 = render(<Grid puzzle={TEST_PUZZLE} />);
+      expect(r2.queryByTestId('current-clue-panel')).toBeTruthy();
+    } finally {
+      window.matchMedia = original;
+    }
+  });
+});
+
 describe('Grid mounts MobileKeyboard on touch-primary', () => {
   const setTouchPrimary = (val: boolean) => {
     window.matchMedia = vi.fn().mockReturnValue({
