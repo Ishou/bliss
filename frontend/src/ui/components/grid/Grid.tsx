@@ -1246,6 +1246,11 @@ export function Grid({
           hintExhausted={hintExhausted || onRequestHint === undefined}
           hintPending={hintPending}
           puzzle={puzzle}
+          validatedPositions={validatedPositions ?? new Set()}
+          filledPositions={filledPositions}
+          currentWordKeys={currentWordKeys}
+          localCursor={nav.localCursor}
+          transformRef={transformWrapperRef}
           scale={transformState.scale}
           positionX={transformState.positionX}
           positionY={transformState.positionY}

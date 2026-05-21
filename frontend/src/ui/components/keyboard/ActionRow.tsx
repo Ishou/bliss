@@ -1,7 +1,9 @@
 import { css } from 'styled-system/css';
+import type { ReactZoomPanPinchContentRef } from 'react-zoom-pan-pinch';
 import type { Puzzle } from '@/domain';
+import { GridMinimap } from '@/ui/components/grid/GridMinimap';
+import type { Direction } from '@/ui/components/grid/useGridNavigation';
 import { KeyboardKey } from './KeyboardKey';
-import { KeyboardMinimap } from './KeyboardMinimap';
 
 const row = css({
   display: 'flex',
@@ -16,6 +18,11 @@ export interface ActionRowProps {
   readonly onPrev: () => void;
   readonly onNext: () => void;
   readonly puzzle: Puzzle;
+  readonly validatedPositions: ReadonlySet<string>;
+  readonly filledPositions?: ReadonlySet<string>;
+  readonly currentWordKeys?: ReadonlySet<string>;
+  readonly localCursor?: { position: { row: number; col: number }; direction: Direction } | null;
+  readonly transformRef: React.RefObject<ReactZoomPanPinchContentRef | null>;
   readonly scale: number;
   readonly positionX: number;
   readonly positionY: number;
@@ -27,6 +34,11 @@ export function ActionRow({
   onPrev,
   onNext,
   puzzle,
+  validatedPositions,
+  filledPositions,
+  currentWordKeys,
+  localCursor,
+  transformRef,
   scale,
   positionX,
   positionY,
@@ -41,8 +53,14 @@ export function ActionRow({
         variant="action"
         onPress={onPrev}
       />
-      <KeyboardMinimap
+      <GridMinimap
+        variant="panel"
         puzzle={puzzle}
+        validatedPositions={validatedPositions}
+        filledPositions={filledPositions}
+        currentWordKeys={currentWordKeys}
+        localCursor={localCursor}
+        transformRef={transformRef}
         scale={scale}
         positionX={positionX}
         positionY={positionY}

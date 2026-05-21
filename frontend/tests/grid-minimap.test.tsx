@@ -218,6 +218,53 @@ describe('GridMinimap', () => {
     expect(rect).not.toHaveAttribute('data-in-word');
   });
 
+  it('panel variant renders at scale 1 (always-on position indicator)', () => {
+    const { ref } = makeRef();
+    const { container } = render(
+      <GridMinimap
+        variant="panel"
+        puzzle={SAMPLE_PUZZLE}
+        validatedPositions={new Set()}
+        transformRef={ref}
+        scale={1}
+        positionX={0}
+        positionY={0}
+        contentWidth={200}
+        contentHeight={200}
+      />,
+    );
+    const minimap = screen.getByRole('img', { name: /aperçu de la grille/i });
+    expect(minimap).toBeInTheDocument();
+    const rects = container.querySelectorAll('rect[data-cell-kind]');
+    expect(rects.length).toBe(SAMPLE_PUZZLE.width * SAMPLE_PUZZLE.height);
+  });
+
+  it('panel variant tap-to-pan invokes setTransform when zoomed in', () => {
+    const { ref, setTransform } = makeRef();
+    render(
+      <GridMinimap
+        variant="panel"
+        puzzle={SAMPLE_PUZZLE}
+        validatedPositions={new Set()}
+        transformRef={ref}
+        scale={2}
+        positionX={0}
+        positionY={0}
+        contentWidth={200}
+        contentHeight={200}
+      />,
+    );
+    const minimap = screen.getByRole('img', { name: /aperçu de la grille/i });
+    minimap.getBoundingClientRect = () => ({
+      x: 0, y: 0, top: 0, left: 0, right: 120, bottom: 44,
+      width: 120, height: 44, toJSON: () => ({}),
+    });
+    minimap.dispatchEvent(new PointerEvent('pointerdown', {
+      bubbles: true, clientX: 60, clientY: 22, pointerId: 1, button: 0,
+    }));
+    expect(setTransform).toHaveBeenCalledTimes(1);
+  });
+
   it('renders a focus-marker rect at the localCursor position', () => {
     const { ref } = makeRef();
     const letterCell = SAMPLE_PUZZLE.cells.find((c) => c.kind === 'letter');

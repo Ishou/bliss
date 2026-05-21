@@ -12,13 +12,8 @@ import { positionKey } from './positionKey';
 const MINIMAP_SIZE_DESKTOP_PX = 120;
 const MINIMAP_SIZE_MOBILE_PX = 80;
 
-const minimapContainer = css({
-  // Always in-flow below gridShell, centered horizontally.
-  // The previous "position: absolute; right: 12px" desktop strategy
-  // assumed ~140px of horizontal margin beside the centered stage, but
-  // the route's max-width constraint leaves only ~28px of room on a
-  // 1440-px viewport, causing visible overlap. Below-the-grid works
-  // regardless of route layout width.
+const overlayContainer = css({
+  // Overlay variant: in-flow 120px (80px on narrow viewports) square below the grid.
   position: 'static',
   margin: '8px auto 0',
   display: 'block',
@@ -32,11 +27,34 @@ const minimapContainer = css({
   touchAction: 'none',
   cursor: 'crosshair',
   transition: 'opacity 150ms ease',
-  // Keep the smaller size on narrow viewports (≤ 480 px).
   '@media (max-width: 480px)': {
     width: `${MINIMAP_SIZE_MOBILE_PX}px`,
     height: `${MINIMAP_SIZE_MOBILE_PX}px`,
   },
+});
+
+const panelContainer = css({
+  // Panel variant: aspect-preserving slot inside the keyboard action row (44px tall, cap 160px wide).
+  flex: 1,
+  minWidth: 0,
+  maxWidth: '160px',
+  height: '44px',
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  bg: 'bg.canvas',
+  border: '1px solid token(colors.border)',
+  borderRadius: '7px',
+  padding: '2px',
+  touchAction: 'none',
+  cursor: 'crosshair',
+});
+
+const panelSvg = css({
+  display: 'block',
+  height: '100%',
+  width: 'auto',
+  maxWidth: '100%',
 });
 
 // Resolved color literals for SVG fill attributes.
@@ -68,6 +86,8 @@ const FILL_IN_WORD = '#fde8e8';
 // Focus-marker outline: secondary.500 = saturated honey amber.
 const STROKE_FOCUS = '#c89456';
 
+export type GridMinimapVariant = 'overlay' | 'panel';
+
 export interface GridMinimapProps {
   puzzle: Puzzle;
   validatedPositions: ReadonlySet<string>;
@@ -80,6 +100,8 @@ export interface GridMinimapProps {
   positionY: number;
   contentWidth: number;
   contentHeight: number;
+  // 'overlay' (default) hides at scale 1; 'panel' always renders for the mobile keyboard.
+  variant?: GridMinimapVariant;
 }
 
 export function GridMinimap({
@@ -94,6 +116,7 @@ export function GridMinimap({
   positionY,
   contentWidth,
   contentHeight,
+  variant = 'overlay',
 }: GridMinimapProps) {
   // Hooks BEFORE the early-return guard (rules of hooks).
   const minimapRef = useRef<HTMLDivElement | null>(null);
@@ -227,8 +250,9 @@ export function GridMinimap({
     return rects;
   }, [puzzle.height, puzzle.width, cellByKey, validatedPositions, filledPositions, currentWordKeys]);
 
-  // Early-return AFTER hooks.
-  if (scale <= 1.01) return null;
+  // Overlay hides at rest; panel always renders so the player keeps a position indicator.
+  if (variant === 'overlay' && scale <= 1.01) return null;
+  if (contentWidth <= 0 || contentHeight <= 0) return null;
 
   const rect = computeViewportRect({
     scale,
@@ -240,12 +264,26 @@ export function GridMinimap({
     minimapHeight: viewBoxH,
   });
 
+  const isPanel = variant === 'panel';
+  const svgProps = isPanel
+    ? {
+        className: panelSvg,
+        preserveAspectRatio: 'xMidYMid meet' as const,
+        style: { pointerEvents: 'none' as const },
+      }
+    : {
+        width: '100%' as const,
+        height: '100%' as const,
+        preserveAspectRatio: 'none' as const,
+        style: { pointerEvents: 'none' as const },
+      };
+
   return (
     <div
       ref={minimapRef}
       role="img"
       aria-label="Aperçu de la grille — la zone surlignée indique la partie visible"
-      className={minimapContainer}
+      className={isPanel ? panelContainer : overlayContainer}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
@@ -253,10 +291,7 @@ export function GridMinimap({
     >
       <svg
         viewBox={`0 0 ${viewBoxW} ${viewBoxH}`}
-        width="100%"
-        height="100%"
-        preserveAspectRatio="none"
-        style={{ pointerEvents: 'none' }}
+        {...svgProps}
         aria-hidden="true"
       >
         {cellRects}
