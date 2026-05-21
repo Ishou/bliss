@@ -1,34 +1,46 @@
 {
   "alert": "BlissNatsDlqNonEmpty",
-  "version": "v5",
   "alertType": "METRIC_BASED_ALERT",
-  "ruleType": "threshold_rule",
-  "evalWindow": "1m0s",
-  "frequency": "1m0s",
+  "description": "WORDSPARROW_USER_EVENTS_DLQ stream has at least one message for 1m.",
+  "ruleType": "promql_rule",
+  "version": "v5",
+  "schemaVersion": "v2alpha1",
   "condition": {
     "compositeQuery": {
       "queryType": "promql",
       "panelType": "graph",
-      "promQueries": {
-        "A": {
-          "name": "A",
-          "query": "nats_stream_messages{stream_name=\"WORDSPARROW_USER_EVENTS_DLQ\"}",
-          "disabled": false
+      "queries": [
+        {
+          "type": "promql",
+          "spec": {
+            "name": "A",
+            "query": "nats_stream_messages{stream_name=\"WORDSPARROW_USER_EVENTS_DLQ\"}",
+            "legend": "{{stream_name}}"
+          }
         }
-      },
-      "unit": ""
+      ]
     },
-    "op": "1",
-    "target": 0,
-    "matchType": "1",
-    "selectedQueryName": "A"
+    "selectedQueryName": "A",
+    "thresholds": {
+      "kind": "basic",
+      "spec": [
+        {
+          "name": "warning",
+          "op": "above",
+          "matchType": "at_least_once",
+          "target": 0,
+          "channels": []
+        }
+      ]
+    }
   },
-  "labels": {
-    "severity": "warning",
-    "component": "nats"
+  "evaluation": {
+    "kind": "rolling",
+    "spec": { "evalWindow": "1m", "frequency": "1m" }
   },
+  "labels": { "severity": "warning", "component": "nats" },
   "annotations": {
     "summary": "Messages present in NATS DLQ stream",
-    "description": "DLQ stream WORDSPARROW_USER_EVENTS_DLQ has {{$value}} messages \u2014 investigate consumer failures (max-delivery exhaustion). See infra/nats/README.md DLQ section."
+    "description": "DLQ stream WORDSPARROW_USER_EVENTS_DLQ has {{$value}} messages for 1m - investigate consumer failures (max-delivery exhaustion). See infra/nats/README.md DLQ section."
   }
 }

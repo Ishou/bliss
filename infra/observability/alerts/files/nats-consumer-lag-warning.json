@@ -1,32 +1,44 @@
 {
   "alert": "BlissNatsConsumerLagWarning",
-  "version": "v5",
   "alertType": "METRIC_BASED_ALERT",
-  "ruleType": "threshold_rule",
-  "evalWindow": "5m0s",
-  "frequency": "1m0s",
+  "description": "NATS consumer max-pending exceeds 100 messages for 5m.",
+  "ruleType": "promql_rule",
+  "version": "v5",
+  "schemaVersion": "v2alpha1",
   "condition": {
     "compositeQuery": {
       "queryType": "promql",
       "panelType": "graph",
-      "promQueries": {
-        "A": {
-          "name": "A",
-          "query": "max by (consumer_name, stream_name) (nats_consumer_num_pending)",
-          "disabled": false
+      "queries": [
+        {
+          "type": "promql",
+          "spec": {
+            "name": "A",
+            "query": "max by (consumer_name, stream_name) (nats_consumer_num_pending)",
+            "legend": "{{consumer_name}} / {{stream_name}}"
+          }
         }
-      },
-      "unit": ""
+      ]
     },
-    "op": "1",
-    "target": 100,
-    "matchType": "1",
-    "selectedQueryName": "A"
+    "selectedQueryName": "A",
+    "thresholds": {
+      "kind": "basic",
+      "spec": [
+        {
+          "name": "warning",
+          "op": "above",
+          "matchType": "at_least_once",
+          "target": 100,
+          "channels": []
+        }
+      ]
+    }
   },
-  "labels": {
-    "severity": "warning",
-    "component": "nats"
+  "evaluation": {
+    "kind": "rolling",
+    "spec": { "evalWindow": "5m", "frequency": "1m" }
   },
+  "labels": { "severity": "warning", "component": "nats" },
   "annotations": {
     "summary": "NATS consumer lag above warn threshold",
     "description": "Consumer {{$labels.consumer_name}} on stream {{$labels.stream_name}} has {{$value}} pending messages (> 100 for 5m)."
