@@ -21,6 +21,7 @@ import { GridZoomControls } from './GridZoomControls';
 import { positionKey } from './positionKey';
 import { buildCellPresenceMap, useRemotePresences } from './PresenceOverlay';
 import { useGridNavigation, type Direction } from './useGridNavigation';
+import { MobileKeyboard } from '@/ui/components/keyboard';
 import { useTouchPrimary } from '@/ui/components/keyboard/useTouchPrimary';
 
 const gridContainer = css({
@@ -79,6 +80,8 @@ const gridShellStyles = css({
   alignItems: 'center',
   justifyContent: 'center',
   containerType: 'size',
+  // Reserve vertical space for the fixed MobileKeyboard panel on touch-primary; var is 0 otherwise.
+  maxHeight: 'calc(100dvh - var(--mobile-kb-height, 0px))',
 });
 
 // Outer wrapper around gridShell + the in-flow minimap. Absorbs the
@@ -1194,6 +1197,12 @@ export function Grid({
         onZoomOut={() => zoomCenteredOnFocus(-0.3)}
         onReset={() => transformWrapperRef.current?.resetTransform(0)}
       />
+      {touchPrimary ? (
+        <MobileKeyboard
+          onLetter={(ch) => nav.enterLetter(ch)}
+          onBackspace={() => nav.eraseLetter()}
+        />
+      ) : null}
     </>
   );
 }
