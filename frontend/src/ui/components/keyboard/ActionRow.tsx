@@ -1,38 +1,37 @@
 import { css } from 'styled-system/css';
+import type { Puzzle } from '@/domain';
 import { KeyboardKey } from './KeyboardKey';
+import { KeyboardMinimap } from './KeyboardMinimap';
 
 const row = css({
   display: 'flex',
   gap: '4px',
+  alignItems: 'center',
   paddingBottom: '4px',
   borderBottom: '1px dashed token(colors.border)',
   marginBottom: '4px',
 });
 
-const hintLabel = css({
-  display: 'inline-flex',
-  alignItems: 'center',
-  gap: '4px',
-  fontSize: '12px',
-  fontWeight: 'medium',
-});
-
 export interface ActionRowProps {
   readonly onPrev: () => void;
   readonly onNext: () => void;
-  readonly onHint: () => void;
-  readonly hintRemaining: number;
-  readonly hintAllowed: number;
-  readonly hintDisabled: boolean;
+  readonly puzzle: Puzzle;
+  readonly scale: number;
+  readonly positionX: number;
+  readonly positionY: number;
+  readonly contentWidth: number;
+  readonly contentHeight: number;
 }
 
 export function ActionRow({
   onPrev,
   onNext,
-  onHint,
-  hintRemaining,
-  hintAllowed,
-  hintDisabled,
+  puzzle,
+  scale,
+  positionX,
+  positionY,
+  contentWidth,
+  contentHeight,
 }: ActionRowProps) {
   return (
     <div className={row}>
@@ -42,16 +41,13 @@ export function ActionRow({
         variant="action"
         onPress={onPrev}
       />
-      <KeyboardKey
-        label={
-          <span className={hintLabel}>
-            💡 Indice {hintRemaining} / {hintAllowed}
-          </span>
-        }
-        ariaLabel={`Demander un indice, ${hintRemaining} restants`}
-        variant="action"
-        disabled={hintDisabled}
-        onPress={onHint}
+      <KeyboardMinimap
+        puzzle={puzzle}
+        scale={scale}
+        positionX={positionX}
+        positionY={positionY}
+        contentWidth={contentWidth}
+        contentHeight={contentHeight}
       />
       <KeyboardKey
         label="Suiv. ▶"

@@ -1235,6 +1235,12 @@ export function Grid({
           hintAllowed={hintAllowed}
           hintExhausted={hintExhausted || onRequestHint === undefined}
           hintPending={hintPending}
+          puzzle={puzzle}
+          scale={transformState.scale}
+          positionX={transformState.positionX}
+          positionY={transformState.positionY}
+          contentWidth={gridFramePx.width}
+          contentHeight={gridFramePx.height}
         />
       ) : null}
     </>

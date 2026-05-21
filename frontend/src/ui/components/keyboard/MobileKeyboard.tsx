@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { css } from 'styled-system/css';
+import type { Puzzle } from '@/domain';
 import type { FocusedCell } from '@/ui/components/grid/HintControl';
 import type { Clue } from '@/ui/components/grid/useGridNavigation';
 import { ActionRow } from './ActionRow';
@@ -28,6 +29,14 @@ const row = css({
   justifyContent: 'center',
 });
 
+const hintLabel = css({
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: '4px',
+  fontSize: '12px',
+  fontWeight: 'medium',
+});
+
 export interface MobileKeyboardProps {
   readonly onLetter: (char: string) => void;
   readonly onBackspace: () => void;
@@ -47,6 +56,13 @@ export interface MobileKeyboardProps {
   readonly getEntryAt: (row: number, col: number) => string;
   // The local user's focused cell — drives the rose underline on the active-clue letter preview.
   readonly focusedPosition: { row: number; col: number } | null;
+  // Puzzle + live transform state feed the in-panel KeyboardMinimap (action-row slot).
+  readonly puzzle: Puzzle;
+  readonly scale: number;
+  readonly positionX: number;
+  readonly positionY: number;
+  readonly contentWidth: number;
+  readonly contentHeight: number;
 }
 
 export function MobileKeyboard(props: MobileKeyboardProps) {
@@ -66,6 +82,12 @@ export function MobileKeyboard(props: MobileKeyboardProps) {
     getFocusedCell,
     getEntryAt,
     focusedPosition,
+    puzzle,
+    scale,
+    positionX,
+    positionY,
+    contentWidth,
+    contentHeight,
   } = props;
 
   const panelRef = useRef<HTMLDivElement | null>(null);
@@ -111,10 +133,12 @@ export function MobileKeyboard(props: MobileKeyboardProps) {
       <ActionRow
         onPrev={onPrevClue}
         onNext={onNextClue}
-        onHint={handleRequestHint}
-        hintRemaining={hintRemaining}
-        hintAllowed={hintAllowed}
-        hintDisabled={hintDisabled}
+        puzzle={puzzle}
+        scale={scale}
+        positionX={positionX}
+        positionY={positionY}
+        contentWidth={contentWidth}
+        contentHeight={contentHeight}
       />
       {AZERTY_ROWS.map((letters, rowIdx) => (
         <div key={rowIdx} className={row}>
@@ -130,10 +154,15 @@ export function MobileKeyboard(props: MobileKeyboardProps) {
           {rowIdx === AZERTY_ROWS.length - 1 ? (
             <>
               <KeyboardKey
-                label="⇄"
-                ariaLabel="Changer de sens"
+                label={
+                  <span className={hintLabel}>
+                    💡 Indice {hintRemaining} / {hintAllowed}
+                  </span>
+                }
+                ariaLabel={`Demander un indice, ${hintRemaining} restants`}
                 variant="action"
-                onPress={onToggleDirection}
+                disabled={hintDisabled}
+                onPress={handleRequestHint}
               />
               <KeyboardKey
                 label="⌫"
