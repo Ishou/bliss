@@ -1,5 +1,6 @@
 import { render, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
+import type { ReactZoomPanPinchContentRef } from 'react-zoom-pan-pinch';
 import type { Puzzle } from '@/domain';
 import { ActionRow } from '@/ui/components/keyboard/ActionRow';
 
@@ -18,6 +19,8 @@ const baseProps = {
   onPrev: () => undefined,
   onNext: () => undefined,
   puzzle: stubPuzzle,
+  validatedPositions: new Set<string>(),
+  transformRef: { current: null } as React.RefObject<ReactZoomPanPinchContentRef | null>,
   scale: 1,
   positionX: 0,
   positionY: 0,
@@ -37,13 +40,12 @@ describe('ActionRow', () => {
     expect(queryByLabelText(/Demander un indice/)).toBeNull();
   });
 
-  it('reserves a minimap placeholder slot at scale 1', () => {
-    const { queryByLabelText } = render(<ActionRow {...baseProps} />);
-    // At rest, the minimap is a non-interactive placeholder div without role="img".
-    expect(queryByLabelText(/Aperçu de la grille/)).toBeNull();
+  it('renders the minimap at rest (scale 1) so the player always has a position indicator', () => {
+    const { getByLabelText } = render(<ActionRow {...baseProps} />);
+    expect(getByLabelText(/Aperçu de la grille/)).toBeTruthy();
   });
 
-  it('renders the minimap once zoomed in', () => {
+  it('still renders the minimap once zoomed in', () => {
     const { getByLabelText } = render(<ActionRow {...baseProps} scale={2} />);
     expect(getByLabelText(/Aperçu de la grille/)).toBeTruthy();
   });

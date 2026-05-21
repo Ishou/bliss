@@ -1,5 +1,6 @@
 import { render, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
+import type { ReactZoomPanPinchContentRef } from 'react-zoom-pan-pinch';
 import type { Puzzle } from '@/domain';
 import type { Clue } from '@/ui/components/grid/useGridNavigation';
 import { MobileKeyboard } from '@/ui/components/keyboard';
@@ -50,6 +51,8 @@ const fullProps = {
   getEntryAt: () => '',
   focusedPosition: null as { row: number; col: number } | null,
   puzzle: stubPuzzle,
+  validatedPositions: new Set<string>(),
+  transformRef: { current: null } as React.RefObject<ReactZoomPanPinchContentRef | null>,
   scale: 1,
   positionX: 0,
   positionY: 0,

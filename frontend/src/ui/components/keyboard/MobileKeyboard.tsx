@@ -1,8 +1,9 @@
 import { useEffect, useRef } from 'react';
 import { css } from 'styled-system/css';
+import type { ReactZoomPanPinchContentRef } from 'react-zoom-pan-pinch';
 import type { Puzzle } from '@/domain';
 import type { FocusedCell } from '@/ui/components/grid/HintControl';
-import type { Clue } from '@/ui/components/grid/useGridNavigation';
+import type { Clue, Direction } from '@/ui/components/grid/useGridNavigation';
 import { ActionRow } from './ActionRow';
 import { AZERTY_ROWS } from './azertyLayout';
 import { ClueBanner } from './ClueBanner';
@@ -64,6 +65,11 @@ export interface MobileKeyboardProps {
   // Validation-set predicate; absent means no cell is validated.
   readonly isCellValidated?: (row: number, col: number) => boolean;
   readonly puzzle: Puzzle;
+  readonly validatedPositions: ReadonlySet<string>;
+  readonly filledPositions?: ReadonlySet<string>;
+  readonly currentWordKeys?: ReadonlySet<string>;
+  readonly localCursor?: { position: { row: number; col: number }; direction: Direction } | null;
+  readonly transformRef: React.RefObject<ReactZoomPanPinchContentRef | null>;
   readonly scale: number;
   readonly positionX: number;
   readonly positionY: number;
@@ -91,6 +97,11 @@ export function MobileKeyboard(props: MobileKeyboardProps) {
     focusedPosition,
     isCellValidated,
     puzzle,
+    validatedPositions,
+    filledPositions,
+    currentWordKeys,
+    localCursor,
+    transformRef,
     scale,
     positionX,
     positionY,
@@ -143,6 +154,11 @@ export function MobileKeyboard(props: MobileKeyboardProps) {
         onPrev={onPrevClue}
         onNext={onNextClue}
         puzzle={puzzle}
+        validatedPositions={validatedPositions}
+        filledPositions={filledPositions}
+        currentWordKeys={currentWordKeys}
+        localCursor={localCursor}
+        transformRef={transformRef}
         scale={scale}
         positionX={positionX}
         positionY={positionY}
