@@ -1,5 +1,6 @@
 {
   "alert": "BlissNatsDlqNonEmpty",
+  "version": "v5",
   "alertType": "METRIC_BASED_ALERT",
   "ruleType": "threshold_rule",
   "evalWindow": "1m0s",
@@ -28,6 +29,6 @@
   },
   "annotations": {
     "summary": "Messages present in NATS DLQ stream",
-    "description": "DLQ stream WORDSPARROW_USER_EVENTS_DLQ has {{$value}} messages — investigate consumer failures (max-delivery exhaustion). See infra/nats/README.md DLQ section."
+    "description": "DLQ stream WORDSPARROW_USER_EVENTS_DLQ has {{$value}} messages \u2014 investigate consumer failures (max-delivery exhaustion). See infra/nats/README.md DLQ section."
   }
 }
