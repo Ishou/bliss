@@ -1230,6 +1230,7 @@ export function Grid({
           onToggleDirection={() => nav.toggleDirection()}
           onPrevClue={() => nav.cycleClue(-1)}
           onNextClue={() => nav.cycleClue(1)}
+          onMoveCursor={(d) => nav.moveCursor(d)}
           onRequestHint={() => {
             const cell = getFocusedCell!()!;
             onRequestHint!(cell.row, cell.column);
@@ -1237,6 +1238,7 @@ export function Grid({
           getFocusedCell={getFocusedCell ?? (() => null)}
           getEntryAt={nav.getEntryAt}
           focusedPosition={nav.localCursor?.position ?? null}
+          isCellValidated={nav.isCellValidated}
           activeClue={nav.currentClue}
           alternateClue={nav.alternateClue}
           hintRemaining={hintRemaining}
