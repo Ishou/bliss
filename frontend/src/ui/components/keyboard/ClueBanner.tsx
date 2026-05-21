@@ -23,7 +23,8 @@ const posChip = css({
   alignItems: 'center',
   borderRadius: '999px',
   bg: 'color-mix(in srgb, token(colors.secondary.400) 18%, transparent)',
-  color: 'secondary.400',
+  // secondary.700 reaches ~7:1 on the honey-pale surface, clearing WCAG AA 4.5:1 for small text.
+  color: 'secondary.700',
   fontSize: '11px',
   fontWeight: 'medium',
 });
