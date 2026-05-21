@@ -859,6 +859,8 @@ export function Grid({
       if (rafId !== null) cancelAnimationFrame(rafId);
     };
   }, []);
+  // Touch-primary + zoomed: switch wrapper/stage/grid to "cover" sizing — kills viewport letterbox on portrait phones.
+  const fillShellOnZoom = touchPrimary && isZoomedIn;
   const transformWrapperStyle = useMemo(
     () => {
       const touchAction = isZoomedIn ? 'none' : 'pan-y';
@@ -866,6 +868,14 @@ export function Grid({
       // once zoomed in (at scale 1 there's nothing to pan to). While the
       // user is mid-drag, switch to `grabbing` for the closed-fist feel.
       const cursor = isPanning ? 'grabbing' : (isZoomedIn ? 'grab' : 'auto');
+      if (fillShellOnZoom) {
+        return {
+          width: '100cqw',
+          height: '100cqh',
+          touchAction,
+          cursor,
+        } as const;
+      }
       return {
         // Keep width/aspect-ratio here as a defensive pass-through:
         // the stage now provides the bounding box, but having these
@@ -879,7 +889,7 @@ export function Grid({
         cursor,
       } as const;
     },
-    [isZoomedIn, isPanning, puzzle.width, puzzle.height],
+    [fillShellOnZoom, isZoomedIn, isPanning, puzzle.width, puzzle.height],
   );
 
   // "stage" box: wraps TransformWrapper AND the overlay siblings so the
@@ -891,13 +901,38 @@ export function Grid({
   // `margin: 0 auto` re-centers the stage inside the flex gridShell
   // (mirrors the `margin: 0 auto` that was on transformWrapperStyle).
   const stageStyle = useMemo(
-    () => ({
-      width: `min(100cqw, calc(100cqh * ${puzzle.width} / ${puzzle.height}), 720px)`,
-      aspectRatio: `${puzzle.width} / ${puzzle.height}`,
-      margin: '0 auto',
-      position: 'relative' as const,
-    }),
-    [puzzle.width, puzzle.height],
+    () => {
+      if (fillShellOnZoom) {
+        return {
+          width: '100cqw',
+          height: '100cqh',
+          margin: '0 auto',
+          position: 'relative' as const,
+        };
+      }
+      return {
+        width: `min(100cqw, calc(100cqh * ${puzzle.width} / ${puzzle.height}), 720px)`,
+        aspectRatio: `${puzzle.width} / ${puzzle.height}`,
+        margin: '0 auto',
+        position: 'relative' as const,
+      };
+    },
+    [fillShellOnZoom, puzzle.width, puzzle.height],
+  );
+
+  // Cover-dimensions override for gridFrame + library's inner content div when fillShellOnZoom is active.
+  const coverWidth = `max(100cqw, calc(100cqh * ${puzzle.width} / ${puzzle.height}))`;
+  const coverHeight = `max(100cqh, calc(100cqw * ${puzzle.height} / ${puzzle.width}))`;
+  const gridFrameInlineStyle = useMemo(
+    () => (fillShellOnZoom ? { width: coverWidth, height: coverHeight } : undefined),
+    [fillShellOnZoom, coverWidth, coverHeight],
+  );
+  const dynamicContentStyle = useMemo(
+    () =>
+      fillShellOnZoom
+        ? { width: coverWidth, height: coverHeight }
+        : transformContentStyle,
+    [fillShellOnZoom, coverWidth, coverHeight],
   );
 
   // Inline style for the overlay div that sits on top of the
@@ -1067,7 +1102,7 @@ export function Grid({
       >
         <TransformComponent
           wrapperStyle={transformWrapperStyle}
-          contentStyle={transformContentStyle}
+          contentStyle={dynamicContentStyle}
         >
           {/*
             `gridFrame` wraps `<div role="grid">` to provide a positioned
@@ -1075,7 +1110,12 @@ export function Grid({
             visuals now live inside each `LetterCellView` (no overlay
             sibling) — the wrapper stays for the pan-listener stability.
           */}
-          <div ref={gridFrameRef} className={gridFrame}>
+          <div
+            ref={gridFrameRef}
+            className={gridFrame}
+            style={gridFrameInlineStyle}
+            data-fill-shell={fillShellOnZoom ? 'true' : undefined}
+          >
             <div
               role="grid"
               id="puzzle-grid"
