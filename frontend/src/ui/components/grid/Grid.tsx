@@ -270,8 +270,7 @@ export function Grid({
   getFocusedCell?: () => FocusedCell | null;
 }) {
   const touchPrimary = useTouchPrimary();
-  // Android Chrome PWA mitigation: blur the focused cell when the document
-  // becomes hidden so the next resume does not re-attach the OS keyboard.
+  // Android PWA: pre-emptive blur on hide prevents OS keyboard re-attach on resume.
   useResumeBlurOnPwa(touchPrimary);
   const cellByPosition = useMemo(() => {
     const m = new Map<string, Cell>();
