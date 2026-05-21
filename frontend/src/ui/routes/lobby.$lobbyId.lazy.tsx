@@ -43,6 +43,7 @@ import type {
 } from '@/domain/game';
 import { Grid } from '@/ui/components/grid';
 import { usePresenceState } from '@/ui/components/grid/usePresenceState';
+import { useTouchPrimary } from '@/ui/components/keyboard';
 import {
   ContentPage,
   ProgressBar,
@@ -121,14 +122,25 @@ const LobbyShell = ({
   readonly variant: 'content' | 'viewport';
   readonly children: React.ReactNode;
 }) => {
-  const Page = variant === 'viewport' ? ViewportPage : ContentPage;
+  const touchPrimary = useTouchPrimary();
+  // Suppress native pinch on the viewport-variant <main> while the MobileKeyboard is mounted — ADR-0016 amendment 2026-05-22.
+  if (variant === 'viewport') {
+    return (
+      <ViewportPage headerActiveNavId="grilles" suppressTouchAction={touchPrimary}>
+        <h1 lang="en" className={srOnly}>
+          WordSparrow
+        </h1>
+        {children}
+      </ViewportPage>
+    );
+  }
   return (
-    <Page headerActiveNavId="grilles">
+    <ContentPage headerActiveNavId="grilles">
       <h1 lang="en" className={srOnly}>
         WordSparrow
       </h1>
       {children}
-    </Page>
+    </ContentPage>
   );
 };
 

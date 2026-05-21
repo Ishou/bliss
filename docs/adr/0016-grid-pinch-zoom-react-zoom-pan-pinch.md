@@ -169,11 +169,12 @@ under §6a per the §3 "WCAG 1.4.4 compliance" decision above and ADR-0050
 
 ### Scope of the exception
 
-Suppression is applied via CSS `touch-action: none` on individual page-chrome
+Suppression is applied via CSS `touch-action: none` on the page-chrome
 elements that surround the grid while the custom keyboard is mounted:
 
 - the `MobileKeyboard` panel root,
-- the `PuzzleToolbar` root (`role="toolbar"`).
+- the `PuzzleToolbar` root (`role="toolbar"`),
+- the `ViewportPage` `<main>` element on grid routes (extension 2026-05-22b).
 
 Suppression is **not** applied to:
 
@@ -181,13 +182,16 @@ Suppression is **not** applied to:
   forbids),
 - the document `body` or `<html>`,
 - non-grid routes (the keyboard only mounts on grid routes via
-  `useTouchPrimary`),
+  `useTouchPrimary`; the `<main>` opt-in is gated on the same flag),
+- the `AppHeader` and `Footer` (siblings of `<main>`, native pinch preserved),
 - desktop / pointer-primary devices (the keyboard is hidden on those —
   ADR-0016 §3 applies unchanged).
 
-The page background, page header (`AppHeader`), and any area outside the
-toolbar + keyboard remain natively pinch-zoomable. The grid keeps its
-library-managed pinch (ADR-0016 §2).
+The page background, page header (`AppHeader`), `Footer`, and any non-grid
+route remain natively pinch-zoomable. The grid's `TransformWrapper` subtree
+keeps its library-managed pinch via JS pointer-event handlers (ADR-0016 §2);
+the ancestor `touch-action: none` on `<main>` blocks the browser's native
+gesture path without affecting the library's JS-driven gesture detection.
 
 ### Why CSS `touch-action`, not viewport meta
 
@@ -220,8 +224,10 @@ the AZERTY layout's natural size.
 ### Decision
 
 The exception is accepted as a real deviation from ADR-0016 §3's
-"no page-level zoom suppression" stance, scoped via CSS to two elements
-that exist only in the keyboard-mounted, grid-route, touch-primary
-configuration. Re-evaluate the deviation if either (a) `PuzzleToolbar` or
-`MobileKeyboard` start carrying long-form text content, or (b) the
-suppressed elements ever render on non-grid routes.
+"no page-level zoom suppression" stance, scoped via CSS to the
+`<main>` of grid routes plus the toolbar and keyboard within it —
+all three exist only in the keyboard-mounted, grid-route, touch-primary
+configuration. Re-evaluate the deviation if either (a) `PuzzleToolbar`,
+`MobileKeyboard`, or the grid route's `<main>` start carrying long-form
+text content, or (b) the suppressed elements ever render on non-grid
+routes.

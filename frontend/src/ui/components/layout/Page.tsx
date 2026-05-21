@@ -19,7 +19,7 @@
 // empirically by frontend/e2e/page-shell-overflow.spec.ts at 320/375/768.
 
 import * as React from 'react';
-import { css } from 'styled-system/css';
+import { css, cx } from 'styled-system/css';
 import { HerbierCorner } from '../decorations/HerbierCorner';
 import { AppHeader } from './AppHeader';
 import { Footer } from './Footer';
@@ -61,6 +61,9 @@ const viewportMainStyles = css({
   width: '100%',
   bg: 'bg',
 });
+
+// Applied only when the keyboard is mounted (touchPrimary) — ADR-0016 keyboard-mounted exception covers page chrome.
+const viewportMainSuppressTouchStyles = css({ touchAction: 'none' });
 
 const contentWrapperStyles = css({
   width: '100%',
@@ -191,18 +194,25 @@ export function ContentPage({ headerActiveNavId, children }: ContentPageProps) {
 export interface ViewportPageProps {
   readonly headerActiveNavId?: string;
   readonly skipLink?: { readonly label: string; readonly onActivate: () => void };
+  // Opt-in `touch-action: none` on <main> for the keyboard-mounted grid routes — ADR-0016 amendment 2026-05-22.
+  readonly suppressTouchAction?: boolean;
   readonly children: React.ReactNode;
 }
 
 export function ViewportPage({
   headerActiveNavId,
   skipLink,
+  suppressTouchAction,
   children,
 }: ViewportPageProps) {
+  const mainClassName = cx(
+    viewportMainStyles,
+    suppressTouchAction && viewportMainSuppressTouchStyles,
+  );
   return (
     <PageChrome
       headerActiveNavId={headerActiveNavId}
-      mainClassName={viewportMainStyles}
+      mainClassName={mainClassName}
       skipLink={skipLink}
     >
       <div className={viewportWrapperStyles}>{children}</div>
