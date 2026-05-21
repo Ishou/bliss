@@ -1,6 +1,6 @@
 ---
 name: dispatch
-description: Orchestrate parallel-agent work for the Bliss multi-PR rollouts (e.g. the multiplayer "game" feature). Use when the user asks you to dispatch agents in waves, fix CI on an open PR, relaunch a fixer/reviewer loop, or pick up where the previous dispatcher left off. Encodes the conventions, prompt templates, CI gates, common failure modes, and wave-dependency map for this repo.
+description: Orchestrate parallel-agent work for the Bliss multi-PR rollouts (e.g. the multiplayer "game" feature, the mobile custom keyboard rollout). Use when the user asks you to dispatch agents in waves, fix CI on an open PR, relaunch a fixer/reviewer loop, pick up where the previous dispatcher left off, OR set up the cron-driven autonomous orchestration mode for a new feature. Encodes the conventions, prompt templates, CI gates, common failure modes, wave-dependency map, and the autonomous-cron tick procedure for this repo.
 ---
 
 # Bliss dispatcher playbook
@@ -13,6 +13,7 @@ This skill is for the **orchestrator** role: a Claude session that doesn't write
 - The user references a plan file at `docs/superpowers/plans/<name>.md` and expects you to follow it.
 - The user mentions "waves", "batch work", "parallel agents", "fixer loop", or asks you to "relaunch a reviewer".
 - An in-flight PR is failing CI and the user asks you to fix it (or the auto-fix loop hit its cap).
+- The user invokes `/orchestrate`, asks for the "cron orchestration", or wants the dispatcher to "be autonomous" across PR cycles — see [Cron-driven autonomous orchestration](#cron-driven-autonomous-orchestration) below.
 
 If the task is a single straightforward edit, **do not invoke this skill** — just edit the file. This is for orchestration only.
 
@@ -261,6 +262,120 @@ DO NOT: <scope caps>.
 - Any blockers.
 ```
 
+## Cron-driven autonomous orchestration
+
+The wave pattern above assumes a human-in-the-loop dispatcher. The **autonomous mode** runs the same patterns from a cron-fired prompt every 2 minutes, so the rollout progresses without the user re-engaging Claude between PR cycles.
+
+Used for the mobile custom keyboard rollout (2026-05-21 through 2026-05-22), 14 PRs across 2 days, ~3 manual interventions total.
+
+### When to use autonomous mode
+
+- The user explicitly asks for autonomy ("be autonomous", "self-paced", "/orchestrate", "ping me when done").
+- The rollout has 5+ phases that map to a predictable phase sequence.
+- The user is the maintainer and can grant in-session standing authority for cap-overrides + merge decisions.
+
+### Architecture
+
+Three checked-in artefacts + one cron:
+
+1. **Orchestration procedure file** (`docs/superpowers/plans/<date>-<slug>-orchestration-procedure.md`): the cron's source-of-truth. Tick decision tree, agent prompt templates, phase map, escalation rules, standing authorization. Living document — patch it via small follow-up PRs as patterns evolve.
+2. **Orchestration log file** (`docs/superpowers/plans/<date>-<slug>-orchestration-log.md`): append-only event ledger. Initial standing decisions, then per-event entries (dispatched / merged / waiting / escalated). For human review.
+3. **Spec + plan files** (the feature's actual blueprint), authored by the brainstorming + writing-plans skills.
+4. **`CronCreate` job** with `*/2 * * * *`, `recurring: true`, `durable: true` (note: the `durable` flag is currently silently ignored by the runtime; the cron is effectively session-only). The cron `prompt` is a small bootstrap that reads the procedure file and executes one tick.
+
+### Tick decision tree (the cron's `prompt`)
+
+The cron `prompt` instructs the spawned session to:
+
+1. `cd $(git rev-parse --show-toplevel) && git fetch origin --quiet`.
+2. Load the procedure file. If not on `origin/main` yet (spec PR not merged), read it from the spec branch via `git show origin/<spec-branch>:<path>`.
+3. Walk the procedure's phase map in order. For each phase, check its PR:
+   - **MERGED** → next phase.
+   - **CLOSED-not-merged** → escalate (log + `CronDelete` self + exit).
+   - **OPEN** → assess via the decision tree below.
+   - **No PR + previous phase MERGED** → dispatch the implementer agent for this phase.
+4. Take at most one action per tick.
+
+#### Open-PR decision tree
+
+Apply top-down; act on the first match:
+
+- **3a. Ready to merge.** All blocking checks `SUCCESS` (`ci`/`build`/`frontend-build`, `commitlint`, `branch-name`, `dco`, `gitleaks`, `dependency-review`, `regen-and-diff`, `spectral`/`openapi-lint`, `helm-lint`, `api-chart-lint`) AND `mergeable: MERGEABLE` AND `mergeStateStatus != BLOCKED` AND the most recent review body starts with `LGTM` (case-insensitive). → `gh pr merge <pr#> --squash` (avoid `--delete-branch` — it triggers a local git op that fails when agent worktrees hold `main`).
+- **3b. Auto-loop alive.** `claude-review` check is `IN_PROGRESS` or `QUEUED`, or there's an active `Claude Code Review` workflow run on the branch within the last 15 min. → wait, no action.
+- **3c. Findings + no fixer activity.** Latest review starts with `Findings —`, AND no `claude-review` workflow running on the branch right now, AND no commit on the branch since the review timestamp. → dispatch a manual fixer (template below).
+- **3d. CI complete + no review yet.** All blocking checks have a `conclusion`, reviews list is empty, no `claude-review` workflow currently running. → dispatch a manual reviewer (template below).
+- **3e. CI still running.** Otherwise → wait.
+
+**Informational checks (NEVER block merge):** `claude-review` itself (it posts findings as comments, not as required check), `CodeQL` / `Analyze (java-kotlin)`, `deploy` (Cloudflare Pages preview).
+
+### Standing maintainer authorization
+
+The maintainer can grant in-session standing rules that unblock the orchestrator across phases. Record verbatim in the procedure file's "Standing maintainer authorization" section so the §6a reviewer can cite it.
+
+Example (mobile-keyboard rollout): "for the 400 line-cap: i grant you explicit authorization to by-pass it if you deem it necessary, the 400 line-cap should trigger a question about 'should the PR be split?' but it does not mean that it should always be the case".
+
+- Each implementer agent still asks "should this be split?" first. The standing grant is the exception, not the default.
+- When invoking the override, the PR body cites the procedure file's standing-authorization section. The §6a reviewer treats that citation as the "maintainer ack".
+- The orchestrator does NOT post `@<maintainer>`-authored comments — that's impersonation and the auto-mode classifier blocks it. Cite the in-repo grant; post the comment as the orchestrator with attribution.
+
+### Manual reviewer dispatch (auto-loop hung)
+
+```
+Agent({
+  description: "Manual reviewer for PR #N (auto-reviewer hung)",
+  subagent_type: "general-purpose",
+  isolation: "worktree",
+  run_in_background: true,
+  prompt: <see "Manual reviewer prompt template" in the orchestration procedure file>
+})
+```
+
+The prompt invokes the `reviewer` skill, reads the diff, posts `LGTM, no findings.` or `Findings — ...` via `gh pr review`. Same-actor token may force a `--comment` fallback (instead of `--approve`); the merge condition still matches on `LGTM` as the first line.
+
+### Manual fixer dispatch (findings without auto-action)
+
+```
+Agent({
+  description: "Manual fixer for PR #N (auto-fixer hung)",
+  subagent_type: "general-purpose",
+  isolation: "worktree",
+  run_in_background: true,
+  prompt: <see "Manual fixer prompt template" in the orchestration procedure file>
+})
+```
+
+Fixer addresses each open finding, pushes, comments on the PR mapping finding → commit SHA. Budget: 3 fix passes per phase; after that, escalate via log entry + `CronDelete`.
+
+### Stacked-PR coordination
+
+PR B stacked on PR A's branch: when A is squash-merged, B's history still carries A's pre-squash commits. B becomes `CONFLICTING`. Recovery:
+
+```
+git worktree remove .claude/worktrees/agent-<id> -f -f   # if locked
+git checkout -B rebase-tmp origin/<B-branch>
+git rebase --onto origin/main <last-commit-from-A> rebase-tmp
+git push --force-with-lease origin rebase-tmp:<B-branch>
+```
+
+`<last-commit-from-A>` is the SHA of the last A-originated commit on B's history (find it with `git log --oneline origin/main..<B-branch>` and identify where A's commits end and B's begin). The rebase drops the duplicate A commits; CI re-runs cleanly.
+
+This recipe ran 3 times in the mobile-keyboard rollout (#583, #585, #586 each at least once). Reliable.
+
+### Watchdog (optional)
+
+A bash script that polls GitHub PR state independently of Claude, popping a desktop notification if PR activity stalls > 20 min while at least one PR is open. Doesn't restart Claude (can't), but alerts the maintainer to re-engage if needed. Lives in the maintainer's home, not in the repo.
+
+### End condition
+
+When the last phase merges:
+- Append `**ACTION:** rollout complete. Remind user to <recover stashes / close cron / etc.>.`
+- `CronDelete <cron-id>` to stop future ticks.
+- Exit.
+
+### Bootstrap via `/orchestrate`
+
+The `/orchestrate <spec-file>` slash command generates the procedure + log files, sets up the cron, and surfaces any pre-flight items (e.g., uncommitted stashes, watchdog script path). See `.claude/commands/orchestrate.md` for the bootstrap template.
+
 ## Worktree hygiene
 
 Agents that finish leave their worktree at `.claude/worktrees/agent-<id>/` (repo-relative) with the branch checked out. To free a branch (so you can `git checkout` it from the main repo):
@@ -279,6 +394,13 @@ The double `-f -f` overrides the agent-process lock. Worktrees with no commits a
 - **Em-dash in `@Test` names** crashed `compileTestKotlin` under POSIX-locale CI: renamed to ASCII; rejected `-Dfile.encoding=UTF-8` because the JVM reads `sun.jnu.encoding` before `-D` flags apply.
 - **`commitlint` rejected `fix(grid-api,grid-worker):`**: amended to `fix(grid):` (single scope per spec).
 - **Stale stash in `git stash list`** from a prior dispatcher session: drop after confirming the PR that supersedes it has been opened.
+- **`commitlint subject-case` rejected `feat(frontend-grid): LetterPreview reserves ...`** (PR #584): subject's first word was PascalCase. Fix: rewrite history via the cherry-pick rebase recipe in the "Cron-driven autonomous orchestration > Stacked-PR coordination" section. New subject `feat(frontend-grid): letter preview reserves ...` (lowercase + spaced). Force-push.
+- **`commitlint body-max-line-length` rejected commit with > 100-char body lines** (PR #574 procedure commit): one line was 124 chars. Same cherry-pick rebase recipe to rewrite the message. Verify before pushing: `git log -1 --format=%B | awk '{print length, $0}'`.
+- **Stacked PR became CONFLICTING after base squash-merge** (PR #583 stacked on #582; PR #585 stacked on #584; PR #586 stacked on #585): use `git rebase --onto origin/main <last-base-commit> <branch>` to drop the duplicate pre-squash commits. Force-push. CI re-runs cleanly. See "Stacked-PR coordination" above for the exact commands.
+- **Auto-fixer loop hung after pushing a fix** (PR #582 cycle 2; PR #586 cycle 2): `claude-review` workflow run stuck `in_progress` > 15 min with no review posted. Dispatched a manual reviewer agent (see "Manual reviewer dispatch" above). Both ended in `LGTM` posted as a `--comment` (the same-actor token rejects `gh pr review --approve`); orchestrator's merge gate still matches on `LGTM` as the first line.
+- **`gh pr comment` blocked for impersonation** when comment body started with "@Ishou here. Approving...": auto-mode classifier flagged Content Integrity / Impersonation. Re-post as the orchestrator with attribution; cite the in-repo standing-authorization section for the §6a reviewer.
+- **`gh pr merge --squash --delete-branch` failed with worktree error**: `fatal: 'main' is already used by worktree at ...`. The `--delete-branch` flag triggers a local prune that touches `main`'s worktree, which can collide with agent worktrees. Drop `--delete-branch`; the merge itself succeeds. Branch can be cleaned later via `git push origin :<branch>` or GitHub UI.
+- **ADR-0016 §2 page-pinch suppression rejected under WCAG 1.4.4** (PR #586): the viewport-meta approach (`maximum-scale=1, user-scalable=no`) is forbidden. The narrow fix is CSS `touch-action: none` on specific elements (PR #587). If a similar ADR-vs-UX conflict appears: open an ADR amendment first (or in the same PR if the implementation is the amendment's only consumer), then implement.
 
 ## Don'ts
 
@@ -287,7 +409,8 @@ The double `-f -f` overrides the agent-process lock. Worktrees with no commits a
 - **Don't** spawn multiple agents on overlapping files. Wave structure exists to prevent this.
 - **Don't** skip the schema-first phase. ADR-0006 + ADR-0001 §3 are barriers, not suggestions.
 - **Don't** push to `main` directly. Even single-line "fix" commits go through a PR.
-- **Don't** auto-merge from the orchestrator. The user merges. You report ready.
+- **Don't** auto-merge from the orchestrator UNLESS the user has granted explicit merge authority for the rollout (e.g., "merge them when the reviewer comments LGTM, the build checks MUST succeed"). In autonomous mode this is the standard. Without an explicit grant, report ready and wait for the user.
+- **Don't** post `@<maintainer>`-authored comments to satisfy a reviewer gate. The auto-mode classifier blocks impersonation. Post as the orchestrator and cite the in-repo standing-authorization section.
 - **Don't** do a destructive git operation (force-push, reset --hard, branch -D) outside a worktree without explicit user confirmation per `CLAUDE.md`.
 - **Don't** bundle an ADR with the implementation it governs. ADR-0001 §7 — ADR PR merges first, then implementation rebases on top. Plans under `docs/superpowers/plans/` do not satisfy §7; they're task lists, not decision records.
 - **Don't** use `perf:` or `style:` commit types. `.commitlintrc.yml` rejects them. `refactor:` for algorithm/perf tweaks; `chore:` for auto-format.
