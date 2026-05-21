@@ -16,6 +16,7 @@
 
 - **Command dispatch shape.** Spec described a `Command` discriminated union routed through a single `dispatch(cmd)` function. The plan delivers the same outcome with named methods on the `GridNavigation` interface (`enterLetter`, `eraseLetter`, `cycleClue`, plus the existing `toggleDirection`). Same execution path; one less layer of indirection. The methods are callable from both DOM event adapters and button clicks, which is what the spec required.
 - **Focused-cell-locked is read imperatively, not threaded as a reactive prop.** ADR-0002 §4 (uncontrolled-input contract) and the existing `HintControl` pattern (see comment at `HintControl.tsx:7`) keep per-cell state out of the React tree to avoid re-renders on every focus change. `MobileKeyboard` follows the same pattern: it accepts a `getFocusedCell: () => FocusedCell | null` callback that the route provides, and the hint button calls it at click time rather than reading a reactive prop.
+- **LetterRow.tsx not extracted.** The spec's component layout lists a separate `LetterRow.tsx` that renders one row of letter keys. The plan inlines row rendering directly in `MobileKeyboard.tsx` via `AZERTY_ROWS.map(...)`. One fewer component file; the spec's named file should not be created.
 
 ## Pinch-zoom: grid zooms, keyboard does not — no special code needed
 
