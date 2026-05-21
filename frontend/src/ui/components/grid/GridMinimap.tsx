@@ -252,7 +252,11 @@ export function GridMinimap({
 
   // Overlay hides at rest; panel always renders so the player keeps a position indicator.
   if (variant === 'overlay' && scale <= 1.01) return null;
-  if (contentWidth <= 0 || contentHeight <= 0) return null;
+  // Reserve the flex slot while ResizeObserver hasn't fired yet (dimensions start at 0).
+  if (contentWidth <= 0 || contentHeight <= 0) {
+    if (variant === 'panel') return <div className={panelContainer} aria-hidden="true" />;
+    return null;
+  }
 
   const rect = computeViewportRect({
     scale,
