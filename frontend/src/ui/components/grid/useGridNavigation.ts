@@ -664,6 +664,35 @@ export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOpt
     [bumpEntries, focusCell, lookup],
   );
 
+  const eraseLetter = useCallback(() => {
+    const { focused: f, direction: dir } = stateRef.current;
+    if (!f) return;
+    const el = refs.current.get(key(f));
+    if (el && el.value !== '' && !el.readOnly) {
+      el.value = '';
+      cellValuesRef.current.delete(key(f));
+      bumpEntries();
+      onCellChangeRef.current?.(f.row, f.col, null);
+      return;
+    }
+    const clue = lookup.clueAt(f.row, f.col, dir);
+    if (!clue) return;
+    const idx = clue.cells.findIndex((c) => same(c.position, f));
+    if (idx <= 0) return;
+    const prev = clue.cells[idx - 1].position;
+    const prevEl = refs.current.get(key(prev));
+    if (prevEl && !prevEl.readOnly) {
+      const before = prevEl.value;
+      prevEl.value = '';
+      if (before !== '') {
+        cellValuesRef.current.delete(key(prev));
+        bumpEntries();
+        onCellChangeRef.current?.(prev.row, prev.col, null);
+      }
+    }
+    focusCell(prev);
+  }, [bumpEntries, focusCell, lookup]);
+
   const handleKeyDown = useCallback(
     (event: React.KeyboardEvent<HTMLInputElement>) => {
       const { focused: f, direction: dir } = stateRef.current;
@@ -757,40 +786,12 @@ export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOpt
         }
         case 'Backspace': {
           event.preventDefault();
-          const el = refs.current.get(key(f));
-          // Validated cells are locked — Backspace must not erase a
-          // correct letter. Still walk back through the word so a
-          // player who's typing forward and overshoots can recover
-          // by chaining backspaces (the previous editable cell will
-          // get cleared, and focus lands there).
-          if (el && el.value !== '' && !el.readOnly) {
-            el.value = '';
-            cellValuesRef.current.delete(key(f));
-            bumpEntries();
-            onCellChangeRef.current?.(f.row, f.col, null);
-            return;
-          }
-          const clue = lookup.clueAt(f.row, f.col, dir);
-          if (!clue) return;
-          const idx = clue.cells.findIndex((c) => same(c.position, f));
-          if (idx <= 0) return;
-          const prev = clue.cells[idx - 1].position;
-          const prevEl = refs.current.get(key(prev));
-          if (prevEl && !prevEl.readOnly) {
-            const before = prevEl.value;
-            prevEl.value = '';
-            if (before !== '') {
-              cellValuesRef.current.delete(key(prev));
-              bumpEntries();
-              onCellChangeRef.current?.(prev.row, prev.col, null);
-            }
-          }
-          focusCell(prev);
+          eraseLetter();
           return;
         }
       }
     },
-    [bumpEntries, enterLetter, focusCell, lookup, moveByVector],
+    [enterLetter, eraseLetter, focusCell, lookup, moveByVector],
   );
 
   const handleInput = useCallback(
@@ -943,6 +944,7 @@ export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOpt
     alternateClue,
     toggleDirection,
     enterLetter,
+    eraseLetter,
     getEntryAt,
     localCursor,
     applyRemoteCellUpdate,
