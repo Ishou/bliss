@@ -288,7 +288,7 @@ export interface UseGridNavigationOptions {
   // Read as a getter (not a value) so the gesture state stays
   // synchronous; useGridNavigation re-evaluates on each event.
   readonly isPanning?: () => boolean;
-  // Validation-set predicate from the parent (Grid). Solo callers omit; default returns false.
+  // Validation-set predicate; absent means no cell is validated.
   readonly isCellValidated?: (row: number, col: number) => boolean;
 }
 
@@ -724,7 +724,7 @@ export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOpt
     focusCell(prev);
   }, [bumpEntries, focusCell, lookup]);
 
-  // Cursor move along a cardinal direction. Used by the soft-keyboard arrow row and by handleKeyDown.
+  // Imperative cursor step; flip-then-step semantics (first press on wrong axis rotates, second moves).
   const moveCursor = useCallback(
     (direction: 'left' | 'right' | 'up' | 'down') => {
       const { focused: f, direction: dir } = stateRef.current;

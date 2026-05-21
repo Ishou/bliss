@@ -63,7 +63,7 @@ export function LetterPreview({
         const classes = [letterSlot];
         if (isFocused) classes.push(letterFocused);
         if (validated) classes.push(letterValidated);
-        else if (!filled) classes.push(letterDot);
+        else if (!filled && !isFocused) classes.push(letterDot);
         return (
           <span key={`${c.position.row},${c.position.col}`} className={classes.join(' ')}>
             {filled ? entry.toUpperCase() : '·'}

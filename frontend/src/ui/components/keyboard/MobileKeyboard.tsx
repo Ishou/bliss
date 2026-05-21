@@ -47,7 +47,7 @@ export interface MobileKeyboardProps {
   readonly onPrevClue: () => void;
   readonly onNextClue: () => void;
   readonly onRequestHint: () => void;
-  // Soft-keyboard cursor-step; delegates to nav.moveCursor with identical semantics to the physical ArrowX keys.
+  // Cursor step; flip-then-step semantics match the physical arrow keys.
   readonly onMoveCursor: (direction: 'left' | 'right' | 'up' | 'down') => void;
   readonly activeClue: Clue | null;
   readonly alternateClue: Clue | null;

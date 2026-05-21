@@ -110,6 +110,25 @@ describe('ClueBanner', () => {
     }
   });
 
+  it('focused+empty slot does not carry the letterDot class', () => {
+    const clue = makeClue('Mot', 3, 'across');
+    const { container } = render(
+      <ClueBanner
+        clue={clue}
+        alternateClue={null}
+        onToggleDirection={() => undefined}
+        getEntryAt={noEntries}
+        focusedPosition={{ row: 0, col: 2 }}
+      />,
+    );
+    const previewRow = container.querySelector('span[aria-hidden]');
+    const slots = Array.from(previewRow!.querySelectorAll(':scope > span'));
+    // Index 1 is the focused slot (col 2 = col0+1+1). It is empty but focused.
+    const focusedSlot = slots[1];
+    // letterDot sets color to neutral.400; the Panda class contains 'neutral'.
+    expect(focusedSlot.className).not.toMatch(/neutral/);
+  });
+
   it('renders validated letters with the success color class', () => {
     const clue = makeClue('Mot', 3, 'across');
     const entries = new Map<string, string>([['0,1', 'a'], ['0,2', 'b']]);
