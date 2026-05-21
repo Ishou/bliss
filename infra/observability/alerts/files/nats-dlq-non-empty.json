@@ -36,11 +36,29 @@
   },
   "evaluation": {
     "kind": "rolling",
-    "spec": { "evalWindow": "1m", "frequency": "1m" }
+    "spec": {
+      "evalWindow": "1m",
+      "frequency": "1m"
+    }
   },
-  "labels": { "severity": "warning", "component": "nats" },
+  "labels": {
+    "severity": "warning",
+    "component": "nats"
+  },
   "annotations": {
     "summary": "Messages present in NATS DLQ stream",
     "description": "DLQ stream WORDSPARROW_USER_EVENTS_DLQ has {{$value}} messages for 1m - investigate consumer failures (max-delivery exhaustion). See infra/nats/README.md DLQ section."
+  },
+  "notificationSettings": {
+    "groupBy": [
+      "stream_name"
+    ],
+    "renotify": {
+      "enabled": true,
+      "interval": "2h",
+      "alertStates": [
+        "firing"
+      ]
+    }
   }
 }
