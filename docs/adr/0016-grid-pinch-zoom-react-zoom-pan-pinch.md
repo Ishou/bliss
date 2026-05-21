@@ -209,11 +209,13 @@ preserved. For the suppressed elements themselves, low-vision users retain:
 - Browser zoom level (text-size or full-page; both are independent of
   viewport-meta scaling and of element `touch-action`).
 
-These are sufficient for the keyboard panel and toolbar specifically: the
-toolbar's text is a short, fixed metadata label (`n°142 · facile`) plus
-icon-buttons sized to the 44 × 44 WCAG 2.5.5 touch target. The keyboard's
-glyphs are single characters at the AZERTY layout's natural size; the user
-who needs larger keys is the user who should adopt system magnification.
+Note: as §3 establishes, iOS Zoom and Android Magnification are assistive
+technology under WCAG and do not satisfy SC 1.4.4's "without assistive
+technology" criterion. Browser zoom level does remain available and
+unaffected by `touch-action`. The toolbar's text is a short, fixed
+metadata label (`n°142 · facile`) plus icon-buttons sized to the 44 × 44
+WCAG 2.5.5 touch target; the keyboard's glyphs are single characters at
+the AZERTY layout's natural size.
 
 ### Decision
 
