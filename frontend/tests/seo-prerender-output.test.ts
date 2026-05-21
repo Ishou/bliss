@@ -246,6 +246,26 @@ describe.skipIf(!existsSync(resolve(DIST, 'index.html')))(
         expect(html).not.toMatch(/Étape 1 sur \d+/);
       },
     );
+
+    // Guard against the burger-menu duplicate-id bug. `OverflowMenu`
+    // sets `lazyMount` on `Menu.Root` so the Portal never mounts during
+    // the closed-state prerender pass. Without it, the menu's
+    // positioner/content ship in dist HTML as a sibling of `#root`;
+    // hydration can't adopt the ghost, and on mobile the duplicate
+    // `aria-controls` id pulls the popover off-screen until a SPA
+    // navigation remounts the menu.
+    it.each(INDEXABLE_ROUTES)(
+      'does not bake the burger-menu Portal into dist/$path',
+      (route) => {
+        const file =
+          route.path === '/'
+            ? resolve(DIST, 'index.html')
+            : resolve(DIST, `${route.path.slice(1)}.html`);
+        const html = readFileSync(file, 'utf8');
+        expect(html).not.toMatch(/data-scope="menu"[^>]*data-part="positioner"/);
+        expect(html).not.toMatch(/data-scope="menu"[^>]*data-part="content"/);
+      },
+    );
   },
 );
 
