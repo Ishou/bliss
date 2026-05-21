@@ -36,11 +36,30 @@
   },
   "evaluation": {
     "kind": "rolling",
-    "spec": { "evalWindow": "1m", "frequency": "1m" }
+    "spec": {
+      "evalWindow": "1m",
+      "frequency": "1m"
+    }
   },
-  "labels": { "severity": "critical", "component": "nats" },
+  "labels": {
+    "severity": "critical",
+    "component": "nats"
+  },
   "annotations": {
     "summary": "NATS consumer lag above critical threshold",
     "description": "Consumer {{$labels.consumer_name}} on stream {{$labels.stream_name}} has {{$value}} pending messages (> 1000 for 1m)."
+  },
+  "notificationSettings": {
+    "groupBy": [
+      "consumer_name",
+      "stream_name"
+    ],
+    "renotify": {
+      "enabled": true,
+      "interval": "1h",
+      "alertStates": [
+        "firing"
+      ]
+    }
   }
 }
