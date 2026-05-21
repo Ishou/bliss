@@ -261,9 +261,6 @@ export function Grid({
   // animate. Threaded into `buildCellPresenceMap` so each peer's badge
   // gets `data-typing="true"` when their session is in the set.
   typingSessionIds?: ReadonlySet<SessionId>;
-  // Hint state forwarded to the touch-primary MobileKeyboard. Solo
-  // routes wire the local `useHintRequest` here; multiplayer leaves
-  // them undefined and the hint button stays disabled.
   hintRemaining?: number;
   hintAllowed?: number;
   hintExhausted?: boolean;
