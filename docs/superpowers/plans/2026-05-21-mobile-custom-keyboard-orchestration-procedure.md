@@ -4,7 +4,7 @@ This file is the self-contained procedure the cron-fired orchestrator follows on
 
 **Cron schedule:** `*/2 * * * *` (every 2 minutes; durable across sessions; auto-expires after 7 days per `CronCreate` contract — recreate if rollout exceeds 7 days).
 
-**CWD assumption:** `/Users/isho/IdeaProjects/bliss`.
+**CWD:** run from the repo root. Use `cd "$(git rev-parse --show-toplevel)"` if the shell is not already there.
 
 **State source of truth:** `docs/superpowers/plans/2026-05-21-mobile-custom-keyboard-orchestration-log.md` (read from `origin/main` if the spec PR has merged, else from `origin/docs/mobile-keyboard-spec`).
 
@@ -25,7 +25,7 @@ This file is the self-contained procedure the cron-fired orchestrator follows on
 ### 1. Refresh local view of remote state
 
 ```sh
-cd /Users/isho/IdeaProjects/bliss
+cd "$(git rev-parse --show-toplevel)"
 git fetch origin --quiet
 ```
 
@@ -144,7 +144,7 @@ If Phase 6's PR is MERGED:
 You are the implementer for **Phase [N]** of the Bliss mobile custom keyboard rollout.
 
 ## Source documents (read these first)
-- Plan: /Users/isho/IdeaProjects/bliss/docs/superpowers/plans/2026-05-21-mobile-custom-keyboard.md — find the "## Phase [N]" section. Each Task in it has exact files + steps + code blocks.
+- Plan: `docs/superpowers/plans/2026-05-21-mobile-custom-keyboard.md` — find the "## Phase [N]" section. Each Task in it has exact files + steps + code blocks.
 - Spec (background only): docs/superpowers/specs/2026-05-21-mobile-custom-keyboard-design.md.
 
 ## Before coding
