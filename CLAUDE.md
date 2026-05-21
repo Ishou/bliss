@@ -179,6 +179,23 @@ Full rationale is in MANIFESTO.md.
   wrong, not the patch. Step back and ask "what would I do designing
   this from scratch today?" — if the answer differs from what you're
   patching, switch.
+- **Fetch a known-working example before authoring a payload for a
+  complex external API.** When you're about to write JSON / YAML / SQL
+  for a system you have never successfully talked to, the canonical
+  shape comes from a source of truth — the server's request-validator
+  source code, its repo's official example file, or a `GET` of an
+  existing resource you create via its UI. **Not** from documentation
+  prose or LLM-synthesized schemas. Patching reactively to "field X
+  missing" / "field Y has wrong type" error messages costs one fix
+  cycle per missing field. The 2026-05-21 SigNoz alerts workstream
+  cycled through 4 PRs (auth header → `version: v5` → full v5 shape →
+  `notificationSettings`) because the first author synthesized from
+  partial docs; a single fetch of `pkg/apiserver/signozapiserver/
+  ruler_examples.go` from the SigNoz repo would have given the
+  complete shape in one. **Tell** you're about to make this mistake:
+  you have a schema-validator error from a remote API, you're about
+  to edit one missing field, and you have not yet fetched a known
+  good example. Stop. Fetch first.
 
 ## Things to never do without explicit approval
 
