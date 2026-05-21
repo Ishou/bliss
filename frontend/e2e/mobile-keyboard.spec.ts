@@ -1,8 +1,4 @@
-// Phase 6 Task 1 — mobile custom keyboard happy path on iPhone 13 emulation.
-// Covers panel visibility, cell focus + letter typing, backspace, clue
-// navigation, and hint reveal. The desktop-Chrome negative test lives in
-// `mobile-keyboard-desktop.spec.ts` because Playwright forbids changing
-// `defaultBrowserType` per `test.describe` block.
+// Desktop-Chrome negative test is in mobile-keyboard-desktop.spec.ts: Playwright forbids defaultBrowserType per describe block.
 import { expect, test, devices } from '@playwright/test';
 
 test.use({ ...devices['iPhone 13'] });
@@ -21,8 +17,7 @@ test('panel renders on touch-primary and CurrentCluePanel does not', async ({ pa
   await expect(page.getByTestId('current-clue-panel')).toHaveCount(0);
 });
 
-// data-cell-kind="letter" lives on the inner <input>; the gridcell wrapper
-// owns the pointer-events. Locate the wrapper as the ancestor of the input.
+// data-cell-kind="letter" is on the inner <input>; the [role=gridcell] wrapper owns pointer-events.
 const firstLetterWrapper = (page: import('@playwright/test').Page) =>
   page.locator('[role="gridcell"]:has(input[data-cell-kind="letter"])').first();
 const firstLetterInput = (page: import('@playwright/test').Page) =>

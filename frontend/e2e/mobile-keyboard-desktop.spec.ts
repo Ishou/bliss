@@ -1,8 +1,4 @@
-// Phase 6 Task 1 (desktop negative) — confirms the mobile keyboard panel
-// stays absent and CurrentCluePanel mounts on a non-touch-primary device.
-// Split from `mobile-keyboard.spec.ts` because Playwright forbids changing
-// `defaultBrowserType` (which `devices['Desktop Chrome']` sets) per
-// `test.describe` block.
+// Split from mobile-keyboard.spec.ts: Playwright forbids defaultBrowserType inside a describe block.
 import { expect, test, devices } from '@playwright/test';
 
 test.use({ ...devices['Desktop Chrome'] });

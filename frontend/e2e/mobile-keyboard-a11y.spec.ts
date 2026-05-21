@@ -1,6 +1,4 @@
-// Phase 6 Task 3 — axe-core scan over the mobile custom keyboard panel.
-// Scoped to the panel via the role=group accessible name so violations on
-// unrelated parts of the grille route do not bleed into this gate.
+// axe-core scan scoped to the keyboard panel; isolates violations to this component.
 import { expect, test, devices } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 

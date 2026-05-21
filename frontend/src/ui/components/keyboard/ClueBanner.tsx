@@ -23,8 +23,7 @@ const posChip = css({
   alignItems: 'center',
   borderRadius: '999px',
   bg: 'color-mix(in srgb, token(colors.secondary.400) 18%, transparent)',
-  // secondary.700 (miel profond) on the mixed honey-pale surface reaches
-  // ~7:1, clearing WCAG AA (4.5:1) and AAA (7:1) for small text.
+  // secondary.700 reaches ~7:1 on the honey-pale surface, clearing WCAG AA 4.5:1 for small text.
   color: 'secondary.700',
   fontSize: '11px',
   fontWeight: 'medium',

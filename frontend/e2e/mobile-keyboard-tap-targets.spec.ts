@@ -1,9 +1,4 @@
-// Phase 6 Task 2 — tap-target audit at the narrowest supported viewport.
-// Height is asserted at 44px (WCAG 2.5.5 AA target row height); width is
-// asserted at 24px (WCAG 2.2 SC 2.5.8 AA Target Size Minimum) because a
-// 10-key AZERTY row mathematically cannot fit 10 buttons at 44px wide
-// inside a 320 CSS-px viewport. Both bounds carry a 0.5px subpixel slack.
-// See plan divergence note in the PR body.
+// width threshold is WCAG 2.2 SC 2.5.8 AA 24 px min (10-key AZERTY row cannot fit 44 px × 10 in 320 px)
 import { expect, test } from '@playwright/test';
 
 test.use({
@@ -20,9 +15,7 @@ test('every keyboard button has tap-target height >= 44 and width >= 24', async 
   await page.waitForSelector('[role="grid"]', { state: 'visible' });
   const panel = page.getByRole('group', { name: 'Clavier mots fléchés' });
   await expect(panel).toBeVisible();
-  // 26 AZERTY letters + 3 action-row buttons (prev/hint/next) + 2 trailing
-  // (direction + backspace) = 31. The guard catches a regression that
-  // accidentally drops a row before per-button measurement runs.
+  // guard: 26 letters + 3 action + 2 trailing = 31; catches row-drop regression.
   const buttons = await panel.getByRole('button').all();
   expect(buttons.length).toBeGreaterThan(20);
   for (const btn of buttons) {
