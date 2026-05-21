@@ -50,6 +50,12 @@ const gridPanelStyles = css({
   // width — the FitText algorithm (Cell.tsx) needs every pixel on
   // mobile-tiny viewports to keep clue ratios above the e2e gate.
   padding: { base: '4px', md: '12px' },
+  // Touch-primary: bleed past the page wrapper's 16 px horizontal padding so the grid hits viewport edges. Toolbar keeps its margin.
+  '@media (any-pointer: coarse) and (any-hover: none)': {
+    marginInline: '-16px',
+    width: 'calc(100% + 32px)',
+    borderRadius: 0,
+  },
 });
 
 // Shared visually-hidden style — used by the page-level h1 (the visible
@@ -388,7 +394,6 @@ function LoadedHomePage({ puzzle }: { readonly puzzle: Puzzle }) {
           initialEntries={initialEntries}
           onCellChange={handleCellChange}
           hintRemaining={hint.hintsRemaining}
-          hintAllowed={puzzle.hintsAllowed}
           hintExhausted={hint.exhausted}
           hintPending={hint.pending}
           onRequestHint={hint.request}

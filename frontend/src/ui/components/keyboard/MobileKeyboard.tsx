@@ -4,6 +4,7 @@ import type { ReactZoomPanPinchContentRef } from 'react-zoom-pan-pinch';
 import type { Puzzle } from '@/domain';
 import type { FocusedCell } from '@/ui/components/grid/HintControl';
 import type { Clue, Direction } from '@/ui/components/grid/useGridNavigation';
+import { HintIcon } from '@/ui/components/icons';
 import { ActionRow } from './ActionRow';
 import { AZERTY_ROWS } from './azertyLayout';
 import { ClueBanner } from './ClueBanner';
@@ -17,7 +18,7 @@ const panel = css({
   borderTop: '1px solid token(colors.border)',
   paddingInline: '6px',
   paddingBlockStart: '8px',
-  paddingBlockEnd: 'calc(env(safe-area-inset-bottom) + 8px)',
+  paddingBlockEnd: 'calc(env(safe-area-inset-bottom) + 16px)',
   display: 'flex',
   flexDirection: 'column',
   gap: '6px',
@@ -33,12 +34,12 @@ const row = css({
 // Arrow row keys claim equal 25% width so the four glyphs span the full panel width.
 const arrowKeyWrapper = css({ flex: '1 1 0', minWidth: 0, display: 'flex' });
 
-const hintLabel = css({
+// Icon-only hint glyph; count stays accessible via the button's aria-label.
+const hintIconStyles = css({
   display: 'inline-flex',
-  alignItems: 'center',
-  gap: '4px',
-  fontSize: '12px',
-  fontWeight: 'medium',
+  width: '20px',
+  height: '20px',
+  '& svg': { width: '100%', height: '100%' },
 });
 
 export interface MobileKeyboardProps {
@@ -53,7 +54,6 @@ export interface MobileKeyboardProps {
   readonly activeClue: Clue | null;
   readonly alternateClue: Clue | null;
   readonly hintRemaining: number;
-  readonly hintAllowed: number;
   readonly hintExhausted: boolean;
   readonly hintPending: boolean;
   // Imperative read at click time (ADR-0002 §4) — mirrors HintControl.getFocusedCell.
@@ -89,7 +89,6 @@ export function MobileKeyboard(props: MobileKeyboardProps) {
     activeClue,
     alternateClue,
     hintRemaining,
-    hintAllowed,
     hintExhausted,
     hintPending,
     getFocusedCell,
@@ -214,8 +213,8 @@ export function MobileKeyboard(props: MobileKeyboardProps) {
             <>
               <KeyboardKey
                 label={
-                  <span className={hintLabel}>
-                    💡 Indice {hintRemaining} / {hintAllowed}
+                  <span className={hintIconStyles}>
+                    <HintIcon />
                   </span>
                 }
                 ariaLabel={`Demander un indice, ${hintRemaining} restants`}
