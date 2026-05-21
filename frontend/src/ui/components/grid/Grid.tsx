@@ -73,7 +73,7 @@ const gridFrame = css({ position: 'relative', width: '100%', overflow: 'visible'
 // `align-items: center; justify-content: center` so the (possibly
 // smaller) square is centered inside the shell when one axis is binding
 // and the other has slack.
-// MobileKeyboard clearance is reserved by viewportWrapper's paddingBottom (see Page.tsx); shell needs no maxHeight hack.
+// Cap so the grid never extends below the keyboard panel (touch) or zoom-controls cluster (desktop md+).
 const gridShellStyles = css({
   flex: '1 1 0',
   minHeight: 0,
@@ -83,6 +83,7 @@ const gridShellStyles = css({
   alignItems: 'center',
   justifyContent: 'center',
   containerType: 'size',
+  maxHeight: 'calc(100dvh - var(--mobile-kb-height, 0px) - var(--grid-zoom-controls-height, 0px))',
 });
 
 // Outer wrapper around gridShell + the in-flow minimap. Absorbs the
@@ -1237,7 +1238,8 @@ export function Grid({
       )}
       </div>{/* stage */}
       </div>{/* gridShell */}
-      {isZoomedIn && gridFramePx.width > 0 && gridFramePx.height > 0 && (
+      {/* Overlay minimap is desktop-only — touch-primary already renders the panel variant inside MobileKeyboard. */}
+      {!touchPrimary && isZoomedIn && gridFramePx.width > 0 && gridFramePx.height > 0 && (
         <GridMinimap
           puzzle={puzzle}
           validatedPositions={validatedPositions ?? new Set()}
