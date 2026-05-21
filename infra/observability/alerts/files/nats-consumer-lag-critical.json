@@ -1,5 +1,6 @@
 {
   "alert": "BlissNatsConsumerLagCritical",
+  "version": "v5",
   "alertType": "METRIC_BASED_ALERT",
   "ruleType": "threshold_rule",
   "evalWindow": "1m0s",
