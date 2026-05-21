@@ -10,7 +10,7 @@ import { AZERTY_ROWS } from './azertyLayout';
 import { ClueBanner } from './ClueBanner';
 import { KeyboardKey } from './KeyboardKey';
 
-// touchAction: 'none' — keyboard-mounted exception to ADR-0016 §3 (see 2026-05-22 amendment).
+// touchAction: 'pan-y' suppresses pinch while preserving vertical pan (pull-to-refresh) — ADR-0016 keyboard-mounted exception.
 const panel = css({
   position: 'fixed',
   insetInline: 0,
@@ -24,7 +24,7 @@ const panel = css({
   flexDirection: 'column',
   gap: '6px',
   zIndex: 20,
-  touchAction: 'none',
+  touchAction: 'pan-y',
 });
 
 const row = css({

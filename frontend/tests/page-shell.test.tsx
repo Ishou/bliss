@@ -101,17 +101,19 @@ describe('<ViewportPage>', () => {
     ).toBeNull();
   });
 
-  it('<main> carries touch-action: none class when suppressTouchAction is true (ADR-0016 amendment 2026-05-22)', async () => {
+  it('<main> carries touch-action: pan-y class when suppressTouchAction is true (suppresses pinch, preserves pull-to-refresh)', async () => {
     renderPage(<ViewportPage suppressTouchAction>body</ViewportPage>);
     await screen.findByText('body');
     const main = document.querySelector('main#main-content')!;
-    expect(main.className).toMatch(/\btch-a_none\b/);
+    expect(main.className).toMatch(/(^|\s)tch-a_pan-y(\s|$)/);
+    expect(main.className).not.toMatch(/(^|\s)tch-a_none(\s|$)/);
   });
 
-  it('<main> does not carry touch-action: none class by default', async () => {
+  it('<main> does not carry the suppress class by default', async () => {
     renderPage(<ViewportPage>body</ViewportPage>);
     await screen.findByText('body');
     const main = document.querySelector('main#main-content')!;
-    expect(main.className).not.toMatch(/\btch-a_none\b/);
+    expect(main.className).not.toMatch(/(^|\s)tch-a_pan-y(\s|$)/);
+    expect(main.className).not.toMatch(/(^|\s)tch-a_none(\s|$)/);
   });
 });

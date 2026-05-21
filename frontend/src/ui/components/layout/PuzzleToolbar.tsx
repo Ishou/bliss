@@ -27,8 +27,8 @@ const toolbarStyles = css({
   width: '100%',
 });
 
-// Applied only when the keyboard is mounted (touchPrimary) — ADR-0016 keyboard-mounted exception.
-const toolbarSuppressTouchStyles = css({ touchAction: 'none' });
+// pan-y suppresses pinch while preserving vertical pan (pull-to-refresh) — ADR-0016 keyboard-mounted exception.
+const toolbarSuppressTouchStyles = css({ touchAction: 'pan-y' });
 
 const leftSlotStyles = css({
   display: 'flex',

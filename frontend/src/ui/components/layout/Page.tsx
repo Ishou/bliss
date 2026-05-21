@@ -62,8 +62,8 @@ const viewportMainStyles = css({
   bg: 'bg',
 });
 
-// Applied only when the keyboard is mounted (touchPrimary) — ADR-0016 keyboard-mounted exception covers page chrome.
-const viewportMainSuppressTouchStyles = css({ touchAction: 'none' });
+// pan-y suppresses pinch while preserving vertical pan (pull-to-refresh) — ADR-0016 keyboard-mounted exception.
+const viewportMainSuppressTouchStyles = css({ touchAction: 'pan-y' });
 
 const contentWrapperStyles = css({
   width: '100%',
@@ -194,7 +194,7 @@ export function ContentPage({ headerActiveNavId, children }: ContentPageProps) {
 export interface ViewportPageProps {
   readonly headerActiveNavId?: string;
   readonly skipLink?: { readonly label: string; readonly onActivate: () => void };
-  // Opt-in `touch-action: none` on <main> for the keyboard-mounted grid routes — ADR-0016 amendment 2026-05-22.
+  // Opt-in `touch-action: pan-y` on <main> for the keyboard-mounted grid routes — ADR-0016 amendment 2026-05-22.
   readonly suppressTouchAction?: boolean;
   readonly children: React.ReactNode;
 }
