@@ -63,6 +63,8 @@ export interface GridNavigation {
   readonly enterLetter: (char: string) => void;
   readonly eraseLetter: () => void;
   readonly cycleClue: (step: 1 | -1) => void;
+  // Imperative cursor step; same semantics as the physical ArrowX handlers (flip-then-step).
+  readonly moveCursor: (direction: 'left' | 'right' | 'up' | 'down') => void;
   // Reads the player's current letter at (row, col) — '' when the cell
   // is empty. The callback identity changes whenever any letter
   // changes (per the version counter inside the hook), so React
@@ -715,6 +717,28 @@ export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOpt
     focusCell(prev);
   }, [bumpEntries, focusCell, lookup]);
 
+  // Cursor move along a cardinal direction. Used by the soft-keyboard arrow row and by handleKeyDown.
+  const moveCursor = useCallback(
+    (direction: 'left' | 'right' | 'up' | 'down') => {
+      const { focused: f, direction: dir } = stateRef.current;
+      if (!f) return;
+      if (direction === 'left' || direction === 'right') {
+        if (dir !== 'across') {
+          setDirection('across');
+          return;
+        }
+        moveByVector(0, direction === 'right' ? 1 : -1);
+        return;
+      }
+      if (dir !== 'down') {
+        setDirection('down');
+        return;
+      }
+      moveByVector(direction === 'down' ? 1 : -1, 0);
+    },
+    [moveByVector],
+  );
+
   const handleKeyDown = useCallback(
     (event: React.KeyboardEvent<HTMLInputElement>) => {
       const { focused: f, direction: dir } = stateRef.current;
@@ -751,16 +775,20 @@ export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOpt
           return;
         }
         case 'ArrowRight':
+          event.preventDefault();
+          moveCursor('right');
+          return;
         case 'ArrowLeft':
           event.preventDefault();
-          if (dir !== 'across') setDirection('across');
-          else moveByVector(0, k === 'ArrowRight' ? 1 : -1);
+          moveCursor('left');
           return;
         case 'ArrowDown':
+          event.preventDefault();
+          moveCursor('down');
+          return;
         case 'ArrowUp':
           event.preventDefault();
-          if (dir !== 'down') setDirection('down');
-          else moveByVector(k === 'ArrowDown' ? 1 : -1, 0);
+          moveCursor('up');
           return;
         case 'Home': {
           event.preventDefault();
@@ -783,7 +811,7 @@ export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOpt
         }
       }
     },
-    [cycleClue, enterLetter, eraseLetter, focusCell, lookup, moveByVector],
+    [cycleClue, enterLetter, eraseLetter, focusCell, lookup, moveCursor],
   );
 
   const handleInput = useCallback(
@@ -938,6 +966,7 @@ export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOpt
     enterLetter,
     eraseLetter,
     cycleClue,
+    moveCursor,
     getEntryAt,
     localCursor,
     applyRemoteCellUpdate,
