@@ -52,6 +52,7 @@ export function createGameApiClient(options: GameApiClientOptions): Client<paths
   const client = createClient<paths>({
     baseUrl: options.baseUrl,
     fetch: options.fetch,
+    credentials: 'include', // cross-subdomain __Secure-ws_session cookie for authed game-api calls
   });
   // WebSocket connections do not support custom request headers from the browser
   // -- instrumenting them is a follow-up (likely via the connect URL).

@@ -128,7 +128,6 @@ export function createHttpLobbyClient(
     },
     async rebindLobbySessions(anonSessionId) {
       const { response } = await client.POST('/v1/lobbies/players/rebind', {
-        credentials: 'include',
         body: { anonSessionId },
       });
       if (!response.ok) {
@@ -137,7 +136,6 @@ export function createHttpLobbyClient(
     },
     async unbindLobbySessions(anonPseudonym) {
       const { response } = await client.POST('/v1/lobbies/players/unbind', {
-        credentials: 'include',
         body: { anonPseudonym },
       });
       if (!response.ok) {
