@@ -114,13 +114,13 @@ describe('MobileKeyboard banner + action row + direction', () => {
     expect(queryByLabelText('Changer de sens')).toBeNull();
   });
 
-  it('renders the Indice button in the 3x3 nav block (top-left)', () => {
+  it('hint button renders in the nav block alongside the erase key', () => {
     const { getByLabelText } = render(<MobileKeyboard {...fullProps} />);
     expect(getByLabelText(/Demander un indice/)).toBeTruthy();
     expect(getByLabelText('Effacer')).toBeTruthy();
   });
 
-  it('renders the minimap in the centre of the 3x3 nav block', () => {
+  it('minimap renders inside the keyboard panel', () => {
     const { getByLabelText } = render(<MobileKeyboard {...fullProps} />);
     expect(getByLabelText(/Aperçu de la grille/)).toBeTruthy();
   });
