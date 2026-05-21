@@ -4,14 +4,11 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { SAMPLE_PUZZLE } from '@/domain';
 import { Grid } from '@/ui/components/grid';
 
-// Shared with the mock TransformWrapper below — lets each test drive
-// `scale` into Grid's `handleTransform` so `isZoomedIn` flips on demand.
+// Module-level scale + callback; each test drives isZoomedIn through _simScale / _fireZoom.
 let _simScale = 1;
 let _fireZoom: ((scale: number) => void) | null = null;
 
-// Mirror of the strategy used in grid-scrollbars-wireup.test.tsx —
-// intercept the library so `transformWrapperRef.current.state.scale` is
-// queryable and `onTransform` can be invoked synchronously.
+// Intercepts react-zoom-pan-pinch so state.scale is queryable and onTransform fires synchronously.
 vi.mock('react-zoom-pan-pinch', async (importOriginal) => {
   const actual = await importOriginal<typeof import('react-zoom-pan-pinch')>();
   const { TransformWrapper: ActualTW } = actual;
@@ -66,8 +63,7 @@ describe('Grid zoom fills mobile viewport without aspect-ratio letterboxing', ()
     _fireZoom = null;
     originalMM = window.matchMedia;
     originalRAF = window.requestAnimationFrame;
-    // Synchronous rAF — Grid's handleTransform commits the scale update
-    // through a rAF; without this the `await act` below times out.
+    // Synchronous rAF so handleTransform's scale commit resolves before the awaited act.
     window.requestAnimationFrame = (fn: FrameRequestCallback) => { fn(0); return 0; };
   });
   afterEach(() => {
@@ -78,8 +74,7 @@ describe('Grid zoom fills mobile viewport without aspect-ratio letterboxing', ()
   it('keeps the natural aspect-ratio fit at zoom 1 on touch-primary', () => {
     matchTouchPrimary(true);
     render(<Grid puzzle={SAMPLE_PUZZLE} />);
-    // At rest, the stage carries the puzzle's aspect-ratio so the grid is
-    // letterboxed inside the shell — same as the unchanged solo desktop UX.
+    // At rest the stage preserves aspect-ratio (letterboxed fit, no fill behaviour).
     const stage = screen.getByTestId('grid-stage');
     expect(stage.style.aspectRatio).toBe(`${SAMPLE_PUZZLE.width} / ${SAMPLE_PUZZLE.height}`);
   });
@@ -100,10 +95,7 @@ describe('Grid zoom fills mobile viewport without aspect-ratio letterboxing', ()
     matchTouchPrimary(true);
     const { container } = render(<Grid puzzle={SAMPLE_PUZZLE} />);
     await act(async () => { _fireZoom?.(1.5); });
-    // The gridFrame is the immediate parent of `<div role="grid">`. The
-    // inline `style` carries the cover-dimensions (max(100cqw, …)) but
-    // jsdom's CSS parser drops those container-query values; the
-    // `data-fill-shell` attribute is the testable surface.
+    // data-fill-shell is the testable surface; jsdom drops container-query values from style.
     const gridFrame = container.querySelector('[role="grid"]')?.parentElement;
     expect(gridFrame).not.toBeNull();
     expect(gridFrame!).toHaveAttribute('data-fill-shell', 'true');
