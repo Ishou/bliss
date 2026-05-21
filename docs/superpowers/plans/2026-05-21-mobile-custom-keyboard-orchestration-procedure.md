@@ -8,6 +8,19 @@ This file is the self-contained procedure the cron-fired orchestrator follows on
 
 **State source of truth:** `docs/superpowers/plans/2026-05-21-mobile-custom-keyboard-orchestration-log.md` (read from `origin/main` if the spec PR has merged, else from `origin/docs/mobile-keyboard-spec`).
 
+## Standing maintainer authorization (recorded 2026-05-21)
+
+For this rollout, @Ishou granted standing authorization to invoke the `docs-bundle` (and analogous one-off justified) cap-override on any rollout PR that has a defensible reason not to split. Verbatim:
+
+> "for the 400 line-cap: i grant you explicit authorization to by-pass it if you deem it necessary, the 400 line-cap should trigger a question about 'should the PR be split?' but it does not mean that it should always be the case"
+
+**Operational consequence:**
+
+- Each implementer agent still asks themselves "should this be split?" first. The default answer is "yes, split if you can."
+- When splitting would harm review (e.g., test-without-prod separation, schema-consumer-coupling), the agent invokes the override category in the PR body, citing the maintainer's standing authorization above.
+- The §6a reviewer should treat the standing authorization as a satisfied "maintainer ack" for the cap-override gate, provided the PR body cites it explicitly.
+- The orchestrator does NOT post `@Ishou`-authored comments to confirm — that would be impersonation. The standing grant is the cite-able artifact.
+
 ## Phase map
 
 | Phase | Branch | Base | PR title prefix |
