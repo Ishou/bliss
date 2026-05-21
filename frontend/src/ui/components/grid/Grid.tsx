@@ -21,6 +21,7 @@ import { GridZoomControls } from './GridZoomControls';
 import { positionKey } from './positionKey';
 import { buildCellPresenceMap, useRemotePresences } from './PresenceOverlay';
 import { useGridNavigation, type Direction } from './useGridNavigation';
+import { MobileKeyboard } from '@/ui/components/keyboard';
 import { useTouchPrimary } from '@/ui/components/keyboard/useTouchPrimary';
 
 const gridContainer = css({
@@ -1194,6 +1195,12 @@ export function Grid({
         onZoomOut={() => zoomCenteredOnFocus(-0.3)}
         onReset={() => transformWrapperRef.current?.resetTransform(0)}
       />
+      {touchPrimary ? (
+        <MobileKeyboard
+          onLetter={(ch) => nav.enterLetter(ch)}
+          onBackspace={() => nav.eraseLetter()}
+        />
+      ) : null}
     </>
   );
 }

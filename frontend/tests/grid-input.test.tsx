@@ -1333,3 +1333,61 @@ describe('Grid letter input — inputMode gated by touch-primary', () => {
     expect(input.inputMode).toBe('text');
   });
 });
+
+describe('Grid mounts MobileKeyboard on touch-primary', () => {
+  const setTouchPrimary = (val: boolean) => {
+    window.matchMedia = vi.fn().mockReturnValue({
+      matches: val,
+      media: '(any-pointer: coarse) and (any-hover: none)',
+      onchange: null,
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+      addListener: () => undefined,
+      removeListener: () => undefined,
+      dispatchEvent: () => true,
+    } as MediaQueryList);
+  };
+
+  it('mounts MobileKeyboard on touch-primary; absent otherwise', () => {
+    const original = window.matchMedia;
+    try {
+      setTouchPrimary(true);
+      const r1 = render(<Grid puzzle={TEST_PUZZLE} />);
+      expect(r1.queryByRole('group', { name: 'Clavier mots fléchés' })).toBeTruthy();
+      r1.unmount();
+      setTouchPrimary(false);
+      const r2 = render(<Grid puzzle={TEST_PUZZLE} />);
+      expect(r2.queryByRole('group', { name: 'Clavier mots fléchés' })).toBeNull();
+    } finally {
+      window.matchMedia = original;
+    }
+  });
+
+  it('tapping a keyboard letter writes it into the focused cell', () => {
+    const original = window.matchMedia;
+    setTouchPrimary(true);
+    try {
+      const { container, getByLabelText } = render(<Grid puzzle={TEST_PUZZLE} />);
+      click(inputAt(container, 1, 1)!);
+      fireEvent.click(getByLabelText('Lettre A'));
+      expect(inputAt(container, 1, 1)!.value).toBe('A');
+      expect(document.activeElement).toBe(inputAt(container, 1, 2));
+    } finally {
+      window.matchMedia = original;
+    }
+  });
+
+  it('tapping backspace clears the previous letter and moves focus back', () => {
+    const original = window.matchMedia;
+    setTouchPrimary(true);
+    try {
+      const { container, getByLabelText } = render(<Grid puzzle={TEST_PUZZLE} />);
+      click(inputAt(container, 1, 1)!);
+      fireEvent.click(getByLabelText('Lettre A'));
+      fireEvent.click(getByLabelText('Effacer'));
+      expect(inputAt(container, 1, 1)!.value).toBe('');
+    } finally {
+      window.matchMedia = original;
+    }
+  });
+});
