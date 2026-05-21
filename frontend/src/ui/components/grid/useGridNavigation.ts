@@ -60,6 +60,9 @@ export interface GridNavigation {
   // direction without touching focus, same effect as a re-tap on an
   // intersection cell.
   readonly toggleDirection: () => void;
+  readonly enterLetter: (char: string) => void;
+  readonly eraseLetter: () => void;
+  readonly cycleClue: (step: 1 | -1) => void;
   // Reads the player's current letter at (row, col) — '' when the cell
   // is empty. The callback identity changes whenever any letter
   // changes (per the version counter inside the hook), so React
@@ -636,6 +639,31 @@ export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOpt
     [focusCell, lookup, puzzle.height, puzzle.width],
   );
 
+  const enterLetter = useCallback(
+    (char: string) => {
+      const { focused: f, direction: dir } = stateRef.current;
+      if (!f) return;
+      const letter = stripDiacritics(char);
+      if (letter.length !== 1 || !LETTER_RE.test(letter)) return;
+      const el = refs.current.get(key(f));
+      if (el && !el.readOnly) {
+        const before = el.value;
+        el.value = letter;
+        if (before !== letter) {
+          cellValuesRef.current.set(key(f), letter);
+          bumpEntries();
+          onCellChangeRef.current?.(f.row, f.col, letter);
+        }
+        onCellFilledRef.current?.(f, dir);
+      }
+      const clue = lookup.clueAt(f.row, f.col, dir);
+      if (!clue) return;
+      const idx = clue.cells.findIndex((c) => same(c.position, f));
+      if (idx >= 0 && idx < clue.cells.length - 1) focusCell(clue.cells[idx + 1].position);
+    },
+    [bumpEntries, focusCell, lookup],
+  );
+
   const handleKeyDown = useCallback(
     (event: React.KeyboardEvent<HTMLInputElement>) => {
       const { focused: f, direction: dir } = stateRef.current;
@@ -684,39 +712,9 @@ export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOpt
         return;
       }
       if (!f) return;
-      // Printable letter — write + advance along the current word.
       if (k.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey && LETTER_RE.test(k)) {
         event.preventDefault();
-        const el = refs.current.get(key(f));
-        const letter = stripDiacritics(k);
-        if (el) {
-          // Validated cells render with `readOnly` (see LetterCellView)
-          // — typing should not overwrite a locked-in correct letter.
-          // The browser already swallows native input on readOnly, but
-          // this manual write path runs from `keydown`, so we have to
-          // gate it explicitly. We still advance focus so the player's
-          // typing flow continues across a partially-solved word.
-          if (!el.readOnly) {
-            const before = el.value;
-            el.value = letter;
-            if (before !== letter) {
-              cellValuesRef.current.set(key(f), letter);
-              bumpEntries();
-              onCellChangeRef.current?.(f.row, f.col, letter);
-            }
-            // The `input` event never fires on this branch (we
-            // preventDefault'd the keydown), so handleInput's
-            // `onCellFilled` path is unreachable from desktop typing.
-            // Fire it here so solo auto-validation runs on every
-            // keystroke regardless of platform — the Android soft-
-            // keyboard path covers the same callback in handleInput.
-            if (!el.readOnly) onCellFilledRef.current?.(f, dir);
-          }
-        }
-        const clue = lookup.clueAt(f.row, f.col, dir);
-        if (!clue) return;
-        const idx = clue.cells.findIndex((c) => same(c.position, f));
-        if (idx >= 0 && idx < clue.cells.length - 1) focusCell(clue.cells[idx + 1].position);
+        enterLetter(k);
         return;
       }
       switch (k) {
@@ -792,7 +790,7 @@ export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOpt
         }
       }
     },
-    [bumpEntries, focusCell, lookup, moveByVector],
+    [bumpEntries, enterLetter, focusCell, lookup, moveByVector],
   );
 
   const handleInput = useCallback(
@@ -944,6 +942,7 @@ export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOpt
     currentClueIndex,
     alternateClue,
     toggleDirection,
+    enterLetter,
     getEntryAt,
     localCursor,
     applyRemoteCellUpdate,
