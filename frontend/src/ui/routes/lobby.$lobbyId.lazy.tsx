@@ -67,6 +67,12 @@ const gridPanelStyles = css({
   bg: 'surfaceElevated',
   borderRadius: '12px',
   padding: { base: '4px', md: '12px' },
+  // Touch-primary: bleed past the page wrapper's 16 px horizontal padding so the grid hits viewport edges. Toolbar keeps its margin.
+  '@media (any-pointer: coarse) and (any-hover: none)': {
+    marginInline: '-16px',
+    width: 'calc(100% + 32px)',
+    borderRadius: 0,
+  },
 });
 
 // Visually-hidden h1 for the heading-hierarchy contract — matches
