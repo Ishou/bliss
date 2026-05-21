@@ -29,7 +29,9 @@
           "op": "above",
           "matchType": "at_least_once",
           "target": 0,
-          "channels": []
+          "channels": [
+            "alerts@wordsparrow.io"
+          ]
         }
       ]
     }
