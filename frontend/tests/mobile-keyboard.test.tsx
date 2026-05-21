@@ -41,4 +41,13 @@ describe('MobileKeyboard letters + backspace', () => {
     const { getByRole } = render(<MobileKeyboard {...baseProps} />);
     expect(getByRole('group', { name: 'Clavier mots fléchés' })).toBeTruthy();
   });
+
+  it('publishes its measured height as --mobile-kb-height on document root', async () => {
+    const { unmount } = render(<MobileKeyboard {...baseProps} />);
+    await new Promise((r) => requestAnimationFrame(() => r(null)));
+    const val = document.documentElement.style.getPropertyValue('--mobile-kb-height');
+    expect(val).toMatch(/^\d+px$/);
+    unmount();
+    expect(document.documentElement.style.getPropertyValue('--mobile-kb-height')).toBe('');
+  });
 });

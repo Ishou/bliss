@@ -80,6 +80,8 @@ const gridShellStyles = css({
   alignItems: 'center',
   justifyContent: 'center',
   containerType: 'size',
+  // Reserve vertical space for the fixed MobileKeyboard panel on touch-primary; var is 0 otherwise.
+  maxHeight: 'calc(100dvh - var(--mobile-kb-height, 0px))',
 });
 
 // Outer wrapper around gridShell + the in-flow minimap. Absorbs the
