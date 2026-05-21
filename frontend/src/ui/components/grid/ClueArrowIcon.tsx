@@ -1,5 +1,8 @@
 import type { ArrowDirection } from '@/domain';
 
+// Bespoke rose used by the grid letter-cell arrows in `Cell.tsx`; the banner inherits this so every arrow site matches.
+export const ARROW_COLOR = '#f0bac4';
+
 // Inline-SVG arrow glyphs — same stroke vocabulary as the grid arrows in `Cell.tsx`, scaled for chip size.
 export const ARROW_PATHS: Record<ArrowDirection, string> = {
   right: 'M3 12h17 M14 7l6 5-6 5',

@@ -7,6 +7,7 @@ import type {
   DefinitionClue,
   LetterCell,
 } from '@/domain';
+import { ARROW_COLOR } from './ClueArrowIcon';
 import { FitText } from './FitText';
 
 // Layout preprocessing for FitText. Two distinct paths:
@@ -382,18 +383,11 @@ export interface IncomingArrow {
   readonly arrow: ArrowDirection;
 }
 
-const ARROW_COLOR = '#f0bac4';
-
+// Color applied inline below since Panda's static extraction only emits CSS for token / literal values — see ClueArrowIcon.tsx for the shared rose constant.
 const letterArrowBase = css({
   position: 'absolute',
   pointerEvents: 'none',
-  color: ARROW_COLOR,
-  // Defensive z-index — the spec ("no z-index needed") relies on
-  // letter cells rendering after their adjacent clue cell in DOM
-  // order, but the explicit elevation guards against future
-  // siblings with their own positioned children.
   zIndex: 3,
-  // SVG colour drives both stem rect and head triangle.
   '& svg': { display: 'block', width: '100%', height: '100%' },
 });
 
@@ -480,14 +474,14 @@ function topEdgeStyle(
 
 function LetterArrow({ arrow }: { arrow: IncomingArrow }) {
   const glyph = GLYPH_BY_ARROW[arrow.arrow];
-  const style =
+  const positionStyle =
     arrow.edge === 'left'
       ? leftEdgeStyle(arrow.offset, glyph)
       : topEdgeStyle(arrow.offset, glyph);
   return (
     <span
       className={letterArrowBase}
-      style={style}
+      style={{ ...positionStyle, color: ARROW_COLOR }}
       data-arrow={arrow.arrow}
       data-incoming-edge={arrow.edge}
       role="img"

@@ -1,6 +1,6 @@
 import { useCallback, type MouseEvent } from 'react';
 import { css } from 'styled-system/css';
-import { ArrowIcon, arrowLabel } from '@/ui/components/grid/ClueArrowIcon';
+import { ArrowIcon, ARROW_COLOR, arrowLabel } from '@/ui/components/grid/ClueArrowIcon';
 import { LetterPreview } from '@/ui/components/grid/LetterPreview';
 import type { Clue } from '@/ui/components/grid/useGridNavigation';
 
@@ -36,6 +36,7 @@ const altBlockTappable = css({
   _active: { transform: 'scale(0.99)' },
 });
 
+// Inline style for the color since Panda extracts only literal tokens or same-module string literals — see Cell.tsx letterArrowBase.
 const arrowGlyph = css({
   flexShrink: 0,
   width: '20px',
@@ -43,7 +44,6 @@ const arrowGlyph = css({
   display: 'inline-flex',
   alignItems: 'center',
   justifyContent: 'center',
-  color: 'secondary.400',
   '& svg': { width: '14px', height: '14px' },
 });
 
@@ -124,6 +124,7 @@ export function ClueBanner({
       <div className={block}>
         <span
           className={arrowGlyph}
+          style={{ color: ARROW_COLOR }}
           role="img"
           aria-label={`définition ${arrowLabel[clue.clue.arrow]}`}
         >
