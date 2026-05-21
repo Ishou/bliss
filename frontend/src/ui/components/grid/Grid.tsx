@@ -1218,7 +1218,7 @@ export function Grid({
           onPrevClue={() => nav.cycleClue(-1)}
           onNextClue={() => nav.cycleClue(1)}
           onRequestHint={() => {
-            const cell = getFocusedCell!();
+            const cell = getFocusedCell!()!;
             onRequestHint!(cell.row, cell.column);
           }}
           getFocusedCell={getFocusedCell ?? (() => null)}
