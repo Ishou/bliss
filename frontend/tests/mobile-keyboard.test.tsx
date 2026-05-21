@@ -34,6 +34,8 @@ const fullProps = {
   hintExhausted: false,
   hintPending: false,
   getFocusedCell: () => ({ row: 0, column: 0, isLocked: false }),
+  getEntryAt: () => '',
+  focusedPosition: null as { row: number; col: number } | null,
 };
 
 describe('MobileKeyboard letters + backspace', () => {

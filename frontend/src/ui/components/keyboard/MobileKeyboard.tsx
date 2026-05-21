@@ -43,6 +43,10 @@ export interface MobileKeyboardProps {
   readonly hintPending: boolean;
   // Imperative read at click time (ADR-0002 §4) — mirrors HintControl.getFocusedCell.
   readonly getFocusedCell: () => FocusedCell | null;
+  // Reads cell entries for the banner letter-preview row; identity bumps per write per ADR-0002 §4.
+  readonly getEntryAt: (row: number, col: number) => string;
+  // The local user's focused cell — drives the rose underline on the active-clue letter preview.
+  readonly focusedPosition: { row: number; col: number } | null;
 }
 
 export function MobileKeyboard(props: MobileKeyboardProps) {
@@ -60,6 +64,8 @@ export function MobileKeyboard(props: MobileKeyboardProps) {
     hintExhausted,
     hintPending,
     getFocusedCell,
+    getEntryAt,
+    focusedPosition,
   } = props;
 
   const panelRef = useRef<HTMLDivElement | null>(null);
@@ -99,6 +105,8 @@ export function MobileKeyboard(props: MobileKeyboardProps) {
         clue={activeClue}
         alternateClue={alternateClue}
         onToggleDirection={onToggleDirection}
+        getEntryAt={getEntryAt}
+        focusedPosition={focusedPosition}
       />
       <ActionRow
         onPrev={onPrevClue}
