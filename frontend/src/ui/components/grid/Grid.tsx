@@ -23,6 +23,7 @@ import { positionKey } from './positionKey';
 import { buildCellPresenceMap, useRemotePresences } from './PresenceOverlay';
 import { useGridNavigation, type Direction } from './useGridNavigation';
 import { MobileKeyboard } from '@/ui/components/keyboard';
+import { useResumeBlurOnPwa } from '@/ui/components/keyboard/useResumeBlurOnPwa';
 import { useTouchPrimary } from '@/ui/components/keyboard/useTouchPrimary';
 
 const gridContainer = css({
@@ -269,6 +270,9 @@ export function Grid({
   getFocusedCell?: () => FocusedCell | null;
 }) {
   const touchPrimary = useTouchPrimary();
+  // Android Chrome PWA mitigation: blur the focused cell when the document
+  // becomes hidden so the next resume does not re-attach the OS keyboard.
+  useResumeBlurOnPwa(touchPrimary);
   const cellByPosition = useMemo(() => {
     const m = new Map<string, Cell>();
     for (const c of puzzle.cells) m.set(positionKey(c.position), c);
