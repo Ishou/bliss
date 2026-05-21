@@ -106,19 +106,8 @@ const cellBase = css({
   overflow: 'visible',
 });
 const letterCell = css({ bg: 'surface' });
-// Letters belonging to the active word/clue carry a ROSE tint — same
-// family as the focused cell's `focusBg` (#2A1C22) but applied as a
-// flat fill (no inset ring) so the actively-focused cell still
-// stands out via its 1.5 px rose ring on top. The previous tint
-// (`accentBg` = sage) was visually identical to the validated state,
-// which made the "you're solving this word" cue indistinguishable
-// from "this letter is locked in".
-//
-// Used by SOLO play AND by the local player in multiplayer — the
-// local user's active word always reads as the same rose tint they
-// see in single-player so the cue is consistent across modes. Remote
-// peers paint via `letterCellPlayerWord` (per-hash hue).
-const letterCellInWord = css({ bg: 'focusBg' });
+// Pale rose distinct from `surfaceVariant` (def cell, secondary.100 honey) — matches the minimap's in-word fill.
+const letterCellInWord = css({ bg: '#fde8e8' });
 // Solo-mode focused-cell ring driven by React state (not the input's
 // `:focus` pseudo-class). Lets the visual persist when DOM focus
 // leaves the input — e.g. the user taps the hint button or page
