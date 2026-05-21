@@ -65,7 +65,7 @@ export interface GridNavigation {
   readonly cycleClue: (step: 1 | -1) => void;
   // Imperative cursor step; same semantics as the physical ArrowX handlers (flip-then-step).
   readonly moveCursor: (direction: 'left' | 'right' | 'up' | 'down') => void;
-  // True when (row, col) is in the parent's validation set; surfaced so letter previews can paint green.
+  // True when (row, col) is in the validation set; always false when no validator is wired.
   readonly isCellValidated: (row: number, col: number) => boolean;
   // Reads the player's current letter at (row, col) — '' when the cell
   // is empty. The callback identity changes whenever any letter

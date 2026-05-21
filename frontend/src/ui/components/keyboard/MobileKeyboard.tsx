@@ -61,7 +61,7 @@ export interface MobileKeyboardProps {
   readonly getEntryAt: (row: number, col: number) => string;
   // The local user's focused cell — drives the rose underline on the active-clue letter preview.
   readonly focusedPosition: { row: number; col: number } | null;
-  // Validation-set predicate; lets the banner's letter preview paint validated glyphs green.
+  // Validation-set predicate; absent means no cell is validated.
   readonly isCellValidated?: (row: number, col: number) => boolean;
   readonly puzzle: Puzzle;
   readonly scale: number;
