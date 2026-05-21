@@ -90,7 +90,13 @@ export function OverflowMenu({
   };
 
   return (
-    <Menu.Root onSelect={handleSelect} positioning={{ placement: 'bottom-end', gutter: 6 }}>
+    <Menu.Root
+      onSelect={handleSelect}
+      positioning={{ placement: 'bottom-end', gutter: 6 }}
+      // Lazy/unmount keeps the closed-state Portal out of the prerendered HTML so duplicate ids don't collide with the live copy on hydration.
+      lazyMount
+      unmountOnExit
+    >
       <Menu.Trigger asChild>
         <IconButton aria-label={triggerLabel} title={triggerLabel} className={className}>
           {triggerIcon ?? <MoreIcon />}

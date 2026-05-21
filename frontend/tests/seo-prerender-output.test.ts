@@ -246,6 +246,20 @@ describe.skipIf(!existsSync(resolve(DIST, 'index.html')))(
         expect(html).not.toMatch(/Étape 1 sur \d+/);
       },
     );
+
+    // lazyMount keeps the closed-state Portal out of prerendered HTML; without it duplicate ids break hydration on mobile.
+    it.each(INDEXABLE_ROUTES)(
+      'does not bake the burger-menu Portal into dist/$path',
+      (route) => {
+        const file =
+          route.path === '/'
+            ? resolve(DIST, 'index.html')
+            : resolve(DIST, `${route.path.slice(1)}.html`);
+        const html = readFileSync(file, 'utf8');
+        expect(html).not.toMatch(/data-scope="menu"[^>]*data-part="positioner"/);
+        expect(html).not.toMatch(/data-scope="menu"[^>]*data-part="content"/);
+      },
+    );
   },
 );
 

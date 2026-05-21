@@ -33,14 +33,12 @@ export interface HerbierCornerProps {
 
 const baseStyles = css({
   position: 'absolute',
-  // Small enough to sit in the periphery without competing with content.
-  // The earlier 80px size dragged the eye to the corners; ~52 px on
-  // desktop reads as a margin doodle, not a feature.
-  width: { base: '36px', md: '52px' },
-  height: { base: '36px', md: '52px' },
+  // Hidden below `lg`: 720px content wrapper fills the viewport, leaving no margin for the doodle.
+  display: { base: 'none', lg: 'block' },
+  width: '52px',
+  height: '52px',
   pointerEvents: 'none',
   color: 'accent',
-  // Lift above the page background but stay below any interactive UI.
   zIndex: 0,
 });
 
