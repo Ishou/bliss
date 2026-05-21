@@ -78,7 +78,9 @@ const viewportWrapperStyles = css({
   maxWidth: 'pageMaxWidth',
   margin: '0 auto',
   paddingInline: { base: '16px', md: '20px' },
-  paddingBlock: { base: '12px', md: '20px' },
+  paddingTop: { base: '12px', md: '20px' },
+  // Bottom reserves space for the fixed MobileKeyboard panel; var is 0 on desktop.
+  paddingBottom: { base: 'calc(12px + var(--mobile-kb-height, 0px))', md: 'calc(20px + var(--mobile-kb-height, 0px))' },
   display: 'flex',
   flexDirection: 'column',
   alignItems: 'center',

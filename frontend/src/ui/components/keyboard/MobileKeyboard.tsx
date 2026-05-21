@@ -2,10 +2,10 @@ import { useEffect, useRef } from 'react';
 import { css } from 'styled-system/css';
 import type { ReactZoomPanPinchContentRef } from 'react-zoom-pan-pinch';
 import type { Puzzle } from '@/domain';
+import { GridMinimap } from '@/ui/components/grid/GridMinimap';
 import type { FocusedCell } from '@/ui/components/grid/HintControl';
 import type { Clue, Direction } from '@/ui/components/grid/useGridNavigation';
 import { HintIcon } from '@/ui/components/icons';
-import { ActionRow } from './ActionRow';
 import { AZERTY_ROWS } from './azertyLayout';
 import { ClueBanner } from './ClueBanner';
 import { KeyboardKey } from './KeyboardKey';
@@ -33,8 +33,22 @@ const row = css({
   justifyContent: 'center',
 });
 
-// Arrow row keys claim equal 25% width so the four glyphs span the full panel width.
-const arrowKeyWrapper = css({ flex: '1 1 0', minWidth: 0, display: 'flex' });
+// 3x3 D-pad: hint (TL), up, empty (TR) / left, minimap, right / prev (BL), down, next (BR).
+const navBlock = css({
+  display: 'grid',
+  gridTemplateColumns: 'repeat(3, 1fr)',
+  gridTemplateRows: 'repeat(3, auto)',
+  gap: '4px',
+  paddingBottom: '4px',
+  borderBottom: '1px dashed token(colors.border)',
+  marginBottom: '4px',
+});
+
+// Each cell is its own flex shell so KeyboardKey's `flex: 1` fills the track.
+const navCell = css({ display: 'flex', minWidth: 0 });
+
+// Transparent placeholder for (1,3) — reserves the track but is not interactive.
+const navCellEmpty = css({ minHeight: '44px' });
 
 // Icon-only hint glyph; count stays accessible via the button's aria-label.
 const hintIconStyles = css({
@@ -151,31 +165,21 @@ export function MobileKeyboard(props: MobileKeyboardProps) {
         focusedPosition={focusedPosition}
         isCellValidated={isCellValidated}
       />
-      <ActionRow
-        onPrev={onPrevClue}
-        onNext={onNextClue}
-        puzzle={puzzle}
-        validatedPositions={validatedPositions}
-        filledPositions={filledPositions}
-        currentWordKeys={currentWordKeys}
-        localCursor={localCursor}
-        transformRef={transformRef}
-        scale={scale}
-        positionX={positionX}
-        positionY={positionY}
-        contentWidth={contentWidth}
-        contentHeight={contentHeight}
-      />
-      <div className={row}>
-        <div className={arrowKeyWrapper}>
+      <div className={navBlock}>
+        <div className={navCell}>
           <KeyboardKey
-            label="←"
-            ariaLabel="Curseur gauche"
+            label={
+              <span className={hintIconStyles}>
+                <HintIcon />
+              </span>
+            }
+            ariaLabel={`Demander un indice, ${hintRemaining} restants`}
             variant="action"
-            onPress={() => onMoveCursor('left')}
+            disabled={hintDisabled}
+            onPress={handleRequestHint}
           />
         </div>
-        <div className={arrowKeyWrapper}>
+        <div className={navCell}>
           <KeyboardKey
             label="↑"
             ariaLabel="Curseur haut"
@@ -183,7 +187,48 @@ export function MobileKeyboard(props: MobileKeyboardProps) {
             onPress={() => onMoveCursor('up')}
           />
         </div>
-        <div className={arrowKeyWrapper}>
+        <div className={`${navCell} ${navCellEmpty}`} aria-hidden />
+        <div className={navCell}>
+          <KeyboardKey
+            label="←"
+            ariaLabel="Curseur gauche"
+            variant="action"
+            onPress={() => onMoveCursor('left')}
+          />
+        </div>
+        <div className={navCell}>
+          <GridMinimap
+            variant="panel"
+            puzzle={puzzle}
+            validatedPositions={validatedPositions}
+            filledPositions={filledPositions}
+            currentWordKeys={currentWordKeys}
+            localCursor={localCursor}
+            transformRef={transformRef}
+            scale={scale}
+            positionX={positionX}
+            positionY={positionY}
+            contentWidth={contentWidth}
+            contentHeight={contentHeight}
+          />
+        </div>
+        <div className={navCell}>
+          <KeyboardKey
+            label="→"
+            ariaLabel="Curseur droite"
+            variant="action"
+            onPress={() => onMoveCursor('right')}
+          />
+        </div>
+        <div className={navCell}>
+          <KeyboardKey
+            label="◀ Préc."
+            ariaLabel="Indice précédent"
+            variant="action"
+            onPress={onPrevClue}
+          />
+        </div>
+        <div className={navCell}>
           <KeyboardKey
             label="↓"
             ariaLabel="Curseur bas"
@@ -191,12 +236,12 @@ export function MobileKeyboard(props: MobileKeyboardProps) {
             onPress={() => onMoveCursor('down')}
           />
         </div>
-        <div className={arrowKeyWrapper}>
+        <div className={navCell}>
           <KeyboardKey
-            label="→"
-            ariaLabel="Curseur droite"
+            label="Suiv. ▶"
+            ariaLabel="Indice suivant"
             variant="action"
-            onPress={() => onMoveCursor('right')}
+            onPress={onNextClue}
           />
         </div>
       </div>
@@ -212,25 +257,12 @@ export function MobileKeyboard(props: MobileKeyboardProps) {
             />
           ))}
           {rowIdx === AZERTY_ROWS.length - 1 ? (
-            <>
-              <KeyboardKey
-                label={
-                  <span className={hintIconStyles}>
-                    <HintIcon />
-                  </span>
-                }
-                ariaLabel={`Demander un indice, ${hintRemaining} restants`}
-                variant="action"
-                disabled={hintDisabled}
-                onPress={handleRequestHint}
-              />
-              <KeyboardKey
-                label="⌫"
-                ariaLabel="Effacer"
-                variant="action"
-                onPress={onBackspace}
-              />
-            </>
+            <KeyboardKey
+              label="⌫"
+              ariaLabel="Effacer"
+              variant="action"
+              onPress={onBackspace}
+            />
           ) : null}
         </div>
       ))}

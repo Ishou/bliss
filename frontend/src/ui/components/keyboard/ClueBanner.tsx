@@ -16,11 +16,13 @@ const banner = css({
   border: '1px solid token(colors.border)',
 });
 
+// minHeight matches arrowGlyph (20px) so empty-state and active rows occupy identical vertical space.
 const block = css({
   display: 'flex',
   alignItems: 'center',
   gap: '8px',
   minWidth: 0,
+  minHeight: '20px',
 });
 
 const altBlockTappable = css({
@@ -77,6 +79,7 @@ const blockPlaceholder = css({
   alignItems: 'center',
   gap: '8px',
   minWidth: 0,
+  minHeight: '20px',
   visibility: 'hidden',
 });
 

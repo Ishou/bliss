@@ -73,6 +73,7 @@ const gridFrame = css({ position: 'relative', width: '100%', overflow: 'visible'
 // `align-items: center; justify-content: center` so the (possibly
 // smaller) square is centered inside the shell when one axis is binding
 // and the other has slack.
+// MobileKeyboard clearance is reserved by viewportWrapper's paddingBottom (see Page.tsx); shell needs no maxHeight hack.
 const gridShellStyles = css({
   flex: '1 1 0',
   minHeight: 0,
@@ -82,8 +83,6 @@ const gridShellStyles = css({
   alignItems: 'center',
   justifyContent: 'center',
   containerType: 'size',
-  // Reserve vertical space for the fixed MobileKeyboard panel on touch-primary; var is 0 otherwise.
-  maxHeight: 'calc(100dvh - var(--mobile-kb-height, 0px))',
 });
 
 // Outer wrapper around gridShell + the in-flow minimap. Absorbs the
