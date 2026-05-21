@@ -16,6 +16,7 @@ import {
 } from './Cell';
 import { CurrentCluePanel } from './CurrentCluePanel';
 import { GridMinimap } from './GridMinimap';
+import type { FocusedCell } from './HintControl';
 import { GridScrollbar } from './GridScrollbar';
 import { GridZoomControls } from './GridZoomControls';
 import { positionKey } from './positionKey';
@@ -220,6 +221,12 @@ export function Grid({
   validatedPositions,
   errorPositions,
   typingSessionIds,
+  hintRemaining = 0,
+  hintAllowed = 0,
+  hintExhausted = true,
+  hintPending = false,
+  onRequestHint,
+  getFocusedCell,
 }: {
   puzzle: Puzzle;
   onCellChange?: (row: number, col: number, letter: string | null) => void;
@@ -254,6 +261,12 @@ export function Grid({
   // animate. Threaded into `buildCellPresenceMap` so each peer's badge
   // gets `data-typing="true"` when their session is in the set.
   typingSessionIds?: ReadonlySet<SessionId>;
+  hintRemaining?: number;
+  hintAllowed?: number;
+  hintExhausted?: boolean;
+  hintPending?: boolean;
+  onRequestHint?: (row: number, column: number) => void;
+  getFocusedCell?: () => FocusedCell | null;
 }) {
   const touchPrimary = useTouchPrimary();
   const cellByPosition = useMemo(() => {
@@ -1201,6 +1214,20 @@ export function Grid({
         <MobileKeyboard
           onLetter={(ch) => nav.enterLetter(ch)}
           onBackspace={() => nav.eraseLetter()}
+          onToggleDirection={() => nav.toggleDirection()}
+          onPrevClue={() => nav.cycleClue(-1)}
+          onNextClue={() => nav.cycleClue(1)}
+          onRequestHint={() => {
+            const cell = getFocusedCell!()!;
+            onRequestHint!(cell.row, cell.column);
+          }}
+          getFocusedCell={getFocusedCell ?? (() => null)}
+          activeClue={nav.currentClue}
+          alternateClue={nav.alternateClue}
+          hintRemaining={hintRemaining}
+          hintAllowed={hintAllowed}
+          hintExhausted={hintExhausted || onRequestHint === undefined}
+          hintPending={hintPending}
         />
       ) : null}
     </>

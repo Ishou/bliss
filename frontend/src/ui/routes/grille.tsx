@@ -383,6 +383,12 @@ function LoadedHomePage({ puzzle }: { readonly puzzle: Puzzle }) {
           onLocalFocusChange={handleLocalFocusChange}
           initialEntries={initialEntries}
           onCellChange={handleCellChange}
+          hintRemaining={hint.hintsRemaining}
+          hintAllowed={puzzle.hintsAllowed}
+          hintExhausted={hint.exhausted}
+          hintPending={hint.pending}
+          onRequestHint={hint.request}
+          getFocusedCell={getFocusedCell}
         />
       </div>
       <ProgressBar
