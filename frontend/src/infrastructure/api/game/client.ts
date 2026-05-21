@@ -52,6 +52,11 @@ export function createGameApiClient(options: GameApiClientOptions): Client<paths
   const client = createClient<paths>({
     baseUrl: options.baseUrl,
     fetch: options.fetch,
+    // Send the __Secure-ws_session cookie cross-subdomain so authed callers
+    // can be identified by game-api (lobby create / read uses the cookie's
+    // displayName when present). Same-origin policy with the wordsparrow.io
+    // parent domain makes this safe.
+    credentials: 'include',
   });
   // WebSocket connections do not support custom request headers from the browser
   // -- instrumenting them is a follow-up (likely via the connect URL).
