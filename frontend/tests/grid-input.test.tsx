@@ -1303,3 +1303,33 @@ describe('Grid smart-focus on click', () => {
     expect(defAt(container, 0, 3)?.dataset.currentClue).toBe('false'); // down-A def
   });
 });
+
+describe('Grid letter input — inputMode gated by touch-primary', () => {
+  it('renders inputMode="none" on every letter input when touch-primary', () => {
+    const original = window.matchMedia;
+    window.matchMedia = vi.fn().mockReturnValue({
+      matches: true,
+      media: '(any-pointer: coarse) and (any-hover: none)',
+      onchange: null,
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+      addListener: () => undefined,
+      removeListener: () => undefined,
+      dispatchEvent: () => true,
+    } as MediaQueryList);
+    try {
+      const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
+      const inputs = container.querySelectorAll<HTMLInputElement>('[data-cell-kind="letter"]');
+      expect(inputs.length).toBeGreaterThan(0);
+      for (const i of inputs) expect(i.inputMode).toBe('none');
+    } finally {
+      window.matchMedia = original;
+    }
+  });
+
+  it('keeps inputMode="text" when not touch-primary', () => {
+    const { container } = render(<Grid puzzle={TEST_PUZZLE} />);
+    const input = container.querySelector<HTMLInputElement>('[data-cell-kind="letter"]')!;
+    expect(input.inputMode).toBe('text');
+  });
+});
