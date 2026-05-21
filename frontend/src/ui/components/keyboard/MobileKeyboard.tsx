@@ -54,7 +54,6 @@ export interface MobileKeyboardProps {
   readonly activeClue: Clue | null;
   readonly alternateClue: Clue | null;
   readonly hintRemaining: number;
-  readonly hintAllowed: number;
   readonly hintExhausted: boolean;
   readonly hintPending: boolean;
   // Imperative read at click time (ADR-0002 §4) — mirrors HintControl.getFocusedCell.
@@ -127,20 +126,6 @@ export function MobileKeyboard(props: MobileKeyboardProps) {
     return () => {
       ro?.disconnect();
       document.documentElement.style.removeProperty('--mobile-kb-height');
-    };
-  }, []);
-
-  // ADR-0016 deviation: suppress native pinch-zoom while the custom keyboard owns input on touch-primary.
-  useEffect(() => {
-    const meta = document.querySelector('meta[name="viewport"]');
-    if (!meta) return;
-    const prev = meta.getAttribute('content') ?? '';
-    meta.setAttribute(
-      'content',
-      'width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1, user-scalable=no',
-    );
-    return () => {
-      meta.setAttribute('content', prev);
     };
   }, []);
 

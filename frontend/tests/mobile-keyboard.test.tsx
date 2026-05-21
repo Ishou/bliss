@@ -44,7 +44,6 @@ const fullProps = {
   activeClue: stubClue('Fruit', 5) as Clue | null,
   alternateClue: null as Clue | null,
   hintRemaining: 3,
-  hintAllowed: 3,
   hintExhausted: false,
   hintPending: false,
   getFocusedCell: () => ({ row: 0, column: 0, isLocked: false }),
@@ -102,23 +101,6 @@ describe('MobileKeyboard letters + backspace', () => {
     expect(document.documentElement.style.getPropertyValue('--mobile-kb-height')).toBe('');
   });
 
-  it('suppresses page pinch-zoom on mount and restores the prior viewport content on unmount', () => {
-    const meta = document.createElement('meta');
-    meta.setAttribute('name', 'viewport');
-    const initial = 'width=device-width, initial-scale=1.0, viewport-fit=cover';
-    meta.setAttribute('content', initial);
-    document.head.appendChild(meta);
-    try {
-      const { unmount } = render(<MobileKeyboard {...fullProps} />);
-      const mounted = meta.getAttribute('content') ?? '';
-      expect(mounted).toMatch(/maximum-scale=1/);
-      expect(mounted).toMatch(/user-scalable=no/);
-      unmount();
-      expect(meta.getAttribute('content')).toBe(initial);
-    } finally {
-      meta.remove();
-    }
-  });
 });
 
 describe('MobileKeyboard banner + action row + direction', () => {

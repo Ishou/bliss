@@ -394,7 +394,6 @@ function LoadedHomePage({ puzzle }: { readonly puzzle: Puzzle }) {
           initialEntries={initialEntries}
           onCellChange={handleCellChange}
           hintRemaining={hint.hintsRemaining}
-          hintAllowed={puzzle.hintsAllowed}
           hintExhausted={hint.exhausted}
           hintPending={hint.pending}
           onRequestHint={hint.request}

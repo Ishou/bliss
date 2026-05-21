@@ -223,7 +223,6 @@ export function Grid({
   errorPositions,
   typingSessionIds,
   hintRemaining = 0,
-  hintAllowed = 0,
   hintExhausted = true,
   hintPending = false,
   onRequestHint,
@@ -263,7 +262,6 @@ export function Grid({
   // gets `data-typing="true"` when their session is in the set.
   typingSessionIds?: ReadonlySet<SessionId>;
   hintRemaining?: number;
-  hintAllowed?: number;
   hintExhausted?: boolean;
   hintPending?: boolean;
   onRequestHint?: (row: number, column: number) => void;
@@ -1242,7 +1240,6 @@ export function Grid({
           activeClue={nav.currentClue}
           alternateClue={nav.alternateClue}
           hintRemaining={hintRemaining}
-          hintAllowed={hintAllowed}
           hintExhausted={hintExhausted || onRequestHint === undefined}
           hintPending={hintPending}
           puzzle={puzzle}

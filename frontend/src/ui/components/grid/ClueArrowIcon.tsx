@@ -1,6 +1,6 @@
 import type { ArrowDirection } from '@/domain';
 
-// Bespoke rose used by the grid letter-cell arrows in `Cell.tsx`; the banner inherits this so every arrow site matches.
+// Applied via inline style — Panda's static extraction requires literal values; cross-module constants produce no CSS rule.
 export const ARROW_COLOR = '#f0bac4';
 
 // Inline-SVG arrow glyphs — same stroke vocabulary as the grid arrows in `Cell.tsx`, scaled for chip size.

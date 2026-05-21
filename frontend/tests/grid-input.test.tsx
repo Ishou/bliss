@@ -1432,7 +1432,6 @@ describe('Grid mounts MobileKeyboard on touch-primary', () => {
         <Grid
           puzzle={TEST_PUZZLE}
           hintRemaining={2}
-          hintAllowed={3}
           hintExhausted={false}
           hintPending={false}
           onRequestHint={onRequestHint}
