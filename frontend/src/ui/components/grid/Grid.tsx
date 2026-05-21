@@ -252,10 +252,6 @@ export function Grid({
   // gets `data-typing="true"` when their session is in the set.
   typingSessionIds?: ReadonlySet<SessionId>;
 }) {
-  // Touch-primary devices (coarse pointer + no hover) get the on-screen
-  // panel from the Phase 3 mobile keyboard workstream. Phase 2 only
-  // suppresses the OS soft keyboard via `inputMode="none"`; the panel
-  // itself lands in the next PR. See ADR-0002 §4 mobile rollout.
   const touchPrimary = useTouchPrimary();
   const cellByPosition = useMemo(() => {
     const m = new Map<string, Cell>();

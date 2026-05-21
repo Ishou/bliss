@@ -682,11 +682,6 @@ export const LetterCellView = memo(function LetterCellView({
   // — see `Grid.tsx#computeIncomingArrows`.
   incomingArrows?: readonly IncomingArrow[];
   inputRef: Ref<HTMLInputElement>;
-  // True when the device is touch-primary (coarse pointer + no hover).
-  // Grid reads this once via `useTouchPrimary()` and threads it down so
-  // the cell input renders `inputMode="none"`, suppressing the OS soft
-  // keyboard. Phase 3 of ADR-0002 §4 mobile rollout introduces the
-  // replacement on-screen panel.
   touchPrimary: boolean;
   onClick: (e: MouseEvent<HTMLDivElement>) => void;
   onKeyDown: (e: KeyboardEvent<HTMLInputElement>) => void;
