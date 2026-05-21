@@ -1,5 +1,6 @@
 import { render, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
+import type { Puzzle } from '@/domain';
 import type { Clue } from '@/ui/components/grid/useGridNavigation';
 import { MobileKeyboard } from '@/ui/components/keyboard';
 
@@ -20,6 +21,17 @@ const stubClue = (text: string, len: number): Clue => ({
   })),
 });
 
+const stubPuzzle: Puzzle = {
+  id: 'test',
+  title: 't',
+  language: 'fr',
+  width: 5,
+  height: 5,
+  hintsAllowed: 3,
+  hintsRemaining: 3,
+  cells: [],
+};
+
 const fullProps = {
   onLetter: noop,
   onBackspace: noop,
@@ -36,6 +48,12 @@ const fullProps = {
   getFocusedCell: () => ({ row: 0, column: 0, isLocked: false }),
   getEntryAt: () => '',
   focusedPosition: null as { row: number; col: number } | null,
+  puzzle: stubPuzzle,
+  scale: 1,
+  positionX: 0,
+  positionY: 0,
+  contentWidth: 200,
+  contentHeight: 200,
 };
 
 describe('MobileKeyboard letters + backspace', () => {
@@ -87,18 +105,22 @@ describe('MobileKeyboard banner + action row + direction', () => {
     expect(getByText('Fruit')).toBeTruthy();
   });
 
-  it('renders the direction key in the bottom row', () => {
-    const { getByLabelText } = render(<MobileKeyboard {...fullProps} />);
-    expect(getByLabelText('Changer de sens')).toBeTruthy();
+  it('does not render a direction-toggle key in the bottom row (handled by banner alt-chip)', () => {
+    const { queryByLabelText } = render(<MobileKeyboard {...fullProps} />);
+    expect(queryByLabelText('Changer de sens')).toBeNull();
   });
 
-  it('clicking the direction key calls onToggleDirection', () => {
-    const onToggleDirection = vi.fn();
-    const { getByLabelText } = render(
-      <MobileKeyboard {...fullProps} onToggleDirection={onToggleDirection} />,
-    );
-    fireEvent.click(getByLabelText('Changer de sens'));
-    expect(onToggleDirection).toHaveBeenCalled();
+  it('renders the Indice button in the bottom row next to backspace', () => {
+    const { getByLabelText, getAllByRole } = render(<MobileKeyboard {...fullProps} />);
+    const hintBtn = getByLabelText(/Demander un indice/);
+    const eraseBtn = getByLabelText('Effacer');
+    expect(hintBtn).toBeTruthy();
+    expect(eraseBtn).toBeTruthy();
+    // Indice should immediately precede Effacer in the DOM order (same row).
+    const buttons = getAllByRole('button');
+    const hintIdx = buttons.indexOf(hintBtn);
+    const eraseIdx = buttons.indexOf(eraseBtn);
+    expect(eraseIdx).toBe(hintIdx + 1);
   });
 
   it('clicking the hint button calls onRequestHint', () => {

@@ -85,6 +85,10 @@ const viewportWrapperStyles = css({
   gap: { base: '12px', md: '18px' },
   flex: '1 1 0',
   minHeight: 0,
+  // Touch-primary devices: drop horizontal padding so the grid hits viewport edges (bigger cells, bigger fonts).
+  '@media (any-pointer: coarse) and (any-hover: none)': {
+    paddingInline: 0,
+  },
 });
 
 // Same visually-hidden-on-blur, pinned-chip-on-focus pattern as the
