@@ -1390,4 +1390,31 @@ describe('Grid mounts MobileKeyboard on touch-primary', () => {
       window.matchMedia = original;
     }
   });
+
+  it('Grid forwards hint props into MobileKeyboard when touch-primary', () => {
+    const original = window.matchMedia;
+    setTouchPrimary(true);
+    try {
+      const onRequestHint = vi.fn();
+      const getFocusedCell = vi
+        .fn()
+        .mockReturnValue({ row: 1, column: 1, isLocked: false });
+      const { container, getByLabelText } = render(
+        <Grid
+          puzzle={TEST_PUZZLE}
+          hintRemaining={2}
+          hintAllowed={3}
+          hintExhausted={false}
+          hintPending={false}
+          onRequestHint={onRequestHint}
+          getFocusedCell={getFocusedCell}
+        />,
+      );
+      click(inputAt(container, 1, 1)!);
+      fireEvent.click(getByLabelText(/Demander un indice/));
+      expect(onRequestHint).toHaveBeenCalledWith(1, 1);
+    } finally {
+      window.matchMedia = original;
+    }
+  });
 });
