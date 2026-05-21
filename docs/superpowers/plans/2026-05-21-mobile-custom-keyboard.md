@@ -17,11 +17,13 @@
 - **Command dispatch shape.** Spec described a `Command` discriminated union routed through a single `dispatch(cmd)` function. The plan delivers the same outcome with named methods on the `GridNavigation` interface (`enterLetter`, `eraseLetter`, `cycleClue`, plus the existing `toggleDirection`). Same execution path; one less layer of indirection. The methods are callable from both DOM event adapters and button clicks, which is what the spec required.
 - **Focused-cell-locked is read imperatively, not threaded as a reactive prop.** ADR-0002 §4 (uncontrolled-input contract) and the existing `HintControl` pattern (see comment at `HintControl.tsx:7`) keep per-cell state out of the React tree to avoid re-renders on every focus change. `MobileKeyboard` follows the same pattern: it accepts a `getFocusedCell: () => FocusedCell | null` callback that the route provides, and the hint button calls it at click time rather than reading a reactive prop.
 
-## Pinch-zoom: grid zooms, keyboard does not
+## Pinch-zoom: grid zooms, keyboard does not — no special code needed
 
-The grid is pinch-zoomable (via `react-zoom-pan-pinch`) and that must keep working with the keyboard mounted. The keyboard itself stays at **fixed CSS size and visual-viewport-bottom anchoring** — it is out of the pinch-zoom mechanism. When the user pinches the grid, glyphs zoom; the keyboard panel does not scale.
+The grid is pinch-zoomable via `react-zoom-pan-pinch`'s `TransformWrapper` (see comment at `Grid.tsx:155-162`). The library applies a CSS transform **only inside** the wrapper. The `MobileKeyboard` panel is mounted at `position: fixed; insetBlockEnd: 0`, **outside** the wrapper subtree. Net effect: grid pinch scales the grid contents; the keyboard panel is unaffected because it never receives that transform.
 
-`CurrentCluePanel.tsx` already solves the inverse problem (top-anchored, counter-scaled) with `useVisualViewportZoom` (lines 304–347). The same machinery applies here, just anchored to the bottom. Phase 3 Task 6 below extracts the helper into a shared module and wires the keyboard panel through it.
+Browser-level page pinch (different mechanism — `window.visualViewport` zoom) is allowed by the viewport meta tag for WCAG 1.4.4 compliance. If a user pinches the page, every element including the keyboard scales naturally — which is the *correct* accessibility behaviour for a low-vision user who wants the keyboard glyphs bigger. We deliberately do not counter-scale.
+
+`CurrentCluePanel`'s `useVisualViewportZoom` (`CurrentCluePanel.tsx:304-347`) solves a different problem: a *sticky-top* element needs to be re-anchored to the visual-viewport top during browser pinch, otherwise scrolling can push it off-screen. A bottom-anchored fixed element does not have this issue — `insetBlockEnd: 0` always reaches the bottom of the layout viewport, which is what we want.
 
 ---
 
@@ -1055,217 +1057,7 @@ git add frontend/src/ui/components/keyboard/MobileKeyboard.tsx frontend/src/ui/c
 git commit -s -m "feat(frontend-keyboard): publish panel height; reserve grid space"
 ```
 
-### Task 6: Pinch-zoom anchoring — extract `useVisualViewportZoom` and bottom-anchor the panel
-
-**Goal:** During pinch-zoom on iOS Safari (and the equivalent Android behaviour), `position: fixed` elements scale along with the visual viewport. The grid is meant to zoom, but the keyboard panel must remain at its native CSS size, anchored to the **bottom** of the visual viewport. `CurrentCluePanel` already does this for the top edge; we extract the helper and reuse it.
-
-**Files:**
-- Create: `frontend/src/ui/components/grid/useVisualViewportZoom.ts`
-- Modify: `frontend/src/ui/components/grid/CurrentCluePanel.tsx` (delete the local copy; import from the new module)
-- Modify: `frontend/src/ui/components/keyboard/MobileKeyboard.tsx`
-- Test: `frontend/tests/use-visual-viewport-zoom.test.tsx`, `frontend/tests/mobile-keyboard.test.tsx`
-
-- [ ] **Step 1: Extract the helper**
-
-Move the body of `useVisualViewportZoom` currently inside `CurrentCluePanel.tsx` (lines 304-347) into a new module:
-
-```tsx
-// frontend/src/ui/components/grid/useVisualViewportZoom.ts
-import { useEffect, useState } from 'react';
-
-export type ZoomedStyle = {
-  position: 'fixed';
-  left: 0;
-  right: 0;
-  transform: string;
-  transformOrigin: 'top left' | 'bottom left';
-} & ({ top: 0; bottom?: never } | { bottom: 0; top?: never });
-
-export type Anchor = 'top' | 'bottom';
-
-export function useVisualViewportZoom(anchor: Anchor = 'top'): ZoomedStyle | undefined {
-  const [style, setStyle] = useState<ZoomedStyle | undefined>(undefined);
-  useEffect(() => {
-    if (typeof window === 'undefined' || !window.visualViewport) return;
-    const vv = window.visualViewport;
-    let raf = 0;
-    const update = () => {
-      raf = 0;
-      if (vv.scale <= 1.001) {
-        setStyle(undefined);
-        return;
-      }
-      const invScale = 1 / vv.scale;
-      if (anchor === 'top') {
-        setStyle({
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          transform: `translate(${vv.offsetLeft}px, ${vv.offsetTop}px) scale(${invScale})`,
-          transformOrigin: 'top left',
-        });
-      } else {
-        const layoutVisibleBottom = vv.offsetTop + vv.height;
-        setStyle({
-          position: 'fixed',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          transform: `translate(${vv.offsetLeft}px, calc(${layoutVisibleBottom}px - 100%)) scale(${invScale})`,
-          transformOrigin: 'bottom left',
-        });
-      }
-    };
-    const schedule = () => { if (!raf) raf = requestAnimationFrame(update); };
-    vv.addEventListener('scroll', schedule);
-    vv.addEventListener('resize', schedule);
-    update();
-    return () => {
-      cancelAnimationFrame(raf);
-      vv.removeEventListener('scroll', schedule);
-      vv.removeEventListener('resize', schedule);
-    };
-  }, [anchor]);
-  return style;
-}
-```
-
-Bottom-anchor math note: when scale > 1, we want the panel to sit at the visual viewport's bottom edge (`vv.offsetTop + vv.height` in layout pixels — that's where the user can see), counter-scaled by `1/scale` to compensate for the visual viewport's zoom factor. `transform: translate(x, calc(${y}px - 100%))` puts the element's bottom edge at `y` (because `100%` resolves to the element's own height *before* the transform, and `transformOrigin: bottom left` anchors the scale to the bottom edge).
-
-- [ ] **Step 2: Migrate `CurrentCluePanel` to the shared helper**
-
-In `frontend/src/ui/components/grid/CurrentCluePanel.tsx`:
-1. Delete the local `ZoomedStyle` type and `useVisualViewportZoom` function (lines 304-347).
-2. Import the shared helper: `import { useVisualViewportZoom } from './useVisualViewportZoom';`
-3. The existing call site already does `const zoomStyle = useVisualViewportZoom();` — keep it as-is (defaults to `'top'`).
-
-- [ ] **Step 3: Run existing CurrentCluePanel tests**
-
-```sh
-cd frontend && pnpm test -- grid-input grid-presence
-```
-
-Expected: PASS. The extraction is behaviour-preserving for the existing call site.
-
-- [ ] **Step 4: Write a failing test for `MobileKeyboard` pinch-zoom handling**
-
-Append to `frontend/tests/mobile-keyboard.test.tsx`:
-
-```tsx
-it('applies counter-scale transform during pinch-zoom and anchors to bottom', async () => {
-  const listeners: { ev: 'scroll' | 'resize'; cb: () => void }[] = [];
-  type VVStub = {
-    scale: number;
-    offsetTop: number;
-    offsetLeft: number;
-    height: number;
-    width: number;
-    addEventListener: (ev: 'scroll' | 'resize', cb: () => void) => void;
-    removeEventListener: (ev: 'scroll' | 'resize', cb: () => void) => void;
-  };
-  const vv: VVStub = {
-    scale: 1,
-    offsetTop: 0,
-    offsetLeft: 0,
-    height: 800,
-    width: 360,
-    addEventListener: (ev, cb) => { listeners.push({ ev, cb }); },
-    removeEventListener: (ev, cb) => {
-      const i = listeners.findIndex((l) => l.ev === ev && l.cb === cb);
-      if (i >= 0) listeners.splice(i, 1);
-    },
-  };
-  Object.defineProperty(window, 'visualViewport', { value: vv, configurable: true, writable: true });
-
-  const { container, rerender } = render(
-    <MobileKeyboard
-      onLetter={() => undefined}
-      onBackspace={() => undefined}
-      onToggleDirection={() => undefined}
-      onPrevClue={() => undefined}
-      onNextClue={() => undefined}
-      onRequestHint={() => undefined}
-      getFocusedCell={() => null}
-      activeClue={null}
-      alternateClue={null}
-      hintRemaining={3}
-      hintAllowed={3}
-      hintExhausted={false}
-      hintPending={false}
-    />,
-  );
-  const panel = container.querySelector('[role="group"]') as HTMLElement;
-  expect(panel.style.transform).toBe('');
-
-  vv.scale = 2;
-  vv.offsetTop = 0;
-  vv.height = 400;
-  listeners.forEach((l) => l.cb());
-  await new Promise((r) => requestAnimationFrame(() => r(null)));
-  rerender(/* same props */ <MobileKeyboard
-    onLetter={() => undefined}
-    onBackspace={() => undefined}
-    onToggleDirection={() => undefined}
-    onPrevClue={() => undefined}
-    onNextClue={() => undefined}
-    onRequestHint={() => undefined}
-    getFocusedCell={() => null}
-    activeClue={null}
-    alternateClue={null}
-    hintRemaining={3}
-    hintAllowed={3}
-    hintExhausted={false}
-    hintPending={false}
-  />);
-  expect(panel.style.transform).toMatch(/scale\(0\.5\)/);
-});
-```
-
-- [ ] **Step 5: Wire the helper into `MobileKeyboard`**
-
-In `frontend/src/ui/components/keyboard/MobileKeyboard.tsx`:
-
-```tsx
-import { useVisualViewportZoom } from '@/ui/components/grid/useVisualViewportZoom';
-```
-
-Inside the component:
-
-```tsx
-const zoomStyle = useVisualViewportZoom('bottom');
-```
-
-Spread the style on the panel `<div>`:
-
-```tsx
-<div
-  ref={panelRef}
-  className={panel}
-  role="group"
-  aria-label="Clavier mots fléchés"
-  style={zoomStyle}
->
-```
-
-When `zoomStyle` is `undefined` (scale ≤ 1), the panel falls back to its CSS-defined `position: fixed; insetBlockEnd: 0`. When pinched, the inline style takes over.
-
-- [ ] **Step 6: Run the tests**
-
-```sh
-cd frontend && pnpm test -- mobile-keyboard use-visual-viewport-zoom
-```
-
-Expected: PASS.
-
-- [ ] **Step 7: Commit**
-
-```sh
-git add frontend/src/ui/components/grid/useVisualViewportZoom.ts frontend/src/ui/components/grid/CurrentCluePanel.tsx frontend/src/ui/components/keyboard/MobileKeyboard.tsx frontend/tests/mobile-keyboard.test.tsx
-git commit -s -m "feat(frontend-keyboard): bottom-anchor panel during pinch-zoom"
-```
-
-### Task 7: Open Phase 3 PR
+### Task 6: Open Phase 3 PR
 
 - [ ] **Step 1: Push the branch**
 
@@ -1281,14 +1073,14 @@ gh pr create --title "feat(frontend-keyboard): MobileKeyboard letters + backspac
 - AZERTY letter layout data + `KeyboardKey` button primitive + `MobileKeyboard` shell mounted at the bottom of the grid on touch-primary devices.
 - Wires letter taps → `nav.enterLetter`; backspace → `nav.eraseLetter` (both from Phase 1).
 - Panel publishes its height as `--mobile-kb-height` so the grid container reserves space.
-- Pinch-zoom: grid contents scale; panel stays at native CSS size, anchored to the visual viewport bottom via the shared `useVisualViewportZoom` helper (extracted from `CurrentCluePanel`).
+- Grid pinch-zoom (react-zoom-pan-pinch) keeps working — the keyboard panel mounts outside the TransformWrapper subtree so the grid's CSS transform doesn't touch it. No counter-scale code needed; browser-level page pinch (rare on mobile, when used it's a WCAG 1.4.4 accessibility action) scales the keyboard along with everything else, which is the correct behaviour.
 - Phase 3 of the mobile custom keyboard rollout. Together with Phase 2, this makes touch-primary devices solvable again through the custom panel.
 
 ## Test plan
-- [ ] `pnpm test -- mobile-keyboard keyboard-key azerty-layout grid-input use-visual-viewport-zoom` green.
+- [ ] `pnpm test -- mobile-keyboard keyboard-key azerty-layout grid-input` green.
 - [ ] `pnpm typecheck` green.
 - [ ] Manual (mobile Safari devtools, iPhone 13 preset): tap a cell → panel sits at viewport bottom; tap A → letter lands; tap backspace → letter clears.
-- [ ] Manual (mobile Safari, real device, pinch-zoom): grid contents enlarge; keyboard stays at native size, glued to the bottom of the visible area.
+- [ ] Manual (mobile Safari, real device, grid pinch via react-zoom-pan-pinch): grid contents enlarge; keyboard stays put at the bottom, unchanged size.
 - [ ] Manual (desktop): panel absent; OS keyboard never expected; behavior unchanged.
 EOF
 )"
@@ -2619,8 +2411,8 @@ EOF
 
 Run through this before handoff:
 
-- **Spec coverage.** Walk each spec section. Banner empty state → Phase 4 Task 1. AZERTY layout → Phase 3 Task 1. Touch-primary detection → Phase 2 Task 1. Command extraction → Phase 1. CurrentCluePanel removal → Phase 5 Task 1. HintControl removal → Phase 5 Task 2. WCAG tap targets → Phase 6 Task 2. Manual device pass → Phase 6 Task 4. Pinch-zoom anchoring → Phase 3 Task 6. All covered.
-- **Type consistency.** `enterLetter`, `eraseLetter`, `cycleClue` signatures are identical across phases. `MobileKeyboardProps` evolves additively (Phase 3 → Phase 4) without breaking earlier callers; `getFocusedCell` replaces `focusedCellLocked` in Phase 4 Task 4 with the change applied consistently in both component code and tests. `useTouchPrimary` returns `boolean` everywhere. `useVisualViewportZoom(anchor)` is the same API in CurrentCluePanel (top, default) and MobileKeyboard (bottom).
+- **Spec coverage.** Walk each spec section. Banner empty state → Phase 4 Task 1. AZERTY layout → Phase 3 Task 1. Touch-primary detection → Phase 2 Task 1. Command extraction → Phase 1. CurrentCluePanel removal → Phase 5 Task 1. HintControl removal → Phase 5 Task 2. WCAG tap targets → Phase 6 Task 2. Manual device pass → Phase 6 Task 4. Pinch-zoom: structurally solved by mounting the keyboard outside the `react-zoom-pan-pinch` `TransformWrapper`; no per-task work required.
+- **Type consistency.** `enterLetter`, `eraseLetter`, `cycleClue` signatures are identical across phases. `MobileKeyboardProps` evolves additively (Phase 3 → Phase 4) without breaking earlier callers; `getFocusedCell` replaces `focusedCellLocked` in Phase 4 Task 4 with the change applied consistently in both component code and tests. `useTouchPrimary` returns `boolean` everywhere.
 - **No placeholders.** Every test has real code. Every implementation has real code. No "implement appropriate X" or "handle edge cases" — each step shows what to write.
 - **MANIFESTO alignment.**
   - **TDD red-green-refactor** ✓ except Phase 1 (pure refactor — existing suite IS the regression guard, no new tests needed) and Phase 5 Task 2 (gating logic is structural; the test is documentation-by-example).
