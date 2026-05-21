@@ -19,12 +19,14 @@ import { TimerPill } from './TimerPill';
 // label for narrow viewports — the mockup uses "n°142" on mobile and
 // "Grille du jour · n°142 · facile" on desktop.
 
+// touchAction: 'none' — keyboard-mounted exception to ADR-0016 §3 (see 2026-05-22 amendment).
 const toolbarStyles = css({
   display: 'grid',
   gridTemplateColumns: '1fr auto 1fr',
   alignItems: 'center',
   gap: '12px',
   width: '100%',
+  touchAction: 'none',
 });
 
 const leftSlotStyles = css({
