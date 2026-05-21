@@ -123,6 +123,18 @@ export function MobileKeyboard(props: MobileKeyboardProps) {
     contentHeight,
   } = props;
 
+  // One-shot reset of locked visual-viewport zoom; reverts within one frame to honor ADR-0016 §2.
+  useEffect(() => {
+    const viewport = document.querySelector<HTMLMetaElement>('meta[name="viewport"]');
+    if (!viewport) return;
+    const initial = viewport.getAttribute('content') ?? '';
+    viewport.setAttribute('content', `${initial}, maximum-scale=1`);
+    const raf = requestAnimationFrame(() => {
+      viewport.setAttribute('content', initial);
+    });
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
   const panelRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
     const el = panelRef.current;
