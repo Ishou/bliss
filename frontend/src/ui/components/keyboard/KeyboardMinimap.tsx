@@ -4,7 +4,6 @@ import type { Puzzle } from '@/domain';
 import { computeViewportRect } from '@/ui/components/grid/transformMath';
 import { positionKey } from '@/ui/components/grid/positionKey';
 
-// Resolved color literals — mirror GridMinimap.tsx (kept in sync intentionally).
 const FILL_BLOCK = '#e0d8c4';
 const FILL_LETTER = '#ffffff';
 const FILL_DEFINITION = '#fbedd0';
@@ -58,8 +57,7 @@ export function KeyboardMinimap({
     const m = new Map<string, (typeof puzzle.cells)[number]>();
     for (const c of puzzle.cells) m.set(positionKey(c.position), c);
     return m;
-    // Only puzzle.cells is read; puzzle identity itself is irrelevant.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only puzzle.cells is read; puzzle object identity is irrelevant
   }, [puzzle.cells]);
 
   const cellRects = useMemo(() => {

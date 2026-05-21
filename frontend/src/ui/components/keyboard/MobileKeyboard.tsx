@@ -56,7 +56,6 @@ export interface MobileKeyboardProps {
   readonly getEntryAt: (row: number, col: number) => string;
   // The local user's focused cell — drives the rose underline on the active-clue letter preview.
   readonly focusedPosition: { row: number; col: number } | null;
-  // Puzzle + live transform state feed the in-panel KeyboardMinimap (action-row slot).
   readonly puzzle: Puzzle;
   readonly scale: number;
   readonly positionX: number;
