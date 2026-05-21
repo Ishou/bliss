@@ -664,6 +664,28 @@ export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOpt
     [bumpEntries, focusCell, lookup],
   );
 
+  const cycleClue = useCallback(
+    (step: 1 | -1) => {
+      const { focused: f, direction: dir } = stateRef.current;
+      const clues = lookup.orderedClues;
+      if (clues.length === 0) return;
+      let nextClue: Clue;
+      if (!f) {
+        nextClue = step === -1 ? clues[clues.length - 1] : clues[0];
+      } else {
+        const here = lookup.cluesAt(f.row, f.col);
+        const current = here.find((h) => h.direction === dir) ?? here[0];
+        const currentIdx = current ? clues.indexOf(current) : -1;
+        const baseIdx = currentIdx < 0 ? (step === -1 ? 0 : -1) : currentIdx;
+        const nextIdx = (baseIdx + step + clues.length) % clues.length;
+        nextClue = clues[nextIdx];
+      }
+      if (nextClue.direction !== stateRef.current.direction) setDirection(nextClue.direction);
+      focusCell(nextClue.cells[0].position);
+    },
+    [focusCell, lookup],
+  );
+
   const eraseLetter = useCallback(() => {
     const { focused: f, direction: dir } = stateRef.current;
     if (!f) return;
@@ -707,37 +729,7 @@ export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOpt
       // this hook is embedded in a form.
       if (k === 'Tab' || k === 'Enter') {
         event.preventDefault();
-        const clues = lookup.orderedClues;
-        if (clues.length === 0) return;
-        let nextClue: Clue;
-        if (!f) {
-          // No current focus — Shift jumps to the last word, plain to the
-          // first. Keeps the keyboard-first user from getting stuck when
-          // they Tab into the grid before clicking any cell.
-          nextClue = event.shiftKey ? clues[clues.length - 1] : clues[0];
-        } else {
-          // Locate the current word. Prefer the clue matching the active
-          // direction (the same rule `currentClue` uses); fall back to any
-          // clue passing through the focused cell so a stale `direction`
-          // doesn't strand the cycle. If no clue covers the focused cell
-          // at all (defensive — shouldn't happen for letter cells), step
-          // from "before the first / after the last" so the wrap math
-          // still lands somewhere sensible.
-          const here = lookup.cluesAt(f.row, f.col);
-          const current = here.find((h) => h.direction === dir) ?? here[0];
-          const currentIdx = current ? clues.indexOf(current) : -1;
-          const step = event.shiftKey ? -1 : 1;
-          const baseIdx = currentIdx < 0 ? (event.shiftKey ? 0 : -1) : currentIdx;
-          // Modulo-with-wrap (works for negative steps too).
-          const nextIdx = (baseIdx + step + clues.length) % clues.length;
-          nextClue = clues[nextIdx];
-        }
-        // Direction first so the new cell's `currentClue` resolves to the
-        // word we just jumped TO, not the perpendicular clue that may
-        // also pass through its starting cell. React 18 batches the
-        // setDirection + setFocused inside this handler into one render.
-        if (nextClue.direction !== dir) setDirection(nextClue.direction);
-        focusCell(nextClue.cells[0].position);
+        cycleClue(event.shiftKey ? -1 : 1);
         return;
       }
       if (!f) return;
@@ -791,7 +783,7 @@ export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOpt
         }
       }
     },
-    [enterLetter, eraseLetter, focusCell, lookup, moveByVector],
+    [cycleClue, enterLetter, eraseLetter, focusCell, lookup, moveByVector],
   );
 
   const handleInput = useCallback(
@@ -945,6 +937,7 @@ export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOpt
     toggleDirection,
     enterLetter,
     eraseLetter,
+    cycleClue,
     getEntryAt,
     localCursor,
     applyRemoteCellUpdate,
