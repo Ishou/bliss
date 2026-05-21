@@ -34,11 +34,11 @@ const overlayContainer = css({
 });
 
 const panelContainer = css({
-  // Panel variant: aspect-preserving slot inside the keyboard action row (44px tall, cap 160px wide).
+  // Panel variant: fills the 64x64 cell of the 3x3 nav block (letterboxed via SVG aspect).
   flex: 1,
   minWidth: 0,
-  maxWidth: '160px',
-  height: '44px',
+  width: '100%',
+  height: '100%',
   display: 'inline-flex',
   alignItems: 'center',
   justifyContent: 'center',
@@ -52,9 +52,8 @@ const panelContainer = css({
 
 const panelSvg = css({
   display: 'block',
+  width: '100%',
   height: '100%',
-  width: 'auto',
-  maxWidth: '100%',
 });
 
 // Resolved color literals for SVG fill attributes.
