@@ -34,7 +34,7 @@ export function MobileKeyboard({ onLetter, onBackspace }: MobileKeyboardProps) {
   useEffect(() => {
     const el = panelRef.current;
     if (!el) return;
-    // Publish initial height so consumers (grid max-height) reserve space even when ResizeObserver is absent.
+    // Publish initial height before ResizeObserver fires so consumers reserve space correctly.
     const publish = () => {
       const h = Math.ceil(el.getBoundingClientRect().height);
       document.documentElement.style.setProperty('--mobile-kb-height', `${h}px`);
