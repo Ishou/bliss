@@ -214,6 +214,54 @@ describe('MobileKeyboard banner + action row + direction', () => {
   });
 });
 
+describe('MobileKeyboard viewport zoom reset on mount', () => {
+  const BASELINE = 'width=device-width, initial-scale=1.0, viewport-fit=cover';
+
+  function withViewportMeta(content: string): HTMLMetaElement {
+    const existing = document.head.querySelector<HTMLMetaElement>('meta[name="viewport"]');
+    if (existing) {
+      existing.setAttribute('content', content);
+      return existing;
+    }
+    const meta = document.createElement('meta');
+    meta.setAttribute('name', 'viewport');
+    meta.setAttribute('content', content);
+    document.head.appendChild(meta);
+    return meta;
+  }
+
+  it('briefly sets maximum-scale=1 on mount then restores baseline next frame', async () => {
+    const meta = withViewportMeta(BASELINE);
+    const rafQueue: FrameRequestCallback[] = [];
+    const origRaf = globalThis.requestAnimationFrame;
+    const origCancel = globalThis.cancelAnimationFrame;
+    globalThis.requestAnimationFrame = ((cb: FrameRequestCallback) => {
+      rafQueue.push(cb);
+      return rafQueue.length;
+    }) as typeof requestAnimationFrame;
+    globalThis.cancelAnimationFrame = (() => {}) as typeof cancelAnimationFrame;
+    try {
+      const { unmount } = render(<MobileKeyboard {...fullProps} />);
+      expect(meta.getAttribute('content')).toBe(`${BASELINE}, maximum-scale=1`);
+      const cb = rafQueue.shift();
+      expect(cb).toBeDefined();
+      cb!(performance.now());
+      expect(meta.getAttribute('content')).toBe(BASELINE);
+      unmount();
+    } finally {
+      globalThis.requestAnimationFrame = origRaf;
+      globalThis.cancelAnimationFrame = origCancel;
+      meta.remove();
+    }
+  });
+
+  it('is a no-op when no viewport meta exists', () => {
+    const existing = document.head.querySelector<HTMLMetaElement>('meta[name="viewport"]');
+    existing?.remove();
+    expect(() => render(<MobileKeyboard {...fullProps} />)).not.toThrow();
+  });
+});
+
 describe('MobileKeyboard arrow-key row', () => {
   it('renders the 4 cursor-arrow keys with French aria-labels', () => {
     const { getByLabelText } = render(<MobileKeyboard {...fullProps} />);

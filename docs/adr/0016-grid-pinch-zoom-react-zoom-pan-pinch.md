@@ -231,3 +231,69 @@ configuration. Re-evaluate the deviation if either (a) `PuzzleToolbar`,
 `MobileKeyboard`, or the grid route's `<main>` start carrying long-form
 text content, or (b) the suppressed elements ever render on non-grid
 routes.
+
+## Amendment 2026-05-22c — momentary viewport-meta reset on MobileKeyboard mount
+
+### Problem
+
+When a user pinches to zoom on a route where native browser pinch is
+allowed (e.g. the home `/` route, where no `touch-action: none` applies),
+then navigates to the grid route, the visual-viewport zoom level carries
+over. Because the 2026-05-22 amendment applied `touch-action: none` to all
+page chrome surrounding the grid, no pinch path to unzoom exists on the
+grid route — the user is stuck at the zoom level set on the previous route.
+
+iOS Safari exposes no JS setter for `visualViewport.scale`. The only
+reliable cross-browser mechanism to programmatically reset zoom is the
+viewport-meta double-set technique: briefly append `maximum-scale=1` to
+the viewport `content` attribute (forcing the browser to re-evaluate and
+snap zoom to 1), then immediately revert to the original value.
+
+### The exception
+
+When `MobileKeyboard` mounts (indicating touch-primary on a grid route):
+
+1. The viewport meta `content` is temporarily extended with
+   `, maximum-scale=1`.
+2. On the next `requestAnimationFrame` — at most one frame (~16 ms) later
+   — the attribute is restored to its original value verbatim.
+
+The `maximum-scale=1` state is held for **at most one animation frame**.
+It never persists past the mount effect. The `rAF` handle is cancelled in
+the `useEffect` cleanup, preventing a stale restore if the component
+unmounts before the frame fires.
+
+### Why this does not violate WCAG 1.4.4
+
+ADR-0016 §2 and §3 forbid `maximum-scale=1` as a long-lived viewport-meta
+value because it persistently blocks browser zoom, causing a WCAG AA
+failure. The prohibition is about **persistent suppression** of the user's
+ability to resize text; it is not duration-gated only because no prior use
+case required a transient exception.
+
+A one-frame transient reset carries zero real a11y impact:
+
+- The forbidden state lasts at most one `rAF` cycle before reverting.
+- Browser zoom level, iOS Display & Text Size, iOS Zoom, and Android
+  Magnification remain fully available throughout and after the reset.
+- The interaction window is too short (~16 ms) for a user gesture to land
+  during it.
+- Pinch on `AppHeader`, `Footer`, and all non-grid routes is unaffected.
+
+### Rationale
+
+The double-set technique is the canonical iOS Safari workaround for locked
+visual-viewport zoom across route transitions. It is used by major SPA
+frameworks when conditional pinch suppression is required. No alternative
+JS mechanism exists that does not depend on a user gesture.
+
+### Constraints
+
+- The double-set runs **only** when `MobileKeyboard` mounts (touch-primary,
+  grid route). It does not run on other routes, on pointer-primary devices,
+  or on subsequent renders.
+- The original viewport `content` value is captured before the set and
+  restored verbatim; no `maximum-scale` or `user-scalable` tokens are left
+  in the attribute after the revert.
+- Re-evaluate this exception if the mount-time reset must run outside the
+  `MobileKeyboard` component or on non-grid routes.
