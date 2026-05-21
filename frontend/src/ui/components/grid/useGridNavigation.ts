@@ -65,6 +65,8 @@ export interface GridNavigation {
   readonly cycleClue: (step: 1 | -1) => void;
   // Imperative cursor step; same semantics as the physical ArrowX handlers (flip-then-step).
   readonly moveCursor: (direction: 'left' | 'right' | 'up' | 'down') => void;
+  // True when (row, col) is in the parent's validation set; surfaced so letter previews can paint green.
+  readonly isCellValidated: (row: number, col: number) => boolean;
   // Reads the player's current letter at (row, col) — '' when the cell
   // is empty. The callback identity changes whenever any letter
   // changes (per the version counter inside the hook), so React
@@ -286,6 +288,8 @@ export interface UseGridNavigationOptions {
   // Read as a getter (not a value) so the gesture state stays
   // synchronous; useGridNavigation re-evaluates on each event.
   readonly isPanning?: () => boolean;
+  // Validation-set predicate from the parent (Grid). Solo callers omit; default returns false.
+  readonly isCellValidated?: (row: number, col: number) => boolean;
 }
 
 // Formats the polite announcement emitted once each time the user enters a
@@ -336,6 +340,9 @@ export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOpt
   // arrow don't churn the handler identities below.
   const isPanningRef = useRef(options?.isPanning);
   isPanningRef.current = options?.isPanning;
+  // Validation-set predicate; ref so an inline arrow at the call site doesn't churn identities.
+  const isCellValidatedRef = useRef(options?.isCellValidated);
+  isCellValidatedRef.current = options?.isCellValidated;
   // Tracks the per-cell normalized (uppercase) value so handleInput can
   // detect same-letter no-ops. The browser overwrites target.value with the
   // raw IME character before handleInput fires, making a simple before/after
@@ -951,6 +958,12 @@ export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOpt
     ? { position: focused, direction }
     : null;
 
+  // Stable accessor; reads through to the live ref so callers see the parent's current validation set.
+  const isCellValidated = useCallback(
+    (row: number, col: number) => isCellValidatedRef.current?.(row, col) ?? false,
+    [],
+  );
+
   return {
     registerCellRef,
     highlightFor,
@@ -967,6 +980,7 @@ export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOpt
     eraseLetter,
     cycleClue,
     moveCursor,
+    isCellValidated,
     getEntryAt,
     localCursor,
     applyRemoteCellUpdate,
