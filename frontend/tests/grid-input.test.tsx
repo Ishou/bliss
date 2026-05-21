@@ -1445,4 +1445,19 @@ describe('Grid mounts MobileKeyboard on touch-primary', () => {
       window.matchMedia = original;
     }
   });
+
+  it('on touch-primary, GridMinimap only mounts inside the MobileKeyboard panel (no overlay sibling)', () => {
+    const original = window.matchMedia;
+    setTouchPrimary(true);
+    try {
+      const r = render(<Grid puzzle={TEST_PUZZLE} />);
+      const panel = r.queryByRole('group', { name: 'Clavier mots fléchés' });
+      expect(panel).toBeTruthy();
+      const gridArea = r.getByTestId('grid-area');
+      const overlayMinimap = gridArea.querySelector('[aria-label*="Aperçu de la grille"]');
+      expect(overlayMinimap).toBeNull();
+    } finally {
+      window.matchMedia = original;
+    }
+  });
 });

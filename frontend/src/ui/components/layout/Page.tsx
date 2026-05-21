@@ -79,8 +79,8 @@ const viewportWrapperStyles = css({
   margin: '0 auto',
   paddingInline: { base: '16px', md: '20px' },
   paddingTop: { base: '12px', md: '20px' },
-  // Bottom reserves space for the fixed MobileKeyboard panel; var is 0 on desktop.
-  paddingBottom: { base: 'calc(12px + var(--mobile-kb-height, 0px))', md: 'calc(20px + var(--mobile-kb-height, 0px))' },
+  // Bottom reserves space for the fixed MobileKeyboard panel (only mounted on touch-primary); falls back to symmetric chrome padding when absent.
+  paddingBottom: { base: 'var(--mobile-kb-height, 12px)', md: 'var(--mobile-kb-height, 20px)' },
   display: 'flex',
   flexDirection: 'column',
   alignItems: 'center',
