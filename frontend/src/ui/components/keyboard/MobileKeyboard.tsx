@@ -34,21 +34,20 @@ const row = css({
 });
 
 // 3x3 D-pad: hint (TL), up, empty (TR) / left, minimap, right / prev (BL), down, next (BR).
+// Square 64px cells (>=44px WCAG target); block centers horizontally in the panel.
 const navBlock = css({
   display: 'grid',
-  gridTemplateColumns: 'repeat(3, 1fr)',
-  gridTemplateRows: 'repeat(3, auto)',
+  gridTemplateColumns: 'repeat(3, 64px)',
+  gridTemplateRows: 'repeat(3, 64px)',
   gap: '4px',
+  justifyContent: 'center',
   paddingBottom: '4px',
   borderBottom: '1px dashed token(colors.border)',
   marginBottom: '4px',
 });
 
-// Each cell is its own flex shell so KeyboardKey's `flex: 1` fills the track.
+// Each cell is its own flex shell so KeyboardKey's `flex: 1` fills the square track.
 const navCell = css({ display: 'flex', minWidth: 0 });
-
-// Transparent placeholder for (1,3) — reserves the track but is not interactive.
-const navCellEmpty = css({ minHeight: '44px' });
 
 // Icon-only hint glyph; count stays accessible via the button's aria-label.
 const hintIconStyles = css({
@@ -187,7 +186,7 @@ export function MobileKeyboard(props: MobileKeyboardProps) {
             onPress={() => onMoveCursor('up')}
           />
         </div>
-        <div className={`${navCell} ${navCellEmpty}`} aria-hidden />
+        <div className={navCell} aria-hidden />
         <div className={navCell}>
           <KeyboardKey
             label="←"
@@ -222,7 +221,7 @@ export function MobileKeyboard(props: MobileKeyboardProps) {
         </div>
         <div className={navCell}>
           <KeyboardKey
-            label="◀ Préc."
+            label="◀"
             ariaLabel="Indice précédent"
             variant="action"
             onPress={onPrevClue}
@@ -238,7 +237,7 @@ export function MobileKeyboard(props: MobileKeyboardProps) {
         </div>
         <div className={navCell}>
           <KeyboardKey
-            label="Suiv. ▶"
+            label="▶"
             ariaLabel="Indice suivant"
             variant="action"
             onPress={onNextClue}
