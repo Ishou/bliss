@@ -29,6 +29,9 @@ const row = css({
   justifyContent: 'center',
 });
 
+// Arrow row keys claim equal 25% width so the four glyphs span the full panel width.
+const arrowKeyWrapper = css({ flex: '1 1 0', minWidth: 0, display: 'flex' });
+
 const hintLabel = css({
   display: 'inline-flex',
   alignItems: 'center',
@@ -44,6 +47,8 @@ export interface MobileKeyboardProps {
   readonly onPrevClue: () => void;
   readonly onNextClue: () => void;
   readonly onRequestHint: () => void;
+  // Cursor step; flip-then-step semantics match the physical arrow keys.
+  readonly onMoveCursor: (direction: 'left' | 'right' | 'up' | 'down') => void;
   readonly activeClue: Clue | null;
   readonly alternateClue: Clue | null;
   readonly hintRemaining: number;
@@ -56,6 +61,8 @@ export interface MobileKeyboardProps {
   readonly getEntryAt: (row: number, col: number) => string;
   // The local user's focused cell — drives the rose underline on the active-clue letter preview.
   readonly focusedPosition: { row: number; col: number } | null;
+  // Validation-set predicate; absent means no cell is validated.
+  readonly isCellValidated?: (row: number, col: number) => boolean;
   readonly puzzle: Puzzle;
   readonly scale: number;
   readonly positionX: number;
@@ -72,6 +79,7 @@ export function MobileKeyboard(props: MobileKeyboardProps) {
     onPrevClue,
     onNextClue,
     onRequestHint,
+    onMoveCursor,
     activeClue,
     alternateClue,
     hintRemaining,
@@ -81,6 +89,7 @@ export function MobileKeyboard(props: MobileKeyboardProps) {
     getFocusedCell,
     getEntryAt,
     focusedPosition,
+    isCellValidated,
     puzzle,
     scale,
     positionX,
@@ -128,6 +137,7 @@ export function MobileKeyboard(props: MobileKeyboardProps) {
         onToggleDirection={onToggleDirection}
         getEntryAt={getEntryAt}
         focusedPosition={focusedPosition}
+        isCellValidated={isCellValidated}
       />
       <ActionRow
         onPrev={onPrevClue}
@@ -139,6 +149,40 @@ export function MobileKeyboard(props: MobileKeyboardProps) {
         contentWidth={contentWidth}
         contentHeight={contentHeight}
       />
+      <div className={row}>
+        <div className={arrowKeyWrapper}>
+          <KeyboardKey
+            label="←"
+            ariaLabel="Curseur gauche"
+            variant="action"
+            onPress={() => onMoveCursor('left')}
+          />
+        </div>
+        <div className={arrowKeyWrapper}>
+          <KeyboardKey
+            label="↑"
+            ariaLabel="Curseur haut"
+            variant="action"
+            onPress={() => onMoveCursor('up')}
+          />
+        </div>
+        <div className={arrowKeyWrapper}>
+          <KeyboardKey
+            label="↓"
+            ariaLabel="Curseur bas"
+            variant="action"
+            onPress={() => onMoveCursor('down')}
+          />
+        </div>
+        <div className={arrowKeyWrapper}>
+          <KeyboardKey
+            label="→"
+            ariaLabel="Curseur droite"
+            variant="action"
+            onPress={() => onMoveCursor('right')}
+          />
+        </div>
+      </div>
       {AZERTY_ROWS.map((letters, rowIdx) => (
         <div key={rowIdx} className={row}>
           {letters.map((ch) => (

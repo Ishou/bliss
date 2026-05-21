@@ -385,12 +385,19 @@ export function Grid({
   // fires React's onFocus / onBlur and pulls React state back in sync.
   const focusBeforePanRef = useRef<HTMLElement | null>(null);
 
+  // Stable predicate so the hook's isCellValidated accessor reads through to the latest set.
+  const isCellValidated = useCallback(
+    (row: number, col: number) => validatedPositions?.has(`${row},${col}`) ?? false,
+    [validatedPositions],
+  );
+
   const nav = useGridNavigation(puzzle, {
     onCellChange,
     onCellFilled,
     onFocusChange: onLocalFocusChange,
     getZoomScale,
     isPanning: isPanningGetter,
+    isCellValidated,
   });
 
   // Multiplayer presence map. The hook subscribes to `presenceUpdated`
@@ -975,6 +982,7 @@ export function Grid({
           alternateClue={nav.alternateClue}
           onSwitchDirection={nav.toggleDirection}
           getEntryAt={nav.getEntryAt}
+          isCellValidated={nav.isCellValidated}
         />
       ) : null}
       {/*
@@ -1222,6 +1230,7 @@ export function Grid({
           onToggleDirection={() => nav.toggleDirection()}
           onPrevClue={() => nav.cycleClue(-1)}
           onNextClue={() => nav.cycleClue(1)}
+          onMoveCursor={(d) => nav.moveCursor(d)}
           onRequestHint={() => {
             const cell = getFocusedCell!()!;
             onRequestHint!(cell.row, cell.column);
@@ -1229,6 +1238,7 @@ export function Grid({
           getFocusedCell={getFocusedCell ?? (() => null)}
           getEntryAt={nav.getEntryAt}
           focusedPosition={nav.localCursor?.position ?? null}
+          isCellValidated={nav.isCellValidated}
           activeClue={nav.currentClue}
           alternateClue={nav.alternateClue}
           hintRemaining={hintRemaining}

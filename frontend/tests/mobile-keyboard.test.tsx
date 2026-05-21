@@ -39,6 +39,7 @@ const fullProps = {
   onPrevClue: noop,
   onNextClue: noop,
   onRequestHint: noop,
+  onMoveCursor: noop as (d: 'left' | 'right' | 'up' | 'down') => void,
   activeClue: stubClue('Fruit', 5) as Clue | null,
   alternateClue: null as Clue | null,
   hintRemaining: 3,
@@ -194,5 +195,27 @@ describe('MobileKeyboard banner + action row + direction', () => {
   it('shows empty-state hint when activeClue is null', () => {
     const { getByText } = render(<MobileKeyboard {...fullProps} activeClue={null} />);
     expect(getByText(/Touchez une case/i)).toBeTruthy();
+  });
+});
+
+describe('MobileKeyboard arrow-key row', () => {
+  it('renders the 4 cursor-arrow keys with French aria-labels', () => {
+    const { getByLabelText } = render(<MobileKeyboard {...fullProps} />);
+    expect(getByLabelText('Curseur gauche')).toBeTruthy();
+    expect(getByLabelText('Curseur haut')).toBeTruthy();
+    expect(getByLabelText('Curseur bas')).toBeTruthy();
+    expect(getByLabelText('Curseur droite')).toBeTruthy();
+  });
+
+  it('clicking each arrow key calls onMoveCursor with the matching direction', () => {
+    const onMoveCursor = vi.fn();
+    const { getByLabelText } = render(
+      <MobileKeyboard {...fullProps} onMoveCursor={onMoveCursor} />,
+    );
+    fireEvent.click(getByLabelText('Curseur gauche'));
+    fireEvent.click(getByLabelText('Curseur haut'));
+    fireEvent.click(getByLabelText('Curseur bas'));
+    fireEvent.click(getByLabelText('Curseur droite'));
+    expect(onMoveCursor.mock.calls.map((c) => c[0])).toEqual(['left', 'up', 'down', 'right']);
   });
 });

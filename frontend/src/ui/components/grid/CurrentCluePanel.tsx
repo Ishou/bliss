@@ -246,6 +246,7 @@ export interface CurrentCluePanelProps {
   readonly alternateClue?: Clue | null;
   readonly onSwitchDirection?: () => void;
   readonly getEntryAt?: (row: number, col: number) => string;
+  readonly isCellValidated?: (row: number, col: number) => boolean;
 }
 
 const noEntries = () => '';
@@ -256,6 +257,7 @@ export function CurrentCluePanel({
   alternateClue = null,
   onSwitchDirection,
   getEntryAt = noEntries,
+  isCellValidated,
 }: CurrentCluePanelProps) {
   const zoomStyle = useVisualViewportZoom();
   const inlineStyle = zoomStyle ?? trackWidthStyle;
@@ -303,6 +305,7 @@ export function CurrentCluePanel({
           cells={clue.cells}
           focusedPosition={focusedPosition}
           getEntryAt={getEntryAt}
+          isCellValidated={isCellValidated}
         />
       </span>
       {alternateClue ? (
@@ -323,6 +326,7 @@ export function CurrentCluePanel({
               cells={alternateClue.cells}
               focusedPosition={focusedPosition}
               getEntryAt={getEntryAt}
+              isCellValidated={isCellValidated}
               muted
             />
           </span>

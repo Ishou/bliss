@@ -71,12 +71,32 @@ const empty = css({
   whiteSpace: 'nowrap',
 });
 
+// Invisible placeholder that reserves the same vertical space as a real block row.
+const blockPlaceholder = css({
+  display: 'flex',
+  alignItems: 'center',
+  gap: '8px',
+  minWidth: 0,
+  visibility: 'hidden',
+});
+
 export interface ClueBannerProps {
   readonly clue: Clue | null;
   readonly alternateClue: Clue | null;
   readonly onToggleDirection: () => void;
   readonly getEntryAt: (row: number, col: number) => string;
   readonly focusedPosition: { row: number; col: number } | null;
+  readonly isCellValidated?: (row: number, col: number) => boolean;
+}
+
+// One-glyph placeholder slot used inside the invisible alt row so it matches a real row's height.
+function AltPlaceholderRow() {
+  return (
+    <div className={blockPlaceholder} aria-hidden>
+      <span className={`${arrowGlyph} ${arrowGlyphMuted}`}>&nbsp;</span>
+      <span className={`${clueText} ${clueTextMuted}`}>&nbsp;</span>
+    </div>
+  );
 }
 
 export function ClueBanner({
@@ -85,13 +105,17 @@ export function ClueBanner({
   onToggleDirection,
   getEntryAt,
   focusedPosition,
+  isCellValidated,
 }: ClueBannerProps) {
   // Preserve the focused cell on tap: suppress mousedown's implicit focus shift.
   const handleAltMouseDown = useCallback((e: MouseEvent) => e.preventDefault(), []);
   if (!clue) {
     return (
       <div className={banner} aria-live="off">
-        <span className={empty}>Touchez une case pour commencer</span>
+        <div className={block}>
+          <span className={empty}>Touchez une case pour commencer</span>
+        </div>
+        <AltPlaceholderRow />
       </div>
     );
   }
@@ -112,6 +136,7 @@ export function ClueBanner({
           cells={clue.cells}
           focusedPosition={focusedPosition}
           getEntryAt={getEntryAt}
+          isCellValidated={isCellValidated}
         />
       </div>
       {alternateClue ? (
@@ -136,10 +161,13 @@ export function ClueBanner({
             cells={alternateClue.cells}
             focusedPosition={focusedPosition}
             getEntryAt={getEntryAt}
+            isCellValidated={isCellValidated}
             muted
           />
         </button>
-      ) : null}
+      ) : (
+        <AltPlaceholderRow />
+      )}
     </div>
   );
 }
