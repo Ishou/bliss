@@ -33,8 +33,7 @@ export interface HerbierCornerProps {
 
 const baseStyles = css({
   position: 'absolute',
-  // Hidden below `lg`: the 720px content wrapper fills the viewport at
-  // ≤1024px, leaving no margin and the doodle overlaps page H1s.
+  // Hidden below `lg`: 720px content wrapper fills the viewport, leaving no margin for the doodle.
   display: { base: 'none', lg: 'block' },
   width: '52px',
   height: '52px',

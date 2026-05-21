@@ -247,13 +247,7 @@ describe.skipIf(!existsSync(resolve(DIST, 'index.html')))(
       },
     );
 
-    // Guard against the burger-menu duplicate-id bug. `OverflowMenu`
-    // sets `lazyMount` on `Menu.Root` so the Portal never mounts during
-    // the closed-state prerender pass. Without it, the menu's
-    // positioner/content ship in dist HTML as a sibling of `#root`;
-    // hydration can't adopt the ghost, and on mobile the duplicate
-    // `aria-controls` id pulls the popover off-screen until a SPA
-    // navigation remounts the menu.
+    // lazyMount keeps the closed-state Portal out of prerendered HTML; without it duplicate ids break hydration on mobile.
     it.each(INDEXABLE_ROUTES)(
       'does not bake the burger-menu Portal into dist/$path',
       (route) => {
