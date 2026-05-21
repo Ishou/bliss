@@ -13,6 +13,9 @@ build/
 .claude/settings.local.json
 .claude/scheduled_tasks.lock
 
+# Superpowers brainstorming session artefacts (mockups, server state).
+.superpowers/
+
 # Helm: subchart tarballs are downloaded by `helm dependency update`
 # and reproduced from Chart.lock; never commit them.
 infra/*/charts/
