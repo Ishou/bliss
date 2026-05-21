@@ -100,4 +100,18 @@ describe('<ViewportPage>', () => {
       document.querySelector('main#main-content a[href="#main-content"]'),
     ).toBeNull();
   });
+
+  it('<main> carries touch-action: none class when suppressTouchAction is true (ADR-0016 amendment 2026-05-22)', async () => {
+    renderPage(<ViewportPage suppressTouchAction>body</ViewportPage>);
+    await screen.findByText('body');
+    const main = document.querySelector('main#main-content')!;
+    expect(main.className).toMatch(/\btch-a_none\b/);
+  });
+
+  it('<main> does not carry touch-action: none class by default', async () => {
+    renderPage(<ViewportPage>body</ViewportPage>);
+    await screen.findByText('body');
+    const main = document.querySelector('main#main-content')!;
+    expect(main.className).not.toMatch(/\btch-a_none\b/);
+  });
 });

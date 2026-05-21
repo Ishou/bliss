@@ -103,13 +103,20 @@ function focusFirstUnvalidatedCell(): void {
 const isMultiplayerEnabled = (): boolean =>
   import.meta.env.VITE_FEATURE_MULTIPLAYER === 'true';
 
-function PageShell({ children }: { children: React.ReactNode }) {
+function PageShell({
+  children,
+  suppressTouchAction,
+}: {
+  children: React.ReactNode;
+  suppressTouchAction?: boolean;
+}) {
   return (
     <ViewportPage
       skipLink={{
         label: 'Aller au mot fléché',
         onActivate: focusFirstUnvalidatedCell,
       }}
+      suppressTouchAction={suppressTouchAction}
     >
       {children}
     </ViewportPage>
@@ -362,7 +369,7 @@ function LoadedHomePage({ puzzle }: { readonly puzzle: Puzzle }) {
   }, []);
 
   return (
-    <PageShell>
+    <PageShell suppressTouchAction={touchPrimary}>
       <h1 lang="fr" className={srOnly}>
         Grille de mots fléchés du jour — <span lang="en">WordSparrow</span>
       </h1>
