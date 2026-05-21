@@ -1,4 +1,4 @@
-import { css } from 'styled-system/css';
+import { css, cx } from 'styled-system/css';
 import { IconButton, OverflowMenu } from '@/ui/components/primitives';
 import {
   RefreshIcon,
@@ -26,6 +26,9 @@ const toolbarStyles = css({
   gap: '12px',
   width: '100%',
 });
+
+// Applied only when the keyboard is mounted (touchPrimary) — ADR-0016 keyboard-mounted exception.
+const toolbarSuppressTouchStyles = css({ touchAction: 'none' });
 
 const leftSlotStyles = css({
   display: 'flex',
@@ -63,6 +66,7 @@ export interface PuzzleToolbarProps {
   readonly metadata: PuzzleToolbarMetadata;
   readonly onRefresh?: () => void;
   readonly onOpenSettings?: () => void;
+  readonly suppressTouchAction?: boolean;
   // Optional server-driven timer parameters. Multiplayer passes
   // `timerStartedAt` (ISO string from `gameStarted.startedAt`) so the
   // pill ticks against the server clock; `timerFrozenAtMs` freezes
@@ -83,6 +87,7 @@ export function PuzzleToolbar({
   timerStartedAt,
   timerFrozenAtMs,
   hintSlot,
+  suppressTouchAction,
 }: PuzzleToolbarProps) {
   const { short, full } = normalizeMetadata(metadata);
   const overflowItems = [
@@ -102,7 +107,7 @@ export function PuzzleToolbar({
     },
   ];
   return (
-    <div className={toolbarStyles} role="toolbar" aria-label="Outils de la grille">
+    <div className={cx(toolbarStyles, suppressTouchAction && toolbarSuppressTouchStyles)} role="toolbar" aria-label="Outils de la grille">
       <div className={leftSlotStyles}>
         <TimerPill startedAt={timerStartedAt} frozenAtMs={timerFrozenAtMs} />
       </div>

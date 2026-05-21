@@ -369,6 +369,7 @@ function LoadedHomePage({ puzzle }: { readonly puzzle: Puzzle }) {
       <PuzzleToolbar
         metadata={buildPuzzleToolbarMetadata(puzzle)}
         onRefresh={openRefreshConfirm}
+        suppressTouchAction={touchPrimary}
         hintSlot={
           touchPrimary ? undefined : (
             <HintControl

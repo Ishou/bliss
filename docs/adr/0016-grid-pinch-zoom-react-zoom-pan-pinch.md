@@ -154,3 +154,74 @@ follow-up ticket."
 - The grid's `TransformWrapper` is the only element in the app that suppresses
   native touch handling. Any future touch-sensitive surface should follow the
   same pattern: scope suppression to the element, not the page.
+
+## Amendment 2026-05-22 — keyboard-mounted exception
+
+When the custom mobile keyboard (`MobileKeyboard`) owns input on touch-primary
+devices, native browser pinch on the page chrome that sits around the grid
+fights the grid's own `react-zoom-pan-pinch` zoom: a two-finger gesture that
+lands partly on the grid and partly on the keyboard panel zooms both the
+grid (via the library) and the page (via the browser) at once, producing a
+confusing double-zoom effect. PR #586 attempted the broadest fix —
+`maximum-scale=1, user-scalable=no` on the viewport meta — and was rejected
+under §6a per the §3 "WCAG 1.4.4 compliance" decision above and ADR-0050
+(a11y baseline). The amendment carves out a narrower exception.
+
+### Scope of the exception
+
+Suppression is applied via CSS `touch-action: none` on individual page-chrome
+elements that surround the grid while the custom keyboard is mounted:
+
+- the `MobileKeyboard` panel root,
+- the `PuzzleToolbar` root (`role="toolbar"`).
+
+Suppression is **not** applied to:
+
+- the viewport meta (`maximum-scale` / `user-scalable` stay as ADR-0016 §2
+  forbids),
+- the document `body` or `<html>`,
+- non-grid routes (the keyboard only mounts on grid routes via
+  `useTouchPrimary`),
+- desktop / pointer-primary devices (the keyboard is hidden on those —
+  ADR-0016 §3 applies unchanged).
+
+The page background, page header (`AppHeader`), and any area outside the
+toolbar + keyboard remain natively pinch-zoomable. The grid keeps its
+library-managed pinch (ADR-0016 §2).
+
+### Why CSS `touch-action`, not viewport meta
+
+`touch-action: none` on an element disables native gestures **only over that
+element's box**. Browser zoom level (text-size and full-page zoom settings)
+is unaffected — the property gates touch gesture handling, not the page-zoom
+mechanism. Viewport-meta `user-scalable=no` disables zoom for the entire
+document across all routes, regardless of which element the user pinches.
+The CSS approach is the minimum surgical scope.
+
+### Accessibility mitigations that remain available
+
+The hard guarantee in ADR-0016 §3 — that the clue panel and page chrome
+*outside* the suppressed elements stay natively pinch-zoomable — is
+preserved. For the suppressed elements themselves, low-vision users retain:
+
+- iOS Display & Text Size, iOS Zoom (Settings > Accessibility > Zoom),
+- Android Magnification (Settings > Accessibility > Magnification),
+- Browser zoom level (text-size or full-page; both are independent of
+  viewport-meta scaling and of element `touch-action`).
+
+Note: as §3 establishes, iOS Zoom and Android Magnification are assistive
+technology under WCAG and do not satisfy SC 1.4.4's "without assistive
+technology" criterion. Browser zoom level does remain available and
+unaffected by `touch-action`. The toolbar's text is a short, fixed
+metadata label (`n°142 · facile`) plus icon-buttons sized to the 44 × 44
+WCAG 2.5.5 touch target; the keyboard's glyphs are single characters at
+the AZERTY layout's natural size.
+
+### Decision
+
+The exception is accepted as a real deviation from ADR-0016 §3's
+"no page-level zoom suppression" stance, scoped via CSS to two elements
+that exist only in the keyboard-mounted, grid-route, touch-primary
+configuration. Re-evaluate the deviation if either (a) `PuzzleToolbar` or
+`MobileKeyboard` start carrying long-form text content, or (b) the
+suppressed elements ever render on non-grid routes.

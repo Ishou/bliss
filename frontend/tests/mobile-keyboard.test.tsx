@@ -92,6 +92,13 @@ describe('MobileKeyboard letters + backspace', () => {
     expect(getByRole('group', { name: 'Clavier mots fléchés' })).toBeTruthy();
   });
 
+  it('panel root carries touch-action: none class (ADR-0016 keyboard-mounted exception)', () => {
+    const { getByRole } = render(<MobileKeyboard {...fullProps} />);
+    const panel = getByRole('group', { name: 'Clavier mots fléchés' });
+    // Panda CSS emits utility classes; touchAction: 'none' compiles to `tch-a_none`.
+    expect(panel.className).toMatch(/\btch-a_none\b/);
+  });
+
   it('publishes its measured height as --mobile-kb-height on document root', async () => {
     const { unmount } = render(<MobileKeyboard {...fullProps} />);
     await new Promise((r) => requestAnimationFrame(() => r(null)));
