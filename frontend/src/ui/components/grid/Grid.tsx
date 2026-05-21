@@ -1227,6 +1227,8 @@ export function Grid({
             onRequestHint!(cell.row, cell.column);
           }}
           getFocusedCell={getFocusedCell ?? (() => null)}
+          getEntryAt={nav.getEntryAt}
+          focusedPosition={nav.localCursor?.position ?? null}
           activeClue={nav.currentClue}
           alternateClue={nav.alternateClue}
           hintRemaining={hintRemaining}

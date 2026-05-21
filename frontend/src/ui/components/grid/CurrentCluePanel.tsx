@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { css } from 'styled-system/css';
-import type { ArrowDirection, LetterCell } from '@/domain';
+import { ArrowIcon, arrowLabel } from './ClueArrowIcon';
 import { GRID_TRACK_WIDTH } from './layout';
+import { LetterPreview } from './LetterPreview';
 import type { Clue } from './useGridNavigation';
 
 // Sticky-pinned to the top of the page-level scroll. Three visual states
@@ -114,41 +115,6 @@ const altClueText = css({
   maxWidth: { base: '140px', md: '200px' },
 });
 
-// Letter preview row — one cell per letter slot. Filled letters paint
-// in the active group's fg; empty slots show a centered dot. The
-// focused cell underlines its letter (or dot) in rose to mirror the
-// grid's active-cell ring.
-const letterRow = css({
-  display: 'inline-flex',
-  alignItems: 'center',
-  gap: '6px',
-  fontFamily: 'body',
-  fontSize: '14px',
-  fontWeight: 'medium',
-  fontVariantNumeric: 'tabular-nums',
-  color: 'fg',
-  flexShrink: 0,
-});
-
-const letterRowMuted = css({ color: 'fgMuted' });
-
-const letterSlot = css({
-  display: 'inline-block',
-  minWidth: '8px',
-  textAlign: 'center',
-});
-
-const letterDot = css({
-  // Slightly dimmer dot — empty slots read as placeholders, not letters.
-  color: 'neutral.400',
-});
-
-const letterFocused = css({
-  borderBottom: '2px solid token(colors.secondary.400)',
-  paddingBottom: '1px',
-  color: 'fg',
-});
-
 // Alt block — direction arrow + alt clue text + alt letter preview.
 // `flex: 1 0 auto` lets it claim the remaining row width on a single-
 // line panel and naturally wrap to its own row when content overflows.
@@ -204,31 +170,6 @@ const kbdChip = css({
   },
 });
 
-// Small inline-SVG arrow glyphs — same stroke vocabulary as the grid
-// arrows in `Cell.tsx`, scaled down for chip size.
-const ARROW_PATHS: Record<ArrowDirection, string> = {
-  right: 'M3 12h17 M14 7l6 5-6 5',
-  down: 'M12 3v17 M7 14l5 6 5-6',
-  'right-down': 'M3 7h14v13 M12 15l5 5 5-5',
-  'down-right': 'M7 3v14h13 M15 12l5 5-5 5',
-};
-
-function ArrowIcon({ arrow }: { arrow: ArrowDirection }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden
-    >
-      <path d={ARROW_PATHS[arrow]} />
-    </svg>
-  );
-}
-
 function PointerIcon() {
   return (
     <svg
@@ -244,55 +185,6 @@ function PointerIcon() {
     >
       <path d="M5 4l5 14 2-6 6-2z" />
     </svg>
-  );
-}
-
-const arrowLabel: Record<ArrowDirection, string> = {
-  right: 'horizontale',
-  down: 'verticale',
-  'down-right': 'horizontale',
-  'right-down': 'verticale',
-};
-
-// Letter preview row builder — one slot per cell in the clue. The
-// `focusedRow`/`focusedCol` pair flags the slot that should carry the
-// rose underline. Cells whose entry is empty show a centred dot.
-function LetterPreview({
-  cells,
-  focusedPosition,
-  getEntryAt,
-  muted,
-}: {
-  cells: readonly LetterCell[];
-  focusedPosition: { row: number; col: number } | null;
-  getEntryAt: (row: number, col: number) => string;
-  muted?: boolean;
-}) {
-  return (
-    <span className={muted ? `${letterRow} ${letterRowMuted}` : letterRow} aria-hidden>
-      {cells.map((c) => {
-        const entry = getEntryAt(c.position.row, c.position.col);
-        const isFocused =
-          focusedPosition !== null &&
-          c.position.row === focusedPosition.row &&
-          c.position.col === focusedPosition.col;
-        const filled = entry !== '';
-        return (
-          <span
-            key={`${c.position.row},${c.position.col}`}
-            className={
-              isFocused
-                ? `${letterSlot} ${letterFocused}`
-                : filled
-                ? letterSlot
-                : `${letterSlot} ${letterDot}`
-            }
-          >
-            {filled ? entry.toUpperCase() : '·'}
-          </span>
-        );
-      })}
-    </span>
   );
 }
 
