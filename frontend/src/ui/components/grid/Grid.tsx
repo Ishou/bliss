@@ -21,6 +21,7 @@ import { GridZoomControls } from './GridZoomControls';
 import { positionKey } from './positionKey';
 import { buildCellPresenceMap, useRemotePresences } from './PresenceOverlay';
 import { useGridNavigation, type Direction } from './useGridNavigation';
+import { useTouchPrimary } from '@/ui/components/keyboard/useTouchPrimary';
 
 const gridContainer = css({
   display: 'grid',
@@ -251,6 +252,7 @@ export function Grid({
   // gets `data-typing="true"` when their session is in the set.
   typingSessionIds?: ReadonlySet<SessionId>;
 }) {
+  const touchPrimary = useTouchPrimary();
   const cellByPosition = useMemo(() => {
     const m = new Map<string, Cell>();
     for (const c of puzzle.cells) m.set(positionKey(c.position), c);
@@ -1105,6 +1107,7 @@ export function Grid({
                             presence={presence}
                             incomingArrows={incomingArrows}
                             inputRef={nav.registerCellRef}
+                            touchPrimary={touchPrimary}
                             onClick={nav.handleClick}
                             onFocus={nav.handleFocus}
                             onBlur={nav.handleBlur}

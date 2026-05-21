@@ -657,7 +657,7 @@ export interface CellPresence {
 }
 
 export const LetterCellView = memo(function LetterCellView({
-  cell, ariaLabel, inWord, focused, validated, error, presence, incomingArrows, inputRef, onClick, onKeyDown, onFocus, onBlur, onInput,
+  cell, ariaLabel, inWord, focused, validated, error, presence, incomingArrows, inputRef, touchPrimary, onClick, onKeyDown, onFocus, onBlur, onInput,
 }: {
   cell: LetterCell;
   ariaLabel: string;
@@ -682,6 +682,7 @@ export const LetterCellView = memo(function LetterCellView({
   // — see `Grid.tsx#computeIncomingArrows`.
   incomingArrows?: readonly IncomingArrow[];
   inputRef: Ref<HTMLInputElement>;
+  touchPrimary: boolean;
   onClick: (e: MouseEvent<HTMLDivElement>) => void;
   onKeyDown: (e: KeyboardEvent<HTMLInputElement>) => void;
   onFocus: (e: FocusEvent<HTMLInputElement>) => void;
@@ -820,7 +821,7 @@ export const LetterCellView = memo(function LetterCellView({
         // type="search" has implicit ARIA role "searchbox"; crossword cells are
         // not search boxes. Override so AT announces "text field" as before.
         role="textbox"
-        inputMode="text"
+        inputMode={touchPrimary ? 'none' : 'text'}
         autoComplete="off"
         autoCapitalize="characters"
         autoCorrect="off"
