@@ -101,6 +101,24 @@ describe('MobileKeyboard letters + backspace', () => {
     unmount();
     expect(document.documentElement.style.getPropertyValue('--mobile-kb-height')).toBe('');
   });
+
+  it('suppresses page pinch-zoom on mount and restores the prior viewport content on unmount', () => {
+    const meta = document.createElement('meta');
+    meta.setAttribute('name', 'viewport');
+    const initial = 'width=device-width, initial-scale=1.0, viewport-fit=cover';
+    meta.setAttribute('content', initial);
+    document.head.appendChild(meta);
+    try {
+      const { unmount } = render(<MobileKeyboard {...fullProps} />);
+      const mounted = meta.getAttribute('content') ?? '';
+      expect(mounted).toMatch(/maximum-scale=1/);
+      expect(mounted).toMatch(/user-scalable=no/);
+      unmount();
+      expect(meta.getAttribute('content')).toBe(initial);
+    } finally {
+      meta.remove();
+    }
+  });
 });
 
 describe('MobileKeyboard banner + action row + direction', () => {
@@ -125,6 +143,14 @@ describe('MobileKeyboard banner + action row + direction', () => {
     const hintIdx = buttons.indexOf(hintBtn);
     const eraseIdx = buttons.indexOf(eraseBtn);
     expect(eraseIdx).toBe(hintIdx + 1);
+  });
+
+  it('hint button shows only the lightbulb icon — no "Indice" text and no counter glyph', () => {
+    const { getByLabelText } = render(<MobileKeyboard {...fullProps} />);
+    const hintBtn = getByLabelText(/Demander un indice/);
+    expect(hintBtn.textContent ?? '').not.toMatch(/Indice/);
+    expect(hintBtn.textContent ?? '').not.toMatch(/\d/);
+    expect(hintBtn.querySelector('svg')).toBeTruthy();
   });
 
   it('clicking the hint button calls onRequestHint', () => {
