@@ -965,13 +965,15 @@ export function Grid({
 
   return (
     <>
-      <CurrentCluePanel
-        clue={nav.currentClue}
-        cellIndex={nav.currentClueIndex}
-        alternateClue={nav.alternateClue}
-        onSwitchDirection={nav.toggleDirection}
-        getEntryAt={nav.getEntryAt}
-      />
+      {!touchPrimary ? (
+        <CurrentCluePanel
+          clue={nav.currentClue}
+          cellIndex={nav.currentClueIndex}
+          alternateClue={nav.alternateClue}
+          onSwitchDirection={nav.toggleDirection}
+          getEntryAt={nav.getEntryAt}
+        />
+      ) : null}
       {/*
         TransformWrapper config rationale:
         - `minScale={1}` — never zoom out below 100%, so the grid always

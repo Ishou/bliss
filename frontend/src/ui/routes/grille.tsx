@@ -12,6 +12,7 @@ import {
   useWordAutoValidation,
 } from '@/ui/components/grid';
 import { Button, Dialog, DialogDescription } from '@/ui/components/primitives';
+import { useTouchPrimary } from '@/ui/components/keyboard';
 import {
   ProgressBar,
   PuzzleToolbar,
@@ -144,6 +145,7 @@ function LoadedHomePage({ puzzle }: { readonly puzzle: Puzzle }) {
   const { puzzleSolver, soloEntriesStore, tourSeenStore } = Route.useRouteContext();
 
   const announcer = useAnnouncer();
+  const touchPrimary = useTouchPrimary();
 
   // Locked cells = cells revealed via a previous hint. Source of truth
   // for "this cell is correct, untouchable, and survives reload."
@@ -362,16 +364,18 @@ function LoadedHomePage({ puzzle }: { readonly puzzle: Puzzle }) {
         metadata={buildPuzzleToolbarMetadata(puzzle)}
         onRefresh={openRefreshConfirm}
         hintSlot={
-          <HintControl
-            hintsRemaining={hint.hintsRemaining}
-            hintsAllowed={puzzle.hintsAllowed}
-            exhausted={hint.exhausted}
-            pending={hint.pending}
-            lastResult={hint.lastResult}
-            errorMessage={hint.errorMessage}
-            getFocusedCell={getFocusedCell}
-            onRequest={hint.request}
-          />
+          touchPrimary ? undefined : (
+            <HintControl
+              hintsRemaining={hint.hintsRemaining}
+              hintsAllowed={puzzle.hintsAllowed}
+              exhausted={hint.exhausted}
+              pending={hint.pending}
+              lastResult={hint.lastResult}
+              errorMessage={hint.errorMessage}
+              getFocusedCell={getFocusedCell}
+              onRequest={hint.request}
+            />
+          )
         }
       />
       <div className={gridPanelStyles}>
