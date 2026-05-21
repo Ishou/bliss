@@ -1,4 +1,4 @@
-import { css } from 'styled-system/css';
+import { css, cx } from 'styled-system/css';
 import { IconButton, OverflowMenu } from '@/ui/components/primitives';
 import {
   RefreshIcon,
@@ -19,15 +19,16 @@ import { TimerPill } from './TimerPill';
 // label for narrow viewports — the mockup uses "n°142" on mobile and
 // "Grille du jour · n°142 · facile" on desktop.
 
-// touchAction: 'none' — keyboard-mounted exception to ADR-0016 §3 (see 2026-05-22 amendment).
 const toolbarStyles = css({
   display: 'grid',
   gridTemplateColumns: '1fr auto 1fr',
   alignItems: 'center',
   gap: '12px',
   width: '100%',
-  touchAction: 'none',
 });
+
+// Applied only when the keyboard is mounted (touchPrimary) — ADR-0016 keyboard-mounted exception.
+const toolbarSuppressTouchStyles = css({ touchAction: 'none' });
 
 const leftSlotStyles = css({
   display: 'flex',
@@ -65,6 +66,7 @@ export interface PuzzleToolbarProps {
   readonly metadata: PuzzleToolbarMetadata;
   readonly onRefresh?: () => void;
   readonly onOpenSettings?: () => void;
+  readonly suppressTouchAction?: boolean;
   // Optional server-driven timer parameters. Multiplayer passes
   // `timerStartedAt` (ISO string from `gameStarted.startedAt`) so the
   // pill ticks against the server clock; `timerFrozenAtMs` freezes
@@ -85,6 +87,7 @@ export function PuzzleToolbar({
   timerStartedAt,
   timerFrozenAtMs,
   hintSlot,
+  suppressTouchAction,
 }: PuzzleToolbarProps) {
   const { short, full } = normalizeMetadata(metadata);
   const overflowItems = [
@@ -104,7 +107,7 @@ export function PuzzleToolbar({
     },
   ];
   return (
-    <div className={toolbarStyles} role="toolbar" aria-label="Outils de la grille">
+    <div className={cx(toolbarStyles, suppressTouchAction && toolbarSuppressTouchStyles)} role="toolbar" aria-label="Outils de la grille">
       <div className={leftSlotStyles}>
         <TimerPill startedAt={timerStartedAt} frozenAtMs={timerFrozenAtMs} />
       </div>
