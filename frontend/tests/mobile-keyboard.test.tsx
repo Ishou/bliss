@@ -114,17 +114,15 @@ describe('MobileKeyboard banner + action row + direction', () => {
     expect(queryByLabelText('Changer de sens')).toBeNull();
   });
 
-  it('renders the Indice button in the bottom row next to backspace', () => {
-    const { getByLabelText, getAllByRole } = render(<MobileKeyboard {...fullProps} />);
-    const hintBtn = getByLabelText(/Demander un indice/);
-    const eraseBtn = getByLabelText('Effacer');
-    expect(hintBtn).toBeTruthy();
-    expect(eraseBtn).toBeTruthy();
-    // Indice should immediately precede Effacer in the DOM order (same row).
-    const buttons = getAllByRole('button');
-    const hintIdx = buttons.indexOf(hintBtn);
-    const eraseIdx = buttons.indexOf(eraseBtn);
-    expect(eraseIdx).toBe(hintIdx + 1);
+  it('renders the Indice button in the 3x3 nav block (top-left)', () => {
+    const { getByLabelText } = render(<MobileKeyboard {...fullProps} />);
+    expect(getByLabelText(/Demander un indice/)).toBeTruthy();
+    expect(getByLabelText('Effacer')).toBeTruthy();
+  });
+
+  it('renders the minimap in the centre of the 3x3 nav block', () => {
+    const { getByLabelText } = render(<MobileKeyboard {...fullProps} />);
+    expect(getByLabelText(/Aperçu de la grille/)).toBeTruthy();
   });
 
   it('hint button shows only the lightbulb icon — no "Indice" text and no counter glyph', () => {
