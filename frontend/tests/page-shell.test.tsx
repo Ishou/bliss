@@ -116,4 +116,16 @@ describe('<ViewportPage>', () => {
     expect(main.className).not.toMatch(/(^|\s)tch-a_pan-y(\s|$)/);
     expect(main.className).not.toMatch(/(^|\s)tch-a_none(\s|$)/);
   });
+
+  it('renders <Footer> by default', async () => {
+    renderPage(<ViewportPage>body</ViewportPage>);
+    await screen.findByText('body');
+    expect(screen.queryByRole('contentinfo')).toBeInTheDocument();
+  });
+
+  it('omits <Footer> when hideFooter is true (keyboard-mounted layout)', async () => {
+    renderPage(<ViewportPage hideFooter>body</ViewportPage>);
+    await screen.findByText('body');
+    expect(screen.queryByRole('contentinfo')).toBeNull();
+  });
 });

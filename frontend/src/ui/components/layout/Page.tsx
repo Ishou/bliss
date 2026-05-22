@@ -136,6 +136,8 @@ interface PageChromeProps {
   readonly headerActiveNavId?: string;
   readonly mainClassName: string;
   readonly skipLink?: { readonly label: string; readonly onActivate: () => void };
+  // Drop the footer from layout — used by keyboard-mounted ViewportPage routes where the fixed MobileKeyboard otherwise hides it and its native height squeezes the grid panel slot.
+  readonly hideFooter?: boolean;
   readonly children: React.ReactNode;
 }
 
@@ -144,6 +146,7 @@ function PageChrome({
   headerActiveNavId,
   mainClassName,
   skipLink,
+  hideFooter,
   children,
 }: PageChromeProps) {
   return (
@@ -164,7 +167,7 @@ function PageChrome({
         ) : null}
         {children}
       </main>
-      <Footer />
+      {hideFooter ? null : <Footer />}
     </div>
   );
 }
@@ -196,6 +199,8 @@ export interface ViewportPageProps {
   readonly skipLink?: { readonly label: string; readonly onActivate: () => void };
   // Opt-in `touch-action: pan-y` on <main> for the keyboard-mounted grid routes — ADR-0016 amendment 2026-05-22.
   readonly suppressTouchAction?: boolean;
+  // Drop the page footer from layout — used by keyboard-mounted routes where the fixed MobileKeyboard occludes the footer and its native height otherwise squeezes the grid panel's flex slot.
+  readonly hideFooter?: boolean;
   readonly children: React.ReactNode;
 }
 
@@ -203,6 +208,7 @@ export function ViewportPage({
   headerActiveNavId,
   skipLink,
   suppressTouchAction,
+  hideFooter,
   children,
 }: ViewportPageProps) {
   const mainClassName = cx(
@@ -214,6 +220,7 @@ export function ViewportPage({
       headerActiveNavId={headerActiveNavId}
       mainClassName={mainClassName}
       skipLink={skipLink}
+      hideFooter={hideFooter}
     >
       <div className={viewportWrapperStyles}>{children}</div>
     </PageChrome>
