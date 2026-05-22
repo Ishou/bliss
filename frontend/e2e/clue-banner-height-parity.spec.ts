@@ -1,6 +1,3 @@
-// Real-browser load-bearing assertion: the mobile clue banner paints at the same total
-// height across empty / single-clue / intersection focus states. PR #584 + #588 both tried
-// to enforce this with `minHeight` on inner blocks and both failed on device.
 import { expect, test, devices } from '@playwright/test';
 
 test.use({ ...devices['iPhone 13'] });

@@ -3,12 +3,7 @@ import { describe, it, expect } from 'vitest';
 import { ClueBanner } from '@/ui/components/keyboard/ClueBanner';
 import type { Clue } from '@/ui/components/grid/useGridNavigation';
 
-// jsdom does not compute CSS layout from external Panda stylesheets, so we synthesize a
-// content-aware banner height: a fixed Panda `h_<NN>px` atomic class on the outer banner
-// short-circuits to that value, otherwise we sum per-row intrinsic heights derived from
-// each row's DOM (a real clue row carries a LetterPreview span and is taller than a
-// placeholder). This mirrors what a real browser paints and fails on origin/main where
-// `banner` uses `minHeight: 44px` and the placeholder has fewer children than a real row.
+// jsdom skips Panda stylesheet evaluation; measuredBannerHeight checks for the h_NNpx atomic class instead.
 const ARROW_GLYPH_HEIGHT = 20;
 const LETTER_PREVIEW_HEIGHT = 24;
 

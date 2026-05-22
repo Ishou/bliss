@@ -4,7 +4,7 @@ import { ArrowIcon, ARROW_COLOR, arrowLabel } from '@/ui/components/grid/ClueArr
 import { LetterPreview } from '@/ui/components/grid/LetterPreview';
 import type { Clue } from '@/ui/components/grid/useGridNavigation';
 
-// Fixed total height: outer banner is the ceiling, not a floor. Inner-block minHeight is insufficient because LetterPreview / alt chip exceed it (rationale: PR body, not source).
+// Fixed total height: outer banner is the ceiling; LetterPreview / alt chip intrinsically exceed minHeight.
 const banner = css({
   display: 'flex',
   flexDirection: 'column',
