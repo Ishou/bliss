@@ -1,0 +1,34 @@
+Mot;Définition 1;Définition 2
+DB;Décibel;Unité sonore
+DM;Décimètre;Dix centimètres
+KM;Kilomètre;Mille mètres
+KO;Kilooctet;Un millier d’octets
+MO;Mégaoctet;1000 KO
+GO;Gigaoctet;1000 MO
+TO;Téraoctet;1000 GO
+ML;Millilitre;Petit volume
+CL;Centilitre;Dix millilitres
+DL;Décilitre;Dix centilitres
+MG;Milligramme;Petit poids
+CG;Centigramme;Centième de gramme
+DG;Décigramme;Dixième de gramme
+KG;Kilogramme;Mille grammes
+CM;Centimètre;Centième de mètre
+MM;Millimètre;Millième de mètre
+HZ;Hertz;Unité de fréquence
+KH;Kilohertz;Mille hertz
+MH;Mégahertz;Million de hertz
+GH;Gigahertz;Milliard de hertz
+CV;Cheval-vapeur;Puissance moteur
+KW;Kilowatt;Mille watts
+MW;Mégawatt;Million de watts
+KV;Kilovolt;Mille volts
+HA;Hectare;Mesure agraire
+MHZ;Mégahertz;Million de hertz
+GHZ;Gigahertz;Milliard de hertz
+KWH;Kilowattheure;Unité d’énergie
+MWH;Mégawattheure;Grande unité d’énergie
+BAR;Unité de pression;Pression au comptoir
+ATM;Atmosphère;Unité de pression
+LUX;Unité d’éclairement;Mesure de lumière
+ARE;Cent mètres carrés;Petite surface
