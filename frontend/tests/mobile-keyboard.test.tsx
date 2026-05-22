@@ -122,15 +122,50 @@ describe('MobileKeyboard banner + action row + direction', () => {
     expect(queryByLabelText('Changer de sens')).toBeNull();
   });
 
-  it('hint button renders in the nav block alongside the erase key', () => {
-    const { getByLabelText } = render(<MobileKeyboard {...fullProps} />);
-    expect(getByLabelText(/Demander un indice/)).toBeTruthy();
-    expect(getByLabelText('Effacer')).toBeTruthy();
+  it('hint button sits in the bottom letter row immediately before the erase key', () => {
+    const { getByLabelText, container } = render(<MobileKeyboard {...fullProps} />);
+    const hint = getByLabelText(/Demander un indice/);
+    const erase = getByLabelText('Effacer');
+    expect(hint).toBeTruthy();
+    expect(erase).toBeTruthy();
+    expect(hint.parentElement).toBe(erase.parentElement);
+    const n = getByLabelText('Lettre N');
+    expect(n.parentElement).toBe(hint.parentElement);
+    const buttons = Array.from(container.querySelectorAll<HTMLElement>('button'));
+    expect(buttons.indexOf(hint)).toBe(buttons.indexOf(erase) - 1);
   });
 
   it('minimap renders inside the keyboard panel', () => {
     const { getByLabelText } = render(<MobileKeyboard {...fullProps} />);
     expect(getByLabelText(/Aperçu de la grille/)).toBeTruthy();
+  });
+
+  it('action block is a 6-column 2-row grid; minimap spans cols 1-3 and both rows', () => {
+    const { getByLabelText, getByRole } = render(<MobileKeyboard {...fullProps} />);
+    const panel = getByRole('group', { name: 'Clavier mots fléchés' });
+    const navBlockEl = panel.querySelector(':scope > div:nth-of-type(2)') as HTMLElement | null;
+    expect(navBlockEl).toBeTruthy();
+    expect(navBlockEl!.className).toMatch(/d_grid/);
+    const minimap = getByLabelText(/Aperçu de la grille/);
+    expect(minimap.parentElement!.className).toMatch(/grid-c_1_\/_span_3/);
+    expect(minimap.parentElement!.className).toMatch(/grid-r_1_\/_span_2/);
+  });
+
+  it('action block buttons appear in reading order: Prev, Up, Next, Left, Down, Right', () => {
+    const { container, getByLabelText } = render(<MobileKeyboard {...fullProps} />);
+    const allButtons = Array.from(container.querySelectorAll<HTMLElement>('button'));
+    const actionLabels = [
+      'Indice précédent',
+      'Curseur haut',
+      'Indice suivant',
+      'Curseur gauche',
+      'Curseur bas',
+      'Curseur droite',
+    ];
+    const indices = actionLabels.map((l) => allButtons.indexOf(getByLabelText(l)));
+    for (let i = 1; i < indices.length; i++) {
+      expect(indices[i]).toBeGreaterThan(indices[i - 1]);
+    }
   });
 
   it('hint button shows only the lightbulb icon — no "Indice" text and no counter glyph', () => {

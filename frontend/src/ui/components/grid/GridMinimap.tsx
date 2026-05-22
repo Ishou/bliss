@@ -34,7 +34,7 @@ const overlayContainer = css({
 });
 
 const panelContainer = css({
-  // Panel variant: fills the 64x64 cell of the 3x3 nav block (letterboxed via SVG aspect).
+  // Panel variant: fills the minimap cell of the keyboard action block (letterboxed via SVG aspect).
   flex: 1,
   minWidth: 0,
   width: '100%',

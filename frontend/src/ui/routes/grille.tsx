@@ -408,12 +408,14 @@ function LoadedHomePage({ puzzle }: { readonly puzzle: Puzzle }) {
           getFocusedCell={getFocusedCell}
         />
       </div>
-      <ProgressBar
-        value={validatedPositions.size}
-        total={totalLetterCells}
-        pending={pending}
-      />
-      {isMultiplayerEnabled() ? <CreateLobbyButton /> : null}
+      {touchPrimary ? null : (
+        <ProgressBar
+          value={validatedPositions.size}
+          total={totalLetterCells}
+          pending={pending}
+        />
+      )}
+      {!touchPrimary && isMultiplayerEnabled() ? <CreateLobbyButton /> : null}
       <SoloTour tour={tour} />
       <Dialog
         open={refreshConfirmOpen}
