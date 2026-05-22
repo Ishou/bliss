@@ -66,10 +66,6 @@ describe('KeyboardKey', () => {
   });
 
   it('does not double-fire when click arrives in a later macrotask after pointerdown (real-device sequence)', async () => {
-    // Real-device repro: pointerdown handler runs, then the browser dispatches the
-    // synthesized click as a SEPARATE macrotask after touchend. Any microtask-based
-    // dedupe (e.g. queueMicrotask reset of a consumedRef) has already cleared by then.
-    // Fix: there is no onClick handler — the synthesized click is delivered into nothing.
     const onPress = vi.fn();
     const { getByRole } = render(
       <KeyboardKey label="A" ariaLabel="Lettre A" onPress={onPress} />,

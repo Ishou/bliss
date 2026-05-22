@@ -7,8 +7,7 @@ import { MobileKeyboard } from '@/ui/components/keyboard';
 
 const noop = () => undefined;
 
-// KeyboardKey activates on pointerdown (not click) to dedupe the touch->click double-fire.
-// Tests simulate the touch press path explicitly.
+// KeyboardKey activates on pointerdown — simulate that path explicitly.
 function pressKey(el: Element): void {
   el.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true, button: 0 }));
 }

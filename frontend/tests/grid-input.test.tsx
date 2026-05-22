@@ -103,7 +103,7 @@ const defAt = (root: HTMLElement, row: number, col: number) =>
 // instead, and `handleFocus` reads the resulting focus event.
 const click = (el: HTMLElement) => { el.focus(); fireEvent.click(el); };
 const typeChar = (el: HTMLInputElement, ch: string) => fireEvent.keyDown(el, { key: ch });
-// MobileKeyboard's KeyboardKey activates on pointerdown, not click (PR #606 — touch->click dedupe).
+// MobileKeyboard's KeyboardKey activates on pointerdown, not click.
 const pressKeyboardKey = (el: Element) =>
   el.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true, button: 0 }));
 

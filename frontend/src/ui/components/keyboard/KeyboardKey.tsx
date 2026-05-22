@@ -47,9 +47,7 @@ export function KeyboardKey({
   disabled = false,
   variant = 'letter',
 }: KeyboardKeyProps) {
-  // Pointer activation: fires on press (snappier than click) for mouse / touch / pen.
-  // No onClick handler is registered, so any synthesized click that follows a touch
-  // is delivered into nothing — no double-dispatch race.
+  // Primary-button press only; synthesized click has no handler to land in.
   const handlePointerDown = useCallback(
     (e: PointerEvent<HTMLButtonElement>) => {
       if (e.button !== 0 || disabled) return;
@@ -59,8 +57,7 @@ export function KeyboardKey({
     [disabled, onPress],
   );
 
-  // Keyboard activation: replaces the implicit click that a focused button would
-  // dispatch on Enter / Space. Suppress default on Space to prevent page scroll.
+  // Enter/Space keyboard activation; preventDefault stops page scroll on Space.
   const handleKeyDown = useCallback(
     (e: KeyboardEvent<HTMLButtonElement>) => {
       if (disabled) return;
