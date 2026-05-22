@@ -429,6 +429,18 @@ export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOpt
 
   const focusCell = useCallback((p: Position) => {
     refs.current.get(key(p))?.focus();
+    // Sync the state mirror in the same tick so subsequent reads of
+    // `stateRef.current.focused` within the same handler (e.g. two
+    // rapid mobile-keyboard taps batched into a single React tick)
+    // see the new focused cell, not the stale pre-tap one. Without
+    // this, `enterLetter` reads-then-async-sets focus, and a second
+    // `enterLetter` fired before the next render writes its letter
+    // on top of the first instead of advancing. The render-time
+    // assignment at the top of the hook (`stateRef.current = { focused,
+    // direction }`) reapplies the same value harmlessly on the next
+    // commit. Direction is preserved via spread so we don't clobber a
+    // setDirection that happened earlier in the same tick.
+    stateRef.current = { ...stateRef.current, focused: p };
     setFocused(p);
   }, []);
 
