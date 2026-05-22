@@ -7,7 +7,7 @@ import {
   createRoute,
   createRouter,
 } from '@tanstack/react-router';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { PuzzleRepository, PuzzleSolver } from '@/application';
 import type { Puzzle } from '@/domain';
 import { Route as RootRoute } from '@/ui/routes/__root';
@@ -172,5 +172,52 @@ describe('grille refresh confirmation', () => {
       fireEvent.click(screen.getByTestId('refresh-confirm-cancel'));
     });
     expect(store.clearForPuzzle).not.toHaveBeenCalled();
+  });
+});
+
+// Hides the ProgressBar and the "Créer une partie multijoueur" CTA on
+// touch-primary devices to reclaim the vertical space eaten by the
+// keyboard panel. Desktop behaviour is preserved.
+describe('grille touch-primary cleanup', () => {
+  const original = window.matchMedia;
+  const setMatchMedia = (matches: boolean) => {
+    window.matchMedia = vi.fn().mockReturnValue({
+      matches,
+      media: '(any-pointer: coarse) and (any-hover: none)',
+      onchange: null,
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+      addListener: () => undefined,
+      removeListener: () => undefined,
+      dispatchEvent: () => true,
+    } as MediaQueryList);
+  };
+  afterEach(() => {
+    window.matchMedia = original;
+    vi.unstubAllEnvs();
+  });
+
+  it('renders the ProgressBar on desktop', async () => {
+    setMatchMedia(false);
+    renderHomeRoute(buildPuzzle());
+    await screen.findByRole('grid');
+    expect(screen.getByRole('progressbar')).toBeInTheDocument();
+  });
+
+  it('omits the ProgressBar on touch-primary', async () => {
+    setMatchMedia(true);
+    renderHomeRoute(buildPuzzle());
+    await screen.findByRole('grid');
+    expect(screen.queryByRole('progressbar')).toBeNull();
+  });
+
+  it('omits "Créer une partie multijoueur" on touch-primary even when the flag is on', async () => {
+    vi.stubEnv('VITE_FEATURE_MULTIPLAYER', 'true');
+    setMatchMedia(true);
+    renderHomeRoute(buildPuzzle());
+    await screen.findByRole('grid');
+    expect(
+      screen.queryByRole('button', { name: 'Créer une partie multijoueur' }),
+    ).toBeNull();
   });
 });
