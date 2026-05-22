@@ -1406,25 +1406,12 @@ describe('Grid mounts MobileKeyboard on touch-primary', () => {
     }
   });
 
-  // Real-device feedback: "fast typing on mobile keyboard not queued
-  // correctly". Two key taps delivered in the same React tick must each
-  // land on a distinct cell: the first into the focused cell, the
-  // second into the next cell along the active direction.
-  // Regression for the read-then-async-set race in `enterLetter` —
-  // before the fix, `enterLetter` reads `stateRef.current.focused`,
-  // then `focusCell` only schedules `setFocused`, so a second
-  // `enterLetter` in the same tick re-reads the OLD focus and writes
-  // its letter on top of the first.
   it('two keyboard letter taps in the same tick each land on consecutive cells', () => {
     const original = window.matchMedia;
     setTouchPrimary(true);
     try {
       const { container, getByLabelText } = render(<Grid puzzle={TEST_PUZZLE} />);
       click(inputAt(container, 1, 1)!);
-      // Dispatch both keyboard taps inside a single act() so React
-      // batches the state updates — mirrors the real-device race
-      // where two physical touchend events fire before the React
-      // commit phase advances focus state.
       act(() => {
         fireEvent.click(getByLabelText('Lettre A'));
         fireEvent.click(getByLabelText('Lettre B'));
