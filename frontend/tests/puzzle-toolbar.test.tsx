@@ -47,15 +47,17 @@ describe('PuzzleToolbar', () => {
     expect(screen.getAllByText('Mots fléchés')).toHaveLength(1);
   });
 
-  it('toolbar root carries touch-action: none class when suppressTouchAction is true (ADR-0016 keyboard-mounted exception)', () => {
+  it('toolbar root carries touch-action: pan-y class when suppressTouchAction is true (suppresses pinch, preserves pull-to-refresh)', () => {
     render(<PuzzleToolbar metadata="n°1 · facile" suppressTouchAction />);
     const toolbar = screen.getByRole('toolbar', { name: 'Outils de la grille' });
-    expect(toolbar.className).toMatch(/\btch-a_none\b/);
+    expect(toolbar.className).toMatch(/(^|\s)tch-a_pan-y(\s|$)/);
+    expect(toolbar.className).not.toMatch(/(^|\s)tch-a_none(\s|$)/);
   });
 
-  it('toolbar root does not carry touch-action: none class when suppressTouchAction is absent', () => {
+  it('toolbar root does not carry the suppress class when suppressTouchAction is absent', () => {
     render(<PuzzleToolbar metadata="n°1 · facile" />);
     const toolbar = screen.getByRole('toolbar', { name: 'Outils de la grille' });
-    expect(toolbar.className).not.toMatch(/\btch-a_none\b/);
+    expect(toolbar.className).not.toMatch(/(^|\s)tch-a_pan-y(\s|$)/);
+    expect(toolbar.className).not.toMatch(/(^|\s)tch-a_none(\s|$)/);
   });
 });
