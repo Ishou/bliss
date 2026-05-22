@@ -175,9 +175,6 @@ describe('grille refresh confirmation', () => {
   });
 });
 
-// Hides the ProgressBar and the "Créer une partie multijoueur" CTA on
-// touch-primary devices to reclaim the vertical space eaten by the
-// keyboard panel. Desktop behaviour is preserved.
 describe('grille touch-primary cleanup', () => {
   const original = window.matchMedia;
   const setMatchMedia = (matches: boolean) => {
