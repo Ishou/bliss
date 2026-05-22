@@ -1,32 +1,56 @@
 # WordSparrow
 
-A *mots fléchés* (French crossword variant) puzzle game, designed for web,
-tablet, and mobile, with future Discord-Activity support. Brand identity is
-recorded in [ADR-0005](./docs/adr/0005-brand-identity.md); "Bliss" was the
-working codename.
+A *mots fléchés* (French crossword variant) puzzle game for web, tablet,
+and mobile, with future Discord-Activity support. Brand identity is
+recorded in [ADR-0005](./docs/adr/0005-brand-identity.md); "Bliss" is
+the working codename used throughout the repo.
 
 Live: <https://bliss-cb4.pages.dev>
 
 ## Status
 
-Sandbox / pre-alpha. Hello-world deployed; first interactive feature
-not yet shipped.
+Sandbox / pre-alpha. Daily puzzles generate and play end-to-end; the
+multiplayer game context and player identity are in active development.
 
 ## Architecture
 
-Two language stacks across bounded contexts:
+Bounded contexts, each hexagonally layered
+(`domain/` → `application/` → `infrastructure/` → `api/`):
 
-- **`grid/`** — Kotlin/JVM domain (puzzle generation, validation).
-- **`frontend/`** — Vite + React 19 + TypeScript (player UI; deployed as
-  a static bundle to Cloudflare Pages).
+- **`grid/`** — Kotlin/JVM. Puzzle generation, validation, daily
+  pre-generation worker ([ADR-0042](./docs/adr/0042-daily-puzzle-pre-generation-worker.md)).
+- **`game/`** — Kotlin/JVM. Multiplayer lobbies and realtime play over
+  REST + WebSocket ([ADR-0018](./docs/adr/0018-game-bounded-context-and-realtime.md)).
+- **`identity/`** — Kotlin/JVM. Player OIDC and session tokens
+  ([ADR-0044](./docs/adr/0044-identity-bounded-context-for-player-oidc.md)).
+- **`frontend/`** — Vite + React 19 + TypeScript. Player UI, deployed
+  as a static bundle to Cloudflare Pages ([ADR-0002](./docs/adr/0002-frontend-stack.md)).
 
-Communication between them is schema-first via OpenAPI, per
-[ADR-0003](./docs/adr/0003-cross-language-api-contract.md).
+Cross-context communication is schema-first: OpenAPI for HTTP, AsyncAPI
+for WebSocket ([ADR-0003](./docs/adr/0003-cross-language-api-contract.md),
+[ADR-0019](./docs/adr/0019-asyncapi-2.6-not-3.x.md)). Generated types
+are checked in and gated by drift CI.
 
-The engineering rules — bounded contexts, hexagonal layering, schema-first
-APIs, parallel-agent workflow — are in [`CLAUDE.md`](./CLAUDE.md) (binding
-rules) and [`MANIFESTO.md`](./MANIFESTO.md) (rationale). Every non-trivial
-decision is recorded in [`docs/adr/`](./docs/adr/).
+The engineering rules — bounded contexts, hexagonal layering,
+schema-first APIs, parallel-agent workflow — are in
+[`CLAUDE.md`](./CLAUDE.md) (binding rules) and
+[`MANIFESTO.md`](./MANIFESTO.md) (rationale). Every non-trivial decision
+is recorded in [`docs/adr/`](./docs/adr/).
+
+## Getting started
+
+Local development runs against a k3d cluster that mirrors the prod k3s
+topology. See [`docs/local-development.md`](./docs/local-development.md)
+for the full walkthrough; the short version:
+
+```sh
+make cluster-up         # create k3d cluster (idempotent)
+make cluster-bootstrap  # ingress-nginx, cert-manager, CNPG
+make deploy-local       # build images, helm install
+make dev                # API hot reload + Vite HMR
+```
+
+Deployment topology is in [`docs/deploy.md`](./docs/deploy.md).
 
 ## Contributing
 
