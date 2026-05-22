@@ -38,9 +38,7 @@ test('grid container fills the vertical space between toolbar and keyboard', asy
   expect(measurements.keyboard.height).toBeGreaterThan(180);
   expect(measurements.keyboard.height).toBeLessThan(400);
 
-  // Grid container reaches close to the keyboard top — no large gap of page
-  // background between the cells region and the keyboard. Tolerance of 16 px
-  // covers the wrapper's gap + sub-pixel rounding.
+  // Grid bottom must be within 16 px of keyboard top — covers wrapper gap and sub-pixel rounding.
   const gridBottom = measurements.gridArea.bottom;
   const keyboardTop = measurements.keyboard.top;
   expect(keyboardTop - gridBottom).toBeLessThanOrEqual(16);
