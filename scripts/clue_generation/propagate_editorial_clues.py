@@ -1,39 +1,5 @@
 #!/usr/bin/env python3
-"""Cross-surface propagation step for the editorial corpus.
-
-Reads `data/curated/raw/_lemmas.csv` (the inflected→lemma map) joined with
-every `data/curated/raw/fr_*.csv` theme file, lemmatizes each clue head via
-`scripts/eval/lemmatize_clue.py`, then forward-inflates the lemma-form clue
-to every other surface of the same lemma via the existing
-`scripts/eval/inflect_clue.py`. Writes one derived CSV with provenance.
-
-Output: `data/curated/derived/fr_inflations.csv` with schema
-    Mot;Définition 1;Définition 2;Lemme;Mot source;Thème source;Flag 1;Flag 2
-
-Provenance columns (Lemme / Mot source / Thème source) let downstream merge
-steps demote derived rows below human-authored editorial rows in
-`findTopBySourcePriority`, and trace any quality issue back to its origin.
-
-Surface filter:
-- Length in [3, 11] inclusive (matches the runtime grid scope; 3 included
-  for short-word grids).
-- Alphabetic only (skip rows with hyphens / apostrophes — those are
-  multi-word lemma surfaces in grammalecte).
-- Skip the source surface itself (the editorial corpus already covers it).
-
-Meta-style clues propagate verbatim (no forward inflation) — they're
-descriptive, not synonym-based, so the same text works on every surface
-of the lemma.
-
-Multi-token agreement (`son → leur`, `verre → verres`) is intentionally
-limited by `inflect_clue`'s head-only design. Known imperfect cases are
-logged via the flag columns; the downstream filter can demote.
-
-Run from repo root:
-    python3 scripts/clue_generation/propagate_editorial_clues.py \\
-        [--lexique /path/to/lexique-grammalecte-fr-v7.7.txt] \\
-        [--out data/curated/derived/fr_inflations.csv]
-"""
+"""Cross-surface propagation step: lemmatize editorial clues and fan-out to all paradigm surfaces."""
 from __future__ import annotations
 
 import argparse
@@ -48,9 +14,7 @@ from inflect_clue import inflect_clue  # noqa: E402
 from lemmatize_clue import lemmatize_clue  # noqa: E402
 from morphology_index import MorphologyIndex  # noqa: E402
 
-DEFAULT_LEXIQUE = Path(
-    "/Users/isho/Downloads/grammalecte/lexique-grammalecte-fr-v7.7.txt"
-)
+DEFAULT_LEXIQUE = None
 DEFAULT_OUT = REPO_ROOT / "data" / "curated" / "derived" / "fr_inflations.csv"
 RAW_DIR = REPO_ROOT / "data" / "curated" / "raw"
 LEMMAS_CSV = RAW_DIR / "_lemmas.csv"
@@ -101,8 +65,8 @@ def main() -> int:
     parser.add_argument("--max-len", type=int, default=MAX_LEN)
     args = parser.parse_args()
 
-    if not args.lexique.exists():
-        print(f"ERROR: lexique not found at {args.lexique}")
+    if args.lexique is None or not args.lexique.exists():
+        print("ERROR: pass --lexique /path/to/lexique-grammalecte-fr-v7.7.txt")
         return 1
 
     print(f"Loading lexique from {args.lexique} …", file=sys.stderr)

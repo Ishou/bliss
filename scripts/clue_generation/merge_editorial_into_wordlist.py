@@ -1,34 +1,5 @@
 #!/usr/bin/env python3
-"""Merge editorial + cross-surface-derived clues into the runtime words-fr.csv.
-
-This is the "for-starters" merger used at the moment the editorial corpus
-(`data/curated/raw/fr_*.csv`) and its cross-surface fan-out
-(`data/curated/derived/fr_inflations.csv`) are ready to land in the
-production wordlist. It is distinct from the LoRA-side
-`merge_clues_into_wordlist.py` — that one merges `surface_clues.csv`
-(LoRA-produced clues at every grammalecte surface) and is a different lane.
-
-Update rules:
-- For words present in the editorial map (`bliss` source intended) → always
-  replace the clue and lemma. This upgrades both thin bliss-curated stubs
-  (`bu → "Participe de boire"`) and empty grammalecte rows that happen to
-  match an editorial word.
-- For words present in the derived map (cross-surface propagation) but NOT
-  in the editorial map → replace ONLY when the existing clue is empty.
-  This preserves any LoRA-generated grammalecte clue that already shipped
-  (e.g. `abaissait → "Rendait plus bas"`) and only fills the gaps.
-- For words in the editorial map that aren't in words-fr.csv yet → ADD a
-  new row with the canonical schema (frequency=100000 default, difficulty
-  empty, source=bliss, source_license=CC0-1.0).
-
-Multi-sense words: editorial entries that split senses across rows
-(e.g. `NE` has rows in fr_len02 for the negation and in fr_cardinal_points
-for the direction) → first row encountered wins. Stable across runs because
-file iteration is sorted. Future work can choose more deliberately by
-theme priority.
-
-Output: rewrites the wordlist in place, sorted by (language, word) ASCII.
-"""
+"""Merge editorial + cross-surface-derived clues into the runtime words-fr.csv."""
 from __future__ import annotations
 
 import argparse

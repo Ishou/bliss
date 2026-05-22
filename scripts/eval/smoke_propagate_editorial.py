@@ -1,19 +1,5 @@
 #!/usr/bin/env python3
-"""Smoke test: load real grammalecte lexique, lemmatize every clue named in
-`_lemmas.csv`, then preview the cross-surface fan-out for each editorial
-verb-form entry.
-
-Output is print-only; nothing is written to disk. Confirms that:
-1. `lemmatize_clue` produces sensible lemma-form clues against real morphology.
-2. `MorphologyIndex.by_lemma[lemma]` returns the right paradigm slice for
-   each Lemme in `_lemmas.csv`.
-3. The existing `inflect_clue.inflect_clue` forward-inflates the lemma-form
-   clue into surface morphology without crashing.
-
-Run from scripts/eval/:
-    python3 smoke_propagate_editorial.py [path-to-lexique]
-Default path: /Users/isho/Downloads/grammalecte/lexique-grammalecte-fr-v7.7.txt
-"""
+"""Smoke test: lemmatize editorial clues and preview cross-surface fan-out against real grammalecte lexique."""
 from __future__ import annotations
 
 import csv
@@ -56,9 +42,10 @@ def load_lemmas_table() -> list[dict[str, str]]:
 
 
 def main() -> int:
-    lex_path = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(
-        "/Users/isho/Downloads/grammalecte/lexique-grammalecte-fr-v7.7.txt"
-    )
+    if len(sys.argv) < 2:
+        print("Usage: python3 smoke_propagate_editorial.py /path/to/lexique-grammalecte-fr-v7.7.txt")
+        return 1
+    lex_path = Path(sys.argv[1])
     if not lex_path.exists():
         print(f"ERROR: lexique not found at {lex_path}")
         return 1

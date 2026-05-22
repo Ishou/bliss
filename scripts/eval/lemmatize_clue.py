@@ -1,30 +1,5 @@
 #!/usr/bin/env python3
-"""Lemmatize a surface-inflected mots-fléchés clue.
-
-Dual of `inflect_clue.inflect_clue`: takes a clue whose head token is already
-in some surface morphology (e.g. ppas `Possédé`, 3sg ipre `Possède`, passé
-composé `S'est désaltéré`) and rewrites it to the citation form (`Posséder`,
-`Se désaltérer`). Used by the editorial cross-surface propagation step — once
-a clue is in lemma form, the forward inflater can re-emit it for any other
-surface of the same lemma's paradigm.
-
-Scope (v1):
-- Strip optional leading reflexive (`Se`/`S'`) — restored at output time with
-  elision-aware spacing (`Se` before consonant, `S'` before vowel/h).
-- Strip optional finite auxiliary (être or avoir conjugated, non-ppas) when
-  it immediately follows the (possibly stripped) reflexive. This is the
-  passé-composé shape `[Se]? + aux + ppas + trailing`.
-- Replace the first remaining content-verb token with its lemma via
-  `MorphologyIndex.lemma_of_form(prefer_pos="verbe")`.
-- Non-head tokens stay verbatim.
-
-Out of scope:
-- Multi-clause / coordinated heads (the forward inflater handles this on
-  the reverse leg; we keep lemmatization head-only on purpose).
-- Adjective heads (would-be `Vue` → `Voir`?). Treat adj heads as already in
-  lemma form (they are, in mots-fléchés convention) and return the clue
-  unchanged with `already-lemma` flag.
-"""
+"""Lemmatize an inflected mots-fléchés clue head to its citation form."""
 from __future__ import annotations
 
 import re

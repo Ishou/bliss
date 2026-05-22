@@ -1,26 +1,4 @@
-"""Tests for `lemmatize_clue.lemmatize_clue`.
-
-Mirror image of `inflect_clue.py`: take a surface-inflected mots-fléchés clue
-and rewrite the head token to its lemma (citation) form. Used by the editorial
-cross-surface propagation step — once a clue is back in lemma form, the
-existing forward inflater can re-emit it for any other surface of the same
-lemma.
-
-Algorithm under test:
-- Strip an optional leading reflexive pronoun (`Se` / `S'`).
-- Strip an optional auxiliary verb (finite être / avoir) that immediately
-  follows the (possibly stripped) reflexive — this is the passé-composé
-  shape `aux + ppas`.
-- Find the first remaining content verb token, lemmatize it via
-  `MorphologyIndex.lemma_of_form(prefer_pos='verbe')`, splice it back in
-  place of the surface form.
-- If a reflexive prefix was stripped, restore it with elision: `Se` before
-  a consonant-initial lemma, `S'` before a vowel- or h-initial lemma.
-- Non-head tokens stay verbatim.
-
-Test verbs are minimal hand-rolled grammalecte entries — enough to exercise
-the discovery + elision rules without loading the full lexique.
-"""
+"""Tests for lemmatize_clue.lemmatize_clue."""
 from __future__ import annotations
 
 import sys
