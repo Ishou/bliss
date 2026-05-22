@@ -10,6 +10,7 @@ import { AZERTY_ROWS } from './azertyLayout';
 import { ClueBanner } from './ClueBanner';
 import { DirectionArrowIcon } from './DirectionArrowIcon';
 import { KeyboardKey } from './KeyboardKey';
+import { TabKeyIcon } from './TabKeyIcon';
 
 // touchAction: 'pan-y' suppresses pinch while preserving vertical pan (pull-to-refresh) — ADR-0016 keyboard-mounted exception.
 const panel = css({
@@ -202,7 +203,7 @@ export function MobileKeyboard(props: MobileKeyboardProps) {
         </div>
         <div className={navCell}>
           <KeyboardKey
-            label="◀"
+            label={<TabKeyIcon direction="previous" />}
             ariaLabel="Indice précédent"
             variant="action"
             onPress={onPrevClue}
@@ -218,7 +219,7 @@ export function MobileKeyboard(props: MobileKeyboardProps) {
         </div>
         <div className={navCell}>
           <KeyboardKey
-            label="▶"
+            label={<TabKeyIcon direction="next" />}
             ariaLabel="Indice suivant"
             variant="action"
             onPress={onNextClue}
