@@ -153,7 +153,7 @@ rationale is in [`MANIFESTO.md`](./MANIFESTO.md). Mechanics:
   `clue-ai`, `jvm-backend`, `frontend`, `schemas`. Skills load via the
   Claude Code Skill tool and encode repo conventions so each agent
   starts with the same context.
-- **Worktree isolation** — agents run in `.claude/worktrees/<branch>/`
+- **Worktree isolation** — agents run in `.claude/worktrees/agent-<id>/`
   via the `Agent` tool with `isolation: "worktree"`, so parallel work
   never collides on the working tree.
 - **Wave-based rollouts** — large features (multiplayer, custom
