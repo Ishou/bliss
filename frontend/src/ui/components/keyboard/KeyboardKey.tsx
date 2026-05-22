@@ -47,16 +47,7 @@ export function KeyboardKey({
   disabled = false,
   variant = 'letter',
 }: KeyboardKeyProps) {
-  // Dispatch on pointerdown so the letter appears at the moment the finger lands.
-  // Click fires only on touchend after the browser's tap-synthesis delay (50-150ms
-  // on mobile even with `touch-action: manipulation`); pointerdown is immediate and
-  // matches the feel of iOS/gboard/native keyboards. preventDefault() also suppresses
-  // the synthesized click and preserves focus on the previously focused element
-  // (typically the grid cell input).
-  //
-  // We retain onClick as a fallback for keyboard-driven activation (Enter/Space on a
-  // focused button), guarded by a "consumed" ref to prevent double-fire when both
-  // pointerdown and click fire for the same user gesture.
+  // pointerdown fires before tap-synthesis delay; preventDefault() suppresses the follow-on click.
   const consumedRef = useRef(false);
 
   const handlePointerDown = useCallback(
@@ -79,8 +70,7 @@ export function KeyboardKey({
     onPress();
   }, [disabled, onPress]);
 
-  // Suppress the long-press context menu on touch — common iOS/Android gesture
-  // that would otherwise interrupt rapid typing.
+  // Suppress the long-press context menu on touch (interrupts rapid typing).
   const handleContextMenu = useCallback((e: MouseEvent) => {
     e.preventDefault();
   }, []);
