@@ -1406,6 +1406,24 @@ describe('Grid mounts MobileKeyboard on touch-primary', () => {
     }
   });
 
+  it('two keyboard letter taps in the same tick each land on consecutive cells', () => {
+    const original = window.matchMedia;
+    setTouchPrimary(true);
+    try {
+      const { container, getByLabelText } = render(<Grid puzzle={TEST_PUZZLE} />);
+      click(inputAt(container, 1, 1)!);
+      act(() => {
+        fireEvent.click(getByLabelText('Lettre A'));
+        fireEvent.click(getByLabelText('Lettre B'));
+      });
+      expect(inputAt(container, 1, 1)!.value).toBe('A');
+      expect(inputAt(container, 1, 2)!.value).toBe('B');
+      expect(document.activeElement).toBe(inputAt(container, 1, 3));
+    } finally {
+      window.matchMedia = original;
+    }
+  });
+
   it('tapping backspace clears the previous letter and moves focus back', () => {
     const original = window.matchMedia;
     setTouchPrimary(true);

@@ -429,6 +429,8 @@ export function useGridNavigation(puzzle: Puzzle, options?: UseGridNavigationOpt
 
   const focusCell = useCallback((p: Position) => {
     refs.current.get(key(p))?.focus();
+    // Sync mirror eagerly so re-entrant enterLetter calls in the same React tick see the updated position.
+    stateRef.current = { ...stateRef.current, focused: p };
     setFocused(p);
   }, []);
 
