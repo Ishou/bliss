@@ -12,13 +12,34 @@ describe('KeyboardKey', () => {
     expect(btn.getAttribute('type')).toBe('button');
   });
 
-  it('calls onPress on click (keyboard-driven activation)', () => {
+  it('calls onPress on Enter keydown (keyboard activation)', () => {
     const onPress = vi.fn();
     const { getByRole } = render(
       <KeyboardKey label="A" ariaLabel="Lettre A" onPress={onPress} />,
     );
-    fireEvent.click(getByRole('button'));
+    fireEvent.keyDown(getByRole('button'), { key: 'Enter' });
     expect(onPress).toHaveBeenCalledTimes(1);
+  });
+
+  it('calls onPress on Space keydown and prevents default (no page scroll)', () => {
+    const onPress = vi.fn();
+    const { getByRole } = render(
+      <KeyboardKey label="A" ariaLabel="Lettre A" onPress={onPress} />,
+    );
+    const ev = fireEvent.keyDown(getByRole('button'), { key: ' ' });
+    expect(onPress).toHaveBeenCalledTimes(1);
+    // fireEvent returns whether the default was NOT prevented; we want it prevented.
+    expect(ev).toBe(false);
+  });
+
+  it('ignores non-activation keys (Tab / letter)', () => {
+    const onPress = vi.fn();
+    const { getByRole } = render(
+      <KeyboardKey label="A" ariaLabel="Lettre A" onPress={onPress} />,
+    );
+    fireEvent.keyDown(getByRole('button'), { key: 'Tab' });
+    fireEvent.keyDown(getByRole('button'), { key: 'a' });
+    expect(onPress).not.toHaveBeenCalled();
   });
 
   it('calls onPress on pointerdown (touch primary path) — fires once', () => {
@@ -44,6 +65,24 @@ describe('KeyboardKey', () => {
     expect(onPress).toHaveBeenCalledTimes(1);
   });
 
+  it('does not double-fire when click arrives in a later macrotask after pointerdown (real-device sequence)', async () => {
+    // Real-device repro: pointerdown handler runs, then the browser dispatches the
+    // synthesized click as a SEPARATE macrotask after touchend. Any microtask-based
+    // dedupe (e.g. queueMicrotask reset of a consumedRef) has already cleared by then.
+    // Fix: there is no onClick handler — the synthesized click is delivered into nothing.
+    const onPress = vi.fn();
+    const { getByRole } = render(
+      <KeyboardKey label="A" ariaLabel="Lettre A" onPress={onPress} />,
+    );
+    const btn = getByRole('button');
+    btn.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true, button: 0 }));
+    // Drain microtasks + yield a macrotask, simulating the gap between touchend and click.
+    await Promise.resolve();
+    await new Promise<void>((r) => setTimeout(r, 0));
+    fireEvent.click(btn);
+    expect(onPress).toHaveBeenCalledTimes(1);
+  });
+
   it('ignores non-primary pointer buttons (right-click)', () => {
     const onPress = vi.fn();
     const { getByRole } = render(
@@ -65,32 +104,16 @@ describe('KeyboardKey', () => {
     expect(ev.defaultPrevented).toBe(true);
   });
 
-  it('disabled=true blocks onPress on pointerdown and click and sets aria-disabled', () => {
+  it('disabled=true blocks onPress on pointerdown and keydown and sets aria-disabled', () => {
     const onPress = vi.fn();
     const { getByRole } = render(
       <KeyboardKey label="A" ariaLabel="Lettre A" disabled onPress={onPress} />,
     );
     const btn = getByRole('button');
     btn.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true, button: 0 }));
-    fireEvent.click(btn);
+    fireEvent.keyDown(btn, { key: 'Enter' });
+    fireEvent.keyDown(btn, { key: ' ' });
     expect(onPress).not.toHaveBeenCalled();
     expect(btn.getAttribute('aria-disabled')).toBe('true');
-  });
-
-  it('after pointerdown gesture completes, a later keyboard-triggered click still fires', async () => {
-    const onPress = vi.fn();
-    const { getByRole } = render(
-      <KeyboardKey label="A" ariaLabel="Lettre A" onPress={onPress} />,
-    );
-    const btn = getByRole('button');
-    // First gesture: pointerdown + synthesized click. Should fire once.
-    btn.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true, button: 0 }));
-    fireEvent.click(btn);
-    expect(onPress).toHaveBeenCalledTimes(1);
-    // Yield a microtask so the consumed ref resets.
-    await Promise.resolve();
-    // Second gesture: pure keyboard activation (Enter/Space on focused button → click).
-    fireEvent.click(btn);
-    expect(onPress).toHaveBeenCalledTimes(2);
   });
 });
