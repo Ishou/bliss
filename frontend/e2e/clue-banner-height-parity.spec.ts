@@ -28,8 +28,7 @@ test('banner height is identical across empty / single-clue / intersection focus
   // State A: empty — page loads with no cell focused; banner shows the "Touchez une case" placeholder.
   const hEmpty = await bannerHeight(page);
 
-  // State B/C: walk the cells. The first letter cell typically intersects (across + down).
-  // We capture the first intersection state we see and the first single-clue state we see.
+  // State B/C: walk cells to capture the first single-clue and first intersection heights.
   const cells = page.locator('[role="gridcell"]:has(input[data-cell-kind="letter"])');
   const count = await cells.count();
   let hSingle: number | null = null;
