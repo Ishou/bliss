@@ -1,4 +1,4 @@
-import { type ReactNode, useCallback, type MouseEvent } from 'react';
+import { type ReactNode, useCallback, useRef, type MouseEvent, type PointerEvent } from 'react';
 import { css } from 'styled-system/css';
 
 const keyBase = css({
@@ -47,22 +47,53 @@ export function KeyboardKey({
   disabled = false,
   variant = 'letter',
 }: KeyboardKeyProps) {
-  // Prevent the implicit focus-shift on mousedown so the focused grid cell keeps focus.
-  const handleMouseDown = useCallback((e: MouseEvent) => {
-    e.preventDefault();
-  }, []);
+  // Dispatch on pointerdown so the letter appears at the moment the finger lands.
+  // Click fires only on touchend after the browser's tap-synthesis delay (50-150ms
+  // on mobile even with `touch-action: manipulation`); pointerdown is immediate and
+  // matches the feel of iOS/gboard/native keyboards. preventDefault() also suppresses
+  // the synthesized click and preserves focus on the previously focused element
+  // (typically the grid cell input).
+  //
+  // We retain onClick as a fallback for keyboard-driven activation (Enter/Space on a
+  // focused button), guarded by a "consumed" ref to prevent double-fire when both
+  // pointerdown and click fire for the same user gesture.
+  const consumedRef = useRef(false);
+
+  const handlePointerDown = useCallback(
+    (e: PointerEvent<HTMLButtonElement>) => {
+      // Only the primary button (left mouse / single-finger touch / stylus tip).
+      if (e.button !== 0 || disabled) return;
+      e.preventDefault();
+      consumedRef.current = true;
+      onPress();
+      // Reset on the next microtask so a subsequent keyboard-triggered click still fires.
+      queueMicrotask(() => {
+        consumedRef.current = false;
+      });
+    },
+    [disabled, onPress],
+  );
+
   const handleClick = useCallback(() => {
-    if (disabled) return;
+    if (consumedRef.current || disabled) return;
     onPress();
   }, [disabled, onPress]);
+
+  // Suppress the long-press context menu on touch — common iOS/Android gesture
+  // that would otherwise interrupt rapid typing.
+  const handleContextMenu = useCallback((e: MouseEvent) => {
+    e.preventDefault();
+  }, []);
+
   return (
     <button
       type="button"
       className={variant === 'action' ? `${keyBase} ${keyAction}` : keyBase}
       aria-label={ariaLabel}
       aria-disabled={disabled || undefined}
-      onMouseDown={handleMouseDown}
+      onPointerDown={handlePointerDown}
       onClick={handleClick}
+      onContextMenu={handleContextMenu}
     >
       {label}
     </button>
