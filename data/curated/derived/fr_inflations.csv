@@ -1,0 +1,453 @@
+Mot;Définition 1;Définition 2;Lemme;Mot source;Thème source;Flag 1;Flag 2
+ONT;Possèdent;Forme d’avoir;avoir;AI;;ok;verbatim
+AVAIT;Possédait;Forme d’avoir;avoir;AI;;ok;verbatim
+AVOIR;Posséder;Forme d’avoir;avoir;AI;;ok;verbatim
+AVONS;Possédons;Forme d’avoir;avoir;AI;;ok;verbatim
+AVAIENT;Possédaient;Forme d’avoir;avoir;AI;;ok;verbatim
+AURAIT;Posséderait;Forme d’avoir;avoir;AI;;ok;verbatim
+AIT;Possède;Forme d’avoir;avoir;AI;;ok;verbatim
+EUT;Posséda;Forme d’avoir;avoir;AI;;ok;verbatim
+AYANT;Possédant;Forme d’avoir;avoir;AI;;ok;verbatim
+EÛT;Possédât;Forme d’avoir;avoir;AI;;ok;verbatim
+AVEZ;Possédez;Forme d’avoir;avoir;AI;;ok;verbatim
+AURAIENT;Posséderaient;Forme d’avoir;avoir;AI;;ok;verbatim
+AURA;Possédera;Forme d’avoir;avoir;AI;;ok;verbatim
+AVAIS;Possédais;Forme d’avoir;avoir;AI;;ok;verbatim
+AIENT;Possèdent;Forme d’avoir;avoir;AI;;ok;verbatim
+AURONT;Posséderont;Forme d’avoir;avoir;AI;;ok;verbatim
+AVIONS;Possédions;Forme d’avoir;avoir;AI;;ok;verbatim
+EURENT;Possédèrent;Forme d’avoir;avoir;AI;;ok;verbatim
+EUSSENT;Possédassent;Forme d’avoir;avoir;AI;;ok;verbatim
+AURAIS;Posséderais;Forme d’avoir;avoir;AI;;ok;verbatim
+AURONS;Posséderons;Forme d’avoir;avoir;AI;;ok;verbatim
+AUREZ;Posséderez;Forme d’avoir;avoir;AI;;ok;verbatim
+AURIONS;Posséderions;Forme d’avoir;avoir;AI;;ok;verbatim
+AURAI;Posséderai;Forme d’avoir;avoir;AI;;ok;verbatim
+AVIEZ;Possédiez;Forme d’avoir;avoir;AI;;ok;verbatim
+EUE;Possédée;Forme d’avoir;avoir;AI;;ok;verbatim
+EUS;Possédés;Forme d’avoir;avoir;AI;;ok;verbatim
+EUSSE;Possédasse;Forme d’avoir;avoir;AI;;ok;verbatim
+AURIEZ;Posséderiez;Forme d’avoir;avoir;AI;;ok;verbatim
+AIE;Possède;Forme d’avoir;avoir;AI;;ok;verbatim
+AYONS;Possédions;Forme d’avoir;avoir;AI;;ok;verbatim
+EÛMES;Possédâmes;Forme d’avoir;avoir;AI;;ok;verbatim
+AYEZ;Possédiez;Forme d’avoir;avoir;AI;;ok;verbatim
+EUSSIONS;Possédassions;Forme d’avoir;avoir;AI;;ok;verbatim
+EUES;Possédées;Forme d’avoir;avoir;AI;;ok;verbatim
+AVOIRS;Posséder;Forme d’avoir;avoir;AI;;head-pos-mismatch;verbatim
+EUSSIEZ;Possédassiez;Forme d’avoir;avoir;AI;;ok;verbatim
+AURAS;Posséderas;Forme d’avoir;avoir;AI;;ok;verbatim
+AIES;Possèdes;Forme d’avoir;avoir;AI;;ok;verbatim
+EÛTES;Possédâtes;Forme d’avoir;avoir;AI;;ok;verbatim
+EUSSES;Possédasses;Forme d’avoir;avoir;AI;;ok;verbatim
+EUSSÉ;Possédât;Forme d’avoir;avoir;AI;;ok;verbatim
+EUSSÈ;Possédât;Forme d’avoir;avoir;AI;;ok;verbatim
+SONT;Forme d’être;Deuxième personne d’être;être;ES;;verbatim;verbatim
+ÊTRE;Forme d’être;Deuxième personne d’être;être;ES;;verbatim;verbatim
+ÉTÉ;Forme d’être;Deuxième personne d’être;être;ES;;verbatim;verbatim
+ÉTAIT;Forme d’être;Deuxième personne d’être;être;ES;;verbatim;verbatim
+ÉTAIENT;Forme d’être;Deuxième personne d’être;être;ES;;verbatim;verbatim
+SERA;Forme d’être;Deuxième personne d’être;être;ES;;verbatim;verbatim
+SERAIT;Forme d’être;Deuxième personne d’être;être;ES;;verbatim;verbatim
+ÉTANT;Forme d’être;Deuxième personne d’être;être;ES;;verbatim;verbatim
+SERONT;Forme d’être;Deuxième personne d’être;être;ES;;verbatim;verbatim
+FURENT;Forme d’être;Deuxième personne d’être;être;ES;;verbatim;verbatim
+SUIS;Forme d’être;Deuxième personne d’être;être;ES;;verbatim;verbatim
+EST;Forme d’être;Deuxième personne d’être;être;ES;;verbatim;verbatim
+FUT;Forme d’être;Deuxième personne d’être;être;ES;;verbatim;verbatim
+SOIT;Forme d’être;Deuxième personne d’être;être;ES;;verbatim;verbatim
+SOIENT;Forme d’être;Deuxième personne d’être;être;ES;;verbatim;verbatim
+FÛT;Forme d’être;Deuxième personne d’être;être;ES;;verbatim;verbatim
+SERAIENT;Forme d’être;Deuxième personne d’être;être;ES;;verbatim;verbatim
+SOMMES;Forme d’être;Deuxième personne d’être;être;ES;;verbatim;verbatim
+ÊTES;Forme d’être;Deuxième personne d’être;être;ES;;verbatim;verbatim
+ÊTRES;Forme d’être;Deuxième personne d’être;être;ES;;verbatim;verbatim
+ÉTAIS;Forme d’être;Deuxième personne d’être;être;ES;;verbatim;verbatim
+FUSSENT;Forme d’être;Deuxième personne d’être;être;ES;;verbatim;verbatim
+ÉTIONS;Forme d’être;Deuxième personne d’être;être;ES;;verbatim;verbatim
+FUS;Forme d’être;Deuxième personne d’être;être;ES;;verbatim;verbatim
+SERAIS;Forme d’être;Deuxième personne d’être;être;ES;;verbatim;verbatim
+SERAI;Forme d’être;Deuxième personne d’être;être;ES;;verbatim;verbatim
+SEREZ;Forme d’être;Deuxième personne d’être;être;ES;;verbatim;verbatim
+SERONS;Forme d’être;Deuxième personne d’être;être;ES;;verbatim;verbatim
+SERIONS;Forme d’être;Deuxième personne d’être;être;ES;;verbatim;verbatim
+ÉTIEZ;Forme d’être;Deuxième personne d’être;être;ES;;verbatim;verbatim
+FÛMES;Forme d’être;Deuxième personne d’être;être;ES;;verbatim;verbatim
+SOIS;Forme d’être;Deuxième personne d’être;être;ES;;verbatim;verbatim
+SOYEZ;Forme d’être;Deuxième personne d’être;être;ES;;verbatim;verbatim
+SERAS;Forme d’être;Deuxième personne d’être;être;ES;;verbatim;verbatim
+SOYONS;Forme d’être;Deuxième personne d’être;être;ES;;verbatim;verbatim
+SERIEZ;Forme d’être;Deuxième personne d’être;être;ES;;verbatim;verbatim
+FUSSE;Forme d’être;Deuxième personne d’être;être;ES;;verbatim;verbatim
+FUSSIONS;Forme d’être;Deuxième personne d’être;être;ES;;verbatim;verbatim
+FUSSIEZ;Forme d’être;Deuxième personne d’être;être;ES;;verbatim;verbatim
+FÛTES;Forme d’être;Deuxième personne d’être;être;ES;;verbatim;verbatim
+FUSSES;Forme d’être;Deuxième personne d’être;être;ES;;verbatim;verbatim
+FUSSÉ;Forme d’être;Deuxième personne d’être;être;ES;;verbatim;verbatim
+FUSSÈ;Forme d’être;Deuxième personne d’être;être;ES;;verbatim;verbatim
+ONT;Possèdent;Obtiennent;avoir;EU;;ok;ok
+AVAIT;Possédait;Obtenait;avoir;EU;;ok;ok
+AVOIR;Posséder;Obtenir;avoir;EU;;ok;ok
+AVONS;Possédons;Obtenons;avoir;EU;;ok;ok
+AVAIENT;Possédaient;Obtenaient;avoir;EU;;ok;ok
+AURAIT;Posséderait;Obtiendrait;avoir;EU;;ok;ok
+AIT;Possède;Obtienne;avoir;EU;;ok;ok
+EUT;Posséda;Obtint;avoir;EU;;ok;ok
+AYANT;Possédant;Obtenant;avoir;EU;;ok;ok
+EÛT;Possédât;Obtînt;avoir;EU;;ok;ok
+AVEZ;Possédez;Obtenez;avoir;EU;;ok;ok
+AURAIENT;Posséderaient;Obtiendraient;avoir;EU;;ok;ok
+AURA;Possédera;Obtiendra;avoir;EU;;ok;ok
+AVAIS;Possédais;Obtenais;avoir;EU;;ok;ok
+AIENT;Possèdent;Obtiennent;avoir;EU;;ok;ok
+AURONT;Posséderont;Obtiendront;avoir;EU;;ok;ok
+AVIONS;Possédions;Obtenions;avoir;EU;;ok;ok
+EURENT;Possédèrent;Obtinrent;avoir;EU;;ok;ok
+EUSSENT;Possédassent;Obtinssent;avoir;EU;;ok;ok
+AURAIS;Posséderais;Obtiendrais;avoir;EU;;ok;ok
+AURONS;Posséderons;Obtiendrons;avoir;EU;;ok;ok
+AUREZ;Posséderez;Obtiendrez;avoir;EU;;ok;ok
+AURIONS;Posséderions;Obtiendrions;avoir;EU;;ok;ok
+AURAI;Posséderai;Obtiendrai;avoir;EU;;ok;ok
+AVIEZ;Possédiez;Obteniez;avoir;EU;;ok;ok
+EUE;Possédée;Obtenue;avoir;EU;;ok;ok
+EUS;Possédés;Obtenus;avoir;EU;;ok;ok
+EUSSE;Possédasse;Obtinsse;avoir;EU;;ok;ok
+AURIEZ;Posséderiez;Obtiendriez;avoir;EU;;ok;ok
+AIE;Possède;Obtienne;avoir;EU;;ok;ok
+AYONS;Possédions;Obtenions;avoir;EU;;ok;ok
+EÛMES;Possédâmes;Obtînmes;avoir;EU;;ok;ok
+AYEZ;Possédiez;Obteniez;avoir;EU;;ok;ok
+EUSSIONS;Possédassions;Obtinssions;avoir;EU;;ok;ok
+EUES;Possédées;Obtenues;avoir;EU;;ok;ok
+AVOIRS;Posséder;Obtenir;avoir;EU;;head-pos-mismatch;head-pos-mismatch
+EUSSIEZ;Possédassiez;Obtinssiez;avoir;EU;;ok;ok
+AURAS;Posséderas;Obtiendras;avoir;EU;;ok;ok
+AIES;Possèdes;Obtiennes;avoir;EU;;ok;ok
+EÛTES;Possédâtes;Obtîntes;avoir;EU;;ok;ok
+EUSSES;Possédasses;Obtinsses;avoir;EU;;ok;ok
+EUSSÉ;Possédât;Obtînt;avoir;EU;;ok;ok
+EUSSÈ;Possédât;Obtînt;avoir;EU;;ok;ok
+BOIRE;Se désaltérer;Vider son verre;boire;BU;;identity;ok
+BOIT;Se désaltère;Vide son verre;boire;BU;;ok;ok
+BOIVENT;Se désaltèrent;Vident son verre;boire;BU;;ok;ok
+BUVAIT;Se désaltérait;Vidait son verre;boire;BU;;ok;ok
+BUVANT;Se désaltérant;Vidant son verre;boire;BU;;ok;ok
+BUVAIENT;Se désaltéraient;Vidaient son verre;boire;BU;;ok;ok
+BUE;Se désaltérer;Vider son verre;boire;BU;;pp-reflexive-skipped;pp-only-skipped
+BOIS;Se désaltères;Vides son verre;boire;BU;;ok;ok
+BUS;Se désaltérer;Vider son verre;boire;BU;;pp-reflexive-skipped;pp-only-skipped
+BUT;Se désaltéra;Vida son verre;boire;BU;;ok;ok
+BURENT;Se désaltérèrent;Vidèrent son verre;boire;BU;;ok;ok
+BOIRA;Se désaltérera;Videra son verre;boire;BU;;ok;ok
+BOIVE;Se désaltère;Vide son verre;boire;BU;;ok;ok
+BUVONS;Se désaltérons;Vidons son verre;boire;BU;;ok;ok
+BUVEZ;Se désaltérez;Videz son verre;boire;BU;;ok;ok
+BUVAIS;Se désaltérais;Vidais son verre;boire;BU;;ok;ok
+BOIRAI;Se désaltérerai;Viderai son verre;boire;BU;;ok;ok
+BUES;Se désaltérer;Vider son verre;boire;BU;;pp-reflexive-skipped;pp-only-skipped
+BUVIONS;Se désaltérions;Vidions son verre;boire;BU;;ok;ok
+BOIRONS;Se désaltérerons;Viderons son verre;boire;BU;;ok;ok
+BÛMES;Se désaltérâmes;Vidâmes son verre;boire;BU;;ok;ok
+BOIRONT;Se désaltéreront;Videront son verre;boire;BU;;ok;ok
+BOIRAIT;Se désaltérerait;Viderait son verre;boire;BU;;ok;ok
+BOIREZ;Se désaltérerez;Viderez son verre;boire;BU;;ok;ok
+BÛT;Se désaltérât;Vidât son verre;boire;BU;;ok;ok
+BOIRAS;Se désaltéreras;Videras son verre;boire;BU;;ok;ok
+BOIRAIS;Se désaltèrerais;Viderais son verre;boire;BU;;ok;ok
+BUVIEZ;Se désaltériez;Vidiez son verre;boire;BU;;ok;ok
+BOIRES;Se désaltérer;Vider son verres;boire;BU;;head-pos-mismatch;ok
+BUSSE;Se désaltérasse;Vidasse son verre;boire;BU;;ok;ok
+BOIRAIENT;Se désaltéreraient;Videraient son verre;boire;BU;;ok;ok
+BÛTES;Se désaltérâtes;Vidâtes son verre;boire;BU;;ok;ok
+BUSSES;Se désaltérasses;Vidasses son verre;boire;BU;;ok;ok
+BUSSENT;Se désaltérassent;Vidassent son verre;boire;BU;;ok;ok
+BOIVES;Se désaltères;Vides son verre;boire;BU;;ok;ok
+BOIRIONS;Se désaltèrerions;Viderions son verre;boire;BU;;ok;ok
+BOIRIEZ;Se désaltèreriez;Videriez son verre;boire;BU;;ok;ok
+BUSSIONS;Se désaltérassions;Vidassions son verre;boire;BU;;ok;ok
+BUSSIEZ;Se désaltérassiez;Vidassiez son verre;boire;BU;;ok;ok
+LIRE;Parcourir des yeux;Déchiffrer;lire;LU;;ok;ok
+LISANT;Parcourant des yeux;Déchiffrant;lire;LU;;ok;ok
+LUT;Parcourut des yeux;Déchiffra;lire;LU;;ok;ok
+LISAIT;Parcourait des yeux;Déchiffrait;lire;LU;;ok;ok
+LUE;Parcourir des yeux;Déchiffrée;lire;LU;;pp-only-skipped;ok
+LISENT;Parcourent des yeux;Déchiffrent;lire;LU;;ok;ok
+LUS;Parcourir des yeux;Déchiffrés;lire;LU;;pp-only-skipped;ok
+LIRA;Parcourra des yeux;Déchiffrera;lire;LU;;ok;ok
+LIT;Parcourt des yeux;Déchiffre;lire;LU;;ok;ok
+LISEZ;Parcourez des yeux;Déchiffrez;lire;LU;;ok;ok
+LUES;Parcourir des yeux;Déchiffrées;lire;LU;;pp-only-skipped;ok
+LIRES;Parcourir des yeux;Déchiffrer;lire;LU;;identity;head-pos-mismatch
+LISONS;Parcourons des yeux;Déchiffrons;lire;LU;;ok;ok
+LISE;Parcoure des yeux;Déchiffre;lire;LU;;ok;ok
+LIS;Parcours des yeux;Déchiffres;lire;LU;;ok;ok
+LIRONT;Parcourront des yeux;Déchiffreront;lire;LU;;ok;ok
+LISAIS;Parcourais des yeux;Déchiffrais;lire;LU;;ok;ok
+LISAIENT;Parcouraient des yeux;Déchiffraient;lire;LU;;ok;ok
+LURENT;Parcoururent des yeux;Déchiffrèrent;lire;LU;;ok;ok
+LÛT;Parcourût des yeux;Déchiffrât;lire;LU;;ok;ok
+LIRAIT;Parcourrait des yeux;Déchiffrerait;lire;LU;;ok;ok
+LIREZ;Parcourrez des yeux;Déchiffrerez;lire;LU;;ok;ok
+LIRAI;Parcourrai des yeux;Déchiffrerai;lire;LU;;ok;ok
+LISIONS;Parcourions des yeux;Déchiffrions;lire;LU;;ok;ok
+LISES;Parcoures des yeux;Déchiffres;lire;LU;;ok;ok
+LIRONS;Parcourrons des yeux;Déchiffrerons;lire;LU;;ok;ok
+LUSSENT;Parcourussent des yeux;Déchiffrassent;lire;LU;;ok;ok
+LIRAS;Parcourras des yeux;Déchiffreras;lire;LU;;ok;ok
+LISIEZ;Parcouriez des yeux;Déchiffriez;lire;LU;;ok;ok
+LIRAIENT;Parcourraient des yeux;Déchiffreraient;lire;LU;;ok;ok
+LÛMES;Parcourûmes des yeux;Déchiffrâmes;lire;LU;;ok;ok
+LIRAIS;Parcourrais des yeux;Déchiffrerais;lire;LU;;ok;ok
+LIRIONS;Parcourrions des yeux;Déchiffrerions;lire;LU;;ok;ok
+LUSSE;Parcourusse des yeux;Déchiffrasse;lire;LU;;ok;ok
+LÛTES;Parcourûtes des yeux;Déchiffrâtes;lire;LU;;ok;ok
+LIRIEZ;Parcourriez des yeux;Déchiffreriez;lire;LU;;ok;ok
+LUSSES;Parcourusses des yeux;Déchiffrasses;lire;LU;;ok;ok
+LUSSIEZ;Parcourussiez des yeux;Déchiffrassiez;lire;LU;;ok;ok
+LUSSIONS;Parcourussions des yeux;Déchiffrassions;lire;LU;;ok;ok
+NAÎTRE;Venir au monde;Mettre bas;naître;NÉ;;ok;ok
+NÉE;Venue au monde;Mise basse;naître;NÉ;;ok;ok
+NÉS;Venus au monde;Mis bas;naître;NÉ;;ok;ok
+NAÎT;Vient au monde;Met bas;naître;NÉ;;ok;ok
+NAISSENT;Viennent au monde;Mettent bas;naître;NÉ;;ok;ok
+NÉES;Venues au monde;Mises basses;naître;NÉ;;ok;ok
+NAQUIT;Vint au monde;Mit bas;naître;NÉ;;ok;ok
+NAISSANT;Venant au monde;Mettant bas;naître;NÉ;;ok;ok
+NAISSAIT;Venait au monde;Mettait bas;naître;NÉ;;ok;ok
+NAÎTRA;Viendra au monde;Mettra bas;naître;NÉ;;ok;ok
+NAQUIRENT;Vinrent au monde;Mirent bas;naître;NÉ;;ok;ok
+NAÎTRONT;Viendront au monde;Mettront bas;naître;NÉ;;ok;ok
+NAISSAIENT;Venaient au monde;Mettaient bas;naître;NÉ;;ok;ok
+NAISSE;Vienne au monde;Mette bas;naître;NÉ;;ok;ok
+NAÎTRAIT;Viendrait au monde;Mettrait bas;naître;NÉ;;ok;ok
+NAIS;Viens au monde;Mets bas;naître;NÉ;;ok;ok
+NAÎTRAIENT;Viendraient au monde;Mettraient bas;naître;NÉ;;ok;ok
+NAISSONS;Venons au monde;Mettons bas;naître;NÉ;;ok;ok
+NAQUIS;Vins au monde;Mis bas;naître;NÉ;;ok;ok
+NAQUÎT;Vînt au monde;Mît bas;naître;NÉ;;ok;ok
+NAISSEZ;Venez au monde;Mettez bas;naître;NÉ;;ok;ok
+NAISSAIS;Venais au monde;Mettais bas;naître;NÉ;;ok;ok
+NAISSIONS;Venions au monde;Mettions bas;naître;NÉ;;ok;ok
+NAQUISSENT;Vinssent au monde;Missent bas;naître;NÉ;;ok;ok
+NAISSIEZ;Veniez au monde;Mettiez bas;naître;NÉ;;ok;ok
+NAQUÎTES;Vîntes au monde;Mîtes bas;naître;NÉ;;ok;ok
+NAQUÎMES;Vînmes au monde;Mîmes bas;naître;NÉ;;ok;ok
+NAÎTRAI;Viendrai au monde;Mettrai bas;naître;NÉ;;ok;ok
+NAÎTREZ;Viendrez au monde;Mettrez bas;naître;NÉ;;ok;ok
+NAÎTRONS;Viendrons au monde;Mettrons bas;naître;NÉ;;ok;ok
+NAISSES;Viennes au monde;Mettes bas;naître;NÉ;;ok;ok
+NAÎTRAS;Viendras au monde;Mettras bas;naître;NÉ;;ok;ok
+NAÎTRAIS;Viendrais au monde;Mettrais bas;naître;NÉ;;ok;ok
+NAÎTRIONS;Viendrions au monde;Mettrions bas;naître;NÉ;;ok;ok
+NAQUISSE;Vinsse au monde;Misse bas;naître;NÉ;;ok;ok
+NAÎTRIEZ;Viendriez au monde;Mettriez bas;naître;NÉ;;ok;ok
+NAQUISSES;Vinsses au monde;Misses bas;naître;NÉ;;ok;ok
+NAQUISSIEZ;Vinssiez au monde;Missiez bas;naître;NÉ;;ok;ok
+NAQUISSIONS;Vinssions au monde;Missions bas;naître;NÉ;;ok;ok
+PEUT;Est capable;Réussit à faire;pouvoir;PU;;ok;ok
+PEUVENT;Sont capable;Réussissent à faire;pouvoir;PU;;ok;ok
+POUVOIR;Être capable;Réussir à faire;pouvoir;PU;;ok;ok
+POURRAIT;Serait capable;Réussirait à faire;pouvoir;PU;;ok;ok
+POUVAIT;Était capable;Réussissait à faire;pouvoir;PU;;ok;ok
+PUISSE;Soit capable;Réussisse à faire;pouvoir;PU;;ok;ok
+POURRA;Sera capable;Réussira à faire;pouvoir;PU;;ok;ok
+PUIS;Suis capable;Réussis à faire;pouvoir;PU;;ok;ok
+POUVOIRS;Êtres capables;Réussir à faire;pouvoir;PU;;ok;head-pos-mismatch
+POUVONS;Sommes capable;Réussissons à faire;pouvoir;PU;;ok;ok
+POUVAIENT;Étaient capable;Réussissaient à faire;pouvoir;PU;;ok;ok
+POURRAIENT;Seraient capable;Réussiraient à faire;pouvoir;PU;;ok;ok
+POURRONT;Seront capable;Réussiront à faire;pouvoir;PU;;ok;ok
+POUVANT;Étant capable;Réussissant à faire;pouvoir;PU;;ok;ok
+PUT;Fut capable;Réussit à faire;pouvoir;PU;;ok;ok
+PUISSENT;Soient capable;Réussissent à faire;pouvoir;PU;;ok;ok
+PÛT;Fût capable;Réussît à faire;pouvoir;PU;;ok;ok
+PEUX;Es capable;Réussis à faire;pouvoir;PU;;ok;ok
+POUVEZ;Êtes capable;Réussissez à faire;pouvoir;PU;;ok;ok
+PURENT;Furent capable;Réussirent à faire;pouvoir;PU;;ok;ok
+POUVAIS;Étais capable;Réussissais à faire;pouvoir;PU;;ok;ok
+POURRIONS;Serions capable;Réussirions à faire;pouvoir;PU;;ok;ok
+POURRAIS;Serais capable;Réussirais à faire;pouvoir;PU;;ok;ok
+POURRONS;Serons capable;Réussirons à faire;pouvoir;PU;;ok;ok
+PUSSENT;Fussent capable;Réussissent à faire;pouvoir;PU;;ok;ok
+PUS;Fus capable;Réussis à faire;pouvoir;PU;;ok;ok
+POURREZ;Serez capable;Réussirez à faire;pouvoir;PU;;ok;ok
+POUVIONS;Étions capable;Réussissions à faire;pouvoir;PU;;ok;ok
+PUISSIONS;Soyons capable;Réussissions à faire;pouvoir;PU;;ok;ok
+POURRAI;Serai capable;Réussirai à faire;pouvoir;PU;;ok;ok
+POURRIEZ;Seriez capable;Réussiriez à faire;pouvoir;PU;;ok;ok
+PUISSIEZ;Soyez capable;Réussissiez à faire;pouvoir;PU;;ok;ok
+PÛMES;Fûmes capable;Réussîmes à faire;pouvoir;PU;;ok;ok
+POUVIEZ;Étiez capable;Réussissiez à faire;pouvoir;PU;;ok;ok
+POURRAS;Seras capable;Réussiras à faire;pouvoir;PU;;ok;ok
+PUSSE;Fusse capable;Réussisse à faire;pouvoir;PU;;ok;ok
+PUISSES;Sois capable;Réussisses à faire;pouvoir;PU;;ok;ok
+PUSSIONS;Fussions capable;Réussissions à faire;pouvoir;PU;;ok;ok
+PUSSIEZ;Fussiez capable;Réussissiez à faire;pouvoir;PU;;ok;ok
+PUISSÉ;Soit capable;Réussissent à faire;pouvoir;PU;;ok;ok
+PÛTES;Fûtes capable;Réussîtes à faire;pouvoir;PU;;ok;ok
+PUSSES;Fusses capable;Réussisses à faire;pouvoir;PU;;ok;ok
+PUISSÈ;Soit capable;Réussissent à faire;pouvoir;PU;;ok;ok
+PUSSÉ;Fût capable;Réussissent à faire;pouvoir;PU;;ok;ok
+PUSSÈ;Fût capable;Réussissent à faire;pouvoir;PU;;ok;ok
+RIRE;Se marrer;S’esclaffer;rire;RI;;identity;identity
+RIT;Se marre;S’esclaffe;rire;RI;;ok;ok
+RIANT;Se marrant;S’esclaffant;rire;RI;;ok;ok
+RIRES;Se marrer;S’esclaffer;rire;RI;;head-pos-mismatch;ok
+RIAIT;Se marrait;S’esclaffait;rire;RI;;ok;ok
+RIENT;Se marrent;S’esclaffent;rire;RI;;ok;ok
+RIAIENT;Se marraient;S’esclaffaient;rire;RI;;ok;ok
+RIE;Se marre;S’esclaffe;rire;RI;;ok;ok
+RIES;Se marres;S’esclaffes;rire;RI;;ok;ok
+RIS;Se marres;S’esclaffes;rire;RI;;ok;ok
+RIRENT;Se marrèrent;S’esclaffèrent;rire;RI;;ok;ok
+RIRA;Se marrera;S’esclaffera;rire;RI;;ok;ok
+RIAIS;Se marrais;S’esclaffais;rire;RI;;ok;ok
+RIONS;Se marrons;S’esclaffons;rire;RI;;ok;ok
+RIEZ;Se marrez;S’esclaffez;rire;RI;;ok;ok
+RIRAIT;Se marrerait;S’esclafferait;rire;RI;;ok;ok
+RIRONT;Se marreront;S’esclafferont;rire;RI;;ok;ok
+RISSENT;Se marrassent;S’esclaffassent;rire;RI;;ok;ok
+RIIONS;Se marrions;S’esclaffions;rire;RI;;ok;ok
+RIRAIENT;Se marreraient;S’esclafferaient;rire;RI;;ok;ok
+RIRAI;Se marrerai;S’esclafferai;rire;RI;;ok;ok
+RIREZ;Se marrerez;S’esclafferez;rire;RI;;ok;ok
+RIRONS;Se marrerons;S’esclafferons;rire;RI;;ok;ok
+RIIEZ;Se marriez;S’esclaffiez;rire;RI;;ok;ok
+RIRAIS;Se marrerais;S’esclafferais;rire;RI;;ok;ok
+RÎMES;Se marrâmes;S’esclaffâmes;rire;RI;;ok;ok
+RISSE;Se marrasse;S’esclaffasse;rire;RI;;ok;ok
+RIRIEZ;Se marreriez;S’esclafferiez;rire;RI;;ok;ok
+RÎT;Se marrât;S’esclaffât;rire;RI;;ok;ok
+RIRAS;Se marreras;S’esclafferas;rire;RI;;ok;ok
+RIRIONS;Se marrerions;S’esclafferions;rire;RI;;ok;ok
+RÎTES;Se marrâtes;S’esclaffâtes;rire;RI;;ok;ok
+RISSES;Se marrasses;S’esclaffasses;rire;RI;;ok;ok
+RISSIONS;Se marrassions;S’esclaffassions;rire;RI;;ok;ok
+RISSIEZ;Se marrassiez;S’esclaffassiez;rire;RI;;ok;ok
+SAVOIR;Apprendre;Connaître;savoir;SU;;ok;ok
+SAIT;Apprend;Connaît;savoir;SU;;ok;ok
+SAURAIT;Apprendrait;Connaîtrait;savoir;SU;;ok;ok
+SAIS;Apprends;Connais;savoir;SU;;ok;ok
+SAVAIT;Apprenait;Connaissait;savoir;SU;;ok;ok
+SAVENT;Apprennent;Connaissent;savoir;SU;;ok;ok
+SAVEZ;Apprenez;Connaissez;savoir;SU;;ok;ok
+SUT;Apprit;Connut;savoir;SU;;ok;ok
+SACHANT;Apprenant;Connaissant;savoir;SU;;ok;ok
+SAURAIENT;Apprendraient;Connaîtraient;savoir;SU;;ok;ok
+SAVONS;Apprenons;Connaissons;savoir;SU;;ok;ok
+SAVAIENT;Apprenaient;Connaissaient;savoir;SU;;ok;ok
+SAURA;Apprendra;Connaîtra;savoir;SU;;ok;ok
+SAVAIS;Apprenais;Connaissais;savoir;SU;;ok;ok
+SAURAIS;Apprendrais;Connaîtrais;savoir;SU;;ok;ok
+SAURIONS;Apprendrions;Connaîtrions;savoir;SU;;ok;ok
+SAVOIRS;Apprendre;Connaître;savoir;SU;;head-pos-mismatch;head-pos-mismatch
+SACHE;Apprenne;Connaisse;savoir;SU;;ok;ok
+SUS;Appris;Connus;savoir;SU;;ok;ok
+SURENT;Apprirent;Connurent;savoir;SU;;ok;ok
+SAURONT;Apprendront;Connaîtront;savoir;SU;;ok;ok
+SAVIONS;Apprenions;Connaissions;savoir;SU;;ok;ok
+SACHENT;Apprennent;Connaissent;savoir;SU;;ok;ok
+SUE;Apprise;Connue;savoir;SU;;ok;ok
+SÛT;Apprît;Connût;savoir;SU;;ok;ok
+SAURONS;Apprendrons;Connaîtrons;savoir;SU;;ok;ok
+SAURAI;Apprendrai;Connaîtrai;savoir;SU;;ok;ok
+SAUREZ;Apprendrez;Connaîtrez;savoir;SU;;ok;ok
+SAVIEZ;Appreniez;Connaissiez;savoir;SU;;ok;ok
+SACHEZ;Apprenez;Connaissez;savoir;SU;;ok;ok
+SACHIONS;Apprenions;Connaissions;savoir;SU;;ok;ok
+SAURIEZ;Apprendriez;Connaîtriez;savoir;SU;;ok;ok
+SACHIEZ;Appreniez;Connaissiez;savoir;SU;;ok;ok
+SACHONS;Apprenons;Connaissons;savoir;SU;;ok;ok
+SUSSENT;Apprissent;Connussent;savoir;SU;;ok;ok
+SAURAS;Apprendras;Connaîtras;savoir;SU;;ok;ok
+SACHES;Apprennes;Connaisses;savoir;SU;;ok;ok
+SUES;Apprises;Connues;savoir;SU;;ok;ok
+SÛMES;Apprîmes;Connûmes;savoir;SU;;ok;ok
+SUSSE;Apprisse;Connusse;savoir;SU;;ok;ok
+SUSSIONS;Apprissions;Connussions;savoir;SU;;ok;ok
+SÛTES;Apprîtes;Connûtes;savoir;SU;;ok;ok
+SUSSIEZ;Apprissiez;Connussiez;savoir;SU;;ok;ok
+SUSSES;Apprisses;Connusses;savoir;SU;;ok;ok
+ALLER;Se rendre;Forme d’aller;aller;VA;;identity;verbatim
+VONT;Se rendent;Forme d’aller;aller;VA;;ok;verbatim
+ALLAIT;Se rendait;Forme d’aller;aller;VA;;ok;verbatim
+VAIS;Se rends;Forme d’aller;aller;VA;;ok;verbatim
+ALLA;Se rendit;Forme d’aller;aller;VA;;ok;verbatim
+ALLANT;Se rendant;Forme d’aller;aller;VA;;ok;verbatim
+ALLAIENT;Se rendaient;Forme d’aller;aller;VA;;ok;verbatim
+ALLONS;Se rendons;Forme d’aller;aller;VA;;ok;verbatim
+ALLÉ;Se rendre;Forme d’aller;aller;VA;;pp-reflexive-skipped;verbatim
+IRA;Se rendra;Forme d’aller;aller;VA;;ok;verbatim
+ALLEZ;Se rendez;Forme d’aller;aller;VA;;ok;verbatim
+ALLAIS;Se rendais;Forme d’aller;aller;VA;;ok;verbatim
+AILLE;Se rende;Forme d’aller;aller;VA;;ok;verbatim
+ALLÈRENT;Se rendirent;Forme d’aller;aller;VA;;ok;verbatim
+VAS;Se rends;Forme d’aller;aller;VA;;ok;verbatim
+IRAIT;Se rendrait;Forme d’aller;aller;VA;;ok;verbatim
+ALLÉS;Se rendre;Forme d’aller;aller;VA;;pp-reflexive-skipped;verbatim
+ALLÉE;Se rendre;Forme d’aller;aller;VA;;pp-reflexive-skipped;verbatim
+IRONT;Se rendront;Forme d’aller;aller;VA;;ok;verbatim
+IRAI;Se rendrai;Forme d’aller;aller;VA;;ok;verbatim
+ALLÉES;Se rendre;Forme d’aller;aller;VA;;pp-reflexive-skipped;verbatim
+ALLAI;Se rendis;Forme d’aller;aller;VA;;ok;verbatim
+IRONS;Se rendrons;Forme d’aller;aller;VA;;ok;verbatim
+AILLENT;Se rendent;Forme d’aller;aller;VA;;ok;verbatim
+ALLIONS;Se rendions;Forme d’aller;aller;VA;;ok;verbatim
+IRAIENT;Se rendraient;Forme d’aller;aller;VA;;ok;verbatim
+ALLÂMES;Se rendîmes;Forme d’aller;aller;VA;;ok;verbatim
+ALLÂT;Se rendît;Forme d’aller;aller;VA;;ok;verbatim
+IRAIS;Se rendrais;Forme d’aller;aller;VA;;ok;verbatim
+IREZ;Se rendrez;Forme d’aller;aller;VA;;ok;verbatim
+IRAS;Se rendras;Forme d’aller;aller;VA;;ok;verbatim
+ALLIEZ;Se rendiez;Forme d’aller;aller;VA;;ok;verbatim
+IRIONS;Se rendrions;Forme d’aller;aller;VA;;ok;verbatim
+ALLASSENT;Se rendissent;Forme d’aller;aller;VA;;ok;verbatim
+ALLERS;Se rendre;Forme d’aller;aller;VA;;head-pos-mismatch;verbatim
+AILLES;Se rendes;Forme d’aller;aller;VA;;ok;verbatim
+ALLAS;Se rendis;Forme d’aller;aller;VA;;ok;verbatim
+IRIEZ;Se rendriez;Forme d’aller;aller;VA;;ok;verbatim
+ALLASSE;Se rendisse;Forme d’aller;aller;VA;;ok;verbatim
+ALLÂTES;Se rendîtes;Forme d’aller;aller;VA;;ok;verbatim
+ALLASSIONS;Se rendissions;Forme d’aller;aller;VA;;ok;verbatim
+ALLASSIEZ;Se rendissiez;Forme d’aller;aller;VA;;ok;verbatim
+ALLASSES;Se rendisses;Forme d’aller;aller;VA;;ok;verbatim
+VOIR;Apercevoir;Considérer;voir;VU;;ok;ok
+VOIT;Aperçoit;Considère;voir;VU;;ok;ok
+VIS;Aperçus;Considéras;voir;VU;;ok;ok
+VIT;Aperçut;Considéra;voir;VU;;ok;ok
+VOYAIT;Apercevait;Considérait;voir;VU;;ok;ok
+VOIE;Aperçoive;Considère;voir;VU;;ok;ok
+VUE;Aperçue;Considérée;voir;VU;;ok;ok
+VOYANT;Apercevant;Considérant;voir;VU;;ok;ok
+VOIES;Aperçoives;Considères;voir;VU;;ok;ok
+VERRA;Apercevra;Considérera;voir;VU;;ok;ok
+VOIENT;Aperçoivent;Considèrent;voir;VU;;ok;ok
+VERRONS;Apercevrons;Considérerons;voir;VU;;ok;ok
+VUES;Aperçues;Considérées;voir;VU;;ok;ok
+VOIS;Aperçois;Considères;voir;VU;;ok;ok
+VOYONS;Apercevons;Considérons;voir;VU;;ok;ok
+VOYEZ;Apercevez;Considérez;voir;VU;;ok;ok
+VOYAIENT;Apercevaient;Considéraient;voir;VU;;ok;ok
+VERREZ;Apercevrez;Considérerez;voir;VU;;ok;ok
+VIRENT;Aperçurent;Considérèrent;voir;VU;;ok;ok
+VERRAIT;Apercevrait;Considérerait;voir;VU;;ok;ok
+VOYAIS;Apercevais;Considérais;voir;VU;;ok;ok
+VUS;Aperçus;Considérés;voir;VU;;ok;ok
+VERRONT;Apercevront;Considéreront;voir;VU;;ok;ok
+VÎMES;Aperçûmes;Considérâmes;voir;VU;;ok;ok
+VERRAI;Apercevrai;Considérerai;voir;VU;;ok;ok
+VERRAS;Apercevras;Considéreras;voir;VU;;ok;ok
+VERRAIENT;Apercevraient;Considéreraient;voir;VU;;ok;ok
+VERRIONS;Apercevrions;Considérerions;voir;VU;;ok;ok
+VOYIONS;Apercevions;Considérions;voir;VU;;ok;ok
+VERRAIS;Apercevrais;Considérerais;voir;VU;;ok;ok
+VÎT;Aperçût;Considérât;voir;VU;;ok;ok
+VERRIEZ;Apercevriez;Considéreriez;voir;VU;;ok;ok
+VISSE;Aperçusse;Considérasse;voir;VU;;ok;ok
+VOYIEZ;Aperceviez;Considériez;voir;VU;;ok;ok
+VISSENT;Aperçussent;Considérassent;voir;VU;;ok;ok
+VÎTES;Aperçûtes;Considérâtes;voir;VU;;ok;ok
+VISSIEZ;Aperçussiez;Considérassiez;voir;VU;;ok;ok
+VISSIONS;Aperçussions;Considérassions;voir;VU;;ok;ok
+VISSES;Aperçusses;Considérasses;voir;VU;;ok;ok
