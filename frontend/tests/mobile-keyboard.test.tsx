@@ -1,4 +1,4 @@
-import { render, fireEvent } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import type { ReactZoomPanPinchContentRef } from 'react-zoom-pan-pinch';
 import type { Puzzle } from '@/domain';
@@ -6,6 +6,11 @@ import type { Clue } from '@/ui/components/grid/useGridNavigation';
 import { MobileKeyboard } from '@/ui/components/keyboard';
 
 const noop = () => undefined;
+
+// KeyboardKey activates on pointerdown — simulate that path explicitly.
+function pressKey(el: Element): void {
+  el.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true, button: 0 }));
+}
 
 const stubClue = (text: string, len: number): Clue => ({
   definition: {
@@ -69,21 +74,21 @@ describe('MobileKeyboard letters + backspace', () => {
     }
   });
 
-  it('clicking a letter calls onLetter with that character', () => {
+  it('pressing a letter calls onLetter with that character', () => {
     const onLetter = vi.fn();
     const { getByLabelText } = render(
       <MobileKeyboard {...fullProps} onLetter={onLetter} />,
     );
-    fireEvent.click(getByLabelText('Lettre E'));
+    pressKey(getByLabelText('Lettre E'));
     expect(onLetter).toHaveBeenCalledWith('E');
   });
 
-  it('clicking backspace calls onBackspace', () => {
+  it('pressing backspace calls onBackspace', () => {
     const onBackspace = vi.fn();
     const { getByLabelText } = render(
       <MobileKeyboard {...fullProps} onBackspace={onBackspace} />,
     );
-    fireEvent.click(getByLabelText('Effacer'));
+    pressKey(getByLabelText('Effacer'));
     expect(onBackspace).toHaveBeenCalled();
   });
 
@@ -176,30 +181,30 @@ describe('MobileKeyboard banner + action row + direction', () => {
     expect(hintBtn.querySelector('svg')).toBeTruthy();
   });
 
-  it('clicking the hint button calls onRequestHint', () => {
+  it('pressing the hint button calls onRequestHint', () => {
     const onRequestHint = vi.fn();
     const { getByLabelText } = render(
       <MobileKeyboard {...fullProps} onRequestHint={onRequestHint} />,
     );
-    fireEvent.click(getByLabelText(/Demander un indice/));
+    pressKey(getByLabelText(/Demander un indice/));
     expect(onRequestHint).toHaveBeenCalled();
   });
 
-  it('clicking Suiv. ▶ calls onNextClue', () => {
+  it('pressing Suiv. ▶ calls onNextClue', () => {
     const onNextClue = vi.fn();
     const { getByLabelText } = render(
       <MobileKeyboard {...fullProps} onNextClue={onNextClue} />,
     );
-    fireEvent.click(getByLabelText('Indice suivant'));
+    pressKey(getByLabelText('Indice suivant'));
     expect(onNextClue).toHaveBeenCalled();
   });
 
-  it('clicking ◀ Préc. calls onPrevClue', () => {
+  it('pressing ◀ Préc. calls onPrevClue', () => {
     const onPrevClue = vi.fn();
     const { getByLabelText } = render(
       <MobileKeyboard {...fullProps} onPrevClue={onPrevClue} />,
     );
-    fireEvent.click(getByLabelText('Indice précédent'));
+    pressKey(getByLabelText('Indice précédent'));
     expect(onPrevClue).toHaveBeenCalled();
   });
 
@@ -218,7 +223,7 @@ describe('MobileKeyboard banner + action row + direction', () => {
     }
   });
 
-  it('hint click is a no-op when getFocusedCell returns a locked cell', () => {
+  it('hint press is a no-op when getFocusedCell returns a locked cell', () => {
     const onRequestHint = vi.fn();
     const { getByLabelText } = render(
       <MobileKeyboard
@@ -227,11 +232,11 @@ describe('MobileKeyboard banner + action row + direction', () => {
         onRequestHint={onRequestHint}
       />,
     );
-    fireEvent.click(getByLabelText(/Demander un indice/));
+    pressKey(getByLabelText(/Demander un indice/));
     expect(onRequestHint).not.toHaveBeenCalled();
   });
 
-  it('hint click is a no-op when getFocusedCell returns null', () => {
+  it('hint press is a no-op when getFocusedCell returns null', () => {
     const onRequestHint = vi.fn();
     const { getByLabelText } = render(
       <MobileKeyboard
@@ -240,7 +245,7 @@ describe('MobileKeyboard banner + action row + direction', () => {
         onRequestHint={onRequestHint}
       />,
     );
-    fireEvent.click(getByLabelText(/Demander un indice/));
+    pressKey(getByLabelText(/Demander un indice/));
     expect(onRequestHint).not.toHaveBeenCalled();
   });
 
@@ -307,15 +312,15 @@ describe('MobileKeyboard arrow-key row', () => {
     expect(getByLabelText('Curseur droite')).toBeTruthy();
   });
 
-  it('clicking each arrow key calls onMoveCursor with the matching direction', () => {
+  it('pressing each arrow key calls onMoveCursor with the matching direction', () => {
     const onMoveCursor = vi.fn();
     const { getByLabelText } = render(
       <MobileKeyboard {...fullProps} onMoveCursor={onMoveCursor} />,
     );
-    fireEvent.click(getByLabelText('Curseur gauche'));
-    fireEvent.click(getByLabelText('Curseur haut'));
-    fireEvent.click(getByLabelText('Curseur bas'));
-    fireEvent.click(getByLabelText('Curseur droite'));
+    pressKey(getByLabelText('Curseur gauche'));
+    pressKey(getByLabelText('Curseur haut'));
+    pressKey(getByLabelText('Curseur bas'));
+    pressKey(getByLabelText('Curseur droite'));
     expect(onMoveCursor.mock.calls.map((c) => c[0])).toEqual(['left', 'up', 'down', 'right']);
   });
 });

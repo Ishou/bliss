@@ -103,6 +103,9 @@ const defAt = (root: HTMLElement, row: number, col: number) =>
 // instead, and `handleFocus` reads the resulting focus event.
 const click = (el: HTMLElement) => { el.focus(); fireEvent.click(el); };
 const typeChar = (el: HTMLInputElement, ch: string) => fireEvent.keyDown(el, { key: ch });
+// MobileKeyboard's KeyboardKey activates on pointerdown, not click.
+const pressKeyboardKey = (el: Element) =>
+  el.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true, button: 0 }));
 
 describe('Grid keyboard interactions', () => {
   it('clicking the wrapper div focuses the inner input', () => {
@@ -1398,7 +1401,7 @@ describe('Grid mounts MobileKeyboard on touch-primary', () => {
     try {
       const { container, getByLabelText } = render(<Grid puzzle={TEST_PUZZLE} />);
       click(inputAt(container, 1, 1)!);
-      fireEvent.click(getByLabelText('Lettre A'));
+      pressKeyboardKey(getByLabelText('Lettre A'));
       expect(inputAt(container, 1, 1)!.value).toBe('A');
       expect(document.activeElement).toBe(inputAt(container, 1, 2));
     } finally {
@@ -1413,8 +1416,8 @@ describe('Grid mounts MobileKeyboard on touch-primary', () => {
       const { container, getByLabelText } = render(<Grid puzzle={TEST_PUZZLE} />);
       click(inputAt(container, 1, 1)!);
       act(() => {
-        fireEvent.click(getByLabelText('Lettre A'));
-        fireEvent.click(getByLabelText('Lettre B'));
+        pressKeyboardKey(getByLabelText('Lettre A'));
+        pressKeyboardKey(getByLabelText('Lettre B'));
       });
       expect(inputAt(container, 1, 1)!.value).toBe('A');
       expect(inputAt(container, 1, 2)!.value).toBe('B');
@@ -1430,8 +1433,8 @@ describe('Grid mounts MobileKeyboard on touch-primary', () => {
     try {
       const { container, getByLabelText } = render(<Grid puzzle={TEST_PUZZLE} />);
       click(inputAt(container, 1, 1)!);
-      fireEvent.click(getByLabelText('Lettre A'));
-      fireEvent.click(getByLabelText('Effacer'));
+      pressKeyboardKey(getByLabelText('Lettre A'));
+      pressKeyboardKey(getByLabelText('Effacer'));
       expect(inputAt(container, 1, 1)!.value).toBe('');
     } finally {
       window.matchMedia = original;
@@ -1457,7 +1460,7 @@ describe('Grid mounts MobileKeyboard on touch-primary', () => {
         />,
       );
       click(inputAt(container, 1, 1)!);
-      fireEvent.click(getByLabelText(/Demander un indice/));
+      pressKeyboardKey(getByLabelText(/Demander un indice/));
       expect(onRequestHint).toHaveBeenCalledWith(1, 1);
     } finally {
       window.matchMedia = original;

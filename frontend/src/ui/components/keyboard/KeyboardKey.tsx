@@ -1,4 +1,4 @@
-import { type ReactNode, useCallback, useRef, type MouseEvent, type PointerEvent } from 'react';
+import { type ReactNode, useCallback, type KeyboardEvent, type MouseEvent, type PointerEvent } from 'react';
 import { css } from 'styled-system/css';
 
 const keyBase = css({
@@ -47,28 +47,26 @@ export function KeyboardKey({
   disabled = false,
   variant = 'letter',
 }: KeyboardKeyProps) {
-  // pointerdown fires before tap-synthesis delay; preventDefault() suppresses the follow-on click.
-  const consumedRef = useRef(false);
-
+  // Primary-button press only; synthesized click has no handler to land in.
   const handlePointerDown = useCallback(
     (e: PointerEvent<HTMLButtonElement>) => {
-      // Only the primary button (left mouse / single-finger touch / stylus tip).
       if (e.button !== 0 || disabled) return;
       e.preventDefault();
-      consumedRef.current = true;
       onPress();
-      // Reset on the next microtask so a subsequent keyboard-triggered click still fires.
-      queueMicrotask(() => {
-        consumedRef.current = false;
-      });
     },
     [disabled, onPress],
   );
 
-  const handleClick = useCallback(() => {
-    if (consumedRef.current || disabled) return;
-    onPress();
-  }, [disabled, onPress]);
+  // Enter/Space keyboard activation; preventDefault stops page scroll on Space.
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent<HTMLButtonElement>) => {
+      if (disabled) return;
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      e.preventDefault();
+      onPress();
+    },
+    [disabled, onPress],
+  );
 
   // Suppress the long-press context menu on touch (interrupts rapid typing).
   const handleContextMenu = useCallback((e: MouseEvent) => {
@@ -82,7 +80,7 @@ export function KeyboardKey({
       aria-label={ariaLabel}
       aria-disabled={disabled || undefined}
       onPointerDown={handlePointerDown}
-      onClick={handleClick}
+      onKeyDown={handleKeyDown}
       onContextMenu={handleContextMenu}
     >
       {label}
