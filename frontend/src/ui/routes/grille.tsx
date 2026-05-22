@@ -117,6 +117,7 @@ function PageShell({
         onActivate: focusFirstUnvalidatedCell,
       }}
       suppressTouchAction={suppressTouchAction}
+      hideFooter={suppressTouchAction}
     >
       {children}
     </ViewportPage>
