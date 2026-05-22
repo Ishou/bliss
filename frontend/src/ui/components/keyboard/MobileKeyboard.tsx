@@ -8,6 +8,7 @@ import type { Clue, Direction } from '@/ui/components/grid/useGridNavigation';
 import { HintIcon } from '@/ui/components/icons';
 import { AZERTY_ROWS } from './azertyLayout';
 import { ClueBanner } from './ClueBanner';
+import { DirectionArrowIcon } from './DirectionArrowIcon';
 import { KeyboardKey } from './KeyboardKey';
 
 // touchAction: 'pan-y' suppresses pinch while preserving vertical pan (pull-to-refresh) — ADR-0016 keyboard-mounted exception.
@@ -209,7 +210,7 @@ export function MobileKeyboard(props: MobileKeyboardProps) {
         </div>
         <div className={navCell}>
           <KeyboardKey
-            label="↑"
+            label={<DirectionArrowIcon direction="up" />}
             ariaLabel="Curseur haut"
             variant="action"
             onPress={() => onMoveCursor('up')}
@@ -225,7 +226,7 @@ export function MobileKeyboard(props: MobileKeyboardProps) {
         </div>
         <div className={navCell}>
           <KeyboardKey
-            label="←"
+            label={<DirectionArrowIcon direction="left" />}
             ariaLabel="Curseur gauche"
             variant="action"
             onPress={() => onMoveCursor('left')}
@@ -233,7 +234,7 @@ export function MobileKeyboard(props: MobileKeyboardProps) {
         </div>
         <div className={navCell}>
           <KeyboardKey
-            label="↓"
+            label={<DirectionArrowIcon direction="down" />}
             ariaLabel="Curseur bas"
             variant="action"
             onPress={() => onMoveCursor('down')}
@@ -241,7 +242,7 @@ export function MobileKeyboard(props: MobileKeyboardProps) {
         </div>
         <div className={navCell}>
           <KeyboardKey
-            label="→"
+            label={<DirectionArrowIcon direction="right" />}
             ariaLabel="Curseur droite"
             variant="action"
             onPress={() => onMoveCursor('right')}
