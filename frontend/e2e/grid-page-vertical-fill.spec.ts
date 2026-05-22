@@ -1,7 +1,4 @@
-// Non-regression for PR #590's failure mode: the grid container must fill the
-// vertical space between the toolbar and the keyboard panel without breaking
-// page layout (no overflow, no horizontal scrollbar, sibling regions keep
-// their natural heights).
+// The grid container must fill the space between toolbar and keyboard without overflow or broken sibling sizes.
 import { expect, test, devices } from '@playwright/test';
 
 test.use({ ...devices['iPhone 13'] });
@@ -35,7 +32,7 @@ test('grid container fills the vertical space between toolbar and keyboard', asy
     };
   });
 
-  // Sibling regions keep their natural sizes (PR #590 broke this).
+  // Toolbar and keyboard must keep their natural sizes when the grid expands.
   expect(measurements.toolbar.height).toBeGreaterThan(20);
   expect(measurements.toolbar.height).toBeLessThan(80);
   expect(measurements.keyboard.height).toBeGreaterThan(180);
