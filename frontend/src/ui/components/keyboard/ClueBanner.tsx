@@ -4,25 +4,28 @@ import { ArrowIcon, ARROW_COLOR, arrowLabel } from '@/ui/components/grid/ClueArr
 import { LetterPreview } from '@/ui/components/grid/LetterPreview';
 import type { Clue } from '@/ui/components/grid/useGridNavigation';
 
+// Fixed total height: outer banner is the ceiling; LetterPreview / alt chip intrinsically exceed minHeight.
 const banner = css({
   display: 'flex',
   flexDirection: 'column',
   gap: '6px',
   paddingInline: '10px',
   paddingBlock: '8px',
-  minHeight: '44px',
+  height: '80px',
   bg: 'surfaceElevated',
   borderRadius: '10px',
   border: '1px solid token(colors.border)',
 });
 
-// minHeight matches arrowGlyph (20px) so empty-state and active rows occupy identical vertical space.
+// Each row claims exactly half the banner via flex; overflow clipped so children cannot resize the outer.
 const block = css({
+  flex: 1,
   display: 'flex',
   alignItems: 'center',
   gap: '8px',
   minWidth: 0,
-  minHeight: '20px',
+  minHeight: 0,
+  overflow: 'hidden',
 });
 
 const altBlockTappable = css({
@@ -73,13 +76,15 @@ const empty = css({
   whiteSpace: 'nowrap',
 });
 
-// Invisible placeholder that reserves the same vertical space as a real block row.
+// Invisible placeholder; same flex sizing as a real block so it shares half the banner.
 const blockPlaceholder = css({
+  flex: 1,
   display: 'flex',
   alignItems: 'center',
   gap: '8px',
   minWidth: 0,
-  minHeight: '20px',
+  minHeight: 0,
+  overflow: 'hidden',
   visibility: 'hidden',
 });
 
