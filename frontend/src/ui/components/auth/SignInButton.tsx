@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { css } from 'styled-system/css';
 import type { AuthClient } from '@/application/auth';
 
@@ -29,11 +30,19 @@ export interface SignInButtonProps {
   readonly authClient: AuthClient;
 }
 
+// returnTo is computed post-hydration so the prerender HTML doesn't bake the local preview URL.
 export function SignInButton({ authClient }: SignInButtonProps) {
-  const returnTo = typeof window !== 'undefined' ? window.location.href : '';
-  const href = authClient.signInUrl('google', returnTo);
+  const [returnTo, setReturnTo] = useState<string>('');
+  useEffect(() => {
+    setReturnTo(window.location.href);
+  }, []);
+  const href = returnTo ? authClient.signInUrl('google', returnTo) : '#';
   return (
-    <a className={signInLinkStyles} href={href}>
+    <a
+      className={signInLinkStyles}
+      href={href}
+      aria-disabled={returnTo ? undefined : true}
+    >
       Se connecter
     </a>
   );
