@@ -5,7 +5,7 @@ and mobile, with future Discord-Activity support. Brand identity is
 recorded in [ADR-0005](./docs/adr/0005-brand-identity.md); "Bliss" is
 the working codename used throughout the repo.
 
-Live: <https://bliss-cb4.pages.dev>
+Live: <https://wordsparrow.io>
 
 ## Status
 
