@@ -74,3 +74,4 @@ Append-only log of decisions the orchestrator made during the 9-PR survey-module
 - `2026-05-25T18:34:38Z` · phase `2 (feat/survey-openapi)` · `waiting-ci` · PR #613: fixer force-pushed amended commit; claude-review QUEUED; no failures. Old LGTM review now stale. No action per 3b.
 - `2026-05-25T18:36:44Z` · phase `2 (feat/survey-openapi)` · `waiting-ci` · PR #613: claude-review IN_PROGRESS on amended SHA df3cf954; no failures. No action per 3b.
 - `2026-05-25T18:38:37Z` · phase `2 (feat/survey-openapi)` · `waiting-ci` · PR #613: claude-review still IN_PROGRESS on amended SHA. No action per 3b.
+- `2026-05-25T18:40:38Z` · phase `2 (feat/survey-openapi)` · `merged` · PR #613 squash-merged at sha `db611729` [reviewer: LGTM by github-actions on amended SHA df3cf954]. Phase 2 complete. Next tick dispatches Phase 3.
