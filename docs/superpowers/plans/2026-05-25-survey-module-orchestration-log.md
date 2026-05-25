@@ -70,3 +70,4 @@ Append-only log of decisions the orchestrator made during the 9-PR survey-module
 - `2026-05-25T18:27:01Z` · phase `2 (feat/survey-openapi)` · `waiting-auto-fixer` · PR #613: 2nd Findings review at 18:26:43; claude-review IN_PROGRESS. No action per 3b.
 - `2026-05-25T18:28:38Z` · phase `2 (feat/survey-openapi)` · `waiting-auto-fixer` · PR #613: unchanged; claude-review IN_PROGRESS. No action per 3b.
 - `2026-05-25T18:30:36Z` · phase `2 (feat/survey-openapi)` · `waiting-auto-fixer` · PR #613: 3rd commit pushed; commitlint FAILING on it; claude-review IN_PROGRESS. Auto-loop may self-correct. No action per 3b.
+- `2026-05-25T18:32:38Z` · phase `2 (feat/survey-openapi)` · `dispatched-fixer` · PR #613: claude-review LGTM at 18:31:14 BUT commitlint FAILING (commit a582719230's subject 123 > 100 chars). Fixer dispatched to amend. Fix-cycle counter: 1/3.
