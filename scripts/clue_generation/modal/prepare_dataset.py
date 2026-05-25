@@ -1,27 +1,5 @@
 #!/usr/bin/env python3
-"""Prépare le dataset gold pilote pour le fine-tune Mistral Nemo.
-
-Lit `data/curated/gold_pilot_v1.csv` (114 entrées) et produit deux fichiers
-JSONL au format chat Mistral, prêts pour SFTTrainer :
-
-- `data/seed/gold_pilot_v1_train.jsonl` (≈ 100 entrées, 88 %)
-- `data/seed/gold_pilot_v1_val.jsonl`   (≈ 14 entrées, 12 %)
-
-Split stratifié par force avec `random.seed(42)` pour reproductibilité.
-
-Format chat Mistral / SFTTrainer :
-    {"messages": [
-        {"role": "user", "content": "Donne une définition de mot fléché pour POMME."},
-        {"role": "assistant", "content": "Tentation d'Ève"}
-    ]}
-
-Pour la v1, on ignore intentionnellement les colonnes pos/style/force/
-categorie dans le prompt — le LLM apprend le style via la diversité des
-exemples vus, pas via une consigne explicite. On enrichira plus tard.
-
-Usage :
-    python3 -m scripts.clue_generation.modal.prepare_dataset
-"""
+"""Stratified train/val split of gold_pilot_v1.csv → data/seed/ JSONL."""
 
 from __future__ import annotations
 
@@ -52,13 +30,7 @@ def charger_csv(path: Path) -> list[dict]:
 
 
 def split_stratifie(rows: list[dict]) -> tuple[list[dict], list[dict]]:
-    """Split train/val stratifié par force.
-
-    Groupe les lignes par force, mélange chaque groupe (seed=42), prend
-    `round(len(groupe) * VAL_RATIO)` pour val et le reste pour train.
-    Garantit que les forces F1, F2, F3, F4 sont représentées
-    proportionnellement dans val.
-    """
+    """Stratified train/val split by force, seed=42."""
     rng = random.Random(SEED)
     par_force: dict[str, list[dict]] = defaultdict(list)
     for row in rows:

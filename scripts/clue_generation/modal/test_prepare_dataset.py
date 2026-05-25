@@ -1,9 +1,4 @@
-"""Tests for the single-source gold-only dataset prep path.
-
-This is the simple smoke path that mirrors bliss-clue-ai's original
-prepare_dataset.py: stratify by `force`, seed=42, val ratio 0.12.
-The multi-source path lives in build_modal_corpus.py (PR 4b).
-"""
+"""Unit tests for prepare_dataset.split_stratifie and construire_chat_entry."""
 
 from __future__ import annotations
 
