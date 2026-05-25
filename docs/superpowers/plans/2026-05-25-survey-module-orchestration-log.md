@@ -87,3 +87,4 @@ Append-only log of decisions the orchestrator made during the 9-PR survey-module
 - `2026-05-25T19:00:38Z` · phase `3 (feat/survey-domain)` · `waiting-ci` · PR #614: fixer pushed 14 commits; 4 build jobs + spectral IN_PROGRESS; commitlint FAILING on latest commit. No action per 3b.
 - `2026-05-25T19:02:39Z` · phase `3 (feat/survey-domain)` · `waiting-ci` · PR #614: build (grid-worker) still IN_PROGRESS; commitlint FAILING. No action per 3b.
 - `2026-05-25T19:04:39Z` · phase `3 (feat/survey-domain)` · `waiting-ci` · PR #614: full CI suite re-running (new push); no failures yet. No action per 3b.
+- `2026-05-25T19:06:37Z` · phase `3 (feat/survey-domain)` · `waiting-auto-fixer` · PR #614: claude-review IN_PROGRESS; commitlint still failing on latest. No action per 3b.
