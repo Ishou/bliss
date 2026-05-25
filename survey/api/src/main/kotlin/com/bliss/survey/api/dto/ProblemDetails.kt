@@ -18,6 +18,6 @@ data class CorrectifRejection(
     val type: String,
     val title: String,
     val status: Int,
-    val filter_id: Int,
+    val filterId: Int,
     val reason: String,
 )

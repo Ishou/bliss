@@ -2,6 +2,8 @@ package com.bliss.survey.api.dto
 
 import kotlinx.serialization.Serializable
 
+// Wire shapes for the rating endpoints. camelCase per ADR-0003 (matches the
+// survey/api/openapi.yaml schemas verbatim).
 @Serializable
 data class CorrectifPayload(
     val text: String,
@@ -14,13 +16,13 @@ data class RatingRequest(
     val difficulte: Int,
     val flag: String? = null,
     val correctif: CorrectifPayload? = null,
-    val latency_ms: Int,
+    val latencyMs: Int,
 )
 
 @Serializable
 data class RatingResponse(
-    val rating_id: String,
-    val item_id: String,
-    val submitted_as: String,
-    val proposed_item_id: String? = null,
+    val ratingId: String,
+    val itemId: String,
+    val submittedAs: String,
+    val proposedItemId: String? = null,
 )

@@ -2,41 +2,43 @@ package com.bliss.survey.api.dto
 
 import kotlinx.serialization.Serializable
 
+// Wire shape for the `Item` schema in survey/api/openapi.yaml — camelCase by
+// ADR-0003 convention; do not snake_case (regenerated TS types depend on it).
 @Serializable
 data class ItemDto(
-    val item_id: String,
+    val itemId: String,
     val mot: String,
     val definition: String,
     val pos: String,
     val categorie: String,
     val style: String,
-    val force_claimed: Int,
+    val forceClaimed: Int,
     val longueur: Int,
     val tier: String,
-    val is_calibration: Boolean,
+    val isCalibration: Boolean,
 )
 
 @Serializable
 data class ProgressResponse(
-    val items_rated: Int,
-    val calibration_agreement: Double? = null,
-    val last_rated_at: String? = null,
+    val itemsRated: Int,
+    val calibrationAgreement: Double? = null,
+    val lastRatedAt: String? = null,
 )
 
 @Serializable
-data class ContributionItemDto(
-    val item_id: String,
+data class ContributionItem(
+    val itemId: String,
     val mot: String,
     val definition: String,
     val pos: String,
     val categorie: String,
     val style: String,
-    val opted_out: Boolean,
-    val k_coverage: Int,
-    val created_at: String,
+    val optedOut: Boolean,
+    val kCoverage: Int,
+    val createdAt: String,
 )
 
 @Serializable
 data class PreferencesPatch(
-    val delete_proposed_on_erasure: Boolean,
+    val deleteProposedOnErasure: Boolean,
 )
