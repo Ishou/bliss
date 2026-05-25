@@ -34,6 +34,7 @@ COPY identity/infrastructure/build.gradle.kts identity/infrastructure/
 COPY identity/api/build.gradle.kts identity/api/
 # Same gotcha for :survey:* modules introduced in ADR-0056.
 COPY survey/domain/build.gradle.kts survey/domain/
+COPY survey/application/build.gradle.kts survey/application/
 
 COPY grid/domain/src grid/domain/src
 COPY grid/application/src grid/application/src

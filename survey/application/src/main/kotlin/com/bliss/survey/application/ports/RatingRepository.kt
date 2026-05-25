@@ -1,0 +1,36 @@
+package com.bliss.survey.application.ports
+
+import com.bliss.survey.domain.model.ItemId
+import com.bliss.survey.domain.model.Rating
+import com.bliss.survey.domain.model.UserId
+import java.time.Instant
+
+interface RatingRepository {
+    suspend fun findAuthRating(
+        itemId: ItemId,
+        userId: UserId,
+    ): Rating?
+
+    suspend fun insert(rating: Rating)
+
+    suspend fun countByItem(itemId: ItemId): Int
+
+    suspend fun anonymiseForUser(userId: UserId)
+
+    suspend fun aggregateForExport(since: Instant?): List<RatingAggregate>
+}
+
+data class RatingAggregate(
+    val itemId: ItemId,
+    val qualiteAuthSum: Int,
+    val qualiteAuthN: Int,
+    val qualiteAnonSum: Int,
+    val qualiteAnonN: Int,
+    val difficulteAuthSum: Int,
+    val difficulteAuthN: Int,
+    val difficulteAnonSum: Int,
+    val difficulteAnonN: Int,
+    val flagCount: Int,
+    val qualiteSquaredAuthSum: Int,
+    val qualiteSquaredAnonSum: Int,
+)
