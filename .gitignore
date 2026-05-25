@@ -26,7 +26,7 @@ __pycache__/
 
 # Large/ephemeral data: external dumps, training artefacts
 data/dbnary/
-data/lora/
+data/lora/*
 data/lora_filter/
 models/
 checkpoints/
@@ -57,3 +57,14 @@ data/eval/grid_gen_bench_*.csv
 data/eval/baseline_wave-*.csv
 data/eval/current_wave-*.csv
 grid/api/data/
+
+# Modal-lane corpus build artefacts (regeneratable from manifest + inputs).
+# `data/lora/*` above ignores everything under data/lora by default; we
+# re-include only the manifest + (later) the build summary. The JSONL
+# outputs and the gold-only smoke JSONL stay ignored.
+!data/lora/modal_corpus_v1/
+data/lora/modal_corpus_v1/train.jsonl
+data/lora/modal_corpus_v1/val.jsonl
+!data/lora/modal_corpus_v1/manifest.toml
+data/seed/gold_pilot_v1_train.jsonl
+data/seed/gold_pilot_v1_val.jsonl
