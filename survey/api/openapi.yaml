@@ -1,0 +1,388 @@
+openapi: 3.1.0
+info:
+  title: WordSparrow Survey API
+  version: 0.1.0
+  summary: Auth-optional rating + corpus-contribution surface for clue RLHF.
+  description: |
+    Backend for the `/sondage` route. Anonymous and authenticated visitors
+    rate candidate clues (qualité, difficulté, optional flag). Authenticated
+    visitors can additionally submit a `correctif` (alternative clue) which
+    enters the corpus as an anonymous candidate.
+
+    Auth resolution: the API attempts to read `__Secure-ws_session` and
+    verifies via identity-api (30 s cache, ADR-0044 pattern). Auth is
+    optional on `/v1/items/*`; required on `/v1/me/*`. Anonymous callers
+    receive 401 if they include a `correctif` (corpus contributions require
+    sign-in).
+
+    See ADR-0056 and `docs/superpowers/specs/2026-05-25-survey-module-design.md`.
+  contact:
+    name: Bliss maintainers
+    url: https://github.com/Ishou/bliss
+    email: noreply@bliss.example
+  license:
+    name: FSL-1.1-MIT
+    url: https://github.com/Ishou/bliss/blob/main/LICENSE
+
+servers:
+  - url: https://survey.wordsparrow.io
+    description: Production
+  - url: http://localhost:7780
+    description: Local k3d
+
+tags:
+  - name: items
+    description: Rating-pool reads and rating submissions.
+  - name: me
+    description: Per-user progress, contributions, and preferences.
+
+paths:
+  /v1/items/next:
+    get:
+      operationId: getNextItem
+      summary: Get the next unrated item for the caller.
+      description: |
+        Pulls one survey item the caller has not yet rated, applying tier-
+        stratified weighted sampling and K-coverage prioritisation. Auth
+        optional: signed-in callers are dedup'd server-side; anonymous
+        callers may provide `excluded` to perform client-side dedup.
+      tags: [items]
+      parameters:
+        - in: query
+          name: excluded
+          required: false
+          description: Comma-separated list of `itemId`s the anonymous caller has already rated locally. Ignored when the caller is authenticated.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Next item.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Item' }
+        '204':
+          description: Pool exhausted — no unrated items remain for this caller.
+        '503':
+          $ref: '#/components/responses/ProblemDetails'
+
+  /v1/items/{itemId}/rating:
+    post:
+      operationId: submitRating
+      summary: Submit a rating for an item.
+      description: |
+        Server assigns `submittedAs` based on session presence. For auth
+        callers, the partial unique index on (itemId, userId) makes this
+        idempotent — a repeat submission returns 409 with the existing
+        rating. For anon callers, every submit creates a new row (no
+        server-side dedup). Anonymous callers including a `correctif` are
+        rejected with 401.
+      tags: [items]
+      parameters:
+        - in: path
+          name: itemId
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RatingRequest' }
+      responses:
+        '201':
+          description: Rating accepted.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RatingResponse' }
+        '400': { $ref: '#/components/responses/ProblemDetails' }
+        '401': { $ref: '#/components/responses/ProblemDetails' }
+        '404': { $ref: '#/components/responses/ProblemDetails' }
+        '409':
+          description: Auth caller already rated this item.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RatingResponse' }
+        '422':
+          description: Correctif rejected by style-guide filters (1–7).
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/CorrectifRejection' }
+
+  /v1/me/progress:
+    get:
+      operationId: getMyProgress
+      summary: Caller's rating progress.
+      tags: [me]
+      security:
+        - sessionCookie: []
+      responses:
+        '200':
+          description: Progress snapshot.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProgressResponse' }
+        '401': { $ref: '#/components/responses/ProblemDetails' }
+
+  /v1/me/contributions:
+    get:
+      operationId: getMyContributions
+      summary: Caller's proposed-clue contributions.
+      tags: [me]
+      security:
+        - sessionCookie: []
+      responses:
+        '200':
+          description: List of items the caller proposed.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/ContributionItem' }
+        '401': { $ref: '#/components/responses/ProblemDetails' }
+
+  /v1/me/preferences:
+    patch:
+      operationId: patchMyPreferences
+      summary: Update caller's survey preferences.
+      description: Currently only `deleteProposedOnErasure`. Updates `proposedBy.optedOut` for all existing contributions and applies to future ones.
+      tags: [me]
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PreferencesPatch' }
+      responses:
+        '204':
+          description: Preferences updated.
+        '400': { $ref: '#/components/responses/ProblemDetails' }
+        '401': { $ref: '#/components/responses/ProblemDetails' }
+
+  /v1/health:
+    get:
+      operationId: getHealth
+      summary: Liveness + readiness.
+      responses:
+        '200': { description: OK }
+        '503': { description: Database or NATS unavailable }
+
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: __Secure-ws_session
+
+  parameters: {}
+
+  schemas:
+    Item:
+      type: object
+      required: [itemId, mot, definition, pos, categorie, style, forceClaimed, longueur, tier, isCalibration]
+      properties:
+        itemId:        { type: string, format: uuid }
+        mot:           { type: string }
+        definition:    { type: string }
+        pos:           { $ref: '#/components/schemas/Pos' }
+        categorie:     { $ref: '#/components/schemas/Categorie' }
+        style:         { $ref: '#/components/schemas/Style' }
+        forceClaimed:  { type: integer, minimum: 1, maximum: 5 }
+        longueur:      { type: integer, minimum: 1 }
+        tier:
+          type: string
+          enum: [high, mid, low, excluded]
+          x-enum-varnames: [HIGH, MID, LOW, EXCLUDED]
+        isCalibration: { type: boolean }
+
+    Pos:
+      type: string
+      enum:
+        - verbe_infinitif
+        - verbe_conjugue
+        - participe_passe
+        - participe_present
+        - nom_commun
+        - nom_propre
+        - adjectif
+        - adverbe
+        - interjection
+        - mot_outil
+        - sigle_abreviation
+        - autre
+      x-enum-varnames:
+        [VERBE_INFINITIF, VERBE_CONJUGUE, PARTICIPE_PASSE, PARTICIPE_PRESENT,
+         NOM_COMMUN, NOM_PROPRE, ADJECTIF, ADVERBE, INTERJECTION, MOT_OUTIL,
+         SIGLE_ABREVIATION, AUTRE]
+
+    Categorie:
+      type: string
+      enum:
+        # Group A — Sciences, measures, sky
+        - chemical_symbols
+        - units
+        - celestial_objects
+        - nombres
+        - roman_numerals
+        # Group B — Geography and places
+        - cardinal_points
+        - cities
+        - countries
+        - country_codes
+        - geography
+        # Group C — People and myths
+        - first_names
+        - titles
+        - mythology
+        # Group D — Language and utterance
+        - abbreviations
+        - etranger
+        - expressions
+        - grammar
+        - interjections
+        - orthographe
+        # Group E — Life and perception
+        - animals
+        - body_parts
+        - senses
+        # Group F — Economy and institutions
+        - currencies
+        - organizations
+        # Group G — Games and music
+        - card_game
+        - games
+        - music_notes
+        # Group H — Residual
+        - autre
+        # Macro-domain I — Daily material
+        - aliments
+        - vetements
+        - mobilier_objet
+        - outils
+        - transports
+        - materiaux
+        # Macro-domain J — Human and social
+        - professions
+        - famille_relations
+        - sentiments_etats
+        # Macro-domain K — Nature
+        - nature_paysage
+        - flore
+        - meteo_climat
+        # Macro-domain L — Abstractions and arts
+        - temps_duree
+        - couleurs
+        - arts
+      x-enum-varnames:
+        [CHEMICAL_SYMBOLS, UNITS, CELESTIAL_OBJECTS, NOMBRES, ROMAN_NUMERALS,
+         CARDINAL_POINTS, CITIES, COUNTRIES, COUNTRY_CODES, GEOGRAPHY,
+         FIRST_NAMES, TITLES, MYTHOLOGY,
+         ABBREVIATIONS, ETRANGER, EXPRESSIONS, GRAMMAR, INTERJECTIONS, ORTHOGRAPHE,
+         ANIMALS, BODY_PARTS, SENSES,
+         CURRENCIES, ORGANIZATIONS,
+         CARD_GAME, GAMES, MUSIC_NOTES,
+         AUTRE,
+         ALIMENTS, VETEMENTS, MOBILIER_OBJET, OUTILS, TRANSPORTS, MATERIAUX,
+         PROFESSIONS, FAMILLE_RELATIONS, SENTIMENTS_ETATS,
+         NATURE_PAYSAGE, FLORE, METEO_CLIMAT,
+         TEMPS_DUREE, COULEURS, ARTS]
+
+    Style:
+      type: string
+      enum:
+        - definition_directe
+        - periphrase
+        - metonymie
+        - fonction_role
+        - calembour
+        - culturel
+        - cryptique
+        - cryptique_morphologique
+        - technique
+      x-enum-varnames:
+        [DEFINITION_DIRECTE, PERIPHRASE, METONYMIE, FONCTION_ROLE, CALEMBOUR,
+         CULTUREL, CRYPTIQUE, CRYPTIQUE_MORPHOLOGIQUE, TECHNIQUE]
+
+    RatingRequest:
+      type: object
+      required: [qualite, difficulte, latencyMs]
+      properties:
+        qualite:    { type: integer, minimum: 1, maximum: 5 }
+        difficulte: { type: integer, minimum: 1, maximum: 5 }
+        flag:
+          type: string
+          enum: [hors_sujet, auto_reference, erreur_sens, autre]
+          x-enum-varnames: [HORS_SUJET, AUTO_REFERENCE, ERREUR_SENS, AUTRE]
+        correctif:
+          type: object
+          description: Alternative clue text + claimed style. Authenticated callers only.
+          required: [text, style]
+          properties:
+            text:   { type: string, minLength: 2, maxLength: 60 }
+            style:  { $ref: '#/components/schemas/Style' }
+        latencyMs: { type: integer, minimum: 0 }
+
+    RatingResponse:
+      type: object
+      required: [ratingId, itemId, submittedAs, proposedItemId]
+      properties:
+        ratingId:       { type: string, format: uuid }
+        itemId:         { type: string, format: uuid }
+        submittedAs:
+          type: string
+          enum: [auth, anon]
+          x-enum-varnames: [AUTH, ANON]
+        proposedItemId: { type: string, format: uuid, nullable: true, description: "UUID of the queued correctif item; null when no correctif was submitted." }
+
+    CorrectifRejection:
+      type: object
+      required: [type, title, status, filterId, reason]
+      properties:
+        type:     { type: string, format: uri }
+        title:    { type: string }
+        status:   { type: integer }
+        filterId: { type: integer, minimum: 1, maximum: 7 }
+        reason:   { type: string }
+
+    ProgressResponse:
+      type: object
+      required: [itemsRated, calibrationAgreement, lastRatedAt]
+      properties:
+        itemsRated:           { type: integer, minimum: 0 }
+        calibrationAgreement: { type: number, format: float, nullable: true, minimum: 0, maximum: 1, description: "Agreement ratio with calibration items; null until the first calibration rating." }
+        lastRatedAt:          { type: string, format: date-time, nullable: true, description: "ISO-8601 timestamp of the most recent rating; null until the first submission." }
+
+    ContributionItem:
+      type: object
+      required: [itemId, mot, definition, pos, categorie, style, optedOut, kCoverage, createdAt]
+      properties:
+        itemId:     { type: string, format: uuid }
+        mot:        { type: string }
+        definition: { type: string }
+        pos:        { $ref: '#/components/schemas/Pos' }
+        categorie:  { $ref: '#/components/schemas/Categorie' }
+        style:      { $ref: '#/components/schemas/Style' }
+        optedOut:   { type: boolean }
+        kCoverage:  { type: integer, minimum: 0 }
+        createdAt:  { type: string, format: date-time }
+
+    PreferencesPatch:
+      type: object
+      required: [deleteProposedOnErasure]
+      properties:
+        deleteProposedOnErasure: { type: boolean }
+
+    ProblemDetails:
+      type: object
+      required: [type, title, status]
+      properties:
+        type:   { type: string, format: uri }
+        title:  { type: string }
+        status: { type: integer }
+        detail: { type: string }
+
+  responses:
+    ProblemDetails:
+      description: RFC 7807 problem details.
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ProblemDetails' }
