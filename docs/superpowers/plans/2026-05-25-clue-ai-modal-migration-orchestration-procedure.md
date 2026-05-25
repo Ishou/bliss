@@ -81,21 +81,34 @@ in-session. Verbatim grants — cite-able by §6a reviewer:
 
 ## Wave map (parallel-where-possible)
 
-This rollout's plan has 7 waves; some waves dispatch multiple PRs in
-parallel (their files are disjoint). The orchestrator dispatches
-**all PRs in a wave from a single tick** (one Agent call with multiple
-sub-agent invocations), then waits for the whole wave to merge before
-opening the next wave.
+This rollout's plan has 7 waves plus a Wave 0 bootstrap gate. Wave 0
+is the merge of this PR itself — the spec, plan, procedure, and log
+must be on `main` before any implementer dispatches, because every
+implementer's prompt instructs it to read the plan from the working
+tree.
+
+Some waves dispatch multiple PRs in parallel (their files are
+disjoint). The orchestrator dispatches **all PRs in a wave from a
+single tick** (one Agent call with multiple sub-agent invocations),
+then waits for the whole wave to merge before opening the next wave.
 
 | Wave | PRs                          | Branch(es)                                                                                          | Base   | Cap-override pre-flag |
 |------|------------------------------|-----------------------------------------------------------------------------------------------------|--------|-----------------------|
-| 1    | PR 0 (ADR-0057)              | `docs/adr-0057-modal-clue-finetune-lane`                                                            | `main` | no                    |
+| 0    | this PR (#618)               | `docs/clue-ai-modal-migration` (spec + plan + procedure + log)                                      | `main` | no                    |
+| 1    | PR 0 (ADR-0057)              | `docs/adr-0057-modal-clue-finetune-lane`                                                            | `main` (after Wave 0) | no                    |
 | 2    | PR 1 + PR 2 + PR 5           | `docs/clue-style-guide-v2` + `chore/clue-ai-modal-gold-pilot-v1` + `chore/clue-ai-modal-paliers-0-1-2` | `main` (after Wave 1) | PR 5 yes (~435 lines) |
 | 3    | PR 3a + PR 4a                | `chore/clue-ai-modal-pipeline-v2-port` + `chore/clue-ai-modal-prepare-dataset`                      | `main` (after Wave 2) | PR 3a yes (~700 lines) |
 | 4    | PR 3b + PR 4b                | `chore/clue-ai-modal-pipeline-v2-fusion` + `chore/clue-ai-modal-build-corpus`                       | `main` (after Wave 3) | no                    |
 | 5    | PR 6                         | `chore/clue-ai-modal-paliers-3a-3b`                                                                 | `main` (after Wave 4) | yes (~760 lines)      |
 | 6    | PR 7                         | `chore/clue-ai-modal-export-bridge`                                                                 | `main` (after Wave 5) | no                    |
 | 7    | PR 8                         | `docs/clue-ai-modal-skill-update`                                                                   | `main` (after Wave 6) | no                    |
+
+**Wave 0 handling:** the bootstrap PR is the maintainer's review-and-
+merge gate. The cron does NOT dispatch any reviewer or fixer for
+Wave 0 — it only assesses whether Wave 0 is merged. If still open,
+the cron logs `waiting-bootstrap` and exits the tick. If the bootstrap
+PR is closed-not-merged, the cron escalates (the maintainer has
+rejected the rollout shape).
 
 Each PR's tasks live in the implementation plan under the matching
 `## Task <n>` section. The implementer agent reads its task's section
@@ -116,7 +129,24 @@ git fetch origin --quiet
 
 ### 2. Determine current wave
 
-Walk the wave map in order. For each wave, look up its PR(s):
+**Wave 0 gate (always first):** check whether the bootstrap PR #618
+(or its successor by `head` `docs/clue-ai-modal-migration`) is
+merged.
+
+```sh
+gh pr list --state all --head docs/clue-ai-modal-migration \
+  --json number,state -L 1
+```
+
+- `state: "MERGED"` → bootstrap complete; proceed to Wave 1.
+- `state: "OPEN"` → log `<timestamp> · bootstrap · waiting-bootstrap · no action`. Exit tick.
+- `state: "CLOSED"` (not merged) → escalation:
+  `**ACTION:** Bootstrap PR was closed without merging. Maintainer rejected the rollout shape. Orchestration paused.` `CronDelete` self. Exit.
+- No PR found → escalation:
+  `**ACTION:** Bootstrap PR for branch docs/clue-ai-modal-migration not found. Orchestration cannot proceed.` `CronDelete` self. Exit.
+
+After Wave 0 passes (bootstrap merged), walk the wave map in order
+starting at Wave 1. For each wave, look up its PR(s):
 
 ```sh
 # For each branch in the wave:
