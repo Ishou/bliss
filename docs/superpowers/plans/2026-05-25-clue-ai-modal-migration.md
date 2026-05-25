@@ -30,7 +30,7 @@ for the 400-line cap, totalling 11 PRs in practice. Branches follow
 orchestrator (`feat/survey-*`, ADR-0056). This work uses
 `*/clue-ai-modal-*` and ADR-0057.
 
-**Source repo for verbatim ports:** `/Users/isho/IdeaProjects/bliss-clue-ai/`
+**Source repo for verbatim ports:** `$BLISS_CLUE_AI_DIR/`
 (sibling of `bliss/`, single-commit scratch tree, everything we care
 about is untracked there).
 
@@ -126,6 +126,13 @@ git rebase --onto origin/main <last-base-commit> <stacked-branch>
 ---
 
 ## Conventions (apply to every PR)
+
+> **Step 0 — set the source-repo variable** (run once in your shell before any porting step):
+> ```sh
+> BLISS_CLUE_AI_DIR="${BLISS_CLUE_AI_DIR:-/Users/isho/IdeaProjects/bliss-clue-ai}"
+> ```
+> All `cp` / `diff` / `ls` commands below reference `$BLISS_CLUE_AI_DIR`.
+> Adjust the default path if your local clone lives elsewhere.
 
 - **Branch naming:** `<type>/clue-ai-modal-<short-slug>` where
   `<type>` ∈ {`feat`, `fix`, `chore`, `refactor`, `test`, `docs`}.
@@ -318,14 +325,14 @@ This is a documentation port with two amendments (filters 9 + 10).
 
 Run:
 ```
-ls -la /Users/isho/IdeaProjects/bliss-clue-ai/docs/style_guide.md
+ls -la $BLISS_CLUE_AI_DIR/docs/style_guide.md
 ```
 Expected: file exists. Read its full length to know what we're porting.
 
 - [ ] **Step 2: Copy style guide and add amendments**
 
 ```
-cp /Users/isho/IdeaProjects/bliss-clue-ai/docs/style_guide.md \
+cp $BLISS_CLUE_AI_DIR/docs/style_guide.md \
    docs/clue-style-guide-v2.md
 ```
 
@@ -422,15 +429,15 @@ PR body must cite ADR-0057, the spec §2.1 (verbatim port) and §3.5.1
 
 Run:
 ```
-head -2 /Users/isho/IdeaProjects/bliss-clue-ai/data/seed/gold_pilot_v1.csv
-wc -l /Users/isho/IdeaProjects/bliss-clue-ai/data/seed/gold_pilot_v1.csv
+head -2 $BLISS_CLUE_AI_DIR/data/seed/gold_pilot_v1.csv
+wc -l $BLISS_CLUE_AI_DIR/data/seed/gold_pilot_v1.csv
 ```
 Expected: header `mot;definition;pos;categorie;style;force;longueur;source;meta` + 114 data rows.
 
 - [ ] **Step 2: Copy with no edits**
 
 ```
-cp /Users/isho/IdeaProjects/bliss-clue-ai/data/seed/gold_pilot_v1.csv \
+cp $BLISS_CLUE_AI_DIR/data/seed/gold_pilot_v1.csv \
    data/curated/gold_pilot_v1.csv
 ```
 
@@ -442,7 +449,7 @@ it unchanged.
 
 Run:
 ```
-diff /Users/isho/IdeaProjects/bliss-clue-ai/data/seed/gold_pilot_v1.csv \
+diff $BLISS_CLUE_AI_DIR/data/seed/gold_pilot_v1.csv \
      data/curated/gold_pilot_v1.csv
 ```
 Expected: no output (files identical).
@@ -550,21 +557,21 @@ fractions of a cent per run.
 - [ ] **Step 3: Port palier 0 (hello world)**
 
 ```
-cp /Users/isho/IdeaProjects/bliss-clue-ai/modal_jobs/00_hello_world.py \
+cp $BLISS_CLUE_AI_DIR/modal_jobs/00_hello_world.py \
    modal_jobs/00_hello_world.py
 ```
 
 - [ ] **Step 4: Port palier 1 (gpu check)**
 
 ```
-cp /Users/isho/IdeaProjects/bliss-clue-ai/modal_jobs/01_gpu_check.py \
+cp $BLISS_CLUE_AI_DIR/modal_jobs/01_gpu_check.py \
    modal_jobs/01_gpu_check.py
 ```
 
 - [ ] **Step 5: Port palier 2 (model download)**
 
 ```
-cp /Users/isho/IdeaProjects/bliss-clue-ai/modal_jobs/02_download_mistral.py \
+cp $BLISS_CLUE_AI_DIR/modal_jobs/02_download_mistral.py \
    modal_jobs/02_download_mistral.py
 ```
 
@@ -576,7 +583,7 @@ the copy.
 Run:
 ```
 for f in 00_hello_world.py 01_gpu_check.py 02_download_mistral.py; do
-  diff /Users/isho/IdeaProjects/bliss-clue-ai/modal_jobs/$f modal_jobs/$f
+  diff $BLISS_CLUE_AI_DIR/modal_jobs/$f modal_jobs/$f
 done
 ```
 Expected: no diff output for any file.
@@ -658,28 +665,28 @@ in PR 3b need only stdlib — no requirements change.)
 - [ ] **Step 2: Port filters.py**
 
 ```
-cp /Users/isho/IdeaProjects/bliss-clue-ai/scripts/pipeline/filters.py \
+cp $BLISS_CLUE_AI_DIR/scripts/pipeline/filters.py \
    scripts/clue_generation/pipeline_v2/filters.py
 ```
 
 - [ ] **Step 3: Port normalizers.py**
 
 ```
-cp /Users/isho/IdeaProjects/bliss-clue-ai/scripts/pipeline/normalizers.py \
+cp $BLISS_CLUE_AI_DIR/scripts/pipeline/normalizers.py \
    scripts/clue_generation/pipeline_v2/normalizers.py
 ```
 
 - [ ] **Step 4: Port llm_judge_mock.py**
 
 ```
-cp /Users/isho/IdeaProjects/bliss-clue-ai/scripts/pipeline/llm_judge_mock.py \
+cp $BLISS_CLUE_AI_DIR/scripts/pipeline/llm_judge_mock.py \
    scripts/clue_generation/pipeline_v2/llm_judge_mock.py
 ```
 
 - [ ] **Step 5: Port test_negative_cases.py**
 
 ```
-cp /Users/isho/IdeaProjects/bliss-clue-ai/scripts/pipeline/test_negative_cases.py \
+cp $BLISS_CLUE_AI_DIR/scripts/pipeline/test_negative_cases.py \
    scripts/clue_generation/pipeline_v2/test_negative_cases.py
 ```
 
@@ -690,7 +697,7 @@ to filters 9 + 10.
 
 ```
 for f in filters.py normalizers.py llm_judge_mock.py test_negative_cases.py; do
-  diff /Users/isho/IdeaProjects/bliss-clue-ai/scripts/pipeline/$f \
+  diff $BLISS_CLUE_AI_DIR/scripts/pipeline/$f \
        scripts/clue_generation/pipeline_v2/$f
 done
 ```
@@ -813,7 +820,6 @@ must match what the source defines — verify by reading the ported
 - [ ] **Step 8: Run the test suite locally**
 
 ```
-cd /Users/isho/IdeaProjects/bliss
 python3 -m pip install -r scripts/clue_generation/pipeline_v2/requirements.txt
 python3 -m pytest scripts/clue_generation/pipeline_v2/ -v
 ```
@@ -1155,7 +1161,7 @@ filter — bisect and fix before continuing.
 - [ ] **Step 8: Create run_pipeline.py**
 
 ```
-cp /Users/isho/IdeaProjects/bliss-clue-ai/scripts/pipeline/run_pipeline.py \
+cp $BLISS_CLUE_AI_DIR/scripts/pipeline/run_pipeline.py \
    scripts/clue_generation/pipeline_v2/run_pipeline.py
 ```
 
@@ -1323,7 +1329,7 @@ Expected: ImportError.
 - [ ] **Step 4: Port prepare_dataset.py**
 
 ```
-cp /Users/isho/IdeaProjects/bliss-clue-ai/scripts/training/prepare_dataset.py \
+cp $BLISS_CLUE_AI_DIR/scripts/training/prepare_dataset.py \
    scripts/clue_generation/modal/prepare_dataset.py
 ```
 
@@ -2028,7 +2034,7 @@ dispatch** per [[feedback-cap-override-short-circuit]].
 - [ ] **Step 1: Port palier 3a (upload dataset)**
 
 ```
-cp /Users/isho/IdeaProjects/bliss-clue-ai/modal_jobs/03a_upload_dataset.py \
+cp $BLISS_CLUE_AI_DIR/modal_jobs/03a_upload_dataset.py \
    modal_jobs/03a_upload_dataset.py
 ```
 
@@ -2066,7 +2072,7 @@ is stable so palier 3b doesn't need to know which corpus is loaded.
 - [ ] **Step 2: Port palier 3b (fine-tune)**
 
 ```
-cp /Users/isho/IdeaProjects/bliss-clue-ai/modal_jobs/03b_finetune.py \
+cp $BLISS_CLUE_AI_DIR/modal_jobs/03b_finetune.py \
    modal_jobs/03b_finetune.py
 ```
 
@@ -2477,7 +2483,7 @@ tested."
 - [ ] **Step 1: Port the pilot validation report**
 
 ```
-cp /Users/isho/IdeaProjects/bliss-clue-ai/docs/pipeline_test_pilot_v1.md \
+cp $BLISS_CLUE_AI_DIR/docs/pipeline_test_pilot_v1.md \
    docs/eval/pipeline_v2_pilot_validation.md
 ```
 

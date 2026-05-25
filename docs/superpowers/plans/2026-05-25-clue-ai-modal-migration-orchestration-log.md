@@ -23,7 +23,7 @@ For human review when convenient.
   spec, the revised spec, the implementation plan, and these procedure
   + log files. 5 commits ahead of `origin/main` after the procedure /
   log commit lands.
-- **Main worktree:** at `/Users/isho/IdeaProjects/bliss`, currently on
+- **Main worktree:** (maintainer's local worktree — path is machine-specific), currently on
   `feat/survey-infrastructure` (the parallel survey orchestrator's
   active branch). The cron tick handles this by reading the procedure
   file from `origin/docs/clue-ai-modal-migration` via `git show` until
