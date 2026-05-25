@@ -50,3 +50,4 @@ Append-only log of decisions the orchestrator made during the 9-PR survey-module
 ### Tick 1 — 2026-05-25
 
 - `2026-05-25T<tick>` · phase `1 (feat/survey-adr)` · `dispatched-implementer` · Agent launched in worktree to write ADR-0056 + open PR. No prior PR existed. Phases 2-9 skipped (sequential).
+- `2026-05-25T<tick2>` · phase `1 (feat/survey-adr)` · `waiting-implementer` · no PR yet; implementer agent from tick 1 still running. No action.
