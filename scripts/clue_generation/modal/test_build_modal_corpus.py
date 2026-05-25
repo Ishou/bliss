@@ -177,5 +177,5 @@ def test_held_out_assertion_fires_when_leak_detected(tmp_corpus_dir, monkeypatch
     """Defense-in-depth assertion catches held-out regressions."""
     out_dir = tmp_corpus_dir / "data" / "lora" / "modal_corpus_v1"
     monkeypatch.setattr(bc, "_load_held_out_lemmas", lambda *a, **k: set())
-    with pytest.raises(AssertionError, match="held-out lemma"):
+    with pytest.raises(ValueError, match="held-out lemma"):
         bc.build_corpus(tmp_corpus_dir, out_dir / "manifest.toml", out_dir)

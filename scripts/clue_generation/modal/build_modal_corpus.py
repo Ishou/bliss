@@ -1,4 +1,4 @@
-"""Multi-source, manifest-driven Modal-lane SFT corpus builder (see spec sec 3.7)."""
+"""Multi-source, manifest-driven Modal-lane SFT corpus builder."""
 
 from __future__ import annotations
 
@@ -192,8 +192,8 @@ def build_corpus(root: Path, manifest_path: Path, out_dir: Path) -> dict:
     # Defense-in-depth: re-read the held-out set via an independent code path.
     held_out = _read_held_out_independent(root, manifest.get("exclude_lemmas_from", ""))
     for r in rows:
-        assert r["mot"].lower() not in held_out, \
-            f"held-out lemma leaked into corpus: {r['mot']}"
+        if r["mot"].lower() in held_out:
+            raise ValueError(f"held-out lemma leaked into corpus: {r['mot']}")
 
     train_rows, val_rows = _split_train_val(
         rows,
