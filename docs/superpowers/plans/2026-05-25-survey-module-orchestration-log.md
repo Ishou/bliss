@@ -93,3 +93,4 @@ Append-only log of decisions the orchestrator made during the 9-PR survey-module
 - `2026-05-25T19:12:39Z` · phase `3 (feat/survey-domain)` · `waiting-auto-fixer` · PR #614 unchanged; claude-review still IN_PROGRESS. No action per 3b.
 - `2026-05-25T19:14:38Z` · phase `3 (feat/survey-domain)` · `waiting-auto-fixer` · PR #614: claude-review workflow stuck IN_PROGRESS (last updated 19:05:21, ~9 min ago). Approaching 15-min hang threshold. One more tick before manual dispatch.
 - `2026-05-25T19:16:39Z` · phase `3 (feat/survey-domain)` · `waiting-auto-fixer` · PR #614: claude-review stalled ~11 min (threshold 15). No action per 3b.
+- `2026-05-25T19:18:38Z` · phase `3 (feat/survey-domain)` · `waiting-auto-fixer` · PR #614: claude-review stalled ~13 min (under 15-min threshold). No action per 3b.
