@@ -9,7 +9,7 @@ info:
     visitors can additionally submit a `correctif` (alternative clue) which
     enters the corpus as an anonymous candidate.
 
-    Auth resolution: the API attempts to read `__Host-ws_session` and
+    Auth resolution: the API attempts to read `__Secure-ws_session` and
     verifies via identity-api (30 s cache, ADR-0044 pattern). Auth is
     optional on `/v1/items/*`; required on `/v1/me/*`. Anonymous callers
     receive 401 if they include a `correctif` (corpus contributions require
@@ -51,7 +51,7 @@ paths:
         - in: query
           name: excluded
           required: false
-          description: Comma-separated list of `item_id`s the anonymous caller has already rated locally. Ignored when the caller is authenticated.
+          description: Comma-separated list of `itemId`s the anonymous caller has already rated locally. Ignored when the caller is authenticated.
           schema:
             type: string
       responses:
@@ -70,8 +70,8 @@ paths:
       operationId: submitRating
       summary: Submit a rating for an item.
       description: |
-        Server assigns `submitted_as` based on session presence. For auth
-        callers, the partial unique index on (item_id, user_id) makes this
+        Server assigns `submittedAs` based on session presence. For auth
+        callers, the partial unique index on (itemId, userId) makes this
         idempotent — a repeat submission returns 409 with the existing
         rating. For anon callers, every submit creates a new row (no
         server-side dedup). Anonymous callers including a `correctif` are
@@ -143,7 +143,7 @@ paths:
     patch:
       operationId: patchMyPreferences
       summary: Update caller's survey preferences.
-      description: Currently only `delete_proposed_on_erasure`. Updates `proposed_by.opted_out` for all existing contributions and applies to future ones.
+      description: Currently only `deleteProposedOnErasure`. Updates `proposedBy.optedOut` for all existing contributions and applies to future ones.
       tags: [me]
       security:
         - sessionCookie: []
@@ -171,27 +171,28 @@ components:
     sessionCookie:
       type: apiKey
       in: cookie
-      name: __Host-ws_session
+      name: __Secure-ws_session
 
   parameters: {}
 
   schemas:
     Item:
       type: object
-      required: [item_id, mot, definition, pos, categorie, style, force_claimed, longueur, tier, is_calibration]
+      required: [itemId, mot, definition, pos, categorie, style, forceClaimed, longueur, tier, isCalibration]
       properties:
-        item_id:        { type: string, format: uuid }
-        mot:            { type: string }
-        definition:     { type: string }
-        pos:            { $ref: '#/components/schemas/Pos' }
-        categorie:      { $ref: '#/components/schemas/Categorie' }
-        style:          { $ref: '#/components/schemas/Style' }
-        force_claimed:  { type: integer, minimum: 1, maximum: 5 }
-        longueur:       { type: integer, minimum: 1 }
+        itemId:        { type: string, format: uuid }
+        mot:           { type: string }
+        definition:    { type: string }
+        pos:           { $ref: '#/components/schemas/Pos' }
+        categorie:     { $ref: '#/components/schemas/Categorie' }
+        style:         { $ref: '#/components/schemas/Style' }
+        forceClaimed:  { type: integer, minimum: 1, maximum: 5 }
+        longueur:      { type: integer, minimum: 1 }
         tier:
           type: string
           enum: [high, mid, low, excluded]
-        is_calibration: { type: boolean }
+          x-enum-varnames: [HIGH, MID, LOW, EXCLUDED]
+        isCalibration: { type: boolean }
 
     Pos:
       type: string
@@ -208,6 +209,10 @@ components:
         - mot_outil
         - sigle_abreviation
         - autre
+      x-enum-varnames:
+        [VERBE_INFINITIF, VERBE_CONJUGUE, PARTICIPE_PASSE, PARTICIPE_PRESENT,
+         NOM_COMMUN, NOM_PROPRE, ADJECTIF, ADVERBE, INTERJECTION, MOT_OUTIL,
+         SIGLE_ABREVIATION, AUTRE]
 
     Categorie:
       type: string
@@ -267,6 +272,19 @@ components:
         - temps_duree
         - couleurs
         - arts
+      x-enum-varnames:
+        [CHEMICAL_SYMBOLS, UNITS, CELESTIAL_OBJECTS, NOMBRES, ROMAN_NUMERALS,
+         CARDINAL_POINTS, CITIES, COUNTRIES, COUNTRY_CODES, GEOGRAPHY,
+         FIRST_NAMES, TITLES, MYTHOLOGY,
+         ABBREVIATIONS, ETRANGER, EXPRESSIONS, GRAMMAR, INTERJECTIONS, ORTHOGRAPHE,
+         ANIMALS, BODY_PARTS, SENSES,
+         CURRENCIES, ORGANIZATIONS,
+         CARD_GAME, GAMES, MUSIC_NOTES,
+         AUTRE,
+         ALIMENTS, VETEMENTS, MOBILIER_OBJET, OUTILS, TRANSPORTS, MATERIAUX,
+         PROFESSIONS, FAMILLE_RELATIONS, SENTIMENTS_ETATS,
+         NATURE_PAYSAGE, FLORE, METEO_CLIMAT,
+         TEMPS_DUREE, COULEURS, ARTS]
 
     Style:
       type: string
@@ -280,16 +298,20 @@ components:
         - cryptique
         - cryptique_morphologique
         - technique
+      x-enum-varnames:
+        [DEFINITION_DIRECTE, PERIPHRASE, METONYMIE, FONCTION_ROLE, CALEMBOUR,
+         CULTUREL, CRYPTIQUE, CRYPTIQUE_MORPHOLOGIQUE, TECHNIQUE]
 
     RatingRequest:
       type: object
-      required: [qualite, difficulte, latency_ms]
+      required: [qualite, difficulte, latencyMs]
       properties:
         qualite:    { type: integer, minimum: 1, maximum: 5 }
         difficulte: { type: integer, minimum: 1, maximum: 5 }
         flag:
           type: string
           enum: [hors_sujet, auto_reference, erreur_sens, autre]
+          x-enum-varnames: [HORS_SUJET, AUTO_REFERENCE, ERREUR_SENS, AUTRE]
           nullable: true
         correctif:
           type: object
@@ -299,54 +321,57 @@ components:
           properties:
             text:   { type: string, minLength: 2, maxLength: 60 }
             style:  { $ref: '#/components/schemas/Style' }
-        latency_ms: { type: integer, minimum: 0 }
+        latencyMs: { type: integer, minimum: 0 }
 
     RatingResponse:
       type: object
-      required: [rating_id, item_id, submitted_as]
+      required: [ratingId, itemId, submittedAs]
       properties:
-        rating_id:        { type: string, format: uuid }
-        item_id:          { type: string, format: uuid }
-        submitted_as:     { type: string, enum: [auth, anon] }
-        proposed_item_id: { type: string, format: uuid, nullable: true }
+        ratingId:       { type: string, format: uuid }
+        itemId:         { type: string, format: uuid }
+        submittedAs:
+          type: string
+          enum: [auth, anon]
+          x-enum-varnames: [AUTH, ANON]
+        proposedItemId: { type: string, format: uuid, nullable: true }
 
     CorrectifRejection:
       type: object
-      required: [type, title, status, filter_id, reason]
+      required: [type, title, status, filterId, reason]
       properties:
-        type:      { type: string, format: uri }
-        title:     { type: string }
-        status:    { type: integer }
-        filter_id: { type: integer, minimum: 1, maximum: 7 }
-        reason:    { type: string }
+        type:     { type: string, format: uri }
+        title:    { type: string }
+        status:   { type: integer }
+        filterId: { type: integer, minimum: 1, maximum: 7 }
+        reason:   { type: string }
 
     ProgressResponse:
       type: object
-      required: [items_rated]
+      required: [itemsRated]
       properties:
-        items_rated:          { type: integer, minimum: 0 }
-        calibration_agreement: { type: number, format: float, nullable: true, minimum: 0, maximum: 1 }
-        last_rated_at:        { type: string, format: date-time, nullable: true }
+        itemsRated:           { type: integer, minimum: 0 }
+        calibrationAgreement: { type: number, format: float, nullable: true, minimum: 0, maximum: 1 }
+        lastRatedAt:          { type: string, format: date-time, nullable: true }
 
     ContributionItem:
       type: object
-      required: [item_id, mot, definition, pos, categorie, style, opted_out, k_coverage, created_at]
+      required: [itemId, mot, definition, pos, categorie, style, optedOut, kCoverage, createdAt]
       properties:
-        item_id:    { type: string, format: uuid }
+        itemId:     { type: string, format: uuid }
         mot:        { type: string }
         definition: { type: string }
         pos:        { $ref: '#/components/schemas/Pos' }
         categorie:  { $ref: '#/components/schemas/Categorie' }
         style:      { $ref: '#/components/schemas/Style' }
-        opted_out:  { type: boolean }
-        k_coverage: { type: integer, minimum: 0 }
-        created_at: { type: string, format: date-time }
+        optedOut:   { type: boolean }
+        kCoverage:  { type: integer, minimum: 0 }
+        createdAt:  { type: string, format: date-time }
 
     PreferencesPatch:
       type: object
-      required: [delete_proposed_on_erasure]
+      required: [deleteProposedOnErasure]
       properties:
-        delete_proposed_on_erasure: { type: boolean }
+        deleteProposedOnErasure: { type: boolean }
 
     ProblemDetails:
       type: object
