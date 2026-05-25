@@ -39,7 +39,7 @@ class UserDeletedConsumer(
     fun start(): Job {
         val existing = job
         if (existing != null && existing.isActive) return existing
-        ensureConsumerConfigured()
+        val deliverSubject = ensureConsumerConfigured()
         val sub =
             nats.jetStream().subscribe(
                 SUBJECT,
@@ -47,6 +47,7 @@ class UserDeletedConsumer(
                     .builder()
                     .stream(streamName)
                     .durable(DURABLE_NAME)
+                    .deliverSubject(deliverSubject)
                     .build(),
             )
         val newJob =
@@ -72,7 +73,9 @@ class UserDeletedConsumer(
         job = null
     }
 
-    private fun ensureConsumerConfigured() {
+    /** Configure the durable consumer with an explicit deliverSubject so it's a push consumer. */
+    private fun ensureConsumerConfigured(): String {
+        val deliverSubject = nats.createInbox()
         val cfg =
             ConsumerConfiguration
                 .builder()
@@ -80,6 +83,7 @@ class UserDeletedConsumer(
                 .filterSubject(SUBJECT)
                 .ackPolicy(AckPolicy.Explicit)
                 .ackWait(Duration.ofSeconds(30))
+                .deliverSubject(deliverSubject)
                 .build()
         try {
             nats.jetStreamManagement().addOrUpdateConsumer(streamName, cfg)
@@ -92,6 +96,7 @@ class UserDeletedConsumer(
             )
             throw e
         }
+        return deliverSubject
     }
 
     companion object {
