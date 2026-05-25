@@ -106,3 +106,4 @@ Append-only log of decisions the orchestrator made during the 9-PR survey-module
 - `2026-05-25T19:38:38Z` · phase `3 (feat/survey-domain)` · `waiting-ci` · PR #614: amend force-pushed; CI re-running on new SHA. No action per 3b.
 - `2026-05-25T19:40:37Z` · phase `3 (feat/survey-domain)` · `waiting-auto-fixer` · PR #614: 4 commits; claude-review IN_PROGRESS; full CI running. No action per 3b.
 - `2026-05-25T19:42:37Z` · phase `3 (feat/survey-domain)` · `waiting-auto-fixer` · PR #614: claude-review IN_PROGRESS; other CI green. No action per 3b.
+- `2026-05-25T19:44:39Z` · phase `3 (feat/survey-domain)` · `waiting-auto-fixer` · PR #614: claude-review IN_PROGRESS still. No action per 3b.
