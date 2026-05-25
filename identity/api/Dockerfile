@@ -35,6 +35,8 @@ COPY identity/domain/build.gradle.kts identity/domain/
 COPY identity/application/build.gradle.kts identity/application/
 COPY identity/infrastructure/build.gradle.kts identity/infrastructure/
 COPY identity/api/build.gradle.kts identity/api/
+# Same gotcha for :survey:* modules introduced in ADR-0056.
+COPY survey/domain/build.gradle.kts survey/domain/
 
 # Source for the identity/ context only — shadowJar transitively pulls
 # :identity:domain, :identity:application, :identity:infrastructure.
