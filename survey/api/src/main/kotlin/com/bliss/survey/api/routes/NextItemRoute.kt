@@ -12,8 +12,7 @@ import io.ktor.server.routing.Route
 import io.ktor.server.routing.get
 import java.util.UUID
 
-// GET /v1/items/next — auth-optional pull from the rating pool (ADR-0056).
-// Anonymous callers may pass `excluded=<uuid,uuid>` for client-side dedup.
+// GET /v1/items/next — auth-optional; excluded= query for client-side dedup (ADR-0056).
 fun Route.nextItemRoute(useCase: GetNextItemUseCase) {
     get("/v1/items/next") {
         val userId = call.attributes.getOrNull(UserIdKey)?.let { UserId(it) }

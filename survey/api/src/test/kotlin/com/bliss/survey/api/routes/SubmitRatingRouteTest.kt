@@ -3,6 +3,7 @@ package com.bliss.survey.api.routes
 import assertk.assertThat
 import assertk.assertions.contains
 import assertk.assertions.isEqualTo
+import assertk.assertions.isNotNull
 import com.bliss.survey.api.WIRE_JSON
 import com.bliss.survey.api.auth.SESSION_COOKIE_NAME
 import com.bliss.survey.api.auth.SessionMiddleware
@@ -19,6 +20,7 @@ import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
+import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.json.json
@@ -179,6 +181,7 @@ class SubmitRatingRouteTest {
                     setBody(jsonBody(correctif = "alt"))
                 }
             assertThat(resp.status).isEqualTo(HttpStatusCode.UnprocessableEntity)
+            assertThat(resp.headers[HttpHeaders.ContentType]).isNotNull().contains("application/problem+json")
             assertThat(resp.bodyAsText()).contains("\"filterId\":3")
             assertThat(resp.bodyAsText()).contains("longueur hors plage")
         }

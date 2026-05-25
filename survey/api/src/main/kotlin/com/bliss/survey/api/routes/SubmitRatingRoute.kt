@@ -1,5 +1,6 @@
 package com.bliss.survey.api.routes
 
+import com.bliss.survey.api.WIRE_JSON
 import com.bliss.survey.api.auth.UserIdKey
 import com.bliss.survey.api.dto.CorrectifRejection
 import com.bliss.survey.api.dto.ProblemDetails
@@ -14,9 +15,11 @@ import com.bliss.survey.domain.model.ItemId
 import com.bliss.survey.domain.model.Rating
 import com.bliss.survey.domain.model.Style
 import com.bliss.survey.domain.model.UserId
+import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
+import io.ktor.server.response.respondText
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.post
 import java.util.UUID
@@ -94,17 +97,21 @@ fun Route.submitRatingRoute(execute: suspend (SubmitRatingCommand) -> SubmitRati
                     ),
                 )
 
-            is SubmitRatingResult.CorrectifRejected ->
-                call.respond(
-                    HttpStatusCode.UnprocessableEntity,
+            is SubmitRatingResult.CorrectifRejected -> {
+                val rejection =
                     CorrectifRejection(
                         type = "about:blank",
                         title = "correctif rejected",
                         status = HttpStatusCode.UnprocessableEntity.value,
                         filterId = result.filterId,
                         reason = result.reason,
-                    ),
+                    )
+                call.respondText(
+                    text = WIRE_JSON.encodeToString(CorrectifRejection.serializer(), rejection),
+                    contentType = ContentType.parse("application/problem+json"),
+                    status = HttpStatusCode.UnprocessableEntity,
                 )
+            }
 
             SubmitRatingResult.ItemNotFound ->
                 call.respondProblem(
