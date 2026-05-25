@@ -72,3 +72,4 @@ Append-only log of decisions the orchestrator made during the 9-PR survey-module
 - `2026-05-25T18:30:36Z` · phase `2 (feat/survey-openapi)` · `waiting-auto-fixer` · PR #613: 3rd commit pushed; commitlint FAILING on it; claude-review IN_PROGRESS. Auto-loop may self-correct. No action per 3b.
 - `2026-05-25T18:32:38Z` · phase `2 (feat/survey-openapi)` · `dispatched-fixer` · PR #613: claude-review LGTM at 18:31:14 BUT commitlint FAILING (commit a582719230's subject 123 > 100 chars). Fixer dispatched to amend. Fix-cycle counter: 1/3.
 - `2026-05-25T18:34:38Z` · phase `2 (feat/survey-openapi)` · `waiting-ci` · PR #613: fixer force-pushed amended commit; claude-review QUEUED; no failures. Old LGTM review now stale. No action per 3b.
+- `2026-05-25T18:36:44Z` · phase `2 (feat/survey-openapi)` · `waiting-ci` · PR #613: claude-review IN_PROGRESS on amended SHA df3cf954; no failures. No action per 3b.
