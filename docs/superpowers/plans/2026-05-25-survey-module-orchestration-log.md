@@ -41,3 +41,8 @@ Append-only log of decisions the orchestrator made during the 9-PR survey-module
 - Orchestration procedure (`2026-05-25-survey-module-orchestration-procedure.md`) and this log added on branch `docs/survey-module-orchestration`.
 - Cron created via `CronCreate` with the `*/2 * * * *` schedule and the bootstrap prompt from the procedure file's tick procedure.
 - Next: push orchestration branch, open small PR, let CI clear, then cron's first tick dispatches Phase 1 (ADR-0056) once the orchestration PR is on origin (the procedure file just needs to be readable from `origin/<branch>` for the cron to find it).
+
+### Cron creation
+
+- `2026-05-25` · cron `7623bd90` created (`*/2 * * * *`, session-only — runtime ignores `durable: true` per dispatch skill note). First tick will look up Phase 1 PR (none yet), dispatch the `feat/survey-adr` implementer.
+- Orchestration PR: https://github.com/Ishou/wordsparrow/pull/611.
