@@ -66,7 +66,7 @@ class SubmitRatingUseCaseTest {
                     ratings = ratings,
                     proposedBy = proposed,
                     progress = progress,
-                    filters = FilterPipeline.default(),
+                    filters = FilterPipeline.default { _ -> false },
                     ids = idGen,
                     clock = clock,
                 )

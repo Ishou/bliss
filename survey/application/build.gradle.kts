@@ -9,7 +9,6 @@ kotlin {
 dependencies {
     implementation(project(":survey:domain"))
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")
-    implementation("com.github.pemistahl:lingua:1.2.2")
 
     testImplementation(platform("org.junit:junit-bom:5.11.4"))
     testImplementation("org.junit.jupiter:junit-jupiter")

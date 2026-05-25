@@ -25,6 +25,7 @@ class ApplicationArchitectureTest {
                 "org.http4k",
                 "org.jetbrains.exposed",
                 "io.micronaut",
+                "com.github.pemistahl",
             )
         applicationScope.files.assertFalse {
             it.hasImport { import ->

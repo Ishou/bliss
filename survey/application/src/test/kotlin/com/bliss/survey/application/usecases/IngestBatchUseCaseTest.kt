@@ -30,7 +30,7 @@ class IngestBatchUseCaseTest {
         }
     private val parser = StyleGuideCsvParser()
     private val writer = StyleGuideCsvWriter()
-    private val pipeline = FilterPipeline.default()
+    private val pipeline = FilterPipeline.default { _ -> false }
 
     private fun row(definition: String): String {
         val item =

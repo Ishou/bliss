@@ -7,7 +7,7 @@ import com.bliss.survey.domain.model.Pos
 import org.junit.jupiter.api.Test
 
 class FilterPipelineTest {
-    private val pipeline = FilterPipeline.default()
+    private val pipeline = FilterPipeline.default { _ -> false }
 
     @Test
     fun `clean definition accepts`() {

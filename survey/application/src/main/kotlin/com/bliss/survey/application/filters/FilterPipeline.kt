@@ -1,5 +1,7 @@
 package com.bliss.survey.application.filters
 
+import com.bliss.survey.application.ports.LanguageDetector
+
 class FilterPipeline(
     private val filters: List<Filter>,
 ) {
@@ -12,7 +14,7 @@ class FilterPipeline(
     }
 
     companion object {
-        fun default(): FilterPipeline =
+        fun default(detector: LanguageDetector): FilterPipeline =
             FilterPipeline(
                 listOf(
                     Filter1Typographiques(),
@@ -20,7 +22,7 @@ class FilterPipeline(
                     Filter3Longueur(),
                     Filter4StereotypesIa(),
                     Filter5AutoReference(),
-                    Filter6LangueFr(),
+                    Filter6LangueFr(detector),
                     Filter7Tautologie(),
                 ),
             )
