@@ -84,3 +84,4 @@ Append-only log of decisions the orchestrator made during the 9-PR survey-module
 - `2026-05-25T<tick33>` · phase `3 (feat/survey-domain)` · `waiting-auto-fixer` · PR #614 OPEN; claude-review IN_PROGRESS; commitlint FAILING; build jobs running. No action per 3b.
 - `2026-05-25T18:56:44Z` · phase `3 (feat/survey-domain)` · `dispatched-fixer` · PR #614: 4 build (game/grid/identity/grid-worker) FAILING — Dockerfile COPY missing survey/domain (known PR #126 pattern). Fixer dispatched. Fix-cycle counter: 1/3.
 - `2026-05-25T18:58:37Z` · phase `3 (feat/survey-domain)` · `waiting-fixer` · PR #614: Dockerfile fixer still running; same 4 build failures persist; "Findings" review at 18:57:43. No action.
+- `2026-05-25T19:00:38Z` · phase `3 (feat/survey-domain)` · `waiting-ci` · PR #614: fixer pushed 14 commits; 4 build jobs + spectral IN_PROGRESS; commitlint FAILING on latest commit. No action per 3b.
