@@ -2,6 +2,7 @@ package com.bliss.survey.api.routes
 
 import assertk.assertThat
 import assertk.assertions.contains
+import assertk.assertions.doesNotContain
 import assertk.assertions.isEqualTo
 import com.bliss.survey.api.auth.SESSION_COOKIE_NAME
 import com.bliss.survey.api.auth.SessionMiddleware
@@ -65,7 +66,10 @@ class MeContributionsRouteTest {
             }
             val resp = client.get("/v1/me/contributions")
             assertThat(resp.status).isEqualTo(HttpStatusCode.Unauthorized)
-            assertThat(resp.bodyAsText()).contains("sign-in required")
+            val body = resp.bodyAsText()
+            assertThat(body).contains("sign-in required")
+            assertThat(body).doesNotContain("\"detail\":null")
+            assertThat(body).doesNotContain("\"instance\":null")
         }
 
     @Test
