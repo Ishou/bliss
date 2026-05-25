@@ -1,0 +1,42 @@
+package com.bliss.survey.domain.model
+
+import assertk.assertThat
+import assertk.assertions.hasSize
+import org.junit.jupiter.api.Test
+
+class EnumsTest {
+    @Test
+    fun `Pos has 12 values (§7-1)`() {
+        assertThat(Pos.values().toList()).hasSize(12)
+    }
+
+    @Test
+    fun `Categorie has 43 values (§7-2)`() {
+        assertThat(Categorie.values().toList()).hasSize(43)
+    }
+
+    @Test
+    fun `Style has 9 values (§4)`() {
+        assertThat(Style.values().toList()).hasSize(9)
+    }
+
+    @Test
+    fun `Tier has 4 values`() {
+        assertThat(Tier.values().toList()).hasSize(4)
+    }
+
+    @Test
+    fun `FlagReason has 4 values`() {
+        assertThat(FlagReason.values().toList()).hasSize(4)
+    }
+
+    @Test
+    fun `Source has 5 values`() {
+        assertThat(Source.values().toList()).hasSize(5)
+    }
+
+    @Test
+    fun `SubmittedAs has 2 values`() {
+        assertThat(SubmittedAs.values().toList()).hasSize(2)
+    }
+}
