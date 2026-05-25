@@ -1,14 +1,5 @@
 #!/usr/bin/env python3
-"""Tests négatifs : vérifier que chaque filtre §8.3 et chaque
-normalisation §8.4 se déclenche correctement sur des cas
-volontairement défectueux.
-
-Suite de tests réutilisable. Sortie console uniquement (pas de
-fichier généré).
-
-Usage :
-  python3 scripts/pipeline/test_negative_cases.py
-"""
+"""Tests négatifs : vérifier que chaque filtre §8.3 et normalisation §8.4 se déclenche sur des entrées défectueuses."""
 
 from __future__ import annotations
 
@@ -25,10 +16,6 @@ from .run_pipeline import (
     traiter_ligne, VALID_POS, VALID_CATEGORIES, VALID_STYLES,
 )
 
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
 
 def make_row(mot: str, definition: str, *, pos: str = "nom_commun",
              categorie: str = "autre", style: str = "definition_directe",

@@ -1,9 +1,4 @@
-"""Per-filter happy-path unit tests (complement to test_negative_cases).
-
-The negative-cases suite verifies that bad inputs trip the right
-filter. These tests verify that legitimate inputs do NOT trip any
-filter, per-filter. Together they pin down the calibration.
-"""
+"""Happy-path unit tests for each pipeline filter."""
 
 from __future__ import annotations
 

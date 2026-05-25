@@ -1,15 +1,5 @@
 #!/usr/bin/env python3
-"""Pipeline principal : orchestre filtres §8.3 + normalisations §8.4.
-
-Usage :
-  python3 scripts/pipeline/run_pipeline.py
-      [--input data/seed/gold_pilot_v1.csv]
-      [--apply]
-
-En mode preview (sans --apply) : affiche les résultats console sans
-écrire les fichiers de sortie. Avec --apply : écrit
-data/seed/gold_pilot_v1_pipeline.csv et docs/pipeline_test_pilot_v1.md.
-"""
+"""Pipeline principal : orchestre filtres §8.3 + normalisations §8.4."""
 
 from __future__ import annotations
 
@@ -31,10 +21,6 @@ from . import filters as F  # noqa: E402
 from . import normalizers as N  # noqa: E402
 from .llm_judge_mock import juge_mock  # noqa: E402
 
-
-# ---------------------------------------------------------------------------
-# Constantes (enums) — cf. style_guide §4, §7.1, §7.2
-# ---------------------------------------------------------------------------
 
 VALID_POS = {
     "verbe_infinitif", "verbe_conjugue", "participe_passe",
@@ -78,20 +64,8 @@ PIPELINE_FILTERS = [
 ]
 
 
-# ---------------------------------------------------------------------------
-# Traitement d'une ligne
-# ---------------------------------------------------------------------------
-
 def traiter_ligne(row: dict) -> dict:
-    """Applique tous les filtres puis les normalisations sur une ligne.
-
-    Retourne le dict enrichi de :
-    - pipeline_status : "accept" | "reject" | "accept_with_warning"
-    - pipeline_reasons : liste des raisons (filtres déclenchés)
-    - pipeline_normalizations : liste des normalisations appliquées
-    - definition_normalisee : la définition après normalisations
-    - filter_traces : dict détaillé étape par étape
-    """
+    """Applique tous les filtres §8.3 puis les normalisations §8.4 sur une ligne."""
     reasons: list[str] = []
     warnings: list[str] = []
     rejected = False
@@ -142,10 +116,6 @@ def traiter_ligne(row: dict) -> dict:
     }
 
 
-# ---------------------------------------------------------------------------
-# Chargement et écriture
-# ---------------------------------------------------------------------------
-
 def charger_csv(path: Path) -> list[dict]:
     """Charge un CSV ; / et retourne une liste de dicts."""
     with path.open(encoding="utf-8", newline="") as f:
@@ -173,10 +143,6 @@ def ecrire_csv_sortie(rows: list[dict], path: Path) -> None:
             row_out = [r.get(c, "") for c in header]
             w.writerow(row_out)
 
-
-# ---------------------------------------------------------------------------
-# Affichage console
-# ---------------------------------------------------------------------------
 
 def afficher_console(rows: list[dict], stats: dict) -> None:
     """Affiche les résultats du pipeline en console."""
@@ -218,10 +184,6 @@ def afficher_console(rows: list[dict], stats: dict) -> None:
         if len(problemes) > 10:
             print(f"   ... et {len(problemes) - 10} autres")
 
-
-# ---------------------------------------------------------------------------
-# Rapport markdown
-# ---------------------------------------------------------------------------
 
 def generer_rapport(rows: list[dict], stats: dict,
                     input_path: Path) -> str:
@@ -327,10 +289,6 @@ def generer_rapport(rows: list[dict], stats: dict,
 
     return "\n".join(lines) + "\n"
 
-
-# ---------------------------------------------------------------------------
-# Main
-# ---------------------------------------------------------------------------
 
 def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(description=__doc__)

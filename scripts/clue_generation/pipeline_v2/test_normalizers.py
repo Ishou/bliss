@@ -1,6 +1,4 @@
-"""Per-normalizer unit tests. Each normalizer returns ``(str, bool)``
-where the bool flags whether the normalisation actually changed the
-input (cf. ``normalizers.NormResult``)."""
+"""Per-normalizer unit tests."""
 
 from __future__ import annotations
 

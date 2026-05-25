@@ -1,12 +1,4 @@
-"""Filtres §8.3 du pipeline de validation.
-
-Chaque filtre prend un dict d'entrée (mot, definition, pos, categorie,
-style, force) et retourne un objet FilterResult :
-  - action : "accept" | "reject" | "warning"
-  - reason : description courte (vide si accept)
-
-Cf. style_guide.md §8.3 pour les spécifications.
-"""
+"""Filtres §8.3 du pipeline de validation."""
 
 from __future__ import annotations
 
@@ -36,10 +28,6 @@ class FilterResult:
     def is_warning(self) -> bool:
         return self.action == "warning"
 
-
-# ---------------------------------------------------------------------------
-# Patterns regex (compilés une fois)
-# ---------------------------------------------------------------------------
 
 # Emoji : caractères dans les plages Unicode emoji standard
 EMOJI_PATTERN = re.compile(
@@ -106,10 +94,6 @@ POS_EXCEPTION_AUTOREF = frozenset({"sigle_abreviation"})
 STYLE_EXCEPTION_AUTOREF = frozenset({"cryptique_morphologique"})
 
 
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
 def _strip_accents(text: str) -> str:
     """Supprime les diacritiques pour matching insensible aux accents."""
     nfd = unicodedata.normalize("NFD", text)
@@ -121,16 +105,8 @@ def _tokenize_definition(definition: str) -> list[str]:
     return [t for t in re.split(r"[\s’'\-]+", definition) if t]
 
 
-# ---------------------------------------------------------------------------
-# Les 8 filtres
-# ---------------------------------------------------------------------------
-
 def filter_1_typographiques(row: dict) -> FilterResult:
-    """Filtre 1 : caractères typographiques stricts.
-
-    Détecte : emoji, gras markdown, italique markdown, balises HTML,
-    caractères non imprimables.
-    """
+    """Filtre 1 : caractères typographiques stricts (emoji, HTML, markdown, non-printable)."""
     defi = row["definition"]
     if EMOJI_PATTERN.search(defi):
         return FilterResult("reject", "Emoji détecté")
@@ -146,13 +122,7 @@ def filter_1_typographiques(row: dict) -> FilterResult:
 
 
 def filter_2_caracteres_interdits(row: dict) -> FilterResult:
-    """Filtre 2 : caractères hors lettres/chiffres/ponctuation standard.
-
-    Pré-normalise NFC pour tolérer les formes NFD (combining marks),
-    qui seront converties en NFC par la normalisation §8.4 #7. Sans
-    cette pré-normalisation, les combining marks (catégorie Mn) ne
-    matchent pas \\w et le filtre rejetterait à tort.
-    """
+    """Filtre 2 : caractères hors lettres/chiffres/ponctuation standard."""
     defi = unicodedata.normalize("NFC", row["definition"])
     if ALLOWED_CHARS.match(defi):
         return FilterResult("accept")
@@ -168,11 +138,7 @@ def filter_2_caracteres_interdits(row: dict) -> FilterResult:
 
 
 def filter_3_longueur(row: dict) -> FilterResult:
-    """Filtre 3 : longueur en mots et caractères.
-
-    - warning si > 8 mots
-    - reject si > 12 mots OU > 60 caractères
-    """
+    """Filtre 3 : longueur en mots et caractères (warning > 8 mots, reject > 12 mots ou > 60 chars)."""
     defi = row["definition"]
     tokens = _tokenize_definition(defi)
     nb_mots = len(tokens)
@@ -205,11 +171,7 @@ def filter_4_stereotypes_ia(row: dict) -> FilterResult:
 
 
 def filter_5_auto_reference(row: dict) -> FilterResult:
-    """Filtre 5 : auto-référence du mot dans la définition.
-
-    Boundary match \\b sur le mot normalisé NFD (accent-insensitive).
-    Exceptions : pos = sigle_abreviation OU style = cryptique_morphologique.
-    """
+    """Filtre 5 : auto-référence du mot dans la définition."""
     pos = row["pos"]
     style = row["style"]
     if pos in POS_EXCEPTION_AUTOREF:
@@ -231,15 +193,7 @@ def filter_5_auto_reference(row: dict) -> FilterResult:
 
 
 def filter_6_langue_fr(row: dict) -> FilterResult:
-    """Filtre 6 : langue française.
-
-    Implémentation : **lingua-language-detector** (primary).
-    Seuils : reject si FR < 0.5 ET EN > 0.5.
-
-    Fallback heuristique (si lingua indisponible) :
-    - Compter les stop-words EN dans la définition
-    - reject si score_FR < 0.7 ET au moins 1 stopword EN détecté
-    """
+    """Filtre 6 : langue française (lingua primary, stopword heuristic fallback)."""
     defi = row["definition"]
     if not defi.strip():
         return FilterResult("accept")
@@ -296,9 +250,7 @@ _LINGUA_TRIED = False
 
 
 def _get_lingua_detector():
-    """Retourne le détecteur lingua-language-detector, ou None si
-    indisponible. Cache la construction (coûteuse en mémoire / I/O).
-    """
+    """Retourne le détecteur lingua-language-detector, ou None si indisponible (construit une seule fois)."""
     global _LINGUA_DETECTOR, _LINGUA_TRIED
     if _LINGUA_TRIED:
         return _LINGUA_DETECTOR
@@ -316,12 +268,7 @@ def _get_lingua_detector():
 
 
 def filter_7_tautologie(row: dict) -> FilterResult:
-    """Filtre 7 : tautologies / définitions vides (étiquette catégorielle nue).
-
-    - reject si def == étiquette générique exacte (case-insensitive,
-      trim)
-    - warning si def = étiquette + 1 qualificatif faible
-    """
+    """Filtre 7 : tautologies / définitions vides (étiquette catégorielle nue)."""
     defi = row["definition"].strip().lower()
     if defi in ETIQUETTES_GENERIQUES:
         return FilterResult(
@@ -342,11 +289,7 @@ def filter_7_tautologie(row: dict) -> FilterResult:
 def filter_8_llm_juge_mock(row: dict, valid_pos: set[str],
                            valid_categories: set[str],
                            valid_styles: set[str]) -> FilterResult:
-    """Filtre 8 : LLM-juge MOCK (cohérence métadonnées + heuristique accord).
-
-    Vérifie les enums et signale les incohérences d'accord §1.5 par
-    heuristique (warning, pas reject).
-    """
+    """Filtre 8 : LLM-juge MOCK (cohérence métadonnées + heuristique accord)."""
     pos = row["pos"]
     cat = row["categorie"]
     style = row["style"]
