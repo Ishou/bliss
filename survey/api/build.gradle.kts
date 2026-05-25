@@ -37,6 +37,9 @@ dependencies {
     implementation(project(":survey:application"))
     implementation(project(":survey:infrastructure"))
 
+    // UUID v7 generator for the IdGenerator port wired in Main.kt. Mirrors identity/infrastructure.
+    implementation("com.fasterxml.uuid:java-uuid-generator:5.2.0")
+
     // Ktor server core + CIO engine.
     implementation("io.ktor:ktor-server-core:$ktorVersion")
     implementation("io.ktor:ktor-server-cio:$ktorVersion")
