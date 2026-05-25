@@ -4810,7 +4810,7 @@ Expected: `src/infrastructure/api/survey/types.ts` created. The `openapi-typescr
 - [ ] **Step 3: Commit**
 
 ```bash
-cd /Users/isho/IdeaProjects/bliss
+cd "$(git rev-parse --show-toplevel)"
 git add frontend/openapi-typescript.config.ts frontend/src/infrastructure/api/survey/types.ts
 git commit -s -m "chore(survey-frontend): regenerate OpenAPI types from survey/api/openapi.yaml"
 ```
@@ -4918,7 +4918,7 @@ Use MSW for the HTTP client (existing pattern, see `frontend/src/infrastructure/
 - [ ] **Step 4: Commit**
 
 ```bash
-cd /Users/isho/IdeaProjects/bliss
+cd "$(git rev-parse --show-toplevel)"
 git add frontend/src/infrastructure/api/survey/client.ts \
         frontend/src/infrastructure/session/localStorageSurveyAnon.ts \
         frontend/src/infrastructure/api/survey/__tests__/ \
@@ -5364,7 +5364,7 @@ Expected: all PASS.
 - [ ] **Step 2: Push and PR**
 
 ```bash
-cd /Users/isho/IdeaProjects/bliss
+cd "$(git rev-parse --show-toplevel)"
 git push -u origin HEAD:feat/survey-frontend
 gh pr create --title "feat(survey-frontend): /sondage route + /compte integration" --body "$(cat <<'EOF'
 ## Summary
