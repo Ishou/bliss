@@ -61,3 +61,4 @@ Append-only log of decisions the orchestrator made during the 9-PR survey-module
 - `2026-05-25T18:08:38Z` · phase `1 (feat/survey-adr)` · `waiting-manual-reviewer` · PR #612: manual reviewer dispatched at tick 9 (~2 min ago), still running. No action.
 - `2026-05-25T<tick11>` · phase `1 (feat/survey-adr)` · `merged` · PR #612 squash-merged at sha `d9360e26` [reviewer: LGTM by Ishou]. Phase 1 complete. Next tick dispatches Phase 2.
 - `2026-05-25T<tick12>` · phase `2 (feat/survey-openapi)` · `dispatched-implementer` · Phase 1 merged; Phase 2 has no PR. Agent dispatched in worktree to write OpenAPI 3.1 contract + open PR.
+- `2026-05-25T<tick13>` · phase `2 (feat/survey-openapi)` · `waiting-implementer` · No PR yet; agent from tick 12 still running.
