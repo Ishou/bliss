@@ -7,9 +7,6 @@ import sys
 import unicodedata
 from pathlib import Path
 
-# Local-package imports. Adapted from the bliss-clue-ai source layout
-# (scripts/pipeline/...) to the bliss layout
-# (scripts/clue_generation/pipeline_v2/...). Logic byte-identical.
 from . import filters as F
 from . import normalizers as N
 from .run_pipeline import (
@@ -70,9 +67,7 @@ def run_norm_test(test_id: str, norm_idx: int, input_def: str,
     return passed
 
 
-# ===========================================================================
 # Tests des filtres §8.3
-# ===========================================================================
 
 print("=" * 96)
 print("FILTRES §8.3")
@@ -178,9 +173,7 @@ run_filter_test("F8-3",
                 "force hors plage [1,5]")
 
 
-# ===========================================================================
-# Tests des normalisations §8.4 (appel direct des fonctions)
-# ===========================================================================
+# Tests des normalisations §8.4
 
 print()
 print("=" * 96)
@@ -235,9 +228,7 @@ run_norm_test("N8", 7,
               "retour ligne interne remplacé")
 
 
-# ===========================================================================
 # Récap
-# ===========================================================================
 
 print()
 print("=" * 96)

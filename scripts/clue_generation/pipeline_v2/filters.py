@@ -39,8 +39,7 @@ MARKDOWN_BOLD = re.compile(r"\*\*[^*]+\*\*")
 MARKDOWN_ITALIC = re.compile(r"(?<!\*)\*(?!\*)[^*]+\*(?!\*)")
 NON_PRINTABLE = re.compile(r"[\x00-\x08\x0B-\x1F\x7F]")
 
-# Caractères autorisés (filtre 2) : lettres, chiffres, espaces,
-# ponctuation standard, apostrophe typographique, guillemets français
+# Caractères autorisés (filtre 2)
 ALLOWED_CHARS = re.compile(
     r"^[\w\s’'.,;:!?()«»\"\-—–]*$",
     re.UNICODE
