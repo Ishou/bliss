@@ -1,0 +1,102 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "bliss-survey-api.fullname" . }}
+  labels: {{- include "bliss-survey-api.labels" . | nindent 4 }}
+spec:
+  # Survey-api state lives in Postgres (ADR-0056). Scales horizontally;
+  # default 1 since rating volume is low. Bump in values-prod if needed.
+  replicas: {{ .Values.replicaCount | default 1 }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels: {{- include "bliss-survey-api.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels: {{- include "bliss-survey-api.selectorLabels" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ include "bliss-survey-api.serviceAccountName" . }}
+      securityContext: {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      terminationGracePeriodSeconds: 30
+      {{- if .Values.database.enabled }}
+      # Block the api container until the CNPG `-rw` Service accepts
+      # connections. The Cluster CRD is owned by a sibling Helm release
+      # (`bliss-survey-api-pg`, chart `survey/api/deploy/db-chart/`);
+      # deploy workflow installs it first. Without this, Flyway's TCP
+      # connect hangs, startup probe sees `connection refused`, Helm
+      # times out.
+      #
+      # `-U survey -d survey` are NOT optional: the container runs as
+      # UID 1000 and the cnpg-postgres image has no `/etc/passwd` entry
+      # for that UID. Same fix as identity/api.
+      initContainers:
+        - name: wait-for-postgres
+          image: {{ .Values.database.waitImage | quote }}
+          imagePullPolicy: IfNotPresent
+          securityContext: {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+          command:
+            - /bin/sh
+            - -c
+            - |
+              until pg_isready -h {{ .Values.database.clusterName }}-rw -p 5432 -U survey -d survey; do
+                echo "wait-for-postgres: not ready yet"
+                sleep 2
+              done
+              echo "wait-for-postgres: ready"
+      {{- end }}
+      containers:
+        - name: api
+          image: {{ include "bliss-survey-api.image" . | quote }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext: {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+          ports:
+            - {name: http, containerPort: {{ .Values.service.port }}, protocol: TCP}
+          env:
+            {{- if .Values.database.enabled }}
+            # SURVEY_JDBC_URL from CNPG's auto-generated `<clusterName>-app`
+            # Secret (key: `uri`). The Cluster lives in a sibling Helm release
+            # (`bliss-survey-api-pg`); this chart does not own its lifecycle
+            # but the Secret name is deterministic from `clusterName`.
+            - name: SURVEY_JDBC_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.database.clusterName }}-app
+                  key: uri
+            {{- end }}
+            {{- with .Values.env }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- with .Values.envFromSecret }}
+          envFrom:
+            # Operator-supplied envs (SURVEY_DB_USER + SURVEY_DB_PASSWORD)
+            # bootstrapped per ADR-0009 §10 via `kubectl create secret`.
+            - secretRef: {name: {{ . }}}
+          {{- end }}
+          {{- with .Values.probes.startup }}
+          startupProbe:
+            httpGet: {path: {{ .path }}, port: http}
+            periodSeconds: {{ .periodSeconds | default 5 }}
+            timeoutSeconds: {{ .timeoutSeconds | default 3 }}
+            failureThreshold: {{ .failureThreshold | default 30 }}
+          {{- end }}
+          livenessProbe:
+            httpGet: {path: {{ .Values.probes.liveness.path }}, port: http}
+            periodSeconds: {{ .Values.probes.liveness.periodSeconds | default 15 }}
+            timeoutSeconds: {{ .Values.probes.liveness.timeoutSeconds | default 5 }}
+            failureThreshold: {{ .Values.probes.liveness.failureThreshold | default 3 }}
+          readinessProbe:
+            httpGet: {path: {{ .Values.probes.readiness.path }}, port: http}
+            periodSeconds: {{ .Values.probes.readiness.periodSeconds | default 10 }}
+            timeoutSeconds: {{ .Values.probes.readiness.timeoutSeconds | default 3 }}
+            failureThreshold: {{ .Values.probes.readiness.failureThreshold | default 2 }}
+          {{- with .Values.resources }}
+          resources: {{- toYaml . | nindent 12 }}
+          {{- end }}
+          # readOnlyRootFilesystem requires a writable /tmp (JVM PerfData etc).
+          volumeMounts:
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - {name: tmp, emptyDir: {}}

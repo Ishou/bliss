@@ -1,0 +1,12 @@
+apiVersion: v2
+name: bliss-survey-api-pg
+description: "CNPG Postgres cluster for the survey-api bounded context"
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+# Independent of the api chart's lifecycle. The Cluster is long-lived
+# infrastructure; the api is a rolling Deployment. Sharing a release
+# means a failed api deploy's auto-rollback tears down the Cluster
+# mid-bootstrap (observed 2026-05-12 — see ADR-0055 amendment). Same
+# split pattern as game/api and identity/api db-charts.
+dependencies: []

@@ -1,0 +1,52 @@
+{{- if .Values.retire.enabled }}
+{{/*
+Hourly retire job. Marks items as retired once they hit the k-coverage
+threshold per tier (KCoveragePolicy.DEFAULT in :survey:domain). Keeps
+the picker query fast by trimming the rotating pool. concurrencyPolicy
+Forbid because a slow run must not double-mark.
+*/}}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "bliss-survey-api.fullname" . }}-retire
+  labels: {{- include "bliss-survey-api.labels" . | nindent 4 }}
+spec:
+  schedule: {{ .Values.retire.schedule | quote }}
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      ttlSecondsAfterFinished: 600
+      backoffLimit: 2
+      template:
+        metadata:
+          labels: {{- include "bliss-survey-api.selectorLabels" . | nindent 12 }}
+        spec:
+          restartPolicy: OnFailure
+          serviceAccountName: {{ include "bliss-survey-api.serviceAccountName" . }}
+          securityContext: {{- toYaml .Values.podSecurityContext | nindent 12 }}
+          containers:
+            - name: retire
+              image: {{ include "bliss-survey-api.image" . | quote }}
+              imagePullPolicy: {{ .Values.image.pullPolicy }}
+              securityContext: {{- toYaml .Values.containerSecurityContext | nindent 16 }}
+              command: ["/app/bin/survey-worker"]
+              args: ["--retire-saturated"]
+              env:
+                {{- if .Values.database.enabled }}
+                - name: SURVEY_JDBC_URL
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .Values.database.clusterName }}-app
+                      key: uri
+                {{- end }}
+              {{- with .Values.envFromSecret }}
+              envFrom:
+                - secretRef: {name: {{ . }}}
+              {{- end }}
+              volumeMounts:
+                - {name: tmp, mountPath: /tmp}
+          volumes:
+            - {name: tmp, emptyDir: {}}
+{{- end }}

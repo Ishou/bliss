@@ -1,0 +1,124 @@
+# Shared defaults. Per-env files override what differs.
+image:
+  # GHCR image built by build-and-push-image.yml (survey/api/Dockerfile).
+  repository: ghcr.io/ishou/bliss/wordsparrow-survey-api
+  # Required by manifesto ("pin to digest"). Empty -> tag fallback. Format "sha256:...".
+  digest: ""
+  tag: "0.1.0"
+  pullPolicy: IfNotPresent
+  # Overridden to true in values-prod.yaml so helm install/upgrade aborts
+  # when CD forgot to inject the digest.
+  requireDigest: false
+# Survey-api state lives in Postgres (ADR-0056). Scales horizontally;
+# defaults to 1 because the daily rating volume is low. values-prod
+# may bump to 2.
+replicaCount: 1
+resources:
+  requests: {cpu: 100m, memory: 256Mi}
+  limits: {cpu: 1000m, memory: 512Mi}
+database:
+  # Wires SURVEY_JDBC_URL from the sibling CNPG cluster
+  # (chart `survey/api/deploy/db-chart/`, Helm release
+  # `wordsparrow-survey-api-pg`) and the wait-for-postgres init
+  # container. Off by default so local-dev `helm install` against k3d
+  # boots without a Cluster; prod turns this on.
+  enabled: false
+  # CNPG cluster name. Equals the db chart's Helm release name; the
+  # operator-managed `<clusterName>-app` Secret and `<clusterName>-rw`
+  # Service names resolve from this.
+  clusterName: "wordsparrow-survey-api-pg"
+  # Image used by the wait-for-postgres init container. Duplicated from
+  # db-chart/values.yaml so the init container reuses the node-cached
+  # CNPG postgres image without depending on db-chart at render time.
+  waitImage: "ghcr.io/cloudnative-pg/postgresql:18.1-system-bookworm@sha256:61654dc3b1aa2191e083288caf332e60daa342817a64a285283e69e31f1c854d"
+service:
+  type: ClusterIP
+  # Survey-api listens on 7780. Grid owns 8080, game 8081, identity 8082.
+  port: 7780
+ingress:
+  enabled: true
+  className: nginx
+  # REQUIRED per env (survey.wordsparrow.io prod, localhost local).
+  host: ""
+  # TLS Secret name created by cert-manager from the ingress annotation.
+  tlsSecretName: ""
+  # Env files set cert-manager and external-dns annotations here.
+  annotations: {}
+serviceAccount:
+  create: true
+  name: ""
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities: {drop: [ALL]}
+probes:
+  liveness:
+    path: "/v1/health"
+    periodSeconds: 15
+    timeoutSeconds: 5
+    failureThreshold: 3
+  readiness:
+    path: "/v1/health"
+    periodSeconds: 10
+    timeoutSeconds: 3
+    failureThreshold: 2
+  # 30 × 5 s = 150 s startup budget covers Flyway migration + Ktor boot.
+  startup:
+    path: "/v1/health"
+    periodSeconds: 5
+    timeoutSeconds: 3
+    failureThreshold: 30
+# Inline env vars. Prefer envFromSecret for anything sensitive.
+# OpenJDK MaxRAMPercentage default 25 -> ~128 MB on 512Mi; 75% -> ~384 MB heap.
+env:
+  - name: JAVA_TOOL_OPTIONS
+    value: "-javaagent:/app/otel.jar -XX:MaxRAMPercentage=75.0"
+  - name: SURVEY_PORT
+    value: "7780"
+  - name: OTEL_EXPORTER_OTLP_ENDPOINT
+    value: "http://observability-signoz-otel-collector.observability:4317"
+  - name: OTEL_EXPORTER_OTLP_PROTOCOL
+    value: "grpc"
+  - name: OTEL_SERVICE_NAME
+    value: "survey-api"
+  - name: OTEL_RESOURCE_ATTRIBUTES
+    value: "bounded_context=survey"
+  - name: OTEL_TRACES_SAMPLER
+    value: "parentbased_traceidratio"
+  - name: OTEL_TRACES_SAMPLER_ARG
+    value: "1.0"
+  # NATS JetStream URL — PR9 wires user.deleted consumer + survey-event
+  # publishers. The chart ships the env var now so the binary can read it
+  # once enabled by feature-flag. `bliss-nats` is the cluster-internal
+  # Service installed by the wordsparrow-nats chart.
+  - name: NATS_URL
+    value: "nats://bliss-nats.wordsparrow:4222"
+  # Identity-api base URL for session-cookie verification.
+  - name: IDENTITY_BASE_URL
+    value: "http://wordsparrow-identity-api.wordsparrow:8082"
+# Name of a Kubernetes Secret to envFrom into the pod. ADR-0009 §10:
+# bootstrapped via `kubectl create secret`, never committed. Carries
+# SURVEY_DB_USER / SURVEY_DB_PASSWORD (CNPG injects SURVEY_JDBC_URL via
+# secretKeyRef below). Bootstrap recipe lands with the prod cutover.
+envFromSecret: ""
+# Calibration seed — gold pilot rows ingested at install time (Helm
+# post-install Job). Disabled by default; values-prod turns it on.
+# Mirrors the configure-in-cluster pattern (CLAUDE.md "Helm post-install
+# Job inside the chart, not a CI job POSTing JSON").
+calibration:
+  seedEnabled: false
+  sourceBatch: "gold_v1"
+  tier: "mid"
+# Hourly retire CronJob — runs `--retire-saturated` once an hour and exits.
+retire:
+  enabled: true
+  schedule: "0 * * * *"
+# Per-pod NetworkPolicy egress allow-list. Default ON in prod; off by
+# default to keep local k3d frictionless.
+networkPolicy:
+  enabled: false
