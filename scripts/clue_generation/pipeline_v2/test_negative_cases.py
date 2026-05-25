@@ -244,3 +244,94 @@ if nb_fail > 0:
         if status == "FAIL":
             print(f"  [FAIL] {tid:6s}  {target:32s}  {detail}")
     sys.exit(1)
+
+
+# === Tests pytest-style des filtres 9 + 10 (PR 3b — fusion MLX-lane) ===
+# Le bloc script ci-dessus couvre les filtres 1-8 ; ces fonctions
+# pytest-style couvrent les filtres ajoutés en PR 3b.
+
+
+def test_filter_9_stem_leak_rejects_lcp_5_chars():
+    """LCP de 8 entre 'destructeur' et 'destruction' ≥ seuil 5 → reject."""
+    r = make_row("DESTRUCTION", "Agent destructeur")
+    out = F.filter_9_stem_leak(r)
+    assert out.action == "reject"
+    assert "stem-leak" in out.reason.lower()
+
+
+def test_filter_9_stem_leak_accepts_4_char_prefix_share():
+    """'Prés' (4 chars) sous le seuil 5 → accept (skip token court)."""
+    r = make_row("PRESIDENT", "Prés du sénat")
+    out = F.filter_9_stem_leak(r)
+    assert out.action == "accept", out.reason
+
+
+def test_filter_9_stem_leak_rejects_substring_in_long_lemma():
+    """'couvert' substring de 'couverture' (les deux ≥ 5) → reject."""
+    r = make_row("COUVERTURE", "Mettre un couvert")
+    out = F.filter_9_stem_leak(r)
+    assert out.action == "reject"
+    assert "stem-leak" in out.reason.lower()
+
+
+def test_filter_9_stem_leak_accepts_short_target_below_threshold():
+    """Target 'CHAT' (4 chars) sous le seuil 5 → skip, accept."""
+    r = make_row("CHAT", "Félin domestique courant")
+    out = F.filter_9_stem_leak(r)
+    assert out.action == "accept", out.reason
+
+
+def test_filter_10_pleonasm_rejects_associer_ensemble():
+    """'Associer ensemble' : head='Associer' ∈ rule 1, tail 'ensemble' → reject."""
+    r = make_row("UNIR", "Associer ensemble",
+                 pos="verbe_infinitif")
+    out = F.filter_10_pleonasm(r)
+    assert out.action == "reject"
+    assert "pleonasm" in out.reason.lower()
+
+
+def test_filter_10_pleonasm_rejects_monter_en_haut():
+    """'Monter en haut' : head='Monter' ∈ rule 2, tail 'en haut' → reject."""
+    r = make_row("GRIMPER", "Monter en haut",
+                 pos="verbe_infinitif")
+    out = F.filter_10_pleonasm(r)
+    assert out.action == "reject"
+
+
+def test_filter_10_pleonasm_rejects_prevoir_a_l_avance():
+    """'Prévoir à l'avance' : head='Prévoir', rule anticipation → reject."""
+    r = make_row("ANTICIPER", "Prévoir à l'avance",
+                 pos="verbe_infinitif")
+    out = F.filter_10_pleonasm(r)
+    assert out.action == "reject"
+
+
+def test_filter_10_pleonasm_rejects_sortir_dehors():
+    """'Sortir dehors' : head='Sortir', tail 'dehors' → reject."""
+    r = make_row("PARTIR", "Sortir dehors",
+                 pos="verbe_infinitif")
+    out = F.filter_10_pleonasm(r)
+    assert out.action == "reject"
+
+
+def test_filter_10_pleonasm_rejects_descendre_en_bas():
+    """'Descendre en bas' : head='Descendre', tail 'en bas' → reject."""
+    r = make_row("CHUTER", "Descendre en bas",
+                 pos="verbe_infinitif")
+    out = F.filter_10_pleonasm(r)
+    assert out.action == "reject"
+
+
+def test_filter_10_pleonasm_rejects_repeter_a_nouveau():
+    """'Répéter à nouveau' : head='Répéter', tail 'à nouveau' → reject."""
+    r = make_row("REDIRE", "Répéter à nouveau",
+                 pos="verbe_infinitif")
+    out = F.filter_10_pleonasm(r)
+    assert out.action == "reject"
+
+
+def test_filter_10_pleonasm_accepts_legitimate_two_phrase_clue():
+    """'Quitter en partant' hors du closed-set → accept (closed-set by design)."""
+    r = make_row("DEPART", "Quitter en partant")
+    out = F.filter_10_pleonasm(r)
+    assert out.action == "accept", out.reason

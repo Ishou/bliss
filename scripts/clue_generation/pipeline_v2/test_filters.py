@@ -52,3 +52,17 @@ def test_filter_7_tautologie_accepts_specific_clue():
     r = _row("CHAT", "Félin domestique courant")
     out = F.filter_7_tautologie(r)
     assert out.action == "accept", out.reason
+
+
+def test_filter_9_stem_leak_accepts_clean_definition():
+    """Happy-path : aucun token de la définition ne partage de radical avec le mot."""
+    r = _row("CHAT", "Félin domestique courant")
+    out = F.filter_9_stem_leak(r)
+    assert out.action == "accept", out.reason
+
+
+def test_filter_10_pleonasm_accepts_clean_definition():
+    """Happy-path : la définition ne matche aucun patron pléonastique fermé."""
+    r = _row("CHIEN", "Animal fidèle au gardien")
+    out = F.filter_10_pleonasm(r)
+    assert out.action == "accept", out.reason

@@ -45,7 +45,7 @@ VALID_STYLES = {
     "technique",
 }
 
-# Pipeline §8.3 — 8 filtres dans l'ordre
+# Pipeline §8.3 — 8 filtres + 2 fusions MLX (PR 3b) dans l'ordre
 PIPELINE_FILTERS = [
     ("filter_1_typographiques", F.filter_1_typographiques, False),
     ("filter_2_caracteres_interdits", F.filter_2_caracteres_interdits, False),
@@ -56,6 +56,9 @@ PIPELINE_FILTERS = [
     ("filter_7_tautologie", F.filter_7_tautologie, False),
     # filter_8 a besoin des enums valides, traité spécialement
     ("filter_8_llm_juge_mock", F.filter_8_llm_juge_mock, True),
+    # === MLX-lane fusion (PR 3b) ===
+    ("filter_9_stem_leak", F.filter_9_stem_leak, False),
+    ("filter_10_pleonasm", F.filter_10_pleonasm, False),
 ]
 
 

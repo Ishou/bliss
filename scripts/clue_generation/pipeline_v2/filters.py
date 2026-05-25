@@ -310,3 +310,180 @@ def filter_8_llm_juge_mock(row: dict, valid_pos: set[str],
     mot_nfd = _strip_accents(mot).lower()
 
     return FilterResult("accept")
+
+
+# === filter_9_stem_leak — porté de scripts/eval/validate_clue.py ===
+# Seuil 5 chars : volontaire (cf. docs/eval/clue-gen-v0.md iter7, variance
+# 86.0% ± 2.5pp). Ne pas abaisser sans rejouer la variance check.
+# Porté verbatim depuis validate_clue.py::_find_stem_leak — pas de
+# normalisation accent : MLX-lane utilise .lower() seul.
+
+_STEM_LEAK_MIN = 5
+
+# Tokens fonctionnels exclus du stem-leak (calque validate_clue.py)
+_STEM_LEAK_FUNCTION_WORDS = frozenset({
+    "le", "la", "les", "un", "une", "des", "du", "de", "d",
+    "à", "au", "aux", "en", "dans", "sur", "sous", "par", "pour",
+    "avec", "sans",
+    "et", "ou", "mais", "donc", "car", "ni", "or",
+    "qui", "que", "qu", "dont", "où", "quoi",
+    "ce", "cet", "cette", "ces", "ceux", "celle", "celui",
+    "son", "sa", "ses", "leur", "leurs", "mon", "ma", "mes",
+    "ton", "ta", "tes",
+    "ne", "pas", "plus", "très", "trop", "peu", "bien", "mal",
+    "je", "tu", "il", "elle", "ils", "elles", "on",
+    "se", "s", "me", "m", "te", "t", "nous", "vous", "lui", "y",
+    "soi",
+})
+
+_STEM_LEAK_TOKEN_RE = re.compile(r"[\wÀ-ÿŒœŸ]+", re.UNICODE)
+
+
+def _longest_common_prefix(a: str, b: str) -> int:
+    """Retourne la longueur du plus long préfixe commun à a et b."""
+    n = min(len(a), len(b))
+    for i in range(n):
+        if a[i] != b[i]:
+            return i
+    return n
+
+
+def _stem_leak_match(clue: str, target_lemma: str) -> str | None:
+    """Retourne le token leakant si LCP ≥ 5 OU sous-chaîne mutuelle, sinon None."""
+    target = target_lemma.lower().strip()
+    if len(target) < _STEM_LEAK_MIN:
+        return None
+    for tok in _STEM_LEAK_TOKEN_RE.findall(clue):
+        tl = tok.lower()
+        if tl in _STEM_LEAK_FUNCTION_WORDS or len(tl) < _STEM_LEAK_MIN:
+            continue
+        if tl == target:
+            # Match exact géré par filter_5 (auto-référence)
+            continue
+        if _longest_common_prefix(target, tl) >= _STEM_LEAK_MIN:
+            return tok
+        if tl in target or target in tl:
+            return tok
+    return None
+
+
+def filter_9_stem_leak(row: dict) -> FilterResult:
+    """Filtre 9 : reject si un token de la définition partage un radical ≥ 5 chars avec le mot."""
+    leak = _stem_leak_match(row["definition"], row["mot"])
+    if leak is None:
+        return FilterResult("accept")
+    return FilterResult(
+        "reject",
+        f"stem-leak : token « {leak} » partage un radical ≥ 5 chars "
+        f"avec le mot « {row['mot']} »",
+    )
+
+
+# === filter_10_pleonasm — porté de scripts/eval/validate_clue.py ===
+# Ensemble fermé par construction. Élargir exige un échec concret en
+# logbook, jamais par analogie. Porté verbatim depuis _PLEONASM_RULES.
+
+# Verbes fonctionnels exclus de la recherche de tête (calque validate_clue.py)
+_PLEONASM_FUNCTION_WORDS = _STEM_LEAK_FUNCTION_WORDS
+
+_PLEONASM_TOKEN_RE = _STEM_LEAK_TOKEN_RE
+
+# (frozenset de lemmes-tête, regex tail) — verbatim _PLEONASM_RULES
+_PLEONASM_RULES: tuple[tuple[frozenset[str], "re.Pattern[str]"], ...] = (
+    # X + ensemble : X signifie déjà "joindre / réunir"
+    (frozenset({
+        "associer", "unir", "joindre", "rejoindre", "réunir",
+        "assembler", "rassembler", "regrouper",
+        "mêler",
+        "lier", "relier", "souder", "fusionner", "conjuguer",
+        "marier", "allier", "apparier", "coupler", "accoupler",
+        "fédérer", "confédérer",
+        "additionner", "ajouter",
+        "enchaîner",
+    }), re.compile(r"\bensemble\b", re.IGNORECASE)),
+    # Directionnel : monter/grimper + en haut / vers le haut
+    (frozenset({"monter", "grimper", "gravir", "ascensionner",
+                "escalader"}),
+     re.compile(r"\b(?:en|vers\s+le)\s+haut\b", re.IGNORECASE)),
+    # Directionnel : descendre/tomber + en bas / vers le bas
+    (frozenset({"descendre", "tomber", "chuter", "baisser", "abaisser"}),
+     re.compile(r"\b(?:en|vers\s+le)\s+bas\b", re.IGNORECASE)),
+    # Sortir + dehors / Entrer + dedans
+    (frozenset({"sortir"}), re.compile(r"\bdehors\b", re.IGNORECASE)),
+    (frozenset({"entrer"}), re.compile(r"\bdedans\b", re.IGNORECASE)),
+    # Avancer + en avant / Reculer + en arrière
+    (frozenset({"avancer", "progresser"}),
+     re.compile(r"\ben\s+avant\b", re.IGNORECASE)),
+    (frozenset({"reculer", "rétrograder"}),
+     re.compile(r"\ben\s+arrière\b", re.IGNORECASE)),
+    # Répétition : re-X + à nouveau
+    (frozenset({
+        "répéter", "recommencer", "refaire", "redire",
+        "reprendre", "réitérer", "réessayer", "relire", "revoir",
+    }), re.compile(r"\bà\s+nouveau\b", re.IGNORECASE)),
+    # Anticipation : anticiper/prévoir + à l'avance
+    (frozenset({"anticiper", "prévoir", "planifier", "préméditer",
+                "programmer"}),
+     re.compile(r"\bà\s+l[’']avance\b", re.IGNORECASE)),
+    # Réciprocité + mutuellement
+    (frozenset({"entraider", "s'entraider", "coopérer", "collaborer",
+                "s'associer"}),
+     re.compile(r"\bmutuellement\b", re.IGNORECASE)),
+    # Complétude : remplir/saturer/vider + complètement
+    (frozenset({"remplir", "saturer", "vider"}),
+     re.compile(r"\bcomplètement\b", re.IGNORECASE)),
+)
+
+
+def _pleonasm_find_head(clue: str) -> str:
+    """Retourne le premier token de contenu (hors mots-outils), ou ""."""
+    for tok in _PLEONASM_TOKEN_RE.findall(clue):
+        if tok.lower() in _PLEONASM_FUNCTION_WORDS:
+            continue
+        return tok
+    return ""
+
+
+def _pleonasm_head_matches_lemma(head: str, lemma: str) -> bool:
+    """Vrai si head == lemma ou inflection plausible (stem-prefix ≥ 3 chars)."""
+    h = head.lower()
+    l = lemma.lower()
+    if h == l:
+        return True
+    if l.startswith("s'") and h == l[2:]:
+        return True
+    stem = l
+    for suf in ("oir", "er", "ir", "re"):
+        if stem.endswith(suf) and len(stem) > len(suf) + 2:
+            stem = stem[: -len(suf)]
+            break
+    if len(stem) < 3:
+        return False
+    return h.startswith(stem) and len(h) >= len(stem)
+
+
+def _pleonasm_match(clue: str) -> str | None:
+    """Retourne le tail redondant si la clue est pléonastique, sinon None."""
+    head = _pleonasm_find_head(clue)
+    if not head:
+        return None
+    head_lower = head.lower()
+    for lemmas, tail_re in _PLEONASM_RULES:
+        if not any(_pleonasm_head_matches_lemma(head_lower, l)
+                   for l in lemmas):
+            continue
+        m = tail_re.search(clue)
+        if m is not None:
+            return m.group(0)
+    return None
+
+
+def filter_10_pleonasm(row: dict) -> FilterResult:
+    """Filtre 10 : reject si la définition matche un patron pléonastique fermé."""
+    match = _pleonasm_match(row["definition"])
+    if match is None:
+        return FilterResult("accept")
+    return FilterResult(
+        "reject",
+        f"pleonasm : patron fermé matché « {match} »",
+    )
