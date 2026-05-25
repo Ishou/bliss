@@ -11,7 +11,7 @@
 
 The clue-generation loop in [`bliss-clue-ai`](../../../../bliss-clue-ai) trains LoRA + DPO models on a French *mots fléchés* corpus. Today's human-feedback step is a Google-Sheets workflow (`bliss-clue-ai/scripts/campaign/`) that hand-distributes 500 stratified definitions to a small cohort of contributors. The Sheets-based campaign is a working prototype but it doesn't scale, can't reach the player base that already authenticates against WordSparrow, and produces ratings that join back to model training via manual Python glue.
 
-The survey module replaces it: an auth-gated route in the WordSparrow frontend where any signed-in player can rate model-produced candidate clues along the three dimensions the offline pipeline already consumes (`qualite`, `difficulte`, optional `correctif`), and where any rater can propose an alternative clue that automatically enters the corpus as an anonymous candidate for further evaluation. Ratings feed the next training iteration; alternative clues seed the next ingest batch.
+The survey module replaces it: a public route in the WordSparrow frontend where **any visitor** — authenticated or anonymous — can rate model-produced candidate clues along the two dimensions the offline pipeline already consumes (`qualite`, `difficulte`), and where **signed-in raters** can additionally propose an alternative clue that automatically enters the corpus as an anonymous candidate. Each rating carries an `auth`/`anon` discriminator so downstream weighting can favour identified raters without losing the volume contributed by drive-by participants. Ratings feed the next training iteration; alternative clues seed the next ingest batch.
 
 Rationale and constraints inherited from existing project artifacts (no separate justifications repeated here):
 
@@ -26,9 +26,11 @@ Rationale and constraints inherited from existing project artifacts (no separate
 
 ## 2. Decision summary
 
-Add a top-level bounded context **`survey/`** peer to `grid/`, `game/`, `identity/`. Hexagonal layout (`domain/ application/ infrastructure/ api/ worker/`). Own Postgres cluster (CNPG), own Helm chart, own ingress host `survey.wordsparrow.io`. Sessions verified by calling `identity-api` (30 s cookie-verify cache, ADR-0044 pattern). On `wordsparrow.user.deleted` events from JetStream, ratings are heavily anonymised; proposed-clue contributions remain in the corpus as anonymous candidates unless the user opted out.
+Add a top-level bounded context **`survey/`** peer to `grid/`, `game/`, `identity/`. Hexagonal layout (`domain/ application/ infrastructure/ api/ worker/`). Own Postgres cluster (CNPG), own Helm chart, own ingress host `survey.wordsparrow.io`. Sessions verified by calling `identity-api` when present (30 s cookie-verify cache, ADR-0044 pattern). On `wordsparrow.user.deleted` events from JetStream, ratings are heavily anonymised; proposed-clue contributions remain in the corpus as anonymous candidates unless the user opted out.
 
-The frontend gains a single auth-gated route `/sondage` that serves rating cards built from a stratified-by-tier, K-coverage-first sampler. Each card carries the 5-axis annotation (POS chip + catégorie chip + style + claimed force). The rater scores qualité (1–5), difficulté (1–5), optionally flags or proposes a correction. Proposed corrections enter the candidate pool immediately via the §8.3 filter pipeline (filters 1–7 ported into Kotlin; LLM-juge filter 8 remains offline in `bliss-clue-ai`).
+**Two participation modes**: authenticated and anonymous. The `/sondage` route is **open to anonymous visitors** (no sign-in required) to maximise rating volume; signed-in users unlock the contribution path (proposing alternative clues) and personal contribution tracking in `/compte`. Every rating carries a `submitted_as ∈ {auth, anon}` discriminator so the export job can apply distinct weights (default: `auth = 1.0`, `anon = 0.5`; configurable).
+
+The frontend serves rating cards built from a stratified-by-tier, K-coverage-first sampler. Each card carries the 5-axis annotation (POS chip + catégorie chip + style + claimed force). The rater scores qualité (1–5), difficulté (1–5), optionally flags. Authenticated raters can additionally propose a correction; proposed corrections enter the candidate pool immediately via the §8.3 filter pipeline (filters 1–7 ported into Kotlin; LLM-juge filter 8 remains offline in `bliss-clue-ai`). The `correctif` field is hidden in anonymous mode — corpus contributions require an accountable identity even though the corpus row itself is anonymous.
 
 Export is a worker subcommand emitting a CSV in `bliss-clue-ai/docs/style_guide.md §8.1` format, consumed verbatim by the offline training pipeline.
 
@@ -101,14 +103,20 @@ CREATE TABLE survey_items (
 CREATE INDEX ON survey_items (tier) WHERE retired_at IS NULL;
 CREATE INDEX ON survey_items (mot);
 
--- One rating per (user, item). proposed_item_id points to the rater's alternative
--- clue if they wrote one; the alternative itself is a row in survey_items with
--- source='rater_proposed'. No correctif text column here — the text lives in
--- survey_items.definition (single source of truth).
+-- A rating is either auth (linked to a user_id) or anon (user_id NULL from
+-- inception, submitted_as='anon'). The submitted_as discriminator is immutable
+-- through the user.deleted flow so anonymised auth-ratings remain
+-- distinguishable from anon-from-inception ratings at export-weighting time.
+-- proposed_item_id is reserved for auth ratings only; the corpus contribution
+-- path requires accountable identity even though the corpus row is anonymous.
+-- No correctif text column here — the text lives in survey_items.definition
+-- (single source of truth).
 CREATE TABLE ratings (
   rating_id        UUID PRIMARY KEY,                  -- UUIDv7
   item_id          UUID NOT NULL REFERENCES survey_items(item_id),
-  user_id          UUID,                              -- nullable after anonymisation
+  user_id          UUID,                              -- nullable: null for anon and after anonymisation
+  submitted_as     TEXT NOT NULL                      -- discriminator; immutable through anonymisation
+                   CHECK (submitted_as IN ('auth','anon')),
   qualite          SMALLINT NOT NULL CHECK (qualite BETWEEN 1 AND 5),
   difficulte       SMALLINT NOT NULL CHECK (difficulte BETWEEN 1 AND 5),
   flag             TEXT CHECK (flag IS NULL OR flag IN
@@ -117,10 +125,16 @@ CREATE TABLE ratings (
   latency_ms       INTEGER,                            -- nullable after anonymisation
   client_meta      JSONB,                              -- nullable after anonymisation
   created_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
-  UNIQUE (item_id, user_id)
+  -- Per-user uniqueness is enforced only for auth ratings. Anon ratings have
+  -- no server-side dedup (no stable identity to dedupe against); the frontend
+  -- tracks rated item_ids in localStorage for best-effort client-side dedup.
+  CHECK (submitted_as = 'auth' OR (user_id IS NULL AND proposed_item_id IS NULL))
 );
+CREATE UNIQUE INDEX ratings_auth_uniq ON ratings (item_id, user_id)
+  WHERE user_id IS NOT NULL;
 CREATE INDEX ON ratings (item_id);
 CREATE INDEX ON ratings (user_id) WHERE user_id IS NOT NULL;
+CREATE INDEX ON ratings (submitted_as);
 
 -- Authorship link for proposed clues. Carries the opt-out flag.
 -- Fully deleted on user.deleted.
@@ -144,10 +158,13 @@ CREATE TABLE user_progress (
 ### 4.2 Domain invariants
 
 - `survey_items` is immutable except for `retired_at`. A new model run produces new `item_id`s.
-- A `Rating` cannot exist without its `SurveyItem`. The unique `(item_id, user_id)` constraint prevents duplicates; idempotent retry returns 409.
+- A `Rating` cannot exist without its `SurveyItem`. For auth ratings, the partial unique index `(item_id, user_id) WHERE user_id IS NOT NULL` prevents duplicates; idempotent retry returns 409.
+- Anon ratings have no server-side dedup. The frontend keeps a localStorage list of rated `item_id`s for best-effort client-side dedup; clearing localStorage allows re-rating from the same browser, which is accepted as a low-cost trade for not persisting an anon session identifier server-side (see Section 10.1).
+- `proposed_item_id` is **null for all anon ratings** (DB-level CHECK constraint). Domain enforces this at construction.
 - `proposed_item_id` always references a `survey_items` row with `source = 'rater_proposed'`. Domain enforces this at construction.
+- `submitted_as` is immutable: an auth rating that gets anonymised on `user.deleted` keeps `submitted_as = 'auth'` (its `user_id` goes to NULL, but the discriminator preserves the original participation tier for export weighting).
 - Polysemy is first-class (style_guide §7.5): `(mot, definition, pos, categorie)` is the corpus-level uniqueness key — a single `mot` legitimately has multiple rows with different `categorie` (POULE-animals vs. POULE-expressions), each with its own clue candidates and ratings.
-- Calibration agreement is computed on a rolling window of the user's last N=20 calibration ratings (configurable).
+- Calibration agreement is computed on a rolling window of the user's last N=20 calibration ratings (auth only — anon has no stable identity to track across requests).
 
 ### 4.3 Domain model (Kotlin shape — names only)
 
@@ -173,12 +190,21 @@ data class SurveyItem(
   init { require(forceClaimed in 1..5) }
 }
 
+enum class SubmittedAs { AUTH, ANON }
+
 data class Rating(
   val id: RatingId, val itemId: ItemId, val userId: UserId?,
+  val submittedAs: SubmittedAs,
   val qualite: Int, val difficulte: Int,
   val flag: FlagReason?, val proposedItemId: ItemId?,
   val latencyMs: Int?, val createdAt: Instant
-)
+) {
+  init {
+    require(submittedAs == SubmittedAs.AUTH || (userId == null && proposedItemId == null)) {
+      "anon ratings cannot carry user_id or proposed_item_id"
+    }
+  }
+}
 ```
 
 ## 5. Item routing — tier-stratified + K-coverage
@@ -197,8 +223,8 @@ The weights and the retirement target live in the chart's `values.yaml`; no code
 
 | Method | Path | Auth | Purpose |
 |---|---|---|---|
-| `GET` | `/v1/items/next` | session required | Pull next unrated item; tier-stratified + K-coverage routing. Returns 204 if pool exhausted. |
-| `POST` | `/v1/items/{itemId}/rating` | session required | Submit `{qualite, difficulte, flag?, correctif?, latency_ms}`. Idempotent via `UNIQUE(item_id, user_id)`. Returns 201 or 409 with the existing rating. |
+| `GET` | `/v1/items/next` | optional | Pull next unrated item; tier-stratified + K-coverage routing. Anonymous callers may pass `?excluded=<comma-sep-uuids>` for best-effort client-side dedup. Returns 204 if pool exhausted. |
+| `POST` | `/v1/items/{itemId}/rating` | optional | Submit `{qualite, difficulte, flag?, correctif?, latency_ms}`. Server sets `submitted_as` based on session presence. `correctif` is **rejected with 401** for anonymous callers (corpus contributions require an account). For auth, idempotent via partial unique index; returns 201 or 409 with the existing rating. For anon, always 201 (no dedup). |
 | `GET` | `/v1/me/progress` | session required | `{items_rated, calibration_agreement, last_rated_at}` |
 | `GET` | `/v1/me/contributions` | session required | List of `survey_items` rows where the caller is the `proposed_by` author. |
 | `PATCH` | `/v1/me/preferences` | session required | `{delete_proposed_on_erasure: bool}` — sets `proposed_by.opted_out` for the caller's existing contributions. |
@@ -206,7 +232,9 @@ The weights and the retirement target live in the chart's `values.yaml`; no code
 
 Error responses follow RFC 7807 (consistent with grid-api). No admin HTTP endpoints — all admin operations are CLI/Job-only (see Section 7).
 
-**`correctif` handling on submit**: if the request includes `correctif`, the application layer runs filters 1–7 from style_guide §8.3 against it. If accepted, a new `survey_items` row with `source='rater_proposed'` is minted in the same transaction as the rating; `proposed_item_id` is set; a `proposed_by` row is inserted with `opted_out=false`. If filters reject, the API returns 422 with the failing filter id and message; the rating itself is NOT submitted (the rater must either fix or drop the correctif).
+**Auth resolution**: the API middleware attempts to read `__Host-ws_session` and verifies via identity-api (30 s cache). If a valid session is present, the rating is submitted as `auth` with the resolved `user_id`. If no session or an invalid one, the rating is submitted as `anon` with `user_id=NULL`. The middleware never rejects requests for being anonymous; it only rejects when an explicitly-auth-required path (`/v1/me/*`) is hit without a session.
+
+**`correctif` handling on submit**: if the request includes `correctif` and the caller is **authenticated**, the application layer runs filters 1–7 from style_guide §8.3 against it. If accepted, a new `survey_items` row with `source='rater_proposed'` is minted in the same transaction as the rating; `proposed_item_id` is set; a `proposed_by` row is inserted with `opted_out=false`. If filters reject, the API returns 422 with the failing filter id and message; the rating itself is NOT submitted (the rater must either fix or drop the correctif). If the caller is **anonymous** and submits `correctif`, the API returns 401 with a message inviting sign-in.
 
 ## 7. Worker subcommands
 
@@ -220,12 +248,14 @@ survey-worker --retire-saturated                                # idempotent
 
 **Ingest** reads §8.1-formatted CSV, validates each row against the enums and through filters 1–7, mints `survey_items` rows. Rejects logged with line number and reason.
 
-**Export** emits CSV in §8.1 format with `meta` carrying aggregated rating data:
+**Export** emits CSV in §8.1 format with `meta` carrying aggregated rating data, **separating auth and anon contributions** so the training pipeline can apply distinct weights:
 
 ```
 mot;definition;pos;categorie;style;force;longueur;source;meta
-POULE;Femelle du coq;nom_commun;animals;périphrase;2;5;synthetic_v1;qualite_mean:4.2|qualite_n:3|qualite_stdev:0.4|difficulte_mean:2.0|flags:0|source_batch:iter18_20260525
+POULE;Femelle du coq;nom_commun;animals;périphrase;2;5;synthetic_v1;qualite_mean:4.2|qualite_n_auth:3|qualite_n_anon:12|qualite_stdev:0.4|difficulte_mean:2.0|difficulte_n_auth:3|difficulte_n_anon:12|flags:0|source_batch:iter18_20260525
 ```
+
+The aggregation uses configurable per-discriminator weights (defaults: `auth = 1.0`, `anon = 0.5`). Weighted means look like `qualite_mean = (1.0·Σauth + 0.5·Σanon) / (1.0·n_auth + 0.5·n_anon)`. Both counts are exported separately so `bliss-clue-ai` can re-weight downstream if needed.
 
 The export is **deterministic and byte-stable** given identical inputs (sorted by `item_id`, fixed locale, NFC). Guarded by the `survey-export-csv-byteequal` CI gate.
 
@@ -237,7 +267,7 @@ The export is **deterministic and byte-stable** given identical inputs (sorted b
 
 New file `frontend/src/ui/routes/sondage.lazy.tsx` (lazy-loaded per convention; see `aide.lazy.tsx`, `mentions-legales.lazy.tsx`).
 
-**Auth gate**: uses the existing `useAuth` hook. Unauthenticated visitors are redirected to sign-in with `return_to=/sondage` (same pattern as `compte.tsx`).
+**Auth gate**: none. The route is **open**. The page renders for both signed-in and anonymous visitors. A persistent banner at the top invites sign-in: *Connectez-vous pour proposer vos propres indices et suivre vos contributions.* For anonymous visitors the `correctif` field and `style` dropdown are hidden; clicking the banner navigates to sign-in with `return_to=/sondage`. Anon raters track their rated `item_id`s in localStorage (`survey.anon.rated_ids`) and pass them to `/v1/items/next` as `excluded` for best-effort dedup. Clearing localStorage permits re-rating from the same browser — accepted trade-off per Section 10.1.
 
 **UI surface per card**:
 - `mot` heading
@@ -260,7 +290,7 @@ Number-row shortcuts are deliberately avoided: on French AZERTY layouts the digi
 - High-contrast token usage from the existing Panda theme
 - Axe-core test under `pnpm a11y` extended to cover `/sondage`
 
-**Analytics (Matomo, ADR-0025)**: events `survey_session_start`, `survey_rating_submitted` (with `tier` dimension), `survey_correctif_proposed`, `survey_flag_raised`. Auth-gated context, no additional PII.
+**Analytics (Matomo, ADR-0025)**: events `survey_session_start`, `survey_rating_submitted` (with `tier` and `submitted_as` dimensions), `survey_correctif_proposed`, `survey_flag_raised`, `survey_signin_prompt_shown`, `survey_signin_prompt_clicked`. No PII added; the `submitted_as` dimension lets us measure the auth-vs-anon mix and the conversion rate from anon → signed-in.
 
 **Account integration (`/compte`)**:
 - New section *Mes contributions* listing user's proposed clues with their current K-coverage.
@@ -316,7 +346,9 @@ Both sides commit their files for reproducibility. No automated transfer — the
 
 ### 10.1 Anonymisation rationale (WP216)
 
-After `user.deleted`, the `ratings` rows retain only `(item_id, qualite, difficulte, flag, proposed_item_id, month)`. None of these columns is identifying on its own:
+**Anon ratings** are anonymous from inception: no `user_id`, no session identifier persisted server-side, no IP stored on the row. The `ratings` row carries only `(item_id, qualite, difficulte, flag, latency_ms, client_meta, created_at, submitted_as='anon')`. Because no stable identifier links two anon ratings together at storage time, they cannot be clustered into per-individual sessions by an attacker reading the dataset — singling out and linkability are both defeated by construction. The frontend's localStorage dedup token never reaches the server.
+
+**Auth ratings** become anonymous after `user.deleted`. The rows retain only `(item_id, qualite, difficulte, flag, proposed_item_id, month, submitted_as='auth')`. None of these columns is identifying on its own:
 
 - `item_id` is a corpus-internal UUID with no identity link.
 - `qualite`, `difficulte` are 1–5 enums (high collision rate across users).
@@ -374,7 +406,9 @@ Per MANIFESTO §Quality and §Testing.
 3. Tier-stratified sampler: over N=10000 draws against a fixed pool, observed tier frequencies are within ε=0.02 of configured weights
 4. K-coverage retirement idempotence: `retire(retire(s)) == retire(s)`
 5. Anonymisation idempotence: applying the user.deleted SQL twice has no additional effect
-6. Filter-1-through-7 pipeline: pre-NFC normalisation invariant, plus the 27 negative cases from `bliss-clue-ai/scripts/pipeline/test_negative_cases.py` ported as the test fixture
+6. Anonymisation preserves `submitted_as`: for any auth rating, post-anonymisation row still reports `submitted_as = 'auth'`
+7. Anon rating invariants: every persisted anon rating has `user_id IS NULL`, `proposed_item_id IS NULL`, `submitted_as = 'anon'` (the DB CHECK enforces this; the PBT verifies the application layer never tries to violate it)
+8. Filter-1-through-7 pipeline: pre-NFC normalisation invariant, plus the 27 negative cases from `bliss-clue-ai/scripts/pipeline/test_negative_cases.py` ported as the test fixture
 
 **CI gates touched or added**:
 
@@ -421,6 +455,8 @@ After PR9 merges:
 | Identity verify traffic spike | L | L | 30 s cache (ADR-0044); identity scales horizontally |
 | Rater abuse (low-effort farming) | L | M | Calibration de-weighting; no live block (avoids UX cliff) |
 | `correctif` injection of disallowed content | L | M | Filters 1–7 run synchronously on submit; rejection returns 422 with reason |
+| Anon abuse — drive-by spam ratings | M | M | Ingress per-IP rate limit (5 rps/30 connections); export weight 0.5 for anon; calibration items mixed into the pool catch noise at the aggregate level (anon group's rolling agreement vs. expected); auth ratings remain dominant in weighted means even at unequal counts |
+| Anon volume drowns auth signal | L | M | Per-discriminator counts in export `meta` let `bliss-clue-ai` re-weight downstream; a SigNoz dashboard panel surfaces the auth/anon ratio per export |
 
 ## 14. Open items (v2 candidates, NOT in scope for v1)
 
@@ -431,6 +467,8 @@ After PR9 merges:
 5. **Filter 8 (LLM-juge) in-band** — currently offline in `bliss-clue-ai`; not worth bringing online until rater volume justifies it
 6. **Bumping K for high-stdev items** — keeps disagreed-on items in the pool longer
 7. **Difficulty histogram per category** in the maintainer's view — current export is enough
+8. **Captcha or proof-of-work for anon** — only if anon abuse signals (calibration disagreement spikes, abusive flag floods) appear in production. v1 relies on ingress rate limiting + downweighting.
+9. **Anon → auth rating attribution** — currently an anon visitor who later signs in loses their prior ratings (they remain in the table as anon). A localStorage-backed merge endpoint could attribute them on sign-in; deferred until we see whether the conversion rate justifies the complexity.
 
 ## 15. What this spec deliberately does NOT do
 
@@ -443,6 +481,9 @@ After PR9 merges:
 - No import of historical Sheets ratings (treat as frozen v0 corpus, already consumed offline).
 - No public scoring statistics.
 - No automated CSV transfer between `bliss-clue-ai` and `bliss` (manual copy at training boundaries).
+- No server-side persistence of an anon session identifier — keeps the "anonymous by construction" property of anon ratings clean. Client-side dedup only.
+- No anon contribution path (proposing alternative clues requires sign-in).
+- No anon → auth attribution of prior ratings on sign-in (deferred to v2 per Section 14).
 
 ---
 
