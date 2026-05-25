@@ -80,3 +80,14 @@ from version control. We list DBnary here regardless because the
 filter model's weights and the LoRA's prompting pipeline are
 derivative of DBnary as training input, and attribution is good
 practice even when no source text is shipped.
+
+## Modal clue-AI lane — language detection and base model
+
+- lingua-language-detector v2.2.0 — Apache 2.0
+  https://github.com/pemistahl/lingua-py
+  Used by scripts/clue_generation/pipeline_v2/filters.py for FR/EN
+  classification (§8.3 filter 6).
+
+- Mistral-Nemo-Base-2407 — Apache 2.0 (model downloaded at training
+  time; not bundled in any deployed artefact). Used by the Modal
+  fine-tuning lane (ADR-0057).
