@@ -2,8 +2,7 @@ package com.bliss.survey.api.dto
 
 import kotlinx.serialization.Serializable
 
-// Wire shapes for the rating endpoints. camelCase per ADR-0003 (matches the
-// survey/api/openapi.yaml schemas verbatim).
+// Wire DTOs for rating endpoints — camelCase per ADR-0003, matches openapi.yaml verbatim.
 @Serializable
 data class CorrectifPayload(
     val text: String,

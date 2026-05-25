@@ -129,8 +129,7 @@ private data class ParsedOrigin(
     val hostPort: String,
 )
 
-// Splits "https://wordsparrow.io" → ("https", "wordsparrow.io"). Returns null
-// for unparseable input; Module.kt simply skips those entries.
+// Splits "https://host" → ("https", "host"); returns null for unparseable input.
 private fun parseOrigin(raw: String): ParsedOrigin? {
     val idx = raw.indexOf("://")
     if (idx <= 0) return null

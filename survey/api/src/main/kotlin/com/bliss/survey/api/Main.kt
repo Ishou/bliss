@@ -23,8 +23,7 @@ import io.ktor.server.engine.embeddedServer
 import java.time.Instant
 import kotlin.random.Random
 
-// Production entry-point. Tests construct the Ktor module directly via
-// `Application.surveyApiModule(wiring, config)`.
+// Production entry-point; tests use Application.surveyApiModule(wiring, config) directly.
 fun main() {
     val config = SurveyApiConfig.load()
     val dataSource = SurveyDatabase.create(config.jdbcUrl, config.dbUser, config.dbPassword)

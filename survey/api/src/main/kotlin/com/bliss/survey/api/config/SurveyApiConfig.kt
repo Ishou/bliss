@@ -1,7 +1,6 @@
 package com.bliss.survey.api.config
 
-// Runtime config sourced from env (ADR-0007 §6). Values without defaults are
-// required at boot — missing values fail-fast with a clear message.
+// Runtime config from env (ADR-0007 §6); missing required values fail-fast at boot.
 data class SurveyApiConfig(
     val port: Int,
     val jdbcUrl: String,

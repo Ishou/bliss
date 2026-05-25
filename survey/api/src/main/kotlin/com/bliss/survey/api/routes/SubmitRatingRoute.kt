@@ -24,8 +24,7 @@ import io.ktor.server.routing.Route
 import io.ktor.server.routing.post
 import java.util.UUID
 
-// POST /v1/items/{itemId}/rating — auth-optional rating submission.
-// Anonymous callers attempting a `correctif` are rejected with 401.
+// POST /v1/items/{itemId}/rating — auth-optional; anon + correctif rejected 401 before use-case.
 fun Route.submitRatingRoute(execute: suspend (SubmitRatingCommand) -> SubmitRatingResult) {
     post("/v1/items/{itemId}/rating") {
         val itemUuid =
@@ -126,8 +125,7 @@ fun Route.submitRatingRoute(execute: suspend (SubmitRatingCommand) -> SubmitRati
     }
 }
 
-// Production overload: lets Module.kt pass the use case as a class without
-// the test seam leaking into the deployment binding.
+// Production overload so Module.kt can pass the concrete use case without exposing the test seam.
 fun Route.submitRatingRoute(useCase: SubmitRatingUseCase) = submitRatingRoute { cmd -> useCase.execute(cmd) }
 
 private fun Rating.toResponse(): RatingResponse =

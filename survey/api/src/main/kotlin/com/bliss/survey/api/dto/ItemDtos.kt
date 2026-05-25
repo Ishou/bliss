@@ -2,8 +2,7 @@ package com.bliss.survey.api.dto
 
 import kotlinx.serialization.Serializable
 
-// Wire shape for the `Item` schema in survey/api/openapi.yaml — camelCase by
-// ADR-0003 convention; do not snake_case (regenerated TS types depend on it).
+// Wire DTO for the Item schema — camelCase per ADR-0003; matches openapi.yaml verbatim.
 @Serializable
 data class ItemDto(
     val itemId: String,

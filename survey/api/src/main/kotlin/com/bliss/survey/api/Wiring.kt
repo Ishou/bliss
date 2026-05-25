@@ -8,9 +8,7 @@ import com.bliss.survey.application.usecases.SubmitRatingCommand
 import com.bliss.survey.application.usecases.SubmitRatingResult
 import java.util.UUID
 
-// Hand-rolled DI graph for survey-api. Module.kt consumes this; Main.kt wires
-// adapters; tests construct directly with stubs. Mirrors identity/api but
-// stays smaller because survey-api has fewer mount points.
+// Hand-rolled DI graph; Module.kt consumes this, Main.kt wires adapters, tests stub directly.
 class Wiring(
     val verifyCookie: suspend (String) -> UUID?,
     val getNextItem: GetNextItemUseCase,

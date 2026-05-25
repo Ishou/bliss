@@ -12,9 +12,7 @@ const val SESSION_COOKIE_NAME: String = "__Secure-ws_session"
 val UserIdKey: AttributeKey<UUID> = AttributeKey("survey.userId")
 
 class SessionMiddlewareConfig {
-    // Verifies a session cookie value, returning the user id when valid.
-    // Defaults to a no-op so routing tests can install the plugin without
-    // wiring identity-api.
+    // Defaults to null so routing tests can install the plugin without wiring identity-api.
     var verifyCookie: suspend (String) -> UUID? = { null }
 }
 
