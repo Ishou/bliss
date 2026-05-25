@@ -10,8 +10,8 @@ This file is the self-contained procedure the cron-fired orchestrator follows on
 
 ## Source documents
 
-- **Spec:** `docs/superpowers/specs/2026-05-25-survey-module-design.md` (already on `main` per commit `8f805839` + `fa449735`).
-- **Plan:** `docs/superpowers/plans/2026-05-25-survey-module.md` (already on `main` per commit `8c311054`).
+- **Spec:** `docs/superpowers/specs/2026-05-25-survey-module-design.md` (lands on `main` with this PR, branch `docs/survey-module-orchestration`).
+- **Plan:** `docs/superpowers/plans/2026-05-25-survey-module.md` (lands on `main` with this PR, branch `docs/survey-module-orchestration`).
 - **ADR-0056** (companion to this rollout, lands as Phase 1).
 
 ## Standing maintainer authorization (recorded 2026-05-25)
@@ -20,15 +20,15 @@ For this rollout, @Ishou granted the following standing rules in-session. Verbat
 
 > **400-line cap:** "for the 400 line-cap: i grant you explicit authorization to by-pass it if you deem it necessary, the 400 line-cap should trigger a question about 'should the PR be split?' but it does not mean that it should always be the case"
 
-> **Cadence + autonomy + reviewer-hang fallback** (from prior rollouts, still in force per [memory note](../../../.claude-account1/projects/-Users-isho-IdeaProjects-bliss/memory/feedback-cron-orchestration-cadence.md) — "2-minute polling, durable cron, `claude-review` IN_PROGRESS = wait"; reviewer/fixer hang → dispatch manual after 15 min)
+> **Cadence + autonomy + reviewer-hang fallback** (from prior rollouts, still in force — "2-minute polling, durable cron, `claude-review` IN_PROGRESS = wait"; reviewer/fixer hang → dispatch manual after 15 min)
 
-> **Autonomy** (memory note [Maintainer autonomy preference](../../../.claude-account1/projects/-Users-isho-IdeaProjects-bliss/memory/user-autonomy-preference.md)): Ishou delegates orchestration decisions; decide and log, don't ask unless blocking.
+> **Autonomy:** Ishou delegates orchestration decisions; decide and log, don't ask unless blocking.
 
 **Operational consequences:**
 
 - PR4 (`feat/survey-application`) and PR7 (`feat/survey-worker-and-charts`) are pre-flagged in the plan as cap-override candidates. The implementer agents invoke the override in the PR body citing this standing-authorization section.
 - §6a reviewer treats the standing authorization as a satisfied "maintainer ack" for the cap-override gate when the PR body cites it explicitly.
-- The orchestrator does NOT post `@Ishou`-authored comments to confirm — that's impersonation per memory note [No maintainer impersonation](../../../.claude-account1/projects/-Users-isho-IdeaProjects-bliss/memory/feedback-no-impersonation-comments.md). The standing grant is the cite-able artefact.
+- The orchestrator does NOT post `@Ishou`-authored comments to confirm — that's impersonation (standing rule from prior rollouts). The standing grant is the cite-able artefact.
 
 ## Phase map
 
@@ -193,7 +193,7 @@ Invoke whichever skills are relevant:
    Informational (don't block): `codeql`/`analyze-java-kotlin`, `claude-review`.
 2. If any blocking check FAILED: diagnose + push fix. Common patterns:
    - `dco`: `git commit -s --amend --no-edit && git push --force-with-lease`.
-   - `commitlint`: amend with single-context scope (no commas), lowercase subject first word, body lines ≤ 100 chars, no disallowed types. See memory note [Commitlint gotchas](../../../.claude-account1/projects/-Users-isho-IdeaProjects-bliss/memory/feedback-commitlint-gotchas.md).
+   - `commitlint`: amend with single-context scope (no commas), lowercase subject first word, body lines ≤ 100 chars, no disallowed types (`perf`, `style`, `wip`, `build`, `ci`, `revert` all rejected).
    - `ci` (Spotless): `./gradlew spotlessApply` then re-commit.
    - `regen-and-diff`: `cd frontend && pnpm api:generate` (or `pnpm api:check`), commit the diff.
 3. Budget: **3 fix passes max**. After 3, STOP and report the blocker in your final message.

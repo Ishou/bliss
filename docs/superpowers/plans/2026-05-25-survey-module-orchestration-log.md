@@ -21,7 +21,7 @@ Append-only log of decisions the orchestrator made during the 9-PR survey-module
 
 ## Pre-orchestration state
 
-- **Spec + plan + procedure on `main`:** spec commits `8f805839` and `fa449735` (design doc with anon mode), plan commit `8c311054` (9-PR implementation plan). All on `main` at orchestration-start time. The orchestration procedure + this log will land on their own small PR (branch `docs/survey-module-orchestration`).
+- **Spec + plan + procedure:** spec, plan, procedure, and this log all land together on `main` via PR on branch `docs/survey-module-orchestration`. The cron reads the procedure from the branch until this PR merges.
 - **No prior survey-module branches on remote.** First implementer dispatch will create `feat/survey-adr`.
 - **Pre-existing local workspace mods (NOT touched by this rollout):**
   - `M .claude/skills/clue-ai/SKILL.md` — stays modified locally, untouched by the orchestration.
@@ -37,7 +37,7 @@ Append-only log of decisions the orchestrator made during the 9-PR survey-module
 
 ### 2026-05-25 — orchestration start
 
-- Spec + plan already on `main` via three direct commits (`8f805839`, `fa449735`, `8c311054`).
+- Spec + plan land on `main` together with this orchestration PR (branch `docs/survey-module-orchestration`).
 - Orchestration procedure (`2026-05-25-survey-module-orchestration-procedure.md`) and this log added on branch `docs/survey-module-orchestration`.
 - Cron created via `CronCreate` with the `*/2 * * * *` schedule and the bootstrap prompt from the procedure file's tick procedure.
 - Next: push orchestration branch, open small PR, let CI clear, then cron's first tick dispatches Phase 1 (ADR-0056) once the orchestration PR is on origin (the procedure file just needs to be readable from `origin/<branch>` for the cron to find it).
