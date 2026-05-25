@@ -28,7 +28,7 @@ cluster-reset:     ## Delete and recreate the local k3d cluster
 cluster-bootstrap: ## Install ingress-nginx, cert-manager, CloudNative-PG via Helm
 	./scripts/local-cluster.sh bootstrap
 
-deploy-local:      ## Build grid-api image, import into k3d, helm install
+deploy-local:      ## Build grid-api + survey-api images, import into k3d, helm install
 	./scripts/local-cluster.sh deploy
 
 dev:               ## Start full-stack dev (API hot reload + Vite HMR). FORCE=1 kills strays on 7777/7778/5173.
