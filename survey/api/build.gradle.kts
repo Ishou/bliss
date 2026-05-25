@@ -1,9 +1,4 @@
-// survey/api — Ktor JVM HTTP server for the survey bounded context (ADR-0056, ADR-0006).
-// Outermost layer; only this module imports Ktor. Mirrors identity/api's pinning so the
-// Ktor stack stays uniform across bounded contexts.
-//
-// shadowJar lands at: build/libs/survey-api-<version>-all.jar
-// Used by survey/api/Dockerfile (Phase 7).
+// survey/api Ktor edge — mirrors identity/api pinning (ADR-0056, ADR-0006).
 
 plugins {
     kotlin("jvm")
@@ -76,10 +71,7 @@ tasks.test {
 tasks.shadowJar {
     archiveBaseName.set("survey-api")
     archiveClassifier.set("all")
-    // Shadow 9.x defaults `duplicatesStrategy` to EXCLUDE on the shadow jar task,
-    // which drops same-path duplicates before mergeServiceFiles sees them — that
-    // silently loses Flyway's SPI registrations and crashes the JVM at boot with
-    // `FlywayException: Unknown prefix for location`. Mirrors identity/api.
+    // INCLUDE prevents Shadow 9.x from dropping Flyway SPI entries before mergeServiceFiles.
     duplicatesStrategy = org.gradle.api.file.DuplicatesStrategy.INCLUDE
     mergeServiceFiles()
 }
