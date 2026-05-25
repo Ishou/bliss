@@ -61,6 +61,7 @@ class SubmitRatingUseCase(
     private val clock: Clock,
 ) {
     suspend fun execute(cmd: SubmitRatingCommand): SubmitRatingResult {
+        val now = clock.now()
         val parent = items.findById(cmd.itemId) ?: return SubmitRatingResult.ItemNotFound
 
         if (cmd.userId == null && cmd.correctif != null) return SubmitRatingResult.AnonCorrectifForbidden
@@ -73,6 +74,10 @@ class SubmitRatingUseCase(
 
         var proposedItemId: ItemId? = null
         if (cmd.correctif != null) {
+            val nonNullUserId =
+                requireNotNull(cmd.userId) {
+                    "userId must be non-null when correctif is provided"
+                }
             val (text, claimed) = cmd.correctif
             val proposedInput =
                 FilterInput(
@@ -96,16 +101,16 @@ class SubmitRatingUseCase(
                     forceClaimed = 3,
                     longueur = parent.mot.length,
                     source = Source.RATER_PROPOSED,
-                    sourceBatch = "rater_${monthKey(clock.now())}",
+                    sourceBatch = "rater_${monthKey(now)}",
                     tier = Tier.MID,
                     isCalibration = false,
                     expected = null,
                     retiredAt = null,
-                    createdAt = clock.now(),
+                    createdAt = now,
                 )
             items.insert(newItem)
             proposedItemId = newItem.id
-            proposedBy.insert(newItem.id, cmd.userId!!, optedOut = false)
+            proposedBy.insert(newItem.id, nonNullUserId, optedOut = false)
         }
 
         val rating =
@@ -119,10 +124,10 @@ class SubmitRatingUseCase(
                 flag = cmd.flag,
                 proposedItemId = proposedItemId,
                 latencyMs = cmd.latencyMs,
-                createdAt = clock.now(),
+                createdAt = now,
             )
         ratings.insert(rating)
-        if (cmd.userId != null) progress.incrementItemsRated(cmd.userId, clock.now())
+        if (cmd.userId != null) progress.incrementItemsRated(cmd.userId, now)
         return SubmitRatingResult.Accepted(rating)
     }
 
