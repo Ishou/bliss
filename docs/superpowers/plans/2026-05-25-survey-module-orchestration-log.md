@@ -104,3 +104,4 @@ Append-only log of decisions the orchestrator made during the 9-PR survey-module
 - `2026-05-25T19:34:41Z` · phase `3 (feat/survey-domain)` · `waiting-fixer` · PR #614: fixer cycle 3 still running; state unchanged.
 - `2026-05-25T19:36:38Z` · phase `3 (feat/survey-domain)` · `dispatched-fixer` · PR #614: cycle 3 fixer's commit subject violated commitlint subject-case (PascalCase 'CalibrationAnswer' first word). Minimal amend fixer dispatched (cycle 3 continuation).
 - `2026-05-25T19:38:38Z` · phase `3 (feat/survey-domain)` · `waiting-ci` · PR #614: amend force-pushed; CI re-running on new SHA. No action per 3b.
+- `2026-05-25T19:40:37Z` · phase `3 (feat/survey-domain)` · `waiting-auto-fixer` · PR #614: 4 commits; claude-review IN_PROGRESS; full CI running. No action per 3b.
