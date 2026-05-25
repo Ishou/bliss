@@ -27,7 +27,7 @@ For this rollout, @Ishou granted the following standing rules in-session. Verbat
 **Operational consequences:**
 
 - PR4 (`feat/survey-application`) and PR7 (`feat/survey-worker-and-charts`) are pre-flagged in the plan as cap-override candidates. The implementer agents invoke the override in the PR body citing this standing-authorization section.
-- §6a reviewer treats the standing authorization as a satisfied "maintainer ack" for the cap-override gate when the PR body cites it explicitly.
+- Cap-override PRs in this rollout must still have an explicit @Ishou approval comment on each PR; the standing authorization is the justification text, not a proxy comment.
 - The orchestrator does NOT post `@Ishou`-authored comments to confirm — that's impersonation (standing rule from prior rollouts). The standing grant is the cite-able artefact.
 
 ## Phase map
