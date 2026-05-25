@@ -23,8 +23,7 @@ class LinguaLanguageDetectorTest {
 
     @Test
     fun `borderline loan-word gentleman is not flagged as English`() {
-        // Single-token loan-words like "gentleman" appear in French clues; the EN>=1.0
-        // threshold deliberately rejects only confidently-English texts.
+        // EN>=1.0 deliberately excludes only confident English; French loan-words like "gentleman" pass.
         assertThat(detector.isClearlyEnglish("gentleman")).isEqualTo(false)
     }
 
