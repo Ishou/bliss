@@ -4,6 +4,7 @@ import com.bliss.survey.application.usecases.AnonymizeUserRatingsUseCase
 import com.bliss.survey.domain.model.UserId
 import io.nats.client.Connection
 import io.nats.client.JetStreamApiException
+import io.nats.client.JetStreamSubscription
 import io.nats.client.PushSubscribeOptions
 import io.nats.client.api.AckPolicy
 import io.nats.client.api.ConsumerConfiguration
@@ -36,6 +37,9 @@ class UserDeletedConsumer(
     @Volatile
     private var job: Job? = null
 
+    @Volatile
+    private var subscription: JetStreamSubscription? = null
+
     fun start(): Job {
         val existing = job
         if (existing != null && existing.isActive) return existing
@@ -50,10 +54,20 @@ class UserDeletedConsumer(
                     .deliverSubject(deliverSubject)
                     .build(),
             )
+        subscription = sub
         val newJob =
             scope.launch(Dispatchers.IO) {
                 while (isActive) {
-                    val msg = sub.nextMessage(pollWait) ?: continue
+                    val msg =
+                        try {
+                            sub.nextMessage(pollWait)
+                        } catch (e: IllegalStateException) {
+                            // Subscription became inactive (e.g. shutdown); exit the loop quietly.
+                            return@launch
+                        } catch (e: InterruptedException) {
+                            Thread.currentThread().interrupt()
+                            return@launch
+                        } ?: continue
                     try {
                         val event = json.decodeFromString(UserDeletedPayload.serializer(), msg.data.decodeToString())
                         anonymise.execute(UserId(UUID.fromString(event.userId)))
@@ -69,6 +83,8 @@ class UserDeletedConsumer(
     }
 
     fun stop() {
+        subscription?.let { runCatching { it.unsubscribe() } }
+        subscription = null
         job?.cancel()
         job = null
     }
