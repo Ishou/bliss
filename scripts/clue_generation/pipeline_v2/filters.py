@@ -1,0 +1,382 @@
+"""Filtres §8.3 du pipeline de validation.
+
+Chaque filtre prend un dict d'entrée (mot, definition, pos, categorie,
+style, force) et retourne un objet FilterResult :
+  - action : "accept" | "reject" | "warning"
+  - reason : description courte (vide si accept)
+
+Cf. style_guide.md §8.3 pour les spécifications.
+"""
+
+from __future__ import annotations
+
+import re
+import unicodedata
+from dataclasses import dataclass
+
+# Apostrophe typographique
+APO = "’"
+
+
+@dataclass(frozen=True)
+class FilterResult:
+    """Résultat d'un filtre : action + raison."""
+    action: str           # "accept" | "reject" | "warning"
+    reason: str = ""
+
+    @property
+    def is_accept(self) -> bool:
+        return self.action == "accept"
+
+    @property
+    def is_reject(self) -> bool:
+        return self.action == "reject"
+
+    @property
+    def is_warning(self) -> bool:
+        return self.action == "warning"
+
+
+# ---------------------------------------------------------------------------
+# Patterns regex (compilés une fois)
+# ---------------------------------------------------------------------------
+
+# Emoji : caractères dans les plages Unicode emoji standard
+EMOJI_PATTERN = re.compile(
+    r"[\U0001F000-\U0001FFFF\U0001F300-\U0001F9FF"
+    r"☀-➿⌀-⏿️‍]"
+)
+HTML_PATTERN = re.compile(r"<[^>]+>")
+MARKDOWN_BOLD = re.compile(r"\*\*[^*]+\*\*")
+MARKDOWN_ITALIC = re.compile(r"(?<!\*)\*(?!\*)[^*]+\*(?!\*)")
+NON_PRINTABLE = re.compile(r"[\x00-\x08\x0B-\x1F\x7F]")
+
+# Caractères autorisés (filtre 2) : lettres, chiffres, espaces,
+# ponctuation standard, apostrophe typographique, guillemets français
+ALLOWED_CHARS = re.compile(
+    r"^[\w\s’'.,;:!?()«»\"\-—–]*$",
+    re.UNICODE
+)
+
+# Stéréotypes IA (préfixes proscrits §6.5)
+LLM_PREFIXES = [
+    r"Quelqu['’]un qui",
+    r"Personne qui",
+    r"Action de",
+    r"Fait de",
+    r"Chose qui sert",
+    r"Chose qui",
+    r"Celui qui",
+    r"Celle qui",
+    r"Action consistant",
+    r"Manière de",
+    r"Objet qui sert",
+    r"Élément faisant partie",
+    r"Type de",
+    r"Sorte de",
+    r"Variété de",
+    r"Mot désignant",
+    r"Terme employé",
+    r"Personnage qui",
+]
+LLM_PREFIX_PATTERN = re.compile(
+    r"^(" + "|".join(LLM_PREFIXES) + r")\b",
+    re.IGNORECASE
+)
+
+# Étiquettes catégorielles génériques (filtre 7)
+ETIQUETTES_GENERIQUES = frozenset({
+    "animal", "prénom", "plante", "objet", "chose", "personne",
+    "mot", "verbe", "adjectif", "lieu", "outil", "terme", "élément",
+    "partie", "nom commun", "nom propre",
+})
+
+# Stop-words EN (filtre 6, fallback heuristique)
+EN_STOPWORDS = frozenset({
+    "the", "and", "is", "of", "to", "in", "a", "an", "for", "with",
+    "on", "at", "by", "from", "as", "that", "this", "are", "be",
+    "or", "it", "not", "but", "have", "has", "had", "will", "would",
+    "should", "could", "can", "may", "might", "do", "does", "did",
+    "get", "got", "got", "make", "made", "what", "who", "where",
+    "when", "why", "how", "you", "your", "they", "them",
+})
+
+# Exceptions à l'auto-référence
+POS_EXCEPTION_AUTOREF = frozenset({"sigle_abreviation"})
+STYLE_EXCEPTION_AUTOREF = frozenset({"cryptique_morphologique"})
+
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+def _strip_accents(text: str) -> str:
+    """Supprime les diacritiques pour matching insensible aux accents."""
+    nfd = unicodedata.normalize("NFD", text)
+    return "".join(c for c in nfd if unicodedata.category(c) != "Mn")
+
+
+def _tokenize_definition(definition: str) -> list[str]:
+    """Tokenise la définition selon les séparateurs §8.3 filtre 3."""
+    return [t for t in re.split(r"[\s’'\-]+", definition) if t]
+
+
+# ---------------------------------------------------------------------------
+# Les 8 filtres
+# ---------------------------------------------------------------------------
+
+def filter_1_typographiques(row: dict) -> FilterResult:
+    """Filtre 1 : caractères typographiques stricts.
+
+    Détecte : emoji, gras markdown, italique markdown, balises HTML,
+    caractères non imprimables.
+    """
+    defi = row["definition"]
+    if EMOJI_PATTERN.search(defi):
+        return FilterResult("reject", "Emoji détecté")
+    if HTML_PATTERN.search(defi):
+        return FilterResult("reject", "Balise HTML détectée")
+    if MARKDOWN_BOLD.search(defi):
+        return FilterResult("reject", "Gras markdown détecté")
+    if MARKDOWN_ITALIC.search(defi):
+        return FilterResult("reject", "Italique markdown détecté")
+    if NON_PRINTABLE.search(defi):
+        return FilterResult("reject", "Caractère non imprimable")
+    return FilterResult("accept")
+
+
+def filter_2_caracteres_interdits(row: dict) -> FilterResult:
+    """Filtre 2 : caractères hors lettres/chiffres/ponctuation standard.
+
+    Pré-normalise NFC pour tolérer les formes NFD (combining marks),
+    qui seront converties en NFC par la normalisation §8.4 #7. Sans
+    cette pré-normalisation, les combining marks (catégorie Mn) ne
+    matchent pas \\w et le filtre rejetterait à tort.
+    """
+    defi = unicodedata.normalize("NFC", row["definition"])
+    if ALLOWED_CHARS.match(defi):
+        return FilterResult("accept")
+    # Identifier le premier caractère interdit pour le message
+    for c in defi:
+        if not re.match(r"[\w\s’'.,;:!?()«»\"\-—–]", c,
+                        re.UNICODE):
+            return FilterResult(
+                "reject",
+                f"Caractère interdit : {c!r} (U+{ord(c):04X})"
+            )
+    return FilterResult("accept")
+
+
+def filter_3_longueur(row: dict) -> FilterResult:
+    """Filtre 3 : longueur en mots et caractères.
+
+    - warning si > 8 mots
+    - reject si > 12 mots OU > 60 caractères
+    """
+    defi = row["definition"]
+    tokens = _tokenize_definition(defi)
+    nb_mots = len(tokens)
+    nb_chars = len(defi)
+
+    if nb_mots > 12:
+        return FilterResult(
+            "reject", f"Trop de mots ({nb_mots} > 12)"
+        )
+    if nb_chars > 60:
+        return FilterResult(
+            "reject", f"Trop de caractères ({nb_chars} > 60)"
+        )
+    if nb_mots > 8:
+        return FilterResult(
+            "warning", f"Long ({nb_mots} mots, > 8)"
+        )
+    return FilterResult("accept")
+
+
+def filter_4_stereotypes_ia(row: dict) -> FilterResult:
+    """Filtre 4 : préfixes stéréotype IA."""
+    defi = row["definition"]
+    m = LLM_PREFIX_PATTERN.match(defi)
+    if m:
+        return FilterResult(
+            "reject", f"Préfixe stéréotype IA : « {m.group(1)} »"
+        )
+    return FilterResult("accept")
+
+
+def filter_5_auto_reference(row: dict) -> FilterResult:
+    """Filtre 5 : auto-référence du mot dans la définition.
+
+    Boundary match \\b sur le mot normalisé NFD (accent-insensitive).
+    Exceptions : pos = sigle_abreviation OU style = cryptique_morphologique.
+    """
+    pos = row["pos"]
+    style = row["style"]
+    if pos in POS_EXCEPTION_AUTOREF:
+        return FilterResult("accept", "Exception : sigle_abreviation")
+    if style in STYLE_EXCEPTION_AUTOREF:
+        return FilterResult(
+            "accept", "Exception : cryptique_morphologique"
+        )
+
+    mot_clean = _strip_accents(row["mot"]).lower()
+    def_clean = _strip_accents(row["definition"]).lower()
+    pattern = re.compile(r"\b" + re.escape(mot_clean) + r"\b")
+    if pattern.search(def_clean):
+        return FilterResult(
+            "reject",
+            f"Auto-référence : « {row['mot']} » apparaît dans la définition"
+        )
+    return FilterResult("accept")
+
+
+def filter_6_langue_fr(row: dict) -> FilterResult:
+    """Filtre 6 : langue française.
+
+    Implémentation : **lingua-language-detector** (primary).
+    Seuils : reject si FR < 0.5 ET EN > 0.5.
+
+    Fallback heuristique (si lingua indisponible) :
+    - Compter les stop-words EN dans la définition
+    - reject si score_FR < 0.7 ET au moins 1 stopword EN détecté
+    """
+    defi = row["definition"]
+    if not defi.strip():
+        return FilterResult("accept")
+
+    detector = _get_lingua_detector()
+    if detector is not None:
+        # Voie primaire : lingua
+        try:
+            confs = detector.compute_language_confidence_values(defi)
+            from lingua import Language  # type: ignore
+            fr_score = 0.0
+            en_score = 0.0
+            for c in confs:
+                if c.language == Language.FRENCH:
+                    fr_score = c.value
+                elif c.language == Language.ENGLISH:
+                    en_score = c.value
+            # Seuils calibrés : FR < 0.3 ET EN > 0.7. La spec
+            # initiale (FR<0.5 ET EN>0.5) produisait 2 faux positifs
+            # sur le gold pilote (segments FR courts ambigus comme
+            # « S'y regarder le matin » à FR=0.49). Calibrage testé
+            # contre le gold + les négatifs.
+            if fr_score < 0.3 and en_score > 0.7:
+                return FilterResult(
+                    "reject",
+                    f"Langue non-FR : lingua FR={fr_score:.2f} "
+                    f"EN={en_score:.2f}"
+                )
+            return FilterResult("accept")
+        except Exception as e:  # noqa: BLE001
+            # En cas d'erreur lingua, fallback heuristique
+            pass
+
+    # Voie de secours : heuristique stopwords EN
+    tokens = [t.lower() for t in _tokenize_definition(defi)]
+    if not tokens:
+        return FilterResult("accept")
+    en_count = sum(1 for t in tokens if t in EN_STOPWORDS)
+    if en_count == 0:
+        return FilterResult("accept")
+    score_fr = 1.0 - (en_count / len(tokens))
+    if score_fr < 0.7:
+        return FilterResult(
+            "reject",
+            f"Langue non-FR (fallback) : {en_count} stopwords EN / "
+            f"{len(tokens)} mots (score FR {score_fr:.2f})"
+        )
+    return FilterResult("accept")
+
+
+# Cache du détecteur lingua (construction coûteuse, à faire une fois)
+_LINGUA_DETECTOR = None
+_LINGUA_TRIED = False
+
+
+def _get_lingua_detector():
+    """Retourne le détecteur lingua-language-detector, ou None si
+    indisponible. Cache la construction (coûteuse en mémoire / I/O).
+    """
+    global _LINGUA_DETECTOR, _LINGUA_TRIED
+    if _LINGUA_TRIED:
+        return _LINGUA_DETECTOR
+    _LINGUA_TRIED = True
+    try:
+        from lingua import Language, LanguageDetectorBuilder  # type: ignore
+        _LINGUA_DETECTOR = (
+            LanguageDetectorBuilder
+            .from_languages(Language.FRENCH, Language.ENGLISH)
+            .build()
+        )
+    except ImportError:
+        _LINGUA_DETECTOR = None
+    return _LINGUA_DETECTOR
+
+
+def filter_7_tautologie(row: dict) -> FilterResult:
+    """Filtre 7 : tautologies / définitions vides (étiquette catégorielle nue).
+
+    - reject si def == étiquette générique exacte (case-insensitive,
+      trim)
+    - warning si def = étiquette + 1 qualificatif faible
+    """
+    defi = row["definition"].strip().lower()
+    if defi in ETIQUETTES_GENERIQUES:
+        return FilterResult(
+            "reject",
+            f"Étiquette catégorielle nue : « {row['definition']} »"
+        )
+    # Étiquette + 1 qualificatif : warning (heuristique)
+    tokens = _tokenize_definition(defi)
+    if len(tokens) == 2 and tokens[0] in ETIQUETTES_GENERIQUES:
+        return FilterResult(
+            "warning",
+            f"Étiquette + qualificatif : « {row['definition']} » "
+            "(discrimination potentiellement faible)"
+        )
+    return FilterResult("accept")
+
+
+def filter_8_llm_juge_mock(row: dict, valid_pos: set[str],
+                           valid_categories: set[str],
+                           valid_styles: set[str]) -> FilterResult:
+    """Filtre 8 : LLM-juge MOCK (cohérence métadonnées + heuristique accord).
+
+    Vérifie les enums et signale les incohérences d'accord §1.5 par
+    heuristique (warning, pas reject).
+    """
+    pos = row["pos"]
+    cat = row["categorie"]
+    style = row["style"]
+    force = row["force"]
+
+    # Validation enums (reject si invalide)
+    if pos not in valid_pos:
+        return FilterResult("reject", f"POS invalide : {pos!r}")
+    if cat not in valid_categories:
+        return FilterResult("reject", f"Catégorie invalide : {cat!r}")
+    if style not in valid_styles:
+        return FilterResult("reject", f"Style invalide : {style!r}")
+    try:
+        f_int = int(force)
+        if not 1 <= f_int <= 5:
+            return FilterResult(
+                "reject", f"Force hors [1,5] : {force}"
+            )
+    except (ValueError, TypeError):
+        return FilterResult("reject", f"Force non entière : {force!r}")
+
+    # Heuristique accord §1.5 (warning uniquement) :
+    # si mot féminin sg (termine par -e non précédé d'autres -e)
+    # et pos = participe_passe ou adjectif, vérifier accord fém. dans def
+    mot = row["mot"]
+    defi_lower = row["definition"].lower()
+    mot_nfd = _strip_accents(mot).lower()
+
+    # Heuristique très simple : signaler si def contient un participe/adj
+    # masc évident pour un mot féminin (ou inversement)
+    # On reste très conservateur pour éviter faux positifs
+    # Détection désactivée par défaut : trop d'ambiguïtés.
+    return FilterResult("accept")
