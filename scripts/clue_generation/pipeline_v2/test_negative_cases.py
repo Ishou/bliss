@@ -246,9 +246,7 @@ if nb_fail > 0:
     sys.exit(1)
 
 
-# === Tests pytest-style des filtres 9 + 10 (PR 3b — fusion MLX-lane) ===
-# Le bloc script ci-dessus couvre les filtres 1-8 ; ces fonctions
-# pytest-style couvrent les filtres ajoutés en PR 3b.
+# filtres 9 + 10
 
 
 def test_filter_9_stem_leak_rejects_lcp_5_chars():

@@ -312,11 +312,7 @@ def filter_8_llm_juge_mock(row: dict, valid_pos: set[str],
     return FilterResult("accept")
 
 
-# === filter_9_stem_leak — porté de scripts/eval/validate_clue.py ===
-# Seuil 5 chars : volontaire (cf. docs/eval/clue-gen-v0.md iter7, variance
-# 86.0% ± 2.5pp). Ne pas abaisser sans rejouer la variance check.
-# Porté verbatim depuis validate_clue.py::_find_stem_leak — pas de
-# normalisation accent : MLX-lane utilise .lower() seul.
+# seuil 5 chars : ne pas abaisser sans rejouer la variance check (docs/eval/clue-gen-v0.md iter7)
 
 _STEM_LEAK_MIN = 5
 
@@ -379,9 +375,7 @@ def filter_9_stem_leak(row: dict) -> FilterResult:
     )
 
 
-# === filter_10_pleonasm — porté de scripts/eval/validate_clue.py ===
-# Ensemble fermé par construction. Élargir exige un échec concret en
-# logbook, jamais par analogie. Porté verbatim depuis _PLEONASM_RULES.
+# closed-set by construction — extend only on a concrete logged failure
 
 # Verbes fonctionnels exclus de la recherche de tête (calque validate_clue.py)
 _PLEONASM_FUNCTION_WORDS = _STEM_LEAK_FUNCTION_WORDS
