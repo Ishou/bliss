@@ -92,18 +92,26 @@ jobs:
 
       - name: Check for convergence (cycle-until-LGTM, max 5 iterations)
         id: cap
-        # Cycle behavior (per ADR-0001 §6a 2026-04-26 amendment):
+        # Cycle behavior (per ADR-0001 §6a 2026-04-26 amendment + 2026-05-25):
         # - If the latest [bot] review's first line is `LGTM`, skip
         #   (convergence reached; no further cycles).
         # - If total [bot] reviews >= 5, skip with a warning so a human
         #   can intervene (max-iteration cap, prevents infinite loops
         #   from reviewer/fixer disagreement).
-        # - Otherwise (first cycle, or non-LGTM review with count < 5),
-        #   continue: run reviewer + fixer.
+        # - If the latest two [bot] reviews flag the same first finding
+        #   (identical first-finding heading after the `Findings —`
+        #   first line), skip with a warning — the loop is stuck on a
+        #   carry-over the fixer cannot or should not resolve by code
+        #   change. The dispatch skill's 3c-loop-terminator pattern
+        #   handles the next move (typically: cite the §4 soft-target
+        #   override in the PR body, dispatch a manual reviewer for
+        #   fresh verdict, then merge).
+        # - Otherwise (first cycle, or non-LGTM review with count < 5
+        #   and findings have changed), continue: run reviewer + fixer.
         #
         # Synchronize fires after the fixer's push, naturally driving the
         # next cycle. Cap step gates: convergence (LGTM in latest bot
-        # review) OR 5-iteration max.
+        # review) OR 5-iteration max OR identical-finding loop.
         run: |
           set -euo pipefail
           reviews=$(gh pr view "$PR_NUMBER" --json reviews \
@@ -129,10 +137,38 @@ jobs:
           if echo "$first_line" | grep -q '^LGTM'; then
             echo "::notice::Latest §6a review is LGTM; convergence reached, skipping."
             echo "skip=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "::notice::Latest §6a review has findings ($count prior cycles); continuing."
-            echo "skip=false" >> "$GITHUB_OUTPUT"
+            exit 0
           fi
+
+          # Identical-finding-loop guard (2026-05-25): if the latest two
+          # bot reviews have the same first Finding heading, the loop is
+          # stuck. Skip and warn — the orchestrator (or maintainer) takes
+          # the next move out-of-band.
+          #
+          # Heuristic: extract the line starting with `## Finding 1 —`
+          # (or `## Finding 1` then a dash) from each review body and
+          # compare. If they match after stripping any `[carry-over from
+          # cycle N]` cycle-number references, that's the loop signal.
+          if [ "${count:-0}" -ge 2 ]; then
+            latest_first_finding=$(echo "$reviews" | jq -r '.[-1].body // ""' \
+              | grep -m1 -E '^## Finding 1' \
+              | sed -E 's/\[carry-over from cycle [0-9]+\]//g' \
+              | sed -E 's/[[:space:]]+/ /g' \
+              | sed -E 's/^[[:space:]]+|[[:space:]]+$//g' || echo "")
+            prior_first_finding=$(echo "$reviews" | jq -r '.[-2].body // ""' \
+              | grep -m1 -E '^## Finding 1' \
+              | sed -E 's/\[carry-over from cycle [0-9]+\]//g' \
+              | sed -E 's/[[:space:]]+/ /g' \
+              | sed -E 's/^[[:space:]]+|[[:space:]]+$//g' || echo "")
+            if [ -n "$latest_first_finding" ] && [ "$latest_first_finding" = "$prior_first_finding" ]; then
+              echo "::warning::Identical first Finding on cycles $((count-1)) and $count for PR $PR_NUMBER ('${latest_first_finding}'); auto-loop terminated. Orchestrator or maintainer handles next move (cite §4 soft-target override OR escalate)."
+              echo "skip=true" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          fi
+
+          echo "::notice::Latest §6a review has findings ($count prior cycles); continuing."
+          echo "skip=false" >> "$GITHUB_OUTPUT"
 
       - name: Run reviewer agent
         if: steps.cap.outputs.skip != 'true'
@@ -216,12 +252,41 @@ jobs:
             burned on this. Phrasing: "PR body still claims X; the
             current diff no longer shows X. Update or remove the claim."
 
+            ## 400-line target is SOFT (ADR-0001 §4 amended 2026-05-25)
+
+            The 400-line figure is a target, not a hard cap. Do NOT
+            re-flag a cap finding in either of these cases:
+
+            1. PR body cites the override. If the PR body cites the
+               §4 2026-05-25 soft-target amendment, the orchestration
+               procedure's Standing maintainer authorization section,
+               or names exception category (a / b / c / coherent
+               layer) per the §4 amendments — treat the cap as
+               resolved. Do not re-flag in this or subsequent cycles
+               while the citation stays in the body.
+
+            2. Carry-over without material change. If the prior
+               cycle flagged the cap with the same rule and same
+               proposed split, AND the diff has materially changed
+               since (a fix commit landed, or the PR body was
+               edited to cite the override), do not re-flag the cap.
+               Re-flagging here triggers the dispatch skill 3c
+               loop-terminator and is treated as a stuck loop.
+
+            If the cap genuinely remains a problem after a body edit
+            cycle (e.g. PR ballooned past 1500 lines and the citation
+            is not in good faith), flag it once with explicit
+            reference to the prior cycle and the specific reason the
+            citation is invalid — do not silently repeat the same
+            generic cap-flag.
+
             ## Cap
 
             This is your only pass per cycle. The fixer runs after you
             and pushes once, which fires the next cycle. The pre-flight
             "Check for convergence" step gates further cycles when the
-            latest review is `LGTM` or 5 cycles have run.
+            latest review is `LGTM`, 5 cycles have run, OR the
+            identical-finding loop guard fires.
 
       - name: Submit review
         # The reviewer agent above writes its review to /tmp/review.md and

@@ -68,8 +68,14 @@ schema.
 ### 4. PR rules (refinement of MANIFESTO.md)
 
 - One workstream = one PR. No bundling.
-- Hard cap: 400 lines of diff, generated code excluded. Above the cap, the PR
-  is split. Schema regeneration is excluded; logic is not.
+- **Target: 400 lines of diff, generated code excluded.** The 400-line figure
+  is a *soft target* the implementer should aim for whenever the workstream
+  permits — small PRs are reviewable in one sitting, and the cap exists to
+  surface "is this two workstreams?" early. It is **not a hard cap**: PRs
+  may legitimately exceed it when the workstream is coherent and splitting
+  would create dependent PRs that cannot ship independently. See the
+  2026-05-25 amendment below for the explicit softening and the
+  exception process.
 
   > **Update (2026-04-26): The cap excludes blank lines in addition to
   > generated code. The diff metric GitHub displays is line-by-line
@@ -156,6 +162,70 @@ schema.
   > exceptions is reviewed for revision; the three precedents above
   > are precisely that review, and the outcome is this codification
   > rather than relaxation of the cap itself.
+
+  > **Update (2026-05-25): 400 lines is a soft target, not a hard cap.**
+  >
+  > The 2026-05-19 amendment codified three exception categories but
+  > kept the 400-line figure as a hard ceiling needing explicit
+  > maintainer sign-off for each exception. In practice, the §6a
+  > reviewer enforced the hard-cap reading and looped on
+  > cap-only findings even when the implementer had already invoked
+  > the override category — observed on the survey-module orchestration
+  > PR #611 (procedure + log; ~330 docs lines, looped on cap finding
+  > until manually merged) and PR #614 (`feat/survey-domain`; the
+  > auto-fixer cycled through "PR A of 2" framing 4 times trying to
+  > satisfy a hard reading of the cap when the layer was coherent and
+  > genuinely indivisible).
+  >
+  > **Rule going forward (replaces "hard cap" wording in §4):**
+  >
+  > 1. **400 lines is a target.** Aim for it. PRs comfortably under
+  >    400 lines do not need to mention the cap at all.
+  > 2. **Crossing 400 lines triggers a "should this be split?"
+  >    self-check**, not an automatic block. The implementer asks the
+  >    question, decides honestly, and proceeds. If the workstream is
+  >    coherent and splitting would create dependent PRs that cannot
+  >    ship independently, the PR ships as one unit.
+  > 3. **PR-body citation replaces the earlier "tag the maintainer"
+  >    requirement.** When the PR exceeds 400 lines, the body says so
+  >    in one paragraph, names which exception category applies (a, b,
+  >    c from the 2026-05-19 amendment, or "coherent layer" — a fourth
+  >    category added here for hexagonally-self-contained module
+  >    drops like a complete domain layer), and that paragraph is
+  >    sufficient. The §6a reviewer treats a properly-cited cap as
+  >    **resolved**, not as a finding to re-flag in subsequent cycles.
+  > 4. **Standing maintainer authorization** for cap-overrides
+  >    delegated to the orchestrator in an autonomous rollout is
+  >    cite-able from the orchestration procedure file. The §6a
+  >    reviewer must accept the citation as a satisfied "maintainer
+  >    ack" — the orchestrator has the standing authority, no fresh
+  >    per-PR ask is required.
+  > 5. **Soft ceiling at ~700 non-blank, non-generated lines stays.**
+  >    Above that, splitting is still preferable when feasible; PR
+  >    #528 remains the worked example. But "above 700" is also not
+  >    an automatic block — the same coherence check applies.
+  > 6. **Identical-finding loop detection** (carry-over rule). If
+  >    cycle N's §6a review re-flags the same finding cycle N-1
+  >    raised, AND the diff has materially changed since N-1 (a fix
+  >    commit landed, the PR body was edited), AND the finding text
+  >    is essentially the same (e.g. the cap-only finding repeats),
+  >    the cycle terminates: the §6a reviewer's last verdict
+  >    cycle stands, and the auto-fixer does NOT spawn another cycle.
+  >    The orchestrator (or human maintainer) handles the next move —
+  >    typically by editing the PR body to cite the standing override
+  >    and dispatching a manual reviewer for a fresh verdict.
+  >
+  > **What the §6a reviewer must NOT do:** re-flag a cap-finding
+  > when the PR body already cites the override. Re-flag any finding
+  > that was marked resolved in a prior cycle without evidence of
+  > regression in the current diff. Loop on PR-description claims
+  > that have already been updated.
+  >
+  > **What the implementer must NOT do:** ship a 1200-line PR with
+  > a perfunctory "coherent layer" citation when the layer could
+  > genuinely have been split into two. The honest self-check at
+  > step 2 is load-bearing; bypassing it dilutes the rule for
+  > everyone.
 - Conventional commits with the bounded-context as scope:
   `feat(grid-application): …`, `fix(frontend-grid): …`,
   `chore(api-grid): regenerate openapi types`.
@@ -213,11 +283,21 @@ round runs before the human maintainer reviews and merges:
    <id>`.
 5. The cycle stops there. Further iteration is the human maintainer's job at
    merge time. No agent ping-pong, no second review pass, no second fix pass.
-6. If a fix would push the PR over the 400-line cap (generated code
-   excluded), the PR is **split**, not padded.
+6. If a fix would push the PR over the 400-line target (generated
+   code and blank lines excluded), prefer splitting the follow-up
+   work into a separate PR rather than padding this one. Splitting
+   is the **default**, not the only option: when the fix is part of
+   the same coherent workstream and splitting would create a
+   dependent follow-up PR that cannot ship independently, the fix
+   ships in the same PR and the body cites the soft-target exception
+   per the §4 2026-05-25 amendment.
 
-   > **Update (2026-04-26): Blank lines are also excluded from this
-   > cap, consistent with the §4 addendum of the same date.**
+   > **Update (2026-04-26): Blank lines are excluded from the target,
+   > consistent with the §4 addendum of the same date.**
+   >
+   > **Update (2026-05-25): "Split, not padded" remains the default
+   > expectation but is no longer absolute — see the §4 2026-05-25
+   > amendment for the soft-target framing.**
 7. Schema PRs receive the same one-pass review, focused on contract design
    rather than implementation correctness.
 8. The review-and-fix cycle is required, not best-effort: if no reviewer
