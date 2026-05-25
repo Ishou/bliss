@@ -1,8 +1,15 @@
 # syntax=docker/dockerfile:1
-# identity-api container image (ADR-0009, ADR-0044). Multi-stage: JDK builder
-# produces the shadowJar; JRE runtime image runs it. Base images pinned to
-# digest per MANIFESTO; bump digest and tag together. Mirrors grid/api and
-# game/api Dockerfiles so the three services have the same build / runtime shape.
+# survey-api container image (ADR-0056). Multi-stage: JDK builder produces
+# both the survey-api shadowJar (Ktor REST edge) and the survey-worker
+# installDist layout (CLI subcommands invoked by Helm Jobs / CronJobs in
+# survey/api/deploy/chart/). A single image ships both binaries so the
+# seed-calibration post-install hook and the hourly retire CronJob can
+# reuse the same digest as the api Deployment — `image.requireDigest`
+# guarantees a single SHA per release.
+#
+# Base images pinned to digest per MANIFESTO; bump digest and tag together.
+# Mirrors identity/api/Dockerfile so the four api services have the same
+# build / runtime shape.
 
 # ---- Stage 1: build ------------------------------------------------------
 # eclipse-temurin:21.0.10_7-jdk-alpine-3.22
@@ -14,11 +21,12 @@ WORKDIR /workspace
 COPY gradlew settings.gradle.kts build.gradle.kts ./
 COPY gradle ./gradle
 
-# settings.gradle.kts includes EVERY :grid:*, :game:*, and :identity:*
-# module; Gradle's configuration phase requires each project directory
-# (with its build.gradle.kts) to exist before any task can run. Copying
-# just the build script per project is enough — grid/ and game/ src/ is
-# not needed because :identity:api:shadowJar has no dependency on them.
+# settings.gradle.kts includes EVERY :grid:*, :game:*, :identity:*, and
+# :survey:* module; Gradle's configuration phase requires each project
+# directory (with its build.gradle.kts) to exist before any task can run.
+# Copying just the build script per project is enough — sibling-context
+# src/ is not needed because :survey:api:shadowJar and :survey:worker:installDist
+# have no dependency on grid/, game/, or identity/.
 COPY grid/domain/build.gradle.kts grid/domain/
 COPY grid/application/build.gradle.kts grid/application/
 COPY grid/infrastructure/build.gradle.kts grid/infrastructure/
@@ -30,26 +38,26 @@ COPY game/application/build.gradle.kts game/application/
 COPY game/infrastructure/build.gradle.kts game/infrastructure/
 COPY game/api/build.gradle.kts game/api/
 
-# Same gotcha for :identity:* modules introduced in ADR-0044.
 COPY identity/domain/build.gradle.kts identity/domain/
 COPY identity/application/build.gradle.kts identity/application/
 COPY identity/infrastructure/build.gradle.kts identity/infrastructure/
 COPY identity/api/build.gradle.kts identity/api/
-# Same gotcha for :survey:* modules introduced in ADR-0056.
+
 COPY survey/domain/build.gradle.kts survey/domain/
 COPY survey/application/build.gradle.kts survey/application/
 COPY survey/infrastructure/build.gradle.kts survey/infrastructure/
 COPY survey/api/build.gradle.kts survey/api/
 COPY survey/worker/build.gradle.kts survey/worker/
 
-# Source for the identity/ context only — shadowJar transitively pulls
-# :identity:domain, :identity:application, :identity:infrastructure.
-COPY identity/domain/src identity/domain/src
-COPY identity/application/src identity/application/src
-COPY identity/infrastructure/src identity/infrastructure/src
-COPY identity/api/src identity/api/src
+# Source for the survey/ context only.
+COPY survey/domain/src survey/domain/src
+COPY survey/application/src survey/application/src
+COPY survey/infrastructure/src survey/infrastructure/src
+COPY survey/api/src survey/api/src
+COPY survey/worker/src survey/worker/src
 
-RUN chmod +x gradlew && ./gradlew :identity:api:shadowJar --no-daemon --stacktrace
+RUN chmod +x gradlew \
+ && ./gradlew :survey:api:shadowJar :survey:worker:installDist --no-daemon --stacktrace
 
 # ---- Stage 2: runtime ----------------------------------------------------
 # eclipse-temurin:21.0.10_7-jre-alpine-3.22
@@ -60,11 +68,17 @@ RUN apk add --no-cache wget
 
 WORKDIR /app
 
-COPY --from=build /workspace/identity/api/build/libs/identity-api-*-all.jar /app/identity-api.jar
+# Ktor REST edge.
+COPY --from=build /workspace/survey/api/build/libs/survey-api-*-all.jar /app/survey-api.jar
+# Worker installDist layout: bin/survey-worker launcher + lib/*.jar classpath.
+# The chart's seed-calibration Job + retire CronJob invoke
+# `java -cp /app/lib/* com.bliss.survey.worker.MainKt`.
+COPY --from=build /workspace/survey/worker/build/install/survey-worker/ /app/
 
-# OpenTelemetry Java agent (ADR-0027). Auto-instruments Ktor + the Ktor
-# HTTP client; activated via JAVA_TOOL_OPTIONS in the chart's env block.
-# Same pinned version + checksum as grid/api and game/api (mirror).
+# OpenTelemetry Java agent (ADR-0027). Auto-instruments Ktor + JDBC + the
+# Ktor HTTP client at JVM start without code imports. Activated via
+# JAVA_TOOL_OPTIONS in the chart's env values. Same pinned version as
+# the other api images.
 ADD --chmod=0644 \
     --checksum=sha256:bd01fea1304e8c8803fff827a0bdda02b2266742a85c62548053c6761474bb5b \
     https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/v2.27.0/opentelemetry-javaagent.jar \
@@ -78,20 +92,18 @@ RUN addgroup --system --gid 1000 ktor \
  && chown -R 1000:1000 /app
 USER 1000:1000
 
-# Port 8082 — grid/api owns 8080, game/api owns 8081 in the cluster
-# (ADR-0009). The three services co-exist on a single node without a
-# port collision.
-EXPOSE 8082
+# Port 7780 — grid/api owns 8080, game/api 8081, identity/api 8082.
+EXPOSE 7780
 
 # Container-level liveness probe. Kubernetes performs its own HTTP probe via
 # the Helm chart; this is good hygiene for `docker run` outside the cluster.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
-    CMD wget -q -O - http://localhost:8082/v1/health || exit 1
+    CMD wget -q -O - http://localhost:7780/v1/health || exit 1
 
-CMD ["java", "-jar", "/app/identity-api.jar"]
+CMD ["java", "-jar", "/app/survey-api.jar"]
 
 # OCI Image Annotations: link the GHCR package back to source and surface
 # basic metadata (description, license) on the package page.
 LABEL org.opencontainers.image.source="https://github.com/Ishou/bliss"
-LABEL org.opencontainers.image.description="WordSparrow Identity JVM API (Ktor REST)"
+LABEL org.opencontainers.image.description="WordSparrow Survey JVM API (Ktor REST + worker CLI)"
 LABEL org.opencontainers.image.licenses="FSL-1.1-MIT"
