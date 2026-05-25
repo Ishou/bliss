@@ -19,7 +19,6 @@ import com.bliss.survey.domain.model.UserId
 import com.zaxxer.hikari.HikariDataSource
 import io.kotest.property.Arb
 import io.kotest.property.arbitrary.int
-import io.kotest.property.arbitrary.list
 import io.kotest.property.arbitrary.next
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
@@ -243,7 +242,4 @@ class PgRatingRepositoryTest {
             latencyMs = null,
             createdAt = now,
         )
-
-    @Suppress("unused")
-    private fun unusedArbList(): List<Int> = Arb.list(Arb.int(1..5), 1..10).next()
 }

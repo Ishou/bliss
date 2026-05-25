@@ -7,7 +7,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.math.BigDecimal
 import java.sql.Timestamp
-import java.sql.Types
 import java.time.Instant
 import javax.sql.DataSource
 
@@ -72,12 +71,6 @@ class PgUserProgressRepository(
                 }
             }
         }
-
-    @Suppress("unused")
-    private fun coerceNullable(
-        stmt: java.sql.PreparedStatement,
-        idx: Int,
-    ) = stmt.setNull(idx, Types.TIMESTAMP_WITH_TIMEZONE)
 
     private companion object {
         const val UPSERT_INCREMENT_SQL =

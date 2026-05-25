@@ -40,47 +40,48 @@ class UserDeletedConsumer(
     @Volatile
     private var subscription: JetStreamSubscription? = null
 
-    fun start(): Job {
-        val existing = job
-        if (existing != null && existing.isActive) return existing
-        val deliverSubject = ensureConsumerConfigured()
-        val sub =
-            nats.jetStream().subscribe(
-                SUBJECT,
-                PushSubscribeOptions
-                    .builder()
-                    .stream(streamName)
-                    .durable(DURABLE_NAME)
-                    .deliverSubject(deliverSubject)
-                    .build(),
-            )
-        subscription = sub
-        val newJob =
-            scope.launch(Dispatchers.IO) {
-                while (isActive) {
-                    val msg =
+    fun start(): Job =
+        synchronized(this) {
+            val existing = job
+            if (existing != null && existing.isActive) return existing
+            val deliverSubject = ensureConsumerConfigured()
+            val sub =
+                nats.jetStream().subscribe(
+                    SUBJECT,
+                    PushSubscribeOptions
+                        .builder()
+                        .stream(streamName)
+                        .durable(DURABLE_NAME)
+                        .deliverSubject(deliverSubject)
+                        .build(),
+                )
+            subscription = sub
+            val newJob =
+                scope.launch(Dispatchers.IO) {
+                    while (isActive) {
+                        val msg =
+                            try {
+                                sub.nextMessage(pollWait)
+                            } catch (e: IllegalStateException) {
+                                // Subscription became inactive (e.g. shutdown); exit the loop quietly.
+                                return@launch
+                            } catch (e: InterruptedException) {
+                                Thread.currentThread().interrupt()
+                                return@launch
+                            } ?: continue
                         try {
-                            sub.nextMessage(pollWait)
-                        } catch (e: IllegalStateException) {
-                            // Subscription became inactive (e.g. shutdown); exit the loop quietly.
-                            return@launch
-                        } catch (e: InterruptedException) {
-                            Thread.currentThread().interrupt()
-                            return@launch
-                        } ?: continue
-                    try {
-                        val event = json.decodeFromString(UserDeletedPayload.serializer(), msg.data.decodeToString())
-                        anonymise.execute(UserId(UUID.fromString(event.userId)))
-                        msg.ack()
-                    } catch (e: Exception) {
-                        log.error("survey_user_deleted_consume_failed subject={} error={}", msg.subject, e.toString(), e)
-                        msg.nak()
+                            val event = json.decodeFromString(UserDeletedPayload.serializer(), msg.data.decodeToString())
+                            anonymise.execute(UserId(UUID.fromString(event.userId)))
+                            msg.ack()
+                        } catch (e: Exception) {
+                            log.error("survey_user_deleted_consume_failed subject={} error={}", msg.subject, e.toString(), e)
+                            msg.nak()
+                        }
                     }
                 }
-            }
-        job = newJob
-        return newJob
-    }
+            job = newJob
+            newJob
+        }
 
     fun stop() {
         subscription?.let { runCatching { it.unsubscribe() } }
@@ -99,6 +100,7 @@ class UserDeletedConsumer(
                 .filterSubject(SUBJECT)
                 .ackPolicy(AckPolicy.Explicit)
                 .ackWait(Duration.ofSeconds(30))
+                .maxDeliver(5)
                 .deliverSubject(deliverSubject)
                 .build()
         try {

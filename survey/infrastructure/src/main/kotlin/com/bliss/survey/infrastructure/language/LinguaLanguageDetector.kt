@@ -4,12 +4,7 @@ import com.bliss.survey.application.ports.LanguageDetector
 import com.github.pemistahl.lingua.api.Language
 import com.github.pemistahl.lingua.api.LanguageDetectorBuilder
 
-/**
- * Lingua-backed [LanguageDetector] (FR vs EN only). Calibration: a text is "clearly English"
- * when the FR-vs-EN confidence values satisfy EN >= 1.0 AND FR < 0.85. The Lingua detector
- * is heavy to initialise (~hundreds of MB of n-gram tables) so the singleton instance is
- * built once per process in the constructor.
- */
+/** Lingua-backed [LanguageDetector] port; builds the heavy detector once in the constructor. */
 class LinguaLanguageDetector : LanguageDetector {
     private val detector =
         LanguageDetectorBuilder

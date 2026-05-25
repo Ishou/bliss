@@ -35,8 +35,7 @@ dependencies {
     // NATS JetStream client - user.deleted consumer (ADR-0049).
     implementation("io.nats:jnats:2.20.6")
 
-    // Lingua language detector - LinguaLanguageDetector implementation of the
-    // application-layer port (deferred from PR4 to keep that PR cap-clean).
+    // Lingua language detector — LanguageDetector port implementation.
     implementation("com.github.pemistahl:lingua:1.2.2")
 
     testFixturesImplementation(project(":survey:domain"))

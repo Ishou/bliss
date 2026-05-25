@@ -5,14 +5,6 @@ import assertk.assertions.isEqualTo
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 
-/**
- * Spec calibration (Phase 4 doc): EN >= 1.0 AND FR < 0.85.
- *
- * Cases:
- *  - clear English text       -> rejects (isClearlyEnglish = true)
- *  - clear French text        -> accepts (false)
- *  - borderline loan-word "gentleman" -> accepts (false) per spec note
- */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class LinguaLanguageDetectorTest {
     private val detector = LinguaLanguageDetector()
