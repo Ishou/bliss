@@ -1,0 +1,115 @@
+mot;definition;pos;categorie;style;force;longueur;source;meta
+PAIN;Aliment de boulangerie;nom_commun;aliments;definition_directe;1;4;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+PAIN;Compagnon de table;nom_commun;aliments;periphrase;3;4;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+TRAIN;Transport ferroviaire;nom_commun;transports;definition_directe;1;5;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+TRAIN;File sur les rails;nom_commun;transports;fonction_role;1;5;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+POMME;Fruit du verger;nom_commun;aliments;definition_directe;1;5;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+POMME;Tentation d’Ève;nom_commun;aliments;culturel;2;5;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+POMME;D’Adam au cou;nom_commun;aliments;cryptique;3;5;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+TABLE;Meuble à pieds;nom_commun;mobilier_objet;definition_directe;1;5;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+TABLE;Support du repas;nom_commun;mobilier_objet;fonction_role;2;5;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+LAMPE;Source d’éclairage;nom_commun;mobilier_objet;definition_directe;2;5;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+LAMPE;Chasse l’obscurité;nom_commun;mobilier_objet;periphrase;2;5;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+CŒUR;Organe vital;nom_commun;body_parts;definition_directe;2;4;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+CŒUR;Bat dans la poitrine;nom_commun;body_parts;fonction_role;2;4;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+CŒUR;Milieu d’un sujet;nom_commun;body_parts;metonymie;3;4;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+CŒUR;Brisé par chagrin;nom_commun;body_parts;fonction_role;3;4;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+AIMER;Chérir;verbe_infinitif;sentiments_etats;definition_directe;1;5;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+AIMER;Éprouver de l’affection;verbe_infinitif;sentiments_etats;periphrase;2;5;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+GRAND;Élevé en taille;adjectif;autre;definition_directe;2;5;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+GRAND;Dépasse les autres;adjectif;autre;fonction_role;2;5;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+HUGO;Patronyme de Victor;nom_propre;first_names;culturel;2;4;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+HUGO;Auteur des Misérables;nom_propre;first_names;culturel;2;4;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+ÉPAULE;Jonction du bras et du tronc;nom_commun;body_parts;definition_directe;3;6;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+ÉPAULE;Porte le sac;nom_commun;body_parts;fonction_role;3;6;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+AVION;Aéronef à hélice ou réacteur;nom_commun;transports;definition_directe;1;5;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+AVION;Voyage dans le ciel;nom_commun;transports;fonction_role;2;5;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+PINCE;Outil de préhension;nom_commun;outils;definition_directe;2;5;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+PINCE;Saisit comme le crabe;nom_commun;outils;cryptique;3;5;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+GLACE;Eau solidifiée;nom_commun;aliments;definition_directe;1;5;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+GLACE;Glisse en hiver;nom_commun;aliments;fonction_role;2;5;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+GLACE;Vanille ou chocolat;nom_commun;aliments;cryptique;2;5;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+GLACE;Reflète l’image;nom_commun;aliments;fonction_role;3;5;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+GLACE;S’y regarder le matin;nom_commun;aliments;cryptique;4;5;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+PIQUE;Couleur noire au tarot;nom_commun;card_game;definition_directe;2;5;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+PIQUE;Arme à long manche;nom_commun;card_game;definition_directe;2;5;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+PIQUE;Remarque blessante;nom_commun;card_game;periphrase;3;5;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+CUIVRE;Métal rougeâtre;nom_commun;materiaux;definition_directe;1;6;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+CUIVRE;Section d’orchestre;nom_commun;materiaux;metonymie;3;6;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+ORANGE;Teinte du coucher;nom_commun;couleurs;periphrase;2;6;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+ORANGE;Entre rouge et jaune;nom_commun;couleurs;definition_directe;3;6;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+ORANGE;Agrume juteux;nom_commun;couleurs;definition_directe;2;6;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+BERGER;Garde le troupeau;nom_commun;professions;fonction_role;2;6;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+BERGER;Suit ses moutons;nom_commun;professions;periphrase;3;6;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+COUSIN;Enfant de l’oncle;nom_commun;famille_relations;definition_directe;2;6;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+COUSIN;Insecte estival piquant;nom_commun;famille_relations;cryptique;3;6;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+RIVIÈRE;Cours d’eau;nom_commun;nature_paysage;definition_directe;2;7;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+RIVIÈRE;Affluent d’un fleuve;nom_commun;nature_paysage;technique;3;7;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+RIVIÈRE;Collier brillant ou ruisseau;nom_commun;nature_paysage;cryptique;4;7;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+CHAPEAU;Couvre la tête;nom_commun;vetements;fonction_role;2;7;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+CHAPEAU;Bravo familier;nom_commun;vetements;cryptique;3;7;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+CHAPEAU;Salut du gentleman;nom_commun;vetements;periphrase;3;7;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+AIMAIT;Chérissait;verbe_conjugue;sentiments_etats;definition_directe;2;6;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+AIMAIT;Portait dans son cœur;verbe_conjugue;sentiments_etats;periphrase;3;6;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+AIMAIT;Éprouvait de l’affection;verbe_conjugue;sentiments_etats;periphrase;3;6;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+BOIRE;Avaler un liquide;verbe_infinitif;aliments;definition_directe;1;5;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+BOIRE;Étancher sa soif;verbe_infinitif;aliments;periphrase;2;5;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+BOIRE;Lever son verre;verbe_infinitif;aliments;fonction_role;3;5;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+NAGER;Se déplacer dans l’eau;verbe_infinitif;autre;definition_directe;1;5;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+NAGER;Ne rien comprendre;verbe_infinitif;autre;cryptique;4;5;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+COURIR;Filer à pied;verbe_infinitif;autre;definition_directe;1;6;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+COURIR;Filer à toutes jambes;verbe_infinitif;autre;periphrase;2;6;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+COURIR;Aller au plus vite;verbe_infinitif;autre;periphrase;3;6;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+CHANTER;Émettre une mélodie;verbe_infinitif;arts;definition_directe;2;7;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+CHANTER;Donner de la voix;verbe_infinitif;arts;periphrase;3;7;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+CHANTER;Faire l’éloge ou la berceuse;verbe_infinitif;arts;cryptique;4;7;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+DORMI;Reposé toute la nuit;participe_passe;sentiments_etats;definition_directe;2;5;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+DORMI;Trouvé le sommeil;participe_passe;sentiments_etats;periphrase;3;5;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+DORMI;Au lit jusqu’au matin;participe_passe;sentiments_etats;cryptique;3;5;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+DORMANT;Qui dort profondément;participe_present;sentiments_etats;definition_directe;2;7;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+DORMANT;Eau stagnante;participe_present;sentiments_etats;cryptique;3;7;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+DORMANT;Sommeillant ou stagnant;participe_present;sentiments_etats;cryptique;4;7;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+JOLIE;Charmante au regard;adjectif;autre;definition_directe;2;5;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+JOLIE;Mignonne;adjectif;autre;definition_directe;2;5;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+JOLIE;Plaisante à regarder;adjectif;autre;periphrase;2;5;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+JOYEUX;Plein de gaieté;adjectif;sentiments_etats;definition_directe;1;6;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+JOYEUX;De bonne humeur;adjectif;sentiments_etats;periphrase;2;6;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+JOYEUX;Sourit à la vie;adjectif;sentiments_etats;fonction_role;3;6;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+GENTIL;Aimable et serviable;adjectif;autre;definition_directe;2;6;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+GENTIL;Bienveillant envers autrui;adjectif;autre;periphrase;3;6;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+PORTEUR;Tel un mur en béton;adjectif;autre;cryptique;4;7;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+ÉCLOT;Comme la fleur au printemps;verbe_conjugue;flore;cryptique;4;5;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+CHAT;Félin domestique;nom_commun;animals;definition_directe;1;4;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+CHAT;Ronronne sur le canapé;nom_commun;animals;fonction_role;2;4;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+CHAT;Ennemi des souris;nom_commun;animals;periphrase;2;4;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+CHAT;Conversation en ligne;nom_commun;animals;definition_directe;3;4;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+CHAT;Messagerie ou boule de poil;nom_commun;animals;cryptique;4;4;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+PARIS;Capitale française;nom_propre;cities;definition_directe;1;5;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+PARIS;Ville lumière;nom_propre;cities;periphrase;2;5;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+PARIS;Ville d’Hugo;nom_propre;cities;culturel;4;5;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+ROBE;Vêtement féminin;nom_commun;vetements;definition_directe;1;4;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+ROBE;Tenue de soirée;nom_commun;vetements;periphrase;2;4;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+ROBE;Portée par la mariée;nom_commun;vetements;fonction_role;3;4;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+MÈRE;Donne la vie;nom_commun;famille_relations;fonction_role;1;4;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+MÈRE;Parent féminin;nom_commun;famille_relations;definition_directe;2;4;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+JOIE;Sentiment d’allégresse;nom_commun;sentiments_etats;definition_directe;1;4;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+JOIE;Bonheur intense;nom_commun;sentiments_etats;periphrase;2;4;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+JOIE;Éclate sur le visage;nom_commun;sentiments_etats;fonction_role;2;4;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+BAGUETTE;Pain français;nom_commun;aliments;definition_directe;1;8;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+BAGUETTE;Croustillante du matin;nom_commun;aliments;periphrase;2;8;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+BAGUETTE;Du chef d’orchestre;nom_commun;aliments;cryptique;3;8;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+BAGUETTE;Magique ou croustillante;nom_commun;aliments;cryptique;4;8;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+MARTEAU;Outil de menuiserie;nom_commun;outils;definition_directe;1;7;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+MARTEAU;Tape sur les clous;nom_commun;outils;fonction_role;2;7;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+MARTEAU;Du forgeron ou du juge;nom_commun;outils;cryptique;3;7;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+CHÊNE;Arbre robuste;nom_commun;flore;definition_directe;2;5;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+CHÊNE;Roi de la forêt;nom_commun;flore;periphrase;3;5;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+CHÊNE;Produit le gland;nom_commun;flore;fonction_role;3;5;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+NEIGE;Précipitation blanche;nom_commun;meteo_climat;definition_directe;1;5;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+NEIGE;Tombe en hiver;nom_commun;meteo_climat;fonction_role;2;5;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+NEIGE;Manteau des montagnes;nom_commun;meteo_climat;metonymie;3;5;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+ROUGE;Couleur du sang;nom_commun;couleurs;definition_directe;1;5;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+ROUGE;Teinte du feu;nom_commun;couleurs;periphrase;2;5;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+ROUGE;De colère ou de honte;nom_commun;couleurs;cryptique;3;5;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+ROUGE;Couleur communiste;nom_commun;couleurs;culturel;3;5;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+POULE;Telle une mère protectrice;nom_commun;animals;cryptique;4;5;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
