@@ -59,7 +59,16 @@ anonymous visitors can rate but cannot propose corrections.
 Cross-context events: JetStream durable `survey-api-user-deleted` on subject
 `wordsparrow.user.deleted` (ADR-0049 pattern).
 
-Data model: see the design spec at `docs/superpowers/specs/2026-05-25-survey-module-design.md`.
+Data model (tables owned by `survey/`):
+
+| Table | Key columns | Notes |
+|---|---|---|
+| `candidate_clues` | `id`, `word`, `definition`, `pos`, `categorie`, `source_model`, `source_version`, `created_at` | Ingest batch rows from `bliss-clue-ai`. Immutable after insert. |
+| `ratings` | `id`, `item_id` → `candidate_clues`, `user_id` (nullable), `qualite SMALLINT 1–5`, `difficulte SMALLINT 1–5`, `flag TEXT`, `weight NUMERIC`, `latency_ms INT`, `client_meta JSONB`, `created_at TIMESTAMPTZ` | Partial unique index `(item_id, user_id) WHERE user_id IS NOT NULL` prevents duplicate auth submissions. |
+| `proposed_clues` | `id`, `word`, `definition`, `pos`, `categorie`, `proposed_at` | Corpus entries from rater proposals. No embedded identity. |
+| `proposed_by` | `user_id`, `proposed_clue_id`, `opted_out BOOL` | Authorship join table; fully deleted on `user.deleted`. |
+| `calibration_items` | `id` → `candidate_clues`, `gold_qualite`, `gold_difficulte`, `seeded_from` | Gold-truth items seeded from `bliss-clue-ai/data/seed/gold_pilot_v1.csv`. |
+| `rater_calibration` | `user_id`, `agreement_score NUMERIC`, `rated_count INT`, `last_updated` | Per-user rolling calibration score for export-time weighting. |
 
 ## Threat Model
 
@@ -67,11 +76,13 @@ The following threats were considered for the survey rating and corpus-
 contribution surface.
 
 **Spoofing (forged user identity)** — auth ratings rely on the existing
-`__Host-ws_session` cookie verified by `identity-api`. The 30 s cache means
-a stolen cookie is usable for at most 30 s beyond the identity-api
-revocation; this is the same posture as `grid-api` and `game-api` and is
-considered acceptable for non-admin player traffic. Anonymous ratings carry
-no identity claim and therefore have nothing to spoof.
+`__Secure-ws_session` cookie (renamed per ADR-0044 Amendment 2026-05-18;
+`Secure; HttpOnly; SameSite=Lax; Domain=wordsparrow.io`) verified by
+`identity-api`. The 30 s cache means a stolen cookie is usable for at most
+30 s beyond the identity-api revocation; this is the same posture as
+`grid-api` and `game-api` and is considered acceptable for non-admin player
+traffic. Anonymous ratings carry no identity claim and therefore have
+nothing to spoof.
 
 **Tampering (ratings injection / dataset poisoning)** — per-user uniqueness
 on auth ratings (partial unique index `(item_id, user_id) WHERE user_id IS
@@ -114,8 +125,19 @@ corpus rows are not personal data by construction (they were minted as
 candidate dictionary entries with no embedded identity claim); the
 `proposed_by` join table that recorded authorship is fully deleted. Users
 who opted out (`proposed_by.opted_out = TRUE`) additionally have their
-contributed corpus rows deleted. See design spec §10 for the WP216
-anonymisation argument in full.
+contributed corpus rows deleted.
+
+WP216 anonymisation basis: after the four-field erasure (`user_id → NULL`,
+`latency_ms → NULL`, `client_meta → NULL`, `created_at` coarsened to month)
+the retained rating rows satisfy the three WP216 tests — (a) singling-out:
+`user_id` is gone, the sole link to the individual; (b) linkability:
+`latency_ms` and `client_meta` that could form a device fingerprint are
+both nulled; (c) inference: `created_at` coarsened to month removes the
+temporal precision that could combine with IP logs to re-identify. The
+remaining fields (`item_id`, `qualite`, `difficulte`, `flag`, `weight`) are
+content-only and not linkable to any individual within our data model. On
+this basis the retained rows are no longer personal data within the meaning
+of RGPD Article 4(1).
 
 ## Consequences
 
