@@ -96,8 +96,7 @@ class NextItemRouteTest {
         }
 }
 
-// In-memory SurveyItemRepository good enough for route-level tests. Mocking
-// the use case would violate the "no mocks of own code" rule (CLAUDE.md).
+// In-memory impl; mocking own code violates CLAUDE.md.
 private class StubItemRepo(
     private val items: List<SurveyItem>,
 ) : SurveyItemRepository {
