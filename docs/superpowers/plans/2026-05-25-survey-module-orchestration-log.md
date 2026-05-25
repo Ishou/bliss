@@ -98,3 +98,4 @@ Append-only log of decisions the orchestrator made during the 9-PR survey-module
 - `2026-05-25T19:22:40Z` · phase `3 (feat/survey-domain)` · `waiting-fixer` · PR #614: state unchanged; fixer cycle 2 still running. No action.
 - `2026-05-25T19:24:38Z` · phase `3 (feat/survey-domain)` · `waiting-ci` · PR #614: 17 commits; full CI re-running; commitlint still failing. No action per 3b.
 - `2026-05-25T19:26:36Z` · phase `3 (feat/survey-domain)` · `waiting-fresh-review` · PR #614: fixer squashed 16→2 commits (b3e7073f, 4089ae48); ALL blocking checks PASS. Stale Findings review predates squash. Awaiting fresh §6a review on new SHA OR 15-min hang threshold. Cap-override finding flagged for orchestrator escalation by fixer.
+- `2026-05-25T19:28:38Z` · phase `3 (feat/survey-domain)` · `waiting-fresh-review` · PR #614: all blocking checks PASS; claude-review not yet re-fired on squashed SHA (~3-4 min ago); under 15-min threshold. No action.
