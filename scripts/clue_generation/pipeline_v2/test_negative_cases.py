@@ -39,10 +39,7 @@ results: list[tuple[str, str, str, str]] = []  # (id, status, target, detail)
 
 def run_filter_test(test_id: str, row: dict, expected_filter: str,
                     expected_action: str, description: str) -> bool:
-    """Vérifie qu'un filtre déclenche l'action attendue dans la pipeline.
-
-    expected_action : "accept" | "reject" | "warning"
-    """
+    """Vérifie qu'un filtre déclenche l'action attendue ("accept" | "reject" | "warning")."""
     out = traiter_ligne(row)
     trace = out["_traces"].get(expected_filter, {})
     actual_action = trace.get("action", "MISSING")
@@ -58,10 +55,7 @@ def run_filter_test(test_id: str, row: dict, expected_filter: str,
 
 def run_norm_test(test_id: str, norm_idx: int, input_def: str,
                   expected_output: str, description: str) -> bool:
-    """Vérifie qu'une normalisation produit la sortie attendue.
-
-    Appel direct sur la fonction (pas via pipeline) pour isoler le test.
-    """
+    """Vérifie qu'une normalisation produit la sortie attendue (appel direct, hors pipeline)."""
     name, fn = N.NORMALIZATIONS[norm_idx]
     result, applied = fn(input_def)
     passed = result == expected_output

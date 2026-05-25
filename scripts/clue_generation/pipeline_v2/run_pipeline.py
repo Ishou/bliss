@@ -10,13 +10,8 @@ from collections import Counter, defaultdict
 from datetime import date
 from pathlib import Path
 
-# Repo root (bliss) — three levels up from this file
-# (scripts/clue_generation/pipeline_v2/run_pipeline.py).
 ROOT = Path(__file__).resolve().parent.parent.parent.parent
 
-# Local-package imports. Adapted from the bliss-clue-ai source layout
-# (scripts/pipeline/...) to the bliss layout
-# (scripts/clue_generation/pipeline_v2/...). Logic byte-identical.
 from . import filters as F  # noqa: E402
 from . import normalizers as N  # noqa: E402
 from .llm_judge_mock import juge_mock  # noqa: E402
@@ -198,8 +193,8 @@ def generer_rapport(rows: list[dict], stats: dict,
     w(f"- Date du test : {date.today().isoformat()}")
     w(f"- Fichier d'entrée : `{input_path.relative_to(ROOT)}`")
     w(f"- Pipeline : §8.3 (8 filtres) + §8.4 (8 normalisations)")
-    w(f"- Filtre 6 (langue) : **fallback heuristique** (stopwords EN), "
-      "fasttext-langid indisponible sur l'environnement courant")
+    w("- Filtre 6 (langue) : lingua-language-detector (primary) + "
+      "stopwords EN (fallback si lingua indisponible)")
     w("")
 
     # Résumé exécutif

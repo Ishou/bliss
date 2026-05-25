@@ -211,11 +211,6 @@ def filter_6_langue_fr(row: dict) -> FilterResult:
                     fr_score = c.value
                 elif c.language == Language.ENGLISH:
                     en_score = c.value
-            # Seuils calibrés : FR < 0.3 ET EN > 0.7. La spec
-            # initiale (FR<0.5 ET EN>0.5) produisait 2 faux positifs
-            # sur le gold pilote (segments FR courts ambigus comme
-            # « S'y regarder le matin » à FR=0.49). Calibrage testé
-            # contre le gold + les négatifs.
             if fr_score < 0.3 and en_score > 0.7:
                 return FilterResult(
                     "reject",
@@ -311,15 +306,8 @@ def filter_8_llm_juge_mock(row: dict, valid_pos: set[str],
     except (ValueError, TypeError):
         return FilterResult("reject", f"Force non entière : {force!r}")
 
-    # Heuristique accord §1.5 (warning uniquement) :
-    # si mot féminin sg (termine par -e non précédé d'autres -e)
-    # et pos = participe_passe ou adjectif, vérifier accord fém. dans def
     mot = row["mot"]
     defi_lower = row["definition"].lower()
     mot_nfd = _strip_accents(mot).lower()
 
-    # Heuristique très simple : signaler si def contient un participe/adj
-    # masc évident pour un mot féminin (ou inversement)
-    # On reste très conservateur pour éviter faux positifs
-    # Détection désactivée par défaut : trop d'ambiguïtés.
     return FilterResult("accept")

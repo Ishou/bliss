@@ -1,12 +1,4 @@
-"""Normalisations §8.4 du pipeline.
-
-Chaque normalisation prend une définition (str) et retourne :
-  - definition_normalisée : str
-  - applied : bool (True si la normalisation a effectué un changement)
-
-Toutes auto-correctibles, jamais reject. Appliquer dans l'ordre indiqué
-(NFC en avant-dernier, cf. §8.4).
-"""
+"""Normalisations §8.4 du pipeline (8 fonctions auto-correctibles)."""
 
 from __future__ import annotations
 
@@ -47,17 +39,10 @@ def norm_4_initiale_majuscule(defi: str) -> NormResult:
 
 
 def norm_5_point_final(defi: str) -> NormResult:
-    """5. Suppression du point final (sauf abréviation médiane).
-
-    Heuristique : on supprime un point final s'il n'est pas précédé
-    d'un autre point (donc pas une abréviation finale type « etc. »).
-    """
+    """5. Supprime le point final sauf si l'avant-dernier char n'est pas une lettre."""
     if not defi:
         return defi, False
     if defi.endswith("."):
-        # Cas abréviation : préserver si « abrév. » ou type
-        # Heuristique : si l'avant-dernier caractère est une lettre
-        # ET pas d'autre point dans les 4 derniers chars, supprimer
         if len(defi) > 1 and defi[-2].isalpha():
             new = defi[:-1]
             return new, True
@@ -105,11 +90,7 @@ NORMALIZATIONS = [
 
 
 def normaliser_tout(defi: str) -> tuple[str, list[str]]:
-    """Applique les 8 normalisations en cascade, retourne (def_finale, normalisations_appliquées).
-
-    Note : norm_7_nfc en position 7 (avant-dernière) pour minimiser
-    les interactions avec les normalisations textuelles.
-    """
+    """Applique les 8 normalisations en cascade, retourne (def_finale, noms_appliqués)."""
     applied: list[str] = []
     for name, fn in NORMALIZATIONS:
         defi, was_applied = fn(defi)

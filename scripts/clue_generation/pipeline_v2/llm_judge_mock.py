@@ -1,13 +1,4 @@
-"""Mock du LLM-juge (étape 8 du pipeline §8.3).
-
-Pas d'appel API réel. Vérifie :
-- Métadonnées enum (pos / categorie / style / force)
-- Accord §1.5 par heuristique simple (warning seulement)
-
-L'enum check est en fait déjà fait par filter_8_llm_juge_mock dans
-filters.py. Ce fichier fournit une interface alternative qui peut
-être étendue pour intégrer un vrai LLM-juge plus tard.
-"""
+"""Mock du LLM-juge §8.3 filtre 8 : validation enums + heuristique accord."""
 
 from __future__ import annotations
 
@@ -37,11 +28,7 @@ MASC_MARKERS_PATTERN = (
 def juge_mock(row: dict, valid_pos: set[str],
               valid_categories: set[str],
               valid_styles: set[str]) -> JudgeResult:
-    """Évalue une ligne (post-filtres 1-7).
-
-    Note : la validation enum est aussi faite par filter_8 dans filters.py
-    pour compatibilité avec le pipeline standard.
-    """
+    """Évalue une ligne post-filtres 1-7 (validation enums + accord §1.5)."""
     pos = row["pos"]
     cat = row["categorie"]
     style = row["style"]
@@ -60,9 +47,5 @@ def juge_mock(row: dict, valid_pos: set[str],
             return JudgeResult("reject", f"Force hors [1,5] : {force}")
     except (ValueError, TypeError):
         return JudgeResult("reject", f"Force non entière : {force!r}")
-
-    # Heuristique accord §1.5 : warning si incohérence évidente
-    # (ex : mot féminin et def commence par marqueur masc)
-    # Désactivé par défaut (trop de faux positifs sur cas frontière)
 
     return JudgeResult("accept")

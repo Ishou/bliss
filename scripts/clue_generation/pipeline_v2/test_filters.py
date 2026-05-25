@@ -7,8 +7,6 @@ import pytest
 from . import filters as F
 
 
-# Minimal-row helper. The pipeline filters read `definition` and the
-# style/POS-aware filters also read metadata columns.
 def _row(mot: str, definition: str, **kw) -> dict:
     base = {
         "mot": mot,
