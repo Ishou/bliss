@@ -3,6 +3,7 @@ package com.bliss.survey.api.routes
 import assertk.assertThat
 import assertk.assertions.contains
 import assertk.assertions.isEqualTo
+import com.bliss.survey.api.WIRE_JSON
 import com.bliss.survey.api.auth.SESSION_COOKIE_NAME
 import com.bliss.survey.api.auth.SessionMiddleware
 import com.bliss.survey.application.ports.UserProgress
@@ -41,7 +42,7 @@ class MeProgressRouteTest {
         testApplication {
             application {
                 install(SessionMiddleware) { verifyCookie = { userUuid } }
-                install(ContentNegotiation) { json() }
+                install(ContentNegotiation) { json(WIRE_JSON) }
                 routing { meProgressRoute(EmptyProgressRepo()) }
             }
             val resp =
@@ -49,7 +50,11 @@ class MeProgressRouteTest {
                     cookie(SESSION_COOKIE_NAME, "valid-token")
                 }
             assertThat(resp.status).isEqualTo(HttpStatusCode.OK)
-            assertThat(resp.bodyAsText()).contains("\"itemsRated\":0")
+            val body = resp.bodyAsText()
+            assertThat(body).contains("\"itemsRated\":0")
+            // required-nullable fields must appear as null, not be absent (ADR-0003 §6)
+            assertThat(body).contains("\"calibrationAgreement\":null")
+            assertThat(body).contains("\"lastRatedAt\":null")
         }
 
     @Test

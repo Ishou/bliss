@@ -3,6 +3,7 @@ package com.bliss.survey.api.routes
 import assertk.assertThat
 import assertk.assertions.contains
 import assertk.assertions.isEqualTo
+import com.bliss.survey.api.WIRE_JSON
 import com.bliss.survey.api.auth.SESSION_COOKIE_NAME
 import com.bliss.survey.api.auth.SessionMiddleware
 import com.bliss.survey.application.usecases.SubmitRatingCommand
@@ -69,7 +70,7 @@ class SubmitRatingRouteTest {
     fun `anon happy path - 201 created`() =
         testApplication {
             application {
-                install(ContentNegotiation) { json() }
+                install(ContentNegotiation) { json(WIRE_JSON) }
                 routing { submitRatingRoute { SubmitRatingResult.Accepted(acceptedAnon) } }
             }
             val resp =
@@ -78,8 +79,11 @@ class SubmitRatingRouteTest {
                     setBody(jsonBody())
                 }
             assertThat(resp.status).isEqualTo(HttpStatusCode.Created)
-            assertThat(resp.bodyAsText()).contains("\"submittedAs\":\"anon\"")
-            assertThat(resp.bodyAsText()).contains("\"ratingId\":\"$ratingUuid\"")
+            val body = resp.bodyAsText()
+            assertThat(body).contains("\"submittedAs\":\"anon\"")
+            assertThat(body).contains("\"ratingId\":\"$ratingUuid\"")
+            // required-nullable: must appear as null, not be absent (ADR-0003 §6)
+            assertThat(body).contains("\"proposedItemId\":null")
         }
 
     @Test

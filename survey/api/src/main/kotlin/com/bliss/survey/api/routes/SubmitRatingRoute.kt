@@ -5,6 +5,7 @@ import com.bliss.survey.api.dto.CorrectifRejection
 import com.bliss.survey.api.dto.ProblemDetails
 import com.bliss.survey.api.dto.RatingRequest
 import com.bliss.survey.api.dto.RatingResponse
+import com.bliss.survey.api.respondProblem
 import com.bliss.survey.application.usecases.SubmitRatingCommand
 import com.bliss.survey.application.usecases.SubmitRatingResult
 import com.bliss.survey.application.usecases.SubmitRatingUseCase
@@ -26,7 +27,7 @@ fun Route.submitRatingRoute(execute: suspend (SubmitRatingCommand) -> SubmitRati
     post("/v1/items/{itemId}/rating") {
         val itemUuid =
             runCatching { UUID.fromString(call.parameters["itemId"]) }.getOrNull()
-                ?: return@post call.respond(
+                ?: return@post call.respondProblem(
                     HttpStatusCode.BadRequest,
                     ProblemDetails(
                         type = "about:blank",
@@ -40,7 +41,7 @@ fun Route.submitRatingRoute(execute: suspend (SubmitRatingCommand) -> SubmitRati
         val userId = call.attributes.getOrNull(UserIdKey)?.let { UserId(it) }
 
         if (userId == null && body.correctif != null) {
-            return@post call.respond(
+            return@post call.respondProblem(
                 HttpStatusCode.Unauthorized,
                 ProblemDetails(
                     type = "about:blank",
@@ -54,7 +55,7 @@ fun Route.submitRatingRoute(execute: suspend (SubmitRatingCommand) -> SubmitRati
         val flag = body.flag?.let { runCatching { FlagReason.valueOf(it.uppercase()) }.getOrNull() }
         val correctifStyle = body.correctif?.let { runCatching { Style.valueOf(it.style.uppercase()) }.getOrNull() }
         if (body.correctif != null && correctifStyle == null) {
-            return@post call.respond(
+            return@post call.respondProblem(
                 HttpStatusCode.BadRequest,
                 ProblemDetails(
                     type = "about:blank",
@@ -84,7 +85,7 @@ fun Route.submitRatingRoute(execute: suspend (SubmitRatingCommand) -> SubmitRati
                 call.respond(HttpStatusCode.Conflict, result.existing.toResponse())
 
             SubmitRatingResult.AnonCorrectifForbidden ->
-                call.respond(
+                call.respondProblem(
                     HttpStatusCode.Unauthorized,
                     ProblemDetails(
                         type = "about:blank",
@@ -106,7 +107,7 @@ fun Route.submitRatingRoute(execute: suspend (SubmitRatingCommand) -> SubmitRati
                 )
 
             SubmitRatingResult.ItemNotFound ->
-                call.respond(
+                call.respondProblem(
                     HttpStatusCode.NotFound,
                     ProblemDetails(
                         type = "about:blank",

@@ -3,6 +3,7 @@ package com.bliss.survey.api.routes
 import com.bliss.survey.api.auth.UserIdKey
 import com.bliss.survey.api.dto.ProblemDetails
 import com.bliss.survey.api.dto.ProgressResponse
+import com.bliss.survey.api.respondProblem
 import com.bliss.survey.application.ports.UserProgressRepository
 import com.bliss.survey.domain.model.UserId
 import io.ktor.http.HttpStatusCode
@@ -15,7 +16,7 @@ fun Route.meProgressRoute(progress: UserProgressRepository) {
     get("/v1/me/progress") {
         val userId =
             call.attributes.getOrNull(UserIdKey)
-                ?: return@get call.respond(
+                ?: return@get call.respondProblem(
                     HttpStatusCode.Unauthorized,
                     ProblemDetails(
                         type = "about:blank",

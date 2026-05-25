@@ -15,6 +15,7 @@ import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.Application
+import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.install
 import io.ktor.server.plugins.calllogging.CallLogging
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
@@ -25,10 +26,7 @@ import io.ktor.server.routing.routing
 import kotlinx.serialization.json.Json
 import org.slf4j.event.Level
 
-// Wires Ktor plugins + routes for the survey bounded context (ADR-0056).
-// Install order — CallLogging → ContentNegotiation → CORS → StatusPages →
-// SessionMiddleware — mirrors identity/api so logs surface before plugin
-// failures and the session middleware never runs before content negotiation.
+// Install order mirrors identity/api: CallLogging → ContentNegotiation → CORS → StatusPages → SessionMiddleware.
 fun Application.surveyApiModule(
     wiring: Wiring,
     config: SurveyApiConfig,
@@ -107,15 +105,24 @@ fun Application.surveyApiModule(
     }
 }
 
-// encodeDefaults=true keeps every `required` field on the wire when the
-// runtime value equals its declared default — ADR-0003 §6.
+// null (absent vs null are distinct on the wire) and encodeDefaults keep all required fields present — ADR-0003 §6.
 internal val WIRE_JSON: Json =
     Json {
         prettyPrint = false
         ignoreUnknownKeys = true
-        explicitNulls = false
+        explicitNulls = true // null ("not yet") must appear on wire; absence ≠ null (ADR-0003 §6)
         encodeDefaults = true
     }
+
+// Responds with RFC 7807 application/problem+json, bypassing ContentNegotiation which would produce application/json.
+internal suspend fun ApplicationCall.respondProblem(
+    status: HttpStatusCode,
+    problem: ProblemDetails,
+) = respondText(
+    text = WIRE_JSON.encodeToString(ProblemDetails.serializer(), problem),
+    contentType = ContentType.parse("application/problem+json"),
+    status = status,
+)
 
 private data class ParsedOrigin(
     val scheme: String,

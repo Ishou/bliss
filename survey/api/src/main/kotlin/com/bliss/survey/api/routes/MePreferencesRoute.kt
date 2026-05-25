@@ -3,6 +3,7 @@ package com.bliss.survey.api.routes
 import com.bliss.survey.api.auth.UserIdKey
 import com.bliss.survey.api.dto.PreferencesPatch
 import com.bliss.survey.api.dto.ProblemDetails
+import com.bliss.survey.api.respondProblem
 import com.bliss.survey.application.ports.ProposedByRepository
 import com.bliss.survey.domain.model.UserId
 import io.ktor.http.HttpStatusCode
@@ -16,7 +17,7 @@ fun Route.mePreferencesRoute(proposedBy: ProposedByRepository) {
     patch("/v1/me/preferences") {
         val userId =
             call.attributes.getOrNull(UserIdKey)
-                ?: return@patch call.respond(
+                ?: return@patch call.respondProblem(
                     HttpStatusCode.Unauthorized,
                     ProblemDetails(
                         type = "about:blank",
