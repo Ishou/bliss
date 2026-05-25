@@ -86,3 +86,4 @@ Append-only log of decisions the orchestrator made during the 9-PR survey-module
 - `2026-05-25T18:58:37Z` · phase `3 (feat/survey-domain)` · `waiting-fixer` · PR #614: Dockerfile fixer still running; same 4 build failures persist; "Findings" review at 18:57:43. No action.
 - `2026-05-25T19:00:38Z` · phase `3 (feat/survey-domain)` · `waiting-ci` · PR #614: fixer pushed 14 commits; 4 build jobs + spectral IN_PROGRESS; commitlint FAILING on latest commit. No action per 3b.
 - `2026-05-25T19:02:39Z` · phase `3 (feat/survey-domain)` · `waiting-ci` · PR #614: build (grid-worker) still IN_PROGRESS; commitlint FAILING. No action per 3b.
+- `2026-05-25T19:04:39Z` · phase `3 (feat/survey-domain)` · `waiting-ci` · PR #614: full CI suite re-running (new push); no failures yet. No action per 3b.
