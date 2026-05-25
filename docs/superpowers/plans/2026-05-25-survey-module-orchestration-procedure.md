@@ -88,9 +88,7 @@ Merge when ALL of:
 - `mergeable: "MERGEABLE"` AND `mergeStateStatus != "BLOCKED"`.
 - ONE of:
   - `reviewDecision == "APPROVED"` OR most recent review body's first line is `LGTM` (case-insensitive); OR
-  - The only outstanding bot findings are about the 400-line cap-override AND the PR body cites either the docs-bundle category OR this file's "Standing maintainer authorization" section.
-
-Detection heuristic for "only the cap-override finding remains": fetch the latest review body, scan for headings matching `^## Finding`. If every finding's title contains `400-line cap`, `cap-override`, `maintainer sign-off`, or `@Ishou`, treat the review as effectively-resolved.
+  - An explicit @Ishou approval comment is visible on the PR (satisfying the ADR-0001 §4 cap-override gate).
 
 Then:
 
@@ -100,7 +98,7 @@ gh pr merge <pr#> --squash
 
 (Drop `--delete-branch` — it triggers a local prune touching `main` which collides with agent worktrees. Branch can be cleaned later via GitHub UI.)
 
-Log: `<timestamp> · phase <name> · merged via squash (sha <sha>) [reviewer state: <APPROVED | cap-override-only>]`. Move to next phase next tick.
+Log: `<timestamp> · phase <name> · merged via squash (sha <sha>) [reviewer state: <APPROVED | @Ishou-cap-approval>]`. Move to next phase next tick.
 
 #### 3b. Auto-fix loop is alive — wait
 
