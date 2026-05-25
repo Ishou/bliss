@@ -19,7 +19,7 @@ local + committed CSV per ADR-0013 §8.
 | # | Script | Cost | Time | Validates |
 |---|--------|------|------|-----------|
 | 0 | `modal run modal_jobs/00_hello_world.py` | ~$0.01 | ~10 s | Modal CLI + auth |
-| 1 | `modal run modal_jobs/01_gpu_check.py` | ~$0.02 | ~30 s | A100-40GB available |
+| 1 | `modal run modal_jobs/01_gpu_check.py` | ~$0.03 | ~30 s | A100-40GB available |
 | 2 | `modal run modal_jobs/02_download_mistral.py` | ~$0.05 | 5–15 min (first time) | `huggingface` secret + licence accept + volume persistence |
 | 3a | `modal run modal_jobs/03a_upload_dataset.py` | ~$0.01 | ~15 s | dataset volume reachable from local |
 | 3b | `modal run modal_jobs/03b_finetune.py` | ~$1.50 | ~25–35 min | end-to-end QLoRA SFT |

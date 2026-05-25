@@ -1,51 +1,3 @@
-"""Palier 2 — Téléchargement de Mistral Nemo Base 2407 sur volume Modal.
-
-OBJECTIF
---------
-Télécharger le modèle de base mistralai/Mistral-Nemo-Base-2407 (~24 Go,
-poids .safetensors) sur un volume Modal persistant nommé
-`mots-fleches-models`, monté sur `/models` dans le container. Ce
-volume sera réutilisé par les paliers suivants (palier 3 fine-tune,
-palier 4 inférence, etc.) — pas besoin de re-télécharger à chaque fois.
-
-CE QUE CE SCRIPT VALIDE
------------------------
-1. Le secret Modal `huggingface` (avec HF_TOKEN) est correctement
-   injecté dans le container.
-2. Le volume persistant `mots-fleches-models` se crée (si absent) et
-   se monte sur `/models`.
-3. `huggingface_hub.snapshot_download` peut tirer le modèle (preuve
-   que l'accès gated Mistral est OK pour ton compte HF).
-4. `volume.commit()` persiste les fichiers (sinon ils disparaissent à
-   la fin de la session — bug classique sur Modal).
-5. Idempotence : un 2e lancement détecte le modèle déjà présent et
-   skip en quelques secondes.
-
-COÛT ATTENDU
-------------
-- Bande passante : Modal ne facture pas le download depuis HF
-  (sortie réseau gratuite côté Modal entrant).
-- Stockage volume : ≈ 0,13 $/mois pour ~24 Go.
-- Container CPU pendant le download : ≈ 0,03 $/heure × 0,2 h = 0,01 $
-  par run.
-
-DURÉE ATTENDUE
---------------
-- Premier run : 5-15 min selon bande passante réseau (HF → Modal).
-- Runs suivants : 5-10 s (idempotence, skip immédiat).
-
-IDÉMPOTENCE
------------
-Le script vérifie l'existence de `/models/Mistral-Nemo-Base-2407/
-config.json` avant de lancer le download. Si présent → skip.
-
-COMMANDE POUR LANCER
---------------------
-Depuis la racine du projet :
-
-    modal run modal_jobs/02_download_mistral.py
-"""
-
 import os
 import time
 from pathlib import Path
@@ -56,17 +8,13 @@ import modal
 # Nom de l'app Modal — visible dans le dashboard
 app = modal.App("mots-fleches-download")
 
-# Volume persistant Modal. `create_if_missing=True` crée le volume au
-# premier appel et le réutilise ensuite. Le même volume peut être
-# monté par d'autres apps en utilisant exactement le même nom.
+# Persistent Modal volume; create_if_missing ensures it exists on first use.
 volume = modal.Volume.from_name(
     "mots-fleches-models",
     create_if_missing=True,
 )
 
-# Image Docker : juste ce qu'il faut pour télécharger depuis HF.
-# Pas besoin de torch/transformers/accelerate pour ce palier — on
-# stockera ces lourdes dépendances dans l'image du palier 3.
+# Minimal image for HF download; heavy deps (torch etc.) added at palier 3.
 image = (
     modal.Image.debian_slim(python_version="3.11")
     .pip_install("huggingface_hub>=0.24")
@@ -76,24 +24,17 @@ image = (
 HF_REPO_ID = "mistralai/Mistral-Nemo-Base-2407"
 LOCAL_DIR = "/models/Mistral-Nemo-Base-2407"
 
-# Patterns d'inclusion/exclusion pour `snapshot_download`.
-# INCLUDE : poids safetensors + tous les fichiers tokenizer/config nécessaires.
-# EXCLUDE : formats redondants (.bin pour anciennes versions PyTorch,
-# .pt checkpoints, .h5 Keras, .msgpack Flax). Pratique défensive même
-# si Mistral Nemo n'a normalement que des .safetensors.
+# Include safetensors + tokenizer/config; exclude redundant formats (.bin, .pt, .h5).
 ALLOW_PATTERNS = [
     "*.safetensors",
-    "model.safetensors.index.json",  # manifest des shards (sinon
-                                     # transformers ne peut pas charger)
+    "model.safetensors.index.json",  # shard manifest required by transformers
     "config.json",
     "generation_config.json",
     "tokenizer*",
     "special_tokens_map.json",
     "merges.txt",
 ]
-# `consolidated.safetensors` (~23 Go) = format Mistral Inference,
-# redondant avec les shards `model-0000X-of-...` du format HF Transformers
-# qu'on veut pour le fine-tune. Économie ~23 Go.
+# consolidated.safetensors is the Mistral Inference format (~23 GB), redundant with HF shards.
 IGNORE_PATTERNS = [
     "consolidated.safetensors",
     "*.bin", "*.pt", "*.h5", "*.msgpack",
@@ -107,21 +48,14 @@ IGNORE_PATTERNS = [
     timeout=1800,  # 30 minutes plafond — sécurité runaway
 )
 def download_mistral_nemo() -> dict:
-    """Télécharge Mistral Nemo Base 2407 sur le volume Modal.
-
-    Idempotent : skip si `config.json` du modèle est déjà présent.
-    Commit explicite du volume après download pour persistance.
-    """
+    """Download Mistral Nemo Base 2407 to the Modal volume; idempotent, commits volume after download."""
     from huggingface_hub import snapshot_download
 
     config_path = Path(LOCAL_DIR) / "config.json"
     index_path = Path(LOCAL_DIR) / "model.safetensors.index.json"
     consolidated_path = Path(LOCAL_DIR) / "consolidated.safetensors"
 
-    # === Étape repair : nettoyer un éventuel état dégradé ===
-    # Issue connue : un premier run avec allow_patterns trop permissifs
-    # a pu tirer consolidated.safetensors (~23 Go, format Mistral
-    # Inference) en plus des shards HF. On le supprime ici.
+    # Repair: remove consolidated.safetensors if a previous run pulled it erroneously.
     actions: list[str] = []
     if consolidated_path.exists():
         gain_gb = consolidated_path.stat().st_size / (1024 ** 3)
@@ -131,9 +65,7 @@ def download_mistral_nemo() -> dict:
         print(f"[REPAIR] consolidated.safetensors supprimé "
               f"({gain_gb:.2f} Go libérés)")
 
-    # === Check idempotence COMPLÈTE ===
-    # Le modèle est utilisable seulement si on a config.json ET le
-    # manifest des shards (model.safetensors.index.json).
+    # Model is fully usable only if both config.json and the shard manifest are present.
     fully_ok = config_path.exists() and index_path.exists()
 
     if fully_ok and not actions:
@@ -151,10 +83,7 @@ def download_mistral_nemo() -> dict:
             "actions": [],
         }
 
-    # === Download (ou complétion) ===
-    # snapshot_download avec local_dir ne re-télécharge pas les fichiers
-    # déjà présents → si on a déjà tous les shards et qu'il manque
-    # juste l'index.json, seul ce dernier sera tiré (< 1 Mo).
+    # snapshot_download skips already-present files; only missing ones are fetched.
     if fully_ok:
         print("[CONTAINER] Fichiers principaux déjà présents, "
               "rien à compléter en download.")
@@ -176,9 +105,7 @@ def download_mistral_nemo() -> dict:
         print(f"[CONTAINER] Download/complétion terminé en {elapsed:.1f} s")
         actions.append(f"snapshot_download exécuté ({elapsed:.1f} s)")
 
-    # === Commit du volume ===
-    # CRITIQUE : persiste à la fois la suppression de consolidated et
-    # les nouveaux fichiers téléchargés.
+    # Commit persists both the repair (consolidated removal) and any new downloads.
     print("[CONTAINER] volume.commit() — persistance des changements...")
     volume.commit()
     print("[CONTAINER] Volume committé.")
@@ -199,10 +126,7 @@ def download_mistral_nemo() -> dict:
 
 
 def _lister_fichiers(racine: str) -> list[dict]:
-    """Liste récursivement les fichiers de `racine`, avec leur taille
-    en bytes. Trié alphabétiquement. Exclut `.cache/huggingface/`
-    (cache interne HF de quelques kilo-octets, non utile à afficher).
-    """
+    """List files under `racine` recursively, sorted, excluding .cache/."""
     p = Path(racine)
     fichiers: list[dict] = []
     for f in sorted(p.rglob("*")):
