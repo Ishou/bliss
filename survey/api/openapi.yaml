@@ -104,7 +104,7 @@ paths:
         '422':
           description: Correctif rejected by style-guide filters (1–7).
           content:
-            application/json:
+            application/problem+json:
               schema: { $ref: '#/components/schemas/CorrectifRejection' }
 
   /v1/me/progress:
@@ -312,10 +312,8 @@ components:
           type: string
           enum: [hors_sujet, auto_reference, erreur_sens, autre]
           x-enum-varnames: [HORS_SUJET, AUTO_REFERENCE, ERREUR_SENS, AUTRE]
-          nullable: true
         correctif:
           type: object
-          nullable: true
           description: Alternative clue text + claimed style. Authenticated callers only.
           required: [text, style]
           properties:
@@ -325,7 +323,7 @@ components:
 
     RatingResponse:
       type: object
-      required: [ratingId, itemId, submittedAs]
+      required: [ratingId, itemId, submittedAs, proposedItemId]
       properties:
         ratingId:       { type: string, format: uuid }
         itemId:         { type: string, format: uuid }
@@ -333,7 +331,7 @@ components:
           type: string
           enum: [auth, anon]
           x-enum-varnames: [AUTH, ANON]
-        proposedItemId: { type: string, format: uuid, nullable: true }
+        proposedItemId: { type: string, format: uuid, nullable: true, description: "UUID of the queued correctif item; null when no correctif was submitted." }
 
     CorrectifRejection:
       type: object
@@ -347,11 +345,11 @@ components:
 
     ProgressResponse:
       type: object
-      required: [itemsRated]
+      required: [itemsRated, calibrationAgreement, lastRatedAt]
       properties:
         itemsRated:           { type: integer, minimum: 0 }
-        calibrationAgreement: { type: number, format: float, nullable: true, minimum: 0, maximum: 1 }
-        lastRatedAt:          { type: string, format: date-time, nullable: true }
+        calibrationAgreement: { type: number, format: float, nullable: true, minimum: 0, maximum: 1, description: "Agreement ratio with calibration items; null until the first calibration rating." }
+        lastRatedAt:          { type: string, format: date-time, nullable: true, description: "ISO-8601 timestamp of the most recent rating; null until the first submission." }
 
     ContributionItem:
       type: object
