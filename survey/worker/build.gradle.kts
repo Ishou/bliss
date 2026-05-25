@@ -1,9 +1,3 @@
-// survey/worker — CLI entry-points for the survey context (ADR-0056).
-//
-// Three subcommands (--ingest-batch, --export-dataset, --retire-saturated)
-// invoked by Helm jobs in survey/api/deploy/chart/. Application plugin layout
-// matches grid/worker: installDist emits bin/survey-worker + lib/*.jar.
-
 plugins {
     kotlin("jvm")
     application

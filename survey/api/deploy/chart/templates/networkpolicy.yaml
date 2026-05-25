@@ -3,8 +3,8 @@
 Egress allow-list for survey-api pods. Defaults to the wordsparrow
 namespace's internal services (NATS, identity-api, CNPG); plus DNS
 in kube-system; plus the observability namespace's OTel collector.
-Pre-staged here from PR9 design — the chart owns this concern (configure-
-in-cluster pattern) rather than waiting for a network-ops PR.
+Egress allow-list pre-staged for the survey bounded context. The chart owns
+this concern (configure-in-cluster pattern) rather than a separate network-ops PR.
 
 Ingress is left to the ingress-nginx controller's default policy
 (allow from cluster) — survey-api accepts HTTP only via the Ingress,

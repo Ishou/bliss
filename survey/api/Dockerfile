@@ -71,8 +71,7 @@ WORKDIR /app
 # Ktor REST edge.
 COPY --from=build /workspace/survey/api/build/libs/survey-api-*-all.jar /app/survey-api.jar
 # Worker installDist layout: bin/survey-worker launcher + lib/*.jar classpath.
-# The chart's seed-calibration Job + retire CronJob invoke
-# `java -cp /app/lib/* com.bliss.survey.worker.MainKt`.
+# The chart's seed-calibration Job + retire CronJob invoke /app/bin/survey-worker.
 COPY --from=build /workspace/survey/worker/build/install/survey-worker/ /app/
 
 # OpenTelemetry Java agent (ADR-0027). Auto-instruments Ktor + JDBC + the

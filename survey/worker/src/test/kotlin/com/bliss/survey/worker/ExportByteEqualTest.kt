@@ -16,10 +16,7 @@ import org.testcontainers.utility.DockerImageName
 import java.nio.file.Files
 import java.util.Locale
 
-// Byte-equal guard for the §8.1 export contract. CI-enforced via the
-// survey-export-csv-byteequal job. Locale is pinned to ROOT so that the
-// "%.2f" format in ExportDatasetUseCase emits dots (not commas) on any
-// runner. Bumps to the export shape require regenerating expected.csv.
+// Locale pinned to ROOT so "%.2f" emits dots on any runner.
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class ExportByteEqualTest {
     private lateinit var pg: PostgreSQLContainer<*>
