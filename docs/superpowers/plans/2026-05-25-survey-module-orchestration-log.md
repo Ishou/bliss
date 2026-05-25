@@ -67,3 +67,4 @@ Append-only log of decisions the orchestrator made during the 9-PR survey-module
 - `2026-05-25T18:20:36Z` · phase `2 (feat/survey-openapi)` · `waiting-auto-fixer` · PR #613: "Findings" review at 18:18:50Z; claude-review IN_PROGRESS (auto-fix loop alive). No action per 3b.
 - `2026-05-25T18:22:37Z` · phase `2 (feat/survey-openapi)` · `waiting-auto-fixer` · PR #613: 2 commits (fixer pushed); claude-review IN_PROGRESS on new commit. No action per 3b.
 - `2026-05-25T18:24:41Z` · phase `2 (feat/survey-openapi)` · `waiting-auto-fixer` · PR #613: claude-review still IN_PROGRESS on cycle 2 commit. No action per 3b.
+- `2026-05-25T18:27:01Z` · phase `2 (feat/survey-openapi)` · `waiting-auto-fixer` · PR #613: 2nd Findings review at 18:26:43; claude-review IN_PROGRESS. No action per 3b.
