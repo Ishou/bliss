@@ -81,3 +81,4 @@ Append-only log of decisions the orchestrator made during the 9-PR survey-module
 - `2026-05-25T<tick30>` · phase `3 (feat/survey-domain)` · `waiting-implementer` · No PR yet; agent still running (~6 min elapsed). No action.
 - `2026-05-25T<tick31>` · phase `3 (feat/survey-domain)` · `waiting-implementer` · No PR yet; agent still running (~8 min). No action.
 - `2026-05-25T<tick32>` · phase `3 (feat/survey-domain)` · `waiting-implementer` · No PR yet; agent still running (~10 min). No action.
+- `2026-05-25T<tick33>` · phase `3 (feat/survey-domain)` · `waiting-auto-fixer` · PR #614 OPEN; claude-review IN_PROGRESS; commitlint FAILING; build jobs running. No action per 3b.
