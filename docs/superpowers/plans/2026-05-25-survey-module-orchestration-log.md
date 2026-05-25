@@ -46,3 +46,7 @@ Append-only log of decisions the orchestrator made during the 9-PR survey-module
 
 - `2026-05-25` · cron `7623bd90` created (`*/2 * * * *`, session-only — runtime ignores `durable: true` per dispatch skill note). First tick will look up Phase 1 PR (none yet), dispatch the `feat/survey-adr` implementer.
 - Orchestration PR: https://github.com/Ishou/wordsparrow/pull/611.
+
+### Tick 1 — 2026-05-25
+
+- `2026-05-25T<tick>` · phase `1 (feat/survey-adr)` · `dispatched-implementer` · Agent launched in worktree to write ADR-0056 + open PR. No prior PR existed. Phases 2-9 skipped (sequential).
