@@ -25,7 +25,7 @@ import { chromium, type BrowserContext } from '@playwright/test';
 import { createServer, type Server } from 'node:http';
 import { readFileSync, statSync, writeFileSync, mkdirSync } from 'node:fs';
 import { extname, join, dirname, resolve } from 'node:path';
-import { INDEXABLE_ROUTES } from '../src/ui/seo/routeManifest.ts';
+import { INDEXABLE_ROUTES, NOINDEX_PRERENDER_ROUTES } from '../src/ui/seo/routeManifest.ts';
 
 const DIST = resolve(import.meta.dirname, '../dist');
 
@@ -37,6 +37,11 @@ const DIST = resolve(import.meta.dirname, '../dist');
 // route's pendingComponent (skeleton) renders; we graft pass A's
 // <head> onto pass B's body.
 const PUZZLE_LOADING_ROUTES: ReadonlySet<string> = new Set(['/', '/grille', '/grilles']);
+
+// Hang auth/survey so AuthProvider stays in `loading` and the anon-redirect effect never fires.
+const AUTH_GATED_ROUTES: ReadonlySet<string> = new Set(
+  NOINDEX_PRERENDER_ROUTES.map((r) => r.path),
+);
 
 const MIME: Record<string, string> = {
   '.html': 'text/html; charset=utf-8',
@@ -167,6 +172,10 @@ async function loadRoute(
         // Intentional no-op: leave the request hanging so the route's
         // pendingComponent (skeleton) renders.
       });
+    }
+    if (AUTH_GATED_ROUTES.has(route.path)) {
+      await page.route('**/v1/auth/**', () => { /* hang */ });
+      await page.route('**/v1/survey/**', () => { /* hang */ });
     }
     await page.goto(`${baseUrl}${route.path}`, {
       waitUntil: 'domcontentloaded',
@@ -302,9 +311,13 @@ async function main(): Promise<void> {
       // Sandboxed contexts (none in CI) — fall through.
     }
   });
+  const allRoutes = [
+    ...INDEXABLE_ROUTES.map((r) => ({ path: r.path, title: r.title })),
+    ...NOINDEX_PRERENDER_ROUTES,
+  ];
   const errors: PrerenderError[] = [];
   try {
-    for (const route of INDEXABLE_ROUTES) {
+    for (const route of allRoutes) {
       const err = await prerenderRoute(context, baseUrl, route);
       if (err) errors.push(err);
     }
@@ -319,7 +332,7 @@ async function main(): Promise<void> {
     for (const e of errors) console.error(`  - ${e.path}: ${e.reason}`);
     process.exit(1);
   }
-  console.warn(`[prerender] OK — ${INDEXABLE_ROUTES.length} routes`);
+  console.warn(`[prerender] OK — ${allRoutes.length} routes`);
 }
 
 main().catch((err) => {

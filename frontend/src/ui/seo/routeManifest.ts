@@ -72,4 +72,15 @@ export const EXCLUDED_ROUTES: ReadonlyArray<string> = [
   '/join/$code',
 ];
 
+export interface PrerenderRoute {
+  readonly path: string;
+  readonly title: string;
+}
+
+// Noindex routes still prerendered so Cloudflare Pages serves the route's own shell, not the home shell.
+export const NOINDEX_PRERENDER_ROUTES: ReadonlyArray<PrerenderRoute> = [
+  { path: '/sondage', title: 'Sondage — WordSparrow' },
+  { path: '/compte', title: 'Mon compte — WordSparrow' },
+];
+
 export const DEFAULT_OG_IMAGE = `${SITE_BASE_URL}/og-default.png`;
