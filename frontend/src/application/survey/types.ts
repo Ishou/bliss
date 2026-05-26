@@ -1,10 +1,4 @@
-// Application-layer shapes for the /sondage surface. Mirrors the survey
-// OpenAPI contract by structure but is defined here independently so the
-// application layer never imports `infrastructure/` (eslint-plugin-
-// boundaries enforces the wall). The HTTP adapter in
-// `infrastructure/api/survey/client.ts` maps between these and the
-// generated wire types; the surface is small enough that the maintenance
-// cost of two parallel definitions is negligible.
+// Application-layer shapes for the /sondage surface (ADR-0056).
 
 export type SurveyPos =
   | 'verbe_infinitif'
@@ -139,12 +133,17 @@ export interface SurveyPreferencesPatch {
   readonly deleteProposedOnErasure: boolean;
 }
 
-// Application port. Concrete adapter lives in
-// `infrastructure/api/survey/client.ts`.
+// Application port. Concrete adapter: `infrastructure/api/survey/client.ts`.
 export interface SurveyClient {
   getNextItem(opts?: { readonly excludedItemIds?: readonly string[] }): Promise<SurveyItem | null>;
   submitRating(itemId: string, body: RatingSubmission): Promise<RatingResult>;
   getProgress(): Promise<SurveyProgress>;
   getContributions(): Promise<ReadonlyArray<SurveyContribution>>;
   patchPreferences(body: SurveyPreferencesPatch): Promise<void>;
+}
+
+// Port for anon-rated dedup. Concrete adapter: `localStorageSurveyAnon.ts`.
+export interface SurveyAnonStore {
+  list(): ReadonlyArray<string>;
+  add(itemId: string): void;
 }

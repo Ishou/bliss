@@ -10,9 +10,11 @@ import type { AuthClient } from '@/application/auth';
 import type {
   RatingResult,
   RatingSubmission,
+  SurveyAnonStore,
   SurveyClient,
   SurveyItem,
 } from '@/application/survey';
+import { surveyAnonRatedStore } from '@/infrastructure/session/localStorageSurveyAnon';
 import { AuthProvider } from '@/ui/components/auth';
 import { Route as RootRoute } from '@/ui/routes/__root';
 import { Route as SondageRoute } from '@/ui/routes/sondage';
@@ -75,10 +77,12 @@ function renderSondage(opts: {
   authClient?: AuthClient;
   surveyClient?: SurveyClient;
   analytics?: AnalyticsPort;
+  surveyAnonStore?: SurveyAnonStore;
 } = {}) {
   const authClient = opts.authClient ?? stubAuth();
   const surveyClient = opts.surveyClient ?? stubSurveyClient();
   const analytics = opts.analytics ?? stubAnalytics();
+  const anonStore = opts.surveyAnonStore ?? surveyAnonRatedStore;
   const routeTree = RootRoute.addChildren([SondageRoute]);
   const router = createRouter({
     routeTree,
@@ -87,6 +91,7 @@ function renderSondage(opts: {
       authClient,
       getPseudonym: () => 'Lapin 1',
       surveyClient,
+      surveyAnonStore: anonStore,
       analytics,
       puzzleRepository: {
         fetchById: vi.fn(),

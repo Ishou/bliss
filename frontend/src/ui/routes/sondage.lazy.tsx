@@ -1,8 +1,4 @@
-// `/sondage` — lazy half. Loads the rating loop on demand. Auth is
-// optional: anon visitors see the page, the sign-in banner invites
-// them, and the correctif slot is hidden in anon mode. Anon rated
-// itemIds are tracked in localStorage (survey.anon.rated_ids) and
-// passed to /v1/items/next as `excluded` for client-side dedup.
+// `/sondage` lazy half — rating loop. Auth optional; anon dedup via surveyAnonStore.
 
 import { createLazyRoute } from '@tanstack/react-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -53,6 +49,7 @@ function SondagePage() {
   const { state } = useAuth();
   const isAuth = state.status === 'authed';
   const surveyClient = ctx.surveyClient;
+  const surveyAnonStore = ctx.surveyAnonStore;
   const analytics = ctx.analytics ?? NOOP_ANALYTICS;
   const authClient = ctx.authClient;
 
@@ -60,31 +57,6 @@ function SondagePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const sessionStartedRef = useRef(false);
-
-  const loadAnonRated = useCallback((): readonly string[] => {
-    // Read straight from localStorage so the route doesn't import the
-    // infrastructure adapter directly. The key is a stable spec constant.
-    try {
-      const raw = localStorage.getItem('survey.anon.rated_ids');
-      if (!raw) return [];
-      const parsed = JSON.parse(raw) as unknown;
-      return Array.isArray(parsed) ? parsed.filter((x): x is string => typeof x === 'string') : [];
-    } catch {
-      return [];
-    }
-  }, []);
-
-  const addAnonRated = useCallback((id: string): void => {
-    try {
-      const current = loadAnonRated();
-      if (current.includes(id)) return;
-      const next = [...current, id];
-      while (next.length > 500) next.shift();
-      localStorage.setItem('survey.anon.rated_ids', JSON.stringify(next));
-    } catch {
-      // localStorage may be unavailable; anon dedup is best-effort.
-    }
-  }, [loadAnonRated]);
 
   const loadNext = useCallback(async (): Promise<void> => {
     if (!surveyClient) {
@@ -95,7 +67,7 @@ function SondagePage() {
     setLoading(true);
     setError(null);
     try {
-      const excludedItemIds = isAuth ? undefined : loadAnonRated();
+      const excludedItemIds = isAuth ? undefined : surveyAnonStore?.list();
       const next = await surveyClient.getNextItem({ excludedItemIds });
       setItem(next);
     } catch (cause) {
@@ -103,10 +75,9 @@ function SondagePage() {
     } finally {
       setLoading(false);
     }
-  }, [surveyClient, isAuth, loadAnonRated]);
+  }, [surveyClient, isAuth, surveyAnonStore]);
 
-  // Session-start event fires once per page visit (idempotent across
-  // auth-state flips so a sign-in mid-session doesn't double-count).
+  // Idempotent: fires once per visit even if auth state flips mid-session.
   useEffect(() => {
     if (sessionStartedRef.current) return;
     if (state.status === 'loading') return;
@@ -134,7 +105,7 @@ function SondagePage() {
       if (payload.flag) {
         analytics.trackEvent('survey', 'flag_raised', payload.flag);
       }
-      if (!isAuth) addAnonRated(item.itemId);
+      if (!isAuth) surveyAnonStore?.add(item.itemId);
       await loadNext();
     } catch (cause) {
       const name = (cause as Error | undefined)?.name ?? '';
@@ -153,7 +124,7 @@ function SondagePage() {
       if (name === 'AlreadyRatedError') {
         // The auth caller has already rated this item; the server replied with
         // the existing rating envelope. Skip ahead to the next item.
-        if (!isAuth) addAnonRated(item.itemId);
+        if (!isAuth) surveyAnonStore?.add(item.itemId);
         await loadNext();
         return;
       }

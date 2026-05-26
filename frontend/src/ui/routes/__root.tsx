@@ -8,7 +8,7 @@ import type { GameClient, LobbyClient } from '@/application/game';
 import type { LobbyJoinCodeStash } from '@/application/session/LobbyJoinCodeStash';
 import type { SessionClient } from '@/application/session/SessionClient';
 import type { SoloEntriesStore } from '@/application/solo/SoloEntriesStore';
-import type { SurveyClient } from '@/application/survey';
+import type { SurveyAnonStore, SurveyClient } from '@/application/survey';
 import type { TourSeenStore } from '@/application/tour/TourSeenStore';
 import type { Pseudonym, SessionId } from '@/domain/game';
 import { AnnouncerProvider } from '@/ui/components/a11y/Announcer';
@@ -54,13 +54,11 @@ export interface AppRouterContext {
   readonly gameClient?: GameClient;
   readonly getSession?: () => AppSession;
   readonly setPseudonym?: (pseudonym: Pseudonym) => void;
-  // Survey-api adapter (ADR-0056). The /sondage route reads it from
-  // context so `ui/` never imports `infrastructure/` directly. Optional
-  // for route-level Vitest fixtures and pre-survey-API environments;
-  // SondagePage degrades gracefully when undefined.
+  // Survey-api adapter (ADR-0056). Optional; SondagePage degrades gracefully when undefined.
   readonly surveyClient?: SurveyClient;
-  // Analytics port (ADR-0025). Optional — defaults to a no-op in
-  // Vitest contexts so routes don't have to stub Matomo.
+  // Anon-rated dedup store (ADR-0056). Optional for Vitest fixtures.
+  readonly surveyAnonStore?: SurveyAnonStore;
+  // Analytics port (ADR-0025). Optional; defaults to a no-op in tests.
   readonly analytics?: AnalyticsPort;
   // ADR-0027: per-tab one-shot stash that the `/join/$code` route and
   // the Accueil "Rejoindre" submit populate, and the lobby route's
