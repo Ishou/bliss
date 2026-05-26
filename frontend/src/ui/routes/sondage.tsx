@@ -23,8 +23,8 @@ function SondageSkeleton() {
       <article className={skeletonArticleStyles}>
         <h1 className={skeletonHeadingStyles}>Sondage des indices</h1>
         <p className={skeletonIntroStyles}>
-          Notez la qualité et la difficulté de chaque définition. Vos retours
-          alimentent la sélection des indices.
+          Notez la qualité des définitions en un clic : mauvaise, à passer, ou bonne.
+          Vos retours alimentent la sélection des indices.
         </p>
         <p className={skeletonStatusStyles} role="status">Chargement…</p>
       </article>
