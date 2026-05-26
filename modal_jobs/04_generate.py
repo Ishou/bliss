@@ -59,7 +59,6 @@ image = (
 
 
 def construire_prompt(mot: str, style: str) -> str:
-    """Format prompt d'inférence — utilisé aussi par le test unitaire."""
     return USER_PROMPT_TEMPLATE.format(mot=mot, style=style)
 
 
