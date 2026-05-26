@@ -173,6 +173,20 @@ Full rationale is in MANIFESTO.md.
   `registry-coherence.yml` enforces the load-bearing cases (ADR ↔ INDEX.md,
   new module ↔ this file); the rule is broader than what CI checks, so
   apply it as a habit, not just where the gate forces it.
+- **Comments document non-obvious WHY, in one line.** Default to no
+  comment. If you write one, it's a single line on a non-obvious
+  *why* — a hidden constraint, a subtle invariant, a workaround for a
+  specific bug. Don't explain WHAT (well-named identifiers do that).
+  Don't reference PRs / tasks / callers / the current fix — those rot
+  as the codebase evolves; they belong in the PR description.
+  Multi-paragraph comment blocks (consecutive `//` / `#` / multi-line
+  `/* */` or `"""`) are forbidden in new code — if you need more than
+  one line, you've found ADR-worthy context. Write the ADR, link from
+  one line. Reviewers flag this every cycle and implementers keep
+  re-adding it; pre-empt at write-time. **Exception:** the codebase
+  has pre-existing legitimate multi-line blocks (ASCII diagrams,
+  non-obvious CSS reasoning, fixture audits) — leave those alone
+  unless you're already editing the surrounding code.
 - **Migrations are expand-and-contract**, backward-compatible.
 - **Feature flags** deploy dark, release bright; flags carry expiry
   dates.
