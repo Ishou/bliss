@@ -59,7 +59,7 @@ class IdentityClient(
     }
 
     companion object {
-        const val SESSION_COOKIE_NAME: String = "__Host-ws_session"
+        const val SESSION_COOKIE_NAME: String = "__Secure-ws_session"
     }
 }
 
