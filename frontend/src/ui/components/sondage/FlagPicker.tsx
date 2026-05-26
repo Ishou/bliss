@@ -1,40 +1,15 @@
-// Flag picker for /sondage — native <select> for platform a11y.
+// Flag picker for /sondage — Ark UI Select keeps brand parity with Likert/TextField.
 
-import { useId } from 'react';
-import { css } from 'styled-system/css';
+import { Select, type SelectOption } from '@/ui/components/primitives';
 import type { SurveyFlagReason } from '@/application/survey';
 
-const wrapperStyles = css({
-  display: 'flex',
-  flexDirection: 'column',
-  gap: 'xs',
-});
+// `__none__` is the sentinel for the "no flag" choice — Ark's collection
+// rejects empty-string values, so we map both directions at the boundary.
+const NONE_VALUE = '__none__';
+type FlagOptionValue = SurveyFlagReason | typeof NONE_VALUE;
 
-const labelStyles = css({
-  fontSize: 'body',
-  fontWeight: 'semibold',
-  color: 'fg',
-});
-
-const selectStyles = css({
-  fontFamily: 'body',
-  fontSize: 'body',
-  color: 'fg',
-  bg: 'surface',
-  border: '1px solid token(colors.border)',
-  borderRadius: '6px',
-  paddingInline: 'sm',
-  paddingBlock: 'xs',
-  minHeight: '40px',
-  _focusVisible: {
-    outline: '2px solid token(colors.focusRing)',
-    outlineOffset: '2px',
-  },
-});
-
-const NONE_VALUE = '';
-
-const OPTIONS: ReadonlyArray<{ value: SurveyFlagReason; label: string }> = [
+const OPTIONS: ReadonlyArray<SelectOption<FlagOptionValue>> = [
+  { value: NONE_VALUE, label: '— Aucun —' },
   { value: 'hors_sujet', label: 'Hors-sujet' },
   { value: 'auto_reference', label: 'Auto-référence' },
   { value: 'erreur_sens', label: 'Erreur de sens' },
@@ -47,24 +22,18 @@ export interface FlagPickerProps {
 }
 
 export function FlagPicker({ value, onChange }: FlagPickerProps) {
-  const id = useId();
   return (
-    <div className={wrapperStyles}>
-      <label htmlFor={id} className={labelStyles}>Signaler un problème (optionnel)</label>
-      <select
-        id={id}
-        className={selectStyles}
-        value={value ?? NONE_VALUE}
-        onChange={(event) => {
-          const next = event.target.value;
-          onChange(next === NONE_VALUE ? undefined : (next as SurveyFlagReason));
-        }}
-      >
-        <option value={NONE_VALUE}>— Aucun —</option>
-        {OPTIONS.map((opt) => (
-          <option key={opt.value} value={opt.value}>{opt.label}</option>
-        ))}
-      </select>
-    </div>
+    <Select<FlagOptionValue>
+      label="Signaler un problème (optionnel)"
+      value={value ?? NONE_VALUE}
+      onValueChange={(next) => {
+        if (next == null || next === NONE_VALUE) {
+          onChange(undefined);
+          return;
+        }
+        onChange(next);
+      }}
+      options={OPTIONS}
+    />
   );
 }

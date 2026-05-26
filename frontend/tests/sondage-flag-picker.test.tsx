@@ -1,31 +1,45 @@
 import { describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { FlagPicker } from '@/ui/components/sondage';
 
+async function openListbox(): Promise<void> {
+  const trigger = screen.getByRole('combobox', { name: /Signaler un problème/i });
+  act(() => { fireEvent.click(trigger); });
+  await waitFor(() => {
+    expect(trigger).toHaveAttribute('data-state', 'open');
+  });
+}
+
 describe('FlagPicker', () => {
-  it('renders the four reasons plus a "none" option', () => {
+  it('renders the four reasons plus a "none" option', async () => {
     render(<FlagPicker value={undefined} onChange={() => {}} />);
-    const select = screen.getByLabelText(/Signaler un problème/i);
-    expect(select).toBeInTheDocument();
-    const options = (select as HTMLSelectElement).querySelectorAll('option');
+    await openListbox();
+    const options = screen.getAllByRole('option');
     expect(options).toHaveLength(5);
+    expect(options[0]).toHaveTextContent('— Aucun —');
   });
 
-  it('reports the chosen reason on change', () => {
+  it('reports the chosen reason on selection', async () => {
     const onChange = vi.fn();
     render(<FlagPicker value={undefined} onChange={onChange} />);
-    fireEvent.change(screen.getByLabelText(/Signaler un problème/i), {
-      target: { value: 'erreur_sens' },
+    await openListbox();
+    act(() => {
+      fireEvent.click(screen.getByRole('option', { name: 'Erreur de sens' }));
     });
-    expect(onChange).toHaveBeenCalledWith('erreur_sens');
+    await waitFor(() => {
+      expect(onChange).toHaveBeenCalledWith('erreur_sens');
+    });
   });
 
-  it('reports undefined when the user picks "Aucun"', () => {
+  it('reports undefined when the user picks "Aucun"', async () => {
     const onChange = vi.fn();
     render(<FlagPicker value="hors_sujet" onChange={onChange} />);
-    fireEvent.change(screen.getByLabelText(/Signaler un problème/i), {
-      target: { value: '' },
+    await openListbox();
+    act(() => {
+      fireEvent.click(screen.getByRole('option', { name: '— Aucun —' }));
     });
-    expect(onChange).toHaveBeenCalledWith(undefined);
+    await waitFor(() => {
+      expect(onChange).toHaveBeenCalledWith(undefined);
+    });
   });
 });

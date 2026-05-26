@@ -18,6 +18,7 @@ export {
   type RadioGroupProps,
   type RadioOption,
 } from './RadioGroup';
+export { Select, type SelectProps, type SelectOption } from './Select';
 export {
   ToggleGroup,
   type ToggleGroupProps,

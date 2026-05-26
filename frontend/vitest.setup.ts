@@ -23,6 +23,12 @@ if (typeof document !== 'undefined') {
   document.hasFocus = () => true;
 }
 
+// jsdom omits `Element.prototype.scrollTo`; zag-js Select calls it on the
+// listbox when opening (scroll-into-view of the highlighted item).
+if (typeof Element !== 'undefined' && typeof Element.prototype.scrollTo !== 'function') {
+  Element.prototype.scrollTo = (() => {}) as Element['scrollTo'];
+}
+
 // jsdom doesn't ship `ResizeObserver`; `react-zoom-pan-pinch` (used by
 // `Grid` to host pinch/zoom) instantiates one to track wrapper sizing.
 // A no-op stub is enough for our tests — we don't assert on transform
