@@ -3,8 +3,7 @@
 import { Select, type SelectOption } from '@/ui/components/primitives';
 import type { SurveyFlagReason } from '@/application/survey';
 
-// `__none__` is the sentinel for the "no flag" choice — Ark's collection
-// rejects empty-string values, so we map both directions at the boundary.
+// Ark rejects empty-string values, so '__none__' stands in for the "no flag" state.
 const NONE_VALUE = '__none__';
 type FlagOptionValue = SurveyFlagReason | typeof NONE_VALUE;
 

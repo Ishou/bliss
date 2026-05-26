@@ -7,11 +7,6 @@ import { Portal } from '@ark-ui/react/portal';
 import { useMemo, type ReactNode } from 'react';
 import { css, cx } from 'styled-system/css';
 
-// Project-local Select primitive — wraps Ark UI's headless `Select` so the
-// visual rhythm matches the rest of the form controls (Likert, TextField,
-// Button). The native `<select>` previously used in FlagPicker rendered
-// the OS-native dropdown which diverged from the brand on every platform.
-
 const rootStyles = css({
   display: 'flex',
   flexDirection: 'column',
@@ -92,8 +87,7 @@ export interface SelectOption<TValue extends string> {
 
 export interface SelectProps<TValue extends string> {
   readonly label: ReactNode;
-  // `null` means no selection — Ark requires `value: string[]`, so we
-  // translate at the boundary instead of forcing callers to think in arrays.
+  // null → [] because Ark's value prop requires string[].
   readonly value: TValue | null;
   readonly onValueChange: (value: TValue | null) => void;
   readonly options: readonly SelectOption<TValue>[];
