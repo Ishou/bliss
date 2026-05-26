@@ -22,9 +22,7 @@ def _generate_clues_on_modal(
     temperatures: tuple[float, ...] = (0.3, 0.5, 0.7, 0.9, 1.1),
     k_per_lemma: int = 5,
 ) -> list[dict[str, Any]]:
-    # Boundary to Modal-side inference; stub until palier 4 lands.
-    # Returns one dict per (lemma, candidate) with keys lemma, clue, confidence.
-    # Modal app + function will live in modal_jobs/04_infer.py.
+    # Stub — returns [{lemma, clue, confidence}]; replace in palier 4 (modal_jobs/04_infer.py).
     raise NotImplementedError(
         "Wire to Modal inference function in a follow-up palier 4."
     )

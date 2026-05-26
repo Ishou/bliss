@@ -43,10 +43,7 @@ def test_csv_has_required_columns(tmp_path, monkeypatch):
 
 
 def test_rejects_dropped_by_pipeline_v2_are_excluded(tmp_path, monkeypatch):
-    # Real pipeline_v2 should reject the stem-leak case on DESTRUCTION.
-    # PROTECTION / "Proteger un objet" does not trip filter_9 (LCP=4 due
-    # to the e/e accent split); DESTRUCTION / "Agent destructeur" gives
-    # LCP=8 which is the canonical filter_9 stem-leak case (cf. PR 3b).
+    # DESTRUCTION / "destructeur" gives LCP=8 (> _STEM_LEAK_MIN=5), triggering filter_9.
     monkeypatch.setattr(
         ex,
         "_generate_clues_on_modal",
