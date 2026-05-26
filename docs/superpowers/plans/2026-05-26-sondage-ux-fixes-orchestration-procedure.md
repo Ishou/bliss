@@ -98,7 +98,7 @@ When all 5 PRs are MERGED:
 - Implementer agent blocked (e.g. can't reproduce E's repro headlessly): log the report verbatim; do NOT auto-redispatch. Next tick is maintainer's call.
 - `gh` CLI auth issue: retry once, log "ACTION: gh CLI auth issue", `CronDelete` self.
 - Two consecutive quiet ticks (no progress on any slot): single "all slots quiet" log entry; don't spam.
-- GH Actions silent-drop pattern (push event creates no workflow runs): identified by zero check_suites for the head commit AND non-zero recent runs on `main`. Resolution: empty `chore(ci): re-trigger ...` commit + force-push (per the 2026-05-26 incident).
+- GH Actions silent-drop pattern (push event creates no workflow runs): identified by zero check_suites for the head commit AND non-zero recent runs on `main`. Resolution: empty `chore(ci): re-trigger ...` commit (git push; the new commit SHA is a fresh push event sufficient to trigger CI).
 
 ## Done condition
 
