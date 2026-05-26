@@ -40,14 +40,15 @@ class IdentityClient(
     /** Returns the user id when the session cookie is valid, otherwise null. */
     suspend fun verifySession(cookieValue: String?): UUID? {
         if (cookieValue.isNullOrBlank()) return null
+        // /v1/auth/whoami is identity-api's session-verify endpoint (ADR-0044 §5); grid/game call the same path.
         val response =
-            client.get("$baseUrl/v1/me") {
+            client.get("$baseUrl/v1/auth/whoami") {
                 header(HttpHeaders.Cookie, "$SESSION_COOKIE_NAME=$cookieValue")
             }
         return when (response.status) {
             HttpStatusCode.OK -> {
-                val me = response.body<MeDto>()
-                runCatching { UUID.fromString(me.id) }.getOrNull()
+                val me = response.body<WhoAmIDto>()
+                runCatching { UUID.fromString(me.userId) }.getOrNull()
             }
             else -> null
         }
@@ -64,7 +65,7 @@ class IdentityClient(
 }
 
 @Serializable
-internal data class MeDto(
-    val id: String,
+internal data class WhoAmIDto(
+    val userId: String,
     val displayName: String? = null,
 )
