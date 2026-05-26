@@ -37,7 +37,6 @@ class IdentityClientTest {
             assertThat(capturedCookies.size).isEqualTo(1)
             assertThat(capturedCookies[0]).isNotNull()
             assertThat(capturedCookies[0]!!.contains("__Secure-ws_session=session-cookie-value")).isEqualTo(true)
-            // identity-api's session-verify is at /v1/auth/whoami; grid/game call the same path.
             assertThat(capturedPaths).isEqualTo(listOf("/v1/auth/whoami"))
             client.close()
         }
