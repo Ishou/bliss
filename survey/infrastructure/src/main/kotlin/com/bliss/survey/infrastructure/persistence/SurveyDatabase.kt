@@ -3,11 +3,13 @@ package com.bliss.survey.infrastructure.persistence
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import org.flywaydb.core.Flyway
+import java.net.URI
 import javax.sql.DataSource
 
 /** Hikari + Flyway bootstrap for the survey context (ADR-0056). */
 object SurveyDatabase {
     private const val FLYWAY_HISTORY_TABLE = "flyway_schema_history_survey"
+    private const val DEFAULT_POSTGRES_PORT: Int = 5432
 
     fun create(
         jdbcUrl: String,
@@ -17,7 +19,7 @@ object SurveyDatabase {
     ): DataSource {
         val config =
             HikariConfig().apply {
-                this.jdbcUrl = jdbcUrl
+                this.jdbcUrl = toJdbcUrl(jdbcUrl)
                 this.username = user
                 this.password = password
                 this.maximumPoolSize = maxPoolSize
@@ -36,5 +38,33 @@ object SurveyDatabase {
             .locations("classpath:db/migration")
             .load()
             .migrate()
+    }
+
+    // CNPG's app secret exposes the URL under key `uri` as libpq-style
+    // (`postgresql://user:pw@host:port/db`). Hikari only accepts JDBC URLs
+    // (`jdbc:postgresql://...`), so we convert. Mirrors IdentityDatabase.
+    fun toJdbcUrl(raw: String): String {
+        if (raw.startsWith("jdbc:")) return raw
+        val uri =
+            try {
+                URI(raw)
+            } catch (e: Exception) {
+                throw IllegalStateException("SURVEY_JDBC_URL is not a valid URI", e)
+            }
+        val scheme = uri.scheme?.lowercase()
+        require(scheme == "postgres" || scheme == "postgresql") {
+            "SURVEY_JDBC_URL must use postgres:// or postgresql:// scheme, got: $scheme"
+        }
+        val rawHost = requireNotNull(uri.host) { "SURVEY_JDBC_URL is missing host" }
+        val host =
+            when {
+                rawHost.startsWith("[") -> rawHost
+                rawHost.contains(':') -> "[$rawHost]"
+                else -> rawHost
+            }
+        val port = if (uri.port == -1) DEFAULT_POSTGRES_PORT else uri.port
+        val path = uri.rawPath.orEmpty().ifEmpty { "/" }
+        val query = uri.rawQuery?.let { "?$it" }.orEmpty()
+        return "jdbc:postgresql://$host:$port$path$query"
     }
 }
