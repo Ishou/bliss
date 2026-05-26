@@ -37,6 +37,7 @@ const articleStyles = css({
   lineHeight: '1.6',
   '& h1': { fontSize: 'xl', fontWeight: 'bold', marginBottom: 'md' },
   '& h2': { fontSize: 'lg', fontWeight: 'semibold', marginTop: 'lg', marginBottom: 'sm' },
+  '& h3': { fontSize: 'md', fontWeight: 'semibold', marginTop: 'md', marginBottom: 'xs' },
   '& p': { marginBottom: 'sm' },
   '& ul': { marginLeft: 'lg', marginBottom: 'sm' },
   '& li': { marginBottom: 'xs' },
@@ -330,6 +331,34 @@ function FrenchContent() {
           choix d'autorisation lors de la connexion ; traité selon son propre DPA RGPD.
         </li>
       </ul>
+      <section aria-labelledby="fr-sondage-heading">
+        <h2 id="fr-sondage-heading">Sondage de qualité des définitions</h2>
+        <p>
+          WordSparrow propose un sondage de notation des définitions candidates afin d’améliorer la
+          qualité du corpus de mots fléchés. Vos notes (qualité et difficulté, de 1 à 5) ainsi que
+          les éventuelles corrections proposées (texte libre) sont collectées en mode anonyme par
+          défaut. Si vous êtes connecté·e, le sondage est associé à votre compte joueur pour éviter
+          les doublons.
+        </p>
+        <h3>Anonymisation à la suppression du compte</h3>
+        <p>
+          Lorsque vous supprimez votre compte joueur (RGPD article 17), vos notes sont{' '}
+          <strong>conservées mais anonymisées</strong> — elles ne sont pas effacées. Le lien avec
+          votre identité est rompu (identifiant remis à NULL, latence et métadonnées techniques
+          effacées, horodatage réduit au mois) selon les critères du WP216 sur l’anonymisation. Les
+          notes restent utilisables pour entraîner le modèle sans qu’il soit possible de les
+          rattacher à vous.
+        </p>
+        <h3>Corrections proposées</h3>
+        <p>
+          Les corrections de définition que vous proposez (texte libre) sont, par défaut,{' '}
+          <strong>également conservées</strong> à la suppression de votre compte, sous une forme
+          détachée de votre identité (la table d’authorship est supprimée intégralement). Si vous
+          préférez que vos corrections soient effacées en même temps que votre compte, activez la
+          préférence « <em>Supprimer aussi mes corrections proposées en cas de suppression de mon
+          compte</em> » dans votre espace <Link to="/compte">Mon compte</Link>.
+        </p>
+      </section>
       <p>
         <Link to="/privacy" hrefLang="en">
           English version

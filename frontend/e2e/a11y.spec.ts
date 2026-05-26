@@ -133,6 +133,14 @@ test.describe('WCAG 2.2 A + AA accessibility', () => {
     await runAxe(page, 'sondage');
   });
 
+  test('confidentialite route (FR privacy notice)', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/confidentialite', { waitUntil: 'networkidle' });
+    await page.evaluate(() => document.fonts.ready);
+
+    await runAxe(page, 'confidentialite');
+  });
+
   test('not-found route', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     // `networkidle` so React hydrates and sets `document.title` via
