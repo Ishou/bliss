@@ -21,3 +21,10 @@ ingress:
 envFromSecret: "bliss-survey-api-env"
 calibration:
   seedEnabled: false
+# Local k3d has no JetStream — skip the bootstrap Job. The api pod's
+# UserDeletedConsumer will fail at bind-time; that's expected locally and
+# is not a release blocker because the only path that needs the consumer
+# is the cross-context "user deleted" anonymisation (RGPD), which doesn't
+# fire in local dev.
+consumerBootstrap:
+  enabled: false

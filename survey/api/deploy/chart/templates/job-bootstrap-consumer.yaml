@@ -1,0 +1,61 @@
+{{- if .Values.consumerBootstrap.enabled }}
+{{/*
+Pre-install / pre-upgrade Job: creates (or updates) the JetStream durable
+consumer `survey-api-user-deleted` on the `WORDSPARROW_USER_EVENTS` stream
+BEFORE the api Deployment is applied. The api pod's `UserDeletedConsumer`
+binds (via `PushSubscribeOptions.bind(true)`) and never tries to recreate.
+
+Pre-hook ordering matters: on first install, the api pod's startup
+otherwise crashes with "[10013] consumer name already in use" because each
+boot generated a fresh deliverSubject and `addOrUpdateConsumer` rejected
+the immutable-field change. Moving the durable's lifecycle out of the
+request path (CLAUDE.md "Configure-in-cluster") fixes this permanently.
+
+Mirrors the pattern in `infra/nats/templates/stream-bootstrap-job.yaml`
+and the sibling `job-seed-calibration.yaml`. The `survey-worker` image is
+the same one the api Deployment uses — `--bootstrap-consumer` is a
+subcommand on Main.kt.
+*/}}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "bliss-survey-api.fullname" . }}-consumer-bootstrap
+  annotations:
+    "helm.sh/hook": "pre-install,pre-upgrade"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+    "helm.sh/hook-weight": "5"
+  labels: {{- include "bliss-survey-api.labels" . | nindent 4 }}
+spec:
+  ttlSecondsAfterFinished: 600
+  backoffLimit: 3
+  template:
+    metadata:
+      # selectorLabels carry app.kubernetes.io/name=bliss-survey-api so the
+      # bliss-nats NetworkPolicy allows this Job's pod through to 4222.
+      labels: {{- include "bliss-survey-api.selectorLabels" . | nindent 8 }}
+    spec:
+      restartPolicy: OnFailure
+      serviceAccountName: {{ include "bliss-survey-api.serviceAccountName" . }}
+      securityContext: {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: bootstrap-consumer
+          image: {{ include "bliss-survey-api.image" . | quote }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext: {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+          command: ["/app/bin/survey-worker"]
+          args: ["--bootstrap-consumer"]
+          env:
+            {{- range .Values.env }}
+            - name: {{ .name }}
+              value: {{ .value | quote }}
+            {{- end }}
+          volumeMounts:
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - {name: tmp, emptyDir: {}}
+{{- end }}
+{{- /*
+The api pod's NetworkPolicy egress allowlist (values-prod.yaml comment line
+48 "in-cluster DNS, NATS, identity-api, CNPG") covers this Job because it
+carries the same selectorLabels. No additional policy needed.
+*/ -}}

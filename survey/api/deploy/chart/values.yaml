@@ -113,6 +113,13 @@ calibration:
   seedEnabled: false
   sourceBatch: "gold_v1"
   tier: "mid"
+# JetStream durable consumer bootstrap. Pre-install/pre-upgrade Job runs
+# `survey-worker --bootstrap-consumer`; the api pod's UserDeletedConsumer
+# then binds (rather than recreating, which fails with 10013 once the
+# durable exists). Always on in prod; off in local k3d when JetStream
+# isn't deployed.
+consumerBootstrap:
+  enabled: true
 # Hourly retire CronJob — runs `--retire-saturated` once an hour and exits.
 retire:
   enabled: true
