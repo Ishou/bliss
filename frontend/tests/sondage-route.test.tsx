@@ -313,7 +313,6 @@ describe('Sondage route', () => {
       expect(getNextItem).toHaveBeenLastCalledWith({ excludedItemIds: [sampleItem.itemId] }),
     );
     expect(surveyClient.submitRating).not.toHaveBeenCalled();
-    // Auth path does not pollute the anon localStorage.
     expect(localStorage.getItem('survey.anon.rated_ids')).toBeNull();
   });
 });

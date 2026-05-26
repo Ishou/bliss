@@ -1,4 +1,4 @@
-// Rating card — three-button verdict picker (BAD / SKIP / GOOD). ADR-0050 §6 a11y.
+// ADR-0050 §6 a11y: 56 px touch-target minimum.
 
 import { useEffect, useRef } from 'react';
 import { css, cx } from 'styled-system/css';
