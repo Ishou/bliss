@@ -126,11 +126,7 @@ internal fun Application.installSurveyCors(config: SurveyApiConfig) {
         // PATCH on /v1/me/preferences (Ktor allows GET/POST/HEAD by default).
         allowMethod(HttpMethod.Patch)
 
-        // ADR-0048: wildcard predicate echoes Access-Control-Request-Headers
-        // verbatim. Required for the OTel browser SDK (traceparent/tracestate)
-        // and any future header the frontend adds without server-side churn.
-        // Compatible with allowCredentials=true because Ktor never emits the
-        // literal "*" string.
+        // ADR-0048: wildcard predicate echoes request headers verbatim; never emits literal "*".
         allowHeaders { true }
 
         allowCredentials = true

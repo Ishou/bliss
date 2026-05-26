@@ -73,11 +73,6 @@ class CorsTest {
             assertThat(response.headers[HttpHeaders.AccessControlAllowHeaders] ?: "").contains("Content-Type")
         }
 
-    // Regression test for the 5th CORS incident (2026-05-26): the survey-api shipped
-    // with `allowHeader(ContentType)` + `allowHeader(Cookie)` only, so the OTel browser
-    // SDK's traceparent/tracestate triggered a 403 preflight that surfaced as a raw
-    // "Failed to fetch" on /sondage. ADR-0048 mandates the wildcard predicate for any
-    // credentialed-CORS bounded context exactly to prevent this.
     @Test
     fun `preflight allows arbitrary frontend headers via predicate wildcard`() =
         testApplication {
