@@ -1,6 +1,6 @@
 // Rating card — three-button verdict picker (BAD / SKIP / GOOD). ADR-0050 §6 a11y.
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { css, cx } from 'styled-system/css';
 import type { SurveyItem } from '@/application/survey';
 import { categorieLabel, posLabel, styleLabel } from './labels';
@@ -125,19 +125,21 @@ export interface RatingCardProps {
 }
 
 export function RatingCard({ item, onVerdict }: RatingCardProps) {
+  const startedAtRef = useRef<number>(0);
+
   useEffect(() => {
-    const startedAt = performance.now();
+    startedAtRef.current = performance.now();
     function handler(event: KeyboardEvent): void {
       if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) return;
       const target = event.target as HTMLElement | null;
-      // Ignore shortcuts while the focus is in a form control (defensive — no inputs render here today).
+      // Ignore shortcuts while the focus is in a form control (defensive future-proofing).
       if (target && /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)) return;
       if (target?.isContentEditable) return;
       const key = event.key.toLowerCase();
       const verdict: Verdict | null = key === 'j' ? 'BAD' : key === 'k' ? 'SKIP' : key === 'l' ? 'GOOD' : null;
       if (verdict === null) return;
       event.preventDefault();
-      const latencyMs = Math.max(0, Math.round(performance.now() - startedAt));
+      const latencyMs = Math.max(0, Math.round(performance.now() - startedAtRef.current));
       void onVerdict(verdict, latencyMs);
     }
     window.addEventListener('keydown', handler);
@@ -145,7 +147,8 @@ export function RatingCard({ item, onVerdict }: RatingCardProps) {
   }, [item.itemId, onVerdict]);
 
   function submit(verdict: Verdict): void {
-    void onVerdict(verdict, 0);
+    const latencyMs = Math.max(0, Math.round(performance.now() - startedAtRef.current));
+    void onVerdict(verdict, latencyMs);
   }
 
   return (

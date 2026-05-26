@@ -46,7 +46,7 @@ const alertStyles = css({
   margin: 0,
 });
 
-// difficulte=3 placeholder per docs/superpowers/plans/2026-05-26-sondage-simplification.md scope-honesty.
+// difficulte=3 placeholder pending schema nullable migration; qualite=5 drives RAFT winners so no algorithmic impact.
 const DIFFICULTE_PLACEHOLDER: LikertScore = 3;
 
 function SondagePage() {
