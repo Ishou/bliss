@@ -151,6 +151,28 @@ Full rationale is in MANIFESTO.md.
 - **ADR before non-trivial change.** A new dependency, a new bounded
   context, a contract change spanning contexts, a build-system or
   deploy-target change — ADR merges first (ADR-0001 §7).
+- **ADR pre-read by path.** Before any non-trivial change, identify the
+  ADRs that govern the file paths you'll touch. The mapping lives in
+  [`docs/adr/INDEX.md`](./docs/adr/INDEX.md). Run
+  `scripts/adr-context.sh <path>...` to emit the bodies of matching ADRs;
+  read them in full before writing code. The dispatch skill prepends this
+  output to every implementer prompt automatically — for one-off edits in
+  a regular session, run the script yourself. Skipping this step is what
+  produces incidents like the 2026-05-26 survey-api CORS regression:
+  ADR-0048 was already canonical, but the scaffolding agent never read it,
+  repeated the explicit-allowlist anti-pattern, and shipped the fifth CORS
+  incident of the same shape to prod. **Tell** you're about to make this
+  mistake: you're about to touch a `Module.kt`, a persistence file, a
+  route, an auth boundary, or a chart and have not yet run the helper.
+  Stop and run it.
+- **Registries cannot lag the things they register.** When you add or
+  modify an ADR, update [`docs/adr/INDEX.md`](./docs/adr/INDEX.md) in the
+  same PR. When you add a bounded context or a top-level module, update
+  the bounded-contexts table at the top of this file. When you add a load-
+  bearing rule, update the relevant skill or procedure. CI's
+  `registry-coherence.yml` enforces the load-bearing cases (ADR ↔ INDEX.md,
+  new module ↔ this file); the rule is broader than what CI checks, so
+  apply it as a habit, not just where the gate forces it.
 - **Migrations are expand-and-contract**, backward-compatible.
 - **Feature flags** deploy dark, release bright; flags carry expiry
   dates.
@@ -202,7 +224,10 @@ Full rationale is in MANIFESTO.md.
 - Add or remove a top-level bounded context.
 - Add a new runtime language (Kotlin and TypeScript are in scope).
 - Introduce a paid third-party service.
-- Modify `MANIFESTO.md` or this `CLAUDE.md`.
+- Modify `MANIFESTO.md`. Agents may edit this `CLAUDE.md` without prior
+  approval when codifying a maintainer instruction, capturing a new
+  recurring incident's prevention rule, or keeping the bounded-contexts
+  table in sync with the codebase.
 - Push directly to `main`, force-push a shared branch, or run
   destructive git on shared history.
 
@@ -215,10 +240,13 @@ Full rationale is in MANIFESTO.md.
   direct.
 - **Verify, don't guess.** Read the file. Run the build. Say "I don't
   know" rather than guessing.
-- **Read the ADR before non-trivial work.** Recent landmarks: 0001
-  (workflow), 0003 (cross-language API), 0009 (k3s deploy), 0018
-  (game context), 0050 (a11y), 0039 (bitmask-CSP grid generator),
-  0042 (daily pre-gen worker).
+- **Read the ADR before non-trivial work.**
+  [`docs/adr/INDEX.md`](./docs/adr/INDEX.md) is the path → ADR registry;
+  `scripts/adr-context.sh <path>...` emits the bodies of matching ADRs.
+  Recent landmarks: 0001 (workflow), 0003 (cross-language API), 0009
+  (k3s deploy), 0018 (game context), 0050 (a11y), 0039 (bitmask-CSP
+  grid generator), 0042 (daily pre-gen worker), 0034/0048 (CORS wildcard
+  predicate), 0056 (survey context).
 
 ## ADR template
 
