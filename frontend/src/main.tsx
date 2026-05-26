@@ -10,6 +10,7 @@ import {
   createHttpLobbyClient,
   createHttpPuzzleRepository,
   createHttpPuzzleSolver,
+  createHttpSurveyClient,
   createReconnectingGameClient,
   createWebSocketGameClient,
 } from '@/infrastructure';
@@ -222,7 +223,20 @@ enableMocks()
     const authClient = createHttpAuthClient({ baseUrl: identityApiBaseUrl });
 
     const multiplayer = import.meta.env.VITE_FEATURE_MULTIPLAYER === 'true';
-    const baseContext = { authClient, getPseudonym };
+    // Survey-api adapter (ADR-0056). Defaults to the prod host so the
+    // bundle works without env config; preview / dev override via env.
+    const surveyApiBaseUrl =
+      import.meta.env.VITE_SURVEY_API_BASE_URL ?? 'https://survey.wordsparrow.io';
+    const surveyClient = createHttpSurveyClient({ baseUrl: surveyApiBaseUrl });
+    // Analytics port — closes over the Matomo tracker so the survey
+    // route can record `survey_*` custom events without importing
+    // `infrastructure/` from `ui/`.
+    const analytics = {
+      trackEvent: (category: string, action: string, name?: string, value?: number) => {
+        tracker.trackEvent(category, action, name, value);
+      },
+    };
+    const baseContext = { authClient, getPseudonym, surveyClient, analytics };
     const context = multiplayer
       ? (() => {
           const gameApiBaseUrl = import.meta.env.VITE_GAME_API_BASE_URL;
