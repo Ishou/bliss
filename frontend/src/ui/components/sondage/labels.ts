@@ -1,5 +1,4 @@
-// Wire enum -> French label maps. Unknown values pass through unchanged so a server-side
-// enum addition doesn't crash the rater UI before the frontend catches up.
+// unknown values pass through unchanged to survive server-side enum additions before the frontend catches up
 
 const POS_LABELS: Record<string, string> = {
   verbe_infinitif: 'Verbe (infinitif)',
