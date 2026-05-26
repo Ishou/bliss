@@ -18,7 +18,7 @@ All five touch disjoint files; no schema-first dependencies. Dispatch in a singl
 |-----|--------------------------------------------------------------------------|----------------------------|------------|
 | α   | /confidentialite gets a sondage RGPD section                             | `frontend` · `ui`          | ~60        |
 | β   | Auth-hydration flash on /sondage + /compte                               | `frontend` · `ui`          | ~80        |
-| γ   | Konsist guard: install(CORS) + credentials ⇒ wildcard headers required   | shared platform arch test  | ~100       |
+| γ   | Konsist guard: install(CORS) + credentials ⇒ wildcard headers required   | `survey` · `api`           | ~100       |
 | δ   | Deploy workflow CORS preflight smoke (post-helm)                         | `.github/workflows/`       | ~50        |
 | ε   | Survey IdentityClient cookie name `__Host-` → `__Secure-ws_session`      | `survey` · `infrastructure`| ~15        |
 
@@ -97,8 +97,7 @@ All five touch disjoint files; no schema-first dependencies. Dispatch in a singl
 ## PR γ — Konsist guard: credentialed CORS requires wildcard headers
 
 **Files**
-- Create: a Konsist architecture test that scans every `*/api/src/main/kotlin/**/Module.kt` (and helper files extracted from them) for the pattern.
-- Likely under `:platform:architecture-tests` if such a shared module exists, otherwise duplicated per api module (mirror `*ArchitectureTest.kt` placement).
+- Create: `survey/api/src/test/kotlin/com/bliss/survey/api/architecture/CorsWildcardArchitectureTest.kt` — a Konsist test that uses a path-glob file scanner (`project.root.files(…)`) to scan all `*/api/src/main/kotlin/**` sources. No cross-context classpath dependency is required; path-glob scanning is self-contained inside `:survey:api`. Mirror the existing `ApiArchitectureTest.kt` placement.
 
 **Mandatory ADR pre-read**
 - ADR-0034 — CORS allow-any-header (grid/game origin)

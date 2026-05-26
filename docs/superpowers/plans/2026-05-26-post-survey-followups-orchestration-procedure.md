@@ -29,7 +29,7 @@ Single wave. All five PRs dispatch simultaneously and merge independently as eac
 |-----|----------------------------------------------|-----------------------------------------------------------------------------|
 | α   | `feat/frontend-confidentialite-sondage-rgpd` | `feat(frontend-confidentialite): document sondage RGPD posture`            |
 | β   | `fix/frontend-route-flash-sondage-compte`    | `fix(frontend-routes): gate /sondage + /compte on auth-session hydration`  |
-| γ   | `test/platform-konsist-cors-wildcard`        | `test(survey-api): Konsist guard for credentialed-CORS wildcard predicate` |
+| γ   | `test/survey-konsist-cors-wildcard`          | `test(survey-api): Konsist guard for credentialed-CORS wildcard predicate` |
 | δ   | `chore/ci-cors-preflight-smoke`              | `chore(ci-deploy): post-deploy CORS preflight smoke per ADR-0048`          |
 | ε   | `fix/survey-identity-client-cookie-name`     | `fix(survey-infrastructure): correct session cookie name to __Secure-`     |
 
