@@ -60,6 +60,7 @@ ADR-0046  identity/api/build.gradle.kts            Nimbus JOSE JWT pinned depend
 ADR-0047  identity/api/src/**/token/**            Token endpoint exchange threat model
 ADR-0048  */api/src/**/Module.kt                   CORS wildcard for credentialed contexts (mirrors identity)
 ADR-0048  */api/src/test/**/CorsTest.kt            Mandatory CORS regression test (traceparent/tracestate)
+ADR-0048  */api/src/test/**/architecture/CorsWildcardArchitectureTest.kt  Konsist guard: credentialed-CORS wildcard predicate
 ADR-0049  */api/src/**/nats/**                     JetStream cross-context events (must start before Ktor serves)
 ADR-0049  */infrastructure/src/**/nats/**          JetStream consumer pattern
 ADR-0050  frontend/**                              A11y baseline: WCAG AA, axe-core via Playwright
