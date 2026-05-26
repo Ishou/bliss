@@ -90,7 +90,7 @@ collision.
 | C | `python3 -m scripts.clue_generation.modal.build_modal_corpus`                    | $0     | Fused-corpus JSONL |
 | 3a | `modal run modal_jobs/03a_upload_dataset.py`                                    | $0.01  | Dataset volume |
 | 3b | `modal run modal_jobs/03b_finetune.py`                                          | $1.50  | Adapter on volume |
-| 7 | `python3 -m scripts.clue_generation.modal.export_adapter_to_csv …`               | $0.20  | pipeline_v2 + CSV in clue_candidates shape (when palier 4 inference Modal app lands) |
+| 7 ⚠ | `python3 -m scripts.clue_generation.modal.export_adapter_to_csv …` | n/a | **Not yet runnable** — `_generate_clues_on_modal` is a `NotImplementedError` stub; requires the palier 4 Modal inference app (separate follow-up ADR). |
 | 8 | `bliss-worker ingest-clue-candidates --source mistral-nemo-pilot-vN`             | $0     | Postgres `clue_candidates` |
 | 9 | `bliss-worker export-words`                                                      | $0     | Updates committed `words-fr.csv` |
 
