@@ -48,6 +48,7 @@ fun main(args: Array<String>) {
                 "--export-dataset" -> runExportCli(opts)
                 "--retire-saturated" -> runRetire()
                 "--bootstrap-consumer" -> runBootstrapConsumer()
+                "--delete-consumer" -> runDeleteConsumer()
                 else -> {
                     log.error("event=worker_unknown_subcommand cmd={}", cmd)
                     printUsage()
@@ -66,7 +67,7 @@ private fun printUsage() {
         "usage: survey-worker --ingest-batch --csv <path> --source-batch <id> [--tier mid] | " +
             "--export-dataset --output <path> [--min-ratings 2] [--since ISO] " +
             "[--auth-weight 1.0] [--anon-weight 0.5] | " +
-            "--retire-saturated | --bootstrap-consumer | --help",
+            "--retire-saturated | --bootstrap-consumer | --delete-consumer | --help",
     )
 }
 
@@ -162,7 +163,30 @@ private fun runRetire(): Int {
 }
 
 // Idempotent; pre-install Job only. See UserDeletedConsumerConfig.bootstrap().
-private fun runBootstrapConsumer(): Int {
+private fun runBootstrapConsumer(): Int =
+    withNatsConnection { conn ->
+        UserDeletedConsumerConfig.bootstrap(conn)
+        log.info(
+            "event=consumer_bootstrap_done stream={} durable={}",
+            UserDeletedConsumerConfig.STREAM_NAME,
+            UserDeletedConsumerConfig.DURABLE_NAME,
+        )
+        0
+    }
+
+// Destructive; NOT wired into any chart hook — explicit operator action for immutable-field migrations.
+private fun runDeleteConsumer(): Int =
+    withNatsConnection { conn ->
+        UserDeletedConsumerConfig.deleteConsumer(conn)
+        log.info(
+            "event=consumer_deleted stream={} durable={}",
+            UserDeletedConsumerConfig.STREAM_NAME,
+            UserDeletedConsumerConfig.DURABLE_NAME,
+        )
+        0
+    }
+
+private inline fun withNatsConnection(block: (io.nats.client.Connection) -> Int): Int {
     val natsUrl = System.getenv("NATS_URL") ?: error("missing env NATS_URL")
     val conn =
         Nats.connect(
@@ -173,16 +197,10 @@ private fun runBootstrapConsumer(): Int {
                 .build(),
         )
     try {
-        UserDeletedConsumerConfig.bootstrap(conn)
-        log.info(
-            "event=consumer_bootstrap_done stream={} durable={}",
-            UserDeletedConsumerConfig.STREAM_NAME,
-            UserDeletedConsumerConfig.DURABLE_NAME,
-        )
+        return block(conn)
     } finally {
         conn.close()
     }
-    return 0
 }
 
 internal fun runRetire(ds: DataSource): Int =

@@ -25,8 +25,13 @@ object UserDeletedConsumerConfig {
             .deliverSubject(DELIVER_SUBJECT)
             .build()
 
-    /** Create-or-update the durable consumer. Idempotent for matching configs. */
+    /** Throws JetStreamApiException (10013) on immutable-field conflict; resolve with --delete-consumer. */
     fun bootstrap(nats: Connection) {
         nats.jetStreamManagement().addOrUpdateConsumer(STREAM_NAME, consumerConfiguration())
+    }
+
+    /** Resolves immutable-field migration conflicts; operator-invoked only. */
+    fun deleteConsumer(nats: Connection) {
+        nats.jetStreamManagement().deleteConsumer(STREAM_NAME, DURABLE_NAME)
     }
 }

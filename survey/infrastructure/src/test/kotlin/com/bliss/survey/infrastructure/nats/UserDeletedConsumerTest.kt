@@ -130,6 +130,59 @@ class UserDeletedConsumerTest {
     }
 
     @Test
+    fun `bootstrap throws when an active subscriber pins a different deliverSubject`() {
+        // NATS 2.10 only treats deliverSubject as immutable while a push subscriber is bound.
+        val legacySubject = "_INBOX.legacy.random.${UUID.randomUUID()}"
+        val incompatible =
+            io.nats.client.api.ConsumerConfiguration
+                .builder()
+                .durable(UserDeletedConsumerConfig.DURABLE_NAME)
+                .filterSubject(UserDeletedConsumerConfig.SUBJECT)
+                .ackPolicy(io.nats.client.api.AckPolicy.Explicit)
+                .deliverSubject(legacySubject)
+                .build()
+        nats.jetStreamManagement().addOrUpdateConsumer(UserDeletedConsumerConfig.STREAM_NAME, incompatible)
+
+        // Active bound subscription pins deliverSubject as immutable — this is the trigger.
+        val activeSub =
+            nats.jetStream().subscribe(
+                UserDeletedConsumerConfig.SUBJECT,
+                io.nats.client.PushSubscribeOptions
+                    .builder()
+                    .bind(true)
+                    .stream(UserDeletedConsumerConfig.STREAM_NAME)
+                    .durable(UserDeletedConsumerConfig.DURABLE_NAME)
+                    .build(),
+            )
+        try {
+            var thrown: io.nats.client.JetStreamApiException? = null
+            try {
+                UserDeletedConsumerConfig.bootstrap(nats)
+            } catch (e: io.nats.client.JetStreamApiException) {
+                thrown = e
+            }
+            check(thrown != null) { "expected JetStreamApiException, none thrown" }
+            check(thrown.apiErrorCode == 10013) {
+                "expected error code 10013, got ${thrown.apiErrorCode}"
+            }
+        } finally {
+            activeSub.unsubscribe()
+        }
+
+        // After explicit deletion, the next bootstrap call must succeed.
+        UserDeletedConsumerConfig.deleteConsumer(nats)
+        UserDeletedConsumerConfig.bootstrap(nats)
+        val info =
+            nats.jetStreamManagement().getConsumerInfo(
+                UserDeletedConsumerConfig.STREAM_NAME,
+                UserDeletedConsumerConfig.DURABLE_NAME,
+            )
+        check(info.consumerConfiguration.deliverSubject == UserDeletedConsumerConfig.DELIVER_SUBJECT) {
+            "expected deliverSubject=${UserDeletedConsumerConfig.DELIVER_SUBJECT}, got ${info.consumerConfiguration.deliverSubject}"
+        }
+    }
+
+    @Test
     fun `start returns null when the consumer has not been bootstrapped`() {
         // Non-default durable keeps this test independent of the bootstrap-then-bind tests above.
         val anonymise =
