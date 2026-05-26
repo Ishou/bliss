@@ -284,7 +284,7 @@ describe('Sondage route', () => {
     expect(skipEventCalls).toHaveLength(1);
     expect(skipEventCalls[0][2]).toBe('tier=mid');
 
-    // Anon SKIP stores in surveyAnonStore so the same item is excluded next round.
+    // anon dedup prevents the same item re-appearing in subsequent sessions.
     const stored = JSON.parse(localStorage.getItem('survey.anon.rated_ids') ?? '[]');
     expect(stored).toContain(sampleItem.itemId);
     localStorage.clear();
