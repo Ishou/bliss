@@ -41,8 +41,7 @@ describe('SurveyPreferences', () => {
   });
 
   it('shows the network-specific copy when the fetch itself fails', async () => {
-    // TypeError mirrors what `fetch()` rejects with on CORS / DNS / offline —
-    // the exact shape that produced the 2026-05-26 5th-CORS regression.
+    // TypeError is what fetch() rejects with on CORS/DNS/offline failures.
     const patch = vi.fn().mockRejectedValue(new TypeError('Failed to fetch'));
     const client = stubSurveyClient(patch);
     render(<SurveyPreferences surveyClient={client} />);

@@ -17,13 +17,7 @@ export interface GetMeResult {
   readonly providers: ReadonlyArray<LinkedProvider>;
 }
 
-// Thrown by `updateMe` on HTTP 400. The wrapped `message` carries the
-// server's RFC 7807 `detail`, which today is the raw Kotlin
-// `require()` text from identity-api's domain layer (English, e.g.
-// "Display name must be 1-30 characters; got 42."). UI MUST NOT
-// render `.message` — map to French copy at the call site. If the
-// server later starts returning a discriminated `code` field, add it
-// as a typed property here and let the UI switch on the code.
+// Thrown by updateMe on HTTP 400; .message is the server's English RFC 7807 detail — map to French copy at the call site.
 export class InvalidDisplayNameError extends Error {
   constructor(message: string) {
     super(message);

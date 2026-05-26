@@ -122,15 +122,7 @@ export default tseslint.config(
     languageOptions: { globals: { ...globals.browser, ...globals.es2022, ...globals.node } },
     rules: { 'boundaries/dependencies': 'off', 'boundaries/no-unknown': 'off' },
   },
-  // UI layer never renders raw `Error.message`. The 2026-05-26 5th-CORS
-  // regression went straight to a French-speaking audience as "Failed to
-  // fetch" because /sondage and /compte fell back to `cause.message` in
-  // their catch blocks. This rule blocks the pattern at PR time. Map
-  // typed errors to local French copy at the route, or call
-  // `messageForApiError(cause)` from `@/application/errors` for the
-  // unknown-shape fallback. Per-line `eslint-disable-next-line` with a
-  // rationale comment is the supported escape hatch when surfacing a
-  // contractually-French server string from a typed error.
+  // UI layer must not render raw Error.message — use messageForApiError() or route-level typed-error mapping.
   {
     files: ['src/ui/**/*.{ts,tsx}'],
     rules: {
@@ -139,7 +131,7 @@ export default tseslint.config(
         {
           selector: "MemberExpression[property.name='message']",
           message:
-            "Don't render `Error.message` in the UI — it leaks browser/English strings (see the 2026-05-26 5th-CORS regression). Use `messageForApiError(cause)` from `@/application/errors`, or map typed errors to local French copy at the route. Justified exceptions need an eslint-disable-next-line with a one-line rationale.",
+            "Don't render `Error.message` in the UI — it leaks browser/English strings. Use `messageForApiError(cause)` from `@/application/errors`, or map typed errors to local French copy at the route. Justified exceptions need an eslint-disable-next-line with a one-line rationale.",
         },
       ],
     },
