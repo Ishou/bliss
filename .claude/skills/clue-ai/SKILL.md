@@ -55,6 +55,77 @@ words-fr.csv (lemma list) ────────► sample top-X per length, l
 
 The two ingestion lanes (LoRA-generated + dbnary-synonym) live side-by-side in `clue_candidates` with distinct `source` values, and `export-words`'s `findTopBySourcePriority` picks per lemma. Don't collapse them — the priority order is how we keep dbnary-synonym as a free-win without it pre-empting better LLM clues.
 
+## Two-lane reality (post-ADR-0057)
+
+The pipeline above is the **MLX lane** (Apple Silicon, Command-R-4bit,
+mlx-lm). A second **Modal lane** lives at `modal_jobs/` +
+`scripts/clue_generation/modal/` + `scripts/clue_generation/pipeline_v2/`,
+trained on Mistral-Nemo-Base-2407 on Modal A100s (ADR-0057). Both
+lanes feed the same `bliss-worker ingest-clue-candidates` with
+distinct `source` tags:
+
+| Lane  | Base model                      | Hardware           | Validator                                                          | Source tag                       |
+|-------|---------------------------------|--------------------|---------------------------------------------------------------------|----------------------------------|
+| MLX   | Command-R-08-2024-4bit (32B)    | Apple Silicon      | `scripts/eval/validate_clue.py` (also runtime guard on committed CSV) | `command-r-lora-vN-iterMM`       |
+| Modal | Mistral-Nemo-Base-2407 (12B)    | Modal A100-40GB    | `scripts/clue_generation/pipeline_v2/` (fused: 8 ported + filters 9 + 10 from validate_clue.py) | `mistral-nemo-pilot-vN`          |
+
+`findTopBySourcePriority` in the worker picks per lemma — no
+collision.
+
+### When to use which lane
+
+- **MLX lane:** quick iteration on a known adapter ladder (iter17+),
+  the production-shipping path today, regression-checked nightly
+  by `test_runtime_csv_pleonasms.py`.
+- **Modal lane:** A/B against Mistral Nemo, larger experiments
+  (200+ lemmas, N=3 candidates), cloud GPU access.
+
+### Modal-lane runbook (cost-aware)
+
+| # | Command                                                                          | Cost ≈ | Validates |
+|---|----------------------------------------------------------------------------------|--------|-----------|
+| 0 | `modal run modal_jobs/00_hello_world.py`                                         | $0.01  | Modal auth |
+| 1 | `modal run modal_jobs/01_gpu_check.py`                                           | $0.02  | A100 available |
+| 2 | `modal run modal_jobs/02_download_mistral.py`                                    | $0.05  | HF token + licence + volume |
+| C | `python3 -m scripts.clue_generation.modal.build_modal_corpus`                    | $0     | Fused-corpus JSONL |
+| 3a | `modal run modal_jobs/03a_upload_dataset.py`                                    | $0.01  | Dataset volume |
+| 3b | `modal run modal_jobs/03b_finetune.py`                                          | $1.50  | Adapter on volume |
+| 7 | `python3 -m scripts.clue_generation.modal.export_adapter_to_csv …`               | $0.20  | pipeline_v2 + CSV in clue_candidates shape (when palier 4 inference Modal app lands) |
+| 8 | `bliss-worker ingest-clue-candidates --source mistral-nemo-pilot-vN`             | $0     | Postgres `clue_candidates` |
+| 9 | `bliss-worker export-words`                                                      | $0     | Updates committed `words-fr.csv` |
+
+### Modal-lane corpus
+
+- Manifest: `data/lora/modal_corpus_v1/manifest.toml` (committed).
+- Tier weights (default): gold=4, silver=2, bronze=1. See spec
+  `docs/superpowers/specs/2026-05-25-clue-ai-modal-migration-design.md`
+  §2.2 + §3.7.
+- Held-out enforcement: `data/eval/eval_human.jsonl` lemmas are
+  excluded by assertion in `build_modal_corpus.py`. Same held-out
+  set as MLX lane → eval numbers comparable.
+- Bumping any manifest value bumps the corpus version
+  (`modal_corpus_v1` → `modal_corpus_v2`). Every Modal adapter
+  records the manifest hash in its `model_version` so adapter →
+  corpus → manifest is traceable.
+
+### Don'ts (Modal lane)
+
+- **Don't** point `03b_finetune.py` at gold-only data without
+  invoking `--mode gold-only` on `03a_upload_dataset.py` — the
+  default fused corpus is what the spec calls for.
+- **Don't** bump the Mistral base model without a new ADR and
+  retraining: adapters are base-model-specific.
+- **Don't** lower the pleonasm or stem-leak threshold in
+  `pipeline_v2/filters.py` to "fix" a regression — the gates are
+  closed-set by construction, drift requires a logbook entry.
+- **Don't** push training data containing lemmas from
+  `data/eval/eval_human.jsonl` into the Modal volume — the held-out
+  set is the only way to compare lanes fairly.
+- **Don't** add arbitrary-code-evaluation (`eval(...)`) to the
+  manifest row-filter — the micro-parser at
+  `build_modal_corpus.py::_apply_row_filter` is intentional, extend
+  it explicitly if the grammar needs to grow.
+
 ## Stack at a glance
 
 | Concern | Choice | Notes |
