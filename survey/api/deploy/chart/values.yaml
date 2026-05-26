@@ -92,10 +92,9 @@ env:
     value: "parentbased_traceidratio"
   - name: OTEL_TRACES_SAMPLER_ARG
     value: "1.0"
-  # NATS JetStream URL — PR9 wires user.deleted consumer + survey-event
-  # publishers. The chart ships the env var now so the binary can read it
-  # once enabled by feature-flag. `bliss-nats` is the cluster-internal
-  # Service installed by the wordsparrow-nats chart.
+  # NATS JetStream URL for the JetStream user.deleted consumer and survey-event
+  # publishers (feature-flagged). `bliss-nats` is the cluster-internal Service
+  # installed by the wordsparrow-nats chart.
   - name: NATS_URL
     value: "nats://bliss-nats.wordsparrow:4222"
   # Identity-api base URL for session-cookie verification.
