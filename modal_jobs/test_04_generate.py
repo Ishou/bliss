@@ -13,7 +13,7 @@ MODULE_PATH = HERE / "04_generate.py"
 
 
 def _load_module():
-    """Charge 04_generate.py — nom-de-fichier non importable directement."""
+    # filename starts with a digit — not importable via standard import
     spec = importlib.util.spec_from_file_location("mod04", MODULE_PATH)
     assert spec is not None and spec.loader is not None
     module = importlib.util.module_from_spec(spec)
