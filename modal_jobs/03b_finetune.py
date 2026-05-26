@@ -13,7 +13,7 @@ CONFIGURATION
 - Modèle  : mistralai/Mistral-Nemo-Base-2407 (12 B paramètres)
 - Quantization : 4-bit NF4 + double quant, compute_dtype bf16
 - LoRA   : r=8, lora_alpha=16, target_modules=[q_proj, v_proj], dropout=0.05
-- Training : 3 epochs, batch_size=1 × grad_accum=4, lr=2e-4, warmup=10
+- Training : 5 epochs, batch_size=8 × grad_accum=1, lr=2e-4, warmup=15
 - GPU    : A100-40GB (3,10 $/h chez Modal)
 
 COÛT ATTENDU
@@ -397,7 +397,7 @@ def finetune_pilot() -> dict:
     # ÉTAPE D — Training avec SFTTrainer
     # ============================================================
     print("\n" + "=" * 60)
-    print("ÉTAPE D — Training SFT (3 epochs)")
+    print("ÉTAPE D — Training SFT (5 epochs)")
     print("=" * 60)
 
     sft_config = SFTConfig(
@@ -499,9 +499,8 @@ def finetune_pilot() -> dict:
     print("ÉTAPE E — Sauvegarde adapters LoRA")
     print("=" * 60)
 
-    # mistral-nemo-pilot-v1 = première itération sur le corpus fusé
-    # (PR 4b). Le namespace ``mistral-nemo-pilot-vN`` est déclaré au
-    # spec §3.3.
+    # mistral-nemo-pilot-v1 = première itération sur le corpus fusé.
+    # Le namespace ``mistral-nemo-pilot-vN`` est déclaré au spec §3.3.
     adapter_path = "/adapters/mistral-nemo-pilot-v1"
     model.save_pretrained(adapter_path)
     tokenizer.save_pretrained(adapter_path)
@@ -575,7 +574,7 @@ def main() -> None:
     """Lance le fine-tune et affiche le récap final."""
     print("[LOCAL] Lancement fine-tune Mistral Nemo (palier 3b)...")
     print("[LOCAL] /!\\ Durée attendue ≈ 20-30 min "
-          "(chargement + 3 epochs + sauvegarde + génération)")
+          "(chargement + 5 epochs + sauvegarde + génération)")
     print("[LOCAL] /!\\ Coût attendu ≈ 1,30 à 1,80 $ "
           "(A100-40GB à 3,10 $/h)")
     print()

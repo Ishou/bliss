@@ -9,7 +9,7 @@ utilisé en lecture seule par le palier 3b (fine-tune).
 Deux modes :
 
 - ``--mode fused`` (défaut) : ``data/lora/modal_corpus_v1/
-  {train,val}.jsonl`` (corpus multi-source de PR 4b).
+  {train,val}.jsonl`` (corpus multi-source fusé).
 - ``--mode gold-only`` : ``data/seed/gold_pilot_v1_{train,val}.jsonl``
   (chemin smoke pilote — output de
   ``scripts/clue_generation/modal/prepare_dataset.py``).
@@ -113,7 +113,7 @@ def main(mode: str = "fused") -> None:
 
     Modes:
       - ``fused`` (default): uploads ``data/lora/modal_corpus_v1/
-        {train,val}.jsonl`` (multi-source corpus from PR 4b).
+        {train,val}.jsonl`` (multi-source fused corpus).
       - ``gold-only``: uploads ``data/seed/gold_pilot_v1_{train,val}.jsonl``
         (gold pilot smoke path, output of
         ``scripts/clue_generation/modal/prepare_dataset.py``).
