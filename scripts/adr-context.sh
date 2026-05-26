@@ -67,7 +67,7 @@ def main(argv: list[str]) -> int:
         print("scripts/adr-context.sh: docs/adr/INDEX.md not found", file=sys.stderr)
         return 2
 
-    paths = [p.lstrip("./") for p in argv[1:]]
+    paths = [p.removeprefix("./") for p in argv[1:]]
     entries = parse_registry(INDEX.read_text(encoding="utf-8"))
 
     matched: dict[str, None] = {}  # use dict to preserve order, dedupe
