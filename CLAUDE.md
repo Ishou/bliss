@@ -195,6 +195,17 @@ Full rationale is in MANIFESTO.md.
 - **Secrets never in code.** Injected at runtime. Git hooks and
   `secret-scan` (gitleaks, listed in CI gates above) prevent accidental
   commits.
+- **Licensed-data posture: see [ADR-0058](./docs/adr/0058-commercial-data-license-posture.md).**
+  WordSparrow has commercial intent. CC BY-NC-* sources (Lexique3) are
+  forbidden for training/filter paths. CC BY-SA sources (DBnary) are
+  permitted with the ShareAlike posture documented in the ADR. Every
+  new data source added under `data/`, `scripts/`, or `modal_jobs/`
+  needs a matrix entry in the same PR — "licence review needed" is no
+  longer a valid spec state. **Tell** you're about to make this
+  mistake: you're adding a path under `data/external/`, importing a
+  TSV/CSV from a French linguistic resource you haven't classified,
+  or carrying a "(licence TBD)" note into a spec. Stop and consult
+  the ADR matrix.
 - **Auth/authz changes need a threat model.** ADR or PR body must
   include one before the PR is reviewed.
 - **Configure-in-cluster, not push-from-CI.** When the work is

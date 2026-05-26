@@ -78,9 +78,10 @@ needed:
   integration, separate sub-project.
 - **Legacy CSV exports** (`data/old_dataset/*`): redundant with what's
   already in `bliss/data/eval/production/` on the MLX lane.
-- **`data/external/lexique383.tsv`**: licence review needed (CC BY-NC-SA
-  3.0); defer until we know whether we actually need it in addition to
-  the grammalecte lexique already in tree.
+- **`data/external/lexique383.tsv`**: **forbidden** per ADR-0058 (Lexique3
+  is CC BY-NC-SA; WordSparrow has commercial intent). Grammalecte's
+  lexique-grammalecte-fr-v7.7.txt (GPL 3.0, ADR-0014) is the in-scope
+  frequency/POS source; no Lexique3 import in any path.
 - **Real LLM-judge (filter 8)**: mock is migrated as-is; real Anthropic/
   OpenAI call requires its own ADR per ADR-0013 (hosted-LLM lane is
   forbidden by default).
