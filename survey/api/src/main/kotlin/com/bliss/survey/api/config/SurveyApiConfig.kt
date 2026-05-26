@@ -8,6 +8,7 @@ data class SurveyApiConfig(
     val dbPassword: String,
     val identityBaseUrl: String,
     val allowedOrigins: List<String>,
+    val natsUrl: String,
 ) {
     companion object {
         fun load(env: (String) -> String? = System::getenv): SurveyApiConfig =
@@ -23,6 +24,8 @@ data class SurveyApiConfig(
                         ?.map { it.trim() }
                         ?.filter { it.isNotEmpty() }
                         ?: listOf("https://wordsparrow.io", "https://www.wordsparrow.io"),
+                // ADR-0049 — JetStream user.deleted consumer URL; default matches in-cluster Service.
+                natsUrl = env("NATS_URL") ?: "nats://nats.wordsparrow.svc.cluster.local:4222",
             )
 
         private fun required(
