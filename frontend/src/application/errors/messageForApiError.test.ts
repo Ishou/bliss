@@ -30,9 +30,6 @@ describe('messageForApiError', () => {
   });
 
   it('never returns an English string', () => {
-    // Belt-and-suspenders regression for the original incident shape: any
-    // input must yield French copy. If a future maintainer adds an
-    // English branch, this test will catch it.
     const inputs: unknown[] = [
       new TypeError('Failed to fetch'),
       new Error('Bad Request'),
