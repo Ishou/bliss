@@ -64,9 +64,7 @@ class UserDeletedConsumer(
                     )
                     return null
                 } catch (e: IllegalArgumentException) {
-                    // jnats raises IllegalArgumentException("Consumer not found.") when
-                    // bind(true) targets a consumer that doesn't exist (local k3d without
-                    // the bootstrap Job). Same graceful-degrade path as the API error case.
+                    // jnats raises IllegalArgumentException for a missing consumer; same graceful-degrade path.
                     log.warn(
                         "survey_user_deleted_consumer_bind_failed stream={} durable={} error={}",
                         streamName,
