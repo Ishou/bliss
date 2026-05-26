@@ -41,13 +41,13 @@ class IdentityClient(
     suspend fun verifySession(cookieValue: String?): UUID? {
         if (cookieValue.isNullOrBlank()) return null
         val response =
-            client.get("$baseUrl/v1/me") {
+            client.get("$baseUrl/v1/auth/whoami") {
                 header(HttpHeaders.Cookie, "$SESSION_COOKIE_NAME=$cookieValue")
             }
         return when (response.status) {
             HttpStatusCode.OK -> {
-                val me = response.body<MeDto>()
-                runCatching { UUID.fromString(me.id) }.getOrNull()
+                val me = response.body<WhoAmIDto>()
+                runCatching { UUID.fromString(me.userId) }.getOrNull()
             }
             else -> null
         }
@@ -64,7 +64,7 @@ class IdentityClient(
 }
 
 @Serializable
-internal data class MeDto(
-    val id: String,
+internal data class WhoAmIDto(
+    val userId: String,
     val displayName: String? = null,
 )

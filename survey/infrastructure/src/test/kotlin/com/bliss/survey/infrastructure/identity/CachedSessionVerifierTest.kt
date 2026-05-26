@@ -109,7 +109,7 @@ class CachedSessionVerifierTest {
                 MockEngine { _ ->
                     counter.incrementAndGet()
                     respond(
-                        content = """{"id":"$responseUserId","displayName":"Alice"}""",
+                        content = """{"userId":"$responseUserId","displayName":"Alice"}""",
                         status = HttpStatusCode.OK,
                         headers = headersOf("Content-Type", ContentType.Application.Json.toString()),
                     )

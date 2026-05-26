@@ -19,12 +19,14 @@ class IdentityClientTest {
     @Test
     fun `verifySession returns user id on 200 OK`() =
         runTest {
-            val captured = mutableListOf<String?>()
+            val capturedCookies = mutableListOf<String?>()
+            val capturedPaths = mutableListOf<String>()
             val engine =
                 MockEngine { request ->
-                    captured += request.headers["Cookie"]
+                    capturedCookies += request.headers["Cookie"]
+                    capturedPaths += request.url.encodedPath
                     respond(
-                        content = """{"id":"$userId","displayName":"Alice"}""",
+                        content = """{"userId":"$userId","displayName":"Alice"}""",
                         status = HttpStatusCode.OK,
                         headers = headersOf("Content-Type", ContentType.Application.Json.toString()),
                     )
@@ -32,9 +34,10 @@ class IdentityClientTest {
             val client = IdentityClient(baseUrl = "https://identity.example", engine = engine)
             val resolved = client.verifySession("session-cookie-value")
             assertThat(resolved).isEqualTo(userId)
-            assertThat(captured.size).isEqualTo(1)
-            assertThat(captured[0]).isNotNull()
-            assertThat(captured[0]!!.contains("__Secure-ws_session=session-cookie-value")).isEqualTo(true)
+            assertThat(capturedCookies.size).isEqualTo(1)
+            assertThat(capturedCookies[0]).isNotNull()
+            assertThat(capturedCookies[0]!!.contains("__Secure-ws_session=session-cookie-value")).isEqualTo(true)
+            assertThat(capturedPaths).isEqualTo(listOf("/v1/auth/whoami"))
             client.close()
         }
 
@@ -77,7 +80,7 @@ class IdentityClientTest {
             val engine =
                 MockEngine { _ ->
                     respond(
-                        content = """{"id":"not-a-uuid"}""",
+                        content = """{"userId":"not-a-uuid"}""",
                         status = HttpStatusCode.OK,
                         headers = headersOf("Content-Type", ContentType.Application.Json.toString()),
                     )
