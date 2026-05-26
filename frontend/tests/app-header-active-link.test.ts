@@ -11,11 +11,13 @@ describe('activeIdForPath', () => {
   it('matches the exact NAV_LINKS href', () => {
     expect(activeIdForPath('/')).toBe('accueil');
     expect(activeIdForPath('/grilles')).toBe('grilles');
+    expect(activeIdForPath('/sondage')).toBe('sondage');
     expect(activeIdForPath('/aide')).toBe('aide');
   });
 
   it('matches the trailing-slash variant served by Cloudflare Pages', () => {
     expect(activeIdForPath('/grilles/')).toBe('grilles');
+    expect(activeIdForPath('/sondage/')).toBe('sondage');
     expect(activeIdForPath('/aide/')).toBe('aide');
   });
 
