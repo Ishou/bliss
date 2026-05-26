@@ -40,9 +40,7 @@ object SurveyDatabase {
             .migrate()
     }
 
-    // CNPG's app secret exposes the URL under key `uri` as libpq-style
-    // (`postgresql://user:pw@host:port/db`). Hikari only accepts JDBC URLs
-    // (`jdbc:postgresql://...`), so we convert. Mirrors IdentityDatabase.
+    // Converts libpq-style postgresql:// URIs to Hikari's expected jdbc:postgresql:// form.
     fun toJdbcUrl(raw: String): String {
         if (raw.startsWith("jdbc:")) return raw
         val uri =
