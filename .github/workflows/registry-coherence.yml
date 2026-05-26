@@ -1,0 +1,98 @@
+name: Registry Coherence
+
+# Enforces that load-bearing registries stay coherent with the things they
+# register. The rule: if a PR changes X, it must also change Y. Captures the
+# easy-to-skip "I added the ADR but forgot the index" / "I added the module
+# but forgot CLAUDE.md" failure modes. CLAUDE.md, MANIFESTO.md, and ADR-0001
+# §7 spell out the broader principle; this workflow only checks the
+# machine-verifiable subset.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  adr-index-coherence:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Fetch base ref
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: git fetch origin "$BASE_REF" --depth=1
+      - name: Require INDEX.md touch when any ADR is added or modified
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          changed=$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")
+          # ADR files match docs/adr/NNNN-*.md — INDEX.md is excluded.
+          adr_changed=$(echo "$changed" | grep -E '^docs/adr/[0-9]+-.+\.md$' || true)
+          if [[ -z "$adr_changed" ]]; then
+            echo "No ADR files changed — nothing to enforce."
+            exit 0
+          fi
+          echo "ADR files changed:"
+          echo "$adr_changed" | sed 's/^/  /'
+          if echo "$changed" | grep -qx 'docs/adr/INDEX.md'; then
+            echo "docs/adr/INDEX.md is in the diff. OK."
+            exit 0
+          fi
+          echo "::error::ADR files changed without touching docs/adr/INDEX.md."
+          echo "::error::Add the new ADR's path-glob bindings (or an explicit"
+          echo "::error::'ADR-NNNN: contextual, no binding paths' comment line)"
+          echo "::error::to docs/adr/INDEX.md in the same PR. See CLAUDE.md"
+          echo "::error::'Registries cannot lag the things they register'."
+          exit 1
+
+  bounded-context-coherence:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Require CLAUDE.md touch when settings.gradle.kts registers a new top-level module
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          changed=$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")
+          # If settings.gradle.kts didn't change, nothing to check.
+          if ! echo "$changed" | grep -qx 'settings.gradle.kts'; then
+            echo "settings.gradle.kts not in diff — nothing to enforce."
+            exit 0
+          fi
+          # Extract module declarations added on the PR side. A new top-level
+          # bounded context shows up as a NEW `:<ctx>:` prefix not present on
+          # base. We compare the set of prefixes seen in `include(":foo:bar")`.
+          extract_prefixes() {
+            grep -oE 'include\("\s*:[a-zA-Z0-9_-]+:' "$1" 2>/dev/null \
+              | sed -E 's/include\("\s*://; s/:$//' \
+              | sort -u || true
+          }
+          git show "$BASE_SHA:settings.gradle.kts" > /tmp/settings.base.kts 2>/dev/null || true
+          git show "$HEAD_SHA:settings.gradle.kts" > /tmp/settings.head.kts 2>/dev/null || true
+          base_prefixes=$(extract_prefixes /tmp/settings.base.kts)
+          head_prefixes=$(extract_prefixes /tmp/settings.head.kts)
+          added=$(comm -13 <(echo "$base_prefixes") <(echo "$head_prefixes") || true)
+          if [[ -z "$added" ]]; then
+            echo "No new top-level bounded-context module prefixes in settings.gradle.kts."
+            exit 0
+          fi
+          echo "New top-level module prefix(es) added: $added"
+          if echo "$changed" | grep -qx 'CLAUDE.md'; then
+            echo "CLAUDE.md is in the diff. OK."
+            exit 0
+          fi
+          echo "::error::settings.gradle.kts adds new top-level module prefix(es)"
+          echo "::error::without updating CLAUDE.md. Update the bounded-contexts"
+          echo "::error::table at the top of CLAUDE.md in the same PR. See"
+          echo "::error::CLAUDE.md 'Registries cannot lag the things they register'."
+          exit 1

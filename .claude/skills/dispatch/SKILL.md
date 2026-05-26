@@ -84,13 +84,29 @@ The agent has zero conversation history. Every prompt MUST include:
 
 1. **Identity + scope**: "You are an implementation agent. PR #N of Wave X — <one-paragraph goal>."
 2. **Background**: link to plan file, link to relevant ADRs, name relevant existing modules. The agent will read them.
-3. **What to do**: exact file paths and the changes expected. Don't be vague.
-4. **What NOT to do**: scope caps. "Don't touch grid:application from this PR." "Don't add new deps." "Don't refactor X."
-5. **How to ship**: branch name, validation commands (gradle / pnpm), commit message template, PR title + body shape, the `mcp__github__create_pull_request` call.
-6. **Constraints**: ADR-0001 §4 cap, conventional commits, DCO sign-off (`git commit -s`), no emojis.
-7. **Domain skill pointer** — tell the agent to invoke the relevant playbook at the start of work (see "Domain-specific skills" below). Saves you copy-pasting 100s of lines of conventions per prompt.
-8. **CI auto-fix loop** (paste-ready snippet — see below).
-9. **Report-back contract**: max ~250 words, branch + PR URL, line counts, test/lint/build outputs, decisions beyond the prompt, blockers.
+3. **Mandatory ADR pre-read** — **inline the output of `scripts/adr-context.sh <every path the PR will touch>` directly into the prompt body, under a clear "MANDATORY READING" heading**. The script greps `docs/adr/INDEX.md` for path-glob bindings and emits the matching ADR bodies. The 2026-05-26 5th-CORS regression happened because Phase 4's dispatch prompt named ADR-0001 but never inlined ADR-0034 / ADR-0048 — the agent never read them. The helper closes this: if it's in the prompt, the agent reads it.
+4. **What to do**: exact file paths and the changes expected. Don't be vague.
+5. **What NOT to do**: scope caps. "Don't touch grid:application from this PR." "Don't add new deps." "Don't refactor X."
+6. **How to ship**: branch name, validation commands (gradle / pnpm), commit message template, PR title + body shape, the `mcp__github__create_pull_request` call.
+7. **Constraints**: ADR-0001 §4 cap, conventional commits, DCO sign-off (`git commit -s`), no emojis.
+8. **Domain skill pointer** — tell the agent to invoke the relevant playbook at the start of work (see "Domain-specific skills" below). Saves you copy-pasting 100s of lines of conventions per prompt.
+9. **CI auto-fix loop** (paste-ready snippet — see below).
+10. **Report-back contract**: max ~250 words, branch + PR URL, line counts, test/lint/build outputs, decisions beyond the prompt, blockers.
+
+#### How to inline ADR context (step 3)
+
+```sh
+# Run from repo root; arguments are repo-relative paths the PR will touch.
+scripts/adr-context.sh \
+  survey/api/src/main/kotlin/com/bliss/survey/api/Module.kt \
+  survey/api/src/test/kotlin/com/bliss/survey/api/CorsTest.kt
+```
+
+Capture stdout and paste it into the prompt body verbatim, preceded by:
+
+> **MANDATORY READING — read these ADRs in full before writing any code. They are not background context; they are binding rules for the paths this PR touches.**
+
+Empty output (no matching ADRs) means the registry has no binding for the paths — note that in the prompt (`No path-bound ADRs apply to this PR. Proceed.`) so the absence is intentional rather than a missed step.
 
 ### Domain-specific skills
 
