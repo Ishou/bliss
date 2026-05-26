@@ -34,7 +34,7 @@ class IdentityClientTest {
             assertThat(resolved).isEqualTo(userId)
             assertThat(captured.size).isEqualTo(1)
             assertThat(captured[0]).isNotNull()
-            assertThat(captured[0]!!.contains("__Host-ws_session=session-cookie-value")).isEqualTo(true)
+            assertThat(captured[0]!!.contains("__Secure-ws_session=session-cookie-value")).isEqualTo(true)
             client.close()
         }
 
