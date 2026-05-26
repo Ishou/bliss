@@ -130,26 +130,45 @@ class UserDeletedConsumerTest {
     }
 
     @Test
-    fun `bootstrap throws when an existing consumer has incompatible immutable fields`() {
-        // Pre-seed with a mismatched deliverSubject to trigger error 10013.
+    fun `bootstrap throws when an active subscriber pins a different deliverSubject`() {
+        // NATS 2.10 only treats deliverSubject as immutable while a push subscriber is bound — replicates the 2026-05-26 prod race.
+        val legacySubject = "_INBOX.legacy.random.${UUID.randomUUID()}"
         val incompatible =
             io.nats.client.api.ConsumerConfiguration
                 .builder()
                 .durable(UserDeletedConsumerConfig.DURABLE_NAME)
                 .filterSubject(UserDeletedConsumerConfig.SUBJECT)
                 .ackPolicy(io.nats.client.api.AckPolicy.Explicit)
-                .deliverSubject("_INBOX.legacy.random.${UUID.randomUUID()}")
+                .deliverSubject(legacySubject)
                 .build()
         nats.jetStreamManagement().addOrUpdateConsumer(UserDeletedConsumerConfig.STREAM_NAME, incompatible)
 
-        var thrown: io.nats.client.JetStreamApiException? = null
+        // Hold an active push subscription on the legacy deliverSubject — this
+        // is the immutability trigger.
+        val activeSub =
+            nats.jetStream().subscribe(
+                UserDeletedConsumerConfig.SUBJECT,
+                io.nats.client.PushSubscribeOptions
+                    .builder()
+                    .bind(true)
+                    .stream(UserDeletedConsumerConfig.STREAM_NAME)
+                    .durable(UserDeletedConsumerConfig.DURABLE_NAME)
+                    .build(),
+            )
         try {
-            UserDeletedConsumerConfig.bootstrap(nats)
-        } catch (e: io.nats.client.JetStreamApiException) {
-            thrown = e
+            var thrown: io.nats.client.JetStreamApiException? = null
+            try {
+                UserDeletedConsumerConfig.bootstrap(nats)
+            } catch (e: io.nats.client.JetStreamApiException) {
+                thrown = e
+            }
+            check(thrown != null) { "expected JetStreamApiException, none thrown" }
+            check(thrown.apiErrorCode == 10013) {
+                "expected error code 10013, got ${thrown.apiErrorCode}"
+            }
+        } finally {
+            activeSub.unsubscribe()
         }
-        check(thrown != null) { "expected JetStreamApiException, none thrown" }
-        check(thrown.apiErrorCode == 10013) { "expected error code 10013, got ${thrown.apiErrorCode}" }
 
         // After explicit deletion, the next bootstrap call must succeed.
         UserDeletedConsumerConfig.deleteConsumer(nats)
