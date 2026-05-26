@@ -16,6 +16,7 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.Application
 import io.ktor.server.application.ApplicationCall
+import io.ktor.server.application.ApplicationStopped
 import io.ktor.server.application.install
 import io.ktor.server.plugins.calllogging.CallLogging
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
@@ -93,6 +94,11 @@ fun Application.surveyApiModule(
 
     install(SessionMiddleware) {
         verifyCookie = wiring.verifyCookie
+    }
+
+    monitor.subscribe(ApplicationStopped) {
+        wiring.userDeletedConsumer?.stop()
+        wiring.closeNats()
     }
 
     routing {

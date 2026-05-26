@@ -6,6 +6,7 @@ import com.bliss.survey.application.ports.UserProgressRepository
 import com.bliss.survey.application.usecases.GetNextItemUseCase
 import com.bliss.survey.application.usecases.SubmitRatingCommand
 import com.bliss.survey.application.usecases.SubmitRatingResult
+import com.bliss.survey.infrastructure.nats.UserDeletedConsumer
 import java.util.UUID
 
 // Hand-rolled DI graph; Module.kt consumes this, Main.kt wires adapters, tests stub directly.
@@ -16,4 +17,6 @@ class Wiring(
     val items: SurveyItemRepository,
     val proposedBy: ProposedByRepository,
     val userProgress: UserProgressRepository,
+    val userDeletedConsumer: UserDeletedConsumer? = null,
+    val closeNats: () -> Unit = {},
 )
