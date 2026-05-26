@@ -33,6 +33,10 @@ checkpoints/
 *.gguf
 *.safetensors
 
+# Licensed external corpora (Lexique3 CC BY-SA, etc.): stay local,
+# never redistribute. ADR-0013 §1, ADR-0023.
+data/external/
+
 # Eval-iteration scratch CSVs that historically embedded verbatim
 # DBnary glosses (CC BY-SA) in the `definition` / `synonyms` columns.
 # Per ADR-0023 §"Distribution discipline" we don't redistribute DBnary
