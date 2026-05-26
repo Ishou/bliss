@@ -122,8 +122,7 @@ function SondagePage() {
         return;
       }
       if (name === 'AlreadyRatedError') {
-        // The auth caller has already rated this item; the server replied with
-        // the existing rating envelope. Skip ahead to the next item.
+        // Already rated — server returned existing envelope; advance to next item.
         if (!isAuth) surveyAnonStore?.add(item.itemId);
         await loadNext();
         return;

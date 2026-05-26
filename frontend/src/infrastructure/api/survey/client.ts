@@ -44,9 +44,7 @@ export interface HttpSurveyClientOptions {
 }
 
 export function createHttpSurveyClient(options: HttpSurveyClientOptions): SurveyClient {
-  // Resolve fetch at call time so MSW's `setupServer` interception
-  // (which monkey-patches `globalThis.fetch` on `.listen()`) takes
-  // effect even when the client is constructed at module load.
+  // Resolve fetch at call time so MSW `.listen()` interception takes effect.
   const fetchImpl: typeof globalThis.fetch = options.fetch
     ? options.fetch
     : (...args) => globalThis.fetch(...args);

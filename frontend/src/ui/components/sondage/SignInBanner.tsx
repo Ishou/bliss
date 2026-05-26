@@ -1,8 +1,4 @@
-// Persistent invitation banner shown to anonymous /sondage visitors.
-// Clicking dispatches a Matomo event via the parent's onClick callback
-// and lets the browser follow the OAuth href so the 302 chain accepts
-// the Set-Cookie at the identity-api callback (same pattern as
-// SignInButton).
+// Anon visitor sign-in banner for /sondage — OAuth href mirrors SignInButton.
 
 import { useEffect, useState } from 'react';
 import { css } from 'styled-system/css';
@@ -54,8 +50,7 @@ export interface SignInBannerProps {
 }
 
 export function SignInBanner({ authClient, onClick }: SignInBannerProps) {
-  // returnTo is computed post-hydration so prerender HTML doesn't bake
-  // a preview URL (mirrors SignInButton).
+  // Compute returnTo post-hydration so prerender HTML doesn't bake a stale URL.
   const [returnTo, setReturnTo] = useState('');
   useEffect(() => {
     setReturnTo(window.location.href);

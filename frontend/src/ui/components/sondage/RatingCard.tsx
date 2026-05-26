@@ -1,7 +1,4 @@
-// Rating card — composes Likert (qualité), Likert (difficulté),
-// FlagPicker, optional CorrectifField, and a submit button. The card
-// is aria-live="polite" so a screen-reader user hears the next card
-// load. Latency is measured from card mount to submit.
+// Rating card — composes Likert scales, FlagPicker, CorrectifField, and a submit button.
 
 import { useEffect, useRef, useState } from 'react';
 import { css } from 'styled-system/css';
@@ -94,12 +91,9 @@ export function RatingCard({ item, isAuthenticated, onSubmit }: RatingCardProps)
   const [correctif, setCorrectif] = useState<SurveyCorrectif | undefined>(undefined);
   const [submitting, setSubmitting] = useState(false);
 
-  // Initialised in the per-item effect below so the render body stays pure
-  // (react-hooks/purity flags calls to `performance.now` inside render).
+  // Initialised in effect below — performance.now() in render trips react-hooks/purity.
   const startedAt = useRef<number>(0);
 
-  // Each new item resets the latency clock and the inputs. Keying by
-  // item.itemId is the canonical pattern so the inputs unmount/remount.
   useEffect(() => {
     startedAt.current = performance.now();
     setQualite(null);

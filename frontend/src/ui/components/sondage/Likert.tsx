@@ -1,7 +1,4 @@
-// Likert 1–5 input with the ARIA radiogroup pattern (spec §8). Tab
-// focuses the group, ←/→ (and ↑/↓) move the active radio, Space/Enter
-// select it. AZERTY-safe — number-row digits are deliberately not
-// shortcuts because they require Shift on French layouts.
+// Likert 1–5 scale with ARIA radiogroup keyboard navigation (←/→/↑/↓, AZERTY-safe).
 
 import { useId, useRef } from 'react';
 import { css, cx } from 'styled-system/css';
@@ -84,9 +81,7 @@ export function Likert({ label, ariaLabel, value, onChange, leftHint, rightHint 
   const groupId = useId();
   const buttonsRef = useRef<Array<HTMLButtonElement | null>>([]);
 
-  // When no value is selected yet, the first radio is tabbable (the
-  // radiogroup roving-tabindex pattern). After a selection, only the
-  // selected radio is tabbable so Shift+Tab leaves the group cleanly.
+  // Roving tabindex: first radio focused when none selected, selected radio after.
   const activeIndex = value === null ? 0 : SCORES.indexOf(value);
 
   function focusIndex(next: number): void {

@@ -25,8 +25,7 @@ function writeSafe(list: readonly string[]): void {
   try {
     localStorage.setItem(KEY, JSON.stringify(list));
   } catch {
-    // localStorage may be unavailable (Safari private mode, quota
-    // exhausted). Swallow — anon dedup is best-effort.
+    // localStorage unavailable (Safari private mode, quota exhausted) — best-effort.
   }
 }
 

@@ -1,7 +1,4 @@
-// Optional 4-option flag picker for /sondage. Native <select> so the
-// keyboard / a11y surface comes from the platform (the four reasons are
-// short and the visual chrome can be themed via Panda without writing a
-// custom listbox).
+// Flag picker for /sondage — native <select> for platform a11y.
 
 import { useId } from 'react';
 import { css } from 'styled-system/css';

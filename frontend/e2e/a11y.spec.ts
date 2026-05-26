@@ -107,9 +107,7 @@ test.describe('WCAG 2.2 A + AA accessibility', () => {
     await page.addInitScript(() => {
       window.localStorage.setItem('wordsparrow.tour.seen', 'true');
     });
-    // Stub the survey-api `getNextItem` endpoint so the rating card hydrates
-    // deterministically. The route is auth-optional so we don't need to
-    // stub /me/* (anon visitors don't call it).
+    // Stub getNextItem so the rating card hydrates deterministically (auth-optional route).
     await page.route(/\/v1\/items\/next/, async (route) => {
       await route.fulfill({
         status: 200,

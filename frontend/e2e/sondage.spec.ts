@@ -1,8 +1,4 @@
-// Smoke test for /sondage. Preview mode doesn't carry survey-api MSW
-// handlers (the survey is too small to justify a fixture corpus), so
-// we route-stub the next-item + rating endpoints at the Playwright
-// level — the route renders the same way against a stub or the real
-// server because the contract is the OpenAPI spec.
+// /sondage smoke test — Playwright-level stubs replace missing MSW handlers in preview.
 
 import { expect, test } from '@playwright/test';
 

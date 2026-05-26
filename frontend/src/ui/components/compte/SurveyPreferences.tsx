@@ -1,6 +1,4 @@
-// /compte section for the `deleteProposedOnErasure` checkbox. Persists
-// via the SurveyClient port; "saving" state disables the checkbox so a
-// rapid toggle doesn't fire two PATCHes in flight.
+// /compte section for deleteProposedOnErasure preference — disables during PATCH.
 
 import { useState } from 'react';
 import { css } from 'styled-system/css';
@@ -43,9 +41,7 @@ const alertStyles = css({
 
 export interface SurveyPreferencesProps {
   readonly surveyClient: SurveyClient;
-  // Optional initial value so the consumer can hydrate from server
-  // state once a GET /me/preferences endpoint ships. v1 defaults
-  // to false (the spec's default opt-in posture).
+  // Hydrate from server state when GET /me/preferences ships; v1 defaults to false.
   readonly initialDeleteOnErasure?: boolean;
 }
 

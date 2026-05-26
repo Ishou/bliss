@@ -1,8 +1,4 @@
-// Optional `correctif` text + style for authenticated raters. Composes
-// an uncontrolled text input (ADR-0002 §4) with a small style <select>.
-// The parent reads the current values at submit time via the callback
-// signature `(value | undefined) => void`, fired only on user-visible
-// edits — no React state churn while the user is typing.
+// Uncontrolled text + style input for authenticated raters (ADR-0002 §4).
 
 import { useId, useRef, useState } from 'react';
 import { css } from 'styled-system/css';
@@ -64,10 +60,6 @@ const STYLE_OPTIONS: ReadonlyArray<{ value: SurveyStyle; label: string }> = [
 ];
 
 export interface CorrectifFieldProps {
-  // The parent owns the canonical value; this component is uncontrolled
-  // for the text input (ADR-0002 §4) and re-broadcasts via onChange on
-  // each user-visible edit. `value` is only read on first mount to seed
-  // the initial defaultValue / select state.
   readonly value: SurveyCorrectif | undefined;
   readonly onChange: (next: SurveyCorrectif | undefined) => void;
 }
