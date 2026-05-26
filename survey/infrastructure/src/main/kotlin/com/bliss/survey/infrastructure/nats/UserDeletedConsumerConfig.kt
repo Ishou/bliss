@@ -25,8 +25,24 @@ object UserDeletedConsumerConfig {
             .deliverSubject(DELIVER_SUBJECT)
             .build()
 
-    /** Create-or-update the durable consumer. Idempotent for matching configs. */
+    /** Create-or-update the durable consumer.
+     *
+     * Idempotent for matching configs. Throws JetStreamApiException (code 10013)
+     * if the existing consumer's immutable fields (deliverSubject, ackPolicy,
+     * deliverPolicy, replayPolicy, …) don't match. Immutable-field changes
+     * are deliberate operator decisions — resolve them with an explicit
+     * `survey-worker --delete-consumer` run, then re-deploy. We do NOT
+     * silently delete-then-recreate here: that would lose pending ack state,
+     * which is safe for the idempotent anonymise use case but a copy-paste
+     * foot-gun for any future non-idempotent consumer.
+     */
     fun bootstrap(nats: Connection) {
         nats.jetStreamManagement().addOrUpdateConsumer(STREAM_NAME, consumerConfiguration())
+    }
+
+    /** Delete the durable consumer. Explicit operator action, used during
+     *  planned migrations that change immutable consumer-config fields. */
+    fun deleteConsumer(nats: Connection) {
+        nats.jetStreamManagement().deleteConsumer(STREAM_NAME, DURABLE_NAME)
     }
 }

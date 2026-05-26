@@ -130,6 +130,45 @@ class UserDeletedConsumerTest {
     }
 
     @Test
+    fun `bootstrap throws when an existing consumer has incompatible immutable fields`() {
+        // Pre-seed the durable with a DIFFERENT deliverSubject — exactly the
+        // 2026-05-26 prod state where the pre-#640 api pod created the
+        // consumer with `nats.createInbox()`. Bootstrap must fail loudly
+        // (not silently delete-then-recreate); operator runs --delete-consumer
+        // explicitly to resolve.
+        val incompatible =
+            io.nats.client.api.ConsumerConfiguration
+                .builder()
+                .durable(UserDeletedConsumerConfig.DURABLE_NAME)
+                .filterSubject(UserDeletedConsumerConfig.SUBJECT)
+                .ackPolicy(io.nats.client.api.AckPolicy.Explicit)
+                .deliverSubject("_INBOX.legacy.random.${UUID.randomUUID()}")
+                .build()
+        nats.jetStreamManagement().addOrUpdateConsumer(UserDeletedConsumerConfig.STREAM_NAME, incompatible)
+
+        var thrown: io.nats.client.JetStreamApiException? = null
+        try {
+            UserDeletedConsumerConfig.bootstrap(nats)
+        } catch (e: io.nats.client.JetStreamApiException) {
+            thrown = e
+        }
+        check(thrown != null) { "expected JetStreamApiException, none thrown" }
+        check(thrown.apiErrorCode == 10013) { "expected error code 10013, got ${thrown.apiErrorCode}" }
+
+        // After explicit deletion, the next bootstrap call must succeed.
+        UserDeletedConsumerConfig.deleteConsumer(nats)
+        UserDeletedConsumerConfig.bootstrap(nats)
+        val info =
+            nats.jetStreamManagement().getConsumerInfo(
+                UserDeletedConsumerConfig.STREAM_NAME,
+                UserDeletedConsumerConfig.DURABLE_NAME,
+            )
+        check(info.consumerConfiguration.deliverSubject == UserDeletedConsumerConfig.DELIVER_SUBJECT) {
+            "expected deliverSubject=${UserDeletedConsumerConfig.DELIVER_SUBJECT}, got ${info.consumerConfiguration.deliverSubject}"
+        }
+    }
+
+    @Test
     fun `start returns null when the consumer has not been bootstrapped`() {
         // Non-default durable keeps this test independent of the bootstrap-then-bind tests above.
         val anonymise =
