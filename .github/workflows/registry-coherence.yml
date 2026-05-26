@@ -1,11 +1,6 @@
 name: Registry Coherence
 
-# Enforces that load-bearing registries stay coherent with the things they
-# register. The rule: if a PR changes X, it must also change Y. Captures the
-# easy-to-skip "I added the ADR but forgot the index" / "I added the module
-# but forgot CLAUDE.md" failure modes. CLAUDE.md, MANIFESTO.md, and ADR-0001
-# §7 spell out the broader principle; this workflow only checks the
-# machine-verifiable subset.
+# Enforces ADR↔INDEX.md and new-module↔CLAUDE.md coherence — see CLAUDE.md "Registries cannot lag".
 
 on:
   pull_request:
@@ -69,9 +64,7 @@ jobs:
             echo "settings.gradle.kts not in diff — nothing to enforce."
             exit 0
           fi
-          # Extract module declarations added on the PR side. A new top-level
-          # bounded context shows up as a NEW `:<ctx>:` prefix not present on
-          # base. We compare the set of prefixes seen in `include(":foo:bar")`.
+          # Extract top-level bounded-context module prefixes (:ctx: first token of each include line).
           extract_prefixes() {
             grep -oE 'include\("\s*:[a-zA-Z0-9_-]+:' "$1" 2>/dev/null \
               | sed -E 's/include\("\s*://; s/:$//' \
