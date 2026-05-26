@@ -62,9 +62,7 @@ class ExportByteEqualTest {
             requireNotNull(javaClass.classLoader.getResourceAsStream("byteequal/expected.csv")) {
                 "missing resource byteequal/expected.csv"
             }.bufferedReader(Charsets.UTF_8).readText()
-        // Files often have a single trailing newline added by the editor; the
-        // export does not. Trim exactly one trailing newline so the byte-equal
-        // comparison is robust to filesystem persistence.
+        // removeSuffix("\n"): expected.csv may carry an editor-appended trailing newline; the export does not.
         val expected = expectedRaw.removeSuffix("\n")
         assertThat(produced).isEqualTo(expected)
     }
