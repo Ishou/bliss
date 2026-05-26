@@ -81,10 +81,13 @@ import modal
 BATCH_SIZE = 8
 GRAD_ACCUM = 1
 USE_PACKING = False
-NUM_EPOCHS = 5
+# step-based budget overrides epochs; eval/early-stop picks the best checkpoint inside the budget.
+MAX_STEPS = 1000
 WARMUP_STEPS = 15
 LEARNING_RATE = 2e-4
 MAX_SEQ_LENGTH = 128
+EVAL_SAVE_STEPS = 50
+EARLY_STOPPING_PATIENCE = 3
 
 
 # Nom de l'app Modal
@@ -233,6 +236,7 @@ def finetune_pilot() -> dict:
         AutoModelForCausalLM,
         AutoTokenizer,
         BitsAndBytesConfig,
+        EarlyStoppingCallback,
     )
     from peft import (
         LoraConfig,
@@ -251,7 +255,9 @@ def finetune_pilot() -> dict:
     print(f"batch_size             : {BATCH_SIZE}")
     print(f"grad_accumulation      : {GRAD_ACCUM}")
     print(f"packing                : {USE_PACKING}")
-    print(f"num_epochs             : {NUM_EPOCHS}")
+    print(f"max_steps              : {MAX_STEPS}")
+    print(f"eval/save every        : {EVAL_SAVE_STEPS} steps")
+    print(f"early_stop_patience    : {EARLY_STOPPING_PATIENCE}")
     print(f"warmup_steps           : {WARMUP_STEPS}")
     print(f"learning_rate          : {LEARNING_RATE}")
     print(f"max_seq_length         : {MAX_SEQ_LENGTH}")
@@ -397,13 +403,12 @@ def finetune_pilot() -> dict:
     # ÉTAPE D — Training avec SFTTrainer
     # ============================================================
     print("\n" + "=" * 60)
-    print("ÉTAPE D — Training SFT (5 epochs)")
+    print(f"ÉTAPE D — Training SFT (budget {MAX_STEPS} steps, eval every {EVAL_SAVE_STEPS})")
     print("=" * 60)
 
     sft_config = SFTConfig(
         output_dir="/tmp/training_output",
-        # Hyperparams issus du benchmark A/B/C (cf. tête du fichier)
-        num_train_epochs=NUM_EPOCHS,
+        max_steps=MAX_STEPS,
         per_device_train_batch_size=BATCH_SIZE,
         gradient_accumulation_steps=GRAD_ACCUM,
         packing=USE_PACKING,
@@ -411,9 +416,15 @@ def finetune_pilot() -> dict:
         warmup_steps=WARMUP_STEPS,
         max_seq_length=MAX_SEQ_LENGTH,
         logging_steps=5,
-        eval_strategy="epoch",
-        save_strategy="epoch",
-        save_total_limit=1,
+        eval_strategy="steps",
+        eval_steps=EVAL_SAVE_STEPS,
+        save_strategy="steps",
+        save_steps=EVAL_SAVE_STEPS,
+        save_total_limit=5,
+        # ship the lowest-val-loss checkpoint, not the step-MAX_STEPS one (guards against the overfit tail of a 1000-step run on a ~100-row training set).
+        load_best_model_at_end=True,
+        metric_for_best_model="eval_loss",
+        greater_is_better=False,
         bf16=True,
         # Pas besoin avec batch petit + 4-bit (~12 Go sur 40 dispo)
         gradient_checkpointing=False,
@@ -428,6 +439,7 @@ def finetune_pilot() -> dict:
         args=sft_config,
         train_dataset=dataset["train"],
         eval_dataset=dataset["validation"],
+        callbacks=[EarlyStoppingCallback(early_stopping_patience=EARLY_STOPPING_PATIENCE)],
     )
 
     # Reset des stats peak memory pour avoir une mesure propre du
@@ -475,7 +487,9 @@ def finetune_pilot() -> dict:
         "batch_size": BATCH_SIZE,
         "grad_accum": GRAD_ACCUM,
         "packing": USE_PACKING,
-        "num_epochs": NUM_EPOCHS,
+        "max_steps": MAX_STEPS,
+        "eval_save_steps": EVAL_SAVE_STEPS,
+        "early_stopping_patience": EARLY_STOPPING_PATIENCE,
         "train_runtime_s": round(runtime, 2),
         "total_steps": steps_total,
         "steps_per_sec": round(steps_per_sec, 4),
