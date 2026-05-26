@@ -21,3 +21,6 @@ ingress:
 envFromSecret: "bliss-survey-api-env"
 calibration:
   seedEnabled: false
+# Skip bootstrap Job locally — k3d has no JetStream.
+consumerBootstrap:
+  enabled: false

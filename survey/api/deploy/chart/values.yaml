@@ -113,6 +113,9 @@ calibration:
   seedEnabled: false
   sourceBatch: "gold_v1"
   tier: "mid"
+# JetStream durable consumer bootstrap (pre-install/pre-upgrade Job).
+consumerBootstrap:
+  enabled: true
 # Hourly retire CronJob — runs `--retire-saturated` once an hour and exits.
 retire:
   enabled: true

@@ -11,14 +11,18 @@ import com.bliss.survey.application.usecases.RetireSaturatedItemsUseCase
 import com.bliss.survey.domain.model.Tier
 import com.bliss.survey.domain.routing.KCoveragePolicy
 import com.bliss.survey.infrastructure.language.LinguaLanguageDetector
+import com.bliss.survey.infrastructure.nats.UserDeletedConsumerConfig
 import com.bliss.survey.infrastructure.persistence.PgRatingRepository
 import com.bliss.survey.infrastructure.persistence.PgSurveyItemRepository
 import com.bliss.survey.infrastructure.persistence.SurveyDatabase
 import com.fasterxml.uuid.Generators
+import io.nats.client.Nats
+import io.nats.client.Options
 import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
 import java.nio.file.Files
 import java.nio.file.Path
+import java.time.Duration
 import java.time.Instant
 import javax.sql.DataSource
 import kotlin.system.exitProcess
@@ -43,6 +47,7 @@ fun main(args: Array<String>) {
                 "--ingest-batch" -> runIngest(opts)
                 "--export-dataset" -> runExportCli(opts)
                 "--retire-saturated" -> runRetire()
+                "--bootstrap-consumer" -> runBootstrapConsumer()
                 else -> {
                     log.error("event=worker_unknown_subcommand cmd={}", cmd)
                     printUsage()
@@ -61,7 +66,7 @@ private fun printUsage() {
         "usage: survey-worker --ingest-batch --csv <path> --source-batch <id> [--tier mid] | " +
             "--export-dataset --output <path> [--min-ratings 2] [--since ISO] " +
             "[--auth-weight 1.0] [--anon-weight 0.5] | " +
-            "--retire-saturated | --help",
+            "--retire-saturated | --bootstrap-consumer | --help",
     )
 }
 
@@ -153,6 +158,30 @@ private fun runRetire(): Int {
     val ds = openDataSource()
     val n = runRetire(ds)
     log.info("event=retire_done count={}", n)
+    return 0
+}
+
+// Idempotent; pre-install Job only. See UserDeletedConsumerConfig.bootstrap().
+private fun runBootstrapConsumer(): Int {
+    val natsUrl = System.getenv("NATS_URL") ?: error("missing env NATS_URL")
+    val conn =
+        Nats.connect(
+            Options
+                .Builder()
+                .server(natsUrl)
+                .connectionTimeout(Duration.ofSeconds(10))
+                .build(),
+        )
+    try {
+        UserDeletedConsumerConfig.bootstrap(conn)
+        log.info(
+            "event=consumer_bootstrap_done stream={} durable={}",
+            UserDeletedConsumerConfig.STREAM_NAME,
+            UserDeletedConsumerConfig.DURABLE_NAME,
+        )
+    } finally {
+        conn.close()
+    }
     return 0
 }
 

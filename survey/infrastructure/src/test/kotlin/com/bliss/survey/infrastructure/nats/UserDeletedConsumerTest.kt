@@ -83,6 +83,8 @@ class UserDeletedConsumerTest {
     @Test
     fun `consumer triggers anonymise exactly once per delivered event`() =
         runBlocking {
+            UserDeletedConsumerConfig.bootstrap(nats)
+
             val anonymisedUsers = ConcurrentLinkedQueue<UserId>()
             val invocations = AtomicInteger()
             val anonymise =
@@ -118,6 +120,35 @@ class UserDeletedConsumerTest {
             assertThat(anonymisedUsers.toList()).containsExactlyInAnyOrder(UserId(userId))
             check(invocations.get() == 1) { "expected exactly one invocation, got ${invocations.get()}" }
         }
+
+    @Test
+    fun `bootstrap is idempotent across repeated invocations`() {
+        // addOrUpdateConsumer with a matching config must be a no-op.
+        UserDeletedConsumerConfig.bootstrap(nats)
+        UserDeletedConsumerConfig.bootstrap(nats)
+        UserDeletedConsumerConfig.bootstrap(nats)
+    }
+
+    @Test
+    fun `start returns null when the consumer has not been bootstrapped`() {
+        // Non-default durable keeps this test independent of the bootstrap-then-bind tests above.
+        val anonymise =
+            AnonymizeUserRatingsUseCase(
+                ratings = CapturingRatings(AtomicInteger(), ConcurrentLinkedQueue()),
+                proposedBy = NoopProposedBy,
+                items = NoopItems,
+                progress = NoopProgress,
+            )
+        val consumer =
+            UserDeletedConsumer(
+                nats = nats,
+                anonymise = anonymise,
+                scope = scope,
+                durableName = "survey-api-test-no-bootstrap",
+                pollWait = Duration.ofMillis(200),
+            )
+        check(consumer.start() == null) { "expected null (consumer not bootstrapped)" }
+    }
 
     private class CapturingRatings(
         private val invocations: AtomicInteger,

@@ -1,0 +1,43 @@
+{{- if .Values.consumerBootstrap.enabled }}
+{{/* Pre-upgrade: creates the durable before the api Deployment binds to it. */}}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "bliss-survey-api.fullname" . }}-consumer-bootstrap
+  annotations:
+    "helm.sh/hook": "pre-install,pre-upgrade"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+    "helm.sh/hook-weight": "5"
+  labels: {{- include "bliss-survey-api.labels" . | nindent 4 }}
+spec:
+  ttlSecondsAfterFinished: 600
+  backoffLimit: 3
+  template:
+    metadata:
+      # selectorLabels=bliss-survey-api so bliss-nats NetworkPolicy allows NATS port 4222.
+      labels: {{- include "bliss-survey-api.selectorLabels" . | nindent 8 }}
+    spec:
+      restartPolicy: OnFailure
+      serviceAccountName: {{ include "bliss-survey-api.serviceAccountName" . }}
+      securityContext: {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: bootstrap-consumer
+          image: {{ include "bliss-survey-api.image" . | quote }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext: {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+          command: ["/app/bin/survey-worker"]
+          args: ["--bootstrap-consumer"]
+          env:
+            {{- range .Values.env }}
+            - name: {{ .name }}
+              value: {{ .value | quote }}
+            {{- end }}
+          {{- with .Values.envFromSecret }}
+          envFrom:
+            - secretRef: {name: {{ . }}}
+          {{- end }}
+          volumeMounts:
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - {name: tmp, emptyDir: {}}
+{{- end }}
