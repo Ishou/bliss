@@ -32,6 +32,20 @@ describe('RatingCard', () => {
     expect(screen.getByLabelText(/Signaler un problème/i)).toBeInTheDocument();
   });
 
+  it('renders chips with human French labels, not raw enum values', () => {
+    const { container } = render(
+      <RatingCard item={sampleItem} isAuthenticated={false} onSubmit={() => Promise.resolve()} />,
+    );
+    const posChip = container.querySelector('[data-chip="pos"]');
+    const categorieChip = container.querySelector('[data-chip="categorie"]');
+    expect(posChip?.textContent).toBe('Nom commun');
+    expect(categorieChip?.textContent).toBe('Animaux');
+    expect(screen.getByText(/Style : Définition directe/)).toBeInTheDocument();
+    expect(screen.getByText(/Difficulté annoncée : 2/)).toBeInTheDocument();
+    expect(screen.queryByText(/nom_commun/i)).toBeNull();
+    expect(screen.queryByText(/force annoncée/i)).toBeNull();
+  });
+
   it('hides the CorrectifField when isAuthenticated is false', () => {
     render(<RatingCard item={sampleItem} isAuthenticated={false} onSubmit={() => Promise.resolve()} />);
     expect(screen.queryByLabelText(/Définition alternative/i)).toBeNull();

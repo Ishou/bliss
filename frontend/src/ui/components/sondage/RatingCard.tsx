@@ -12,6 +12,7 @@ import type {
 import { Button } from '@/ui/components/primitives';
 import { CorrectifField } from './CorrectifField';
 import { FlagPicker } from './FlagPicker';
+import { categorieLabel, posLabel, styleLabel } from './labels';
 import { Likert } from './Likert';
 
 const cardStyles = css({
@@ -45,8 +46,6 @@ const chipStyles = css({
   paddingBlock: '4px',
   fontSize: 'xs',
   fontWeight: 'semibold',
-  letterSpacing: '0.04em',
-  textTransform: 'uppercase',
   color: 'fgMuted',
   border: '1px solid token(colors.border)',
   borderRadius: 'sm',
@@ -126,14 +125,14 @@ export function RatingCard({ item, isAuthenticated, onSubmit }: RatingCardProps)
     <article className={cardStyles} aria-live="polite" data-testid="rating-card">
       <h2 className={titleStyles}>{item.mot}</h2>
       <p className={chipRowStyles}>
-        <span className={chipStyles} data-chip="pos">{item.pos}</span>
+        <span className={chipStyles} data-chip="pos">{posLabel(item.pos)}</span>
         <span className={`${chipStyles} ${chipCategorieStyles}`} data-chip="categorie">
-          {item.categorie}
+          {categorieLabel(item.categorie)}
         </span>
       </p>
       <blockquote className={definitionStyles}>« {item.definition} »</blockquote>
       <p className={metaStyles}>
-        style : {item.style} · force annoncée : {item.forceClaimed}
+        Style : {styleLabel(item.style)} · Difficulté annoncée : {item.forceClaimed}
       </p>
 
       <Likert
