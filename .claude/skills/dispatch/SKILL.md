@@ -89,9 +89,10 @@ The agent has zero conversation history. Every prompt MUST include:
 5. **What NOT to do**: scope caps. "Don't touch grid:application from this PR." "Don't add new deps." "Don't refactor X."
 6. **How to ship**: branch name, validation commands (gradle / pnpm), commit message template, PR title + body shape, the `mcp__github__create_pull_request` call.
 7. **Constraints**: ADR-0001 §4 cap, conventional commits, DCO sign-off (`git commit -s`), no emojis.
-8. **Domain skill pointer** — tell the agent to invoke the relevant playbook at the start of work (see "Domain-specific skills" below). Saves you copy-pasting 100s of lines of conventions per prompt.
-9. **CI auto-fix loop** (paste-ready snippet — see below).
-10. **Report-back contract**: max ~250 words, branch + PR URL, line counts, test/lint/build outputs, decisions beyond the prompt, blockers.
+8. **Comment-style preflag** — paste-ready snippet (see [Comment-style preflag](#comment-style-preflag) below). The auto-reviewer flags multi-paragraph docstrings and multi-line `//` / `#` comment blocks on essentially every rollout PR (Python ports especially, but also TS/Kotlin). Pre-empting at write-time shaves an auto-fix cycle off every PR.
+9. **Domain skill pointer** — tell the agent to invoke the relevant playbook at the start of work (see "Domain-specific skills" below). Saves you copy-pasting 100s of lines of conventions per prompt.
+10. **CI auto-fix loop** (paste-ready snippet — see below).
+11. **Report-back contract**: max ~250 words, branch + PR URL, line counts, test/lint/build outputs, decisions beyond the prompt, blockers.
 
 #### How to inline ADR context (step 3)
 
@@ -107,6 +108,12 @@ Capture stdout and paste it into the prompt body verbatim, preceded by:
 > **MANDATORY READING — read these ADRs in full before writing any code. They are not background context; they are binding rules for the paths this PR touches.**
 
 Empty output (no matching ADRs) means the registry has no binding for the paths — note that in the prompt (`No path-bound ADRs apply to this PR. Proceed.`) so the absence is intentional rather than a missed step.
+
+### Comment-style preflag
+
+Paste verbatim into every implementer-dispatch prompt under a "Comment style" heading:
+
+> **Comments document non-obvious WHY, in one line.** Default to no comment. If you write one, it's a single line on a non-obvious *why* — a hidden constraint, a subtle invariant, a workaround for a specific bug. Don't explain WHAT the code does (well-named identifiers do that). Don't reference PRs / tasks / callers / the current fix — those rot. Multi-paragraph comment blocks (consecutive `//` / `#`, multi-line `/* */` or `"""`) are forbidden in new code: if you need more than one line, you've found ADR-worthy context — write the ADR and link from one line. For verbatim Python ports from external sources, collapse multi-paragraph source docstrings to one-liners BEFORE the first push. The auto-§6a reviewer flags this and the auto-fixer will cycle 2-4 times collapsing them otherwise — pre-empt.
 
 ### Domain-specific skills
 
