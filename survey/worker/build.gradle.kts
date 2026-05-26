@@ -26,8 +26,7 @@ dependencies {
     implementation("com.fasterxml.uuid:java-uuid-generator:5.2.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")
 
-    // JetStream client for the --bootstrap-consumer subcommand. Same major
-    // as survey/infrastructure so the shared UserDeletedConsumerConfig works.
+    // Same major as :survey:infrastructure; required by --bootstrap-consumer.
     implementation("io.nats:jnats:2.20.6")
 
     implementation("ch.qos.logback:logback-classic:$logbackVersion")

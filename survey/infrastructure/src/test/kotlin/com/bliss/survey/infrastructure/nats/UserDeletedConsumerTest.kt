@@ -83,8 +83,6 @@ class UserDeletedConsumerTest {
     @Test
     fun `consumer triggers anonymise exactly once per delivered event`() =
         runBlocking {
-            // The chart's pre-install/pre-upgrade Job runs this in prod;
-            // the test runs it inline before binding.
             UserDeletedConsumerConfig.bootstrap(nats)
 
             val anonymisedUsers = ConcurrentLinkedQueue<UserId>()

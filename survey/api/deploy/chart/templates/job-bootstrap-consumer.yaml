@@ -49,6 +49,10 @@ spec:
             - name: {{ .name }}
               value: {{ .value | quote }}
             {{- end }}
+          {{- with .Values.envFromSecret }}
+          envFrom:
+            - secretRef: {name: {{ . }}}
+          {{- end }}
           volumeMounts:
             - {name: tmp, mountPath: /tmp}
       volumes:
