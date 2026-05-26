@@ -39,7 +39,7 @@ export interface MyContributionsProps {
 
 export function MyContributions({ surveyClient }: MyContributionsProps) {
   const [items, setItems] = useState<ReadonlyArray<SurveyContribution> | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -48,15 +48,13 @@ export function MyContributions({ surveyClient }: MyContributionsProps) {
       .then((list) => {
         if (!cancelled) setItems(list);
       })
-      .catch((cause: unknown) => {
-        if (!cancelled) {
-          setError(cause instanceof Error ? cause.message : String(cause));
-        }
+      .catch(() => {
+        if (!cancelled) setHasError(true);
       });
     return () => { cancelled = true; };
   }, [surveyClient]);
 
-  if (error !== null) {
+  if (hasError) {
     return <p className={statusStyles} role="alert">Impossible de charger vos contributions.</p>;
   }
   if (items === null) {

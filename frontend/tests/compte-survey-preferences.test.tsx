@@ -29,14 +29,27 @@ describe('SurveyPreferences', () => {
     await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent(/Enregistré/i));
   });
 
-  it('rolls back the optimistic UI on failure and surfaces an alert', async () => {
-    const patch = vi.fn().mockRejectedValue(new Error('network down'));
+  it('rolls back the optimistic UI on a generic failure and surfaces a functional alert', async () => {
+    const patch = vi.fn().mockRejectedValue(new Error('whatever the backend said'));
     const client = stubSurveyClient(patch);
     render(<SurveyPreferences surveyClient={client} />);
     await act(async () => { fireEvent.click(screen.getByRole('checkbox')); });
     await waitFor(() =>
-      expect(screen.getByRole('alert')).toHaveTextContent(/Impossible d.enregistrer/i),
+      expect(screen.getByRole('alert')).toHaveTextContent(/Une erreur est survenue/i),
     );
     expect((screen.getByRole('checkbox') as HTMLInputElement).checked).toBe(false);
+  });
+
+  it('shows the network-specific copy when the fetch itself fails', async () => {
+    // TypeError mirrors what `fetch()` rejects with on CORS / DNS / offline —
+    // the exact shape that produced the 2026-05-26 5th-CORS regression.
+    const patch = vi.fn().mockRejectedValue(new TypeError('Failed to fetch'));
+    const client = stubSurveyClient(patch);
+    render(<SurveyPreferences surveyClient={client} />);
+    await act(async () => { fireEvent.click(screen.getByRole('checkbox')); });
+    await waitFor(() =>
+      expect(screen.getByRole('alert')).toHaveTextContent(/Connexion impossible/i),
+    );
+    expect(screen.queryByText(/failed to fetch/i)).toBeNull();
   });
 });

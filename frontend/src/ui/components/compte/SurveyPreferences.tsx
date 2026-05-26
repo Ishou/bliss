@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { css } from 'styled-system/css';
+import { messageForApiError } from '@/application/errors';
 import type { SurveyClient } from '@/application/survey';
 
 const fieldsetStyles = css({
@@ -62,7 +63,7 @@ export function SurveyPreferences({
       await surveyClient.patchPreferences({ deleteProposedOnErasure: next });
       setSavedAt('Enregistré.');
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : String(cause));
+      setError(messageForApiError(cause));
       // Roll back the optimistic UI.
       setDeleteOnErasure(!next);
     } finally {
@@ -85,7 +86,7 @@ export function SurveyPreferences({
         </span>
       </label>
       {error !== null ? (
-        <p className={alertStyles} role="alert">Impossible d&apos;enregistrer : {error}</p>
+        <p className={alertStyles} role="alert">{error}</p>
       ) : savedAt !== null && !saving ? (
         <p className={statusStyles} role="status">{savedAt}</p>
       ) : null}

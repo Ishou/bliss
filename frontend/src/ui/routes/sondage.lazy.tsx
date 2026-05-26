@@ -4,6 +4,7 @@ import { createLazyRoute } from '@tanstack/react-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { css } from 'styled-system/css';
 import { NOOP_ANALYTICS } from '@/application/analytics';
+import { messageForApiError } from '@/application/errors';
 import type { RatingSubmission, SurveyItem } from '@/application/survey';
 import { useAuth } from '@/ui/components/auth';
 import { ContentPage } from '@/ui/components/layout';
@@ -71,7 +72,7 @@ function SondagePage() {
       const next = await surveyClient.getNextItem({ excludedItemIds });
       setItem(next);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : String(cause));
+      setError(messageForApiError(cause));
     } finally {
       setLoading(false);
     }
@@ -127,7 +128,7 @@ function SondagePage() {
         await loadNext();
         return;
       }
-      setError(cause instanceof Error ? cause.message : String(cause));
+      setError(messageForApiError(cause));
     }
   }
 
