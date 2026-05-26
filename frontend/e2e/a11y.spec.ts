@@ -101,6 +101,40 @@ test.describe('WCAG 2.2 A + AA accessibility', () => {
     await runAxe(page, 'grilles');
   });
 
+  test('sondage route', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    // Pre-seed tour-seen so the SoloTour doesn't open over the page.
+    await page.addInitScript(() => {
+      window.localStorage.setItem('wordsparrow.tour.seen', 'true');
+    });
+    // Stub the survey-api `getNextItem` endpoint so the rating card hydrates
+    // deterministically. The route is auth-optional so we don't need to
+    // stub /me/* (anon visitors don't call it).
+    await page.route(/\/v1\/items\/next/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          itemId: '0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6b',
+          mot: 'CHAT',
+          definition: 'Animal domestique à moustaches',
+          pos: 'nom_commun',
+          categorie: 'animals',
+          style: 'definition_directe',
+          forceClaimed: 2,
+          longueur: 4,
+          tier: 'mid',
+          isCalibration: false,
+        }),
+      });
+    });
+    await page.goto('/sondage', { waitUntil: 'networkidle' });
+    await page.waitForSelector('[data-testid="rating-card"]', { state: 'visible' });
+    await page.evaluate(() => document.fonts.ready);
+
+    await runAxe(page, 'sondage');
+  });
+
   test('not-found route', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     // `networkidle` so React hydrates and sets `document.title` via

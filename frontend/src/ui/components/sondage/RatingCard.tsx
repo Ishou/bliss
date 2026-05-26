@@ -94,7 +94,9 @@ export function RatingCard({ item, isAuthenticated, onSubmit }: RatingCardProps)
   const [correctif, setCorrectif] = useState<SurveyCorrectif | undefined>(undefined);
   const [submitting, setSubmitting] = useState(false);
 
-  const startedAt = useRef<number>(performance.now());
+  // Initialised in the per-item effect below so the render body stays pure
+  // (react-hooks/purity flags calls to `performance.now` inside render).
+  const startedAt = useRef<number>(0);
 
   // Each new item resets the latency clock and the inputs. Keying by
   // item.itemId is the canonical pattern so the inputs unmount/remount.
