@@ -125,11 +125,7 @@ class UserDeletedConsumerTest {
 
     @Test
     fun `bootstrap is idempotent across repeated invocations`() {
-        // The chart's hook-weight pattern re-runs the bootstrap Job on every
-        // helm upgrade. addOrUpdateConsumer with a matching config must be a
-        // no-op — this is exactly what failed in the original incident
-        // (createInbox() generated a fresh deliverSubject each pod boot, so
-        // every "update" rejected the immutable-field change with 10013).
+        // addOrUpdateConsumer with a matching config must be a no-op.
         UserDeletedConsumerConfig.bootstrap(nats)
         UserDeletedConsumerConfig.bootstrap(nats)
         UserDeletedConsumerConfig.bootstrap(nats)
@@ -137,11 +133,7 @@ class UserDeletedConsumerTest {
 
     @Test
     fun `start returns null when the consumer has not been bootstrapped`() {
-        // Connect to a clean test NATS instance with the stream but no
-        // consumer. The api pod must NOT crash if the bootstrap Job hasn't
-        // run; it logs and stays up so the rest of the api keeps serving.
-        // Use a non-default durable name so this test is independent of
-        // the bootstrap-then-bind tests above.
+        // Non-default durable keeps this test independent of the bootstrap-then-bind tests above.
         val anonymise =
             AnonymizeUserRatingsUseCase(
                 ratings = CapturingRatings(AtomicInteger(), ConcurrentLinkedQueue()),

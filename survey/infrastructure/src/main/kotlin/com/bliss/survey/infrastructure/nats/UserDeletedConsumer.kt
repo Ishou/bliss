@@ -17,13 +17,7 @@ import org.slf4j.LoggerFactory
 import java.time.Duration
 import java.util.UUID
 
-/** Binds to the pre-created durable consumer survey-api-user-deleted (ADR-0049).
- * The consumer is created by the chart's pre-install/pre-upgrade Job
- * (`survey-worker --bootstrap-consumer`) per CLAUDE.md "Configure-in-cluster".
- * This split fixes the "[10013] consumer name already in use" failure that
- * blocked every rolling deploy: the api pod no longer tries to addOrUpdate
- * the consumer with a fresh `nats.createInbox()` deliverSubject on each boot.
- */
+/** Binds to the pre-created durable (ADR-0049); lifecycle owned by chart's pre-install Job. */
 class UserDeletedConsumer(
     private val nats: Connection,
     private val anonymise: AnonymizeUserRatingsUseCase,
@@ -49,12 +43,7 @@ class UserDeletedConsumer(
         synchronized(this) {
             val existing = job
             if (existing != null && existing.isActive) return existing
-            // bind(true) fetches the existing consumer's deliverSubject from the
-            // server, so the api pod never picks one. If the consumer doesn't
-            // exist (e.g. local k3d where the bootstrap Job is disabled), log
-            // and stay up — anonymisation won't fire, but the rest of the api
-            // is independent. In prod the chart's pre-install Job creates the
-            // consumer before the Deployment is applied.
+            // bind(true) lets the server supply the deliverSubject; api stays up if consumer is absent.
             val sub =
                 try {
                     nats.jetStream().subscribe(
@@ -122,9 +111,6 @@ class UserDeletedConsumer(
     }
 
     companion object {
-        // Kept for backwards-compat with callers that referenced these via
-        // UserDeletedConsumer.SUBJECT / STREAM_NAME / DURABLE_NAME. New code
-        // should reference UserDeletedConsumerConfig directly.
         const val SUBJECT: String = UserDeletedConsumerConfig.SUBJECT
         const val STREAM_NAME: String = UserDeletedConsumerConfig.STREAM_NAME
         const val DURABLE_NAME: String = UserDeletedConsumerConfig.DURABLE_NAME

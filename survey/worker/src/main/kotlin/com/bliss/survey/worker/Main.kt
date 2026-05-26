@@ -161,9 +161,7 @@ private fun runRetire(): Int {
     return 0
 }
 
-// Idempotent: addOrUpdateConsumer is a no-op when the existing config matches.
-// Invoked by the chart's pre-install/pre-upgrade Job (ADR-0049 + CLAUDE.md
-// "configure-in-cluster"). The api pod binds rather than recreates.
+// Idempotent; pre-install Job only. See UserDeletedConsumerConfig.bootstrap().
 private fun runBootstrapConsumer(): Int {
     val natsUrl = System.getenv("NATS_URL") ?: error("missing env NATS_URL")
     val conn =

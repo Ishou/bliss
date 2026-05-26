@@ -5,21 +5,13 @@ import io.nats.client.api.AckPolicy
 import io.nats.client.api.ConsumerConfiguration
 import java.time.Duration
 
-/** Single source of truth for the survey-api's JetStream durable consumer.
- * The bootstrap path (`survey-worker --bootstrap-consumer`, run by the chart's
- * pre-install/pre-upgrade Job) and the api pod's bind path
- * ([UserDeletedConsumer]) both reference these constants so the durable
- * config can never drift between create-time and bind-time.
- */
+/** Consumer constants shared by bootstrap Job and api bind path (ADR-0049). */
 object UserDeletedConsumerConfig {
     const val SUBJECT: String = "wordsparrow.user.deleted"
     const val STREAM_NAME: String = "WORDSPARROW_USER_EVENTS"
     const val DURABLE_NAME: String = "survey-api-user-deleted"
 
-    // Stable deliver subject derived from the durable name. The bootstrap Job
-    // passes this verbatim to `addOrUpdateConsumer`; the api pod fetches it
-    // back via `bind(true)`. Keeping it deterministic means re-running the
-    // Job on helm upgrade is a no-op (same config → idempotent).
+    // Deterministic so addOrUpdateConsumer is idempotent across helm upgrades.
     const val DELIVER_SUBJECT: String = "_DELIVER.survey-api.user-deleted"
 
     fun consumerConfiguration(): ConsumerConfiguration =
