@@ -74,6 +74,17 @@ class UserDeletedConsumer(
                         e.toString(),
                     )
                     return null
+                } catch (e: IllegalArgumentException) {
+                    // jnats raises IllegalArgumentException("Consumer not found.") when
+                    // bind(true) targets a consumer that doesn't exist (local k3d without
+                    // the bootstrap Job). Same graceful-degrade path as the API error case.
+                    log.warn(
+                        "survey_user_deleted_consumer_bind_failed stream={} durable={} error={}",
+                        streamName,
+                        durableName,
+                        e.toString(),
+                    )
+                    return null
                 }
             subscription = sub
             val newJob =
