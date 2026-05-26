@@ -510,3 +510,44 @@ jobs:
           done
           echo "::error::$HEALTH_URL did not return 200 after 50s"
           exit 1
+
+      - name: CORS preflight smoke
+        if: env.RUN_ROW == 'true'
+        env:
+          PREFLIGHT_URL: ${{ matrix.health-url }}
+        # Runtime guard on ADR-0048: source-level Konsist can't prove the rolled-out pod's wildcard predicate is live; this verifies it against the public ingress.
+        run: |
+          set -euo pipefail
+          deadline=$(( $(date +%s) + 60 ))
+          attempt=0
+          while :; do
+            attempt=$((attempt + 1))
+            headers_file="$(mktemp)"
+            status=$(curl -sS -o /dev/null -D "$headers_file" -m 5 \
+              -w '%{http_code}' \
+              -X OPTIONS "$PREFLIGHT_URL" \
+              -H 'Origin: https://wordsparrow.io' \
+              -H 'Access-Control-Request-Method: GET' \
+              -H 'Access-Control-Request-Headers: traceparent' \
+              || true)
+            allow_origin=$(grep -i '^access-control-allow-origin:' "$headers_file" \
+              | tr -d '\r' | awk -F': ' '{print tolower($2)}' || true)
+            allow_headers=$(grep -i '^access-control-allow-headers:' "$headers_file" \
+              | tr -d '\r' | awk -F': ' '{print tolower($2)}' || true)
+            if [ "$status" = "200" ] \
+               && [ "$allow_origin" = "https://wordsparrow.io" ] \
+               && printf '%s' "$allow_headers" | grep -q 'traceparent'; then
+              echo "CORS preflight OK on attempt $attempt"
+              rm -f "$headers_file"
+              exit 0
+            fi
+            echo "::warning::attempt $attempt failed (status=$status allow_origin='$allow_origin' allow_headers='$allow_headers')"
+            cat "$headers_file" || true
+            rm -f "$headers_file"
+            if [ "$(date +%s)" -ge "$deadline" ]; then
+              break
+            fi
+            sleep 5
+          done
+          echo "::error::CORS preflight against $PREFLIGHT_URL failed within 60s — ADR-0048 wildcard predicate may not be live on the rolled-out pod"
+          exit 1
