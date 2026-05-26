@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { css, cx } from 'styled-system/css';
 import { InvalidDisplayNameError, type AuthClient, type GetMeResult } from '@/application/auth';
 import { useAuth } from '@/ui/components/auth';
+import { MyContributions, SurveyPreferences } from '@/ui/components/compte';
 import { ContentPage } from '@/ui/components/layout';
 import { Button, Dialog, DialogDescription, TextField, useToast } from '@/ui/components/primitives';
 import { buildHead, SITE_BASE_URL } from '@/ui/seo';
@@ -154,7 +155,7 @@ function DangerZone({
 }
 
 function ComptePage() {
-  const { authClient } = Route.useRouteContext();
+  const { authClient, surveyClient } = Route.useRouteContext();
   const { state, refresh } = useAuth();
   const navigate = useNavigate();
   const toast = useToast();
@@ -292,6 +293,24 @@ function ComptePage() {
             </li>
           </ul>
         </section>
+
+        {surveyClient ? (
+          <section className={sectionStyles} aria-labelledby="compte-contributions-title">
+            <h2 id="compte-contributions-title" className={sectionTitleStyles}>
+              Mes contributions
+            </h2>
+            <MyContributions surveyClient={surveyClient} />
+          </section>
+        ) : null}
+
+        {surveyClient ? (
+          <section className={sectionStyles} aria-labelledby="compte-survey-prefs-title">
+            <h2 id="compte-survey-prefs-title" className={sectionTitleStyles}>
+              Préférences du sondage
+            </h2>
+            <SurveyPreferences surveyClient={surveyClient} />
+          </section>
+        ) : null}
 
         <DangerZone
           me={me}

@@ -2,11 +2,13 @@ import { HeadContent, Outlet, createRootRouteWithContext } from '@tanstack/react
 import { useLayoutEffect } from 'react';
 import { css } from 'styled-system/css';
 import type { PuzzleRepository, PuzzleSolver } from '@/application';
+import type { AnalyticsPort } from '@/application/analytics';
 import type { AuthClient } from '@/application/auth';
 import type { GameClient, LobbyClient } from '@/application/game';
 import type { LobbyJoinCodeStash } from '@/application/session/LobbyJoinCodeStash';
 import type { SessionClient } from '@/application/session/SessionClient';
 import type { SoloEntriesStore } from '@/application/solo/SoloEntriesStore';
+import type { SurveyAnonStore, SurveyClient } from '@/application/survey';
 import type { TourSeenStore } from '@/application/tour/TourSeenStore';
 import type { Pseudonym, SessionId } from '@/domain/game';
 import { AnnouncerProvider } from '@/ui/components/a11y/Announcer';
@@ -52,6 +54,12 @@ export interface AppRouterContext {
   readonly gameClient?: GameClient;
   readonly getSession?: () => AppSession;
   readonly setPseudonym?: (pseudonym: Pseudonym) => void;
+  // Survey-api adapter (ADR-0056). Optional; SondagePage degrades gracefully when undefined.
+  readonly surveyClient?: SurveyClient;
+  // Anon-rated dedup store (ADR-0056). Optional for Vitest fixtures.
+  readonly surveyAnonStore?: SurveyAnonStore;
+  // Analytics port (ADR-0025). Optional; defaults to a no-op in tests.
+  readonly analytics?: AnalyticsPort;
   // ADR-0027: per-tab one-shot stash that the `/join/$code` route and
   // the Accueil "Rejoindre" submit populate, and the lobby route's
   // WS-open consumes. Optional alongside the multiplayer adapters
