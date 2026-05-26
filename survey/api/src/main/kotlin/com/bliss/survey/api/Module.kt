@@ -10,7 +10,6 @@ import com.bliss.survey.api.routes.meProgressRoute
 import com.bliss.survey.api.routes.nextItemRoute
 import com.bliss.survey.api.routes.submitRatingRoute
 import io.ktor.http.ContentType
-import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.json.json
@@ -40,21 +39,7 @@ fun Application.surveyApiModule(
         json(WIRE_JSON)
     }
 
-    install(CORS) {
-        for (origin in config.allowedOrigins) {
-            val parsed = parseOrigin(origin)
-            if (parsed != null) {
-                allowHost(parsed.hostPort, schemes = listOf(parsed.scheme))
-            }
-        }
-        // PATCH on /v1/me/preferences (Ktor allows GET/POST/HEAD by default).
-        allowMethod(HttpMethod.Patch)
-        allowHeader(HttpHeaders.ContentType)
-        allowHeader(HttpHeaders.Cookie)
-        allowCredentials = true
-        allowNonSimpleContentTypes = true
-        maxAgeInSeconds = 600
-    }
+    installSurveyCors(config)
 
     install(StatusPages) {
         // RFC 7807 catch-all per ADR-0003 §6.
@@ -129,6 +114,26 @@ internal suspend fun ApplicationCall.respondProblem(
     contentType = ContentType.parse("application/problem+json"),
     status = status,
 )
+
+internal fun Application.installSurveyCors(config: SurveyApiConfig) {
+    install(CORS) {
+        for (origin in config.allowedOrigins) {
+            val parsed = parseOrigin(origin)
+            if (parsed != null) {
+                allowHost(parsed.hostPort, schemes = listOf(parsed.scheme))
+            }
+        }
+        // PATCH on /v1/me/preferences (Ktor allows GET/POST/HEAD by default).
+        allowMethod(HttpMethod.Patch)
+
+        // ADR-0048: wildcard predicate echoes request headers verbatim; never emits literal "*".
+        allowHeaders { true }
+
+        allowCredentials = true
+        allowNonSimpleContentTypes = true
+        maxAgeInSeconds = 600
+    }
+}
 
 private data class ParsedOrigin(
     val scheme: String,
