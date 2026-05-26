@@ -1,0 +1,50 @@
+# Production overrides — Hetzner k3s cluster (ADR-0009 §2).
+
+# Pin the K8s resource name to the release name so the CD workflow's
+# `kubectl rollout status deployment/wordsparrow-survey-api` line resolves
+# without per-context name arithmetic. Without this, helm's default
+# fullname is `<release>-<chart>` = `wordsparrow-survey-api-bliss-survey-api`.
+fullnameOverride: "wordsparrow-survey-api"
+
+image:
+  # Fail-fast guard: helm aborts if digest is empty (see _helpers.tpl).
+  requireDigest: true
+  # Set by the CD workflow per push (ADR-0009 §8 step 5). Format "sha256:...".
+  digest: ""
+
+database:
+  # CNPG cluster lives in the sibling `wordsparrow-survey-api-pg` Helm release
+  # (chart `survey/api/deploy/db-chart/`, deployed first by the workflow).
+  enabled: true
+
+ingress:
+  host: "survey.wordsparrow.io"
+  tlsSecretName: "bliss-survey-api-tls"
+  # Issuer + external-dns provider installed by cluster bring-up (ADR-0009 §3).
+  # `external-dns.alpha.kubernetes.io/target` pins the public Hetzner floating
+  # IP (ADR-0012) — same pattern as identity/api + game/api.
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    external-dns.alpha.kubernetes.io/hostname: "survey.wordsparrow.io"
+    external-dns.alpha.kubernetes.io/target: "116.202.180.82"
+    # Per-IP rate limiting at the ingress (leaky-bucket). Survey-api is a
+    # rating-submission REST surface — generous-but-bounded.
+    nginx.ingress.kubernetes.io/limit-rps: "5"
+    nginx.ingress.kubernetes.io/limit-burst-multiplier: "5"
+    nginx.ingress.kubernetes.io/limit-connections: "30"
+
+# Bootstrapped via `kubectl create secret generic bliss-survey-api-env ...`
+# (ADR-0009 §10). Carries SURVEY_DB_USER + SURVEY_DB_PASSWORD; the JDBC URL
+# is supplied separately via the CNPG `<clusterName>-app` Secret. The cookie
+# verifier reads IDENTITY_BASE_URL from values.yaml's env block.
+envFromSecret: "bliss-survey-api-env"
+
+calibration:
+  # Seed gold items at install time (Helm post-install Job, ADR-pattern:
+  # configure-in-cluster).
+  seedEnabled: true
+
+networkPolicy:
+  # Restrict pod egress to: in-cluster DNS, NATS, identity-api, CNPG.
+  # OpenTelemetry collector reachable via the OTEL_EXPORTER_OTLP_ENDPOINT.
+  enabled: true

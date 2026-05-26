@@ -58,6 +58,11 @@ on:
       - 'identity/domain/**'
       - 'identity/application/**'
       - 'identity/infrastructure/**'
+      - 'survey/api/**'
+      - 'survey/domain/**'
+      - 'survey/application/**'
+      - 'survey/infrastructure/**'
+      - 'survey/worker/**'
       - 'gradle/**'
       - 'gradlew'
       - 'settings.gradle.kts'
@@ -78,6 +83,11 @@ on:
       - 'identity/domain/**'
       - 'identity/application/**'
       - 'identity/infrastructure/**'
+      - 'survey/api/**'
+      - 'survey/domain/**'
+      - 'survey/application/**'
+      - 'survey/infrastructure/**'
+      - 'survey/worker/**'
       - 'gradle/**'
       - 'gradlew'
       - 'settings.gradle.kts'
@@ -119,6 +129,13 @@ jobs:
             dockerfile: identity/api/Dockerfile
             image-name: wordsparrow-identity-api
             digest-artifact: image-digest-identity
+          # survey-api (ADR-0056). Single image bundles the api shadowJar
+          # + :survey:worker installDist so the chart's post-install seed Job
+          # and hourly retire CronJob share a digest with the Deployment.
+          - context: survey
+            dockerfile: survey/api/Dockerfile
+            image-name: wordsparrow-survey-api
+            digest-artifact: image-digest-survey
           # ADR-0042: :grid:worker daily-puzzle pre-generation CLI shipped as a
           # CronJob (grid/api/deploy/chart/templates/cronjob-ensure-dailies.yaml).
           # Separate image so the worker can be tagged + rolled independently

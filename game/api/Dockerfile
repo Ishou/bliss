@@ -41,6 +41,7 @@ COPY survey/domain/build.gradle.kts survey/domain/
 COPY survey/application/build.gradle.kts survey/application/
 COPY survey/infrastructure/build.gradle.kts survey/infrastructure/
 COPY survey/api/build.gradle.kts survey/api/
+COPY survey/worker/build.gradle.kts survey/worker/
 
 # Source for the game/ context only — shadowJar transitively pulls
 # :game:domain, :game:application, :game:infrastructure.

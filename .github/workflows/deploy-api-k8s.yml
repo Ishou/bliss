@@ -67,6 +67,7 @@ on:
           - grid
           - game
           - identity
+          - survey
         default: grid
       digest:
         description: 'Image digest to deploy, format "sha256:..." (manual rollback / redeploy).'
@@ -179,6 +180,25 @@ jobs:
             db-release-name: wordsparrow-identity-api-pg
             db-chart-path: identity/api/deploy/db-chart/
             db-values-file: identity/api/deploy/db-chart/values-prod.yaml
+          # survey-api (ADR-0056). Same chart-split pattern as game-api +
+          # identity-api. The api image bundles the :survey:worker installDist
+          # so the chart's post-install seed Job and hourly retire CronJob
+          # share the same digest (no separate worker artifact).
+          # Pre-merge gates: the bootstrap of `bliss-survey-api-env` Secret
+          # and the GHCR package visibility flip — until both are done, the
+          # first survey-context run on main may fail at wait-for-postgres
+          # (Secret missing) or ImagePullBackOff (package private). Both
+          # recoverable by completing the matching docs/deploy.md steps.
+          - context: survey
+            release-name: wordsparrow-survey-api
+            chart-path: survey/api/deploy/chart/
+            values-file: survey/api/deploy/chart/values-prod.yaml
+            digest-artifact: image-digest-survey
+            worker-digest-artifact: ""
+            health-url: https://survey.wordsparrow.io/v1/health
+            db-release-name: wordsparrow-survey-api-pg
+            db-chart-path: survey/api/deploy/db-chart/
+            db-values-file: survey/api/deploy/db-chart/values-prod.yaml
     environment:
       # Per-context environment so each appears separately in the GitHub
       # Environments UI and required-reviewer rules can be applied

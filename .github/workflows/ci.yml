@@ -46,3 +46,39 @@ jobs:
             **/build/test-results/**
           if-no-files-found: ignore
           retention-days: 7
+
+  survey-export-csv-byteequal:
+    # Tier-1 gate for the §8.1 export contract (ADR-0056). The full ./gradlew
+    # build job above also runs ExportByteEqualTest as part of :survey:worker:test;
+    # this dedicated job surfaces the byte-equal guard as its own required
+    # status check on PRs so a regression in the export shape is named, not
+    # hidden in the wider Gradle log.
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Run byte-equal export guard
+        run: ./gradlew :survey:worker:test --tests com.bliss.survey.worker.ExportByteEqualTest --stacktrace
+
+      - name: Upload test reports
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: survey-export-csv-byteequal-reports
+          path: |
+            survey/worker/build/reports/tests/**
+            survey/worker/build/test-results/**
+          if-no-files-found: ignore
+          retention-days: 7

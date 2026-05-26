@@ -1,0 +1,36 @@
+{{- if .Values.calibration.seedEnabled }}
+{{/*
+Calibration seed: 20 hand-validated rows from
+data/curated/gold_pilot_v1.csv. Embedded verbatim so the chart is
+self-contained — no network fetch at install time. Bump in lockstep
+with the curated CSV when the gold set grows.
+*/}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "bliss-survey-api.fullname" . }}-calibration
+  labels: {{- include "bliss-survey-api.labels" . | nindent 4 }}
+data:
+  gold_pilot_v1.csv: |
+    mot;definition;pos;categorie;style;force;longueur;source;meta
+    PAIN;Aliment de boulangerie;nom_commun;aliments;definition_directe;1;4;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+    PAIN;Compagnon de table;nom_commun;aliments;periphrase;3;4;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+    TRAIN;Transport ferroviaire;nom_commun;transports;definition_directe;1;5;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+    TRAIN;File sur les rails;nom_commun;transports;fonction_role;1;5;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+    POMME;Fruit du verger;nom_commun;aliments;definition_directe;1;5;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+    POMME;Tentation d’Ève;nom_commun;aliments;culturel;2;5;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+    POMME;D’Adam au cou;nom_commun;aliments;cryptique;3;5;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+    TABLE;Meuble à pieds;nom_commun;mobilier_objet;definition_directe;1;5;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+    TABLE;Support du repas;nom_commun;mobilier_objet;fonction_role;2;5;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+    LAMPE;Source d’éclairage;nom_commun;mobilier_objet;definition_directe;2;5;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+    LAMPE;Chasse l’obscurité;nom_commun;mobilier_objet;periphrase;2;5;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+    CŒUR;Organe vital;nom_commun;body_parts;definition_directe;2;4;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+    CŒUR;Bat dans la poitrine;nom_commun;body_parts;fonction_role;2;4;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+    CŒUR;Milieu d’un sujet;nom_commun;body_parts;metonymie;3;4;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+    CŒUR;Brisé par chagrin;nom_commun;body_parts;fonction_role;3;4;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+    AIMER;Chérir;verbe_infinitif;sentiments_etats;definition_directe;1;5;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+    AIMER;Éprouver de l’affection;verbe_infinitif;sentiments_etats;periphrase;2;5;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+    GRAND;Élevé en taille;adjectif;autre;definition_directe;2;5;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+    GRAND;Dépasse les autres;adjectif;autre;fonction_role;2;5;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+    HUGO;Patronyme de Victor;nom_propre;first_names;culturel;2;4;gold;annotator:claude_pilote|reviewed:true|reviewer:utilisateur
+{{- end }}

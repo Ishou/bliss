@@ -83,6 +83,17 @@ jobs:
             release: wordsparrow-identity-api-pg
             hasProdValues: true
             localValuesFile: values.yaml
+          # survey-api chart (ADR-0056). Mirrors identity-api: api chart +
+          # sibling db-chart split. Calibration seed via post-install Job, hourly
+          # retire CronJob inside the api chart (configure-in-cluster pattern).
+          - path: survey/api/deploy/chart
+            release: wordsparrow-survey-api
+            hasProdValues: true
+            localValuesFile: values-local.yaml
+          - path: survey/api/deploy/db-chart
+            release: wordsparrow-survey-api-pg
+            hasProdValues: true
+            localValuesFile: values.yaml
           # NATS JetStream chart (ADR-0049). Sits under `infra/nats/` rather
           # than `<ctx>/api/deploy/` because it is shared infrastructure with
           # no owning bounded context. Ships values.yaml (local defaults) +

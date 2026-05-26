@@ -175,6 +175,17 @@ CHART_DIR="grid/api/deploy/chart"
 APP_NAMESPACE="default"
 APP_RELEASE="wordsparrow-api"
 
+# Survey-api local deploy (ADR-0056). Sibling db-chart provisions the CNPG
+# Cluster; the api chart installs Deployment + Service + Ingress + the
+# post-install seed Job + hourly retire CronJob. Image is built from
+# survey/api/Dockerfile (bundles api shadowJar + worker installDist).
+SURVEY_IMAGE="ghcr.io/ishou/bliss/wordsparrow-survey-api"
+SURVEY_TAG="local"
+SURVEY_CHART_DIR="survey/api/deploy/chart"
+SURVEY_DB_CHART_DIR="survey/api/deploy/db-chart"
+SURVEY_RELEASE="wordsparrow-survey-api"
+SURVEY_DB_RELEASE="wordsparrow-survey-api-pg"
+
 cmd_deploy() {
   preflight
   if ! cluster_exists; then
@@ -201,6 +212,31 @@ cmd_deploy() {
     --set "image.tag=${APP_TAG}" \
     --set "image.pullPolicy=Never" \
     --wait --timeout 120s
+
+  # Survey-api: same build + import + helm-upgrade triplet, plus a sibling
+  # db-chart release for the CNPG Cluster. db-chart goes first so the api's
+  # wait-for-postgres init container can resolve the -rw Service.
+  local survey_chart="${repo_root}/${SURVEY_CHART_DIR}"
+  local survey_db_chart="${repo_root}/${SURVEY_DB_CHART_DIR}"
+
+  log "installing/upgrading Helm release '${SURVEY_DB_RELEASE}' (CNPG Cluster)"
+  helm upgrade --install "${SURVEY_DB_RELEASE}" "${survey_db_chart}" \
+    -n "${APP_NAMESPACE}" \
+    -f "${survey_db_chart}/values.yaml"
+
+  log "building Docker image ${SURVEY_IMAGE}:${SURVEY_TAG}"
+  docker build -t "${SURVEY_IMAGE}:${SURVEY_TAG}" -f "${repo_root}/survey/api/Dockerfile" "${repo_root}"
+
+  log "importing image into k3d cluster '${CLUSTER_NAME}'"
+  k3d image import "${SURVEY_IMAGE}:${SURVEY_TAG}" --cluster "${CLUSTER_NAME}"
+
+  log "installing/upgrading Helm release '${SURVEY_RELEASE}'"
+  helm upgrade --install "${SURVEY_RELEASE}" "${survey_chart}" \
+    -n "${APP_NAMESPACE}" \
+    -f "${survey_chart}/values-local.yaml" \
+    --set "image.repository=${SURVEY_IMAGE}" \
+    --set "image.tag=${SURVEY_TAG}" \
+    --set "image.pullPolicy=Never"
 
   log "deploy complete — https://wordsparrow.local/ (self-signed cert)"
 }

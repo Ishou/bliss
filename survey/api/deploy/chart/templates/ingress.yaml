@@ -1,0 +1,33 @@
+{{- if .Values.ingress.enabled -}}
+{{- if not .Values.ingress.host -}}
+{{- fail "ingress.host must be set (see values-prod.yaml / values-local.yaml)" -}}
+{{- end -}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "bliss-survey-api.fullname" . }}
+  labels: {{- include "bliss-survey-api.labels" . | nindent 4 }}
+  {{- with .Values.ingress.annotations }}
+  annotations: {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  ingressClassName: {{ .Values.ingress.className }}
+  {{- if .Values.ingress.tlsSecretName }}
+  tls:
+    - hosts: [{{ .Values.ingress.host | quote }}]
+      secretName: {{ .Values.ingress.tlsSecretName }}
+  {{- end }}
+  rules:
+    - host: {{ .Values.ingress.host | quote }}
+      http:
+        paths:
+          # REST-only ingress (no WebSocket annotations — survey is rating
+          # submission HTTP). Host (survey.wordsparrow.io prod) isolates the
+          # service, so routes at `/` rather than a path prefix.
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "bliss-survey-api.fullname" . }}
+                port: {number: {{ .Values.service.port }}}
+{{- end }}

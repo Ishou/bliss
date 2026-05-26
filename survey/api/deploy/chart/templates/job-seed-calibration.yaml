@@ -1,0 +1,66 @@
+{{- if .Values.calibration.seedEnabled }}
+{{/*
+Post-install / post-upgrade Job: ingests the gold pilot CSV into
+survey_items via `survey-worker --ingest-batch`. Idempotent at the
+business level because the parser assigns a fresh UUID per row and
+sourceBatch is fixed; rerunning produces duplicate items, which is
+why `helm.sh/hook-delete-policy: before-hook-creation` keeps only one
+run alive at a time. The CSV is mounted from the ConfigMap.
+
+Pattern: ADR-0009 "configure-in-cluster, not push-from-CI" — the Job
+runs *inside* the chart, not as a GitHub Actions step.
+*/}}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "bliss-survey-api.fullname" . }}-seed
+  annotations:
+    "helm.sh/hook": "post-install,post-upgrade"
+    "helm.sh/hook-delete-policy": before-hook-creation
+    "helm.sh/hook-weight": "5"
+  labels: {{- include "bliss-survey-api.labels" . | nindent 4 }}
+spec:
+  ttlSecondsAfterFinished: 600
+  backoffLimit: 2
+  template:
+    metadata:
+      labels: {{- include "bliss-survey-api.selectorLabels" . | nindent 8 }}
+    spec:
+      restartPolicy: OnFailure
+      serviceAccountName: {{ include "bliss-survey-api.serviceAccountName" . }}
+      securityContext: {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: seed
+          image: {{ include "bliss-survey-api.image" . | quote }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext: {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+          command: ["/app/bin/survey-worker"]
+          args:
+            - "--ingest-batch"
+            - "--csv"
+            - "/seed/gold_pilot_v1.csv"
+            - "--source-batch"
+            - {{ .Values.calibration.sourceBatch | quote }}
+            - "--tier"
+            - {{ .Values.calibration.tier | quote }}
+          env:
+            {{- if .Values.database.enabled }}
+            - name: SURVEY_JDBC_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.database.clusterName }}-app
+                  key: uri
+            {{- end }}
+          {{- with .Values.envFromSecret }}
+          envFrom:
+            - secretRef: {name: {{ . }}}
+          {{- end }}
+          volumeMounts:
+            - {name: seed-csv, mountPath: /seed}
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - name: seed-csv
+          configMap:
+            name: {{ include "bliss-survey-api.fullname" . }}-calibration
+        - {name: tmp, emptyDir: {}}
+{{- end }}

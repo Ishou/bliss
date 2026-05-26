@@ -1,0 +1,23 @@
+# Local overrides — k3d cluster (ADR-0009 §5, scripts/local-cluster.sh).
+replicaCount: 1
+image:
+  digest: ""
+  tag: "0.1.0"
+  # Never so a locally-built `bliss-survey-api:0.1.0` (loaded into k3d
+  # via `k3d image import`) wins over any GHCR pull attempt.
+  pullPolicy: Never
+# No limits locally — k3d node is small; JVM honours UseContainerSupport.
+resources: {}
+ingress:
+  enabled: true
+  host: "localhost"
+  tlsSecretName: "bliss-survey-api-tls"
+  annotations:
+    cert-manager.io/cluster-issuer: "selfsigned"
+# Carries SURVEY_DB_USER + SURVEY_DB_PASSWORD locally; create via:
+#   kubectl create secret generic bliss-survey-api-env \
+#     --from-literal=SURVEY_DB_USER=survey \
+#     --from-literal=SURVEY_DB_PASSWORD=survey
+envFromSecret: "bliss-survey-api-env"
+calibration:
+  seedEnabled: false
