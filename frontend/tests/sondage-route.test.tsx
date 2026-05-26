@@ -290,6 +290,25 @@ describe('Sondage route', () => {
     localStorage.clear();
   });
 
+  it('auth visit still passes anon store items so pre-auth ratings (user_id=NULL on server) are deduped', async () => {
+    const authClient: AuthClient = {
+      ...stubAuth(),
+      whoami: vi.fn().mockResolvedValue({
+        userId: '0190e3a4-7a2c-7c9e-8f1a-1234567890ab',
+        displayName: 'Lapin 472',
+      }),
+    };
+    const preAuthRatedId = '0190e3a4-7a2c-7c9e-8f1a-aaaaaaaaaaaa';
+    localStorage.setItem('survey.anon.rated_ids', JSON.stringify([preAuthRatedId]));
+    const getNextItem = vi.fn().mockResolvedValue(sampleItem);
+    const surveyClient = stubSurveyClient({ getNextItem });
+    renderSondage({ authClient, surveyClient });
+
+    await waitFor(() => expect(getNextItem).toHaveBeenCalled());
+    expect(getNextItem).toHaveBeenLastCalledWith({ excludedItemIds: [preAuthRatedId] });
+    localStorage.clear();
+  });
+
   it('auth SKIP excludes skipped ids on the next getNextItem call without touching surveyAnonStore', async () => {
     const authClient: AuthClient = {
       ...stubAuth(),
