@@ -7,26 +7,23 @@
 // 'include'` is set per call so the __Secure-ws_session cookie flows
 // through. The composition root reads VITE_SURVEY_API_BASE; tests pass
 // baseUrl explicitly.
+//
+// The shape returned satisfies the application-layer `SurveyClient`
+// port; the wire types come from the generated OpenAPI types but only
+// flow through this file — the application layer never sees them.
 
+import type {
+  RatingResult,
+  RatingSubmission,
+  SurveyClient,
+  SurveyContribution,
+  SurveyItem,
+  SurveyPreferencesPatch,
+  SurveyProgress,
+} from '@/application/survey';
 import type { components, paths } from './types';
 
-type Item = components['schemas']['Item'];
-type RatingRequest = components['schemas']['RatingRequest'];
-type RatingResponse = components['schemas']['RatingResponse'];
-type ProgressResponse = components['schemas']['ProgressResponse'];
-type ContributionItem = components['schemas']['ContributionItem'];
 type CorrectifRejection = components['schemas']['CorrectifRejection'];
-type PreferencesPatch = components['schemas']['PreferencesPatch'];
-
-// Convenience re-exports for application/ui layers that need the shapes.
-export type {
-  Item as SurveyApiItem,
-  RatingRequest as SurveyApiRatingRequest,
-  RatingResponse as SurveyApiRatingResponse,
-  ProgressResponse as SurveyApiProgressResponse,
-  ContributionItem as SurveyApiContributionItem,
-  PreferencesPatch as SurveyApiPreferencesPatch,
-};
 
 export class SignInRequiredError extends Error {
   constructor() {
@@ -36,25 +33,21 @@ export class SignInRequiredError extends Error {
 }
 
 export class CorrectifRejectedError extends Error {
-  constructor(public readonly detail: CorrectifRejection) {
+  readonly detail: CorrectifRejection;
+  constructor(detail: CorrectifRejection) {
     super(`correctif rejected by filter ${detail.filterId}: ${detail.reason}`);
     this.name = 'CorrectifRejectedError';
+    this.detail = detail;
   }
 }
 
 export class AlreadyRatedError extends Error {
-  constructor(public readonly response: RatingResponse) {
+  readonly response: RatingResult;
+  constructor(response: RatingResult) {
     super('already rated');
     this.name = 'AlreadyRatedError';
+    this.response = response;
   }
-}
-
-export interface SurveyClient {
-  getNextItem(opts?: { readonly excludedItemIds?: readonly string[] }): Promise<Item | null>;
-  submitRating(itemId: string, body: RatingRequest): Promise<RatingResponse>;
-  getProgress(): Promise<ProgressResponse>;
-  getContributions(): Promise<ReadonlyArray<ContributionItem>>;
-  patchPreferences(body: PreferencesPatch): Promise<void>;
 }
 
 export interface HttpSurveyClientOptions {
@@ -80,10 +73,10 @@ export function createHttpSurveyClient(options: HttpSurveyClientOptions): Survey
     const res = await fetchImpl(url, { credentials: 'include' });
     if (res.status === 204) return null;
     if (!res.ok) throw new Error(`getNextItem failed: ${res.status}`);
-    return (await res.json()) as Item;
+    return (await res.json()) as SurveyItem;
   };
 
-  const submitRating: SurveyClient['submitRating'] = async (itemId, body) => {
+  const submitRating: SurveyClient['submitRating'] = async (itemId: string, body: RatingSubmission) => {
     const url = `${base}/v1/items/${encodeURIComponent(itemId)}/rating`;
     const res = await fetchImpl(url, {
       method: 'POST',
@@ -97,28 +90,28 @@ export function createHttpSurveyClient(options: HttpSurveyClientOptions): Survey
       throw new CorrectifRejectedError(detail);
     }
     if (res.status === 409) {
-      // Auth caller already rated this item; return the existing rating envelope.
-      throw new AlreadyRatedError((await res.json()) as RatingResponse);
+      // Auth caller already rated this item; the response envelope is the existing rating.
+      throw new AlreadyRatedError((await res.json()) as RatingResult);
     }
     if (!res.ok) throw new Error(`submitRating failed: ${res.status}`);
-    return (await res.json()) as RatingResponse;
+    return (await res.json()) as RatingResult;
   };
 
   const getProgress: SurveyClient['getProgress'] = async () => {
     const res = await fetchImpl(`${base}/v1/me/progress`, { credentials: 'include' });
     if (res.status === 401) throw new SignInRequiredError();
     if (!res.ok) throw new Error(`getProgress failed: ${res.status}`);
-    return (await res.json()) as ProgressResponse;
+    return (await res.json()) as SurveyProgress;
   };
 
   const getContributions: SurveyClient['getContributions'] = async () => {
     const res = await fetchImpl(`${base}/v1/me/contributions`, { credentials: 'include' });
     if (res.status === 401) throw new SignInRequiredError();
     if (!res.ok) throw new Error(`getContributions failed: ${res.status}`);
-    return (await res.json()) as ContributionItem[];
+    return (await res.json()) as SurveyContribution[];
   };
 
-  const patchPreferences: SurveyClient['patchPreferences'] = async (body) => {
+  const patchPreferences: SurveyClient['patchPreferences'] = async (body: SurveyPreferencesPatch) => {
     const res = await fetchImpl(`${base}/v1/me/preferences`, {
       method: 'PATCH',
       credentials: 'include',

@@ -1,0 +1,150 @@
+// Application-layer shapes for the /sondage surface. Mirrors the survey
+// OpenAPI contract by structure but is defined here independently so the
+// application layer never imports `infrastructure/` (eslint-plugin-
+// boundaries enforces the wall). The HTTP adapter in
+// `infrastructure/api/survey/client.ts` maps between these and the
+// generated wire types; the surface is small enough that the maintenance
+// cost of two parallel definitions is negligible.
+
+export type SurveyPos =
+  | 'verbe_infinitif'
+  | 'verbe_conjugue'
+  | 'participe_passe'
+  | 'participe_present'
+  | 'nom_commun'
+  | 'nom_propre'
+  | 'adjectif'
+  | 'adverbe'
+  | 'interjection'
+  | 'mot_outil'
+  | 'sigle_abreviation'
+  | 'autre';
+
+export type SurveyCategorie =
+  | 'chemical_symbols'
+  | 'units'
+  | 'celestial_objects'
+  | 'nombres'
+  | 'roman_numerals'
+  | 'cardinal_points'
+  | 'cities'
+  | 'countries'
+  | 'country_codes'
+  | 'geography'
+  | 'first_names'
+  | 'titles'
+  | 'mythology'
+  | 'abbreviations'
+  | 'etranger'
+  | 'expressions'
+  | 'grammar'
+  | 'interjections'
+  | 'orthographe'
+  | 'animals'
+  | 'body_parts'
+  | 'senses'
+  | 'currencies'
+  | 'organizations'
+  | 'card_game'
+  | 'games'
+  | 'music_notes'
+  | 'autre'
+  | 'aliments'
+  | 'vetements'
+  | 'mobilier_objet'
+  | 'outils'
+  | 'transports'
+  | 'materiaux'
+  | 'professions'
+  | 'famille_relations'
+  | 'sentiments_etats'
+  | 'nature_paysage'
+  | 'flore'
+  | 'meteo_climat'
+  | 'temps_duree'
+  | 'couleurs'
+  | 'arts';
+
+export type SurveyStyle =
+  | 'definition_directe'
+  | 'periphrase'
+  | 'metonymie'
+  | 'fonction_role'
+  | 'calembour'
+  | 'culturel'
+  | 'cryptique'
+  | 'cryptique_morphologique'
+  | 'technique';
+
+export type SurveyTier = 'high' | 'mid' | 'low' | 'excluded';
+
+export type SurveyFlagReason = 'hors_sujet' | 'auto_reference' | 'erreur_sens' | 'autre';
+
+export type SubmittedAs = 'auth' | 'anon';
+
+export type LikertScore = 1 | 2 | 3 | 4 | 5;
+
+export interface SurveyItem {
+  readonly itemId: string;
+  readonly mot: string;
+  readonly definition: string;
+  readonly pos: SurveyPos;
+  readonly categorie: SurveyCategorie;
+  readonly style: SurveyStyle;
+  readonly forceClaimed: number;
+  readonly longueur: number;
+  readonly tier: SurveyTier;
+  readonly isCalibration: boolean;
+}
+
+export interface SurveyCorrectif {
+  readonly text: string;
+  readonly style: SurveyStyle;
+}
+
+export interface RatingSubmission {
+  readonly qualite: LikertScore;
+  readonly difficulte: LikertScore;
+  readonly flag?: SurveyFlagReason;
+  readonly correctif?: SurveyCorrectif;
+  readonly latencyMs: number;
+}
+
+export interface RatingResult {
+  readonly ratingId: string;
+  readonly itemId: string;
+  readonly submittedAs: SubmittedAs;
+  readonly proposedItemId: string | null;
+}
+
+export interface SurveyProgress {
+  readonly itemsRated: number;
+  readonly calibrationAgreement: number | null;
+  readonly lastRatedAt: string | null;
+}
+
+export interface SurveyContribution {
+  readonly itemId: string;
+  readonly mot: string;
+  readonly definition: string;
+  readonly pos: SurveyPos;
+  readonly categorie: SurveyCategorie;
+  readonly style: SurveyStyle;
+  readonly optedOut: boolean;
+  readonly kCoverage: number;
+  readonly createdAt: string;
+}
+
+export interface SurveyPreferencesPatch {
+  readonly deleteProposedOnErasure: boolean;
+}
+
+// Application port. Concrete adapter lives in
+// `infrastructure/api/survey/client.ts`.
+export interface SurveyClient {
+  getNextItem(opts?: { readonly excludedItemIds?: readonly string[] }): Promise<SurveyItem | null>;
+  submitRating(itemId: string, body: RatingSubmission): Promise<RatingResult>;
+  getProgress(): Promise<SurveyProgress>;
+  getContributions(): Promise<ReadonlyArray<SurveyContribution>>;
+  patchPreferences(body: SurveyPreferencesPatch): Promise<void>;
+}

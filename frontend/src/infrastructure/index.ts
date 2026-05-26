@@ -50,7 +50,6 @@ export {
   SignInRequiredError,
   CorrectifRejectedError,
   AlreadyRatedError,
-  type SurveyClient,
   type HttpSurveyClientOptions,
 } from './api/survey/client';
 export {

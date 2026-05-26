@@ -4,7 +4,6 @@ import { setupServer } from 'msw/node';
 
 import {
   AlreadyRatedError,
-  CorrectifRejectedError,
   createHttpSurveyClient,
   SignInRequiredError,
 } from '@/infrastructure';
