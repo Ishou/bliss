@@ -73,9 +73,11 @@ function SondagePage() {
     setLoading(true);
     setError(null);
     try {
+      // anon store also excluded when auth: server dedups on user_id, so pre-auth ratings (stored with user_id=NULL) wouldn't otherwise be filtered.
+      const anonSeen = surveyAnonStore?.list() ?? [];
       const excludedItemIds = isAuth
-        ? Array.from(authSkippedIdsRef.current)
-        : surveyAnonStore?.list();
+        ? [...anonSeen, ...Array.from(authSkippedIdsRef.current)]
+        : anonSeen;
       const next = await surveyClient.getNextItem({ excludedItemIds });
       setItem(next);
     } catch (cause) {
