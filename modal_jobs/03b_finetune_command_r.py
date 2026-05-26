@@ -91,7 +91,7 @@ EARLY_STOPPING_PATIENCE = 3
 
 
 # Nom de l'app Modal
-app = modal.App("mots-fleches-finetune")
+app = modal.App("mots-fleches-finetune-command-r")
 
 # Volume modèles (lecture seule logique pour ce palier)
 volume_models = modal.Volume.from_name(
@@ -296,15 +296,9 @@ def finetune_pilot() -> dict:
     print("ÉTAPE A — Chargement Mistral Nemo Base 2407 (4-bit NF4)")
     print("=" * 60)
 
-    bnb_config = BitsAndBytesConfig(
-        load_in_4bit=True,
-        bnb_4bit_quant_type="nf4",
-        bnb_4bit_compute_dtype=torch.bfloat16,
-        bnb_4bit_use_double_quant=True,
-    )
-
+    # unsloth's redistribution is already bnb-4bit-quantized; embedded quantization_config in config.json picks up automatically.
     tokenizer = AutoTokenizer.from_pretrained(
-        "/models/Mistral-Nemo-Base-2407",
+        "/models/c4ai-command-r-08-2024-bnb-4bit",
     )
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
@@ -339,8 +333,7 @@ def finetune_pilot() -> dict:
     # MemEfficient/Math sont alors choisis dynamiquement par torch).
     try:
         model = AutoModelForCausalLM.from_pretrained(
-            "/models/Mistral-Nemo-Base-2407",
-            quantization_config=bnb_config,
+            "/models/c4ai-command-r-08-2024-bnb-4bit",
             device_map="auto",
             torch_dtype=torch.bfloat16,
             attn_implementation="flash_attention_2",
@@ -351,8 +344,7 @@ def finetune_pilot() -> dict:
               f"{exc})")
         print("[OPT] Fallback sur attn_implementation='sdpa'")
         model = AutoModelForCausalLM.from_pretrained(
-            "/models/Mistral-Nemo-Base-2407",
-            quantization_config=bnb_config,
+            "/models/c4ai-command-r-08-2024-bnb-4bit",
             device_map="auto",
             torch_dtype=torch.bfloat16,
             attn_implementation="sdpa",
@@ -427,7 +419,8 @@ def finetune_pilot() -> dict:
         greater_is_better=False,
         bf16=True,
         # Pas besoin avec batch petit + 4-bit (~12 Go sur 40 dispo)
-        gradient_checkpointing=False,
+        # command-r 35B needs grad-checkpointing to fit on A100-40GB; trades speed for memory.
+        gradient_checkpointing=True,
         # Préfetch parallélisé
         dataloader_num_workers=2,
         report_to="none",
@@ -515,7 +508,7 @@ def finetune_pilot() -> dict:
 
     # mistral-nemo-pilot-v1 = première itération sur le corpus fusé.
     # Le namespace ``mistral-nemo-pilot-vN`` est déclaré au spec §3.3.
-    adapter_path = "/adapters/mistral-nemo-pilot-v1"
+    adapter_path = "/adapters/c4ai-command-r-pilot-v1"
     model.save_pretrained(adapter_path)
     tokenizer.save_pretrained(adapter_path)
     volume_adapters.commit()
