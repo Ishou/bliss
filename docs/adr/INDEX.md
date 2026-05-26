@@ -69,6 +69,11 @@ ADR-0054  frontend/src/ui/**                       Page-shell primitive
 ADR-0055  game/**/persistence/**                   Multiplayer game persistence
 ADR-0056  survey/**                                Survey bounded context (RLHF clue rating)
 ADR-0057  modal_jobs/**                            Cloud-GPU finetune lane (Modal)
+ADR-0058  data/external/**                         Licensed-data posture (commercial intent); per-source verdict matrix
+ADR-0058  data/dbnary/**                           DBnary SA-acceptance + distribution discipline
+ADR-0058  scripts/clue_generation/**               Training/filter paths must classify per ADR-0058 matrix
+ADR-0058  scripts/eval/**                          Same — eval paths that feed training must classify
+ADR-0058  modal_jobs/**                            Training paths on Modal must classify per ADR-0058
 ```
 
 ## Adding entries
