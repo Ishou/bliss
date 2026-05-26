@@ -77,8 +77,7 @@ export interface PrerenderRoute {
   readonly title: string;
 }
 
-// Noindex routes still prerendered so the first byte returned by Cloudflare
-// Pages is the route's own shell (title + skeleton), not the home shell.
+// Noindex routes still prerendered so Cloudflare Pages serves the route's own shell, not the home shell.
 export const NOINDEX_PRERENDER_ROUTES: ReadonlyArray<PrerenderRoute> = [
   { path: '/sondage', title: 'Sondage — WordSparrow' },
   { path: '/compte', title: 'Mon compte — WordSparrow' },

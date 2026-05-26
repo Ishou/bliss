@@ -38,8 +38,7 @@ const DIST = resolve(import.meta.dirname, '../dist');
 // <head> onto pass B's body.
 const PUZZLE_LOADING_ROUTES: ReadonlySet<string> = new Set(['/', '/grille', '/grilles']);
 
-// Noindex routes whose components redirect on `anon` state — hang auth/survey
-// so AuthProvider stays in `loading` and the skeleton renders while head() fires.
+// Hang auth/survey so AuthProvider stays in `loading` and the anon-redirect effect never fires.
 const AUTH_GATED_ROUTES: ReadonlySet<string> = new Set(
   NOINDEX_PRERENDER_ROUTES.map((r) => r.path),
 );
@@ -175,8 +174,6 @@ async function loadRoute(
       });
     }
     if (AUTH_GATED_ROUTES.has(route.path)) {
-      // Hang auth + survey so AuthProvider stays `loading`; the route's
-      // anon-redirect effect never fires and the skeleton ships intact.
       await page.route('**/v1/auth/**', () => { /* hang */ });
       await page.route('**/v1/survey/**', () => { /* hang */ });
     }
