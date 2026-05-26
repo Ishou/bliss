@@ -180,7 +180,7 @@ jobs:
             db-release-name: wordsparrow-identity-api-pg
             db-chart-path: identity/api/deploy/db-chart/
             db-values-file: identity/api/deploy/db-chart/values-prod.yaml
-          # survey-api (ADR-0056, PR7). Same chart-split pattern as game-api +
+          # survey-api (ADR-0056). Same chart-split pattern as game-api +
           # identity-api. The api image bundles the :survey:worker installDist
           # so the chart's post-install seed Job and hourly retire CronJob
           # share the same digest (no separate worker artifact).

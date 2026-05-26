@@ -83,7 +83,7 @@ jobs:
             release: wordsparrow-identity-api-pg
             hasProdValues: true
             localValuesFile: values.yaml
-          # survey-api chart (ADR-0056, PR7). Mirrors identity-api: api chart +
+          # survey-api chart (ADR-0056). Mirrors identity-api: api chart +
           # sibling db-chart split. Calibration seed via post-install Job, hourly
           # retire CronJob inside the api chart (configure-in-cluster pattern).
           - path: survey/api/deploy/chart

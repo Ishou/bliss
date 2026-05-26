@@ -129,7 +129,7 @@ jobs:
             dockerfile: identity/api/Dockerfile
             image-name: wordsparrow-identity-api
             digest-artifact: image-digest-identity
-          # survey-api (ADR-0056, PR7). Single image bundles the api shadowJar
+          # survey-api (ADR-0056). Single image bundles the api shadowJar
           # + :survey:worker installDist so the chart's post-install seed Job
           # and hourly retire CronJob share a digest with the Deployment.
           - context: survey
