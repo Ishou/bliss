@@ -1,10 +1,4 @@
-// Anon dedup store for the /sondage route. Anonymous raters track the
-// item_ids they have already rated locally and pass them to the next-item
-// endpoint as `excluded` so the server can hand back something fresh.
-// Capped at 500 entries (FIFO) to keep localStorage small; clearing it
-// permits re-rating from the same browser — accepted trade-off per
-// spec §10.1 (anon ratings are anonymous from inception so there is no
-// stable identifier to defeat).
+// localStorage adapter for the SurveyAnonStore port — FIFO, capped at 500 entries.
 
 const KEY = 'survey.anon.rated_ids';
 const MAX_ITEMS = 500;

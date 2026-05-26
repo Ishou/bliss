@@ -1,6 +1,4 @@
-// /compte section listing the caller's proposed corrections with their
-// current K-coverage. Reads from the SurveyClient passed via props so
-// the component remains pure and easily testable.
+// /compte — lists caller's proposed corrections with K-coverage.
 
 import { useEffect, useState } from 'react';
 import { css } from 'styled-system/css';

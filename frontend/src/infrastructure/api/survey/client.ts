@@ -1,16 +1,4 @@
-// HTTP adapter for the survey-api surface (ADR-0002 §7). Pure fetch
-// because the surface is small (5 endpoints) and we need finer error
-// classification than openapi-fetch's generic envelope provides — 401
-// triggers a sign-in nudge, 422 carries an RFC 7807 correctif rejection.
-//
-// Auth is optional on /v1/items/*; required on /v1/me/*. `credentials:
-// 'include'` is set per call so the __Secure-ws_session cookie flows
-// through. The composition root reads VITE_SURVEY_API_BASE; tests pass
-// baseUrl explicitly.
-//
-// The shape returned satisfies the application-layer `SurveyClient`
-// port; the wire types come from the generated OpenAPI types but only
-// flow through this file — the application layer never sees them.
+// HTTP adapter for the survey-api surface (ADR-0056).
 
 import type {
   RatingResult,
