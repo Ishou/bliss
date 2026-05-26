@@ -1,19 +1,11 @@
-// Rating card — composes Likert scales, FlagPicker, CorrectifField, and a submit button.
+// Rating card — three-button verdict picker (BAD / SKIP / GOOD). ADR-0050 §6 a11y.
 
-import { useEffect, useRef, useState } from 'react';
-import { css } from 'styled-system/css';
-import type {
-  LikertScore,
-  RatingSubmission,
-  SurveyCorrectif,
-  SurveyFlagReason,
-  SurveyItem,
-} from '@/application/survey';
-import { Button } from '@/ui/components/primitives';
-import { CorrectifField } from './CorrectifField';
-import { FlagPicker } from './FlagPicker';
+import { useEffect } from 'react';
+import { css, cx } from 'styled-system/css';
+import type { SurveyItem } from '@/application/survey';
 import { categorieLabel, posLabel, styleLabel } from './labels';
-import { Likert } from './Likert';
+
+export type Verdict = 'GOOD' | 'BAD' | 'SKIP';
 
 const cardStyles = css({
   bg: 'surface',
@@ -72,54 +64,89 @@ const metaStyles = css({
   margin: 0,
 });
 
-const submitRowStyles = css({
-  display: 'flex',
-  justifyContent: 'flex-end',
+const verdictRowStyles = css({
+  display: 'grid',
+  gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+  gap: 'sm',
+});
+
+const verdictButtonBase = css({
+  minHeight: '56px',
+  minWidth: '56px',
+  display: 'inline-flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  justifyContent: 'center',
+  paddingInline: 'md',
+  paddingBlock: 'sm',
+  fontFamily: 'body',
+  fontSize: 'body',
+  fontWeight: 'bold',
+  borderRadius: '6px',
+  cursor: 'pointer',
+  transition: 'background-color 120ms ease-out, border-color 120ms ease-out, opacity 120ms ease-out',
+  _focusVisible: {
+    outline: '2px solid token(colors.focusRing)',
+    outlineOffset: '2px',
+  },
+  _disabled: { opacity: 0.5, cursor: 'not-allowed' },
+});
+
+const verdictBadStyles = css({
+  bg: 'errorBg',
+  color: 'errorText',
+  border: '1px solid token(colors.error)',
+  _hover: { bg: 'terra.200' },
+});
+
+const verdictSkipStyles = css({
+  bg: 'surface',
+  color: 'fgMuted',
+  border: '1px solid token(colors.border)',
+  _hover: { bg: 'surfaceMuted' },
+});
+
+const verdictGoodStyles = css({
+  bg: 'accent',
+  color: 'onAccent',
+  border: '1px solid token(colors.accent)',
+  _hover: { bg: 'primary.400' },
+});
+
+const shortcutStyles = css({
+  fontSize: 'xs',
+  fontWeight: 'normal',
+  opacity: 0.75,
 });
 
 export interface RatingCardProps {
   readonly item: SurveyItem;
-  readonly isAuthenticated: boolean;
-  readonly onSubmit: (payload: RatingSubmission) => Promise<void> | void;
+  readonly onVerdict: (verdict: Verdict, latencyMs: number) => Promise<void> | void;
 }
 
-export function RatingCard({ item, isAuthenticated, onSubmit }: RatingCardProps) {
-  const [qualite, setQualite] = useState<LikertScore | null>(null);
-  const [difficulte, setDifficulte] = useState<LikertScore | null>(null);
-  const [flag, setFlag] = useState<SurveyFlagReason | undefined>(undefined);
-  const [correctif, setCorrectif] = useState<SurveyCorrectif | undefined>(undefined);
-  const [submitting, setSubmitting] = useState(false);
-
-  // Initialised in effect below — performance.now() in render trips react-hooks/purity.
-  const startedAt = useRef<number>(0);
-
+export function RatingCard({ item, onVerdict }: RatingCardProps) {
   useEffect(() => {
-    startedAt.current = performance.now();
-    setQualite(null);
-    setDifficulte(null);
-    setFlag(undefined);
-    setCorrectif(undefined);
-  }, [item.itemId]);
-
-  async function submit(): Promise<void> {
-    if (qualite === null || difficulte === null || submitting) return;
-    setSubmitting(true);
-    try {
-      const latencyMs = Math.max(0, Math.round(performance.now() - startedAt.current));
-      const payload: RatingSubmission = {
-        qualite,
-        difficulte,
-        flag,
-        correctif: isAuthenticated ? correctif : undefined,
-        latencyMs,
-      };
-      await onSubmit(payload);
-    } finally {
-      setSubmitting(false);
+    const startedAt = performance.now();
+    function handler(event: KeyboardEvent): void {
+      if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) return;
+      const target = event.target as HTMLElement | null;
+      // Ignore shortcuts while the focus is in a form control (defensive — no inputs render here today).
+      if (target && /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)) return;
+      if (target?.isContentEditable) return;
+      const key = event.key.toLowerCase();
+      const verdict: Verdict | null = key === 'j' ? 'BAD' : key === 'k' ? 'SKIP' : key === 'l' ? 'GOOD' : null;
+      if (verdict === null) return;
+      event.preventDefault();
+      const latencyMs = Math.max(0, Math.round(performance.now() - startedAt));
+      void onVerdict(verdict, latencyMs);
     }
-  }
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [item.itemId, onVerdict]);
 
-  const canSubmit = qualite !== null && difficulte !== null && !submitting;
+  function submit(verdict: Verdict): void {
+    void onVerdict(verdict, 0);
+  }
 
   return (
     <article className={cardStyles} aria-live="polite" data-testid="rating-card">
@@ -135,38 +162,42 @@ export function RatingCard({ item, isAuthenticated, onSubmit }: RatingCardProps)
         Style : {styleLabel(item.style)} · Difficulté annoncée : {item.forceClaimed}
       </p>
 
-      <Likert
-        label="Cette définition est :"
-        ariaLabel="Qualité"
-        value={qualite}
-        onChange={setQualite}
-        leftHint="Mauvaise"
-        rightHint="Excellente"
-      />
-
-      <Likert
-        label="Difficulté réelle :"
-        ariaLabel="Difficulté"
-        value={difficulte}
-        onChange={setDifficulte}
-        leftHint="Très facile"
-        rightHint="Expert"
-      />
-
-      <FlagPicker value={flag} onChange={setFlag} />
-
-      {isAuthenticated ? (
-        <CorrectifField key={item.itemId} value={correctif} onChange={setCorrectif} />
-      ) : null}
-
-      <div className={submitRowStyles}>
-        <Button
-          variant="primary"
-          disabled={!canSubmit}
-          onClick={() => { void submit(); }}
+      <div
+        className={verdictRowStyles}
+        role="group"
+        aria-label="Verdict"
+        aria-keyshortcuts="j k l"
+      >
+        <button
+          type="button"
+          className={cx(verdictButtonBase, verdictBadStyles)}
+          aria-label={`BAD pour l'indice « ${item.definition} »`}
+          data-verdict="BAD"
+          onClick={() => submit('BAD')}
         >
-          {submitting ? 'Envoi…' : 'Suivant'}
-        </Button>
+          <span>Mauvaise</span>
+          <span className={shortcutStyles}>J</span>
+        </button>
+        <button
+          type="button"
+          className={cx(verdictButtonBase, verdictSkipStyles)}
+          aria-label={`SKIP pour l'indice « ${item.definition} »`}
+          data-verdict="SKIP"
+          onClick={() => submit('SKIP')}
+        >
+          <span>Passer</span>
+          <span className={shortcutStyles}>K</span>
+        </button>
+        <button
+          type="button"
+          className={cx(verdictButtonBase, verdictGoodStyles)}
+          aria-label={`GOOD pour l'indice « ${item.definition} »`}
+          data-verdict="GOOD"
+          onClick={() => submit('GOOD')}
+        >
+          <span>Bonne</span>
+          <span className={shortcutStyles}>L</span>
+        </button>
       </div>
     </article>
   );

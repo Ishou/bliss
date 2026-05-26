@@ -5,9 +5,10 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { css } from 'styled-system/css';
 import { NOOP_ANALYTICS } from '@/application/analytics';
 import { messageForApiError } from '@/application/errors';
-import type { RatingSubmission, SurveyItem } from '@/application/survey';
+import type { LikertScore, RatingSubmission, SurveyItem } from '@/application/survey';
 import { useAuth } from '@/ui/components/auth';
 import { ContentPage } from '@/ui/components/layout';
+import type { Verdict } from '@/ui/components/sondage';
 import { RatingCard, SignInBanner } from '@/ui/components/sondage';
 import { Route as ParentRoute } from './sondage';
 
@@ -45,6 +46,9 @@ const alertStyles = css({
   margin: 0,
 });
 
+// difficulte=3 placeholder per docs/superpowers/plans/2026-05-26-sondage-simplification.md scope-honesty.
+const DIFFICULTE_PLACEHOLDER: LikertScore = 3;
+
 function SondagePage() {
   const ctx = ParentRoute.useRouteContext();
   const { state } = useAuth();
@@ -58,6 +62,7 @@ function SondagePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const sessionStartedRef = useRef(false);
+  const authSkippedIdsRef = useRef<Set<string>>(new Set());
 
   const loadNext = useCallback(async (): Promise<void> => {
     if (!surveyClient) {
@@ -68,7 +73,9 @@ function SondagePage() {
     setLoading(true);
     setError(null);
     try {
-      const excludedItemIds = isAuth ? undefined : surveyAnonStore?.list();
+      const excludedItemIds = isAuth
+        ? Array.from(authSkippedIdsRef.current)
+        : surveyAnonStore?.list();
       const next = await surveyClient.getNextItem({ excludedItemIds });
       setItem(next);
     } catch (cause) {
@@ -91,40 +98,37 @@ function SondagePage() {
     void loadNext();
   }, [state.status, loadNext]);
 
-  async function onSubmit(payload: RatingSubmission): Promise<void> {
+  async function onVerdict(verdict: Verdict, latencyMs: number): Promise<void> {
     if (!surveyClient || !item) return;
+    const currentItem = item;
+    if (verdict === 'SKIP') {
+      analytics.trackEvent('survey', 'verdict_skipped', `tier=${currentItem.tier}`);
+      if (isAuth) {
+        authSkippedIdsRef.current.add(currentItem.itemId);
+      } else {
+        surveyAnonStore?.add(currentItem.itemId);
+      }
+      await loadNext();
+      return;
+    }
+    const payload: RatingSubmission = {
+      qualite: verdict === 'GOOD' ? 5 : 1,
+      difficulte: DIFFICULTE_PLACEHOLDER,
+      latencyMs,
+    };
     try {
-      const result = await surveyClient.submitRating(item.itemId, payload);
+      await surveyClient.submitRating(currentItem.itemId, payload);
       analytics.trackEvent(
         'survey',
-        'rating_submitted',
-        `tier=${item.tier};submitted_as=${result.submittedAs}`,
+        'verdict_submitted',
+        `tier=${currentItem.tier};verdict=${verdict}`,
       );
-      if (payload.correctif) {
-        analytics.trackEvent('survey', 'correctif_proposed', undefined);
-      }
-      if (payload.flag) {
-        analytics.trackEvent('survey', 'flag_raised', payload.flag);
-      }
-      if (!isAuth) surveyAnonStore?.add(item.itemId);
+      if (!isAuth) surveyAnonStore?.add(currentItem.itemId);
       await loadNext();
     } catch (cause) {
       const name = (cause as Error | undefined)?.name ?? '';
-      if (name === 'SignInRequiredError') {
-        analytics.trackEvent('survey', 'signin_prompt_shown', 'correctif_anon');
-        setError('Connectez-vous pour proposer une correction.');
-        return;
-      }
-      if (name === 'CorrectifRejectedError') {
-        const detail = (cause as { detail?: { filterId?: number; reason?: string } }).detail;
-        setError(
-          `Correction rejetée par le filtre ${detail?.filterId ?? '?'} : ${detail?.reason ?? 'motif inconnu'}.`,
-        );
-        return;
-      }
       if (name === 'AlreadyRatedError') {
-        // Already rated — server returned existing envelope; advance to next item.
-        if (!isAuth) surveyAnonStore?.add(item.itemId);
+        if (!isAuth) surveyAnonStore?.add(currentItem.itemId);
         await loadNext();
         return;
       }
@@ -141,8 +145,8 @@ function SondagePage() {
       <article className={articleStyles}>
         <h1 className={headingStyles}>Sondage des indices</h1>
         <p className={introStyles}>
-          Notez la qualité et la difficulté de chaque définition. Vos retours
-          alimentent la sélection des indices.
+          Notez la qualité des définitions en un clic : mauvaise, à passer, ou bonne.
+          Vos retours alimentent la sélection des indices.
         </p>
 
         {state.status === 'anon' && authClient ? (
@@ -164,12 +168,7 @@ function SondagePage() {
         ) : null}
 
         {item !== null ? (
-          <RatingCard
-            key={item.itemId}
-            item={item}
-            isAuthenticated={isAuth}
-            onSubmit={onSubmit}
-          />
+          <RatingCard key={item.itemId} item={item} onVerdict={onVerdict} />
         ) : null}
       </article>
     </ContentPage>
