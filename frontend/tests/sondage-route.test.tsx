@@ -181,6 +181,34 @@ describe('Sondage route', () => {
     expect(sessionStartCalls[0][2]).toBe('anon');
   });
 
+  it('does not flash the sign-in banner during the auth-hydration window', async () => {
+    let resolveWhoami: (value: null) => void = () => {};
+    const whoamiPromise = new Promise<null>((resolve) => { resolveWhoami = resolve; });
+    const authClient: AuthClient = {
+      ...stubAuth(),
+      whoami: vi.fn().mockReturnValue(whoamiPromise),
+    };
+    renderSondage({ authClient });
+    expect(screen.queryByRole('note', { name: /Invitation à se connecter/i })).toBeNull();
+    await act(async () => { resolveWhoami(null); });
+    await waitFor(() =>
+      expect(screen.getByRole('note', { name: /Invitation à se connecter/i })).toBeInTheDocument(),
+    );
+  });
+
+  it('keeps the sign-in banner hidden once the visitor resolves as authed', async () => {
+    const authClient: AuthClient = {
+      ...stubAuth(),
+      whoami: vi.fn().mockResolvedValue({
+        userId: '0190e3a4-7a2c-7c9e-8f1a-1234567890ab',
+        displayName: 'Lapin 472',
+      }),
+    };
+    renderSondage({ authClient });
+    await waitFor(() => expect(screen.getByTestId('rating-card')).toBeInTheDocument());
+    expect(screen.queryByRole('note', { name: /Invitation à se connecter/i })).toBeNull();
+  });
+
   it('records submit + adds the item to localStorage anon dedup', async () => {
     const analytics = stubAnalytics();
     const surveyClient = stubSurveyClient();

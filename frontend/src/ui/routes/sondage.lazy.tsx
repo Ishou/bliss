@@ -145,11 +145,11 @@ function SondagePage() {
           alimentent la sélection des indices.
         </p>
 
-        {!isAuth && authClient ? (
+        {state.status === 'anon' && authClient ? (
           <SignInBanner authClient={authClient} onClick={onSignInClick} />
         ) : null}
 
-        {loading ? (
+        {loading || state.status === 'loading' ? (
           <p className={statusStyles} role="status">Chargement…</p>
         ) : null}
 
