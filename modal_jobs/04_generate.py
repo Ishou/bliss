@@ -63,7 +63,6 @@ def construire_prompt(mot: str, style: str) -> str:
 
 
 def charger_lemmes(path: Path) -> list[str]:
-    """Lit une colonne `mot` depuis un CSV séparé par `;` ou `,`."""
     if not path.exists():
         raise FileNotFoundError(f"Liste de lemmes introuvable : {path}")
     with path.open(encoding="utf-8", newline="") as f:
@@ -100,7 +99,6 @@ def generate_remote(
     n_per_pair: int,
     source_batch: str,
 ) -> dict:
-    """Charge l'adaptateur, génère N candidats par (lemme, style), filtre."""
     import datetime as dt
     from collections import Counter
 
@@ -238,7 +236,6 @@ def generate(
     lemmas: str = "data/curated/round_1_lemmas.csv",
     n_per_pair: int = 1,
 ) -> None:
-    """Lance la génération round-N et affiche le récap."""
     import uuid
 
     lemmes_path = ROOT / lemmas if not Path(lemmas).is_absolute() else Path(lemmas)
