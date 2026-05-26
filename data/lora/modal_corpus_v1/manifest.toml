@@ -73,3 +73,13 @@ weight = 1
 csv_delimiter = ","
 schema_mapping = { mot = "lemma", definition = "lemma_clue", force = "" }
 row_filter = "rating == 'y'"  # human-judged correct only
+
+# RAFT winners — round 1+. Each round appends one slot here so the
+# manifest grows monotonically with the training loop. See
+# docs/runbooks/clue-loop.md for the end-to-end cycle.
+[[sources]]
+name = "winners_round_1"
+path = "data/lora/modal_corpus_v1/winners_round_1.jsonl"
+tier = "gold"
+weight = 1
+optional = true
