@@ -45,3 +45,16 @@ export {
   createHttpAuthClient,
   type HttpAuthClientOptions,
 } from './auth/HttpAuthClient';
+export {
+  createHttpSurveyClient,
+  SignInRequiredError,
+  CorrectifRejectedError,
+  AlreadyRatedError,
+  type SurveyClient,
+  type HttpSurveyClientOptions,
+} from './api/survey/client';
+export {
+  surveyAnonRatedStore,
+  SURVEY_ANON_RATED_STORE_KEY,
+  type SurveyAnonRatedStore,
+} from './session/localStorageSurveyAnon';
