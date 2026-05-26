@@ -29,8 +29,7 @@ class CorsWildcardArchitectureTest {
                 buildString {
                     appendLine(
                         "ADR-0048: credentialed CORS (allowCredentials = true) must use the wildcard predicate " +
-                            "`allowHeaders { true }`, not an explicit allowHeader(...) list. Re-introducing the " +
-                            "explicit allowlist is what produced the 2026-05-26 5th-CORS regression on survey-api.",
+                            "`allowHeaders { true }`, not an explicit allowHeader(...) list. See ADR-0048.",
                     )
                     appendLine("Offending file(s):")
                     offenders.forEach { appendLine("  - $it") }
@@ -44,7 +43,6 @@ class CorsWildcardArchitectureTest {
         val body: String,
     )
 
-    // Catches both the inline install(CORS) { ... } form and any install*Cors* helper extracted from Module.kt.
     private fun extractCorsConfigBlocks(source: String): List<CorsBlock> {
         val results = mutableListOf<CorsBlock>()
         results.addAll(findBalancedBraceBlocks(source, INSTALL_CORS_REGEX, label = "install(CORS)"))
