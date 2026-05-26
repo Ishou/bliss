@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import csv
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -144,7 +145,8 @@ def generate_remote(
     model.train(False)
 
     generated_at = dt.datetime.now(dt.timezone.utc).isoformat()
-    source_tag = f"modal_round_{round_n}"
+    # synthetic_v1 matches the Kotlin Source enum; modal lineage lives in source_batch instead.
+    source_tag = "synthetic_v1"
     pairs = [(m, s) for m in lemmes for s in STYLES_ACTIFS]
     requested = len(pairs) * n_per_pair
 
@@ -171,9 +173,11 @@ def generate_remote(
             )
 
         for seq in outputs:
-            text = tokenizer.decode(
+            raw = tokenizer.decode(
                 seq[inputs.shape[1]:], skip_special_tokens=True,
             ).strip()
+            # round-0 SFT did not train EOS discipline; model emits run-ons after the first plausible clue. Keep sentence 1.
+            text = re.split(r"(?<=[.!?])\s+", raw, maxsplit=1)[0].rstrip(".!?").strip()
             n_returned += 1
             candidate = {
                 "mot": mot,
