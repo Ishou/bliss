@@ -22,7 +22,7 @@ dependencies {
     implementation(project(":survey:application"))
     implementation(project(":survey:infrastructure"))
 
-    // UUIDv7 generator for the IdGenerator port wired in Main.kt.
+    // UUIDv7 generator for the IdGenerator port.
     implementation("com.fasterxml.uuid:java-uuid-generator:5.2.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")
 
