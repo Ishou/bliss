@@ -131,11 +131,7 @@ class UserDeletedConsumerTest {
 
     @Test
     fun `bootstrap throws when an existing consumer has incompatible immutable fields`() {
-        // Pre-seed the durable with a DIFFERENT deliverSubject — exactly the
-        // 2026-05-26 prod state where the pre-#640 api pod created the
-        // consumer with `nats.createInbox()`. Bootstrap must fail loudly
-        // (not silently delete-then-recreate); operator runs --delete-consumer
-        // explicitly to resolve.
+        // Pre-seed with a mismatched deliverSubject to trigger error 10013.
         val incompatible =
             io.nats.client.api.ConsumerConfiguration
                 .builder()

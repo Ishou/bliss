@@ -174,10 +174,7 @@ private fun runBootstrapConsumer(): Int =
         0
     }
 
-// Operator-invoked only; resolves immutable-field conflicts on the durable
-// consumer (e.g. deliverSubject change) by deleting it. NOT wired into any
-// chart hook — must be run explicitly via `kubectl run … --delete-consumer`.
-// Destructive: loses pending ack state; only run when you mean to.
+// Destructive; NOT wired into any chart hook — explicit operator action for immutable-field migrations.
 private fun runDeleteConsumer(): Int =
     withNatsConnection { conn ->
         UserDeletedConsumerConfig.deleteConsumer(conn)
