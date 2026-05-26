@@ -58,8 +58,7 @@ fun main() {
     val identityClient = IdentityClient(config.identityBaseUrl)
     val sessionVerifier = CachedSessionVerifier(identityClient)
 
-    // ADR-0049 — start the user.deleted consumer BEFORE Ktor begins serving so events
-    // queued during a redeploy (including boot-time delete bursts) are captured.
+    // ADR-0049 — must start before Ktor serves so redelivery-on-boot events are captured.
     val anonymise = AnonymizeUserRatingsUseCase(ratings, proposedBy, items, progress)
     val natsConn = Nats.connect(config.natsUrl)
     val consumerScope = CoroutineScope(SupervisorJob())

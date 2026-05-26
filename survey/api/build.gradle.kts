@@ -35,7 +35,7 @@ dependencies {
     // UUID v7 generator for the IdGenerator port wired in Main.kt. Mirrors identity/infrastructure.
     implementation("com.fasterxml.uuid:java-uuid-generator:5.2.0")
 
-    // NATS JetStream client - Main.kt opens the connection passed into UserDeletedConsumer (ADR-0049).
+    // NATS JetStream client — JetStream consumer per ADR-0049.
     implementation("io.nats:jnats:2.20.6")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")
 
