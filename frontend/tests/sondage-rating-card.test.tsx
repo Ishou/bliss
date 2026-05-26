@@ -29,7 +29,7 @@ describe('RatingCard', () => {
     expect(screen.getByText(/Animal domestique à moustaches/i)).toBeInTheDocument();
     expect(screen.getByRole('radiogroup', { name: 'Qualité' })).toBeInTheDocument();
     expect(screen.getByRole('radiogroup', { name: 'Difficulté' })).toBeInTheDocument();
-    expect(screen.getByLabelText(/Signaler un problème/i)).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: /Signaler un problème/i })).toBeInTheDocument();
   });
 
   it('renders chips with human French labels, not raw enum values', () => {
