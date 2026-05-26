@@ -24,9 +24,19 @@ local + committed CSV per ADR-0013 §8.
 | 3a | `modal run modal_jobs/03a_upload_dataset.py` | ~$0.01 | ~15 s | dataset volume reachable from local |
 | 3b | `modal run modal_jobs/03b_finetune.py` | ~$1.50 | ~25–35 min | end-to-end QLoRA SFT |
 
+**Palier 3a default mode** is `--mode fused` (reads
+`data/lora/modal_corpus_v1/train.jsonl` + `val.jsonl`, the multi-source
+corpus produced by `scripts/clue_generation/modal/build_modal_corpus`).
+For a smoke test against the gold pilot alone, pass `--mode gold-only`
+which reads `data/seed/gold_pilot_v1_train.jsonl` + `val.jsonl` (output
+of `scripts/clue_generation/modal/prepare_dataset.py`). Volume-side
+filenames are stable (`/datasets/train.jsonl` + `/datasets/val.jsonl`)
+so palier 3b is mode-agnostic.
+
 After palier 2, the model lives on volume `mots-fleches-models` and
 is reused by every subsequent run (idempotent — re-running 02 reports
-`skipped` immediately).
+`skipped` immediately). After palier 3b, the trained adapter lives on
+volume `mots-fleches-adapters` at `/adapters/mistral-nemo-pilot-v1`.
 
 ## Killing a runaway run
 
