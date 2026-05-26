@@ -74,6 +74,7 @@ fun main() {
             proposedBy = proposedBy,
             userProgress = progress,
             userDeletedConsumer = userDeletedConsumer,
+            closeNats = { natsConn.close() },
         )
 
     embeddedServer(CIO, port = config.port, host = "0.0.0.0") {

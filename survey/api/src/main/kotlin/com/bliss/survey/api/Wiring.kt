@@ -18,4 +18,5 @@ class Wiring(
     val proposedBy: ProposedByRepository,
     val userProgress: UserProgressRepository,
     val userDeletedConsumer: UserDeletedConsumer? = null,
+    val closeNats: () -> Unit = {},
 )

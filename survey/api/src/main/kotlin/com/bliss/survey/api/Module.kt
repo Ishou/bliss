@@ -96,7 +96,10 @@ fun Application.surveyApiModule(
         verifyCookie = wiring.verifyCookie
     }
 
-    monitor.subscribe(ApplicationStopped) { wiring.userDeletedConsumer?.stop() }
+    monitor.subscribe(ApplicationStopped) {
+        wiring.userDeletedConsumer?.stop()
+        wiring.closeNats()
+    }
 
     routing {
         healthRoute()
