@@ -1,9 +1,3 @@
-"""Import Modal-generated candidates JSONL into the survey-api survey_items table.
-
-Reads each line of candidates.jsonl, INSERTs into survey_items with the V5
-content-uniqueness constraint surfacing as a silent skip per (mot, definition).
-See docs/runbooks/clue-loop.md for the round-N invocation pattern.
-"""
 from __future__ import annotations
 
 import argparse
@@ -37,7 +31,7 @@ def _connect():
 
 
 def main() -> int:
-    p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    p = argparse.ArgumentParser(description="Import Modal-generated candidates JSONL into the survey-api survey_items table.")
     p.add_argument("--jsonl", type=Path, required=True, help="candidates.jsonl from 04_generate.py")
     p.add_argument("--source-batch", required=True, help="e.g., round_1")
     p.add_argument("--tier", default="mid", choices=["high", "mid", "low", "excluded"])
