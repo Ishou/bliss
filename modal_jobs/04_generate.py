@@ -1,5 +1,3 @@
-"""Palier 4 — round-N candidate generator + pipeline_v2 filtering (ADR-0057)."""
-
 from __future__ import annotations
 
 import csv
@@ -38,7 +36,7 @@ volume_generations = modal.Volume.from_name(
     "mots-fleches-generations", create_if_missing=True,
 )
 
-# pipeline_v2 monté au build via add_local_dir(copy=True) — indépendant du runtime sync.
+# pipeline_v2 monté au build via add_local_dir(copy=True) — indépendant du runtime sync. ADR-0057.
 image = (
     modal.Image.from_registry("python:3.11-slim")
     .pip_install(

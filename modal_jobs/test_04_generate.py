@@ -1,5 +1,3 @@
-"""Tests unitaires pour 04_generate : prompt + lecture lemmes CSV."""
-
 from __future__ import annotations
 
 import importlib.util
