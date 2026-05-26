@@ -131,7 +131,7 @@ class UserDeletedConsumerTest {
 
     @Test
     fun `bootstrap throws when an active subscriber pins a different deliverSubject`() {
-        // NATS 2.10 only treats deliverSubject as immutable while a push subscriber is bound — replicates the 2026-05-26 prod race.
+        // NATS 2.10 only treats deliverSubject as immutable while a push subscriber is bound.
         val legacySubject = "_INBOX.legacy.random.${UUID.randomUUID()}"
         val incompatible =
             io.nats.client.api.ConsumerConfiguration
