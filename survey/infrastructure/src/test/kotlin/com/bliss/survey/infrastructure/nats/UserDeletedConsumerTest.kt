@@ -143,8 +143,7 @@ class UserDeletedConsumerTest {
                 .build()
         nats.jetStreamManagement().addOrUpdateConsumer(UserDeletedConsumerConfig.STREAM_NAME, incompatible)
 
-        // Hold an active push subscription on the legacy deliverSubject — this
-        // is the immutability trigger.
+        // Active bound subscription pins deliverSubject as immutable — this is the trigger.
         val activeSub =
             nats.jetStream().subscribe(
                 UserDeletedConsumerConfig.SUBJECT,
