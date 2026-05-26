@@ -93,6 +93,33 @@ class PgSurveyItemRepositoryTest {
         }
 
     @Test
+    fun `duplicate mot+definition while unretired is rejected by V5 invariant`() =
+        runTest {
+            val first = sampleItem(mot = "PAIN")
+            items.insert(first)
+            val duplicate = first.copy(id = ItemId(UUID.randomUUID()))
+            val thrown =
+                runCatching { items.insert(duplicate) }.exceptionOrNull()
+            check(thrown is org.postgresql.util.PSQLException) {
+                "expected PSQLException on duplicate (mot, definition); got $thrown"
+            }
+            check(thrown.sqlState == "23505") {
+                "expected unique-violation sqlstate 23505; got ${thrown.sqlState}"
+            }
+        }
+
+    @Test
+    fun `retiring an item frees its mot+definition for re-insertion`() =
+        runTest {
+            val original = sampleItem(mot = "PAIN")
+            items.insert(original)
+            items.retire(original.id, now)
+            val fresh = original.copy(id = ItemId(UUID.randomUUID()))
+            items.insert(fresh)
+            assertThat(items.findById(fresh.id)).isNotNull()
+        }
+
+    @Test
     fun `pickUnratedForUser returns null when no items match`() =
         runTest {
             val pick = items.pickUnratedForUser(null, Tier.MID, exclude = emptySet())

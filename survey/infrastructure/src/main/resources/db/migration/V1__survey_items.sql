@@ -1,7 +1,6 @@
 -- survey_items: candidate clues with the 5-axis annotation (style_guide §4 + §7).
 -- Polymorphic by `source`; rater-proposed clues carry source='rater_proposed'.
--- Same (mot, definition, pos, categorie) from a new source_batch = a new item_id
--- (raters can re-rate across model iterations per spec §4.1).
+-- Duplicate (mot, definition) is rejected while unretired (V5).
 
 CREATE TABLE survey_items (
     item_id        UUID PRIMARY KEY,
