@@ -2,6 +2,7 @@ import { createRoute, useNavigate } from '@tanstack/react-router';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { css, cx } from 'styled-system/css';
 import { InvalidDisplayNameError, type AuthClient, type GetMeResult } from '@/application/auth';
+import { messageForApiError } from '@/application/errors';
 import { useAuth } from '@/ui/components/auth';
 import { MyContributions, SurveyPreferences } from '@/ui/components/compte';
 import { ContentPage } from '@/ui/components/layout';
@@ -237,8 +238,8 @@ function ComptePage() {
     } catch (err) {
       setSaveError(
         err instanceof InvalidDisplayNameError
-          ? err.message
-          : 'Une erreur est survenue. Réessayez.',
+          ? 'Le pseudonyme doit faire 1 à 30 caractères.'
+          : messageForApiError(err),
       );
     } finally {
       setSaving(false);

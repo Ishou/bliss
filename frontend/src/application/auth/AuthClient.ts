@@ -17,7 +17,7 @@ export interface GetMeResult {
   readonly providers: ReadonlyArray<LinkedProvider>;
 }
 
-// Thrown by `updateMe` on HTTP 400; carries the server's RFC 7807 `detail`.
+// Thrown by updateMe on HTTP 400; .message is the server's English RFC 7807 detail — map to French copy at the call site.
 export class InvalidDisplayNameError extends Error {
   constructor(message: string) {
     super(message);
