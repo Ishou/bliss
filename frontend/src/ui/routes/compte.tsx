@@ -197,11 +197,7 @@ function ComptePage() {
   }, [authClient, state.status]);
 
   if (state.status === 'loading') {
-    return (
-      <ContentPage>
-        <p role="status" className={statusStyles}>Chargement…</p>
-      </ContentPage>
-    );
+    return <CompteSkeleton />;
   }
   if (state.status !== 'authed') return null;
 
@@ -324,9 +320,23 @@ function ComptePage() {
   );
 }
 
+// pendingMs=0 + this skeleton stops the flash of the previous route during auth-hydration.
+function CompteSkeleton() {
+  return (
+    <ContentPage>
+      <article className={articleStyles}>
+        <h1 className={pageTitleStyles}>Mon compte</h1>
+        <p role="status" className={statusStyles}>Chargement…</p>
+      </article>
+    </ContentPage>
+  );
+}
+
 export const Route = createRoute({
   getParentRoute: () => RootRoute,
   path: '/compte',
+  pendingMs: 0,
+  pendingComponent: CompteSkeleton,
   head: () =>
     buildHead({
       title: 'Mon compte — WordSparrow',
