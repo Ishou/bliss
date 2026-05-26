@@ -1,20 +1,7 @@
 #!/usr/bin/env python3
-"""Emit the bodies of every ADR whose path-glob in docs/adr/INDEX.md matches
-at least one of the input paths. Used by the dispatch skill to inline
-mandatory-reading material into implementer prompts so an agent never has
-to "remember" to read an ADR — the ADR is in the prompt.
-
-Usage:
-    scripts/adr-context.sh <path>...
-
-Example:
-    scripts/adr-context.sh survey/api/src/main/kotlin/com/bliss/survey/api/Module.kt
-
-Output goes to stdout. Nothing matched → empty output, exit 0.
-"""
+"""Emit ADR bodies for INDEX.md globs matching the given source paths."""
 from __future__ import annotations
 
-import fnmatch
 import re
 import sys
 from pathlib import Path
@@ -25,13 +12,7 @@ ADR_DIR = REPO_ROOT / "docs" / "adr"
 
 
 def glob_to_regex(glob: str) -> re.Pattern[str]:
-    """Translate a registry glob to a regex.
-
-    Conventions:
-      * matches anything except a path separator.
-      ** matches anything including path separators.
-    fnmatch alone doesn't distinguish the two, so we hand-translate.
-    """
+    """Translate a registry glob (* = no separator, ** = any) to a regex."""
     out: list[str] = []
     i = 0
     while i < len(glob):
@@ -56,9 +37,7 @@ def glob_to_regex(glob: str) -> re.Pattern[str]:
 
 
 def parse_registry(index_text: str) -> list[tuple[str, re.Pattern[str]]]:
-    """Walk INDEX.md and return (adr_id, compiled_glob_regex) for every
-    registry line. Lines that don't start with ADR- are ignored, so headings
-    and prose around the fenced code block are silently skipped."""
+    """Return (adr_id, compiled_glob_regex) for every registry line in INDEX.md."""
     entries: list[tuple[str, re.Pattern[str]]] = []
     for raw in index_text.splitlines():
         line = raw.strip()
