@@ -21,7 +21,7 @@ SELECT si.mot, si.definition, si.pos, si.categorie, si.style,
    AND r.qualite = 5
    AND r.flag IS NULL
    AND si.retired_at IS NULL
-   AND si.source LIKE 'modal_round_%%'
+   AND si.source_batch LIKE %s
  ORDER BY r.created_at
 """
 
@@ -48,19 +48,18 @@ def _load_db_url() -> str:
     )
 
 
-def fetch_rows(conn: Any, user_id: str) -> list[tuple]:
-    """Execute the winners query and return all rows."""
+def fetch_rows(conn: Any, user_id: str, round_n: int) -> list[tuple]:
+    """Execute the winners query and return all rows. Round is matched via source_batch lineage tag."""
     with conn.cursor() as cur:
-        cur.execute(SQL, (user_id,))
+        cur.execute(SQL, (user_id, f"%-r{round_n}-%"))
         return list(cur.fetchall())
 
 
 def row_to_entry(row: Sequence, round_n: int) -> tuple[dict | None, str | None]:
     """Map a DB row to the JSONL dict; return (entry, drop_reason). Exactly one is None."""
     rec = dict(zip(COLUMNS, row))
-    expected_source = f"modal_round_{round_n}"
-    if rec["source"] != expected_source:
-        return None, "source_round_mismatch"
+    if f"-r{round_n}-" not in (rec["source_batch"] or ""):
+        return None, "source_batch_round_mismatch"
     created_at = rec["created_at"]
     rated_at = created_at.isoformat() if hasattr(created_at, "isoformat") else str(created_at)
     entry = {
@@ -99,7 +98,7 @@ def _print_summary(considered: int, result: dict, round_n: int, out_path: Path) 
     drops = result["drops"]
     dropped_total = sum(drops.values())
     print(f"survey_items × ratings rows considered: {considered}", file=sys.stderr)
-    print(f"  kept (qualite=5, flag IS NULL, source=modal_round_{round_n}, unretired): "
+    print(f"  kept (qualite=5, flag IS NULL, source_batch=*-r{round_n}-*, unretired): "
           f"{result['kept']}", file=sys.stderr)
     print(f"  dropped: {dropped_total}", file=sys.stderr)
     for reason, count in sorted(drops.items()):
@@ -109,7 +108,7 @@ def _print_summary(considered: int, result: dict, round_n: int, out_path: Path) 
 
 def run(user_id: str, round_n: int, out_path: Path, conn: Any) -> dict:
     """Fetch + serialize + summarize. Returns the result dict."""
-    rows = fetch_rows(conn, user_id)
+    rows = fetch_rows(conn, user_id, round_n)
     result = write_jsonl(rows, out_path, round_n)
     _print_summary(len(rows), result, round_n, out_path)
     return result
@@ -127,7 +126,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--user-id", required=True,
                         help="Maintainer's user_id (UUID); single-rater training is intentional.")
     parser.add_argument("--round", type=int, required=True,
-                        help="Round number; matches survey_items.source = 'modal_round_<N>'.")
+                        help="Round number; matched against survey_items.source_batch via '-r<N>-' lineage tag.")
     parser.add_argument("--out", type=Path, required=True,
                         help="Output JSONL path (e.g., data/lora/modal_corpus_v1/winners_round_1.jsonl).")
     args = parser.parse_args(argv)

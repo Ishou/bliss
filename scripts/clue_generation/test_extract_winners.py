@@ -67,17 +67,18 @@ def seeded_conn() -> SqliteConnAdapter:
 
     items = [
         # (item_id, mot, def, pos, cat, style, force, longueur, source, batch, expected, retired_at)
+        # round lineage now lives in source_batch (`-r<N>-` infix); source is the Kotlin enum value.
         ("i1", "PAIN", "Aliment de boulangerie", "nom_commun", "aliments",
-         "definition_directe", 1, 4, "modal_round_1", "batch-A", None, None),
+         "definition_directe", 1, 4, "synthetic_v1", "mistral-nemo-pilot-v1-r1-aaa", None, None),
         ("i2", "TRAIN", "Transport ferroviaire", "nom_commun", "transports",
-         "definition_directe", 1, 5, "modal_round_2", "batch-B", None, None),
+         "definition_directe", 1, 5, "synthetic_v1", "mistral-nemo-pilot-v1-r2-bbb", None, None),
         ("i3", "MIEL", "Produit des abeilles", "nom_commun", "aliments",
-         "definition_directe", 2, 4, "modal_round_1", "batch-A", None,
+         "definition_directe", 2, 4, "synthetic_v1", "mistral-nemo-pilot-v1-r1-aaa", None,
          "2026-05-26T10:00:00+00:00"),
         ("i4", "EAU", "Liquide vital", "nom_commun", "boissons",
-         "definition_directe", 1, 3, "legacy", "batch-X", None, None),
+         "definition_directe", 1, 3, "gold", "gold_v1", None, None),
         ("i5", "SEL", "Condiment marin", "nom_commun", "aliments",
-         "definition_directe", 1, 3, "modal_round_1", "batch-A", None, None),
+         "definition_directe", 1, 3, "synthetic_v1", "mistral-nemo-pilot-v1-r1-aaa", None, None),
     ]
     conn.executemany(
         "INSERT INTO survey_items VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
@@ -85,10 +86,10 @@ def seeded_conn() -> SqliteConnAdapter:
     )
 
     ratings = [
-        ("r1", "i1", USER_ME, 5, None, "2026-05-26T12:00:00+00:00"),       # KEEP
-        ("r2", "i2", USER_ME, 5, None, "2026-05-26T12:01:00+00:00"),       # source=round_2 → round_mismatch when --round 1
+        ("r1", "i1", USER_ME, 5, None, "2026-05-26T12:00:00+00:00"),       # KEEP (batch matches -r1-)
+        ("r2", "i2", USER_ME, 5, None, "2026-05-26T12:01:00+00:00"),       # batch is -r2- → SQL filters out when --round 1
         ("r3", "i3", USER_ME, 5, None, "2026-05-26T12:02:00+00:00"),       # retired → SQL filters out
-        ("r4", "i4", USER_ME, 5, None, "2026-05-26T12:03:00+00:00"),       # legacy source → SQL filters out
+        ("r4", "i4", USER_ME, 5, None, "2026-05-26T12:03:00+00:00"),       # gold_v1 batch (no -r1-) → SQL filters out
         ("r5", "i5", USER_ME, 3, None, "2026-05-26T12:04:00+00:00"),       # qualite=3 → SQL filters out
         ("r6", "i1", USER_ME, 5, "hors_sujet", "2026-05-26T12:05:00+00:00"),  # flag set → SQL filters out
         ("r7", "i1", USER_OTHER, 5, None, "2026-05-26T12:06:00+00:00"),    # other user → SQL filters out
@@ -102,11 +103,10 @@ def seeded_conn() -> SqliteConnAdapter:
 
 
 def test_run_writes_only_matching_row(seeded_conn, tmp_path):
-    """End-to-end: only PAIN (modal_round_1, qualite=5, flag NULL, unretired) survives."""
+    """End-to-end: only PAIN (source_batch -r1-, qualite=5, flag NULL, unretired) survives."""
     out = tmp_path / "winners.jsonl"
     result = ew.run(USER_ME, 1, out, seeded_conn)
     assert result["kept"] == 1
-    assert result["drops"].get("source_round_mismatch", 0) == 1
 
     lines = out.read_text(encoding="utf-8").splitlines()
     assert len(lines) == 1
@@ -119,18 +119,17 @@ def test_run_writes_only_matching_row(seeded_conn, tmp_path):
         "style": "definition_directe",
         "force": 1,
         "longueur": 4,
-        "source": "modal_round_1",
-        "source_batch": "batch-A",
+        "source": "synthetic_v1",
+        "source_batch": "mistral-nemo-pilot-v1-r1-aaa",
         "rated_at": "2026-05-26T12:00:00+00:00",
     }
 
 
 def test_run_with_round_2_keeps_only_train(seeded_conn, tmp_path):
-    """Switching --round 2 keeps TRAIN and counts PAIN as round_mismatch."""
+    """Switching --round 2 keeps TRAIN (source_batch -r2-) and excludes PAIN via SQL."""
     out = tmp_path / "winners.jsonl"
     result = ew.run(USER_ME, 2, out, seeded_conn)
     assert result["kept"] == 1
-    assert result["drops"].get("source_round_mismatch", 0) == 1
     entry = json.loads(out.read_text(encoding="utf-8").splitlines()[0])
     assert entry["mot"] == "TRAIN"
 
@@ -139,18 +138,18 @@ def test_row_to_entry_isoformats_datetime():
     """`rated_at` is ISO-8601 even when the driver returns a datetime."""
     dt = datetime(2026, 5, 26, 12, 0, 0, tzinfo=timezone.utc)
     row = ("CHAT", "Animal", "nom_commun", "animaux", "definition_directe",
-           1, 4, "modal_round_1", "batch-A", None, 5, USER_ME, dt)
+           1, 4, "synthetic_v1", "mistral-nemo-pilot-v1-r1-aaa", None, 5, USER_ME, dt)
     entry, reason = ew.row_to_entry(row, 1)
     assert reason is None
     assert entry["rated_at"] == "2026-05-26T12:00:00+00:00"
 
 
 def test_row_to_entry_drops_wrong_round():
-    """A row whose source is modal_round_3 is dropped when --round=1."""
-    row = ("X", "d", "p", "c", "s", 1, 1, "modal_round_3", "b", None, 5, USER_ME, "t")
+    """A row whose source_batch carries -r3- is dropped when --round=1."""
+    row = ("X", "d", "p", "c", "s", 1, 1, "synthetic_v1", "mistral-nemo-pilot-v1-r3-zzz", None, 5, USER_ME, "t")
     entry, reason = ew.row_to_entry(row, 1)
     assert entry is None
-    assert reason == "source_round_mismatch"
+    assert reason == "source_batch_round_mismatch"
 
 
 def test_load_db_url_errors_when_neither_source_present(monkeypatch, tmp_path):
