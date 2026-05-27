@@ -128,7 +128,7 @@ class SubmitRatingUseCase(
             )
         ratings.insert(rating)
         if (proposedItemId != null) {
-            // Auto-GOOD on the rater_proposed item: by submitting a correctif the user vouches for the fix, so it enters winners directly without a re-rating round.
+            // submitting a correctif vouches for the fix — enters winners directly without a re-rating round
             val autoGood =
                 Rating(
                     id = RatingId(ids.next()),
