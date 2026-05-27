@@ -207,7 +207,6 @@ class SubmitRatingUseCaseTest {
                     ),
                 )
             assertThat(r).isInstanceOf(SubmitRatingResult.Accepted::class)
-            // Two ratings: the user's qualite=3 on the original + the auto-GOOD on the proposed.
             assertThat(ratings.ratings.size).isEqualTo(2)
             val proposedItem = items.items.values.single { it.source == Source.RATER_PROPOSED }
             assertThat(proposed.links.single().itemId).isEqualTo(proposedItem.id)
