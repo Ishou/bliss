@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import {
   RouterProvider,
   createMemoryHistory,
@@ -307,6 +307,114 @@ describe('Sondage route', () => {
     await waitFor(() => expect(getNextItem).toHaveBeenCalled());
     expect(getNextItem).toHaveBeenLastCalledWith({ excludedItemIds: [preAuthRatedId] });
     localStorage.clear();
+  });
+
+  it('CORRIGER on authenticated user submits qualite=3 with correctif, fires correctif_proposed, advances to next item', async () => {
+    const authClient: AuthClient = {
+      ...stubAuth(),
+      whoami: vi.fn().mockResolvedValue({
+        userId: '0190e3a4-7a2c-7c9e-8f1a-1234567890ab',
+        displayName: 'Lapin 472',
+      }),
+    };
+    const second: SurveyItem = { ...sampleItem, itemId: '0190e3a4-7a2c-7c9e-8f1a-cafecafecafe', mot: 'NEXT' };
+    const getNextItem = vi
+      .fn()
+      .mockResolvedValueOnce(sampleItem)
+      .mockResolvedValue(second);
+    const surveyClient = stubSurveyClient({ getNextItem });
+    const analytics = stubAnalytics();
+    renderSondage({ authClient, surveyClient, analytics });
+
+    await waitFor(() => expect(screen.getByTestId('rating-card')).toBeInTheDocument());
+
+    await act(async () => {
+      document.querySelector<HTMLButtonElement>('[data-verdict="CORRIGER"]')!.click();
+    });
+
+    const textarea = document.querySelector<HTMLTextAreaElement>('textarea#correctif-text')!;
+    await act(async () => {
+      fireEvent.change(textarea, { target: { value: 'Une définition corrigée' } });
+    });
+    await act(async () => {
+      document.querySelector<HTMLButtonElement>('[data-testid="correctif-submit"]')!.click();
+    });
+
+    await waitFor(() => expect(surveyClient.submitRating).toHaveBeenCalled());
+    const [calledItemId, payload] = (surveyClient.submitRating as ReturnType<typeof vi.fn>).mock.calls[0] as [string, RatingSubmission];
+    expect(calledItemId).toBe(sampleItem.itemId);
+    expect(payload.qualite).toBe(3);
+    expect(payload.correctif).toEqual({ text: 'Une définition corrigée', style: sampleItem.style });
+
+    const correctifEventCalls = analytics.trackEvent.mock.calls.filter(
+      ([category, action]) => category === 'survey' && action === 'correctif_proposed',
+    );
+    expect(correctifEventCalls).toHaveLength(1);
+    expect(correctifEventCalls[0][2]).toBe(`tier=${sampleItem.tier}`);
+
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'NEXT' })).toBeInTheDocument());
+  });
+
+  it('CORRIGER on anon user sets the sign-in error message without calling submitRating', async () => {
+    const surveyClient = stubSurveyClient();
+    renderSondage({ surveyClient });
+    await waitFor(() => expect(screen.getByTestId('rating-card')).toBeInTheDocument());
+
+    await act(async () => {
+      document.querySelector<HTMLButtonElement>('[data-verdict="CORRIGER"]')!.click();
+    });
+
+    const textarea = document.querySelector<HTMLTextAreaElement>('textarea#correctif-text')!;
+    await act(async () => {
+      fireEvent.change(textarea, { target: { value: 'Une correction' } });
+    });
+    await act(async () => {
+      document.querySelector<HTMLButtonElement>('[data-testid="correctif-submit"]')!.click();
+    });
+
+    await waitFor(() =>
+      expect(screen.getByRole('alert')).toHaveTextContent(
+        'Connectez-vous pour proposer une correction.',
+      ),
+    );
+    expect(surveyClient.submitRating).not.toHaveBeenCalled();
+  });
+
+  it('CorrectifRejectedError from server shows filter id and reason in the error banner', async () => {
+    const authClient: AuthClient = {
+      ...stubAuth(),
+      whoami: vi.fn().mockResolvedValue({
+        userId: '0190e3a4-7a2c-7c9e-8f1a-1234567890ab',
+        displayName: 'Lapin 472',
+      }),
+    };
+    const rejection = Object.assign(new Error('rejected'), {
+      name: 'CorrectifRejectedError',
+      detail: { filterId: 2, reason: 'contenu offensant' },
+    });
+    const surveyClient = stubSurveyClient({
+      submitRating: vi.fn().mockRejectedValue(rejection),
+    });
+    renderSondage({ authClient, surveyClient });
+    await waitFor(() => expect(screen.getByTestId('rating-card')).toBeInTheDocument());
+
+    await act(async () => {
+      document.querySelector<HTMLButtonElement>('[data-verdict="CORRIGER"]')!.click();
+    });
+
+    const textarea = document.querySelector<HTMLTextAreaElement>('textarea#correctif-text')!;
+    await act(async () => {
+      fireEvent.change(textarea, { target: { value: 'Une correction' } });
+    });
+    await act(async () => {
+      document.querySelector<HTMLButtonElement>('[data-testid="correctif-submit"]')!.click();
+    });
+
+    await waitFor(() =>
+      expect(screen.getByRole('alert')).toHaveTextContent(
+        'Correction rejetée par le filtre 2 : contenu offensant.',
+      ),
+    );
   });
 
   it('auth SKIP excludes skipped ids on the next getNextItem call without touching surveyAnonStore', async () => {

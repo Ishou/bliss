@@ -17,7 +17,7 @@ const sampleItem: SurveyItem = {
 };
 
 describe('RatingCard verdict picker', () => {
-  it('renders mot, definition, chips, and three verdict buttons', () => {
+  it('renders mot, definition, chips, and four verdict buttons', () => {
     const { container } = render(<RatingCard item={sampleItem} onVerdict={() => Promise.resolve()} onCorriger={async () => {}} />);
     expect(screen.getByRole('heading', { name: 'CHAT' })).toBeInTheDocument();
     expect(screen.getByText(/Animal domestique à moustaches/i)).toBeInTheDocument();
@@ -26,6 +26,7 @@ describe('RatingCard verdict picker', () => {
     expect(container.querySelector('[data-verdict="BAD"]')).not.toBeNull();
     expect(container.querySelector('[data-verdict="SKIP"]')).not.toBeNull();
     expect(container.querySelector('[data-verdict="GOOD"]')).not.toBeNull();
+    expect(container.querySelector('[data-verdict="CORRIGER"]')).not.toBeNull();
   });
 
   it('exposes the Verdict role=group with aria-keyshortcuts j k l', () => {
