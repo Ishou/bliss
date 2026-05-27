@@ -173,7 +173,6 @@ export function RatingCard({ item, onVerdict, onCorriger }: RatingCardProps) {
   const startedAtRef = useRef<number>(0);
   const [correctifText, setCorrectifText] = useState<string | null>(null);
 
-  // Reset correctif draft on new item.
   useEffect(() => {
     setCorrectifText(null);
   }, [item.itemId]);

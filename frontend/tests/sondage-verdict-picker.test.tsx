@@ -45,6 +45,10 @@ describe('RatingCard verdict picker', () => {
       // jsdom doesn't compute layout; assert the css contract is wired via class names rather than getBoundingClientRect.
       expect(btn!.className).toMatch(/min/i);
     }
+    const corrigerBtn = container.querySelector<HTMLButtonElement>('[data-verdict="CORRIGER"]');
+    expect(corrigerBtn).not.toBeNull();
+    expect(corrigerBtn!.getAttribute('aria-label')).toContain('Animal domestique à moustaches');
+    expect(corrigerBtn!.className).toMatch(/min/i);
   });
 
   it('clicking GOOD invokes onVerdict("GOOD", latencyMs >= 0)', async () => {
