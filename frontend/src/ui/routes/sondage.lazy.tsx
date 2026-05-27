@@ -138,6 +138,37 @@ function SondagePage() {
     }
   }
 
+  async function onCorriger(correctedText: string, latencyMs: number): Promise<void> {
+    if (!surveyClient || !item) return;
+    if (!isAuth) {
+      setError('Connectez-vous pour proposer une correction.');
+      return;
+    }
+    const currentItem = item;
+    // qualite=3 stays neutral on the original; the server creates a rater_proposed item and auto-rates it GOOD per ADR-0056.
+    const payload: RatingSubmission = {
+      qualite: 3,
+      difficulte: DIFFICULTE_PLACEHOLDER,
+      latencyMs,
+      correctif: { text: correctedText, style: currentItem.style },
+    };
+    try {
+      await surveyClient.submitRating(currentItem.itemId, payload);
+      analytics.trackEvent('survey', 'correctif_proposed', `tier=${currentItem.tier}`);
+      await loadNext();
+    } catch (cause) {
+      const name = (cause as Error | undefined)?.name ?? '';
+      if (name === 'CorrectifRejectedError') {
+        const detail = (cause as { detail?: { filterId?: number; reason?: string } }).detail;
+        setError(
+          `Correction rejetée par le filtre ${detail?.filterId ?? '?'} : ${detail?.reason ?? 'motif inconnu'}.`,
+        );
+        return;
+      }
+      setError(messageForApiError(cause));
+    }
+  }
+
   function onSignInClick(): void {
     analytics.trackEvent('survey', 'signin_prompt_clicked', undefined);
   }
@@ -170,7 +201,12 @@ function SondagePage() {
         ) : null}
 
         {item !== null ? (
-          <RatingCard key={item.itemId} item={item} onVerdict={onVerdict} />
+          <RatingCard
+            key={item.itemId}
+            item={item}
+            onVerdict={onVerdict}
+            onCorriger={onCorriger}
+          />
         ) : null}
       </article>
     </ContentPage>

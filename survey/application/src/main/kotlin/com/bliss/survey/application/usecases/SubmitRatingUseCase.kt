@@ -127,6 +127,23 @@ class SubmitRatingUseCase(
                 createdAt = now,
             )
         ratings.insert(rating)
+        if (proposedItemId != null) {
+            // Auto-GOOD on the rater_proposed item: by submitting a correctif the user vouches for the fix, so it enters winners directly without a re-rating round.
+            val autoGood =
+                Rating(
+                    id = RatingId(ids.next()),
+                    itemId = proposedItemId,
+                    userId = cmd.userId,
+                    submittedAs = SubmittedAs.AUTH,
+                    qualite = 5,
+                    difficulte = cmd.difficulte,
+                    flag = null,
+                    proposedItemId = null,
+                    latencyMs = 0,
+                    createdAt = now,
+                )
+            ratings.insert(autoGood)
+        }
         if (cmd.userId != null) progress.incrementItemsRated(cmd.userId, now)
         return SubmitRatingResult.Accepted(rating)
     }

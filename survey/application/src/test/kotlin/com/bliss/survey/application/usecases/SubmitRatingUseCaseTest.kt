@@ -189,6 +189,36 @@ class SubmitRatingUseCaseTest {
         }
 
     @Test
+    fun `correctif insert auto-rates the proposed item GOOD by the same user`() =
+        runTest {
+            val (uc, items, ratings, proposed, _) = newUseCase()
+            val parent = seedItem(items)
+            val userId = UserId(UUID.randomUUID())
+            val r =
+                uc.execute(
+                    SubmitRatingCommand(
+                        itemId = parent.id,
+                        userId = userId,
+                        qualite = 3,
+                        difficulte = 3,
+                        flag = null,
+                        correctif = "Fruit defendu d'Eve" to Style.PERIPHRASE,
+                        latencyMs = 1500,
+                    ),
+                )
+            assertThat(r).isInstanceOf(SubmitRatingResult.Accepted::class)
+            // Two ratings: the user's qualite=3 on the original + the auto-GOOD on the proposed.
+            assertThat(ratings.ratings.size).isEqualTo(2)
+            val proposedItem = items.items.values.single { it.source == Source.RATER_PROPOSED }
+            assertThat(proposed.links.single().itemId).isEqualTo(proposedItem.id)
+            val onProposed = ratings.ratings.single { it.itemId == proposedItem.id }
+            assertThat(onProposed.userId).isEqualTo(userId)
+            assertThat(onProposed.qualite).isEqualTo(5)
+            assertThat(onProposed.submittedAs).isEqualTo(SubmittedAs.AUTH)
+            assertThat(onProposed.proposedItemId).isEqualTo(null)
+        }
+
+    @Test
     fun `auth happy path increments user progress`() =
         runTest {
             val (uc, items, _, _, progress) = newUseCase()
