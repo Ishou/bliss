@@ -40,9 +40,8 @@ ingress:
 envFromSecret: "bliss-survey-api-env"
 
 calibration:
-  # Seed gold items at install time (Helm post-install Job, ADR-pattern:
-  # configure-in-cluster).
-  seedEnabled: true
+  # Seed disabled: re-running hits V5's partial unique index; IngestBatchUseCase lacks ON CONFLICT.
+  seedEnabled: false
 
 networkPolicy:
   # Restrict pod egress to: in-cluster DNS, NATS, identity-api, CNPG.
