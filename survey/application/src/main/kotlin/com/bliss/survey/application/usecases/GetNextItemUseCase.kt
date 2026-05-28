@@ -16,9 +16,15 @@ class GetNextItemUseCase(
         forUser: UserId?,
         locallyExcluded: Set<ItemId>,
     ): SurveyItem? {
+        val populated =
+            itemRepo
+                .countUnretiredByTier()
+                .filterValues { it > 0 }
+                .keys
+        if (populated.isEmpty()) return null
         val rng = randomFactory.create()
         repeat(MAX_ATTEMPTS) {
-            val tier = sampler.pickTier(rng)
+            val tier = sampler.pickTier(rng, restrictTo = populated)
             val pick = itemRepo.pickUnratedForUser(forUser, tier, locallyExcluded)
             if (pick != null) return pick
         }

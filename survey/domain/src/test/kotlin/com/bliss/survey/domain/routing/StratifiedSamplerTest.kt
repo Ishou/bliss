@@ -27,6 +27,37 @@ class StratifiedSamplerTest {
     }
 
     @Test
+    fun `restrictTo limits picks to that subset and renormalises`() {
+        val sampler = StratifiedSampler(TierWeights.DEFAULT)
+        val rng = Random(123L)
+        val counts = mutableMapOf<Tier, Int>().withDefault { 0 }
+        val n = 5_000
+        val restrict = setOf(Tier.MID)
+        repeat(n) {
+            val tier = sampler.pickTier(rng, restrictTo = restrict)
+            counts[tier] = counts.getValue(tier) + 1
+        }
+        assertThat(counts.getValue(Tier.MID).toDouble() / n).isCloseTo(1.0, 0.0001)
+    }
+
+    @Test
+    fun `restrictTo renormalises between two populated tiers`() {
+        val sampler = StratifiedSampler(TierWeights.DEFAULT)
+        val rng = Random(99L)
+        val counts = mutableMapOf<Tier, Int>().withDefault { 0 }
+        val n = 20_000
+        val restrict = setOf(Tier.HIGH, Tier.MID)
+        repeat(n) {
+            val tier = sampler.pickTier(rng, restrictTo = restrict)
+            counts[tier] = counts.getValue(tier) + 1
+        }
+        val highShare = counts.getValue(Tier.HIGH).toDouble() / n
+        val midShare = counts.getValue(Tier.MID).toDouble() / n
+        assertThat(highShare).isCloseTo(0.20 / 0.75, 0.02)
+        assertThat(midShare).isCloseTo(0.55 / 0.75, 0.02)
+    }
+
+    @Test
     fun `uniform weights yield uniform distribution`() {
         val weights =
             TierWeights(
