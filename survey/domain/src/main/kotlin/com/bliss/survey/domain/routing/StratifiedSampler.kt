@@ -4,30 +4,50 @@ import com.bliss.survey.domain.model.Tier
 import kotlin.random.Random
 
 class StratifiedSampler(
-    weights: TierWeights,
+    private val weights: TierWeights,
 ) {
     private data class Bucket(
         val tier: Tier,
         val cumulative: Double,
     )
 
-    private val buckets: List<Bucket>
-    private val total: Double
+    private val fullBuckets: List<Bucket>
+    private val fullTotal: Double
 
     init {
         val sorted = weights.weights.entries.sortedBy { it.key.name }
         var running = 0.0
-        buckets =
+        fullBuckets =
             sorted.map { (tier, w) ->
                 running += w
                 Bucket(tier, running)
             }
-        total = running
+        fullTotal = running
     }
 
-    fun pickTier(rng: Random): Tier {
-        val r = rng.nextDouble() * total
-        for (b in buckets) if (r < b.cumulative) return b.tier
-        return buckets.last().tier
+    // renormalises weights over the non-empty `restrictTo` subset
+    fun pickTier(
+        rng: Random,
+        restrictTo: Set<Tier>? = null,
+    ): Tier {
+        if (restrictTo == null) {
+            val r = rng.nextDouble() * fullTotal
+            for (b in fullBuckets) if (r < b.cumulative) return b.tier
+            return fullBuckets.last().tier
+        }
+        require(restrictTo.isNotEmpty()) { "restrictTo must be non-empty" }
+        var subTotal = 0.0
+        val subBuckets =
+            buildList {
+                for ((tier, w) in weights.weights.entries.sortedBy { it.key.name }) {
+                    if (tier !in restrictTo || w <= 0.0) continue
+                    subTotal += w
+                    add(Bucket(tier, subTotal))
+                }
+            }
+        require(subBuckets.isNotEmpty()) { "no positive weight among restricted tiers" }
+        val r = rng.nextDouble() * subTotal
+        for (b in subBuckets) if (r < b.cumulative) return b.tier
+        return subBuckets.last().tier
     }
 }

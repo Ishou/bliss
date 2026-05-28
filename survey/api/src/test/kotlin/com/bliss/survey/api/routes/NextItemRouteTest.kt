@@ -115,7 +115,11 @@ private class StubItemRepo(
         exclude: Set<ItemId>,
     ): SurveyItem? = items.firstOrNull { it.tier == tier && it.id !in exclude }
 
-    override suspend fun countUnretiredByTier(): Map<Tier, Int> = emptyMap()
+    override suspend fun countUnretiredByTier(): Map<Tier, Int> =
+        items
+            .filter { it.retiredAt == null }
+            .groupBy { it.tier }
+            .mapValues { (_, v) -> v.size }
 
     override suspend fun listSaturated(policy: KCoveragePolicy): List<ItemId> = emptyList()
 

@@ -75,6 +75,23 @@ class GetNextItemUseCaseTest {
         }
 
     @Test
+    fun `picks from the only populated tier even when sampler weights favour empty ones`() =
+        runTest {
+            val repo = InMemorySurveyItemRepository()
+            repeat(10) { i -> repo.insert(item(Tier.MID, "mid-$i")) }
+            val uc =
+                GetNextItemUseCase(
+                    itemRepo = repo,
+                    sampler = StratifiedSampler(TierWeights.DEFAULT),
+                    randomFactory = { Random(0L) },
+                )
+            repeat(8) {
+                val pick = uc.execute(forUser = null, locallyExcluded = emptySet())
+                assertThat(pick).isNotNull()
+            }
+        }
+
+    @Test
     fun `returns null when all tiers exhausted`() =
         runTest {
             val repo = InMemorySurveyItemRepository()
