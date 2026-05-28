@@ -107,6 +107,61 @@ paths:
             application/problem+json:
               schema: { $ref: '#/components/schemas/CorrectifRejection' }
 
+  /v1/items/pairs/next:
+    get:
+      operationId: getNextPair
+      summary: Get the next unrated pair (same mot) for pairwise rating.
+      description: |
+        Pulls two distinct survey items for the same `mot`, both unrated by
+        the caller. Same auth/dedup rules as `/v1/items/next`. Returns 204
+        when no mot has at least two unrated candidates available.
+      tags: [items]
+      parameters:
+        - in: query
+          name: excluded
+          required: false
+          description: Comma-separated list of `itemId`s the anonymous caller has already rated locally. Ignored when the caller is authenticated.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Next pair.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ItemPair' }
+        '204':
+          description: No mot has two unrated candidates available.
+        '503':
+          $ref: '#/components/responses/ProblemDetails'
+
+  /v1/ratings/pair:
+    post:
+      operationId: submitPairRating
+      summary: Submit a pairwise verdict on two items for the same mot.
+      description: |
+        Records a pairwise verdict. Routing depends on whether the verdict
+        expresses a preference or a tied absolute judgment:
+          - LEFT_WINS / RIGHT_WINS → 1 row in `pair_ratings` (consumed by
+            DPO pair builder directly as chosen/rejected).
+          - BOTH_GOOD → 2 rows in `ratings` (qualite=5 each).
+          - BOTH_BAD  → 2 rows in `ratings` (qualite=1 each).
+          - SKIP      → no writes; client advances.
+        `pair_ratings` stays a strict preference table — every row is a
+        usable DPO pair. Absolute judgments accumulate in `ratings`
+        alongside the binary-mode submissions.
+      tags: [items]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PairRatingRequest' }
+      responses:
+        '204':
+          description: Pair verdict recorded (or SKIP — no rows written).
+        '400': { $ref: '#/components/responses/ProblemDetails' }
+        '404': { $ref: '#/components/responses/ProblemDetails' }
+        '409': { $ref: '#/components/responses/ProblemDetails' }
+
   /v1/me/progress:
     get:
       operationId: getMyProgress
@@ -301,6 +356,29 @@ components:
       x-enum-varnames:
         [DEFINITION_DIRECTE, PERIPHRASE, METONYMIE, FONCTION_ROLE, CALEMBOUR,
          CULTUREL, CRYPTIQUE, CRYPTIQUE_MORPHOLOGIQUE, TECHNIQUE]
+
+    ItemPair:
+      type: object
+      required: [mot, left, right]
+      properties:
+        mot:   { type: string }
+        left:  { $ref: '#/components/schemas/Item' }
+        right: { $ref: '#/components/schemas/Item' }
+
+    PairVerdict:
+      type: string
+      enum: [LEFT_WINS, RIGHT_WINS, BOTH_GOOD, BOTH_BAD, SKIP]
+      x-enum-varnames: [LEFT_WINS, RIGHT_WINS, BOTH_GOOD, BOTH_BAD, SKIP]
+
+    PairRatingRequest:
+      type: object
+      required: [leftItemId, rightItemId, verdict, difficulte, latencyMs]
+      properties:
+        leftItemId:  { type: string, format: uuid }
+        rightItemId: { type: string, format: uuid }
+        verdict:     { $ref: '#/components/schemas/PairVerdict' }
+        difficulte:  { type: integer, minimum: 1, maximum: 5 }
+        latencyMs:   { type: integer, minimum: 0 }
 
     RatingRequest:
       type: object
