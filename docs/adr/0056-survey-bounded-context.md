@@ -45,6 +45,9 @@ Standard hexagonal layout: `domain/`, `application/`, `infrastructure/`, `api/`,
 - Rater-proposed clues promoted into the corpus.
 - Ratings (qualité 1–5, difficulté 1–5, optional flag) by authenticated and
   anonymous visitors.
+- Pairwise comparison ratings (`pair_ratings` table): LEFT_WINS/RIGHT_WINS →
+  one row in `pair_ratings` (consumed by DPO pair builder as chosen/rejected);
+  BOTH_GOOD/BOTH_BAD → two rows in `ratings`; SKIP → no write.
 - Authorship link for proposed clues (`proposed_by` table) and per-user
   opt-out preference.
 - §8.1-formatted CSV export consumed by `bliss-clue-ai`'s training pipeline.
@@ -69,6 +72,7 @@ Data model (tables owned by `survey/`):
 | `proposed_by` | `user_id`, `proposed_clue_id`, `opted_out BOOL` | Authorship join table; fully deleted on `user.deleted`. |
 | `calibration_items` | `id` → `candidate_clues`, `gold_qualite`, `gold_difficulte`, `seeded_from` | Gold-truth items seeded from `bliss-clue-ai/data/seed/gold_pilot_v1.csv`. |
 | `rater_calibration` | `user_id`, `agreement_score NUMERIC`, `rated_count INT`, `last_updated` | Per-user rolling calibration score for export-time weighting. |
+| `pair_ratings` | `id`, `left_item_id` → `candidate_clues`, `right_item_id` → `candidate_clues`, `user_id` (nullable), `verdict` (LEFT_WINS \| RIGHT_WINS), `difficulte SMALLINT 1–5`, `latency_ms INT`, `created_at TIMESTAMPTZ` | Strict preference table: every row is a usable DPO pair. BOTH_GOOD/BOTH_BAD route to `ratings`; SKIP is not persisted. |
 
 ## Threat Model
 
