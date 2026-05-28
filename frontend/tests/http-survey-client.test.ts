@@ -197,6 +197,97 @@ describe('HttpSurveyClient.getContributions', () => {
   });
 });
 
+describe('HttpSurveyClient.getNextPair', () => {
+  const samplePair = {
+    mot: 'CHAT',
+    left: sampleItem,
+    right: { ...sampleItem, itemId: '0190e3a4-7a2c-7c9e-8f1a-cafecafecafe' },
+  };
+
+  it('returns the pair on 200', async () => {
+    server.use(http.get(`${BASE}/v1/items/pairs/next`, () => HttpResponse.json(samplePair)));
+    expect(await client.getNextPair()).toEqual(samplePair);
+  });
+
+  it('returns null on 204', async () => {
+    server.use(
+      http.get(`${BASE}/v1/items/pairs/next`, () => new HttpResponse(null, { status: 204 })),
+    );
+    expect(await client.getNextPair()).toBeNull();
+  });
+
+  it('passes excludedItemIds as a comma-separated `excluded` query', async () => {
+    let captured = '';
+    server.use(
+      http.get(`${BASE}/v1/items/pairs/next`, ({ request }) => {
+        captured = new URL(request.url).searchParams.get('excluded') ?? '';
+        return HttpResponse.json(samplePair);
+      }),
+    );
+    await client.getNextPair({ excludedItemIds: ['a', 'b'] });
+    expect(captured).toBe('a,b');
+  });
+});
+
+describe('HttpSurveyClient.submitPairRating', () => {
+  const leftId = '0190e3a4-7a2c-7c9e-8f1a-1111111111aa';
+  const rightId = '0190e3a4-7a2c-7c9e-8f1a-2222222222bb';
+
+  it('POSTs the payload and resolves on 204', async () => {
+    let captured: Record<string, unknown> = {};
+    server.use(
+      http.post(`${BASE}/v1/ratings/pair`, async ({ request }) => {
+        captured = (await request.json()) as Record<string, unknown>;
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+    await client.submitPairRating({
+      leftItemId: leftId,
+      rightItemId: rightId,
+      verdict: 'LEFT_WINS',
+      difficulte: 3,
+      latencyMs: 1500,
+    });
+    expect(captured).toEqual({
+      leftItemId: leftId,
+      rightItemId: rightId,
+      verdict: 'LEFT_WINS',
+      difficulte: 3,
+      latencyMs: 1500,
+    });
+  });
+
+  it('throws SignInRequiredError on 401', async () => {
+    server.use(
+      http.post(`${BASE}/v1/ratings/pair`, () => new HttpResponse(null, { status: 401 })),
+    );
+    await expect(
+      client.submitPairRating({
+        leftItemId: leftId,
+        rightItemId: rightId,
+        verdict: 'LEFT_WINS',
+        difficulte: 3,
+        latencyMs: 0,
+      }),
+    ).rejects.toBeInstanceOf(SignInRequiredError);
+  });
+
+  it('throws AlreadyRatedError on 409', async () => {
+    server.use(
+      http.post(`${BASE}/v1/ratings/pair`, () => new HttpResponse(null, { status: 409 })),
+    );
+    await expect(
+      client.submitPairRating({
+        leftItemId: leftId,
+        rightItemId: rightId,
+        verdict: 'BOTH_GOOD',
+        difficulte: 3,
+        latencyMs: 0,
+      }),
+    ).rejects.toBeInstanceOf(AlreadyRatedError);
+  });
+});
+
 describe('HttpSurveyClient.patchPreferences', () => {
   it('PATCHes and resolves on 204', async () => {
     let captured: { deleteProposedOnErasure?: boolean } = {};

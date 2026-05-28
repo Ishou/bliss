@@ -7,6 +7,8 @@ function stubSurveyClient(getContributions: () => Promise<ReadonlyArray<SurveyCo
   return {
     getNextItem: vi.fn(),
     submitRating: vi.fn(),
+    getNextPair: vi.fn(),
+    submitPairRating: vi.fn(),
     getProgress: vi.fn(),
     getContributions,
     patchPreferences: vi.fn(),
