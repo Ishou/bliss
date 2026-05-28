@@ -29,7 +29,7 @@ internal object SurveyTestcontainer {
         ds.connection.use { conn ->
             conn
                 .prepareStatement(
-                    "TRUNCATE survey_items, ratings, proposed_by, user_progress RESTART IDENTITY CASCADE",
+                    "TRUNCATE survey_items, ratings, proposed_by, user_progress, pair_ratings RESTART IDENTITY CASCADE",
                 ).use { it.executeUpdate() }
         }
     }

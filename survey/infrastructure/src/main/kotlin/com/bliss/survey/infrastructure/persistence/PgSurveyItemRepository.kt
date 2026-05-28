@@ -4,6 +4,7 @@ import com.bliss.survey.application.ports.ProposedContribution
 import com.bliss.survey.application.ports.SurveyItemRepository
 import com.bliss.survey.domain.model.Categorie
 import com.bliss.survey.domain.model.ItemId
+import com.bliss.survey.domain.model.ItemPair
 import com.bliss.survey.domain.model.Pos
 import com.bliss.survey.domain.model.Source
 import com.bliss.survey.domain.model.Style
@@ -80,6 +81,122 @@ class PgSurveyItemRepository(
                 null
             }
         }
+
+    override suspend fun pickPairForUser(
+        userId: UserId?,
+        exclude: Set<ItemId>,
+    ): ItemPair? =
+        withContext(Dispatchers.IO) {
+            dataSource.connection.use { conn ->
+                val mot = pickEligibleMot(conn, userId, exclude) ?: return@withContext null
+                pickTwoItemsForMot(conn, mot, userId, exclude)
+            }
+        }
+
+    private fun pickEligibleMot(
+        conn: java.sql.Connection,
+        userId: UserId?,
+        exclude: Set<ItemId>,
+    ): String? {
+        val sql = buildEligibleMotQuery(userId != null, exclude.size)
+        conn.prepareStatement(sql).use { stmt ->
+            var idx = 1
+            for (id in exclude) stmt.setObject(idx++, id.value)
+            if (userId != null) {
+                stmt.setObject(idx++, userId.value)
+                stmt.setObject(idx, userId.value)
+            }
+            stmt.executeQuery().use { rs ->
+                return if (rs.next()) rs.getString(1) else null
+            }
+        }
+    }
+
+    private fun pickTwoItemsForMot(
+        conn: java.sql.Connection,
+        mot: String,
+        userId: UserId?,
+        exclude: Set<ItemId>,
+    ): ItemPair? {
+        val sql = buildTwoItemsForMotQuery(userId != null, exclude.size)
+        conn.prepareStatement(sql).use { stmt ->
+            var idx = 1
+            stmt.setString(idx++, mot)
+            for (id in exclude) stmt.setObject(idx++, id.value)
+            if (userId != null) {
+                stmt.setObject(idx++, userId.value)
+                stmt.setObject(idx, userId.value)
+            }
+            stmt.executeQuery().use { rs ->
+                val picks = mutableListOf<SurveyItem>()
+                while (rs.next() && picks.size < 2) picks += rs.toSurveyItem()
+                if (picks.size < 2) return null
+                return ItemPair(mot = mot, left = picks[0], right = picks[1])
+            }
+        }
+    }
+
+    private fun buildEligibleMotQuery(
+        hasUserId: Boolean,
+        excludeSize: Int,
+    ): String {
+        val excludeClause =
+            if (excludeSize > 0) "AND si.item_id NOT IN (${List(excludeSize) { "?" }.joinToString(",")})" else ""
+        val antiRated =
+            if (hasUserId) {
+                """
+                AND NOT EXISTS (
+                    SELECT 1 FROM ratings r WHERE r.item_id = si.item_id AND r.user_id = ?
+                )
+                AND NOT EXISTS (
+                    SELECT 1 FROM pair_ratings pr
+                     WHERE (pr.left_item_id = si.item_id OR pr.right_item_id = si.item_id)
+                       AND pr.user_id = ?
+                )
+                """.trimIndent()
+            } else {
+                ""
+            }
+        return """
+            SELECT si.mot FROM survey_items si
+             WHERE si.retired_at IS NULL
+               $excludeClause
+               $antiRated
+             GROUP BY si.mot
+            HAVING count(*) >= 2
+             ORDER BY random() LIMIT 1
+            """.trimIndent()
+    }
+
+    private fun buildTwoItemsForMotQuery(
+        hasUserId: Boolean,
+        excludeSize: Int,
+    ): String {
+        val excludeClause =
+            if (excludeSize > 0) "AND si.item_id NOT IN (${List(excludeSize) { "?" }.joinToString(",")})" else ""
+        val antiRated =
+            if (hasUserId) {
+                """
+                AND NOT EXISTS (
+                    SELECT 1 FROM ratings r WHERE r.item_id = si.item_id AND r.user_id = ?
+                )
+                AND NOT EXISTS (
+                    SELECT 1 FROM pair_ratings pr
+                     WHERE (pr.left_item_id = si.item_id OR pr.right_item_id = si.item_id)
+                       AND pr.user_id = ?
+                )
+                """.trimIndent()
+            } else {
+                ""
+            }
+        return """
+            SELECT si.* FROM survey_items si
+             WHERE si.retired_at IS NULL AND si.mot = ?
+               $excludeClause
+               $antiRated
+             ORDER BY random() LIMIT 2
+            """.trimIndent()
+    }
 
     override suspend fun retire(
         id: ItemId,

@@ -1,6 +1,7 @@
 package com.bliss.survey.application.ports
 
 import com.bliss.survey.domain.model.ItemId
+import com.bliss.survey.domain.model.ItemPair
 import com.bliss.survey.domain.model.SurveyItem
 import com.bliss.survey.domain.model.Tier
 import com.bliss.survey.domain.model.UserId
@@ -22,6 +23,15 @@ interface SurveyItemRepository {
         tier: Tier,
         exclude: Set<ItemId>,
     ): SurveyItem?
+
+    /**
+     * Pick two distinct items for the same `mot`, both unrated by the caller in either binary or pair mode.
+     * Returns null when no mot has at least two such candidates available.
+     */
+    suspend fun pickPairForUser(
+        userId: UserId?,
+        exclude: Set<ItemId>,
+    ): ItemPair?
 
     suspend fun countUnretiredByTier(): Map<Tier, Int>
 

@@ -25,3 +25,20 @@ data class RatingResponse(
     val submittedAs: String,
     val proposedItemId: String? = null,
 )
+
+// Pair-mode wire DTOs (ADR-0056 amendment 2026-05-28).
+@Serializable
+data class ItemPairDto(
+    val mot: String,
+    val left: ItemDto,
+    val right: ItemDto,
+)
+
+@Serializable
+data class PairRatingRequest(
+    val leftItemId: String,
+    val rightItemId: String,
+    val verdict: String,
+    val difficulte: Int,
+    val latencyMs: Int,
+)
