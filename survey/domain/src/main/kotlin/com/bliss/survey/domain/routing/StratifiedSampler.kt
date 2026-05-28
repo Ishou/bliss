@@ -25,8 +25,7 @@ class StratifiedSampler(
         fullTotal = running
     }
 
-    // `restrictTo` lets callers exclude tiers known to be empty without burning retry budget;
-    // weights are renormalised over the subset for this draw.
+    // renormalises weights over the non-empty `restrictTo` subset
     fun pickTier(
         rng: Random,
         restrictTo: Set<Tier>? = null,

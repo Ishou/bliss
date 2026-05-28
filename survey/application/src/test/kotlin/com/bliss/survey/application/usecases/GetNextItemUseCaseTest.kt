@@ -79,8 +79,6 @@ class GetNextItemUseCaseTest {
         runTest {
             val repo = InMemorySurveyItemRepository()
             repeat(10) { i -> repo.insert(item(Tier.MID, "mid-$i")) }
-            // RNG seed normally biases the first 4 draws towards non-MID tiers under DEFAULT weights;
-            // restrictTo ensures we still pick a MID candidate on the first attempt.
             val uc =
                 GetNextItemUseCase(
                     itemRepo = repo,
