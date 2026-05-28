@@ -124,7 +124,7 @@ function SondagePairsPage() {
     void loadNext();
   }, [state.status, loadNext]);
 
-  async function onVerdict(verdict: PairVerdict, latencyMs: number): Promise<void> {
+  const onVerdict = useCallback(async (verdict: PairVerdict, latencyMs: number): Promise<void> => {
     if (!surveyClient || !pair) return;
     const currentPair = pair;
     const leftItemId = currentPair.left.itemId;
@@ -172,7 +172,7 @@ function SondagePairsPage() {
       }
       setError(messageForApiError(cause));
     }
-  }
+  }, [surveyClient, pair, isAuth, surveyAnonStore, analytics, loadNext]);
 
   function onSignInClick(): void {
     analytics.trackEvent('survey', 'pair_signin_prompt_clicked', undefined);

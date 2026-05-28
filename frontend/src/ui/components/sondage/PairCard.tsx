@@ -1,5 +1,4 @@
-// ADR-0050 §6 a11y: 56 px touch-target minimum.
-// ADR-0056 pairwise verdict: LEFT_WINS / RIGHT_WINS → pair_ratings; BOTH_GOOD / BOTH_BAD → ratings; SKIP → nothing.
+// ADR-0050 §6: 56 px touch-target minimum on every verdict button.
 
 import { useEffect, useRef } from 'react';
 import { css, cx } from 'styled-system/css';
