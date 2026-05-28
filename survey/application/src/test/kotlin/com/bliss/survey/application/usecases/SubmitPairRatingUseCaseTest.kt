@@ -249,6 +249,32 @@ class SubmitPairRatingUseCaseTest {
         }
 
     @Test
+    fun `auth BOTH_GOOD increments progress twice`() =
+        runTest {
+            val (uc, items, _, _, progress) = wire()
+            val a = item("POMME", "a")
+            val b = item("POMME", "b")
+            items.insert(a)
+            items.insert(b)
+            val user = UserId(UUID.randomUUID())
+            uc.execute(SubmitPairRatingCommand(a.id, b.id, user, PairVerdict.BOTH_GOOD, 3, 1200))
+            assertThat(progress.progress[user]?.itemsRated).isEqualTo(2)
+        }
+
+    @Test
+    fun `auth BOTH_BAD increments progress twice`() =
+        runTest {
+            val (uc, items, _, _, progress) = wire()
+            val a = item("POMME", "a")
+            val b = item("POMME", "b")
+            items.insert(a)
+            items.insert(b)
+            val user = UserId(UUID.randomUUID())
+            uc.execute(SubmitPairRatingCommand(a.id, b.id, user, PairVerdict.BOTH_BAD, 3, 1200))
+            assertThat(progress.progress[user]?.itemsRated).isEqualTo(2)
+        }
+
+    @Test
     fun `auth BOTH_GOOD blocked when caller already rated either side in binary mode`() =
         runTest {
             val (uc, items, ratings, _, _) = wire()

@@ -7,8 +7,7 @@ value class PairRatingId(
     val value: UUID,
 )
 
-// Domain row for the pair_ratings table: strict preference only.
-// BOTH_GOOD/BOTH_BAD become absolute Rating rows; SKIP is not persisted.
+// BOTH_GOOD/BOTH_BAD route to absolute Rating rows; SKIP is not persisted.
 enum class PreferenceVerdict {
     LEFT_WINS,
     RIGHT_WINS,

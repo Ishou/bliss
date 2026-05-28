@@ -24,10 +24,7 @@ interface SurveyItemRepository {
         exclude: Set<ItemId>,
     ): SurveyItem?
 
-    /**
-     * Pick two distinct items for the same `mot`, both unrated by the caller in either binary or pair mode.
-     * Returns null when no mot has at least two such candidates available.
-     */
+    // null when no mot has ≥ 2 unrated candidates for the caller in either binary or pair mode
     suspend fun pickPairForUser(
         userId: UserId?,
         exclude: Set<ItemId>,

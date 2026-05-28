@@ -137,5 +137,5 @@ fun Route.submitPairRatingRoute(execute: suspend (SubmitPairRatingCommand) -> Su
     }
 }
 
-// Production overload mirroring submitRatingRoute(useCase) — concrete use case from Module.kt without exposing the test seam.
+// concrete overload that takes the use case directly, keeping the lambda seam out of production wiring
 fun Route.submitPairRatingRoute(useCase: SubmitPairRatingUseCase) = submitPairRatingRoute { cmd -> useCase.execute(cmd) }
