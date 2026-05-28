@@ -164,6 +164,36 @@ class PgSurveyItemRepositoryTest {
         }
 
     @Test
+    fun `pickUnratedForUser excludes items by content match to user's rated history`() =
+        runTest {
+            val userId = UserId(UUID.randomUUID())
+            // Realistic shape: rated item is retired, then a fresh item with identical content is inserted.
+            val rated = sampleItem(mot = "PAIN")
+            items.insert(rated)
+            ratings.insert(authRating(rated.id, userId))
+            items.retire(rated.id, now)
+            val reincarnation = rated.copy(id = ItemId(UUID.randomUUID()), retiredAt = null)
+            items.insert(reincarnation)
+            val picked = items.pickUnratedForUser(userId, Tier.MID, exclude = emptySet())
+            assertThat(picked).isNull()
+        }
+
+    @Test
+    fun `pickUnratedForUser anon caller is unchanged by the content dedup`() =
+        runTest {
+            val someoneElse = UserId(UUID.randomUUID())
+            val rated = sampleItem(mot = "PAIN")
+            items.insert(rated)
+            ratings.insert(authRating(rated.id, someoneElse))
+            items.retire(rated.id, now)
+            val reincarnation = rated.copy(id = ItemId(UUID.randomUUID()), retiredAt = null)
+            items.insert(reincarnation)
+            // Anon caller: K=0 path matches reincarnation (no rating on its item_id) regardless of content history.
+            val picked = items.pickUnratedForUser(null, Tier.MID, exclude = emptySet())
+            assertThat(picked?.id).isEqualTo(reincarnation.id)
+        }
+
+    @Test
     fun `listSaturated returns items meeting tier-specific K coverage`() =
         runTest {
             val item = sampleItem(tier = Tier.MID)
