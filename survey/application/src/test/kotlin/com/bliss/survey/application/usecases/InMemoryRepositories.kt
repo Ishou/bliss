@@ -1,5 +1,6 @@
 package com.bliss.survey.application.usecases
 
+import com.bliss.survey.application.ports.PairRatingRepository
 import com.bliss.survey.application.ports.ProposedByRepository
 import com.bliss.survey.application.ports.ProposedContribution
 import com.bliss.survey.application.ports.RatingAggregate
@@ -8,6 +9,8 @@ import com.bliss.survey.application.ports.SurveyItemRepository
 import com.bliss.survey.application.ports.UserProgress
 import com.bliss.survey.application.ports.UserProgressRepository
 import com.bliss.survey.domain.model.ItemId
+import com.bliss.survey.domain.model.ItemPair
+import com.bliss.survey.domain.model.PairRating
 import com.bliss.survey.domain.model.Rating
 import com.bliss.survey.domain.model.SubmittedAs
 import com.bliss.survey.domain.model.SurveyItem
@@ -19,6 +22,7 @@ import java.time.Instant
 class InMemorySurveyItemRepository : SurveyItemRepository {
     val items: MutableMap<ItemId, SurveyItem> = linkedMapOf()
     val retired: MutableSet<ItemId> = mutableSetOf()
+    var ratedByUser: Map<UserId, Set<ItemId>> = emptyMap()
 
     override suspend fun findById(id: ItemId): SurveyItem? = items[id]
 
@@ -43,6 +47,21 @@ class InMemorySurveyItemRepository : SurveyItemRepository {
             .filter { it.tier == tier && it.id !in exclude && it.id !in retired }
             .firstOrNull()
 
+    override suspend fun pickPairForUser(
+        userId: UserId?,
+        exclude: Set<ItemId>,
+    ): ItemPair? {
+        val rated = userId?.let { ratedByUser[it] }.orEmpty()
+        val eligible =
+            items.values.filter {
+                it.id !in retired && it.id !in exclude && it.id !in rated
+            }
+        val byMot = eligible.groupBy { it.mot }.filterValues { it.size >= 2 }
+        if (byMot.isEmpty()) return null
+        val (mot, candidates) = byMot.entries.first()
+        return ItemPair(mot = mot, left = candidates[0], right = candidates[1])
+    }
+
     override suspend fun countUnretiredByTier(): Map<Tier, Int> =
         items.values
             .filter { it.id !in retired }
@@ -59,6 +78,25 @@ class InMemorySurveyItemRepository : SurveyItemRepository {
 
     override suspend fun deleteByIds(ids: Collection<ItemId>) {
         for (id in ids) items.remove(id)
+    }
+}
+
+class InMemoryPairRatingRepository : PairRatingRepository {
+    val rows: MutableList<PairRating> = mutableListOf()
+
+    override suspend fun insert(rating: PairRating): Boolean {
+        if (rating.userId != null) {
+            val unorderedKey =
+                setOf(rating.leftItemId, rating.rightItemId)
+            val duplicate =
+                rows.any { existing ->
+                    existing.userId == rating.userId &&
+                        setOf(existing.leftItemId, existing.rightItemId) == unorderedKey
+                }
+            if (duplicate) return false
+        }
+        rows += rating
+        return true
     }
 }
 

@@ -3,11 +3,13 @@ package com.bliss.survey.api
 import com.bliss.survey.api.auth.SessionMiddleware
 import com.bliss.survey.api.config.SurveyApiConfig
 import com.bliss.survey.api.dto.ProblemDetails
+import com.bliss.survey.api.routes.getNextPairRoute
 import com.bliss.survey.api.routes.healthRoute
 import com.bliss.survey.api.routes.meContributionsRoute
 import com.bliss.survey.api.routes.mePreferencesRoute
 import com.bliss.survey.api.routes.meProgressRoute
 import com.bliss.survey.api.routes.nextItemRoute
+import com.bliss.survey.api.routes.submitPairRatingRoute
 import com.bliss.survey.api.routes.submitRatingRoute
 import io.ktor.http.ContentType
 import io.ktor.http.HttpMethod
@@ -90,6 +92,8 @@ fun Application.surveyApiModule(
         healthRoute()
         nextItemRoute(wiring.getNextItem)
         submitRatingRoute(wiring.submitRating)
+        getNextPairRoute(wiring.getNextPair)
+        submitPairRatingRoute(wiring.submitPairRating)
         meProgressRoute(wiring.userProgress)
         meContributionsRoute(wiring.items)
         mePreferencesRoute(wiring.proposedBy)

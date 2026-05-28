@@ -125,6 +125,11 @@ private open class ContribsEmptyItemRepo : SurveyItemRepository {
         exclude: Set<ItemId>,
     ): SurveyItem? = null
 
+    override suspend fun pickPairForUser(
+        userId: UserId?,
+        exclude: Set<ItemId>,
+    ): com.bliss.survey.domain.model.ItemPair? = null
+
     override suspend fun countUnretiredByTier(): Map<Tier, Int> = emptyMap()
 
     override suspend fun listSaturated(policy: KCoveragePolicy): List<ItemId> = emptyList()

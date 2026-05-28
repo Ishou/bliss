@@ -3,10 +3,10 @@ package com.bliss.survey.api.routes
 import assertk.assertThat
 import assertk.assertions.contains
 import assertk.assertions.isEqualTo
+import assertk.assertions.isTrue
 import com.bliss.survey.application.ports.ProposedContribution
-import com.bliss.survey.application.ports.RandomFactory
 import com.bliss.survey.application.ports.SurveyItemRepository
-import com.bliss.survey.application.usecases.GetNextItemUseCase
+import com.bliss.survey.application.usecases.GetNextPairUseCase
 import com.bliss.survey.domain.model.Categorie
 import com.bliss.survey.domain.model.ItemId
 import com.bliss.survey.domain.model.ItemPair
@@ -17,8 +17,6 @@ import com.bliss.survey.domain.model.SurveyItem
 import com.bliss.survey.domain.model.Tier
 import com.bliss.survey.domain.model.UserId
 import com.bliss.survey.domain.routing.KCoveragePolicy
-import com.bliss.survey.domain.routing.StratifiedSampler
-import com.bliss.survey.domain.routing.TierWeights
 import io.ktor.client.request.get
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.HttpStatusCode
@@ -30,21 +28,20 @@ import io.ktor.server.testing.testApplication
 import org.junit.jupiter.api.Test
 import java.time.Instant
 import java.util.UUID
-import kotlin.random.Random
 
-class NextItemRouteTest {
-    private val fixedItem =
+class GetNextPairRouteTest {
+    private val left =
         SurveyItem(
             id = ItemId(UUID.fromString("11111111-1111-7111-8111-111111111111")),
-            mot = "TESTMOT",
-            definition = "a probe definition",
+            mot = "POMME",
+            definition = "Fruit du pommier",
             pos = Pos.NOM_COMMUN,
-            categorie = Categorie.AUTRE,
+            categorie = Categorie.ALIMENTS,
             style = Style.DEFINITION_DIRECTE,
             forceClaimed = 3,
-            longueur = 7,
-            source = Source.CURATED_V1,
-            sourceBatch = "test_2026-05",
+            longueur = 5,
+            source = Source.SYNTHETIC_V1,
+            sourceBatch = "test",
             tier = Tier.MID,
             isCalibration = false,
             expected = null,
@@ -52,56 +49,62 @@ class NextItemRouteTest {
             createdAt = Instant.parse("2026-05-25T00:00:00Z"),
         )
 
+    private val right =
+        left.copy(
+            id = ItemId(UUID.fromString("22222222-2222-7222-8222-222222222222")),
+            definition = "Fruit rouge ou vert",
+        )
+
     @Test
-    fun `200 returns item shape when pool has a pick`() =
+    fun `200 returns the pair when available`() =
         testApplication {
-            val repo = StubItemRepo(listOf(fixedItem))
-            val useCase = GetNextItemUseCase(repo, StratifiedSampler(TierWeights.DEFAULT), RandomFactory { Random(0) })
+            val repo = StubPairRepo(ItemPair("POMME", left, right))
+            val useCase = GetNextPairUseCase(repo)
             application {
                 install(ContentNegotiation) { json() }
-                routing { nextItemRoute(useCase) }
+                routing { getNextPairRoute(useCase) }
             }
-            val resp = client.get("/v1/items/next")
+            val resp = client.get("/v1/items/pairs/next")
             assertThat(resp.status).isEqualTo(HttpStatusCode.OK)
             val body = resp.bodyAsText()
+            assertThat(body).contains("\"mot\":\"POMME\"")
             assertThat(body).contains("\"itemId\":\"11111111-1111-7111-8111-111111111111\"")
-            assertThat(body).contains("\"mot\":\"TESTMOT\"")
-            assertThat(body).contains("\"pos\":\"nom_commun\"")
-            assertThat(body).contains("\"tier\":\"mid\"")
+            assertThat(body).contains("\"itemId\":\"22222222-2222-7222-8222-222222222222\"")
         }
 
     @Test
-    fun `204 when pool is empty`() =
+    fun `204 when no pair is available`() =
         testApplication {
-            val repo = StubItemRepo(emptyList())
-            val useCase = GetNextItemUseCase(repo, StratifiedSampler(TierWeights.DEFAULT), RandomFactory { Random(0) })
+            val useCase = GetNextPairUseCase(StubPairRepo(null))
             application {
                 install(ContentNegotiation) { json() }
-                routing { nextItemRoute(useCase) }
+                routing { getNextPairRoute(useCase) }
             }
-            val resp = client.get("/v1/items/next")
+            val resp = client.get("/v1/items/pairs/next")
             assertThat(resp.status).isEqualTo(HttpStatusCode.NoContent)
         }
 
     @Test
-    fun `excluded query param filters out items`() =
+    fun `excluded query is forwarded to the use case`() =
         testApplication {
-            val repo = StubItemRepo(listOf(fixedItem))
-            val useCase = GetNextItemUseCase(repo, StratifiedSampler(TierWeights.DEFAULT), RandomFactory { Random(0) })
+            val repo = StubPairRepo(null, recordExclude = true)
+            val useCase = GetNextPairUseCase(repo)
             application {
                 install(ContentNegotiation) { json() }
-                routing { nextItemRoute(useCase) }
+                routing { getNextPairRoute(useCase) }
             }
-            val resp = client.get("/v1/items/next?excluded=${fixedItem.id.value}")
-            assertThat(resp.status).isEqualTo(HttpStatusCode.NoContent)
+            client.get("/v1/items/pairs/next?excluded=${left.id.value}")
+            assertThat(repo.lastExclude.contains(left.id)).isTrue()
         }
 }
 
-// In-memory impl; mocking own code violates CLAUDE.md.
-private class StubItemRepo(
-    private val items: List<SurveyItem>,
+private class StubPairRepo(
+    private val pair: ItemPair?,
+    private val recordExclude: Boolean = false,
 ) : SurveyItemRepository {
-    override suspend fun findById(id: ItemId): SurveyItem? = items.firstOrNull { it.id == id }
+    var lastExclude: Set<ItemId> = emptySet()
+
+    override suspend fun findById(id: ItemId): SurveyItem? = null
 
     override suspend fun insert(item: SurveyItem) {}
 
@@ -114,18 +117,17 @@ private class StubItemRepo(
         userId: UserId?,
         tier: Tier,
         exclude: Set<ItemId>,
-    ): SurveyItem? = items.firstOrNull { it.tier == tier && it.id !in exclude }
+    ): SurveyItem? = null
 
     override suspend fun pickPairForUser(
         userId: UserId?,
         exclude: Set<ItemId>,
-    ): ItemPair? = null
+    ): ItemPair? {
+        if (recordExclude) lastExclude = exclude
+        return pair
+    }
 
-    override suspend fun countUnretiredByTier(): Map<Tier, Int> =
-        items
-            .filter { it.retiredAt == null }
-            .groupBy { it.tier }
-            .mapValues { (_, v) -> v.size }
+    override suspend fun countUnretiredByTier(): Map<Tier, Int> = emptyMap()
 
     override suspend fun listSaturated(policy: KCoveragePolicy): List<ItemId> = emptyList()
 

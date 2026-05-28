@@ -7,6 +7,8 @@ import com.bliss.survey.application.ports.IdGenerator
 import com.bliss.survey.application.ports.RandomFactory
 import com.bliss.survey.application.usecases.AnonymizeUserRatingsUseCase
 import com.bliss.survey.application.usecases.GetNextItemUseCase
+import com.bliss.survey.application.usecases.GetNextPairUseCase
+import com.bliss.survey.application.usecases.SubmitPairRatingUseCase
 import com.bliss.survey.application.usecases.SubmitRatingUseCase
 import com.bliss.survey.domain.routing.StratifiedSampler
 import com.bliss.survey.domain.routing.TierWeights
@@ -14,6 +16,7 @@ import com.bliss.survey.infrastructure.identity.CachedSessionVerifier
 import com.bliss.survey.infrastructure.identity.IdentityClient
 import com.bliss.survey.infrastructure.language.LinguaLanguageDetector
 import com.bliss.survey.infrastructure.nats.UserDeletedConsumer
+import com.bliss.survey.infrastructure.persistence.PgPairRatingRepository
 import com.bliss.survey.infrastructure.persistence.PgProposedByRepository
 import com.bliss.survey.infrastructure.persistence.PgRatingRepository
 import com.bliss.survey.infrastructure.persistence.PgSurveyItemRepository
@@ -35,6 +38,7 @@ fun main() {
 
     val items = PgSurveyItemRepository(dataSource)
     val ratings = PgRatingRepository(dataSource)
+    val pairRatings = PgPairRatingRepository(dataSource)
     val proposedBy = PgProposedByRepository(dataSource)
     val progress = PgUserProgressRepository(dataSource)
 
@@ -54,6 +58,16 @@ fun main() {
             ids = ids,
             clock = clock,
         )
+    val getNextPair = GetNextPairUseCase(items)
+    val submitPairRating =
+        SubmitPairRatingUseCase(
+            items = items,
+            ratings = ratings,
+            pairRatings = pairRatings,
+            progress = progress,
+            ids = ids,
+            clock = clock,
+        )
 
     val identityClient = IdentityClient(config.identityBaseUrl)
     val sessionVerifier = CachedSessionVerifier(identityClient)
@@ -70,6 +84,8 @@ fun main() {
             verifyCookie = { cookie -> sessionVerifier.verify(cookie) },
             getNextItem = getNextItem,
             submitRating = { cmd -> submitRating.execute(cmd) },
+            getNextPair = getNextPair,
+            submitPairRating = { cmd -> submitPairRating.execute(cmd) },
             items = items,
             proposedBy = proposedBy,
             userProgress = progress,
