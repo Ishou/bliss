@@ -40,10 +40,7 @@ ingress:
 envFromSecret: "bliss-survey-api-env"
 
 calibration:
-  # Gold items already seeded (gold_v1, 114 rows). Re-running the seed Job
-  # on upgrade hits V5's partial unique index on (mot, definition) because
-  # IngestBatchUseCase has no ON CONFLICT path. Disabled until idempotency
-  # is fixed in the worker (tracked separately).
+  # Seed disabled: re-running hits V5's partial unique index; IngestBatchUseCase lacks ON CONFLICT.
   seedEnabled: false
 
 networkPolicy:
