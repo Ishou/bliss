@@ -68,9 +68,9 @@ class PgSurveyItemRepository(
                     val pickQuery = buildPickQuery(userId != null, exclude.size)
                     conn.prepareStatement(pickQuery).use { stmt ->
                         var idx = 1
-                        if (userId != null) stmt.setObject(idx++, userId.value)
                         stmt.setString(idx++, tier.name.lowercase())
                         for (id in exclude) stmt.setObject(idx++, id.value)
+                        if (userId != null) stmt.setObject(idx++, userId.value)
                         stmt.setInt(idx, k)
                         stmt.executeQuery().use { rs ->
                             if (rs.next()) return@withContext rs.toSurveyItem()
@@ -183,16 +183,28 @@ class PgSurveyItemRepository(
         hasUserId: Boolean,
         excludeSize: Int,
     ): String {
-        val joinClause = if (hasUserId) "LEFT JOIN ratings r ON r.item_id = si.item_id AND r.user_id = ?" else ""
         val excludeClause =
             if (excludeSize > 0) "AND si.item_id NOT IN (${List(excludeSize) { "?" }.joinToString(",")})" else ""
-        val antiJoinClause = if (hasUserId) "AND r.rating_id IS NULL" else ""
+        // Dedup by (mot, definition) not item_id: a regenerated identical clue under a new id is still the same logical rating to the user.
+        val antiExistsClause =
+            if (hasUserId) {
+                """
+                AND NOT EXISTS (
+                    SELECT 1 FROM ratings r
+                      JOIN survey_items si2 ON si2.item_id = r.item_id
+                     WHERE r.user_id = ?
+                       AND si2.mot = si.mot
+                       AND si2.definition = si.definition
+                )
+                """.trimIndent()
+            } else {
+                ""
+            }
         return """
             SELECT si.* FROM survey_items si
-              $joinClause
              WHERE si.tier = ? AND si.retired_at IS NULL
                $excludeClause
-               $antiJoinClause
+               $antiExistsClause
                AND (SELECT count(*) FROM ratings r2 WHERE r2.item_id = si.item_id) = ?
              ORDER BY random() LIMIT 1
             """.trimIndent()
