@@ -29,7 +29,7 @@ data class PairRating(
     }
 }
 
-// Two items for the same mot, both unrated by the caller (GET /v1/items/pairs/next).
+// Two items for the same mot, both unrated by the caller.
 data class ItemPair(
     val mot: String,
     val left: SurveyItem,
