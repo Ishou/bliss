@@ -52,6 +52,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/items/pairs/next": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get the next unrated pair (same mot) for pairwise rating.
+         * @description Pulls two distinct survey items for the same `mot`, both unrated by
+         *     the caller. Same auth/dedup rules as `/v1/items/next`. Returns 204
+         *     when no mot has at least two unrated candidates available.
+         */
+        get: operations["getNextPair"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/ratings/pair": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Submit a pairwise verdict on two items for the same mot.
+         * @description Records a pairwise verdict. Routing depends on whether the verdict
+         *     expresses a preference or a tied absolute judgment:
+         *       - LEFT_WINS / RIGHT_WINS → 1 row in `pair_ratings` (consumed by
+         *         DPO pair builder directly as chosen/rejected).
+         *       - BOTH_GOOD → 2 rows in `ratings` (qualite=5 each).
+         *       - BOTH_BAD  → 2 rows in `ratings` (qualite=1 each).
+         *       - SKIP      → no writes; client advances.
+         *     `pair_ratings` stays a strict preference table — every row is a
+         *     usable DPO pair. Absolute judgments accumulate in `ratings`
+         *     alongside the binary-mode submissions.
+         */
+        post: operations["submitPairRating"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/me/progress": {
         parameters: {
             query?: never;
@@ -147,6 +198,22 @@ export interface components {
         Categorie: "chemical_symbols" | "units" | "celestial_objects" | "nombres" | "roman_numerals" | "cardinal_points" | "cities" | "countries" | "country_codes" | "geography" | "first_names" | "titles" | "mythology" | "abbreviations" | "etranger" | "expressions" | "grammar" | "interjections" | "orthographe" | "animals" | "body_parts" | "senses" | "currencies" | "organizations" | "card_game" | "games" | "music_notes" | "autre" | "aliments" | "vetements" | "mobilier_objet" | "outils" | "transports" | "materiaux" | "professions" | "famille_relations" | "sentiments_etats" | "nature_paysage" | "flore" | "meteo_climat" | "temps_duree" | "couleurs" | "arts";
         /** @enum {string} */
         Style: "definition_directe" | "periphrase" | "metonymie" | "fonction_role" | "calembour" | "culturel" | "cryptique" | "cryptique_morphologique" | "technique";
+        ItemPair: {
+            mot: string;
+            left: components["schemas"]["Item"];
+            right: components["schemas"]["Item"];
+        };
+        /** @enum {string} */
+        PairVerdict: "LEFT_WINS" | "RIGHT_WINS" | "BOTH_GOOD" | "BOTH_BAD" | "SKIP";
+        PairRatingRequest: {
+            /** Format: uuid */
+            leftItemId: string;
+            /** Format: uuid */
+            rightItemId: string;
+            verdict: components["schemas"]["PairVerdict"];
+            difficulte: number;
+            latencyMs: number;
+        };
         RatingRequest: {
             qualite: number;
             difficulte: number;
@@ -311,6 +378,62 @@ export interface operations {
                     "application/problem+json": components["schemas"]["CorrectifRejection"];
                 };
             };
+        };
+    };
+    getNextPair: {
+        parameters: {
+            query?: {
+                /** @description Comma-separated list of `itemId`s the anonymous caller has already rated locally. Ignored when the caller is authenticated. */
+                excluded?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Next pair. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ItemPair"];
+                };
+            };
+            /** @description No mot has two unrated candidates available. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            503: components["responses"]["ProblemDetails"];
+        };
+    };
+    submitPairRating: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PairRatingRequest"];
+            };
+        };
+        responses: {
+            /** @description Pair verdict recorded (or SKIP — no rows written). */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["ProblemDetails"];
+            404: components["responses"]["ProblemDetails"];
+            409: components["responses"]["ProblemDetails"];
         };
     };
     getMyProgress: {

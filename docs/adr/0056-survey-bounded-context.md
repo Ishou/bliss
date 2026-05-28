@@ -160,8 +160,20 @@ of RGPD Article 4(1).
   ported to Kotlin from `bliss-clue-ai/scripts/pipeline/`). Filter 8
   (LLM-juge) stays offline.
 
-**Future work (explicitly deferred to v2):**
-- Pairwise comparison task type.
+**Pairwise comparison task type (added 2026-05-28, was deferred to v2):**
+Pulled forward from v2 once binary GOOD/BAD ratings started bottoming out at "good" — as the model improves, more outputs land in the GOOD bucket and binary mode can't extract refinement signal between two acceptable clues. Pairwise also feeds DPO with cleaner preference pairs than the cross-product of same-mot good/bad ratings, and reduces rater fatigue (one click per pair vs two).
+
+Design:
+- New endpoints `GET /v1/items/pairs/next` and `POST /v1/ratings/pair`.
+- Verdict enum: `LEFT_WINS` / `RIGHT_WINS` / `BOTH_GOOD` / `BOTH_BAD` / `SKIP`.
+- Verdict routing keeps the absolute-quality stream clean:
+  - `LEFT_WINS` / `RIGHT_WINS` → one row in a new `pair_ratings` table (preference-only; `CHECK (verdict IN ('left_wins', 'right_wins'))` enforces the invariant at the DB level).
+  - `BOTH_GOOD` / `BOTH_BAD` → two rows in the existing `ratings` table (`qualite=5` or `qualite=1`). These are absolute judgments equivalent to two independent binary-mode ratings.
+  - `SKIP` → no writes.
+- DPO pair builder consumes `pair_ratings` directly (no cross-product needed).
+- Binary RAFT pipeline continues unchanged on the `ratings` table.
+
+**Future work (still deferred to v2):**
 - Adaptive routing weights based on per-rater calibration agreement.
 - Captcha for anon participants (only if abuse signals appear).
 - Anon → auth attribution on sign-in.

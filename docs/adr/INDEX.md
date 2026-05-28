@@ -67,7 +67,7 @@ ADR-0050  frontend/**                              A11y baseline: WCAG AA, axe-c
 ADR-0053  frontend/src/**/prerender/**             Build-time SEO prerender
 ADR-0054  frontend/src/ui/**                       Page-shell primitive
 ADR-0055  game/**/persistence/**                   Multiplayer game persistence
-ADR-0056  survey/**                                Survey bounded context (RLHF clue rating)
+ADR-0056  survey/**                                Survey bounded context (RLHF clue rating; pairwise comparison task pulled from v2 deferral)
 ADR-0057  modal_jobs/**                            Cloud-GPU finetune lane (Modal)
 ADR-0058  data/external/**                         Licensed-data posture (commercial intent); per-source verdict matrix
 ADR-0058  data/dbnary/**                           DBnary SA-acceptance + distribution discipline
