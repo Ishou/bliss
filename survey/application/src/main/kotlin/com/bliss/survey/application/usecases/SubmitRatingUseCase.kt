@@ -108,9 +108,10 @@ class SubmitRatingUseCase(
                     retiredAt = null,
                     createdAt = now,
                 )
-            items.insert(newItem)
-            proposedItemId = newItem.id
-            proposedBy.insert(newItem.id, nonNullUserId, optedOut = false)
+            // On (mot, definition) conflict, reuse the existing row's id so the auto-GOOD rating never dangles.
+            val stored = items.insertIfAbsent(newItem)
+            proposedItemId = stored.id
+            proposedBy.insert(stored.id, nonNullUserId, optedOut = false)
         }
 
         val rating =

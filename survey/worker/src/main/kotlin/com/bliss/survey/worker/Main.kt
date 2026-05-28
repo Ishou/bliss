@@ -103,7 +103,12 @@ private fun runIngest(opts: Map<String, String>): Int {
     val tier = Tier.valueOf((opts["tier"] ?: "mid").uppercase())
     val ds = openDataSource()
     val report = runIngest(ds, csv, sourceBatch, tier)
-    log.info("event=ingest_done accepted={} rejected={}", report.accepted, report.rejected.size)
+    log.info(
+        "event=ingest_done accepted={} alreadyPresent={} rejected={}",
+        report.accepted,
+        report.alreadyPresent,
+        report.rejected.size,
+    )
     for ((line, reason) in report.rejected) {
         log.warn("event=ingest_rejected line={} reason=\"{}\"", line, reason)
     }

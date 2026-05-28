@@ -13,6 +13,9 @@ interface SurveyItemRepository {
 
     suspend fun insert(item: SurveyItem)
 
+    // Idempotent insert: returns the inserted row, or the existing unretired row with the same (mot, definition).
+    suspend fun insertIfAbsent(item: SurveyItem): SurveyItem
+
     suspend fun retire(
         id: ItemId,
         at: Instant,

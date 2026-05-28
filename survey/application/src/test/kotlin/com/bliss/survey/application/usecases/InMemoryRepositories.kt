@@ -30,6 +30,20 @@ class InMemorySurveyItemRepository : SurveyItemRepository {
         items[item.id] = item
     }
 
+    override suspend fun insertIfAbsent(item: SurveyItem): SurveyItem {
+        existingUnretired(item.mot, item.definition)?.let { return it }
+        items[item.id] = item
+        return item
+    }
+
+    private fun existingUnretired(
+        mot: String,
+        definition: String,
+    ): SurveyItem? =
+        items.values.firstOrNull {
+            it.mot == mot && it.definition == definition && it.retiredAt == null && it.id !in retired
+        }
+
     override suspend fun retire(
         id: ItemId,
         at: Instant,

@@ -114,6 +114,8 @@ private open class ContribsEmptyItemRepo : SurveyItemRepository {
 
     override suspend fun insert(item: SurveyItem) {}
 
+    override suspend fun insertIfAbsent(item: SurveyItem): SurveyItem = item
+
     override suspend fun retire(
         id: ItemId,
         at: Instant,
