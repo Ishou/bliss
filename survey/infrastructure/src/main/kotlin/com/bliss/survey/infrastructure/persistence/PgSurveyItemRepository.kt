@@ -28,22 +28,25 @@ class PgSurveyItemRepository(
         withContext(Dispatchers.IO) {
             dataSource.connection.use { conn ->
                 conn.prepareStatement(INSERT_SQL).use { stmt ->
-                    stmt.setObject(1, item.id.value)
-                    stmt.setString(2, item.mot)
-                    stmt.setString(3, item.definition)
-                    stmt.setString(4, item.pos.name.lowercase())
-                    stmt.setString(5, item.categorie.name.lowercase())
-                    stmt.setString(6, item.style.name.lowercase())
-                    stmt.setInt(7, item.forceClaimed)
-                    stmt.setInt(8, item.longueur)
-                    stmt.setString(9, item.source.name.lowercase())
-                    stmt.setString(10, item.sourceBatch)
-                    stmt.setString(11, item.tier.name.lowercase())
-                    stmt.setBoolean(12, item.isCalibration)
-                    stmt.setString(13, null)
-                    stmt.setTimestamp(14, item.retiredAt?.let(Timestamp::from))
-                    stmt.setTimestamp(15, Timestamp.from(item.createdAt))
+                    bindInsertParams(stmt, item)
                     stmt.executeUpdate()
+                }
+            }
+        }
+
+    override suspend fun insertIfAbsent(item: SurveyItem): SurveyItem =
+        withContext(Dispatchers.IO) {
+            dataSource.connection.use { conn ->
+                conn.prepareStatement(INSERT_IF_ABSENT_SQL).use { stmt ->
+                    bindInsertParams(stmt, item)
+                    stmt.executeQuery().use { rs -> if (rs.next()) return@withContext item }
+                }
+                conn.prepareStatement(SELECT_BY_CONTENT_SQL).use { stmt ->
+                    stmt.setString(1, item.mot)
+                    stmt.setString(2, item.definition)
+                    stmt.executeQuery().use { rs ->
+                        if (rs.next()) rs.toSurveyItem() else error("conflict on insert but no existing row for ${item.mot}")
+                    }
                 }
             }
         }
@@ -277,6 +280,27 @@ class PgSurveyItemRepository(
             }
         }
 
+    private fun bindInsertParams(
+        stmt: java.sql.PreparedStatement,
+        item: SurveyItem,
+    ) {
+        stmt.setObject(1, item.id.value)
+        stmt.setString(2, item.mot)
+        stmt.setString(3, item.definition)
+        stmt.setString(4, item.pos.name.lowercase())
+        stmt.setString(5, item.categorie.name.lowercase())
+        stmt.setString(6, item.style.name.lowercase())
+        stmt.setInt(7, item.forceClaimed)
+        stmt.setInt(8, item.longueur)
+        stmt.setString(9, item.source.name.lowercase())
+        stmt.setString(10, item.sourceBatch)
+        stmt.setString(11, item.tier.name.lowercase())
+        stmt.setBoolean(12, item.isCalibration)
+        stmt.setString(13, null)
+        stmt.setTimestamp(14, item.retiredAt?.let(Timestamp::from))
+        stmt.setTimestamp(15, Timestamp.from(item.createdAt))
+    }
+
     private fun ResultSet.toSurveyItem(): SurveyItem =
         SurveyItem(
             id = ItemId(getObject("item_id", UUID::class.java)),
@@ -336,7 +360,21 @@ class PgSurveyItemRepository(
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?::jsonb, ?, ?)
             """
 
+        // Mirrors scripts/clue_generation/import_candidates.py: re-ingesting an existing (mot, definition) no-ops.
+        const val INSERT_IF_ABSENT_SQL =
+            """
+            INSERT INTO survey_items
+              (item_id, mot, definition, pos, categorie, style, force_claimed, longueur,
+               source, source_batch, tier, is_calibration, expected, retired_at, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?::jsonb, ?, ?)
+            ON CONFLICT (mot, definition) WHERE retired_at IS NULL DO NOTHING
+            RETURNING item_id
+            """
+
         const val SELECT_BY_ID_SQL = "SELECT * FROM survey_items WHERE item_id = ?"
+
+        const val SELECT_BY_CONTENT_SQL =
+            "SELECT * FROM survey_items WHERE mot = ? AND definition = ? AND retired_at IS NULL"
 
         const val RETIRE_SQL =
             "UPDATE survey_items SET retired_at = ? WHERE item_id = ? AND retired_at IS NULL"

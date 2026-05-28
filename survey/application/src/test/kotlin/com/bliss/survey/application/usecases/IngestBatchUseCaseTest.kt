@@ -62,6 +62,7 @@ class IngestBatchUseCaseTest {
             val lines = listOf(writer.header(), row("Fruit du pommier rouge ou vert au verger"))
             val report = uc.execute(lines, sourceBatch = "ingest1", tier = Tier.HIGH)
             assertThat(report.accepted).isEqualTo(1)
+            assertThat(report.alreadyPresent).isEqualTo(0)
             assertThat(report.rejected.size).isEqualTo(0)
             val stored = repo.items.values.first()
             assertThat(stored.sourceBatch).isEqualTo("ingest1")
@@ -77,5 +78,20 @@ class IngestBatchUseCaseTest {
             val report = uc.execute(lines, sourceBatch = "ingest2", tier = Tier.MID)
             assertThat(report.accepted).isEqualTo(0)
             assertThat(report.rejected.size).isEqualTo(1)
+        }
+
+    @Test
+    fun `re-ingesting existing rows is counted as alreadyPresent not rejected`() =
+        runTest {
+            val repo = InMemorySurveyItemRepository()
+            val uc = IngestBatchUseCase(parser, pipeline, repo, ids, clock)
+            val lines = listOf(writer.header(), row("Fruit du pommier rouge ou vert au verger"))
+            val first = uc.execute(lines, sourceBatch = "seed", tier = Tier.MID)
+            assertThat(first.accepted).isEqualTo(1)
+            val second = uc.execute(lines, sourceBatch = "seed", tier = Tier.MID)
+            assertThat(second.accepted).isEqualTo(0)
+            assertThat(second.alreadyPresent).isEqualTo(1)
+            assertThat(second.rejected.size).isEqualTo(0)
+            assertThat(repo.items.size).isEqualTo(1)
         }
 }

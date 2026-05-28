@@ -40,8 +40,8 @@ ingress:
 envFromSecret: "bliss-survey-api-env"
 
 calibration:
-  # Seed disabled: re-running hits V5's partial unique index; IngestBatchUseCase lacks ON CONFLICT.
-  seedEnabled: false
+  # Idempotent: IngestBatchUseCase now inserts ON CONFLICT (mot, definition) DO NOTHING, so re-seeding is a no-op.
+  seedEnabled: true
 
 networkPolicy:
   # Restrict pod egress to: in-cluster DNS, NATS, identity-api, CNPG.

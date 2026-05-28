@@ -19,6 +19,7 @@ class IngestBatchUseCase(
 ) {
     data class Report(
         val accepted: Int,
+        val alreadyPresent: Int,
         val rejected: List<Pair<Int, String>>,
     )
 
@@ -29,6 +30,7 @@ class IngestBatchUseCase(
     ): Report {
         val rejected = mutableListOf<Pair<Int, String>>()
         var ok = 0
+        var present = 0
         for ((i, raw) in csvLines.drop(1).withIndex()) {
             val lineNumber = i + 2
             try {
@@ -46,21 +48,21 @@ class IngestBatchUseCase(
                     rejected += lineNumber to "filter ${r.filterId}: ${r.reason}"
                     continue
                 }
-                items.insert(
+                val toInsert =
                     parsed.copy(
                         id = ItemId(ids.next()),
                         sourceBatch = sourceBatch,
                         tier = tier,
                         createdAt = clock.now(),
-                    ),
-                )
-                ok++
+                    )
+                val stored = items.insertIfAbsent(toInsert)
+                if (stored.id == toInsert.id) ok++ else present++
             } catch (e: IllegalArgumentException) {
                 rejected += lineNumber to "parse: ${e.message}"
             } catch (e: NumberFormatException) {
                 rejected += lineNumber to "parse: ${e.message}"
             }
         }
-        return Report(ok, rejected)
+        return Report(ok, present, rejected)
     }
 }

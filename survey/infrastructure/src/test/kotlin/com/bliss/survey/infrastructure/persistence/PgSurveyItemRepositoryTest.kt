@@ -109,6 +109,26 @@ class PgSurveyItemRepositoryTest {
         }
 
     @Test
+    fun `insertIfAbsent inserts a new row and returns it`() =
+        runTest {
+            val item = sampleItem(mot = "PAIN")
+            val returned = items.insertIfAbsent(item)
+            assertThat(returned.id).isEqualTo(item.id)
+            assertThat(items.findById(item.id)).isNotNull()
+        }
+
+    @Test
+    fun `insertIfAbsent on duplicate mot+definition returns the existing row without inserting`() =
+        runTest {
+            val first = sampleItem(mot = "PAIN")
+            items.insert(first)
+            val duplicate = first.copy(id = ItemId(UUID.randomUUID()))
+            val returned = items.insertIfAbsent(duplicate)
+            assertThat(returned.id).isEqualTo(first.id)
+            assertThat(items.findById(duplicate.id)).isNull()
+        }
+
+    @Test
     fun `retiring an item frees its mot+definition for re-insertion`() =
         runTest {
             val original = sampleItem(mot = "PAIN")

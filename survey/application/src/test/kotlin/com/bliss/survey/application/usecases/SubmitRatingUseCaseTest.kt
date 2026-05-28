@@ -3,6 +3,7 @@ package com.bliss.survey.application.usecases
 import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.isInstanceOf
+import assertk.assertions.isNotNull
 import com.bliss.survey.application.filters.FilterPipeline
 import com.bliss.survey.application.ports.Clock
 import com.bliss.survey.application.ports.IdGenerator
@@ -215,6 +216,54 @@ class SubmitRatingUseCaseTest {
             assertThat(onProposed.qualite).isEqualTo(5)
             assertThat(onProposed.submittedAs).isEqualTo(SubmittedAs.AUTH)
             assertThat(onProposed.proposedItemId).isEqualTo(null)
+        }
+
+    @Test
+    fun `correctif duplicating an existing clue reuses its id so the auto-GOOD rating never dangles`() =
+        runTest {
+            val (uc, items, ratings, proposed, _) = newUseCase()
+            val parent = seedItem(items)
+            val userId = UserId(UUID.randomUUID())
+            val duplicateText = "Fruit defendu d'Eve"
+            // An item with the proposed (mot, definition) already exists in the corpus.
+            val existing =
+                SurveyItem(
+                    id = ItemId(UUID.randomUUID()),
+                    mot = parent.mot,
+                    definition = duplicateText,
+                    pos = parent.pos,
+                    categorie = parent.categorie,
+                    style = Style.PERIPHRASE,
+                    forceClaimed = 3,
+                    longueur = parent.mot.length,
+                    source = Source.RATER_PROPOSED,
+                    sourceBatch = "rater_2026-05",
+                    tier = Tier.MID,
+                    isCalibration = false,
+                    expected = null,
+                    retiredAt = null,
+                    createdAt = fixedNow,
+                )
+            items.insert(existing)
+            val r =
+                uc.execute(
+                    SubmitRatingCommand(
+                        itemId = parent.id,
+                        userId = userId,
+                        qualite = 3,
+                        difficulte = 3,
+                        flag = null,
+                        correctif = duplicateText to Style.PERIPHRASE,
+                        latencyMs = 1500,
+                    ),
+                )
+            assertThat(r).isInstanceOf(SubmitRatingResult.Accepted::class)
+            check(r is SubmitRatingResult.Accepted)
+            assertThat(r.rating.proposedItemId).isEqualTo(existing.id)
+            val autoGood = ratings.ratings.single { it.itemId == existing.id }
+            assertThat(autoGood.qualite).isEqualTo(5)
+            assertThat(items.findById(existing.id)).isNotNull()
+            assertThat(proposed.links.single().itemId).isEqualTo(existing.id)
         }
 
     @Test

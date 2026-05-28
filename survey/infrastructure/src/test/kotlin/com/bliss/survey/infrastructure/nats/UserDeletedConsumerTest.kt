@@ -246,6 +246,8 @@ class UserDeletedConsumerTest {
 
         override suspend fun insert(item: SurveyItem) = Unit
 
+        override suspend fun insertIfAbsent(item: SurveyItem): SurveyItem = item
+
         override suspend fun retire(
             id: ItemId,
             at: Instant,
