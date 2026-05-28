@@ -1,6 +1,8 @@
 // HTTP adapter for the survey-api surface (ADR-0056).
 
 import type {
+  ItemPair,
+  PairRatingSubmission,
   RatingResult,
   RatingSubmission,
   SurveyClient,
@@ -83,6 +85,38 @@ export function createHttpSurveyClient(options: HttpSurveyClientOptions): Survey
     return (await res.json()) as RatingResult;
   };
 
+  const getNextPair: SurveyClient['getNextPair'] = async (opts = {}) => {
+    const params = new URLSearchParams();
+    const excluded = opts.excludedItemIds;
+    if (excluded && excluded.length > 0) params.set('excluded', excluded.join(','));
+    const query = params.toString();
+    const url = `${base}/v1/items/pairs/next${query ? `?${query}` : ''}`;
+    const res = await fetchImpl(url, { credentials: 'include' });
+    if (res.status === 204) return null;
+    if (!res.ok) throw new Error(`getNextPair failed: ${res.status}`);
+    return (await res.json()) as ItemPair;
+  };
+
+  const submitPairRating: SurveyClient['submitPairRating'] = async (body: PairRatingSubmission) => {
+    const res = await fetchImpl(`${base}/v1/ratings/pair`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    if (res.status === 401) throw new SignInRequiredError();
+    // 409 means the auth caller already rated this pair; surface as AlreadyRatedError without a payload body.
+    if (res.status === 409) {
+      throw new AlreadyRatedError({
+        ratingId: '',
+        itemId: body.leftItemId,
+        submittedAs: 'auth',
+        proposedItemId: null,
+      });
+    }
+    if (!res.ok) throw new Error(`submitPairRating failed: ${res.status}`);
+  };
+
   const getProgress: SurveyClient['getProgress'] = async () => {
     const res = await fetchImpl(`${base}/v1/me/progress`, { credentials: 'include' });
     if (res.status === 401) throw new SignInRequiredError();
@@ -108,7 +142,7 @@ export function createHttpSurveyClient(options: HttpSurveyClientOptions): Survey
     if (!res.ok) throw new Error(`patchPreferences failed: ${res.status}`);
   };
 
-  return { getNextItem, submitRating, getProgress, getContributions, patchPreferences };
+  return { getNextItem, submitRating, getNextPair, submitPairRating, getProgress, getContributions, patchPreferences };
 }
 
 export type { paths };

@@ -117,6 +117,22 @@ export interface SurveyProgress {
   readonly lastRatedAt: string | null;
 }
 
+export type PairVerdict = 'LEFT_WINS' | 'RIGHT_WINS' | 'BOTH_GOOD' | 'BOTH_BAD' | 'SKIP';
+
+export interface ItemPair {
+  readonly mot: string;
+  readonly left: SurveyItem;
+  readonly right: SurveyItem;
+}
+
+export interface PairRatingSubmission {
+  readonly leftItemId: string;
+  readonly rightItemId: string;
+  readonly verdict: PairVerdict;
+  readonly difficulte: LikertScore;
+  readonly latencyMs: number;
+}
+
 export interface SurveyContribution {
   readonly itemId: string;
   readonly mot: string;
@@ -137,6 +153,8 @@ export interface SurveyPreferencesPatch {
 export interface SurveyClient {
   getNextItem(opts?: { readonly excludedItemIds?: readonly string[] }): Promise<SurveyItem | null>;
   submitRating(itemId: string, body: RatingSubmission): Promise<RatingResult>;
+  getNextPair(opts?: { readonly excludedItemIds?: readonly string[] }): Promise<ItemPair | null>;
+  submitPairRating(body: PairRatingSubmission): Promise<void>;
   getProgress(): Promise<SurveyProgress>;
   getContributions(): Promise<ReadonlyArray<SurveyContribution>>;
   patchPreferences(body: SurveyPreferencesPatch): Promise<void>;

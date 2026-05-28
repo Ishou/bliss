@@ -1,16 +1,20 @@
-// `/sondage` lazy half — rating loop. Auth optional; anon dedup via surveyAnonStore.
+// `/sondage/pairs` lazy half — pairwise rating loop. Auth optional; anon dedup via surveyAnonStore.
 
 import { createLazyRoute, Link } from '@tanstack/react-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { css } from 'styled-system/css';
 import { NOOP_ANALYTICS } from '@/application/analytics';
 import { messageForApiError } from '@/application/errors';
-import type { LikertScore, RatingSubmission, SurveyItem } from '@/application/survey';
+import type {
+  ItemPair,
+  LikertScore,
+  PairRatingSubmission,
+  PairVerdict,
+} from '@/application/survey';
 import { useAuth } from '@/ui/components/auth';
 import { ContentPage } from '@/ui/components/layout';
-import type { Verdict } from '@/ui/components/sondage';
-import { RatingCard, SignInBanner } from '@/ui/components/sondage';
-import { Route as ParentRoute } from './sondage';
+import { PairCard, SignInBanner } from '@/ui/components/sondage';
+import { Route as ParentRoute } from './sondage.pairs';
 
 const articleStyles = css({
   display: 'flex',
@@ -36,19 +40,6 @@ const headingStyles = css({
   color: 'fg',
 });
 
-const modeLinkStyles = css({
-  fontSize: 'sm',
-  fontWeight: 'semibold',
-  color: 'accent',
-  textDecoration: 'underline',
-  _hover: { opacity: 0.8 },
-  _focusVisible: {
-    outline: '2px solid token(colors.focusRing)',
-    outlineOffset: '2px',
-    borderRadius: 'sm',
-  },
-});
-
 const introStyles = css({
   fontSize: 'body',
   color: 'fgMuted',
@@ -67,10 +58,23 @@ const alertStyles = css({
   margin: 0,
 });
 
-// difficulte=3 placeholder pending schema nullable migration; qualite=5 drives RAFT winners so no algorithmic impact.
+const modeLinkStyles = css({
+  fontSize: 'sm',
+  fontWeight: 'semibold',
+  color: 'accent',
+  textDecoration: 'underline',
+  _hover: { opacity: 0.8 },
+  _focusVisible: {
+    outline: '2px solid token(colors.focusRing)',
+    outlineOffset: '2px',
+    borderRadius: 'sm',
+  },
+});
+
+// difficulte=3 placeholder mirrors `/sondage` (the binary route) until the schema allows nullable difficulté.
 const DIFFICULTE_PLACEHOLDER: LikertScore = 3;
 
-function SondagePage() {
+function SondagePairsPage() {
   const ctx = ParentRoute.useRouteContext();
   const { state } = useAuth();
   const isAuth = state.status === 'authed';
@@ -79,7 +83,7 @@ function SondagePage() {
   const analytics = ctx.analytics ?? NOOP_ANALYTICS;
   const authClient = ctx.authClient;
 
-  const [item, setItem] = useState<SurveyItem | null>(null);
+  const [pair, setPair] = useState<ItemPair | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const sessionStartedRef = useRef(false);
@@ -94,13 +98,12 @@ function SondagePage() {
     setLoading(true);
     setError(null);
     try {
-      // anon store also excluded when auth: server dedups on user_id, so pre-auth ratings (stored with user_id=NULL) wouldn't otherwise be filtered.
       const anonSeen = surveyAnonStore?.list() ?? [];
       const excludedItemIds = isAuth
         ? [...anonSeen, ...Array.from(authSkippedIdsRef.current)]
         : anonSeen;
-      const next = await surveyClient.getNextItem({ excludedItemIds });
-      setItem(next);
+      const next = await surveyClient.getNextPair({ excludedItemIds });
+      setPair(next);
     } catch (cause) {
       setError(messageForApiError(cause));
     } finally {
@@ -113,7 +116,7 @@ function SondagePage() {
     if (sessionStartedRef.current) return;
     if (state.status === 'loading') return;
     sessionStartedRef.current = true;
-    analytics.trackEvent('survey', 'session_start', isAuth ? 'auth' : 'anon');
+    analytics.trackEvent('survey', 'pair_session_start', isAuth ? 'auth' : 'anon');
   }, [state.status, isAuth, analytics]);
 
   useEffect(() => {
@@ -121,91 +124,72 @@ function SondagePage() {
     void loadNext();
   }, [state.status, loadNext]);
 
-  async function onVerdict(verdict: Verdict, latencyMs: number): Promise<void> {
-    if (!surveyClient || !item) return;
-    const currentItem = item;
+  const onVerdict = useCallback(async (verdict: PairVerdict, latencyMs: number): Promise<void> => {
+    if (!surveyClient || !pair) return;
+    const currentPair = pair;
+    const leftItemId = currentPair.left.itemId;
+    const rightItemId = currentPair.right.itemId;
     if (verdict === 'SKIP') {
-      analytics.trackEvent('survey', 'verdict_skipped', `tier=${currentItem.tier}`);
+      analytics.trackEvent('survey', 'pair_verdict_skipped', `tier=${currentPair.left.tier}`);
       if (isAuth) {
-        authSkippedIdsRef.current.add(currentItem.itemId);
+        authSkippedIdsRef.current.add(leftItemId);
+        authSkippedIdsRef.current.add(rightItemId);
       } else {
-        surveyAnonStore?.add(currentItem.itemId);
+        surveyAnonStore?.add(leftItemId);
+        surveyAnonStore?.add(rightItemId);
       }
       await loadNext();
       return;
     }
-    const payload: RatingSubmission = {
-      qualite: verdict === 'GOOD' ? 5 : 1,
+    const payload: PairRatingSubmission = {
+      leftItemId,
+      rightItemId,
+      verdict,
       difficulte: DIFFICULTE_PLACEHOLDER,
       latencyMs,
     };
     try {
-      await surveyClient.submitRating(currentItem.itemId, payload);
+      await surveyClient.submitPairRating(payload);
       analytics.trackEvent(
         'survey',
-        'verdict_submitted',
-        `tier=${currentItem.tier};verdict=${verdict}`,
+        'pair_verdict_submitted',
+        `tier=${currentPair.left.tier};verdict=${verdict}`,
       );
-      if (!isAuth) surveyAnonStore?.add(currentItem.itemId);
+      if (!isAuth) {
+        surveyAnonStore?.add(leftItemId);
+        surveyAnonStore?.add(rightItemId);
+      }
       await loadNext();
     } catch (cause) {
       const name = (cause as Error | undefined)?.name ?? '';
       if (name === 'AlreadyRatedError') {
-        if (!isAuth) surveyAnonStore?.add(currentItem.itemId);
+        if (!isAuth) {
+          surveyAnonStore?.add(leftItemId);
+          surveyAnonStore?.add(rightItemId);
+        }
         await loadNext();
         return;
       }
       setError(messageForApiError(cause));
     }
-  }
-
-  async function onCorriger(correctedText: string, latencyMs: number): Promise<void> {
-    if (!surveyClient || !item) return;
-    if (!isAuth) {
-      setError('Connectez-vous pour proposer une correction.');
-      return;
-    }
-    const currentItem = item;
-    // qualite=3 stays neutral on the original; the server creates a rater_proposed item and auto-rates it GOOD per ADR-0056.
-    const payload: RatingSubmission = {
-      qualite: 3,
-      difficulte: DIFFICULTE_PLACEHOLDER,
-      latencyMs,
-      correctif: { text: correctedText, style: currentItem.style },
-    };
-    try {
-      await surveyClient.submitRating(currentItem.itemId, payload);
-      analytics.trackEvent('survey', 'correctif_proposed', `tier=${currentItem.tier}`);
-      await loadNext();
-    } catch (cause) {
-      const name = (cause as Error | undefined)?.name ?? '';
-      if (name === 'CorrectifRejectedError') {
-        const detail = (cause as { detail?: { filterId?: number; reason?: string } }).detail;
-        setError(
-          `Correction rejetée par le filtre ${detail?.filterId ?? '?'} : ${detail?.reason ?? 'motif inconnu'}.`,
-        );
-        return;
-      }
-      setError(messageForApiError(cause));
-    }
-  }
+  }, [surveyClient, pair, isAuth, surveyAnonStore, analytics, loadNext]);
 
   function onSignInClick(): void {
-    analytics.trackEvent('survey', 'signin_prompt_clicked', undefined);
+    analytics.trackEvent('survey', 'pair_signin_prompt_clicked', undefined);
   }
 
   return (
     <ContentPage>
       <article className={articleStyles}>
         <div className={headerRowStyles}>
-          <h1 className={headingStyles}>Sondage des indices</h1>
-          <Link to="/sondage/pairs" className={modeLinkStyles} data-testid="mode-switch-pairs">
-            Mode paires →
+          <h1 className={headingStyles}>Sondage par paires</h1>
+          <Link to="/sondage" className={modeLinkStyles} data-testid="mode-switch-binary">
+            Mode binaire →
           </Link>
         </div>
         <p className={introStyles}>
-          Notez la qualité des définitions en un clic : mauvaise, à passer, ou bonne.
-          Vos retours alimentent la sélection des indices.
+          Comparez deux définitions du même mot. Choisissez votre préférée, marquez-les comme
+          toutes deux bonnes ou mauvaises, ou passez si vous ne pouvez pas trancher.
         </p>
 
         {state.status === 'anon' && authClient ? (
@@ -220,18 +204,17 @@ function SondagePage() {
           <p className={alertStyles} role="alert">{error}</p>
         ) : null}
 
-        {!loading && item === null && error === null ? (
+        {!loading && pair === null && error === null ? (
           <p className={statusStyles}>
-            Plus d&apos;indices à noter pour l&apos;instant. Merci !
+            Plus de paires à comparer pour l&apos;instant. Merci !
           </p>
         ) : null}
 
-        {item !== null ? (
-          <RatingCard
-            key={item.itemId}
-            item={item}
+        {pair !== null ? (
+          <PairCard
+            key={`${pair.left.itemId}|${pair.right.itemId}`}
+            pair={pair}
             onVerdict={onVerdict}
-            onCorriger={onCorriger}
           />
         ) : null}
       </article>
@@ -239,6 +222,6 @@ function SondagePage() {
   );
 }
 
-export const Route = createLazyRoute('/sondage')({
-  component: SondagePage,
+export const Route = createLazyRoute('/sondage/pairs')({
+  component: SondagePairsPage,
 });
