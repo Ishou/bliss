@@ -12,8 +12,12 @@ const POS_LABELS: Record<string, string> = {
   interjection: 'Interjection',
   mot_outil: 'Mot-outil',
   sigle_abreviation: 'Sigle / abréviation',
+  polyvalent: 'Polyvalent',
   autre: 'Autre',
 };
+
+// Source of truth for the POS <select> in the correction panel; order matches the Pos enum.
+export const POS_OPTIONS: ReadonlyArray<string> = Object.keys(POS_LABELS);
 
 const CATEGORIE_LABELS: Record<string, string> = {
   chemical_symbols: 'Symboles chimiques',
