@@ -79,6 +79,59 @@ class GetNextPairUseCaseTest {
         }
 
     @Test
+    fun `prefers an anchor pair built from the caller's known-good item`() =
+        runTest {
+            val repo = InMemorySurveyItemRepository()
+            val anchor = item("POMME", "anchor")
+            val sibling = item("POMME", "sibling")
+            repo.insert(anchor)
+            repo.insert(sibling)
+            val user = UserId(UUID.randomUUID())
+            // anchor is rated qualite=5 by the caller; sibling is genuinely unrated.
+            repo.ratedByUser = mapOf(user to setOf(anchor.id))
+            repo.knownGoodByUser = mapOf(user to setOf(anchor.id))
+            val uc = GetNextPairUseCase(repo)
+            val pair = uc.execute(forUser = user, locallyExcluded = emptySet())
+            assertThat(pair).isNotNull()
+            assertThat(pair!!.left.id).isEqualTo(anchor.id)
+            assertThat(pair.right.id).isEqualTo(sibling.id)
+        }
+
+    @Test
+    fun `falls back to two unrated items when no anchor exists`() =
+        runTest {
+            val repo = InMemorySurveyItemRepository()
+            val a = item("POMME", "a")
+            val b = item("POMME", "b")
+            repo.insert(a)
+            repo.insert(b)
+            val user = UserId(UUID.randomUUID())
+            // No known-good item for this user; must fall back to two unrated.
+            val uc = GetNextPairUseCase(repo)
+            val pair = uc.execute(forUser = user, locallyExcluded = emptySet())
+            assertThat(pair).isNotNull()
+            assertThat(pair!!.mot).isEqualTo("POMME")
+        }
+
+    @Test
+    fun `does not anchor when the only sibling was already pair-rated by the caller`() =
+        runTest {
+            val repo = InMemorySurveyItemRepository()
+            val anchor = item("POMME", "anchor")
+            val sibling = item("POMME", "sibling")
+            repo.insert(anchor)
+            repo.insert(sibling)
+            val user = UserId(UUID.randomUUID())
+            repo.ratedByUser = mapOf(user to setOf(anchor.id))
+            repo.knownGoodByUser = mapOf(user to setOf(anchor.id))
+            repo.pairRatedByUser = mapOf(user to setOf(setOf(anchor.id, sibling.id)))
+            val uc = GetNextPairUseCase(repo)
+            // anchor's only sibling is consumed; sibling alone can't form a fallback pair.
+            val pair = uc.execute(forUser = user, locallyExcluded = emptySet())
+            assertThat(pair).isNull()
+        }
+
+    @Test
     fun `excludes items the user has rated`() =
         runTest {
             val repo = InMemorySurveyItemRepository()

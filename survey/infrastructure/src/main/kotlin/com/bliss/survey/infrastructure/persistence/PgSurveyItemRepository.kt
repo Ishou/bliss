@@ -91,10 +91,90 @@ class PgSurveyItemRepository(
     ): ItemPair? =
         withContext(Dispatchers.IO) {
             dataSource.connection.use { conn ->
+                if (userId != null) {
+                    pickAnchorPair(conn, userId, exclude)?.let { return@withContext it }
+                }
                 val mot = pickEligibleMot(conn, userId, exclude) ?: return@withContext null
                 pickTwoItemsForMot(conn, mot, userId, exclude)
             }
         }
+
+    // Anchor pair: a caller-rated qualite=5 item as left, plus a same-mot sibling the caller has never seen as right.
+    private fun pickAnchorPair(
+        conn: java.sql.Connection,
+        userId: UserId,
+        exclude: Set<ItemId>,
+    ): ItemPair? {
+        val sql = buildAnchorPairQuery(exclude.size)
+        conn.prepareStatement(sql).use { stmt ->
+            var idx = 1
+            stmt.setObject(idx++, userId.value) // anchor: qualite=5 rating by caller
+            for (id in exclude) stmt.setObject(idx++, id.value) // anchor not excluded
+            for (id in exclude) stmt.setObject(idx++, id.value) // sibling not excluded
+            stmt.setObject(idx++, userId.value) // sibling not in caller's ratings
+            stmt.setObject(idx, userId.value) // sibling not in caller's pair_ratings
+            stmt.executeQuery().use { rs ->
+                if (!rs.next()) return null
+                val left = rs.toAnchorItem("a_")
+                val right = rs.toAnchorItem("s_")
+                return ItemPair(mot = left.mot, left = left, right = right)
+            }
+        }
+    }
+
+    private fun buildAnchorPairQuery(excludeSize: Int): String {
+        val anchorExclude =
+            if (excludeSize > 0) "AND a.item_id NOT IN (${List(excludeSize) { "?" }.joinToString(",")})" else ""
+        val siblingExclude =
+            if (excludeSize > 0) "AND s.item_id NOT IN (${List(excludeSize) { "?" }.joinToString(",")})" else ""
+        return """
+            SELECT a.item_id AS a_item_id, a.mot AS a_mot, a.definition AS a_definition, a.pos AS a_pos,
+                   a.categorie AS a_categorie, a.style AS a_style, a.force_claimed AS a_force_claimed,
+                   a.longueur AS a_longueur, a.source AS a_source, a.source_batch AS a_source_batch,
+                   a.tier AS a_tier, a.is_calibration AS a_is_calibration, a.retired_at AS a_retired_at,
+                   a.created_at AS a_created_at,
+                   s.item_id AS s_item_id, s.mot AS s_mot, s.definition AS s_definition, s.pos AS s_pos,
+                   s.categorie AS s_categorie, s.style AS s_style, s.force_claimed AS s_force_claimed,
+                   s.longueur AS s_longueur, s.source AS s_source, s.source_batch AS s_source_batch,
+                   s.tier AS s_tier, s.is_calibration AS s_is_calibration, s.retired_at AS s_retired_at,
+                   s.created_at AS s_created_at
+              FROM survey_items a
+              JOIN ratings ar ON ar.item_id = a.item_id AND ar.user_id = ? AND ar.qualite = 5 AND ar.flag IS NULL
+              JOIN survey_items s ON s.mot = a.mot AND s.item_id <> a.item_id AND s.retired_at IS NULL
+             WHERE a.retired_at IS NULL
+               $anchorExclude
+               $siblingExclude
+               AND NOT EXISTS (
+                   SELECT 1 FROM ratings r WHERE r.item_id = s.item_id AND r.user_id = ?
+               )
+               AND NOT EXISTS (
+                   SELECT 1 FROM pair_ratings pr
+                    WHERE pr.user_id = ?
+                      AND ((pr.left_item_id = a.item_id AND pr.right_item_id = s.item_id)
+                        OR (pr.left_item_id = s.item_id AND pr.right_item_id = a.item_id))
+               )
+             ORDER BY random() LIMIT 1
+            """.trimIndent()
+    }
+
+    private fun ResultSet.toAnchorItem(prefix: String): SurveyItem =
+        SurveyItem(
+            id = ItemId(getObject("${prefix}item_id", UUID::class.java)),
+            mot = getString("${prefix}mot"),
+            definition = getString("${prefix}definition"),
+            pos = Pos.valueOf(getString("${prefix}pos").uppercase()),
+            categorie = Categorie.valueOf(getString("${prefix}categorie").uppercase()),
+            style = Style.valueOf(getString("${prefix}style").uppercase()),
+            forceClaimed = getInt("${prefix}force_claimed"),
+            longueur = getInt("${prefix}longueur"),
+            source = Source.valueOf(getString("${prefix}source").uppercase()),
+            sourceBatch = getString("${prefix}source_batch"),
+            tier = Tier.valueOf(getString("${prefix}tier").uppercase()),
+            isCalibration = getBoolean("${prefix}is_calibration"),
+            expected = null,
+            retiredAt = getTimestamp("${prefix}retired_at")?.toInstant(),
+            createdAt = getTimestamp("${prefix}created_at").toInstant(),
+        )
 
     private fun pickEligibleMot(
         conn: java.sql.Connection,
