@@ -139,7 +139,7 @@ class SubmitRatingUseCaseTest {
                         qualite = 3,
                         difficulte = 3,
                         flag = null,
-                        correctif = "Une meilleure definition" to Style.DEFINITION_DIRECTE,
+                        correctif = CorrectifInput("Une meilleure definition", Style.DEFINITION_DIRECTE, null),
                         latencyMs = 1000,
                     ),
                 )
@@ -180,7 +180,7 @@ class SubmitRatingUseCaseTest {
                         difficulte = 3,
                         flag = null,
                         // Filter4 (stereotypes) catches the "Quelqu'un qui ..." prefix
-                        correctif = "Quelqu'un qui mange un fruit" to Style.PERIPHRASE,
+                        correctif = CorrectifInput("Quelqu'un qui mange un fruit", Style.PERIPHRASE, null),
                         latencyMs = 1000,
                     ),
                 )
@@ -203,7 +203,7 @@ class SubmitRatingUseCaseTest {
                         qualite = 3,
                         difficulte = 3,
                         flag = null,
-                        correctif = "Fruit defendu d'Eve" to Style.PERIPHRASE,
+                        correctif = CorrectifInput("Fruit defendu d'Eve", Style.PERIPHRASE, null),
                         latencyMs = 1500,
                     ),
                 )
@@ -253,7 +253,7 @@ class SubmitRatingUseCaseTest {
                         qualite = 3,
                         difficulte = 3,
                         flag = null,
-                        correctif = duplicateText to Style.PERIPHRASE,
+                        correctif = CorrectifInput(duplicateText, Style.PERIPHRASE, null),
                         latencyMs = 1500,
                     ),
                 )
@@ -264,6 +264,79 @@ class SubmitRatingUseCaseTest {
             assertThat(autoGood.qualite).isEqualTo(5)
             assertThat(items.findById(existing.id)).isNotNull()
             assertThat(proposed.links.single().itemId).isEqualTo(existing.id)
+        }
+
+    @Test
+    fun `correctif with unchanged text and new pos patches the original item in place without a proposed item`() =
+        runTest {
+            val (uc, items, ratings, proposed, _) = newUseCase()
+            val parent = seedItem(items)
+            val userId = UserId(UUID.randomUUID())
+            val r =
+                uc.execute(
+                    SubmitRatingCommand(
+                        itemId = parent.id,
+                        userId = userId,
+                        qualite = 3,
+                        difficulte = 3,
+                        flag = null,
+                        correctif = CorrectifInput(parent.definition, parent.style, Pos.POLYVALENT),
+                        latencyMs = 1100,
+                    ),
+                )
+            assertThat(r).isInstanceOf(SubmitRatingResult.Accepted::class)
+            check(r is SubmitRatingResult.Accepted)
+            assertThat(items.findById(parent.id)?.pos).isEqualTo(Pos.POLYVALENT)
+            assertThat(items.items.values.none { it.source == Source.RATER_PROPOSED }).isEqualTo(true)
+            assertThat(proposed.links.isEmpty()).isEqualTo(true)
+            assertThat(r.rating.proposedItemId).isEqualTo(null)
+            assertThat(ratings.ratings.size).isEqualTo(1)
+        }
+
+    @Test
+    fun `correctif with changed text and pos creates a proposed item carrying the chosen pos`() =
+        runTest {
+            val (uc, items, _, _, _) = newUseCase()
+            val parent = seedItem(items)
+            val userId = UserId(UUID.randomUUID())
+            val r =
+                uc.execute(
+                    SubmitRatingCommand(
+                        itemId = parent.id,
+                        userId = userId,
+                        qualite = 3,
+                        difficulte = 3,
+                        flag = null,
+                        correctif = CorrectifInput("Fruit defendu d'Eve", Style.PERIPHRASE, Pos.POLYVALENT),
+                        latencyMs = 1500,
+                    ),
+                )
+            assertThat(r).isInstanceOf(SubmitRatingResult.Accepted::class)
+            val proposedItem = items.items.values.single { it.source == Source.RATER_PROPOSED }
+            assertThat(proposedItem.pos).isEqualTo(Pos.POLYVALENT)
+            assertThat(proposedItem.definition).isEqualTo("Fruit defendu d'Eve")
+            assertThat(items.findById(parent.id)?.pos).isEqualTo(Pos.NOM_COMMUN)
+        }
+
+    @Test
+    fun `correctif with changed text and no pos keeps the parent pos on the proposed item`() =
+        runTest {
+            val (uc, items, _, _, _) = newUseCase()
+            val parent = seedItem(items)
+            val userId = UserId(UUID.randomUUID())
+            uc.execute(
+                SubmitRatingCommand(
+                    itemId = parent.id,
+                    userId = userId,
+                    qualite = 3,
+                    difficulte = 3,
+                    flag = null,
+                    correctif = CorrectifInput("Fruit defendu d'Eve", Style.PERIPHRASE, null),
+                    latencyMs = 1500,
+                ),
+            )
+            val proposedItem = items.items.values.single { it.source == Source.RATER_PROPOSED }
+            assertThat(proposedItem.pos).isEqualTo(parent.pos)
         }
 
     @Test

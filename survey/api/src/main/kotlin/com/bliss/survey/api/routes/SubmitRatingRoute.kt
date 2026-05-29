@@ -7,11 +7,13 @@ import com.bliss.survey.api.dto.ProblemDetails
 import com.bliss.survey.api.dto.RatingRequest
 import com.bliss.survey.api.dto.RatingResponse
 import com.bliss.survey.api.respondProblem
+import com.bliss.survey.application.usecases.CorrectifInput
 import com.bliss.survey.application.usecases.SubmitRatingCommand
 import com.bliss.survey.application.usecases.SubmitRatingResult
 import com.bliss.survey.application.usecases.SubmitRatingUseCase
 import com.bliss.survey.domain.model.FlagReason
 import com.bliss.survey.domain.model.ItemId
+import com.bliss.survey.domain.model.Pos
 import com.bliss.survey.domain.model.Rating
 import com.bliss.survey.domain.model.Style
 import com.bliss.survey.domain.model.UserId
@@ -67,6 +69,18 @@ fun Route.submitRatingRoute(execute: suspend (SubmitRatingCommand) -> SubmitRati
                 ),
             )
         }
+        val correctifPos = body.correctif?.pos?.let { runCatching { Pos.valueOf(it.uppercase()) }.getOrNull() }
+        if (body.correctif?.pos != null && correctifPos == null) {
+            return@post call.respondProblem(
+                HttpStatusCode.BadRequest,
+                ProblemDetails(
+                    type = "about:blank",
+                    title = "invalid pos",
+                    status = HttpStatusCode.BadRequest.value,
+                    detail = "correctif.pos must be a known Pos value",
+                ),
+            )
+        }
 
         val cmd =
             SubmitRatingCommand(
@@ -75,7 +89,7 @@ fun Route.submitRatingRoute(execute: suspend (SubmitRatingCommand) -> SubmitRati
                 qualite = body.qualite,
                 difficulte = body.difficulte,
                 flag = flag,
-                correctif = body.correctif?.let { it.text to correctifStyle!! },
+                correctif = body.correctif?.let { CorrectifInput(it.text, correctifStyle!!, correctifPos) },
                 latencyMs = body.latencyMs,
             )
 

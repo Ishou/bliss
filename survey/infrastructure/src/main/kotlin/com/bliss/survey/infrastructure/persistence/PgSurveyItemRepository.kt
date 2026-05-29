@@ -295,6 +295,20 @@ class PgSurveyItemRepository(
             }
         }
 
+    override suspend fun updatePos(
+        id: ItemId,
+        pos: Pos,
+    ): Unit =
+        withContext(Dispatchers.IO) {
+            dataSource.connection.use { conn ->
+                conn.prepareStatement(UPDATE_POS_SQL).use { stmt ->
+                    stmt.setString(1, pos.name.lowercase())
+                    stmt.setObject(2, id.value)
+                    stmt.executeUpdate()
+                }
+            }
+        }
+
     override suspend fun countUnretiredByTier(): Map<Tier, Int> =
         withContext(Dispatchers.IO) {
             dataSource.connection.use { conn ->
@@ -458,6 +472,9 @@ class PgSurveyItemRepository(
 
         const val RETIRE_SQL =
             "UPDATE survey_items SET retired_at = ? WHERE item_id = ? AND retired_at IS NULL"
+
+        const val UPDATE_POS_SQL =
+            "UPDATE survey_items SET pos = ? WHERE item_id = ? AND retired_at IS NULL"
 
         const val COUNT_BY_TIER_SQL =
             "SELECT tier, count(*) FROM survey_items WHERE retired_at IS NULL GROUP BY tier"

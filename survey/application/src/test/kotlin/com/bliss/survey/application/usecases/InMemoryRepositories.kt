@@ -11,6 +11,7 @@ import com.bliss.survey.application.ports.UserProgressRepository
 import com.bliss.survey.domain.model.ItemId
 import com.bliss.survey.domain.model.ItemPair
 import com.bliss.survey.domain.model.PairRating
+import com.bliss.survey.domain.model.Pos
 import com.bliss.survey.domain.model.Rating
 import com.bliss.survey.domain.model.SubmittedAs
 import com.bliss.survey.domain.model.SurveyItem
@@ -56,6 +57,13 @@ class InMemorySurveyItemRepository : SurveyItemRepository {
     ) {
         retired += id
         items[id]?.let { items[id] = it.copy(retiredAt = at) }
+    }
+
+    override suspend fun updatePos(
+        id: ItemId,
+        pos: Pos,
+    ) {
+        items[id]?.let { items[id] = it.copy(pos = pos) }
     }
 
     override suspend fun pickUnratedForUser(

@@ -2,6 +2,7 @@ package com.bliss.survey.application.ports
 
 import com.bliss.survey.domain.model.ItemId
 import com.bliss.survey.domain.model.ItemPair
+import com.bliss.survey.domain.model.Pos
 import com.bliss.survey.domain.model.SurveyItem
 import com.bliss.survey.domain.model.Tier
 import com.bliss.survey.domain.model.UserId
@@ -19,6 +20,11 @@ interface SurveyItemRepository {
     suspend fun retire(
         id: ItemId,
         at: Instant,
+    )
+
+    suspend fun updatePos(
+        id: ItemId,
+        pos: Pos,
     )
 
     suspend fun pickUnratedForUser(
