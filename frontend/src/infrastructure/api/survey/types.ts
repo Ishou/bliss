@@ -225,10 +225,16 @@ export interface components {
             difficulte: number;
             /** @enum {string} */
             flag?: "hors_sujet" | "auto_reference" | "erreur_sens" | "autre";
-            /** @description Alternative clue text + claimed style. Authenticated callers only. */
+            /**
+             * @description Clue correction. Authenticated callers only. When `pos` is set and
+             *     `text` equals the original clue, the original item's POS is patched
+             *     in place; when `text` differs, a new rater-proposed item carries the
+             *     corrected text and `pos` (defaulting to the parent's POS when absent).
+             */
             correctif?: {
                 text: string;
                 style: components["schemas"]["Style"];
+                pos?: components["schemas"]["Pos"];
             };
             latencyMs: number;
         };
