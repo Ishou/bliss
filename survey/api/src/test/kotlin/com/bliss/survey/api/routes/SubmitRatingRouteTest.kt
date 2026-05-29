@@ -11,6 +11,7 @@ import com.bliss.survey.application.usecases.SubmitRatingCommand
 import com.bliss.survey.application.usecases.SubmitRatingResult
 import com.bliss.survey.domain.model.FlagReason
 import com.bliss.survey.domain.model.ItemId
+import com.bliss.survey.domain.model.Pos
 import com.bliss.survey.domain.model.Rating
 import com.bliss.survey.domain.model.RatingId
 import com.bliss.survey.domain.model.SubmittedAs
@@ -59,12 +60,17 @@ class SubmitRatingRouteTest {
         difficulte: Int = 2,
         flag: String? = null,
         correctif: String? = null,
+        correctifPos: String? = null,
         latency: Int = 1200,
     ): String =
         buildString {
             append("{\"qualite\":$qualite,\"difficulte\":$difficulte,")
             if (flag != null) append("\"flag\":\"$flag\",")
-            if (correctif != null) append("\"correctif\":{\"text\":\"$correctif\",\"style\":\"definition_directe\"},")
+            if (correctif != null) {
+                append("\"correctif\":{\"text\":\"$correctif\",\"style\":\"definition_directe\"")
+                if (correctifPos != null) append(",\"pos\":\"$correctifPos\"")
+                append("},")
+            }
             append("\"latencyMs\":$latency}")
         }
 
@@ -200,6 +206,46 @@ class SubmitRatingRouteTest {
                 }
             assertThat(resp.status).isEqualTo(HttpStatusCode.BadRequest)
             assertThat(resp.bodyAsText()).contains("invalid item id")
+        }
+
+    @Test
+    fun `invalid pos in correctif - 400 problem details`() =
+        testApplication {
+            application {
+                install(SessionMiddleware) { verifyCookie = { userUuid } }
+                install(ContentNegotiation) { json(WIRE_JSON) }
+                routing { submitRatingRoute { SubmitRatingResult.Accepted(acceptedAuth) } }
+            }
+            val resp =
+                client.post("/v1/items/$itemUuid/rating") {
+                    cookie(SESSION_COOKIE_NAME, "valid-token")
+                    contentType(ContentType.Application.Json)
+                    setBody(jsonBody(correctif = "better clue", correctifPos = "not_a_pos"))
+                }
+            assertThat(resp.status).isEqualTo(HttpStatusCode.BadRequest)
+            assertThat(resp.bodyAsText()).contains("invalid pos")
+        }
+
+    @Test
+    fun `valid pos in correctif passes validation`() =
+        testApplication {
+            application {
+                install(SessionMiddleware) { verifyCookie = { userUuid } }
+                install(ContentNegotiation) { json(WIRE_JSON) }
+                routing {
+                    submitRatingRoute { cmd ->
+                        assertThat(cmd.correctif?.pos).isEqualTo(Pos.POLYVALENT)
+                        SubmitRatingResult.Accepted(acceptedAuth)
+                    }
+                }
+            }
+            val resp =
+                client.post("/v1/items/$itemUuid/rating") {
+                    cookie(SESSION_COOKIE_NAME, "valid-token")
+                    contentType(ContentType.Application.Json)
+                    setBody(jsonBody(correctif = "better clue", correctifPos = "polyvalent"))
+                }
+            assertThat(resp.status).isEqualTo(HttpStatusCode.Created)
         }
 
     @Test
