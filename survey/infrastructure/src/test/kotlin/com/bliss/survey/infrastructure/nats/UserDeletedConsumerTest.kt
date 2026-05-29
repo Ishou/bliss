@@ -253,6 +253,11 @@ class UserDeletedConsumerTest {
             at: Instant,
         ) = Unit
 
+        override suspend fun updatePos(
+            id: ItemId,
+            pos: com.bliss.survey.domain.model.Pos,
+        ) = Unit
+
         override suspend fun pickUnratedForUser(
             userId: UserId?,
             tier: Tier,

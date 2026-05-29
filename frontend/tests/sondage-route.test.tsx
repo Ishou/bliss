@@ -346,7 +346,7 @@ describe('Sondage route', () => {
     const [calledItemId, payload] = (surveyClient.submitRating as ReturnType<typeof vi.fn>).mock.calls[0] as [string, RatingSubmission];
     expect(calledItemId).toBe(sampleItem.itemId);
     expect(payload.qualite).toBe(3);
-    expect(payload.correctif).toEqual({ text: 'Une définition corrigée', style: sampleItem.style });
+    expect(payload.correctif).toEqual({ text: 'Une définition corrigée', style: sampleItem.style, pos: sampleItem.pos });
 
     const correctifEventCalls = analytics.trackEvent.mock.calls.filter(
       ([category, action]) => category === 'survey' && action === 'correctif_proposed',

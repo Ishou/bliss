@@ -7,6 +7,7 @@ import kotlinx.serialization.Serializable
 data class CorrectifPayload(
     val text: String,
     val style: String,
+    val pos: String? = null,
 )
 
 @Serializable

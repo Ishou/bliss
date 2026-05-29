@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { css, cx } from 'styled-system/css';
-import type { SurveyItem } from '@/application/survey';
-import { categorieLabel, posLabel, styleLabel } from './labels';
+import type { SurveyItem, SurveyPos } from '@/application/survey';
+import { categorieLabel, POS_OPTIONS, posLabel, styleLabel } from './labels';
 
 export type Verdict = 'GOOD' | 'BAD' | 'SKIP';
 
@@ -78,6 +78,21 @@ const correctifBoxStyles = css({
   borderRadius: 'md',
   padding: 'md',
   bg: 'surface',
+});
+
+const correctifSelectStyles = css({
+  fontSize: 'body',
+  fontFamily: 'body',
+  color: 'fg',
+  bg: 'surface',
+  border: '1px solid token(colors.border)',
+  borderRadius: 'sm',
+  padding: 'sm',
+  minHeight: '44px',
+  _focusVisible: {
+    outline: '2px solid token(colors.focusRing)',
+    outlineOffset: '2px',
+  },
 });
 
 const correctifTextareaStyles = css({
@@ -166,16 +181,18 @@ const shortcutStyles = css({
 export interface RatingCardProps {
   readonly item: SurveyItem;
   readonly onVerdict: (verdict: Verdict, latencyMs: number) => Promise<void> | void;
-  readonly onCorriger: (correctedText: string, latencyMs: number) => Promise<void> | void;
+  readonly onCorriger: (correctedText: string, pos: SurveyPos, latencyMs: number) => Promise<void> | void;
 }
 
 export function RatingCard({ item, onVerdict, onCorriger }: RatingCardProps) {
   const startedAtRef = useRef<number>(0);
   const [correctifText, setCorrectifText] = useState<string | null>(null);
+  const [correctifPos, setCorrectifPos] = useState<SurveyPos>(item.pos);
 
   useEffect(() => {
     setCorrectifText(null);
-  }, [item.itemId]);
+    setCorrectifPos(item.pos);
+  }, [item.itemId, item.pos]);
 
   useEffect(() => {
     startedAtRef.current = performance.now();
@@ -208,13 +225,17 @@ export function RatingCard({ item, onVerdict, onCorriger }: RatingCardProps) {
   function submitCorrectif(): void {
     if (correctifText === null) return;
     const trimmed = correctifText.trim();
-    if (!trimmed || trimmed === item.definition.trim()) {
+    const textChanged = trimmed.length > 0 && trimmed !== item.definition.trim();
+    const posChanged = correctifPos !== item.pos;
+    // Nothing to correct: empty text with no POS change is a no-op. POS-only fixes keep the original text.
+    if (!textChanged && !posChanged) {
       setCorrectifText(null);
       return;
     }
     const latencyMs = Math.max(0, Math.round(performance.now() - startedAtRef.current));
+    const text = textChanged ? trimmed : item.definition;
     setCorrectifText(null);
-    void onCorriger(trimmed, latencyMs);
+    void onCorriger(text, correctifPos, latencyMs);
   }
 
   return (
@@ -281,6 +302,22 @@ export function RatingCard({ item, onVerdict, onCorriger }: RatingCardProps) {
 
       {correctifText !== null ? (
         <div className={correctifBoxStyles} data-testid="correctif-box">
+          <label htmlFor="correctif-pos" className={metaStyles}>
+            Nature grammaticale (POS)
+          </label>
+          <select
+            id="correctif-pos"
+            className={correctifSelectStyles}
+            value={correctifPos}
+            aria-label="Nature grammaticale corrigée"
+            onChange={(e) => setCorrectifPos(e.target.value as SurveyPos)}
+          >
+            {POS_OPTIONS.map((pos) => (
+              <option key={pos} value={pos}>
+                {posLabel(pos)}
+              </option>
+            ))}
+          </select>
           <label htmlFor="correctif-text" className={metaStyles}>
             Proposez une définition corrigée. Soumise comme nouvelle entrée notée GOOD automatiquement.
           </label>

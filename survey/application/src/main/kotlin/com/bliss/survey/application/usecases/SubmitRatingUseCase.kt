@@ -11,6 +11,7 @@ import com.bliss.survey.application.ports.SurveyItemRepository
 import com.bliss.survey.application.ports.UserProgressRepository
 import com.bliss.survey.domain.model.FlagReason
 import com.bliss.survey.domain.model.ItemId
+import com.bliss.survey.domain.model.Pos
 import com.bliss.survey.domain.model.Rating
 import com.bliss.survey.domain.model.RatingId
 import com.bliss.survey.domain.model.Source
@@ -41,13 +42,19 @@ sealed interface SubmitRatingResult {
     data object ItemNotFound : SubmitRatingResult
 }
 
+data class CorrectifInput(
+    val text: String,
+    val style: Style,
+    val pos: Pos?,
+)
+
 data class SubmitRatingCommand(
     val itemId: ItemId,
     val userId: UserId?,
     val qualite: Int,
     val difficulte: Int,
     val flag: FlagReason?,
-    val correctif: Pair<String, Style>?,
+    val correctif: CorrectifInput?,
     val latencyMs: Int,
 )
 
@@ -78,40 +85,47 @@ class SubmitRatingUseCase(
                 requireNotNull(cmd.userId) {
                     "userId must be non-null when correctif is provided"
                 }
-            val (text, claimed) = cmd.correctif
-            val proposedInput =
-                FilterInput(
-                    mot = parent.mot,
-                    definition = text,
-                    pos = parent.pos,
-                    style = claimed,
-                )
-            val r = filters.run(proposedInput)
-            if (r is FilterResult.Reject) {
-                return SubmitRatingResult.CorrectifRejected(r.filterId, r.reason)
+            val (text, claimed, requestedPos) = cmd.correctif
+            val textChanged = text.trim() != parent.definition.trim()
+            if (!textChanged) {
+                // POS-only fix: patch the original item in place, no new proposed item.
+                if (requestedPos != null && requestedPos != parent.pos) items.updatePos(parent.id, requestedPos)
+            } else {
+                val effectivePos = requestedPos ?: parent.pos
+                val proposedInput =
+                    FilterInput(
+                        mot = parent.mot,
+                        definition = text,
+                        pos = effectivePos,
+                        style = claimed,
+                    )
+                val r = filters.run(proposedInput)
+                if (r is FilterResult.Reject) {
+                    return SubmitRatingResult.CorrectifRejected(r.filterId, r.reason)
+                }
+                val newItem =
+                    SurveyItem(
+                        id = ItemId(ids.next()),
+                        mot = parent.mot,
+                        definition = text,
+                        pos = effectivePos,
+                        categorie = parent.categorie,
+                        style = claimed,
+                        forceClaimed = 3,
+                        longueur = parent.mot.length,
+                        source = Source.RATER_PROPOSED,
+                        sourceBatch = "rater_${monthKey(now)}",
+                        tier = Tier.MID,
+                        isCalibration = false,
+                        expected = null,
+                        retiredAt = null,
+                        createdAt = now,
+                    )
+                // On (mot, definition) conflict, reuse the existing row's id so the auto-GOOD rating never dangles.
+                val stored = items.insertIfAbsent(newItem)
+                proposedItemId = stored.id
+                proposedBy.insert(stored.id, nonNullUserId, optedOut = false)
             }
-            val newItem =
-                SurveyItem(
-                    id = ItemId(ids.next()),
-                    mot = parent.mot,
-                    definition = text,
-                    pos = parent.pos,
-                    categorie = parent.categorie,
-                    style = claimed,
-                    forceClaimed = 3,
-                    longueur = parent.mot.length,
-                    source = Source.RATER_PROPOSED,
-                    sourceBatch = "rater_${monthKey(now)}",
-                    tier = Tier.MID,
-                    isCalibration = false,
-                    expected = null,
-                    retiredAt = null,
-                    createdAt = now,
-                )
-            // On (mot, definition) conflict, reuse the existing row's id so the auto-GOOD rating never dangles.
-            val stored = items.insertIfAbsent(newItem)
-            proposedItemId = stored.id
-            proposedBy.insert(stored.id, nonNullUserId, optedOut = false)
         }
 
         val rating =

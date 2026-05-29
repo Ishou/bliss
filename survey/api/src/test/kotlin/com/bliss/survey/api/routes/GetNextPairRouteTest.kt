@@ -115,6 +115,11 @@ private class StubPairRepo(
         at: Instant,
     ) {}
 
+    override suspend fun updatePos(
+        id: ItemId,
+        pos: com.bliss.survey.domain.model.Pos,
+    ) {}
+
     override suspend fun pickUnratedForUser(
         userId: UserId?,
         tier: Tier,

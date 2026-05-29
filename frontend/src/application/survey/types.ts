@@ -12,6 +12,7 @@ export type SurveyPos =
   | 'interjection'
   | 'mot_outil'
   | 'sigle_abreviation'
+  | 'polyvalent'
   | 'autre';
 
 export type SurveyCategorie =
@@ -94,6 +95,7 @@ export interface SurveyItem {
 export interface SurveyCorrectif {
   readonly text: string;
   readonly style: SurveyStyle;
+  readonly pos?: SurveyPos;
 }
 
 export interface RatingSubmission {

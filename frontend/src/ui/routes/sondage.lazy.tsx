@@ -5,7 +5,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { css } from 'styled-system/css';
 import { NOOP_ANALYTICS } from '@/application/analytics';
 import { messageForApiError } from '@/application/errors';
-import type { LikertScore, RatingSubmission, SurveyItem } from '@/application/survey';
+import type { LikertScore, RatingSubmission, SurveyItem, SurveyPos } from '@/application/survey';
 import { useAuth } from '@/ui/components/auth';
 import { ContentPage } from '@/ui/components/layout';
 import type { Verdict } from '@/ui/components/sondage';
@@ -159,19 +159,19 @@ function SondagePage() {
     }
   }
 
-  async function onCorriger(correctedText: string, latencyMs: number): Promise<void> {
+  async function onCorriger(correctedText: string, pos: SurveyPos, latencyMs: number): Promise<void> {
     if (!surveyClient || !item) return;
     if (!isAuth) {
       setError('Connectez-vous pour proposer une correction.');
       return;
     }
     const currentItem = item;
-    // qualite=3 stays neutral on the original; the server creates a rater_proposed item and auto-rates it GOOD per ADR-0056.
+    // qualite=3 stays neutral on the original; the server patches POS in place or creates an auto-GOOD rater_proposed item per ADR-0056.
     const payload: RatingSubmission = {
       qualite: 3,
       difficulte: DIFFICULTE_PLACEHOLDER,
       latencyMs,
-      correctif: { text: correctedText, style: currentItem.style },
+      correctif: { text: correctedText, style: currentItem.style, pos },
     };
     try {
       await surveyClient.submitRating(currentItem.itemId, payload);

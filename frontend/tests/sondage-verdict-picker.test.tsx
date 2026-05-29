@@ -126,8 +126,43 @@ describe('RatingCard verdict picker', () => {
     const submit = container.querySelector('[data-testid="correctif-submit"]') as HTMLButtonElement;
     await act(async () => { fireEvent.click(submit); });
 
-    expect(onCorriger).toHaveBeenCalledWith('Une définition corrigée plus précise', expect.any(Number));
+    expect(onCorriger).toHaveBeenCalledWith(
+      'Une définition corrigée plus précise',
+      sampleItem.pos,
+      expect.any(Number),
+    );
     expect(onVerdict).not.toHaveBeenCalled();
+  });
+
+  it('correction panel exposes a labelled POS select pre-set to the item POS', async () => {
+    const { container } = render(
+      <RatingCard item={sampleItem} onVerdict={async () => {}} onCorriger={async () => {}} />,
+    );
+    await act(async () => {
+      fireEvent.click(container.querySelector('button[data-verdict="CORRIGER"]') as HTMLButtonElement);
+    });
+    const select = container.querySelector('select#correctif-pos') as HTMLSelectElement;
+    expect(select).not.toBeNull();
+    expect(select.getAttribute('aria-label')).toBe('Nature grammaticale corrigée');
+    expect(select.value).toBe(sampleItem.pos);
+  });
+
+  it('changing only the POS submits the original text with the new POS', async () => {
+    const onCorriger = vi.fn().mockResolvedValue(undefined);
+    const { container } = render(
+      <RatingCard item={sampleItem} onVerdict={async () => {}} onCorriger={onCorriger} />,
+    );
+    await act(async () => {
+      fireEvent.click(container.querySelector('button[data-verdict="CORRIGER"]') as HTMLButtonElement);
+    });
+    const select = container.querySelector('select#correctif-pos') as HTMLSelectElement;
+    await act(async () => {
+      fireEvent.change(select, { target: { value: 'polyvalent' } });
+    });
+    await act(async () => {
+      fireEvent.click(container.querySelector('[data-testid="correctif-submit"]') as HTMLButtonElement);
+    });
+    expect(onCorriger).toHaveBeenCalledWith(sampleItem.definition, 'polyvalent', expect.any(Number));
   });
 
   it('Corriger submit is a no-op when text equals the original definition', async () => {

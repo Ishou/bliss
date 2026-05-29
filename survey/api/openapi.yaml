@@ -398,11 +398,16 @@ components:
           x-enum-varnames: [HORS_SUJET, AUTO_REFERENCE, ERREUR_SENS, AUTRE]
         correctif:
           type: object
-          description: Alternative clue text + claimed style. Authenticated callers only.
+          description: |
+            Clue correction. Authenticated callers only. When `pos` is set and
+            `text` equals the original clue, the original item's POS is patched
+            in place; when `text` differs, a new rater-proposed item carries the
+            corrected text and `pos` (defaulting to the parent's POS when absent).
           required: [text, style]
           properties:
             text:   { type: string, minLength: 2, maxLength: 60 }
             style:  { $ref: '#/components/schemas/Style' }
+            pos:    { $ref: '#/components/schemas/Pos' }
         latencyMs: { type: integer, minimum: 0 }
 
     RatingResponse:
