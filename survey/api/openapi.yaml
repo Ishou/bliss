@@ -251,6 +251,11 @@ components:
 
     Pos:
       type: string
+      description: |
+        Part of speech of the clued answer. `polyvalent` marks a clue with
+        multiple valid readings — sense-only (e.g. ARGENT money/colour, both
+        noun) or cross-POS (noun + adjective) — collapsed into one bucket;
+        distinct from `autre` (POS unknown/not applicable).
       enum:
         - verbe_infinitif
         - verbe_conjugue
@@ -263,11 +268,12 @@ components:
         - interjection
         - mot_outil
         - sigle_abreviation
+        - polyvalent
         - autre
       x-enum-varnames:
         [VERBE_INFINITIF, VERBE_CONJUGUE, PARTICIPE_PASSE, PARTICIPE_PRESENT,
          NOM_COMMUN, NOM_PROPRE, ADJECTIF, ADVERBE, INTERJECTION, MOT_OUTIL,
-         SIGLE_ABREVIATION, AUTRE]
+         SIGLE_ABREVIATION, POLYVALENT, AUTRE]
 
     Categorie:
       type: string

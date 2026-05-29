@@ -192,8 +192,14 @@ export interface components {
             tier: "high" | "mid" | "low" | "excluded";
             isCalibration: boolean;
         };
-        /** @enum {string} */
-        Pos: "verbe_infinitif" | "verbe_conjugue" | "participe_passe" | "participe_present" | "nom_commun" | "nom_propre" | "adjectif" | "adverbe" | "interjection" | "mot_outil" | "sigle_abreviation" | "autre";
+        /**
+         * @description Part of speech of the clued answer. `polyvalent` marks a clue with
+         *     multiple valid readings — sense-only (e.g. ARGENT money/colour, both
+         *     noun) or cross-POS (noun + adjective) — collapsed into one bucket;
+         *     distinct from `autre` (POS unknown/not applicable).
+         * @enum {string}
+         */
+        Pos: "verbe_infinitif" | "verbe_conjugue" | "participe_passe" | "participe_present" | "nom_commun" | "nom_propre" | "adjectif" | "adverbe" | "interjection" | "mot_outil" | "sigle_abreviation" | "polyvalent" | "autre";
         /** @enum {string} */
         Categorie: "chemical_symbols" | "units" | "celestial_objects" | "nombres" | "roman_numerals" | "cardinal_points" | "cities" | "countries" | "country_codes" | "geography" | "first_names" | "titles" | "mythology" | "abbreviations" | "etranger" | "expressions" | "grammar" | "interjections" | "orthographe" | "animals" | "body_parts" | "senses" | "currencies" | "organizations" | "card_game" | "games" | "music_notes" | "autre" | "aliments" | "vetements" | "mobilier_objet" | "outils" | "transports" | "materiaux" | "professions" | "famille_relations" | "sentiments_etats" | "nature_paysage" | "flore" | "meteo_climat" | "temps_duree" | "couleurs" | "arts";
         /** @enum {string} */
