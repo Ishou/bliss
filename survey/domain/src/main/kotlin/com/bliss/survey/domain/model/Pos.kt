@@ -12,5 +12,6 @@ enum class Pos {
     INTERJECTION,
     MOT_OUTIL,
     SIGLE_ABREVIATION,
+    POLYVALENT,
     AUTRE,
 }

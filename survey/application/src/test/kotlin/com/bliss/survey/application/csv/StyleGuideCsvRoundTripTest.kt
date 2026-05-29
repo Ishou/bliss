@@ -75,6 +75,12 @@ class StyleGuideCsvRoundTripTest {
         }
 
     @Test
+    fun `parser accepts polyvalent pos token`() {
+        val row = "ARGENT;Monnaie ou couleur;polyvalent;units;définition_directe;3;6;synthetic_v1"
+        assertThat(parser.parseRow(row).pos).isEqualTo(Pos.POLYVALENT)
+    }
+
+    @Test
     fun `header is fixed schema`() {
         assertThat(writer.header()).isEqualTo("mot;definition;pos;categorie;style;force;longueur;source;meta")
     }
