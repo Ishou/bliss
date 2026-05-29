@@ -38,6 +38,7 @@ class PgSurveyItemRepositoryTest {
     private lateinit var items: PgSurveyItemRepository
     private lateinit var ratings: PgRatingRepository
     private lateinit var proposedBy: PgProposedByRepository
+    private lateinit var pairRatings: PgPairRatingRepository
 
     private val now: Instant = Instant.parse("2026-05-25T12:00:00Z")
 
@@ -60,6 +61,7 @@ class PgSurveyItemRepositoryTest {
         items = PgSurveyItemRepository(dataSource)
         ratings = PgRatingRepository(dataSource)
         proposedBy = PgProposedByRepository(dataSource)
+        pairRatings = PgPairRatingRepository(dataSource)
     }
 
     @AfterEach
@@ -269,6 +271,83 @@ class PgSurveyItemRepositoryTest {
             assertThat(counts[Tier.LOW]).isEqualTo(0)
         }
 
+    @Test
+    fun `pickPairForUser prefers a known-good anchor as the left item`() =
+        runTest {
+            if (!::dataSource.isInitialized) return@runTest
+            val user = UserId(UUID.randomUUID())
+            val anchor = sampleItem(mot = "POMME").copy(definition = "anchor def")
+            val sibling = sampleItem(mot = "POMME").copy(definition = "sibling def")
+            items.insert(anchor)
+            items.insert(sibling)
+            ratings.insert(authRating(anchor.id, user, qualite = 5))
+            val pair = items.pickPairForUser(user, exclude = emptySet())
+            assertThat(pair).isNotNull()
+            assertThat(pair!!.left.id).isEqualTo(anchor.id)
+            assertThat(pair.right.id).isEqualTo(sibling.id)
+        }
+
+    @Test
+    fun `pickPairForUser does not anchor on a flagged qualite=5 rating`() =
+        runTest {
+            if (!::dataSource.isInitialized) return@runTest
+            val user = UserId(UUID.randomUUID())
+            val flagged = sampleItem(mot = "POMME").copy(definition = "flagged def")
+            val sibling = sampleItem(mot = "POMME").copy(definition = "sibling def")
+            items.insert(flagged)
+            items.insert(sibling)
+            ratings.insert(
+                authRating(flagged.id, user, qualite = 5)
+                    .copy(flag = com.bliss.survey.domain.model.FlagReason.AUTRE),
+            )
+            // flagged is rated by the caller, so the only unrated item is sibling -> no anchor, no fallback pair.
+            val pair = items.pickPairForUser(user, exclude = emptySet())
+            assertThat(pair).isNull()
+        }
+
+    @Test
+    fun `pickPairForUser falls back to two unrated items when no anchor exists`() =
+        runTest {
+            if (!::dataSource.isInitialized) return@runTest
+            val user = UserId(UUID.randomUUID())
+            val a = sampleItem(mot = "POMME").copy(definition = "a def")
+            val b = sampleItem(mot = "POMME").copy(definition = "b def")
+            items.insert(a)
+            items.insert(b)
+            val pair = items.pickPairForUser(user, exclude = emptySet())
+            assertThat(pair).isNotNull()
+            assertThat(pair!!.mot).isEqualTo("POMME")
+        }
+
+    @Test
+    fun `pickPairForUser never returns an anchor sibling already pair-rated by the caller`() =
+        runTest {
+            if (!::dataSource.isInitialized) return@runTest
+            val user = UserId(UUID.randomUUID())
+            val anchor = sampleItem(mot = "POMME").copy(definition = "anchor def")
+            val sibling = sampleItem(mot = "POMME").copy(definition = "sibling def")
+            items.insert(anchor)
+            items.insert(sibling)
+            ratings.insert(authRating(anchor.id, user, qualite = 5))
+            pairRatings.insert(
+                com.bliss.survey.domain.model.PairRating(
+                    id =
+                        com.bliss.survey.domain.model
+                            .PairRatingId(UUID.randomUUID()),
+                    leftItemId = sibling.id,
+                    rightItemId = anchor.id,
+                    userId = user,
+                    verdict = com.bliss.survey.domain.model.PreferenceVerdict.LEFT_WINS,
+                    difficulte = 3,
+                    latencyMs = null,
+                    createdAt = now,
+                ),
+            )
+            // The only anchor sibling is consumed (reverse ordering); sibling alone can't form a fallback pair.
+            val pair = items.pickPairForUser(user, exclude = emptySet())
+            assertThat(pair).isNull()
+        }
+
     private fun sampleItem(
         mot: String = "POULE",
         tier: Tier = Tier.MID,
@@ -295,6 +374,7 @@ class PgSurveyItemRepositoryTest {
     private fun authRating(
         itemId: ItemId,
         userId: UserId,
+        qualite: Int = 3,
     ): com.bliss.survey.domain.model.Rating =
         com.bliss.survey.domain.model.Rating(
             id =
@@ -303,7 +383,7 @@ class PgSurveyItemRepositoryTest {
             itemId = itemId,
             userId = userId,
             submittedAs = com.bliss.survey.domain.model.SubmittedAs.AUTH,
-            qualite = 3,
+            qualite = qualite,
             difficulte = 3,
             flag = null,
             proposedItemId = null,

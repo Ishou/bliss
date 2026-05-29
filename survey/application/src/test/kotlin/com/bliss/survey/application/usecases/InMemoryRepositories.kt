@@ -24,6 +24,12 @@ class InMemorySurveyItemRepository : SurveyItemRepository {
     val retired: MutableSet<ItemId> = mutableSetOf()
     var ratedByUser: Map<UserId, Set<ItemId>> = emptyMap()
 
+    // Items the caller rated qualite=5 (unflagged) in binary mode — eligible as anchors.
+    var knownGoodByUser: Map<UserId, Set<ItemId>> = emptyMap()
+
+    // Unordered {leftItemId, rightItemId} sets the caller already gave a pair verdict on.
+    var pairRatedByUser: Map<UserId, Set<Set<ItemId>>> = emptyMap()
+
     override suspend fun findById(id: ItemId): SurveyItem? = items[id]
 
     override suspend fun insert(item: SurveyItem) {
@@ -64,16 +70,53 @@ class InMemorySurveyItemRepository : SurveyItemRepository {
     override suspend fun pickPairForUser(
         userId: UserId?,
         exclude: Set<ItemId>,
+    ): ItemPair? = anchorPairForUser(userId, exclude) ?: fallbackPairForUser(userId, exclude)
+
+    private fun anchorPairForUser(
+        userId: UserId?,
+        exclude: Set<ItemId>,
+    ): ItemPair? {
+        if (userId == null) return null
+        val rated = ratedByUser[userId].orEmpty()
+        val knownGood = knownGoodByUser[userId].orEmpty()
+        val pairRated = pairRatedByUser[userId].orEmpty()
+        for (anchor in items.values) {
+            if (anchor.id in retired || anchor.id !in knownGood || anchor.id in exclude) continue
+            val sibling =
+                items.values.firstOrNull {
+                    it.mot == anchor.mot &&
+                        it.id != anchor.id &&
+                        it.id !in retired &&
+                        it.id !in exclude &&
+                        it.id !in rated &&
+                        setOf(anchor.id, it.id) !in pairRated
+                } ?: continue
+            return ItemPair(mot = anchor.mot, left = anchor, right = sibling)
+        }
+        return null
+    }
+
+    private fun fallbackPairForUser(
+        userId: UserId?,
+        exclude: Set<ItemId>,
     ): ItemPair? {
         val rated = userId?.let { ratedByUser[it] }.orEmpty()
+        val pairRated = userId?.let { pairRatedByUser[it] }.orEmpty()
         val eligible =
             items.values.filter {
                 it.id !in retired && it.id !in exclude && it.id !in rated
             }
         val byMot = eligible.groupBy { it.mot }.filterValues { it.size >= 2 }
-        if (byMot.isEmpty()) return null
-        val (mot, candidates) = byMot.entries.first()
-        return ItemPair(mot = mot, left = candidates[0], right = candidates[1])
+        for ((mot, candidates) in byMot) {
+            val pair =
+                candidates.indices
+                    .asSequence()
+                    .flatMap { i ->
+                        ((i + 1) until candidates.size).asSequence().map { candidates[i] to candidates[it] }
+                    }.firstOrNull { (l, r) -> setOf(l.id, r.id) !in pairRated }
+            if (pair != null) return ItemPair(mot = mot, left = pair.first, right = pair.second)
+        }
+        return null
     }
 
     override suspend fun countUnretiredByTier(): Map<Tier, Int> =
