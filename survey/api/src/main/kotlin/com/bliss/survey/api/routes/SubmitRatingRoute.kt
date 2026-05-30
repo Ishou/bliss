@@ -135,6 +135,17 @@ fun Route.submitRatingRoute(execute: suspend (SubmitRatingCommand) -> SubmitRati
                         status = HttpStatusCode.NotFound.value,
                     ),
                 )
+
+            SubmitRatingResult.Locked ->
+                call.respondProblem(
+                    HttpStatusCode.Locked,
+                    ProblemDetails(
+                        type = "about:blank",
+                        title = "campaign closed",
+                        status = HttpStatusCode.Locked.value,
+                        detail = "The sondage is paused while a training batch is being prepared.",
+                    ),
+                )
         }
     }
 }
@@ -148,4 +159,8 @@ private fun Rating.toResponse(): RatingResponse =
         itemId = itemId.value.toString(),
         submittedAs = submittedAs.name.lowercase(),
         proposedItemId = proposedItemId?.value?.toString(),
+        campaignId =
+            requireNotNull(campaignId) {
+                "Accepted rating must have campaignId stamped by SubmitRatingUseCase"
+            }.value.toString(),
     )

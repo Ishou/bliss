@@ -9,6 +9,7 @@ import com.bliss.survey.api.auth.SESSION_COOKIE_NAME
 import com.bliss.survey.api.auth.SessionMiddleware
 import com.bliss.survey.application.usecases.SubmitRatingCommand
 import com.bliss.survey.application.usecases.SubmitRatingResult
+import com.bliss.survey.domain.model.CampaignId
 import com.bliss.survey.domain.model.FlagReason
 import com.bliss.survey.domain.model.ItemId
 import com.bliss.survey.domain.model.Pos
@@ -37,6 +38,7 @@ class SubmitRatingRouteTest {
     private val itemUuid = UUID.fromString("11111111-1111-7111-8111-111111111111")
     private val ratingUuid = UUID.fromString("22222222-2222-7222-8222-222222222222")
     private val userUuid = UUID.fromString("33333333-3333-7333-8333-333333333333")
+    private val campaignUuid = UUID.fromString("44444444-4444-7444-8444-444444444444")
 
     private val acceptedAnon =
         Rating(
@@ -50,6 +52,7 @@ class SubmitRatingRouteTest {
             proposedItemId = null,
             latencyMs = 1200,
             createdAt = Instant.parse("2026-05-25T12:00:00Z"),
+            campaignId = CampaignId(campaignUuid),
         )
 
     private val acceptedAuth =
@@ -252,4 +255,36 @@ class SubmitRatingRouteTest {
     fun `flag enum lowercase round-trips into FlagReason`() {
         assertThat(FlagReason.valueOf("hors_sujet".uppercase())).isEqualTo(FlagReason.HORS_SUJET)
     }
+
+    @Test
+    fun `returns 423 when the use case returns Locked`() =
+        testApplication {
+            application {
+                install(ContentNegotiation) { json(WIRE_JSON) }
+                routing { submitRatingRoute { SubmitRatingResult.Locked } }
+            }
+            val resp =
+                client.post("/v1/items/$itemUuid/rating") {
+                    contentType(ContentType.Application.Json)
+                    setBody(jsonBody())
+                }
+            assertThat(resp.status.value).isEqualTo(423)
+            assertThat(resp.bodyAsText()).contains("\"title\":\"campaign closed\"")
+        }
+
+    @Test
+    fun `201 response includes campaignId`() =
+        testApplication {
+            application {
+                install(ContentNegotiation) { json(WIRE_JSON) }
+                routing { submitRatingRoute { SubmitRatingResult.Accepted(acceptedAnon) } }
+            }
+            val resp =
+                client.post("/v1/items/$itemUuid/rating") {
+                    contentType(ContentType.Application.Json)
+                    setBody(jsonBody())
+                }
+            assertThat(resp.status).isEqualTo(HttpStatusCode.Created)
+            assertThat(resp.bodyAsText()).contains("\"campaignId\":\"$campaignUuid\"")
+        }
 }
