@@ -40,7 +40,10 @@ class InMemorySurveyItemRepository : SurveyItemRepository {
     // Unordered {leftItemId, rightItemId} sets the caller already gave a pair verdict on.
     var pairRatedByUser: Map<UserId, Set<Set<ItemId>>> = emptyMap()
 
-    override suspend fun findById(id: ItemId): SurveyItem? = items[id]
+    override suspend fun findById(id: ItemId): SurveyItem? =
+        items[id]?.let { item ->
+            trainingWeights[id]?.let { w -> item.copy(trainingWeight = w) } ?: item
+        }
 
     override suspend fun insert(item: SurveyItem) {
         items[item.id] = item
