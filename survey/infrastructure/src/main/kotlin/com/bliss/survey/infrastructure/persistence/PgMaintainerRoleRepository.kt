@@ -9,7 +9,7 @@ import java.sql.Timestamp
 import java.util.UUID
 import javax.sql.DataSource
 
-/** Postgres-backed durable cache of cross-context role state (Spec B). */
+/** Postgres-backed durable cache of cross-context role state. */
 class PgMaintainerRoleRepository(
     private val dataSource: DataSource,
 ) : MaintainerRoleRepository {

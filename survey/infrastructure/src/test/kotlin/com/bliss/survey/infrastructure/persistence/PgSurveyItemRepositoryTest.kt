@@ -262,6 +262,25 @@ class PgSurveyItemRepositoryTest {
         }
 
     @Test
+    fun `updateTrainingWeight persists the weight for the given item`() =
+        runTest {
+            val item = sampleItem()
+            items.insert(item)
+            items.updateTrainingWeight(item.id, 0.75)
+            val actual =
+                dataSource.connection.use { conn ->
+                    conn.prepareStatement("SELECT training_weight FROM survey_items WHERE item_id = ?").use { stmt ->
+                        stmt.setObject(1, item.id.value)
+                        stmt.executeQuery().use { rs ->
+                            check(rs.next()) { "row not found after updateTrainingWeight" }
+                            rs.getDouble("training_weight")
+                        }
+                    }
+                }
+            assertThat(actual).isEqualTo(0.75)
+        }
+
+    @Test
     fun `countUnretiredByTier reports zero for empty tiers`() =
         runTest {
             items.insert(sampleItem(tier = Tier.HIGH))
