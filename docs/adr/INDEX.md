@@ -74,6 +74,12 @@ ADR-0058  data/dbnary/**                           DBnary SA-acceptance + distri
 ADR-0058  scripts/clue_generation/**               Training/filter paths must classify per ADR-0058 matrix
 ADR-0058  scripts/eval/**                          Same — eval paths that feed training must classify
 ADR-0058  modal_jobs/**                            Training paths on Modal must classify per ADR-0058
+ADR-0059  survey/**/persistence/**                 Campaign lifecycle: campaigns table, partial-unique open invariant
+ADR-0059  survey/**/usecases/SubmitRatingUseCase.kt           Locked arm + campaign_id stamping
+ADR-0059  survey/**/usecases/SubmitPairRatingUseCase.kt       Locked arm + campaign_id stamping
+ADR-0059  survey/api/openapi.yaml                  /v1/campaign/current + 423 on rating POSTs
+ADR-0059  frontend/src/ui/components/sondage/**    LockBanner + useCampaignStatus + disabled cards
+ADR-0059  scripts/survey/backfill_campaigns.py     Historical campaign attribution from Modal logs
 ```
 
 ## Adding entries
