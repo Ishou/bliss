@@ -19,7 +19,7 @@ class PgUserProgressRepository(
         at: Instant,
     ): Unit =
         withContext(Dispatchers.IO) {
-            dataSource.connection.use { conn ->
+            withTxConnection(dataSource) { conn ->
                 conn.prepareStatement(UPSERT_INCREMENT_SQL).use { stmt ->
                     stmt.setObject(1, userId.value)
                     stmt.setTimestamp(2, Timestamp.from(at))
@@ -33,7 +33,7 @@ class PgUserProgressRepository(
         agreement: Double,
     ): Unit =
         withContext(Dispatchers.IO) {
-            dataSource.connection.use { conn ->
+            withTxConnection(dataSource) { conn ->
                 conn.prepareStatement(UPSERT_AGREEMENT_SQL).use { stmt ->
                     stmt.setObject(1, userId.value)
                     stmt.setBigDecimal(2, BigDecimal.valueOf(agreement))
@@ -44,7 +44,7 @@ class PgUserProgressRepository(
 
     override suspend fun get(userId: UserId): UserProgress? =
         withContext(Dispatchers.IO) {
-            dataSource.connection.use { conn ->
+            withTxConnection(dataSource) { conn ->
                 conn.prepareStatement(SELECT_SQL).use { stmt ->
                     stmt.setObject(1, userId.value)
                     stmt.executeQuery().use { rs ->
@@ -64,7 +64,7 @@ class PgUserProgressRepository(
 
     override suspend fun deleteByUser(userId: UserId): Unit =
         withContext(Dispatchers.IO) {
-            dataSource.connection.use { conn ->
+            withTxConnection(dataSource) { conn ->
                 conn.prepareStatement(DELETE_SQL).use { stmt ->
                     stmt.setObject(1, userId.value)
                     stmt.executeUpdate()

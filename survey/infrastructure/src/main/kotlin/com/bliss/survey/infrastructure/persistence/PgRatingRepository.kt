@@ -27,7 +27,7 @@ class PgRatingRepository(
         userId: UserId,
     ): Rating? =
         withContext(Dispatchers.IO) {
-            dataSource.connection.use { conn ->
+            withTxConnection(dataSource) { conn ->
                 conn.prepareStatement(FIND_AUTH_RATING_SQL).use { stmt ->
                     stmt.setObject(1, itemId.value)
                     stmt.setObject(2, userId.value)
@@ -38,7 +38,7 @@ class PgRatingRepository(
 
     override suspend fun insert(rating: Rating): Unit =
         withContext(Dispatchers.IO) {
-            dataSource.connection.use { conn ->
+            withTxConnection(dataSource) { conn ->
                 conn.prepareStatement(INSERT_SQL).use { stmt ->
                     stmt.setObject(1, rating.id.value)
                     stmt.setObject(2, rating.itemId.value)
@@ -76,7 +76,7 @@ class PgRatingRepository(
 
     override suspend fun countByItem(itemId: ItemId): Int =
         withContext(Dispatchers.IO) {
-            dataSource.connection.use { conn ->
+            withTxConnection(dataSource) { conn ->
                 conn.prepareStatement(COUNT_BY_ITEM_SQL).use { stmt ->
                     stmt.setObject(1, itemId.value)
                     stmt.executeQuery().use { rs -> if (rs.next()) rs.getInt(1) else 0 }
@@ -86,7 +86,7 @@ class PgRatingRepository(
 
     override suspend fun anonymiseForUser(userId: UserId): Unit =
         withContext(Dispatchers.IO) {
-            dataSource.connection.use { conn ->
+            withTxConnection(dataSource) { conn ->
                 conn.prepareStatement(ANONYMISE_SQL).use { stmt ->
                     stmt.setObject(1, userId.value)
                     stmt.executeUpdate()
@@ -96,7 +96,7 @@ class PgRatingRepository(
 
     override suspend fun aggregateForExport(since: Instant?): List<RatingAggregate> =
         withContext(Dispatchers.IO) {
-            dataSource.connection.use { conn ->
+            withTxConnection(dataSource) { conn ->
                 val sql = if (since != null) AGGREGATE_SINCE_SQL else AGGREGATE_ALL_SQL
                 conn.prepareStatement(sql).use { stmt ->
                     if (since != null) stmt.setTimestamp(1, Timestamp.from(since))

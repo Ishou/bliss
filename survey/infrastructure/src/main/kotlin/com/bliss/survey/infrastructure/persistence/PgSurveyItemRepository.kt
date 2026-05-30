@@ -26,7 +26,7 @@ class PgSurveyItemRepository(
 ) : SurveyItemRepository {
     override suspend fun insert(item: SurveyItem): Unit =
         withContext(Dispatchers.IO) {
-            dataSource.connection.use { conn ->
+            withTxConnection(dataSource) { conn ->
                 conn.prepareStatement(INSERT_SQL).use { stmt ->
                     bindInsertParams(stmt, item)
                     stmt.executeUpdate()
@@ -36,7 +36,7 @@ class PgSurveyItemRepository(
 
     override suspend fun insertIfAbsent(item: SurveyItem): SurveyItem =
         withContext(Dispatchers.IO) {
-            dataSource.connection.use { conn ->
+            withTxConnection(dataSource) { conn ->
                 conn.prepareStatement(INSERT_IF_ABSENT_SQL).use { stmt ->
                     bindInsertParams(stmt, item)
                     stmt.executeQuery().use { rs -> if (rs.next()) return@withContext item }
@@ -53,7 +53,7 @@ class PgSurveyItemRepository(
 
     override suspend fun findById(id: ItemId): SurveyItem? =
         withContext(Dispatchers.IO) {
-            dataSource.connection.use { conn ->
+            withTxConnection(dataSource) { conn ->
                 conn.prepareStatement(SELECT_BY_ID_SQL).use { stmt ->
                     stmt.setObject(1, id.value)
                     stmt.executeQuery().use { rs -> if (rs.next()) rs.toSurveyItem() else null }
@@ -67,7 +67,7 @@ class PgSurveyItemRepository(
         exclude: Set<ItemId>,
     ): SurveyItem? =
         withContext(Dispatchers.IO) {
-            dataSource.connection.use { conn ->
+            withTxConnection(dataSource) { conn ->
                 for (k in 0..2) {
                     val pickQuery = buildPickQuery(userId != null, exclude.size)
                     conn.prepareStatement(pickQuery).use { stmt ->
@@ -90,7 +90,7 @@ class PgSurveyItemRepository(
         exclude: Set<ItemId>,
     ): ItemPair? =
         withContext(Dispatchers.IO) {
-            dataSource.connection.use { conn ->
+            withTxConnection(dataSource) { conn ->
                 if (userId != null) {
                     pickAnchorPair(conn, userId, exclude)?.let { return@withContext it }
                 }
@@ -286,7 +286,7 @@ class PgSurveyItemRepository(
         at: Instant,
     ): Unit =
         withContext(Dispatchers.IO) {
-            dataSource.connection.use { conn ->
+            withTxConnection(dataSource) { conn ->
                 conn.prepareStatement(RETIRE_SQL).use { stmt ->
                     stmt.setTimestamp(1, Timestamp.from(at))
                     stmt.setObject(2, id.value)
@@ -300,7 +300,7 @@ class PgSurveyItemRepository(
         pos: Pos,
     ): Unit =
         withContext(Dispatchers.IO) {
-            dataSource.connection.use { conn ->
+            withTxConnection(dataSource) { conn ->
                 conn.prepareStatement(UPDATE_POS_SQL).use { stmt ->
                     stmt.setString(1, pos.name.lowercase())
                     stmt.setObject(2, id.value)
@@ -311,7 +311,7 @@ class PgSurveyItemRepository(
 
     override suspend fun countUnretiredByTier(): Map<Tier, Int> =
         withContext(Dispatchers.IO) {
-            dataSource.connection.use { conn ->
+            withTxConnection(dataSource) { conn ->
                 val out = Tier.values().associateWith { 0 }.toMutableMap()
                 conn.prepareStatement(COUNT_BY_TIER_SQL).use { stmt ->
                     stmt.executeQuery().use { rs ->
@@ -326,7 +326,7 @@ class PgSurveyItemRepository(
 
     override suspend fun listSaturated(policy: KCoveragePolicy): List<ItemId> =
         withContext(Dispatchers.IO) {
-            dataSource.connection.use { conn ->
+            withTxConnection(dataSource) { conn ->
                 val results = mutableListOf<ItemId>()
                 for ((tier, k) in policy.targetK) {
                     conn.prepareStatement(SATURATED_BY_TIER_SQL).use { stmt ->
@@ -343,7 +343,7 @@ class PgSurveyItemRepository(
 
     override suspend fun listProposedByUser(userId: UserId): List<ProposedContribution> =
         withContext(Dispatchers.IO) {
-            dataSource.connection.use { conn ->
+            withTxConnection(dataSource) { conn ->
                 val out = mutableListOf<ProposedContribution>()
                 conn.prepareStatement(PROPOSED_BY_USER_SQL).use { stmt ->
                     stmt.setObject(1, userId.value)
@@ -365,7 +365,7 @@ class PgSurveyItemRepository(
     override suspend fun deleteByIds(ids: Collection<ItemId>): Unit =
         withContext(Dispatchers.IO) {
             if (ids.isEmpty()) return@withContext
-            dataSource.connection.use { conn ->
+            withTxConnection(dataSource) { conn ->
                 conn.prepareStatement(DELETE_BY_IDS_SQL).use { stmt ->
                     val arr = conn.createArrayOf("uuid", ids.map { it.value }.toTypedArray())
                     stmt.setArray(1, arr)
