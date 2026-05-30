@@ -13,7 +13,7 @@ import type {
 } from '@/application/survey';
 import { useAuth } from '@/ui/components/auth';
 import { ContentPage } from '@/ui/components/layout';
-import { PairCard, SignInBanner } from '@/ui/components/sondage';
+import { LockBanner, PairCard, SignInBanner, useCampaignStatus } from '@/ui/components/sondage';
 import { Route as ParentRoute } from './sondage.pairs';
 
 const articleStyles = css({
@@ -82,6 +82,9 @@ function SondagePairsPage() {
   const surveyAnonStore = ctx.surveyAnonStore;
   const analytics = ctx.analytics ?? NOOP_ANALYTICS;
   const authClient = ctx.authClient;
+
+  const campaignStatus = useCampaignStatus(surveyClient);
+  const isLocked = campaignStatus.status.kind === 'closed';
 
   const [pair, setPair] = useState<ItemPair | null>(null);
   const [loading, setLoading] = useState(true);
@@ -170,9 +173,13 @@ function SondagePairsPage() {
         await loadNext();
         return;
       }
+      if (name === 'SondageLockedError') {
+        campaignStatus.refresh();
+        return;
+      }
       setError(messageForApiError(cause));
     }
-  }, [surveyClient, pair, isAuth, surveyAnonStore, analytics, loadNext]);
+  }, [surveyClient, pair, isAuth, surveyAnonStore, analytics, loadNext, campaignStatus]);
 
   function onSignInClick(): void {
     analytics.trackEvent('survey', 'pair_signin_prompt_clicked', undefined);
@@ -187,6 +194,9 @@ function SondagePairsPage() {
             Mode binaire →
           </Link>
         </div>
+        {campaignStatus.status.kind === 'closed' ? (
+          <LockBanner campaign={campaignStatus.status.campaign} />
+        ) : null}
         <p className={introStyles}>
           Comparez deux définitions du même mot. Choisissez votre préférée, marquez-les comme
           toutes deux bonnes ou mauvaises, ou passez si vous ne pouvez pas trancher.
@@ -215,6 +225,7 @@ function SondagePairsPage() {
             key={`${pair.left.itemId}|${pair.right.itemId}`}
             pair={pair}
             onVerdict={onVerdict}
+            disabled={isLocked}
           />
         ) : null}
       </article>
