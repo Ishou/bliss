@@ -106,6 +106,7 @@ dependencies {
     testImplementation("com.lemonappdev:konsist:$konsistVersion")
     testImplementation("io.kotest:kotest-property-jvm:$kotestPropertyVersion")
     testImplementation(testFixtures(project(":identity:infrastructure")))
+    testImplementation(testFixtures(project(":identity:application")))
 }
 
 tasks.test {
