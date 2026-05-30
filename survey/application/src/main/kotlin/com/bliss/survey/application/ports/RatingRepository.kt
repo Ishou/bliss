@@ -2,6 +2,7 @@ package com.bliss.survey.application.ports
 
 import com.bliss.survey.domain.model.ItemId
 import com.bliss.survey.domain.model.Rating
+import com.bliss.survey.domain.model.RatingId
 import com.bliss.survey.domain.model.UserId
 import java.time.Instant
 
@@ -12,6 +13,8 @@ interface RatingRepository {
     ): Rating?
 
     suspend fun insert(rating: Rating)
+
+    suspend fun deleteByIds(ids: List<RatingId>)
 
     suspend fun countByItem(itemId: ItemId): Int
 

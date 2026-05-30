@@ -89,6 +89,12 @@ private class EmptyProgressRepo : UserProgressRepository {
         at: Instant,
     ) {}
 
+    override suspend fun decrementItemsRated(
+        userId: UserId,
+        by: Int,
+        priorLastRatedAt: Instant?,
+    ) {}
+
     override suspend fun updateCalibrationAgreement(
         userId: UserId,
         agreement: Double,
@@ -105,6 +111,12 @@ private class StubProgressRepo(
     override suspend fun incrementItemsRated(
         userId: UserId,
         at: Instant,
+    ) {}
+
+    override suspend fun decrementItemsRated(
+        userId: UserId,
+        by: Int,
+        priorLastRatedAt: Instant?,
     ) {}
 
     override suspend fun updateCalibrationAgreement(

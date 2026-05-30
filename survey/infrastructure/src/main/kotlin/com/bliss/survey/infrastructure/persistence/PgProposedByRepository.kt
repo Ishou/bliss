@@ -56,6 +56,20 @@ class PgProposedByRepository(
             }
         }
 
+    override suspend fun delete(
+        itemId: ItemId,
+        userId: UserId,
+    ): Unit =
+        withContext(Dispatchers.IO) {
+            withTxConnection(dataSource) { conn ->
+                conn.prepareStatement(DELETE_SQL).use { stmt ->
+                    stmt.setObject(1, itemId.value)
+                    stmt.setObject(2, userId.value)
+                    stmt.executeUpdate()
+                }
+            }
+        }
+
     override suspend fun deleteByUser(userId: UserId): Unit =
         withContext(Dispatchers.IO) {
             withTxConnection(dataSource) { conn ->
@@ -72,6 +86,7 @@ class PgProposedByRepository(
         const val SET_OPT_OUT_SQL = "UPDATE proposed_by SET opted_out = ? WHERE user_id = ?"
         const val LIST_OPTED_OUT_SQL =
             "SELECT proposed_item_id FROM proposed_by WHERE user_id = ? AND opted_out = TRUE"
+        const val DELETE_SQL = "DELETE FROM proposed_by WHERE proposed_item_id = ? AND user_id = ?"
         const val DELETE_BY_USER_SQL = "DELETE FROM proposed_by WHERE user_id = ?"
     }
 }

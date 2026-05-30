@@ -214,6 +214,8 @@ class UserDeletedConsumerTest {
 
         override suspend fun insert(rating: Rating) = Unit
 
+        override suspend fun deleteByIds(ids: List<com.bliss.survey.domain.model.RatingId>) = Unit
+
         override suspend fun countByItem(itemId: ItemId): Int = 0
 
         override suspend fun anonymiseForUser(userId: UserId) {
@@ -237,6 +239,11 @@ class UserDeletedConsumerTest {
         ) = Unit
 
         override suspend fun listOptedOutByUser(userId: UserId): List<ItemId> = emptyList()
+
+        override suspend fun delete(
+            itemId: ItemId,
+            userId: UserId,
+        ) = Unit
 
         override suspend fun deleteByUser(userId: UserId) = Unit
     }
@@ -282,6 +289,12 @@ class UserDeletedConsumerTest {
         override suspend fun incrementItemsRated(
             userId: UserId,
             at: Instant,
+        ) = Unit
+
+        override suspend fun decrementItemsRated(
+            userId: UserId,
+            by: Int,
+            priorLastRatedAt: Instant?,
         ) = Unit
 
         override suspend fun updateCalibrationAgreement(

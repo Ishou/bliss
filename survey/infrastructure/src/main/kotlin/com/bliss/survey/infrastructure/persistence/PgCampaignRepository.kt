@@ -30,6 +30,16 @@ class PgCampaignRepository(
             }
         }
 
+    override suspend fun findById(id: CampaignId): Campaign? =
+        withContext(Dispatchers.IO) {
+            dataSource.connection.use { conn ->
+                conn.prepareStatement(FIND_BY_ID_SQL).use { stmt ->
+                    stmt.setObject(1, id.value)
+                    stmt.executeQuery().use { rs -> if (rs.next()) rs.toCampaign() else null }
+                }
+            }
+        }
+
     private fun ResultSet.toCampaign(): Campaign =
         Campaign(
             id = CampaignId(getObject("campaign_id", UUID::class.java)),
@@ -45,5 +55,8 @@ class PgCampaignRepository(
         // Open campaign first, otherwise the most recently opened — uses campaigns_opened_at_idx.
         const val FIND_CURRENT_SQL =
             "SELECT campaign_id, batch_label, opened_at, closed_at FROM campaigns ORDER BY opened_at DESC LIMIT 1"
+
+        const val FIND_BY_ID_SQL =
+            "SELECT campaign_id, batch_label, opened_at, closed_at FROM campaigns WHERE campaign_id = ?"
     }
 }

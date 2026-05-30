@@ -82,6 +82,25 @@ class PgUserProgressRepositoryTest {
         }
 
     @Test
+    fun `decrementItemsRated floors at zero and restores prior last_rated_at`() =
+        runTest {
+            val user = UserId(UUID.randomUUID())
+            progress.incrementItemsRated(user, now)
+            progress.incrementItemsRated(user, now.plusSeconds(60))
+
+            progress.decrementItemsRated(user, by = 1, priorLastRatedAt = now)
+            val afterOne = progress.get(user)
+            assertThat(afterOne?.itemsRated).isEqualTo(1)
+            assertThat(afterOne?.lastRatedAt).isEqualTo(now)
+
+            // Decrementing by more than remaining floors at 0 and may null last_rated_at.
+            progress.decrementItemsRated(user, by = 5, priorLastRatedAt = null)
+            val floored = progress.get(user)
+            assertThat(floored?.itemsRated).isEqualTo(0)
+            assertThat(floored?.lastRatedAt).isNull()
+        }
+
+    @Test
     fun `deleteByUser removes the row`() =
         runTest {
             val user = UserId(UUID.randomUUID())

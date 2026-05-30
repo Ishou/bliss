@@ -11,8 +11,10 @@ import com.bliss.survey.application.ports.UserProgressRepository
 import com.bliss.survey.domain.model.ItemId
 import com.bliss.survey.domain.model.ItemPair
 import com.bliss.survey.domain.model.PairRating
+import com.bliss.survey.domain.model.PairRatingId
 import com.bliss.survey.domain.model.Pos
 import com.bliss.survey.domain.model.Rating
+import com.bliss.survey.domain.model.RatingId
 import com.bliss.survey.domain.model.SubmittedAs
 import com.bliss.survey.domain.model.SurveyItem
 import com.bliss.survey.domain.model.Tier
@@ -163,6 +165,10 @@ class InMemoryPairRatingRepository : PairRatingRepository {
         rows += rating
         return true
     }
+
+    override suspend fun deleteById(id: PairRatingId) {
+        rows.removeAll { it.id == id }
+    }
 }
 
 class InMemoryRatingRepository : RatingRepository {
@@ -179,6 +185,10 @@ class InMemoryRatingRepository : RatingRepository {
 
     override suspend fun insert(rating: Rating) {
         ratings += rating
+    }
+
+    override suspend fun deleteByIds(ids: List<RatingId>) {
+        ratings.removeAll { it.id in ids }
     }
 
     override suspend fun countByItem(itemId: ItemId): Int = ratings.count { it.itemId == itemId }
@@ -230,6 +240,13 @@ class InMemoryProposedByRepository : ProposedByRepository {
             .filter { it.userId == userId && it.optedOut }
             .map { it.itemId }
 
+    override suspend fun delete(
+        itemId: ItemId,
+        userId: UserId,
+    ) {
+        links.removeAll { it.itemId == itemId && it.userId == userId }
+    }
+
     override suspend fun deleteByUser(userId: UserId) {
         links.removeAll { it.userId == userId }
     }
@@ -247,6 +264,19 @@ class InMemoryUserProgressRepository : UserProgressRepository {
         progress[userId] =
             existing?.copy(itemsRated = existing.itemsRated + 1, lastRatedAt = at)
                 ?: UserProgress(userId, 1, null, at)
+    }
+
+    override suspend fun decrementItemsRated(
+        userId: UserId,
+        by: Int,
+        priorLastRatedAt: Instant?,
+    ) {
+        val existing = progress[userId] ?: return
+        progress[userId] =
+            existing.copy(
+                itemsRated = maxOf(existing.itemsRated - by, 0),
+                lastRatedAt = priorLastRatedAt,
+            )
     }
 
     override suspend fun updateCalibrationAgreement(

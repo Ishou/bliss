@@ -124,4 +124,20 @@ class PgCampaignRepositoryTest {
             assertThat(found).isNotNull()
             assertThat(found!!.batchLabel).isEqualTo("round-6")
         }
+
+    @Test
+    fun `findById returns the persisted campaign`() =
+        runTest {
+            val id = insertCampaign("round-7")
+            val found = campaigns.findById(CampaignId(id))
+            assertThat(found).isNotNull()
+            assertThat(found!!.id).isEqualTo(CampaignId(id))
+            assertThat(found.batchLabel).isEqualTo("round-7")
+        }
+
+    @Test
+    fun `findById returns null for an unknown id`() =
+        runTest {
+            assertThat(campaigns.findById(CampaignId(UUID.randomUUID()))).isNull()
+        }
 }
