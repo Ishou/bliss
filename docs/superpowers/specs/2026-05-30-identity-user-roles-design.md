@@ -67,8 +67,7 @@ Konsist architecture tests must stay green: no vendor SDK imports in
 - Migration `V5__user_role.sql` (expand-and-contract, backward-compatible):
 
   ```sql
-  -- identity_users.role: authz primitive. Default 'player' so the column is
-  -- additive; existing rows need no backfill.
+  -- authz primitive; DEFAULT 'player' makes this column additive (no backfill needed).
   ALTER TABLE identity_users
       ADD COLUMN role TEXT NOT NULL DEFAULT 'player'
           CHECK (role IN ('player', 'maintainer'));

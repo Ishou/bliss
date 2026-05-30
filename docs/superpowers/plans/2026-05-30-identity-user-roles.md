@@ -295,8 +295,7 @@ git commit -s -m "feat(identity): add UserRepository.updateRole port + in-memory
 - [ ] **Step 1: Write the migration**
 
 ```sql
--- identity_users.role: authz primitive. Default 'player' so the column is
--- additive; existing rows need no backfill.
+-- authz primitive; DEFAULT 'player' makes this column additive (no backfill needed).
 ALTER TABLE identity_users
     ADD COLUMN role TEXT NOT NULL DEFAULT 'player'
         CHECK (role IN ('player', 'maintainer'));
