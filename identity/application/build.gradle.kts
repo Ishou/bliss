@@ -11,7 +11,6 @@ dependencies {
     implementation(project(":identity:domain"))
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")
 
-    // Shared test doubles consumed by sibling-layer tests (api) per ADR-0001 §1.
     testFixturesImplementation(project(":identity:domain"))
     testFixturesImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")
 

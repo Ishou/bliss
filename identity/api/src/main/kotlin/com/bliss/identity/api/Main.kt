@@ -19,7 +19,6 @@ import kotlin.system.exitProcess
 
 private val log = LoggerFactory.getLogger("identity-api")
 
-// With `--set-maintainer-roles` runs the configure-in-cluster bootstrap (ADR-0060); otherwise starts the HTTP server.
 fun main(args: Array<String>) {
     if (args.firstOrNull() == "--set-maintainer-roles") {
         exitProcess(runSetMaintainerRoles())
