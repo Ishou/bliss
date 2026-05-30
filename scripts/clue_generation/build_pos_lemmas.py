@@ -8,8 +8,7 @@ import sys
 import unicodedata
 from pathlib import Path
 
-# DBnary POS -> survey enum. properNoun kept distinct (TITAN can be both
-# nom_commun and nom_propre); pruning of spurious tags is left to review.
+# DBnary POS -> survey enum; properNoun kept distinct (TITAN = nom_commun + nom_propre).
 DBNARY_TO_ENUM = {
     "noun": "nom_commun",
     "properNoun": "nom_propre",
@@ -18,9 +17,7 @@ DBNARY_TO_ENUM = {
     "adverb": "adverbe",
 }
 
-# Filter-only use of the DBnary gloss (ADR-0058): a (lemma, pos) whose every
-# sense is tagged obsolete is dropped so we never generate dead senses
-# (e.g. GRAIN-adverbe = "(Désuet) Pas."). The gloss text is never emitted.
+# ADR-0058 filter-only gloss use: drop a (lemma, pos) whose every sense is obsolete-tagged; gloss text is never emitted.
 _OBSOLETE = re.compile(r"\((?:Désuet|Vieilli|Vieux|Archaïsme|Archaïque|Par archaïsme)\)", re.IGNORECASE)
 
 
@@ -30,8 +27,7 @@ def _strip(s: str) -> str:
     ).lower()
 
 
-# {stripped lemma: {enum_pos: count of non-obsolete senses}}. The count ranks
-# a word's dominant POS (more attested senses = more central) for --max-pos-per-word.
+# {stripped lemma: {enum_pos: non-obsolete sense count}}; the count ranks a word's dominant POS for --multi-pos-fraction.
 def load_dbnary(path: Path) -> dict[str, dict[str, int]]:
     db: dict[str, dict[str, int]] = {}
     with path.open() as f:
@@ -85,8 +81,7 @@ def main() -> int:
             continue
         # rank by sense-count desc (dominant POS first), tie-break by name
         ranked = sorted(counts, key=lambda p: (-counts[p], p))
-        # most multi-POS words collapse to their dominant POS (breadth);
-        # a `multi_pos_fraction` share keep all their POS (variety).
+        # most multi-POS words collapse to their dominant POS (breadth); a fraction keep all (variety).
         if len(ranked) > 1 and rng.random() >= args.multi_pos_fraction:
             ranked = ranked[:1]
         for pos in sorted(ranked):
