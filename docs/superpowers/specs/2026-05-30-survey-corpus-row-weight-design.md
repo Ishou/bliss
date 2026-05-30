@@ -89,8 +89,8 @@ generated training artifact.
 
 | File | Change |
 |---|---|
-| `scripts/clue_generation/modal/build_modal_corpus.py` | `_load_source` reads `weight_column`; per-row replication with the `max(1, round())` rule; invariant guard (`weight_column` ⇒ `weight == 1`). |
-| `scripts/clue_generation/modal/test_build_modal_corpus.py` | New tests for row-wins replication, the invariant guard, blank-cell default; existing tests unchanged (backward-compat proof). |
+| `scripts/clue_generation/modal/build_modal_corpus.py` | `_load_source` return type broadened to `list[dict[str, Any]]` (stores temporary `_copies` int); `load_all_sources` accumulates `raw_counts` per source, pops `_copies` before replication, returns `(rows, raw_counts)` tuple; `build_corpus` unpacks the tuple and threads `raw_counts` to `_build_summary`; `_build_summary` uses `raw_counts[name]` for `weight_column` sources so "Rows in" reflects the pre-replication unique-row count. |
+| `scripts/clue_generation/modal/test_build_modal_corpus.py` | Three existing `load_all_sources` callers updated to unpack the tuple; new tests for row-wins replication, summary correctness, the invariant guard, blank-cell default. |
 | `data/lora/modal_corpus_v1/manifest.toml` | Grammar-doc comment block documents the new optional `weight_column` field. No new source entry. |
 
 ## Data flow

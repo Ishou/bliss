@@ -18,8 +18,8 @@
 
 | File | Responsibility | Change |
 |---|---|---|
-| `scripts/clue_generation/modal/build_modal_corpus.py` | Manifest-driven corpus builder | Add `_row_copies` helper; `_load_source` reads `weight_column` per row; `load_all_sources` enforces the `weight==1` invariant and replicates per-row. |
-| `scripts/clue_generation/modal/test_build_modal_corpus.py` | Builder tests | Add a row-weight fixture + 2 tests; existing tests untouched. |
+| `scripts/clue_generation/modal/build_modal_corpus.py` | Manifest-driven corpus builder | Add `_row_copies` helper; `_load_source` reads `weight_column` per row; `load_all_sources` enforces the `weight==1` invariant, accumulates `raw_counts`, pops `_copies`, returns tuple; `build_corpus` unpacks the tuple; `_build_summary` uses `raw_counts` for weight_column sources. |
+| `scripts/clue_generation/modal/test_build_modal_corpus.py` | Builder tests | Update 3 existing `load_all_sources` callers to unpack tuple; add row-weight fixture + 3 new tests. |
 | `data/lora/modal_corpus_v1/manifest.toml` | Production corpus recipe | Document the optional `weight_column` field in the existing grammar comment block. No new source entry. |
 
 **Test command (run from repo root):**
@@ -33,8 +33,8 @@ python3 -m pytest scripts/clue_generation/modal/test_build_modal_corpus.py -q
 ## Task 1: Per-row replication via `weight_column`
 
 **Files:**
-- Modify: `scripts/clue_generation/modal/build_modal_corpus.py` (add `_row_copies`; edit `_load_source` lines 84-118; edit `load_all_sources` lines 121-131)
-- Test: `scripts/clue_generation/modal/test_build_modal_corpus.py`
+- Modify: `scripts/clue_generation/modal/build_modal_corpus.py` (add `_row_copies`; edit `_load_source` lines 84-118; edit `load_all_sources` lines 121-131; update `build_corpus` line 190 and 214; update `_build_summary` lines 224-249)
+- Modify: `scripts/clue_generation/modal/test_build_modal_corpus.py` (update 3 existing `load_all_sources` callers; add 2 new tests)
 
 - [ ] **Step 1: Write the failing test**
 
@@ -84,18 +84,29 @@ def _rowweight_manifest(root: Path) -> Path:
 def test_per_row_weight_replicates_by_column_value(tmp_rowweight_dir):
     """A weight_column source replicates each row by its own value."""
     from collections import Counter
-    rows = bc.load_all_sources(tmp_rowweight_dir, _rowweight_manifest(tmp_rowweight_dir))
+    rows, raw_counts = bc.load_all_sources(tmp_rowweight_dir, _rowweight_manifest(tmp_rowweight_dir))
     counts = Counter(r["mot"] for r in rows)
     assert counts["CHAT"] == 3    # 3.0 -> 3 copies
     assert counts["CHIEN"] == 1   # 1.0 -> 1 copy
     assert counts["SOURIS"] == 1  # blank cell -> default 1.0 -> 1 copy
     assert len(rows) == 5
+    assert raw_counts["survey"] == 3  # 3 unique rows before replication, not 5
+    assert all("_copies" not in r for r in rows)  # _copies must not leak into returned rows
+
+
+def test_summary_reports_raw_rows_in_for_weight_column_source(tmp_rowweight_dir):
+    """build_summary.md shows the pre-replication unique row count for weight_column sources."""
+    out_dir = tmp_rowweight_dir / "data" / "lora" / "modal_corpus_v1"
+    bc.build_corpus(tmp_rowweight_dir, _rowweight_manifest(tmp_rowweight_dir), out_dir)
+    summary = (out_dir / "build_summary.md").read_text(encoding="utf-8")
+    # survey has 3 unique input rows (CHAT, CHIEN, SOURIS); 5 after replication
+    assert "| `survey` | gold | 1 | 3 | 5 |" in summary
 ```
 
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `python3 -m pytest scripts/clue_generation/modal/test_build_modal_corpus.py::test_per_row_weight_replicates_by_column_value -q`
-Expected: FAIL — today every row is replicated by the source `weight` (1), so `CHAT` count is 1, not 3 (`assert counts["CHAT"] == 3` fails). `weight_column` is currently ignored.
+Expected: FAIL — today `load_all_sources` returns a plain list, so `rows, raw_counts = bc.load_all_sources(...)` raises `ValueError: too many values to unpack`. Any implementation that does not return a tuple fails here.
 
 - [ ] **Step 3: Add the `_row_copies` helper**
 
@@ -116,7 +127,17 @@ def _row_copies(raw: str | None) -> int:
 
 - [ ] **Step 4: Read `weight_column` in `_load_source`**
 
-In `_load_source`, after the line `name = src["name"]` (line 94), add:
+In `_load_source`, change the return-type annotation and the `out` declaration (lines 84, 96) — `_copies` is `int`, not `str`, so the list is `dict[str, Any]` temporarily:
+
+```python
+def _load_source(root: Path, src: dict[str, Any]) -> list[dict[str, Any]]:  # Any: _copies is int
+```
+
+```python
+    out: list[dict[str, Any]] = []
+```
+
+After the line `name = src["name"]` (line 94), add:
 
 ```python
     weight_col = src.get("weight_column", "")
@@ -141,11 +162,19 @@ Then replace the `out.append({...})` block (lines 112-117) with:
 Replace the body of `load_all_sources` (lines 121-131) with:
 
 ```python
-def load_all_sources(root: Path, manifest_path: Path) -> list[dict[str, str]]:
-    """Load every source, exclude held-out lemmas, replicate by weight (per-row when the source sets weight_column)."""
+def load_all_sources(
+    root: Path, manifest_path: Path
+) -> tuple[list[dict[str, str]], dict[str, int]]:
+    """Load every source, exclude held-out lemmas, replicate by weight (per-row when the source sets weight_column).
+
+    Returns (all_rows, raw_counts) where raw_counts[name] is the pre-replication unique-row
+    count for each source (needed by _build_summary to report correct 'Rows in' for
+    weight_column sources whose uniform weight is always 1).
+    """
     manifest = _load_manifest(manifest_path)
     held_out = _load_held_out_lemmas(root, manifest.get("exclude_lemmas_from", ""))
     all_rows: list[dict[str, str]] = []
+    raw_counts: dict[str, int] = {}
     for src in manifest["sources"]:
         if src.get("weight_column") and int(src["weight"]) != 1:
             raise ValueError(
@@ -154,25 +183,99 @@ def load_all_sources(root: Path, manifest_path: Path) -> list[dict[str, str]]:
             )
         rows = _load_source(root, src)
         rows = [r for r in rows if r["mot"].lower() not in held_out]
+        raw_counts[src["name"]] = len(rows)  # pre-replication count; weight_column sources need this
         if src.get("weight_column"):
             for r in rows:
-                all_rows.extend([r] * r["_copies"])
+                n = r.pop("_copies")  # strip int before replication; eliminates type violation + key leak
+                all_rows.extend([r] * n)
         else:
             all_rows.extend(rows * int(src["weight"]))
-    return all_rows
+    return all_rows, raw_counts
 ```
 
-- [ ] **Step 6: Run test to verify it passes**
+- [ ] **Step 6: Update `build_corpus` to unpack the tuple**
 
-Run: `python3 -m pytest scripts/clue_generation/modal/test_build_modal_corpus.py::test_per_row_weight_replicates_by_column_value -q`
-Expected: PASS.
+`load_all_sources` now returns `(rows, raw_counts)`. Update `build_corpus` (line 190) — change:
 
-- [ ] **Step 7: Run the full file to confirm no regression**
+```python
+    rows = load_all_sources(root, manifest_path)
+```
+
+to:
+
+```python
+    rows, raw_counts = load_all_sources(root, manifest_path)
+```
+
+And update the `_build_summary` call (line 214) — change:
+
+```python
+    summary = _build_summary(manifest, rows, train_rows, val_rows)
+```
+
+to:
+
+```python
+    summary = _build_summary(manifest, rows, train_rows, val_rows, raw_counts)
+```
+
+- [ ] **Step 7: Update `_build_summary` to report correct "Rows in" for `weight_column` sources**
+
+Change the `_build_summary` signature (line 224) — add `raw_counts`:
+
+```python
+def _build_summary(manifest, rows, train, val, raw_counts: dict[str, int]) -> str:
+```
+
+Inside the per-source loop (lines 241-249), replace the `rows_in` calculation:
+
+```python
+        if src.get("weight_column"):
+            rows_in = raw_counts.get(name, 0)  # unique pre-replication count; weight=1 makes out//weight wrong
+        else:
+            rows_in = out // weight if weight > 0 else 0
+```
+
+(The existing `weight = int(src["weight"])` and `out = src_counts.get(name, 0)` lines are unchanged; only the `rows_in` assignment gains a branch.)
+
+- [ ] **Step 8: Update the three existing tests that call `load_all_sources` directly**
+
+`load_all_sources` now returns a tuple. The three existing tests that assign its result to a plain variable must be updated to unpack:
+
+In `test_loads_sources_with_their_delimiter_and_schema` (line 128):
+
+```python
+    rows, _ = bc.load_all_sources(
+```
+
+In `test_excludes_held_out_lemmas` (line 139):
+
+```python
+    rows, _ = bc.load_all_sources(
+```
+
+In `test_weight_replication_exact_counts` (line 149):
+
+```python
+    rows, _ = bc.load_all_sources(
+```
+
+(`test_rebuild_is_byte_identical` calls `bc.build_corpus`, not `load_all_sources` directly — no change needed there.)
+
+- [ ] **Step 9: Run new tests to verify they pass**
+
+Run:
+```
+python3 -m pytest scripts/clue_generation/modal/test_build_modal_corpus.py::test_per_row_weight_replicates_by_column_value scripts/clue_generation/modal/test_build_modal_corpus.py::test_summary_reports_raw_rows_in_for_weight_column_source -q
+```
+Expected: both PASS.
+
+- [ ] **Step 10: Run the full file to confirm no regression**
 
 Run: `python3 -m pytest scripts/clue_generation/modal/test_build_modal_corpus.py -q`
-Expected: PASS — all prior tests (16 now) green. `test_weight_replication_exact_counts` still passes because the existing fixture's sources declare no `weight_column` and take the uniform-`weight` branch unchanged.
+Expected: PASS — all prior tests (17 now) green. `test_weight_replication_exact_counts` still passes because the existing fixture's sources declare no `weight_column` and take the uniform-`weight` branch unchanged.
 
-- [ ] **Step 8: Commit**
+- [ ] **Step 11: Commit**
 
 ```bash
 git add scripts/clue_generation/modal/build_modal_corpus.py scripts/clue_generation/modal/test_build_modal_corpus.py
@@ -274,12 +377,12 @@ git commit -s -m "docs(clue-corpus): document the optional weight_column manifes
 - [ ] **Step 1: Run the full modal test file**
 
 Run: `python3 -m pytest scripts/clue_generation/modal/test_build_modal_corpus.py -q`
-Expected: PASS — 17 tests (15 original + 2 new), 0 failures.
+Expected: PASS — 18 tests (15 original + 3 new), 0 failures.
 
 - [ ] **Step 2: Confirm the diff is in scope and within the line target**
 
 Run: `git diff origin/main --stat`
-Expected: only the three files above change; total well under the ADR-0001 §4 400-line target (≈15 production lines, ≈45 test lines, ≈7 manifest comment lines).
+Expected: only the three files above change; total well under the ADR-0001 §4 400-line target (≈25 production lines, ≈55 test lines, ≈7 manifest comment lines).
 
 - [ ] **Step 3: Push the feature branch**
 
