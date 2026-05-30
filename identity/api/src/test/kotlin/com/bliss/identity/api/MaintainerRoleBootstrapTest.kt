@@ -12,7 +12,6 @@ import com.bliss.identity.domain.user.DisplayName
 import com.bliss.identity.domain.user.Role
 import com.bliss.identity.domain.user.User
 import com.bliss.identity.domain.user.UserId
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Test
 import java.time.Instant
@@ -27,10 +26,8 @@ class MaintainerRoleBootstrapTest {
             val users = FakeUserRepository()
             val id1 = UserId(UUID.randomUUID())
             val id2 = UserId(UUID.randomUUID())
-            runBlocking {
-                users.create(User(id1, DisplayName.of("A"), now, now))
-                users.create(User(id2, DisplayName.of("B"), now, now))
-            }
+            users.create(User(id1, DisplayName.of("A"), now, now))
+            users.create(User(id2, DisplayName.of("B"), now, now))
             val bc = RecordingUserRoleChangedBroadcaster()
             val useCase = SetUserRoleUseCase(users, bc, FixedClock(now))
 
