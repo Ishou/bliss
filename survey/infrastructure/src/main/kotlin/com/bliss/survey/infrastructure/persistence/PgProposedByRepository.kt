@@ -18,7 +18,7 @@ class PgProposedByRepository(
         optedOut: Boolean,
     ): Unit =
         withContext(Dispatchers.IO) {
-            dataSource.connection.use { conn ->
+            withTxConnection(dataSource) { conn ->
                 conn.prepareStatement(INSERT_SQL).use { stmt ->
                     stmt.setObject(1, itemId.value)
                     stmt.setObject(2, userId.value)
@@ -33,7 +33,7 @@ class PgProposedByRepository(
         optedOut: Boolean,
     ): Unit =
         withContext(Dispatchers.IO) {
-            dataSource.connection.use { conn ->
+            withTxConnection(dataSource) { conn ->
                 conn.prepareStatement(SET_OPT_OUT_SQL).use { stmt ->
                     stmt.setBoolean(1, optedOut)
                     stmt.setObject(2, userId.value)
@@ -44,7 +44,7 @@ class PgProposedByRepository(
 
     override suspend fun listOptedOutByUser(userId: UserId): List<ItemId> =
         withContext(Dispatchers.IO) {
-            dataSource.connection.use { conn ->
+            withTxConnection(dataSource) { conn ->
                 conn.prepareStatement(LIST_OPTED_OUT_SQL).use { stmt ->
                     stmt.setObject(1, userId.value)
                     val out = mutableListOf<ItemId>()
@@ -58,7 +58,7 @@ class PgProposedByRepository(
 
     override suspend fun deleteByUser(userId: UserId): Unit =
         withContext(Dispatchers.IO) {
-            dataSource.connection.use { conn ->
+            withTxConnection(dataSource) { conn ->
                 conn.prepareStatement(DELETE_BY_USER_SQL).use { stmt ->
                     stmt.setObject(1, userId.value)
                     stmt.executeUpdate()

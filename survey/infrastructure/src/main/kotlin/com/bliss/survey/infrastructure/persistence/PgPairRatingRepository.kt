@@ -16,7 +16,7 @@ class PgPairRatingRepository(
 ) : PairRatingRepository {
     override suspend fun insert(rating: PairRating): Boolean =
         withContext(Dispatchers.IO) {
-            dataSource.connection.use { conn ->
+            withTxConnection(dataSource) { conn ->
                 conn.prepareStatement(INSERT_SQL).use { stmt ->
                     stmt.setObject(1, rating.id.value)
                     stmt.setObject(2, rating.leftItemId.value)
