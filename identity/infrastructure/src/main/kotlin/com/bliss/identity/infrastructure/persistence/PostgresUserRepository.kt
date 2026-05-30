@@ -99,14 +99,7 @@ class PostgresUserRepository(
             }
         }
 
-    /**
-     * Read-side reconstruction. `DisplayName.of` re-validates the 1–30-char invariant on every
-     * load — a row written by this adapter always passes; a row inserted out-of-band that
-     * violates the invariant will throw at read time. That's a deliberate "loud failure" choice:
-     * silent acceptance of corrupted rows would surface later as confusing UX bugs. If the
-     * schema ever needs a `CHECK char_length(trim(display_name)) BETWEEN 1 AND 30` constraint
-     * to make this redundant, add it in a follow-up migration.
-     */
+    /** DisplayName.of re-validates at read time — out-of-band corrupt rows throw here by design. */
     private fun ResultSet.toUser(): User =
         User(
             id = UserId(getObject("user_id", UUID::class.java)),
