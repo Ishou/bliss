@@ -27,3 +27,5 @@ Append-only log of decisions the orchestrator made during this rollout. For huma
 ## Event log
 
 (entries appended chronologically by the cron)
+
+- 2026-05-30T14:53Z · A0 · #688 · WAIT — blocking `commitlint` failed on commit `e52df053` (subject-case: "Spec" pascal-case). Reworded subject to "implementation plan for user roles + UserRoleChanged event" via cherry-pick rebuild; force-pushed `docs/identity-user-roles`. CI re-running; re-assess next tick.
