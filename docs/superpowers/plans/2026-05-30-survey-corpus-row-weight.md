@@ -165,12 +165,7 @@ Replace the body of `load_all_sources` (lines 121-131) with:
 def load_all_sources(
     root: Path, manifest_path: Path
 ) -> tuple[list[dict[str, str]], dict[str, int]]:
-    """Load every source, exclude held-out lemmas, replicate by weight (per-row when the source sets weight_column).
-
-    Returns (all_rows, raw_counts) where raw_counts[name] is the pre-replication unique-row
-    count for each source (needed by _build_summary to report correct 'Rows in' for
-    weight_column sources whose uniform weight is always 1).
-    """
+    """Load every source, exclude held-out lemmas, replicate by weight; returns (rows, raw_counts)."""
     manifest = _load_manifest(manifest_path)
     held_out = _load_held_out_lemmas(root, manifest.get("exclude_lemmas_from", ""))
     all_rows: list[dict[str, str]] = []
