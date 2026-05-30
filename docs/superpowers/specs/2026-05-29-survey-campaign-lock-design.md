@@ -220,8 +220,9 @@ These are the operations a maintainer runs from psql when prepping or finishing 
 
 ```sql
 -- Open a new campaign. Fails if one is already open (campaigns_one_open).
+-- requires pg_uuidv7; or generate externally: python3 -c 'import uuid_utils; print(uuid_utils.uuid7())'
 INSERT INTO campaigns (campaign_id, batch_label)
-     VALUES (gen_random_uuid(), 'round-7')
+     VALUES (uuidv7(), 'round-7')
   RETURNING campaign_id, opened_at;
 
 -- Close the currently open campaign. Returns the closed row's id for audit.

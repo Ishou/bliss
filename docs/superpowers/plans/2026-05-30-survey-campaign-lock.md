@@ -116,8 +116,9 @@ A new `GET /v1/campaign/current` returns the current row (the open one if any, o
 Campaign open and close are performed by direct SQL in v1. No admin HTTP endpoints ship in v1. The 1-line verbs are:
 
 ```sql
+-- requires pg_uuidv7; or generate externally: python3 -c 'import uuid_utils; print(uuid_utils.uuid7())'
 INSERT INTO campaigns (campaign_id, batch_label)
-     VALUES (gen_random_uuid(), 'round-7') RETURNING campaign_id, opened_at;
+     VALUES (uuidv7(), 'round-7') RETURNING campaign_id, opened_at;
 
 UPDATE campaigns SET closed_at = now()
  WHERE closed_at IS NULL
@@ -484,8 +485,8 @@ CREATE INDEX pair_ratings_campaign_idx ON pair_ratings (campaign_id);
 If a local Postgres is available, run:
 ```bash
 psql -d survey_local -f survey/infrastructure/src/main/resources/db/migration/V7__campaigns.sql
-psql -d survey_local -c "INSERT INTO campaigns (campaign_id, batch_label) VALUES (gen_random_uuid(), 'r1') RETURNING campaign_id, opened_at;"
-psql -d survey_local -c "INSERT INTO campaigns (campaign_id, batch_label) VALUES (gen_random_uuid(), 'r2') RETURNING campaign_id;"
+psql -d survey_local -c "INSERT INTO campaigns (campaign_id, batch_label) VALUES (uuidv7(), 'r1') RETURNING campaign_id, opened_at;"
+psql -d survey_local -c "INSERT INTO campaigns (campaign_id, batch_label) VALUES (uuidv7(), 'r2') RETURNING campaign_id;"
 ```
 Expected: first INSERT succeeds; second INSERT fails with `duplicate key value violates unique constraint "campaigns_one_open"` (the invariant is enforced).
 
@@ -997,9 +998,7 @@ class PgCampaignRepository(
         const val FIND_OPEN_SQL =
             "SELECT * FROM campaigns WHERE closed_at IS NULL LIMIT 1"
 
-        // ORDER BY opened_at DESC uses campaigns_opened_at_idx; LIMIT 1 is the
-        // current open row when one exists (cheaper than UNION), or the most
-        // recently opened closed row when none does.
+        // uses campaigns_opened_at_idx; returns open campaign or, if none, most-recent-closed
         const val FIND_CURRENT_SQL =
             "SELECT * FROM campaigns ORDER BY opened_at DESC LIMIT 1"
     }
@@ -2632,40 +2631,19 @@ git checkout -b chore/survey-campaign-backfill
 
 ```python
 #!/usr/bin/env python3
-"""Backfill campaigns and stamp historical ratings.
-
-Reads a CSV of historical training-batch windows (batch_label, opened_at,
-closed_at) — one row per legacy Modal run — and:
-
-  1. INSERTs a campaigns row per CSV row (idempotent: skips labels that
-     already exist).
-  2. UPDATEs ratings.campaign_id = ? WHERE created_at IN [opened_at, closed_at)
-     AND campaign_id IS NULL for each campaign.
-  3. Same for pair_ratings.
-  4. Prints a coverage report.
-
-This is a one-shot operational tool, run by the maintainer after the V7
-migration deploys. It is NOT a Flyway migration: a bug here cannot wedge
-the cluster.
-
-Usage:
-    python scripts/survey/backfill_campaigns.py \\
-        --dsn postgres://survey:***@host:5432/survey \\
-        --batches scripts/survey/historical_batches.csv \\
-        [--dry-run]
-"""
+"""Backfill campaigns from Modal-log CSVs and stamp historical ratings."""
 
 from __future__ import annotations
 
 import argparse
 import csv
 import sys
-import uuid
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Iterable
 
 import psycopg
+import uuid_utils
 
 
 @dataclass(frozen=True)
@@ -2747,10 +2725,7 @@ git commit -s -m "chore(survey-scripts): backfill_campaigns skeleton"
 
 ```python
 # scripts/survey/test_backfill_campaigns.py
-"""Unit tests for backfill_campaigns. Use a real Postgres via testcontainers-python.
-
-Run: pytest scripts/survey/test_backfill_campaigns.py
-"""
+"""Integration tests for backfill_campaigns. Requires Docker (Testcontainers)."""
 
 from __future__ import annotations
 
@@ -2838,7 +2813,7 @@ def ensure_campaigns(conn, batches: Iterable[HistoricalBatch], *, dry_run: bool)
                 INSERT INTO campaigns (campaign_id, batch_label, opened_at, closed_at)
                 VALUES (%s, %s, %s, %s)
                 """,
-                (uuid.uuid4(), batch.batch_label, batch.opened_at, batch.closed_at),
+                (uuid_utils.uuid7(), batch.batch_label, batch.opened_at, batch.closed_at),
             )
 ```
 

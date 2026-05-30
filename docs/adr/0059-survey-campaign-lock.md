@@ -24,8 +24,9 @@ A new `GET /v1/campaign/current` returns the current row (the open one if any, o
 Campaign open and close are performed by direct SQL in v1. No admin HTTP endpoints ship in v1. The 1-line verbs are:
 
 ```sql
+-- requires pg_uuidv7; or generate externally: python3 -c 'import uuid_utils; print(uuid_utils.uuid7())'
 INSERT INTO campaigns (campaign_id, batch_label)
-     VALUES (gen_random_uuid(), 'round-7') RETURNING campaign_id, opened_at;
+     VALUES (uuidv7(), 'round-7') RETURNING campaign_id, opened_at;
 
 UPDATE campaigns SET closed_at = now()
  WHERE closed_at IS NULL
