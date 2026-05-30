@@ -419,7 +419,7 @@ The `survey_actions` table, its domain model, repository port + adapter, a token
 - Modify: `CampaignRepository.kt` + `PgCampaignRepository.kt` (add `findById`)
 - Test: `PgActionLogRepositoryTest.kt`, `UndoTokenHashTest.kt`, and additions to existing repo tests.
 
-> **Spec refinement:** the migration adds a `proposed_item_id` column not enumerated in the spec's data-model block. It is needed to delete the `proposed_by` row on undo of a text-correctif when the item was *reused* (so `created_item_id` is null but a `proposed_by` row still exists). Note this in the ADR-0059 amendment in Phase 4.
+> **Spec refinement:** the migration adds a `proposed_item_id` column not enumerated in the spec's data-model block. It is needed to delete the `proposed_by` row on undo of a text-correctif when the item was *reused* (so `created_item_id` is null but a `proposed_by` row still exists). Note this in the ADR-0059 amendment in Phase 0.5 (already captured in Task 0.5.1 step 1(d)).
 
 ### Task 2b.1: V8 migration
 
@@ -938,7 +938,7 @@ git commit -s -m "feat(survey): add reversal repo methods (deleteByIds, deleteBy
 
 ## Phase 4 — Undo use case + submit wiring PR (2c)
 
-The `UndoActionUseCase`, the submit use-cases minting a token and writing the recipe inside a transaction, the export settling filter, the route, DI wiring, and the ADR amendment.
+The `UndoActionUseCase`, the submit use-cases minting a token and writing the recipe inside a transaction, the export settling filter, the route, DI wiring.
 
 **Files:**
 - Create: `survey/application/src/main/kotlin/com/bliss/survey/application/usecases/UndoActionUseCase.kt`
