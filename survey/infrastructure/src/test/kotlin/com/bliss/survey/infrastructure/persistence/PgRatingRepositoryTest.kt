@@ -194,8 +194,9 @@ class PgRatingRepositoryTest {
     fun `aggregateForExport excludes open and within-grace campaigns`() =
         runTest {
             val settledItem = sampleItem()
-            val openItem = sampleItem().copy(id = ItemId(UUID.randomUUID()))
-            val graceItem = sampleItem().copy(id = ItemId(UUID.randomUUID()))
+            // survey_items_content_uniq is on (mot, definition), so each item needs distinct content.
+            val openItem = sampleItem().copy(id = ItemId(UUID.randomUUID()), mot = "PAIN", definition = "Aliment de boulangerie")
+            val graceItem = sampleItem().copy(id = ItemId(UUID.randomUUID()), mot = "CHAT", definition = "Felin domestique")
             items.insert(settledItem)
             items.insert(openItem)
             items.insert(graceItem)
