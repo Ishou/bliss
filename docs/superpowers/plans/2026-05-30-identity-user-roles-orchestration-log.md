@@ -29,3 +29,4 @@ Append-only log of decisions the orchestrator made during this rollout. For huma
 (entries appended chronologically by the cron)
 
 - 2026-05-30T14:53Z · A0 · #688 · WAIT — blocking `commitlint` failed on commit `e52df053` (subject-case: "Spec" pascal-case). Reworded subject to "implementation plan for user roles + UserRoleChanged event" via cherry-pick rebuild; force-pushed `docs/identity-user-roles`. CI re-running; re-assess next tick.
+- 2026-05-30T14:56Z · A0 · #688 · DISPATCHED-FIXER — `claude-review` Finding 1 (ADR-0003 §6: `role` enum missing `x-enum-varnames`) valid; fixed in-line in `6fc7da51` (added `x-enum-varnames: [PLAYER, MAINTAINER]` to plan Task 11 YAML), replied on PR. CI re-running.
