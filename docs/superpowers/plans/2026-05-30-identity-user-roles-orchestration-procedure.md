@@ -37,11 +37,17 @@ code cites ADR-0060, so **A1 must be MERGED before A2 opens**. A3 is stacked on 
 
 | Phase | Branch | Base | PR title prefix | Scope (plan tasks) |
 |---|---|---|---|---|
+| A0 | `docs/identity-user-roles` (PR #688) | `main` | `docs(identity):` | This bundle — spec + plan + procedure + log. Must merge first so implementer agents (which run in fresh worktrees off `main`) can read the plan/spec. |
 | A1 | `docs/identity-roles-adr-event` | `main` | `docs(identity):` | ADR-0060 + `identity/api/events/UserRoleChanged.yaml` + `docs/adr/INDEX.md` (Tasks 11–12) |
 | A2 | `feat/identity-role-persistence` | `main` | `feat(identity-*):` | `Role`, `User.role`, migration V5, repo read/write + `updateRole`, ports (Tasks 1–6) |
 | A3 | `feat/identity-role-bootstrap` | `feat/identity-role-persistence` (A2) | `feat(identity-*):` | `SetUserRoleUseCase`, NATS adapter, `main()` dispatch, Helm Job + values (Tasks 7–10) |
 
 Notes:
+- **A0 is the gate.** Dispatch A1 only once A0 (PR #688) is MERGED — until then the
+  plan/spec aren't on `main` and a fresh-worktree implementer can't read them. A0 has
+  no implementer agent: it's already open; the cron only assesses + merges it via the
+  open-PR decision tree (it's docs-only, so it merges on green + `LGTM`; the §4
+  soft-target override is already cited in its body).
 - A1 and A2 both base off `main` but are NOT parallel: A2 references ADR-0060, which
   only exists on `main` after A1 merges. Dispatch A2 only once A1 is MERGED.
 - A3 is **stacked on A2**. After A2 squash-merges, A3 becomes `CONFLICTING`; recover
@@ -52,7 +58,7 @@ Notes:
 1. `cd "$(git rev-parse --show-toplevel)" && git fetch origin --quiet`.
 2. Load this procedure + the log from `origin/main` if present, else from
    `origin/docs/identity-user-roles` via `git show`.
-3. Walk the phase map in order (A1 → A2 → A3). For each phase, find its PR
+3. Walk the phase map in order (A0 → A1 → A2 → A3). For each phase, find its PR
    (`gh pr list --head <branch> --state all --json number,state,title`):
    - **MERGED** → move to next phase.
    - **CLOSED-not-merged** → escalate (log `ACTION`, `CronDelete` self, exit).
