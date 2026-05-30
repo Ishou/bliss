@@ -6,9 +6,9 @@ CNPG `Cluster` for the survey context. Deployed alongside the
 ## Extensions
 
 The cluster bootstraps with `pg_uuidv7` installed via
-`bootstrap.initdb.postInitSQL` so the maintainer's campaign-lifecycle
-SQL backdoor (ADR-0059) can call `uuidv7()` directly. `postInitSQL`
-runs as superuser at cluster-create time only — for an already-running
+`bootstrap.initdb.postInitApplicationSQL` so the maintainer's campaign-lifecycle
+SQL backdoor (ADR-0059) can call `uuidv7()` directly. `postInitApplicationSQL`
+runs as superuser in the application database at cluster-create time only — for an already-running
 CNPG cluster, install the extension once by hand:
 
 ```sh
