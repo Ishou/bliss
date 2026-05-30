@@ -276,6 +276,11 @@ class UserDeletedConsumerTest {
         override suspend fun listProposedByUser(userId: UserId) = emptyList<com.bliss.survey.application.ports.ProposedContribution>()
 
         override suspend fun deleteByIds(ids: Collection<ItemId>) = Unit
+
+        override suspend fun updateTrainingWeight(
+            id: ItemId,
+            weight: Double,
+        ) = Unit
     }
 
     private object NoopProgress : UserProgressRepository {
