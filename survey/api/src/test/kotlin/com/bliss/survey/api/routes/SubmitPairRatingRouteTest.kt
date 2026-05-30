@@ -9,10 +9,12 @@ import com.bliss.survey.api.auth.SESSION_COOKIE_NAME
 import com.bliss.survey.api.auth.SessionMiddleware
 import com.bliss.survey.application.usecases.SubmitPairRatingCommand
 import com.bliss.survey.application.usecases.SubmitPairRatingResult
+import com.bliss.survey.domain.model.CampaignId
 import com.bliss.survey.domain.model.PairVerdict
 import io.ktor.client.request.cookie
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
+import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
@@ -28,6 +30,8 @@ class SubmitPairRatingRouteTest {
     private val leftId = UUID.fromString("11111111-1111-7111-8111-111111111111")
     private val rightId = UUID.fromString("22222222-2222-7222-8222-222222222222")
     private val userId = UUID.fromString("33333333-3333-7333-8333-333333333333")
+    private val campaignUuid = UUID.fromString("44444444-4444-7444-8444-444444444444")
+    private val recorded = SubmitPairRatingResult.Recorded(CampaignId(campaignUuid))
 
     private fun jsonBody(
         left: String = leftId.toString(),
@@ -39,18 +43,19 @@ class SubmitPairRatingRouteTest {
         "{\"leftItemId\":\"$left\",\"rightItemId\":\"$right\",\"verdict\":\"$verdict\",\"difficulte\":$difficulte,\"latencyMs\":$latency}"
 
     @Test
-    fun `anon LEFT_WINS - 204 no content`() =
+    fun `anon LEFT_WINS - 201 with campaignId`() =
         testApplication {
             application {
                 install(ContentNegotiation) { json(WIRE_JSON) }
-                routing { submitPairRatingRoute { SubmitPairRatingResult.Recorded } }
+                routing { submitPairRatingRoute { recorded } }
             }
             val resp =
                 client.post("/v1/ratings/pair") {
                     contentType(ContentType.Application.Json)
                     setBody(jsonBody())
                 }
-            assertThat(resp.status).isEqualTo(HttpStatusCode.NoContent)
+            assertThat(resp.status).isEqualTo(HttpStatusCode.Created)
+            assertThat(resp.bodyAsText()).contains("\"campaignId\":\"$campaignUuid\"")
         }
 
     @Test
@@ -63,7 +68,7 @@ class SubmitPairRatingRouteTest {
                 routing {
                     submitPairRatingRoute { cmd: SubmitPairRatingCommand ->
                         capturedUserId = cmd.userId?.value
-                        SubmitPairRatingResult.Recorded
+                        recorded
                     }
                 }
             }
@@ -73,7 +78,7 @@ class SubmitPairRatingRouteTest {
                     contentType(ContentType.Application.Json)
                     setBody(jsonBody(verdict = "BOTH_GOOD"))
                 }
-            assertThat(resp.status).isEqualTo(HttpStatusCode.NoContent)
+            assertThat(resp.status).isEqualTo(HttpStatusCode.Created)
             assertThat(capturedUserId).isEqualTo(userId)
         }
 
@@ -147,7 +152,7 @@ class SubmitPairRatingRouteTest {
                 routing {
                     submitPairRatingRoute {
                         called = true
-                        SubmitPairRatingResult.Recorded
+                        recorded
                     }
                 }
             }
@@ -169,7 +174,7 @@ class SubmitPairRatingRouteTest {
                 routing {
                     submitPairRatingRoute {
                         called = true
-                        SubmitPairRatingResult.Recorded
+                        recorded
                     }
                 }
             }
@@ -187,7 +192,7 @@ class SubmitPairRatingRouteTest {
         testApplication {
             application {
                 install(ContentNegotiation) { json(WIRE_JSON) }
-                routing { submitPairRatingRoute { SubmitPairRatingResult.Recorded } }
+                routing { submitPairRatingRoute { recorded } }
             }
             val resp =
                 client.post("/v1/ratings/pair") {
@@ -202,7 +207,7 @@ class SubmitPairRatingRouteTest {
         testApplication {
             application {
                 install(ContentNegotiation) { json(WIRE_JSON) }
-                routing { submitPairRatingRoute { SubmitPairRatingResult.Recorded } }
+                routing { submitPairRatingRoute { recorded } }
             }
             val resp =
                 client.post("/v1/ratings/pair") {
@@ -217,4 +222,20 @@ class SubmitPairRatingRouteTest {
         assertThat(PairVerdict.valueOf("LEFT_WINS".uppercase())).isEqualTo(PairVerdict.LEFT_WINS)
         assertThat(PairVerdict.valueOf("BOTH_GOOD".uppercase())).isEqualTo(PairVerdict.BOTH_GOOD)
     }
+
+    @Test
+    fun `returns 423 when the use case returns Locked`() =
+        testApplication {
+            application {
+                install(ContentNegotiation) { json(WIRE_JSON) }
+                routing { submitPairRatingRoute { SubmitPairRatingResult.Locked } }
+            }
+            val resp =
+                client.post("/v1/ratings/pair") {
+                    contentType(ContentType.Application.Json)
+                    setBody(jsonBody())
+                }
+            assertThat(resp.status.value).isEqualTo(423)
+            assertThat(resp.bodyAsText()).contains("\"title\":\"campaign closed\"")
+        }
 }

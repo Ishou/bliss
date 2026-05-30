@@ -2,6 +2,7 @@ package com.bliss.survey.api.routes
 
 import com.bliss.survey.api.auth.UserIdKey
 import com.bliss.survey.api.dto.PairRatingRequest
+import com.bliss.survey.api.dto.PairRatingResponse
 import com.bliss.survey.api.dto.ProblemDetails
 import com.bliss.survey.api.respondProblem
 import com.bliss.survey.application.usecases.SubmitPairRatingCommand
@@ -88,8 +89,14 @@ fun Route.submitPairRatingRoute(execute: suspend (SubmitPairRatingCommand) -> Su
                 latencyMs = body.latencyMs,
             )
 
-        when (execute(cmd)) {
-            SubmitPairRatingResult.Recorded, SubmitPairRatingResult.Skipped ->
+        when (val result = execute(cmd)) {
+            is SubmitPairRatingResult.Recorded ->
+                call.respond(
+                    HttpStatusCode.Created,
+                    PairRatingResponse(campaignId = result.campaignId.value.toString()),
+                )
+
+            SubmitPairRatingResult.Skipped ->
                 call.respond(HttpStatusCode.NoContent)
 
             SubmitPairRatingResult.AlreadyExists ->
@@ -131,6 +138,17 @@ fun Route.submitPairRatingRoute(execute: suspend (SubmitPairRatingCommand) -> Su
                         title = "same item",
                         status = HttpStatusCode.BadRequest.value,
                         detail = "leftItemId and rightItemId must differ",
+                    ),
+                )
+
+            SubmitPairRatingResult.Locked ->
+                call.respondProblem(
+                    HttpStatusCode.Locked,
+                    ProblemDetails(
+                        type = "about:blank",
+                        title = "campaign closed",
+                        status = HttpStatusCode.Locked.value,
+                        detail = "The sondage is paused while a training batch is being prepared.",
                     ),
                 )
         }
