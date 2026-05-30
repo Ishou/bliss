@@ -61,6 +61,36 @@ def ensure_campaigns(conn, batches: Iterable[HistoricalBatch], *, dry_run: bool)
             )
 
 
+def stamp_ratings(conn, batches: Iterable[HistoricalBatch], *, dry_run: bool) -> None:
+    with conn.cursor() as cur:
+        for batch in batches:
+            cur.execute(
+                """
+                UPDATE ratings
+                   SET campaign_id = (SELECT campaign_id FROM campaigns WHERE batch_label = %s)
+                 WHERE created_at >= %s
+                   AND created_at <  %s
+                   AND campaign_id IS NULL
+                """,
+                (batch.batch_label, batch.opened_at, batch.closed_at),
+            )
+
+
+def stamp_pair_ratings(conn, batches: Iterable[HistoricalBatch], *, dry_run: bool) -> None:
+    with conn.cursor() as cur:
+        for batch in batches:
+            cur.execute(
+                """
+                UPDATE pair_ratings
+                   SET campaign_id = (SELECT campaign_id FROM campaigns WHERE batch_label = %s)
+                 WHERE created_at >= %s
+                   AND created_at <  %s
+                   AND campaign_id IS NULL
+                """,
+                (batch.batch_label, batch.opened_at, batch.closed_at),
+            )
+
+
 def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--dsn", required=True)
