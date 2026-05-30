@@ -88,3 +88,6 @@ export function categorieLabel(categorie: string): string {
 export function styleLabel(style: string): string {
   return STYLE_LABELS[style] ?? style;
 }
+
+export const LOCK_BANNER_TEXT =
+  'Campagne en pause — un nouveau lot est en cours d’entraînement. Revenez bientôt pour la suite.';
