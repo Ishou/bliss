@@ -7,7 +7,7 @@ import argparse
 import csv
 import sys
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Iterable
 
 import psycopg
@@ -29,8 +29,8 @@ def parse_batches(path: str) -> list[HistoricalBatch]:
             out.append(
                 HistoricalBatch(
                     batch_label=row["batch_label"].strip(),
-                    opened_at=datetime.fromisoformat(row["opened_at"]),
-                    closed_at=datetime.fromisoformat(row["closed_at"]),
+                    opened_at=datetime.fromisoformat(row["opened_at"]).replace(tzinfo=timezone.utc),
+                    closed_at=datetime.fromisoformat(row["closed_at"]).replace(tzinfo=timezone.utc),
                 )
             )
     out.sort(key=lambda b: b.opened_at)
@@ -43,7 +43,7 @@ def parse_batches(path: str) -> list[HistoricalBatch]:
     return out
 
 
-def ensure_campaigns(conn, batches: Iterable[HistoricalBatch], *, dry_run: bool) -> None:
+def ensure_campaigns(conn, batches: Iterable[HistoricalBatch]) -> None:
     with conn.cursor() as cur:
         for batch in batches:
             cur.execute(
@@ -61,7 +61,7 @@ def ensure_campaigns(conn, batches: Iterable[HistoricalBatch], *, dry_run: bool)
             )
 
 
-def stamp_ratings(conn, batches: Iterable[HistoricalBatch], *, dry_run: bool) -> None:
+def stamp_ratings(conn, batches: Iterable[HistoricalBatch]) -> None:
     with conn.cursor() as cur:
         for batch in batches:
             cur.execute(
@@ -76,7 +76,7 @@ def stamp_ratings(conn, batches: Iterable[HistoricalBatch], *, dry_run: bool) ->
             )
 
 
-def stamp_pair_ratings(conn, batches: Iterable[HistoricalBatch], *, dry_run: bool) -> None:
+def stamp_pair_ratings(conn, batches: Iterable[HistoricalBatch]) -> None:
     with conn.cursor() as cur:
         for batch in batches:
             cur.execute(
@@ -96,8 +96,8 @@ def coverage_report(conn) -> None:
         cur.execute(
             """
             SELECT COALESCE(c.batch_label, '<unattributed>') AS label,
-                   count(r.rating_id)        AS ratings_n,
-                   count(pr.id)              AS pair_ratings_n
+                   count(DISTINCT r.rating_id) AS ratings_n,
+                   count(DISTINCT pr.id)       AS pair_ratings_n
               FROM (SELECT campaign_id, batch_label FROM campaigns
                     UNION ALL SELECT NULL, NULL) c
          LEFT JOIN ratings r       ON r.campaign_id IS NOT DISTINCT FROM c.campaign_id
@@ -123,9 +123,9 @@ def main(argv: list[str]) -> int:
     print(f"Loaded {len(batches)} historical batches from {args.batches}", file=sys.stderr)
 
     with psycopg.connect(args.dsn, autocommit=False) as conn:
-        ensure_campaigns(conn, batches, dry_run=args.dry_run)
-        stamp_ratings(conn, batches, dry_run=args.dry_run)
-        stamp_pair_ratings(conn, batches, dry_run=args.dry_run)
+        ensure_campaigns(conn, batches)
+        stamp_ratings(conn, batches)
+        stamp_pair_ratings(conn, batches)
         coverage_report(conn)
         if args.dry_run:
             conn.rollback()

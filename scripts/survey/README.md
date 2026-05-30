@@ -26,6 +26,10 @@ round-5,2026-05-01T00:00:00,2026-05-07T00:00:00
 round-6,2026-05-08T00:00:00,2026-05-15T00:00:00
 ```
 
+Timestamps are interpreted as UTC regardless of the local timezone or the
+PostgreSQL session's `TimeZone` setting. Use naive ISO 8601 (`T00:00:00`)
+or explicit UTC offset (`T00:00:00+00:00`); either form is accepted.
+
 Source the windows from Modal job logs: each batch run's `started_at` →
 `finished_at`. Sort by `opened_at`; the script rejects overlapping
 windows.

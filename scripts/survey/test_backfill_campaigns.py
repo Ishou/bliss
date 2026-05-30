@@ -61,7 +61,7 @@ def test_ensure_campaigns_inserts_one_row_per_batch(conn):
         bf.HistoricalBatch("round-5", _at("2026-05-01T00:00:00"), _at("2026-05-07T00:00:00")),
         bf.HistoricalBatch("round-6", _at("2026-05-08T00:00:00"), _at("2026-05-15T00:00:00")),
     ]
-    bf.ensure_campaigns(conn, batches, dry_run=False)
+    bf.ensure_campaigns(conn, batches)
     with conn.cursor() as cur:
         cur.execute("SELECT count(*) FROM campaigns")
         assert cur.fetchone()[0] == 2
@@ -69,8 +69,8 @@ def test_ensure_campaigns_inserts_one_row_per_batch(conn):
 
 def test_ensure_campaigns_is_idempotent(conn):
     batches = [bf.HistoricalBatch("round-5", _at("2026-05-01T00:00:00"), _at("2026-05-07T00:00:00"))]
-    bf.ensure_campaigns(conn, batches, dry_run=False)
-    bf.ensure_campaigns(conn, batches, dry_run=False)
+    bf.ensure_campaigns(conn, batches)
+    bf.ensure_campaigns(conn, batches)
     with conn.cursor() as cur:
         cur.execute("SELECT count(*) FROM campaigns WHERE batch_label = 'round-5'")
         assert cur.fetchone()[0] == 1
@@ -81,7 +81,7 @@ def test_stamp_ratings_attributes_rows_by_created_at(conn):
         bf.HistoricalBatch("round-5", _at("2026-05-01T00:00:00"), _at("2026-05-07T00:00:00")),
         bf.HistoricalBatch("round-6", _at("2026-05-08T00:00:00"), _at("2026-05-15T00:00:00")),
     ]
-    bf.ensure_campaigns(conn, batches, dry_run=False)
+    bf.ensure_campaigns(conn, batches)
     item_id = _uuid.uuid4()
     user_id = _uuid.uuid4()
     with conn.cursor() as cur:
@@ -104,7 +104,7 @@ def test_stamp_ratings_attributes_rows_by_created_at(conn):
                    VALUES (%s, %s, %s, 'auth', 5, 3, %s)""",
                 (rid, item_id, user_id, created_at),
             )
-    bf.stamp_ratings(conn, batches, dry_run=False)
+    bf.stamp_ratings(conn, batches)
     with conn.cursor() as cur:
         cur.execute(
             "SELECT c.batch_label, count(*) "
