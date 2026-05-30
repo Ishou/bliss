@@ -46,6 +46,11 @@ interface SurveyItemRepository {
     suspend fun listProposedByUser(userId: UserId): List<ProposedContribution>
 
     suspend fun deleteByIds(ids: Collection<ItemId>)
+
+    suspend fun updateTrainingWeight(
+        id: ItemId,
+        weight: Double,
+    )
 }
 
 data class ProposedContribution(

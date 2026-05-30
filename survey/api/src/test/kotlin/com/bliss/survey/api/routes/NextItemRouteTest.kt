@@ -139,4 +139,9 @@ private class StubItemRepo(
     override suspend fun listProposedByUser(userId: UserId): List<ProposedContribution> = emptyList()
 
     override suspend fun deleteByIds(ids: Collection<ItemId>) {}
+
+    override suspend fun updateTrainingWeight(
+        id: ItemId,
+        weight: Double,
+    ) {}
 }

@@ -374,6 +374,20 @@ class PgSurveyItemRepository(
             }
         }
 
+    override suspend fun updateTrainingWeight(
+        id: ItemId,
+        weight: Double,
+    ): Unit =
+        withContext(Dispatchers.IO) {
+            withTxConnection(dataSource) { conn ->
+                conn.prepareStatement(UPDATE_TRAINING_WEIGHT_SQL).use { stmt ->
+                    stmt.setBigDecimal(1, java.math.BigDecimal.valueOf(weight))
+                    stmt.setObject(2, id.value)
+                    stmt.executeUpdate()
+                }
+            }
+        }
+
     private fun bindInsertParams(
         stmt: java.sql.PreparedStatement,
         item: SurveyItem,
@@ -497,5 +511,8 @@ class PgSurveyItemRepository(
             """
 
         const val DELETE_BY_IDS_SQL = "DELETE FROM survey_items WHERE item_id = ANY (?)"
+
+        const val UPDATE_TRAINING_WEIGHT_SQL =
+            "UPDATE survey_items SET training_weight = ? WHERE item_id = ?"
     }
 }

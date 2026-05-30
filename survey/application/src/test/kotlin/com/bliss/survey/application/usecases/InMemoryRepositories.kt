@@ -144,6 +144,15 @@ class InMemorySurveyItemRepository : SurveyItemRepository {
     override suspend fun deleteByIds(ids: Collection<ItemId>) {
         for (id in ids) items.remove(id)
     }
+
+    val trainingWeights: MutableMap<ItemId, Double> = linkedMapOf()
+
+    override suspend fun updateTrainingWeight(
+        id: ItemId,
+        weight: Double,
+    ) {
+        trainingWeights[id] = weight
+    }
 }
 
 class InMemoryPairRatingRepository : PairRatingRepository {
