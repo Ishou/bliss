@@ -149,6 +149,8 @@ export function createHttpSurveyClient(options: HttpSurveyClientOptions): Survey
     }
     if (res.status === 423) throw new SondageLockedError();
     if (!res.ok) throw new Error(`submitPairRating failed: ${res.status}`);
+    // SKIP verdicts return 204 with no body; no undo token to surface.
+    if (res.status === 204) return { undoToken: null };
     const json = (await res.json()) as { undoToken?: string | null };
     return { undoToken: json.undoToken ?? null } satisfies PairRatingResult;
   };

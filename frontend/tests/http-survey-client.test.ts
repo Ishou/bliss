@@ -305,6 +305,20 @@ describe('HttpSurveyClient.submitPairRating', () => {
     });
     expect(result).toEqual({ undoToken: 'tok_pair' });
   });
+
+  it('resolves with a null token on 204 (SKIP)', async () => {
+    server.use(
+      http.post(`${BASE}/v1/ratings/pair`, () => new HttpResponse(null, { status: 204 })),
+    );
+    const result = await client.submitPairRating({
+      leftItemId: leftId,
+      rightItemId: rightId,
+      verdict: 'SKIP',
+      difficulte: 3,
+      latencyMs: 0,
+    });
+    expect(result).toEqual({ undoToken: null });
+  });
 });
 
 describe('HttpSurveyClient.undoAction', () => {
