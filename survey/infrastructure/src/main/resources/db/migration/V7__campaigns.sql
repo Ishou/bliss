@@ -1,8 +1,4 @@
--- Campaign-bounded rating sessions (ADR-0059). Partial unique invariant holds at most
--- one open campaign at a time; ratings + pair_ratings gain nullable campaign_id FKs.
--- Application stamps campaign_id from Generators.timeBasedEpochGenerator(); the
--- maintainer's psql verbs may rely on the pg_uuidv7 extension (installed out-of-band
--- in prod) or generate UUIDs externally.
+-- Campaign-bounded rating sessions (ADR-0059); nullable campaign_id FKs on ratings/pair_ratings.
 
 CREATE TABLE campaigns (
     campaign_id  UUID         PRIMARY KEY,

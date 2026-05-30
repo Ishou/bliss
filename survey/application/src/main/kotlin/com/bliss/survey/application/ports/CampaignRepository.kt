@@ -6,7 +6,6 @@ import com.bliss.survey.domain.model.Campaign
 interface CampaignRepository {
     suspend fun findOpen(): Campaign?
 
-    // Drives the frontend's lock UI: the open campaign if any, otherwise the most
-    // recently opened (closed) campaign; null only when the table is empty.
+    // Open campaign if any; otherwise the most recently opened (closed) row; null only when table is empty.
     suspend fun findCurrent(): Campaign?
 }
