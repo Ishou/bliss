@@ -64,7 +64,7 @@ class ExportDatasetUseCaseTest {
                 )
             val uc = ExportDatasetUseCase(items, ratings, StyleGuideCsvWriter(), Clock { now })
             val csv = uc.execute(minRatings = 3, since = null, authWeight = 2.0, anonWeight = 1.0)
-            assertThat(csv).startsWith("mot;definition;pos;categorie;style;force;longueur;source;meta")
+            assertThat(csv).startsWith("mot;definition;pos;categorie;style;force;longueur;source;training_weight;meta")
             assertThat(csv).contains("POMME")
             assertThat(csv).contains("qualite_mean")
         }
@@ -113,7 +113,7 @@ class ExportDatasetUseCaseTest {
             val uc = ExportDatasetUseCase(items, ratings, StyleGuideCsvWriter(), Clock { now })
             val csv = uc.execute(minRatings = 3, since = null, authWeight = 1.0, anonWeight = 1.0)
             // Only the header remains
-            assertThat(csv).startsWith("mot;definition;pos;categorie;style;force;longueur;source;meta")
+            assertThat(csv).startsWith("mot;definition;pos;categorie;style;force;longueur;source;training_weight;meta")
             check(!csv.contains("POIRE")) { "PR-below threshold item should not be exported" }
         }
 }

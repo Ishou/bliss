@@ -5,7 +5,7 @@ import com.bliss.survey.domain.model.SurveyItem
 import java.text.Normalizer
 
 class StyleGuideCsvWriter {
-    fun header(): String = "mot;definition;pos;categorie;style;force;longueur;source;meta"
+    fun header(): String = "mot;definition;pos;categorie;style;force;longueur;source;training_weight;meta"
 
     fun toRow(
         item: SurveyItem,
@@ -27,6 +27,8 @@ class StyleGuideCsvWriter {
             append(item.longueur)
             append(';')
             append(item.source.name.lowercase())
+            append(';')
+            append(item.trainingWeight)
             append(';')
             append(quote(meta.entries.joinToString("|") { "${it.key}:${it.value}" }))
         }

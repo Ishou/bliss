@@ -82,6 +82,6 @@ class StyleGuideCsvRoundTripTest {
 
     @Test
     fun `header is fixed schema`() {
-        assertThat(writer.header()).isEqualTo("mot;definition;pos;categorie;style;force;longueur;source;meta")
+        assertThat(writer.header()).isEqualTo("mot;definition;pos;categorie;style;force;longueur;source;training_weight;meta")
     }
 }
