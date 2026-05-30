@@ -168,9 +168,10 @@ export interface RatingCardProps {
   readonly item: SurveyItem;
   readonly onVerdict: (verdict: Verdict, latencyMs: number) => Promise<void> | void;
   readonly onCorriger: (correctedText: string, pos: SurveyPos, latencyMs: number) => Promise<void> | void;
+  readonly disabled?: boolean;
 }
 
-export function RatingCard({ item, onVerdict, onCorriger }: RatingCardProps) {
+export function RatingCard({ item, onVerdict, onCorriger, disabled = false }: RatingCardProps) {
   const startedAtRef = useRef<number>(0);
   const [correctifText, setCorrectifText] = useState<string | null>(null);
   const [correctifPos, setCorrectifPos] = useState<SurveyPos>(item.pos);
@@ -180,9 +181,15 @@ export function RatingCard({ item, onVerdict, onCorriger }: RatingCardProps) {
     setCorrectifPos(item.pos);
   }, [item.itemId, item.pos]);
 
+  // Lock arriving mid-correction collapses any open panel so the disabled state stays internally consistent.
+  useEffect(() => {
+    if (disabled) setCorrectifText(null);
+  }, [disabled]);
+
   useEffect(() => {
     startedAtRef.current = performance.now();
     function handler(event: KeyboardEvent): void {
+      if (disabled) return;
       if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) return;
       const target = event.target as HTMLElement | null;
       if (target && /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)) return;
@@ -203,9 +210,10 @@ export function RatingCard({ item, onVerdict, onCorriger }: RatingCardProps) {
     }
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [item.itemId, item.definition, onVerdict]);
+  }, [item.itemId, item.definition, onVerdict, disabled]);
 
   function submit(verdict: Verdict): void {
+    if (disabled) return;
     const latencyMs = Math.max(0, Math.round(performance.now() - startedAtRef.current));
     void onVerdict(verdict, latencyMs);
   }
@@ -250,6 +258,7 @@ export function RatingCard({ item, onVerdict, onCorriger }: RatingCardProps) {
           type="button"
           className={cx(verdictButtonBase, verdictBadStyles)}
           aria-label={`Mauvaise définition pour l'indice « ${item.definition} »`}
+          aria-disabled={disabled || undefined}
           data-verdict="BAD"
           onClick={() => submit('BAD')}
         >
@@ -260,6 +269,7 @@ export function RatingCard({ item, onVerdict, onCorriger }: RatingCardProps) {
           type="button"
           className={cx(verdictButtonBase, verdictSkipStyles)}
           aria-label={`Passer l'indice « ${item.definition} »`}
+          aria-disabled={disabled || undefined}
           data-verdict="SKIP"
           onClick={() => submit('SKIP')}
         >
@@ -270,22 +280,25 @@ export function RatingCard({ item, onVerdict, onCorriger }: RatingCardProps) {
           type="button"
           className={cx(verdictButtonBase, verdictGoodStyles)}
           aria-label={`Bonne définition pour l'indice « ${item.definition} »`}
+          aria-disabled={disabled || undefined}
           data-verdict="GOOD"
           onClick={() => submit('GOOD')}
         >
           <span>Bonne</span>
           <span className={shortcutStyles}>L</span>
         </button>
-        <button
-          type="button"
-          className={cx(verdictButtonBase, verdictCorrigerStyles)}
-          aria-label={`Corriger l'indice « ${item.definition} »`}
-          data-verdict="CORRIGER"
-          onClick={() => setCorrectifText(item.definition)}
-        >
-          <span>Corriger</span>
-          <span className={shortcutStyles}>C</span>
-        </button>
+        {disabled ? null : (
+          <button
+            type="button"
+            className={cx(verdictButtonBase, verdictCorrigerStyles)}
+            aria-label={`Corriger l'indice « ${item.definition} »`}
+            data-verdict="CORRIGER"
+            onClick={() => setCorrectifText(item.definition)}
+          >
+            <span>Corriger</span>
+            <span className={shortcutStyles}>C</span>
+          </button>
+        )}
       </div>
 
       {correctifText !== null ? (
