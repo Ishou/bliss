@@ -16,3 +16,8 @@ value class RatingId(
 value class UserId(
     val value: UUID,
 )
+
+@JvmInline
+value class CampaignId(
+    val value: UUID,
+)
