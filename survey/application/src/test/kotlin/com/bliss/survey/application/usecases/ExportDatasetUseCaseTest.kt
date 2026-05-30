@@ -159,7 +159,7 @@ class ExportDatasetUseCaseTest {
                         qualiteSquaredAnonSum = 8,
                     ),
                 )
-            val uc = ExportDatasetUseCase(items, ratings, StyleGuideCsvWriter())
+            val uc = ExportDatasetUseCase(items, ratings, StyleGuideCsvWriter(), Clock { now })
             val csv = uc.execute(minRatings = 3, since = null, authWeight = 2.0, anonWeight = 1.0)
             assertThat(csv).contains(";curated_v1;3.0;")
         }
