@@ -200,6 +200,39 @@ paths:
             application/problem+json:
               schema: { $ref: '#/components/schemas/ProblemDetails' }
 
+  /v1/actions/undo:
+    post:
+      operationId: undoAction
+      summary: Undo the action identified by a capability token.
+      description: |
+        Reverses every write a submit produced, using the capability token
+        returned as `undoToken`. The token travels in the body, never the URL.
+        Anon actions authorize on possession; authed actions additionally bind
+        to the session user. Undoable while the campaign is open and for an 8 s
+        close grace; 410 once the grace elapses.
+      tags: [items]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UndoActionRequest'
+      responses:
+        '204':
+          description: Action reversed.
+        '404':
+          description: Token unknown, not yours, or already undone.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '410':
+          description: Campaign-close grace window has elapsed.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+
   /v1/me/progress:
     get:
       operationId: getMyProgress
@@ -471,9 +504,17 @@ components:
             pos:    { $ref: '#/components/schemas/Pos' }
         latencyMs: { type: integer, minimum: 0 }
 
+    UndoActionRequest:
+      type: object
+      required: [token]
+      properties:
+        token:
+          type: string
+          description: The capability token returned as undoToken by the submit response.
+
     RatingResponse:
       type: object
-      required: [ratingId, itemId, submittedAs, proposedItemId, campaignId]
+      required: [ratingId, itemId, submittedAs, proposedItemId, campaignId, undoToken]
       properties:
         ratingId:       { type: string, format: uuid }
         itemId:         { type: string, format: uuid }
@@ -483,12 +524,24 @@ components:
           x-enum-varnames: [AUTH, ANON]
         proposedItemId: { type: string, format: uuid, nullable: true, description: "UUID of the queued correctif item; null when no correctif was submitted." }
         campaignId:     { type: string, format: uuid, description: "Campaign whose lifecycle window this rating landed in. Stamped by the server at insert time." }
+        undoToken:
+          type: string
+          nullable: true
+          description: >-
+            Capability token for undoing this action. Non-null on 201 (fresh
+            action); null on 409 (idempotent re-rate). Present it in the body of
+            POST /v1/actions/undo.
 
     PairRatingResponse:
       type: object
-      required: [campaignId]
+      required: [campaignId, undoToken]
       properties:
         campaignId: { type: string, format: uuid, description: "Campaign whose lifecycle window this pair verdict landed in. Stamped by the server at insert time." }
+        undoToken:
+          type: string
+          description: >-
+            Capability token for undoing this pair action. Non-null on 201.
+            Present it in the body of POST /v1/actions/undo.
 
     CorrectifRejection:
       type: object
