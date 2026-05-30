@@ -1,5 +1,4 @@
--- survey_actions: one row per reversible rating submit, carrying the reversal recipe (ADR-0059).
--- proposed_item_id unwinds the proposed_by link when a text-correctif reused an existing item.
+-- proposed_item_id unwinds the proposed_by link when a text-correctif reused an existing item (ADR-0059).
 
 CREATE TABLE survey_actions (
     action_id           UUID PRIMARY KEY,
