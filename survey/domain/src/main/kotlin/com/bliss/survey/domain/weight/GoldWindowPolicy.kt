@@ -2,7 +2,6 @@ package com.bliss.survey.domain.weight
 
 import java.time.Instant
 
-// Future gold windows (per-campaign, graded multipliers) extend here without touching call sites.
 class GoldWindowPolicy(
     private val cutoff: Instant,
     private val goldMultiplier: Double,
