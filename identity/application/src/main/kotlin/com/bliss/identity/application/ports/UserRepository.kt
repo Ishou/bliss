@@ -1,6 +1,7 @@
 package com.bliss.identity.application.ports
 
 import com.bliss.identity.domain.user.DisplayName
+import com.bliss.identity.domain.user.Role
 import com.bliss.identity.domain.user.User
 import com.bliss.identity.domain.user.UserId
 import java.time.Instant
@@ -24,6 +25,12 @@ interface UserRepository {
     suspend fun updateDisplayName(
         id: UserId,
         name: DisplayName,
+    )
+
+    /** No-op if [id] does not exist. */
+    suspend fun updateRole(
+        id: UserId,
+        role: Role,
     )
 
     suspend fun delete(id: UserId)

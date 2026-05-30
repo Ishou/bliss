@@ -4,6 +4,7 @@ import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.isNull
 import com.bliss.identity.domain.user.DisplayName
+import com.bliss.identity.domain.user.Role
 import com.bliss.identity.domain.user.User
 import com.bliss.identity.domain.user.UserId
 import kotlinx.coroutines.test.runTest
@@ -101,6 +102,25 @@ class InMemoryUserRepositoryTest {
             val repo = InMemoryUserRepository()
             val unknownId = UserId(UUID.randomUUID())
             repo.updateDisplayName(unknownId, DisplayName.of("Ghost"))
+            assertThat(repo.findById(unknownId)).isNull()
+        }
+
+    @Test
+    fun `updateRole changes the stored role`() =
+        runTest {
+            val repo = InMemoryUserRepository()
+            val u = user()
+            repo.create(u)
+            repo.updateRole(u.id, Role.MAINTAINER)
+            assertThat(repo.findById(u.id)?.role).isEqualTo(Role.MAINTAINER)
+        }
+
+    @Test
+    fun `updateRole is a no-op for an unknown user`() =
+        runTest {
+            val repo = InMemoryUserRepository()
+            val unknownId = UserId(UUID.randomUUID())
+            repo.updateRole(unknownId, Role.MAINTAINER)
             assertThat(repo.findById(unknownId)).isNull()
         }
 }
