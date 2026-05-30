@@ -7,4 +7,5 @@ data class User(
     val displayName: DisplayName,
     val createdAt: Instant,
     val lastSeenAt: Instant,
+    val role: Role = Role.PLAYER,
 )

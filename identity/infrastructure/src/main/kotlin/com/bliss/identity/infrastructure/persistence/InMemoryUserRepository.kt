@@ -2,6 +2,7 @@ package com.bliss.identity.infrastructure.persistence
 
 import com.bliss.identity.application.ports.UserRepository
 import com.bliss.identity.domain.user.DisplayName
+import com.bliss.identity.domain.user.Role
 import com.bliss.identity.domain.user.User
 import com.bliss.identity.domain.user.UserId
 import java.time.Instant
@@ -28,6 +29,13 @@ class InMemoryUserRepository : UserRepository {
         name: DisplayName,
     ) {
         byId.computeIfPresent(id) { _, existing -> existing.copy(displayName = name) }
+    }
+
+    override suspend fun updateRole(
+        id: UserId,
+        role: Role,
+    ) {
+        byId.computeIfPresent(id) { _, existing -> existing.copy(role = role) }
     }
 
     override suspend fun delete(id: UserId) {
