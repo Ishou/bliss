@@ -93,7 +93,7 @@ scripts/survey/
 
 ```sql
 CREATE TABLE campaigns (
-  id          BIGSERIAL PRIMARY KEY,
+  campaign_id UUID        PRIMARY KEY,
   batch_label TEXT        NOT NULL,
   opened_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
   closed_at   TIMESTAMPTZ NULL
@@ -103,10 +103,12 @@ CREATE TABLE campaigns (
 CREATE UNIQUE INDEX campaigns_one_open
   ON campaigns ((1)) WHERE closed_at IS NULL;
 
--- Cheap lookup of the current open row.
-CREATE INDEX campaigns_open_lookup
-  ON campaigns (opened_at DESC) WHERE closed_at IS NULL;
+-- Cheap fallback for findCurrent() when no open row exists.
+CREATE INDEX campaigns_opened_at_idx
+  ON campaigns (opened_at DESC);
 ```
+
+UUID primary key matches the convention established by `survey_items`, `ratings`, `pair_ratings`, and `user_progress`. The application generates the id via the existing `IdGenerator` port — same pattern as ratings.
 
 `batch_label` is a short human string (e.g. `round-7`, `pos-pass-2`) chosen by the maintainer at open time. It carries no enforced format; it is the audit-trail label that ties a campaign to its downstream training batch in `bliss-clue-ai`.
 
@@ -116,12 +118,12 @@ The partial unique index `campaigns_one_open` is the load-bearing invariant: the
 
 ```sql
 ALTER TABLE ratings
-  ADD COLUMN campaign_id BIGINT NULL REFERENCES campaigns(id);
-CREATE INDEX ratings_campaign ON ratings (campaign_id);
+  ADD COLUMN campaign_id UUID NULL REFERENCES campaigns(campaign_id);
+CREATE INDEX ratings_campaign_idx ON ratings (campaign_id);
 
 ALTER TABLE pair_ratings
-  ADD COLUMN campaign_id BIGINT NULL REFERENCES campaigns(id);
-CREATE INDEX pair_ratings_campaign ON pair_ratings (campaign_id);
+  ADD COLUMN campaign_id UUID NULL REFERENCES campaigns(campaign_id);
+CREATE INDEX pair_ratings_campaign_idx ON pair_ratings (campaign_id);
 ```
 
 `campaign_id` is nullable in this spec's migration. New rows inserted by the application after deploy will have it populated by the use case; legacy rows are stamped by the backfill script (§7). A follow-up migration (out of scope here) will tighten to `NOT NULL` once the backfill is verified.
@@ -150,9 +152,9 @@ Schema-only PR first per ADR-0001 §3.
           application/json:
             schema:
               type: object
-              required: [id, batchLabel, openedAt, closedAt]
+              required: [campaignId, batchLabel, openedAt, closedAt]
               properties:
-                id:         { type: integer, format: int64 }
+                campaignId: { type: string, format: uuid }
                 batchLabel: { type: string, maxLength: 64 }
                 openedAt:   { type: string, format: date-time }
                 closedAt:   { type: [string, "null"], format: date-time }
@@ -178,7 +180,7 @@ There is no separate "no current campaign" response shape: when the maintainer h
               required: [submittedAs, campaignId]
               properties:
                 submittedAs: { type: string, enum: [auth, anon] }
-                campaignId:  { type: integer, format: int64 }
+                campaignId:  { type: string, format: uuid }
       '423':
         description: No open campaign — the sondage is locked.
         content:
@@ -197,7 +199,7 @@ There is no separate "no current campaign" response shape: when the maintainer h
               type: object
               required: [campaignId]
               properties:
-                campaignId: { type: integer, format: int64 }
+                campaignId: { type: string, format: uuid }
       '423':
         description: No open campaign — the sondage is locked.
         content:
@@ -218,14 +220,15 @@ These are the operations a maintainer runs from psql when prepping or finishing 
 
 ```sql
 -- Open a new campaign. Fails if one is already open (campaigns_one_open).
-INSERT INTO campaigns (batch_label) VALUES ('round-7')
-RETURNING id, opened_at;
+INSERT INTO campaigns (campaign_id, batch_label)
+     VALUES (gen_random_uuid(), 'round-7')
+  RETURNING campaign_id, opened_at;
 
 -- Close the currently open campaign. Returns the closed row's id for audit.
 UPDATE campaigns
    SET closed_at = now()
  WHERE closed_at IS NULL
-RETURNING id, batch_label, closed_at;
+RETURNING campaign_id, batch_label, closed_at;
 ```
 
 Both statements are single-line, deterministic, and produce a row that the maintainer can paste into the runbook log. Wrapping these in HTTP later is a small, additive change.
@@ -257,7 +260,7 @@ interface CampaignRepository {
 }
 ```
 
-The Postgres adapter implements `findOpen` as `SELECT ... WHERE closed_at IS NULL LIMIT 1` (the partial unique index covers this) and `findCurrent` as `findOpen() ?: SELECT ... ORDER BY id DESC LIMIT 1` (the primary-key index covers the ORDER BY descending; `id` is monotonic with `opened_at` because the BIGSERIAL is assigned before `now()` evaluates in the default).
+The Postgres adapter implements `findOpen` as `SELECT ... WHERE closed_at IS NULL LIMIT 1` (the partial unique index covers this) and `findCurrent` as `findOpen() ?: SELECT ... ORDER BY opened_at DESC LIMIT 1` (covered by `campaigns_opened_at_idx`).
 
 `findCurrent` is the read used by `GET /v1/campaign/current`. The endpoint always returns a row in the steady state; only a brand-new database (no campaigns ever opened) returns a 503 — and that is an operator error caught by deploy-time smoke tests, not a runtime concern.
 
