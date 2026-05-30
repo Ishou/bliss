@@ -106,3 +106,8 @@ env:
 # client credentials (Google + Apple), COOKIE_DOMAIN, and
 # ALLOWED_RETURN_ORIGINS. Bootstrap recipe lands in PR 4.5e.
 envFromSecret: ""
+# Assigns maintainer role to configured users on helm upgrade (ADR-0060); off by default.
+maintainerRoleBootstrap:
+  enabled: false
+  # Comma-separated identity user UUIDs. Empty -> Job runs and no-ops.
+  userIds: ""

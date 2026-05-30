@@ -1,0 +1,51 @@
+{{- if .Values.maintainerRoleBootstrap.enabled }}
+{{/* Post-upgrade: promotes configured user_ids to maintainer and emits UserRoleChanged (ADR-0060). Idempotent. */}}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "bliss-identity-api.fullname" . }}-maintainer-roles
+  annotations:
+    "helm.sh/hook": "post-install,post-upgrade"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+    "helm.sh/hook-weight": "5"
+  labels: {{- include "bliss-identity-api.labels" . | nindent 4 }}
+spec:
+  ttlSecondsAfterFinished: 600
+  backoffLimit: 3
+  template:
+    metadata:
+      # selectorLabels so the bliss-nats NetworkPolicy admits this Job on 4222.
+      labels: {{- include "bliss-identity-api.selectorLabels" . | nindent 8 }}
+    spec:
+      restartPolicy: OnFailure
+      serviceAccountName: {{ include "bliss-identity-api.serviceAccountName" . }}
+      securityContext: {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: set-maintainer-roles
+          image: {{ include "bliss-identity-api.image" . | quote }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext: {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+          command: ["java", "-jar", "/app/identity-api.jar"]
+          args: ["--set-maintainer-roles"]
+          env:
+            {{- if .Values.database.enabled }}
+            - name: IDENTITY_DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.database.clusterName }}-app
+                  key: uri
+            {{- end }}
+            - name: MAINTAINER_USER_IDS
+              value: {{ .Values.maintainerRoleBootstrap.userIds | quote }}
+            {{- with .Values.env }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- with .Values.envFromSecret }}
+          envFrom:
+            - secretRef: {name: {{ . }}}
+          {{- end }}
+          volumeMounts:
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - {name: tmp, emptyDir: {}}
+{{- end }}

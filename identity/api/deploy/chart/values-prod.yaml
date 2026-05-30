@@ -47,3 +47,7 @@ ingress:
 # (ADR-0009 §10). Recipe lands in PR 4.5e. Carries OIDC client credentials
 # (Google + Apple), COOKIE_DOMAIN, and ALLOWED_RETURN_ORIGINS.
 envFromSecret: "bliss-identity-api-env"
+# REPLACE_WITH_MAINTAINER_UUID filled by the operator at deploy time; Job no-ops if unset.
+maintainerRoleBootstrap:
+  enabled: true
+  userIds: "REPLACE_WITH_MAINTAINER_UUID"
