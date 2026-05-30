@@ -1,6 +1,7 @@
 // Application layer barrel for the /sondage surface.
 
 export type {
+  Campaign,
   ItemPair,
   LikertScore,
   PairRatingSubmission,

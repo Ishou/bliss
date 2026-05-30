@@ -151,6 +151,13 @@ export interface SurveyPreferencesPatch {
   readonly deleteProposedOnErasure: boolean;
 }
 
+export interface Campaign {
+  readonly campaignId: string;
+  readonly batchLabel: string;
+  readonly openedAt: string;
+  readonly closedAt: string | null;
+}
+
 // Application port. Concrete adapter: `infrastructure/api/survey/client.ts`.
 export interface SurveyClient {
   getNextItem(opts?: { readonly excludedItemIds?: readonly string[] }): Promise<SurveyItem | null>;
@@ -160,6 +167,7 @@ export interface SurveyClient {
   getProgress(): Promise<SurveyProgress>;
   getContributions(): Promise<ReadonlyArray<SurveyContribution>>;
   patchPreferences(body: SurveyPreferencesPatch): Promise<void>;
+  getCurrentCampaign(): Promise<Campaign>;
 }
 
 // Port for anon-rated dedup. Concrete adapter: `localStorageSurveyAnon.ts`.

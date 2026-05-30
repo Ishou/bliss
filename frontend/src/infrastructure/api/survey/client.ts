@@ -1,6 +1,7 @@
 // HTTP adapter for the survey-api surface (ADR-0056).
 
 import type {
+  Campaign,
   ItemPair,
   PairRatingSubmission,
   RatingResult,
@@ -14,6 +15,7 @@ import type {
 import type { components, paths } from './types';
 
 type CorrectifRejection = components['schemas']['CorrectifRejection'];
+type CampaignResponse = components['schemas']['Campaign'];
 
 export class SignInRequiredError extends Error {
   constructor() {
@@ -37,6 +39,13 @@ export class AlreadyRatedError extends Error {
     super('already rated');
     this.name = 'AlreadyRatedError';
     this.response = response;
+  }
+}
+
+export class SondageLockedError extends Error {
+  constructor() {
+    super('sondage locked');
+    this.name = 'SondageLockedError';
   }
 }
 
@@ -81,6 +90,7 @@ export function createHttpSurveyClient(options: HttpSurveyClientOptions): Survey
       // Auth caller already rated this item; the response envelope is the existing rating.
       throw new AlreadyRatedError((await res.json()) as RatingResult);
     }
+    if (res.status === 423) throw new SondageLockedError();
     if (!res.ok) throw new Error(`submitRating failed: ${res.status}`);
     return (await res.json()) as RatingResult;
   };
@@ -114,7 +124,20 @@ export function createHttpSurveyClient(options: HttpSurveyClientOptions): Survey
         proposedItemId: null,
       });
     }
+    if (res.status === 423) throw new SondageLockedError();
     if (!res.ok) throw new Error(`submitPairRating failed: ${res.status}`);
+  };
+
+  const getCurrentCampaign: SurveyClient['getCurrentCampaign'] = async () => {
+    const res = await fetchImpl(`${base}/v1/campaign/current`, { credentials: 'include' });
+    if (!res.ok) throw new Error(`getCurrentCampaign failed: ${res.status}`);
+    const body = (await res.json()) as CampaignResponse;
+    return {
+      campaignId: body.campaignId,
+      batchLabel: body.batchLabel,
+      openedAt: body.openedAt,
+      closedAt: body.closedAt,
+    } satisfies Campaign;
   };
 
   const getProgress: SurveyClient['getProgress'] = async () => {
@@ -142,7 +165,16 @@ export function createHttpSurveyClient(options: HttpSurveyClientOptions): Survey
     if (!res.ok) throw new Error(`patchPreferences failed: ${res.status}`);
   };
 
-  return { getNextItem, submitRating, getNextPair, submitPairRating, getProgress, getContributions, patchPreferences };
+  return {
+    getNextItem,
+    submitRating,
+    getNextPair,
+    submitPairRating,
+    getProgress,
+    getContributions,
+    patchPreferences,
+    getCurrentCampaign,
+  };
 }
 
 export type { paths };

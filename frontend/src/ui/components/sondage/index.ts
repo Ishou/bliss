@@ -3,4 +3,6 @@ export { CorrectifField, type CorrectifFieldProps } from './CorrectifField';
 export { SignInBanner, type SignInBannerProps } from './SignInBanner';
 export { RatingCard, type RatingCardProps, type Verdict } from './RatingCard';
 export { PairCard, type PairCardProps } from './PairCard';
-export { categorieLabel, posLabel, styleLabel } from './labels';
+export { LockBanner, type LockBannerProps } from './LockBanner';
+export { useCampaignStatus, type CampaignStatus, type CampaignStatusApi } from './useCampaignStatus';
+export { categorieLabel, LOCK_BANNER_TEXT, posLabel, styleLabel } from './labels';

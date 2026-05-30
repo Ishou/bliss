@@ -9,7 +9,7 @@ import type { LikertScore, RatingSubmission, SurveyItem, SurveyPos } from '@/app
 import { useAuth } from '@/ui/components/auth';
 import { ContentPage } from '@/ui/components/layout';
 import type { Verdict } from '@/ui/components/sondage';
-import { RatingCard, SignInBanner } from '@/ui/components/sondage';
+import { LockBanner, RatingCard, SignInBanner, useCampaignStatus } from '@/ui/components/sondage';
 import { Route as ParentRoute } from './sondage';
 
 const articleStyles = css({
@@ -78,6 +78,9 @@ function SondagePage() {
   const surveyAnonStore = ctx.surveyAnonStore;
   const analytics = ctx.analytics ?? NOOP_ANALYTICS;
   const authClient = ctx.authClient;
+
+  const campaignStatus = useCampaignStatus(surveyClient);
+  const isLocked = campaignStatus.status.kind === 'closed';
 
   const [item, setItem] = useState<SurveyItem | null>(null);
   const [loading, setLoading] = useState(true);
@@ -155,6 +158,10 @@ function SondagePage() {
         await loadNext();
         return;
       }
+      if (name === 'SondageLockedError') {
+        campaignStatus.refresh();
+        return;
+      }
       setError(messageForApiError(cause));
     }
   }
@@ -186,6 +193,10 @@ function SondagePage() {
         );
         return;
       }
+      if (name === 'SondageLockedError') {
+        campaignStatus.refresh();
+        return;
+      }
       setError(messageForApiError(cause));
     }
   }
@@ -203,6 +214,9 @@ function SondagePage() {
             Mode paires →
           </Link>
         </div>
+        {campaignStatus.status.kind === 'closed' ? (
+          <LockBanner campaign={campaignStatus.status.campaign} />
+        ) : null}
         <p className={introStyles}>
           Notez la qualité des définitions en un clic : mauvaise, à passer, ou bonne.
           Vos retours alimentent la sélection des indices.
@@ -232,6 +246,7 @@ function SondagePage() {
             item={item}
             onVerdict={onVerdict}
             onCorriger={onCorriger}
+            disabled={isLocked}
           />
         ) : null}
       </article>

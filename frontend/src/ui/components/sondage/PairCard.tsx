@@ -165,14 +165,16 @@ const legendStyles = css({
 export interface PairCardProps {
   readonly pair: ItemPair;
   readonly onVerdict: (verdict: PairVerdict, latencyMs: number) => Promise<void> | void;
+  readonly disabled?: boolean;
 }
 
-export function PairCard({ pair, onVerdict }: PairCardProps) {
+export function PairCard({ pair, onVerdict, disabled = false }: PairCardProps) {
   const startedAtRef = useRef<number>(0);
 
   useEffect(() => {
     startedAtRef.current = performance.now();
     function handler(event: KeyboardEvent): void {
+      if (disabled) return;
       if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) return;
       const target = event.target as HTMLElement | null;
       if (target && /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)) return;
@@ -192,9 +194,10 @@ export function PairCard({ pair, onVerdict }: PairCardProps) {
     }
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [pair.left.itemId, pair.right.itemId, onVerdict]);
+  }, [pair.left.itemId, pair.right.itemId, onVerdict, disabled]);
 
   function submit(verdict: PairVerdict): void {
+    if (disabled) return;
     const latencyMs = Math.max(0, Math.round(performance.now() - startedAtRef.current));
     void onVerdict(verdict, latencyMs);
   }
@@ -241,6 +244,7 @@ export function PairCard({ pair, onVerdict }: PairCardProps) {
           type="button"
           className={cx(verdictButtonBase, verdictLeftStyles)}
           aria-label="Préférer la définition de gauche"
+          aria-disabled={disabled || undefined}
           data-verdict="LEFT_WINS"
           onClick={() => submit('LEFT_WINS')}
         >
@@ -251,6 +255,7 @@ export function PairCard({ pair, onVerdict }: PairCardProps) {
           type="button"
           className={cx(verdictButtonBase, verdictRightStyles)}
           aria-label="Préférer la définition de droite"
+          aria-disabled={disabled || undefined}
           data-verdict="RIGHT_WINS"
           onClick={() => submit('RIGHT_WINS')}
         >
@@ -261,6 +266,7 @@ export function PairCard({ pair, onVerdict }: PairCardProps) {
           type="button"
           className={cx(verdictButtonBase, verdictBothGoodStyles)}
           aria-label="Les deux définitions sont bonnes"
+          aria-disabled={disabled || undefined}
           data-verdict="BOTH_GOOD"
           onClick={() => submit('BOTH_GOOD')}
         >
@@ -271,6 +277,7 @@ export function PairCard({ pair, onVerdict }: PairCardProps) {
           type="button"
           className={cx(verdictButtonBase, verdictBothBadStyles)}
           aria-label="Les deux définitions sont mauvaises"
+          aria-disabled={disabled || undefined}
           data-verdict="BOTH_BAD"
           onClick={() => submit('BOTH_BAD')}
         >
@@ -281,6 +288,7 @@ export function PairCard({ pair, onVerdict }: PairCardProps) {
           type="button"
           className={cx(verdictButtonBase, verdictSkipStyles)}
           aria-label="Passer cette paire"
+          aria-disabled={disabled || undefined}
           data-verdict="SKIP"
           onClick={() => submit('SKIP')}
         >

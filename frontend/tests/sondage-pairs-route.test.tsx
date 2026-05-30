@@ -73,6 +73,12 @@ function stubSurveyClient(overrides: Partial<SurveyClient> = {}): SurveyClient {
     }),
     getContributions: vi.fn().mockResolvedValue([]),
     patchPreferences: vi.fn().mockResolvedValue(undefined),
+    getCurrentCampaign: vi.fn().mockResolvedValue({
+      campaignId: '0190e3a4-7a2c-7c9e-8f1a-000000000007',
+      batchLabel: 'round-7',
+      openedAt: '2026-05-30T10:00:00Z',
+      closedAt: null,
+    }),
     ...overrides,
   };
 }
