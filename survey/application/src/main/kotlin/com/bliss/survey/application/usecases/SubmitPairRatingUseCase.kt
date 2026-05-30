@@ -1,11 +1,14 @@
 package com.bliss.survey.application.usecases
 
+import com.bliss.survey.application.ports.CampaignRepository
 import com.bliss.survey.application.ports.Clock
 import com.bliss.survey.application.ports.IdGenerator
 import com.bliss.survey.application.ports.PairRatingRepository
 import com.bliss.survey.application.ports.RatingRepository
 import com.bliss.survey.application.ports.SurveyItemRepository
 import com.bliss.survey.application.ports.UserProgressRepository
+import com.bliss.survey.domain.model.Campaign
+import com.bliss.survey.domain.model.CampaignId
 import com.bliss.survey.domain.model.ItemId
 import com.bliss.survey.domain.model.PairRating
 import com.bliss.survey.domain.model.PairRatingId
@@ -18,7 +21,9 @@ import com.bliss.survey.domain.model.SurveyItem
 import com.bliss.survey.domain.model.UserId
 
 sealed interface SubmitPairRatingResult {
-    data object Recorded : SubmitPairRatingResult
+    data class Recorded(
+        val campaignId: CampaignId,
+    ) : SubmitPairRatingResult
 
     data object Skipped : SubmitPairRatingResult
 
@@ -29,6 +34,8 @@ sealed interface SubmitPairRatingResult {
     data object PairMotMismatch : SubmitPairRatingResult
 
     data object SameItem : SubmitPairRatingResult
+
+    data object Locked : SubmitPairRatingResult
 }
 
 data class SubmitPairRatingCommand(
@@ -47,9 +54,12 @@ class SubmitPairRatingUseCase(
     private val progress: UserProgressRepository,
     private val ids: IdGenerator,
     private val clock: Clock,
+    private val campaigns: CampaignRepository,
 ) {
     suspend fun execute(cmd: SubmitPairRatingCommand): SubmitPairRatingResult {
+        // SKIP is never persisted — preserve the no-write contract regardless of lock state.
         if (cmd.verdict == PairVerdict.SKIP) return SubmitPairRatingResult.Skipped
+        val openCampaign = campaigns.findOpen() ?: return SubmitPairRatingResult.Locked
         if (cmd.leftItemId == cmd.rightItemId) return SubmitPairRatingResult.SameItem
         val left = items.findById(cmd.leftItemId) ?: return SubmitPairRatingResult.ItemNotFound
         val right = items.findById(cmd.rightItemId) ?: return SubmitPairRatingResult.ItemNotFound
@@ -59,9 +69,9 @@ class SubmitPairRatingUseCase(
         val submittedAs = if (cmd.userId != null) SubmittedAs.AUTH else SubmittedAs.ANON
 
         return when (cmd.verdict) {
-            PairVerdict.LEFT_WINS, PairVerdict.RIGHT_WINS -> insertPreference(cmd, now)
-            PairVerdict.BOTH_GOOD -> insertAbsolutePair(cmd, left, right, qualite = 5, submittedAs, now)
-            PairVerdict.BOTH_BAD -> insertAbsolutePair(cmd, left, right, qualite = 1, submittedAs, now)
+            PairVerdict.LEFT_WINS, PairVerdict.RIGHT_WINS -> insertPreference(cmd, now, openCampaign)
+            PairVerdict.BOTH_GOOD -> insertAbsolutePair(cmd, left, right, qualite = 5, submittedAs, now, openCampaign)
+            PairVerdict.BOTH_BAD -> insertAbsolutePair(cmd, left, right, qualite = 1, submittedAs, now, openCampaign)
             PairVerdict.SKIP -> SubmitPairRatingResult.Skipped
         }
     }
@@ -69,6 +79,7 @@ class SubmitPairRatingUseCase(
     private suspend fun insertPreference(
         cmd: SubmitPairRatingCommand,
         now: java.time.Instant,
+        openCampaign: Campaign,
     ): SubmitPairRatingResult {
         val preference =
             when (cmd.verdict) {
@@ -86,11 +97,12 @@ class SubmitPairRatingUseCase(
                 difficulte = cmd.difficulte,
                 latencyMs = cmd.latencyMs,
                 createdAt = now,
+                campaignId = openCampaign.id,
             )
         val inserted = pairRatings.insert(row)
         if (!inserted) return SubmitPairRatingResult.AlreadyExists
         if (cmd.userId != null) progress.incrementItemsRated(cmd.userId, now)
-        return SubmitPairRatingResult.Recorded
+        return SubmitPairRatingResult.Recorded(openCampaign.id)
     }
 
     private suspend fun insertAbsolutePair(
@@ -100,6 +112,7 @@ class SubmitPairRatingUseCase(
         qualite: Int,
         submittedAs: SubmittedAs,
         now: java.time.Instant,
+        openCampaign: Campaign,
     ): SubmitPairRatingResult {
         // Skip the BOTH_* path if the auth caller already rated either side in binary mode.
         if (cmd.userId != null) {
@@ -119,6 +132,7 @@ class SubmitPairRatingUseCase(
                     proposedItemId = null,
                     latencyMs = cmd.latencyMs,
                     createdAt = now,
+                    campaignId = openCampaign.id,
                 )
             }
         for (r in rows) ratings.insert(r)
@@ -126,6 +140,6 @@ class SubmitPairRatingUseCase(
             progress.incrementItemsRated(cmd.userId, now)
             progress.incrementItemsRated(cmd.userId, now)
         }
-        return SubmitPairRatingResult.Recorded
+        return SubmitPairRatingResult.Recorded(openCampaign.id)
     }
 }
