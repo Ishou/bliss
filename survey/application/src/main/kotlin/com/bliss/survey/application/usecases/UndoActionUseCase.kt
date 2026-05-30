@@ -1,5 +1,6 @@
 package com.bliss.survey.application.usecases
 
+import com.bliss.survey.application.CLOSE_GRACE
 import com.bliss.survey.application.ports.ActionLogRepository
 import com.bliss.survey.application.ports.CampaignRepository
 import com.bliss.survey.application.ports.Clock
@@ -13,7 +14,6 @@ import com.bliss.survey.application.sha256
 import com.bliss.survey.domain.model.ActionKind
 import com.bliss.survey.domain.model.SurveyAction
 import com.bliss.survey.domain.model.UserId
-import java.time.Duration
 
 sealed interface UndoActionResult {
     data object Undone : UndoActionResult
@@ -70,9 +70,5 @@ class UndoActionUseCase(
         val actor = action.userId ?: return
         val decrement = if (action.kind == ActionKind.PAIR && action.createdRatingIds.size == 2) 2 else 1
         progress.decrementItemsRated(actor, decrement, action.priorLastRatedAt)
-    }
-
-    private companion object {
-        val CLOSE_GRACE: Duration = Duration.ofSeconds(8)
     }
 }

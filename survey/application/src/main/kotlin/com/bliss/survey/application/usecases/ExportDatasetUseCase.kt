@@ -1,10 +1,10 @@
 package com.bliss.survey.application.usecases
 
+import com.bliss.survey.application.CLOSE_GRACE
 import com.bliss.survey.application.csv.StyleGuideCsvWriter
 import com.bliss.survey.application.ports.Clock
 import com.bliss.survey.application.ports.RatingRepository
 import com.bliss.survey.application.ports.SurveyItemRepository
-import java.time.Duration
 import java.time.Instant
 import kotlin.math.max
 import kotlin.math.sqrt
@@ -75,9 +75,5 @@ class ExportDatasetUseCase(
         val mean = (authSum + anonSum).toDouble() / n
         val variance = ((authSq + anonSq).toDouble() / n) - mean * mean
         return sqrt(max(0.0, variance))
-    }
-
-    private companion object {
-        val CLOSE_GRACE: Duration = Duration.ofSeconds(8)
     }
 }
