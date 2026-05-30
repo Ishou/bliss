@@ -143,7 +143,11 @@ class SubmitRatingUseCaseLockedTest {
             val accepted = r as SubmitRatingResult.Accepted
             assertThat(accepted.rating.campaignId).isNotNull()
             assertThat(accepted.rating.campaignId!!.value).isEqualTo(campaign.id.value)
-            assertThat(setup.ratings.ratings.single().campaignId).isEqualTo(campaign.id)
+            assertThat(
+                setup.ratings.ratings
+                    .single()
+                    .campaignId,
+            ).isEqualTo(campaign.id)
         }
 
     @Test

@@ -217,13 +217,14 @@ class PgPairRatingRepositoryTest {
     private fun insertCampaignRow(label: String): UUID {
         val id = UUID.randomUUID()
         dataSource.connection.use { c ->
-            c.prepareStatement(
-                "INSERT INTO campaigns (campaign_id, batch_label) VALUES (?, ?)",
-            ).use { s ->
-                s.setObject(1, id)
-                s.setString(2, label)
-                s.executeUpdate()
-            }
+            c
+                .prepareStatement(
+                    "INSERT INTO campaigns (campaign_id, batch_label) VALUES (?, ?)",
+                ).use { s ->
+                    s.setObject(1, id)
+                    s.setString(2, label)
+                    s.executeUpdate()
+                }
         }
         return id
     }

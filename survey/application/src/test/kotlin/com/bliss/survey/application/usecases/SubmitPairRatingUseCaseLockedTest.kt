@@ -137,7 +137,11 @@ class SubmitPairRatingUseCaseLockedTest {
             assertThat(r).isInstanceOf(SubmitPairRatingResult.Recorded::class)
             val recorded = r as SubmitPairRatingResult.Recorded
             assertThat(recorded.campaignId).isEqualTo(c.id)
-            assertThat(setup.pairRatings.rows.single().campaignId).isEqualTo(c.id)
+            assertThat(
+                setup.pairRatings.rows
+                    .single()
+                    .campaignId,
+            ).isEqualTo(c.id)
         }
 
     @Test
