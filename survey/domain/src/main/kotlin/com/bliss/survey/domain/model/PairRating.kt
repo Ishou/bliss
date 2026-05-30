@@ -22,6 +22,7 @@ data class PairRating(
     val difficulte: Int,
     val latencyMs: Int?,
     val createdAt: java.time.Instant,
+    val campaignId: CampaignId? = null,
 ) {
     init {
         require(leftItemId != rightItemId) { "leftItemId and rightItemId must differ" }
