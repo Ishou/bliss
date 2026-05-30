@@ -16,7 +16,7 @@ const bannerStyles = css({
 });
 
 interface LockBannerProps {
-  readonly campaign: Campaign;
+  readonly campaign: Campaign | null;
 }
 
 export function LockBanner({ campaign }: LockBannerProps) {
@@ -26,7 +26,7 @@ export function LockBanner({ campaign }: LockBannerProps) {
       role="status"
       aria-live="polite"
       data-testid="sondage-lock-banner"
-      data-batch-label={campaign.batchLabel}
+      data-batch-label={campaign?.batchLabel ?? ''}
     >
       <span>{LOCK_BANNER_TEXT}</span>
     </div>

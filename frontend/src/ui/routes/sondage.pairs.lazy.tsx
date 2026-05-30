@@ -84,7 +84,8 @@ function SondagePairsPage() {
   const authClient = ctx.authClient;
 
   const campaignStatus = useCampaignStatus(surveyClient);
-  const isLocked = campaignStatus.status.kind === 'closed';
+  const isLocked =
+    campaignStatus.status.kind === 'closed' || campaignStatus.status.kind === 'unavailable';
 
   const [pair, setPair] = useState<ItemPair | null>(null);
   const [loading, setLoading] = useState(true);
@@ -196,6 +197,9 @@ function SondagePairsPage() {
         </div>
         {campaignStatus.status.kind === 'closed' ? (
           <LockBanner campaign={campaignStatus.status.campaign} />
+        ) : null}
+        {campaignStatus.status.kind === 'unavailable' ? (
+          <LockBanner campaign={null} />
         ) : null}
         <p className={introStyles}>
           Comparez deux définitions du même mot. Choisissez votre préférée, marquez-les comme

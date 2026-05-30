@@ -49,6 +49,13 @@ export class SondageLockedError extends Error {
   }
 }
 
+export class NoCampaignError extends Error {
+  constructor() {
+    super('no campaign');
+    this.name = 'NoCampaignError';
+  }
+}
+
 export interface HttpSurveyClientOptions {
   readonly baseUrl: string;
   readonly fetch?: typeof globalThis.fetch;
@@ -130,6 +137,7 @@ export function createHttpSurveyClient(options: HttpSurveyClientOptions): Survey
 
   const getCurrentCampaign: SurveyClient['getCurrentCampaign'] = async () => {
     const res = await fetchImpl(`${base}/v1/campaign/current`, { credentials: 'include' });
+    if (res.status === 503) throw new NoCampaignError();
     if (!res.ok) throw new Error(`getCurrentCampaign failed: ${res.status}`);
     const body = (await res.json()) as CampaignResponse;
     return {

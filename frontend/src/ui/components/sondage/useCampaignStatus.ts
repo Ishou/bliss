@@ -4,7 +4,8 @@ import type { Campaign, SurveyClient } from '@/application/survey';
 export type CampaignStatus =
   | { readonly kind: 'loading' }
   | { readonly kind: 'open'; readonly campaign: Campaign }
-  | { readonly kind: 'closed'; readonly campaign: Campaign };
+  | { readonly kind: 'closed'; readonly campaign: Campaign }
+  | { readonly kind: 'unavailable' };
 
 export interface CampaignStatusApi {
   readonly status: CampaignStatus;
@@ -22,8 +23,14 @@ export function useCampaignStatus(client: SurveyClient | null | undefined): Camp
         kind: c.closedAt === null ? 'open' : 'closed',
         campaign: c,
       });
-    } catch {
-      // keep prior status on transient failure so a network blip doesn't flash the LockBanner
+    } catch (cause) {
+      // 503 → no campaign has ever been opened. Other errors stay transient.
+      const name = (cause as Error | undefined)?.name ?? '';
+      if (name === 'NoCampaignError') {
+        setStatus({ kind: 'unavailable' });
+        return;
+      }
+      // transient network/server blip — keep prior status so the banner doesn't flash
     }
   }, [client]);
 

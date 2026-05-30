@@ -14,7 +14,7 @@ import type {
   SurveyClient,
   SurveyItem,
 } from '@/application/survey';
-import { SondageLockedError } from '@/infrastructure/api/survey/client';
+import { NoCampaignError, SondageLockedError } from '@/infrastructure/api/survey/client';
 import { surveyAnonRatedStore } from '@/infrastructure/session/localStorageSurveyAnon';
 import { AuthProvider } from '@/ui/components/auth';
 import { Route as RootRoute } from '@/ui/routes/__root';
@@ -147,6 +147,20 @@ function renderSondage(opts: {
     ),
   };
 }
+
+describe('/sondage when no campaign has ever been opened (server 503)', () => {
+  it('renders the LockBanner and aria-disables verdict buttons', async () => {
+    const surveyClient = stubSurveyClient({
+      getCurrentCampaign: vi.fn().mockRejectedValue(new NoCampaignError()),
+    });
+    renderSondage({ surveyClient });
+    await waitFor(() =>
+      expect(screen.getByTestId('sondage-lock-banner')).toBeInTheDocument(),
+    );
+    const goodBtn = await screen.findByRole('button', { name: /Bonne définition/i });
+    expect(goodBtn).toHaveAttribute('aria-disabled', 'true');
+  });
+});
 
 describe('/sondage when campaign is closed', () => {
   it('renders the LockBanner and aria-disables verdict buttons', async () => {
