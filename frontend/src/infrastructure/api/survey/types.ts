@@ -4,6 +4,31 @@
  */
 
 export interface paths {
+    "/v1/campaign/current": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Return the current campaign and its lock state.
+         * @description Returns the open campaign if one exists, otherwise the most recently
+         *     closed campaign. The frontend treats a non-null `closedAt` as "the
+         *     sondage is locked": render the LockBanner and disable verdict /
+         *     Corriger controls. Polled on mount and visibilitychange; no
+         *     long-poll, no WebSocket. 503 only when no campaign has ever existed
+         *     (operator error caught by smoke tests).
+         */
+        get: operations["getCurrentCampaign"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/items/next": {
         parameters: {
             query?: never;
@@ -178,6 +203,24 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * @description A rating-collection lifecycle window. At most one campaign is "open"
+         *     (closedAt is null) at any time. When the current campaign is closed
+         *     and no successor has been opened, rating POSTs return 423.
+         */
+        Campaign: {
+            /** Format: uuid */
+            campaignId: string;
+            /** @description Human label tying this campaign to a downstream training batch (e.g. `round-7`). */
+            batchLabel: string;
+            /** Format: date-time */
+            openedAt: string;
+            /**
+             * Format: date-time
+             * @description Null while the campaign is collecting; non-null after the maintainer closes it.
+             */
+            closedAt: string | null;
+        };
         Item: {
             /** Format: uuid */
             itemId: string;
@@ -250,6 +293,18 @@ export interface components {
              * @description UUID of the queued correctif item; null when no correctif was submitted.
              */
             proposedItemId: string | null;
+            /**
+             * Format: uuid
+             * @description Campaign whose lifecycle window this rating landed in. Stamped by the server at insert time.
+             */
+            campaignId: string;
+        };
+        PairRatingResponse: {
+            /**
+             * Format: uuid
+             * @description Campaign whose lifecycle window this pair verdict landed in. Stamped by the server at insert time.
+             */
+            campaignId: string;
         };
         CorrectifRejection: {
             /** Format: uri */
@@ -314,6 +369,27 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    getCurrentCampaign: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Current campaign. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Campaign"];
+                };
+            };
+            503: components["responses"]["ProblemDetails"];
+        };
+    };
     getNextItem: {
         parameters: {
             query?: {
@@ -390,6 +466,15 @@ export interface operations {
                     "application/problem+json": components["schemas"]["CorrectifRejection"];
                 };
             };
+            /** @description No open campaign — the sondage is locked. */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
         };
     };
     getNextPair: {
@@ -436,7 +521,16 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Pair verdict recorded (or SKIP — no rows written). */
+            /** @description Pair verdict recorded — at least one row written. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PairRatingResponse"];
+                };
+            };
+            /** @description SKIP verdict — no rows written, no body returned. */
             204: {
                 headers: {
                     [name: string]: unknown;
@@ -446,6 +540,15 @@ export interface operations {
             400: components["responses"]["ProblemDetails"];
             404: components["responses"]["ProblemDetails"];
             409: components["responses"]["ProblemDetails"];
+            /** @description No open campaign — the sondage is locked. */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
         };
     };
     getMyProgress: {

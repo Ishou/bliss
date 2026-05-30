@@ -31,12 +31,35 @@ servers:
     description: Local k3d
 
 tags:
+  - name: campaigns
+    description: Campaign-lifecycle reads. Open/close happen via direct SQL in v1.
   - name: items
     description: Rating-pool reads and rating submissions.
   - name: me
     description: Per-user progress, contributions, and preferences.
 
 paths:
+  /v1/campaign/current:
+    get:
+      operationId: getCurrentCampaign
+      summary: Return the current campaign and its lock state.
+      description: |
+        Returns the open campaign if one exists, otherwise the most recently
+        closed campaign. The frontend treats a non-null `closedAt` as "the
+        sondage is locked": render the LockBanner and disable verdict /
+        Corriger controls. Polled on mount and visibilitychange; no
+        long-poll, no WebSocket. 503 only when no campaign has ever existed
+        (operator error caught by smoke tests).
+      tags: [campaigns]
+      responses:
+        '200':
+          description: Current campaign.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Campaign' }
+        '503':
+          $ref: '#/components/responses/ProblemDetails'
+
   /v1/items/next:
     get:
       operationId: getNextItem
@@ -106,6 +129,11 @@ paths:
           content:
             application/problem+json:
               schema: { $ref: '#/components/schemas/CorrectifRejection' }
+        '423':
+          description: No open campaign — the sondage is locked.
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/ProblemDetails' }
 
   /v1/items/pairs/next:
     get:
@@ -156,11 +184,21 @@ paths:
           application/json:
             schema: { $ref: '#/components/schemas/PairRatingRequest' }
       responses:
+        '201':
+          description: Pair verdict recorded — at least one row written.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PairRatingResponse' }
         '204':
-          description: Pair verdict recorded (or SKIP — no rows written).
+          description: SKIP verdict — no rows written, no body returned.
         '400': { $ref: '#/components/responses/ProblemDetails' }
         '404': { $ref: '#/components/responses/ProblemDetails' }
         '409': { $ref: '#/components/responses/ProblemDetails' }
+        '423':
+          description: No open campaign — the sondage is locked.
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/ProblemDetails' }
 
   /v1/me/progress:
     get:
@@ -231,6 +269,29 @@ components:
   parameters: {}
 
   schemas:
+    Campaign:
+      type: object
+      description: |
+        A rating-collection lifecycle window. At most one campaign is "open"
+        (closedAt is null) at any time. When the current campaign is closed
+        and no successor has been opened, rating POSTs return 423.
+      required: [campaignId, batchLabel, openedAt, closedAt]
+      properties:
+        campaignId:
+          type: string
+          format: uuid
+        batchLabel:
+          type: string
+          maxLength: 64
+          description: Human label tying this campaign to a downstream training batch (e.g. `round-7`).
+        openedAt:
+          type: string
+          format: date-time
+        closedAt:
+          type: [string, "null"]
+          format: date-time
+          description: Null while the campaign is collecting; non-null after the maintainer closes it.
+
     Item:
       type: object
       required: [itemId, mot, definition, pos, categorie, style, forceClaimed, longueur, tier, isCalibration]
@@ -412,7 +473,7 @@ components:
 
     RatingResponse:
       type: object
-      required: [ratingId, itemId, submittedAs, proposedItemId]
+      required: [ratingId, itemId, submittedAs, proposedItemId, campaignId]
       properties:
         ratingId:       { type: string, format: uuid }
         itemId:         { type: string, format: uuid }
@@ -421,6 +482,13 @@ components:
           enum: [auth, anon]
           x-enum-varnames: [AUTH, ANON]
         proposedItemId: { type: string, format: uuid, nullable: true, description: "UUID of the queued correctif item; null when no correctif was submitted." }
+        campaignId:     { type: string, format: uuid, description: "Campaign whose lifecycle window this rating landed in. Stamped by the server at insert time." }
+
+    PairRatingResponse:
+      type: object
+      required: [campaignId]
+      properties:
+        campaignId: { type: string, format: uuid, description: "Campaign whose lifecycle window this pair verdict landed in. Stamped by the server at insert time." }
 
     CorrectifRejection:
       type: object
