@@ -91,6 +91,27 @@ def stamp_pair_ratings(conn, batches: Iterable[HistoricalBatch], *, dry_run: boo
             )
 
 
+def coverage_report(conn) -> None:
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT COALESCE(c.batch_label, '<unattributed>') AS label,
+                   count(r.rating_id)        AS ratings_n,
+                   count(pr.id)              AS pair_ratings_n
+              FROM (SELECT campaign_id, batch_label FROM campaigns
+                    UNION ALL SELECT NULL, NULL) c
+         LEFT JOIN ratings r       ON r.campaign_id IS NOT DISTINCT FROM c.campaign_id
+         LEFT JOIN pair_ratings pr ON pr.campaign_id IS NOT DISTINCT FROM c.campaign_id
+             GROUP BY c.batch_label
+             ORDER BY label
+            """
+        )
+        print("Coverage:", file=sys.stderr)
+        print(f"  {'label':<24} {'ratings':>10} {'pair_ratings':>14}", file=sys.stderr)
+        for label, ratings_n, pair_ratings_n in cur.fetchall():
+            print(f"  {label:<24} {ratings_n:>10} {pair_ratings_n:>14}", file=sys.stderr)
+
+
 def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--dsn", required=True)
