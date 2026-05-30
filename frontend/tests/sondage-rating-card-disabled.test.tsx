@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { ItemPair, SurveyItem } from '@/application/survey';
 import { PairCard, RatingCard } from '@/ui/components/sondage';

@@ -11,7 +11,7 @@ export interface CampaignStatusApi {
   readonly refresh: () => void;
 }
 
-export function useCampaignStatus(client: SurveyClient | null): CampaignStatusApi {
+export function useCampaignStatus(client: SurveyClient | null | undefined): CampaignStatusApi {
   const [status, setStatus] = useState<CampaignStatus>({ kind: 'loading' });
 
   const fetchStatus = useCallback(async () => {
