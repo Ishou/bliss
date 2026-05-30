@@ -32,6 +32,12 @@ class PgPairRatingRepository(
                     val latency = rating.latencyMs
                     if (latency != null) stmt.setInt(7, latency) else stmt.setNull(7, Types.INTEGER)
                     stmt.setTimestamp(8, Timestamp.from(rating.createdAt))
+                    val campaign = rating.campaignId
+                    if (campaign != null) {
+                        stmt.setObject(9, campaign.value)
+                    } else {
+                        stmt.setNull(9, Types.OTHER)
+                    }
                     try {
                         stmt.executeUpdate() == 1
                     } catch (e: PSQLException) {
@@ -53,8 +59,8 @@ class PgPairRatingRepository(
         const val INSERT_SQL =
             """
             INSERT INTO pair_ratings
-              (id, left_item_id, right_item_id, user_id, verdict, difficulte, latency_ms, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+              (id, left_item_id, right_item_id, user_id, verdict, difficulte, latency_ms, created_at, campaign_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """
     }
 }

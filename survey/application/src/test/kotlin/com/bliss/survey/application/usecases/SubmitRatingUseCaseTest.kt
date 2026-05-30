@@ -5,8 +5,11 @@ import assertk.assertions.isEqualTo
 import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotNull
 import com.bliss.survey.application.filters.FilterPipeline
+import com.bliss.survey.application.ports.CampaignRepository
 import com.bliss.survey.application.ports.Clock
 import com.bliss.survey.application.ports.IdGenerator
+import com.bliss.survey.domain.model.Campaign
+import com.bliss.survey.domain.model.CampaignId
 import com.bliss.survey.domain.model.Categorie
 import com.bliss.survey.domain.model.ItemId
 import com.bliss.survey.domain.model.Pos
@@ -54,6 +57,21 @@ class SubmitRatingUseCaseTest {
         return item
     }
 
+    private val openCampaign =
+        Campaign(
+            id = CampaignId(UUID(0L, 1234L)),
+            batchLabel = "round-7",
+            openedAt = fixedNow.minusSeconds(3600),
+            closedAt = null,
+        )
+
+    private val openCampaignRepo =
+        object : CampaignRepository {
+            override suspend fun findOpen(): Campaign = openCampaign
+
+            override suspend fun findCurrent(): Campaign = openCampaign
+        }
+
     private fun newUseCase() =
         Quad(
             InMemorySurveyItemRepository(),
@@ -70,6 +88,7 @@ class SubmitRatingUseCaseTest {
                     filters = FilterPipeline.default { _ -> false },
                     ids = idGen,
                     clock = clock,
+                    campaigns = openCampaignRepo,
                 )
             Quintet(uc, items, ratings, proposed, progress)
         }

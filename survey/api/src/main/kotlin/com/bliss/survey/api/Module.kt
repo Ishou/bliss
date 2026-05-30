@@ -3,6 +3,7 @@ package com.bliss.survey.api
 import com.bliss.survey.api.auth.SessionMiddleware
 import com.bliss.survey.api.config.SurveyApiConfig
 import com.bliss.survey.api.dto.ProblemDetails
+import com.bliss.survey.api.routes.getCurrentCampaignRoute
 import com.bliss.survey.api.routes.getNextPairRoute
 import com.bliss.survey.api.routes.healthRoute
 import com.bliss.survey.api.routes.meContributionsRoute
@@ -94,6 +95,7 @@ fun Application.surveyApiModule(
         submitRatingRoute(wiring.submitRating)
         getNextPairRoute(wiring.getNextPair)
         submitPairRatingRoute(wiring.submitPairRating)
+        getCurrentCampaignRoute(wiring.getCurrentCampaign)
         meProgressRoute(wiring.userProgress)
         meContributionsRoute(wiring.items)
         mePreferencesRoute(wiring.proposedBy)

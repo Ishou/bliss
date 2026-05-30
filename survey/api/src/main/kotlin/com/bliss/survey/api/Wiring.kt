@@ -3,6 +3,7 @@ package com.bliss.survey.api
 import com.bliss.survey.application.ports.ProposedByRepository
 import com.bliss.survey.application.ports.SurveyItemRepository
 import com.bliss.survey.application.ports.UserProgressRepository
+import com.bliss.survey.application.usecases.GetCurrentCampaignUseCase
 import com.bliss.survey.application.usecases.GetNextItemUseCase
 import com.bliss.survey.application.usecases.GetNextPairUseCase
 import com.bliss.survey.application.usecases.SubmitPairRatingCommand
@@ -19,6 +20,7 @@ class Wiring(
     val submitRating: suspend (SubmitRatingCommand) -> SubmitRatingResult,
     val getNextPair: GetNextPairUseCase,
     val submitPairRating: suspend (SubmitPairRatingCommand) -> SubmitPairRatingResult,
+    val getCurrentCampaign: GetCurrentCampaignUseCase,
     val items: SurveyItemRepository,
     val proposedBy: ProposedByRepository,
     val userProgress: UserProgressRepository,

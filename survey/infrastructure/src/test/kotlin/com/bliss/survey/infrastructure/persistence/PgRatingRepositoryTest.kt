@@ -4,6 +4,7 @@ import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.isNotNull
 import assertk.assertions.isNull
+import com.bliss.survey.domain.model.CampaignId
 import com.bliss.survey.domain.model.Categorie
 import com.bliss.survey.domain.model.FlagReason
 import com.bliss.survey.domain.model.ItemId
@@ -192,6 +193,46 @@ class PgRatingRepositoryTest {
         runTest {
             assertThat(ratings.findAuthRating(ItemId(UUID.randomUUID()), UserId(UUID.randomUUID()))).isNull()
         }
+
+    @Test
+    fun `insert and read back round-trips campaign_id`() =
+        runTest {
+            val item = sampleItem()
+            items.insert(item)
+            val campaignUuid = insertCampaignRow("round-7")
+            val userId = UserId(UUID.randomUUID())
+            val rating = authRating(item.id, userId).copy(campaignId = CampaignId(campaignUuid))
+            ratings.insert(rating)
+
+            val back = ratings.findAuthRating(item.id, userId)
+            assertThat(back).isNotNull()
+            assertThat(back!!.campaignId).isEqualTo(CampaignId(campaignUuid))
+
+            dataSource.connection.use { c ->
+                c.prepareStatement("SELECT campaign_id FROM ratings WHERE rating_id = ?").use { s ->
+                    s.setObject(1, rating.id.value)
+                    s.executeQuery().use { rs ->
+                        assertThat(rs.next()).isEqualTo(true)
+                        assertThat(rs.getObject("campaign_id", UUID::class.java)).isEqualTo(campaignUuid)
+                    }
+                }
+            }
+        }
+
+    private fun insertCampaignRow(label: String): UUID {
+        val id = UUID.randomUUID()
+        dataSource.connection.use { c ->
+            c
+                .prepareStatement(
+                    "INSERT INTO campaigns (campaign_id, batch_label) VALUES (?, ?)",
+                ).use { s ->
+                    s.setObject(1, id)
+                    s.setString(2, label)
+                    s.executeUpdate()
+                }
+        }
+        return id
+    }
 
     private fun sampleItem(): SurveyItem =
         SurveyItem(

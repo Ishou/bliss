@@ -13,6 +13,7 @@ data class Rating(
     val proposedItemId: ItemId?,
     val latencyMs: Int?,
     val createdAt: Instant,
+    val campaignId: CampaignId? = null,
 ) {
     init {
         require(qualite in 1..5) { "qualite must be in 1..5 (was $qualite)" }

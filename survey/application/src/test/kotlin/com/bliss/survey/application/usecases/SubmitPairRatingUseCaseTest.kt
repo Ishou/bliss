@@ -4,8 +4,12 @@ import assertk.assertThat
 import assertk.assertions.containsExactlyInAnyOrder
 import assertk.assertions.hasSize
 import assertk.assertions.isEqualTo
+import assertk.assertions.isInstanceOf
+import com.bliss.survey.application.ports.CampaignRepository
 import com.bliss.survey.application.ports.Clock
 import com.bliss.survey.application.ports.IdGenerator
+import com.bliss.survey.domain.model.Campaign
+import com.bliss.survey.domain.model.CampaignId
 import com.bliss.survey.domain.model.Categorie
 import com.bliss.survey.domain.model.ItemId
 import com.bliss.survey.domain.model.PairVerdict
@@ -55,6 +59,21 @@ class SubmitPairRatingUseCaseTest {
             createdAt = fixedNow,
         )
 
+    private val openCampaign =
+        Campaign(
+            id = CampaignId(UUID(0L, 7777L)),
+            batchLabel = "round-7",
+            openedAt = fixedNow.minusSeconds(3600),
+            closedAt = null,
+        )
+
+    private val openCampaignRepo =
+        object : CampaignRepository {
+            override suspend fun findOpen(): Campaign = openCampaign
+
+            override suspend fun findCurrent(): Campaign = openCampaign
+        }
+
     private fun wire(): Setup {
         val items = InMemorySurveyItemRepository()
         val ratings = InMemoryRatingRepository()
@@ -68,6 +87,7 @@ class SubmitPairRatingUseCaseTest {
                 progress = progress,
                 ids = idGen(),
                 clock = clock,
+                campaigns = openCampaignRepo,
             )
         return Setup(uc, items, ratings, pairRatings, progress)
     }
@@ -99,7 +119,7 @@ class SubmitPairRatingUseCaseTest {
                         latencyMs = 1500,
                     ),
                 )
-            assertThat(result).isEqualTo(SubmitPairRatingResult.Recorded)
+            assertThat(result).isInstanceOf(SubmitPairRatingResult.Recorded::class)
             assertThat(pairRatings.rows).hasSize(1)
             assertThat(pairRatings.rows.single().verdict).isEqualTo(PreferenceVerdict.LEFT_WINS)
             assertThat(ratings.ratings).hasSize(0)

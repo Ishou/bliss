@@ -3,6 +3,7 @@ package com.bliss.survey.infrastructure.persistence
 import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.isNotNull
+import com.bliss.survey.domain.model.CampaignId
 import com.bliss.survey.domain.model.Categorie
 import com.bliss.survey.domain.model.ItemId
 import com.bliss.survey.domain.model.ItemPair
@@ -180,6 +181,53 @@ class PgPairRatingRepositoryTest {
             // Only c is still unseen by this user; not enough for a pair.
             assertThat(items.pickPairForUser(user, exclude = emptySet())).isEqualTo(null)
         }
+
+    @Test
+    fun `insert round-trips campaign_id`() =
+        runTest {
+            val a = sampleItem(definition = "def a")
+            val b = sampleItem(definition = "def b")
+            items.insert(a)
+            items.insert(b)
+            val campaignId = insertCampaignRow("round-7")
+            val row =
+                PairRating(
+                    id = PairRatingId(UUID.randomUUID()),
+                    leftItemId = a.id,
+                    rightItemId = b.id,
+                    userId = UserId(UUID.randomUUID()),
+                    verdict = PreferenceVerdict.LEFT_WINS,
+                    difficulte = 3,
+                    latencyMs = 1500,
+                    createdAt = now,
+                    campaignId = CampaignId(campaignId),
+                )
+            assertThat(pairRatings.insert(row)).isEqualTo(true)
+            dataSource.connection.use { c ->
+                c.prepareStatement("SELECT campaign_id FROM pair_ratings WHERE id = ?").use { s ->
+                    s.setObject(1, row.id.value)
+                    s.executeQuery().use { rs ->
+                        assertThat(rs.next()).isEqualTo(true)
+                        assertThat(rs.getObject("campaign_id", UUID::class.java)).isEqualTo(campaignId)
+                    }
+                }
+            }
+        }
+
+    private fun insertCampaignRow(label: String): UUID {
+        val id = UUID.randomUUID()
+        dataSource.connection.use { c ->
+            c
+                .prepareStatement(
+                    "INSERT INTO campaigns (campaign_id, batch_label) VALUES (?, ?)",
+                ).use { s ->
+                    s.setObject(1, id)
+                    s.setString(2, label)
+                    s.executeUpdate()
+                }
+        }
+        return id
+    }
 
     private fun sampleItem(
         mot: String = "POMME",
