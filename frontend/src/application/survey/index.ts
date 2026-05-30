@@ -1,6 +1,8 @@
 // Application layer barrel for the /sondage surface.
 
 export type {
+  Campaign,
+  CampaignLockKind,
   ItemPair,
   LikertScore,
   PairRatingSubmission,
@@ -21,3 +23,4 @@ export type {
   SurveyStyle,
   SurveyTier,
 } from './types';
+export { lockKindOf } from './types';
