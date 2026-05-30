@@ -249,11 +249,7 @@ internal class TxConnection(
     companion object Key : CoroutineContext.Key<TxConnection>
 }
 
-/**
- * Runs [block] with the ambient transactional connection if one is bound to the
- * current coroutine context, otherwise borrows a fresh pooled connection. The
- * ambient connection is NOT closed here — the transaction owner closes it.
- */
+/** Returns the ambient tx connection if one is bound, otherwise borrows a fresh pooled one; does NOT close the ambient connection. */
 internal suspend fun <T> withTxConnection(
     dataSource: DataSource,
     block: (Connection) -> T,
