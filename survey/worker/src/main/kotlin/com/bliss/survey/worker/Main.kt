@@ -190,7 +190,7 @@ private fun runBootstrapConsumer(): Int =
 private fun runRecompute(): Int {
     val ds = openDataSource()
     val cutoff = System.getenv("SURVEY_GOLD_CUTOFF")?.let(Instant::parse) ?: Instant.parse("2026-05-30T00:00:00Z")
-    val multiplier = System.getenv("SURVEY_GOLD_MULTIPLIER")?.toDoubleOrNull() ?: 3.0
+    val multiplier = System.getenv("SURVEY_GOLD_MULTIPLIER")?.toDouble() ?: 3.0
     runBlocking {
         val items = PgSurveyItemRepository(ds)
         val roles = PgMaintainerRoleRepository(ds)
