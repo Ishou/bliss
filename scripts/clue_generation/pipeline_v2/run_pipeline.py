@@ -21,7 +21,7 @@ VALID_POS = {
     "verbe_infinitif", "verbe_conjugue", "participe_passe",
     "participe_present", "nom_commun", "nom_propre", "adjectif",
     "adverbe", "interjection", "mot_outil", "sigle_abreviation",
-    "autre",
+    "polyvalent", "autre",
 }
 
 VALID_CATEGORIES = {

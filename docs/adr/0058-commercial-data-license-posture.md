@@ -56,6 +56,7 @@ Two recurring confusions need codification:
 | Grammalecte lexique data        | GPL 3.0            | permitted² | permitted | permitted | **forbidden** |
 | Hunspell-fr                     | MPL 2.0            | permitted | permitted | permitted | permitted (with notice) |
 | Mistral-Nemo-Base-2407          | Apache 2.0         | permitted | n/a       | permitted | per Apache 2.0 |
+| unsloth/c4ai-command-r-08-2024-bnb-4bit (Cohere Command-R) | Cohere C4AI Community License | permitted³ | n/a | permitted | **forbidden** |
 | In-house (gold_pilot_v1, eval CSVs the maintainer authored) | maintainer-authored | permitted | permitted | permitted | permitted |
 
 ¹ DBnary training is permitted under the SA-contamination acceptance
@@ -65,6 +66,12 @@ in §"ShareAlike posture" below.
 artifacts (per ADR-0014 and §"Definitions" below); using it locally
 to derive frequency / POS signals stored in our codebase is permitted
 under the GPL "mere use" reading.
+
+³ Cohere C4AI Community License permits commercial fine-tuning and local
+use but prohibits redistribution of model weights. LoRA adapters derived
+from Command-R are stored on the Modal volume and not released externally,
+consistent with the §"ShareAlike posture" mitigations above. The unsloth
+pre-quantized bnb-4bit redistribution is used under the same license terms.
 
 ### Definitions (binding)
 

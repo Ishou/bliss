@@ -73,7 +73,7 @@ ADR-0058  data/external/**                         Licensed-data posture (commer
 ADR-0058  data/dbnary/**                           DBnary SA-acceptance + distribution discipline
 ADR-0058  scripts/clue_generation/**               Training/filter paths must classify per ADR-0058 matrix
 ADR-0058  scripts/eval/**                          Same — eval paths that feed training must classify
-ADR-0058  modal_jobs/**                            Training paths on Modal must classify per ADR-0058
+ADR-0058  modal_jobs/**                            Training/inference on Modal must classify per ADR-0058 (incl. the Command-R base model)
 ADR-0059  survey/**/persistence/**                 Campaign lifecycle: campaigns table, partial-unique open invariant
 ADR-0059  survey/**/usecases/SubmitRatingUseCase.kt           Locked arm + campaign_id stamping
 ADR-0059  survey/**/usecases/SubmitPairRatingUseCase.kt       Locked arm + campaign_id stamping
