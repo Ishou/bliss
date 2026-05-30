@@ -18,6 +18,7 @@ data class SurveyItem(
     val expected: CalibrationAnswer?,
     val retiredAt: Instant?,
     val createdAt: Instant,
+    val trainingWeight: Double = 1.0,
 ) {
     init {
         require(mot.isNotBlank()) { "mot must not be blank" }
@@ -25,6 +26,7 @@ data class SurveyItem(
         require(forceClaimed in 1..5) { "force_claimed must be in 1..5 (was $forceClaimed)" }
         require(longueur > 0) { "longueur must be positive (was $longueur)" }
         require(sourceBatch.isNotBlank()) { "source_batch must not be blank" }
+        require(trainingWeight > 0) { "training_weight must be positive (was $trainingWeight)" }
     }
 }
 
