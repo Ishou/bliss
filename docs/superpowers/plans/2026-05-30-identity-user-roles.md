@@ -892,8 +892,7 @@ import kotlin.system.exitProcess
 
 private val log = LoggerFactory.getLogger("identity-api")
 
-// Entrypoint. With `--set-maintainer-roles`, runs the configure-in-cluster role
-// bootstrap (ADR-0060) and exits; otherwise starts the HTTP server.
+// With `--set-maintainer-roles` runs the configure-in-cluster bootstrap (ADR-0060); otherwise starts the HTTP server.
 fun main(args: Array<String>) {
     if (args.firstOrNull() == "--set-maintainer-roles") {
         exitProcess(runSetMaintainerRoles())
@@ -986,9 +985,7 @@ git commit -s -m "feat(identity-api): --set-maintainer-roles bootstrap entrypoin
 - [ ] **Step 1: Add the values block** to `values.yaml` (after `envFromSecret`):
 
 ```yaml
-# Configure-in-cluster maintainer role assignment (ADR-0060). The post-upgrade
-# Job promotes each listed identity user_id to role=maintainer and emits
-# UserRoleChanged. Off by default; prod enables it. Requires database.enabled.
+# Assigns maintainer role to configured users on helm upgrade (ADR-0060); off by default.
 maintainerRoleBootstrap:
   enabled: false
   # Comma-separated identity user UUIDs. Empty -> Job runs and no-ops.
