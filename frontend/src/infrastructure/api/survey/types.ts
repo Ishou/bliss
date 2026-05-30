@@ -327,7 +327,7 @@ export interface components {
              */
             campaignId: string;
             /** @description Capability token for undoing this action. Non-null on 201 (fresh action); null on 409 (idempotent re-rate). Present it in the body of POST /v1/actions/undo. */
-            undoToken?: string | null;
+            undoToken: string | null;
         };
         PairRatingResponse: {
             /**
@@ -335,8 +335,8 @@ export interface components {
              * @description Campaign whose lifecycle window this pair verdict landed in. Stamped by the server at insert time.
              */
             campaignId: string;
-            /** @description Capability token for undoing this pair action. Non-null on 201; null on 204 (SKIP, no body). Present it in the body of POST /v1/actions/undo. */
-            undoToken?: string | null;
+            /** @description Capability token for undoing this pair action. Non-null on 201. Present it in the body of POST /v1/actions/undo. */
+            undoToken: string;
         };
         CorrectifRejection: {
             /** Format: uri */

@@ -514,7 +514,7 @@ components:
 
     RatingResponse:
       type: object
-      required: [ratingId, itemId, submittedAs, proposedItemId, campaignId]
+      required: [ratingId, itemId, submittedAs, proposedItemId, campaignId, undoToken]
       properties:
         ratingId:       { type: string, format: uuid }
         itemId:         { type: string, format: uuid }
@@ -534,15 +534,14 @@ components:
 
     PairRatingResponse:
       type: object
-      required: [campaignId]
+      required: [campaignId, undoToken]
       properties:
         campaignId: { type: string, format: uuid, description: "Campaign whose lifecycle window this pair verdict landed in. Stamped by the server at insert time." }
         undoToken:
           type: string
-          nullable: true
           description: >-
-            Capability token for undoing this pair action. Non-null on 201; null
-            on 204 (SKIP, no body). Present it in the body of POST /v1/actions/undo.
+            Capability token for undoing this pair action. Non-null on 201.
+            Present it in the body of POST /v1/actions/undo.
 
     CorrectifRejection:
       type: object
