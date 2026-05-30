@@ -234,7 +234,7 @@ export function PairCard({ pair, onVerdict }: PairCardProps) {
       <div
         className={verdictRowStyles}
         role="group"
-        aria-label="Verdict pairwise"
+        aria-label="Comparaison des deux définitions"
         aria-keyshortcuts="a d s x space escape"
       >
         <button

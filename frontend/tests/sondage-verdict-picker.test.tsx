@@ -37,10 +37,11 @@ describe('RatingCard verdict picker', () => {
 
   it('each verdict button has an aria-label citing the definition and meets the 56px touch target', () => {
     const { container } = render(<RatingCard item={sampleItem} onVerdict={() => Promise.resolve()} onCorriger={async () => {}} />);
+    const verdictLabels = { BAD: 'Mauvaise', SKIP: 'Passer', GOOD: 'Bonne' } as const;
     for (const verdict of ['BAD', 'SKIP', 'GOOD'] as const) {
       const btn = container.querySelector<HTMLButtonElement>(`[data-verdict="${verdict}"]`);
       expect(btn).not.toBeNull();
-      expect(btn!.getAttribute('aria-label')).toContain(verdict);
+      expect(btn!.getAttribute('aria-label')).toContain(verdictLabels[verdict]);
       expect(btn!.getAttribute('aria-label')).toContain('Animal domestique à moustaches');
       // jsdom doesn't compute layout; assert the css contract is wired via class names rather than getBoundingClientRect.
       expect(btn!.className).toMatch(/min/i);
@@ -141,10 +142,9 @@ describe('RatingCard verdict picker', () => {
     await act(async () => {
       fireEvent.click(container.querySelector('button[data-verdict="CORRIGER"]') as HTMLButtonElement);
     });
-    const select = container.querySelector('select#correctif-pos') as HTMLSelectElement;
-    expect(select).not.toBeNull();
-    expect(select.getAttribute('aria-label')).toBe('Nature grammaticale corrigée');
-    expect(select.value).toBe(sampleItem.pos);
+    const trigger = screen.getByRole('combobox', { name: 'Nature grammaticale' });
+    expect(trigger).not.toBeNull();
+    expect(trigger.textContent).toContain('Nom commun');
   });
 
   it('changing only the POS submits the original text with the new POS', async () => {
@@ -155,10 +155,11 @@ describe('RatingCard verdict picker', () => {
     await act(async () => {
       fireEvent.click(container.querySelector('button[data-verdict="CORRIGER"]') as HTMLButtonElement);
     });
-    const select = container.querySelector('select#correctif-pos') as HTMLSelectElement;
     await act(async () => {
-      fireEvent.change(select, { target: { value: 'polyvalent' } });
+      fireEvent.click(screen.getByRole('combobox', { name: 'Nature grammaticale' }));
     });
+    const option = await screen.findByRole('option', { name: 'Polyvalent' });
+    await act(async () => { fireEvent.click(option); });
     await act(async () => {
       fireEvent.click(container.querySelector('[data-testid="correctif-submit"]') as HTMLButtonElement);
     });
