@@ -44,3 +44,39 @@ backdoor through a UI feature.
 **Triggers to revisit.** Sustained user reports of vote loss on
 flaky networks; PWA install becoming a product goal; a multi-context
 RFC for resilient writes.
+
+## SigNoz alert: stale campaign lock on `/sondage`
+
+**Gap.** ADR-0059's operational risk note ("maintainer closes a
+campaign and forgets to open the next one") is unguarded. Users would
+see the lock banner indefinitely; the maintainer would only notice via
+direct sondage traffic complaints.
+
+**Why later.** The campaign-lock spec §11 explicitly listed this
+alert as "recommended, not in v1 PR sequence". Designing it cleanly
+requires picking between two query shapes — both need verification
+against the survey-api's actual emitted metrics in SigNoz before
+shipping (the 2026-05-21 SigNoz-alerts rollout cycled through 4 PRs
+because the first author synthesized from partial docs instead of
+fetching a known-working example).
+
+**Shape A — gauge-based (cleanest).** Add a periodic gauge in
+`survey-api` exposing `survey_campaign_open` (1 if `findOpen() != null`,
+0 otherwise). PromQL: `min_over_time(survey_campaign_open[1h]) == 0`.
+Adds ~10 lines of Kotlin + an instrumentation hook.
+
+**Shape B — 423-rate proxy (no backend change).** Alert on sustained
+`http_server_request_duration_seconds_count{http_response_status_code="423",service_name="survey-api"}`
+above zero for >1 h. Imperfect: false-fires during legitimate lock
+windows (acceptable since those are rare), and the exact metric name
+depends on the OTel SDK version actually emitting it. Verify via
+SigNoz's "Metrics Explorer" against a running survey-api before
+writing the rule.
+
+**Drop in.** `infra/observability/alerts/files/survey-campaign-lock-stale.json`
+mirroring the existing `nats-consumer-lag-warning.json` v5
++ v2alpha1 schema. Notification channel: `alerts@wordsparrow.io`
+(same as NATS alerts).
+
+**Triggers to revisit.** Any time a sondage outage gets traced back
+to a forgotten campaign-open.

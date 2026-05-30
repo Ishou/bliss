@@ -17,6 +17,9 @@ spec:
       # password at initdb and surfaces it on its auto-managed `<cluster>-app`
       # Secret, which the api Deployment reads via `valueFrom: secretKeyRef`
       # for the runtime SURVEY_JDBC_URL.
+      # `postInitSQL` runs as superuser at cluster create only; existing clusters need a manual `kubectl cnpg psql` run of the same statement (see README).
+      postInitSQL:
+        - "CREATE EXTENSION IF NOT EXISTS pg_uuidv7;"
   storage:
     size: {{ .Values.cluster.storage.size }}
     {{- with .Values.cluster.storage.storageClass }}
