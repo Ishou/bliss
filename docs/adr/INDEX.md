@@ -80,6 +80,7 @@ ADR-0059  survey/**/usecases/SubmitPairRatingUseCase.kt       Locked arm + campa
 ADR-0059  survey/api/openapi.yaml                  /v1/campaign/current + 423 on rating POSTs
 ADR-0059  frontend/src/ui/components/sondage/**    LockBanner + useCampaignStatus + disabled cards
 ADR-0059  scripts/survey/backfill_campaigns.py     Historical campaign attribution from Modal logs
+ADR-0060  identity/**                              Identity user roles + UserRoleChanged event (gold-weighting Spec A)
 ```
 
 ## Adding entries
