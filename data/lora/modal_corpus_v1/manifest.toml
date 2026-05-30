@@ -27,6 +27,13 @@ user_prompt_template = "Donne une définition de mot fléché pour {mot}."
 #   op       := "==" | "!="
 #   operand  := IDENT | "'" STRING "'"
 # Anything outside this grammar raises ValueError at build time.
+#
+# Optional per-row weighting: a source may set `weight_column = "<col>"`
+# to replicate each row by its own column value ("row wins") instead of
+# the uniform per-source `weight`. Such a source MUST set `weight = 1`
+# (the two are never multiplied) or the build raises. Blank, missing, or
+# non-numeric cells default to 1.0 (one copy). Used by the survey export's
+# frozen `training_weight` column (ADR-0056, Spec C/D).
 
 [[sources]]
 name = "gold_pilot_v1"
