@@ -230,3 +230,14 @@ def test_per_row_weight_replicates_by_column_value(tmp_rowweight_dir):
     assert counts["CHIEN"] == 1   # 1.0 -> 1 copy
     assert counts["SOURIS"] == 1  # blank cell -> default 1.0 -> 1 copy
     assert len(rows) == 5
+
+
+def test_weight_column_with_nonunit_weight_raises(tmp_rowweight_dir):
+    """weight_column + weight != 1 is a misconfiguration -> ValueError (never multiplied)."""
+    manifest = _rowweight_manifest(tmp_rowweight_dir)
+    manifest.write_text(
+        manifest.read_text(encoding="utf-8").replace("weight = 1", "weight = 2"),
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="weight_column requires weight = 1"):
+        bc.load_all_sources(tmp_rowweight_dir, manifest)
