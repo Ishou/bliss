@@ -914,7 +914,6 @@ fun main(args: Array<String>) {
     }.start(wait = true)
 }
 
-// Pure orchestration: parse the comma-separated id list and promote each to MAINTAINER.
 internal suspend fun setMaintainerRoles(
     rawIds: String?,
     useCase: SetUserRoleUseCase,
@@ -925,7 +924,6 @@ internal suspend fun setMaintainerRoles(
         .filter { it.isNotEmpty() }
         .map { useCase.execute(UserId.parse(it), Role.MAINTAINER) }
 
-// I/O glue: wire real Postgres + NATS adapters, run the bootstrap, log outcomes. Returns the process exit code.
 private fun runSetMaintainerRoles(): Int {
     val db =
         IdentityDatabase(poolName = "identity-role-bootstrap", maxPoolSize = 2, requireUrl = true)
@@ -1032,7 +1030,8 @@ spec:
           image: {{ include "bliss-identity-api.image" . | quote }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           securityContext: {{- toYaml .Values.containerSecurityContext | nindent 12 }}
-          command: ["java", "-jar", "/app/identity-api.jar", "--set-maintainer-roles"]
+          command: ["/app/bin/identity-api"]
+          args: ["--set-maintainer-roles"]
           env:
             {{- if .Values.database.enabled }}
             - name: IDENTITY_DATABASE_URL
@@ -1067,7 +1066,7 @@ Expected: `1 chart(s) linted, 0 chart(s) failed`.
 Also render to eyeball the Job:
 
 Run: `helm template identity/api/deploy/chart --values identity/api/deploy/chart/values-prod.yaml --show-only templates/job-maintainer-roles.yaml`
-Expected: a Job manifest with `command: ["java","-jar","/app/identity-api.jar","--set-maintainer-roles"]` and `MAINTAINER_USER_IDS` set.
+Expected: a Job manifest with `command: ["/app/bin/identity-api"]`, `args: ["--set-maintainer-roles"]`, and `MAINTAINER_USER_IDS` set.
 
 - [ ] **Step 5: Commit**
 
