@@ -31,3 +31,31 @@ Append-only log of decisions the orchestrator made during this rollout. For huma
 ## Event log
 
 (entries appended chronologically by the cron)
+
+### 2026-05-30 — COMPLETE: Spec B fully merged to `main`
+
+All seven phase PRs merged in dependency order:
+
+| Phase | PR | Branch | Notes |
+|---|---|---|---|
+| B0 | #697 | `docs/survey-training-weight` | Bundle: spec + plan + procedure + log |
+| B1 | #699 | `feat/survey-training-weight-migration` | V8 migration + `maintainer_roles` table |
+| B2 | #700 | `feat/survey-gold-window-policy` | `GoldWindowPolicy` (inclusive cutoff) |
+| B3 | #701 | `feat/survey-training-weight-repos` | `updateTrainingWeight` + `MaintainerRoleRepository` + Pg adapters |
+| B4 | #702 | `feat/survey-recompute-use-case` | `RecomputeTrainingWeightUseCase` (3 triggers, out-of-order guard) |
+| B5 | #704 | `feat/survey-role-changed-consumer` | `UserRoleChangedConsumer` mirroring UserDeleted slice |
+| B6 | #705 | `feat/survey-training-weight-wiring` | Trigger-2 stamp + UserDeleted role erasure + api/worker/chart wiring |
+
+Fix cycles consumed (all bot auto-fixer, no escalation):
+- B1: `truncateAll` missing `maintainer_roles` — auto-fixed.
+- B3: `(Spec B)` task-reference in a KDoc — auto-fixed (comment-rot rule).
+- B5: ADR-0049 durable-registry row missing — auto-fixed (`b3fb96ce`).
+- B6 cycle 1: `toDoubleOrNull()` swallowing invalid `SURVEY_GOLD_MULTIPLIER` — auto-fixed (`d007425e`, fail-fast on bad env).
+- B6 cycle 2: two 2-line `#` comment blocks in `values.yaml` — auto-fixed (`93ffb5c7`, collapsed to one-liners citing ADR-0056).
+- Commitlint PascalCase-subject gotcha hit B2/B4 (plan literal subjects); each amended to lowercase first word.
+
+Cap-override (ADR-0001 §4): invoked on B6 from first push (coherent integration layer; splitting would leave half-wired constructors that don't compile). No other phase exceeded the target.
+
+Orchestration cron `dba7eb0f` deleted on completion.
+
+**Remaining in the gold-weighting rollout (NOT part of Spec B):** Spec C (`ExportDatasetUseCase` reads/emits the frozen `training_weight`) and Spec D (wire survey export into `build_modal_corpus.py`). Each needs its own spec → plan → orchestration.
