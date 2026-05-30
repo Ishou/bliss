@@ -294,4 +294,4 @@ def generate(
 
 
 if __name__ == "__main__":
-    sys.exit("Lance ce fichier via `modal run modal_jobs/04_generate.py::generate`.")
+    sys.exit("Lance ce fichier via `modal run modal_jobs/04_generate_command_r.py::generate`.")
