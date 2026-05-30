@@ -12,7 +12,6 @@ import com.bliss.identity.domain.user.DisplayName
 import com.bliss.identity.domain.user.Role
 import com.bliss.identity.domain.user.User
 import com.bliss.identity.domain.user.UserId
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Test
 import java.time.Instant
@@ -22,12 +21,10 @@ class SetUserRoleUseCaseTest {
     private val now = Instant.parse("2026-05-30T12:00:00Z")
     private val clock = FixedClock(now)
 
-    private fun fixture(role: Role = Role.PLAYER): Pair<FakeUserRepository, UserId> {
+    private suspend fun fixture(role: Role = Role.PLAYER): Pair<FakeUserRepository, UserId> {
         val users = FakeUserRepository()
         val id = UserId(UUID.randomUUID())
-        runBlocking {
-            users.create(User(id, DisplayName.of("Alice"), now, now, role))
-        }
+        users.create(User(id, DisplayName.of("Alice"), now, now, role))
         return users to id
     }
 
