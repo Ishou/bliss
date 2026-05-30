@@ -17,9 +17,7 @@ VALUES
    2, 5, 'gold', 'gold_v1', 'mid', FALSE, NULL, NULL,
    '2026-05-25T12:00:00Z');
 
--- Export settles per-campaign-at-close (ADR-0059): a rating is exported only
--- once its campaign is closed and past the grace window, so the fixture's
--- ratings belong to a campaign closed well before any export run.
+-- Ratings belong to a closed campaign past the 8 s grace so they settle (ADR-0059).
 INSERT INTO campaigns
   (campaign_id, batch_label, opened_at, closed_at)
 VALUES
