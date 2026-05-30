@@ -7,11 +7,15 @@ import com.bliss.survey.application.ports.Clock
 import com.bliss.survey.application.ports.IdGenerator
 import com.bliss.survey.application.usecases.ExportDatasetUseCase
 import com.bliss.survey.application.usecases.IngestBatchUseCase
+import com.bliss.survey.application.usecases.RecomputeTrainingWeightUseCase
 import com.bliss.survey.application.usecases.RetireSaturatedItemsUseCase
 import com.bliss.survey.domain.model.Tier
 import com.bliss.survey.domain.routing.KCoveragePolicy
+import com.bliss.survey.domain.weight.GoldWindowPolicy
 import com.bliss.survey.infrastructure.language.LinguaLanguageDetector
 import com.bliss.survey.infrastructure.nats.UserDeletedConsumerConfig
+import com.bliss.survey.infrastructure.nats.UserRoleChangedConsumerConfig
+import com.bliss.survey.infrastructure.persistence.PgMaintainerRoleRepository
 import com.bliss.survey.infrastructure.persistence.PgRatingRepository
 import com.bliss.survey.infrastructure.persistence.PgSurveyItemRepository
 import com.bliss.survey.infrastructure.persistence.SurveyDatabase
@@ -47,6 +51,7 @@ fun main(args: Array<String>) {
                 "--ingest-batch" -> runIngest(opts)
                 "--export-dataset" -> runExportCli(opts)
                 "--retire-saturated" -> runRetire()
+                "--recompute-training-weights" -> runRecompute()
                 "--bootstrap-consumer" -> runBootstrapConsumer()
                 "--delete-consumer" -> runDeleteConsumer()
                 else -> {
@@ -67,7 +72,8 @@ private fun printUsage() {
         "usage: survey-worker --ingest-batch --csv <path> --source-batch <id> [--tier mid] | " +
             "--export-dataset --output <path> [--min-ratings 2] [--since ISO] " +
             "[--auth-weight 1.0] [--anon-weight 0.5] | " +
-            "--retire-saturated | --bootstrap-consumer | --delete-consumer | --help",
+            "--retire-saturated | --recompute-training-weights | " +
+            "--bootstrap-consumer | --delete-consumer | --help",
     )
 }
 
@@ -171,13 +177,28 @@ private fun runRetire(): Int {
 private fun runBootstrapConsumer(): Int =
     withNatsConnection { conn ->
         UserDeletedConsumerConfig.bootstrap(conn)
+        UserRoleChangedConsumerConfig.bootstrap(conn)
         log.info(
-            "event=consumer_bootstrap_done stream={} durable={}",
+            "event=consumer_bootstrap_done stream={} durables={},{}",
             UserDeletedConsumerConfig.STREAM_NAME,
             UserDeletedConsumerConfig.DURABLE_NAME,
+            UserRoleChangedConsumerConfig.DURABLE_NAME,
         )
         0
     }
+
+private fun runRecompute(): Int {
+    val ds = openDataSource()
+    val cutoff = System.getenv("SURVEY_GOLD_CUTOFF")?.let(Instant::parse) ?: Instant.parse("2026-05-30T00:00:00Z")
+    val multiplier = System.getenv("SURVEY_GOLD_MULTIPLIER")?.toDoubleOrNull() ?: 3.0
+    runBlocking {
+        val items = PgSurveyItemRepository(ds)
+        val roles = PgMaintainerRoleRepository(ds)
+        RecomputeTrainingWeightUseCase(roles, items, GoldWindowPolicy(cutoff, multiplier)).recomputeAll()
+    }
+    log.info("event=recompute_training_weights_done")
+    return 0
+}
 
 // Destructive; NOT wired into any chart hook — explicit operator action for immutable-field migrations.
 private fun runDeleteConsumer(): Int =

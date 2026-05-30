@@ -100,6 +100,12 @@ env:
   # Identity-api base URL for session-cookie verification.
   - name: IDENTITY_BASE_URL
     value: "http://wordsparrow-identity-api.wordsparrow:8082"
+  # Frozen gold-weight window: maintainer-authored items created on/after the
+  # cutoff get the multiplier stamped onto training_weight (ADR-0056).
+  - name: SURVEY_GOLD_CUTOFF
+    value: "2026-05-30T00:00:00Z"
+  - name: SURVEY_GOLD_MULTIPLIER
+    value: "3.0"
 # Name of a Kubernetes Secret to envFrom into the pod. ADR-0009 §10:
 # bootstrapped via `kubectl create secret`, never committed. Carries
 # SURVEY_DB_USER / SURVEY_DB_PASSWORD (CNPG injects SURVEY_JDBC_URL via
@@ -116,6 +122,10 @@ calibration:
 # JetStream durable consumer bootstrap (pre-install/pre-upgrade Job).
 consumerBootstrap:
   enabled: true
+# Manual re-materialize of training_weight under the current GoldWindowPolicy.
+# Operator flips this on for a policy-change re-run (post-upgrade Job).
+recomputeTrainingWeights:
+  enabled: false
 # Hourly retire CronJob — runs `--retire-saturated` once an hour and exits.
 retire:
   enabled: true

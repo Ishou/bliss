@@ -86,6 +86,7 @@ fun Application.surveyApiModule(
 
     monitor.subscribe(ApplicationStopped) {
         wiring.userDeletedConsumer?.stop()
+        wiring.userRoleChangedConsumer?.stop()
         wiring.closeNats()
     }
 

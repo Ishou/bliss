@@ -2,6 +2,8 @@ package com.bliss.survey.infrastructure.nats
 
 import assertk.assertThat
 import assertk.assertions.containsExactlyInAnyOrder
+import com.bliss.survey.application.ports.MaintainerRole
+import com.bliss.survey.application.ports.MaintainerRoleRepository
 import com.bliss.survey.application.ports.ProposedByRepository
 import com.bliss.survey.application.ports.RatingRepository
 import com.bliss.survey.application.ports.SurveyItemRepository
@@ -93,6 +95,7 @@ class UserDeletedConsumerTest {
                     proposedBy = NoopProposedBy,
                     items = NoopItems,
                     progress = NoopProgress,
+                    maintainerRoles = NoopMaintainerRoles,
                 )
             val consumer =
                 UserDeletedConsumer(
@@ -191,6 +194,7 @@ class UserDeletedConsumerTest {
                 proposedBy = NoopProposedBy,
                 items = NoopItems,
                 progress = NoopProgress,
+                maintainerRoles = NoopMaintainerRoles,
             )
         val consumer =
             UserDeletedConsumer(
@@ -310,5 +314,15 @@ class UserDeletedConsumerTest {
         override suspend fun get(userId: UserId) = null
 
         override suspend fun deleteByUser(userId: UserId) = Unit
+    }
+
+    private object NoopMaintainerRoles : MaintainerRoleRepository {
+        override suspend fun find(userId: UserId): MaintainerRole? = null
+
+        override suspend fun upsert(role: MaintainerRole) = Unit
+
+        override suspend fun delete(userId: UserId) = Unit
+
+        override suspend fun listMaintainers(): List<UserId> = emptyList()
     }
 }
