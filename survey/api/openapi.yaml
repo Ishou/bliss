@@ -231,6 +231,29 @@ components:
   parameters: {}
 
   schemas:
+    Campaign:
+      type: object
+      description: |
+        A rating-collection lifecycle window. At most one campaign is "open"
+        (closedAt is null) at any time. When the current campaign is closed
+        and no successor has been opened, rating POSTs return 423.
+      required: [campaignId, batchLabel, openedAt, closedAt]
+      properties:
+        campaignId:
+          type: string
+          format: uuid
+        batchLabel:
+          type: string
+          maxLength: 64
+          description: Human label tying this campaign to a downstream training batch (e.g. `round-7`).
+        openedAt:
+          type: string
+          format: date-time
+        closedAt:
+          type: [string, "null"]
+          format: date-time
+          description: Null while the campaign is collecting; non-null after the maintainer closes it.
+
     Item:
       type: object
       required: [itemId, mot, definition, pos, categorie, style, forceClaimed, longueur, tier, isCalibration]
