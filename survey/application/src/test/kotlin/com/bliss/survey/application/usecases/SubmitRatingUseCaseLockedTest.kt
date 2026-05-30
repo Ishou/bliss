@@ -46,6 +46,8 @@ class SubmitRatingUseCaseLockedTest {
             override suspend fun findOpen(): Campaign? = current
 
             override suspend fun findCurrent(): Campaign? = current
+
+            override suspend fun findById(id: CampaignId): Campaign? = current
         }
 
     private fun seedItem(items: InMemorySurveyItemRepository): SurveyItem {

@@ -72,6 +72,8 @@ class SubmitPairRatingUseCaseTest {
             override suspend fun findOpen(): Campaign = openCampaign
 
             override suspend fun findCurrent(): Campaign = openCampaign
+
+            override suspend fun findById(id: CampaignId): Campaign = openCampaign
         }
 
     private fun wire(): Setup {

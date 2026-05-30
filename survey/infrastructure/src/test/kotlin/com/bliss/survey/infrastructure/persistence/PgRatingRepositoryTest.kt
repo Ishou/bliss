@@ -189,6 +189,24 @@ class PgRatingRepositoryTest {
         }
 
     @Test
+    fun `deleteByIds removes only the named ratings and is a no-op on empty`() =
+        runTest {
+            val item = sampleItem()
+            items.insert(item)
+            val keep = authRating(item.id, UserId(UUID.randomUUID()))
+            val drop = authRating(item.id, UserId(UUID.randomUUID()))
+            ratings.insert(keep)
+            ratings.insert(drop)
+
+            ratings.deleteByIds(emptyList())
+            assertThat(ratings.countByItem(item.id)).isEqualTo(2)
+
+            ratings.deleteByIds(listOf(drop.id))
+            assertThat(ratings.countByItem(item.id)).isEqualTo(1)
+            assertThat(ratings.findAuthRating(item.id, keep.userId!!)).isNotNull()
+        }
+
+    @Test
     fun `findAuthRating returns null when no rating exists`() =
         runTest {
             assertThat(ratings.findAuthRating(ItemId(UUID.randomUUID()), UserId(UUID.randomUUID()))).isNull()

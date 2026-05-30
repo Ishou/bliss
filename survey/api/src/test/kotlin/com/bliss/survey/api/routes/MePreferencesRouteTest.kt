@@ -100,5 +100,10 @@ private class RecordingRepo : ProposedByRepository {
 
     override suspend fun listOptedOutByUser(userId: UserId): List<ItemId> = emptyList()
 
+    override suspend fun delete(
+        itemId: ItemId,
+        userId: UserId,
+    ) {}
+
     override suspend fun deleteByUser(userId: UserId) {}
 }

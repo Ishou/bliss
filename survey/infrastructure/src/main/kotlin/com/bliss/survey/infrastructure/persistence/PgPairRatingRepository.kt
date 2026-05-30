@@ -2,6 +2,7 @@ package com.bliss.survey.infrastructure.persistence
 
 import com.bliss.survey.application.ports.PairRatingRepository
 import com.bliss.survey.domain.model.PairRating
+import com.bliss.survey.domain.model.PairRatingId
 import com.bliss.survey.domain.model.PreferenceVerdict
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -49,6 +50,16 @@ class PgPairRatingRepository(
             }
         }
 
+    override suspend fun deleteById(id: PairRatingId): Unit =
+        withContext(Dispatchers.IO) {
+            withTxConnection(dataSource) { conn ->
+                conn.prepareStatement(DELETE_BY_ID_SQL).use { stmt ->
+                    stmt.setObject(1, id.value)
+                    stmt.executeUpdate()
+                }
+            }
+        }
+
     private fun PreferenceVerdict.wire(): String =
         when (this) {
             PreferenceVerdict.LEFT_WINS -> "left_wins"
@@ -62,5 +73,7 @@ class PgPairRatingRepository(
               (id, left_item_id, right_item_id, user_id, verdict, difficulte, latency_ms, created_at, campaign_id)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """
+
+        const val DELETE_BY_ID_SQL = "DELETE FROM pair_ratings WHERE id = ?"
     }
 }

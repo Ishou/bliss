@@ -183,6 +183,39 @@ class PgPairRatingRepositoryTest {
         }
 
     @Test
+    fun `deleteById removes the row`() =
+        runTest {
+            val a = sampleItem(definition = "def a")
+            val b = sampleItem(definition = "def b")
+            items.insert(a)
+            items.insert(b)
+            val row =
+                PairRating(
+                    id = PairRatingId(UUID.randomUUID()),
+                    leftItemId = a.id,
+                    rightItemId = b.id,
+                    userId = UserId(UUID.randomUUID()),
+                    verdict = PreferenceVerdict.LEFT_WINS,
+                    difficulte = 3,
+                    latencyMs = 1500,
+                    createdAt = now,
+                )
+            pairRatings.insert(row)
+
+            pairRatings.deleteById(row.id)
+
+            dataSource.connection.use { c ->
+                c.prepareStatement("SELECT count(*) FROM pair_ratings WHERE id = ?").use { s ->
+                    s.setObject(1, row.id.value)
+                    s.executeQuery().use { rs ->
+                        rs.next()
+                        assertThat(rs.getInt(1)).isEqualTo(0)
+                    }
+                }
+            }
+        }
+
+    @Test
     fun `insert round-trips campaign_id`() =
         runTest {
             val a = sampleItem(definition = "def a")

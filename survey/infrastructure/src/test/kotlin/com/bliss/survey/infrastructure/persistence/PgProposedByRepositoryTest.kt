@@ -98,6 +98,22 @@ class PgProposedByRepositoryTest {
         }
 
     @Test
+    fun `delete removes only the named item-user link`() =
+        runTest {
+            val author = UserId(UUID.randomUUID())
+            val a = sampleItem("A")
+            val b = sampleItem("B")
+            items.insert(a)
+            items.insert(b)
+            proposedBy.insert(a.id, author, optedOut = true)
+            proposedBy.insert(b.id, author, optedOut = true)
+
+            proposedBy.delete(a.id, author)
+
+            assertThat(proposedBy.listOptedOutByUser(author)).containsExactlyInAnyOrder(b.id)
+        }
+
+    @Test
     fun `listOptedOutByUser leaves other users untouched`() =
         runTest {
             val mine = UserId(UUID.randomUUID())

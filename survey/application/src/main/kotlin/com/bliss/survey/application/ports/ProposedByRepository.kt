@@ -17,5 +17,10 @@ interface ProposedByRepository {
 
     suspend fun listOptedOutByUser(userId: UserId): List<ItemId>
 
+    suspend fun delete(
+        itemId: ItemId,
+        userId: UserId,
+    )
+
     suspend fun deleteByUser(userId: UserId)
 }

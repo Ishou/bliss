@@ -74,6 +74,17 @@ class PgRatingRepository(
             }
         }
 
+    override suspend fun deleteByIds(ids: List<RatingId>): Unit =
+        withContext(Dispatchers.IO) {
+            if (ids.isEmpty()) return@withContext
+            withTxConnection(dataSource) { conn ->
+                conn.prepareStatement(DELETE_BY_IDS_SQL).use { stmt ->
+                    stmt.setArray(1, conn.createArrayOf("uuid", ids.map { it.value }.toTypedArray()))
+                    stmt.executeUpdate()
+                }
+            }
+        }
+
     override suspend fun countByItem(itemId: ItemId): Int =
         withContext(Dispatchers.IO) {
             withTxConnection(dataSource) { conn ->
@@ -157,6 +168,8 @@ class PgRatingRepository(
 
         const val FIND_AUTH_RATING_SQL =
             "SELECT * FROM ratings WHERE item_id = ? AND user_id = ? AND submitted_as = 'auth'"
+
+        const val DELETE_BY_IDS_SQL = "DELETE FROM ratings WHERE rating_id = ANY(?)"
 
         const val COUNT_BY_ITEM_SQL = "SELECT count(*) FROM ratings WHERE item_id = ?"
 

@@ -9,6 +9,12 @@ interface UserProgressRepository {
         at: Instant,
     )
 
+    suspend fun decrementItemsRated(
+        userId: UserId,
+        by: Int,
+        priorLastRatedAt: Instant?,
+    )
+
     suspend fun updateCalibrationAgreement(
         userId: UserId,
         agreement: Double,
