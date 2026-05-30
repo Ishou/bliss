@@ -9,6 +9,7 @@ function stubSurveyClient(getContributions: () => Promise<ReadonlyArray<SurveyCo
     submitRating: vi.fn(),
     getNextPair: vi.fn(),
     submitPairRating: vi.fn(),
+    undoAction: vi.fn(),
     getProgress: vi.fn(),
     getContributions,
     patchPreferences: vi.fn(),

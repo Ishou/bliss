@@ -6,6 +6,8 @@ import {
   AlreadyRatedError,
   createHttpSurveyClient,
   SignInRequiredError,
+  UndoExpiredError,
+  UndoUnavailableError,
 } from '@/infrastructure';
 
 const BASE = 'http://survey.test';
@@ -233,21 +235,22 @@ describe('HttpSurveyClient.submitPairRating', () => {
   const leftId = '0190e3a4-7a2c-7c9e-8f1a-1111111111aa';
   const rightId = '0190e3a4-7a2c-7c9e-8f1a-2222222222bb';
 
-  it('POSTs the payload and resolves on 204', async () => {
+  it('POSTs the payload and resolves with the token on 201', async () => {
     let captured: Record<string, unknown> = {};
     server.use(
       http.post(`${BASE}/v1/ratings/pair`, async ({ request }) => {
         captured = (await request.json()) as Record<string, unknown>;
-        return new HttpResponse(null, { status: 204 });
+        return HttpResponse.json({ undoToken: 'tok_left' }, { status: 201 });
       }),
     );
-    await client.submitPairRating({
+    const result = await client.submitPairRating({
       leftItemId: leftId,
       rightItemId: rightId,
       verdict: 'LEFT_WINS',
       difficulte: 3,
       latencyMs: 1500,
     });
+    expect(result).toEqual({ undoToken: 'tok_left' });
     expect(captured).toEqual({
       leftItemId: leftId,
       rightItemId: rightId,
@@ -285,6 +288,64 @@ describe('HttpSurveyClient.submitPairRating', () => {
         latencyMs: 0,
       }),
     ).rejects.toBeInstanceOf(AlreadyRatedError);
+  });
+
+  it('returns the undoToken from the response envelope', async () => {
+    server.use(
+      http.post(`${BASE}/v1/ratings/pair`, () =>
+        HttpResponse.json({ undoToken: 'tok_pair' }),
+      ),
+    );
+    const result = await client.submitPairRating({
+      leftItemId: leftId,
+      rightItemId: rightId,
+      verdict: 'BOTH_GOOD',
+      difficulte: 3,
+      latencyMs: 100,
+    });
+    expect(result).toEqual({ undoToken: 'tok_pair' });
+  });
+
+  it('resolves with a null token on 204 (SKIP)', async () => {
+    server.use(
+      http.post(`${BASE}/v1/ratings/pair`, () => new HttpResponse(null, { status: 204 })),
+    );
+    const result = await client.submitPairRating({
+      leftItemId: leftId,
+      rightItemId: rightId,
+      verdict: 'SKIP',
+      difficulte: 3,
+      latencyMs: 0,
+    });
+    expect(result).toEqual({ undoToken: null });
+  });
+});
+
+describe('HttpSurveyClient.undoAction', () => {
+  it('resolves on 204', async () => {
+    let body: unknown = null;
+    server.use(
+      http.post(`${BASE}/v1/actions/undo`, async ({ request }) => {
+        body = await request.json();
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+    await expect(client.undoAction('tok_abc')).resolves.toBeUndefined();
+    expect(body).toEqual({ token: 'tok_abc' });
+  });
+
+  it('throws UndoUnavailableError on 404', async () => {
+    server.use(
+      http.post(`${BASE}/v1/actions/undo`, () => new HttpResponse(null, { status: 404 })),
+    );
+    await expect(client.undoAction('tok_abc')).rejects.toBeInstanceOf(UndoUnavailableError);
+  });
+
+  it('throws UndoExpiredError on 410', async () => {
+    server.use(
+      http.post(`${BASE}/v1/actions/undo`, () => new HttpResponse(null, { status: 410 })),
+    );
+    await expect(client.undoAction('tok_abc')).rejects.toBeInstanceOf(UndoExpiredError);
   });
 });
 

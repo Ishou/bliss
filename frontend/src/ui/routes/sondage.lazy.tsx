@@ -9,7 +9,7 @@ import type { LikertScore, RatingSubmission, SurveyItem, SurveyPos } from '@/app
 import { useAuth } from '@/ui/components/auth';
 import { ContentPage } from '@/ui/components/layout';
 import type { Verdict } from '@/ui/components/sondage';
-import { LockBanner, RatingCard, SignInBanner, useCampaignStatus } from '@/ui/components/sondage';
+import { LockBanner, RatingCard, SignInBanner, UndoBar, useCampaignStatus } from '@/ui/components/sondage';
 import { Route as ParentRoute } from './sondage';
 
 const articleStyles = css({
@@ -86,6 +86,8 @@ function SondagePage() {
   const [item, setItem] = useState<SurveyItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [lastAction, setLastAction] = useState<{ token: string; item: SurveyItem } | null>(null);
+  const [undoBusy, setUndoBusy] = useState(false);
   const sessionStartedRef = useRef(false);
   const authSkippedIdsRef = useRef<Set<string>>(new Set());
 
@@ -135,6 +137,7 @@ function SondagePage() {
       } else {
         surveyAnonStore?.add(currentItem.itemId);
       }
+      setLastAction(null);
       await loadNext();
       return;
     }
@@ -144,13 +147,14 @@ function SondagePage() {
       latencyMs,
     };
     try {
-      await surveyClient.submitRating(currentItem.itemId, payload);
+      const result = await surveyClient.submitRating(currentItem.itemId, payload);
       analytics.trackEvent(
         'survey',
         'verdict_submitted',
         `tier=${currentItem.tier};verdict=${verdict}`,
       );
       if (!isAuth) surveyAnonStore?.add(currentItem.itemId);
+      if (result.undoToken) setLastAction({ token: result.undoToken, item: currentItem });
       await loadNext();
     } catch (cause) {
       const name = (cause as Error | undefined)?.name ?? '';
@@ -182,8 +186,9 @@ function SondagePage() {
       correctif: { text: correctedText, style: currentItem.style, pos },
     };
     try {
-      await surveyClient.submitRating(currentItem.itemId, payload);
+      const result = await surveyClient.submitRating(currentItem.itemId, payload);
       analytics.trackEvent('survey', 'correctif_proposed', `tier=${currentItem.tier}`);
+      if (result.undoToken) setLastAction({ token: result.undoToken, item: currentItem });
       await loadNext();
     } catch (cause) {
       const name = (cause as Error | undefined)?.name ?? '';
@@ -199,6 +204,33 @@ function SondagePage() {
         return;
       }
       setError(messageForApiError(cause));
+    }
+  }
+
+  async function onUndo(): Promise<void> {
+    if (!surveyClient || !lastAction) return;
+    const { token, item: stashedItem } = lastAction;
+    setUndoBusy(true);
+    try {
+      await surveyClient.undoAction(token);
+      analytics.trackEvent('survey', 'verdict_undone', undefined);
+      if (!isAuth) surveyAnonStore?.remove(stashedItem.itemId);
+      authSkippedIdsRef.current.delete(stashedItem.itemId);
+      setLastAction(null);
+      setError(null);
+      setItem(stashedItem);
+    } catch (cause) {
+      const name = (cause as Error | undefined)?.name ?? '';
+      setLastAction(null);
+      if (name === 'UndoExpiredError') {
+        setError('Trop tard pour annuler : la campagne est terminée.');
+      } else if (name === 'UndoUnavailableError') {
+        setError('Cette action ne peut plus être annulée.');
+      } else {
+        setError(messageForApiError(cause));
+      }
+    } finally {
+      setUndoBusy(false);
     }
   }
 
@@ -253,6 +285,8 @@ function SondagePage() {
             disabled={isLocked}
           />
         ) : null}
+
+        {lastAction !== null ? <UndoBar onUndo={onUndo} busy={undoBusy} /> : null}
       </article>
     </ContentPage>
   );

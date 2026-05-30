@@ -3,6 +3,7 @@
 import type {
   Campaign,
   ItemPair,
+  PairRatingResult,
   PairRatingSubmission,
   RatingResult,
   RatingSubmission,
@@ -53,6 +54,20 @@ export class NoCampaignError extends Error {
   constructor() {
     super('no campaign');
     this.name = 'NoCampaignError';
+  }
+}
+
+export class UndoExpiredError extends Error {
+  constructor() {
+    super('undo window expired');
+    this.name = 'UndoExpiredError';
+  }
+}
+
+export class UndoUnavailableError extends Error {
+  constructor() {
+    super('undo unavailable');
+    this.name = 'UndoUnavailableError';
   }
 }
 
@@ -129,10 +144,28 @@ export function createHttpSurveyClient(options: HttpSurveyClientOptions): Survey
         itemId: body.leftItemId,
         submittedAs: 'auth',
         proposedItemId: null,
+        undoToken: null,
       });
     }
     if (res.status === 423) throw new SondageLockedError();
     if (!res.ok) throw new Error(`submitPairRating failed: ${res.status}`);
+    // SKIP verdicts return 204 with no body; no undo token to surface.
+    if (res.status === 204) return { undoToken: null };
+    const json = (await res.json()) as { undoToken?: string | null };
+    return { undoToken: json.undoToken ?? null } satisfies PairRatingResult;
+  };
+
+  const undoAction: SurveyClient['undoAction'] = async (token: string) => {
+    const res = await fetchImpl(`${base}/v1/actions/undo`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ token }),
+    });
+    if (res.status === 204) return;
+    if (res.status === 404) throw new UndoUnavailableError();
+    if (res.status === 410) throw new UndoExpiredError();
+    throw new Error(`undoAction failed: ${res.status}`);
   };
 
   const getCurrentCampaign: SurveyClient['getCurrentCampaign'] = async () => {
@@ -178,6 +211,7 @@ export function createHttpSurveyClient(options: HttpSurveyClientOptions): Survey
     submitRating,
     getNextPair,
     submitPairRating,
+    undoAction,
     getProgress,
     getContributions,
     patchPreferences,

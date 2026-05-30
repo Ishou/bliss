@@ -111,6 +111,11 @@ export interface RatingResult {
   readonly itemId: string;
   readonly submittedAs: SubmittedAs;
   readonly proposedItemId: string | null;
+  readonly undoToken: string | null;
+}
+
+export interface PairRatingResult {
+  readonly undoToken: string | null;
 }
 
 export interface SurveyProgress {
@@ -163,7 +168,8 @@ export interface SurveyClient {
   getNextItem(opts?: { readonly excludedItemIds?: readonly string[] }): Promise<SurveyItem | null>;
   submitRating(itemId: string, body: RatingSubmission): Promise<RatingResult>;
   getNextPair(opts?: { readonly excludedItemIds?: readonly string[] }): Promise<ItemPair | null>;
-  submitPairRating(body: PairRatingSubmission): Promise<void>;
+  submitPairRating(body: PairRatingSubmission): Promise<PairRatingResult>;
+  undoAction(token: string): Promise<void>;
   getProgress(): Promise<SurveyProgress>;
   getContributions(): Promise<ReadonlyArray<SurveyContribution>>;
   patchPreferences(body: SurveyPreferencesPatch): Promise<void>;
@@ -174,4 +180,5 @@ export interface SurveyClient {
 export interface SurveyAnonStore {
   list(): ReadonlyArray<string>;
   add(itemId: string): void;
+  remove(itemId: string): void;
 }

@@ -75,7 +75,8 @@ function stubSurveyClient(overrides: Partial<SurveyClient> = {}): SurveyClient {
     getNextItem: vi.fn().mockResolvedValue(null),
     submitRating: vi.fn().mockResolvedValue(undefined),
     getNextPair: vi.fn().mockResolvedValue(samplePair),
-    submitPairRating: vi.fn().mockResolvedValue(undefined),
+    submitPairRating: vi.fn().mockResolvedValue({ undoToken: null }),
+    undoAction: vi.fn().mockResolvedValue(undefined),
     getProgress: vi.fn().mockResolvedValue({
       itemsRated: 0,
       calibrationAgreement: null,

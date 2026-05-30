@@ -13,7 +13,7 @@ import type {
 } from '@/application/survey';
 import { useAuth } from '@/ui/components/auth';
 import { ContentPage } from '@/ui/components/layout';
-import { LockBanner, PairCard, SignInBanner, useCampaignStatus } from '@/ui/components/sondage';
+import { LockBanner, PairCard, SignInBanner, UndoBar, useCampaignStatus } from '@/ui/components/sondage';
 import { Route as ParentRoute } from './sondage.pairs';
 
 const articleStyles = css({
@@ -90,6 +90,8 @@ function SondagePairsPage() {
   const [pair, setPair] = useState<ItemPair | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [lastAction, setLastAction] = useState<{ token: string; pair: ItemPair } | null>(null);
+  const [undoBusy, setUndoBusy] = useState(false);
   const sessionStartedRef = useRef(false);
   const authSkippedIdsRef = useRef<Set<string>>(new Set());
 
@@ -142,6 +144,7 @@ function SondagePairsPage() {
         surveyAnonStore?.add(leftItemId);
         surveyAnonStore?.add(rightItemId);
       }
+      setLastAction(null);
       await loadNext();
       return;
     }
@@ -153,7 +156,7 @@ function SondagePairsPage() {
       latencyMs,
     };
     try {
-      await surveyClient.submitPairRating(payload);
+      const result = await surveyClient.submitPairRating(payload);
       analytics.trackEvent(
         'survey',
         'pair_verdict_submitted',
@@ -163,6 +166,7 @@ function SondagePairsPage() {
         surveyAnonStore?.add(leftItemId);
         surveyAnonStore?.add(rightItemId);
       }
+      if (result.undoToken) setLastAction({ token: result.undoToken, pair: currentPair });
       await loadNext();
     } catch (cause) {
       const name = (cause as Error | undefined)?.name ?? '';
@@ -181,6 +185,37 @@ function SondagePairsPage() {
       setError(messageForApiError(cause));
     }
   }, [surveyClient, pair, isAuth, surveyAnonStore, analytics, loadNext, campaignStatus]);
+
+  async function onUndo(): Promise<void> {
+    if (!surveyClient || !lastAction) return;
+    const { token, pair: stashedPair } = lastAction;
+    setUndoBusy(true);
+    try {
+      await surveyClient.undoAction(token);
+      analytics.trackEvent('survey', 'pair_verdict_undone', undefined);
+      if (!isAuth) {
+        surveyAnonStore?.remove(stashedPair.left.itemId);
+        surveyAnonStore?.remove(stashedPair.right.itemId);
+      }
+      authSkippedIdsRef.current.delete(stashedPair.left.itemId);
+      authSkippedIdsRef.current.delete(stashedPair.right.itemId);
+      setLastAction(null);
+      setError(null);
+      setPair(stashedPair);
+    } catch (cause) {
+      const name = (cause as Error | undefined)?.name ?? '';
+      setLastAction(null);
+      if (name === 'UndoExpiredError') {
+        setError('Trop tard pour annuler : la campagne est terminée.');
+      } else if (name === 'UndoUnavailableError') {
+        setError('Cette action ne peut plus être annulée.');
+      } else {
+        setError(messageForApiError(cause));
+      }
+    } finally {
+      setUndoBusy(false);
+    }
+  }
 
   function onSignInClick(): void {
     analytics.trackEvent('survey', 'pair_signin_prompt_clicked', undefined);
@@ -232,6 +267,8 @@ function SondagePairsPage() {
             disabled={isLocked}
           />
         ) : null}
+
+        {lastAction !== null ? <UndoBar onUndo={onUndo} busy={undoBusy} /> : null}
       </article>
     </ContentPage>
   );

@@ -9,6 +9,7 @@ function stubSurveyClient(patch: (b: { deleteProposedOnErasure: boolean }) => Pr
     submitRating: vi.fn(),
     getNextPair: vi.fn(),
     submitPairRating: vi.fn(),
+    undoAction: vi.fn(),
     getProgress: vi.fn(),
     getContributions: vi.fn(),
     patchPreferences: patch as SurveyClient['patchPreferences'],
