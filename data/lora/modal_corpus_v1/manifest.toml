@@ -27,6 +27,7 @@ user_prompt_template = "Donne une définition de mot fléché pour {mot}."
 #   op       := "==" | "!="
 #   operand  := IDENT | "'" STRING "'"
 # Anything outside this grammar raises ValueError at build time.
+# Per-row weighting: weight_column = "<col>" replicates each row by its value; requires weight = 1 (ADR-0056).
 
 [[sources]]
 name = "gold_pilot_v1"

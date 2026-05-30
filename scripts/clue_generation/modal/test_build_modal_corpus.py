@@ -179,3 +179,65 @@ def test_held_out_assertion_fires_when_leak_detected(tmp_corpus_dir, monkeypatch
     monkeypatch.setattr(bc, "_load_held_out_lemmas", lambda *a, **k: set())
     with pytest.raises(ValueError, match="held-out lemma"):
         bc.build_corpus(tmp_corpus_dir, out_dir / "manifest.toml", out_dir)
+
+
+@pytest.fixture
+def tmp_rowweight_dir(tmp_path: Path) -> Path:
+    """Single survey-style source that declares a per-row weight column."""
+    root = tmp_path
+    (root / "data" / "seed").mkdir(parents=True)
+    (root / "data" / "lora" / "modal_corpus_v1").mkdir(parents=True)
+    (root / "data" / "seed" / "survey_export.csv").write_text(
+        "mot;definition;training_weight\n"
+        "CHAT;Animal qui ronronne;3.0\n"
+        "CHIEN;Meilleur ami de l'homme;1.0\n"
+        "SOURIS;Petit rongeur;\n",
+        encoding="utf-8",
+    )
+    (root / "data" / "lora" / "modal_corpus_v1" / "manifest.toml").write_text(
+        """
+version = "test"
+seed = 42
+val_ratio = 0.0
+exclude_lemmas_from = ""
+user_prompt_template = "Donne une définition de mot fléché pour {mot}."
+
+[[sources]]
+name = "survey"
+path = "data/seed/survey_export.csv"
+tier = "gold"
+weight = 1
+csv_delimiter = ";"
+schema_mapping = { mot = "mot", definition = "definition", force = "" }
+row_filter = ""
+weight_column = "training_weight"
+""",
+        encoding="utf-8",
+    )
+    return root
+
+
+def _rowweight_manifest(root: Path) -> Path:
+    return root / "data" / "lora" / "modal_corpus_v1" / "manifest.toml"
+
+
+def test_per_row_weight_replicates_by_column_value(tmp_rowweight_dir):
+    """A weight_column source replicates each row by its own value."""
+    from collections import Counter
+    rows = bc.load_all_sources(tmp_rowweight_dir, _rowweight_manifest(tmp_rowweight_dir))
+    counts = Counter(r["mot"] for r in rows)
+    assert counts["CHAT"] == 3    # 3.0 -> 3 copies
+    assert counts["CHIEN"] == 1   # 1.0 -> 1 copy
+    assert counts["SOURIS"] == 1  # blank cell -> default 1.0 -> 1 copy
+    assert len(rows) == 5
+
+
+def test_weight_column_with_nonunit_weight_raises(tmp_rowweight_dir):
+    """weight_column + weight != 1 is a misconfiguration -> ValueError (never multiplied)."""
+    manifest = _rowweight_manifest(tmp_rowweight_dir)
+    manifest.write_text(
+        manifest.read_text(encoding="utf-8").replace("weight = 1", "weight = 2"),
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="weight_column requires weight = 1"):
+        bc.load_all_sources(tmp_rowweight_dir, manifest)
