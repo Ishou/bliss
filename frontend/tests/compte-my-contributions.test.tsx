@@ -12,6 +12,7 @@ function stubSurveyClient(getContributions: () => Promise<ReadonlyArray<SurveyCo
     getProgress: vi.fn(),
     getContributions,
     patchPreferences: vi.fn(),
+    getCurrentCampaign: vi.fn(),
   };
 }
 
