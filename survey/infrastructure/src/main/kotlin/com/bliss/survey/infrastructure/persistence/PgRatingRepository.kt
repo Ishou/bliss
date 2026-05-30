@@ -2,6 +2,7 @@ package com.bliss.survey.infrastructure.persistence
 
 import com.bliss.survey.application.ports.RatingAggregate
 import com.bliss.survey.application.ports.RatingRepository
+import com.bliss.survey.domain.model.CampaignId
 import com.bliss.survey.domain.model.FlagReason
 import com.bliss.survey.domain.model.ItemId
 import com.bliss.survey.domain.model.Rating
@@ -62,6 +63,12 @@ class PgRatingRepository(
                     if (latency != null) stmt.setInt(9, latency) else stmt.setNull(9, Types.INTEGER)
                     stmt.setNull(10, Types.OTHER)
                     stmt.setTimestamp(11, Timestamp.from(rating.createdAt))
+                    val campaign = rating.campaignId
+                    if (campaign != null) {
+                        stmt.setObject(12, campaign.value)
+                    } else {
+                        stmt.setNull(12, Types.OTHER)
+                    }
                     stmt.executeUpdate()
                 }
             }
@@ -121,6 +128,7 @@ class PgRatingRepository(
     private fun ResultSet.toRating(): Rating {
         val userIdValue: UUID? = getObject("user_id", UUID::class.java)
         val proposedValue: UUID? = getObject("proposed_item_id", UUID::class.java)
+        val campaignValue: UUID? = getObject("campaign_id", UUID::class.java)
         val rawFlag = getString("flag")
         val latency = getInt("latency_ms").let { if (wasNull()) null else it }
         return Rating(
@@ -134,6 +142,7 @@ class PgRatingRepository(
             proposedItemId = proposedValue?.let(::ItemId),
             latencyMs = latency,
             createdAt = getTimestamp("created_at").toInstant(),
+            campaignId = campaignValue?.let(::CampaignId),
         )
     }
 
@@ -142,8 +151,8 @@ class PgRatingRepository(
             """
             INSERT INTO ratings
               (rating_id, item_id, user_id, submitted_as, qualite, difficulte,
-               flag, proposed_item_id, latency_ms, client_meta, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+               flag, proposed_item_id, latency_ms, client_meta, created_at, campaign_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """
 
         const val FIND_AUTH_RATING_SQL =
