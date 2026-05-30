@@ -8,6 +8,7 @@ import com.bliss.survey.application.filters.FilterPipeline
 import com.bliss.survey.application.ports.CampaignRepository
 import com.bliss.survey.application.ports.Clock
 import com.bliss.survey.application.ports.IdGenerator
+import com.bliss.survey.application.ports.MaintainerRole
 import com.bliss.survey.domain.model.Campaign
 import com.bliss.survey.domain.model.CampaignId
 import com.bliss.survey.domain.model.Categorie
@@ -19,6 +20,7 @@ import com.bliss.survey.domain.model.SubmittedAs
 import com.bliss.survey.domain.model.SurveyItem
 import com.bliss.survey.domain.model.Tier
 import com.bliss.survey.domain.model.UserId
+import com.bliss.survey.domain.weight.GoldWindowPolicy
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Test
 import java.time.Instant
@@ -74,26 +76,31 @@ class SubmitRatingUseCaseTest {
             override suspend fun findById(id: CampaignId): Campaign = openCampaign
         }
 
-    private fun newUseCase() =
-        Quad(
-            InMemorySurveyItemRepository(),
-            InMemoryRatingRepository(),
-            InMemoryProposedByRepository(),
-            InMemoryUserProgressRepository(),
-        ).let { (items, ratings, proposed, progress) ->
-            val uc =
-                SubmitRatingUseCase(
-                    items = items,
-                    ratings = ratings,
-                    proposedBy = proposed,
-                    progress = progress,
-                    filters = FilterPipeline.default { _ -> false },
-                    ids = idGen,
-                    clock = clock,
-                    campaigns = openCampaignRepo,
-                )
-            Quintet(uc, items, ratings, proposed, progress)
-        }
+    private val goldPolicy = GoldWindowPolicy(Instant.parse("2026-05-30T00:00:00Z"), 3.0)
+
+    private fun newUseCase(
+        clock: Clock = this.clock,
+        roles: InMemoryMaintainerRoleRepository = InMemoryMaintainerRoleRepository(),
+    ) = Quad(
+        InMemorySurveyItemRepository(),
+        InMemoryRatingRepository(),
+        InMemoryProposedByRepository(),
+        InMemoryUserProgressRepository(),
+    ).let { (items, ratings, proposed, progress) ->
+        val uc =
+            SubmitRatingUseCase(
+                items = items,
+                ratings = ratings,
+                proposedBy = proposed,
+                progress = progress,
+                filters = FilterPipeline.default { _ -> false },
+                ids = idGen,
+                clock = clock,
+                campaigns = openCampaignRepo,
+                recompute = RecomputeTrainingWeightUseCase(roles, items, goldPolicy),
+            )
+        Quintet(uc, items, ratings, proposed, progress)
+    }
 
     private data class Quad<A, B, C, D>(
         val a: A,
@@ -358,6 +365,30 @@ class SubmitRatingUseCaseTest {
             )
             val proposedItem = items.items.values.single { it.source == Source.RATER_PROPOSED }
             assertThat(proposedItem.pos).isEqualTo(parent.pos)
+        }
+
+    @Test
+    fun `correctif by a cached maintainer is stamped gold`() =
+        runTest {
+            val rater = UserId(UUID.randomUUID())
+            val roles = InMemoryMaintainerRoleRepository()
+            roles.upsert(MaintainerRole(rater, "maintainer", Instant.parse("2026-05-30T00:00:00Z")))
+            val postCutoffClock = Clock { Instant.parse("2026-05-30T09:00:00Z") }
+            val (uc, items, _, _, _) = newUseCase(clock = postCutoffClock, roles = roles)
+            val parent = seedItem(items)
+            uc.execute(
+                SubmitRatingCommand(
+                    itemId = parent.id,
+                    userId = rater,
+                    qualite = 3,
+                    difficulte = 3,
+                    flag = null,
+                    correctif = CorrectifInput("Fruit defendu d'Eve", Style.PERIPHRASE, null),
+                    latencyMs = 1500,
+                ),
+            )
+            val proposed = items.trainingWeights.entries.single()
+            assertThat(proposed.value).isEqualTo(3.0)
         }
 
     @Test

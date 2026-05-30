@@ -1,0 +1,42 @@
+{{- if .Values.recomputeTrainingWeights.enabled }}
+{{/* Manual re-materialize of training_weight under the current GoldWindowPolicy. */}}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "bliss-survey-api.fullname" . }}-recompute-weights
+  annotations:
+    "helm.sh/hook": "post-upgrade"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+    "helm.sh/hook-weight": "10"
+  labels: {{- include "bliss-survey-api.labels" . | nindent 4 }}
+spec:
+  ttlSecondsAfterFinished: 600
+  backoffLimit: 3
+  template:
+    metadata:
+      labels: {{- include "bliss-survey-api.selectorLabels" . | nindent 8 }}
+    spec:
+      restartPolicy: OnFailure
+      serviceAccountName: {{ include "bliss-survey-api.serviceAccountName" . }}
+      securityContext: {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: recompute-weights
+          image: {{ include "bliss-survey-api.image" . | quote }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext: {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+          command: ["/app/bin/survey-worker"]
+          args: ["--recompute-training-weights"]
+          env:
+            {{- range .Values.env }}
+            - name: {{ .name }}
+              value: {{ .value | quote }}
+            {{- end }}
+          {{- with .Values.envFromSecret }}
+          envFrom:
+            - secretRef: {name: {{ . }}}
+          {{- end }}
+          volumeMounts:
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - {name: tmp, emptyDir: {}}
+{{- end }}

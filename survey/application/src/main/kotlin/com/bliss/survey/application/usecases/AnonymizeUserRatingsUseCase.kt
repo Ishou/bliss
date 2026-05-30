@@ -1,5 +1,6 @@
 package com.bliss.survey.application.usecases
 
+import com.bliss.survey.application.ports.MaintainerRoleRepository
 import com.bliss.survey.application.ports.ProposedByRepository
 import com.bliss.survey.application.ports.RatingRepository
 import com.bliss.survey.application.ports.SurveyItemRepository
@@ -11,6 +12,7 @@ class AnonymizeUserRatingsUseCase(
     private val proposedBy: ProposedByRepository,
     private val items: SurveyItemRepository,
     private val progress: UserProgressRepository,
+    private val maintainerRoles: MaintainerRoleRepository,
 ) {
     suspend fun execute(userId: UserId) {
         val optedOut = proposedBy.listOptedOutByUser(userId)
@@ -18,5 +20,6 @@ class AnonymizeUserRatingsUseCase(
         ratings.anonymiseForUser(userId)
         proposedBy.deleteByUser(userId)
         progress.deleteByUser(userId)
+        maintainerRoles.delete(userId)
     }
 }

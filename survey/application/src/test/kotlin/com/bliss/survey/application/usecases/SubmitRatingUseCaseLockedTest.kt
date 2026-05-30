@@ -18,6 +18,7 @@ import com.bliss.survey.domain.model.Style
 import com.bliss.survey.domain.model.SurveyItem
 import com.bliss.survey.domain.model.Tier
 import com.bliss.survey.domain.model.UserId
+import com.bliss.survey.domain.weight.GoldWindowPolicy
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Test
 import java.time.Instant
@@ -90,6 +91,12 @@ class SubmitRatingUseCaseLockedTest {
                     ids = idGen,
                     clock = clock,
                     campaigns = campaignsRepo(currentCampaign),
+                    recompute =
+                        RecomputeTrainingWeightUseCase(
+                            InMemoryMaintainerRoleRepository(),
+                            setup.items,
+                            GoldWindowPolicy(Instant.parse("2026-05-30T00:00:00Z"), 3.0),
+                        ),
                 )
             setup.copy(uc = uc)
         }

@@ -2,7 +2,9 @@ package com.bliss.survey.application.usecases
 
 import assertk.assertThat
 import assertk.assertions.isEqualTo
+import assertk.assertions.isNull
 import assertk.assertions.isTrue
+import com.bliss.survey.application.ports.MaintainerRole
 import com.bliss.survey.domain.model.Categorie
 import com.bliss.survey.domain.model.ItemId
 import com.bliss.survey.domain.model.Pos
@@ -72,7 +74,7 @@ class AnonymizeUserRatingsUseCaseTest {
             ratings.insert(rating)
             progress.incrementItemsRated(user, now)
 
-            val uc = AnonymizeUserRatingsUseCase(ratings, proposedBy, items, progress)
+            val uc = AnonymizeUserRatingsUseCase(ratings, proposedBy, items, progress, InMemoryMaintainerRoleRepository())
             uc.execute(user)
 
             assertThat(items.items.containsKey(contribItem.id)).isEqualTo(false)
@@ -80,5 +82,23 @@ class AnonymizeUserRatingsUseCaseTest {
             assertThat(progress.deleted.contains(user)).isTrue()
             // Rating is now anonymous; userId is null on every rating belonging to user
             assertThat(ratings.ratings.none { it.userId == user }).isTrue()
+        }
+
+    @Test
+    fun `erases the cached maintainer role on user deletion`() =
+        runTest {
+            val roles = InMemoryMaintainerRoleRepository()
+            val userId = UserId(UUID.randomUUID())
+            roles.upsert(MaintainerRole(userId, "maintainer", Instant.parse("2026-05-30T00:00:00Z")))
+            val useCase =
+                AnonymizeUserRatingsUseCase(
+                    ratings = InMemoryRatingRepository(),
+                    proposedBy = InMemoryProposedByRepository(),
+                    items = InMemorySurveyItemRepository(),
+                    progress = InMemoryUserProgressRepository(),
+                    maintainerRoles = roles,
+                )
+            useCase.execute(userId)
+            assertThat(roles.find(userId)).isNull()
         }
 }

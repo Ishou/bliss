@@ -70,6 +70,7 @@ class SubmitRatingUseCase(
     private val ids: IdGenerator,
     private val clock: Clock,
     private val campaigns: CampaignRepository,
+    private val recompute: RecomputeTrainingWeightUseCase,
 ) {
     suspend fun execute(cmd: SubmitRatingCommand): SubmitRatingResult {
         val openCampaign = campaigns.findOpen() ?: return SubmitRatingResult.Locked
@@ -130,6 +131,7 @@ class SubmitRatingUseCase(
                 val stored = items.insertIfAbsent(newItem)
                 proposedItemId = stored.id
                 proposedBy.insert(stored.id, nonNullUserId, optedOut = false)
+                recompute.forItem(stored.id, nonNullUserId)
             }
         }
 

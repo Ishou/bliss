@@ -10,6 +10,7 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.testing.testApplication
 import org.junit.jupiter.api.Test
+import java.time.Instant
 
 class CorsTest {
     private val testConfig =
@@ -21,6 +22,8 @@ class CorsTest {
             identityBaseUrl = "https://auth.example",
             allowedOrigins = listOf("https://wordsparrow.io"),
             natsUrl = "nats://localhost:4222",
+            goldCutoff = Instant.parse("2026-05-30T00:00:00Z"),
+            goldMultiplier = 3.0,
         )
 
     @Test
