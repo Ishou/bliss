@@ -1,3 +1,3 @@
-mot;definition;pos;categorie;style;force;longueur;source;meta
-PAIN;Aliment de boulangerie;nom_commun;aliments;définition_directe;1;4;gold;qualite_mean:3.67|qualite_n_auth:1|qualite_n_anon:1|qualite_stdev:0.50|difficulte_mean:2.00|difficulte_n_auth:1|difficulte_n_anon:1|flags:0|source_batch:gold_v1
-POULE;Femelle du coq;nom_commun;animals;périphrase;2;5;gold;qualite_mean:4.50|qualite_n_auth:2|qualite_n_anon:0|qualite_stdev:0.50|difficulte_mean:3.50|difficulte_n_auth:2|difficulte_n_anon:0|flags:0|source_batch:gold_v1
+mot;definition;pos;categorie;style;force;longueur;source;training_weight;meta
+PAIN;Aliment de boulangerie;nom_commun;aliments;définition_directe;1;4;gold;1.0;qualite_mean:3.67|qualite_n_auth:1|qualite_n_anon:1|qualite_stdev:0.50|difficulte_mean:2.00|difficulte_n_auth:1|difficulte_n_anon:1|flags:0|source_batch:gold_v1
+POULE;Femelle du coq;nom_commun;animals;périphrase;2;5;gold;3.0;qualite_mean:4.50|qualite_n_auth:2|qualite_n_anon:0|qualite_stdev:0.50|difficulte_mean:3.50|difficulte_n_auth:2|difficulte_n_anon:0|flags:0|source_batch:gold_v1

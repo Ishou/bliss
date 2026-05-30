@@ -16,6 +16,7 @@ import io.kotest.property.arbitrary.bind
 import io.kotest.property.arbitrary.enum
 import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.map
+import io.kotest.property.arbitrary.of
 import io.kotest.property.arbitrary.string
 import io.kotest.property.checkAll
 import kotlinx.coroutines.test.runTest
@@ -37,7 +38,8 @@ class StyleGuideCsvRoundTripTest {
             Arb.enum<Categorie>(),
             Arb.enum<Style>(),
             Arb.int(1..5),
-        ) { mot, def, pos, cat, style, force ->
+            Arb.of(1.0, 2.0, 3.0, 5.0),
+        ) { mot, def, pos, cat, style, force, weight ->
             SurveyItem(
                 id = ItemId(UUID.randomUUID()),
                 mot = mot,
@@ -54,6 +56,7 @@ class StyleGuideCsvRoundTripTest {
                 expected = null,
                 retiredAt = null,
                 createdAt = Instant.now(),
+                trainingWeight = weight,
             )
         }
 
@@ -71,6 +74,7 @@ class StyleGuideCsvRoundTripTest {
                 assertThat(parsed.forceClaimed).isEqualTo(original.forceClaimed)
                 assertThat(parsed.longueur).isEqualTo(original.longueur)
                 assertThat(parsed.source).isEqualTo(original.source)
+                assertThat(parsed.trainingWeight).isEqualTo(original.trainingWeight)
             }
         }
 
@@ -82,6 +86,6 @@ class StyleGuideCsvRoundTripTest {
 
     @Test
     fun `header is fixed schema`() {
-        assertThat(writer.header()).isEqualTo("mot;definition;pos;categorie;style;force;longueur;source;meta")
+        assertThat(writer.header()).isEqualTo("mot;definition;pos;categorie;style;force;longueur;source;training_weight;meta")
     }
 }

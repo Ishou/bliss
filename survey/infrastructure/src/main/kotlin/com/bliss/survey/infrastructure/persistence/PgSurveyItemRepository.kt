@@ -426,6 +426,7 @@ class PgSurveyItemRepository(
             expected = null,
             retiredAt = getTimestamp("retired_at")?.toInstant(),
             createdAt = getTimestamp("created_at").toInstant(),
+            trainingWeight = getDouble("training_weight"),
         )
 
     private fun buildPickQuery(

@@ -36,12 +36,13 @@ class StyleGuideCsvParser {
             forceClaimed = force,
             longueur = longueur,
             source = source,
-            sourceBatch = if (cells.size > 8) cells[8].ifBlank { "unknown" } else "unknown",
+            sourceBatch = "unknown",
             tier = Tier.MID,
             isCalibration = false,
             expected = null,
             retiredAt = null,
             createdAt = Instant.now(),
+            trainingWeight = cells.getOrNull(8)?.toDoubleOrNull() ?: 1.0,
         )
     }
 

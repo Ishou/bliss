@@ -27,6 +27,10 @@ VALUES
    '2026-05-25T12:00:00Z')
 ON CONFLICT (campaign_id) DO NOTHING;
 
+-- POULE keeps a non-default frozen weight so the export mapper proves it reads a real value.
+UPDATE survey_items SET training_weight = 3.0
+ WHERE item_id = '00000000-0000-0000-0000-000000000002';
+
 -- Item 1: one auth rating (qualite=4, difficulte=2), one anon (qualite=3, difficulte=2).
 INSERT INTO ratings
   (rating_id, item_id, user_id, submitted_as, qualite, difficulte,
