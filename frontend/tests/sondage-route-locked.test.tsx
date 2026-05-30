@@ -149,7 +149,7 @@ function renderSondage(opts: {
 }
 
 describe('/sondage when no campaign has ever been opened (server 503)', () => {
-  it('renders the LockBanner and aria-disables verdict buttons (was: silently stuck in loading on prod before the first campaign opened)', async () => {
+  it('renders the LockBanner and aria-disables verdict buttons', async () => {
     const surveyClient = stubSurveyClient({
       getCurrentCampaign: vi.fn().mockRejectedValue(new NoCampaignError()),
     });
