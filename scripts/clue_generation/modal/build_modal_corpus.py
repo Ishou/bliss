@@ -81,6 +81,18 @@ def _load_held_out_lemmas(root: Path, path: str) -> set[str]:
     return out
 
 
+def _row_copies(raw: str | None) -> int:
+    """Copies for a per-row weight cell: max(1, round(value)); blank/non-numeric -> 1."""
+    text = (raw or "").strip()
+    if not text:
+        return 1
+    try:
+        value = float(text)
+    except ValueError:
+        return 1
+    return max(1, round(value))
+
+
 def _load_source(root: Path, src: dict[str, Any]) -> list[dict[str, str]]:
     """Load one source per its manifest entry and apply schema mapping."""
     if "path_glob" in src:
@@ -92,6 +104,7 @@ def _load_source(root: Path, src: dict[str, Any]) -> list[dict[str, str]]:
     mapping = src["schema_mapping"]
     row_filter = src.get("row_filter", "")
     name = src["name"]
+    weight_col = src.get("weight_column", "")
 
     out: list[dict[str, str]] = []
     for p in paths:
@@ -109,25 +122,36 @@ def _load_source(root: Path, src: dict[str, Any]) -> list[dict[str, str]]:
                 definition = (row.get(def_col) or "").strip()
                 if not mot or not definition:
                     continue
-                out.append({
+                entry = {
                     "mot": mot,
                     "definition": definition,
                     "force": (row.get(force_col) or "").strip() if force_col else "",
                     "_source": name,
-                })
+                }
+                if weight_col:
+                    entry["_copies"] = _row_copies(row.get(weight_col))
+                out.append(entry)
     return out
 
 
 def load_all_sources(root: Path, manifest_path: Path) -> list[dict[str, str]]:
-    """Load every source, exclude held-out lemmas, replicate by weight."""
+    """Load every source, exclude held-out lemmas, replicate by weight (per-row when the source sets weight_column)."""
     manifest = _load_manifest(manifest_path)
     held_out = _load_held_out_lemmas(root, manifest.get("exclude_lemmas_from", ""))
     all_rows: list[dict[str, str]] = []
     for src in manifest["sources"]:
+        if src.get("weight_column") and int(src["weight"]) != 1:
+            raise ValueError(
+                f"source '{src['name']}': weight_column requires weight = 1 "
+                f"(got {src['weight']})"
+            )
         rows = _load_source(root, src)
         rows = [r for r in rows if r["mot"].lower() not in held_out]
-        weight = int(src["weight"])
-        all_rows.extend(rows * weight)
+        if src.get("weight_column"):
+            for r in rows:
+                all_rows.extend([r] * r["_copies"])
+        else:
+            all_rows.extend(rows * int(src["weight"]))
     return all_rows
 
 
