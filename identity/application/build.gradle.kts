@@ -1,5 +1,6 @@
 plugins {
     kotlin("jvm")
+    `java-test-fixtures`
 }
 
 kotlin {
@@ -9,6 +10,10 @@ kotlin {
 dependencies {
     implementation(project(":identity:domain"))
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")
+
+    // Shared test doubles consumed by sibling-layer tests (api) per ADR-0001 §1.
+    testFixturesImplementation(project(":identity:domain"))
+    testFixturesImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")
 
     testImplementation(platform("org.junit:junit-bom:5.11.4"))
     testImplementation("org.junit.jupiter:junit-jupiter")
