@@ -45,3 +45,15 @@ Post-commit undo of ratings is deliberately **out of scope** here. The schema in
 - Two operational risks to be mindful of:
   - "Maintainer closes a campaign and forgets to open the next one" — symptom is users see the lock banner indefinitely. A SigNoz alert on `findOpen() == null` for > 1 h is recommended; not in the v1 PR sequence.
   - A rating-submit transaction that holds a row lock on the open campaign at the moment of close commits inside the closing transaction's window. Acceptable: that rating is the last entry in the closing campaign.
+
+## Amendment 2026-05-30: Undo grace-window and export-at-close
+
+The post-commit undo follow-up flagged out of scope above (the spec's `submission_id` / `withdrawn_at` columns) is now designed in `docs/superpowers/specs/2026-05-30-survey-undo-design.md`. It lands as a `survey_actions` log written in the same transaction as each rating submit, reversed by `POST /v1/actions/undo`. Four decisions about that undo are bound to the campaign lifecycle this ADR introduced and are recorded here so the implementation phases inherit them.
+
+**Undo window is the campaign's open lifetime plus an 8 s close grace.** An action stays undoable for as long as its campaign is open, then for a `CLOSE_GRACE = 8 s` tail after `closed_at`. There is no per-action wall-clock timer while the campaign is open — the campaign boundary *is* the window. Past `closed_at + CLOSE_GRACE`, undo returns 410 Gone.
+
+**Undo does not check campaign-open; the grace check is the only gate.** `UndoActionUseCase` intentionally permits undo during the close grace even though new rating POSTs are 423-locked the instant `closed_at` is stamped (per the lock above). Submit and undo are asymmetric on purpose: locking a closed campaign stops *new* data entering the batch, but a user mid-action when the maintainer closes must still be able to retract the rating they just made. The `closed_at + grace` comparison is the sole authorization gate beyond token possession / session binding.
+
+**Export settles per-campaign-at-close, as a consequence.** Because undo is campaign-long, a rating is not final until its campaign has been closed past the grace. `aggregateForExport` therefore excludes ratings whose campaign is still open (or within the grace), making export effectively per-campaign-at-close rather than continuous mid-campaign. This sharpens the "each rating belongs to exactly one batch" guarantee above: a batch is frozen — and exportable — only once no in-flight undo can still mutate it.
+
+**The `proposed_item_id` recipe column unwinds a reused-item `proposed_by` link.** The `survey_actions` reversal recipe carries `proposed_item_id` in addition to `created_item_id`. They differ on the text-correctif path: `created_item_id` is set only when the corrected item was *freshly inserted*, whereas `proposed_item_id` is set whenever the correctif ran — including when `insertIfAbsent` *reused* an existing row on a `(mot, definition)` conflict. Undo deletes the user's `proposed_by` link via `proposed_item_id` in both cases, but only drops the item itself when it was freshly created and nothing else now references it.

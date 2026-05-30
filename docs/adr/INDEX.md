@@ -77,6 +77,7 @@ ADR-0058  modal_jobs/**                            Training/inference on Modal m
 ADR-0059  survey/**/persistence/**                 Campaign lifecycle: campaigns table, partial-unique open invariant
 ADR-0059  survey/**/usecases/SubmitRatingUseCase.kt           Locked arm + campaign_id stamping
 ADR-0059  survey/**/usecases/SubmitPairRatingUseCase.kt       Locked arm + campaign_id stamping
+ADR-0059  survey/**/usecases/UndoActionUseCase.kt             Undo grace-window (campaign-open + 8 s close grace); grace is sole gate
 ADR-0059  survey/api/openapi.yaml                  /v1/campaign/current + 423 on rating POSTs
 ADR-0059  frontend/src/ui/components/sondage/**    LockBanner + useCampaignStatus + disabled cards
 ADR-0059  scripts/survey/backfill_campaigns.py     Historical campaign attribution from Modal logs
