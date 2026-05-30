@@ -9,13 +9,55 @@
 **Tech Stack:** Kotlin 2.3 + Ktor 3 + Postgres/Flyway/JDBC + kotlinx-coroutines (backend); Vite + React 19 + TanStack Router + Panda + Vitest/MSW (frontend). Spec: `docs/superpowers/specs/2026-05-30-survey-undo-design.md`.
 
 **PR sequence (each ≤400 lines diff, ADR-0001 §4):**
+- **PR 0.5 — ADR-0059 amendment:** amend `docs/adr/0059-*.md` with undo-window + export-at-close decisions; update `docs/adr/INDEX.md`. Docs-only; gates Phase 1 (ADR-0001 §7). (Phase 0.5)
 - **PR 1 — schema-only:** `openapi.yaml` additive `undoToken` + `POST /v1/actions/undo`. (Phase 1)
 - **PR 2a — transaction boundary:** `TransactionManager` port + adapter + ambient-connection refactor of the 5 write repos. No behavior change. (Phase 2)
 - **PR 2b — action log:** V8 migration, `SurveyAction` domain, `ActionLogRepository` port + adapter, token util, new repo methods (`deleteByIds`, `findById`, `delete`, `decrementItemsRated`). (Phase 3)
-- **PR 2c — undo + submit wiring:** `UndoActionUseCase`, submit use-cases mint token + write recipe in a transaction, export settling filter, route, DI wiring, ADR-0059 amendment. (Phase 4)
+- **PR 2c — undo + submit wiring:** `UndoActionUseCase`, submit use-cases mint token + write recipe in a transaction, export settling filter, route, DI wiring. (Phase 4)
 - **PR 3 — frontend:** regenerate types, client `undoAction` + `undoToken`, persistent on-card `Annuler` on both sondage routes, analytics, tests. (Phase 5)
 
 > The backend is split into 2a/2b/2c to stay under the diff cap; if the maintainer prefers a single backend PR, invoke the standing cap-override (memory: `feedback-standing-cap-override`).
+
+---
+
+## Phase 0.5 — ADR-0059 amendment PR (docs-only)
+
+**Must merge before Phase 1.** ADR-0001 §7 requires the ADR to exist before any implementation PR. The undo-window and export-settling decisions are foundational to every downstream phase.
+
+**Files:**
+- Modify: `docs/adr/0059-<slug>.md`
+- Modify: `docs/adr/INDEX.md`
+
+### Task 0.5.1: Amend ADR-0059
+
+- [ ] **Step 1: Add the amendment section**
+
+In `docs/adr/0059-*.md`, append a dated amendment section recording:
+
+(a) **Undo window** — an action is undoable for as long as its campaign is open plus a `CLOSE_GRACE = 8 s` tail after close. There is no per-action wall-clock timer during an open campaign.
+
+(b) **Undo during close grace** — `UndoActionUseCase` intentionally allows undo during the grace even though new rating POSTs are 423-locked; the `campaign.closedAt` + grace check is the only gate.
+
+(c) **Export settles per-campaign-at-close** — because undo is campaign-long, `aggregateForExport` excludes ratings whose campaign is not closed past the grace; export is effectively per-campaign-at-close, not continuous mid-campaign.
+
+(d) **`proposed_item_id` recipe column** — the `survey_actions` reversal recipe carries a `proposed_item_id` column (in addition to `created_item_id`) to unwind the `proposed_by` row for a text-correctif where the item was *reused* (conflict on `(mot, definition)`) rather than freshly inserted.
+
+- [ ] **Step 2: Update INDEX.md**
+
+Add entries for the new use-case paths under the ADR-0059 and ADR-0056 rows in `docs/adr/INDEX.md`:
+- `survey/**/usecases/UndoActionUseCase.kt` → ADR-0059, ADR-0056
+- `survey/**/persistence/PgActionLogRepository.kt` → ADR-0059, ADR-0056
+
+Run `scripts/adr-context.sh docs/adr/0059-*.md` to confirm the mapping format, then follow the existing row style.
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add docs/adr/0059-*.md docs/adr/INDEX.md
+git commit -s -m "docs(adr): amend ADR-0059 with undo grace-window, export-at-close, proposed_item_id"
+```
+
+> PR 0.5 ends here. It merges before Phase 1 dispatch.
 
 ---
 
@@ -905,8 +947,9 @@ The `UndoActionUseCase`, the submit use-cases minting a token and writing the re
 - Modify: `PgRatingRepository.kt` (export settling filter)
 - Create: `survey/api/src/main/kotlin/com/bliss/survey/api/routes/UndoActionRoute.kt`
 - Modify: `survey/api/.../dto/RatingDtos.kt`, `Main.kt`, `Module.kt`, the `Wiring` data class
-- Modify: `docs/adr/0059-*.md`, `docs/adr/INDEX.md`
 - Test: `UndoActionUseCaseTest.kt`, submit use-case test additions, `UndoActionRouteTest.kt`, export-filter test addition.
+
+> ADR-0059 amendment and INDEX.md update shipped in Phase 0.5 (already on `main`).
 
 ### Task 2c.1: `UndoActionUseCase` (TDD, domain-level)
 
@@ -1483,25 +1526,9 @@ git add survey/api/src/main/kotlin/com/bliss/survey/api/routes/UndoActionRoute.k
 git commit -s -m "feat(survey-api): wire POST /v1/actions/undo route + undo use case"
 ```
 
-### Task 2c.7: ADR-0059 amendment + INDEX.md
+### Task 2c.7: (moved to Phase 0.5)
 
-- [ ] **Step 1: Amend ADR-0059**
-
-In `docs/adr/0059-*.md`, add a dated amendment section recording: (a) undo is undoable for the campaign's open lifetime + an 8s close grace; (b) undo does **not** check campaign-open (it intentionally fires during the grace even though new rating POSTs are 423-locked); (c) export settles per-campaign-at-close as a consequence; (d) the `proposed_item_id` recipe column exists to unwind a reused-item `proposed_by` link.
-
-- [ ] **Step 2: Update INDEX.md**
-
-Run `scripts/adr-context.sh survey/application/src/main/kotlin/com/bliss/survey/application/usecases/UndoActionUseCase.kt` to confirm the path→ADR mapping, then add the new use-case path(s) under the ADR-0059 / ADR-0056 entries in `docs/adr/INDEX.md` so `registry-coherence` passes.
-
-- [ ] **Step 3: Full survey build + commit**
-
-Run: `./gradlew :survey:domain:build :survey:application:build :survey:infrastructure:build :survey:api:build spotlessCheck`
-Expected: BUILD SUCCESSFUL.
-
-```bash
-git add docs/adr/0059-*.md docs/adr/INDEX.md
-git commit -s -m "docs(adr): amend ADR-0059 with undo grace-window + export-at-close"
-```
+> ADR-0059 amendment and `docs/adr/INDEX.md` update shipped in Phase 0.5, which merges before Phase 1. Nothing to do here — verify the amendment is on `main` before starting this phase.
 
 ---
 

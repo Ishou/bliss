@@ -10,7 +10,7 @@ Append-only log of decisions the orchestrator made during this rollout. For huma
 | Polling cadence | 120 s (`*/2 * * * *` via CronCreate) | Matches dispatch-skill default; `claude-review` IN_PROGRESS = wait |
 | Continuity | `CronCreate` (session-only in practice; `durable` flag ignored by runtime) | Recreate if the rollout outlives the session |
 | Fix-cycle budget per phase | 3 | Dispatch-skill default |
-| Phase order | Strictly sequential: bootstrap → 1 → 2a → 2b → 2c → 3; each branches off `main` after predecessor merges | 2b needs 2a's tx helper; 2c needs 2b's repos; 3 needs 1 (types) + 2c (server behavior) |
+| Phase order | Strictly sequential: bootstrap → 0.5 → 1 → 2a → 2b → 2c → 3; each branches off `main` after predecessor merges | 0.5 (ADR amendment) gates 1 (ADR-0001 §7); 2b needs 2a's tx helper; 2c needs 2b's repos; 3 needs 1 (types) + 2c (server behavior) |
 | Cap override | Standing; orchestrator may invoke proactively to short-circuit 3c-loop-terminator. PR 2c pre-flagged cap-heavy | memory `feedback-standing-cap-override`, `feedback-cap-override-short-circuit` |
 | Escalation trigger | 3 failed fix-cycles on any PR, OR identical non-cap finding across two §6a cycles | Stops the chain; logs an `ACTION` entry + `CronDelete` self |
 

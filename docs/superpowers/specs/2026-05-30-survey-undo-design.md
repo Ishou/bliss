@@ -314,8 +314,10 @@ Touches `survey/**/persistence/**`, `survey/**/usecases/**`, and
 the rating-POST lock) and ADR-0056. Two decisions deserve recording as an
 **amendment to ADR-0059** rather than a new ADR: (a) undo is undoable for the
 campaign's open lifetime + an 8s close grace, and (b) export settles
-per-campaign-at-close as a consequence. Add the new use-case path(s) to
-`docs/adr/INDEX.md` in the same PR (`registry-coherence` gate).
+per-campaign-at-close as a consequence. Per ADR-0001 §7, the amendment ships in a
+**standalone Phase 0.5 docs-only PR** (`docs/survey-undo-adr-amendment`, branch off
+`main`) that merges before Phase 1 (the schema PR). That PR also adds the new
+use-case path(s) to `docs/adr/INDEX.md` (`registry-coherence` gate).
 
 ## Out of scope
 
@@ -327,10 +329,14 @@ per-campaign-at-close as a consequence. Add the new use-case path(s) to
 
 ## PR sequencing
 
+0.5. **ADR-0059 amendment (Phase 0.5):** amend `docs/adr/0059-*.md` with (a) undo
+    window = campaign lifetime + 8 s grace, (b) export settles per-campaign-at-close;
+    update `docs/adr/INDEX.md` with new use-case paths. Docs-only; merges before
+    Phase 1 (ADR-0001 §7 gate).
 1. **Schema-only PR:** openapi `undoToken` additive field + `POST /v1/actions/undo`.
 2. **Backend PR:** V8 migration (`survey_actions`), `TransactionManager` +
    `ActionLogRepository` + adapters, `UndoActionUseCase`, submit use-cases mint
    token + write recipe inside a transaction, export settling filter,
-   `decrementItemsRated`, ADR-0059 amendment + INDEX.md.
+   `decrementItemsRated`.
 3. **Frontend PR:** regenerate types, persistent on-card `Annuler` wiring on
    both sondage routes, stash-and-restore, analytics, tests.

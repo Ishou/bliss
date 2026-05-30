@@ -35,17 +35,19 @@ Strictly sequential. Each phase branches off `origin/main` **after its predecess
 | Phase | Branch | Base | PR title prefix | Depends on |
 |---|---|---|---|---|
 | 0 — bootstrap docs | `docs/survey-undo-orchestration` | `main` | `docs(survey):` | — |
-| 1 — schema-only | `feat/survey-undo-schema` | `main` | `feat(api-survey):` | Phase 0 merged |
+| 0.5 — ADR-0059 amendment | `docs/survey-undo-adr-amendment` | `main` | `docs(adr):` | Phase 0 merged |
+| 1 — schema-only | `feat/survey-undo-schema` | `main` | `feat(api-survey):` | Phase 0.5 merged |
 | 2a — tx boundary | `refactor/survey-tx-boundary` | `main` | `refactor(survey-infrastructure):` | Phase 1 merged |
 | 2b — action log | `feat/survey-action-log` | `main` | `feat(survey-infrastructure):` | Phase 2a merged |
 | 2c — undo + wiring | `feat/survey-undo-usecase` | `main` | `feat(survey):` | Phase 2b merged |
 | 3 — frontend | `feat/survey-frontend-undo` | `main` | `feat(survey-frontend):` | Phase 1 merged (needs `pnpm api:generate`) **and** Phase 2c merged (server returns `undoToken` / honours undo) |
 
 Phase scopes (from the plan):
+- **0.5:** `docs/adr/0059-*.md` amendment — undo window = campaign lifetime + 8 s grace, export settles per-campaign-at-close, `proposed_item_id` recipe column rationale; `docs/adr/INDEX.md` new use-case path entries. Docs-only. (Plan Phase 0.5.)
 - **1:** `survey/api/openapi.yaml` — additive `undoToken` on `RatingResponse`/`PairRatingResponse`, `POST /v1/actions/undo` + `UndoActionRequest`. (Plan Phase 1.)
 - **2a:** `TransactionManager` port + `PgTransactionManager` + `TxConnection` ambient-connection element; refactor the 5 write repos to `withTxConnection`. No behavior change. (Plan Phase 2.)
 - **2b:** V8 migration `survey_actions`; `SurveyAction` domain; `TokenGenerator` port + `UndoTokenHash` util; `ActionLogRepository` port + `PgActionLogRepository`; new reversal repo methods. (Plan Phase 3.)
-- **2c:** `UndoActionUseCase`; submit use-cases mint token + write recipe in a transaction; export settling filter; `POST /v1/actions/undo` route; DI wiring; ADR-0059 amendment + INDEX.md. (Plan Phase 4.)
+- **2c:** `UndoActionUseCase`; submit use-cases mint token + write recipe in a transaction; export settling filter; `POST /v1/actions/undo` route; DI wiring. (Plan Phase 4.)
 - **3:** regenerate types; client `undoAction` + `undoToken`; anon-store `remove`; `UndoBar`; on-card undo on both sondage routes; analytics; vitest/MSW tests. (Plan Phase 5.)
 
 ## Tick procedure
@@ -55,7 +57,7 @@ Run from repo root. Take **at most one action per tick**, then stop. Be concise 
 1. `cd "$(git rev-parse --show-toplevel)" && git fetch origin --quiet`.
 2. Read this procedure. If it is not on `origin/main` yet, you are already reading it from `origin/docs/survey-undo-orchestration` via the bootstrap prompt — proceed.
 3. **Bootstrap gate:** locate the bootstrap PR (head branch `docs/survey-undo-orchestration`). If it exists and is **open**, apply the open-PR decision tree to it and stop. If it is **closed-not-merged**, escalate (log `ACTION` + `CronDelete` self + exit). If **merged**, continue.
-4. Walk the phase map (1 → 2a → 2b → 2c → 3) in order. For the first phase not yet merged:
+4. Walk the phase map (0.5 → 1 → 2a → 2b → 2c → 3) in order. For the first phase not yet merged:
    - **No PR for this phase AND all dependencies merged** → dispatch the implementer agent for this phase (template below). Log `DISPATCHED`. Stop.
    - **No PR AND a dependency is not yet merged** → wait (a predecessor is still in flight). Stop.
    - **PR exists** → assess via the open-PR decision tree. Take the first matching action. Stop.
@@ -117,9 +119,10 @@ Comments document non-obvious WHY, in one line. Default to no comment. No multi-
 - ADR-0001 §4 400-line soft target (generated code excluded). Ask "should this split?" first; cite the override only when warranted.
 - No cross-context imports. No new runtime deps without an ADR.
 - DCO sign-off, conventional commits, no emojis.
+- [Phase 0.5 only: docs-only; do NOT touch any code or schema files.]
 - [Phase 1 only: schema-first — this is the schema PR; no implementation.]
 - [Phase 2a only: NO behavior change; do not alter repo constructors — only swap the connection-acquisition line.]
-- [Phase 2c only: the ADR-0059 amendment ships in this PR because this PR is its only consumer; note that in the body.]
+- [Phase 2c only: ADR-0059 amendment is already on `main` (Phase 0.5); do not re-amend it here.]
 
 ## CI auto-fix loop
 After pushing, monitor CI and auto-fix until green.
