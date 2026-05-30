@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { css, cx } from 'styled-system/css';
 import type { SurveyItem, SurveyPos } from '@/application/survey';
+import { Select } from '@/ui/components/primitives';
 import { categorieLabel, POS_OPTIONS, posLabel, styleLabel } from './labels';
 
 export type Verdict = 'GOOD' | 'BAD' | 'SKIP';
@@ -78,21 +79,6 @@ const correctifBoxStyles = css({
   borderRadius: 'md',
   padding: 'md',
   bg: 'surface',
-});
-
-const correctifSelectStyles = css({
-  fontSize: 'body',
-  fontFamily: 'body',
-  color: 'fg',
-  bg: 'surface',
-  border: '1px solid token(colors.border)',
-  borderRadius: 'sm',
-  padding: 'sm',
-  minHeight: '44px',
-  _focusVisible: {
-    outline: '2px solid token(colors.focusRing)',
-    outlineOffset: '2px',
-  },
 });
 
 const correctifTextareaStyles = css({
@@ -200,6 +186,8 @@ export function RatingCard({ item, onVerdict, onCorriger }: RatingCardProps) {
       if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) return;
       const target = event.target as HTMLElement | null;
       if (target && /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)) return;
+      // Ark Select renders a `<button role="combobox">`; focus stays on it while the listbox is open.
+      if (target instanceof Element && target.closest('[role="combobox"], [role="listbox"]')) return;
       if (target?.isContentEditable) return;
       const key = event.key.toLowerCase();
       if (key === 'c') {
@@ -261,7 +249,7 @@ export function RatingCard({ item, onVerdict, onCorriger }: RatingCardProps) {
         <button
           type="button"
           className={cx(verdictButtonBase, verdictBadStyles)}
-          aria-label={`BAD pour l'indice « ${item.definition} »`}
+          aria-label={`Mauvaise définition pour l'indice « ${item.definition} »`}
           data-verdict="BAD"
           onClick={() => submit('BAD')}
         >
@@ -271,7 +259,7 @@ export function RatingCard({ item, onVerdict, onCorriger }: RatingCardProps) {
         <button
           type="button"
           className={cx(verdictButtonBase, verdictSkipStyles)}
-          aria-label={`SKIP pour l'indice « ${item.definition} »`}
+          aria-label={`Passer l'indice « ${item.definition} »`}
           data-verdict="SKIP"
           onClick={() => submit('SKIP')}
         >
@@ -281,7 +269,7 @@ export function RatingCard({ item, onVerdict, onCorriger }: RatingCardProps) {
         <button
           type="button"
           className={cx(verdictButtonBase, verdictGoodStyles)}
-          aria-label={`GOOD pour l'indice « ${item.definition} »`}
+          aria-label={`Bonne définition pour l'indice « ${item.definition} »`}
           data-verdict="GOOD"
           onClick={() => submit('GOOD')}
         >
@@ -302,24 +290,14 @@ export function RatingCard({ item, onVerdict, onCorriger }: RatingCardProps) {
 
       {correctifText !== null ? (
         <div className={correctifBoxStyles} data-testid="correctif-box">
-          <label htmlFor="correctif-pos" className={metaStyles}>
-            Nature grammaticale (POS)
-          </label>
-          <select
-            id="correctif-pos"
-            className={correctifSelectStyles}
+          <Select<SurveyPos>
+            label="Nature grammaticale"
             value={correctifPos}
-            aria-label="Nature grammaticale corrigée"
-            onChange={(e) => setCorrectifPos(e.target.value as SurveyPos)}
-          >
-            {POS_OPTIONS.map((pos) => (
-              <option key={pos} value={pos}>
-                {posLabel(pos)}
-              </option>
-            ))}
-          </select>
+            onValueChange={(pos) => pos && setCorrectifPos(pos)}
+            options={POS_OPTIONS.map((pos) => ({ value: pos as SurveyPos, label: posLabel(pos) }))}
+          />
           <label htmlFor="correctif-text" className={metaStyles}>
-            Proposez une définition corrigée. Soumise comme nouvelle entrée notée GOOD automatiquement.
+            Proposez une définition corrigée. Soumise comme nouvelle entrée notée « bonne » automatiquement.
           </label>
           <textarea
             id="correctif-text"

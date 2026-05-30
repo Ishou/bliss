@@ -53,7 +53,7 @@ describe('PairCard', () => {
 
   it('exposes the Verdict role=group with aria-keyshortcuts', () => {
     render(<PairCard pair={samplePair} onVerdict={() => Promise.resolve()} />);
-    const group = screen.getByRole('group', { name: /Verdict pairwise/i });
+    const group = screen.getByRole('group', { name: /Comparaison des deux définitions/i });
     expect(group.getAttribute('aria-keyshortcuts')).toBe('a d s x space escape');
   });
 
