@@ -88,7 +88,10 @@ Konsist architecture tests must stay green: no vendor SDK imports in
     required: [userId, role, changedAt]
     properties:
       userId:    { type: string, format: uuid }
-      role:      { type: string, enum: [player, maintainer] }
+      role:
+        type: string
+        enum: [player, maintainer]
+        x-enum-varnames: [PLAYER, MAINTAINER]
       changedAt: { type: string, format: date-time }
   ```
 
