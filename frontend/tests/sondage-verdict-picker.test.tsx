@@ -108,6 +108,22 @@ describe('RatingCard verdict picker', () => {
     expect(onVerdict).not.toHaveBeenCalled();
   });
 
+  it('does not fire a verdict when j/k/l is pressed on the Ark POS combobox', async () => {
+    const onVerdict = vi.fn().mockResolvedValue(undefined);
+    const { container } = render(
+      <RatingCard item={sampleItem} onVerdict={onVerdict} onCorriger={async () => {}} />,
+    );
+    await act(async () => {
+      fireEvent.click(container.querySelector('button[data-verdict="CORRIGER"]') as HTMLButtonElement);
+    });
+    const combobox = screen.getByRole('combobox', { name: 'Nature grammaticale' });
+    await act(async () => {
+      fireEvent.keyDown(combobox, { key: 'l' });
+      fireEvent.keyDown(combobox, { key: 'j' });
+    });
+    expect(onVerdict).not.toHaveBeenCalled();
+  });
+
   it('Corriger button opens textarea pre-filled with definition; submit invokes onCorriger', async () => {
     const onVerdict = vi.fn().mockResolvedValue(undefined);
     const onCorriger = vi.fn().mockResolvedValue(undefined);

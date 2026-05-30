@@ -186,6 +186,8 @@ export function RatingCard({ item, onVerdict, onCorriger }: RatingCardProps) {
       if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) return;
       const target = event.target as HTMLElement | null;
       if (target && /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)) return;
+      // Ark Select renders a `<button role="combobox">`; focus stays on it while the listbox is open.
+      if (target instanceof Element && target.closest('[role="combobox"], [role="listbox"]')) return;
       if (target?.isContentEditable) return;
       const key = event.key.toLowerCase();
       if (key === 'c') {
