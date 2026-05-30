@@ -70,6 +70,7 @@ patch without an ADR amendment.
 | `game-api-user-deleted` | `wordsparrow.user.deleted` | game-api |
 | `game-api-user-renamed` | `wordsparrow.user.renamed` | game-api |
 | `grid-user-deleted` | `wordsparrow.user.deleted` | grid-api |
+| `survey-api-user-role-changed` | `wordsparrow.user.role-changed` | survey-api |
 
 ## Consequences
 
