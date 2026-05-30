@@ -1,0 +1,11 @@
+summary: A user's role changed; downstream consumers update their cached role state.
+payload:
+  type: object
+  required: [userId, role, changedAt]
+  properties:
+    userId:    { type: string, format: uuid }
+    role:
+      type: string
+      enum: [player, maintainer]
+      x-enum-varnames: [PLAYER, MAINTAINER]
+    changedAt: { type: string, format: date-time }
