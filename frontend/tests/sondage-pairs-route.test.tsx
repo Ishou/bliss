@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import {
   RouterProvider,
   createMemoryHistory,
@@ -65,7 +65,8 @@ function stubSurveyClient(overrides: Partial<SurveyClient> = {}): SurveyClient {
     getNextItem: vi.fn().mockResolvedValue(null),
     submitRating: vi.fn().mockResolvedValue(undefined),
     getNextPair: vi.fn().mockResolvedValue(samplePair),
-    submitPairRating: vi.fn().mockResolvedValue(undefined),
+    submitPairRating: vi.fn().mockResolvedValue({ undoToken: null }),
+    undoAction: vi.fn().mockResolvedValue(undefined),
     getProgress: vi.fn().mockResolvedValue({
       itemsRated: 0,
       calibrationAgreement: null,
@@ -306,6 +307,35 @@ describe('Sondage pairs route', () => {
     renderSondagePairs({ authClient, surveyClient });
     await waitFor(() => expect(getNextPair).toHaveBeenCalled());
     expect(getNextPair).toHaveBeenLastCalledWith({ excludedItemIds: [preAuthRatedId] });
+    localStorage.clear();
+  });
+
+  it('shows Annuler after a pair verdict and re-presents the pair on undo', async () => {
+    const undoAction = vi.fn().mockResolvedValue(undefined);
+    const getNextPair = vi
+      .fn()
+      .mockResolvedValueOnce(samplePair)
+      .mockResolvedValueOnce(null);
+    const surveyClient = stubSurveyClient({
+      getNextPair,
+      submitPairRating: vi.fn().mockResolvedValue({ undoToken: 'tok_pair_1' }),
+      undoAction,
+    });
+    renderSondagePairs({ surveyClient });
+
+    const bothGood = await screen.findByRole('button', {
+      name: /Les deux définitions sont bonnes/i,
+    });
+    const click = (el: HTMLElement) => { el.focus(); fireEvent.click(el); };
+    await act(async () => { click(bothGood); });
+
+    const undo = await screen.findByTestId('undo-button');
+    await act(async () => { click(undo); });
+
+    expect(undoAction).toHaveBeenCalledWith('tok_pair_1');
+    expect(
+      await screen.findByRole('button', { name: /Les deux définitions sont bonnes/i }),
+    ).toBeTruthy();
     localStorage.clear();
   });
 });
