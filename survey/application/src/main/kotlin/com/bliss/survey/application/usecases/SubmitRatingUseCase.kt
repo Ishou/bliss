@@ -3,6 +3,7 @@ package com.bliss.survey.application.usecases
 import com.bliss.survey.application.filters.FilterInput
 import com.bliss.survey.application.filters.FilterPipeline
 import com.bliss.survey.application.filters.FilterResult
+import com.bliss.survey.application.ports.CampaignRepository
 import com.bliss.survey.application.ports.Clock
 import com.bliss.survey.application.ports.IdGenerator
 import com.bliss.survey.application.ports.ProposedByRepository
@@ -40,6 +41,8 @@ sealed interface SubmitRatingResult {
     data object AnonCorrectifForbidden : SubmitRatingResult
 
     data object ItemNotFound : SubmitRatingResult
+
+    data object Locked : SubmitRatingResult
 }
 
 data class CorrectifInput(
@@ -66,8 +69,10 @@ class SubmitRatingUseCase(
     private val filters: FilterPipeline,
     private val ids: IdGenerator,
     private val clock: Clock,
+    private val campaigns: CampaignRepository,
 ) {
     suspend fun execute(cmd: SubmitRatingCommand): SubmitRatingResult {
+        val openCampaign = campaigns.findOpen() ?: return SubmitRatingResult.Locked
         val now = clock.now()
         val parent = items.findById(cmd.itemId) ?: return SubmitRatingResult.ItemNotFound
 
@@ -140,6 +145,7 @@ class SubmitRatingUseCase(
                 proposedItemId = proposedItemId,
                 latencyMs = cmd.latencyMs,
                 createdAt = now,
+                campaignId = openCampaign.id,
             )
         ratings.insert(rating)
         if (proposedItemId != null) {
@@ -156,6 +162,7 @@ class SubmitRatingUseCase(
                     proposedItemId = null,
                     latencyMs = 0,
                     createdAt = now,
+                    campaignId = openCampaign.id,
                 )
             ratings.insert(autoGood)
         }
