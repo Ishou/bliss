@@ -158,12 +158,6 @@ export interface Campaign {
   readonly closedAt: string | null;
 }
 
-export type CampaignLockKind = 'open' | 'closed';
-
-export function lockKindOf(campaign: Campaign): CampaignLockKind {
-  return campaign.closedAt === null ? 'open' : 'closed';
-}
-
 // Application port. Concrete adapter: `infrastructure/api/survey/client.ts`.
 export interface SurveyClient {
   getNextItem(opts?: { readonly excludedItemIds?: readonly string[] }): Promise<SurveyItem | null>;
