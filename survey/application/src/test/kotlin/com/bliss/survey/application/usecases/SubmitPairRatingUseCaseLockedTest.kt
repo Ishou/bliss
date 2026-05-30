@@ -7,6 +7,7 @@ import assertk.assertions.isInstanceOf
 import com.bliss.survey.application.ports.CampaignRepository
 import com.bliss.survey.application.ports.Clock
 import com.bliss.survey.application.ports.IdGenerator
+import com.bliss.survey.application.ports.TokenGenerator
 import com.bliss.survey.domain.model.Campaign
 import com.bliss.survey.domain.model.CampaignId
 import com.bliss.survey.domain.model.Categorie
@@ -87,6 +88,9 @@ class SubmitPairRatingUseCaseLockedTest {
                 ids = idGen(),
                 clock = clock,
                 campaigns = campaignsRepo(currentCampaign),
+                actions = InMemoryActionLogRepository(),
+                tokens = TokenGenerator { "fixed-token" },
+                tx = passThroughTransactionManager,
             )
         return Setup(uc, items, ratings, pairRatings, progress)
     }

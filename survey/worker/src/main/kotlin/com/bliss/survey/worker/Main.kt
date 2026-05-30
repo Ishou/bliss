@@ -160,7 +160,8 @@ internal fun runExport(
     runBlocking {
         val items = PgSurveyItemRepository(ds)
         val ratings = PgRatingRepository(ds)
-        val useCase = ExportDatasetUseCase(items, ratings, StyleGuideCsvWriter())
+        val clock = Clock { Instant.now() }
+        val useCase = ExportDatasetUseCase(items, ratings, StyleGuideCsvWriter(), clock)
         val csv = useCase.execute(minRatings, since, authWeight, anonWeight)
         Files.writeString(out, csv)
     }

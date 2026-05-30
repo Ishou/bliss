@@ -2,6 +2,7 @@ package com.bliss.survey.infrastructure.nats
 
 import assertk.assertThat
 import assertk.assertions.containsExactlyInAnyOrder
+import com.bliss.survey.application.ports.ActionLogRepository
 import com.bliss.survey.application.ports.MaintainerRole
 import com.bliss.survey.application.ports.MaintainerRoleRepository
 import com.bliss.survey.application.ports.ProposedByRepository
@@ -9,8 +10,10 @@ import com.bliss.survey.application.ports.RatingRepository
 import com.bliss.survey.application.ports.SurveyItemRepository
 import com.bliss.survey.application.ports.UserProgressRepository
 import com.bliss.survey.application.usecases.AnonymizeUserRatingsUseCase
+import com.bliss.survey.domain.model.ActionId
 import com.bliss.survey.domain.model.ItemId
 import com.bliss.survey.domain.model.Rating
+import com.bliss.survey.domain.model.SurveyAction
 import com.bliss.survey.domain.model.SurveyItem
 import com.bliss.survey.domain.model.Tier
 import com.bliss.survey.domain.model.UserId
@@ -96,6 +99,7 @@ class UserDeletedConsumerTest {
                     items = NoopItems,
                     progress = NoopProgress,
                     maintainerRoles = NoopMaintainerRoles,
+                    actions = NoopActionLog,
                 )
             val consumer =
                 UserDeletedConsumer(
@@ -195,6 +199,7 @@ class UserDeletedConsumerTest {
                 items = NoopItems,
                 progress = NoopProgress,
                 maintainerRoles = NoopMaintainerRoles,
+                actions = NoopActionLog,
             )
         val consumer =
             UserDeletedConsumer(
@@ -227,7 +232,10 @@ class UserDeletedConsumerTest {
             captured += userId
         }
 
-        override suspend fun aggregateForExport(since: Instant?) = emptyList<com.bliss.survey.application.ports.RatingAggregate>()
+        override suspend fun aggregateForExport(
+            since: Instant?,
+            settledBefore: Instant,
+        ) = emptyList<com.bliss.survey.application.ports.RatingAggregate>()
     }
 
     private object NoopProposedBy : ProposedByRepository {
@@ -314,6 +322,19 @@ class UserDeletedConsumerTest {
         override suspend fun get(userId: UserId) = null
 
         override suspend fun deleteByUser(userId: UserId) = Unit
+    }
+
+    private object NoopActionLog : ActionLogRepository {
+        override suspend fun insert(action: SurveyAction) = Unit
+
+        override suspend fun findByTokenHash(tokenHash: ByteArray): SurveyAction? = null
+
+        override suspend fun markUndone(
+            id: ActionId,
+            at: Instant,
+        ) = false
+
+        override suspend fun scrubUser(userId: UserId) = Unit
     }
 
     private object NoopMaintainerRoles : MaintainerRoleRepository {

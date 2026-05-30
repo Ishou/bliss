@@ -107,14 +107,18 @@ class PgActionLogRepositoryTest {
         }
 
     @Test
-    fun `markUndone stamps undone_at`() =
+    fun `markUndone stamps undone_at and returns true, second call returns false`() =
         runTest {
             val campaign = persistCampaign()
             actions.insert(sampleBinaryAction(campaign, sha256("tok2")).copy(id = ActionId(UUID.randomUUID())))
             val stored = actions.findByTokenHash(sha256("tok2"))!!
 
-            actions.markUndone(stored.id, Instant.parse("2026-05-30T12:00:00Z"))
+            assertThat(actions.markUndone(stored.id, Instant.parse("2026-05-30T12:00:00Z"))).isEqualTo(true)
+            assertThat(actions.findByTokenHash(sha256("tok2"))?.undoneAt)
+                .isEqualTo(Instant.parse("2026-05-30T12:00:00Z"))
 
+            // Conditional single-redemption: a second claim on an already-undone row changes nothing.
+            assertThat(actions.markUndone(stored.id, Instant.parse("2026-05-30T13:00:00Z"))).isEqualTo(false)
             assertThat(actions.findByTokenHash(sha256("tok2"))?.undoneAt)
                 .isEqualTo(Instant.parse("2026-05-30T12:00:00Z"))
         }

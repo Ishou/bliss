@@ -4,6 +4,7 @@ import assertk.assertThat
 import assertk.assertions.contains
 import assertk.assertions.startsWith
 import com.bliss.survey.application.csv.StyleGuideCsvWriter
+import com.bliss.survey.application.ports.Clock
 import com.bliss.survey.application.ports.RatingAggregate
 import com.bliss.survey.domain.model.Categorie
 import com.bliss.survey.domain.model.ItemId
@@ -61,7 +62,7 @@ class ExportDatasetUseCaseTest {
                         qualiteSquaredAnonSum = 8,
                     ),
                 )
-            val uc = ExportDatasetUseCase(items, ratings, StyleGuideCsvWriter())
+            val uc = ExportDatasetUseCase(items, ratings, StyleGuideCsvWriter(), Clock { now })
             val csv = uc.execute(minRatings = 3, since = null, authWeight = 2.0, anonWeight = 1.0)
             assertThat(csv).startsWith("mot;definition;pos;categorie;style;force;longueur;source;meta")
             assertThat(csv).contains("POMME")
@@ -109,7 +110,7 @@ class ExportDatasetUseCaseTest {
                         qualiteSquaredAnonSum = 0,
                     ),
                 )
-            val uc = ExportDatasetUseCase(items, ratings, StyleGuideCsvWriter())
+            val uc = ExportDatasetUseCase(items, ratings, StyleGuideCsvWriter(), Clock { now })
             val csv = uc.execute(minRatings = 3, since = null, authWeight = 1.0, anonWeight = 1.0)
             // Only the header remains
             assertThat(csv).startsWith("mot;definition;pos;categorie;style;force;longueur;source;meta")

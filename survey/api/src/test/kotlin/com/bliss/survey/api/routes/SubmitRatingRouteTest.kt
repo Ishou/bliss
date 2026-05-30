@@ -82,7 +82,7 @@ class SubmitRatingRouteTest {
         testApplication {
             application {
                 install(ContentNegotiation) { json(WIRE_JSON) }
-                routing { submitRatingRoute { SubmitRatingResult.Accepted(acceptedAnon) } }
+                routing { submitRatingRoute { SubmitRatingResult.Accepted(acceptedAnon, undoToken = "undo-tok") } }
             }
             val resp =
                 client.post("/v1/items/$itemUuid/rating") {
@@ -103,7 +103,7 @@ class SubmitRatingRouteTest {
             application {
                 install(SessionMiddleware) { verifyCookie = { userUuid } }
                 install(ContentNegotiation) { json() }
-                routing { submitRatingRoute { SubmitRatingResult.Accepted(acceptedAuth) } }
+                routing { submitRatingRoute { SubmitRatingResult.Accepted(acceptedAuth, undoToken = "undo-tok") } }
             }
             val resp =
                 client.post("/v1/items/$itemUuid/rating") {
@@ -124,7 +124,7 @@ class SubmitRatingRouteTest {
                 routing {
                     submitRatingRoute { _: SubmitRatingCommand ->
                         called = true
-                        SubmitRatingResult.Accepted(acceptedAnon)
+                        SubmitRatingResult.Accepted(acceptedAnon, undoToken = "undo-tok")
                     }
                 }
             }
@@ -200,7 +200,7 @@ class SubmitRatingRouteTest {
         testApplication {
             application {
                 install(ContentNegotiation) { json() }
-                routing { submitRatingRoute { SubmitRatingResult.Accepted(acceptedAnon) } }
+                routing { submitRatingRoute { SubmitRatingResult.Accepted(acceptedAnon, undoToken = "undo-tok") } }
             }
             val resp =
                 client.post("/v1/items/not-a-uuid/rating") {
@@ -217,7 +217,7 @@ class SubmitRatingRouteTest {
             application {
                 install(SessionMiddleware) { verifyCookie = { userUuid } }
                 install(ContentNegotiation) { json(WIRE_JSON) }
-                routing { submitRatingRoute { SubmitRatingResult.Accepted(acceptedAuth) } }
+                routing { submitRatingRoute { SubmitRatingResult.Accepted(acceptedAuth, undoToken = "undo-tok") } }
             }
             val resp =
                 client.post("/v1/items/$itemUuid/rating") {
@@ -238,7 +238,7 @@ class SubmitRatingRouteTest {
                 routing {
                     submitRatingRoute { cmd ->
                         assertThat(cmd.correctif?.pos).isEqualTo(Pos.POLYVALENT)
-                        SubmitRatingResult.Accepted(acceptedAuth)
+                        SubmitRatingResult.Accepted(acceptedAuth, undoToken = "undo-tok")
                     }
                 }
             }
@@ -277,7 +277,7 @@ class SubmitRatingRouteTest {
         testApplication {
             application {
                 install(ContentNegotiation) { json(WIRE_JSON) }
-                routing { submitRatingRoute { SubmitRatingResult.Accepted(acceptedAnon) } }
+                routing { submitRatingRoute { SubmitRatingResult.Accepted(acceptedAnon, undoToken = "undo-tok") } }
             }
             val resp =
                 client.post("/v1/items/$itemUuid/rating") {

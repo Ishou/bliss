@@ -69,13 +69,13 @@ class PgActionLogRepository(
     override suspend fun markUndone(
         id: ActionId,
         at: Instant,
-    ): Unit =
+    ): Boolean =
         withContext(Dispatchers.IO) {
             withTxConnection(dataSource) { conn ->
                 conn.prepareStatement(MARK_UNDONE_SQL).use { stmt ->
                     stmt.setTimestamp(1, Timestamp.from(at))
                     stmt.setObject(2, id.value)
-                    stmt.executeUpdate()
+                    stmt.executeUpdate() > 0
                 }
             }
         }
@@ -129,7 +129,7 @@ class PgActionLogRepository(
             """
 
         const val FIND_BY_HASH_SQL = "SELECT * FROM survey_actions WHERE undo_token_hash = ?"
-        const val MARK_UNDONE_SQL = "UPDATE survey_actions SET undone_at = ? WHERE action_id = ?"
+        const val MARK_UNDONE_SQL = "UPDATE survey_actions SET undone_at = ? WHERE action_id = ? AND undone_at IS NULL"
         const val SCRUB_USER_SQL = "UPDATE survey_actions SET user_id = NULL WHERE user_id = ?"
     }
 }

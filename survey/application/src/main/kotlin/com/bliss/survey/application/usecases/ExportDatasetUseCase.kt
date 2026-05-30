@@ -1,6 +1,8 @@
 package com.bliss.survey.application.usecases
 
+import com.bliss.survey.application.CLOSE_GRACE
 import com.bliss.survey.application.csv.StyleGuideCsvWriter
+import com.bliss.survey.application.ports.Clock
 import com.bliss.survey.application.ports.RatingRepository
 import com.bliss.survey.application.ports.SurveyItemRepository
 import java.time.Instant
@@ -11,6 +13,7 @@ class ExportDatasetUseCase(
     private val items: SurveyItemRepository,
     private val ratings: RatingRepository,
     private val writer: StyleGuideCsvWriter,
+    private val clock: Clock,
 ) {
     suspend fun execute(
         minRatings: Int,
@@ -18,9 +21,10 @@ class ExportDatasetUseCase(
         authWeight: Double,
         anonWeight: Double,
     ): String {
+        val settledBefore = clock.now().minus(CLOSE_GRACE)
         val aggs =
             ratings
-                .aggregateForExport(since)
+                .aggregateForExport(since, settledBefore)
                 .filter { (it.qualiteAuthN + it.qualiteAnonN) >= minRatings }
                 .sortedBy { it.itemId.value }
         val rows = mutableListOf(writer.header())

@@ -3,13 +3,19 @@ package com.bliss.survey.application.usecases
 import com.bliss.survey.application.filters.FilterInput
 import com.bliss.survey.application.filters.FilterPipeline
 import com.bliss.survey.application.filters.FilterResult
+import com.bliss.survey.application.ports.ActionLogRepository
 import com.bliss.survey.application.ports.CampaignRepository
 import com.bliss.survey.application.ports.Clock
 import com.bliss.survey.application.ports.IdGenerator
 import com.bliss.survey.application.ports.ProposedByRepository
 import com.bliss.survey.application.ports.RatingRepository
 import com.bliss.survey.application.ports.SurveyItemRepository
+import com.bliss.survey.application.ports.TokenGenerator
+import com.bliss.survey.application.ports.TransactionManager
 import com.bliss.survey.application.ports.UserProgressRepository
+import com.bliss.survey.application.sha256
+import com.bliss.survey.domain.model.ActionId
+import com.bliss.survey.domain.model.ActionKind
 import com.bliss.survey.domain.model.FlagReason
 import com.bliss.survey.domain.model.ItemId
 import com.bliss.survey.domain.model.Pos
@@ -18,6 +24,7 @@ import com.bliss.survey.domain.model.RatingId
 import com.bliss.survey.domain.model.Source
 import com.bliss.survey.domain.model.Style
 import com.bliss.survey.domain.model.SubmittedAs
+import com.bliss.survey.domain.model.SurveyAction
 import com.bliss.survey.domain.model.SurveyItem
 import com.bliss.survey.domain.model.Tier
 import com.bliss.survey.domain.model.UserId
@@ -27,6 +34,7 @@ import java.time.ZoneOffset
 sealed interface SubmitRatingResult {
     data class Accepted(
         val rating: Rating,
+        val undoToken: String,
     ) : SubmitRatingResult
 
     data class AlreadyExists(
@@ -71,6 +79,9 @@ class SubmitRatingUseCase(
     private val clock: Clock,
     private val campaigns: CampaignRepository,
     private val recompute: RecomputeTrainingWeightUseCase,
+    private val actions: ActionLogRepository,
+    private val tokens: TokenGenerator,
+    private val tx: TransactionManager,
 ) {
     suspend fun execute(cmd: SubmitRatingCommand): SubmitRatingResult {
         val openCampaign = campaigns.findOpen() ?: return SubmitRatingResult.Locked
@@ -85,31 +96,20 @@ class SubmitRatingUseCase(
             }
         }
 
-        var proposedItemId: ItemId? = null
+        // Build the (possibly null) text-correctif item OUTSIDE the transaction so a filter Reject never opens one.
+        var newItem: SurveyItem? = null
+        var patchedPos: Pos? = null
         if (cmd.correctif != null) {
-            val nonNullUserId =
-                requireNotNull(cmd.userId) {
-                    "userId must be non-null when correctif is provided"
-                }
+            requireNotNull(cmd.userId) { "userId must be non-null when correctif is provided" }
             val (text, claimed, requestedPos) = cmd.correctif
             val textChanged = text.trim() != parent.definition.trim()
             if (!textChanged) {
-                // POS-only fix: patch the original item in place, no new proposed item.
-                if (requestedPos != null && requestedPos != parent.pos) items.updatePos(parent.id, requestedPos)
+                if (requestedPos != null && requestedPos != parent.pos) patchedPos = requestedPos
             } else {
                 val effectivePos = requestedPos ?: parent.pos
-                val proposedInput =
-                    FilterInput(
-                        mot = parent.mot,
-                        definition = text,
-                        pos = effectivePos,
-                        style = claimed,
-                    )
-                val r = filters.run(proposedInput)
-                if (r is FilterResult.Reject) {
-                    return SubmitRatingResult.CorrectifRejected(r.filterId, r.reason)
-                }
-                val newItem =
+                val r = filters.run(FilterInput(mot = parent.mot, definition = text, pos = effectivePos, style = claimed))
+                if (r is FilterResult.Reject) return SubmitRatingResult.CorrectifRejected(r.filterId, r.reason)
+                newItem =
                     SurveyItem(
                         id = ItemId(ids.next()),
                         mot = parent.mot,
@@ -127,49 +127,93 @@ class SubmitRatingUseCase(
                         retiredAt = null,
                         createdAt = now,
                     )
-                // On (mot, definition) conflict, reuse the existing row's id so the auto-GOOD rating never dangles.
-                val stored = items.insertIfAbsent(newItem)
-                proposedItemId = stored.id
-                proposedBy.insert(stored.id, nonNullUserId, optedOut = false)
-                recompute.forItem(stored.id, nonNullUserId)
             }
         }
 
+        val token = tokens.newToken()
+        val priorLastRatedAt = if (cmd.userId != null) progress.get(cmd.userId)?.lastRatedAt else null
+
         val rating =
-            Rating(
-                id = RatingId(ids.next()),
-                itemId = cmd.itemId,
-                userId = cmd.userId,
-                submittedAs = if (cmd.userId != null) SubmittedAs.AUTH else SubmittedAs.ANON,
-                qualite = cmd.qualite,
-                difficulte = cmd.difficulte,
-                flag = cmd.flag,
-                proposedItemId = proposedItemId,
-                latencyMs = cmd.latencyMs,
-                createdAt = now,
-                campaignId = openCampaign.id,
-            )
-        ratings.insert(rating)
-        if (proposedItemId != null) {
-            // submitting a correctif vouches for the fix — enters winners directly without a re-rating round
-            val autoGood =
-                Rating(
-                    id = RatingId(ids.next()),
-                    itemId = proposedItemId,
-                    userId = cmd.userId,
-                    submittedAs = SubmittedAs.AUTH,
-                    qualite = 5,
-                    difficulte = cmd.difficulte,
-                    flag = null,
-                    proposedItemId = null,
-                    latencyMs = 0,
-                    createdAt = now,
-                    campaignId = openCampaign.id,
+            tx.inTransaction {
+                val createdRatingIds = mutableListOf<RatingId>()
+                var createdItemId: ItemId? = null
+                var proposedItemId: ItemId? = null
+                var patchedItemId: ItemId? = null
+                var priorPos: Pos? = null
+
+                if (patchedPos != null) {
+                    patchedItemId = parent.id
+                    priorPos = parent.pos
+                    items.updatePos(parent.id, patchedPos)
+                }
+                if (newItem != null) {
+                    // On (mot, definition) conflict, reuse the existing row's id so the auto-GOOD rating never dangles.
+                    val stored = items.insertIfAbsent(newItem)
+                    proposedItemId = stored.id
+                    if (stored.id == newItem.id) createdItemId = stored.id
+                    proposedBy.insert(stored.id, cmd.userId!!, optedOut = false)
+                    recompute.forItem(stored.id, cmd.userId)
+                }
+
+                val r =
+                    Rating(
+                        id = RatingId(ids.next()),
+                        itemId = cmd.itemId,
+                        userId = cmd.userId,
+                        submittedAs = if (cmd.userId != null) SubmittedAs.AUTH else SubmittedAs.ANON,
+                        qualite = cmd.qualite,
+                        difficulte = cmd.difficulte,
+                        flag = cmd.flag,
+                        proposedItemId = proposedItemId,
+                        latencyMs = cmd.latencyMs,
+                        createdAt = now,
+                        campaignId = openCampaign.id,
+                    )
+                ratings.insert(r)
+                createdRatingIds += r.id
+
+                if (proposedItemId != null) {
+                    // submitting a correctif vouches for the fix — enters winners directly without a re-rating round
+                    val autoGood =
+                        Rating(
+                            id = RatingId(ids.next()),
+                            itemId = proposedItemId,
+                            userId = cmd.userId,
+                            submittedAs = SubmittedAs.AUTH,
+                            qualite = 5,
+                            difficulte = cmd.difficulte,
+                            flag = null,
+                            proposedItemId = null,
+                            latencyMs = 0,
+                            createdAt = now,
+                            campaignId = openCampaign.id,
+                        )
+                    ratings.insert(autoGood)
+                    createdRatingIds += autoGood.id
+                }
+                if (cmd.userId != null) progress.incrementItemsRated(cmd.userId, now)
+
+                actions.insert(
+                    SurveyAction(
+                        id = ActionId(ids.next()),
+                        undoTokenHash = sha256(token),
+                        userId = cmd.userId,
+                        kind = if (cmd.correctif != null) ActionKind.CORRECTIF else ActionKind.BINARY,
+                        campaignId = openCampaign.id,
+                        createdAt = now,
+                        undoneAt = null,
+                        createdRatingIds = createdRatingIds.toList(),
+                        createdPairId = null,
+                        createdItemId = createdItemId,
+                        proposedItemId = proposedItemId,
+                        patchedItemId = patchedItemId,
+                        priorPos = priorPos,
+                        priorLastRatedAt = priorLastRatedAt,
+                    ),
                 )
-            ratings.insert(autoGood)
-        }
-        if (cmd.userId != null) progress.incrementItemsRated(cmd.userId, now)
-        return SubmitRatingResult.Accepted(rating)
+                r
+            }
+        return SubmitRatingResult.Accepted(rating, token)
     }
 
     private fun monthKey(t: Instant): String {

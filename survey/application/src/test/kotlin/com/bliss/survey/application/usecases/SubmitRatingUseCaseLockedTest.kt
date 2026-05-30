@@ -8,6 +8,7 @@ import com.bliss.survey.application.filters.FilterPipeline
 import com.bliss.survey.application.ports.CampaignRepository
 import com.bliss.survey.application.ports.Clock
 import com.bliss.survey.application.ports.IdGenerator
+import com.bliss.survey.application.ports.TokenGenerator
 import com.bliss.survey.domain.model.Campaign
 import com.bliss.survey.domain.model.CampaignId
 import com.bliss.survey.domain.model.Categorie
@@ -27,6 +28,7 @@ import java.util.UUID
 class SubmitRatingUseCaseLockedTest {
     private val now: Instant = Instant.parse("2026-05-30T12:00:00Z")
     private val clock = Clock { now }
+    private val goldPolicy = GoldWindowPolicy(Instant.parse("2026-05-30T00:00:00Z"), 3.0)
     private val idGen =
         object : IdGenerator {
             private var counter = 0L
@@ -91,12 +93,10 @@ class SubmitRatingUseCaseLockedTest {
                     ids = idGen,
                     clock = clock,
                     campaigns = campaignsRepo(currentCampaign),
-                    recompute =
-                        RecomputeTrainingWeightUseCase(
-                            InMemoryMaintainerRoleRepository(),
-                            setup.items,
-                            GoldWindowPolicy(Instant.parse("2026-05-30T00:00:00Z"), 3.0),
-                        ),
+                    recompute = RecomputeTrainingWeightUseCase(InMemoryMaintainerRoleRepository(), setup.items, goldPolicy),
+                    actions = InMemoryActionLogRepository(),
+                    tokens = TokenGenerator { "fixed-token" },
+                    tx = passThroughTransactionManager,
                 )
             setup.copy(uc = uc)
         }

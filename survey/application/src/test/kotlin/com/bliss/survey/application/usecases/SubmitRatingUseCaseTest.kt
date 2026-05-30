@@ -9,6 +9,7 @@ import com.bliss.survey.application.ports.CampaignRepository
 import com.bliss.survey.application.ports.Clock
 import com.bliss.survey.application.ports.IdGenerator
 import com.bliss.survey.application.ports.MaintainerRole
+import com.bliss.survey.application.ports.TokenGenerator
 import com.bliss.survey.domain.model.Campaign
 import com.bliss.survey.domain.model.CampaignId
 import com.bliss.survey.domain.model.Categorie
@@ -98,6 +99,9 @@ class SubmitRatingUseCaseTest {
                 clock = clock,
                 campaigns = openCampaignRepo,
                 recompute = RecomputeTrainingWeightUseCase(roles, items, goldPolicy),
+                actions = InMemoryActionLogRepository(),
+                tokens = TokenGenerator { "fixed-token" },
+                tx = passThroughTransactionManager,
             )
         Quintet(uc, items, ratings, proposed, progress)
     }

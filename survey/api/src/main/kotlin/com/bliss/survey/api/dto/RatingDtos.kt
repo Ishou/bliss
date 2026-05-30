@@ -26,12 +26,19 @@ data class RatingResponse(
     val submittedAs: String,
     val proposedItemId: String? = null,
     val campaignId: String,
+    val undoToken: String? = null,
 )
 
 // Pairwise endpoints — 201 body shape per ADR-0059 + openapi PairRatingResponse schema.
 @Serializable
 data class PairRatingResponse(
     val campaignId: String,
+    val undoToken: String? = null,
+)
+
+@Serializable
+data class UndoActionRequest(
+    val token: String,
 )
 
 // Pair-mode wire DTOs (ADR-0056 amendment 2026-05-28).
