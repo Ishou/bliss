@@ -126,6 +126,18 @@ test.describe('WCAG 2.2 A + AA accessibility', () => {
         }),
       });
     });
+    await page.route(/\/v1\/campaign\/current/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          campaignId: '0190e3a4-7a2c-7c9e-8f1a-000000000007',
+          batchLabel: 'round-7',
+          openedAt: '2026-05-30T10:00:00Z',
+          closedAt: null,
+        }),
+      });
+    });
     await page.goto('/sondage', { waitUntil: 'networkidle' });
     await page.waitForSelector('[data-testid="rating-card"]', { state: 'visible' });
     await page.evaluate(() => document.fonts.ready);
