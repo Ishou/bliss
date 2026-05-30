@@ -131,7 +131,7 @@ push-from-CI" rule.
   `job-maintainer-roles.yaml`), gated by `maintainerRoleBootstrap.enabled`:
   - `helm.sh/hook: post-install,post-upgrade`
   - `helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded`
-  - `command: ["/app/bin/identity-api"]`, `args: ["--set-maintainer-roles"]`
+  - `command: ["java", "-jar", "/app/identity-api.jar"]`, `args: ["--set-maintainer-roles"]`
   - same selector labels as the api pod so the NATS NetworkPolicy admits it
   - `ttlSecondsAfterFinished`, `backoffLimit`, `restartPolicy: OnFailure`
     matching the survey bootstrap Job.

@@ -1030,7 +1030,7 @@ spec:
           image: {{ include "bliss-identity-api.image" . | quote }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           securityContext: {{- toYaml .Values.containerSecurityContext | nindent 12 }}
-          command: ["/app/bin/identity-api"]
+          command: ["java", "-jar", "/app/identity-api.jar"]
           args: ["--set-maintainer-roles"]
           env:
             {{- if .Values.database.enabled }}
@@ -1066,7 +1066,7 @@ Expected: `1 chart(s) linted, 0 chart(s) failed`.
 Also render to eyeball the Job:
 
 Run: `helm template identity/api/deploy/chart --values identity/api/deploy/chart/values-prod.yaml --show-only templates/job-maintainer-roles.yaml`
-Expected: a Job manifest with `command: ["/app/bin/identity-api"]`, `args: ["--set-maintainer-roles"]`, and `MAINTAINER_USER_IDS` set.
+Expected: a Job manifest with `command: ["java", "-jar", "/app/identity-api.jar"]`, `args: ["--set-maintainer-roles"]`, and `MAINTAINER_USER_IDS` set.
 
 - [ ] **Step 5: Commit**
 
