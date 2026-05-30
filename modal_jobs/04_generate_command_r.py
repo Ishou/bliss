@@ -114,7 +114,7 @@ def charger_lemmes(path: Path) -> list[tuple[str, str | None]]:
 def generate_remote(
     run_tag: str,
     round_n: int,
-    lemmes: list[str],
+    lemmes: list[tuple[str, str | None]],
     n_per_pair: int,
     source_batch: str,
 ) -> dict:
@@ -132,7 +132,7 @@ def generate_remote(
     sys.path.insert(0, "/root")
     from pipeline_v2.run_pipeline import traiter_ligne
 
-    # cuDNN SDPA est buggé sur Mistral (GQA + sliding window) — fallback Flash/MemEfficient/Math.
+    # cuDNN SDPA disabled on Command-R (GQA + device_map='auto' fragmentation).
     torch.backends.cuda.enable_cudnn_sdp(False)
 
     base_path = "/models/c4ai-command-r-08-2024-bnb-4bit"
@@ -179,7 +179,7 @@ def generate_remote(
                 inputs,
                 max_new_tokens=30,
                 do_sample=(n_per_pair > 1),
-                temperature=1.0 if n_per_pair > 1 else 1.0,
+                temperature=1.0,
                 top_p=0.95,
                 num_return_sequences=n_per_pair,
                 pad_token_id=tokenizer.eos_token_id,
