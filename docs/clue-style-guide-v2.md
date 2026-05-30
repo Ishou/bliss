@@ -2414,7 +2414,7 @@ dataset s'appuie sur les contrats définis ici.
 ### 8.1 Schéma du dataset final
 
 Le dataset principal est un CSV UTF-8 NFC, séparateur `;`,
-**8 colonnes principales** plus un champ `meta` optionnel.
+**9 colonnes principales** plus un champ `meta` optionnel.
 
 #### Spécification colonne par colonne
 
@@ -2428,7 +2428,8 @@ Le dataset principal est un CSV UTF-8 NFC, séparateur `;`,
 | 6 | `force` | int | Entier dans [1, 5] | 1, 2, 3, 4, 5 (§5) |
 | 7 | `longueur` | int | Codepoints NFC du mot | Entier > 0, dérivé du champ `mot` (cohérence à valider en pipeline) |
 | 8 | `source` | str enum | Traçabilité de la ligne | `gold` (référence éditoriale), `curated_v1` (base curée short_words_unified.csv), `synthetic_v1` (génération LLM v1), `manual` (saisie humaine ad hoc), ou identifiant projet ultérieur |
-| 9 *(opt.)* | `meta` | str | Clés-valeurs au format `clé:valeur|clé:valeur|…` | Liaison clé-valeur par `:`, séparateur entre paires par `|`. Valeurs ne contiennent ni `|` ni `:` (échappement non géré). Toutes les clés sont optionnelles. Le champ peut être vide (`""`). Convention détaillée ci-dessous. |
+| 9 | `training_weight` | float | Poids d'entraînement figé (frozen) au moment de la contribution | Réel > 0 ; défaut `1.0` ; pondération gold (ex. `3.0`) appliquée aux items proposés par un mainteneur après le cutoff 2026-05-30 (ADR-0056, Spec B) |
+| 10 *(opt.)* | `meta` | str | Clés-valeurs au format `clé:valeur|clé:valeur|…` | Liaison clé-valeur par `:`, séparateur entre paires par `|`. Valeurs ne contiennent ni `|` ni `:` (échappement non géré). Toutes les clés sont optionnelles. Le champ peut être vide (`""`). Convention détaillée ci-dessous. |
 
 #### Convention du champ `meta`
 
@@ -2471,20 +2472,20 @@ meta = ""
 - **Échappement** : si une cellule contient `;`, `"` ou un saut de
   ligne, encadrer la cellule par `"…"` selon RFC 4180
 - **Saut de ligne** : `\n` (LF) entre lignes
-- **En-tête** : ligne 1 contenant les noms des 8 colonnes (ou 9 si
+- **En-tête** : ligne 1 contenant les noms des 9 colonnes (ou 10 si
   `meta` est présent)
 
 #### Lignes complètes d'exemple
 
-> Format : `mot;definition;pos;categorie;style;force;longueur;source`
+> Format : `mot;definition;pos;categorie;style;force;longueur;source;training_weight`
 
 ```
-COQ;Mâle de la basse-cour;nom_commun;animals;périphrase;2;3;curated_v1
-KO;Hors combat;sigle_abreviation;abbreviations;définition_directe;1;2;curated_v1
-NO;Refus anglais;sigle_abreviation;etranger;définition_directe;2;2;curated_v1
-LOU;Loup sans p;nom_commun;animals;cryptique_morphologique;4;3;curated_v1
-TIBIA;Os de la jambe avant;nom_commun;body_parts;technique;4;5;synthetic_v1
-RIMBAUD;Auteur du Bateau ivre;nom_propre;first_names;culturel;5;7;synthetic_v1
+COQ;Mâle de la basse-cour;nom_commun;animals;périphrase;2;3;curated_v1;1.0
+KO;Hors combat;sigle_abreviation;abbreviations;définition_directe;1;2;curated_v1;1.0
+NO;Refus anglais;sigle_abreviation;etranger;définition_directe;2;2;curated_v1;1.0
+LOU;Loup sans p;nom_commun;animals;cryptique_morphologique;4;3;curated_v1;1.0
+TIBIA;Os de la jambe avant;nom_commun;body_parts;technique;4;5;synthetic_v1;1.0
+RIMBAUD;Auteur du Bateau ivre;nom_propre;first_names;culturel;5;7;synthetic_v1;1.0
 ```
 
 Les 4 premières lignes sont curées de `short_words_unified.csv` ; les
