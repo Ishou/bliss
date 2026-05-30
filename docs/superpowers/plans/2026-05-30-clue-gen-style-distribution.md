@@ -6,7 +6,7 @@
 
 **Architecture:** A new pure, GPU-free module `modal_jobs/style_allocation.py` holds all allocation logic (config load+validate, largest-remainder target counts, per-pass shortfall allocation). It is unit-tested directly with no `modal`/`torch` import. `04_generate.py` imports it both locally (entrypoint) and inside the Modal container (added to the image), and its `generate_remote` becomes a generate→filter→top-up loop. This separate-module choice refines the spec (which placed the helpers in `04_generate.py`): the helpers must not transitively `import modal`, otherwise unit tests need the full GPU stack.
 
-**Tech Stack:** Python 3.14, pytest, PyYAML (already in the repo `.venv`), Modal. Run tests with `"$VENV/bin/python" -m pytest` where `VENV=/Users/isho/IdeaProjects/bliss/.venv`.
+**Tech Stack:** Python 3.14, pytest, PyYAML (already in the repo `.venv`), Modal. Run tests with `python -m pytest` from repo root (activate the repo venv first).
 
 **Spec:** `docs/superpowers/specs/2026-05-30-clue-gen-target-style-distribution-design.md`
 
@@ -22,10 +22,7 @@
 
 Conventions (match existing repo Python): French identifiers where the existing file uses them; tests via `importlib`-free direct import for the new module (normal filename), and the existing `_load_module()` helper for `04_generate.py`.
 
-**Test runner shorthand used throughout:**
-```bash
-VENV=/Users/isho/IdeaProjects/bliss/.venv
-```
+**Test runner shorthand used throughout:** `python -m pytest` from repo root (with the repo venv active).
 
 ---
 
@@ -594,7 +591,7 @@ Replace the `summary = {...}` dict and the `candidates.jsonl`/`summary.json` wri
 
 The `@app.function` decorator and `generate_remote` body reference torch/transformers only at call time, but the file must still import. Verify:
 
-Run: `cd /Users/isho/IdeaProjects/bliss/.claude/worktrees/feat+clue-gen-style-distribution && "$VENV/bin/python" -c "import importlib.util,sys; s=importlib.util.spec_from_file_location('m','modal_jobs/04_generate.py'); m=importlib.util.module_from_spec(s); sys.modules['m']=m; s.loader.exec_module(m); print('import OK', hasattr(m,'generate_remote'))"`
+Run from repo root: `python -c "import importlib.util,sys; s=importlib.util.spec_from_file_location('m','modal_jobs/04_generate.py'); m=importlib.util.module_from_spec(s); sys.modules['m']=m; s.loader.exec_module(m); print('import OK', hasattr(m,'generate_remote'))"`
 Expected: `import OK True`
 
 - [ ] **Step 6: Commit**
@@ -684,7 +681,7 @@ def generate(
 
 - [ ] **Step 2: Import-check again**
 
-Run: `cd /Users/isho/IdeaProjects/bliss/.claude/worktrees/feat+clue-gen-style-distribution && "$VENV/bin/python" -c "import importlib.util,sys; s=importlib.util.spec_from_file_location('m','modal_jobs/04_generate.py'); m=importlib.util.module_from_spec(s); sys.modules['m']=m; s.loader.exec_module(m); print('import OK')"`
+Run from repo root: `python -c "import importlib.util,sys; s=importlib.util.spec_from_file_location('m','modal_jobs/04_generate.py'); m=importlib.util.module_from_spec(s); sys.modules['m']=m; s.loader.exec_module(m); print('import OK')"`
 Expected: `import OK`
 
 - [ ] **Step 3: Commit**
@@ -707,10 +704,9 @@ Delete `test_styles_actifs_count` (lines ~33–39) — `STYLES_ACTIFS` no longer
 
 - [ ] **Step 2: Run the file + full suite**
 
-Run:
+Run from repo root:
 ```bash
-cd /Users/isho/IdeaProjects/bliss/.claude/worktrees/feat+clue-gen-style-distribution
-"$VENV/bin/python" -m pytest modal_jobs/ -v
+python -m pytest modal_jobs/ -v
 ```
 Expected: PASS — `test_04_generate.py` (5 tests) + `test_style_allocation.py` (all). Zero failures, no reference to `STYLES_ACTIFS`.
 
