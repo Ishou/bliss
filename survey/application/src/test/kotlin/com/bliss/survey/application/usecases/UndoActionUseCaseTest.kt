@@ -244,6 +244,34 @@ class UndoActionUseCaseTest {
         }
 
     @Test
+    fun `concurrent redeem - second markUndone is rejected and reverse runs once`() =
+        runTest {
+            val f = newFixture(campaignOpen = true)
+            val actionId =
+                f.actions.actions
+                    .single()
+                    .id
+
+            // First caller claims the token.
+            assertThat(f.actions.markUndone(actionId, now)).isEqualTo(true)
+            // Second concurrent caller (both passed the pre-tx guard) loses the conditional claim.
+            assertThat(f.actions.markUndone(actionId, now)).isEqualTo(false)
+        }
+
+    @Test
+    fun `double execute does not reverse twice`() =
+        runTest {
+            val f = newFixture(campaignOpen = true)
+            assertThat(f.useCase.execute("tok", f.userId)).isEqualTo(UndoActionResult.Undone)
+            // Simulate a second in-flight caller that also passed the pre-tx guard reaching the tx.
+            val replay = RatingId(UUID.randomUUID())
+            f.ratings.insert(rating(replay, ItemId(UUID.randomUUID()), f.userId))
+            assertThat(f.useCase.execute("tok", f.userId)).isEqualTo(UndoActionResult.NotFound)
+            // reverse() did not run a second time: the replayed rating is untouched.
+            assertThat(f.ratings.ratings.any { it.id == replay }).isEqualTo(true)
+        }
+
+    @Test
     fun `closed campaign within grace is Undone`() =
         runTest {
             val f = newFixture(campaignOpen = false, closedAt = now.minusSeconds(5))

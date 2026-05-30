@@ -10,10 +10,11 @@ interface ActionLogRepository {
 
     suspend fun findByTokenHash(tokenHash: ByteArray): SurveyAction?
 
+    // Conditional single-redemption: flips undone_at only if still null; returns true iff a row changed.
     suspend fun markUndone(
         id: ActionId,
         at: Instant,
-    )
+    ): Boolean
 
     // RGPD: null out user_id for the erased user's actions.
     suspend fun scrubUser(userId: UserId)

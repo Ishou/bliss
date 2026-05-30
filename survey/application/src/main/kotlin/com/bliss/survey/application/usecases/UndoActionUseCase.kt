@@ -40,6 +40,7 @@ class UndoActionUseCase(
         sessionUserId: UserId?,
     ): UndoActionResult {
         val action = actions.findByTokenHash(sha256(token)) ?: return UndoActionResult.NotFound
+        // Fast-path only; the authoritative single-redemption gate is the conditional markUndone inside the tx.
         if (action.undoneAt != null) return UndoActionResult.NotFound
         // Capability check: an authed action is only undoable by its owner; anon by anyone holding the token.
         if (action.userId != null && action.userId != sessionUserId) return UndoActionResult.NotFound
@@ -47,11 +48,15 @@ class UndoActionUseCase(
         val now = clock.now()
         val closedAt = campaign.closedAt
         if (closedAt != null && now.isAfter(closedAt.plus(CLOSE_GRACE))) return UndoActionResult.Expired
-        tx.inTransaction {
-            reverse(action)
-            actions.markUndone(action.id, now)
+        return tx.inTransaction {
+            val claimed = actions.markUndone(action.id, now)
+            if (!claimed) {
+                UndoActionResult.NotFound
+            } else {
+                reverse(action)
+                UndoActionResult.Undone
+            }
         }
-        return UndoActionResult.Undone
     }
 
     private suspend fun reverse(action: SurveyAction) {

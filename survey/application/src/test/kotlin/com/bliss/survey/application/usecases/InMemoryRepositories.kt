@@ -331,10 +331,10 @@ class InMemoryActionLogRepository : ActionLogRepository {
     override suspend fun markUndone(
         id: ActionId,
         at: Instant,
-    ) {
-        actions.withIndex().firstOrNull { it.value.id == id }?.let { (idx, a) ->
-            actions[idx] = a.copy(undoneAt = at)
-        }
+    ): Boolean {
+        val entry = actions.withIndex().firstOrNull { it.value.id == id && it.value.undoneAt == null } ?: return false
+        actions[entry.index] = entry.value.copy(undoneAt = at)
+        return true
     }
 
     override suspend fun scrubUser(userId: UserId) {

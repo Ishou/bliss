@@ -332,7 +332,7 @@ class UserDeletedConsumerTest {
         override suspend fun markUndone(
             id: ActionId,
             at: Instant,
-        ) = Unit
+        ) = false
 
         override suspend fun scrubUser(userId: UserId) = Unit
     }
