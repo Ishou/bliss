@@ -1,0 +1,11 @@
+# Target style mix for clue generation (modal_jobs/04_generate.py).
+# Weights are fractions of *accepted* (post-filter) clues; must sum to 1.0.
+# calembour stays hors-IA (clue-style-guide-v2.md §4.5); omitted styles = 0.
+styles:
+  definition_directe: 0.217
+  periphrase:         0.217
+  cryptique:          0.216
+  culturel:           0.10
+  fonction_role:      0.10
+  metonymie:          0.10
+  technique:          0.05
