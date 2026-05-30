@@ -6,6 +6,7 @@ const MAX_ITEMS = 500;
 export interface SurveyAnonRatedStore {
   list(): ReadonlyArray<string>;
   add(itemId: string): void;
+  remove(itemId: string): void;
   clear(): void;
 }
 
@@ -39,6 +40,11 @@ export const surveyAnonRatedStore: SurveyAnonRatedStore = {
     const next = [...current, itemId];
     while (next.length > MAX_ITEMS) next.shift();
     writeSafe(next);
+  },
+  remove(itemId: string): void {
+    const current = readSafe();
+    if (!current.includes(itemId)) return;
+    writeSafe(current.filter((id) => id !== itemId));
   },
   clear(): void {
     try {

@@ -4,6 +4,7 @@ export type {
   Campaign,
   ItemPair,
   LikertScore,
+  PairRatingResult,
   PairRatingSubmission,
   PairVerdict,
   RatingResult,

@@ -38,6 +38,7 @@ const ratingResult: RatingResult = {
   itemId: sampleItem.itemId,
   submittedAs: 'anon',
   proposedItemId: null,
+  undoToken: null,
 };
 
 const openCampaign: Campaign = {
@@ -69,7 +70,8 @@ function stubSurveyClient(overrides: Partial<SurveyClient> = {}): SurveyClient {
     getNextItem: vi.fn().mockResolvedValue(sampleItem),
     submitRating: vi.fn().mockResolvedValue(ratingResult),
     getNextPair: vi.fn().mockResolvedValue(null),
-    submitPairRating: vi.fn().mockResolvedValue(undefined),
+    submitPairRating: vi.fn().mockResolvedValue({ undoToken: null }),
+    undoAction: vi.fn().mockResolvedValue(undefined),
     getProgress: vi.fn().mockResolvedValue({
       itemsRated: 0,
       calibrationAgreement: null,

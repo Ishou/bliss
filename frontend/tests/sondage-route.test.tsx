@@ -37,6 +37,7 @@ const ratingResult: RatingResult = {
   itemId: sampleItem.itemId,
   submittedAs: 'anon',
   proposedItemId: null,
+  undoToken: 'tok_sample_123',
 };
 
 function stubAuth(): AuthClient {
@@ -56,7 +57,8 @@ function stubSurveyClient(overrides: Partial<SurveyClient> = {}): SurveyClient {
     getNextItem: vi.fn().mockResolvedValue(sampleItem),
     submitRating: vi.fn().mockResolvedValue(ratingResult),
     getNextPair: vi.fn().mockResolvedValue(null),
-    submitPairRating: vi.fn().mockResolvedValue(undefined),
+    submitPairRating: vi.fn().mockResolvedValue({ undoToken: null }),
+    undoAction: vi.fn().mockResolvedValue(undefined),
     getProgress: vi.fn().mockResolvedValue({
       itemsRated: 0,
       calibrationAgreement: null,
@@ -449,5 +451,27 @@ describe('Sondage route', () => {
     );
     expect(surveyClient.submitRating).not.toHaveBeenCalled();
     expect(localStorage.getItem('survey.anon.rated_ids')).toBeNull();
+  });
+
+  it('shows Annuler after a verdict and re-presents the item on undo', async () => {
+    const undoAction = vi.fn().mockResolvedValue(undefined);
+    const getNextItem = vi
+      .fn()
+      .mockResolvedValueOnce(sampleItem)
+      .mockResolvedValueOnce(null);
+    const surveyClient = stubSurveyClient({ getNextItem, undoAction });
+    renderSondage({ surveyClient });
+
+    const good = await screen.findByRole('button', { name: /Bonne définition/ });
+    const click = (el: HTMLElement) => { el.focus(); fireEvent.click(el); };
+    await act(async () => { click(good); });
+
+    const undo = await screen.findByTestId('undo-button');
+    await act(async () => { click(undo); });
+
+    expect(undoAction).toHaveBeenCalledWith('tok_sample_123');
+    // The stashed item is re-presented for re-rating.
+    expect(await screen.findByRole('button', { name: /Bonne définition/ })).toBeTruthy();
+    localStorage.clear();
   });
 });
