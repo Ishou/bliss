@@ -470,7 +470,6 @@ describe('Sondage route', () => {
     await act(async () => { click(undo); });
 
     expect(undoAction).toHaveBeenCalledWith('tok_sample_123');
-    // The stashed item is re-presented for re-rating.
     expect(await screen.findByRole('button', { name: /Bonne définition/ })).toBeTruthy();
     localStorage.clear();
   });
