@@ -149,7 +149,7 @@ def test_paires_all_lemmes_are_valid() -> None:
     assert all(m in LEMMES for m, _s in pairs)
 
 
-def test_paires_deterministic_given_seed() -> None:
+def test_paires_stable_across_processes() -> None:
     a = paires_pour_manque(CIBLES, {}, LEMMES, seed=3, pass_idx=0, inflation=1.0)
     b = paires_pour_manque(CIBLES, {}, LEMMES, seed=3, pass_idx=0, inflation=1.0)
     assert a == b

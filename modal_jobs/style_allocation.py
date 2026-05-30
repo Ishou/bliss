@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import math
 from pathlib import Path
 
@@ -68,8 +69,8 @@ def paires_pour_manque(
         if manque <= 0:
             continue
         req = math.ceil(manque * inflation)
-        # deterministic per-(style,seed) base offset, advanced each pass
-        base = (abs(hash((s, seed))) + pass_idx * (req + 1)) % n
+        # digest-based offset: stable across processes regardless of PYTHONHASHSEED
+        base = (int(hashlib.md5(f"{s}:{seed}".encode()).hexdigest(), 16) + pass_idx * (req + 1)) % n
         for i in range(req):
             pairs.append((lemmes[(base + i) % n], s))
     return pairs
