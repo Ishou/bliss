@@ -6,6 +6,7 @@ import com.bliss.survey.application.ports.Clock
 import com.bliss.survey.application.ports.IdGenerator
 import com.bliss.survey.application.ports.RandomFactory
 import com.bliss.survey.application.usecases.AnonymizeUserRatingsUseCase
+import com.bliss.survey.application.usecases.GetCurrentCampaignUseCase
 import com.bliss.survey.application.usecases.GetNextItemUseCase
 import com.bliss.survey.application.usecases.GetNextPairUseCase
 import com.bliss.survey.application.usecases.SubmitPairRatingUseCase
@@ -16,6 +17,7 @@ import com.bliss.survey.infrastructure.identity.CachedSessionVerifier
 import com.bliss.survey.infrastructure.identity.IdentityClient
 import com.bliss.survey.infrastructure.language.LinguaLanguageDetector
 import com.bliss.survey.infrastructure.nats.UserDeletedConsumer
+import com.bliss.survey.infrastructure.persistence.PgCampaignRepository
 import com.bliss.survey.infrastructure.persistence.PgPairRatingRepository
 import com.bliss.survey.infrastructure.persistence.PgProposedByRepository
 import com.bliss.survey.infrastructure.persistence.PgRatingRepository
@@ -41,6 +43,7 @@ fun main() {
     val pairRatings = PgPairRatingRepository(dataSource)
     val proposedBy = PgProposedByRepository(dataSource)
     val progress = PgUserProgressRepository(dataSource)
+    val campaignRepository = PgCampaignRepository(dataSource)
 
     val clock = Clock { Instant.now() }
     val ids = IdGenerator { Generators.timeBasedEpochGenerator().generate() }
@@ -57,6 +60,7 @@ fun main() {
             filters = FilterPipeline.default(languageDetector),
             ids = ids,
             clock = clock,
+            campaigns = campaignRepository,
         )
     val getNextPair = GetNextPairUseCase(items)
     val submitPairRating =
@@ -67,7 +71,9 @@ fun main() {
             progress = progress,
             ids = ids,
             clock = clock,
+            campaigns = campaignRepository,
         )
+    val getCurrentCampaign = GetCurrentCampaignUseCase(campaignRepository)
 
     val identityClient = IdentityClient(config.identityBaseUrl)
     val sessionVerifier = CachedSessionVerifier(identityClient)
@@ -86,6 +92,7 @@ fun main() {
             submitRating = { cmd -> submitRating.execute(cmd) },
             getNextPair = getNextPair,
             submitPairRating = { cmd -> submitPairRating.execute(cmd) },
+            getCurrentCampaign = getCurrentCampaign,
             items = items,
             proposedBy = proposedBy,
             userProgress = progress,
