@@ -4,6 +4,7 @@ import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.isNull
 import com.bliss.identity.domain.user.DisplayName
+import com.bliss.identity.domain.user.Role
 import com.bliss.identity.domain.user.User
 import com.bliss.identity.domain.user.UserId
 import com.zaxxer.hikari.HikariConfig
@@ -195,5 +196,58 @@ class PostgresUserRepositoryTest {
             val unknownId = UserId(UUID.randomUUID())
             repo.updateDisplayName(unknownId, DisplayName.of("Ghost"))
             assertThat(repo.findById(unknownId)).isNull()
+        }
+
+    @Test
+    fun `new user defaults to player on read`() =
+        runTest {
+            val u = user()
+            repo.create(u)
+            assertThat(repo.findById(u.id)?.role).isEqualTo(Role.PLAYER)
+        }
+
+    @Test
+    fun `create persists an explicit role`() =
+        runTest {
+            val u = user().copy(role = Role.MAINTAINER)
+            repo.create(u)
+            assertThat(repo.findById(u.id)?.role).isEqualTo(Role.MAINTAINER)
+        }
+
+    @Test
+    fun `updateRole promotes an existing user`() =
+        runTest {
+            val u = user()
+            repo.create(u)
+            repo.updateRole(u.id, Role.MAINTAINER)
+            assertThat(repo.findById(u.id)?.role).isEqualTo(Role.MAINTAINER)
+        }
+
+    @Test
+    fun `updateRole is a no-op for an unknown user`() =
+        runTest {
+            val unknownId = UserId(UUID.randomUUID())
+            repo.updateRole(unknownId, Role.MAINTAINER)
+            assertThat(repo.findById(unknownId)).isNull()
+        }
+
+    @Test
+    fun `rows inserted without a role read back as player`() =
+        runTest {
+            val id = UUID.randomUUID()
+            dataSource.connection.use { conn ->
+                conn
+                    .prepareStatement(
+                        "INSERT INTO identity_users (user_id, display_name, created_at, last_seen_at) " +
+                            "VALUES (?, ?, ?, ?)",
+                    ).use { stmt ->
+                        stmt.setObject(1, id)
+                        stmt.setString(2, "Legacy")
+                        stmt.setObject(3, now.atOffset(java.time.ZoneOffset.UTC))
+                        stmt.setObject(4, now.atOffset(java.time.ZoneOffset.UTC))
+                        stmt.executeUpdate()
+                    }
+            }
+            assertThat(repo.findById(UserId(id))?.role).isEqualTo(Role.PLAYER)
         }
 }
