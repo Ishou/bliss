@@ -43,6 +43,24 @@ def parse_batches(path: str) -> list[HistoricalBatch]:
     return out
 
 
+def ensure_campaigns(conn, batches: Iterable[HistoricalBatch], *, dry_run: bool) -> None:
+    with conn.cursor() as cur:
+        for batch in batches:
+            cur.execute(
+                "SELECT 1 FROM campaigns WHERE batch_label = %s",
+                (batch.batch_label,),
+            )
+            if cur.fetchone() is not None:
+                continue
+            cur.execute(
+                """
+                INSERT INTO campaigns (campaign_id, batch_label, opened_at, closed_at)
+                VALUES (%s, %s, %s, %s)
+                """,
+                (uuid_utils.uuid7(), batch.batch_label, batch.opened_at, batch.closed_at),
+            )
+
+
 def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--dsn", required=True)
