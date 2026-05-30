@@ -80,7 +80,8 @@ function SondagePage() {
   const authClient = ctx.authClient;
 
   const campaignStatus = useCampaignStatus(surveyClient);
-  const isLocked = campaignStatus.status.kind === 'closed';
+  const isLocked =
+    campaignStatus.status.kind === 'closed' || campaignStatus.status.kind === 'unavailable';
 
   const [item, setItem] = useState<SurveyItem | null>(null);
   const [loading, setLoading] = useState(true);
@@ -216,6 +217,9 @@ function SondagePage() {
         </div>
         {campaignStatus.status.kind === 'closed' ? (
           <LockBanner campaign={campaignStatus.status.campaign} />
+        ) : null}
+        {campaignStatus.status.kind === 'unavailable' ? (
+          <LockBanner campaign={null} />
         ) : null}
         <p className={introStyles}>
           Notez la qualité des définitions en un clic : mauvaise, à passer, ou bonne.

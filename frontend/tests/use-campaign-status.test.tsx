@@ -1,6 +1,7 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Campaign, SurveyClient } from '@/application/survey';
+import { NoCampaignError } from '@/infrastructure/api/survey/client';
 import { useCampaignStatus } from '@/ui/components/sondage/useCampaignStatus';
 
 function makeClient(campaign: Campaign): SurveyClient {
@@ -65,6 +66,14 @@ describe('useCampaignStatus', () => {
       result.current.refresh();
     });
     await waitFor(() => expect(client.getCurrentCampaign).toHaveBeenCalledTimes(2));
+  });
+
+  it('resolves to unavailable when getCurrentCampaign throws NoCampaignError (503: no campaign ever opened)', async () => {
+    const client = {
+      getCurrentCampaign: vi.fn().mockRejectedValue(new NoCampaignError()),
+    } as unknown as SurveyClient;
+    const { result } = renderHook(() => useCampaignStatus(client));
+    await waitFor(() => expect(result.current.status.kind).toBe('unavailable'));
   });
 
   it('keeps previous status on transient fetch failure', async () => {
