@@ -76,6 +76,73 @@ def test_ensure_campaigns_is_idempotent(conn):
         assert cur.fetchone()[0] == 1
 
 
+def test_stamp_pair_ratings_attributes_rows_by_created_at(conn):
+    batches = [
+        bf.HistoricalBatch("round-5", _at("2026-05-01T00:00:00"), _at("2026-05-07T00:00:00")),
+        bf.HistoricalBatch("round-6", _at("2026-05-08T00:00:00"), _at("2026-05-15T00:00:00")),
+    ]
+    bf.ensure_campaigns(conn, batches)
+    left_id = _uuid.uuid4()
+    right_id = _uuid.uuid4()
+    with conn.cursor() as cur:
+        for item_id, mot in ((left_id, "CHAT"), (right_id, "CHIEN")):
+            cur.execute(
+                """INSERT INTO survey_items
+                   (item_id, mot, definition, pos, categorie, style,
+                    force_claimed, longueur, source, source_batch)
+                   VALUES (%s, %s, 'animal', 'nom_commun', 'animals',
+                           'classique', 3, 4, 'legacy', 'pre-campaign')""",
+                (item_id, mot),
+            )
+        for pr_id, created_at in (
+            (_uuid.uuid4(), "2026-05-03T12:00:00Z"),
+            (_uuid.uuid4(), "2026-05-10T12:00:00Z"),
+        ):
+            cur.execute(
+                """INSERT INTO pair_ratings
+                   (id, left_item_id, right_item_id, verdict, difficulte, created_at)
+                   VALUES (%s, %s, %s, 'left_wins', 3, %s)""",
+                (pr_id, left_id, right_id, created_at),
+            )
+    bf.stamp_pair_ratings(conn, batches)
+    with conn.cursor() as cur:
+        cur.execute(
+            "SELECT c.batch_label, count(*) "
+            "FROM pair_ratings pr JOIN campaigns c ON pr.campaign_id = c.campaign_id "
+            "GROUP BY c.batch_label ORDER BY c.batch_label",
+        )
+        rows = cur.fetchall()
+    assert rows == [("round-5", 1), ("round-6", 1)]
+
+
+def test_stamp_pair_ratings_is_idempotent(conn):
+    batches = [bf.HistoricalBatch("round-5", _at("2026-05-01T00:00:00"), _at("2026-05-07T00:00:00"))]
+    bf.ensure_campaigns(conn, batches)
+    left_id = _uuid.uuid4()
+    right_id = _uuid.uuid4()
+    with conn.cursor() as cur:
+        for item_id, mot in ((left_id, "CHAT"), (right_id, "CHIEN")):
+            cur.execute(
+                """INSERT INTO survey_items
+                   (item_id, mot, definition, pos, categorie, style,
+                    force_claimed, longueur, source, source_batch)
+                   VALUES (%s, %s, 'animal', 'nom_commun', 'animals',
+                           'classique', 3, 4, 'legacy', 'pre-campaign')""",
+                (item_id, mot),
+            )
+        cur.execute(
+            """INSERT INTO pair_ratings
+               (id, left_item_id, right_item_id, verdict, difficulte, created_at)
+               VALUES (%s, %s, %s, 'left_wins', 3, '2026-05-03T12:00:00Z')""",
+            (_uuid.uuid4(), left_id, right_id),
+        )
+    bf.stamp_pair_ratings(conn, batches)
+    bf.stamp_pair_ratings(conn, batches)
+    with conn.cursor() as cur:
+        cur.execute("SELECT count(*) FROM pair_ratings WHERE campaign_id IS NOT NULL")
+        assert cur.fetchone()[0] == 1
+
+
 def test_stamp_ratings_attributes_rows_by_created_at(conn):
     batches = [
         bf.HistoricalBatch("round-5", _at("2026-05-01T00:00:00"), _at("2026-05-07T00:00:00")),
