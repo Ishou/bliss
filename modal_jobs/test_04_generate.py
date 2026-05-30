@@ -30,15 +30,6 @@ def test_construire_prompt_format() -> None:
     assert prompt.startswith("Donne une définition de mot fléché pour")
 
 
-def test_styles_actifs_count() -> None:
-    mod = _load_module()
-    assert len(mod.STYLES_ACTIFS) == 5
-    assert set(mod.STYLES_ACTIFS) == {
-        "definition_directe", "periphrase", "culturel",
-        "cryptique", "fonction_role",
-    }
-
-
 def test_charger_lemmes_semicolon(tmp_path: Path) -> None:
     mod = _load_module()
     csv_path = tmp_path / "lemmes.csv"

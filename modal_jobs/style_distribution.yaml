@@ -1,0 +1,9 @@
+# accepted-mix fractions; calembour must stay 0 (hors-IA, clue-style-guide-v2 §4.5).
+styles:
+  definition_directe: 0.217
+  periphrase:         0.217
+  cryptique:          0.216
+  culturel:           0.10
+  fonction_role:      0.10
+  metonymie:          0.10
+  technique:          0.05
