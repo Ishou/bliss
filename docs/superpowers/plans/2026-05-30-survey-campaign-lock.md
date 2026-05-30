@@ -2690,8 +2690,7 @@ def main(argv: list[str]) -> int:
     return 0
 
 
-# Implementations of ensure_campaigns / stamp_ratings / stamp_pair_ratings /
-# coverage_report live in subsequent steps.
+# ensure_campaigns / stamp_ratings / stamp_pair_ratings / coverage_report defined in subsequent steps.
 
 
 if __name__ == "__main__":
@@ -2840,8 +2839,7 @@ def test_stamp_ratings_attributes_rows_by_created_at(conn):
         bf.HistoricalBatch("round-6", _at("2026-05-08T00:00:00"), _at("2026-05-15T00:00:00")),
     ]
     bf.ensure_campaigns(conn, batches, dry_run=False)
-    # Insert two ratings, one in each window. We need a survey_item row first;
-    # use a fixture helper (assumed in conftest.py) or inline it:
+    # seed inline (not via conftest): one survey_item + two ratings, one per window.
     import uuid as _uuid
     item_id = _uuid.uuid4()
     user_id = _uuid.uuid4()

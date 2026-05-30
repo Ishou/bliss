@@ -242,8 +242,7 @@ Both statements are single-line, deterministic, and produce a row that the maint
 
 ```kotlin
 val campaign = campaigns.findOpen() ?: return SubmitRatingResult.Locked
-// existing item-lookup, validation, insert flow continues:
-// ratings.insert(rating.copy(campaignId = campaign.id))
+// existing flow continues; the inserted Rating(...) gets `campaignId = campaign.id`
 ```
 
 `SubmitPairRatingUseCase.execute(cmd)` gets the same gate, applied to both the pair-row insert and the absolute-row inserts that BOTH_GOOD / BOTH_BAD produce. The campaign id is stamped on every row written in this transaction.
