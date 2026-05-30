@@ -128,6 +128,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/actions/undo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Undo the action identified by a capability token.
+         * @description Reverses every write a submit produced, using the capability token
+         *     returned as `undoToken`. The token travels in the body, never the URL.
+         *     Anon actions authorize on possession; authed actions additionally bind
+         *     to the session user. Undoable while the campaign is open and for an 8 s
+         *     close grace; 410 once the grace elapses.
+         */
+        post: operations["undoAction"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/me/progress": {
         parameters: {
             query?: never;
@@ -281,6 +305,10 @@ export interface components {
             };
             latencyMs: number;
         };
+        UndoActionRequest: {
+            /** @description The capability token returned as undoToken by the submit response. */
+            token: string;
+        };
         RatingResponse: {
             /** Format: uuid */
             ratingId: string;
@@ -298,6 +326,8 @@ export interface components {
              * @description Campaign whose lifecycle window this rating landed in. Stamped by the server at insert time.
              */
             campaignId: string;
+            /** @description Capability token for undoing this action. Non-null on 201 (fresh action); null on 409 (idempotent re-rate). Present it in the body of POST /v1/actions/undo. */
+            undoToken?: string | null;
         };
         PairRatingResponse: {
             /**
@@ -305,6 +335,8 @@ export interface components {
              * @description Campaign whose lifecycle window this pair verdict landed in. Stamped by the server at insert time.
              */
             campaignId: string;
+            /** @description Capability token for undoing this pair action. Non-null on 201; null on 204 (SKIP, no body). Present it in the body of POST /v1/actions/undo. */
+            undoToken?: string | null;
         };
         CorrectifRejection: {
             /** Format: uri */
@@ -542,6 +574,46 @@ export interface operations {
             409: components["responses"]["ProblemDetails"];
             /** @description No open campaign — the sondage is locked. */
             423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    undoAction: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UndoActionRequest"];
+            };
+        };
+        responses: {
+            /** @description Action reversed. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Token unknown, not yours, or already undone. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Campaign-close grace window has elapsed. */
+            410: {
                 headers: {
                     [name: string]: unknown;
                 };
