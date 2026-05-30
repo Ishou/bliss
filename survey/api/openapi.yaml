@@ -31,12 +31,35 @@ servers:
     description: Local k3d
 
 tags:
+  - name: campaigns
+    description: Campaign-lifecycle reads. Open/close happen via direct SQL in v1.
   - name: items
     description: Rating-pool reads and rating submissions.
   - name: me
     description: Per-user progress, contributions, and preferences.
 
 paths:
+  /v1/campaign/current:
+    get:
+      operationId: getCurrentCampaign
+      summary: Return the current campaign and its lock state.
+      description: |
+        Returns the open campaign if one exists, otherwise the most recently
+        closed campaign. The frontend treats a non-null `closedAt` as "the
+        sondage is locked": render the LockBanner and disable verdict /
+        Corriger controls. Polled on mount and visibilitychange; no
+        long-poll, no WebSocket. 503 only when no campaign has ever existed
+        (operator error caught by smoke tests).
+      tags: [campaigns]
+      responses:
+        '200':
+          description: Current campaign.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Campaign' }
+        '503':
+          $ref: '#/components/responses/ProblemDetails'
+
   /v1/items/next:
     get:
       operationId: getNextItem
