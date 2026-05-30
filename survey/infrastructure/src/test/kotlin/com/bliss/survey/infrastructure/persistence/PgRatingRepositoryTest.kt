@@ -170,12 +170,14 @@ class PgRatingRepositoryTest {
         runTest {
             val item = sampleItem()
             items.insert(item)
-            ratings.insert(authRating(item.id, UserId(UUID.randomUUID())).copy(qualite = 4, difficulte = 2))
-            ratings.insert(authRating(item.id, UserId(UUID.randomUUID())).copy(qualite = 5, difficulte = 3))
-            ratings.insert(anonRating(item.id).copy(qualite = 3, difficulte = 4))
-            val flagged = anonRating(item.id).copy(flag = FlagReason.AUTRE)
+            // Ratings only settle once their campaign closed past the 8s grace.
+            val campaign = CampaignId(insertClosedCampaign("round-7", closedAt = now.minusSeconds(60)))
+            ratings.insert(authRating(item.id, UserId(UUID.randomUUID())).copy(qualite = 4, difficulte = 2, campaignId = campaign))
+            ratings.insert(authRating(item.id, UserId(UUID.randomUUID())).copy(qualite = 5, difficulte = 3, campaignId = campaign))
+            ratings.insert(anonRating(item.id).copy(qualite = 3, difficulte = 4, campaignId = campaign))
+            val flagged = anonRating(item.id).copy(flag = FlagReason.AUTRE, campaignId = campaign)
             ratings.insert(flagged)
-            val out = ratings.aggregateForExport(since = null)
+            val out = ratings.aggregateForExport(since = null, settledBefore = now.minusSeconds(8))
             assertThat(out).isNotNull()
             assertThat(out.size).isEqualTo(1)
             val agg = out[0]
@@ -186,6 +188,29 @@ class PgRatingRepositoryTest {
             assertThat(agg.qualiteAnonN).isEqualTo(2)
             assertThat(agg.flagCount).isEqualTo(1)
             assertThat(agg.qualiteSquaredAuthSum).isEqualTo(16 + 25)
+        }
+
+    @Test
+    fun `aggregateForExport excludes open and within-grace campaigns`() =
+        runTest {
+            val settledItem = sampleItem()
+            val openItem = sampleItem().copy(id = ItemId(UUID.randomUUID()))
+            val graceItem = sampleItem().copy(id = ItemId(UUID.randomUUID()))
+            items.insert(settledItem)
+            items.insert(openItem)
+            items.insert(graceItem)
+
+            val settled = CampaignId(insertClosedCampaign("settled", closedAt = now.minusSeconds(60)))
+            val open = CampaignId(insertCampaignRow("open"))
+            val grace = CampaignId(insertClosedCampaign("grace", closedAt = now.minusSeconds(3)))
+
+            ratings.insert(anonRating(settledItem.id).copy(campaignId = settled))
+            ratings.insert(anonRating(openItem.id).copy(campaignId = open))
+            ratings.insert(anonRating(graceItem.id).copy(campaignId = grace))
+
+            val out = ratings.aggregateForExport(since = null, settledBefore = now.minusSeconds(8))
+            assertThat(out.size).isEqualTo(1)
+            assertThat(out[0].itemId).isEqualTo(settledItem.id)
         }
 
     @Test
@@ -246,6 +271,25 @@ class PgRatingRepositoryTest {
                 ).use { s ->
                     s.setObject(1, id)
                     s.setString(2, label)
+                    s.executeUpdate()
+                }
+        }
+        return id
+    }
+
+    private fun insertClosedCampaign(
+        label: String,
+        closedAt: Instant,
+    ): UUID {
+        val id = UUID.randomUUID()
+        dataSource.connection.use { c ->
+            c
+                .prepareStatement(
+                    "INSERT INTO campaigns (campaign_id, batch_label, closed_at) VALUES (?, ?, ?)",
+                ).use { s ->
+                    s.setObject(1, id)
+                    s.setString(2, label)
+                    s.setTimestamp(3, java.sql.Timestamp.from(closedAt))
                     s.executeUpdate()
                 }
         }

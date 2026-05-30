@@ -93,7 +93,7 @@ fun Route.submitPairRatingRoute(execute: suspend (SubmitPairRatingCommand) -> Su
             is SubmitPairRatingResult.Recorded ->
                 call.respond(
                     HttpStatusCode.Created,
-                    PairRatingResponse(campaignId = result.campaignId.value.toString()),
+                    PairRatingResponse(campaignId = result.campaignId.value.toString(), undoToken = result.undoToken),
                 )
 
             SubmitPairRatingResult.Skipped ->

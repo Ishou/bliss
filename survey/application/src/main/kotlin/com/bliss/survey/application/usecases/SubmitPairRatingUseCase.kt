@@ -1,12 +1,18 @@
 package com.bliss.survey.application.usecases
 
+import com.bliss.survey.application.ports.ActionLogRepository
 import com.bliss.survey.application.ports.CampaignRepository
 import com.bliss.survey.application.ports.Clock
 import com.bliss.survey.application.ports.IdGenerator
 import com.bliss.survey.application.ports.PairRatingRepository
 import com.bliss.survey.application.ports.RatingRepository
 import com.bliss.survey.application.ports.SurveyItemRepository
+import com.bliss.survey.application.ports.TokenGenerator
+import com.bliss.survey.application.ports.TransactionManager
 import com.bliss.survey.application.ports.UserProgressRepository
+import com.bliss.survey.application.sha256
+import com.bliss.survey.domain.model.ActionId
+import com.bliss.survey.domain.model.ActionKind
 import com.bliss.survey.domain.model.Campaign
 import com.bliss.survey.domain.model.CampaignId
 import com.bliss.survey.domain.model.ItemId
@@ -17,12 +23,14 @@ import com.bliss.survey.domain.model.PreferenceVerdict
 import com.bliss.survey.domain.model.Rating
 import com.bliss.survey.domain.model.RatingId
 import com.bliss.survey.domain.model.SubmittedAs
+import com.bliss.survey.domain.model.SurveyAction
 import com.bliss.survey.domain.model.SurveyItem
 import com.bliss.survey.domain.model.UserId
 
 sealed interface SubmitPairRatingResult {
     data class Recorded(
         val campaignId: CampaignId,
+        val undoToken: String,
     ) : SubmitPairRatingResult
 
     data object Skipped : SubmitPairRatingResult
@@ -55,6 +63,9 @@ class SubmitPairRatingUseCase(
     private val ids: IdGenerator,
     private val clock: Clock,
     private val campaigns: CampaignRepository,
+    private val actions: ActionLogRepository,
+    private val tokens: TokenGenerator,
+    private val tx: TransactionManager,
 ) {
     suspend fun execute(cmd: SubmitPairRatingCommand): SubmitPairRatingResult {
         // SKIP is never persisted — preserve the no-write contract regardless of lock state.
@@ -99,10 +110,34 @@ class SubmitPairRatingUseCase(
                 createdAt = now,
                 campaignId = openCampaign.id,
             )
-        val inserted = pairRatings.insert(row)
+        val token = tokens.newToken()
+        val priorLastRatedAt = if (cmd.userId != null) progress.get(cmd.userId)?.lastRatedAt else null
+        val inserted =
+            tx.inTransaction {
+                if (!pairRatings.insert(row)) return@inTransaction false
+                if (cmd.userId != null) progress.incrementItemsRated(cmd.userId, now)
+                actions.insert(
+                    SurveyAction(
+                        id = ActionId(ids.next()),
+                        undoTokenHash = sha256(token),
+                        userId = cmd.userId,
+                        kind = ActionKind.PAIR,
+                        campaignId = openCampaign.id,
+                        createdAt = now,
+                        undoneAt = null,
+                        createdRatingIds = emptyList(),
+                        createdPairId = row.id,
+                        createdItemId = null,
+                        proposedItemId = null,
+                        patchedItemId = null,
+                        priorPos = null,
+                        priorLastRatedAt = priorLastRatedAt,
+                    ),
+                )
+                true
+            }
         if (!inserted) return SubmitPairRatingResult.AlreadyExists
-        if (cmd.userId != null) progress.incrementItemsRated(cmd.userId, now)
-        return SubmitPairRatingResult.Recorded(openCampaign.id)
+        return SubmitPairRatingResult.Recorded(openCampaign.id, token)
     }
 
     private suspend fun insertAbsolutePair(
@@ -135,11 +170,33 @@ class SubmitPairRatingUseCase(
                     campaignId = openCampaign.id,
                 )
             }
-        for (r in rows) ratings.insert(r)
-        if (cmd.userId != null) {
-            progress.incrementItemsRated(cmd.userId, now)
-            progress.incrementItemsRated(cmd.userId, now)
+        val token = tokens.newToken()
+        val priorLastRatedAt = if (cmd.userId != null) progress.get(cmd.userId)?.lastRatedAt else null
+        tx.inTransaction {
+            for (r in rows) ratings.insert(r)
+            if (cmd.userId != null) {
+                progress.incrementItemsRated(cmd.userId, now)
+                progress.incrementItemsRated(cmd.userId, now)
+            }
+            actions.insert(
+                SurveyAction(
+                    id = ActionId(ids.next()),
+                    undoTokenHash = sha256(token),
+                    userId = cmd.userId,
+                    kind = ActionKind.PAIR,
+                    campaignId = openCampaign.id,
+                    createdAt = now,
+                    undoneAt = null,
+                    createdRatingIds = rows.map { it.id },
+                    createdPairId = null,
+                    createdItemId = null,
+                    proposedItemId = null,
+                    patchedItemId = null,
+                    priorPos = null,
+                    priorLastRatedAt = priorLastRatedAt,
+                ),
+            )
         }
-        return SubmitPairRatingResult.Recorded(openCampaign.id)
+        return SubmitPairRatingResult.Recorded(openCampaign.id, token)
     }
 }

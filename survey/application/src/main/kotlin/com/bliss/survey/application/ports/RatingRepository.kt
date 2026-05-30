@@ -20,7 +20,11 @@ interface RatingRepository {
 
     suspend fun anonymiseForUser(userId: UserId)
 
-    suspend fun aggregateForExport(since: Instant?): List<RatingAggregate>
+    // settledBefore excludes ratings whose campaign is still open or within the close grace (ADR-0059).
+    suspend fun aggregateForExport(
+        since: Instant?,
+        settledBefore: Instant,
+    ): List<RatingAggregate>
 }
 
 data class RatingAggregate(

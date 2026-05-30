@@ -95,7 +95,7 @@ fun Route.submitRatingRoute(execute: suspend (SubmitRatingCommand) -> SubmitRati
 
         when (val result = execute(cmd)) {
             is SubmitRatingResult.Accepted ->
-                call.respond(HttpStatusCode.Created, result.rating.toResponse())
+                call.respond(HttpStatusCode.Created, result.rating.toResponse(undoToken = result.undoToken))
 
             is SubmitRatingResult.AlreadyExists ->
                 call.respond(HttpStatusCode.Conflict, result.existing.toResponse())
@@ -153,7 +153,7 @@ fun Route.submitRatingRoute(execute: suspend (SubmitRatingCommand) -> SubmitRati
 // Production overload so Module.kt can pass the concrete use case without exposing the test seam.
 fun Route.submitRatingRoute(useCase: SubmitRatingUseCase) = submitRatingRoute { cmd -> useCase.execute(cmd) }
 
-private fun Rating.toResponse(): RatingResponse =
+private fun Rating.toResponse(undoToken: String? = null): RatingResponse =
     RatingResponse(
         ratingId = id.value.toString(),
         itemId = itemId.value.toString(),
@@ -163,4 +163,5 @@ private fun Rating.toResponse(): RatingResponse =
             requireNotNull(campaignId) {
                 "Accepted rating must have campaignId stamped by SubmitRatingUseCase"
             }.value.toString(),
+        undoToken = undoToken,
     )

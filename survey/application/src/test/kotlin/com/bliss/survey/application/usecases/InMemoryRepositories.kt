@@ -1,13 +1,19 @@
 package com.bliss.survey.application.usecases
 
+import com.bliss.survey.application.ports.ActionLogRepository
+import com.bliss.survey.application.ports.CampaignRepository
 import com.bliss.survey.application.ports.PairRatingRepository
 import com.bliss.survey.application.ports.ProposedByRepository
 import com.bliss.survey.application.ports.ProposedContribution
 import com.bliss.survey.application.ports.RatingAggregate
 import com.bliss.survey.application.ports.RatingRepository
 import com.bliss.survey.application.ports.SurveyItemRepository
+import com.bliss.survey.application.ports.TransactionManager
 import com.bliss.survey.application.ports.UserProgress
 import com.bliss.survey.application.ports.UserProgressRepository
+import com.bliss.survey.domain.model.ActionId
+import com.bliss.survey.domain.model.Campaign
+import com.bliss.survey.domain.model.CampaignId
 import com.bliss.survey.domain.model.ItemId
 import com.bliss.survey.domain.model.ItemPair
 import com.bliss.survey.domain.model.PairRating
@@ -16,6 +22,7 @@ import com.bliss.survey.domain.model.Pos
 import com.bliss.survey.domain.model.Rating
 import com.bliss.survey.domain.model.RatingId
 import com.bliss.survey.domain.model.SubmittedAs
+import com.bliss.survey.domain.model.SurveyAction
 import com.bliss.survey.domain.model.SurveyItem
 import com.bliss.survey.domain.model.Tier
 import com.bliss.survey.domain.model.UserId
@@ -217,7 +224,10 @@ class InMemoryRatingRepository : RatingRepository {
 
     var aggregateOverride: List<RatingAggregate>? = null
 
-    override suspend fun aggregateForExport(since: Instant?): List<RatingAggregate> = aggregateOverride ?: emptyList()
+    override suspend fun aggregateForExport(
+        since: Instant?,
+        settledBefore: Instant,
+    ): List<RatingAggregate> = aggregateOverride ?: emptyList()
 }
 
 class InMemoryProposedByRepository : ProposedByRepository {
@@ -305,3 +315,47 @@ class InMemoryUserProgressRepository : UserProgressRepository {
         progress.remove(userId)
     }
 }
+
+class InMemoryActionLogRepository : ActionLogRepository {
+    val actions: MutableList<SurveyAction> = mutableListOf()
+
+    override suspend fun insert(action: SurveyAction) {
+        actions += action
+    }
+
+    override suspend fun findByTokenHash(tokenHash: ByteArray): SurveyAction? =
+        actions.firstOrNull {
+            it.undoTokenHash.contentEquals(tokenHash)
+        }
+
+    override suspend fun markUndone(
+        id: ActionId,
+        at: Instant,
+    ) {
+        actions.withIndex().firstOrNull { it.value.id == id }?.let { (idx, a) ->
+            actions[idx] = a.copy(undoneAt = at)
+        }
+    }
+
+    override suspend fun scrubUser(userId: UserId) {
+        actions.withIndex().filter { it.value.userId == userId }.forEach { (idx, a) ->
+            actions[idx] = a.copy(userId = null)
+        }
+    }
+}
+
+class InMemoryCampaignRepository(
+    private val campaign: Campaign?,
+) : CampaignRepository {
+    override suspend fun findOpen(): Campaign? = campaign?.takeIf { it.isOpen }
+
+    override suspend fun findCurrent(): Campaign? = campaign
+
+    override suspend fun findById(id: CampaignId): Campaign? = campaign?.takeIf { it.id == id }
+}
+
+// Pass-through tx: the in-memory fakes share no connection, so commit/rollback is a no-op.
+val passThroughTransactionManager: TransactionManager =
+    object : TransactionManager {
+        override suspend fun <T> inTransaction(block: suspend () -> T): T = block()
+    }

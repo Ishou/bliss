@@ -105,12 +105,16 @@ class PgRatingRepository(
             }
         }
 
-    override suspend fun aggregateForExport(since: Instant?): List<RatingAggregate> =
+    override suspend fun aggregateForExport(
+        since: Instant?,
+        settledBefore: Instant,
+    ): List<RatingAggregate> =
         withContext(Dispatchers.IO) {
             withTxConnection(dataSource) { conn ->
                 val sql = if (since != null) AGGREGATE_SINCE_SQL else AGGREGATE_ALL_SQL
                 conn.prepareStatement(sql).use { stmt ->
-                    if (since != null) stmt.setTimestamp(1, Timestamp.from(since))
+                    stmt.setTimestamp(1, Timestamp.from(settledBefore))
+                    if (since != null) stmt.setTimestamp(2, Timestamp.from(since))
                     val out = mutableListOf<RatingAggregate>()
                     stmt.executeQuery().use { rs ->
                         while (rs.next()) {
@@ -197,7 +201,10 @@ class PgRatingRepository(
                    COALESCE(SUM(CASE WHEN flag IS NOT NULL THEN 1 END), 0) AS flag_count,
                    COALESCE(SUM(CASE WHEN submitted_as = 'auth' THEN qualite * qualite END), 0) AS qualite_sq_auth_sum,
                    COALESCE(SUM(CASE WHEN submitted_as = 'anon' THEN qualite * qualite END), 0) AS qualite_sq_anon_sum
-              FROM ratings
+              FROM ratings r
+              JOIN campaigns c ON c.campaign_id = r.campaign_id
+             WHERE c.closed_at IS NOT NULL
+               AND c.closed_at < ?
              GROUP BY item_id
             """
 
@@ -215,8 +222,11 @@ class PgRatingRepository(
                    COALESCE(SUM(CASE WHEN flag IS NOT NULL THEN 1 END), 0) AS flag_count,
                    COALESCE(SUM(CASE WHEN submitted_as = 'auth' THEN qualite * qualite END), 0) AS qualite_sq_auth_sum,
                    COALESCE(SUM(CASE WHEN submitted_as = 'anon' THEN qualite * qualite END), 0) AS qualite_sq_anon_sum
-              FROM ratings
-             WHERE created_at >= ?
+              FROM ratings r
+              JOIN campaigns c ON c.campaign_id = r.campaign_id
+             WHERE c.closed_at IS NOT NULL
+               AND c.closed_at < ?
+               AND created_at >= ?
              GROUP BY item_id
             """
     }

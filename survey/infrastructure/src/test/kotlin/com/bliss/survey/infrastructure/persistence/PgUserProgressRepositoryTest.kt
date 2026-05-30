@@ -76,6 +76,30 @@ class PgUserProgressRepositoryTest {
         }
 
     @Test
+    fun `decrementItemsRated subtracts and restores last_rated_at`() =
+        runTest {
+            val user = UserId(UUID.randomUUID())
+            progress.incrementItemsRated(user, now)
+            progress.incrementItemsRated(user, now.plusSeconds(60))
+            val prior = now.minusSeconds(30)
+            progress.decrementItemsRated(user, by = 1, priorLastRatedAt = prior)
+            val loaded = progress.get(user)
+            assertThat(loaded?.itemsRated).isEqualTo(1)
+            assertThat(loaded?.lastRatedAt).isEqualTo(prior)
+        }
+
+    @Test
+    fun `decrementItemsRated floors items_rated at zero`() =
+        runTest {
+            val user = UserId(UUID.randomUUID())
+            progress.incrementItemsRated(user, now)
+            progress.decrementItemsRated(user, by = 5, priorLastRatedAt = null)
+            val loaded = progress.get(user)
+            assertThat(loaded?.itemsRated).isEqualTo(0)
+            assertThat(loaded?.lastRatedAt).isNull()
+        }
+
+    @Test
     fun `get returns null for unknown user`() =
         runTest {
             assertThat(progress.get(UserId(UUID.randomUUID()))).isNull()

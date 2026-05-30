@@ -31,7 +31,7 @@ class SubmitPairRatingRouteTest {
     private val rightId = UUID.fromString("22222222-2222-7222-8222-222222222222")
     private val userId = UUID.fromString("33333333-3333-7333-8333-333333333333")
     private val campaignUuid = UUID.fromString("44444444-4444-7444-8444-444444444444")
-    private val recorded = SubmitPairRatingResult.Recorded(CampaignId(campaignUuid))
+    private val recorded = SubmitPairRatingResult.Recorded(CampaignId(campaignUuid), undoToken = "undo-tok")
 
     private fun jsonBody(
         left: String = leftId.toString(),
