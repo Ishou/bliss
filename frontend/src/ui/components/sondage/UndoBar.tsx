@@ -44,7 +44,7 @@ export interface UndoBarProps {
 export function UndoBar({ onUndo, busy = false }: UndoBarProps) {
   return (
     <div className={barStyles} data-testid="undo-bar">
-      <p className={labelStyles}>Action enregistrée.</p>
+      <p className={labelStyles} role="status">Action enregistrée.</p>
       <button
         type="button"
         className={buttonStyles}
