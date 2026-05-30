@@ -1055,10 +1055,7 @@ import java.time.Instant
 import java.util.UUID
 
 class SubmitRatingUseCaseLockedTest {
-    // For brevity, the harness reuses fakes from sibling tests in this
-    // package (FakeSurveyItemRepository, FakeRatingRepository, etc.). If
-    // they don't yet exist, write minimal in-memory ports that satisfy
-    // the interfaces — never mock these (CLAUDE.md "no mocks of own code").
+    // reuse FakeSurveyItemRepository etc. from sibling tests; write minimal in-memory ports if missing — no mocks (CLAUDE.md)
 
     private val now: Instant = Instant.parse("2026-05-30T12:00:00Z")
     private val itemId = ItemId(UUID.randomUUID())
@@ -1273,9 +1270,7 @@ class SubmitPairRatingUseCase(
 
         // ... existing same-item / pair-mot-mismatch / item-not-found checks ...
 
-        // Stamp campaignId in:
-        //   - the PairRating(...) constructed under LEFT_WINS / RIGHT_WINS
-        //   - both Rating(...) rows constructed under BOTH_GOOD / BOTH_BAD
+        // stamp campaignId into PairRating (LEFT/RIGHT wins) and both Rating rows (BOTH_GOOD/BOTH_BAD)
     }
 }
 ```
@@ -1328,8 +1323,7 @@ fun `insert and read back round-trips campaign_id`() = runTest {
     )
     ratings.insert(rating)
 
-    // Re-read via aggregateForExport — that's the existing read path; assert
-    // count is 1. Then a direct SELECT to assert the campaign_id column.
+    // re-read via aggregateForExport; assert count=1 and campaign_id column matches
     dataSource.connection.use { c ->
         c.prepareStatement("SELECT campaign_id FROM ratings WHERE rating_id = ?").use { s ->
             s.setObject(1, rating.id.value)
@@ -2145,9 +2139,7 @@ export function useCampaignStatus(client: SurveyClient | null): CampaignStatusAp
         campaign: c,
       });
     } catch {
-      // On error keep the previous state; the caller can also surface a
-      // banner via its own error handling. We do not flip to 'closed' on
-      // network failure — that would lock the UI for transient blips.
+      // keep previous status on error — avoid flipping to 'closed' on transient network blips
     }
   }, [client]);
 
