@@ -224,8 +224,7 @@ package com.bliss.survey.domain.weight
 
 import java.time.Instant
 
-// Single definition of "what counts as gold." Future windows (per-campaign,
-// graded multipliers) live here without touching call sites.
+// Future gold windows (per-campaign, graded multipliers) extend here without touching call sites.
 class GoldWindowPolicy(
     private val cutoff: Instant,
     private val goldMultiplier: Double,
