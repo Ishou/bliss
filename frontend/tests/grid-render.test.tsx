@@ -73,9 +73,7 @@ describe('Grid render', () => {
     expect(grid).toHaveAttribute('lang', SAMPLE_PUZZLE.language);
   });
 
-  // Track template scales to puzzle dims; tracks are minmax(0, 1fr) so a
-  // non-square puzzle (e.g. 15×12) divides the wrapper evenly without a
-  // clue-text auto-min inflating a track, and cells stay square via aspect-ratio: 1.
+  // Tracks are minmax(0, 1fr) so clue-text auto-min can't inflate a track; cells stay square via aspect-ratio: 1.
   it('emits gridTemplateColumns/Rows that match puzzle.width/height', () => {
     const landscape: Puzzle = { ...SAMPLE_PUZZLE, width: 15, height: 12 };
     render(<Grid puzzle={landscape} />);
@@ -373,8 +371,7 @@ describe('Grid render', () => {
     it('renders the zoom controls cluster centered in the bottom controls bar (no grid-track cap)', () => {
       render(<Grid puzzle={SAMPLE_PUZZLE} />);
       const cluster = screen.getByRole('group', { name: /zoom controls/i });
-      // The cluster moved out of a full-width row into a centered bottom bar
-      // (side-by-side with the minimap), so the grid-track cap no longer applies.
+      // Grid-track cap no longer applies; the cluster is centered inside the bottom bar now.
       expect(cluster.style.maxWidth).toBe('');
       // Panda atomic class for justifyContent:center on the parent bottom bar.
       expect(cluster.parentElement?.className).toMatch(/\bjc_center\b/);

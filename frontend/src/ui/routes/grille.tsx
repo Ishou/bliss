@@ -404,8 +404,7 @@ export function buildPuzzleToolbarMetadata(puzzle: Puzzle) {
   return { short, full };
 }
 
-// Maps a loader error to French copy for the route's errorComponent —
-// never the raw `error.message`, which can be an English exception name.
+// Converts a thrown error to French copy; never exposes raw error.message (an English exception name).
 function messageForError(err: unknown): string {
   if (err instanceof LobbyClientError) {
     switch (err.kind) {

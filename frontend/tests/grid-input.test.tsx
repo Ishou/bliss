@@ -1473,8 +1473,7 @@ describe('Grid mounts MobileKeyboard on touch-primary', () => {
     try {
       const r = render(<Grid puzzle={TEST_PUZZLE} />);
       expect(r.queryByRole('group', { name: 'Clavier mots fléchés' })).toBeTruthy();
-      // The desktop minimap + zoom bar is gated on `!touchPrimary`, so its
-      // zoom cluster is absent from the DOM entirely on touch devices.
+      // Desktop bar is gated on !touchPrimary — no zoom-controls group on touch devices.
       expect(r.queryByRole('group', { name: 'Zoom controls' })).toBeNull();
     } finally {
       window.matchMedia = original;

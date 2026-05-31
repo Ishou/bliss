@@ -111,8 +111,7 @@ describe('Grid scrollbars + minimap wireup', () => {
   it('renders the minimap in the bottom controls bar, outside grid-area and grid-stage', () => {
     render(<Grid puzzle={SAMPLE_PUZZLE} />);
     const minimap = screen.getByRole('img', { name: /aperçu/i });
-    // The minimap now lives in the desktop controls bar, a sibling AFTER
-    // grid-area — no longer nested inside the grid's flex column.
+    // The bottom controls bar is a sibling after grid-area, so the minimap is outside both grid-area and grid-stage.
     expect(screen.getByTestId('grid-area')).not.toContainElement(minimap as HTMLElement);
     expect(screen.getByTestId('grid-stage')).not.toContainElement(minimap as HTMLElement);
   });
