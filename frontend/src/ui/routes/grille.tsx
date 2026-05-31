@@ -267,9 +267,7 @@ function LoadedHomePage({ puzzle }: { readonly puzzle: Puzzle }) {
     [soloEntriesStore, puzzle.id],
   );
 
-  // Union the auto-validated cells with the hint-revealed (locked)
-  // cells before passing to <Grid>. Grid renders both as read-only
-  // with the sage tint — the contract we want for revealed cells too.
+  // Merges auto-validated and hint-revealed cells into one read-only set before passing to <Grid>.
   const validatedPositions = useMemo<ReadonlySet<string>>(() => {
     if (lockedHintCells.size === 0) return autoValidation.validated;
     if (autoValidation.validated.size === 0) return lockedHintCells;
@@ -278,12 +276,7 @@ function LoadedHomePage({ puzzle }: { readonly puzzle: Puzzle }) {
     return merged;
   }, [autoValidation.validated, lockedHintCells]);
 
-  // Read the currently focused cell's coordinates + lock state. The
-  // focus ref is updated on every `onLocalFocusChange` callback (no
-  // re-render in the keystroke path); we resolve `isLocked` lazily at
-  // click time against the latest `validatedPositions` (auto-validated
-  // ∪ hint-revealed), so the hint button refuses both kinds of
-  // already-sage cells.
+  // Resolves the focused cell lazily at click time so the hint button rejects both auto-validated and hint-revealed cells.
   const validatedPositionsRef = useRef(validatedPositions);
   validatedPositionsRef.current = validatedPositions;
   const getFocusedCell = useCallback(() => {

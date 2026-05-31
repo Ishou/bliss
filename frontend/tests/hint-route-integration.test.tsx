@@ -160,8 +160,7 @@ describe('Index route — hint refused on validated cells', () => {
     const second = inputAt(0, 2)!;
     typeChar(second, 'i');
     await vi.waitFor(() => expect(validate).toHaveBeenCalled());
-    // Both cells turn read-only once auto-validation locks them —
-    // surface signal that `validatedPositions` includes (0,1)..(0,2).
+    // Both cells must be read-only — surface signal that validatedPositions covers (0,1)..(0,2).
     await vi.waitFor(() => expect(inputAt(0, 1)!.readOnly).toBe(true));
     expect(inputAt(0, 2)!.readOnly).toBe(true);
 
