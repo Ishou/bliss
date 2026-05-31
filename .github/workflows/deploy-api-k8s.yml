@@ -382,6 +382,8 @@ jobs:
           RELEASE: ${{ matrix.release-name }}
           CHART: ${{ matrix.chart-path }}
           VALUES: ${{ matrix.values-file }}
+          # Identity-only: the maintainer UUID(s) are injected at deploy rather than committed.
+          MAINTAINER_USER_IDS: ${{ matrix.context == 'identity' && secrets.MAINTAINER_USER_IDS || '' }}
         # `--atomic` was dropped on purpose: when a release fails,
         # `--atomic` rolls back BEFORE the diagnostics step can run, so
         # the broken pods (and their logs / events) are gone by the time
@@ -406,6 +408,10 @@ jobs:
             --set image.digest="$DIGEST"
           if [ -n "$WORKER_DIGEST" ]; then
             set -- "$@" --set "ensureDailies.image.digest=$WORKER_DIGEST"
+          fi
+          # Inject identity maintainer UUID(s) only when the secret is set, keeping the privileged id out of git.
+          if [ -n "${MAINTAINER_USER_IDS:-}" ]; then
+            set -- "$@" --set "maintainerRoleBootstrap.userIds=$MAINTAINER_USER_IDS"
           fi
           set -- "$@" --wait --timeout 5m
           "$@"
