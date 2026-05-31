@@ -99,10 +99,7 @@ const gridAreaStyles = css({
   flexDirection: 'column',
 });
 
-// Desktop controls bar below the grid: the minimap (120px square) and the
-// zoom cluster, side by side and centered. Replaces the removed progress
-// bar + multiplayer button. Height-bound grids on desktop gain back the
-// vertical space the stacked controls used to cost.
+// Must be a sibling of gridShellStyles so --grid-zoom-controls-height subtracts from the grid's available height.
 const bottomBarStyles = css({
   display: 'flex',
   flexDirection: 'row',
@@ -544,10 +541,7 @@ export function Grid({
   // visualViewport collapses under the soft keyboard.
   const gridShellRef = useRef<HTMLDivElement | null>(null);
 
-  // The desktop controls bar reserves vertical space from the grid shell
-  // (gridShellStyles.maxHeight subtracts `--grid-zoom-controls-height`).
-  // Publish the bar's measured height; remove the var on touch-primary
-  // where the bar isn't rendered (the keyboard owns its own reservation).
+  // Publishes --grid-zoom-controls-height so gridShellStyles.maxHeight can subtract the bar's actual height.
   const bottomBarRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
     const el = bottomBarRef.current;
@@ -1240,12 +1234,6 @@ export function Grid({
       </div>{/* stage */}
       </div>{/* gridShell */}
       </div>{/* gridArea */}
-      {/*
-        Desktop controls bar: minimap + zoom cluster, side by side, centered.
-        Touch-primary renders the minimap panel variant inside MobileKeyboard
-        instead, so this bar is desktop-only. The minimap is always visible
-        (no longer zoom-gated) so the player has a constant overview.
-      */}
       {!touchPrimary ? (
         <div ref={bottomBarRef} className={bottomBarStyles}>
           {gridFramePx.width > 0 && gridFramePx.height > 0 && (

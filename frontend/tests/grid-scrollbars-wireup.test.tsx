@@ -56,11 +56,7 @@ vi.mock('react-zoom-pan-pinch', async (importOriginal) => {
 });
 
 describe('Grid scrollbars + minimap wireup', () => {
-  // jsdom reports 0 for offsetWidth/Height; override so the gridFramePx
-  // effect sets non-zero dimensions and the minimap's render guard passes.
-  // The ResizeObserver override fires the observe callback synchronously
-  // (vitest.setup.ts ships a no-op), and a microtask-deferred rAF (see
-  // beforeEach) lets handleTransform's coalesced state update land within act().
+  // jsdom returns 0 for offsetWidth/Height; stub non-zero values so gridFramePx resolves and the minimap render guard passes.
   let origW: PropertyDescriptor | undefined;
   let origH: PropertyDescriptor | undefined;
   let origRO: typeof ResizeObserver;
@@ -82,12 +78,7 @@ describe('Grid scrollbars + minimap wireup', () => {
       disconnect() {}
     } as unknown as typeof ResizeObserver;
     origRAF = window.requestAnimationFrame;
-    // Defer to a microtask (not a plain `fn(0)`) so the caller's
-    // `rafRef.current = requestAnimationFrame(...)` assignment runs BEFORE the
-    // callback nulls the ref — matching real async rAF ordering. A synchronous
-    // `fn(0)` inverts that order and wedges handleTransform's coalescing guard
-    // at a truthy id, so later transforms never flush. `await act(async …)`
-    // drains the microtask, so the coalesced state update still lands in-test.
+    // Must defer (queueMicrotask), not call synchronously — sync fn(0) wedges handleTransform's rAF coalescing guard before the ref assignment.
     window.requestAnimationFrame = (fn: FrameRequestCallback) => { queueMicrotask(() => fn(0)); return 0; };
   });
 
