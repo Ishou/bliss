@@ -1,6 +1,6 @@
 import { useRef, useImperativeHandle, type ComponentProps } from 'react';
 import { render, screen, act } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { SAMPLE_PUZZLE } from '@/domain';
 import { Grid } from '@/ui/components/grid';
 
@@ -56,33 +56,20 @@ vi.mock('react-zoom-pan-pinch', async (importOriginal) => {
 });
 
 describe('Grid scrollbars + minimap wireup', () => {
+  // jsdom returns 0 for offsetWidth/Height; stub non-zero values so gridFramePx resolves and the minimap render guard passes.
+  let origW: PropertyDescriptor | undefined;
+  let origH: PropertyDescriptor | undefined;
+  let origRO: typeof ResizeObserver;
+  let origRAF: typeof window.requestAnimationFrame;
+
   beforeEach(() => {
     _simScale = 1;
     _fireZoom = null;
-  });
-
-  it('does not render scrollbars or minimap at scale 1', () => {
-    render(<Grid puzzle={SAMPLE_PUZZLE} />);
-    expect(screen.queryByRole('scrollbar')).toBeNull();
-    expect(screen.queryByRole('img', { name: /aperçu/i })).toBeNull();
-  });
-
-  it('the inner <div role="grid"> has id="puzzle-grid" so aria-controls resolves', () => {
-    render(<Grid puzzle={SAMPLE_PUZZLE} />);
-    expect(screen.getByRole('grid')).toHaveAttribute('id', 'puzzle-grid');
-  });
-
-  it('minimap renders inside grid-area, not inside grid-stage, when zoomed', async () => {
-    // jsdom reports 0 for offsetWidth/Height; override so the gridFramePx
-    // effect sets non-zero dimensions and the minimap's render guard passes.
-    const origW = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetWidth');
-    const origH = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetHeight');
+    origW = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetWidth');
+    origH = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetHeight');
     Object.defineProperty(HTMLElement.prototype, 'offsetWidth', { get: () => 720, configurable: true });
     Object.defineProperty(HTMLElement.prototype, 'offsetHeight', { get: () => 540, configurable: true });
-
-    // Override the global no-op ResizeObserver stub (vitest.setup.ts) so the
-    // gridFramePx effect actually fires the update callback.
-    const OrigRO = globalThis.ResizeObserver;
+    origRO = globalThis.ResizeObserver;
     globalThis.ResizeObserver = class {
       #cb: ResizeObserverCallback;
       constructor(cb: ResizeObserverCallback) { this.#cb = cb; }
@@ -90,31 +77,42 @@ describe('Grid scrollbars + minimap wireup', () => {
       unobserve() {}
       disconnect() {}
     } as unknown as typeof ResizeObserver;
+    origRAF = window.requestAnimationFrame;
+    // Must defer (queueMicrotask), not call synchronously — sync fn(0) wedges handleTransform's rAF coalescing guard before the ref assignment.
+    window.requestAnimationFrame = (fn: FrameRequestCallback) => { queueMicrotask(() => fn(0)); return 0; };
+  });
 
-    // Make rAF synchronous so the rAF callback inside handleTransform runs
-    // immediately and sets transformState.scale = _simScale (1.5) within
-    // the same act() call, satisfying GridMinimap's `scale > 1.01` guard.
-    const origRAF = window.requestAnimationFrame;
-    window.requestAnimationFrame = (fn: FrameRequestCallback) => { fn(0); return 0; };
-
-    render(<Grid puzzle={SAMPLE_PUZZLE} />);
-
-    // Drive isZoomedIn → true and transformState.scale → 1.5 via the mock.
-    await act(async () => { _fireZoom?.(1.5); });
-
-    const minimap = await screen.findByRole('img', { name: /aperçu/i });
-
-    // Structural invariant: the minimap SVG is a sibling of grid-shell inside
-    // grid-area, NOT a descendant of grid-stage (which wraps overlayFrame).
-    const gridArea = screen.getByTestId('grid-area');
-    const gridStage = screen.getByTestId('grid-stage');
-    expect(gridArea).toContainElement(minimap as HTMLElement);
-    expect(gridStage).not.toContainElement(minimap as HTMLElement);
-
-    // Restore
+  afterEach(() => {
     window.requestAnimationFrame = origRAF;
     if (origW) Object.defineProperty(HTMLElement.prototype, 'offsetWidth', origW);
     if (origH) Object.defineProperty(HTMLElement.prototype, 'offsetHeight', origH);
-    globalThis.ResizeObserver = OrigRO;
+    globalThis.ResizeObserver = origRO;
+  });
+
+  it('renders the desktop minimap but no scrollbars at scale 1', () => {
+    render(<Grid puzzle={SAMPLE_PUZZLE} />);
+    // Minimap is no longer zoom-gated — it shows as soon as dims resolve.
+    expect(screen.getByRole('img', { name: /aperçu/i })).toBeInTheDocument();
+    // Scrollbars stay zoom-gated.
+    expect(screen.queryByRole('scrollbar')).toBeNull();
+  });
+
+  it('the inner <div role="grid"> has id="puzzle-grid" so aria-controls resolves', () => {
+    render(<Grid puzzle={SAMPLE_PUZZLE} />);
+    expect(screen.getByRole('grid')).toHaveAttribute('id', 'puzzle-grid');
+  });
+
+  it('renders scrollbars once zoomed in', async () => {
+    render(<Grid puzzle={SAMPLE_PUZZLE} />);
+    await act(async () => { _fireZoom?.(1.5); });
+    expect(screen.getAllByRole('scrollbar').length).toBeGreaterThan(0);
+  });
+
+  it('renders the minimap in the bottom controls bar, outside grid-area and grid-stage', () => {
+    render(<Grid puzzle={SAMPLE_PUZZLE} />);
+    const minimap = screen.getByRole('img', { name: /aperçu/i });
+    // The bottom controls bar is a sibling after grid-area, so the minimap is outside both grid-area and grid-stage.
+    expect(screen.getByTestId('grid-area')).not.toContainElement(minimap as HTMLElement);
+    expect(screen.getByTestId('grid-stage')).not.toContainElement(minimap as HTMLElement);
   });
 });

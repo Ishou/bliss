@@ -73,15 +73,13 @@ describe('Grid render', () => {
     expect(grid).toHaveAttribute('lang', SAMPLE_PUZZLE.language);
   });
 
-  // Track template scales to puzzle dims; rows are 1fr (not auto) so a
-  // non-square puzzle (e.g. 15×12) divides the wrapper height evenly,
-  // and cells stay square via their own aspect-ratio: 1.
+  // Tracks are minmax(0, 1fr) so clue-text auto-min can't inflate a track; cells stay square via aspect-ratio: 1.
   it('emits gridTemplateColumns/Rows that match puzzle.width/height', () => {
     const landscape: Puzzle = { ...SAMPLE_PUZZLE, width: 15, height: 12 };
     render(<Grid puzzle={landscape} />);
     const grid = screen.getByRole('grid', { name: landscape.title });
-    expect(grid.style.gridTemplateColumns).toBe('repeat(15, 1fr)');
-    expect(grid.style.gridTemplateRows).toBe('repeat(12, 1fr)');
+    expect(grid.style.gridTemplateColumns).toBe('repeat(15, minmax(0, 1fr))');
+    expect(grid.style.gridTemplateRows).toBe('repeat(12, minmax(0, 1fr))');
   });
 
   it('renders every clue text in the DOM, including stacked clues', () => {
@@ -370,10 +368,13 @@ describe('Grid render', () => {
       expect(shell!.querySelector('.react-transform-wrapper')).not.toBeNull();
     });
 
-    it('applies the shared GRID_TRACK_WIDTH cap to the zoom controls cluster', () => {
+    it('renders the zoom controls cluster centered in the bottom controls bar (no grid-track cap)', () => {
       render(<Grid puzzle={SAMPLE_PUZZLE} />);
       const cluster = screen.getByRole('group', { name: /zoom controls/i });
-      expect(cluster.style.maxWidth).toBe(GRID_TRACK_WIDTH);
+      // Grid-track cap no longer applies; the cluster is centered inside the bottom bar now.
+      expect(cluster.style.maxWidth).toBe('');
+      // Panda atomic class for justifyContent:center on the parent bottom bar.
+      expect(cluster.parentElement?.className).toMatch(/\bjc_center\b/);
     });
 
     it('applies the shared GRID_TRACK_WIDTH cap to the sticky clue panel at rest', () => {

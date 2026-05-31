@@ -160,9 +160,9 @@ describe('Index route — hint refused on validated cells', () => {
     const second = inputAt(0, 2)!;
     typeChar(second, 'i');
     await vi.waitFor(() => expect(validate).toHaveBeenCalled());
-    // ProgressBar reflects the lock — surface signal that
-    // `validatedPositions` includes (0,1)..(0,2).
-    await screen.findByText('2 / 2 cases');
+    // Both cells must be read-only — surface signal that validatedPositions covers (0,1)..(0,2).
+    await vi.waitFor(() => expect(inputAt(0, 1)!.readOnly).toBe(true));
+    expect(inputAt(0, 2)!.readOnly).toBe(true);
 
     // Focus the validated cell and click the hint button.
     click(first);
@@ -210,8 +210,6 @@ describe('Index route — refresh clears the locked-cell state', () => {
 
     await vi.waitFor(() => expect(inputAt(0, 1)!.readOnly).toBe(false));
     expect(inputAt(0, 2)!.readOnly).toBe(false);
-    // ProgressBar reflects the clean slate.
-    expect(screen.getByText('0 / 2 cases')).toBeInTheDocument();
   });
 });
 

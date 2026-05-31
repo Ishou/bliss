@@ -9,13 +9,12 @@ import {
 } from './transformMath';
 import { positionKey } from './positionKey';
 
-const MINIMAP_SIZE_DESKTOP_PX = 120;
-const MINIMAP_SIZE_MOBILE_PX = 80;
+const MINIMAP_SIZE_DESKTOP_PX = 96;
 
 const overlayContainer = css({
-  // Overlay variant: in-flow 120px (80px on narrow viewports) square below the grid.
+  // Overlay variant: square flex item in the desktop bottom controls bar (alongside zoom).
   position: 'static',
-  margin: '8px auto 0',
+  flexShrink: 0,
   display: 'block',
   width: `${MINIMAP_SIZE_DESKTOP_PX}px`,
   height: `${MINIMAP_SIZE_DESKTOP_PX}px`,
@@ -26,11 +25,6 @@ const overlayContainer = css({
   boxShadow: 'sm',
   touchAction: 'none',
   cursor: 'crosshair',
-  transition: 'opacity 150ms ease',
-  '@media (max-width: 480px)': {
-    width: `${MINIMAP_SIZE_MOBILE_PX}px`,
-    height: `${MINIMAP_SIZE_MOBILE_PX}px`,
-  },
 });
 
 const panelContainer = css({
@@ -99,7 +93,7 @@ export interface GridMinimapProps {
   positionY: number;
   contentWidth: number;
   contentHeight: number;
-  // 'overlay' (default) hides at scale 1; 'panel' always renders for the mobile keyboard.
+  // 'overlay' (default) for the desktop bottom bar; 'panel' for the mobile keyboard.
   variant?: GridMinimapVariant;
 }
 
@@ -249,8 +243,6 @@ export function GridMinimap({
     return rects;
   }, [puzzle.height, puzzle.width, cellByKey, validatedPositions, filledPositions, currentWordKeys]);
 
-  // Overlay hides at rest; panel always renders so the player keeps a position indicator.
-  if (variant === 'overlay' && scale <= 1.01) return null;
   // Reserve the flex slot while ResizeObserver hasn't fired yet (dimensions start at 0).
   if (contentWidth <= 0 || contentHeight <= 0) {
     if (variant === 'panel') return <div className={panelContainer} aria-hidden="true" />;

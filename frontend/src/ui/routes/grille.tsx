@@ -14,7 +14,6 @@ import {
 import { Button, Dialog, DialogDescription } from '@/ui/components/primitives';
 import { useTouchPrimary } from '@/ui/components/keyboard';
 import {
-  ProgressBar,
   PuzzleToolbar,
   ViewportPage,
 } from '@/ui/components/layout';
@@ -73,16 +72,6 @@ const srOnly = css({
   border: 0,
 });
 
-const createLobbyButtonStyles = css({
-  paddingInline: 'lg',
-});
-
-const createLobbyErrorStyles = css({
-  fontSize: 'body',
-  margin: 0,
-  color: 'errorText',
-});
-
 function focusFirstUnvalidatedCell(): void {
   // `:not([readonly])` filters out validated cells (Cell.tsx renders
   // them read-only). Falls back to the first letter cell if no cell
@@ -94,14 +83,6 @@ function focusFirstUnvalidatedCell(): void {
     ?? main?.querySelector<HTMLInputElement>('input[data-cell-kind="letter"]');
   target?.focus();
 }
-
-// Multiplayer feature flag (ADR-0018 §10). Read once per render — when
-// off, the CTA is not mounted at all and the solo flow above is the
-// only thing on `/`. Reading `import.meta.env` here keeps the seam
-// inside `ui/` (no `infrastructure/` import); tests stub it via
-// `vi.stubEnv('VITE_FEATURE_MULTIPLAYER', '...')`.
-const isMultiplayerEnabled = (): boolean =>
-  import.meta.env.VITE_FEATURE_MULTIPLAYER === 'true';
 
 function PageShell({
   children,
@@ -262,41 +243,13 @@ function LoadedHomePage({ puzzle }: { readonly puzzle: Puzzle }) {
     return soloEntriesStore.load(puzzle.id);
   }, [puzzle.id, refreshCount, soloEntriesStore]);
 
-  // Mirrors keystrokes into a Set; grid is uncontrolled (ADR-0002 §4).
-  const [filledPositions, setFilledPositions] = useState<ReadonlySet<string>>(
-    () => new Set(initialEntries.map((e) => `${e.row},${e.column}`)),
-  );
-
-  // Mirror the `initialEntries` posture for the locked-cell state:
-  // re-read storage on every refreshCount bump so `clearForPuzzle`
-  // (Actualiser) propagates into the React state. Without
-  // `refreshCount` in the deps the effect was bound to `[puzzle.id]`
-  // alone — locks survived the storage clear and the cells stayed
-  // sage-tinted until a full reload.
-  // Re-seed so Actualiser wipes the pending segment.
+  // Re-reads on refreshCount so clearForPuzzle (Actualiser) propagates — otherwise locks survive the storage clear until full reload.
   useEffect(() => {
     const persisted = soloEntriesStore.loadLockedCells(puzzle.id);
     setLockedHintCells(new Set(persisted.map((c) => `${c.row},${c.column}`)));
-    const persistedEntries = soloEntriesStore.load(puzzle.id);
-    setFilledPositions(new Set(persistedEntries.map((e) => `${e.row},${e.column}`)));
   }, [puzzle.id, refreshCount, soloEntriesStore]);
 
-  // Word-by-word auto-validation: when the player completes a word,
-  // its cells lock if every letter matches. Wrong words drop silently
-  // (the product decision per ADR-0005 §6: incorrect fills must be
-  // visually indistinguishable from in-progress ones). The progress
-  // bar reflects the running tally of locked cells.
-  //
-  // Passing `initialEntries` here rehydrates locks earned in a prior
-  // session: without it, a page reload re-paints the typed letters
-  // (cells are uncontrolled, populated via `defaultValue` from
-  // `initialEntries`) but every word would be back to editable and the
-  // progress bar would read zero. The hook walks the persisted entries
-  // once per puzzle and POSTs `validate` in a single round-trip.
-  // Persist every auto-validated cell to the same `lockedCells` bucket
-  // hint reveals write to. Without this, Accueil's "Grille du jour"
-  // progress only counted hint-revealed cells (capped at hintsAllowed)
-  // because the auto-validated set lived in React state only.
+  // Rehydrates prior-session auto-validated locks via initialEntries and persists them to lockedCells so Actualiser wipes them correctly.
   const handleWordValidated = useMemo(
     () => makeWordValidatedHandler({
       puzzleId: puzzle.id,
@@ -310,31 +263,11 @@ function LoadedHomePage({ puzzle }: { readonly puzzle: Puzzle }) {
   const handleCellChange = useCallback(
     (row: number, col: number, letter: string | null) => {
       soloEntriesStore.save(puzzle.id, row, col, letter);
-      const key = `${row},${col}`;
-      setFilledPositions((prev) => {
-        if (letter === null) {
-          if (!prev.has(key)) return prev;
-          const next = new Set(prev);
-          next.delete(key);
-          return next;
-        }
-        if (prev.has(key)) return prev;
-        const next = new Set(prev);
-        next.add(key);
-        return next;
-      });
     },
     [soloEntriesStore, puzzle.id],
   );
 
-  const totalLetterCells = useMemo<number>(
-    () => puzzle.cells.reduce((n, c) => (c.kind === 'letter' ? n + 1 : n), 0),
-    [puzzle.cells],
-  );
-
-  // Union the auto-validated cells with the hint-revealed (locked)
-  // cells before passing to <Grid>. Grid renders both as read-only
-  // with the sage tint — the contract we want for revealed cells too.
+  // Merges auto-validated and hint-revealed cells into one read-only set before passing to <Grid>.
   const validatedPositions = useMemo<ReadonlySet<string>>(() => {
     if (lockedHintCells.size === 0) return autoValidation.validated;
     if (autoValidation.validated.size === 0) return lockedHintCells;
@@ -343,19 +276,7 @@ function LoadedHomePage({ puzzle }: { readonly puzzle: Puzzle }) {
     return merged;
   }, [autoValidation.validated, lockedHintCells]);
 
-  // Set difference, not size subtraction: hint reveals bypass onCellChange.
-  const pending = useMemo(() => {
-    let count = 0;
-    for (const k of filledPositions) if (!validatedPositions.has(k)) count++;
-    return count;
-  }, [filledPositions, validatedPositions]);
-
-  // Read the currently focused cell's coordinates + lock state. The
-  // focus ref is updated on every `onLocalFocusChange` callback (no
-  // re-render in the keystroke path); we resolve `isLocked` lazily at
-  // click time against the latest `validatedPositions` (auto-validated
-  // ∪ hint-revealed), so the hint button refuses both kinds of
-  // already-sage cells.
+  // Resolves the focused cell lazily at click time so the hint button rejects both auto-validated and hint-revealed cells.
   const validatedPositionsRef = useRef(validatedPositions);
   validatedPositionsRef.current = validatedPositions;
   const getFocusedCell = useCallback(() => {
@@ -409,14 +330,6 @@ function LoadedHomePage({ puzzle }: { readonly puzzle: Puzzle }) {
           getFocusedCell={getFocusedCell}
         />
       </div>
-      {touchPrimary ? null : (
-        <ProgressBar
-          value={validatedPositions.size}
-          total={totalLetterCells}
-          pending={pending}
-        />
-      )}
-      {!touchPrimary && isMultiplayerEnabled() ? <CreateLobbyButton /> : null}
       <SoloTour tour={tour} />
       <Dialog
         open={refreshConfirmOpen}
@@ -464,63 +377,7 @@ export function buildPuzzleToolbarMetadata(puzzle: Puzzle) {
   return { short, full };
 }
 
-// Self-contained multiplayer entry-point. Reads `lobbyClient` and
-// `getSession` from the route context (plumbed by the lobby-route wiring);
-// on click, mints a lobby and navigates to `/lobby/:lobbyId`. Failures map
-// to the same `LobbyClientError.kind` switch used by the lobby route's
-// error boundary so copy stays consistent across the multiplayer surface.
-function CreateLobbyButton() {
-  const navigate = useNavigate();
-  const ctx = Route.useRouteContext();
-  // Adapters are guaranteed present when the multiplayer flag is on:
-  // the composition root in `main.tsx` wires them in that branch only.
-  const lobbyClient = ctx.lobbyClient!;
-  const getSession = ctx.getSession!;
-  const [pending, setPending] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  const handleClick = async () => {
-    setPending(true);
-    setErrorMessage(null);
-    try {
-      const { sessionId, pseudonym } = getSession();
-      const created = await lobbyClient.createLobby({
-        ownerSessionId: sessionId,
-        ownerPseudonym: pseudonym,
-      });
-      await navigate({ to: '/lobby/$lobbyId', params: { lobbyId: created.id } });
-    } catch (err) {
-      setErrorMessage(messageForError(err));
-      setPending(false);
-    }
-  };
-
-  return (
-    <>
-      <Button
-        variant="primary"
-        className={createLobbyButtonStyles}
-        disabled={pending}
-        onClick={() => {
-          void handleClick();
-        }}
-      >
-        {pending ? 'Création…' : 'Créer une partie multijoueur'}
-      </Button>
-      {errorMessage != null ? (
-        <p className={createLobbyErrorStyles} role="alert">
-          {errorMessage}
-        </p>
-      ) : null}
-    </>
-  );
-}
-
-// Mirrors the lobby route's `LobbyErrorComponent` so the user sees
-// consistent copy whether the failure happens at create-time on
-// `/` or at load-time on `/lobby/:id`. `not-found` is unreachable for
-// `createLobby` (the server never returns 404) but is included for
-// totality so future kinds light up the type-checker.
+// Converts a thrown error to French copy; never exposes raw error.message (an English exception name).
 function messageForError(err: unknown): string {
   if (err instanceof LobbyClientError) {
     switch (err.kind) {
@@ -585,20 +442,21 @@ const skeletonCellStyles = css({
 const skeletonBottomRowStyles = css({
   display: 'flex',
   width: '100%',
-  alignItems: { base: 'stretch', md: 'flex-end' },
-  flexDirection: { base: 'column', md: 'row' },
-  gap: { base: '12px', md: '20px' },
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: '16px',
+  marginTop: '8px',
 });
 
-const skeletonProgressStyles = css({
-  flex: 1,
-  minWidth: 0,
-  height: '32px',
+const skeletonMinimapStyles = css({
+  width: '96px',
+  height: '96px',
 });
 
-const skeletonButtonStyles = css({
-  width: { base: '100%', md: '120px' },
-  height: '40px',
+const skeletonZoomStyles = css({
+  width: '150px',
+  height: '44px',
 });
 
 function HomeSkeleton() {
@@ -634,8 +492,8 @@ function HomeSkeleton() {
         </div>
       </div>
       <div className={skeletonBottomRowStyles} aria-hidden>
-        <div className={`${skeletonPulse} ${skeletonProgressStyles}`} />
-        <div className={`${skeletonPulse} ${skeletonButtonStyles}`} />
+        <div className={`${skeletonPulse} ${skeletonMinimapStyles}`} />
+        <div className={`${skeletonPulse} ${skeletonZoomStyles}`} />
       </div>
       <p className={srOnly} role="status">
         Chargement de la grille…

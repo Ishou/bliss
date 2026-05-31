@@ -18,7 +18,7 @@ const TOOLBAR_SELECTOR = '[role="toolbar"][aria-label="Outils de la grille"]';
 const DEFINITION_CELL_SELECTOR = '[data-cell-kind="definition"]';
 const HINT_BUTTON_SELECTOR = '[aria-label^="Indice ("]';
 const ZOOM_CONTROLS_SELECTOR = '[role="group"][aria-label="Zoom controls"]';
-const PROGRESS_BAR_SELECTOR = '[data-testid="puzzle-progress"]';
+const MINIMAP_SELECTOR = '[role="img"][aria-label^="Aperçu de la grille"]';
 
 const queryFirst = (selector: string): HTMLElement | null =>
   document.querySelector<HTMLElement>(selector);
@@ -104,10 +104,10 @@ export function buildSoloTourSteps({
   steps.push({
     id: 'validation',
     type: 'tooltip',
-    title: 'Progression et validation',
+    title: 'Aperçu et validation',
     description:
-      'La barre de progression suit votre avancée. Chaque mot est validé automatiquement quand vous le complétez — pas besoin de confirmer.',
-    target: () => queryFirst(PROGRESS_BAR_SELECTOR),
+      "L'aperçu de la grille suit votre avancée — les cases validées s'y colorent. Chaque mot est validé automatiquement quand vous le complétez, pas besoin de confirmer.",
+    target: () => queryFirst(MINIMAP_SELECTOR),
     placement: 'top',
     arrow: true,
     backdrop: true,
@@ -127,5 +127,5 @@ export const TOUR_TARGET_SELECTORS = {
   definitionCell: DEFINITION_CELL_SELECTOR,
   hintButton: HINT_BUTTON_SELECTOR,
   zoomControls: ZOOM_CONTROLS_SELECTOR,
-  progressBar: PROGRESS_BAR_SELECTOR,
+  minimap: MINIMAP_SELECTOR,
 } as const;

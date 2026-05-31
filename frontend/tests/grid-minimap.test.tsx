@@ -16,9 +16,9 @@ const makeRef = () => {
 };
 
 describe('GridMinimap', () => {
-  it('renders nothing at scale 1', () => {
+  it('overlay variant renders at scale 1 (always-on overview)', () => {
     const { ref } = makeRef();
-    const { container } = render(
+    render(
       <GridMinimap
         puzzle={SAMPLE_PUZZLE}
         validatedPositions={new Set()}
@@ -30,7 +30,7 @@ describe('GridMinimap', () => {
         contentHeight={200}
       />,
     );
-    expect(container.firstChild).toBeNull();
+    expect(screen.getByRole('img', { name: /aperçu de la grille/i })).toBeInTheDocument();
   });
 
   it('renders an accessible img with one rect per cell at scale > 1', () => {
