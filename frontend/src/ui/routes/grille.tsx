@@ -243,33 +243,13 @@ function LoadedHomePage({ puzzle }: { readonly puzzle: Puzzle }) {
     return soloEntriesStore.load(puzzle.id);
   }, [puzzle.id, refreshCount, soloEntriesStore]);
 
-  // Mirror the `initialEntries` posture for the locked-cell state:
-  // re-read storage on every refreshCount bump so `clearForPuzzle`
-  // (Actualiser) propagates into the React state. Without
-  // `refreshCount` in the deps the effect was bound to `[puzzle.id]`
-  // alone — locks survived the storage clear and the cells stayed
-  // sage-tinted until a full reload.
+  // Re-reads on refreshCount so clearForPuzzle (Actualiser) propagates — otherwise locks survive the storage clear until full reload.
   useEffect(() => {
     const persisted = soloEntriesStore.loadLockedCells(puzzle.id);
     setLockedHintCells(new Set(persisted.map((c) => `${c.row},${c.column}`)));
   }, [puzzle.id, refreshCount, soloEntriesStore]);
 
-  // Word-by-word auto-validation: when the player completes a word,
-  // its cells lock if every letter matches. Wrong words drop silently
-  // (the product decision per ADR-0005 §6: incorrect fills must be
-  // visually indistinguishable from in-progress ones). The progress
-  // bar reflects the running tally of locked cells.
-  //
-  // Passing `initialEntries` here rehydrates locks earned in a prior
-  // session: without it, a page reload re-paints the typed letters
-  // (cells are uncontrolled, populated via `defaultValue` from
-  // `initialEntries`) but every word would be back to editable and the
-  // progress bar would read zero. The hook walks the persisted entries
-  // once per puzzle and POSTs `validate` in a single round-trip.
-  // Persist every auto-validated cell to the same `lockedCells` bucket
-  // hint reveals write to. Without this, Accueil's "Grille du jour"
-  // progress only counted hint-revealed cells (capped at hintsAllowed)
-  // because the auto-validated set lived in React state only.
+  // Rehydrates prior-session auto-validated locks via initialEntries and persists them to lockedCells so Actualiser wipes them correctly.
   const handleWordValidated = useMemo(
     () => makeWordValidatedHandler({
       puzzleId: puzzle.id,

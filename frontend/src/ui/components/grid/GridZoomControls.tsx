@@ -1,19 +1,5 @@
 import { css } from '../../../../styled-system/css';
 
-/**
- * Visible zoom controls for the grid: zoom-in, zoom-out, reset. Driven
- * by the parent's `react-zoom-pan-pinch` ref (passed in via the three
- * imperative callbacks). Discoverability + accessibility: keyboard-only
- * users get a way to zoom without the mouse wheel; screen-reader users
- * get aria-labelled buttons. Sits below the grid as a horizontal row
- * so it never covers cell content.
- *
- * Visual telegraphy:
- * - At scale 1, "Zoom out" and "Reset" are disabled — there's nothing
- *   to undo. "Zoom in" is the only enabled button until the user has
- *   started zooming.
- * - At max scale, "Zoom in" disables.
- */
 // Hidden below md — touch pinch-zoom makes the cluster redundant; showing it costs ~52 px of grid height on mobile-tiny.
 const cluster = css({
   display: { base: 'none', md: 'flex' },
@@ -22,12 +8,7 @@ const cluster = css({
   gap: '6px',
 });
 
-// Same visual rhythm as the toolbar `IconButton` primitive (subtle
-// border, muted icon, hover brightens, press scales) — the previous
-// `bg: surface` + `_hover: primary.50` looked out of palette next to
-// the new toolbar buttons. Touch target stays at 44 px (WCAG 2.5.5 AA)
-// so we keep the larger size; the IconButton's 28×28 is desktop-only
-// for the toolbar.
+// 44 px touch target (WCAG 2.5.5 AA); transparent bg to stay in-palette next to toolbar buttons.
 const button = css({
   minWidth: '44px',
   height: '44px',
