@@ -99,6 +99,20 @@ const gridAreaStyles = css({
   flexDirection: 'column',
 });
 
+// Desktop controls bar below the grid: the minimap (120px square) and the
+// zoom cluster, side by side and centered. Replaces the removed progress
+// bar + multiplayer button. Height-bound grids on desktop gain back the
+// vertical space the stacked controls used to cost.
+const bottomBarStyles = css({
+  display: 'flex',
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: '16px',
+  width: '100%',
+  margin: '8px auto 0',
+});
+
 // Base inline style for the `TransformComponent` wrapper. The wrapper
 // is a `puzzle.width × puzzle.height` rectangle (aspect-ratio derived
 // from the puzzle dims) sized to fit whichever container axis binds
@@ -529,6 +543,33 @@ export function Grid({
   // square edge, which keeps width and height in lockstep when the
   // visualViewport collapses under the soft keyboard.
   const gridShellRef = useRef<HTMLDivElement | null>(null);
+
+  // The desktop controls bar reserves vertical space from the grid shell
+  // (gridShellStyles.maxHeight subtracts `--grid-zoom-controls-height`).
+  // Publish the bar's measured height; remove the var on touch-primary
+  // where the bar isn't rendered (the keyboard owns its own reservation).
+  const bottomBarRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const el = bottomBarRef.current;
+    if (!el) {
+      document.documentElement.style.removeProperty('--grid-zoom-controls-height');
+      return;
+    }
+    const publish = () => {
+      const h = Math.ceil(el.getBoundingClientRect().height);
+      document.documentElement.style.setProperty('--grid-zoom-controls-height', `${h}px`);
+    };
+    publish();
+    let ro: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== 'undefined') {
+      ro = new ResizeObserver(publish);
+      ro.observe(el);
+    }
+    return () => {
+      ro?.disconnect();
+      document.documentElement.style.removeProperty('--grid-zoom-controls-height');
+    };
+  }, [touchPrimary]);
 
   // Blur-on-gesture coordination (iOS Safari mitigation). When an
   // `<input>` is focused, iOS Safari natively auto-scrolls / zooms to
@@ -1198,30 +1239,39 @@ export function Grid({
       )}
       </div>{/* stage */}
       </div>{/* gridShell */}
-      {/* Overlay minimap is desktop-only — touch-primary already renders the panel variant inside MobileKeyboard. */}
-      {!touchPrimary && isZoomedIn && gridFramePx.width > 0 && gridFramePx.height > 0 && (
-        <GridMinimap
-          puzzle={puzzle}
-          validatedPositions={validatedPositions ?? new Set()}
-          filledPositions={filledPositions}
-          currentWordKeys={currentWordKeys}
-          localCursor={nav.localCursor}
-          transformRef={transformWrapperRef}
-          scale={transformState.scale}
-          positionX={transformState.positionX}
-          positionY={transformState.positionY}
-          contentWidth={gridFramePx.width}
-          contentHeight={gridFramePx.height}
-        />
-      )}
       </div>{/* gridArea */}
-      <GridZoomControls
-        canZoomIn={!isMaxZoom}
-        canZoomOut={isZoomedIn}
-        onZoomIn={() => zoomCenteredOnFocus(0.3)}
-        onZoomOut={() => zoomCenteredOnFocus(-0.3)}
-        onReset={() => transformWrapperRef.current?.resetTransform(0)}
-      />
+      {/*
+        Desktop controls bar: minimap + zoom cluster, side by side, centered.
+        Touch-primary renders the minimap panel variant inside MobileKeyboard
+        instead, so this bar is desktop-only. The minimap is always visible
+        (no longer zoom-gated) so the player has a constant overview.
+      */}
+      {!touchPrimary ? (
+        <div ref={bottomBarRef} className={bottomBarStyles}>
+          {gridFramePx.width > 0 && gridFramePx.height > 0 && (
+            <GridMinimap
+              puzzle={puzzle}
+              validatedPositions={validatedPositions ?? new Set()}
+              filledPositions={filledPositions}
+              currentWordKeys={currentWordKeys}
+              localCursor={nav.localCursor}
+              transformRef={transformWrapperRef}
+              scale={transformState.scale}
+              positionX={transformState.positionX}
+              positionY={transformState.positionY}
+              contentWidth={gridFramePx.width}
+              contentHeight={gridFramePx.height}
+            />
+          )}
+          <GridZoomControls
+            canZoomIn={!isMaxZoom}
+            canZoomOut={isZoomedIn}
+            onZoomIn={() => zoomCenteredOnFocus(0.3)}
+            onZoomOut={() => zoomCenteredOnFocus(-0.3)}
+            onReset={() => transformWrapperRef.current?.resetTransform(0)}
+          />
+        </div>
+      ) : null}
       {touchPrimary ? (
         <MobileKeyboard
           onLetter={(ch) => nav.enterLetter(ch)}

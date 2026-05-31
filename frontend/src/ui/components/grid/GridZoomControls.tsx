@@ -1,6 +1,4 @@
-import { useEffect, useRef } from 'react';
 import { css } from '../../../../styled-system/css';
-import { GRID_TRACK_WIDTH } from './layout';
 
 /**
  * Visible zoom controls for the grid: zoom-in, zoom-out, reset. Driven
@@ -27,12 +25,7 @@ const cluster = css({
   flexDirection: 'row',
   justifyContent: 'center',
   gap: '6px',
-  width: '100%',
-  margin: '8px auto 0',
 });
-
-// Inline-style: Panda CSS cannot statically extract min(…) with viewport units.
-const clusterStyle = { maxWidth: GRID_TRACK_WIDTH } as const;
 
 // Same visual rhythm as the toolbar `IconButton` primitive (subtle
 // border, muted icon, hover brightens, press scales) — the previous
@@ -75,27 +68,8 @@ export function GridZoomControls({
   onZoomOut: () => void;
   onReset: () => void;
 }) {
-  const clusterRef = useRef<HTMLDivElement | null>(null);
-  useEffect(() => {
-    const el = clusterRef.current;
-    if (!el) return;
-    const publish = () => {
-      const h = Math.ceil(el.getBoundingClientRect().height);
-      document.documentElement.style.setProperty('--grid-zoom-controls-height', `${h}px`);
-    };
-    publish();
-    let ro: ResizeObserver | null = null;
-    if (typeof ResizeObserver !== 'undefined') {
-      ro = new ResizeObserver(publish);
-      ro.observe(el);
-    }
-    return () => {
-      ro?.disconnect();
-      document.documentElement.style.removeProperty('--grid-zoom-controls-height');
-    };
-  }, []);
   return (
-    <div ref={clusterRef} className={cluster} style={clusterStyle} role="group" aria-label="Zoom controls">
+    <div className={cluster} role="group" aria-label="Zoom controls">
       {/*
         `onMouseDown={e => e.preventDefault()}` on every button: stops
         the browser's default mousedown→focus on the <button>, which

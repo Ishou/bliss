@@ -62,12 +62,13 @@ async function readProgress(thumb: Locator): Promise<number> {
 }
 
 test.describe('Grid scrollbars + minimap', () => {
-  test('scrollbars and minimap appear only after zoom', async ({ page }) => {
+  test('scrollbars appear only after zoom; the minimap is always visible', async ({ page }) => {
     await gridReady(page);
 
+    // Scrollbars stay zoom-gated.
     await expect(page.getByRole('scrollbar')).toHaveCount(0);
-    // aria-label contains "Aperçu de la grille" — GridMinimap.tsx line 201
-    await expect(page.getByRole('img', { name: /aperçu de la grille/i })).toHaveCount(0);
+    // The minimap is now always-on (overview at rest, viewport tracker when zoomed).
+    await expect(page.getByRole('img', { name: /aperçu de la grille/i })).toBeVisible();
 
     await zoomIn(page, 2);
 
@@ -154,7 +155,7 @@ test.describe('Grid scrollbars + minimap', () => {
     },
   );
 
-  test('1:1 reset removes scrollbars and minimap from the DOM', async ({ page }) => {
+  test('1:1 reset removes scrollbars from the DOM but keeps the minimap', async ({ page }) => {
     await gridReady(page);
     await zoomIn(page, 2);
 
@@ -165,7 +166,8 @@ test.describe('Grid scrollbars + minimap', () => {
     await page.waitForTimeout(250);
 
     await expect(page.getByRole('scrollbar')).toHaveCount(0);
-    await expect(page.getByRole('img', { name: /aperçu de la grille/i })).toHaveCount(0);
+    // The minimap is always-on, so it survives the reset to scale 1.
+    await expect(page.getByRole('img', { name: /aperçu de la grille/i })).toBeVisible();
   });
 
   test.fixme(
