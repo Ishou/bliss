@@ -244,7 +244,9 @@ const defSingle = css({
   display: 'flex',
   flexDirection: 'column',
   width: '100%',
-  height: '100%',
+  // alignSelf:stretch not height:100% — % height vs an aspect-ratio parent is indefinite in Blink, definite in WebKit (FitText then measured different heights).
+  alignSelf: 'stretch',
+  minHeight: 0,
   overflow: 'hidden',
 });
 
@@ -492,7 +494,9 @@ const defStack = css({
   display: 'flex',
   flexDirection: 'column',
   width: '100%',
-  height: '100%',
+  // alignSelf:stretch not height:100% — see defSingle.
+  alignSelf: 'stretch',
+  minHeight: 0,
   gap: '1px',
   lineHeight: '1.05',
   overflow: 'hidden',
