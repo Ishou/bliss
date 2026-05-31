@@ -497,9 +497,21 @@ const defStack = css({
   // alignSelf:stretch not height:100% — see defSingle.
   alignSelf: 'stretch',
   minHeight: 0,
-  gap: '1px',
   lineHeight: '1.05',
   overflow: 'hidden',
+});
+// Full-bleed divider at the 50/50 split, in the grid-line neutral. Painted on the cell (position:relative) via ::after so it spans edge-to-edge, ignoring the cell's 4px padding that insets the clue text.
+const defStackDivider = css({
+  '&::after': {
+    content: '""',
+    position: 'absolute',
+    insetInline: 0,
+    top: '50%',
+    height: '1px',
+    transform: 'translateY(-0.5px)',
+    backgroundColor: 'gridLine',
+    pointerEvents: 'none',
+  },
 });
 const defStackClue = css({
   display: 'flex',
@@ -514,13 +526,9 @@ const defStackClue = css({
   minHeight: 0,
   overflow: 'hidden',
   wordBreak: 'break-word',
-  // Hairline rose divider between stacked clues — replaces the prior
-  // `gridLine` neutral so the split reads as part of the rose clue
-  // surface rather than a continuation of the charcoal grid line. A
-  // light tint (1 px @ ~25 % alpha) is enough to part the two halves
-  // without competing visually with the clue text.
+  // Bottom half: pad below the divider to mirror the top half's 4px cell-padding inset.
   '&:not(:first-child)': {
-    borderTop: '1px solid color-mix(in srgb, token(colors.secondary.400) 25%, transparent)',
+    paddingTop: '4px',
   },
 });
 // Stack-clue current marker: same sage `accent` as the single-clue
@@ -943,7 +951,7 @@ export const DefinitionCellView = memo(function DefinitionCellView({
   return (
     <div
       role="gridcell"
-      className={`${cellBase} ${defCell}`}
+      className={`${cellBase} ${defCell} ${defStackDivider}`}
       data-row={cell.position.row}
       data-col={cell.position.col}
       data-cell-kind="definition"
