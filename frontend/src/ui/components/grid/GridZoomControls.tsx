@@ -14,12 +14,7 @@ import { css } from '../../../../styled-system/css';
  *   started zooming.
  * - At max scale, "Zoom in" disables.
  */
-// Hidden below `md` (768 px) — touch devices have native pinch-zoom,
-// so the buttons are redundant there AND they steal ~52 px of vertical
-// space inside the grid panel (a button row + its top margin). On
-// mobile-tiny that squashed cells from ~24 px to ~17 px and pushed
-// stacked-clue text below the e2e visibility gate (clue-ratio.spec).
-// Desktop / tablet keep the cluster for keyboard + motor a11y.
+// Hidden below md — touch pinch-zoom makes the cluster redundant; showing it costs ~52 px of grid height on mobile-tiny.
 const cluster = css({
   display: { base: 'none', md: 'flex' },
   flexDirection: 'row',
@@ -70,14 +65,7 @@ export function GridZoomControls({
 }) {
   return (
     <div className={cluster} role="group" aria-label="Zoom controls">
-      {/*
-        `onMouseDown={e => e.preventDefault()}` on every button: stops
-        the browser's default mousedown→focus on the <button>, which
-        would otherwise blur the focused cell input. We still get the
-        onClick (click is dispatched after mouseup; preventDefault on
-        mousedown only suppresses default focus, not the click event
-        itself). Standard React toolbar pattern.
-      */}
+      {/* onMouseDown preventDefault: stops browser focus-on-mousedown from blurring the focused cell input. */}
       <button
         type="button"
         className={button}
