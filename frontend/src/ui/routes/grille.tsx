@@ -478,8 +478,8 @@ const skeletonBottomRowStyles = css({
 });
 
 const skeletonMinimapStyles = css({
-  width: '120px',
-  height: '120px',
+  width: '96px',
+  height: '96px',
 });
 
 const skeletonZoomStyles = css({
