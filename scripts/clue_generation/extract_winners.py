@@ -1,9 +1,9 @@
-"""Survey DB → winners JSONL extractor for RAFT round-N fine-tuning (read-only)."""
+"""Survey DB → winners CSV extractor for RAFT round-N fine-tuning (read-only)."""
 
 from __future__ import annotations
 
 import argparse
-import json
+import csv
 import os
 import sys
 from collections import Counter
@@ -13,23 +13,34 @@ from typing import Any, Iterable, Sequence
 
 SQL = """
 SELECT si.mot, si.definition, si.pos, si.categorie, si.style,
-       si.force_claimed, si.longueur, si.source, si.source_batch, si.expected,
-       r.qualite, r.user_id, r.created_at
+       si.force_claimed, si.longueur, si.source, si.source_batch,
+       si.training_weight,
+       r.qualite, r.created_at
   FROM survey_items si
   JOIN ratings r ON r.item_id = si.item_id
- WHERE r.user_id = %s::uuid
+ WHERE r.user_id IN (SELECT user_id FROM maintainer_roles WHERE role = 'maintainer')
    AND r.qualite = 5
    AND r.flag IS NULL
+   AND r.proposed_item_id IS NULL
    AND si.retired_at IS NULL
-   AND si.source_batch LIKE %s
+   AND (si.source_batch LIKE %s OR si.source = 'rater_proposed')
  ORDER BY r.created_at
 """
 
 COLUMNS = (
     "mot", "definition", "pos", "categorie", "style",
-    "force_claimed", "longueur", "source", "source_batch", "expected",
-    "qualite", "user_id", "created_at",
+    "force_claimed", "longueur", "source", "source_batch",
+    "training_weight",
+    "qualite", "created_at",
 )
+
+# `;` delimiter matches gold_pilot_v1.csv and the manifest's csv_delimiter convention.
+CSV_FIELDS = (
+    "mot", "definition", "pos", "categorie", "style",
+    "force", "longueur", "source", "source_batch", "rated_at",
+    "training_weight",
+)
+CSV_DELIMITER = ";"
 
 
 def _load_db_url() -> str:
@@ -48,21 +59,19 @@ def _load_db_url() -> str:
     )
 
 
-def fetch_rows(conn: Any, user_id: str, round_n: int) -> list[tuple]:
-    """Execute the winners query and return all rows. Round is matched via source_batch lineage tag."""
+def fetch_rows(conn: Any, round_n: int) -> list[tuple]:
+    """Execute the winners query and return all rows."""
     with conn.cursor() as cur:
-        cur.execute(SQL, (user_id, f"%-r{round_n}-%"))
+        cur.execute(SQL, (f"%-r{round_n}-%",))
         return list(cur.fetchall())
 
 
-def row_to_entry(row: Sequence, round_n: int) -> tuple[dict | None, str | None]:
-    """Map a DB row to the JSONL dict; return (entry, drop_reason). Exactly one is None."""
+def row_to_entry(row: Sequence) -> dict:
+    """Map a DB row to the CSV dict; the SQL has already filtered round / source."""
     rec = dict(zip(COLUMNS, row))
-    if f"-r{round_n}-" not in (rec["source_batch"] or ""):
-        return None, "source_batch_round_mismatch"
     created_at = rec["created_at"]
     rated_at = created_at.isoformat() if hasattr(created_at, "isoformat") else str(created_at)
-    entry = {
+    return {
         "mot": rec["mot"],
         "definition": rec["definition"],
         "pos": rec["pos"],
@@ -73,68 +82,63 @@ def row_to_entry(row: Sequence, round_n: int) -> tuple[dict | None, str | None]:
         "source": rec["source"],
         "source_batch": rec["source_batch"],
         "rated_at": rated_at,
+        "training_weight": rec["training_weight"],
     }
-    return entry, None
 
 
-def write_jsonl(rows: Iterable[Sequence], out_path: Path, round_n: int) -> dict:
-    """Serialize matching rows to JSONL; return per-reason drop counts + kept count."""
+def write_csv(rows: Iterable[Sequence], out_path: Path) -> dict:
+    """Serialize matching rows to `;`-delimited CSV; return kept count + per-source breakdown."""
     out_path.parent.mkdir(parents=True, exist_ok=True)
     kept = 0
-    drops: Counter[str] = Counter()
-    with out_path.open("w", encoding="utf-8") as f:
+    by_source: Counter[str] = Counter()
+    with out_path.open("w", encoding="utf-8", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=CSV_FIELDS, delimiter=CSV_DELIMITER)
+        writer.writeheader()
         for row in rows:
-            entry, reason = row_to_entry(row, round_n)
-            if entry is None:
-                drops[reason or "unknown"] += 1
-                continue
-            f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+            entry = row_to_entry(row)
+            writer.writerow(entry)
+            by_source[entry["source"]] += 1
             kept += 1
-    return {"kept": kept, "drops": dict(drops)}
+    return {"kept": kept, "by_source": dict(by_source)}
 
 
 def _print_summary(considered: int, result: dict, round_n: int, out_path: Path) -> None:
     """Emit a one-screen summary to stderr."""
-    drops = result["drops"]
-    dropped_total = sum(drops.values())
     print(f"survey_items × ratings rows considered: {considered}", file=sys.stderr)
-    print(f"  kept (qualite=5, flag IS NULL, source_batch=*-r{round_n}-*, unretired): "
-          f"{result['kept']}", file=sys.stderr)
-    print(f"  dropped: {dropped_total}", file=sys.stderr)
-    for reason, count in sorted(drops.items()):
-        print(f"    {reason}: {count}", file=sys.stderr)
+    print(f"  kept (qualite=5, flag/proposed NULL, maintainer rater, "
+          f"r{round_n} batch OR rater_proposed, unretired): {result['kept']}", file=sys.stderr)
+    for src, count in sorted(result["by_source"].items()):
+        print(f"    {src}: {count}", file=sys.stderr)
     print(f"wrote {out_path}", file=sys.stderr)
 
 
-def run(user_id: str, round_n: int, out_path: Path, conn: Any) -> dict:
+def run(round_n: int, out_path: Path, conn: Any) -> dict:
     """Fetch + serialize + summarize. Returns the result dict."""
-    rows = fetch_rows(conn, user_id, round_n)
-    result = write_jsonl(rows, out_path, round_n)
+    rows = fetch_rows(conn, round_n)
+    result = write_csv(rows, out_path)
     _print_summary(len(rows), result, round_n, out_path)
     return result
 
 
 def _connect_psycopg2(db_url: str) -> Any:
     """Open a psycopg2 connection; imported lazily so tests can stub."""
-    import psycopg2  # local import lets tests run without psycopg2 installed
+    import psycopg2
     return psycopg2.connect(db_url)
 
 
 def main(argv: list[str] | None = None) -> int:
     """CLI entrypoint."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--user-id", required=True,
-                        help="Maintainer's user_id (UUID); single-rater training is intentional.")
     parser.add_argument("--round", type=int, required=True,
                         help="Round number; matched against survey_items.source_batch via '-r<N>-' lineage tag.")
     parser.add_argument("--out", type=Path, required=True,
-                        help="Output JSONL path (e.g., data/lora/modal_corpus_v1/winners_round_1.jsonl).")
+                        help="Output CSV path (e.g., data/lora/modal_corpus_v1/winners_round_10.csv).")
     args = parser.parse_args(argv)
 
     db_url = _load_db_url()
     conn = _connect_psycopg2(db_url)
     try:
-        run(args.user_id, args.round, args.out, conn)
+        run(args.round, args.out, conn)
     finally:
         conn.close()
     return 0
