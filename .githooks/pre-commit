@@ -15,9 +15,7 @@
 set -e
 set -u
 
-# Worktree guard: feature work happens in a worktree, never the shared main
-# checkout (ADR-0001 parallel-agent workflow). Worktrees carry "/worktrees/"
-# in their git-dir; the main checkout does not. Override: ALLOW_MAIN_COMMIT=1.
+# Worktree guard (ADR-0001 §2): commits from the shared main checkout are blocked; ALLOW_MAIN_COMMIT=1 overrides.
 case "$(git rev-parse --absolute-git-dir)" in
     */worktrees/*) : ;;
     *)
