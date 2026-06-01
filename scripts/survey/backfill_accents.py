@@ -39,7 +39,7 @@ def load_lookup(dbnary_path: Path) -> dict[tuple[str, str], str]:
                 continue
             survey_pos = DBNARY_TO_ENUM[pos_dbnary]
             key = (_strip(row["lemma"]), survey_pos)
-            # Alphabetical tie-break — matches build_pos_lemmas.
+            # Alphabetical tie-break: lex-first variant wins.
             existing = lookup.get(key)
             if existing is None or row["lemma"] < existing:
                 lookup[key] = row["lemma"]
