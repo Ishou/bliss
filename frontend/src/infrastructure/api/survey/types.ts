@@ -68,8 +68,9 @@ export interface paths {
          *     idempotent — a repeat submission returns 409 with the existing
          *     rating. For anon callers, every submit creates a new row (no
          *     server-side dedup). Anonymous callers including a `correctif` or
-         *     `targetSenses` are rejected with 401 — corpus contributions and
-         *     sense-inventory writes both require sign-in.
+         *     any meta annotation (`targetCategories`, `targetSense`,
+         *     `isMultisense`, `subTags`) are rejected with 401 — corpus
+         *     contributions and sense/category annotation both require sign-in.
          */
         post: operations["submitRating"];
         delete?: never;
@@ -216,24 +217,15 @@ export interface paths {
         };
         /**
          * Per-lemma autocomplete source for sense glosses and sub-tags.
-         * @description Returns the rolling `priorSenses` inventory (every gloss observed
-         *     in past ratings of this lemma) and the maintainer-curated
-         *     `priorSubTags`. Powers the rating-card autocomplete dropdowns
-         *     introduced in ADR-0061. Open auth (no PII, vocabulary-only).
-         *     Both arrays are always returned — empty when the lemma has not
-         *     been rated or tagged yet.
+         * @description Aggregates the distinct sense glosses and sub-tags observed across
+         *     past ratings of this lemma. Both `priorSenses` and `priorSubTags`
+         *     are machine-grown from rating history — there is no separate
+         *     curation surface. Powers the rating-card autocomplete dropdowns.
+         *     Open auth (no PII, vocabulary-only). Both arrays are always
+         *     returned — empty when the lemma has not been rated yet.
          */
         get: operations["getLemmaMeta"];
-        /**
-         * Replace the maintainer-curated sub-tag list for a lemma.
-         * @description Maintainer-only (ADR-0060 role gate). Replaces the lemma's
-         *     `subTags` list with the body. The sense inventory is NOT writable
-         *     through this endpoint — it grows as a side-effect of rating
-         *     submits carrying `targetSenses` (ADR-0061). Soft-normalized
-         *     server-side for autocomplete dedup; the original spelling is
-         *     retained for display.
-         */
-        put: operations["putLemmaSubTags"];
+        put?: never;
         post?: never;
         delete?: never;
         options?: never;
@@ -302,8 +294,14 @@ export interface components {
          * @enum {string}
          */
         Pos: "verbe_infinitif" | "verbe_conjugue" | "participe_passe" | "participe_present" | "nom_commun" | "nom_propre" | "adjectif" | "adverbe" | "interjection" | "mot_outil" | "sigle_abreviation" | "polyvalent" | "autre";
-        /** @enum {string} */
-        Categorie: "chemical_symbols" | "units" | "celestial_objects" | "nombres" | "roman_numerals" | "cardinal_points" | "cities" | "countries" | "country_codes" | "geography" | "first_names" | "titles" | "mythology" | "abbreviations" | "etranger" | "expressions" | "grammar" | "interjections" | "orthographe" | "animals" | "body_parts" | "senses" | "currencies" | "organizations" | "card_game" | "games" | "music_notes" | "autre" | "aliments" | "vetements" | "mobilier_objet" | "outils" | "transports" | "materiaux" | "professions" | "famille_relations" | "sentiments_etats" | "nature_paysage" | "flore" | "meteo_climat" | "temps_duree" | "couleurs" | "arts";
+        /**
+         * @description High-level answer class. 18 broad classes + `autre`; one word each,
+         *     scannable, spanning nouns, verbs (`action`) and adjectives
+         *     (`qualificatif`). All granularity lives in free-form sub-tags, not
+         *     here.
+         * @enum {string}
+         */
+        Categorie: "personne" | "faune_flore" | "geographie" | "meteo" | "objet" | "nourriture" | "corps" | "culture" | "histoire" | "jeu" | "sport" | "religion" | "societe" | "science" | "conceptuel" | "langue" | "action" | "qualificatif" | "autre";
         /** @enum {string} */
         Style: "definition_directe" | "periphrase" | "metonymie" | "fonction_role" | "calembour" | "culturel" | "cryptique" | "cryptique_morphologique" | "technique";
         ItemPair: {
@@ -339,15 +337,37 @@ export interface components {
                 pos?: components["schemas"]["Pos"];
             };
             /**
-             * @description Freeform sense glosses the rater is annotating this clue against
-             *     (ADR-0061). Multi-value supports calembour cases where the clue
-             *     targets two senses simultaneously. Server soft-normalizes for
-             *     inventory merge; the original spelling is stored verbatim.
-             *     Authenticated callers only — anonymous submissions including
-             *     this field return 401 (parallels the `correctif` gate).
-             *     Omitted when the rater does not annotate sense.
+             * @description High-level answer classes the rater assigns to this definition.
+             *     An editable multi-select, pre-filled client-side from the item's
+             *     single machine `categorie` prior but freely overridden. Any
+             *     authenticated rater may set it; anonymous submissions including
+             *     this field return 401. When several raters annotate the same
+             *     definition, maintainer ratings take precedence on resolution.
+             *     Omitted when the rater does not annotate categories.
              */
-            targetSenses?: string[];
+            targetCategories?: components["schemas"]["Categorie"][];
+            /**
+             * @description Single freeform sense gloss this clue targets. Must not repeat
+             *     the lemma; server soft-normalizes for autocomplete dedup, stores
+             *     the original spelling. Omitted when sense is not annotated
+             *     or `isMultisense` is true. Authenticated callers only.
+             */
+            targetSense?: string;
+            /**
+             * @description Calembour marker: the clue deliberately plays on several senses
+             *     at once. When true, `targetSense` is optional — the senses are
+             *     not enumerated. Authenticated callers only.
+             * @default false
+             */
+            isMultisense: boolean;
+            /**
+             * @description Free-form sub-domain refinement tags for this definition — finer
+             *     than `targetCategories` (e.g. felin, capitale, note de musique).
+             *     Per-rating. Server soft-normalizes for autocomplete dedup, stores
+             *     the original spelling. Authenticated callers only. Omitted when
+             *     not annotated.
+             */
+            subTags?: string[];
             latencyMs: number;
         };
         UndoActionRequest: {
@@ -421,23 +441,17 @@ export interface components {
             deleteProposedOnErasure: boolean;
         };
         /**
-         * @description Per-lemma autocomplete payload (ADR-0061). Both arrays are always
-         *     present, empty when the lemma has no history. `priorSenses` is
-         *     machine-grown from past ratings; `priorSubTags` is maintainer-curated.
+         * @description Per-lemma autocomplete payload. Both arrays are always present,
+         *     empty when the lemma has no history. Both `priorSenses` and
+         *     `priorSubTags` are machine-grown by aggregating the distinct values
+         *     observed across past ratings of this lemma; there is no separate
+         *     curation surface.
          */
         LemmaMeta: {
-            /** @description Sense glosses observed in past ratings of this lemma. Ordered most-recent first. */
+            /** @description Distinct sense glosses observed in past ratings of this lemma. Ordered most-recent first. */
             priorSenses: string[];
-            /** @description Maintainer-curated sub-domain tags for this lemma. Stable order (insertion). */
+            /** @description Distinct sub-domain tags observed in past ratings of this lemma. Ordered most-recent first. */
             priorSubTags: string[];
-        };
-        /**
-         * @description Replace the maintainer-curated sub-tag list for a lemma. Empty
-         *     array clears the list. Duplicates collapse server-side by
-         *     soft-normalized form (strip determiners, NFD, lowercase).
-         */
-        SubTagsRequest: {
-            subTags: string[];
         };
         ProblemDetails: {
             /** Format: uri */
@@ -775,42 +789,6 @@ export interface operations {
                 };
             };
             503: components["responses"]["ProblemDetails"];
-        };
-    };
-    putLemmaSubTags: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Lemma surface form. */
-                mot: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SubTagsRequest"];
-            };
-        };
-        responses: {
-            /** @description Sub-tags replaced. */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            400: components["responses"]["ProblemDetails"];
-            401: components["responses"]["ProblemDetails"];
-            /** @description Caller is authenticated but lacks the maintainer role (ADR-0060). */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
         };
     };
     getHealth: {
