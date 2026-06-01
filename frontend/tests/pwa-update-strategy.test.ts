@@ -199,8 +199,6 @@ describe('registerServiceWorker — update strategy', () => {
     await Promise.resolve();
     expect(reloadMock).toHaveBeenCalledTimes(1);
 
-    // `reloadOnce` is one-shot per tab session, so a second reload would no-op
-    // anyway — assert the guard re-fires the SW update past the window.
     vi.advanceTimersByTime(11_000);
     window.dispatchEvent(new Event('vite:preloadError'));
     await Promise.resolve();
