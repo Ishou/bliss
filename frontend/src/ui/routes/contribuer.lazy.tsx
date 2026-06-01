@@ -262,7 +262,7 @@ function ContribuerPage() {
     <ContentPage>
       <article className={articleStyles}>
         <div className={headerRowStyles}>
-          <h1 className={headingStyles}>Campagne des indices</h1>
+          <h1 className={headingStyles}>Campagne de qualité des indices</h1>
           <Link to="/contribuer/pairs" className={modeLinkStyles} data-testid="mode-switch-pairs">
             Mode paires →
           </Link>
