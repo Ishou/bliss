@@ -87,8 +87,7 @@ def load_lookup(dbnary_path: Path, frequencies: dict[str, int] | None = None) ->
 
 
 def load_pos_agnostic(dbnary_path: Path) -> dict[str, str]:
-    """{stripped_lemma: accented_surface} for stripped forms with exactly one live DBnary
-    surface across all POS; multi-surface homographs (naufrage/naufragé) are omitted."""
+    """{stripped_lemma: accented_surface}; homographs (multiple distinct surfaces) are omitted."""
     surfaces: dict[str, set[str]] = {}
     with dbnary_path.open(encoding="utf-8") as f:
         for row in csv.DictReader(f):
@@ -102,8 +101,7 @@ def load_pos_agnostic(dbnary_path: Path) -> dict[str, str]:
     return {stripped: next(iter(v)) for stripped, v in surfaces.items() if len(v) == 1}
 
 
-# pos='autre'/'polyvalent' rows (legacy multi-POS) miss the per-POS lookup; fall back to the
-# POS-agnostic map, which only carries forms with no accent ambiguity.
+# legacy pos values with no DBNARY_TO_ENUM mapping; resolved POS-blind instead
 _POS_AGNOSTIC_FALLBACK = frozenset({"autre", "polyvalent"})
 
 
