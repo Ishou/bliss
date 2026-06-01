@@ -235,6 +235,7 @@ class SubmitRatingUseCase(
     }
 
     // Merge new glosses into the lemma's sense inventory, dedup by normalized form; preserve first-seen spelling.
+    // findForUpdate locks the row inside the surrounding transaction so concurrent merges serialize (avoids lost-update).
     private suspend fun mergeIntoSenseInventory(
         mot: String,
         incoming: List<String>,
