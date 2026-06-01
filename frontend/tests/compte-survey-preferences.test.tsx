@@ -14,6 +14,8 @@ function stubSurveyClient(patch: (b: { deleteProposedOnErasure: boolean }) => Pr
     getContributions: vi.fn(),
     patchPreferences: patch as SurveyClient['patchPreferences'],
     getCurrentCampaign: vi.fn(),
+    getLemmaMeta: vi.fn(),
+    putLemmaSubTags: vi.fn(),
   };
 }
 

@@ -61,6 +61,7 @@ describe('RatingCard verdict picker', () => {
     expect(onVerdict).toHaveBeenCalledTimes(1);
     expect(onVerdict.mock.calls[0][0]).toBe('GOOD');
     expect(onVerdict.mock.calls[0][1]).toBeGreaterThanOrEqual(0);
+    expect(onVerdict.mock.calls[0][2]).toEqual({ targetSenses: [] });
   });
 
   it('clicking BAD invokes onVerdict("BAD")', async () => {
@@ -69,7 +70,7 @@ describe('RatingCard verdict picker', () => {
     await act(async () => {
       fireEvent.click(container.querySelector('[data-verdict="BAD"]')!);
     });
-    expect(onVerdict).toHaveBeenCalledWith('BAD', expect.any(Number));
+    expect(onVerdict).toHaveBeenCalledWith('BAD', expect.any(Number), { targetSenses: [] });
   });
 
   it('clicking SKIP invokes onVerdict("SKIP")', async () => {
@@ -78,7 +79,7 @@ describe('RatingCard verdict picker', () => {
     await act(async () => {
       fireEvent.click(container.querySelector('[data-verdict="SKIP"]')!);
     });
-    expect(onVerdict).toHaveBeenCalledWith('SKIP', expect.any(Number));
+    expect(onVerdict).toHaveBeenCalledWith('SKIP', expect.any(Number), { targetSenses: [] });
   });
 
   it('pressing j/k/l triggers BAD/SKIP/GOOD via the document-level keydown handler', async () => {
@@ -87,15 +88,15 @@ describe('RatingCard verdict picker', () => {
     await act(async () => {
       fireEvent.keyDown(window, { key: 'j' });
     });
-    expect(onVerdict).toHaveBeenLastCalledWith('BAD', expect.any(Number));
+    expect(onVerdict).toHaveBeenLastCalledWith('BAD', expect.any(Number), { targetSenses: [] });
     await act(async () => {
       fireEvent.keyDown(window, { key: 'k' });
     });
-    expect(onVerdict).toHaveBeenLastCalledWith('SKIP', expect.any(Number));
+    expect(onVerdict).toHaveBeenLastCalledWith('SKIP', expect.any(Number), { targetSenses: [] });
     await act(async () => {
       fireEvent.keyDown(window, { key: 'l' });
     });
-    expect(onVerdict).toHaveBeenLastCalledWith('GOOD', expect.any(Number));
+    expect(onVerdict).toHaveBeenLastCalledWith('GOOD', expect.any(Number), { targetSenses: [] });
   });
 
   it('ignores modifier-key chords (Cmd/Ctrl/Alt + j)', async () => {
@@ -147,6 +148,7 @@ describe('RatingCard verdict picker', () => {
       'Une définition corrigée plus précise',
       sampleItem.pos,
       expect.any(Number),
+      { targetSenses: [] },
     );
     expect(onVerdict).not.toHaveBeenCalled();
   });
@@ -179,7 +181,7 @@ describe('RatingCard verdict picker', () => {
     await act(async () => {
       fireEvent.click(container.querySelector('[data-testid="correctif-submit"]') as HTMLButtonElement);
     });
-    expect(onCorriger).toHaveBeenCalledWith(sampleItem.definition, 'polyvalent', expect.any(Number));
+    expect(onCorriger).toHaveBeenCalledWith(sampleItem.definition, 'polyvalent', expect.any(Number), { targetSenses: [] });
   });
 
   it('Corriger submit is a no-op when text equals the original definition', async () => {

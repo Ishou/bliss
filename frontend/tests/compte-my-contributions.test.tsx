@@ -14,6 +14,8 @@ function stubSurveyClient(getContributions: () => Promise<ReadonlyArray<SurveyCo
     getContributions,
     patchPreferences: vi.fn(),
     getCurrentCampaign: vi.fn(),
+    getLemmaMeta: vi.fn(),
+    putLemmaSubTags: vi.fn(),
   };
 }
 

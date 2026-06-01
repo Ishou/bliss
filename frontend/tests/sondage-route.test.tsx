@@ -72,6 +72,8 @@ function stubSurveyClient(overrides: Partial<SurveyClient> = {}): SurveyClient {
       openedAt: '2026-05-30T10:00:00Z',
       closedAt: null,
     }),
+    getLemmaMeta: vi.fn().mockResolvedValue({ priorSenses: [], priorSubTags: [] }),
+    putLemmaSubTags: vi.fn().mockResolvedValue(undefined),
     ...overrides,
   };
 }
