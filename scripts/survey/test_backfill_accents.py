@@ -64,8 +64,7 @@ def _dbnary(tmp_path: Path, rows: list[dict[str, str]]) -> Path:
 
 
 def _insert_item(conn, mot: str, pos: str = "adjectif") -> _uuid.UUID:
-    # tier omitted: V1's CHECK constraint requires lowercase ('high','mid','low','excluded'); rely on the 'mid' default.
-    # All other enum-backed columns (pos, categorie, style, source) are stored lowercase in prod — see PgSurveyItemRepository.kt + StyleGuideCsvWriter.kt.
+    # tier omitted: 'mid' default; V1 CHECK requires lowercase ('high','mid','low','excluded').
     item_id = _uuid.uuid4()
     with conn.cursor() as cur:
         cur.execute(
