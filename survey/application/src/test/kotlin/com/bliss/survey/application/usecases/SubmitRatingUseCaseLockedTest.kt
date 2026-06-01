@@ -97,6 +97,7 @@ class SubmitRatingUseCaseLockedTest {
                     actions = InMemoryActionLogRepository(),
                     tokens = TokenGenerator { "fixed-token" },
                     tx = passThroughTransactionManager,
+                    wordMeta = InMemoryWordMetaRepository(),
                 )
             setup.copy(uc = uc)
         }
