@@ -118,6 +118,112 @@ class ExportDatasetUseCaseTest {
         }
 
     @Test
+    fun `emits sanitized distinct-sorted per-rating meta and multisense only when present`() =
+        runTest {
+            val items = InMemorySurveyItemRepository()
+            val ratings = InMemoryRatingRepository()
+            val item =
+                SurveyItem(
+                    id = ItemId(UUID.randomUUID()),
+                    mot = "PAIN",
+                    definition = "Aliment",
+                    pos = Pos.NOM_COMMUN,
+                    categorie = Categorie.NOURRITURE,
+                    style = Style.DEFINITION_DIRECTE,
+                    forceClaimed = 1,
+                    longueur = 4,
+                    source = Source.CURATED_V1,
+                    sourceBatch = "batch1",
+                    tier = Tier.MID,
+                    isCalibration = false,
+                    expected = null,
+                    retiredAt = null,
+                    createdAt = now,
+                )
+            items.insert(item)
+            ratings.aggregateOverride =
+                listOf(
+                    RatingAggregate(
+                        itemId = item.id,
+                        qualiteAuthSum = 10,
+                        qualiteAuthN = 3,
+                        qualiteAnonSum = 4,
+                        qualiteAnonN = 2,
+                        difficulteAuthSum = 8,
+                        difficulteAuthN = 3,
+                        difficulteAnonSum = 4,
+                        difficulteAnonN = 2,
+                        flagCount = 0,
+                        qualiteSquaredAuthSum = 36,
+                        qualiteSquaredAnonSum = 8,
+                        senses = listOf("aliment; de base, cuit", "aliment; de base, cuit"),
+                        subTags = listOf("pâtisserie", "boulangerie", "pâtisserie"),
+                        targetCategories = listOf("objet", "nourriture"),
+                        anyMultisense = true,
+                    ),
+                )
+            val uc = ExportDatasetUseCase(items, ratings, StyleGuideCsvWriter(), Clock { now })
+            val csv = uc.execute(minRatings = 3, since = null, authWeight = 2.0, anonWeight = 1.0)
+            assertThat(csv).contains("senses:aliment de base cuit|")
+            assertThat(csv).contains("sub_tags:boulangerie,pâtisserie|")
+            assertThat(csv).contains("target_categories:nourriture,objet|")
+            assertThat(csv).contains("multisense:true")
+        }
+
+    @Test
+    fun `omits per-rating meta keys when empty and multisense when all false`() =
+        runTest {
+            val items = InMemorySurveyItemRepository()
+            val ratings = InMemoryRatingRepository()
+            val item =
+                SurveyItem(
+                    id = ItemId(UUID.randomUUID()),
+                    mot = "POMME",
+                    definition = "Fruit",
+                    pos = Pos.NOM_COMMUN,
+                    categorie = Categorie.NOURRITURE,
+                    style = Style.DEFINITION_DIRECTE,
+                    forceClaimed = 3,
+                    longueur = 5,
+                    source = Source.CURATED_V1,
+                    sourceBatch = "batch1",
+                    tier = Tier.MID,
+                    isCalibration = false,
+                    expected = null,
+                    retiredAt = null,
+                    createdAt = now,
+                )
+            items.insert(item)
+            ratings.aggregateOverride =
+                listOf(
+                    RatingAggregate(
+                        itemId = item.id,
+                        qualiteAuthSum = 10,
+                        qualiteAuthN = 3,
+                        qualiteAnonSum = 4,
+                        qualiteAnonN = 2,
+                        difficulteAuthSum = 8,
+                        difficulteAuthN = 3,
+                        difficulteAnonSum = 4,
+                        difficulteAnonN = 2,
+                        flagCount = 0,
+                        qualiteSquaredAuthSum = 36,
+                        qualiteSquaredAnonSum = 8,
+                        senses = listOf("   "),
+                        subTags = emptyList(),
+                        targetCategories = emptyList(),
+                        anyMultisense = false,
+                    ),
+                )
+            val uc = ExportDatasetUseCase(items, ratings, StyleGuideCsvWriter(), Clock { now })
+            val csv = uc.execute(minRatings = 3, since = null, authWeight = 2.0, anonWeight = 1.0)
+            check(!csv.contains("senses:")) { "blank-only senses must be omitted" }
+            check(!csv.contains("sub_tags:")) { "empty sub_tags must be omitted" }
+            check(!csv.contains("target_categories:")) { "empty target_categories must be omitted" }
+            check(!csv.contains("multisense:")) { "multisense must be omitted when all false" }
+        }
+
+    @Test
     fun `exports frozen training_weight for stamped item`() =
         runTest {
             val items = InMemorySurveyItemRepository()

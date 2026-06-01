@@ -57,9 +57,24 @@ class ExportDatasetUseCase(
                     "flags" to agg.flagCount.toString(),
                     "source_batch" to item.sourceBatch,
                 )
+            joinMeta(agg.senses)?.let { meta["senses"] = it }
+            joinMeta(agg.subTags)?.let { meta["sub_tags"] = it }
+            joinMeta(agg.targetCategories)?.let { meta["target_categories"] = it }
+            if (agg.anyMultisense) meta["multisense"] = "true"
             rows += writer.toRow(item, meta)
         }
         return rows.joinToString("\n")
+    }
+
+    // Strip the meta grammar's delimiters from free-form maintainer text; lossy is fine for a conditioning signal.
+    private fun joinMeta(values: List<String>): String? {
+        val cleaned =
+            values
+                .map { it.replace(Regex("[|:,;]"), " ").replace(Regex("\\s+"), " ").trim() }
+                .filter { it.isNotEmpty() }
+                .distinct()
+                .sorted()
+        return cleaned.takeIf { it.isNotEmpty() }?.joinToString(",")
     }
 
     private fun stdev(
