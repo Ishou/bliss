@@ -248,8 +248,10 @@ rater calibration is out of scope (see plan).
        --out data/lora/modal_corpus_v1/winners_round_<N>.csv
    ```
 
-2. Add a `winners_round_<N>` source to `manifest.toml` (replacing the
-   prior round's slot, or alongside it — the build accumulates):
+2. Replace the prior round's winners slot in `manifest.toml` with the
+   new one (do **not** accumulate multiple slots — the extractor emits
+   all historical correctifs on every run, so keeping old slots would
+   replicate them once per slot):
 
    ```toml
    [[sources]]
