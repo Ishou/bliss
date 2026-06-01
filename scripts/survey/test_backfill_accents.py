@@ -63,7 +63,7 @@ def _dbnary(tmp_path: Path, rows: list[dict[str, str]]) -> Path:
     return path
 
 
-def _frequencies(tmp_path: Path, freqs: dict[str, int]) -> Path:
+def _frequencies(tmp_path: Path, freqs: dict[str, int]) -> dict[str, int]:
     path = tmp_path / "words-fr.csv"
     with path.open("w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=["word", "frequency"])

@@ -36,8 +36,11 @@ DBNARY_TO_ENUM = {
 
 
 def load_frequencies(path: Path) -> dict[str, int]:
-    """Build {lowercased_surface: max grammalecte frequency} from words-fr.csv."""
+    """Build {lowercased_surface: max grammalecte frequency} from words-fr.csv; missing file → {}."""
     freqs: dict[str, int] = {}
+    if not path.exists():
+        print(f"frequencies file absent, accent tie-break falls back to stripped: {path}", file=sys.stderr)
+        return freqs
     with path.open(encoding="utf-8") as f:
         for row in csv.DictReader(f):
             word = (row.get("word") or "").lower()
