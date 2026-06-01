@@ -2,6 +2,7 @@ package com.bliss.survey.application.usecases
 
 import com.bliss.survey.application.ports.Clock
 import com.bliss.survey.application.ports.MaintainerRoleRepository
+import com.bliss.survey.application.ports.TransactionManager
 import com.bliss.survey.application.ports.WordMetaRepository
 import com.bliss.survey.application.text.GlossNormalizer
 import com.bliss.survey.domain.model.UserId
@@ -17,6 +18,7 @@ class UpsertSubTagsUseCase(
     private val wordMeta: WordMetaRepository,
     private val maintainerRoles: MaintainerRoleRepository,
     private val clock: Clock,
+    private val tx: TransactionManager,
 ) {
     suspend fun execute(
         mot: String,
@@ -25,15 +27,18 @@ class UpsertSubTagsUseCase(
     ): UpsertSubTagsResult {
         if (maintainerRoles.find(userId)?.role != "maintainer") return UpsertSubTagsResult.Forbidden
         val cleaned = dedupByNormalized(subTags)
-        val existing = wordMeta.find(mot)
-        val updated =
-            WordMeta(
-                mot = mot,
-                subTags = cleaned,
-                senseInventory = existing?.senseInventory ?: emptyList(),
-                updatedAt = clock.now(),
+        tx.inTransaction {
+            // findForUpdate enrolls in the same row-lock used by mergeIntoSenseInventory; senseInventory is preserved.
+            val existing = wordMeta.findForUpdate(mot)
+            wordMeta.save(
+                WordMeta(
+                    mot = mot,
+                    subTags = cleaned,
+                    senseInventory = existing?.senseInventory ?: emptyList(),
+                    updatedAt = clock.now(),
+                ),
             )
-        wordMeta.save(updated)
+        }
         return UpsertSubTagsResult.Ok
     }
 

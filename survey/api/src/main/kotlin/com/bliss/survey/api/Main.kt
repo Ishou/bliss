@@ -94,7 +94,7 @@ fun main() {
             wordMeta = wordMeta,
         )
     val getLemmaMeta = GetLemmaMetaUseCase(wordMeta)
-    val upsertSubTags = UpsertSubTagsUseCase(wordMeta, maintainerRoles, clock)
+    val upsertSubTags = UpsertSubTagsUseCase(wordMeta, maintainerRoles, clock, txManager)
     val getNextPair = GetNextPairUseCase(items)
     val submitPairRating =
         SubmitPairRatingUseCase(

@@ -234,8 +234,7 @@ class SubmitRatingUseCase(
         return "%04d-%02d".format(zdt.year, zdt.monthValue)
     }
 
-    // Merge new glosses into the lemma's sense inventory, dedup by normalized form; preserve first-seen spelling.
-    // findForUpdate locks the row inside the surrounding transaction so concurrent merges serialize (avoids lost-update).
+    // findForUpdate locks the row so concurrent merges inside the surrounding tx serialize.
     private suspend fun mergeIntoSenseInventory(
         mot: String,
         incoming: List<String>,

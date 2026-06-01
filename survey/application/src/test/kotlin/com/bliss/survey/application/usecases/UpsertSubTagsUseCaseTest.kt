@@ -21,7 +21,7 @@ class UpsertSubTagsUseCaseTest {
         runTest {
             val roles = InMemoryMaintainerRoleRepository()
             roles.rows[player] = MaintainerRole(player, "player", now)
-            val uc = UpsertSubTagsUseCase(InMemoryWordMetaRepository(), roles, clock)
+            val uc = UpsertSubTagsUseCase(InMemoryWordMetaRepository(), roles, clock, passThroughTransactionManager)
             assertThat(uc.execute("chat", listOf("felin"), player)).isEqualTo(UpsertSubTagsResult.Forbidden)
         }
 
@@ -31,7 +31,7 @@ class UpsertSubTagsUseCaseTest {
             val roles = InMemoryMaintainerRoleRepository()
             roles.rows[maintainer] = MaintainerRole(maintainer, "maintainer", now)
             val wordMeta = InMemoryWordMetaRepository()
-            val uc = UpsertSubTagsUseCase(wordMeta, roles, clock)
+            val uc = UpsertSubTagsUseCase(wordMeta, roles, clock, passThroughTransactionManager)
 
             val result = uc.execute("chat", listOf("FÉLIN", "felin", "domestique"), maintainer)
 
@@ -53,7 +53,7 @@ class UpsertSubTagsUseCaseTest {
                     updatedAt = now,
                 ),
             )
-            val uc = UpsertSubTagsUseCase(wordMeta, roles, clock)
+            val uc = UpsertSubTagsUseCase(wordMeta, roles, clock, passThroughTransactionManager)
 
             uc.execute("chat", listOf("felin"), maintainer)
 
