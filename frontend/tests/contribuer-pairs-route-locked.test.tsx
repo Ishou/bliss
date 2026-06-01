@@ -156,7 +156,7 @@ function renderContribuerPairs(opts: {
 }
 
 describe('/contribuer/pairs when campaign is closed', () => {
-  it('renders the LockBanner and aria-disables pair verdict buttons', async () => {
+  it('renders the LockBanner and hides the pair card', async () => {
     const surveyClient = stubSurveyClient({
       getCurrentCampaign: vi.fn().mockResolvedValue(closedCampaign),
     });
@@ -164,10 +164,7 @@ describe('/contribuer/pairs when campaign is closed', () => {
     await waitFor(() =>
       expect(screen.getByTestId('sondage-lock-banner')).toBeInTheDocument(),
     );
-    const leftBtn = await screen.findByRole('button', {
-      name: /Préférer la définition de gauche/i,
-    });
-    expect(leftBtn).toHaveAttribute('aria-disabled', 'true');
+    expect(screen.queryByTestId('pair-card')).toBeNull();
   });
 
   it('reacts to 423 from submitPairRating by refreshing status', async () => {

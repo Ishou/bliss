@@ -153,7 +153,7 @@ function renderContribuer(opts: {
 }
 
 describe('/contribuer when no campaign has ever been opened (server 503)', () => {
-  it('renders the LockBanner and aria-disables verdict buttons', async () => {
+  it('renders the LockBanner and hides the rating card', async () => {
     const surveyClient = stubSurveyClient({
       getCurrentCampaign: vi.fn().mockRejectedValue(new NoCampaignError()),
     });
@@ -161,13 +161,12 @@ describe('/contribuer when no campaign has ever been opened (server 503)', () =>
     await waitFor(() =>
       expect(screen.getByTestId('sondage-lock-banner')).toBeInTheDocument(),
     );
-    const goodBtn = await screen.findByRole('button', { name: /Bonne définition/i });
-    expect(goodBtn).toHaveAttribute('aria-disabled', 'true');
+    expect(screen.queryByTestId('rating-card')).toBeNull();
   });
 });
 
 describe('/contribuer when campaign is closed', () => {
-  it('renders the LockBanner and aria-disables verdict buttons', async () => {
+  it('renders the LockBanner and hides the rating card', async () => {
     const surveyClient = stubSurveyClient({
       getCurrentCampaign: vi.fn().mockResolvedValue(closedCampaign),
     });
@@ -175,8 +174,7 @@ describe('/contribuer when campaign is closed', () => {
     await waitFor(() =>
       expect(screen.getByTestId('sondage-lock-banner')).toBeInTheDocument(),
     );
-    const goodBtn = await screen.findByRole('button', { name: /Bonne définition/i });
-    expect(goodBtn).toHaveAttribute('aria-disabled', 'true');
+    expect(screen.queryByTestId('rating-card')).toBeNull();
   });
 
   it('reacts to 423 from submit by refreshing status', async () => {
