@@ -19,7 +19,7 @@ def _strip(s: str) -> str:
     ).lower()
 
 
-# DBnary POS -> survey enum, same mapping as build_pos_lemmas.
+# DBnary POS -> Kotlin Pos enum name as stored in survey_items.pos (uppercase).
 DBNARY_TO_ENUM = {
     "noun": "NOM_COMMUN",
     "properNoun": "NOM_PROPRE",

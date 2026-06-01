@@ -27,9 +27,7 @@ def _strip(s: str) -> str:
     ).lower()
 
 
-# {stripped lemma: ({enum_pos: non-obsolete sense count}, {enum_pos: canonical_lemma})}.
-# Canonical is tracked per (stripped, enum_pos) so `solde` (noun) and `soldé` (adjective)
-# emit distinct surfaces; alphabetical tie-break when multiple variants share (stripped, pos).
+# Keyed by stripped lemma; value is (POS→count, POS→canonical accented lemma) — per-POS so solde/soldé don't collapse.
 def load_dbnary(path: Path) -> dict[str, tuple[dict[str, int], dict[str, str]]]:
     db: dict[str, tuple[dict[str, int], dict[str, str]]] = {}
     with path.open() as f:
