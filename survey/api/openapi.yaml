@@ -477,7 +477,7 @@ components:
 
     RatingRequest:
       type: object
-      required: [qualite, difficulte, latencyMs]
+      required: [qualite, difficulte, latencyMs, isMultisense]
       properties:
         qualite:    { type: integer, minimum: 1, maximum: 5 }
         difficulte: { type: integer, minimum: 1, maximum: 5 }
@@ -512,11 +512,10 @@ components:
           maxItems: 6
         targetSense:
           type: string
-          nullable: true
           description: |
             Single freeform sense gloss this clue targets. Must not repeat
             the lemma; server soft-normalizes for autocomplete dedup, stores
-            the original spelling. Null/omitted when sense is not annotated
+            the original spelling. Omitted when sense is not annotated
             or `isMultisense` is true. Authenticated callers only.
           minLength: 1
           maxLength: 80

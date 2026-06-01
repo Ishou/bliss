@@ -349,10 +349,10 @@ export interface components {
             /**
              * @description Single freeform sense gloss this clue targets. Must not repeat
              *     the lemma; server soft-normalizes for autocomplete dedup, stores
-             *     the original spelling. Null/omitted when sense is not annotated
+             *     the original spelling. Omitted when sense is not annotated
              *     or `isMultisense` is true. Authenticated callers only.
              */
-            targetSense?: string | null;
+            targetSense?: string;
             /**
              * @description Calembour marker: the clue deliberately plays on several senses
              *     at once. When true, `targetSense` is optional — the senses are
