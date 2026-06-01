@@ -1,13 +1,19 @@
 # Cloudflare Pages _redirects. Copied verbatim from `frontend/public/` into
-# `dist/` at build time by Vite's static-asset pass.
+# `dist/` at build time by Vite's static-asset pass. First match wins.
+#
+# Since the build emits a top-level dist/404.html (see scripts/prerender.ts),
+# Pages no longer SPA-falls-back unmatched paths to the index shell with 200.
+# Any path with no static file and no rule here is served 404.html with a 404
+# status — which fixes the missing-/assets/*.js MIME violation but means every
+# non-prerendered route must be handled explicitly below, before the implicit
+# 404 fallback.
 #
 # Trailing-slash → non-trailing canonical. The build emits `dist/<slug>.html`
-# (file, not directory) for every indexable route (see scripts/prerender.ts),
-# so Pages serves `/<slug>` with 200 directly. Anyone who lands on `/<slug>/`
-# — old inbound links, third-party share tools that auto-append `/` —
-# gets a 308 to the canonical no-trailing form. Search Console previously
-# flagged the (old) `/<slug>` → `/<slug>/` 308 chain as "page avec
-# redirection", suppressing the indexable URL.
+# (file, not directory) for every indexable route, so Pages serves `/<slug>`
+# with 200 directly. Anyone who lands on `/<slug>/` — old inbound links,
+# third-party share tools that auto-append `/` — gets a 308 to the canonical
+# no-trailing form. Search Console previously flagged the (old) `/<slug>` →
+# `/<slug>/` 308 chain as "page avec redirection", suppressing the indexable URL.
 #
 # 308 (not 301) preserves the request method on rewrite; matches the
 # default Cloudflare Pages emits for the inverse rule.
@@ -19,4 +25,18 @@
 /confidentialite/    /confidentialite    308
 /privacy/            /privacy            308
 /compte/             /compte             308
-/sondage/            /sondage            308
+
+# Legacy survey aliases. The /sondage surface was renamed to /contribuer;
+# these were client-side beforeLoad redirects but the 404.html change turns
+# off the SPA fallback they relied on, so they're now server-side 308s.
+# Trailing-slash variants land directly on the canonical /contribuer form.
+/sondage/pairs/      /contribuer/pairs   308
+/sondage/pairs       /contribuer/pairs   308
+/sondage/            /contribuer         308
+/sondage             /contribuer         308
+
+# Client-only dynamic routes. No prerendered file exists, so rewrite to the
+# shell with 200 (NOT a redirect) — a multiplayer share link or a refresh on
+# a lobby must resolve the param client-side, never 404 or bounce to home.
+/lobby/*             /index.html         200
+/join/*              /index.html         200

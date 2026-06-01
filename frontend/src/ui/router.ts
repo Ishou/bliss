@@ -13,8 +13,6 @@ import { Route as PrivacyRoute } from './routes/privacy';
 import { Route as LegalNoticeRoute } from './routes/mentions-legales';
 import { Route as ContribuerRoute } from './routes/contribuer';
 import { Route as ContribuerPairsRoute } from './routes/contribuer.pairs';
-import { Route as SondageRedirectRoute } from './routes/sondage';
-import { Route as SondagePairsRedirectRoute } from './routes/sondage.pairs';
 
 // Composition root supplies `context`. Keeping `createAppRouter` a
 // factory means `ui/` never instantiates `infrastructure/` directly
@@ -38,8 +36,6 @@ export function createAppRouter({ context, multiplayer }: CreateAppRouterOptions
     LegalNoticeRoute,
     ContribuerRoute,
     ContribuerPairsRoute,
-    SondageRedirectRoute,
-    SondagePairsRedirectRoute,
   ];
   // Multiplayer-flag-gated routes: lobby + the `/join/$code` share-link
   // landing both require the game-api adapter on the router context.

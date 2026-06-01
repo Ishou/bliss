@@ -82,6 +82,7 @@ export const NOINDEX_PRERENDER_ROUTES: ReadonlyArray<PrerenderRoute> = [
   { path: '/contribuer', title: 'Campagne — WordSparrow' },
   { path: '/contribuer/pairs', title: 'Campagne par paires — WordSparrow' },
   { path: '/compte', title: 'Mon compte — WordSparrow' },
+  { path: '/privacy', title: 'Privacy — WordSparrow' },
 ];
 
 export const DEFAULT_OG_IMAGE = `${SITE_BASE_URL}/og-default.png`;
