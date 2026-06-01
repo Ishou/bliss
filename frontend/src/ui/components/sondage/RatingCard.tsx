@@ -188,7 +188,6 @@ export interface RatingCardProps {
     meta: { readonly targetSenses: ReadonlyArray<string> },
   ) => Promise<void> | void;
   readonly disabled?: boolean;
-  // Wires the lemma-meta autocomplete and the maintainer-only PUT for sub-tags; absent in test fixtures.
   readonly surveyClient?: SurveyClient | null;
 }
 
