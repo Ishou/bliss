@@ -25,7 +25,7 @@ const sampleItem: SurveyItem = {
   mot: 'CHAT',
   definition: 'Animal domestique à moustaches',
   pos: 'nom_commun',
-  categorie: 'animals',
+  categorie: 'faune_flore',
   style: 'definition_directe',
   forceClaimed: 2,
   longueur: 4,
@@ -81,7 +81,6 @@ function stubSurveyClient(overrides: Partial<SurveyClient> = {}): SurveyClient {
     patchPreferences: vi.fn().mockResolvedValue(undefined),
     getCurrentCampaign: vi.fn().mockResolvedValue(openCampaign),
     getLemmaMeta: vi.fn().mockResolvedValue({ priorSenses: [], priorSubTags: [] }),
-    putLemmaSubTags: vi.fn().mockResolvedValue(undefined),
     ...overrides,
   };
 }

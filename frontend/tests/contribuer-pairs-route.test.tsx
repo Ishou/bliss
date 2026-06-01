@@ -25,7 +25,7 @@ const leftItem: SurveyItem = {
   mot: 'CHAT',
   definition: 'Animal domestique à moustaches',
   pos: 'nom_commun',
-  categorie: 'animals',
+  categorie: 'faune_flore',
   style: 'definition_directe',
   forceClaimed: 2,
   longueur: 4,
@@ -38,7 +38,7 @@ const rightItem: SurveyItem = {
   mot: 'CHAT',
   definition: 'Félin domestique aux iris fendus',
   pos: 'nom_commun',
-  categorie: 'animals',
+  categorie: 'faune_flore',
   style: 'periphrase',
   forceClaimed: 3,
   longueur: 4,
@@ -81,7 +81,6 @@ function stubSurveyClient(overrides: Partial<SurveyClient> = {}): SurveyClient {
       closedAt: null,
     }),
     getLemmaMeta: vi.fn().mockResolvedValue({ priorSenses: [], priorSubTags: [] }),
-    putLemmaSubTags: vi.fn().mockResolvedValue(undefined),
     ...overrides,
   };
 }

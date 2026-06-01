@@ -1,4 +1,4 @@
-// /sondage smoke test — Playwright-level stubs replace missing MSW handlers in preview.
+// /contribuer smoke test — Playwright-level stubs replace missing MSW handlers in preview.
 
 import { expect, test } from '@playwright/test';
 
@@ -7,7 +7,7 @@ const sampleItem = {
   mot: 'CHAT',
   definition: 'Animal domestique à moustaches',
   pos: 'nom_commun',
-  categorie: 'animals',
+  categorie: 'faune_flore',
   style: 'definition_directe',
   forceClaimed: 2,
   longueur: 4,
@@ -22,8 +22,10 @@ const nextItem = {
   definition: 'Meilleur ami de l\'homme',
 };
 
-test.describe('/sondage', () => {
-  test('loads the rating card, submits, and advances to the next card', async ({ page }) => {
+const lemmaMeta = { priorSenses: [], priorSubTags: [] };
+
+test.describe('/contribuer', () => {
+  test('loads the rating card, submits a verdict, and advances to the next card', async ({ page }) => {
     await page.addInitScript(() => {
       window.localStorage.setItem('wordsparrow.tour.seen', 'true');
     });
@@ -35,6 +37,9 @@ test.describe('/sondage', () => {
         contentType: 'application/json',
         body: JSON.stringify(nextCalls === 1 ? sampleItem : nextItem),
       });
+    });
+    await page.route(/\/v1\/lemma-meta\//, async (route) => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(lemmaMeta) });
     });
     await page.route(/\/v1\/items\/.+\/rating/, async (route) => {
       await route.fulfill({
@@ -49,33 +54,27 @@ test.describe('/sondage', () => {
       });
     });
 
-    await page.goto('/sondage');
+    await page.goto('/contribuer');
     await page.waitForSelector('[data-testid="rating-card"]', { state: 'visible' });
     await expect(page.getByRole('heading', { name: 'CHAT' })).toBeVisible();
 
-    // Select qualité=4 and difficulté=3 via the radiogroup buttons.
-    await page.getByRole('radiogroup', { name: 'Qualité' }).getByRole('radio', { name: '4' }).click();
-    await page.getByRole('radiogroup', { name: 'Difficulté' }).getByRole('radio', { name: '3' }).click();
-
-    await page.getByRole('button', { name: 'Suivant' }).click();
+    await page.locator('[data-verdict="GOOD"]').click();
 
     await expect(page.getByRole('heading', { name: 'CHIEN' })).toBeVisible();
   });
 
-  test('renders the sign-in banner for anon visitors and hides the correctif slot', async ({ page }) => {
+  test('renders the sign-in banner for anon visitors and hides the meta inputs', async ({ page }) => {
     await page.addInitScript(() => {
       window.localStorage.setItem('wordsparrow.tour.seen', 'true');
     });
     await page.route(/\/v1\/items\/next/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(sampleItem),
-      });
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(sampleItem) });
     });
-    await page.goto('/sondage');
+    await page.route(/\/v1\/lemma-meta\//, async (route) => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(lemmaMeta) });
+    });
+    await page.goto('/contribuer');
     await page.waitForSelector('[data-testid="rating-card"]', { state: 'visible' });
     await expect(page.getByRole('note', { name: /Invitation à se connecter/i })).toBeVisible();
-    await expect(page.getByLabel(/Définition alternative/i)).toHaveCount(0);
   });
 });

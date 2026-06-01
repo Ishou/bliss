@@ -101,7 +101,7 @@ test.describe('WCAG 2.2 A + AA accessibility', () => {
     await runAxe(page, 'grilles');
   });
 
-  test('sondage route', async ({ page }) => {
+  test('contribuer route', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     // Pre-seed tour-seen so the SoloTour doesn't open over the page.
     await page.addInitScript(() => {
@@ -117,13 +117,20 @@ test.describe('WCAG 2.2 A + AA accessibility', () => {
           mot: 'CHAT',
           definition: 'Animal domestique à moustaches',
           pos: 'nom_commun',
-          categorie: 'animals',
+          categorie: 'faune_flore',
           style: 'definition_directe',
           forceClaimed: 2,
           longueur: 4,
           tier: 'mid',
           isCalibration: false,
         }),
+      });
+    });
+    await page.route(/\/v1\/lemma-meta\//, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ priorSenses: [], priorSubTags: [] }),
       });
     });
     await page.route(/\/v1\/campaign\/current/, async (route) => {
@@ -138,11 +145,11 @@ test.describe('WCAG 2.2 A + AA accessibility', () => {
         }),
       });
     });
-    await page.goto('/sondage', { waitUntil: 'networkidle' });
+    await page.goto('/contribuer', { waitUntil: 'networkidle' });
     await page.waitForSelector('[data-testid="rating-card"]', { state: 'visible' });
     await page.evaluate(() => document.fonts.ready);
 
-    await runAxe(page, 'sondage');
+    await runAxe(page, 'contribuer');
   });
 
   test('confidentialite route (FR privacy notice)', async ({ page }) => {

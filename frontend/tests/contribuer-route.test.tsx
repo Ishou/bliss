@@ -24,7 +24,7 @@ const sampleItem: SurveyItem = {
   mot: 'CHAT',
   definition: 'Animal domestique à moustaches',
   pos: 'nom_commun',
-  categorie: 'animals',
+  categorie: 'faune_flore',
   style: 'definition_directe',
   forceClaimed: 2,
   longueur: 4,
@@ -73,7 +73,6 @@ function stubSurveyClient(overrides: Partial<SurveyClient> = {}): SurveyClient {
       closedAt: null,
     }),
     getLemmaMeta: vi.fn().mockResolvedValue({ priorSenses: [], priorSubTags: [] }),
-    putLemmaSubTags: vi.fn().mockResolvedValue(undefined),
     ...overrides,
   };
 }
@@ -257,6 +256,11 @@ describe('Contribuer route', () => {
     expect(payload.difficulte).toBe(3);
     expect(payload.correctif).toBeUndefined();
     expect(payload.flag).toBeUndefined();
+    // ADR-0061 §5: anon submissions carry no meta annotation, only the required isMultisense=false.
+    expect(payload.isMultisense).toBe(false);
+    expect(payload.targetCategories).toBeUndefined();
+    expect(payload.targetSense).toBeUndefined();
+    expect(payload.subTags).toBeUndefined();
 
     const verdictEventCalls = analytics.trackEvent.mock.calls.filter(
       ([category, action]) => category === 'survey' && action === 'verdict_submitted',
@@ -372,6 +376,9 @@ describe('Contribuer route', () => {
     expect(calledItemId).toBe(sampleItem.itemId);
     expect(payload.qualite).toBe(3);
     expect(payload.correctif).toEqual({ text: 'Une définition corrigée', style: sampleItem.style, pos: sampleItem.pos });
+    // Auth path threads the seeded category prior; isMultisense always sent.
+    expect(payload.targetCategories).toEqual(['faune_flore']);
+    expect(payload.isMultisense).toBe(false);
 
     const correctifEventCalls = analytics.trackEvent.mock.calls.filter(
       ([category, action]) => category === 'survey' && action === 'correctif_proposed',
@@ -442,6 +449,28 @@ describe('Contribuer route', () => {
         'Correction rejetée par le filtre 2 : contenu offensant.',
       ),
     );
+  });
+
+  it('auth verdict strips targetSense that repeats the lemma before submission (ADR-0061 §2)', async () => {
+    const authClient: AuthClient = {
+      ...stubAuth(),
+      whoami: vi.fn().mockResolvedValue({
+        userId: '0190e3a4-7a2c-7c9e-8f1a-1234567890ab',
+        displayName: 'Lapin 472',
+      }),
+    };
+    const surveyClient = stubSurveyClient();
+    renderContribuer({ authClient, surveyClient });
+    await waitFor(() => expect(screen.getByTestId('rating-card')).toBeInTheDocument());
+
+    const sense = screen.getByRole('combobox', { name: 'Sens cible' }) as HTMLInputElement;
+    await act(async () => { fireEvent.change(sense, { target: { value: 'le chat' } }); });
+    await act(async () => { clickVerdict('GOOD'); });
+
+    await waitFor(() => expect(surveyClient.submitRating).toHaveBeenCalled());
+    const payload = (surveyClient.submitRating as ReturnType<typeof vi.fn>).mock.calls[0][1] as RatingSubmission;
+    expect(payload.targetSense).toBeUndefined();
+    localStorage.clear();
   });
 
   it('auth SKIP excludes skipped ids on the next getNextItem call without touching surveyAnonStore', async () => {

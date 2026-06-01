@@ -2,15 +2,24 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { css, cx } from 'styled-system/css';
-import type { SurveyClient, SurveyItem, SurveyPos } from '@/application/survey';
+import type { SurveyCategorie, SurveyClient, SurveyItem, SurveyPos } from '@/application/survey';
 import { Select } from '@/ui/components/primitives';
+import { CategorieMultiSelect } from './CategorieMultiSelect';
 import { GlossChipInput } from './GlossChipInput';
-import { categorieLabel, POS_OPTIONS, posLabel, styleLabel } from './labels';
+import { POS_OPTIONS, posLabel, styleLabel } from './labels';
+import { SenseInput } from './SenseInput';
 import { useLemmaMeta } from './useLemmaMeta';
 
 const EMPTY_LIST: ReadonlyArray<string> = Object.freeze([]);
 
 export type Verdict = 'GOOD' | 'BAD' | 'SKIP';
+
+export interface RatingMeta {
+  readonly targetCategories: ReadonlyArray<SurveyCategorie>;
+  readonly targetSense: string;
+  readonly isMultisense: boolean;
+  readonly subTags: ReadonlyArray<string>;
+}
 
 const cardStyles = css({
   bg: 'surface',
@@ -46,11 +55,6 @@ const chipStyles = css({
   color: 'fgMuted',
   border: '1px solid token(colors.border)',
   borderRadius: 'sm',
-});
-
-const chipCategorieStyles = css({
-  color: 'accent',
-  borderColor: 'accent',
 });
 
 const definitionStyles = css({
@@ -174,18 +178,38 @@ const metaInputsStyles = css({
   gap: 'sm',
 });
 
+const multisenseRowStyles = css({
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: '8px',
+  fontSize: 'body',
+  color: 'fg',
+  cursor: 'pointer',
+});
+
+const multisenseCheckboxStyles = css({
+  width: '18px',
+  height: '18px',
+  margin: 0,
+  accentColor: 'token(colors.accent)',
+  _focusVisible: {
+    outline: '2px solid token(colors.focusRing)',
+    outlineOffset: '2px',
+  },
+});
+
 export interface RatingCardProps {
   readonly item: SurveyItem;
   readonly onVerdict: (
     verdict: Verdict,
     latencyMs: number,
-    meta: { readonly targetSenses: ReadonlyArray<string> },
+    meta: RatingMeta,
   ) => Promise<void> | void;
   readonly onCorriger: (
     correctedText: string,
     pos: SurveyPos,
     latencyMs: number,
-    meta: { readonly targetSenses: ReadonlyArray<string> },
+    meta: RatingMeta,
   ) => Promise<void> | void;
   readonly disabled?: boolean;
   readonly surveyClient?: SurveyClient | null;
@@ -195,33 +219,25 @@ export function RatingCard({ item, onVerdict, onCorriger, disabled = false, surv
   const startedAtRef = useRef<number>(0);
   const [correctifText, setCorrectifText] = useState<string | null>(null);
   const [correctifPos, setCorrectifPos] = useState<SurveyPos>(item.pos);
-  const [targetSenses, setTargetSenses] = useState<ReadonlyArray<string>>([]);
+  const [targetCategories, setTargetCategories] = useState<ReadonlyArray<SurveyCategorie>>([item.categorie]);
+  const [targetSense, setTargetSense] = useState('');
+  const [isMultisense, setIsMultisense] = useState(false);
   const [subTags, setSubTags] = useState<ReadonlyArray<string>>([]);
 
   const lemmaMeta = useLemmaMeta(surveyClient ?? null, item.mot);
   const priorSenses = lemmaMeta.data?.priorSenses ?? EMPTY_LIST;
   const priorSubTags = lemmaMeta.data?.priorSubTags ?? EMPTY_LIST;
 
+  const meta: RatingMeta = { targetCategories, targetSense, isMultisense, subTags };
+
   useEffect(() => {
     setCorrectifText(null);
     setCorrectifPos(item.pos);
-    setTargetSenses([]);
+    setTargetCategories([item.categorie]);
+    setTargetSense('');
+    setIsMultisense(false);
     setSubTags([]);
-  }, [item.itemId, item.pos]);
-
-  useEffect(() => {
-    setSubTags(priorSubTags);
-  }, [priorSubTags]);
-
-  async function persistSubTags(next: ReadonlyArray<string>): Promise<void> {
-    setSubTags(next);
-    if (!surveyClient) return;
-    try {
-      await surveyClient.putLemmaSubTags(item.mot, next);
-    } catch {
-      // Fire-and-forget: the local view stays optimistic; the server is authoritative on next load.
-    }
-  }
+  }, [item.itemId, item.pos, item.categorie]);
 
   // Lock arriving mid-correction collapses any open panel so the disabled state stays internally consistent.
   useEffect(() => {
@@ -248,16 +264,16 @@ export function RatingCard({ item, onVerdict, onCorriger, disabled = false, surv
       if (verdict === null) return;
       event.preventDefault();
       const latencyMs = Math.max(0, Math.round(performance.now() - startedAtRef.current));
-      void onVerdict(verdict, latencyMs, { targetSenses });
+      void onVerdict(verdict, latencyMs, { targetCategories, targetSense, isMultisense, subTags });
     }
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [item.itemId, item.definition, onVerdict, disabled, targetSenses]);
+  }, [item.itemId, item.definition, onVerdict, disabled, targetCategories, targetSense, isMultisense, subTags]);
 
   function submit(verdict: Verdict): void {
     if (disabled) return;
     const latencyMs = Math.max(0, Math.round(performance.now() - startedAtRef.current));
-    void onVerdict(verdict, latencyMs, { targetSenses });
+    void onVerdict(verdict, latencyMs, meta);
   }
 
   function submitCorrectif(): void {
@@ -273,7 +289,7 @@ export function RatingCard({ item, onVerdict, onCorriger, disabled = false, surv
     const latencyMs = Math.max(0, Math.round(performance.now() - startedAtRef.current));
     const text = textChanged ? trimmed : item.definition;
     setCorrectifText(null);
-    void onCorriger(text, correctifPos, latencyMs, { targetSenses });
+    void onCorriger(text, correctifPos, latencyMs, meta);
   }
 
   return (
@@ -281,9 +297,6 @@ export function RatingCard({ item, onVerdict, onCorriger, disabled = false, surv
       <h2 className={titleStyles}>{item.mot}</h2>
       <p className={chipRowStyles}>
         <span className={chipStyles} data-chip="pos">{posLabel(item.pos)}</span>
-        <span className={`${chipStyles} ${chipCategorieStyles}`} data-chip="categorie">
-          {categorieLabel(item.categorie)}
-        </span>
       </p>
       <blockquote className={definitionStyles}>« {item.definition} »</blockquote>
       <p className={metaStyles}>
@@ -345,22 +358,41 @@ export function RatingCard({ item, onVerdict, onCorriger, disabled = false, surv
 
       {disabled ? null : (
         <div className={metaInputsStyles} data-testid="rating-meta-inputs">
-          <GlossChipInput
-            value={[...targetSenses]}
-            onChange={(next) => setTargetSenses(next)}
+          <CategorieMultiSelect
+            value={targetCategories}
+            onChange={(next) => setTargetCategories(next)}
+            legend="Catégories"
+            minItems={1}
+            maxItems={6}
+          />
+          <label className={multisenseRowStyles}>
+            <input
+              type="checkbox"
+              className={multisenseCheckboxStyles}
+              data-testid="multisense-checkbox"
+              checked={isMultisense}
+              onChange={(e) => setIsMultisense(e.target.checked)}
+            />
+            <span>Calembour — plusieurs sens</span>
+          </label>
+          <SenseInput
+            value={targetSense}
+            onChange={(next) => setTargetSense(next)}
             suggestions={priorSenses}
-            label="Sens cibles"
-            ariaLabel="Sens cibles"
+            label="Sens cible"
             placeholder="ex. animal félin, conversation digitale…"
+            disabled={isMultisense}
             bannedTerm={item.mot}
           />
           <GlossChipInput
             value={[...subTags]}
-            onChange={(next) => { void persistSubTags(next); }}
+            onChange={(next) => setSubTags(next)}
             suggestions={priorSubTags}
             label="Sous-tags"
             ariaLabel="Sous-tags"
             placeholder="ex. félin, mammifère, domestique…"
+            maxItems={12}
+            maxLength={40}
           />
         </div>
       )}

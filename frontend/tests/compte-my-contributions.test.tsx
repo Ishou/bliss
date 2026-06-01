@@ -15,7 +15,6 @@ function stubSurveyClient(getContributions: () => Promise<ReadonlyArray<SurveyCo
     patchPreferences: vi.fn(),
     getCurrentCampaign: vi.fn(),
     getLemmaMeta: vi.fn(),
-    putLemmaSubTags: vi.fn(),
   };
 }
 
@@ -33,7 +32,7 @@ describe('MyContributions', () => {
         mot: 'CHAT',
         definition: 'Felin domestique',
         pos: 'nom_commun',
-        categorie: 'animals',
+        categorie: 'faune_flore',
         style: 'definition_directe',
         optedOut: false,
         kCoverage: 7,
@@ -44,7 +43,7 @@ describe('MyContributions', () => {
         mot: 'CHIEN',
         definition: 'Meilleur ami',
         pos: 'nom_commun',
-        categorie: 'animals',
+        categorie: 'faune_flore',
         style: 'periphrase',
         optedOut: true,
         kCoverage: 3,

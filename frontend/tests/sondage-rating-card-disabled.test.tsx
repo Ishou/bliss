@@ -8,7 +8,7 @@ const sampleItem: SurveyItem = {
   mot: 'CHAT',
   definition: 'Animal domestique à moustaches',
   pos: 'nom_commun',
-  categorie: 'animals',
+  categorie: 'faune_flore',
   style: 'definition_directe',
   forceClaimed: 2,
   longueur: 4,

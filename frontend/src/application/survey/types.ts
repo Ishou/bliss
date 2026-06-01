@@ -16,49 +16,25 @@ export type SurveyPos =
   | 'autre';
 
 export type SurveyCategorie =
-  | 'chemical_symbols'
-  | 'units'
-  | 'celestial_objects'
-  | 'nombres'
-  | 'roman_numerals'
-  | 'cardinal_points'
-  | 'cities'
-  | 'countries'
-  | 'country_codes'
-  | 'geography'
-  | 'first_names'
-  | 'titles'
-  | 'mythology'
-  | 'abbreviations'
-  | 'etranger'
-  | 'expressions'
-  | 'grammar'
-  | 'interjections'
-  | 'orthographe'
-  | 'animals'
-  | 'body_parts'
-  | 'senses'
-  | 'currencies'
-  | 'organizations'
-  | 'card_game'
-  | 'games'
-  | 'music_notes'
-  | 'autre'
-  | 'aliments'
-  | 'vetements'
-  | 'mobilier_objet'
-  | 'outils'
-  | 'transports'
-  | 'materiaux'
-  | 'professions'
-  | 'famille_relations'
-  | 'sentiments_etats'
-  | 'nature_paysage'
-  | 'flore'
-  | 'meteo_climat'
-  | 'temps_duree'
-  | 'couleurs'
-  | 'arts';
+  | 'personne'
+  | 'faune_flore'
+  | 'geographie'
+  | 'meteo'
+  | 'objet'
+  | 'nourriture'
+  | 'corps'
+  | 'culture'
+  | 'histoire'
+  | 'jeu'
+  | 'sport'
+  | 'religion'
+  | 'societe'
+  | 'science'
+  | 'conceptuel'
+  | 'langue'
+  | 'action'
+  | 'qualificatif'
+  | 'autre';
 
 export type SurveyStyle =
   | 'definition_directe'
@@ -103,8 +79,11 @@ export interface RatingSubmission {
   readonly difficulte: LikertScore;
   readonly flag?: SurveyFlagReason;
   readonly correctif?: SurveyCorrectif;
-  // ADR-0061: freeform sense glosses; auth-only on the server, omit when empty.
-  readonly targetSenses?: ReadonlyArray<string>;
+  // ADR-0061 meta: all auth-only on the server; anon submissions carrying any meta field get 401.
+  readonly targetCategories?: ReadonlyArray<SurveyCategorie>;
+  readonly targetSense?: string;
+  readonly isMultisense: boolean;
+  readonly subTags?: ReadonlyArray<string>;
   readonly latencyMs: number;
 }
 
@@ -182,8 +161,6 @@ export interface SurveyClient {
   patchPreferences(body: SurveyPreferencesPatch): Promise<void>;
   getCurrentCampaign(): Promise<Campaign>;
   getLemmaMeta(mot: string): Promise<LemmaMeta>;
-  // Resolves on 204; rejects with MaintainerOnlyError on 403, SignInRequiredError on 401.
-  putLemmaSubTags(mot: string, subTags: ReadonlyArray<string>): Promise<void>;
 }
 
 // Port for anon-rated dedup. Concrete adapter: `localStorageSurveyAnon.ts`.
