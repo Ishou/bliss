@@ -67,8 +67,9 @@ export interface paths {
          *     callers, the partial unique index on (itemId, userId) makes this
          *     idempotent — a repeat submission returns 409 with the existing
          *     rating. For anon callers, every submit creates a new row (no
-         *     server-side dedup). Anonymous callers including a `correctif` are
-         *     rejected with 401.
+         *     server-side dedup). Anonymous callers including a `correctif` or
+         *     `targetSenses` are rejected with 401 — corpus contributions and
+         *     sense-inventory writes both require sign-in.
          */
         post: operations["submitRating"];
         delete?: never;
@@ -206,6 +207,40 @@ export interface paths {
         patch: operations["patchMyPreferences"];
         trace?: never;
     };
+    "/v1/lemma-meta/{mot}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Per-lemma autocomplete source for sense glosses and sub-tags.
+         * @description Returns the rolling `priorSenses` inventory (every gloss observed
+         *     in past ratings of this lemma) and the maintainer-curated
+         *     `priorSubTags`. Powers the rating-card autocomplete dropdowns
+         *     introduced in ADR-0061. Open auth (no PII, vocabulary-only).
+         *     Both arrays are always returned — empty when the lemma has not
+         *     been rated or tagged yet.
+         */
+        get: operations["getLemmaMeta"];
+        /**
+         * Replace the maintainer-curated sub-tag list for a lemma.
+         * @description Maintainer-only (ADR-0060 role gate). Replaces the lemma's
+         *     `subTags` list with the body. The sense inventory is NOT writable
+         *     through this endpoint — it grows as a side-effect of rating
+         *     submits carrying `targetSenses` (ADR-0061). Soft-normalized
+         *     server-side for autocomplete dedup; the original spelling is
+         *     retained for display.
+         */
+        put: operations["putLemmaSubTags"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/health": {
         parameters: {
             query?: never;
@@ -303,6 +338,16 @@ export interface components {
                 style: components["schemas"]["Style"];
                 pos?: components["schemas"]["Pos"];
             };
+            /**
+             * @description Freeform sense glosses the rater is annotating this clue against
+             *     (ADR-0061). Multi-value supports calembour cases where the clue
+             *     targets two senses simultaneously. Server soft-normalizes for
+             *     inventory merge; the original spelling is stored verbatim.
+             *     Authenticated callers only — anonymous submissions including
+             *     this field return 401 (parallels the `correctif` gate).
+             *     Omitted when the rater does not annotate sense.
+             */
+            targetSenses?: string[];
             latencyMs: number;
         };
         UndoActionRequest: {
@@ -374,6 +419,25 @@ export interface components {
         };
         PreferencesPatch: {
             deleteProposedOnErasure: boolean;
+        };
+        /**
+         * @description Per-lemma autocomplete payload (ADR-0061). Both arrays are always
+         *     present, empty when the lemma has no history. `priorSenses` is
+         *     machine-grown from past ratings; `priorSubTags` is maintainer-curated.
+         */
+        LemmaMeta: {
+            /** @description Sense glosses observed in past ratings of this lemma. Ordered most-recent first. */
+            priorSenses: string[];
+            /** @description Maintainer-curated sub-domain tags for this lemma. Stable order (insertion). */
+            priorSubTags: string[];
+        };
+        /**
+         * @description Replace the maintainer-curated sub-tag list for a lemma. Empty
+         *     array clears the list. Duplicates collapse server-side by
+         *     soft-normalized form (strip determiners, NFD, lowercase).
+         */
+        SubTagsRequest: {
+            subTags: string[];
         };
         ProblemDetails: {
             /** Format: uri */
@@ -687,6 +751,66 @@ export interface operations {
             };
             400: components["responses"]["ProblemDetails"];
             401: components["responses"]["ProblemDetails"];
+        };
+    };
+    getLemmaMeta: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Lemma surface form (the French word to look up). Matched as stored — no normalization on read. */
+                mot: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Lemma meta (possibly empty). */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LemmaMeta"];
+                };
+            };
+            503: components["responses"]["ProblemDetails"];
+        };
+    };
+    putLemmaSubTags: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Lemma surface form. */
+                mot: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubTagsRequest"];
+            };
+        };
+        responses: {
+            /** @description Sub-tags replaced. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["ProblemDetails"];
+            401: components["responses"]["ProblemDetails"];
+            /** @description Caller is authenticated but lacks the maintainer role (ADR-0060). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
         };
     };
     getHealth: {

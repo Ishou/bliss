@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: WordSparrow Survey API
-  version: 0.1.0
+  version: 0.2.0
   summary: Auth-optional rating + corpus-contribution surface for clue RLHF.
   description: |
     Backend for the `/sondage` route. Anonymous and authenticated visitors
@@ -35,6 +35,8 @@ tags:
     description: Campaign-lifecycle reads. Open/close happen via direct SQL in v1.
   - name: items
     description: Rating-pool reads and rating submissions.
+  - name: lemma-meta
+    description: Per-lemma sub-tag taxonomy and rolling sense-gloss inventory (ADR-0061).
   - name: me
     description: Per-user progress, contributions, and preferences.
 
@@ -97,8 +99,9 @@ paths:
         callers, the partial unique index on (itemId, userId) makes this
         idempotent — a repeat submission returns 409 with the existing
         rating. For anon callers, every submit creates a new row (no
-        server-side dedup). Anonymous callers including a `correctif` are
-        rejected with 401.
+        server-side dedup). Anonymous callers including a `correctif` or
+        `targetSenses` are rejected with 401 — corpus contributions and
+        sense-inventory writes both require sign-in.
       tags: [items]
       parameters:
         - in: path
@@ -283,6 +286,75 @@ paths:
           description: Preferences updated.
         '400': { $ref: '#/components/responses/ProblemDetails' }
         '401': { $ref: '#/components/responses/ProblemDetails' }
+
+  /v1/lemma-meta/{mot}:
+    get:
+      operationId: getLemmaMeta
+      summary: Per-lemma autocomplete source for sense glosses and sub-tags.
+      description: |
+        Returns the rolling `priorSenses` inventory (every gloss observed
+        in past ratings of this lemma) and the maintainer-curated
+        `priorSubTags`. Powers the rating-card autocomplete dropdowns
+        introduced in ADR-0061. Open auth (no PII, vocabulary-only).
+        Both arrays are always returned — empty when the lemma has not
+        been rated or tagged yet.
+      tags: [lemma-meta]
+      parameters:
+        - in: path
+          name: mot
+          required: true
+          description: Lemma surface form (the French word to look up). Matched as stored — no normalization on read.
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 64
+            pattern: '^[A-Za-zÀ-ÖØ-öø-ÿŒœ''’ -]+$'
+      responses:
+        '200':
+          description: Lemma meta (possibly empty).
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LemmaMeta' }
+        '503':
+          $ref: '#/components/responses/ProblemDetails'
+    put:
+      operationId: putLemmaSubTags
+      summary: Replace the maintainer-curated sub-tag list for a lemma.
+      description: |
+        Maintainer-only (ADR-0060 role gate). Replaces the lemma's
+        `subTags` list with the body. The sense inventory is NOT writable
+        through this endpoint — it grows as a side-effect of rating
+        submits carrying `targetSenses` (ADR-0061). Soft-normalized
+        server-side for autocomplete dedup; the original spelling is
+        retained for display.
+      tags: [lemma-meta]
+      security:
+        - sessionCookie: []
+      parameters:
+        - in: path
+          name: mot
+          required: true
+          description: Lemma surface form.
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 64
+            pattern: '^[A-Za-zÀ-ÖØ-öø-ÿŒœ''’ -]+$'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SubTagsRequest' }
+      responses:
+        '204':
+          description: Sub-tags replaced.
+        '400': { $ref: '#/components/responses/ProblemDetails' }
+        '401': { $ref: '#/components/responses/ProblemDetails' }
+        '403':
+          description: Caller is authenticated but lacks the maintainer role (ADR-0060).
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/ProblemDetails' }
 
   /v1/health:
     get:
@@ -502,6 +574,22 @@ components:
             text:   { type: string, minLength: 2, maxLength: 60 }
             style:  { $ref: '#/components/schemas/Style' }
             pos:    { $ref: '#/components/schemas/Pos' }
+        targetSenses:
+          type: array
+          description: |
+            Freeform sense glosses the rater is annotating this clue against
+            (ADR-0061). Multi-value supports calembour cases where the clue
+            targets two senses simultaneously. Server soft-normalizes for
+            inventory merge; the original spelling is stored verbatim.
+            Authenticated callers only — anonymous submissions including
+            this field return 401 (parallels the `correctif` gate).
+            Omitted when the rater does not annotate sense.
+          items:
+            type: string
+            minLength: 1
+            maxLength: 80
+          minItems: 1
+          maxItems: 8
         latencyMs: { type: integer, minimum: 0 }
 
     UndoActionRequest:
@@ -580,6 +668,45 @@ components:
       required: [deleteProposedOnErasure]
       properties:
         deleteProposedOnErasure: { type: boolean }
+
+    LemmaMeta:
+      type: object
+      description: |
+        Per-lemma autocomplete payload (ADR-0061). Both arrays are always
+        present, empty when the lemma has no history. `priorSenses` is
+        machine-grown from past ratings; `priorSubTags` is maintainer-curated.
+      required: [priorSenses, priorSubTags]
+      properties:
+        priorSenses:
+          type: array
+          description: Sense glosses observed in past ratings of this lemma. Ordered most-recent first.
+          items:
+            type: string
+            minLength: 1
+            maxLength: 80
+        priorSubTags:
+          type: array
+          description: Maintainer-curated sub-domain tags for this lemma. Stable order (insertion).
+          items:
+            type: string
+            minLength: 1
+            maxLength: 40
+
+    SubTagsRequest:
+      type: object
+      description: |
+        Replace the maintainer-curated sub-tag list for a lemma. Empty
+        array clears the list. Duplicates collapse server-side by
+        soft-normalized form (strip determiners, NFD, lowercase).
+      required: [subTags]
+      properties:
+        subTags:
+          type: array
+          items:
+            type: string
+            minLength: 1
+            maxLength: 40
+          maxItems: 32
 
     ProblemDetails:
       type: object
