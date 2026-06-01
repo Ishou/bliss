@@ -82,10 +82,9 @@ ADR-0059  survey/api/openapi.yaml                  /v1/campaign/current + 423 on
 ADR-0059  frontend/src/ui/components/sondage/**    LockBanner + useCampaignStatus + disabled cards
 ADR-0059  scripts/survey/backfill_campaigns.py     Historical campaign attribution from Modal logs
 ADR-0060  identity/**                              Identity user roles + UserRoleChanged event
-ADR-0061  survey/**/persistence/V*__word_meta*.sql Pure-expand migration: survey_word_meta + ratings.target_senses
-ADR-0061  survey/**/model/WordMeta.kt              Per-lemma sub-tags + sense inventory aggregate
+ADR-0061  survey/**/persistence/V11__*.sql          V11 migrate: drop survey_word_meta, collapse categorie (48→18 classes), add per-rating target_categories/target_sense/is_multisense/sub_tags
 ADR-0061  survey/**/text/GlossNormalizer.kt        Soft normalization rules for autocomplete + inventory dedup
-ADR-0061  survey/api/openapi.yaml                  Adds RatingRequest.targetSenses + /v1/lemma-meta/{mot}
+ADR-0061  survey/api/openapi.yaml                  GET /v1/lemma-meta/{mot} aggregates prior ratings; PUT /v1/lemma-meta removed; RatingRequest carries target_categories/target_sense/is_multisense/sub_tags
 ADR-0061  frontend/src/ui/components/sondage/**    Sense + sub-tag chip inputs; difficulté default = 3
 ```
 
