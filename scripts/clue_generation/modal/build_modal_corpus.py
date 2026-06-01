@@ -94,7 +94,7 @@ def _row_copies(raw: str | None) -> int:
 
 
 def _parse_meta_column(raw: str | None) -> dict[str, Any]:
-    """Parse `key:value|key:value` meta cell into the pinned per-rating keys (PR-6a); ignore unknown keys."""
+    """Parse `key:value|key:value` meta cell (ADR-0061 survey export); returns pinned keys, ignores unknown."""
     text = (raw or "").strip()
     if not text:
         return {}
@@ -111,7 +111,7 @@ def _parse_meta_column(raw: str | None) -> dict[str, Any]:
     return out
 
 
-def _load_source(root: Path, src: dict[str, Any]) -> list[dict[str, str]]:
+def _load_source(root: Path, src: dict[str, Any]) -> list[dict[str, Any]]:
     """Load one source per its manifest entry and apply schema mapping."""
     if "path_glob" in src:
         paths = [Path(p) for p in glob(str(root / src["path_glob"]))]
@@ -124,7 +124,7 @@ def _load_source(root: Path, src: dict[str, Any]) -> list[dict[str, str]]:
     name = src["name"]
     weight_col = src.get("weight_column", "")
 
-    out: list[dict[str, str]] = []
+    out: list[dict[str, Any]] = []
     for p in paths:
         if not p.exists():
             raise FileNotFoundError(f"source '{name}': {p} not found")

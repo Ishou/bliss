@@ -266,7 +266,7 @@ def test_parse_meta_column_multisense_absent_is_false_when_read():
 
 
 def test_parse_meta_column_multisense_only_true_string_is_true():
-    """multisense is True only for the literal `true`; any other value is False."""
+    """multisense is True for case-insensitive `true`; any other value is False."""
     assert bc._parse_meta_column("multisense:true") == {"multisense": True}
     assert bc._parse_meta_column("multisense:TRUE") == {"multisense": True}
     assert bc._parse_meta_column("multisense:false") == {"multisense": False}
