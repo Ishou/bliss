@@ -17,8 +17,8 @@ import type {
 import { surveyAnonRatedStore } from '@/infrastructure/session/localStorageSurveyAnon';
 import { AuthProvider } from '@/ui/components/auth';
 import { Route as RootRoute } from '@/ui/routes/__root';
-import { Route as SondageRoute } from '@/ui/routes/sondage';
-import { Route as SondagePairsRoute } from '@/ui/routes/sondage.pairs';
+import { Route as ContribuerRoute } from '@/ui/routes/contribuer';
+import { Route as ContribuerPairsRoute } from '@/ui/routes/contribuer.pairs';
 
 const leftItem: SurveyItem = {
   itemId: '0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6b',
@@ -93,7 +93,7 @@ function stubAnalytics(): SpyAnalytics {
   return { trackEvent } as SpyAnalytics;
 }
 
-function renderSondagePairs(opts: {
+function renderContribuerPairs(opts: {
   authClient?: AuthClient;
   surveyClient?: SurveyClient;
   analytics?: AnalyticsPort;
@@ -103,10 +103,10 @@ function renderSondagePairs(opts: {
   const surveyClient = opts.surveyClient ?? stubSurveyClient();
   const analytics = opts.analytics ?? stubAnalytics();
   const anonStore = opts.surveyAnonStore ?? surveyAnonRatedStore;
-  const routeTree = RootRoute.addChildren([SondageRoute, SondagePairsRoute]);
+  const routeTree = RootRoute.addChildren([ContribuerRoute, ContribuerPairsRoute]);
   const router = createRouter({
     routeTree,
-    history: createMemoryHistory({ initialEntries: ['/sondage/pairs'] }),
+    history: createMemoryHistory({ initialEntries: ['/contribuer/pairs'] }),
     context: {
       authClient,
       getPseudonym: () => 'Lapin 1',
@@ -161,25 +161,25 @@ function clickVerdict(verdict: 'LEFT_WINS' | 'RIGHT_WINS' | 'BOTH_GOOD' | 'BOTH_
   btn.click();
 }
 
-describe('Sondage pairs route', () => {
+describe('Contribuer pairs route', () => {
   it('renders the pair card after the next-pair fetch resolves', async () => {
-    renderSondagePairs();
+    renderContribuerPairs();
     await waitFor(() => expect(screen.getByTestId('pair-card')).toBeInTheDocument());
     expect(screen.getByRole('heading', { name: 'CHAT', level: 2 })).toBeInTheDocument();
   });
 
-  it('renders a back-link to the binary /sondage mode', async () => {
-    renderSondagePairs();
+  it('renders a back-link to the binary /contribuer mode', async () => {
+    renderContribuerPairs();
     await waitFor(() => expect(screen.getByTestId('mode-switch-binary')).toBeInTheDocument());
     const link = screen.getByTestId('mode-switch-binary');
-    expect(link.getAttribute('href')).toBe('/sondage');
+    expect(link.getAttribute('href')).toBe('/contribuer');
   });
 
   it('shows the pool-empty message when getNextPair returns null', async () => {
     const surveyClient = stubSurveyClient({
       getNextPair: vi.fn().mockResolvedValue(null),
     });
-    renderSondagePairs({ surveyClient });
+    renderContribuerPairs({ surveyClient });
     await waitFor(() =>
       expect(screen.getByText(/Plus de paires à comparer/i)).toBeInTheDocument(),
     );
@@ -188,7 +188,7 @@ describe('Sondage pairs route', () => {
   it('passes excludedItemIds from anonStore on initial load', async () => {
     localStorage.setItem('survey.anon.rated_ids', JSON.stringify(['prev-a', 'prev-b']));
     const surveyClient = stubSurveyClient();
-    renderSondagePairs({ surveyClient });
+    renderContribuerPairs({ surveyClient });
     await waitFor(() => expect(screen.getByTestId('pair-card')).toBeInTheDocument());
     expect(surveyClient.getNextPair).toHaveBeenCalledWith({
       excludedItemIds: ['prev-a', 'prev-b'],
@@ -198,7 +198,7 @@ describe('Sondage pairs route', () => {
 
   it('fires pair_session_start once with the submitted_as dimension', async () => {
     const analytics = stubAnalytics();
-    renderSondagePairs({ analytics });
+    renderContribuerPairs({ analytics });
     await waitFor(() => expect(screen.getByTestId('pair-card')).toBeInTheDocument());
     const sessionStartCalls = analytics.trackEvent.mock.calls.filter(
       ([category, action]) => category === 'survey' && action === 'pair_session_start',
@@ -210,7 +210,7 @@ describe('Sondage pairs route', () => {
   it('LEFT_WINS verdict submits with both item ids + emits pair_verdict_submitted', async () => {
     const analytics = stubAnalytics();
     const surveyClient = stubSurveyClient();
-    renderSondagePairs({ analytics, surveyClient });
+    renderContribuerPairs({ analytics, surveyClient });
     await waitFor(() => expect(screen.getByTestId('pair-card')).toBeInTheDocument());
 
     await act(async () => { clickVerdict('LEFT_WINS'); });
@@ -243,7 +243,7 @@ describe('Sondage pairs route', () => {
       .mockResolvedValueOnce(samplePair)
       .mockResolvedValue(secondPair);
     const surveyClient = stubSurveyClient({ getNextPair });
-    renderSondagePairs({ analytics, surveyClient });
+    renderContribuerPairs({ analytics, surveyClient });
     await waitFor(() => expect(screen.getByTestId('pair-card')).toBeInTheDocument());
 
     await act(async () => { clickVerdict('SKIP'); });
@@ -264,7 +264,7 @@ describe('Sondage pairs route', () => {
 
   it('BOTH_GOOD verdict submits BOTH_GOOD and stores both ids in the anon dedup', async () => {
     const surveyClient = stubSurveyClient();
-    renderSondagePairs({ surveyClient });
+    renderContribuerPairs({ surveyClient });
     await waitFor(() => expect(screen.getByTestId('pair-card')).toBeInTheDocument());
 
     await act(async () => { clickVerdict('BOTH_GOOD'); });
@@ -283,13 +283,13 @@ describe('Sondage pairs route', () => {
     const surveyClient = stubSurveyClient({
       getNextPair: vi.fn().mockRejectedValue(new TypeError('Failed to fetch')),
     });
-    renderSondagePairs({ surveyClient });
+    renderContribuerPairs({ surveyClient });
     await waitFor(() => expect(screen.getByRole('alert')).toBeInTheDocument());
     expect(screen.getByRole('alert').textContent).toMatch(/réseau|connexion|réessayez/i);
   });
 
   it('shows the sign-in banner for anon visitors', async () => {
-    renderSondagePairs();
+    renderContribuerPairs();
     await waitFor(() => expect(screen.getByTestId('pair-card')).toBeInTheDocument());
     expect(screen.getByRole('note', { name: /Invitation à se connecter/i })).toBeInTheDocument();
   });
@@ -306,7 +306,7 @@ describe('Sondage pairs route', () => {
     localStorage.setItem('survey.anon.rated_ids', JSON.stringify([preAuthRatedId]));
     const getNextPair = vi.fn().mockResolvedValue(samplePair);
     const surveyClient = stubSurveyClient({ getNextPair });
-    renderSondagePairs({ authClient, surveyClient });
+    renderContribuerPairs({ authClient, surveyClient });
     await waitFor(() => expect(getNextPair).toHaveBeenCalled());
     expect(getNextPair).toHaveBeenLastCalledWith({ excludedItemIds: [preAuthRatedId] });
     localStorage.clear();
@@ -323,7 +323,7 @@ describe('Sondage pairs route', () => {
       submitPairRating: vi.fn().mockResolvedValue({ undoToken: 'tok_pair_1' }),
       undoAction,
     });
-    renderSondagePairs({ surveyClient });
+    renderContribuerPairs({ surveyClient });
 
     const bothGood = await screen.findByRole('button', {
       name: /Les deux définitions sont bonnes/i,

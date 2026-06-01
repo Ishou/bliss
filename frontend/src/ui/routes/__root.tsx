@@ -54,7 +54,7 @@ export interface AppRouterContext {
   readonly gameClient?: GameClient;
   readonly getSession?: () => AppSession;
   readonly setPseudonym?: (pseudonym: Pseudonym) => void;
-  // Survey-api adapter (ADR-0056). Optional; SondagePage degrades gracefully when undefined.
+  // Survey-api adapter (ADR-0056). Optional; ContribuerPage degrades gracefully when undefined.
   readonly surveyClient?: SurveyClient;
   // Anon-rated dedup store (ADR-0056). Optional for Vitest fixtures.
   readonly surveyAnonStore?: SurveyAnonStore;

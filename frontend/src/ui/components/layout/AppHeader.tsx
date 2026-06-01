@@ -22,13 +22,13 @@ interface NavLink {
   readonly id: string;
   readonly label: string;
   // union makes <Link to=> and navigate({ to }) type-safe without a cast.
-  readonly href: '/' | '/grilles' | '/sondage' | '/aide';
+  readonly href: '/' | '/grilles' | '/contribuer' | '/aide';
 }
 
 const NAV_LINKS: readonly NavLink[] = [
   { id: 'accueil', label: 'Accueil', href: '/' },
   { id: 'grilles', label: 'Grilles', href: '/grilles' },
-  { id: 'sondage', label: 'Sondage', href: '/sondage' },
+  { id: 'contribuer', label: 'Contribuer', href: '/contribuer' },
   { id: 'aide', label: 'Aide', href: '/aide' },
 ];
 

@@ -1,4 +1,4 @@
-// `/sondage/pairs` lazy half — pairwise rating loop. Auth optional; anon dedup via surveyAnonStore.
+// `/contribuer/pairs` lazy half — pairwise rating loop. Auth optional; anon dedup via surveyAnonStore.
 
 import { createLazyRoute, Link } from '@tanstack/react-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -14,7 +14,7 @@ import type {
 import { useAuth } from '@/ui/components/auth';
 import { ContentPage } from '@/ui/components/layout';
 import { LockBanner, PairCard, SignInBanner, UndoBar, useCampaignStatus } from '@/ui/components/sondage';
-import { Route as ParentRoute } from './sondage.pairs';
+import { Route as ParentRoute } from './contribuer.pairs';
 
 const articleStyles = css({
   display: 'flex',
@@ -71,10 +71,10 @@ const modeLinkStyles = css({
   },
 });
 
-// difficulte=3 placeholder mirrors `/sondage` (the binary route) until the schema allows nullable difficulté.
+// difficulte=3 placeholder mirrors `/contribuer` (the binary route) until the schema allows nullable difficulté.
 const DIFFICULTE_PLACEHOLDER: LikertScore = 3;
 
-function SondagePairsPage() {
+function ContribuerPairsPage() {
   const ctx = ParentRoute.useRouteContext();
   const { state } = useAuth();
   const isAuth = state.status === 'authed';
@@ -225,8 +225,8 @@ function SondagePairsPage() {
     <ContentPage>
       <article className={articleStyles}>
         <div className={headerRowStyles}>
-          <h1 className={headingStyles}>Sondage par paires</h1>
-          <Link to="/sondage" className={modeLinkStyles} data-testid="mode-switch-binary">
+          <h1 className={headingStyles}>Campagne par paires</h1>
+          <Link to="/contribuer" className={modeLinkStyles} data-testid="mode-switch-binary">
             Mode binaire →
           </Link>
         </div>
@@ -274,6 +274,6 @@ function SondagePairsPage() {
   );
 }
 
-export const Route = createLazyRoute('/sondage/pairs')({
-  component: SondagePairsPage,
+export const Route = createLazyRoute('/contribuer/pairs')({
+  component: ContribuerPairsPage,
 });
