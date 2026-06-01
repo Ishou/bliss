@@ -90,6 +90,9 @@ ADR-0062  survey/**/model/Pos.kt                   Lemma-anchored taxonomy: verb
 ADR-0062  survey/api/openapi.yaml                  Pos enum drops verbe_conjugue / VERBE_CONJUGUE
 ADR-0062  scripts/clue_generation/pipeline_v2/run_pipeline.py    POS allowlist drops verbe_conjugue (generation is lemma-only)
 ADR-0062  modal_jobs/04_generate_command_r.py      POS phrasing map drops verbe_conjugue
+ADR-0062  frontend/src/infrastructure/api/survey/types.ts    Pos enum regenerated without verbe_conjugue / VERBE_CONJUGUE
+ADR-0062  frontend/src/application/survey/types.ts           Hand-maintained Pos type drops verbe_conjugue
+ADR-0062  frontend/src/ui/components/sondage/labels.ts       POS label map drops verbe_conjugue entry
 ```
 
 ## Adding entries
