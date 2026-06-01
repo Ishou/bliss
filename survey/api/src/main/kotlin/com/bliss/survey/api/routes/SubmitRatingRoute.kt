@@ -91,6 +91,7 @@ fun Route.submitRatingRoute(execute: suspend (SubmitRatingCommand) -> SubmitRati
                 flag = flag,
                 correctif = body.correctif?.let { CorrectifInput(it.text, correctifStyle!!, correctifPos) },
                 latencyMs = body.latencyMs,
+                targetSenses = body.targetSenses ?: emptyList(),
             )
 
         when (val result = execute(cmd)) {
@@ -107,6 +108,17 @@ fun Route.submitRatingRoute(execute: suspend (SubmitRatingCommand) -> SubmitRati
                         type = "about:blank",
                         title = "sign-in required",
                         status = HttpStatusCode.Unauthorized.value,
+                    ),
+                )
+
+            SubmitRatingResult.AnonTargetSensesForbidden ->
+                call.respondProblem(
+                    HttpStatusCode.Unauthorized,
+                    ProblemDetails(
+                        type = "about:blank",
+                        title = "sign-in required",
+                        status = HttpStatusCode.Unauthorized.value,
+                        detail = "Annotating senses requires signing in (ADR-0061).",
                     ),
                 )
 

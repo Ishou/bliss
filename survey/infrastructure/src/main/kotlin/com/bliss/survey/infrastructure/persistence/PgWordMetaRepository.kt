@@ -13,10 +13,17 @@ import javax.sql.DataSource
 class PgWordMetaRepository(
     private val dataSource: DataSource,
 ) : WordMetaRepository {
-    override suspend fun find(mot: String): WordMeta? =
+    override suspend fun find(mot: String): WordMeta? = findInternal(mot, FIND_SQL)
+
+    override suspend fun findForUpdate(mot: String): WordMeta? = findInternal(mot, FIND_FOR_UPDATE_SQL)
+
+    private suspend fun findInternal(
+        mot: String,
+        sql: String,
+    ): WordMeta? =
         withContext(Dispatchers.IO) {
             withTxConnection(dataSource) { conn ->
-                conn.prepareStatement(FIND_SQL).use { stmt ->
+                conn.prepareStatement(sql).use { stmt ->
                     stmt.setString(1, mot)
                     stmt.executeQuery().use { rs ->
                         if (rs.next()) {
@@ -57,6 +64,10 @@ class PgWordMetaRepository(
 
         const val FIND_SQL =
             "SELECT mot, sub_tags, sense_inventory, updated_at FROM survey_word_meta WHERE mot = ?"
+
+        // FOR UPDATE locks the row so concurrent merges serialize; must be called inside a transaction.
+        const val FIND_FOR_UPDATE_SQL =
+            "SELECT mot, sub_tags, sense_inventory, updated_at FROM survey_word_meta WHERE mot = ? FOR UPDATE"
 
         const val UPSERT_SQL =
             """

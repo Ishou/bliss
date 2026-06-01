@@ -13,7 +13,9 @@ import com.bliss.survey.application.ports.SurveyItemRepository
 import com.bliss.survey.application.ports.TokenGenerator
 import com.bliss.survey.application.ports.TransactionManager
 import com.bliss.survey.application.ports.UserProgressRepository
+import com.bliss.survey.application.ports.WordMetaRepository
 import com.bliss.survey.application.sha256
+import com.bliss.survey.application.text.GlossNormalizer
 import com.bliss.survey.domain.model.ActionId
 import com.bliss.survey.domain.model.ActionKind
 import com.bliss.survey.domain.model.FlagReason
@@ -28,6 +30,7 @@ import com.bliss.survey.domain.model.SurveyAction
 import com.bliss.survey.domain.model.SurveyItem
 import com.bliss.survey.domain.model.Tier
 import com.bliss.survey.domain.model.UserId
+import com.bliss.survey.domain.model.WordMeta
 import java.time.Instant
 import java.time.ZoneOffset
 
@@ -48,6 +51,8 @@ sealed interface SubmitRatingResult {
 
     data object AnonCorrectifForbidden : SubmitRatingResult
 
+    data object AnonTargetSensesForbidden : SubmitRatingResult
+
     data object ItemNotFound : SubmitRatingResult
 
     data object Locked : SubmitRatingResult
@@ -67,6 +72,7 @@ data class SubmitRatingCommand(
     val flag: FlagReason?,
     val correctif: CorrectifInput?,
     val latencyMs: Int,
+    val targetSenses: List<String> = emptyList(),
 )
 
 class SubmitRatingUseCase(
@@ -82,6 +88,7 @@ class SubmitRatingUseCase(
     private val actions: ActionLogRepository,
     private val tokens: TokenGenerator,
     private val tx: TransactionManager,
+    private val wordMeta: WordMetaRepository,
 ) {
     suspend fun execute(cmd: SubmitRatingCommand): SubmitRatingResult {
         val openCampaign = campaigns.findOpen() ?: return SubmitRatingResult.Locked
@@ -89,6 +96,9 @@ class SubmitRatingUseCase(
         val parent = items.findById(cmd.itemId) ?: return SubmitRatingResult.ItemNotFound
 
         if (cmd.userId == null && cmd.correctif != null) return SubmitRatingResult.AnonCorrectifForbidden
+        if (cmd.userId == null && cmd.targetSenses.isNotEmpty()) {
+            return SubmitRatingResult.AnonTargetSensesForbidden
+        }
 
         if (cmd.userId != null) {
             ratings.findAuthRating(cmd.itemId, cmd.userId)?.let {
@@ -168,9 +178,12 @@ class SubmitRatingUseCase(
                         latencyMs = cmd.latencyMs,
                         createdAt = now,
                         campaignId = openCampaign.id,
+                        targetSenses = cmd.targetSenses,
                     )
                 ratings.insert(r)
                 createdRatingIds += r.id
+
+                if (cmd.targetSenses.isNotEmpty()) mergeIntoSenseInventory(parent.mot, cmd.targetSenses, now)
 
                 if (proposedItemId != null) {
                     // submitting a correctif vouches for the fix — enters winners directly without a re-rating round
@@ -219,5 +232,29 @@ class SubmitRatingUseCase(
     private fun monthKey(t: Instant): String {
         val zdt = t.atZone(ZoneOffset.UTC)
         return "%04d-%02d".format(zdt.year, zdt.monthValue)
+    }
+
+    // Merge new glosses into the lemma's sense inventory, dedup by normalized form; preserve first-seen spelling.
+    // findForUpdate locks the row inside the surrounding transaction so concurrent merges serialize (avoids lost-update).
+    private suspend fun mergeIntoSenseInventory(
+        mot: String,
+        incoming: List<String>,
+        now: Instant,
+    ) {
+        val existing = wordMeta.findForUpdate(mot)
+        val seen = HashSet<String>()
+        val merged = ArrayList<String>()
+        for (gloss in incoming + (existing?.senseInventory ?: emptyList())) {
+            val key = GlossNormalizer.normalize(gloss)
+            if (key.isNotBlank() && seen.add(key)) merged += gloss
+        }
+        wordMeta.save(
+            WordMeta(
+                mot = mot,
+                subTags = existing?.subTags ?: emptyList(),
+                senseInventory = merged,
+                updatedAt = now,
+            ),
+        )
     }
 }

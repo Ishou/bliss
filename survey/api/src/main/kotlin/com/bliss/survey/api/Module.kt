@@ -6,6 +6,7 @@ import com.bliss.survey.api.dto.ProblemDetails
 import com.bliss.survey.api.routes.getCurrentCampaignRoute
 import com.bliss.survey.api.routes.getNextPairRoute
 import com.bliss.survey.api.routes.healthRoute
+import com.bliss.survey.api.routes.lemmaMetaRoute
 import com.bliss.survey.api.routes.meContributionsRoute
 import com.bliss.survey.api.routes.mePreferencesRoute
 import com.bliss.survey.api.routes.meProgressRoute
@@ -99,6 +100,7 @@ fun Application.surveyApiModule(
         submitPairRatingRoute(wiring.submitPairRating)
         undoActionRoute(wiring.undoAction)
         getCurrentCampaignRoute(wiring.getCurrentCampaign)
+        lemmaMetaRoute(wiring.getLemmaMeta, wiring.upsertSubTags)
         meProgressRoute(wiring.userProgress)
         meContributionsRoute(wiring.items)
         mePreferencesRoute(wiring.proposedBy)
