@@ -21,11 +21,11 @@ def _strip(s: str) -> str:
 
 # DBnary POS -> Kotlin Pos enum name as stored in survey_items.pos (uppercase).
 DBNARY_TO_ENUM = {
-    "noun": "NOM_COMMUN",
-    "properNoun": "NOM_PROPRE",
-    "adjective": "ADJECTIF",
-    "verb": "VERBE_INFINITIF",
-    "adverb": "ADVERBE",
+    "noun": "nom_commun",
+    "properNoun": "nom_propre",
+    "adjective": "adjectif",
+    "verb": "verbe_infinitif",
+    "adverb": "adverbe",
 }
 
 

@@ -63,8 +63,9 @@ def _dbnary(tmp_path: Path, rows: list[dict[str, str]]) -> Path:
     return path
 
 
-def _insert_item(conn, mot: str, pos: str = "ADJECTIF") -> _uuid.UUID:
+def _insert_item(conn, mot: str, pos: str = "adjectif") -> _uuid.UUID:
     # tier omitted: V1's CHECK constraint requires lowercase ('high','mid','low','excluded'); rely on the 'mid' default.
+    # All other enum-backed columns (pos, categorie, style, source) are stored lowercase in prod — see PgSurveyItemRepository.kt + StyleGuideCsvWriter.kt.
     item_id = _uuid.uuid4()
     with conn.cursor() as cur:
         cur.execute(
@@ -72,8 +73,8 @@ def _insert_item(conn, mot: str, pos: str = "ADJECTIF") -> _uuid.UUID:
             INSERT INTO survey_items
               (item_id, mot, definition, pos, categorie, style,
                force_claimed, longueur, source, source_batch)
-            VALUES (%s, %s, 'def', %s, 'AUTRE', 'DEFINITION_DIRECTE',
-                    1, length(%s), 'SYNTHETIC_V1', 'test')
+            VALUES (%s, %s, 'def', %s, 'autre', 'definition_directe',
+                    1, length(%s), 'synthetic_v1', 'test')
             """,
             (item_id, mot, pos, mot),
         )
@@ -89,7 +90,7 @@ def _fetch_mot(conn, item_id: _uuid.UUID) -> str:
 
 def test_backfill_recovers_accents_from_dbnary(conn, tmp_path):
     """An ASCII `SOLDE adjectif` row gets rewritten to `SOLDÉ`."""
-    item_id = _insert_item(conn, "SOLDE", pos="ADJECTIF")
+    item_id = _insert_item(conn, "SOLDE", pos="adjectif")
     dbnary = _dbnary(
         tmp_path,
         [{"lemma": "soldé", "pos": "adjective", "definition": "Vendu au rabais."}],
@@ -103,7 +104,7 @@ def test_backfill_recovers_accents_from_dbnary(conn, tmp_path):
 
 def test_backfill_skips_when_no_dbnary_match(conn, tmp_path, capsys):
     """A row whose mot+pos has no DBnary entry is left unchanged and logged."""
-    item_id = _insert_item(conn, "XYZQZW", pos="NOM_COMMUN")
+    item_id = _insert_item(conn, "XYZQZW", pos="nom_commun")
     dbnary = _dbnary(tmp_path, [])
     lookup = ba.load_lookup(dbnary)
 
@@ -117,7 +118,7 @@ def test_backfill_skips_when_no_dbnary_match(conn, tmp_path, capsys):
 
 def test_backfill_is_idempotent(conn, tmp_path):
     """Running twice on a recovered row counts as 'already' the second time."""
-    item_id = _insert_item(conn, "SOLDE", pos="ADJECTIF")
+    item_id = _insert_item(conn, "SOLDE", pos="adjectif")
     dbnary = _dbnary(
         tmp_path,
         [{"lemma": "soldé", "pos": "adjective", "definition": "Vendu au rabais."}],
@@ -135,7 +136,7 @@ def test_backfill_is_idempotent(conn, tmp_path):
 
 def test_backfill_dry_run_does_not_mutate(conn, tmp_path):
     """dry_run=True reports the update but leaves the row alone."""
-    item_id = _insert_item(conn, "SOLDE", pos="ADJECTIF")
+    item_id = _insert_item(conn, "SOLDE", pos="adjectif")
     dbnary = _dbnary(
         tmp_path,
         [{"lemma": "soldé", "pos": "adjective", "definition": "Vendu au rabais."}],
