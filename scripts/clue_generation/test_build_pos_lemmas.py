@@ -14,7 +14,7 @@ import build_pos_lemmas as bpl  # noqa: E402
 
 
 def _write_dbnary(tmp_path: Path, rows: list[dict[str, str]]) -> Path:
-    """Build a minimal data/dbnary/dbnary_fr.csv with the columns load_dbnary reads."""
+    """Minimal dbnary_fr.csv fixture with lemma/pos/definition columns."""
     path = tmp_path / "dbnary_fr.csv"
     with path.open("w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=["lemma", "pos", "definition"])
