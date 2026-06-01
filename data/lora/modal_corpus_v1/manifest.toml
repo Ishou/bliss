@@ -75,10 +75,7 @@ csv_delimiter = ","
 schema_mapping = { mot = "lemma", definition = "lemma_clue", force = "" }
 row_filter = "rating == 'y'"  # human-judged correct only
 
-# RAFT winners slots — appended one per round. See docs/runbooks/clue-loop.md.
-# Each round's CSV is produced by `scripts/clue_generation/extract_winners.py`
-# and carries a `training_weight` column so gold maintainer correctifs (3.0)
-# are replicated 3× by the corpus builder.
+# RAFT winners slots — replaced each round, not accumulated; CSV carries training_weight. See clue-loop.md.
 [[sources]]
 name = "winners_round_10"
 path = "data/lora/modal_corpus_v1/winners_round_10.csv"
