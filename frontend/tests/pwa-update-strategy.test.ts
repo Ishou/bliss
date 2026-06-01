@@ -166,7 +166,7 @@ describe('registerServiceWorker — update strategy', () => {
     expect(reloadMock).toHaveBeenCalledTimes(1);
   });
 
-  // guard reloads via wb.update().finally(reload); await microtask queue before asserting
+  // two microtask ticks needed: finally() on wb.update() settles asynchronously
   it('updates the SW then reloads once on vite:preloadError', async () => {
     registerServiceWorker();
     window.dispatchEvent(new Event('vite:preloadError'));
