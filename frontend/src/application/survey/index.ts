@@ -26,3 +26,5 @@ export type {
 } from './types';
 
 export { normalizeForMatch } from './gloss';
+
+export { campaignDisplayName } from './campaignName';
