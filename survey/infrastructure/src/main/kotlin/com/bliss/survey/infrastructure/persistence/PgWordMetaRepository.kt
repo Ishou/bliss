@@ -16,7 +16,18 @@ class PgWordMetaRepository(
 ) : WordMetaRepository {
     override suspend fun find(mot: String): WordMeta? = findInternal(mot, FIND_SQL)
 
-    override suspend fun findForUpdate(mot: String): WordMeta? = findInternal(mot, FIND_FOR_UPDATE_SQL)
+    override suspend fun findForUpdate(mot: String): WordMeta? {
+        withContext(Dispatchers.IO) {
+            withTxConnection(dataSource) { conn ->
+                conn.prepareStatement(ENSURE_ROW_SQL).use { stmt ->
+                    stmt.setString(1, mot)
+                    stmt.setTimestamp(2, Timestamp.from(Instant.now()))
+                    stmt.executeUpdate()
+                }
+            }
+        }
+        return findInternal(mot, FIND_FOR_UPDATE_SQL)
+    }
 
     private suspend fun findInternal(
         mot: String,
@@ -25,32 +36,6 @@ class PgWordMetaRepository(
         withContext(Dispatchers.IO) {
             withTxConnection(dataSource) { conn ->
                 conn.prepareStatement(sql).use { stmt ->
-                    stmt.setString(1, mot)
-                    stmt.executeQuery().use { rs ->
-                        if (rs.next()) {
-                            WordMeta(
-                                mot = rs.getString("mot"),
-                                subTags = decodeList(rs.getString("sub_tags")),
-                                senseInventory = decodeList(rs.getString("sense_inventory")),
-                                updatedAt = rs.getTimestamp("updated_at").toInstant(),
-                            )
-                        } else {
-                            null
-                        }
-                    }
-                }
-            }
-        }
-
-    override suspend fun findForUpdate(mot: String): WordMeta? =
-        withContext(Dispatchers.IO) {
-            withTxConnection(dataSource) { conn ->
-                conn.prepareStatement(ENSURE_ROW_SQL).use { stmt ->
-                    stmt.setString(1, mot)
-                    stmt.setTimestamp(2, Timestamp.from(Instant.now()))
-                    stmt.executeUpdate()
-                }
-                conn.prepareStatement(FIND_FOR_UPDATE_SQL).use { stmt ->
                     stmt.setString(1, mot)
                     stmt.executeQuery().use { rs ->
                         if (rs.next()) {
@@ -95,6 +80,14 @@ class PgWordMetaRepository(
         // FOR UPDATE locks the row so concurrent merges serialize; must be called inside a transaction.
         const val FIND_FOR_UPDATE_SQL =
             "SELECT mot, sub_tags, sense_inventory, updated_at FROM survey_word_meta WHERE mot = ? FOR UPDATE"
+
+        // Guarantees the row exists before FOR UPDATE so the first-write race is also serialized.
+        const val ENSURE_ROW_SQL =
+            """
+            INSERT INTO survey_word_meta (mot, sub_tags, sense_inventory, updated_at)
+            VALUES (?, '[]'::jsonb, '[]'::jsonb, ?)
+            ON CONFLICT (mot) DO NOTHING
+            """
 
         const val UPSERT_SQL =
             """
