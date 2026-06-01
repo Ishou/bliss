@@ -279,8 +279,7 @@ async function main(): Promise<void> {
   // (<title>, og:*, twitter:*, description, canonical) — they'd
   // duplicate in every dumped outerHTML.
   const originalShell = readFileSync(join(DIST, 'index.html'), 'utf8');
-  // Ship a top-level 404.html so Cloudflare Pages stops SPA-falling-back
-  // missing /assets/*.js as 200 text/html (the MIME-violation root cause).
+  // 404.html stops Pages SPA-falling-back missing chunks as text/html (ADR-0004)
   writeFileSync(join(DIST, '404.html'), originalShell, 'utf8');
   const { server, port } = await startStaticServer(DIST, originalShell);
   const baseUrl = `http://127.0.0.1:${port}`;

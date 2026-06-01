@@ -38,10 +38,7 @@ const setVisibility = (state: 'visible' | 'hidden') => {
 describe('registerServiceWorker — update strategy', () => {
   let reloadMock: ReturnType<typeof vi.fn>;
   let originalLocation: Location;
-  // `installChunkMismatchGuard` adds a non-removable `vite:preloadError`
-  // listener per `registerServiceWorker()` call. Across tests these would
-  // accumulate and fire prior tests' stale closures, so track and detach
-  // them between tests for isolation.
+  // track vite:preloadError listeners to detach between tests, preventing stale-closure accumulation
   const addedListeners: Array<[string, EventListener]> = [];
   const realAdd = window.addEventListener.bind(window);
 
@@ -169,8 +166,7 @@ describe('registerServiceWorker — update strategy', () => {
     expect(reloadMock).toHaveBeenCalledTimes(1);
   });
 
-  // The chunk-mismatch guard reloads via `wb.update().finally(reload)`, so
-  // assertions on the reload must await the microtask queue.
+  // guard reloads via wb.update().finally(reload); await microtask queue before asserting
   it('updates the SW then reloads once on vite:preloadError', async () => {
     registerServiceWorker();
     window.dispatchEvent(new Event('vite:preloadError'));

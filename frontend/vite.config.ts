@@ -190,13 +190,7 @@ export default defineConfig({
           /^\/sitemap\.xml$/,
         ],
         cleanupOutdatedCaches: true,
-        // skipWaiting+clientsClaim activate the new SW on install and
-        // adopt all open tabs immediately; pwa.ts's `controlling` handler
-        // then reloads each tab onto the new build. A still-open old page
-        // that lazy-imports a now-vanished route chunk gets a 404 (top-
-        // level 404.html, no SPA fallback) → vite:preloadError, which
-        // pwa.ts's chunk-mismatch guard recovers from by updating the SW
-        // and reloading onto the fresh shell + precache.
+        // skipWaiting+clientsClaim: see ADR-0026 for reload-on-update UX
         skipWaiting: true,
         clientsClaim: true,
         runtimeCaching: [

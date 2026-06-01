@@ -2,11 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-// The /sondage surface was renamed to /contribuer. The legacy aliases used
-// to be client-side beforeLoad redirect routes, but shipping a top-level
-// 404.html turned off Cloudflare Pages' SPA fallback they relied on, so the
-// redirects now live server-side in public/_redirects as 308s. This asserts
-// the rules exist and rewrite to the canonical /contribuer targets.
+// asserts /sondage → /contribuer 308s in public/_redirects (ADR-0004)
 const REDIRECTS = readFileSync(
   resolve(__dirname, '../public/_redirects'),
   'utf8',
