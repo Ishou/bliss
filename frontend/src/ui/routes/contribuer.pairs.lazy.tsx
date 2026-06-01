@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { css } from 'styled-system/css';
 import { NOOP_ANALYTICS } from '@/application/analytics';
 import { messageForApiError } from '@/application/errors';
+import { campaignDisplayName } from '@/application/survey';
 import type {
   ItemPair,
   LikertScore,
@@ -38,6 +39,12 @@ const headingStyles = css({
   letterSpacing: '-0.02em',
   margin: 0,
   color: 'fg',
+});
+
+const subtitleStyles = css({
+  fontSize: 'sm',
+  color: 'fgMuted',
+  margin: 0,
 });
 
 const introStyles = css({
@@ -230,6 +237,11 @@ function ContribuerPairsPage() {
             Mode binaire →
           </Link>
         </div>
+        {campaignStatus.status.kind === 'open' ? (
+          <p className={subtitleStyles} data-testid="campaign-subtitle">
+            {campaignDisplayName(campaignStatus.status.campaign)}
+          </p>
+        ) : null}
         {campaignStatus.status.kind === 'closed' ? (
           <LockBanner campaign={campaignStatus.status.campaign} />
         ) : null}
@@ -259,12 +271,11 @@ function ContribuerPairsPage() {
           </p>
         ) : null}
 
-        {pair !== null ? (
+        {pair !== null && !isLocked ? (
           <PairCard
             key={`${pair.left.itemId}|${pair.right.itemId}`}
             pair={pair}
             onVerdict={onVerdict}
-            disabled={isLocked}
           />
         ) : null}
 

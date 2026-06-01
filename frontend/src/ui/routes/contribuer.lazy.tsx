@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { css } from 'styled-system/css';
 import { NOOP_ANALYTICS } from '@/application/analytics';
 import { messageForApiError } from '@/application/errors';
+import { campaignDisplayName } from '@/application/survey';
 import type { LikertScore, RatingSubmission, SurveyItem, SurveyPos } from '@/application/survey';
 import { useAuth } from '@/ui/components/auth';
 import { ContentPage } from '@/ui/components/layout';
@@ -47,6 +48,12 @@ const modeLinkStyles = css({
     outlineOffset: '2px',
     borderRadius: 'sm',
   },
+});
+
+const subtitleStyles = css({
+  fontSize: 'sm',
+  color: 'fgMuted',
+  margin: 0,
 });
 
 const introStyles = css({
@@ -260,6 +267,11 @@ function ContribuerPage() {
             Mode paires →
           </Link>
         </div>
+        {campaignStatus.status.kind === 'open' ? (
+          <p className={subtitleStyles} data-testid="campaign-subtitle">
+            {campaignDisplayName(campaignStatus.status.campaign)}
+          </p>
+        ) : null}
         {campaignStatus.status.kind === 'closed' ? (
           <LockBanner campaign={campaignStatus.status.campaign} />
         ) : null}
@@ -289,13 +301,12 @@ function ContribuerPage() {
           </p>
         ) : null}
 
-        {item !== null ? (
+        {item !== null && !isLocked ? (
           <RatingCard
             key={item.itemId}
             item={item}
             onVerdict={onVerdict}
             onCorriger={onCorriger}
-            disabled={isLocked}
             surveyClient={surveyClient}
           />
         ) : null}

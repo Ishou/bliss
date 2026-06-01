@@ -168,6 +168,21 @@ describe('Contribuer pairs route', () => {
     expect(screen.getByRole('heading', { name: 'CHAT', level: 2 })).toBeInTheDocument();
   });
 
+  it('renders the campaign display name as a subtitle when the campaign is open', async () => {
+    const surveyClient = stubSurveyClient({
+      getCurrentCampaign: vi.fn().mockResolvedValue({
+        campaignId: '0190e3a4-7a2c-7c9e-8f1a-000000000009',
+        batchLabel: 'round-9',
+        openedAt: '2026-05-30T08:24:34Z',
+        closedAt: null,
+      }),
+    });
+    renderContribuerPairs({ surveyClient });
+    await waitFor(() =>
+      expect(screen.getByTestId('campaign-subtitle')).toHaveTextContent('Moineau 9 — 30/05/2026'),
+    );
+  });
+
   it('renders a back-link to the binary /contribuer mode', async () => {
     renderContribuerPairs();
     await waitFor(() => expect(screen.getByTestId('mode-switch-binary')).toBeInTheDocument());
