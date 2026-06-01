@@ -83,3 +83,63 @@ def _fetch_mot(conn, item_id: _uuid.UUID) -> str:
     with conn.cursor() as cur:
         cur.execute("SELECT mot FROM survey_items WHERE item_id = %s", (item_id,))
         return cur.fetchone()[0]
+
+
+def test_backfill_recovers_accents_from_dbnary(conn, tmp_path):
+    """An ASCII `SOLDE adjectif` row gets rewritten to `SOLDÉ`."""
+    item_id = _insert_item(conn, "SOLDE", pos="ADJECTIF")
+    dbnary = _dbnary(
+        tmp_path,
+        [{"lemma": "soldé", "pos": "adjective", "definition": "Vendu au rabais."}],
+    )
+    lookup = ba.load_lookup(dbnary)
+
+    summary = ba.backfill(conn, lookup)
+    assert summary == {"updated": 1, "skipped": 0, "already": 0}
+    assert _fetch_mot(conn, item_id) == "SOLDÉ"
+
+
+def test_backfill_skips_when_no_dbnary_match(conn, tmp_path, capsys):
+    """A row whose mot+pos has no DBnary entry is left unchanged and logged."""
+    item_id = _insert_item(conn, "XYZQZW", pos="NOM_COMMUN")
+    dbnary = _dbnary(tmp_path, [])
+    lookup = ba.load_lookup(dbnary)
+
+    summary = ba.backfill(conn, lookup)
+    assert summary == {"updated": 0, "skipped": 1, "already": 0}
+    assert _fetch_mot(conn, item_id) == "XYZQZW"
+    err = capsys.readouterr().err
+    assert "no DBnary match" in err
+    assert "XYZQZW" in err
+
+
+def test_backfill_is_idempotent(conn, tmp_path):
+    """Running twice on a recovered row counts as 'already' the second time."""
+    item_id = _insert_item(conn, "SOLDE", pos="ADJECTIF")
+    dbnary = _dbnary(
+        tmp_path,
+        [{"lemma": "soldé", "pos": "adjective", "definition": "Vendu au rabais."}],
+    )
+    lookup = ba.load_lookup(dbnary)
+
+    first = ba.backfill(conn, lookup)
+    assert first == {"updated": 1, "skipped": 0, "already": 0}
+    assert _fetch_mot(conn, item_id) == "SOLDÉ"
+
+    second = ba.backfill(conn, lookup)
+    assert second == {"updated": 0, "skipped": 0, "already": 1}
+    assert _fetch_mot(conn, item_id) == "SOLDÉ"
+
+
+def test_backfill_dry_run_does_not_mutate(conn, tmp_path):
+    """dry_run=True reports the update but leaves the row alone."""
+    item_id = _insert_item(conn, "SOLDE", pos="ADJECTIF")
+    dbnary = _dbnary(
+        tmp_path,
+        [{"lemma": "soldé", "pos": "adjective", "definition": "Vendu au rabais."}],
+    )
+    lookup = ba.load_lookup(dbnary)
+
+    summary = ba.backfill(conn, lookup, dry_run=True)
+    assert summary == {"updated": 1, "skipped": 0, "already": 0}
+    assert _fetch_mot(conn, item_id) == "SOLDE"  # unchanged
