@@ -32,8 +32,6 @@ UPDATE survey_items SET training_weight = 3.0
  WHERE item_id = '00000000-0000-0000-0000-000000000002';
 
 -- Item 1: one auth rating (qualite=4, difficulte=2), one anon (qualite=3, difficulte=2).
--- The auth rating carries per-rating meta (categories lowercased, sub_tags + sense free text,
--- a delimiter-laden gloss to exercise sanitization); anon ratings carry no meta by invariant.
 INSERT INTO ratings
   (rating_id, item_id, user_id, submitted_as, qualite, difficulte,
    flag, proposed_item_id, latency_ms, client_meta, created_at, campaign_id,
@@ -55,8 +53,7 @@ VALUES
    '00000000-0000-0000-0000-0000000000c1',
    '[]'::jsonb, NULL, FALSE, '[]'::jsonb);
 
--- Item 2: two distinct auth raters (qualite=5/4, difficulte=3/4); overlapping sub_tags + senses
--- across raters prove distinct+sorted dedup; neither is multisense so the key is omitted.
+-- Item 2: two distinct auth raters (qualite=5/4, difficulte=3/4); overlapping sub_tags + senses.
 INSERT INTO ratings
   (rating_id, item_id, user_id, submitted_as, qualite, difficulte,
    flag, proposed_item_id, latency_ms, client_meta, created_at, campaign_id,
