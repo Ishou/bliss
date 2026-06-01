@@ -3,6 +3,7 @@
 export type {
   Campaign,
   ItemPair,
+  LemmaMeta,
   LikertScore,
   PairRatingResult,
   PairRatingSubmission,
@@ -23,3 +24,5 @@ export type {
   SurveyStyle,
   SurveyTier,
 } from './types';
+
+export { normalizeForMatch } from './gloss';

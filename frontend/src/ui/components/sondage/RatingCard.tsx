@@ -2,9 +2,13 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { css, cx } from 'styled-system/css';
-import type { SurveyItem, SurveyPos } from '@/application/survey';
+import type { SurveyClient, SurveyItem, SurveyPos } from '@/application/survey';
 import { Select } from '@/ui/components/primitives';
+import { GlossChipInput } from './GlossChipInput';
 import { categorieLabel, POS_OPTIONS, posLabel, styleLabel } from './labels';
+import { useLemmaMeta } from './useLemmaMeta';
+
+const EMPTY_LIST: ReadonlyArray<string> = Object.freeze([]);
 
 export type Verdict = 'GOOD' | 'BAD' | 'SKIP';
 
@@ -164,22 +168,64 @@ const shortcutStyles = css({
   opacity: 0.75,
 });
 
+const metaInputsStyles = css({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 'sm',
+});
+
 export interface RatingCardProps {
   readonly item: SurveyItem;
-  readonly onVerdict: (verdict: Verdict, latencyMs: number) => Promise<void> | void;
-  readonly onCorriger: (correctedText: string, pos: SurveyPos, latencyMs: number) => Promise<void> | void;
+  readonly onVerdict: (
+    verdict: Verdict,
+    latencyMs: number,
+    meta: { readonly targetSenses: ReadonlyArray<string> },
+  ) => Promise<void> | void;
+  readonly onCorriger: (
+    correctedText: string,
+    pos: SurveyPos,
+    latencyMs: number,
+    meta: { readonly targetSenses: ReadonlyArray<string> },
+  ) => Promise<void> | void;
   readonly disabled?: boolean;
+  // Wires the lemma-meta autocomplete and the maintainer-only PUT for sub-tags; absent in test fixtures.
+  readonly surveyClient?: SurveyClient | null;
 }
 
-export function RatingCard({ item, onVerdict, onCorriger, disabled = false }: RatingCardProps) {
+export function RatingCard({ item, onVerdict, onCorriger, disabled = false, surveyClient }: RatingCardProps) {
   const startedAtRef = useRef<number>(0);
   const [correctifText, setCorrectifText] = useState<string | null>(null);
   const [correctifPos, setCorrectifPos] = useState<SurveyPos>(item.pos);
+  const [targetSenses, setTargetSenses] = useState<ReadonlyArray<string>>([]);
+  const [subTags, setSubTags] = useState<ReadonlyArray<string>>([]);
+
+  const lemmaMeta = useLemmaMeta(surveyClient ?? null, item.mot);
+  const priorSenses = lemmaMeta.data?.priorSenses ?? EMPTY_LIST;
+  const priorSubTags = lemmaMeta.data?.priorSubTags ?? EMPTY_LIST;
 
   useEffect(() => {
     setCorrectifText(null);
     setCorrectifPos(item.pos);
+    setTargetSenses([]);
+    setSubTags([]);
   }, [item.itemId, item.pos]);
+
+  useEffect(() => {
+    setSubTags(priorSubTags);
+  }, [priorSubTags]);
+
+  async function persistSubTags(next: ReadonlyArray<string>): Promise<void> {
+    setSubTags(next);
+    if (!surveyClient) return;
+    try {
+      await surveyClient.putLemmaSubTags(item.mot, next);
+    } catch (cause) {
+      const name = (cause as Error | undefined)?.name ?? '';
+      // Non-maintainer (403) / anon (401) silently keep the local view; the server is authoritative on next read.
+      if (name === 'MaintainerOnlyError' || name === 'SignInRequiredError') return;
+      throw cause;
+    }
+  }
 
   // Lock arriving mid-correction collapses any open panel so the disabled state stays internally consistent.
   useEffect(() => {
@@ -206,16 +252,16 @@ export function RatingCard({ item, onVerdict, onCorriger, disabled = false }: Ra
       if (verdict === null) return;
       event.preventDefault();
       const latencyMs = Math.max(0, Math.round(performance.now() - startedAtRef.current));
-      void onVerdict(verdict, latencyMs);
+      void onVerdict(verdict, latencyMs, { targetSenses });
     }
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [item.itemId, item.definition, onVerdict, disabled]);
+  }, [item.itemId, item.definition, onVerdict, disabled, targetSenses]);
 
   function submit(verdict: Verdict): void {
     if (disabled) return;
     const latencyMs = Math.max(0, Math.round(performance.now() - startedAtRef.current));
-    void onVerdict(verdict, latencyMs);
+    void onVerdict(verdict, latencyMs, { targetSenses });
   }
 
   function submitCorrectif(): void {
@@ -231,7 +277,7 @@ export function RatingCard({ item, onVerdict, onCorriger, disabled = false }: Ra
     const latencyMs = Math.max(0, Math.round(performance.now() - startedAtRef.current));
     const text = textChanged ? trimmed : item.definition;
     setCorrectifText(null);
-    void onCorriger(text, correctifPos, latencyMs);
+    void onCorriger(text, correctifPos, latencyMs, { targetSenses });
   }
 
   return (
@@ -300,6 +346,28 @@ export function RatingCard({ item, onVerdict, onCorriger, disabled = false }: Ra
           </button>
         )}
       </div>
+
+      {disabled ? null : (
+        <div className={metaInputsStyles} data-testid="rating-meta-inputs">
+          <GlossChipInput
+            value={[...targetSenses]}
+            onChange={(next) => setTargetSenses(next)}
+            suggestions={priorSenses}
+            label="Sens cibles"
+            ariaLabel="Sens cibles"
+            placeholder="ex. animal félin, conversation digitale…"
+            bannedTerm={item.mot}
+          />
+          <GlossChipInput
+            value={[...subTags]}
+            onChange={(next) => { void persistSubTags(next); }}
+            suggestions={priorSubTags}
+            label="Sous-tags"
+            ariaLabel="Sous-tags"
+            placeholder="ex. félin, mammifère, domestique…"
+          />
+        </div>
+      )}
 
       {correctifText !== null ? (
         <div className={correctifBoxStyles} data-testid="correctif-box">

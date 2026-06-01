@@ -103,7 +103,14 @@ export interface RatingSubmission {
   readonly difficulte: LikertScore;
   readonly flag?: SurveyFlagReason;
   readonly correctif?: SurveyCorrectif;
+  // ADR-0061: freeform sense glosses; auth-only on the server, omit when empty.
+  readonly targetSenses?: ReadonlyArray<string>;
   readonly latencyMs: number;
+}
+
+export interface LemmaMeta {
+  readonly priorSenses: ReadonlyArray<string>;
+  readonly priorSubTags: ReadonlyArray<string>;
 }
 
 export interface RatingResult {
@@ -174,6 +181,9 @@ export interface SurveyClient {
   getContributions(): Promise<ReadonlyArray<SurveyContribution>>;
   patchPreferences(body: SurveyPreferencesPatch): Promise<void>;
   getCurrentCampaign(): Promise<Campaign>;
+  getLemmaMeta(mot: string): Promise<LemmaMeta>;
+  // Resolves on 204; rejects with MaintainerOnlyError on 403, SignInRequiredError on 401.
+  putLemmaSubTags(mot: string, subTags: ReadonlyArray<string>): Promise<void>;
 }
 
 // Port for anon-rated dedup. Concrete adapter: `localStorageSurveyAnon.ts`.

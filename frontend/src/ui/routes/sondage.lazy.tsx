@@ -127,7 +127,11 @@ function SondagePage() {
     void loadNext();
   }, [state.status, loadNext]);
 
-  async function onVerdict(verdict: Verdict, latencyMs: number): Promise<void> {
+  async function onVerdict(
+    verdict: Verdict,
+    latencyMs: number,
+    meta: { readonly targetSenses: ReadonlyArray<string> },
+  ): Promise<void> {
     if (!surveyClient || !item) return;
     const currentItem = item;
     if (verdict === 'SKIP') {
@@ -141,10 +145,12 @@ function SondagePage() {
       await loadNext();
       return;
     }
+    const senses = isAuth && meta.targetSenses.length > 0 ? [...meta.targetSenses] : undefined;
     const payload: RatingSubmission = {
       qualite: verdict === 'GOOD' ? 5 : 1,
       difficulte: DIFFICULTE_PLACEHOLDER,
       latencyMs,
+      ...(senses ? { targetSenses: senses } : {}),
     };
     try {
       const result = await surveyClient.submitRating(currentItem.itemId, payload);
@@ -171,19 +177,26 @@ function SondagePage() {
     }
   }
 
-  async function onCorriger(correctedText: string, pos: SurveyPos, latencyMs: number): Promise<void> {
+  async function onCorriger(
+    correctedText: string,
+    pos: SurveyPos,
+    latencyMs: number,
+    meta: { readonly targetSenses: ReadonlyArray<string> },
+  ): Promise<void> {
     if (!surveyClient || !item) return;
     if (!isAuth) {
       setError('Connectez-vous pour proposer une correction.');
       return;
     }
     const currentItem = item;
+    const senses = meta.targetSenses.length > 0 ? [...meta.targetSenses] : undefined;
     // qualite=3 stays neutral on the original; the server patches POS in place or creates an auto-GOOD rater_proposed item per ADR-0056.
     const payload: RatingSubmission = {
       qualite: 3,
       difficulte: DIFFICULTE_PLACEHOLDER,
       latencyMs,
       correctif: { text: correctedText, style: currentItem.style, pos },
+      ...(senses ? { targetSenses: senses } : {}),
     };
     try {
       const result = await surveyClient.submitRating(currentItem.itemId, payload);
@@ -283,6 +296,7 @@ function SondagePage() {
             onVerdict={onVerdict}
             onCorriger={onCorriger}
             disabled={isLocked}
+            surveyClient={surveyClient}
           />
         ) : null}
 

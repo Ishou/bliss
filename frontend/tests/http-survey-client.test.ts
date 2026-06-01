@@ -371,3 +371,44 @@ describe('HttpSurveyClient.patchPreferences', () => {
     ).rejects.toBeInstanceOf(SignInRequiredError);
   });
 });
+
+describe('HttpSurveyClient.getLemmaMeta', () => {
+  it('GETs and returns the LemmaMeta payload', async () => {
+    server.use(
+      http.get(`${BASE}/v1/lemma-meta/CHAT`, () =>
+        HttpResponse.json({ priorSenses: ['félin'], priorSubTags: ['domestique'] }),
+      ),
+    );
+    const meta = await client.getLemmaMeta('CHAT');
+    expect(meta).toEqual({ priorSenses: ['félin'], priorSubTags: ['domestique'] });
+  });
+});
+
+describe('HttpSurveyClient.putLemmaSubTags', () => {
+  it('PUTs the subTags and resolves on 204', async () => {
+    let body: { subTags?: string[] } = {};
+    server.use(
+      http.put(`${BASE}/v1/lemma-meta/CHAT`, async ({ request }) => {
+        body = (await request.json()) as { subTags: string[] };
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+    await client.putLemmaSubTags('CHAT', ['félin', 'domestique']);
+    expect(body).toEqual({ subTags: ['félin', 'domestique'] });
+  });
+
+  it('throws MaintainerOnlyError on 403', async () => {
+    const { MaintainerOnlyError } = await import('@/infrastructure');
+    server.use(
+      http.put(`${BASE}/v1/lemma-meta/CHAT`, () => new HttpResponse(null, { status: 403 })),
+    );
+    await expect(client.putLemmaSubTags('CHAT', [])).rejects.toBeInstanceOf(MaintainerOnlyError);
+  });
+
+  it('throws SignInRequiredError on 401', async () => {
+    server.use(
+      http.put(`${BASE}/v1/lemma-meta/CHAT`, () => new HttpResponse(null, { status: 401 })),
+    );
+    await expect(client.putLemmaSubTags('CHAT', [])).rejects.toBeInstanceOf(SignInRequiredError);
+  });
+});

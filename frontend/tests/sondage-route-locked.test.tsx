@@ -80,6 +80,8 @@ function stubSurveyClient(overrides: Partial<SurveyClient> = {}): SurveyClient {
     getContributions: vi.fn().mockResolvedValue([]),
     patchPreferences: vi.fn().mockResolvedValue(undefined),
     getCurrentCampaign: vi.fn().mockResolvedValue(openCampaign),
+    getLemmaMeta: vi.fn().mockResolvedValue({ priorSenses: [], priorSubTags: [] }),
+    putLemmaSubTags: vi.fn().mockResolvedValue(undefined),
     ...overrides,
   };
 }

@@ -3,6 +3,7 @@
 import type {
   Campaign,
   ItemPair,
+  LemmaMeta,
   PairRatingResult,
   PairRatingSubmission,
   RatingResult,
@@ -68,6 +69,13 @@ export class UndoUnavailableError extends Error {
   constructor() {
     super('undo unavailable');
     this.name = 'UndoUnavailableError';
+  }
+}
+
+export class MaintainerOnlyError extends Error {
+  constructor() {
+    super('maintainer-only operation');
+    this.name = 'MaintainerOnlyError';
   }
 }
 
@@ -195,6 +203,27 @@ export function createHttpSurveyClient(options: HttpSurveyClientOptions): Survey
     return (await res.json()) as SurveyContribution[];
   };
 
+  const getLemmaMeta: SurveyClient['getLemmaMeta'] = async (mot: string) => {
+    const res = await fetchImpl(`${base}/v1/lemma-meta/${encodeURIComponent(mot)}`, {
+      credentials: 'include',
+    });
+    if (!res.ok) throw new Error(`getLemmaMeta failed: ${res.status}`);
+    return (await res.json()) as LemmaMeta;
+  };
+
+  const putLemmaSubTags: SurveyClient['putLemmaSubTags'] = async (mot, subTags) => {
+    const res = await fetchImpl(`${base}/v1/lemma-meta/${encodeURIComponent(mot)}`, {
+      method: 'PUT',
+      credentials: 'include',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ subTags: [...subTags] }),
+    });
+    if (res.status === 204) return;
+    if (res.status === 401) throw new SignInRequiredError();
+    if (res.status === 403) throw new MaintainerOnlyError();
+    throw new Error(`putLemmaSubTags failed: ${res.status}`);
+  };
+
   const patchPreferences: SurveyClient['patchPreferences'] = async (body: SurveyPreferencesPatch) => {
     const res = await fetchImpl(`${base}/v1/me/preferences`, {
       method: 'PATCH',
@@ -216,6 +245,8 @@ export function createHttpSurveyClient(options: HttpSurveyClientOptions): Survey
     getContributions,
     patchPreferences,
     getCurrentCampaign,
+    getLemmaMeta,
+    putLemmaSubTags,
   };
 }
 

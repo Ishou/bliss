@@ -52,6 +52,7 @@ export {
   AlreadyRatedError,
   UndoExpiredError,
   UndoUnavailableError,
+  MaintainerOnlyError,
   type HttpSurveyClientOptions,
 } from './api/survey/client';
 export {
