@@ -30,6 +30,16 @@ def _write_words(tmp_path: Path, words: list[str]) -> Path:
     return path
 
 
+def _write_freqs(tmp_path: Path, freqs: dict[str, int]) -> Path:
+    """Build a minimal --frequencies input mirroring words-fr.csv's word/frequency columns."""
+    path = tmp_path / "words-fr.csv"
+    with path.open("w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=["word", "frequency"])
+        w.writeheader()
+        w.writerows({"word": word, "frequency": freq} for word, freq in freqs.items())
+    return path
+
+
 def _read_out(path: Path) -> list[tuple[str, str]]:
     """Read the output CSV back into a list of (mot, pos) tuples."""
     with path.open(encoding="utf-8") as f:
@@ -95,6 +105,48 @@ def test_accented_input_passes_through(tmp_path, monkeypatch):
     )
     assert bpl.main() == 0
     assert _read_out(out) == [("SOLDÉ", "adjectif")]
+
+
+def test_accented_variant_wins_on_grammalecte_frequency(tmp_path, monkeypatch):
+    """Both `riviere` and `rivière` are live DBnary nouns; grammalecte freq breaks the tie to `RIVIÈRE`."""
+    dbnary = _write_dbnary(
+        tmp_path,
+        [
+            {"lemma": "riviere", "pos": "noun", "definition": "Orthographe ancienne de rivière."},
+            {"lemma": "rivière", "pos": "noun", "definition": "Cours d'eau."},
+        ],
+    )
+    words = _write_words(tmp_path, ["RIVIERE"])
+    freqs = _write_freqs(tmp_path, {"rivière": 7_800_000})
+    out = tmp_path / "out.csv"
+    monkeypatch.setattr(
+        sys, "argv",
+        ["build_pos_lemmas.py", "--words", str(words), "--dbnary", str(dbnary),
+         "--frequencies", str(freqs), "--out", str(out)],
+    )
+    assert bpl.main() == 0
+    assert _read_out(out) == [("RIVIÈRE", "nom_commun")]
+
+
+def test_desuet_only_variant_dropped(tmp_path, monkeypatch):
+    """A lemma whose every sense is désuet-tagged is dropped, leaving the live accented twin to win."""
+    dbnary = _write_dbnary(
+        tmp_path,
+        [
+            {"lemma": "mere", "pos": "noun", "definition": "(Vieilli) Forme ancienne."},
+            {"lemma": "mère", "pos": "noun", "definition": "Femme qui a enfanté."},
+        ],
+    )
+    words = _write_words(tmp_path, ["MERE"])
+    freqs = _write_freqs(tmp_path, {})  # no freq data; single live variant resolves at step 1
+    out = tmp_path / "out.csv"
+    monkeypatch.setattr(
+        sys, "argv",
+        ["build_pos_lemmas.py", "--words", str(words), "--dbnary", str(dbnary),
+         "--frequencies", str(freqs), "--out", str(out)],
+    )
+    assert bpl.main() == 0
+    assert _read_out(out) == [("MÈRE", "nom_commun")]
 
 
 def test_unknown_word_reported_to_stderr(tmp_path, monkeypatch, capsys):

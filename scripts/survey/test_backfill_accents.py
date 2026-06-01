@@ -63,6 +63,15 @@ def _dbnary(tmp_path: Path, rows: list[dict[str, str]]) -> Path:
     return path
 
 
+def _frequencies(tmp_path: Path, freqs: dict[str, int]) -> dict[str, int]:
+    path = tmp_path / "words-fr.csv"
+    with path.open("w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=["word", "frequency"])
+        w.writeheader()
+        w.writerows({"word": word, "frequency": freq} for word, freq in freqs.items())
+    return ba.load_frequencies(path)
+
+
 def _insert_item(conn, mot: str, pos: str = "adjectif") -> _uuid.UUID:
     # tier omitted: 'mid' default; V1 CHECK requires lowercase ('high','mid','low','excluded').
     item_id = _uuid.uuid4()
@@ -99,6 +108,41 @@ def test_backfill_recovers_accents_from_dbnary(conn, tmp_path):
     summary = ba.backfill(conn, lookup)
     assert summary == {"updated": 1, "skipped": 0, "already": 0}
     assert _fetch_mot(conn, item_id) == "SOLDÉ"
+
+
+def test_backfill_keeps_accent_via_grammalecte_tiebreak(conn, tmp_path):
+    """`RIVIERE` with both DBnary twins live resolves to `RIVIÈRE` on grammalecte frequency, not stripped."""
+    item_id = _insert_item(conn, "RIVIERE", pos="nom_commun")
+    dbnary = _dbnary(
+        tmp_path,
+        [
+            {"lemma": "riviere", "pos": "noun", "definition": "Orthographe ancienne de rivière."},
+            {"lemma": "rivière", "pos": "noun", "definition": "Cours d'eau."},
+        ],
+    )
+    frequencies = _frequencies(tmp_path, {"rivière": 7_800_000})
+    lookup = ba.load_lookup(dbnary, frequencies)
+
+    summary = ba.backfill(conn, lookup)
+    assert summary == {"updated": 1, "skipped": 0, "already": 0}
+    assert _fetch_mot(conn, item_id) == "RIVIÈRE"
+
+
+def test_backfill_drops_desuet_only_variant(conn, tmp_path):
+    """A désuet-only twin is dropped so the live accented variant wins even with no frequency data."""
+    item_id = _insert_item(conn, "MERE", pos="nom_commun")
+    dbnary = _dbnary(
+        tmp_path,
+        [
+            {"lemma": "mere", "pos": "noun", "definition": "(Vieilli) Forme ancienne."},
+            {"lemma": "mère", "pos": "noun", "definition": "Femme qui a enfanté."},
+        ],
+    )
+    lookup = ba.load_lookup(dbnary, _frequencies(tmp_path, {}))
+
+    summary = ba.backfill(conn, lookup)
+    assert summary == {"updated": 1, "skipped": 0, "already": 0}
+    assert _fetch_mot(conn, item_id) == "MÈRE"
 
 
 def test_backfill_skips_when_no_dbnary_match(conn, tmp_path, capsys):
