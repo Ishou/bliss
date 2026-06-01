@@ -82,6 +82,7 @@ class SubmitRatingUseCaseTest {
     private fun newUseCase(
         clock: Clock = this.clock,
         roles: InMemoryMaintainerRoleRepository = InMemoryMaintainerRoleRepository(),
+        wordMeta: InMemoryWordMetaRepository = InMemoryWordMetaRepository(),
     ) = Quad(
         InMemorySurveyItemRepository(),
         InMemoryRatingRepository(),
@@ -102,7 +103,7 @@ class SubmitRatingUseCaseTest {
                 actions = InMemoryActionLogRepository(),
                 tokens = TokenGenerator { "fixed-token" },
                 tx = passThroughTransactionManager,
-                wordMeta = InMemoryWordMetaRepository(),
+                wordMeta = wordMeta,
             )
         Quintet(uc, items, ratings, proposed, progress)
     }
@@ -404,5 +405,85 @@ class SubmitRatingUseCaseTest {
             val userId = UserId(UUID.randomUUID())
             uc.execute(SubmitRatingCommand(parent.id, userId, 5, 3, null, null, 700))
             assertThat(progress.progress[userId]?.itemsRated).isEqualTo(1)
+        }
+
+    @Test
+    fun `anon plus targetSenses is forbidden`() =
+        runTest {
+            val (uc, items, _, _, _) = newUseCase()
+            val parent = seedItem(items)
+            val r =
+                uc.execute(
+                    SubmitRatingCommand(
+                        itemId = parent.id,
+                        userId = null,
+                        qualite = 3,
+                        difficulte = 3,
+                        flag = null,
+                        correctif = null,
+                        latencyMs = 1000,
+                        targetSenses = listOf("some gloss"),
+                    ),
+                )
+            assertThat(r).isEqualTo(SubmitRatingResult.AnonTargetSensesForbidden)
+        }
+
+    @Test
+    fun `auth rating with targetSenses merges glosses into sense inventory`() =
+        runTest {
+            val wordMeta = InMemoryWordMetaRepository()
+            val (uc, items, _, _, _) = newUseCase(wordMeta = wordMeta)
+            val parent = seedItem(items)
+            val userId = UserId(UUID.randomUUID())
+            val r =
+                uc.execute(
+                    SubmitRatingCommand(
+                        itemId = parent.id,
+                        userId = userId,
+                        qualite = 4,
+                        difficulte = 2,
+                        flag = null,
+                        correctif = null,
+                        latencyMs = 1000,
+                        targetSenses = listOf("fruit rouge", "fruit vert"),
+                    ),
+                )
+            assertThat(r).isInstanceOf(SubmitRatingResult.Accepted::class)
+            assertThat(wordMeta.rows[parent.mot]?.senseInventory)
+                .isEqualTo(listOf("fruit rouge", "fruit vert"))
+        }
+
+    @Test
+    fun `mergeIntoSenseInventory deduplicates by normalized form preserving first-seen spelling`() =
+        runTest {
+            val wordMeta = InMemoryWordMetaRepository()
+            kotlinx.coroutines.runBlocking {
+                wordMeta.save(
+                    com.bliss.survey.domain.model.WordMeta(
+                        mot = "POMME",
+                        subTags = emptyList(),
+                        senseInventory = listOf("Fruit du pommier"),
+                        updatedAt = fixedNow,
+                    ),
+                )
+            }
+            val (uc, items, _, _, _) = newUseCase(wordMeta = wordMeta)
+            val parent = seedItem(items)
+            val userId = UserId(UUID.randomUUID())
+            uc.execute(
+                SubmitRatingCommand(
+                    itemId = parent.id,
+                    userId = userId,
+                    qualite = 4,
+                    difficulte = 2,
+                    flag = null,
+                    correctif = null,
+                    latencyMs = 1000,
+                    targetSenses = listOf("FRUIT DU POMMIER", "Pomme golden"),
+                ),
+            )
+            // incoming first; "FRUIT DU POMMIER" and "Fruit du pommier" share a normalized key — incoming wins
+            assertThat(wordMeta.rows["POMME"]?.senseInventory)
+                .isEqualTo(listOf("FRUIT DU POMMIER", "Pomme golden"))
         }
 }
