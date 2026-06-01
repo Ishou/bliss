@@ -8,20 +8,27 @@ agent) who has just cloned the repo.
 
 ## One-time setup
 
-Activate the repo-managed git hooks:
+Activate the repo-managed git hooks (`make hooks`, or directly):
 
 ```sh
 ./scripts/setup-hooks.sh
 ```
 
-This points `core.hooksPath` at `.githooks/`. The `pre-commit` hook
-runs [`gitleaks`](https://github.com/gitleaks/gitleaks) against staged
-changes and aborts the commit on any finding. Install gitleaks first
-(`brew install gitleaks` on macOS or Linux Homebrew; otherwise grab a
-release binary from upstream and put it on your `PATH`). The same scan
-runs in CI via `.github/workflows/secret-scan.yml`, so a bypassed local
-hook is still caught at the server side — but the hook is what keeps
-secrets off your local machine's history in the first place.
+This points `core.hooksPath` at `.githooks/`. The `pre-commit` hook does
+two things:
+
+1. **Worktree guard.** It refuses any commit made from the main checkout,
+   because feature work happens in a git worktree under the parallel-agent
+   workflow (ADR-0001), not the shared checkout. Create one with
+   `git worktree add ../bliss-<feature> -b <type>/<name>`. For a deliberate
+   one-off commit in the main checkout, prefix `ALLOW_MAIN_COMMIT=1`.
+2. **Secret scan.** It runs [`gitleaks`](https://github.com/gitleaks/gitleaks)
+   against staged changes and aborts on any finding. Install gitleaks first
+   (`brew install gitleaks` on macOS or Linux Homebrew; otherwise grab a
+   release binary from upstream and put it on your `PATH`). The same scan
+   runs in CI via `.github/workflows/secret-scan.yml`, so a bypassed local
+   hook is still caught at the server side — but the hook is what keeps
+   secrets off your local machine's history in the first place.
 
 ## Branches
 

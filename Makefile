@@ -12,9 +12,14 @@ SHELL := /usr/bin/env bash
 
 .DEFAULT_GOAL := help
 
-## Local cluster (k3d, mirrors prod k3s — see docs/local-development.md)
+## Developer setup
 
-.PHONY: cluster-up cluster-down cluster-reset cluster-bootstrap deploy-local dev cluster-status help
+.PHONY: hooks cluster-up cluster-down cluster-reset cluster-bootstrap deploy-local dev cluster-status help
+
+hooks:             ## Enable repo-managed git hooks (core.hooksPath = .githooks)
+	./scripts/setup-hooks.sh
+
+## Local cluster (k3d, mirrors prod k3s — see docs/local-development.md)
 
 cluster-up:        ## Create the local k3d cluster (idempotent)
 	./scripts/local-cluster.sh up
@@ -31,7 +36,7 @@ cluster-bootstrap: ## Install ingress-nginx, cert-manager, CloudNative-PG via He
 deploy-local:      ## Build grid-api + survey-api images, import into k3d, helm install
 	./scripts/local-cluster.sh deploy
 
-dev:               ## Start full-stack dev (API hot reload + Vite HMR). FORCE=1 kills strays on 7777/7778/5173.
+dev: hooks         ## Start full-stack dev (API hot reload + Vite HMR). FORCE=1 kills strays on 7777/7778/5173.
 	./scripts/local-cluster.sh dev $(if $(FORCE),--force)
 
 cluster-status:    ## kubectl get nodes,pods -A against the local context
