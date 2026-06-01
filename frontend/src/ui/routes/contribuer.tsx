@@ -21,7 +21,7 @@ function ContribuerSkeleton() {
   return (
     <ContentPage>
       <article className={skeletonArticleStyles}>
-        <h1 className={skeletonHeadingStyles}>Campagne des indices</h1>
+        <h1 className={skeletonHeadingStyles}>Campagne de qualité des indices</h1>
         <p className={skeletonIntroStyles}>
           Notez la qualité des définitions en un clic : mauvaise, à passer, ou bonne.
           Vos retours alimentent la sélection des indices.
