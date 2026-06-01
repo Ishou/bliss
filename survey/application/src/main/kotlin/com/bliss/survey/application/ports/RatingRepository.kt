@@ -26,8 +26,6 @@ interface RatingRepository {
         settledBefore: Instant,
     ): List<RatingAggregate>
 
-    // Raw senses + sub-tags across prior ratings of items sharing this lemma, most-recent first.
-    // Dedup/normalization is the caller's concern (GetLemmaMetaUseCase).
     suspend fun priorMetaForMot(mot: String): PriorLemmaMeta
 }
 

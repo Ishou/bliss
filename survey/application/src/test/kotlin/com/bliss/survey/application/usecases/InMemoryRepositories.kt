@@ -194,6 +194,7 @@ class InMemoryPairRatingRepository : PairRatingRepository {
 class InMemoryRatingRepository : RatingRepository {
     val ratings: MutableList<Rating> = mutableListOf()
     val anonymisedUsers: MutableSet<UserId> = mutableSetOf()
+    val itemIdToMot: MutableMap<ItemId, String> = mutableMapOf()
 
     override suspend fun findAuthRating(
         itemId: ItemId,
@@ -233,11 +234,13 @@ class InMemoryRatingRepository : RatingRepository {
         settledBefore: Instant,
     ): List<RatingAggregate> = aggregateOverride ?: emptyList()
 
-    override suspend fun priorMetaForMot(mot: String): PriorLemmaMeta =
-        PriorLemmaMeta(
-            senses = ratings.mapNotNull { it.targetSense },
-            subTags = ratings.flatMap { it.subTags },
+    override suspend fun priorMetaForMot(mot: String): PriorLemmaMeta {
+        val matched = ratings.filter { itemIdToMot[it.itemId] == mot }
+        return PriorLemmaMeta(
+            senses = matched.mapNotNull { it.targetSense },
+            subTags = matched.flatMap { it.subTags },
         )
+    }
 }
 
 class InMemoryProposedByRepository : ProposedByRepository {
