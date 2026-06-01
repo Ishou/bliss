@@ -8,7 +8,7 @@ const sampleItem: SurveyItem = {
   mot: 'CHAT',
   definition: 'Animal domestique à moustaches',
   pos: 'nom_commun',
-  categorie: 'animals',
+  categorie: 'faune_flore',
   style: 'definition_directe',
   forceClaimed: 2,
   longueur: 4,
@@ -17,16 +17,23 @@ const sampleItem: SurveyItem = {
 };
 
 describe('RatingCard verdict picker', () => {
-  it('renders mot, definition, chips, and four verdict buttons', () => {
+  it('renders mot, definition, pos chip, and four verdict buttons', () => {
     const { container } = render(<RatingCard item={sampleItem} onVerdict={() => Promise.resolve()} onCorriger={async () => {}} />);
     expect(screen.getByRole('heading', { name: 'CHAT' })).toBeInTheDocument();
     expect(screen.getByText(/Animal domestique à moustaches/i)).toBeInTheDocument();
     expect(container.querySelector('[data-chip="pos"]')?.textContent).toBe('Nom commun');
-    expect(container.querySelector('[data-chip="categorie"]')?.textContent).toBe('Animaux');
     expect(container.querySelector('[data-verdict="BAD"]')).not.toBeNull();
     expect(container.querySelector('[data-verdict="SKIP"]')).not.toBeNull();
     expect(container.querySelector('[data-verdict="GOOD"]')).not.toBeNull();
     expect(container.querySelector('[data-verdict="CORRIGER"]')).not.toBeNull();
+  });
+
+  it('seeds the category multi-select from the item machine prior', () => {
+    const { container } = render(<RatingCard item={sampleItem} onVerdict={() => Promise.resolve()} onCorriger={async () => {}} />);
+    const seeded = container.querySelector<HTMLInputElement>('[data-categorie="faune_flore"] input');
+    expect(seeded?.checked).toBe(true);
+    const unselected = container.querySelector<HTMLInputElement>('[data-categorie="objet"] input');
+    expect(unselected?.checked).toBe(false);
   });
 
   it('exposes the Verdict role=group with aria-keyshortcuts j k l', () => {
@@ -61,7 +68,7 @@ describe('RatingCard verdict picker', () => {
     expect(onVerdict).toHaveBeenCalledTimes(1);
     expect(onVerdict.mock.calls[0][0]).toBe('GOOD');
     expect(onVerdict.mock.calls[0][1]).toBeGreaterThanOrEqual(0);
-    expect(onVerdict.mock.calls[0][2]).toEqual({ targetSenses: [] });
+    expect(onVerdict.mock.calls[0][2]).toEqual({ targetCategories: ['faune_flore'], targetSense: '', isMultisense: false, subTags: [] });
   });
 
   it('clicking BAD invokes onVerdict("BAD")', async () => {
@@ -70,7 +77,7 @@ describe('RatingCard verdict picker', () => {
     await act(async () => {
       fireEvent.click(container.querySelector('[data-verdict="BAD"]')!);
     });
-    expect(onVerdict).toHaveBeenCalledWith('BAD', expect.any(Number), { targetSenses: [] });
+    expect(onVerdict).toHaveBeenCalledWith('BAD', expect.any(Number), { targetCategories: ['faune_flore'], targetSense: '', isMultisense: false, subTags: [] });
   });
 
   it('clicking SKIP invokes onVerdict("SKIP")', async () => {
@@ -79,7 +86,7 @@ describe('RatingCard verdict picker', () => {
     await act(async () => {
       fireEvent.click(container.querySelector('[data-verdict="SKIP"]')!);
     });
-    expect(onVerdict).toHaveBeenCalledWith('SKIP', expect.any(Number), { targetSenses: [] });
+    expect(onVerdict).toHaveBeenCalledWith('SKIP', expect.any(Number), { targetCategories: ['faune_flore'], targetSense: '', isMultisense: false, subTags: [] });
   });
 
   it('pressing j/k/l triggers BAD/SKIP/GOOD via the document-level keydown handler', async () => {
@@ -88,15 +95,15 @@ describe('RatingCard verdict picker', () => {
     await act(async () => {
       fireEvent.keyDown(window, { key: 'j' });
     });
-    expect(onVerdict).toHaveBeenLastCalledWith('BAD', expect.any(Number), { targetSenses: [] });
+    expect(onVerdict).toHaveBeenLastCalledWith('BAD', expect.any(Number), { targetCategories: ['faune_flore'], targetSense: '', isMultisense: false, subTags: [] });
     await act(async () => {
       fireEvent.keyDown(window, { key: 'k' });
     });
-    expect(onVerdict).toHaveBeenLastCalledWith('SKIP', expect.any(Number), { targetSenses: [] });
+    expect(onVerdict).toHaveBeenLastCalledWith('SKIP', expect.any(Number), { targetCategories: ['faune_flore'], targetSense: '', isMultisense: false, subTags: [] });
     await act(async () => {
       fireEvent.keyDown(window, { key: 'l' });
     });
-    expect(onVerdict).toHaveBeenLastCalledWith('GOOD', expect.any(Number), { targetSenses: [] });
+    expect(onVerdict).toHaveBeenLastCalledWith('GOOD', expect.any(Number), { targetCategories: ['faune_flore'], targetSense: '', isMultisense: false, subTags: [] });
   });
 
   it('ignores modifier-key chords (Cmd/Ctrl/Alt + j)', async () => {
@@ -148,7 +155,7 @@ describe('RatingCard verdict picker', () => {
       'Une définition corrigée plus précise',
       sampleItem.pos,
       expect.any(Number),
-      { targetSenses: [] },
+      { targetCategories: ['faune_flore'], targetSense: '', isMultisense: false, subTags: [] },
     );
     expect(onVerdict).not.toHaveBeenCalled();
   });
@@ -181,7 +188,7 @@ describe('RatingCard verdict picker', () => {
     await act(async () => {
       fireEvent.click(container.querySelector('[data-testid="correctif-submit"]') as HTMLButtonElement);
     });
-    expect(onCorriger).toHaveBeenCalledWith(sampleItem.definition, 'polyvalent', expect.any(Number), { targetSenses: [] });
+    expect(onCorriger).toHaveBeenCalledWith(sampleItem.definition, 'polyvalent', expect.any(Number), { targetCategories: ['faune_flore'], targetSense: '', isMultisense: false, subTags: [] });
   });
 
   it('Corriger submit is a no-op when text equals the original definition', async () => {

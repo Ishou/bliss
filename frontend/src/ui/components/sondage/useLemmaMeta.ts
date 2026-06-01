@@ -17,6 +17,11 @@ interface CacheEntry {
 // Module-scoped cache so re-renders / quick re-mounts (next item with same mot) don't re-fetch.
 const cache = new Map<string, CacheEntry>();
 
+// Test-only: the module cache survives across renders, so suites must reset it between cases.
+export function clearLemmaMetaCache(): void {
+  cache.clear();
+}
+
 export function useLemmaMeta(
   client: SurveyClient | null | undefined,
   mot: string,

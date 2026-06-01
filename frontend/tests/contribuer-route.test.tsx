@@ -24,7 +24,7 @@ const sampleItem: SurveyItem = {
   mot: 'CHAT',
   definition: 'Animal domestique à moustaches',
   pos: 'nom_commun',
-  categorie: 'animals',
+  categorie: 'faune_flore',
   style: 'definition_directe',
   forceClaimed: 2,
   longueur: 4,
@@ -73,7 +73,6 @@ function stubSurveyClient(overrides: Partial<SurveyClient> = {}): SurveyClient {
       closedAt: null,
     }),
     getLemmaMeta: vi.fn().mockResolvedValue({ priorSenses: [], priorSubTags: [] }),
-    putLemmaSubTags: vi.fn().mockResolvedValue(undefined),
     ...overrides,
   };
 }
@@ -257,6 +256,11 @@ describe('Contribuer route', () => {
     expect(payload.difficulte).toBe(3);
     expect(payload.correctif).toBeUndefined();
     expect(payload.flag).toBeUndefined();
+    // ADR-0061 §5: anon submissions carry no meta annotation, only the required isMultisense=false.
+    expect(payload.isMultisense).toBe(false);
+    expect(payload.targetCategories).toBeUndefined();
+    expect(payload.targetSense).toBeUndefined();
+    expect(payload.subTags).toBeUndefined();
 
     const verdictEventCalls = analytics.trackEvent.mock.calls.filter(
       ([category, action]) => category === 'survey' && action === 'verdict_submitted',
@@ -372,6 +376,9 @@ describe('Contribuer route', () => {
     expect(calledItemId).toBe(sampleItem.itemId);
     expect(payload.qualite).toBe(3);
     expect(payload.correctif).toEqual({ text: 'Une définition corrigée', style: sampleItem.style, pos: sampleItem.pos });
+    // Auth path threads the seeded category prior; isMultisense always sent.
+    expect(payload.targetCategories).toEqual(['faune_flore']);
+    expect(payload.isMultisense).toBe(false);
 
     const correctifEventCalls = analytics.trackEvent.mock.calls.filter(
       ([category, action]) => category === 'survey' && action === 'correctif_proposed',

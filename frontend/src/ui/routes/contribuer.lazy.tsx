@@ -9,7 +9,7 @@ import { campaignDisplayName } from '@/application/survey';
 import type { LikertScore, RatingSubmission, SurveyItem, SurveyPos } from '@/application/survey';
 import { useAuth } from '@/ui/components/auth';
 import { ContentPage } from '@/ui/components/layout';
-import type { Verdict } from '@/ui/components/sondage';
+import type { RatingMeta, Verdict } from '@/ui/components/sondage';
 import { LockBanner, RatingCard, SignInBanner, UndoBar, useCampaignStatus } from '@/ui/components/sondage';
 import { Route as ParentRoute } from './contribuer';
 
@@ -134,10 +134,26 @@ function ContribuerPage() {
     void loadNext();
   }, [state.status, loadNext]);
 
+  // ADR-0061 §5: meta annotation is auth-only — anon submissions carrying any meta field get 401.
+  // isMultisense is required on the wire (schema default false); for anon we send only base + false.
+  function metaFields(meta: RatingMeta): Pick<
+    RatingSubmission,
+    'targetCategories' | 'targetSense' | 'isMultisense' | 'subTags'
+  > {
+    if (!isAuth) return { isMultisense: false };
+    const sense = meta.isMultisense ? '' : meta.targetSense.trim();
+    return {
+      isMultisense: meta.isMultisense,
+      ...(meta.targetCategories.length > 0 ? { targetCategories: [...meta.targetCategories] } : {}),
+      ...(sense.length > 0 ? { targetSense: sense } : {}),
+      ...(meta.subTags.length > 0 ? { subTags: [...meta.subTags] } : {}),
+    };
+  }
+
   async function onVerdict(
     verdict: Verdict,
     latencyMs: number,
-    meta: { readonly targetSenses: ReadonlyArray<string> },
+    meta: RatingMeta,
   ): Promise<void> {
     if (!surveyClient || !item) return;
     const currentItem = item;
@@ -152,12 +168,11 @@ function ContribuerPage() {
       await loadNext();
       return;
     }
-    const senses = isAuth && meta.targetSenses.length > 0 ? [...meta.targetSenses] : undefined;
     const payload: RatingSubmission = {
       qualite: verdict === 'GOOD' ? 5 : 1,
       difficulte: DIFFICULTE_PLACEHOLDER,
       latencyMs,
-      ...(senses ? { targetSenses: senses } : {}),
+      ...metaFields(meta),
     };
     try {
       const result = await surveyClient.submitRating(currentItem.itemId, payload);
@@ -188,7 +203,7 @@ function ContribuerPage() {
     correctedText: string,
     pos: SurveyPos,
     latencyMs: number,
-    meta: { readonly targetSenses: ReadonlyArray<string> },
+    meta: RatingMeta,
   ): Promise<void> {
     if (!surveyClient || !item) return;
     if (!isAuth) {
@@ -196,14 +211,13 @@ function ContribuerPage() {
       return;
     }
     const currentItem = item;
-    const senses = meta.targetSenses.length > 0 ? [...meta.targetSenses] : undefined;
     // qualite=3 stays neutral on the original; the server patches POS in place or creates an auto-GOOD rater_proposed item per ADR-0056.
     const payload: RatingSubmission = {
       qualite: 3,
       difficulte: DIFFICULTE_PLACEHOLDER,
       latencyMs,
       correctif: { text: correctedText, style: currentItem.style, pos },
-      ...(senses ? { targetSenses: senses } : {}),
+      ...metaFields(meta),
     };
     try {
       const result = await surveyClient.submitRating(currentItem.itemId, payload);

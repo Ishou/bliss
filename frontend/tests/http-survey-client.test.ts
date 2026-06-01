@@ -20,7 +20,7 @@ const sampleItem = {
   mot: 'CHAT',
   definition: 'Felin domestique',
   pos: 'nom_commun',
-  categorie: 'animals',
+  categorie: 'faune_flore',
   style: 'definition_directe',
   forceClaimed: 2,
   longueur: 4,
@@ -82,9 +82,13 @@ describe('HttpSurveyClient.submitRating', () => {
     };
     server.use(
       http.post(`${BASE}/v1/items/${itemId}/rating`, async ({ request }) => {
-        const body = (await request.json()) as { qualite: number; latencyMs: number };
+        const body = (await request.json()) as Record<string, unknown>;
         expect(body.qualite).toBe(4);
         expect(body.latencyMs).toBeGreaterThanOrEqual(0);
+        expect(body.isMultisense).toBe(true);
+        expect(body.targetCategories).toEqual(['faune_flore']);
+        expect(body.targetSense).toBe('animal félin');
+        expect(body.subTags).toEqual(['félin']);
         return HttpResponse.json(envelope, { status: 201 });
       }),
     );
@@ -92,6 +96,10 @@ describe('HttpSurveyClient.submitRating', () => {
       qualite: 4,
       difficulte: 3,
       latencyMs: 1500,
+      isMultisense: true,
+      targetCategories: ['faune_flore'],
+      targetSense: 'animal félin',
+      subTags: ['félin'],
     });
     expect(result).toEqual(envelope);
   });
@@ -103,7 +111,7 @@ describe('HttpSurveyClient.submitRating', () => {
       ),
     );
     await expect(
-      client.submitRating(itemId, { qualite: 4, difficulte: 3, latencyMs: 0 }),
+      client.submitRating(itemId, { qualite: 4, difficulte: 3, latencyMs: 0, isMultisense: false }),
     ).rejects.toBeInstanceOf(SignInRequiredError);
   });
 
@@ -129,6 +137,7 @@ describe('HttpSurveyClient.submitRating', () => {
         difficulte: 3,
         correctif: { text: 'meilleure définition', style: 'definition_directe' },
         latencyMs: 1000,
+        isMultisense: false,
       }),
     ).rejects.toMatchObject({ name: 'CorrectifRejectedError', detail: rejection });
   });
@@ -146,7 +155,7 @@ describe('HttpSurveyClient.submitRating', () => {
       ),
     );
     try {
-      await client.submitRating(itemId, { qualite: 1, difficulte: 1, latencyMs: 0 });
+      await client.submitRating(itemId, { qualite: 1, difficulte: 1, latencyMs: 0, isMultisense: false });
       expect.unreachable('expected AlreadyRatedError');
     } catch (err) {
       expect(err).toBeInstanceOf(AlreadyRatedError);
@@ -180,7 +189,7 @@ describe('HttpSurveyClient.getContributions', () => {
         mot: 'CHIEN',
         definition: 'Meilleur ami de l\'homme',
         pos: 'nom_commun',
-        categorie: 'animals',
+        categorie: 'faune_flore',
         style: 'definition_directe',
         optedOut: false,
         kCoverage: 5,
@@ -381,34 +390,5 @@ describe('HttpSurveyClient.getLemmaMeta', () => {
     );
     const meta = await client.getLemmaMeta('CHAT');
     expect(meta).toEqual({ priorSenses: ['félin'], priorSubTags: ['domestique'] });
-  });
-});
-
-describe('HttpSurveyClient.putLemmaSubTags', () => {
-  it('PUTs the subTags and resolves on 204', async () => {
-    let body: { subTags?: string[] } = {};
-    server.use(
-      http.put(`${BASE}/v1/lemma-meta/CHAT`, async ({ request }) => {
-        body = (await request.json()) as { subTags: string[] };
-        return new HttpResponse(null, { status: 204 });
-      }),
-    );
-    await client.putLemmaSubTags('CHAT', ['félin', 'domestique']);
-    expect(body).toEqual({ subTags: ['félin', 'domestique'] });
-  });
-
-  it('throws MaintainerOnlyError on 403', async () => {
-    const { MaintainerOnlyError } = await import('@/infrastructure');
-    server.use(
-      http.put(`${BASE}/v1/lemma-meta/CHAT`, () => new HttpResponse(null, { status: 403 })),
-    );
-    await expect(client.putLemmaSubTags('CHAT', [])).rejects.toBeInstanceOf(MaintainerOnlyError);
-  });
-
-  it('throws SignInRequiredError on 401', async () => {
-    server.use(
-      http.put(`${BASE}/v1/lemma-meta/CHAT`, () => new HttpResponse(null, { status: 401 })),
-    );
-    await expect(client.putLemmaSubTags('CHAT', [])).rejects.toBeInstanceOf(SignInRequiredError);
   });
 });
