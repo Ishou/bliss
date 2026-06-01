@@ -8,7 +8,6 @@ import csv
 import sys
 import unicodedata
 from pathlib import Path
-from typing import Iterable
 
 import psycopg
 
@@ -47,7 +46,7 @@ def load_lookup(dbnary_path: Path) -> dict[tuple[str, str], str]:
     return lookup
 
 
-def backfill(conn, lookup: dict[tuple[str, str], str], dry_run: bool = False) -> dict:
+def backfill(conn, lookup: dict[tuple[str, str], str], dry_run: bool = False) -> dict[str, int]:
     """Walk survey_items, UPDATE mot for rows whose (stripped, pos) is in lookup."""
     updated = 0
     skipped = 0

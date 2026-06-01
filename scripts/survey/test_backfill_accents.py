@@ -47,6 +47,8 @@ def pg():
 def conn(pg):
     with psycopg.connect(pg.get_connection_url(driver=None), autocommit=False) as c:
         yield c
+        # Roll back any aborted txn left by a failing test so the TRUNCATE can run.
+        c.rollback()
         with c.cursor() as cur:
             cur.execute("TRUNCATE campaigns, ratings, pair_ratings, survey_items CASCADE")
         c.commit()
