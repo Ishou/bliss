@@ -12,7 +12,7 @@ from pathlib import Path
 import psycopg
 
 
-# Mirrors build_pos_lemmas._strip — keep in sync.
+# Must produce the same key used when building the lookup; any divergence silently drops rows.
 def _strip(s: str) -> str:
     return "".join(
         c for c in unicodedata.normalize("NFD", s) if unicodedata.category(c) != "Mn"
