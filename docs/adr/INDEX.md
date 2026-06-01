@@ -85,7 +85,7 @@ ADR-0060  identity/**                              Identity user roles + UserRol
 ADR-0061  survey/**/persistence/V11__*.sql          V11 migrate: drop survey_word_meta, collapse categorie (48→18 classes), add per-rating target_categories/target_sense/is_multisense/sub_tags
 ADR-0061  survey/**/text/GlossNormalizer.kt        Soft normalization rules for autocomplete + inventory dedup
 ADR-0061  survey/api/openapi.yaml                  GET /v1/lemma-meta/{mot} aggregates prior ratings; PUT /v1/lemma-meta removed; RatingRequest carries target_categories/target_sense/is_multisense/sub_tags
-ADR-0061  frontend/src/ui/components/sondage/**    Sense + sub-tag chip inputs; difficulté default = 3
+ADR-0061  frontend/src/ui/components/sondage/**    Category multi-select (19 classes) + single sense gloss + is_multisense flag + sub-tag chips; difficulté default = 3
 ```
 
 ## Adding entries
