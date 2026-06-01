@@ -1,5 +1,4 @@
-# Cloudflare Pages _redirects. Copied verbatim from `frontend/public/` into
-# `dist/` at build time by Vite's static-asset pass. First match wins.
+# Cloudflare Pages _redirects — copied to dist/ at build time by Vite. First match wins.
 #
 # 404.html turns off SPA fallback for unmatched paths — see ADR-0004
 #
