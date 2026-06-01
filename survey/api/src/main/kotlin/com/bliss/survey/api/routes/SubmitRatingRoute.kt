@@ -11,6 +11,7 @@ import com.bliss.survey.application.usecases.CorrectifInput
 import com.bliss.survey.application.usecases.SubmitRatingCommand
 import com.bliss.survey.application.usecases.SubmitRatingResult
 import com.bliss.survey.application.usecases.SubmitRatingUseCase
+import com.bliss.survey.domain.model.Categorie
 import com.bliss.survey.domain.model.FlagReason
 import com.bliss.survey.domain.model.ItemId
 import com.bliss.survey.domain.model.Pos
@@ -82,6 +83,20 @@ fun Route.submitRatingRoute(execute: suspend (SubmitRatingCommand) -> SubmitRati
             )
         }
 
+        val rawCategories = body.targetCategories ?: emptyList()
+        val targetCategories = rawCategories.map { runCatching { Categorie.valueOf(it.uppercase()) }.getOrNull() }
+        if (targetCategories.any { it == null }) {
+            return@post call.respondProblem(
+                HttpStatusCode.BadRequest,
+                ProblemDetails(
+                    type = "about:blank",
+                    title = "invalid categorie",
+                    status = HttpStatusCode.BadRequest.value,
+                    detail = "targetCategories entries must be known Categorie values",
+                ),
+            )
+        }
+
         val cmd =
             SubmitRatingCommand(
                 itemId = ItemId(itemUuid),
@@ -91,7 +106,10 @@ fun Route.submitRatingRoute(execute: suspend (SubmitRatingCommand) -> SubmitRati
                 flag = flag,
                 correctif = body.correctif?.let { CorrectifInput(it.text, correctifStyle!!, correctifPos) },
                 latencyMs = body.latencyMs,
-                targetSenses = body.targetSenses ?: emptyList(),
+                targetCategories = targetCategories.filterNotNull(),
+                targetSense = body.targetSense,
+                isMultisense = body.isMultisense,
+                subTags = body.subTags ?: emptyList(),
             )
 
         when (val result = execute(cmd)) {
@@ -111,14 +129,14 @@ fun Route.submitRatingRoute(execute: suspend (SubmitRatingCommand) -> SubmitRati
                     ),
                 )
 
-            SubmitRatingResult.AnonTargetSensesForbidden ->
+            SubmitRatingResult.AnonMetaForbidden ->
                 call.respondProblem(
                     HttpStatusCode.Unauthorized,
                     ProblemDetails(
                         type = "about:blank",
                         title = "sign-in required",
                         status = HttpStatusCode.Unauthorized.value,
-                        detail = "Annotating senses requires signing in (ADR-0061).",
+                        detail = "Annotating meta (categories, sense, sub-tags) requires signing in (ADR-0061).",
                     ),
                 )
 

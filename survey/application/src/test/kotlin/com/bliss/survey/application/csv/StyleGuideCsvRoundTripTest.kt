@@ -80,7 +80,7 @@ class StyleGuideCsvRoundTripTest {
 
     @Test
     fun `parser accepts polyvalent pos token`() {
-        val row = "ARGENT;Monnaie ou couleur;polyvalent;units;définition_directe;3;6;synthetic_v1"
+        val row = "ARGENT;Monnaie ou couleur;polyvalent;science;définition_directe;3;6;synthetic_v1"
         assertThat(parser.parseRow(row).pos).isEqualTo(Pos.POLYVALENT)
     }
 

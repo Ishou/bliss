@@ -44,7 +44,7 @@ class SubmitRatingUseCaseTest {
                 mot = "POMME",
                 definition = "Fruit du pommier de la famille des rosacees",
                 pos = Pos.NOM_COMMUN,
-                categorie = Categorie.ALIMENTS,
+                categorie = Categorie.NOURRITURE,
                 style = Style.DEFINITION_DIRECTE,
                 forceClaimed = 3,
                 longueur = 5,
@@ -82,7 +82,6 @@ class SubmitRatingUseCaseTest {
     private fun newUseCase(
         clock: Clock = this.clock,
         roles: InMemoryMaintainerRoleRepository = InMemoryMaintainerRoleRepository(),
-        wordMeta: InMemoryWordMetaRepository = InMemoryWordMetaRepository(),
     ) = Quad(
         InMemorySurveyItemRepository(),
         InMemoryRatingRepository(),
@@ -103,7 +102,6 @@ class SubmitRatingUseCaseTest {
                 actions = InMemoryActionLogRepository(),
                 tokens = TokenGenerator { "fixed-token" },
                 tx = passThroughTransactionManager,
-                wordMeta = wordMeta,
             )
         Quintet(uc, items, ratings, proposed, progress)
     }
@@ -200,7 +198,7 @@ class SubmitRatingUseCaseTest {
         }
 
     @Test
-    fun `anon plus target senses is forbidden`() =
+    fun `anon plus meta is forbidden`() =
         runTest {
             val (uc, items, _, _, _) = newUseCase()
             val parent = seedItem(items)
@@ -214,17 +212,16 @@ class SubmitRatingUseCaseTest {
                         flag = null,
                         correctif = null,
                         latencyMs = 1000,
-                        targetSenses = listOf("animal félin"),
+                        subTags = listOf("felin"),
                     ),
                 )
-            assertThat(r).isEqualTo(SubmitRatingResult.AnonTargetSensesForbidden)
+            assertThat(r).isEqualTo(SubmitRatingResult.AnonMetaForbidden)
         }
 
     @Test
-    fun `auth rating with target senses populates sense inventory`() =
+    fun `auth rating persists per-rating meta on the rating`() =
         runTest {
-            val wordMeta = InMemoryWordMetaRepository()
-            val (uc, items, _, _, _) = newUseCase(wordMeta = wordMeta)
+            val (uc, items, ratings, _, _) = newUseCase()
             val parent = seedItem(items)
             uc.execute(
                 SubmitRatingCommand(
@@ -235,42 +232,16 @@ class SubmitRatingUseCaseTest {
                     flag = null,
                     correctif = null,
                     latencyMs = 1200,
-                    targetSenses = listOf("fruit du pommier", "objet rond"),
+                    targetCategories = listOf(Categorie.NOURRITURE),
+                    targetSense = "fruit du pommier",
+                    isMultisense = false,
+                    subTags = listOf("fruit", "rosacees"),
                 ),
             )
-            assertThat(wordMeta.rows[parent.mot]!!.senseInventory)
-                .isEqualTo(listOf("fruit du pommier", "objet rond"))
-        }
-
-    @Test
-    fun `auth rating with overlapping senses dedups by normalized form and preserves first seen`() =
-        runTest {
-            val wordMeta = InMemoryWordMetaRepository()
-            wordMeta.save(
-                com.bliss.survey.domain.model.WordMeta(
-                    mot = "POMME",
-                    subTags = emptyList(),
-                    senseInventory = listOf("Fruit du pommier"),
-                    updatedAt = fixedNow,
-                ),
-            )
-            val (uc, items, _, _, _) = newUseCase(wordMeta = wordMeta)
-            val parent = seedItem(items)
-            uc.execute(
-                SubmitRatingCommand(
-                    itemId = parent.id,
-                    userId = UserId(UUID.fromString("22222222-2222-7222-8222-222222222222")),
-                    qualite = 4,
-                    difficulte = 2,
-                    flag = null,
-                    correctif = null,
-                    latencyMs = 1200,
-                    targetSenses = listOf("fruit du pommier", "objet rond"),
-                ),
-            )
-            // Incoming-first ordering: new gloss kept as first-seen spelling, existing dropped as duplicate.
-            assertThat(wordMeta.rows[parent.mot]!!.senseInventory)
-                .isEqualTo(listOf("fruit du pommier", "objet rond"))
+            val stored = ratings.ratings.single()
+            assertThat(stored.targetCategories).isEqualTo(listOf(Categorie.NOURRITURE))
+            assertThat(stored.targetSense).isEqualTo("fruit du pommier")
+            assertThat(stored.subTags).isEqualTo(listOf("fruit", "rosacees"))
         }
 
     @Test

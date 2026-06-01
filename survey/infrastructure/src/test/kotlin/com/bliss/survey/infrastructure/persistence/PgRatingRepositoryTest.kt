@@ -263,6 +263,54 @@ class PgRatingRepositoryTest {
             }
         }
 
+    @Test
+    fun `insert and read back round-trips per-rating meta`() =
+        runTest {
+            val item = sampleItem()
+            items.insert(item)
+            val userId = UserId(UUID.randomUUID())
+            val rating =
+                authRating(item.id, userId).copy(
+                    targetCategories = listOf(Categorie.FAUNE_FLORE, Categorie.NOURRITURE),
+                    targetSense = "femelle du coq",
+                    isMultisense = true,
+                    subTags = listOf("volaille", "ferme"),
+                )
+            ratings.insert(rating)
+
+            val back = ratings.findAuthRating(item.id, userId)
+            assertThat(back).isNotNull()
+            assertThat(back!!.targetCategories).isEqualTo(listOf(Categorie.FAUNE_FLORE, Categorie.NOURRITURE))
+            assertThat(back.targetSense).isEqualTo("femelle du coq")
+            assertThat(back.isMultisense).isEqualTo(true)
+            assertThat(back.subTags).isEqualTo(listOf("volaille", "ferme"))
+        }
+
+    @Test
+    fun `priorMetaForMot aggregates senses and sub-tags across ratings for a lemma`() =
+        runTest {
+            val item = sampleItem()
+            items.insert(item)
+            ratings.insert(
+                authRating(item.id, UserId(UUID.randomUUID())).copy(
+                    targetSense = "femelle du coq",
+                    subTags = listOf("volaille"),
+                    createdAt = now.minusSeconds(60),
+                ),
+            )
+            ratings.insert(
+                authRating(item.id, UserId(UUID.randomUUID())).copy(
+                    targetSense = "oiseau de basse-cour",
+                    subTags = listOf("ferme"),
+                    createdAt = now,
+                ),
+            )
+
+            val prior = ratings.priorMetaForMot("POULE")
+            assertThat(prior.senses).isEqualTo(listOf("oiseau de basse-cour", "femelle du coq"))
+            assertThat(prior.subTags).isEqualTo(listOf("ferme", "volaille"))
+        }
+
     private fun insertCampaignRow(label: String): UUID {
         val id = UUID.randomUUID()
         dataSource.connection.use { c ->
@@ -303,7 +351,7 @@ class PgRatingRepositoryTest {
             mot = "POULE",
             definition = "Femelle du coq",
             pos = Pos.NOM_COMMUN,
-            categorie = Categorie.ANIMALS,
+            categorie = Categorie.FAUNE_FLORE,
             style = Style.PERIPHRASE,
             forceClaimed = 2,
             longueur = 5,

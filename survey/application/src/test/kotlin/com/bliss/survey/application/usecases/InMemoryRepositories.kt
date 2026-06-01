@@ -3,6 +3,7 @@ package com.bliss.survey.application.usecases
 import com.bliss.survey.application.ports.ActionLogRepository
 import com.bliss.survey.application.ports.CampaignRepository
 import com.bliss.survey.application.ports.PairRatingRepository
+import com.bliss.survey.application.ports.PriorLemmaMeta
 import com.bliss.survey.application.ports.ProposedByRepository
 import com.bliss.survey.application.ports.ProposedContribution
 import com.bliss.survey.application.ports.RatingAggregate
@@ -231,6 +232,12 @@ class InMemoryRatingRepository : RatingRepository {
         since: Instant?,
         settledBefore: Instant,
     ): List<RatingAggregate> = aggregateOverride ?: emptyList()
+
+    override suspend fun priorMetaForMot(mot: String): PriorLemmaMeta =
+        PriorLemmaMeta(
+            senses = ratings.mapNotNull { it.targetSense },
+            subTags = ratings.flatMap { it.subTags },
+        )
 }
 
 class InMemoryProposedByRepository : ProposedByRepository {

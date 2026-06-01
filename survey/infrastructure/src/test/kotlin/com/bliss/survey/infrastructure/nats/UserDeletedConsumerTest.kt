@@ -236,6 +236,10 @@ class UserDeletedConsumerTest {
             since: Instant?,
             settledBefore: Instant,
         ) = emptyList<com.bliss.survey.application.ports.RatingAggregate>()
+
+        override suspend fun priorMetaForMot(mot: String) =
+            com.bliss.survey.application.ports
+                .PriorLemmaMeta(emptyList(), emptyList())
     }
 
     private object NoopProposedBy : ProposedByRepository {

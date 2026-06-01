@@ -5,7 +5,6 @@ import com.bliss.survey.application.csv.StyleGuideCsvWriter
 import com.bliss.survey.application.ports.Clock
 import com.bliss.survey.application.ports.RatingRepository
 import com.bliss.survey.application.ports.SurveyItemRepository
-import com.bliss.survey.application.ports.WordMetaRepository
 import java.time.Instant
 import kotlin.math.max
 import kotlin.math.sqrt
@@ -15,7 +14,6 @@ class ExportDatasetUseCase(
     private val ratings: RatingRepository,
     private val writer: StyleGuideCsvWriter,
     private val clock: Clock,
-    private val wordMeta: WordMetaRepository,
 ) {
     suspend fun execute(
         minRatings: Int,
@@ -59,11 +57,6 @@ class ExportDatasetUseCase(
                     "flags" to agg.flagCount.toString(),
                     "source_batch" to item.sourceBatch,
                 )
-            val lemmaMeta = wordMeta.find(item.mot)
-            if (lemmaMeta != null) {
-                if (lemmaMeta.senseInventory.isNotEmpty()) meta["senses"] = lemmaMeta.senseInventory.joinToString(",")
-                if (lemmaMeta.subTags.isNotEmpty()) meta["sub_tags"] = lemmaMeta.subTags.joinToString(",")
-            }
             rows += writer.toRow(item, meta)
         }
         return rows.joinToString("\n")

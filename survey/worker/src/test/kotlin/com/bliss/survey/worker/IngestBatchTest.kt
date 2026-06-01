@@ -53,9 +53,9 @@ class IngestBatchTest {
             csv,
             buildString {
                 append("mot;definition;pos;categorie;style;force;longueur;source\n")
-                append("PAIN;Aliment de boulangerie;nom_commun;aliments;definition_directe;1;4;gold\n")
-                append("POULE;Femelle du coq;nom_commun;animals;periphrase;2;5;gold\n")
-                append("TRAIN;Transport ferroviaire;nom_commun;transports;definition_directe;1;5;gold\n")
+                append("PAIN;Aliment de boulangerie;nom_commun;nourriture;definition_directe;1;4;gold\n")
+                append("POULE;Femelle du coq;nom_commun;faune_flore;periphrase;2;5;gold\n")
+                append("TRAIN;Transport ferroviaire;nom_commun;objet;definition_directe;1;5;gold\n")
                 // Reject: Filter4 stereotype prefix "personne qui "
                 append("HOMME;personne qui marche;nom_commun;autre;definition_directe;2;5;gold\n")
             },

@@ -1,8 +1,10 @@
 package com.bliss.survey.infrastructure.persistence
 
+import com.bliss.survey.application.ports.PriorLemmaMeta
 import com.bliss.survey.application.ports.RatingAggregate
 import com.bliss.survey.application.ports.RatingRepository
 import com.bliss.survey.domain.model.CampaignId
+import com.bliss.survey.domain.model.Categorie
 import com.bliss.survey.domain.model.FlagReason
 import com.bliss.survey.domain.model.ItemId
 import com.bliss.survey.domain.model.Rating
@@ -72,7 +74,11 @@ class PgRatingRepository(
                     } else {
                         stmt.setNull(12, Types.OTHER)
                     }
-                    stmt.setString(13, encodeTargetSenses(rating.targetSenses))
+                    stmt.setString(13, encodeStrings(rating.targetCategories.map { it.name.lowercase() }))
+                    val sense = rating.targetSense
+                    if (sense != null) stmt.setString(14, sense) else stmt.setNull(14, Types.VARCHAR)
+                    stmt.setBoolean(15, rating.isMultisense)
+                    stmt.setString(16, encodeStrings(rating.subTags))
                     stmt.executeUpdate()
                 }
             }
@@ -144,13 +150,32 @@ class PgRatingRepository(
             }
         }
 
+    override suspend fun priorMetaForMot(mot: String): PriorLemmaMeta =
+        withContext(Dispatchers.IO) {
+            withTxConnection(dataSource) { conn ->
+                conn.prepareStatement(PRIOR_META_SQL).use { stmt ->
+                    stmt.setString(1, mot)
+                    val senses = mutableListOf<String>()
+                    val subTags = mutableListOf<String>()
+                    stmt.executeQuery().use { rs ->
+                        while (rs.next()) {
+                            rs.getString("target_sense")?.let { senses += it }
+                            rs.getString("sub_tags")?.let { subTags += decodeStrings(it) }
+                        }
+                    }
+                    PriorLemmaMeta(senses = senses, subTags = subTags)
+                }
+            }
+        }
+
     private fun ResultSet.toRating(): Rating {
         val userIdValue: UUID? = getObject("user_id", UUID::class.java)
         val proposedValue: UUID? = getObject("proposed_item_id", UUID::class.java)
         val campaignValue: UUID? = getObject("campaign_id", UUID::class.java)
         val rawFlag = getString("flag")
         val latency = getInt("latency_ms").let { if (wasNull()) null else it }
-        val rawTargetSenses = getString("target_senses")
+        val rawCategories = getString("target_categories")
+        val rawSubTags = getString("sub_tags")
         return Rating(
             id = RatingId(getObject("rating_id", UUID::class.java)),
             itemId = ItemId(getObject("item_id", UUID::class.java)),
@@ -163,25 +188,42 @@ class PgRatingRepository(
             latencyMs = latency,
             createdAt = getTimestamp("created_at").toInstant(),
             campaignId = campaignValue?.let(::CampaignId),
-            targetSenses = if (rawTargetSenses != null) decodeTargetSenses(rawTargetSenses) else emptyList(),
+            targetCategories =
+                if (rawCategories != null) {
+                    decodeStrings(rawCategories).map { Categorie.valueOf(it.uppercase()) }
+                } else {
+                    emptyList()
+                },
+            targetSense = getString("target_sense"),
+            isMultisense = getBoolean("is_multisense"),
+            subTags = if (rawSubTags != null) decodeStrings(rawSubTags) else emptyList(),
         )
     }
 
     private companion object {
-        private val TARGET_SENSES_SERIALIZER = ListSerializer(String.serializer())
+        private val STRINGS_SERIALIZER = ListSerializer(String.serializer())
         private val JSON = Json { ignoreUnknownKeys = true }
 
-        private fun encodeTargetSenses(items: List<String>): String = JSON.encodeToString(TARGET_SENSES_SERIALIZER, items)
+        private fun encodeStrings(items: List<String>): String = JSON.encodeToString(STRINGS_SERIALIZER, items)
 
-        private fun decodeTargetSenses(json: String): List<String> = JSON.decodeFromString(TARGET_SENSES_SERIALIZER, json)
+        private fun decodeStrings(json: String): List<String> = JSON.decodeFromString(STRINGS_SERIALIZER, json)
 
         const val INSERT_SQL =
             """
             INSERT INTO ratings
               (rating_id, item_id, user_id, submitted_as, qualite, difficulte,
                flag, proposed_item_id, latency_ms, client_meta, created_at, campaign_id,
-               target_senses)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?::jsonb)
+               target_categories, target_sense, is_multisense, sub_tags)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?::jsonb, ?, ?, ?::jsonb)
+            """
+
+        const val PRIOR_META_SQL =
+            """
+            SELECT r.target_sense, r.sub_tags
+              FROM ratings r
+              JOIN survey_items s ON s.item_id = r.item_id
+             WHERE s.mot = ?
+             ORDER BY r.created_at DESC
             """
 
         const val FIND_AUTH_RATING_SQL =

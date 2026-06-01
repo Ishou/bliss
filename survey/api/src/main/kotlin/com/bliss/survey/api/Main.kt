@@ -15,7 +15,6 @@ import com.bliss.survey.application.usecases.RecomputeTrainingWeightUseCase
 import com.bliss.survey.application.usecases.SubmitPairRatingUseCase
 import com.bliss.survey.application.usecases.SubmitRatingUseCase
 import com.bliss.survey.application.usecases.UndoActionUseCase
-import com.bliss.survey.application.usecases.UpsertSubTagsUseCase
 import com.bliss.survey.domain.routing.StratifiedSampler
 import com.bliss.survey.domain.routing.TierWeights
 import com.bliss.survey.domain.weight.GoldWindowPolicy
@@ -33,7 +32,6 @@ import com.bliss.survey.infrastructure.persistence.PgRatingRepository
 import com.bliss.survey.infrastructure.persistence.PgSurveyItemRepository
 import com.bliss.survey.infrastructure.persistence.PgTransactionManager
 import com.bliss.survey.infrastructure.persistence.PgUserProgressRepository
-import com.bliss.survey.infrastructure.persistence.PgWordMetaRepository
 import com.bliss.survey.infrastructure.persistence.SurveyDatabase
 import com.fasterxml.uuid.Generators
 import io.ktor.server.cio.CIO
@@ -59,7 +57,6 @@ fun main() {
     val campaignRepository = PgCampaignRepository(dataSource)
     val maintainerRoles = PgMaintainerRoleRepository(dataSource)
     val actionLog = PgActionLogRepository(dataSource)
-    val wordMeta = PgWordMetaRepository(dataSource)
     val txManager = PgTransactionManager(dataSource)
     val goldPolicy = GoldWindowPolicy(config.goldCutoff, config.goldMultiplier)
     val recompute = RecomputeTrainingWeightUseCase(maintainerRoles, items, goldPolicy)
@@ -91,10 +88,8 @@ fun main() {
             actions = actionLog,
             tokens = tokens,
             tx = txManager,
-            wordMeta = wordMeta,
         )
-    val getLemmaMeta = GetLemmaMetaUseCase(wordMeta)
-    val upsertSubTags = UpsertSubTagsUseCase(wordMeta, maintainerRoles, clock, txManager)
+    val getLemmaMeta = GetLemmaMetaUseCase(ratings)
     val getNextPair = GetNextPairUseCase(items)
     val submitPairRating =
         SubmitPairRatingUseCase(
@@ -145,7 +140,6 @@ fun main() {
             undoAction = { token, uid -> undoAction.execute(token, uid) },
             getCurrentCampaign = getCurrentCampaign,
             getLemmaMeta = getLemmaMeta,
-            upsertSubTags = upsertSubTags,
             items = items,
             proposedBy = proposedBy,
             userProgress = progress,

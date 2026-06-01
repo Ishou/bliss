@@ -32,7 +32,7 @@ class ExportDatasetUseCaseTest {
                     mot = "POMME",
                     definition = "Fruit",
                     pos = Pos.NOM_COMMUN,
-                    categorie = Categorie.ALIMENTS,
+                    categorie = Categorie.NOURRITURE,
                     style = Style.DEFINITION_DIRECTE,
                     forceClaimed = 3,
                     longueur = 5,
@@ -62,7 +62,7 @@ class ExportDatasetUseCaseTest {
                         qualiteSquaredAnonSum = 8,
                     ),
                 )
-            val uc = ExportDatasetUseCase(items, ratings, StyleGuideCsvWriter(), Clock { now }, InMemoryWordMetaRepository())
+            val uc = ExportDatasetUseCase(items, ratings, StyleGuideCsvWriter(), Clock { now })
             val csv = uc.execute(minRatings = 3, since = null, authWeight = 2.0, anonWeight = 1.0)
             assertThat(csv).startsWith("mot;definition;pos;categorie;style;force;longueur;source;training_weight;meta")
             assertThat(csv).contains("POMME")
@@ -80,7 +80,7 @@ class ExportDatasetUseCaseTest {
                     mot = "POIRE",
                     definition = "Fruit du poirier",
                     pos = Pos.NOM_COMMUN,
-                    categorie = Categorie.ALIMENTS,
+                    categorie = Categorie.NOURRITURE,
                     style = Style.DEFINITION_DIRECTE,
                     forceClaimed = 3,
                     longueur = 5,
@@ -110,7 +110,7 @@ class ExportDatasetUseCaseTest {
                         qualiteSquaredAnonSum = 0,
                     ),
                 )
-            val uc = ExportDatasetUseCase(items, ratings, StyleGuideCsvWriter(), Clock { now }, InMemoryWordMetaRepository())
+            val uc = ExportDatasetUseCase(items, ratings, StyleGuideCsvWriter(), Clock { now })
             val csv = uc.execute(minRatings = 3, since = null, authWeight = 1.0, anonWeight = 1.0)
             // Only the header remains
             assertThat(csv).startsWith("mot;definition;pos;categorie;style;force;longueur;source;training_weight;meta")
@@ -128,7 +128,7 @@ class ExportDatasetUseCaseTest {
                     mot = "POMME",
                     definition = "Fruit",
                     pos = Pos.NOM_COMMUN,
-                    categorie = Categorie.ALIMENTS,
+                    categorie = Categorie.NOURRITURE,
                     style = Style.DEFINITION_DIRECTE,
                     forceClaimed = 3,
                     longueur = 5,
@@ -159,64 +159,8 @@ class ExportDatasetUseCaseTest {
                         qualiteSquaredAnonSum = 8,
                     ),
                 )
-            val uc = ExportDatasetUseCase(items, ratings, StyleGuideCsvWriter(), Clock { now }, InMemoryWordMetaRepository())
+            val uc = ExportDatasetUseCase(items, ratings, StyleGuideCsvWriter(), Clock { now })
             val csv = uc.execute(minRatings = 3, since = null, authWeight = 2.0, anonWeight = 1.0)
             assertThat(csv).contains(";curated_v1;3.0;")
-        }
-
-    @Test
-    fun `meta column carries senses and sub_tags when lemma has WordMeta`() =
-        runTest {
-            val items = InMemorySurveyItemRepository()
-            val ratings = InMemoryRatingRepository()
-            val wordMeta = InMemoryWordMetaRepository()
-            val item =
-                SurveyItem(
-                    id = ItemId(UUID.randomUUID()),
-                    mot = "CHAT",
-                    definition = "Animal",
-                    pos = Pos.NOM_COMMUN,
-                    categorie = Categorie.ANIMALS,
-                    style = Style.DEFINITION_DIRECTE,
-                    forceClaimed = 3,
-                    longueur = 4,
-                    source = Source.CURATED_V1,
-                    sourceBatch = "batch1",
-                    tier = Tier.MID,
-                    isCalibration = false,
-                    expected = null,
-                    retiredAt = null,
-                    createdAt = now,
-                )
-            items.insert(item)
-            wordMeta.save(
-                com.bliss.survey.domain.model.WordMeta(
-                    mot = "CHAT",
-                    subTags = listOf("felin", "domestique"),
-                    senseInventory = listOf("animal félin", "conversation digitale"),
-                    updatedAt = now,
-                ),
-            )
-            ratings.aggregateOverride =
-                listOf(
-                    RatingAggregate(
-                        itemId = item.id,
-                        qualiteAuthSum = 10,
-                        qualiteAuthN = 3,
-                        qualiteAnonSum = 4,
-                        qualiteAnonN = 2,
-                        difficulteAuthSum = 8,
-                        difficulteAuthN = 3,
-                        difficulteAnonSum = 4,
-                        difficulteAnonN = 2,
-                        flagCount = 0,
-                        qualiteSquaredAuthSum = 36,
-                        qualiteSquaredAnonSum = 8,
-                    ),
-                )
-            val uc = ExportDatasetUseCase(items, ratings, StyleGuideCsvWriter(), Clock { now }, wordMeta)
-            val csv = uc.execute(minRatings = 3, since = null, authWeight = 2.0, anonWeight = 1.0)
-            assertThat(csv).contains("senses:animal félin,conversation digitale")
-            assertThat(csv).contains("sub_tags:felin,domestique")
         }
 }

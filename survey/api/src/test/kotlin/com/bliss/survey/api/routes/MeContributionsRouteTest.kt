@@ -41,7 +41,7 @@ class MeContributionsRouteTest {
                     mot = "BLEU",
                     definition = "couleur du ciel",
                     pos = Pos.NOM_COMMUN,
-                    categorie = Categorie.COULEURS,
+                    categorie = Categorie.CONCEPTUEL,
                     style = Style.PERIPHRASE,
                     forceClaimed = 3,
                     longueur = 4,
@@ -87,7 +87,7 @@ class MeContributionsRouteTest {
             assertThat(resp.status).isEqualTo(HttpStatusCode.OK)
             val body = resp.bodyAsText()
             assertThat(body).contains("\"mot\":\"BLEU\"")
-            assertThat(body).contains("\"categorie\":\"couleurs\"")
+            assertThat(body).contains("\"categorie\":\"conceptuel\"")
             assertThat(body).contains("\"kCoverage\":2")
             assertThat(body).contains("\"optedOut\":false")
         }

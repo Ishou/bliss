@@ -24,8 +24,8 @@ class EnumsTest {
     }
 
     @Test
-    fun `Categorie has 43 values (§7-2)`() {
-        assertThat(Categorie.values().toList()).hasSize(43)
+    fun `Categorie has 19 values (ADR-0061 collapse)`() {
+        assertThat(Categorie.values().toList()).hasSize(19)
     }
 
     @Test

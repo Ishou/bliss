@@ -14,7 +14,10 @@ data class Rating(
     val latencyMs: Int?,
     val createdAt: Instant,
     val campaignId: CampaignId? = null,
-    val targetSenses: List<String> = emptyList(),
+    val targetCategories: List<Categorie> = emptyList(),
+    val targetSense: String? = null,
+    val isMultisense: Boolean = false,
+    val subTags: List<String> = emptyList(),
 ) {
     init {
         require(qualite in 1..5) { "qualite must be in 1..5 (was $qualite)" }
@@ -24,23 +27,28 @@ data class Rating(
             require(proposedItemId == null) {
                 "anon rating must have null proposed_item_id (contributions require auth)"
             }
-            require(targetSenses.isEmpty()) {
-                "anon rating must have empty target_senses (sense annotation requires auth, ADR-0061)"
+            require(targetCategories.isEmpty() && targetSense == null && !isMultisense && subTags.isEmpty()) {
+                "anon rating must carry no meta (annotation requires sign-in)"
             }
         }
-        require(targetSenses.size <= MAX_TARGET_SENSES) {
-            "targetSenses bounded to $MAX_TARGET_SENSES (ADR-0061)"
+        require(targetCategories.size <= MAX_TARGET_CATEGORIES) {
+            "targetCategories bounded to $MAX_TARGET_CATEGORIES"
         }
-        require(targetSenses.all { it.isNotBlank() }) {
-            "targetSenses must not contain blank entries"
+        targetSense?.let {
+            require(it.isNotBlank()) { "targetSense must not be blank when present" }
+            require(it.length <= MAX_SENSE_LENGTH) { "targetSense bounded to $MAX_SENSE_LENGTH chars" }
         }
-        require(targetSenses.all { it.length <= MAX_TARGET_SENSE_LENGTH }) {
-            "targetSenses entries bounded to $MAX_TARGET_SENSE_LENGTH chars (ADR-0061)"
+        require(subTags.size <= MAX_SUB_TAGS) { "subTags bounded to $MAX_SUB_TAGS" }
+        require(subTags.all { it.isNotBlank() }) { "subTags must not contain blank entries" }
+        require(subTags.all { it.length <= MAX_SUB_TAG_LENGTH }) {
+            "subTags entries bounded to $MAX_SUB_TAG_LENGTH chars"
         }
     }
 
     companion object {
-        const val MAX_TARGET_SENSES = 8
-        const val MAX_TARGET_SENSE_LENGTH = 80
+        const val MAX_TARGET_CATEGORIES = 6
+        const val MAX_SUB_TAGS = 12
+        const val MAX_SUB_TAG_LENGTH = 40
+        const val MAX_SENSE_LENGTH = 80
     }
 }

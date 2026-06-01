@@ -36,7 +36,7 @@ class GetNextPairRouteTest {
             mot = "POMME",
             definition = "Fruit du pommier",
             pos = Pos.NOM_COMMUN,
-            categorie = Categorie.ALIMENTS,
+            categorie = Categorie.NOURRITURE,
             style = Style.DEFINITION_DIRECTE,
             forceClaimed = 3,
             longueur = 5,

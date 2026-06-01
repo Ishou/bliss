@@ -39,7 +39,7 @@ class IngestBatchUseCaseTest {
                 mot = "POMME",
                 definition = definition,
                 pos = Pos.NOM_COMMUN,
-                categorie = Categorie.ALIMENTS,
+                categorie = Categorie.NOURRITURE,
                 style = Style.DEFINITION_DIRECTE,
                 forceClaimed = 3,
                 longueur = 5,
