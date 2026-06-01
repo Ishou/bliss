@@ -94,11 +94,7 @@ def _row_copies(raw: str | None) -> int:
 
 
 def _parse_meta_column(raw: str | None) -> dict[str, list[str]]:
-    """Parse the survey-export `meta` column (`key:value|key:value`) into a dict of comma-split list values.
-
-    Returns only the keys used downstream (`senses`, `sub_tags`); other keys are aggregate stats
-    consumed by humans and don't need plumbing.
-    """
+    """Parse `key:value|key:value` meta cell; returns only `senses` and `sub_tags` as lists."""
     text = (raw or "").strip()
     if not text:
         return {}
