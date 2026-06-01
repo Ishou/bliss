@@ -3,12 +3,7 @@
 #
 # 404.html turns off SPA fallback for unmatched paths — see ADR-0004
 #
-# Trailing-slash → non-trailing canonical. The build emits `dist/<slug>.html`
-# (file, not directory) for every indexable route, so Pages serves `/<slug>`
-# with 200 directly. Anyone who lands on `/<slug>/` — old inbound links,
-# third-party share tools that auto-append `/` — gets a 308 to the canonical
-# no-trailing form. Search Console previously flagged the (old) `/<slug>` →
-# `/<slug>/` 308 chain as "page avec redirection", suppressing the indexable URL.
+# trailing-slash 308: Search Console flags redirect chains as "page avec redirection" — ADR-0004
 #
 # 308 (not 301) preserves the request method on rewrite; matches the
 # default Cloudflare Pages emits for the inverse rule.
