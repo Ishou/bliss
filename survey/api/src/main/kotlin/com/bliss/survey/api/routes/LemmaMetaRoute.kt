@@ -85,7 +85,7 @@ fun Route.lemmaMetaRoute(
     }
 }
 
-// Production overload so Module.kt can pass the concrete use cases without exposing the test seam.
+// Production overload; delegates to the lambda overload so use-case types stay out of the test scope.
 fun Route.lemmaMetaRoute(
     getLemmaMeta: GetLemmaMetaUseCase,
     upsertSubTags: UpsertSubTagsUseCase,
