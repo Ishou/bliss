@@ -248,9 +248,10 @@ The granular old values become sub-tag *suggestions* (e.g. `felin`,
 
 **2. All meta moves onto the rating row; `survey_word_meta` is dropped.**
 New `ratings` columns:
-- `target_categories JSONB` — list of `Categorie` names; the maintainer's
-  authoritative, **editable multi-select**. Pre-filled in the UI from the
-  item's single machine prior (see below) but freely overridden.
+- `target_categories JSONB` — list of `Categorie` names, an **editable
+  multi-select**. Pre-filled in the UI from the item's single machine prior
+  (see below) but freely overridden. Authored by any authenticated rater,
+  not the maintainer alone (see *Authority model* below).
 - `target_sense TEXT NULL` — single freeform sense gloss (gloss rules
   above still bind: no determiner-only normalization at storage, must not
   repeat the lemma).
@@ -277,6 +278,20 @@ dedup. `priorSenses` / `priorSubTags` response shape is unchanged.
 `PUT /v1/lemma-meta/{mot}` and `SubTagsRequest` are **removed** — sub-tags
 are no longer upserted per-word; they are authored per-rating. The
 sense-inventory side-effect in `SubmitRatingUseCase` is removed.
+
+**5. Authority model: any authenticated rater authors; maintainer wins on
+resolution.** All per-rating meta (`target_categories`, `target_sense`,
+`is_multisense`, `sub_tags`) is authored by any authenticated rater, not
+the maintainer alone — anonymous callers are still rejected (annotation
+requires sign-in). This supersedes the pre-amendment maintainer-only
+sub-tag upsert posture, which is moot now that the per-word upsert path is
+gone. When several raters annotate the same definition, **maintainer
+ratings take precedence** when a single canonical set is resolved
+downstream (training export, autocomplete weighting). This precedence is a
+*resolution* rule, not a *write* gate: the write path admits every
+authenticated rater equally. "Maintainer wins" is the current posture for a
+single-maintainer-plus-fleet sandbox; revisit if a multi-rater pattern with
+conflicting annotations emerges.
 
 ### Consequences (amended)
 
