@@ -79,8 +79,8 @@ export interface PrerenderRoute {
 
 // Noindex routes still prerendered so Cloudflare Pages serves the route's own shell, not the home shell.
 export const NOINDEX_PRERENDER_ROUTES: ReadonlyArray<PrerenderRoute> = [
-  { path: '/sondage', title: 'Sondage — WordSparrow' },
-  { path: '/sondage/pairs', title: 'Sondage par paires — WordSparrow' },
+  { path: '/contribuer', title: 'Campagne — WordSparrow' },
+  { path: '/contribuer/pairs', title: 'Campagne par paires — WordSparrow' },
   { path: '/compte', title: 'Mon compte — WordSparrow' },
 ];
 

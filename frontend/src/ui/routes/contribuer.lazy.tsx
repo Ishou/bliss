@@ -1,4 +1,4 @@
-// `/sondage` lazy half — rating loop. Auth optional; anon dedup via surveyAnonStore.
+// `/contribuer` lazy half — rating loop. Auth optional; anon dedup via surveyAnonStore.
 
 import { createLazyRoute, Link } from '@tanstack/react-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -10,7 +10,7 @@ import { useAuth } from '@/ui/components/auth';
 import { ContentPage } from '@/ui/components/layout';
 import type { Verdict } from '@/ui/components/sondage';
 import { LockBanner, RatingCard, SignInBanner, UndoBar, useCampaignStatus } from '@/ui/components/sondage';
-import { Route as ParentRoute } from './sondage';
+import { Route as ParentRoute } from './contribuer';
 
 const articleStyles = css({
   display: 'flex',
@@ -70,7 +70,7 @@ const alertStyles = css({
 // difficulte=3 placeholder pending schema nullable migration; qualite=5 drives RAFT winners so no algorithmic impact.
 const DIFFICULTE_PLACEHOLDER: LikertScore = 3;
 
-function SondagePage() {
+function ContribuerPage() {
   const ctx = ParentRoute.useRouteContext();
   const { state } = useAuth();
   const isAuth = state.status === 'authed';
@@ -255,8 +255,8 @@ function SondagePage() {
     <ContentPage>
       <article className={articleStyles}>
         <div className={headerRowStyles}>
-          <h1 className={headingStyles}>Sondage des indices</h1>
-          <Link to="/sondage/pairs" className={modeLinkStyles} data-testid="mode-switch-pairs">
+          <h1 className={headingStyles}>Campagne des indices</h1>
+          <Link to="/contribuer/pairs" className={modeLinkStyles} data-testid="mode-switch-pairs">
             Mode paires →
           </Link>
         </div>
@@ -306,6 +306,6 @@ function SondagePage() {
   );
 }
 
-export const Route = createLazyRoute('/sondage')({
-  component: SondagePage,
+export const Route = createLazyRoute('/contribuer')({
+  component: ContribuerPage,
 });

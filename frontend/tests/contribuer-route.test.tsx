@@ -17,7 +17,7 @@ import type {
 import { surveyAnonRatedStore } from '@/infrastructure/session/localStorageSurveyAnon';
 import { AuthProvider } from '@/ui/components/auth';
 import { Route as RootRoute } from '@/ui/routes/__root';
-import { Route as SondageRoute } from '@/ui/routes/sondage';
+import { Route as ContribuerRoute } from '@/ui/routes/contribuer';
 
 const sampleItem: SurveyItem = {
   itemId: '0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6b',
@@ -85,7 +85,7 @@ function stubAnalytics(): SpyAnalytics {
   return { trackEvent } as SpyAnalytics;
 }
 
-function renderSondage(opts: {
+function renderContribuer(opts: {
   authClient?: AuthClient;
   surveyClient?: SurveyClient;
   analytics?: AnalyticsPort;
@@ -95,10 +95,10 @@ function renderSondage(opts: {
   const surveyClient = opts.surveyClient ?? stubSurveyClient();
   const analytics = opts.analytics ?? stubAnalytics();
   const anonStore = opts.surveyAnonStore ?? surveyAnonRatedStore;
-  const routeTree = RootRoute.addChildren([SondageRoute]);
+  const routeTree = RootRoute.addChildren([ContribuerRoute]);
   const router = createRouter({
     routeTree,
-    history: createMemoryHistory({ initialEntries: ['/sondage'] }),
+    history: createMemoryHistory({ initialEntries: ['/contribuer'] }),
     context: {
       authClient,
       getPseudonym: () => 'Lapin 1',
@@ -153,15 +153,15 @@ function clickVerdict(verdict: 'BAD' | 'SKIP' | 'GOOD'): void {
   btn.click();
 }
 
-describe('Sondage route', () => {
+describe('Contribuer route', () => {
   it('renders the rating card after the next-item fetch resolves', async () => {
-    renderSondage();
+    renderContribuer();
     await waitFor(() => expect(screen.getByTestId('rating-card')).toBeInTheDocument());
     expect(screen.getByRole('heading', { name: 'CHAT' })).toBeInTheDocument();
   });
 
   it('shows the sign-in banner for anon visitors', async () => {
-    renderSondage();
+    renderContribuer();
     await waitFor(() => expect(screen.getByTestId('rating-card')).toBeInTheDocument());
     expect(screen.getByRole('note', { name: /Invitation à se connecter/i })).toBeInTheDocument();
   });
@@ -169,7 +169,7 @@ describe('Sondage route', () => {
   it('passes excludedItemIds from localStorage for anon visitors', async () => {
     localStorage.setItem('survey.anon.rated_ids', JSON.stringify(['prev-a', 'prev-b']));
     const surveyClient = stubSurveyClient();
-    renderSondage({ surveyClient });
+    renderContribuer({ surveyClient });
     await waitFor(() => expect(screen.getByTestId('rating-card')).toBeInTheDocument());
     expect(surveyClient.getNextItem).toHaveBeenCalledWith({
       excludedItemIds: ['prev-a', 'prev-b'],
@@ -181,7 +181,7 @@ describe('Sondage route', () => {
     const surveyClient = stubSurveyClient({
       getNextItem: vi.fn().mockResolvedValue(null),
     });
-    renderSondage({ surveyClient });
+    renderContribuer({ surveyClient });
     await waitFor(() =>
       expect(screen.getByText(/Plus d.indices à noter/i)).toBeInTheDocument(),
     );
@@ -189,7 +189,7 @@ describe('Sondage route', () => {
 
   it('fires survey_session_start once with the submitted_as dimension', async () => {
     const analytics = stubAnalytics();
-    renderSondage({ analytics });
+    renderContribuer({ analytics });
     await waitFor(() => expect(screen.getByTestId('rating-card')).toBeInTheDocument());
     const sessionStartCalls = analytics.trackEvent.mock.calls.filter(
       ([category, action]) => category === 'survey' && action === 'session_start',
@@ -205,7 +205,7 @@ describe('Sondage route', () => {
       ...stubAuth(),
       whoami: vi.fn().mockReturnValue(whoamiPromise),
     };
-    renderSondage({ authClient });
+    renderContribuer({ authClient });
     expect(screen.queryByRole('note', { name: /Invitation à se connecter/i })).toBeNull();
     await act(async () => { resolveWhoami(null); });
     await waitFor(() =>
@@ -221,7 +221,7 @@ describe('Sondage route', () => {
         displayName: 'Lapin 472',
       }),
     };
-    renderSondage({ authClient });
+    renderContribuer({ authClient });
     await waitFor(() => expect(screen.getByTestId('rating-card')).toBeInTheDocument());
     expect(screen.queryByRole('note', { name: /Invitation à se connecter/i })).toBeNull();
   });
@@ -229,7 +229,7 @@ describe('Sondage route', () => {
   it('GOOD verdict submits qualite=5 difficulte=3 + adds the item to anon dedup', async () => {
     const analytics = stubAnalytics();
     const surveyClient = stubSurveyClient();
-    renderSondage({ analytics, surveyClient });
+    renderContribuer({ analytics, surveyClient });
     await waitFor(() => expect(screen.getByTestId('rating-card')).toBeInTheDocument());
 
     await act(async () => { clickVerdict('GOOD'); });
@@ -257,7 +257,7 @@ describe('Sondage route', () => {
   it('BAD verdict submits qualite=1 difficulte=3', async () => {
     const analytics = stubAnalytics();
     const surveyClient = stubSurveyClient();
-    renderSondage({ analytics, surveyClient });
+    renderContribuer({ analytics, surveyClient });
     await waitFor(() => expect(screen.getByTestId('rating-card')).toBeInTheDocument());
 
     await act(async () => { clickVerdict('BAD'); });
@@ -282,7 +282,7 @@ describe('Sondage route', () => {
       .mockResolvedValueOnce(sampleItem)
       .mockResolvedValue(second);
     const surveyClient = stubSurveyClient({ getNextItem });
-    renderSondage({ analytics, surveyClient });
+    renderContribuer({ analytics, surveyClient });
     await waitFor(() => expect(screen.getByTestId('rating-card')).toBeInTheDocument());
 
     await act(async () => { clickVerdict('SKIP'); });
@@ -314,7 +314,7 @@ describe('Sondage route', () => {
     localStorage.setItem('survey.anon.rated_ids', JSON.stringify([preAuthRatedId]));
     const getNextItem = vi.fn().mockResolvedValue(sampleItem);
     const surveyClient = stubSurveyClient({ getNextItem });
-    renderSondage({ authClient, surveyClient });
+    renderContribuer({ authClient, surveyClient });
 
     await waitFor(() => expect(getNextItem).toHaveBeenCalled());
     expect(getNextItem).toHaveBeenLastCalledWith({ excludedItemIds: [preAuthRatedId] });
@@ -336,7 +336,7 @@ describe('Sondage route', () => {
       .mockResolvedValue(second);
     const surveyClient = stubSurveyClient({ getNextItem });
     const analytics = stubAnalytics();
-    renderSondage({ authClient, surveyClient, analytics });
+    renderContribuer({ authClient, surveyClient, analytics });
 
     await waitFor(() => expect(screen.getByTestId('rating-card')).toBeInTheDocument());
 
@@ -369,7 +369,7 @@ describe('Sondage route', () => {
 
   it('CORRIGER on anon user sets the sign-in error message without calling submitRating', async () => {
     const surveyClient = stubSurveyClient();
-    renderSondage({ surveyClient });
+    renderContribuer({ surveyClient });
     await waitFor(() => expect(screen.getByTestId('rating-card')).toBeInTheDocument());
 
     await act(async () => {
@@ -407,7 +407,7 @@ describe('Sondage route', () => {
     const surveyClient = stubSurveyClient({
       submitRating: vi.fn().mockRejectedValue(rejection),
     });
-    renderSondage({ authClient, surveyClient });
+    renderContribuer({ authClient, surveyClient });
     await waitFor(() => expect(screen.getByTestId('rating-card')).toBeInTheDocument());
 
     await act(async () => {
@@ -443,7 +443,7 @@ describe('Sondage route', () => {
       .mockResolvedValueOnce(sampleItem)
       .mockResolvedValue(second);
     const surveyClient = stubSurveyClient({ getNextItem });
-    renderSondage({ authClient, surveyClient });
+    renderContribuer({ authClient, surveyClient });
     await waitFor(() => expect(screen.getByTestId('rating-card')).toBeInTheDocument());
 
     await act(async () => { clickVerdict('SKIP'); });
@@ -462,7 +462,7 @@ describe('Sondage route', () => {
       .mockResolvedValueOnce(sampleItem)
       .mockResolvedValueOnce(null);
     const surveyClient = stubSurveyClient({ getNextItem, undoAction });
-    renderSondage({ surveyClient });
+    renderContribuer({ surveyClient });
 
     const good = await screen.findByRole('button', { name: /Bonne définition/ });
     const click = (el: HTMLElement) => { el.focus(); fireEvent.click(el); };

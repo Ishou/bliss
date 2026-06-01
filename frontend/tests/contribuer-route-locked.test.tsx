@@ -9,19 +9,18 @@ import type { AnalyticsPort } from '@/application/analytics';
 import type { AuthClient } from '@/application/auth';
 import type {
   Campaign,
-  ItemPair,
+  RatingResult,
   SurveyAnonStore,
   SurveyClient,
   SurveyItem,
 } from '@/application/survey';
-import { SondageLockedError } from '@/infrastructure/api/survey/client';
+import { NoCampaignError, SondageLockedError } from '@/infrastructure/api/survey/client';
 import { surveyAnonRatedStore } from '@/infrastructure/session/localStorageSurveyAnon';
 import { AuthProvider } from '@/ui/components/auth';
 import { Route as RootRoute } from '@/ui/routes/__root';
-import { Route as SondageRoute } from '@/ui/routes/sondage';
-import { Route as SondagePairsRoute } from '@/ui/routes/sondage.pairs';
+import { Route as ContribuerRoute } from '@/ui/routes/contribuer';
 
-const leftItem: SurveyItem = {
+const sampleItem: SurveyItem = {
   itemId: '0190e3a4-7a2c-7c9e-8f1a-9b2d3e4f5a6b',
   mot: 'CHAT',
   definition: 'Animal domestique à moustaches',
@@ -34,20 +33,13 @@ const leftItem: SurveyItem = {
   isCalibration: false,
 };
 
-const rightItem: SurveyItem = {
-  itemId: '0190e3a4-7a2c-7c9e-8f1a-cafecafecafe',
-  mot: 'CHAT',
-  definition: 'Félin domestique aux iris fendus',
-  pos: 'nom_commun',
-  categorie: 'animals',
-  style: 'periphrase',
-  forceClaimed: 3,
-  longueur: 4,
-  tier: 'mid',
-  isCalibration: false,
+const ratingResult: RatingResult = {
+  ratingId: '0190e3a4-7a2c-7c9e-8f1a-1234567890ab',
+  itemId: sampleItem.itemId,
+  submittedAs: 'anon',
+  proposedItemId: null,
+  undoToken: null,
 };
-
-const samplePair: ItemPair = { mot: 'CHAT', left: leftItem, right: rightItem };
 
 const openCampaign: Campaign = {
   campaignId: '0190e3a4-7a2c-7c9e-8f1a-000000000007',
@@ -56,7 +48,10 @@ const openCampaign: Campaign = {
   closedAt: null,
 };
 
-const closedCampaign: Campaign = { ...openCampaign, closedAt: '2026-05-30T12:00:00Z' };
+const closedCampaign: Campaign = {
+  ...openCampaign,
+  closedAt: '2026-05-30T12:00:00Z',
+};
 
 function stubAuth(): AuthClient {
   return {
@@ -72,9 +67,9 @@ function stubAuth(): AuthClient {
 
 function stubSurveyClient(overrides: Partial<SurveyClient> = {}): SurveyClient {
   return {
-    getNextItem: vi.fn().mockResolvedValue(null),
-    submitRating: vi.fn().mockResolvedValue(undefined),
-    getNextPair: vi.fn().mockResolvedValue(samplePair),
+    getNextItem: vi.fn().mockResolvedValue(sampleItem),
+    submitRating: vi.fn().mockResolvedValue(ratingResult),
+    getNextPair: vi.fn().mockResolvedValue(null),
     submitPairRating: vi.fn().mockResolvedValue({ undoToken: null }),
     undoAction: vi.fn().mockResolvedValue(undefined),
     getProgress: vi.fn().mockResolvedValue({
@@ -91,13 +86,15 @@ function stubSurveyClient(overrides: Partial<SurveyClient> = {}): SurveyClient {
   };
 }
 
-function stubAnalytics(): AnalyticsPort {
-  return { trackEvent: vi.fn() } as AnalyticsPort;
+type SpyAnalytics = AnalyticsPort & { trackEvent: ReturnType<typeof vi.fn> };
+function stubAnalytics(): SpyAnalytics {
+  const trackEvent = vi.fn();
+  return { trackEvent } as SpyAnalytics;
 }
 
-function renderSondagePairs(opts: {
-  surveyClient?: SurveyClient;
+function renderContribuer(opts: {
   authClient?: AuthClient;
+  surveyClient?: SurveyClient;
   analytics?: AnalyticsPort;
   surveyAnonStore?: SurveyAnonStore;
 } = {}) {
@@ -105,10 +102,10 @@ function renderSondagePairs(opts: {
   const surveyClient = opts.surveyClient ?? stubSurveyClient();
   const analytics = opts.analytics ?? stubAnalytics();
   const anonStore = opts.surveyAnonStore ?? surveyAnonRatedStore;
-  const routeTree = RootRoute.addChildren([SondageRoute.addChildren([SondagePairsRoute])]);
+  const routeTree = RootRoute.addChildren([ContribuerRoute]);
   const router = createRouter({
     routeTree,
-    history: createMemoryHistory({ initialEntries: ['/sondage/pairs'] }),
+    history: createMemoryHistory({ initialEntries: ['/contribuer'] }),
     context: {
       authClient,
       getPseudonym: () => 'Lapin 1',
@@ -155,37 +152,49 @@ function renderSondagePairs(opts: {
   };
 }
 
-describe('/sondage/pairs when campaign is closed', () => {
-  it('renders the LockBanner and aria-disables pair verdict buttons', async () => {
+describe('/contribuer when no campaign has ever been opened (server 503)', () => {
+  it('renders the LockBanner and aria-disables verdict buttons', async () => {
     const surveyClient = stubSurveyClient({
-      getCurrentCampaign: vi.fn().mockResolvedValue(closedCampaign),
+      getCurrentCampaign: vi.fn().mockRejectedValue(new NoCampaignError()),
     });
-    renderSondagePairs({ surveyClient });
+    renderContribuer({ surveyClient });
     await waitFor(() =>
       expect(screen.getByTestId('sondage-lock-banner')).toBeInTheDocument(),
     );
-    const leftBtn = await screen.findByRole('button', {
-      name: /Préférer la définition de gauche/i,
+    const goodBtn = await screen.findByRole('button', { name: /Bonne définition/i });
+    expect(goodBtn).toHaveAttribute('aria-disabled', 'true');
+  });
+});
+
+describe('/contribuer when campaign is closed', () => {
+  it('renders the LockBanner and aria-disables verdict buttons', async () => {
+    const surveyClient = stubSurveyClient({
+      getCurrentCampaign: vi.fn().mockResolvedValue(closedCampaign),
     });
-    expect(leftBtn).toHaveAttribute('aria-disabled', 'true');
+    renderContribuer({ surveyClient });
+    await waitFor(() =>
+      expect(screen.getByTestId('sondage-lock-banner')).toBeInTheDocument(),
+    );
+    const goodBtn = await screen.findByRole('button', { name: /Bonne définition/i });
+    expect(goodBtn).toHaveAttribute('aria-disabled', 'true');
   });
 
-  it('reacts to 423 from submitPairRating by refreshing status', async () => {
+  it('reacts to 423 from submit by refreshing status', async () => {
     const getCurrentCampaign = vi
       .fn()
       .mockResolvedValueOnce(openCampaign)
       .mockResolvedValueOnce(closedCampaign);
-    const submitPairRating = vi.fn().mockRejectedValue(new SondageLockedError());
-    const surveyClient = stubSurveyClient({ getCurrentCampaign, submitPairRating });
-    renderSondagePairs({ surveyClient });
-    await waitFor(() => expect(screen.getByTestId('pair-card')).toBeInTheDocument());
+    const submitRating = vi.fn().mockRejectedValue(new SondageLockedError());
+    const surveyClient = stubSurveyClient({ getCurrentCampaign, submitRating });
+    renderContribuer({ surveyClient });
+    await waitFor(() => expect(screen.getByTestId('rating-card')).toBeInTheDocument());
     expect(screen.queryByTestId('sondage-lock-banner')).toBeNull();
 
     await act(async () => {
-      document.querySelector<HTMLButtonElement>('[data-verdict="LEFT_WINS"]')!.click();
+      document.querySelector<HTMLButtonElement>('[data-verdict="GOOD"]')!.click();
     });
 
-    await waitFor(() => expect(submitPairRating).toHaveBeenCalled());
+    await waitFor(() => expect(submitRating).toHaveBeenCalled());
     await waitFor(() =>
       expect(screen.getByTestId('sondage-lock-banner')).toBeInTheDocument(),
     );

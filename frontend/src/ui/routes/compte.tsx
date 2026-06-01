@@ -303,7 +303,7 @@ function ComptePage() {
         {surveyClient ? (
           <section className={sectionStyles} aria-labelledby="compte-survey-prefs-title">
             <h2 id="compte-survey-prefs-title" className={sectionTitleStyles}>
-              Préférences du sondage
+              Préférences de contribution
             </h2>
             <SurveyPreferences surveyClient={surveyClient} />
           </section>
