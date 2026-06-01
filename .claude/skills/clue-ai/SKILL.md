@@ -60,25 +60,34 @@ The two ingestion lanes (LoRA-generated + dbnary-synonym) live side-by-side in `
 The pipeline above is the **MLX lane** (Apple Silicon, Command-R-4bit,
 mlx-lm). A second **Modal lane** lives at `modal_jobs/` +
 `scripts/clue_generation/modal/` + `scripts/clue_generation/pipeline_v2/`,
-trained on Mistral-Nemo-Base-2407 on Modal A100s (ADR-0057). Both
-lanes feed the same `bliss-worker ingest-clue-candidates` with
-distinct `source` tags:
+on Modal A100s (ADR-0057). The Modal lane has **two base-model forks
+sharing the same RAFT cycle counter**; the Command-R fork is the
+active production path as of round-9 (2026-05-29):
 
-| Lane  | Base model                      | Hardware           | Validator                                                          | Source tag                       |
-|-------|---------------------------------|--------------------|---------------------------------------------------------------------|----------------------------------|
-| MLX   | Command-R-08-2024-4bit (32B)    | Apple Silicon      | `scripts/eval/validate_clue.py` (also runtime guard on committed CSV) | `command-r-lora-vN-iterMM`       |
-| Modal | Mistral-Nemo-Base-2407 (12B)    | Modal A100-40GB    | `scripts/clue_generation/pipeline_v2/` (fused: 8 ported + filters 9 + 10 from validate_clue.py) | `mistral-nemo-pilot-vN`          |
+| Lane  | Base model                          | Hardware           | Trainer script                                                                                     | source_batch prefix in `survey_items`           |
+|-------|-------------------------------------|--------------------|----------------------------------------------------------------------------------------------------|-------------------------------------------------|
+| MLX             | Command-R-08-2024-4bit (32B) | Apple Silicon      | `mlx_lm.lora` via `scripts/clue_generation/train_lora.sh`                                          | `command-r-lora-vN-iterMM` (different cycle counter) |
+| Modal — Mistral | Mistral-Nemo-Base-2407 (12B) | Modal A100-40GB    | `modal_jobs/03b_finetune.py`                                                                       | `mistral-nemo-pilot-v1-r<N>-<hash>`             |
+| Modal — Command-R | command-r-08-2024-4bit (35B) | Modal A100-40GB | `modal_jobs/03b_finetune_command_r.py` (lives on `experiment/command-r-base`)                      | `c4ai-command-r-pilot-v1-r<N>-<hash>`           |
 
 `findTopBySourcePriority` in the worker picks per lemma — no
-collision.
+collision. **Three independent counters** — do not conflate them:
+MLX `iterN` (adapter version in `docs/eval/clue-gen-v0.md`), Modal
+`corpus_vN` (recipe version of `data/lora/modal_corpus_v1/manifest.toml`),
+Modal RAFT `round-N` (training cycle within a corpus version).
 
 ### When to use which lane
 
 - **MLX lane:** quick iteration on a known adapter ladder (iter17+),
   the production-shipping path today, regression-checked nightly
   by `test_runtime_csv_pleonasms.py`.
-- **Modal lane:** A/B against Mistral Nemo, larger experiments
-  (200+ lemmas, N=3 candidates), cloud GPU access.
+- **Modal — Command-R:** the active RAFT-loop training path. Forked
+  from the Mistral palier in commit `6894271a` after the Command-R
+  fork hit 1.36 eval loss vs Mistral-Nemo's 1.71 on the same gold
+  corpus. Round-9 generations (r1 → r9 in `survey_items.source_batch`)
+  preceded round-10's correctif-aware retrain.
+- **Modal — Mistral-Nemo:** dormant comparison lane (round-1 only);
+  kept for A/B against the Command-R fork if needed.
 
 ### Modal-lane runbook (cost-aware)
 
@@ -107,6 +116,38 @@ collision.
   (`modal_corpus_v1` → `modal_corpus_v2`). Every Modal adapter
   records the manifest hash in its `model_version` so adapter →
   corpus → manifest is traceable.
+- The builder is **CSV-only**. The original `winners_round_N.jsonl`
+  slot design was never wired into `build_modal_corpus.py`; the
+  working path is a per-round CSV with a `weight_column` for per-row
+  replication (PR #712 plumbing).
+
+### How survey ratings + correctifs flow into a Modal round
+
+`scripts/clue_generation/extract_winners.py` reads the survey DB and
+writes `data/lora/modal_corpus_v1/winners_round_<N>.csv` with one row
+per winner. It pulls **both**:
+
+- **RAFT winners:** maintainer `qualite = 5, flag NULL` ratings on
+  items whose `source_batch` matches `%-r<N>-%` (the round-N
+  generations).
+- **Correctifs:** auto-GOOD ratings (`f21da63a`) on
+  `source = 'rater_proposed'` items the maintainer wrote in
+  `/sondage`. The auto-GOOD path stamps the proposed item with
+  `qualite = 5, flag NULL` attributed to the rater. Post-2026-05-30
+  maintainer correctifs additionally get
+  `survey_items.training_weight = 3.0` (gold); the corpus builder
+  replicates those rows 3× via `weight_column = "training_weight"`.
+
+The maintainer is auto-resolved from `maintainer_roles`. No
+`--user-id` arg.
+
+**Dead-leg history (pre-PR-#713):** the auto-GOOD wiring was in place
+from 2026-05-28 but `extract_winners.py`'s source_batch filter
+silently excluded all `rater_proposed` items. Rounds r1–r9 trained
+without seeing any survey correctifs even though the DB held them.
+Round-10 (2026-06-01) is the first cycle with correctifs in the
+training corpus. When diagnosing "why didn't my correctif move the
+needle?", check whether the round predates this fix.
 
 ### Don'ts (Modal lane)
 

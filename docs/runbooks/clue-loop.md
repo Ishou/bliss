@@ -1,4 +1,4 @@
-# Clue training loop runbook — round-0 to round-1
+# Clue training loop runbook — Modal lane
 
 End-to-end procedure for the iterative clue-generation training loop
 on Modal: round-0 SFT on the gold pilot v1, then RAFT (rejection-
@@ -8,6 +8,49 @@ Algorithm choice is RAFT, not DPO. Rationale + expectations live in
 `docs/superpowers/plans/2026-05-26-clue-loop-raft.md`. Backbone design
 is ADR-0057 (Modal cloud-GPU lane). This runbook is for **solo
 operation** — one maintainer, one rater, no calibration step.
+
+## What's where — three independent counters
+
+The clue-AI stack carries three numbering schemes that are easy to
+confuse. They are not interchangeable.
+
+| Counter         | Lane                              | What it tracks                          | What bumps it                                         |
+|-----------------|-----------------------------------|-----------------------------------------|-------------------------------------------------------|
+| `iter9`, `iter18`, … | **MLX** (Command-R, Apple Silicon) | LoRA adapter iteration in `docs/eval/clue-gen-v0.md` | Any new adapter trained on the MLX lane               |
+| `modal_corpus_v1`   | **Modal**                        | Recipe version of the SFT corpus        | Structural manifest edit (new source, prompt change)  |
+| `round-N`           | **Modal RAFT**                   | Training *cycle* within a corpus version | Each retrain after a fresh winners CSV is appended    |
+
+The Modal lane has **two base-model forks** sharing the same RAFT
+cycle counter:
+
+| Fork              | Base model                  | Trainer script                       | source_batch prefix in `survey_items`         |
+|-------------------|-----------------------------|--------------------------------------|-----------------------------------------------|
+| Mistral-Nemo path | Mistral-Nemo-Base-2407 (12B) | `modal_jobs/03b_finetune.py`         | `mistral-nemo-pilot-v1-r<N>-<hash>`           |
+| Command-R fork    | command-r-08-2024-4bit (35B) | `modal_jobs/03b_finetune_command_r.py` (lives on `experiment/command-r-base`) | `c4ai-command-r-pilot-v1-r<N>-<hash>` |
+
+The Command-R fork has been the active iteration path since
+2026-05-27 (commit `6894271a`). Round numbering continues across the
+fork — at the time of writing, generations through r9 exist on the
+Command-R fork; the Mistral-Nemo path has r1 only.
+
+## How correctifs flow into training
+
+Maintainer correctifs (rater proposes a replacement clue in `/sondage`)
+create a new `survey_items` row with `source = 'rater_proposed'` and,
+post-2026-05-30, `training_weight = 3.0` (gold). The auto-GOOD wiring
+(commit `f21da63a`) also creates a `qualite = 5, flag NULL` rating on
+the proposed item attributed to the maintainer.
+
+**Pre-PR-#713 (rounds 1–9):** correctifs landed in the DB and were
+silently dropped at extraction — `extract_winners.py` filtered by
+`source_batch LIKE '%-r<N>-%'` which excluded the `rater_2026-*`
+source_batches. Nothing trained on them.
+
+**Round-10 onward (this runbook):** `extract_winners.py` widens the
+WHERE clause to `(source_batch LIKE '%-r<N>-%' OR source = 'rater_proposed')`
+and writes a CSV with the `training_weight` column. The manifest's
+`winners_round_<N>` slot consumes it via `weight_column = "training_weight"`,
+which replicates gold rows 3× during corpus build (PR #712 plumbing).
 
 ## Prereqs
 
@@ -25,7 +68,7 @@ operation** — one maintainer, one rater, no calibration step.
 1. [Round-0 prep + SFT](#round-0-prep--sft)
 2. [Round-0 to round-1 transition](#round-0-to-round-1-transition)
 3. [Round-1 rating session](#round-1-rating-session)
-4. [Round-1 RAFT step](#round-1-raft-step)
+4. [Round-N RAFT step](#round-n-raft-step)
 5. [Round-2 lemma curation](#round-2-lemma-curation)
 
 ---
@@ -190,52 +233,59 @@ rater calibration is out of scope (see plan).
 
 ---
 
-## Round-1 RAFT step
+## Round-N RAFT step
 
-1. Get the maintainer user_id. Either:
-
-   ```sh
-   curl -s -b session_cookie https://<survey-api>/v1/auth/whoami | jq .user_id
-   ```
-
-   or from psql:
-
-   ```sql
-   SELECT user_id, email FROM users WHERE email = '<maintainer email>';
-   ```
-
-2. Extract round-1 winners (GOOD-rated `modal_round_1` items) to JSONL:
+1. Extract round-N winners to CSV. The extractor auto-resolves the
+   maintainer from `maintainer_roles`; no UUID arg is needed. It pulls
+   both r-N RAFT winners (`source_batch LIKE '%-r<N>-%'`) **and**
+   maintainer correctifs (`source = 'rater_proposed'`) into the same
+   file, with the `training_weight` column driving per-row replication
+   downstream:
 
    ```sh
    python3 -m scripts.clue_generation.extract_winners \
-       --user-id <UUID> \
-       --round 1 \
-       --out data/lora/modal_corpus_v1/winners_round_1.jsonl
+       --round <N> \
+       --out data/lora/modal_corpus_v1/winners_round_<N>.csv
    ```
 
-3. Build the round-1 corpus, snapshot the manifest, and emit the
+2. Add a `winners_round_<N>` source to `manifest.toml` (replacing the
+   prior round's slot, or alongside it — the build accumulates):
+
+   ```toml
+   [[sources]]
+   name = "winners_round_<N>"
+   path = "data/lora/modal_corpus_v1/winners_round_<N>.csv"
+   tier = "gold"
+   weight = 1
+   csv_delimiter = ";"
+   schema_mapping = { mot = "mot", definition = "definition", force = "force" }
+   weight_column = "training_weight"
+   row_filter = ""
+   ```
+
+3. Build the round-N corpus, snapshot the manifest, and emit the
    handoff commands:
 
    ```sh
-   python3 modal_jobs/05_raft_finetune.py --round 1
+   python3 modal_jobs/05_raft_finetune.py --round <N>
    ```
 
-   This writes `data/lora/modal_corpus_v1/manifest.raft-round-1.toml`
-   (the snapshot is what makes the round reproducible) and refreshes
-   `train.jsonl` / `val.jsonl` to include `winners_round_1.jsonl`.
+   This writes `data/lora/modal_corpus_v1/manifest.raft-round-<N>.toml`
+   and refreshes `train.jsonl` / `val.jsonl` to include the new winners.
 
-4. Upload + finetune (same two commands as round-0):
+4. Upload + finetune. Use the trainer matching the active fork — for
+   the Command-R fork (current production path), use
+   `03b_finetune_command_r.py` from the `experiment/command-r-base`
+   branch:
 
    ```sh
    modal run modal_jobs/03a_upload_dataset.py
-   modal run modal_jobs/03b_finetune.py
-   modal volume cp mots-fleches-adapters/mistral-nemo-pilot-v1 \
-       mots-fleches-adapters/raft-round-1
+   modal run modal_jobs/03b_finetune_command_r.py    # or 03b_finetune.py for the Mistral path
+   modal volume cp mots-fleches-adapters/c4ai-command-r-pilot-v1 \
+       mots-fleches-adapters/raft-round-<N>
    ```
 
-Expected duration: ≈ 25–35 min on A100-40GB (same envelope as
-round-0; the corpus grows by ≤100 winners, so training time is
-effectively unchanged). Cost ≈ $1.50.
+Expected duration: ≈ 25–35 min on A100-40GB. Cost ≈ $1.50.
 
 ---
 
@@ -248,22 +298,10 @@ observed, the lemma pool will be expanded from
 `data/curated/lemma_pool.csv` (or, if absent, from a Grammalecte-
 lemma-frequency cut per ADR-0014).
 
-Adding a new round to the manifest:
-
-```toml
-[[sources]]
-name = "winners_round_2"
-path = "data/lora/modal_corpus_v1/winners_round_2.jsonl"
-tier = "gold"
-weight = 1
-optional = true
-```
-
-`optional = true` is currently declarative — the builder needs an
-upgrade to honor it (skip missing JSONL files instead of raising
-`FileNotFoundError`) and to read JSONL alongside CSV sources. Track
-this as a builder follow-up before round-2 is actually runnable end-
-to-end.
+Adding a new round to the manifest: see the round-N RAFT step above
+for the CSV-backed source block. The builder is CSV-only; JSONL was
+the original design but never wired into `build_modal_corpus.py`, so
+the CSV path is the only working option today.
 
 ---
 

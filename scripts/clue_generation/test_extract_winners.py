@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-import json
+import csv
+import io
 import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
@@ -48,108 +49,143 @@ class SqliteCursorAdapter:
 
 @pytest.fixture
 def seeded_conn() -> SqliteConnAdapter:
-    """In-memory SQLite seeded with 5 survey_items + ratings; only one row matches all filters."""
+    """In-memory SQLite: items + ratings + maintainer_roles; mixed RAFT + correctif rows."""
     conn = sqlite3.connect(":memory:")
     conn.execute("""
         CREATE TABLE survey_items (
             item_id TEXT PRIMARY KEY,
             mot TEXT, definition TEXT, pos TEXT, categorie TEXT, style TEXT,
             force_claimed INTEGER, longueur INTEGER,
-            source TEXT, source_batch TEXT, expected TEXT, retired_at TEXT
+            source TEXT, source_batch TEXT, expected TEXT, retired_at TEXT,
+            training_weight REAL DEFAULT 1.0
         )
     """)
     conn.execute("""
         CREATE TABLE ratings (
             rating_id TEXT PRIMARY KEY, item_id TEXT, user_id TEXT,
-            qualite INTEGER, flag TEXT, created_at TEXT
+            qualite INTEGER, flag TEXT, proposed_item_id TEXT,
+            created_at TEXT
         )
     """)
+    conn.execute("""
+        CREATE TABLE maintainer_roles (
+            user_id TEXT PRIMARY KEY, role TEXT, changed_at TEXT
+        )
+    """)
+    conn.execute(
+        "INSERT INTO maintainer_roles VALUES (?, 'maintainer', '2026-05-01T00:00:00+00:00')",
+        (USER_ME,),
+    )
 
     items = [
-        # (item_id, mot, def, pos, cat, style, force, longueur, source, batch, expected, retired_at)
-        # round lineage now lives in source_batch (`-r<N>-` infix); source is the Kotlin enum value.
+        # (item_id, mot, def, pos, cat, style, force, longueur, source, batch, expected, retired_at, training_weight)
         ("i1", "PAIN", "Aliment de boulangerie", "nom_commun", "aliments",
-         "definition_directe", 1, 4, "synthetic_v1", "mistral-nemo-pilot-v1-r1-aaa", None, None),
+         "definition_directe", 1, 4, "synthetic_v1", "c4ai-command-r-pilot-v1-r9-aaa", None, None, 1.0),
         ("i2", "TRAIN", "Transport ferroviaire", "nom_commun", "transports",
-         "definition_directe", 1, 5, "synthetic_v1", "mistral-nemo-pilot-v1-r2-bbb", None, None),
+         "definition_directe", 1, 5, "synthetic_v1", "c4ai-command-r-pilot-v1-r8-bbb", None, None, 1.0),
         ("i3", "MIEL", "Produit des abeilles", "nom_commun", "aliments",
-         "definition_directe", 2, 4, "synthetic_v1", "mistral-nemo-pilot-v1-r1-aaa", None,
-         "2026-05-26T10:00:00+00:00"),
+         "definition_directe", 2, 4, "synthetic_v1", "c4ai-command-r-pilot-v1-r9-aaa", None,
+         "2026-05-26T10:00:00+00:00", 1.0),
         ("i4", "EAU", "Liquide vital", "nom_commun", "boissons",
-         "definition_directe", 1, 3, "gold", "gold_v1", None, None),
+         "definition_directe", 1, 3, "gold", "gold_v1", None, None, 1.0),
         ("i5", "SEL", "Condiment marin", "nom_commun", "aliments",
-         "definition_directe", 1, 3, "synthetic_v1", "mistral-nemo-pilot-v1-r1-aaa", None, None),
+         "definition_directe", 1, 3, "synthetic_v1", "c4ai-command-r-pilot-v1-r9-aaa", None, None, 1.0),
+        # rater_proposed items: i6 gold (training_weight=3), i7 non-gold (weight=1)
+        ("i6", "CHAT", "Petit félin domestique", "nom_commun", "animaux",
+         "definition_directe", 2, 4, "rater_proposed", "rater_2026-06", None, None, 3.0),
+        ("i7", "CHIEN", "Compagnon fidèle", "nom_commun", "animaux",
+         "definition_directe", 2, 5, "rater_proposed", "rater_2026-05", None, None, 1.0),
     ]
     conn.executemany(
-        "INSERT INTO survey_items VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+        "INSERT INTO survey_items VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
         items,
     )
 
     ratings = [
-        ("r1", "i1", USER_ME, 5, None, "2026-05-26T12:00:00+00:00"),       # KEEP (batch matches -r1-)
-        ("r2", "i2", USER_ME, 5, None, "2026-05-26T12:01:00+00:00"),       # batch is -r2- → SQL filters out when --round 1
-        ("r3", "i3", USER_ME, 5, None, "2026-05-26T12:02:00+00:00"),       # retired → SQL filters out
-        ("r4", "i4", USER_ME, 5, None, "2026-05-26T12:03:00+00:00"),       # gold_v1 batch (no -r1-) → SQL filters out
-        ("r5", "i5", USER_ME, 3, None, "2026-05-26T12:04:00+00:00"),       # qualite=3 → SQL filters out
-        ("r6", "i1", USER_ME, 5, "hors_sujet", "2026-05-26T12:05:00+00:00"),  # flag set → SQL filters out
-        ("r7", "i1", USER_OTHER, 5, None, "2026-05-26T12:06:00+00:00"),    # other user → SQL filters out
+        # r9 RAFT path
+        ("r1", "i1", USER_ME, 5, None, None, "2026-05-26T12:00:00+00:00"),       # KEEP: r9, qualite=5
+        ("r2", "i2", USER_ME, 5, None, None, "2026-05-26T12:01:00+00:00"),       # DROP: r8 (round mismatch)
+        ("r3", "i3", USER_ME, 5, None, None, "2026-05-26T12:02:00+00:00"),       # DROP: retired
+        ("r4", "i4", USER_ME, 5, None, None, "2026-05-26T12:03:00+00:00"),       # DROP: gold_v1 batch
+        ("r5", "i5", USER_ME, 3, None, None, "2026-05-26T12:04:00+00:00"),       # DROP: qualite=3
+        ("r6", "i1", USER_ME, 5, "hors_sujet", None, "2026-05-26T12:05:00+00:00"),  # DROP: flag set
+        ("r7", "i1", USER_OTHER, 5, None, None, "2026-05-26T12:06:00+00:00"),    # DROP: not a maintainer
+        # rater_proposed auto-GOOD path
+        ("r8", "i6", USER_ME, 5, None, None, "2026-05-30T08:31:00+00:00"),       # KEEP: gold correctif
+        ("r9", "i7", USER_ME, 5, None, None, "2026-05-29T08:31:00+00:00"),       # KEEP: non-gold correctif
+        ("r10", "i7", USER_ME, 5, None, "i6", "2026-05-29T08:32:00+00:00"),       # DROP: nested correctif (proposed_item_id set)
     ]
     conn.executemany(
-        "INSERT INTO ratings VALUES (?,?,?,?,?,?)",
+        "INSERT INTO ratings VALUES (?,?,?,?,?,?,?)",
         ratings,
     )
     conn.commit()
     return SqliteConnAdapter(conn)
 
 
-def test_run_writes_only_matching_row(seeded_conn, tmp_path):
-    """End-to-end: only PAIN (source_batch -r1-, qualite=5, flag NULL, unretired) survives."""
-    out = tmp_path / "winners.jsonl"
-    result = ew.run(USER_ME, 1, out, seeded_conn)
-    assert result["kept"] == 1
-
-    lines = out.read_text(encoding="utf-8").splitlines()
-    assert len(lines) == 1
-    entry = json.loads(lines[0])
-    assert entry == {
-        "mot": "PAIN",
-        "definition": "Aliment de boulangerie",
-        "pos": "nom_commun",
-        "categorie": "aliments",
-        "style": "definition_directe",
-        "force": 1,
-        "longueur": 4,
-        "source": "synthetic_v1",
-        "source_batch": "mistral-nemo-pilot-v1-r1-aaa",
-        "rated_at": "2026-05-26T12:00:00+00:00",
-    }
+def _read_csv(path: Path) -> list[dict]:
+    """Read a `;`-delimited CSV into a list of dicts."""
+    return list(csv.DictReader(io.StringIO(path.read_text(encoding="utf-8")), delimiter=";"))
 
 
-def test_run_with_round_2_keeps_only_train(seeded_conn, tmp_path):
-    """Switching --round 2 keeps TRAIN (source_batch -r2-) and excludes PAIN via SQL."""
-    out = tmp_path / "winners.jsonl"
-    result = ew.run(USER_ME, 2, out, seeded_conn)
-    assert result["kept"] == 1
-    entry = json.loads(out.read_text(encoding="utf-8").splitlines()[0])
-    assert entry["mot"] == "TRAIN"
+def test_run_writes_r9_winner_and_correctifs(seeded_conn, tmp_path):
+    """Round 9 keeps PAIN (RAFT) + CHAT (gold correctif) + CHIEN (non-gold correctif)."""
+    out = tmp_path / "winners.csv"
+    result = ew.run(9, out, seeded_conn)
+    assert result["kept"] == 3
+    rows = _read_csv(out)
+    mots = {r["mot"] for r in rows}
+    assert mots == {"PAIN", "CHAT", "CHIEN"}
+
+
+def test_csv_carries_training_weight(seeded_conn, tmp_path):
+    """The gold correctif CHAT carries training_weight=3.0 in the CSV."""
+    out = tmp_path / "winners.csv"
+    ew.run(9, out, seeded_conn)
+    rows = _read_csv(out)
+    by_mot = {r["mot"]: r for r in rows}
+    assert by_mot["CHAT"]["training_weight"] == "3.0"
+    assert by_mot["CHIEN"]["training_weight"] == "1.0"
+    assert by_mot["PAIN"]["training_weight"] == "1.0"
+
+
+def test_csv_uses_force_column_not_force_claimed(seeded_conn, tmp_path):
+    """The CSV uses `force` as the column name (manifest schema_mapping expects this)."""
+    out = tmp_path / "winners.csv"
+    ew.run(9, out, seeded_conn)
+    rows = _read_csv(out)
+    assert "force" in rows[0]
+    assert "force_claimed" not in rows[0]
+
+
+def test_no_maintainer_means_no_rows(tmp_path):
+    """When no user is tagged as maintainer, nothing is exported (instead of all users)."""
+    conn = sqlite3.connect(":memory:")
+    conn.execute("CREATE TABLE survey_items (item_id TEXT, mot TEXT, definition TEXT, pos TEXT, "
+                 "categorie TEXT, style TEXT, force_claimed INTEGER, longueur INTEGER, "
+                 "source TEXT, source_batch TEXT, expected TEXT, retired_at TEXT, training_weight REAL)")
+    conn.execute("CREATE TABLE ratings (rating_id TEXT, item_id TEXT, user_id TEXT, "
+                 "qualite INTEGER, flag TEXT, proposed_item_id TEXT, created_at TEXT)")
+    conn.execute("CREATE TABLE maintainer_roles (user_id TEXT, role TEXT, changed_at TEXT)")
+    conn.execute("INSERT INTO survey_items VALUES "
+                 "('i1','X','d','p','c','s',1,1,'synthetic_v1','c4ai-command-r-pilot-v1-r9-aaa',NULL,NULL,1.0)")
+    conn.execute("INSERT INTO ratings VALUES ('r1','i1',?,5,NULL,NULL,'2026-05-26T12:00:00+00:00')",
+                 (USER_ME,))
+    conn.commit()
+    out = tmp_path / "winners.csv"
+    result = ew.run(9, out, SqliteConnAdapter(conn))
+    assert result["kept"] == 0
 
 
 def test_row_to_entry_isoformats_datetime():
     """`rated_at` is ISO-8601 even when the driver returns a datetime."""
     dt = datetime(2026, 5, 26, 12, 0, 0, tzinfo=timezone.utc)
     row = ("CHAT", "Animal", "nom_commun", "animaux", "definition_directe",
-           1, 4, "synthetic_v1", "mistral-nemo-pilot-v1-r1-aaa", None, 5, USER_ME, dt)
-    entry, reason = ew.row_to_entry(row, 1)
-    assert reason is None
+           1, 4, "synthetic_v1", "c4ai-command-r-pilot-v1-r9-aaa", 1.0,
+           5, dt)
+    entry = ew.row_to_entry(row)
     assert entry["rated_at"] == "2026-05-26T12:00:00+00:00"
-
-
-def test_row_to_entry_drops_wrong_round():
-    """A row whose source_batch carries -r3- is dropped when --round=1."""
-    row = ("X", "d", "p", "c", "s", 1, 1, "synthetic_v1", "mistral-nemo-pilot-v1-r3-zzz", None, 5, USER_ME, "t")
-    entry, reason = ew.row_to_entry(row, 1)
-    assert entry is None
-    assert reason == "source_batch_round_mismatch"
+    assert entry["mot"] == "CHAT"
 
 
 def test_load_db_url_errors_when_neither_source_present(monkeypatch, tmp_path):

@@ -1,0 +1,84 @@
+mot;definition;pos;categorie;style;force;longueur;source;source_batch;rated_at;training_weight
+JOLIE;Attrayante;autre;autre;culturel;3;5;rater_proposed;rater_2026-05;2026-05-27 12:37:53.498797+00;1.0
+PINCE;Main du crabe;nom_commun;autre;cryptique;3;5;rater_proposed;rater_2026-05;2026-05-27 16:24:32.629073+00;1.0
+GLACE;On y voit son reflet;nom_commun;autre;periphrase;3;5;rater_proposed;rater_2026-05;2026-05-27 16:31:49.199803+00;1.0
+ROUGE;À lèvre, pour se maquiller;adjectif;autre;periphrase;3;5;rater_proposed;rater_2026-05;2026-05-27 21:23:29.386812+00;1.0
+AVION;Oiseau de fer;nom_commun;autre;periphrase;3;5;rater_proposed;rater_2026-05;2026-05-27 21:41:48.769418+00;1.0
+LIVRE;Ensemble de pages;nom_commun;autre;culturel;3;5;rater_proposed;rater_2026-05;2026-05-27 22:01:17.569952+00;1.0
+MARTEAU;Il sert à taper des clous;nom_commun;autre;definition_directe;3;7;rater_proposed;rater_2026-05;2026-05-28 05:37:20.471997+00;1.0
+MAIN;Porteuse de bagues;nom_commun;autre;periphrase;3;4;rater_proposed;rater_2026-05;2026-05-28 05:40:25.116589+00;1.0
+POULE;D'eau ou de ferme;nom_commun;autre;culturel;3;5;rater_proposed;rater_2026-05;2026-05-28 05:43:01.598381+00;1.0
+PLAGE;Horaire ou sableuse;nom_commun;autre;fonction_role;3;5;rater_proposed;rater_2026-05;2026-05-28 06:00:33.591795+00;1.0
+LENT;Qui avance à petit pas;adjectif;autre;definition_directe;3;4;rater_proposed;rater_2026-05;2026-05-28 07:07:09.726727+00;1.0
+POULE;Pondeuse de ferme;nom_commun;autre;periphrase;3;5;rater_proposed;rater_2026-05;2026-05-28 07:10:33.905254+00;1.0
+ARGENT;Métal ou monnaie;nom_commun;autre;fonction_role;3;6;rater_proposed;rater_2026-05;2026-05-28 07:16:14.983098+00;1.0
+BERGER;Allemand, c'est un canidé;nom_commun;autre;periphrase;3;6;rater_proposed;rater_2026-05;2026-05-28 07:18:22.407435+00;1.0
+RENARD;Canidé rusé;nom_commun;autre;fonction_role;3;6;rater_proposed;rater_2026-05;2026-05-28 09:24:58.771308+00;1.0
+TANTE;La sœur de maman;nom_commun;autre;culturel;3;5;rater_proposed;rater_2026-05;2026-05-28 09:26:31.942748+00;1.0
+COURONNE;Ornement de souverains;nom_commun;autre;culturel;3;8;rater_proposed;rater_2026-05;2026-05-28 09:31:18.3577+00;1.0
+CASQUE;Protège la tête;nom_commun;autre;definition_directe;3;6;rater_proposed;rater_2026-05;2026-05-28 09:31:53.462908+00;1.0
+CRATERE;Cicatrice de Lune;nom_commun;autre;fonction_role;3;7;rater_proposed;rater_2026-05;2026-05-29 09:14:47.591465+00;1.0
+PIANO;Clavier sans ordinateur;nom_commun;autre;cryptique;3;5;rater_proposed;rater_2026-05;2026-05-29 09:15:29.321813+00;1.0
+SIRENE;Signal de péril ou péril en mer;nom_commun;autre;definition_directe;3;6;rater_proposed;rater_2026-05;2026-05-29 09:17:32.858439+00;1.0
+SAGE;Bien élevé ou bien instruit;polyvalent;autre;cryptique;3;4;rater_proposed;rater_2026-05;2026-05-29 09:18:01.816656+00;1.0
+ODYSSEE;Périple d’un héros grec;nom_commun;autre;periphrase;3;7;rater_proposed;rater_2026-05;2026-05-29 09:18:52.55025+00;1.0
+REVERIE;Voyage immobile;nom_commun;autre;cryptique;3;7;rater_proposed;rater_2026-05;2026-05-29 09:19:09.135638+00;1.0
+CHEVAL;Vapeur, fiscal ou de Troie;nom_commun;autre;definition_directe;3;6;rater_proposed;rater_2026-05;2026-05-29 09:20:00.209606+00;1.0
+VENISE;Cité des doges;nom_propre;autre;culturel;3;6;rater_proposed;rater_2026-05;2026-05-29 09:20:58.322893+00;1.0
+INDOMPTABLE;Qu’on ne met pas au pas;adjectif;autre;definition_directe;3;11;rater_proposed;rater_2026-05;2026-05-29 09:21:35.379377+00;1.0
+ETOILE;Soleil de loin;nom_commun;autre;culturel;3;6;rater_proposed;rater_2026-05;2026-05-29 09:22:56.429907+00;1.0
+DANSEUR;Il a le rythme dans la peau;nom_commun;autre;fonction_role;3;7;rater_proposed;rater_2026-05;2026-05-29 09:24:08.461568+00;1.0
+SABLIER;Il fait couler le temps;nom_commun;autre;cryptique;3;7;rater_proposed;rater_2026-05;2026-05-29 09:24:53.388668+00;1.0
+FRAGILE;À manier avec précaution;adjectif;autre;culturel;3;7;rater_proposed;rater_2026-05;2026-05-29 09:25:09.280994+00;1.0
+PLAGE;Rive à serviettes;nom_commun;autre;periphrase;3;5;rater_proposed;rater_2026-05;2026-05-29 09:25:34.659993+00;1.0
+PEINTRE;Artisan du mur ou de la toile;nom_commun;autre;cryptique;3;7;rater_proposed;rater_2026-05;2026-05-29 09:26:05.726312+00;1.0
+GRAIN;Morceau de sable ou de folie;polyvalent;autre;culturel;3;5;rater_proposed;rater_2026-05;2026-05-29 09:26:33.252082+00;1.0
+LENT;Pas pressé d’arriver;adjectif;autre;periphrase;3;4;rater_proposed;rater_2026-05;2026-05-29 09:26:53.56747+00;1.0
+MARTEAU;Complètement frappé;nom_commun;autre;culturel;3;7;rater_proposed;rater_2026-05;2026-05-29 09:28:18.812414+00;1.0
+NEBULEUX;Qui laisse planer le doute;adjectif;autre;cryptique;3;8;rater_proposed;rater_2026-05;2026-05-29 09:29:24.721003+00;1.0
+MONTAGNE;Sommet de la géographie;nom_commun;autre;culturel;3;8;rater_proposed;rater_2026-05;2026-05-29 09:30:29.888543+00;1.0
+MARIN;Homme à bord;nom_commun;autre;periphrase;3;5;rater_proposed;rater_2026-05;2026-05-29 09:31:22.069191+00;1.0
+TROUVER;Mettre la main dessus;verbe_infinitif;autre;culturel;3;7;rater_proposed;rater_2026-05;2026-05-29 09:31:53.661791+00;1.0
+OEIL;Caméra naturelle;autre;autre;definition_directe;3;4;rater_proposed;rater_2026-05;2026-05-29 09:32:17.423518+00;1.0
+TIMBRE;Passeport pour courrier;nom_commun;autre;definition_directe;3;6;rater_proposed;rater_2026-05;2026-05-29 09:32:53.785434+00;1.0
+VOILE;Drap qui prend le large;nom_commun;autre;culturel;3;5;rater_proposed;rater_2026-05;2026-05-29 09:33:57.718026+00;1.0
+CASQUE;Bulle sonore portative;nom_commun;autre;cryptique;3;6;rater_proposed;rater_2026-05;2026-05-29 09:34:26.819757+00;1.0
+RIRE;Sourire à voix haute;verbe_infinitif;autre;fonction_role;3;4;rater_proposed;rater_2026-05;2026-05-29 09:35:24.487539+00;1.0
+TABLEAU;Périodique en chimie;nom_commun;autre;cryptique;3;7;rater_proposed;rater_2026-05;2026-05-29 20:35:47.404318+00;1.0
+DRAGON;Ennemi du chevalier;adjectif;autre;cryptique;3;6;synthetic_v1;c4ai-command-r-pilot-v1-r9-1709f57b;2026-05-30 08:27:59.264077+00;1.0
+IVRESSE;État d’ébriété;nom_commun;autre;periphrase;3;7;synthetic_v1;c4ai-command-r-pilot-v1-r9-1709f57b;2026-05-30 08:30:49.272023+00;1.0
+LANTERNE;Elle guide dans le noir;nom_commun;autre;fonction_role;3;8;rater_proposed;rater_2026-05;2026-05-30 08:31:14.562608+00;3.0
+JAILLIR;Sortir sans prévenir;verbe_infinitif;autre;cryptique;3;7;rater_proposed;rater_2026-05;2026-05-30 08:31:46.187528+00;3.0
+FLEUR;Parure végétale;nom_commun;autre;periphrase;3;5;rater_proposed;rater_2026-05;2026-05-30 08:36:25.920241+00;3.0
+MANGER;Passer à table;verbe_infinitif;autre;periphrase;3;6;rater_proposed;rater_2026-05;2026-05-30 08:36:56.79024+00;3.0
+RIVIÈRE;Décor de Monet;nom_commun;autre;culturel;3;7;rater_proposed;rater_2026-05;2026-05-30 08:39:56.330393+00;3.0
+SCINTILLER;Jeter de petits éclats;verbe_infinitif;autre;periphrase;3;10;rater_proposed;rater_2026-05;2026-05-30 08:40:22.700695+00;3.0
+GRAIN;Morceau de sable;nom_commun;autre;periphrase;3;5;rater_proposed;rater_2026-05;2026-05-30 08:41:48.599566+00;3.0
+VERTIGE;Effroi d’Icare;nom_commun;autre;culturel;3;7;rater_proposed;rater_2026-05;2026-05-30 08:44:10.618938+00;3.0
+CITADELLE;Fort bien gardé;nom_commun;autre;cryptique;3;9;rater_proposed;rater_2026-05;2026-05-30 09:09:07.01447+00;3.0
+IMPASSIBLE;Stoïque comme Sénèque;adjectif;autre;culturel;3;10;rater_proposed;rater_2026-05;2026-05-30 09:09:51.725065+00;3.0
+ABIME;Néant de Nietzsche;autre;autre;culturel;3;5;rater_proposed;rater_2026-05;2026-05-30 09:11:41.262993+00;3.0
+ANCIEN;Daté d’Homère;adjectif;autre;culturel;3;6;rater_proposed;rater_2026-05;2026-05-30 09:12:35.718858+00;3.0
+BABEL;Chantier biblique;nom_propre;autre;culturel;3;5;rater_proposed;rater_2026-05;2026-05-30 09:15:00.186482+00;3.0
+JAILLIR;Sortir en éclats;verbe_infinitif;autre;cryptique;3;7;rater_proposed;rater_2026-05;2026-05-30 09:16:17.53588+00;3.0
+PLATINE;Blond très pâle;adjectif;autre;periphrase;3;7;rater_proposed;rater_2026-05;2026-05-30 09:16:43.959066+00;3.0
+FALAISE;Blanche d’Étretat;nom_commun;autre;culturel;3;7;rater_proposed;rater_2026-05;2026-05-30 09:17:11.664721+00;3.0
+AURORE;Annonce du jour;nom_commun;autre;fonction_role;3;6;rater_proposed;rater_2026-05;2026-05-30 09:18:16.567264+00;3.0
+PLUIE;Laveuse de pavés;nom_commun;autre;fonction_role;3;5;rater_proposed;rater_2026-05;2026-05-30 09:19:35.492152+00;3.0
+RECIF;Briseur de coques;nom_commun;autre;cryptique;3;5;rater_proposed;rater_2026-05;2026-05-30 09:20:14.716105+00;3.0
+HIVER;Saison de Noël;nom_commun;autre;culturel;3;5;rater_proposed;rater_2026-05;2026-05-30 09:20:48.421921+00;3.0
+MARIN;Bleu qui prend le large;autre;autre;cryptique;3;5;rater_proposed;rater_2026-05;2026-05-30 09:25:24.539089+00;3.0
+GOUFFRE;Cavité profonde;nom_commun;autre;definition_directe;3;7;rater_proposed;rater_2026-05;2026-05-30 09:25:45.283853+00;3.0
+RIDEAU;Tissu de fenêtre;nom_commun;autre;definition_directe;3;6;rater_proposed;rater_2026-06;2026-06-01 05:45:12.123035+00;3.0
+BABEL;Tour biblique;nom_commun;autre;definition_directe;3;5;rater_proposed;rater_2026-06;2026-06-01 05:45:56.070933+00;3.0
+SOEUR;Lien de sang ou d’âme;polyvalent;autre;cryptique;3;5;rater_proposed;rater_2026-06;2026-06-01 05:49:29.67882+00;3.0
+SORTILEGE;Parole à effet;nom_commun;autre;cryptique;3;9;rater_proposed;rater_2026-06;2026-06-01 05:49:50.870377+00;3.0
+FALAISE;Rempart du littoral;nom_commun;autre;fonction_role;3;7;rater_proposed;rater_2026-06;2026-06-01 05:50:13.832788+00;3.0
+PAPILLON;Insecte ailé;nom_commun;autre;definition_directe;3;8;rater_proposed;rater_2026-06;2026-06-01 05:50:40.760734+00;3.0
+ABEILLE;Butineuse;nom_commun;autre;definition_directe;3;7;rater_proposed;rater_2026-06;2026-06-01 05:51:06.419863+00;3.0
+LUNE;Quartier sans maison;nom_commun;autre;cryptique;3;4;rater_proposed;rater_2026-06;2026-06-01 05:52:01.334117+00;3.0
+PILE;Sans un écart;adverbe;autre;periphrase;3;4;rater_proposed;rater_2026-06;2026-06-01 05:53:12.922079+00;3.0
+DUNE;Amas de sable;nom_commun;autre;definition_directe;3;4;rater_proposed;rater_2026-06;2026-06-01 05:53:49.074562+00;3.0
+DIFFICILE;Qui met à l’épreuve;adjectif;autre;fonction_role;3;9;rater_proposed;rater_2026-06;2026-06-01 05:54:15.502524+00;3.0
+COURONNE;Or royal ou dentaire;polyvalent;autre;cryptique;3;8;rater_proposed;rater_2026-06;2026-06-01 05:55:19.759507+00;3.0
+SOLDE;Balance de compte;nom_commun;autre;definition_directe;3;5;rater_proposed;rater_2026-06;2026-06-01 05:57:05.61583+00;3.0
