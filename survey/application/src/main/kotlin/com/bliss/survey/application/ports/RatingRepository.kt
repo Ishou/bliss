@@ -47,4 +47,8 @@ data class RatingAggregate(
     val flagCount: Int,
     val qualiteSquaredAuthSum: Int,
     val qualiteSquaredAnonSum: Int,
+    val senses: List<String> = emptyList(),
+    val subTags: List<String> = emptyList(),
+    val targetCategories: List<String> = emptyList(),
+    val anyMultisense: Boolean = false,
 )

@@ -142,6 +142,10 @@ class PgRatingRepository(
                                     flagCount = rs.getInt("flag_count"),
                                     qualiteSquaredAuthSum = rs.getInt("qualite_sq_auth_sum"),
                                     qualiteSquaredAnonSum = rs.getInt("qualite_sq_anon_sum"),
+                                    senses = decodeStrings(rs.getString("senses")),
+                                    subTags = flattenJsonArrays(rs.getString("sub_tags")),
+                                    targetCategories = flattenJsonArrays(rs.getString("target_categories")),
+                                    anyMultisense = rs.getBoolean("any_multisense"),
                                 )
                         }
                     }
@@ -202,11 +206,17 @@ class PgRatingRepository(
 
     private companion object {
         private val STRINGS_SERIALIZER = ListSerializer(String.serializer())
+        private val NESTED_STRINGS_SERIALIZER = ListSerializer(ListSerializer(String.serializer()))
         private val JSON = Json { ignoreUnknownKeys = true }
 
         private fun encodeStrings(items: List<String>): String = JSON.encodeToString(STRINGS_SERIALIZER, items)
 
-        private fun decodeStrings(json: String): List<String> = JSON.decodeFromString(STRINGS_SERIALIZER, json)
+        private fun decodeStrings(json: String?): List<String> =
+            if (json == null) emptyList() else JSON.decodeFromString(STRINGS_SERIALIZER, json)
+
+        // jsonb_agg over the per-rating JSONB arrays yields an array-of-arrays to flatten.
+        private fun flattenJsonArrays(json: String?): List<String> =
+            if (json == null) emptyList() else JSON.decodeFromString(NESTED_STRINGS_SERIALIZER, json).flatten()
 
         const val INSERT_SQL =
             """
@@ -256,7 +266,11 @@ class PgRatingRepository(
                    COALESCE(SUM(CASE WHEN submitted_as = 'anon' THEN 1 END), 0) AS difficulte_anon_n,
                    COALESCE(SUM(CASE WHEN flag IS NOT NULL THEN 1 END), 0) AS flag_count,
                    COALESCE(SUM(CASE WHEN submitted_as = 'auth' THEN qualite * qualite END), 0) AS qualite_sq_auth_sum,
-                   COALESCE(SUM(CASE WHEN submitted_as = 'anon' THEN qualite * qualite END), 0) AS qualite_sq_anon_sum
+                   COALESCE(SUM(CASE WHEN submitted_as = 'anon' THEN qualite * qualite END), 0) AS qualite_sq_anon_sum,
+                   jsonb_agg(r.target_sense) FILTER (WHERE r.target_sense IS NOT NULL) AS senses,
+                   jsonb_agg(r.sub_tags) AS sub_tags,
+                   jsonb_agg(r.target_categories) AS target_categories,
+                   bool_or(r.is_multisense) AS any_multisense
               FROM ratings r
               JOIN campaigns c ON c.campaign_id = r.campaign_id
              WHERE c.closed_at IS NOT NULL
@@ -277,7 +291,11 @@ class PgRatingRepository(
                    COALESCE(SUM(CASE WHEN submitted_as = 'anon' THEN 1 END), 0) AS difficulte_anon_n,
                    COALESCE(SUM(CASE WHEN flag IS NOT NULL THEN 1 END), 0) AS flag_count,
                    COALESCE(SUM(CASE WHEN submitted_as = 'auth' THEN qualite * qualite END), 0) AS qualite_sq_auth_sum,
-                   COALESCE(SUM(CASE WHEN submitted_as = 'anon' THEN qualite * qualite END), 0) AS qualite_sq_anon_sum
+                   COALESCE(SUM(CASE WHEN submitted_as = 'anon' THEN qualite * qualite END), 0) AS qualite_sq_anon_sum,
+                   jsonb_agg(r.target_sense) FILTER (WHERE r.target_sense IS NOT NULL) AS senses,
+                   jsonb_agg(r.sub_tags) AS sub_tags,
+                   jsonb_agg(r.target_categories) AS target_categories,
+                   bool_or(r.is_multisense) AS any_multisense
               FROM ratings r
               JOIN campaigns c ON c.campaign_id = r.campaign_id
              WHERE c.closed_at IS NOT NULL

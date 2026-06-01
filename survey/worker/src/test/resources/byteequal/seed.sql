@@ -34,35 +34,44 @@ UPDATE survey_items SET training_weight = 3.0
 -- Item 1: one auth rating (qualite=4, difficulte=2), one anon (qualite=3, difficulte=2).
 INSERT INTO ratings
   (rating_id, item_id, user_id, submitted_as, qualite, difficulte,
-   flag, proposed_item_id, latency_ms, client_meta, created_at, campaign_id)
+   flag, proposed_item_id, latency_ms, client_meta, created_at, campaign_id,
+   target_categories, target_sense, is_multisense, sub_tags)
 VALUES
   ('00000000-0000-0000-0000-000000000101',
    '00000000-0000-0000-0000-000000000001',
    '00000000-0000-0000-0000-0000000000a1',
    'auth', 4, 2, NULL, NULL, NULL, NULL,
    '2026-05-25T12:00:00Z',
-   '00000000-0000-0000-0000-0000000000c1'),
+   '00000000-0000-0000-0000-0000000000c1',
+   '["nourriture", "objet"]'::jsonb, 'aliment; de base, cuit', TRUE,
+   '["pâtisserie", "boulangerie"]'::jsonb),
   ('00000000-0000-0000-0000-000000000102',
    '00000000-0000-0000-0000-000000000001',
    NULL,
    'anon', 3, 2, NULL, NULL, NULL, NULL,
    '2026-05-25T12:00:00Z',
-   '00000000-0000-0000-0000-0000000000c1');
+   '00000000-0000-0000-0000-0000000000c1',
+   '[]'::jsonb, NULL, FALSE, '[]'::jsonb);
 
--- Item 2: two distinct auth raters (qualite=5/4, difficulte=3/4).
+-- Item 2: two distinct auth raters (qualite=5/4, difficulte=3/4); overlapping sub_tags + senses.
 INSERT INTO ratings
   (rating_id, item_id, user_id, submitted_as, qualite, difficulte,
-   flag, proposed_item_id, latency_ms, client_meta, created_at, campaign_id)
+   flag, proposed_item_id, latency_ms, client_meta, created_at, campaign_id,
+   target_categories, target_sense, is_multisense, sub_tags)
 VALUES
   ('00000000-0000-0000-0000-000000000201',
    '00000000-0000-0000-0000-000000000002',
    '00000000-0000-0000-0000-0000000000a1',
    'auth', 5, 3, NULL, NULL, NULL, NULL,
    '2026-05-25T12:00:00Z',
-   '00000000-0000-0000-0000-0000000000c1'),
+   '00000000-0000-0000-0000-0000000000c1',
+   '["faune_flore"]'::jsonb, 'oiseau de basse-cour', FALSE,
+   '["volaille", "ferme"]'::jsonb),
   ('00000000-0000-0000-0000-000000000202',
    '00000000-0000-0000-0000-000000000002',
    '00000000-0000-0000-0000-0000000000a2',
    'auth', 4, 4, NULL, NULL, NULL, NULL,
    '2026-05-25T12:00:00Z',
-   '00000000-0000-0000-0000-0000000000c1');
+   '00000000-0000-0000-0000-0000000000c1',
+   '["faune_flore"]'::jsonb, 'oiseau de basse-cour', FALSE,
+   '["volaille"]'::jsonb);
