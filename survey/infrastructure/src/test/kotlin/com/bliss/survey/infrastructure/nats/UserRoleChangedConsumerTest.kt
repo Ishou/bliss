@@ -118,7 +118,7 @@ class UserRoleChangedConsumerTest {
             mot = "chat",
             definition = "def",
             pos = Pos.NOM_COMMUN,
-            categorie = Categorie.ANIMALS,
+            categorie = Categorie.FAUNE_FLORE,
             style = Style.PERIPHRASE,
             forceClaimed = 2,
             longueur = 4,

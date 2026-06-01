@@ -22,7 +22,7 @@ class StyleGuideCsvWriterTest {
             mot = "PAIN",
             definition = "Aliment de boulangerie",
             pos = Pos.NOM_COMMUN,
-            categorie = Categorie.ALIMENTS,
+            categorie = Categorie.NOURRITURE,
             style = Style.DEFINITION_DIRECTE,
             forceClaimed = 1,
             longueur = 4,
@@ -45,12 +45,12 @@ class StyleGuideCsvWriterTest {
     @Test
     fun `row emits weight between source and meta`() {
         val row = writer.toRow(item(3.0), meta = emptyMap())
-        assertThat(row).isEqualTo("PAIN;Aliment de boulangerie;nom_commun;aliments;définition_directe;1;4;gold;3.0;")
+        assertThat(row).isEqualTo("PAIN;Aliment de boulangerie;nom_commun;nourriture;définition_directe;1;4;gold;3.0;")
     }
 
     @Test
     fun `row emits default weight as 1_0`() {
         val row = writer.toRow(item(1.0), meta = emptyMap())
-        assertThat(row).isEqualTo("PAIN;Aliment de boulangerie;nom_commun;aliments;définition_directe;1;4;gold;1.0;")
+        assertThat(row).isEqualTo("PAIN;Aliment de boulangerie;nom_commun;nourriture;définition_directe;1;4;gold;1.0;")
     }
 }

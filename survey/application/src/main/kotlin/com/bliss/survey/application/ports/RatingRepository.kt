@@ -25,7 +25,14 @@ interface RatingRepository {
         since: Instant?,
         settledBefore: Instant,
     ): List<RatingAggregate>
+
+    suspend fun priorMetaForMot(mot: String): PriorLemmaMeta
 }
+
+data class PriorLemmaMeta(
+    val senses: List<String>,
+    val subTags: List<String>,
+)
 
 data class RatingAggregate(
     val itemId: ItemId,

@@ -100,7 +100,7 @@ fun Application.surveyApiModule(
         submitPairRatingRoute(wiring.submitPairRating)
         undoActionRoute(wiring.undoAction)
         getCurrentCampaignRoute(wiring.getCurrentCampaign)
-        lemmaMetaRoute(wiring.getLemmaMeta, wiring.upsertSubTags)
+        lemmaMetaRoute(wiring.getLemmaMeta)
         meProgressRoute(wiring.userProgress)
         meContributionsRoute(wiring.items)
         mePreferencesRoute(wiring.proposedBy)

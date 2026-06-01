@@ -135,7 +135,7 @@ class PgProposedByRepositoryTest {
             mot = mot,
             definition = "Definition for $mot",
             pos = Pos.NOM_COMMUN,
-            categorie = Categorie.ANIMALS,
+            categorie = Categorie.FAUNE_FLORE,
             style = Style.PERIPHRASE,
             forceClaimed = 2,
             longueur = mot.length,

@@ -14,7 +14,7 @@ class SurveyItemTest {
             mot = "POULE",
             definition = "Femelle du coq",
             pos = Pos.NOM_COMMUN,
-            categorie = Categorie.ANIMALS,
+            categorie = Categorie.FAUNE_FLORE,
             style = Style.PERIPHRASE,
             forceClaimed = 2,
             longueur = 5,

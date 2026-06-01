@@ -8,12 +8,12 @@ INSERT INTO survey_items
 VALUES
   ('00000000-0000-0000-0000-000000000001',
    'PAIN', 'Aliment de boulangerie',
-   'nom_commun', 'aliments', 'definition_directe',
+   'nom_commun', 'nourriture', 'definition_directe',
    1, 4, 'gold', 'gold_v1', 'mid', FALSE, NULL, NULL,
    '2026-05-25T12:00:00Z'),
   ('00000000-0000-0000-0000-000000000002',
    'POULE', 'Femelle du coq',
-   'nom_commun', 'animals', 'periphrase',
+   'nom_commun', 'faune_flore', 'periphrase',
    2, 5, 'gold', 'gold_v1', 'mid', FALSE, NULL, NULL,
    '2026-05-25T12:00:00Z');
 

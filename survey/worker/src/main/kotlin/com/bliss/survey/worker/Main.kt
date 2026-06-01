@@ -18,7 +18,6 @@ import com.bliss.survey.infrastructure.nats.UserRoleChangedConsumerConfig
 import com.bliss.survey.infrastructure.persistence.PgMaintainerRoleRepository
 import com.bliss.survey.infrastructure.persistence.PgRatingRepository
 import com.bliss.survey.infrastructure.persistence.PgSurveyItemRepository
-import com.bliss.survey.infrastructure.persistence.PgWordMetaRepository
 import com.bliss.survey.infrastructure.persistence.SurveyDatabase
 import com.fasterxml.uuid.Generators
 import io.nats.client.Nats
@@ -161,9 +160,8 @@ internal fun runExport(
     runBlocking {
         val items = PgSurveyItemRepository(ds)
         val ratings = PgRatingRepository(ds)
-        val wordMeta = PgWordMetaRepository(ds)
         val clock = Clock { Instant.now() }
-        val useCase = ExportDatasetUseCase(items, ratings, StyleGuideCsvWriter(), clock, wordMeta)
+        val useCase = ExportDatasetUseCase(items, ratings, StyleGuideCsvWriter(), clock)
         val csv = useCase.execute(minRatings, since, authWeight, anonWeight)
         Files.writeString(out, csv)
     }

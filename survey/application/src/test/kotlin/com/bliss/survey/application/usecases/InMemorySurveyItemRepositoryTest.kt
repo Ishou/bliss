@@ -21,7 +21,7 @@ class InMemorySurveyItemRepositoryTest {
             mot = "PAIN",
             definition = "Aliment de boulangerie",
             pos = Pos.NOM_COMMUN,
-            categorie = Categorie.ALIMENTS,
+            categorie = Categorie.NOURRITURE,
             style = Style.DEFINITION_DIRECTE,
             forceClaimed = 1,
             longueur = 4,

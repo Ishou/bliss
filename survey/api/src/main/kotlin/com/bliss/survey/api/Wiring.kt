@@ -12,7 +12,6 @@ import com.bliss.survey.application.usecases.SubmitPairRatingResult
 import com.bliss.survey.application.usecases.SubmitRatingCommand
 import com.bliss.survey.application.usecases.SubmitRatingResult
 import com.bliss.survey.application.usecases.UndoActionResult
-import com.bliss.survey.application.usecases.UpsertSubTagsUseCase
 import com.bliss.survey.domain.model.UserId
 import com.bliss.survey.infrastructure.nats.UserDeletedConsumer
 import com.bliss.survey.infrastructure.nats.UserRoleChangedConsumer
@@ -28,7 +27,6 @@ class Wiring(
     val undoAction: suspend (String, UserId?) -> UndoActionResult,
     val getCurrentCampaign: GetCurrentCampaignUseCase,
     val getLemmaMeta: GetLemmaMetaUseCase,
-    val upsertSubTags: UpsertSubTagsUseCase,
     val items: SurveyItemRepository,
     val proposedBy: ProposedByRepository,
     val userProgress: UserProgressRepository,

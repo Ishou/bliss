@@ -16,7 +16,10 @@ data class RatingRequest(
     val difficulte: Int,
     val flag: String? = null,
     val correctif: CorrectifPayload? = null,
-    val targetSenses: List<String>? = null,
+    val targetCategories: List<String>? = null,
+    val targetSense: String? = null,
+    val isMultisense: Boolean = false,
+    val subTags: List<String>? = null,
     val latencyMs: Int,
 )
 

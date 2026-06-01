@@ -7,8 +7,3 @@ data class LemmaMetaResponse(
     val priorSenses: List<String>,
     val priorSubTags: List<String>,
 )
-
-@Serializable
-data class SubTagsRequest(
-    val subTags: List<String>,
-)

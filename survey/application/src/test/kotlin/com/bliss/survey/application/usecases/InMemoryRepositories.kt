@@ -3,6 +3,7 @@ package com.bliss.survey.application.usecases
 import com.bliss.survey.application.ports.ActionLogRepository
 import com.bliss.survey.application.ports.CampaignRepository
 import com.bliss.survey.application.ports.PairRatingRepository
+import com.bliss.survey.application.ports.PriorLemmaMeta
 import com.bliss.survey.application.ports.ProposedByRepository
 import com.bliss.survey.application.ports.ProposedContribution
 import com.bliss.survey.application.ports.RatingAggregate
@@ -193,6 +194,7 @@ class InMemoryPairRatingRepository : PairRatingRepository {
 class InMemoryRatingRepository : RatingRepository {
     val ratings: MutableList<Rating> = mutableListOf()
     val anonymisedUsers: MutableSet<UserId> = mutableSetOf()
+    val itemIdToMot: MutableMap<ItemId, String> = mutableMapOf()
 
     override suspend fun findAuthRating(
         itemId: ItemId,
@@ -231,6 +233,14 @@ class InMemoryRatingRepository : RatingRepository {
         since: Instant?,
         settledBefore: Instant,
     ): List<RatingAggregate> = aggregateOverride ?: emptyList()
+
+    override suspend fun priorMetaForMot(mot: String): PriorLemmaMeta {
+        val matched = ratings.filter { itemIdToMot[it.itemId] == mot }
+        return PriorLemmaMeta(
+            senses = matched.mapNotNull { it.targetSense },
+            subTags = matched.flatMap { it.subTags },
+        )
+    }
 }
 
 class InMemoryProposedByRepository : ProposedByRepository {
