@@ -38,5 +38,7 @@
 # Client-only dynamic routes. No prerendered file exists, so rewrite to the
 # shell with 200 (NOT a redirect) — a multiplayer share link or a refresh on
 # a lobby must resolve the param client-side, never 404 or bounce to home.
-/lobby/*             /index.html         200
-/join/*              /index.html         200
+# Target is `/` (the canonically-served shell): Pages auto-308s `/index.html`
+# to `/`, and a 200-rewrite whose target redirects falls through to 404.html.
+/lobby/*             /                   200
+/join/*              /                   200
