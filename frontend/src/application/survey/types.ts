@@ -2,7 +2,6 @@
 
 export type SurveyPos =
   | 'verbe_infinitif'
-  | 'verbe_conjugue'
   | 'participe_passe'
   | 'participe_present'
   | 'nom_commun'

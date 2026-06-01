@@ -5,7 +5,6 @@ describe('sondage label maps', () => {
   describe('posLabel', () => {
     it.each([
       ['verbe_infinitif', 'Verbe (infinitif)'],
-      ['verbe_conjugue', 'Verbe (conjugué)'],
       ['participe_passe', 'Participe passé'],
       ['participe_present', 'Participe présent'],
       ['nom_commun', 'Nom commun'],
