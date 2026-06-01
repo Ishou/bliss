@@ -86,17 +86,53 @@ def load_lookup(dbnary_path: Path, frequencies: dict[str, int] | None = None) ->
     return {key: _resolve(variants, frequencies) for key, variants in candidates.items()}
 
 
-def backfill(conn, lookup: dict[tuple[str, str], str], dry_run: bool = False) -> dict[str, int]:
+def load_pos_agnostic(dbnary_path: Path) -> dict[str, str]:
+    """{stripped_lemma: accented_surface} for stripped forms with exactly one live DBnary
+    surface across all POS; multi-surface homographs (naufrage/naufragé) are omitted."""
+    surfaces: dict[str, set[str]] = {}
+    with dbnary_path.open(encoding="utf-8") as f:
+        for row in csv.DictReader(f):
+            if row["pos"].strip() not in DBNARY_TO_ENUM:
+                continue
+            senses = [s for s in (row.get("definition") or "").split("|") if s.strip()]
+            live = [s for s in senses if not _OBSOLETE.search(s)]
+            if senses and not live:
+                continue
+            surfaces.setdefault(_strip(row["lemma"]), set()).add(row["lemma"])
+    return {stripped: next(iter(v)) for stripped, v in surfaces.items() if len(v) == 1}
+
+
+# pos='autre'/'polyvalent' rows (legacy multi-POS) miss the per-POS lookup; fall back to the
+# POS-agnostic map, which only carries forms with no accent ambiguity.
+_POS_AGNOSTIC_FALLBACK = frozenset({"autre", "polyvalent"})
+
+
+def backfill(
+    conn,
+    lookup: dict[tuple[str, str], str],
+    pos_agnostic: dict[str, str] | None = None,
+    dry_run: bool = False,
+    pos_filter: list[str] | None = None,
+) -> dict[str, int]:
     """Walk survey_items, UPDATE mot for rows whose (stripped, pos) is in lookup."""
+    pos_agnostic = pos_agnostic or {}
+    with conn.cursor() as cur:
+        if pos_filter:
+            cur.execute(
+                "SELECT item_id, mot, pos FROM survey_items WHERE retired_at IS NULL AND pos = ANY(%s)",
+                (pos_filter,),
+            )
+        else:
+            cur.execute("SELECT item_id, mot, pos FROM survey_items WHERE retired_at IS NULL")
+        rows = cur.fetchall()
     updated = 0
     skipped = 0
     already = 0
-    with conn.cursor() as cur:
-        cur.execute("SELECT item_id, mot, pos FROM survey_items WHERE retired_at IS NULL")
-        rows = cur.fetchall()
     for item_id, mot, pos in rows:
         key = (_strip(mot), pos)
         canonical = lookup.get(key)
+        if canonical is None and pos in _POS_AGNOSTIC_FALLBACK:
+            canonical = pos_agnostic.get(_strip(mot))
         if canonical is None:
             print(f"skip (no DBnary match): {mot} ({pos}) item_id={item_id}", file=sys.stderr)
             skipped += 1
@@ -124,11 +160,18 @@ def main() -> int:
     p.add_argument("--dbnary", type=Path, default=Path("data/dbnary/dbnary_fr.csv"))
     p.add_argument("--frequencies", type=Path, default=_DEFAULT_FREQUENCIES)
     p.add_argument("--dry-run", action="store_true", help="Print updates without applying.")
+    p.add_argument(
+        "--pos",
+        help="Comma-separated pos values to restrict the backfill to "
+        "(e.g. 'autre,polyvalent' for the legacy buckets); default: all live rows.",
+    )
     args = p.parse_args()
 
+    pos_filter = [p.strip() for p in args.pos.split(",")] if args.pos else None
     lookup = load_lookup(args.dbnary, load_frequencies(args.frequencies))
+    pos_agnostic = load_pos_agnostic(args.dbnary)
     with psycopg.connect(args.dsn) as conn:
-        summary = backfill(conn, lookup, dry_run=args.dry_run)
+        summary = backfill(conn, lookup, pos_agnostic, dry_run=args.dry_run, pos_filter=pos_filter)
     print(f"updated={summary['updated']} skipped={summary['skipped']} already={summary['already']}", file=sys.stderr)
     return 0
 
