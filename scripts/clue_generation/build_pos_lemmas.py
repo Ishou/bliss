@@ -27,9 +27,11 @@ def _strip(s: str) -> str:
     ).lower()
 
 
-# {stripped lemma: {enum_pos: non-obsolete sense count}}; the count ranks a word's dominant POS for --multi-pos-fraction.
-def load_dbnary(path: Path) -> dict[str, dict[str, int]]:
-    db: dict[str, dict[str, int]] = {}
+# {stripped lemma: ({enum_pos: non-obsolete sense count}, {enum_pos: canonical_lemma})}.
+# Canonical is tracked per (stripped, enum_pos) so `solde` (noun) and `soldé` (adjective)
+# emit distinct surfaces; alphabetical tie-break when multiple variants share (stripped, pos).
+def load_dbnary(path: Path) -> dict[str, tuple[dict[str, int], dict[str, str]]]:
+    db: dict[str, tuple[dict[str, int], dict[str, str]]] = {}
     with path.open() as f:
         for row in csv.DictReader(f):
             pos = row["pos"].strip()
@@ -39,9 +41,14 @@ def load_dbnary(path: Path) -> dict[str, dict[str, int]]:
             live = [s for s in senses if not _OBSOLETE.search(s)]
             if senses and not live:
                 continue
-            counts = db.setdefault(_strip(row["lemma"]), {})
+            stripped = _strip(row["lemma"])
+            counts, canonicals = db.get(stripped, ({}, {}))
             enum_pos = DBNARY_TO_ENUM[pos]
             counts[enum_pos] = counts.get(enum_pos, 0) + (len(live) or 1)
+            existing = canonicals.get(enum_pos)
+            if existing is None or row["lemma"] < existing:
+                canonicals[enum_pos] = row["lemma"]
+            db[stripped] = (counts, canonicals)
     return db
 
 
@@ -75,17 +82,19 @@ def main() -> int:
     rows: list[tuple[str, str]] = []
     uncovered: list[str] = []
     for mot in words:
-        counts = db.get(_strip(mot), {})
-        if not counts:
+        entry = db.get(_strip(mot))
+        if entry is None:
             uncovered.append(mot)
             continue
+        counts, canonicals = entry
         # rank by sense-count desc (dominant POS first), tie-break by name
         ranked = sorted(counts, key=lambda p: (-counts[p], p))
         # most multi-POS words collapse to their dominant POS (breadth); a fraction keep all (variety).
         if len(ranked) > 1 and rng.random() >= args.multi_pos_fraction:
             ranked = ranked[:1]
         for pos in sorted(ranked):
-            rows.append((mot, pos))
+            # The DBnary canonical lemma per POS carries the accents the input mot may have lost.
+            rows.append((canonicals[pos].upper(), pos))
 
     with args.out.open("w", newline="") as f:
         w = csv.writer(f, delimiter=";")
