@@ -1,5 +1,5 @@
 #!/usr/bin/env sh
-# Bliss pre-commit hook: secret scanning via gitleaks.
+# Bliss pre-commit hook: worktree-only guard + secret scanning via gitleaks.
 #
 # Enforces the manifesto rule "Git hooks prevent accidental commits"
 # (CLAUDE.md, "Security") and ADR-0004 §7 ("git-side secret-scanning gate").
@@ -14,6 +14,24 @@
 
 set -e
 set -u
+
+# Worktree guard: feature work happens in a worktree, never the shared main
+# checkout (ADR-0001 parallel-agent workflow). Worktrees carry "/worktrees/"
+# in their git-dir; the main checkout does not. Override: ALLOW_MAIN_COMMIT=1.
+case "$(git rev-parse --absolute-git-dir)" in
+    */worktrees/*) : ;;
+    *)
+        if [ "${ALLOW_MAIN_COMMIT:-}" != "1" ]; then
+            cat >&2 <<EOF
+BLOCKED: commit attempted in the MAIN checkout ($(git rev-parse --show-toplevel)).
+All feature work must happen in a git worktree, never the shared main checkout.
+  git worktree add ../bliss-<feature> -b <type>/<name>
+Deliberate main-checkout commit (maintainer only): ALLOW_MAIN_COMMIT=1 git commit ...
+EOF
+            exit 1
+        fi
+        ;;
+esac
 
 # If there are no staged changes (e.g. `git commit --allow-empty`), we
 # have nothing to scan. Exit cleanly so the commit can proceed.
