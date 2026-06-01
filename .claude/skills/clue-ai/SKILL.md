@@ -129,7 +129,8 @@ per winner. It pulls **both**:
 
 - **RAFT winners:** maintainer `qualite = 5, flag NULL` ratings on
   items whose `source_batch` matches `%-r<N>-%` (the round-N
-  generations).
+  generations), **rated within the just-closed campaign**
+  (`r.campaign_id = <latest campaign>`).
 - **Correctifs:** auto-GOOD ratings (`f21da63a`) on
   `source = 'rater_proposed'` items the maintainer wrote in
   `/sondage`. The auto-GOOD path stamps the proposed item with
@@ -141,6 +142,15 @@ per winner. It pulls **both**:
 The maintainer is auto-resolved from `maintainer_roles`. No
 `--user-id` arg.
 
+**Campaign gate (ADR-0059).** `extract_winners.py` resolves the
+most-recently-opened campaign and **refuses to run while it is still
+open**. Close the round's campaign before extracting
+(`UPDATE campaigns SET closed_at = now() WHERE closed_at IS NULL;`).
+RAFT winners are scoped to that just-closed campaign's `campaign_id`;
+correctifs are cumulative gold and deliberately *not* campaign-scoped.
+One campaign per round — open one before each rating session, close it
+before the RAFT step. Full lifecycle in `docs/runbooks/clue-loop.md`.
+
 **Dead-leg history (pre-PR-#713):** the auto-GOOD wiring was in place
 from 2026-05-28 but `extract_winners.py`'s source_batch filter
 silently excluded all `rater_proposed` items. Rounds r1–r9 trained
@@ -151,6 +161,11 @@ needle?", check whether the round predates this fix.
 
 ### Don'ts (Modal lane)
 
+- **Don't** start a RAFT retrain without closing the round's campaign
+  first. `extract_winners.py` refuses on an open latest campaign, but
+  the orchestration habit is close → extract → train → import next
+  round → open. One open campaign spanning multiple rounds is the
+  2026-05-30 incident (ADR-0059).
 - **Don't** point `03b_finetune.py` at gold-only data without
   invoking `--mode gold-only` on `03a_upload_dataset.py` — the
   default fused corpus is what the spec calls for.
