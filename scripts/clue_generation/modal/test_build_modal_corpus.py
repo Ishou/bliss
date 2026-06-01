@@ -243,15 +243,39 @@ def test_weight_column_with_nonunit_weight_raises(tmp_rowweight_dir):
         bc.load_all_sources(tmp_rowweight_dir, manifest)
 
 
-def test_parse_meta_column_extracts_senses_and_sub_tags():
-    """meta column (ADR-0061 survey export) yields lists; other keys ignored."""
+def test_parse_meta_column_extracts_all_pinned_keys():
+    """meta column (ADR-0061 survey export) yields the four pinned keys; other keys ignored."""
     parsed = bc._parse_meta_column(
-        "qualite_mean:4.2|senses:animal félin,conversation digitale|sub_tags:felin,domestique|flags:0"
+        "qualite_mean:4.2|senses:animal félin,conversation digitale|"
+        "sub_tags:felin,domestique|target_categories:animaux,technologie|"
+        "multisense:true|flags:0"
     )
     assert parsed == {
         "senses": ["animal félin", "conversation digitale"],
         "sub_tags": ["felin", "domestique"],
+        "target_categories": ["animaux", "technologie"],
+        "multisense": True,
     }
+
+
+def test_parse_meta_column_multisense_absent_is_false_when_read():
+    """multisense is absent unless flagged; consumers treat absence as False."""
+    parsed = bc._parse_meta_column("senses:a|sub_tags:b")
+    assert "multisense" not in parsed
+    assert parsed.get("multisense", False) is False
+
+
+def test_parse_meta_column_multisense_only_true_string_is_true():
+    """multisense is True for case-insensitive `true`; any other value is False."""
+    assert bc._parse_meta_column("multisense:true") == {"multisense": True}
+    assert bc._parse_meta_column("multisense:TRUE") == {"multisense": True}
+    assert bc._parse_meta_column("multisense:false") == {"multisense": False}
+    assert bc._parse_meta_column("multisense:1") == {"multisense": False}
+
+
+def test_parse_meta_column_ignores_unknown_keys():
+    """Unknown keys are dropped; only pinned keys survive."""
+    assert bc._parse_meta_column("qualite_mean:4.2|flags:0|notes:whatever") == {}
 
 
 def test_parse_meta_column_empty_and_malformed():
@@ -260,3 +284,36 @@ def test_parse_meta_column_empty_and_malformed():
     assert bc._parse_meta_column(None) == {}
     assert bc._parse_meta_column("no_colon|alsono_colon") == {}
     assert bc._parse_meta_column("senses: a , b ") == {"senses": ["a", "b"]}
+    assert bc._parse_meta_column("target_categories: animaux , technologie ") == {
+        "target_categories": ["animaux", "technologie"]
+    }
+
+
+def test_load_source_attaches_per_rating_meta(tmp_path: Path):
+    """_load_source mirrors senses/sub_tags wiring for target_categories + multisense."""
+    root = tmp_path
+    (root / "data").mkdir(parents=True)
+    (root / "data" / "survey.csv").write_text(
+        "mot;definition;meta\n"
+        "CHAT;Animal qui ronronne;"
+        "senses:félin,jeu|sub_tags:domestique|target_categories:animaux,jeux|multisense:true\n"
+        "PAIN;Aliment de boulangerie;\n",
+        encoding="utf-8",
+    )
+    src = {
+        "name": "survey",
+        "path": "data/survey.csv",
+        "csv_delimiter": ";",
+        "schema_mapping": {"mot": "mot", "definition": "definition", "force": ""},
+        "row_filter": "",
+    }
+    rows = bc._load_source(root, src)
+    chat = next(r for r in rows if r["mot"] == "CHAT")
+    assert chat["_senses"] == ["félin", "jeu"]
+    assert chat["_sub_tags"] == ["domestique"]
+    assert chat["_target_categories"] == ["animaux", "jeux"]
+    assert chat["_multisense"] is True
+
+    pain = next(r for r in rows if r["mot"] == "PAIN")
+    assert "_target_categories" not in pain
+    assert "_multisense" not in pain

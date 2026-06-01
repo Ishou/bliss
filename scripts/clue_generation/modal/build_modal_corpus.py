@@ -93,24 +93,25 @@ def _row_copies(raw: str | None) -> int:
     return max(1, round(value))
 
 
-def _parse_meta_column(raw: str | None) -> dict[str, list[str]]:
-    """Parse `key:value|key:value` meta cell; returns only `senses` and `sub_tags` as lists."""
+def _parse_meta_column(raw: str | None) -> dict[str, Any]:
+    """Parse `key:value|key:value` meta cell (ADR-0061 survey export); returns pinned keys, ignores unknown."""
     text = (raw or "").strip()
     if not text:
         return {}
-    out: dict[str, list[str]] = {}
+    out: dict[str, Any] = {}
     for pair in text.split("|"):
         if ":" not in pair:
             continue
         key, _, value = pair.partition(":")
         key = key.strip()
-        if key not in ("senses", "sub_tags"):
-            continue
-        out[key] = [v.strip() for v in value.split(",") if v.strip()]
+        if key in ("senses", "sub_tags", "target_categories"):
+            out[key] = [v.strip() for v in value.split(",") if v.strip()]
+        elif key == "multisense":
+            out[key] = value.strip().lower() == "true"
     return out
 
 
-def _load_source(root: Path, src: dict[str, Any]) -> list[dict[str, str]]:
+def _load_source(root: Path, src: dict[str, Any]) -> list[dict[str, Any]]:
     """Load one source per its manifest entry and apply schema mapping."""
     if "path_glob" in src:
         paths = [Path(p) for p in glob(str(root / src["path_glob"]))]
@@ -123,7 +124,7 @@ def _load_source(root: Path, src: dict[str, Any]) -> list[dict[str, str]]:
     name = src["name"]
     weight_col = src.get("weight_column", "")
 
-    out: list[dict[str, str]] = []
+    out: list[dict[str, Any]] = []
     for p in paths:
         if not p.exists():
             raise FileNotFoundError(f"source '{name}': {p} not found")
@@ -153,15 +154,19 @@ def _load_source(root: Path, src: dict[str, Any]) -> list[dict[str, str]]:
                     entry["_senses"] = parsed_meta["senses"]
                 if "sub_tags" in parsed_meta:
                     entry["_sub_tags"] = parsed_meta["sub_tags"]
+                if "target_categories" in parsed_meta:
+                    entry["_target_categories"] = parsed_meta["target_categories"]
+                if "multisense" in parsed_meta:
+                    entry["_multisense"] = parsed_meta["multisense"]
                 out.append(entry)
     return out
 
 
-def load_all_sources(root: Path, manifest_path: Path) -> list[dict[str, str]]:
+def load_all_sources(root: Path, manifest_path: Path) -> list[dict[str, Any]]:
     """Load every source, exclude held-out lemmas, replicate by weight (per-row when the source sets weight_column)."""
     manifest = _load_manifest(manifest_path)
     held_out = _load_held_out_lemmas(root, manifest.get("exclude_lemmas_from", ""))
-    all_rows: list[dict[str, str]] = []
+    all_rows: list[dict[str, Any]] = []
     for src in manifest["sources"]:
         if src.get("weight_column") and int(src["weight"]) != 1:
             raise ValueError(
