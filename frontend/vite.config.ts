@@ -190,23 +190,7 @@ export default defineConfig({
           /^\/sitemap\.xml$/,
         ],
         cleanupOutdatedCaches: true,
-        // Without these two, a freshly-installed SW sits in `waiting`
-        // forever while any tab is still controlled by the previous SW
-        // — a normal F5 keeps going through the old SW's precache and
-        // never sees the new build. `skipWaiting` makes the new SW
-        // activate on install; `clientsClaim` makes it adopt all open
-        // tabs immediately. The `controlling`-event handler in
-        // `src/infrastructure/pwa.ts` then reloads each tab — fresh
-        // loads reload synchronously, mid-session tabs defer until the
-        // tab next becomes visible so the user is never yanked
-        // mid-typing. Safe here because all four chunks (app + three
-        // vendor splits) are eagerly loaded via <script> tags in
-        // index.html — a tab under the old SW has already fetched
-        // everything it needs before the new SW claims it. No
-        // mid-session dynamic import() will ask the new SW for an
-        // old-hash chunk. If lazy-loaded routes (import('./Route')) are
-        // added later, revisit this: the new SW's precache won't have
-        // the old hashed filenames the still-open page would request.
+        // skipWaiting+clientsClaim: see ADR-0026 for reload-on-update UX
         skipWaiting: true,
         clientsClaim: true,
         runtimeCaching: [

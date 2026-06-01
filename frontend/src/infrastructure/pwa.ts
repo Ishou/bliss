@@ -21,24 +21,20 @@ import { reportCaughtError } from '@/infrastructure/observability/otelTracer';
 // user when another tab triggers an update.
 const FRESH_LOAD_RELOAD_WINDOW_MS = 3000;
 
-// Session-storage key used by the chunk-load reload guard. Bounded to a
-// single reload per tab session so a genuinely broken chunk request
-// (network outage, CDN 404) cannot drive an infinite reload loop.
-const CHUNK_RELOAD_FLAG = 'bliss.chunk-mismatch-reload';
+// timestamp of last chunk-mismatch reload; time-windowed per ADR-0026
+const CHUNK_RELOAD_AT = 'bliss.chunk-mismatch-reload-at';
 
-/**
- * Recovers from a "v1 page asks for a chunk that's no longer in v2"
- * mismatch. Today the bundle is one chunk so this can't happen — but
- * route-level code splitting in the future would expose it, and the
- * symptom (a blank page after a deploy) is opaque enough that a
- * one-line guard now is cheaper than a postmortem later.
- */
-function installChunkMismatchGuard(): void {
+// suppression window; second error within span = infinite-reload guard (ADR-0026)
+const CHUNK_RELOAD_WINDOW_MS = 10_000;
+
+// vite:preloadError recovery — see ADR-0026 for the vanished-chunk flow
+function installChunkMismatchGuard(wb: Workbox, reload: () => void): void {
   window.addEventListener('vite:preloadError', (event: Event) => {
-    if (sessionStorage.getItem(CHUNK_RELOAD_FLAG) === '1') return;
-    sessionStorage.setItem(CHUNK_RELOAD_FLAG, '1');
+    const last = Number(sessionStorage.getItem(CHUNK_RELOAD_AT) ?? '0');
+    if (Date.now() - last < CHUNK_RELOAD_WINDOW_MS) return;
+    sessionStorage.setItem(CHUNK_RELOAD_AT, String(Date.now()));
     event.preventDefault();
-    window.location.reload();
+    void wb.update().finally(reload);
   });
 }
 
@@ -59,8 +55,6 @@ export function registerServiceWorker(): void {
     return;
   }
 
-  installChunkMismatchGuard();
-
   const start = () => {
     // `updateViaCache: 'none'` forces the browser to fetch `/sw.js`
     // from the network on every registration call, instead of trusting
@@ -77,6 +71,8 @@ export function registerServiceWorker(): void {
       refreshing = true;
       window.location.reload();
     };
+
+    installChunkMismatchGuard(wb, reloadOnce);
 
     const armDeferredReload = () => {
       if (staleVisibilityListener) return;

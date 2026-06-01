@@ -4,6 +4,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 const controllingHandlers: Array<() => void> = [];
 const constructorCalls: Array<{ scriptUrl: string; options?: unknown }> = [];
 const wbRegister = vi.fn(() => Promise.resolve());
+const wbUpdate = vi.fn(() => Promise.resolve());
 
 // Vitest 4 narrowed `vi.fn().mockImplementation(arrow)` so the resulting
 // mock is no longer constructable (`new MockedFn(...)` throws "is not a
@@ -17,6 +18,7 @@ vi.mock('workbox-window', () => ({
       if (type === 'controlling') controllingHandlers.push(fn);
     };
     this.register = wbRegister;
+    this.update = wbUpdate;
   }),
 }));
 
@@ -36,11 +38,22 @@ const setVisibility = (state: 'visible' | 'hidden') => {
 describe('registerServiceWorker — update strategy', () => {
   let reloadMock: ReturnType<typeof vi.fn>;
   let originalLocation: Location;
+  // track vite:preloadError listeners to detach between tests, preventing stale-closure accumulation
+  const addedListeners: Array<[string, EventListener]> = [];
+  const realAdd = window.addEventListener.bind(window);
 
   beforeEach(() => {
     controllingHandlers.length = 0;
     constructorCalls.length = 0;
     wbRegister.mockClear();
+    wbUpdate.mockClear();
+    sessionStorage.clear();
+
+    addedListeners.length = 0;
+    vi.spyOn(window, 'addEventListener').mockImplementation((type, listener, opts) => {
+      if (type === 'vite:preloadError') addedListeners.push([type, listener as EventListener]);
+      return realAdd(type, listener as EventListener, opts);
+    });
 
     reloadMock = vi.fn();
     originalLocation = window.location;
@@ -73,6 +86,10 @@ describe('registerServiceWorker — update strategy', () => {
   afterEach(() => {
     vi.useRealTimers();
     vi.unstubAllEnvs();
+    vi.restoreAllMocks();
+    for (const [type, listener] of addedListeners) {
+      window.removeEventListener(type, listener);
+    }
     Object.defineProperty(window, 'location', {
       configurable: true,
       value: originalLocation,
@@ -149,18 +166,44 @@ describe('registerServiceWorker — update strategy', () => {
     expect(reloadMock).toHaveBeenCalledTimes(1);
   });
 
-  it('reloads once on vite:preloadError', () => {
-    sessionStorage.clear();
+  // two microtask ticks needed: finally() on wb.update() settles asynchronously
+  it('updates the SW then reloads once on vite:preloadError', async () => {
     registerServiceWorker();
     window.dispatchEvent(new Event('vite:preloadError'));
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(wbUpdate).toHaveBeenCalledTimes(1);
     expect(reloadMock).toHaveBeenCalledTimes(1);
   });
 
-  it('does not reload a second time when the session flag is already set', () => {
-    sessionStorage.setItem('bliss.chunk-mismatch-reload', '1');
+  it('suppresses a second preloadError within the reload window', async () => {
     registerServiceWorker();
     window.dispatchEvent(new Event('vite:preloadError'));
-    expect(reloadMock).not.toHaveBeenCalled();
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(reloadMock).toHaveBeenCalledTimes(1);
+
+    vi.advanceTimersByTime(9000);
+    window.dispatchEvent(new Event('vite:preloadError'));
+    await Promise.resolve();
+    await Promise.resolve();
+    // Still within the 10s window — no second reload (and no second update).
+    expect(reloadMock).toHaveBeenCalledTimes(1);
+    expect(wbUpdate).toHaveBeenCalledTimes(1);
+  });
+
+  it('allows a reload again after the window elapses', async () => {
+    registerServiceWorker();
+    window.dispatchEvent(new Event('vite:preloadError'));
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(reloadMock).toHaveBeenCalledTimes(1);
+
+    vi.advanceTimersByTime(11_000);
+    window.dispatchEvent(new Event('vite:preloadError'));
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(wbUpdate).toHaveBeenCalledTimes(2);
   });
 
   // Preview deploys set VITE_MOCK_GRID_API/VITE_MOCK_GAME_API='true' so
