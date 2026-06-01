@@ -19,7 +19,7 @@ def _strip(s: str) -> str:
     ).lower()
 
 
-# DBnary POS -> survey_items.pos wire format (lowercase, as written by PgSurveyItemRepository.kt).
+# DBnary POS -> survey_items.pos wire format (lowercase).
 DBNARY_TO_ENUM = {
     "noun": "nom_commun",
     "properNoun": "nom_propre",
