@@ -176,3 +176,121 @@ No new elevation-of-privilege surface beyond the rating path.
 **Migration shape**: V10 pure-expand (add column to `ratings`, add new
 `survey_word_meta` table, both default-empty). No backfill, no contract
 phase needed — existing rows carry empty lists and remain valid.
+
+## Amendment (2026-06-01) — high-level taxonomy + all meta per-rating
+
+Hands-on use of the shipped UI surfaced three model errors. This
+amendment corrects them; the bottom-up-freeform-gloss and
+no-external-KB decisions above stand unchanged.
+
+### What was wrong
+
+1. **`Categorie` was at the wrong altitude.** The 48-value enum was
+   derived from a 114-definition gold pilot. In practice it is both
+   *too large to scan and select from* during a rating and *still
+   incomplete* — it is a flat list mixing genuine high-level classes
+   (`ARTS`, `NATURE_PAYSAGE`) with sub-tag-grade detail
+   (`ROMAN_NUMERALS`, `MUSIC_NOTES`, `COUNTRY_CODES`, `CARDINAL_POINTS`),
+   and it is entirely noun-centric — nothing tags an answer that is a
+   verb or an adjective, which are a large share of *mots fléchés*
+   answers.
+2. **`survey_word_meta` (per-lemma) did not match how the maintainer
+   works.** Rating happens one definition at a time; the maintainer
+   thinks "this definition, the answer is `chat`-the-animal, tag it",
+   not "let me go edit the word `chat`". Sub-tags and sense belong on
+   the rating, not on a per-word side-table.
+3. **Multi-select sense list went unused.** A clue targets one sense.
+   The only multi-sense case is a deliberate pun (calembour), which
+   needs a *marker*, not an enumerated list — enumerating the senses of
+   a pun adds authoring cost with no training signal the single flag
+   doesn't already carry.
+
+### Decision (amended)
+
+**1. Replace the 48-value `Categorie` with 18 high-level classes + `AUTRE`.**
+The rule: a category names a *broad class* in one word; all granularity
+moves to free-form sub-tags. The set spans nouns, verbs and adjectives:
+
+`PERSONNE`, `FAUNE_FLORE`, `GEOGRAPHIE`, `METEO`, `OBJET`, `NOURRITURE`,
+`CORPS`, `CULTURE`, `HISTOIRE`, `JEU`, `SPORT`, `RELIGION`, `SOCIETE`,
+`SCIENCE`, `CONCEPTUEL`, `LANGUE`, `ACTION`, `QUALIFICATIF`, `AUTRE`.
+
+`ACTION` (answer is a verb) and `QUALIFICATIF` (answer is an adjective)
+are net-new and close the noun-only gap. The goal is the *smallest set
+that almost never forces `AUTRE`* while staying scannable.
+
+Old → new collapse (drives the data migration of `survey_items.categorie`):
+
+| New class | Absorbs (old 48) |
+|---|---|
+| `PERSONNE` | FIRST_NAMES, TITLES, MYTHOLOGY, PROFESSIONS, FAMILLE_RELATIONS |
+| `FAUNE_FLORE` | ANIMALS, FLORE |
+| `GEOGRAPHIE` | CARDINAL_POINTS, CITIES, COUNTRIES, COUNTRY_CODES, GEOGRAPHY, NATURE_PAYSAGE |
+| `METEO` | METEO_CLIMAT |
+| `OBJET` | VETEMENTS, MOBILIER_OBJET, OUTILS, TRANSPORTS, MATERIAUX |
+| `NOURRITURE` | ALIMENTS |
+| `CORPS` | BODY_PARTS, SENSES |
+| `CULTURE` | ARTS, MUSIC_NOTES |
+| `HISTOIRE` | *(net-new)* |
+| `JEU` | CARD_GAME, GAMES |
+| `SPORT` | *(net-new)* |
+| `RELIGION` | *(net-new; mythology stays under PERSONNE)* |
+| `SOCIETE` | CURRENCIES, ORGANIZATIONS |
+| `SCIENCE` | CHEMICAL_SYMBOLS, UNITS, CELESTIAL_OBJECTS, NOMBRES, ROMAN_NUMERALS |
+| `CONCEPTUEL` | SENTIMENTS_ETATS, TEMPS_DUREE, COULEURS |
+| `LANGUE` | ABBREVIATIONS, ETRANGER, EXPRESSIONS, GRAMMAR, INTERJECTIONS, ORTHOGRAPHE |
+| `ACTION` | *(net-new)* |
+| `QUALIFICATIF` | *(net-new)* |
+| `AUTRE` | AUTRE |
+
+The granular old values become sub-tag *suggestions* (e.g. `felin`,
+`capitale`, `note de musique`, `symbole chimique`), not enum members.
+
+**2. All meta moves onto the rating row; `survey_word_meta` is dropped.**
+New `ratings` columns:
+- `target_categories JSONB` — list of `Categorie` names; the maintainer's
+  authoritative, **editable multi-select**. Pre-filled in the UI from the
+  item's single machine prior (see below) but freely overridden.
+- `target_sense TEXT NULL` — single freeform sense gloss (gloss rules
+  above still bind: no determiner-only normalization at storage, must not
+  repeat the lemma).
+- `is_multisense BOOLEAN NOT NULL DEFAULT false` — the calembour marker.
+  When `true`, `target_sense` is optional and the clue is understood to
+  play on several senses at once.
+- `sub_tags JSONB` — free-form multi-label refinement, per-rating.
+
+The old per-rating `target_senses JSONB` list is **removed** (replaced by
+`target_sense` + `is_multisense`).
+
+**3. `survey_items.categorie` stays, as a single machine prior.**
+It is migrated in place via the collapse table (old value → new class;
+unmapped/unknown → `AUTRE`). It remains the ingest-time machine guess and
+the pre-fill seed for the per-rating multi-select, so unrated items keep
+category coverage for downstream generation. The per-rating
+`target_categories` is the human source of truth where present.
+
+**4. Autocomplete now reads back from prior ratings.**
+With `survey_word_meta` gone, `GET /v1/lemma-meta/{mot}` becomes an
+aggregation query: distinct `target_sense` values and distinct `sub_tags`
+across prior ratings of items whose `mot` matches, soft-normalized for
+dedup. `priorSenses` / `priorSubTags` response shape is unchanged.
+`PUT /v1/lemma-meta/{mot}` and `SubTagsRequest` are **removed** — sub-tags
+are no longer upserted per-word; they are authored per-rating. The
+sense-inventory side-effect in `SubmitRatingUseCase` is removed.
+
+### Consequences (amended)
+
+- **Dropped surface**: `survey_word_meta` table, `WordMeta` aggregate,
+  `WordMetaRepository` / `PgWordMetaRepository` / in-memory fake,
+  `UpsertSubTagsUseCase`, `PUT /v1/lemma-meta`, `SubTagsRequest`. This is
+  a teardown of code that landed in #719–#724 days earlier; acceptable
+  because no production ratings carry the old shape yet (gold window
+  opens 2026-05-30; this is the same maintainer iterating pre-data).
+- **Migration shape**: V11 is *not* pure-expand. It drops a table and a
+  column and rewrites `survey_items.categorie` values. Safe because the
+  affected data is pre-gold sandbox data with no external consumers.
+- **Tag granularity is now uniform**: one place (sub_tags, per-rating)
+  carries all refinement; categories are a stable, trainable, low-card
+  control surface. Generation conditioning gets a clean 19-way class plus
+  open-vocabulary sub-tags, instead of a 48-way class with no verb/adj
+  coverage.
