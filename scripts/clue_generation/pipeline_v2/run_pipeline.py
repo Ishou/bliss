@@ -18,7 +18,7 @@ from .llm_judge_mock import juge_mock  # noqa: E402
 
 
 VALID_POS = {
-    "verbe_infinitif", "verbe_conjugue", "participe_passe",
+    "verbe_infinitif", "participe_passe",
     "participe_present", "nom_commun", "nom_propre", "adjectif",
     "adverbe", "interjection", "mot_outil", "sigle_abreviation",
     "polyvalent", "autre",

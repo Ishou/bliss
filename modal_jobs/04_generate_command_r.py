@@ -62,7 +62,6 @@ POS_LABELS = {
     "nom_commun": "nom",
     "nom_propre": "nom propre",
     "verbe_infinitif": "verbe",
-    "verbe_conjugue": "verbe conjugué",
     "participe_passe": "participe passé",
     "participe_present": "participe présent",
     "adjectif": "adjectif",
