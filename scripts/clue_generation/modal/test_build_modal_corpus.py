@@ -241,3 +241,22 @@ def test_weight_column_with_nonunit_weight_raises(tmp_rowweight_dir):
     )
     with pytest.raises(ValueError, match="weight_column requires weight = 1"):
         bc.load_all_sources(tmp_rowweight_dir, manifest)
+
+
+def test_parse_meta_column_extracts_senses_and_sub_tags():
+    """meta column (ADR-0061 survey export) yields lists; other keys ignored."""
+    parsed = bc._parse_meta_column(
+        "qualite_mean:4.2|senses:animal félin,conversation digitale|sub_tags:felin,domestique|flags:0"
+    )
+    assert parsed == {
+        "senses": ["animal félin", "conversation digitale"],
+        "sub_tags": ["felin", "domestique"],
+    }
+
+
+def test_parse_meta_column_empty_and_malformed():
+    """Blank or non-pair tokens parse to empty dict; whitespace stripped from list values."""
+    assert bc._parse_meta_column("") == {}
+    assert bc._parse_meta_column(None) == {}
+    assert bc._parse_meta_column("no_colon|alsono_colon") == {}
+    assert bc._parse_meta_column("senses: a , b ") == {"senses": ["a", "b"]}

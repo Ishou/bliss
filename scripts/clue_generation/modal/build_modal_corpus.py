@@ -93,6 +93,27 @@ def _row_copies(raw: str | None) -> int:
     return max(1, round(value))
 
 
+def _parse_meta_column(raw: str | None) -> dict[str, list[str]]:
+    """Parse the survey-export `meta` column (`key:value|key:value`) into a dict of comma-split list values.
+
+    Returns only the keys used downstream (`senses`, `sub_tags`); other keys are aggregate stats
+    consumed by humans and don't need plumbing.
+    """
+    text = (raw or "").strip()
+    if not text:
+        return {}
+    out: dict[str, list[str]] = {}
+    for pair in text.split("|"):
+        if ":" not in pair:
+            continue
+        key, _, value = pair.partition(":")
+        key = key.strip()
+        if key not in ("senses", "sub_tags"):
+            continue
+        out[key] = [v.strip() for v in value.split(",") if v.strip()]
+    return out
+
+
 def _load_source(root: Path, src: dict[str, Any]) -> list[dict[str, str]]:
     """Load one source per its manifest entry and apply schema mapping."""
     if "path_glob" in src:
@@ -130,6 +151,12 @@ def _load_source(root: Path, src: dict[str, Any]) -> list[dict[str, str]]:
                 }
                 if weight_col:
                     entry["_copies"] = _row_copies(row.get(weight_col))
+                # `meta` is a column on the survey export only; absent on other sources.
+                parsed_meta = _parse_meta_column(row.get("meta"))
+                if "senses" in parsed_meta:
+                    entry["_senses"] = parsed_meta["senses"]
+                if "sub_tags" in parsed_meta:
+                    entry["_sub_tags"] = parsed_meta["sub_tags"]
                 out.append(entry)
     return out
 
