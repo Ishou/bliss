@@ -19,7 +19,7 @@ def _strip(s: str) -> str:
     ).lower()
 
 
-# DBnary POS -> Kotlin Pos enum name as stored in survey_items.pos (uppercase).
+# DBnary POS -> survey_items.pos wire format (lowercase, as written by PgSurveyItemRepository.kt).
 DBNARY_TO_ENUM = {
     "noun": "nom_commun",
     "properNoun": "nom_propre",
