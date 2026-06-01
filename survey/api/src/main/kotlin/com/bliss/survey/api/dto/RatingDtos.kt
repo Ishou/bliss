@@ -16,6 +16,7 @@ data class RatingRequest(
     val difficulte: Int,
     val flag: String? = null,
     val correctif: CorrectifPayload? = null,
+    val targetSenses: List<String>? = null,
     val latencyMs: Int,
 )
 

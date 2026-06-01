@@ -102,6 +102,7 @@ class SubmitRatingUseCaseTest {
                 actions = InMemoryActionLogRepository(),
                 tokens = TokenGenerator { "fixed-token" },
                 tx = passThroughTransactionManager,
+                wordMeta = InMemoryWordMetaRepository(),
             )
         Quintet(uc, items, ratings, proposed, progress)
     }
