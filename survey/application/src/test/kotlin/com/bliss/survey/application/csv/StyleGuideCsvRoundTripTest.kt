@@ -88,4 +88,15 @@ class StyleGuideCsvRoundTripTest {
     fun `header is fixed schema`() {
         assertThat(writer.header()).isEqualTo("mot;definition;pos;categorie;style;force;longueur;source;training_weight;meta")
     }
+
+    @Test
+    fun `mot column round-trips an accented uppercase French word`() {
+        val row = "SOLDÉ;Vendu au rabais.;adjectif;autre;définition_directe;1;5;synthetic_v1;1.0;"
+        val parsed = parser.parseRow(row)
+        assertThat(parsed.mot).isEqualTo("SOLDÉ")
+
+        val written = writer.toRow(parsed, meta = emptyMap())
+        val reparsed = parser.parseRow(written)
+        assertThat(reparsed.mot).isEqualTo("SOLDÉ")
+    }
 }
