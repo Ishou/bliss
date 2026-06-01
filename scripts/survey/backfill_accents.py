@@ -36,11 +36,11 @@ DBNARY_TO_ENUM = {
 
 
 def load_frequencies(path: Path) -> dict[str, int]:
-    """Build {lowercased_surface: max grammalecte frequency} from words-fr.csv; missing file → {}."""
+    """Build {lowercased_surface: max grammalecte frequency} from words-fr.csv."""
     freqs: dict[str, int] = {}
+    # Fail loud: with no frequencies the tie-break degrades to _strip(), re-stripping the accents this backfill restores.
     if not path.exists():
-        print(f"frequencies file absent, accent tie-break falls back to stripped: {path}", file=sys.stderr)
-        return freqs
+        raise SystemExit(f"frequencies file required for the accent tie-break but absent: {path}")
     with path.open(encoding="utf-8") as f:
         for row in csv.DictReader(f):
             word = (row.get("word") or "").lower()
