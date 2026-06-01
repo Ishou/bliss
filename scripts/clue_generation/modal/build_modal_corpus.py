@@ -162,11 +162,11 @@ def _load_source(root: Path, src: dict[str, Any]) -> list[dict[str, Any]]:
     return out
 
 
-def load_all_sources(root: Path, manifest_path: Path) -> list[dict[str, str]]:
+def load_all_sources(root: Path, manifest_path: Path) -> list[dict[str, Any]]:
     """Load every source, exclude held-out lemmas, replicate by weight (per-row when the source sets weight_column)."""
     manifest = _load_manifest(manifest_path)
     held_out = _load_held_out_lemmas(root, manifest.get("exclude_lemmas_from", ""))
-    all_rows: list[dict[str, str]] = []
+    all_rows: list[dict[str, Any]] = []
     for src in manifest["sources"]:
         if src.get("weight_column") and int(src["weight"]) != 1:
             raise ValueError(
