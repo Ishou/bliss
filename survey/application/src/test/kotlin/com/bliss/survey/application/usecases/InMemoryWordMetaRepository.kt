@@ -8,6 +8,8 @@ class InMemoryWordMetaRepository : WordMetaRepository {
 
     override suspend fun find(mot: String): WordMeta? = rows[mot]
 
+    override suspend fun findForUpdate(mot: String): WordMeta? = rows[mot]
+
     override suspend fun save(meta: WordMeta) {
         rows[meta.mot] = meta
     }

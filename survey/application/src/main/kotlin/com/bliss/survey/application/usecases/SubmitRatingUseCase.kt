@@ -240,7 +240,7 @@ class SubmitRatingUseCase(
         incoming: List<String>,
         now: Instant,
     ) {
-        val existing = wordMeta.find(mot)
+        val existing = wordMeta.findForUpdate(mot)
         val seen = HashSet<String>()
         val merged = ArrayList<String>()
         for (gloss in incoming + (existing?.senseInventory ?: emptyList())) {

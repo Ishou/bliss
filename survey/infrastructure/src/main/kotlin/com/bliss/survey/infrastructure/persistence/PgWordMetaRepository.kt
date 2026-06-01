@@ -8,6 +8,7 @@ import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.json.Json
 import java.sql.Timestamp
+import java.time.Instant
 import javax.sql.DataSource
 
 class PgWordMetaRepository(
@@ -17,6 +18,32 @@ class PgWordMetaRepository(
         withContext(Dispatchers.IO) {
             withTxConnection(dataSource) { conn ->
                 conn.prepareStatement(FIND_SQL).use { stmt ->
+                    stmt.setString(1, mot)
+                    stmt.executeQuery().use { rs ->
+                        if (rs.next()) {
+                            WordMeta(
+                                mot = rs.getString("mot"),
+                                subTags = decodeList(rs.getString("sub_tags")),
+                                senseInventory = decodeList(rs.getString("sense_inventory")),
+                                updatedAt = rs.getTimestamp("updated_at").toInstant(),
+                            )
+                        } else {
+                            null
+                        }
+                    }
+                }
+            }
+        }
+
+    override suspend fun findForUpdate(mot: String): WordMeta? =
+        withContext(Dispatchers.IO) {
+            withTxConnection(dataSource) { conn ->
+                conn.prepareStatement(ENSURE_ROW_SQL).use { stmt ->
+                    stmt.setString(1, mot)
+                    stmt.setTimestamp(2, Timestamp.from(Instant.now()))
+                    stmt.executeUpdate()
+                }
+                conn.prepareStatement(FIND_FOR_UPDATE_SQL).use { stmt ->
                     stmt.setString(1, mot)
                     stmt.executeQuery().use { rs ->
                         if (rs.next()) {
@@ -57,6 +84,16 @@ class PgWordMetaRepository(
 
         const val FIND_SQL =
             "SELECT mot, sub_tags, sense_inventory, updated_at FROM survey_word_meta WHERE mot = ?"
+
+        const val FIND_FOR_UPDATE_SQL =
+            "SELECT mot, sub_tags, sense_inventory, updated_at FROM survey_word_meta WHERE mot = ? FOR UPDATE"
+
+        const val ENSURE_ROW_SQL =
+            """
+            INSERT INTO survey_word_meta (mot, sub_tags, sense_inventory, updated_at)
+            VALUES (?, '[]'::jsonb, '[]'::jsonb, ?)
+            ON CONFLICT (mot) DO NOTHING
+            """
 
         const val UPSERT_SQL =
             """
