@@ -5,7 +5,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { css } from 'styled-system/css';
 import { NOOP_ANALYTICS } from '@/application/analytics';
 import { messageForApiError } from '@/application/errors';
-import { campaignDisplayName } from '@/application/survey';
+import { campaignDisplayName, normalizeForMatch } from '@/application/survey';
 import type { LikertScore, RatingSubmission, SurveyItem, SurveyPos } from '@/application/survey';
 import { useAuth } from '@/ui/components/auth';
 import { ContentPage } from '@/ui/components/layout';
@@ -134,14 +134,15 @@ function ContribuerPage() {
     void loadNext();
   }, [state.status, loadNext]);
 
-  // ADR-0061 §5: meta annotation is auth-only — anon submissions carrying any meta field get 401.
-  // isMultisense is required on the wire (schema default false); for anon we send only base + false.
+  // ADR-0061 §5: auth-only meta; anon path sends only isMultisense=false (required on the wire).
   function metaFields(meta: RatingMeta): Pick<
     RatingSubmission,
     'targetCategories' | 'targetSense' | 'isMultisense' | 'subTags'
   > {
     if (!isAuth) return { isMultisense: false };
-    const sense = meta.isMultisense ? '' : meta.targetSense.trim();
+    const rawSense = meta.isMultisense ? '' : meta.targetSense.trim();
+    // ADR-0061 §2: a gloss must not repeat the lemma — strip before the wire rather than relying on the warning UI alone.
+    const sense = (item && rawSense && normalizeForMatch(rawSense).includes(normalizeForMatch(item.mot))) ? '' : rawSense;
     return {
       isMultisense: meta.isMultisense,
       ...(meta.targetCategories.length > 0 ? { targetCategories: [...meta.targetCategories] } : {}),

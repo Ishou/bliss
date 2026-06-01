@@ -451,6 +451,28 @@ describe('Contribuer route', () => {
     );
   });
 
+  it('auth verdict strips targetSense that repeats the lemma before submission (ADR-0061 §2)', async () => {
+    const authClient: AuthClient = {
+      ...stubAuth(),
+      whoami: vi.fn().mockResolvedValue({
+        userId: '0190e3a4-7a2c-7c9e-8f1a-1234567890ab',
+        displayName: 'Lapin 472',
+      }),
+    };
+    const surveyClient = stubSurveyClient();
+    renderContribuer({ authClient, surveyClient });
+    await waitFor(() => expect(screen.getByTestId('rating-card')).toBeInTheDocument());
+
+    const sense = screen.getByRole('combobox', { name: 'Sens cible' }) as HTMLInputElement;
+    await act(async () => { fireEvent.change(sense, { target: { value: 'le chat' } }); });
+    await act(async () => { clickVerdict('GOOD'); });
+
+    await waitFor(() => expect(surveyClient.submitRating).toHaveBeenCalled());
+    const payload = (surveyClient.submitRating as ReturnType<typeof vi.fn>).mock.calls[0][1] as RatingSubmission;
+    expect(payload.targetSense).toBeUndefined();
+    localStorage.clear();
+  });
+
   it('auth SKIP excludes skipped ids on the next getNextItem call without touching surveyAnonStore', async () => {
     const authClient: AuthClient = {
       ...stubAuth(),
