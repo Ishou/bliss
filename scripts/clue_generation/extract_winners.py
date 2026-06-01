@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any, Iterable, Sequence
 
 
+# RAFT winners scope to the last campaign; correctifs are cumulative gold, deliberately not campaign-scoped.
 SQL = """
 SELECT si.mot, si.definition, si.pos, si.categorie, si.style,
        si.force_claimed, si.longueur, si.source, si.source_batch,
@@ -23,8 +24,16 @@ SELECT si.mot, si.definition, si.pos, si.categorie, si.style,
    AND r.flag IS NULL
    AND r.proposed_item_id IS NULL
    AND si.retired_at IS NULL
-   AND (si.source_batch LIKE %s OR si.source = 'rater_proposed')
+   AND ((si.source_batch LIKE %s AND r.campaign_id = %s::uuid)
+        OR si.source = 'rater_proposed')
  ORDER BY r.created_at
+"""
+
+LAST_CAMPAIGN_SQL = """
+SELECT campaign_id, batch_label, closed_at
+  FROM campaigns
+ ORDER BY opened_at DESC
+ LIMIT 1
 """
 
 COLUMNS = (
@@ -59,10 +68,18 @@ def _load_db_url() -> str:
     )
 
 
-def fetch_rows(conn: Any, round_n: int) -> list[tuple]:
-    """Execute the winners query and return all rows."""
+def resolve_last_campaign(conn: Any) -> tuple | None:
+    """Return (campaign_id, batch_label, closed_at) for the most-recently-opened campaign, or None."""
     with conn.cursor() as cur:
-        cur.execute(SQL, (f"%-r{round_n}-%",))
+        cur.execute(LAST_CAMPAIGN_SQL, ())
+        rows = list(cur.fetchall())
+    return rows[0] if rows else None
+
+
+def fetch_rows(conn: Any, round_n: int, campaign_id: str) -> list[tuple]:
+    """Execute the winners query and return all rows. RAFT rows are scoped to campaign_id."""
+    with conn.cursor() as cur:
+        cur.execute(SQL, (f"%-r{round_n}-%", campaign_id))
         return list(cur.fetchall())
 
 
@@ -102,21 +119,31 @@ def write_csv(rows: Iterable[Sequence], out_path: Path) -> dict:
     return {"kept": kept, "by_source": dict(by_source)}
 
 
-def _print_summary(considered: int, result: dict, round_n: int, out_path: Path) -> None:
+def _print_summary(considered: int, result: dict, round_n: int, out_path: Path, batch_label: str) -> None:
     """Emit a one-screen summary to stderr."""
+    print(f"campaign: {batch_label} (closed)", file=sys.stderr)
     print(f"survey_items × ratings rows considered: {considered}", file=sys.stderr)
     print(f"  kept (qualite=5, flag/proposed NULL, maintainer rater, "
-          f"r{round_n} batch OR rater_proposed, unretired): {result['kept']}", file=sys.stderr)
+          f"r{round_n} batch in campaign OR rater_proposed, unretired): {result['kept']}", file=sys.stderr)
     for src, count in sorted(result["by_source"].items()):
         print(f"    {src}: {count}", file=sys.stderr)
     print(f"wrote {out_path}", file=sys.stderr)
 
 
 def run(round_n: int, out_path: Path, conn: Any) -> dict:
-    """Fetch + serialize + summarize. Returns the result dict."""
-    rows = fetch_rows(conn, round_n)
+    """Fetch + serialize + summarize. Refuses unless the latest campaign is closed. Returns the result dict."""
+    campaign = resolve_last_campaign(conn)
+    if campaign is None:
+        raise SystemExit("ERROR: no campaign exists; cannot scope winners to a campaign window (ADR-0059).")
+    campaign_id, batch_label, closed_at = campaign
+    if closed_at is None:
+        raise SystemExit(
+            f"ERROR: the latest campaign '{batch_label}' is still open. Close it before extracting "
+            f"winners: UPDATE campaigns SET closed_at = now() WHERE closed_at IS NULL; (ADR-0059)."
+        )
+    rows = fetch_rows(conn, round_n, campaign_id)
     result = write_csv(rows, out_path)
-    _print_summary(len(rows), result, round_n, out_path)
+    _print_summary(len(rows), result, round_n, out_path, batch_label)
     return result
 
 

@@ -16,6 +16,9 @@ from . import extract_winners as ew
 USER_ME = "11111111-1111-4111-8111-111111111111"
 USER_OTHER = "22222222-2222-4222-8222-222222222222"
 
+CAMP_LAST = "33333333-3333-4333-8333-333333333333"   # most-recent, closed
+CAMP_OLD = "44444444-4444-4444-8444-444444444444"     # earlier, closed
+
 
 class SqliteConnAdapter:
     """Wrap sqlite3.Connection so its cursor matches the psycopg2 context-manager API."""
@@ -64,9 +67,22 @@ def seeded_conn() -> SqliteConnAdapter:
         CREATE TABLE ratings (
             rating_id TEXT PRIMARY KEY, item_id TEXT, user_id TEXT,
             qualite INTEGER, flag TEXT, proposed_item_id TEXT,
-            created_at TEXT
+            created_at TEXT, campaign_id TEXT
         )
     """)
+    conn.execute("""
+        CREATE TABLE campaigns (
+            campaign_id TEXT PRIMARY KEY, batch_label TEXT,
+            opened_at TEXT, closed_at TEXT
+        )
+    """)
+    conn.executemany(
+        "INSERT INTO campaigns VALUES (?,?,?,?)",
+        [
+            (CAMP_OLD, "round-8", "2026-05-25T09:00:00+00:00", "2026-05-25T13:00:00+00:00"),
+            (CAMP_LAST, "round-9", "2026-05-26T09:00:00+00:00", "2026-05-26T13:00:00+00:00"),
+        ],
+    )
     conn.execute("""
         CREATE TABLE maintainer_roles (
             user_id TEXT PRIMARY KEY, role TEXT, changed_at TEXT
@@ -102,21 +118,21 @@ def seeded_conn() -> SqliteConnAdapter:
     )
 
     ratings = [
-        # r9 RAFT path
-        ("r1", "i1", USER_ME, 5, None, None, "2026-05-26T12:00:00+00:00"),       # KEEP: r9, qualite=5
-        ("r2", "i2", USER_ME, 5, None, None, "2026-05-26T12:01:00+00:00"),       # DROP: r8 (round mismatch)
-        ("r3", "i3", USER_ME, 5, None, None, "2026-05-26T12:02:00+00:00"),       # DROP: retired
-        ("r4", "i4", USER_ME, 5, None, None, "2026-05-26T12:03:00+00:00"),       # DROP: gold_v1 batch
-        ("r5", "i5", USER_ME, 3, None, None, "2026-05-26T12:04:00+00:00"),       # DROP: qualite=3
-        ("r6", "i1", USER_ME, 5, "hors_sujet", None, "2026-05-26T12:05:00+00:00"),  # DROP: flag set
-        ("r7", "i1", USER_OTHER, 5, None, None, "2026-05-26T12:06:00+00:00"),    # DROP: not a maintainer
-        # rater_proposed auto-GOOD path
-        ("r8", "i6", USER_ME, 5, None, None, "2026-05-30T08:31:00+00:00"),       # KEEP: gold correctif
-        ("r9", "i7", USER_ME, 5, None, None, "2026-05-29T08:31:00+00:00"),       # KEEP: non-gold correctif
-        ("r10", "i7", USER_ME, 5, None, "i6", "2026-05-29T08:32:00+00:00"),       # DROP: nested correctif (proposed_item_id set)
+        # r9 RAFT path — scoped to the last (closed) campaign
+        ("r1", "i1", USER_ME, 5, None, None, "2026-05-26T12:00:00+00:00", CAMP_LAST),   # KEEP: r9, qualite=5, last campaign
+        ("r2", "i2", USER_ME, 5, None, None, "2026-05-26T12:01:00+00:00", CAMP_LAST),   # DROP: r8 (round mismatch)
+        ("r3", "i3", USER_ME, 5, None, None, "2026-05-26T12:02:00+00:00", CAMP_LAST),   # DROP: retired
+        ("r4", "i4", USER_ME, 5, None, None, "2026-05-26T12:03:00+00:00", CAMP_LAST),   # DROP: gold_v1 batch
+        ("r5", "i5", USER_ME, 3, None, None, "2026-05-26T12:04:00+00:00", CAMP_LAST),   # DROP: qualite=3
+        ("r6", "i1", USER_ME, 5, "hors_sujet", None, "2026-05-26T12:05:00+00:00", CAMP_LAST),  # DROP: flag set
+        ("r7", "i1", USER_OTHER, 5, None, None, "2026-05-26T12:06:00+00:00", CAMP_LAST),  # DROP: not a maintainer
+        # rater_proposed auto-GOOD path — cumulative, NOT campaign-scoped (older campaign / NULL still kept)
+        ("r8", "i6", USER_ME, 5, None, None, "2026-05-30T08:31:00+00:00", CAMP_OLD),    # KEEP: gold correctif, earlier campaign
+        ("r9", "i7", USER_ME, 5, None, None, "2026-05-29T08:31:00+00:00", None),        # KEEP: non-gold correctif, NULL campaign
+        ("r10", "i7", USER_ME, 5, None, "i6", "2026-05-29T08:32:00+00:00", None),       # DROP: nested correctif (proposed_item_id set)
     ]
     conn.executemany(
-        "INSERT INTO ratings VALUES (?,?,?,?,?,?,?)",
+        "INSERT INTO ratings VALUES (?,?,?,?,?,?,?,?)",
         ratings,
     )
     conn.commit()
@@ -165,16 +181,60 @@ def test_no_maintainer_means_no_rows(tmp_path):
                  "categorie TEXT, style TEXT, force_claimed INTEGER, longueur INTEGER, "
                  "source TEXT, source_batch TEXT, expected TEXT, retired_at TEXT, training_weight REAL)")
     conn.execute("CREATE TABLE ratings (rating_id TEXT, item_id TEXT, user_id TEXT, "
-                 "qualite INTEGER, flag TEXT, proposed_item_id TEXT, created_at TEXT)")
+                 "qualite INTEGER, flag TEXT, proposed_item_id TEXT, created_at TEXT, campaign_id TEXT)")
+    conn.execute("CREATE TABLE campaigns (campaign_id TEXT, batch_label TEXT, opened_at TEXT, closed_at TEXT)")
     conn.execute("CREATE TABLE maintainer_roles (user_id TEXT, role TEXT, changed_at TEXT)")
+    conn.execute("INSERT INTO campaigns VALUES (?, 'round-9', '2026-05-26T09:00:00+00:00', '2026-05-26T13:00:00+00:00')",
+                 (CAMP_LAST,))
     conn.execute("INSERT INTO survey_items VALUES "
                  "('i1','X','d','p','c','s',1,1,'synthetic_v1','c4ai-command-r-pilot-v1-r9-aaa',NULL,NULL,1.0)")
-    conn.execute("INSERT INTO ratings VALUES ('r1','i1',?,5,NULL,NULL,'2026-05-26T12:00:00+00:00')",
-                 (USER_ME,))
+    conn.execute("INSERT INTO ratings VALUES ('r1','i1',?,5,NULL,NULL,'2026-05-26T12:00:00+00:00',?)",
+                 (USER_ME, CAMP_LAST))
     conn.commit()
     out = tmp_path / "winners.csv"
     result = ew.run(9, out, SqliteConnAdapter(conn))
     assert result["kept"] == 0
+
+
+def test_run_refuses_when_latest_campaign_open(seeded_conn, tmp_path):
+    """A newer open campaign blocks extraction — the latest window must be closed first (ADR-0059)."""
+    seeded_conn._conn.execute(
+        "INSERT INTO campaigns VALUES (?, 'round-10', '2026-05-27T09:00:00+00:00', NULL)",
+        ("55555555-5555-4555-8555-555555555555",),
+    )
+    seeded_conn._conn.commit()
+    out = tmp_path / "winners.csv"
+    with pytest.raises(SystemExit, match="still open"):
+        ew.run(9, out, seeded_conn)
+
+
+def test_run_refuses_when_no_campaigns(seeded_conn, tmp_path):
+    """No campaign rows at all → refuse rather than emit an unscoped corpus."""
+    seeded_conn._conn.execute("DELETE FROM campaigns")
+    seeded_conn._conn.commit()
+    out = tmp_path / "winners.csv"
+    with pytest.raises(SystemExit, match="no campaign"):
+        ew.run(9, out, seeded_conn)
+
+
+def test_raft_winner_from_earlier_campaign_is_excluded(seeded_conn, tmp_path):
+    """A r9 RAFT winner rated under an earlier campaign is dropped; correctifs (cumulative) are not."""
+    seeded_conn._conn.execute(
+        "INSERT INTO survey_items VALUES "
+        "('i8','OURS','Grand mammifère','nom_commun','animaux','definition_directe',"
+        "2,4,'synthetic_v1','c4ai-command-r-pilot-v1-r9-zzz',NULL,NULL,1.0)"
+    )
+    seeded_conn._conn.execute(
+        "INSERT INTO ratings VALUES ('r11','i8',?,5,NULL,NULL,'2026-05-25T12:00:00+00:00',?)",
+        (USER_ME, CAMP_OLD),
+    )
+    seeded_conn._conn.commit()
+    out = tmp_path / "winners.csv"
+    result = ew.run(9, out, seeded_conn)
+    mots = {r["mot"] for r in _read_csv(out)}
+    assert "OURS" not in mots               # r9 RAFT row outside the last campaign is excluded
+    assert mots == {"PAIN", "CHAT", "CHIEN"}
+    assert result["kept"] == 3
 
 
 def test_row_to_entry_isoformats_datetime():

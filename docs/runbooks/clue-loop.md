@@ -47,10 +47,37 @@ silently dropped at extraction — `extract_winners.py` filtered by
 source_batches. Nothing trained on them.
 
 **Round-10 onward (this runbook):** `extract_winners.py` widens the
-WHERE clause to `(source_batch LIKE '%-r<N>-%' OR source = 'rater_proposed')`
-and writes a CSV with the `training_weight` column. The manifest's
-`winners_round_<N>` slot consumes it via `weight_column = "training_weight"`,
-which replicates gold rows 3× during corpus build (PR #712 plumbing).
+WHERE clause to `((source_batch LIKE '%-r<N>-%' AND campaign_id = <last>)
+OR source = 'rater_proposed')` and writes a CSV with the
+`training_weight` column. The manifest's `winners_round_<N>` slot
+consumes it via `weight_column = "training_weight"`, which replicates
+gold rows 3× during corpus build (PR #712 plumbing).
+
+## Campaign lifecycle (ADR-0059)
+
+Each round's ratings live inside a **campaign** — a rating-collection
+window in the survey DB. At most one campaign is open at a time. Open
+one before a rating session so verdicts are stamped with its
+`campaign_id`; close it before extracting winners so the batch is
+frozen.
+
+```sql
+-- open (before a rating session); needs pg_uuidv7, or generate a uuid7 externally
+INSERT INTO campaigns (campaign_id, batch_label)
+     VALUES (uuidv7(), 'round-<N>') RETURNING campaign_id, opened_at;
+
+-- close (before extracting winners)
+UPDATE campaigns SET closed_at = now()
+ WHERE closed_at IS NULL
+RETURNING campaign_id, batch_label, closed_at;
+```
+
+`extract_winners.py` resolves the most-recently-opened campaign and
+**refuses to run while it is still open** — RAFT winners are scoped to
+that campaign's `campaign_id`, so forgetting to close yields a clear
+error instead of a half-collected batch. Correctifs are cumulative
+gold and are deliberately *not* campaign-scoped. One campaign per
+round: never let a single open campaign span multiple rounds.
 
 ## Prereqs
 
@@ -203,6 +230,14 @@ FROM staging_round_1;
 The `source` prefix `modal_round_<n>` is what `extract_winners.py`
 filters on in the WHERE clause — keep it stable across rounds.
 
+Step 3 — open the campaign for this round so the rating session's
+verdicts are stamped to it (see [Campaign lifecycle](#campaign-lifecycle-adr-0059)):
+
+```sql
+INSERT INTO campaigns (campaign_id, batch_label)
+     VALUES (uuidv7(), 'round-1') RETURNING campaign_id, opened_at;
+```
+
 ---
 
 ## Round-1 rating session
@@ -235,12 +270,27 @@ rater calibration is out of scope (see plan).
 
 ## Round-N RAFT step
 
+**Before you start: close the round's campaign.** `extract_winners.py`
+refuses to run while the latest campaign is still open (ADR-0059) and
+scopes RAFT winners to that just-closed campaign. Freeze the batch
+first (see [Campaign lifecycle](#campaign-lifecycle-adr-0059)):
+
+```sql
+UPDATE campaigns SET closed_at = now()
+ WHERE closed_at IS NULL
+RETURNING campaign_id, batch_label, closed_at;
+```
+
+After the new adapter is trained and the next round's candidates are
+imported, open a fresh campaign (`batch_label = 'round-<N+1>'`) before
+the next rating session.
+
 1. Extract round-N winners to CSV. The extractor auto-resolves the
    maintainer from `maintainer_roles`; no UUID arg is needed. It pulls
-   both r-N RAFT winners (`source_batch LIKE '%-r<N>-%'`) **and**
-   maintainer correctifs (`source = 'rater_proposed'`) into the same
-   file, with the `training_weight` column driving per-row replication
-   downstream:
+   both r-N RAFT winners (`source_batch LIKE '%-r<N>-%'`, scoped to the
+   just-closed campaign) **and** maintainer correctifs
+   (`source = 'rater_proposed'`, cumulative) into the same file, with
+   the `training_weight` column driving per-row replication downstream:
 
    ```sh
    python3 -m scripts.clue_generation.extract_winners \
