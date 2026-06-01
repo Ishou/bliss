@@ -11,6 +11,9 @@ import com.bliss.survey.domain.model.SubmittedAs
 import com.bliss.survey.domain.model.UserId
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.builtins.serializer
+import kotlinx.serialization.json.Json
 import java.sql.ResultSet
 import java.sql.Timestamp
 import java.sql.Types
@@ -69,6 +72,7 @@ class PgRatingRepository(
                     } else {
                         stmt.setNull(12, Types.OTHER)
                     }
+                    stmt.setString(13, encodeTargetSenses(rating.targetSenses))
                     stmt.executeUpdate()
                 }
             }
@@ -146,6 +150,7 @@ class PgRatingRepository(
         val campaignValue: UUID? = getObject("campaign_id", UUID::class.java)
         val rawFlag = getString("flag")
         val latency = getInt("latency_ms").let { if (wasNull()) null else it }
+        val rawTargetSenses = getString("target_senses")
         return Rating(
             id = RatingId(getObject("rating_id", UUID::class.java)),
             itemId = ItemId(getObject("item_id", UUID::class.java)),
@@ -158,16 +163,25 @@ class PgRatingRepository(
             latencyMs = latency,
             createdAt = getTimestamp("created_at").toInstant(),
             campaignId = campaignValue?.let(::CampaignId),
+            targetSenses = if (rawTargetSenses != null) decodeTargetSenses(rawTargetSenses) else emptyList(),
         )
     }
 
     private companion object {
+        private val TARGET_SENSES_SERIALIZER = ListSerializer(String.serializer())
+        private val JSON = Json { ignoreUnknownKeys = true }
+
+        private fun encodeTargetSenses(items: List<String>): String = JSON.encodeToString(TARGET_SENSES_SERIALIZER, items)
+
+        private fun decodeTargetSenses(json: String): List<String> = JSON.decodeFromString(TARGET_SENSES_SERIALIZER, json)
+
         const val INSERT_SQL =
             """
             INSERT INTO ratings
               (rating_id, item_id, user_id, submitted_as, qualite, difficulte,
-               flag, proposed_item_id, latency_ms, client_meta, created_at, campaign_id)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+               flag, proposed_item_id, latency_ms, client_meta, created_at, campaign_id,
+               target_senses)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?::jsonb)
             """
 
         const val FIND_AUTH_RATING_SQL =
