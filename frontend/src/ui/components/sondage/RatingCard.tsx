@@ -218,11 +218,8 @@ export function RatingCard({ item, onVerdict, onCorriger, disabled = false, surv
     if (!surveyClient) return;
     try {
       await surveyClient.putLemmaSubTags(item.mot, next);
-    } catch (cause) {
-      const name = (cause as Error | undefined)?.name ?? '';
-      // Non-maintainer (403) / anon (401) silently keep the local view; the server is authoritative on next read.
-      if (name === 'MaintainerOnlyError' || name === 'SignInRequiredError') return;
-      throw cause;
+    } catch {
+      // Fire-and-forget: the local view stays optimistic; the server is authoritative on next load.
     }
   }
 
