@@ -105,6 +105,31 @@ describe('RatingCard meta inputs', () => {
     expect(lastMeta(onVerdict).targetCategories).toEqual(['objet']);
   });
 
+  it('announces all cleared when "autre" replaces other selections', async () => {
+    const { container } = render(
+      <RatingCard item={sampleItem} onVerdict={async () => {}} onCorriger={async () => {}} />,
+    );
+    const objet = container.querySelector<HTMLInputElement>('[data-categorie="objet"] input')!;
+    await act(async () => { fireEvent.click(objet); });
+    const autre = container.querySelector<HTMLInputElement>('[data-categorie="autre"] input')!;
+    await act(async () => { fireEvent.click(autre); });
+    const liveRegion = container.querySelector('[data-testid="categorie-multiselect"] [role="status"]')!;
+    expect(liveRegion.textContent).toContain('retirées');
+  });
+
+  it('announces "autre" removed when a non-exclusive category is selected', async () => {
+    const { container } = render(
+      <RatingCard item={sampleItem} onVerdict={async () => {}} onCorriger={async () => {}} />,
+    );
+    const autre = container.querySelector<HTMLInputElement>('[data-categorie="autre"] input')!;
+    await act(async () => { fireEvent.click(autre); });
+    const objet = container.querySelector<HTMLInputElement>('[data-categorie="objet"] input')!;
+    await act(async () => { fireEvent.click(objet); });
+    const liveRegion = container.querySelector('[data-testid="categorie-multiselect"] [role="status"]')!;
+    expect(liveRegion.textContent).toContain('Autre');
+    expect(liveRegion.textContent).toContain('retirée');
+  });
+
   it('autre is still clickable when 6 categories are already selected', async () => {
     const onVerdict = vi.fn().mockResolvedValue(undefined);
     const { container } = render(

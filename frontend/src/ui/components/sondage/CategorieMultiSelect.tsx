@@ -99,14 +99,24 @@ export function CategorieMultiSelect({
       return;
     }
     if (cat === exclusiveValue) {
+      const hadOthers = value.filter((c) => c !== exclusiveValue).length > 0;
       onChange([cat]);
-      setAnnounce(`${categorieLabel(cat)} ajoutée`);
+      setAnnounce(
+        hadOthers
+          ? `${categorieLabel(cat)} sélectionnée, autres catégories retirées`
+          : `${categorieLabel(cat)} ajoutée`,
+      );
       return;
     }
-    const base = exclusiveValue === undefined ? value : value.filter((c) => c !== exclusiveValue);
+    const hadExclusive = exclusiveValue !== undefined && value.includes(exclusiveValue);
+    const base = hadExclusive ? value.filter((c) => c !== exclusiveValue) : value;
     if (base.length >= maxItems) return;
     onChange([...base, cat]);
-    setAnnounce(`${categorieLabel(cat)} ajoutée`);
+    setAnnounce(
+      hadExclusive
+        ? `${categorieLabel(cat)} ajoutée, ${categorieLabel(exclusiveValue!)} retirée`
+        : `${categorieLabel(cat)} ajoutée`,
+    );
   }
 
   return (
