@@ -79,6 +79,32 @@ describe('RatingCard meta inputs', () => {
     expect(lastMeta(onVerdict).targetCategories).toHaveLength(6);
   });
 
+  it('checking "autre" clears every other category', async () => {
+    const onVerdict = vi.fn().mockResolvedValue(undefined);
+    const { container } = render(
+      <RatingCard item={sampleItem} onVerdict={onVerdict} onCorriger={async () => {}} />,
+    );
+    const objet = container.querySelector<HTMLInputElement>('[data-categorie="objet"] input')!;
+    await act(async () => { fireEvent.click(objet); });
+    const autre = container.querySelector<HTMLInputElement>('[data-categorie="autre"] input')!;
+    await act(async () => { fireEvent.click(autre); });
+    await act(async () => { fireEvent.click(container.querySelector('[data-verdict="GOOD"]')!); });
+    expect(lastMeta(onVerdict).targetCategories).toEqual(['autre']);
+  });
+
+  it('checking another category clears a previously selected "autre"', async () => {
+    const onVerdict = vi.fn().mockResolvedValue(undefined);
+    const { container } = render(
+      <RatingCard item={sampleItem} onVerdict={onVerdict} onCorriger={async () => {}} />,
+    );
+    const autre = container.querySelector<HTMLInputElement>('[data-categorie="autre"] input')!;
+    await act(async () => { fireEvent.click(autre); });
+    const objet = container.querySelector<HTMLInputElement>('[data-categorie="objet"] input')!;
+    await act(async () => { fireEvent.click(objet); });
+    await act(async () => { fireEvent.click(container.querySelector('[data-verdict="GOOD"]')!); });
+    expect(lastMeta(onVerdict).targetCategories).toEqual(['objet']);
+  });
+
   it('typing a single sense threads it into the verdict meta', async () => {
     const onVerdict = vi.fn().mockResolvedValue(undefined);
     const { container } = render(
@@ -121,7 +147,7 @@ describe('RatingCard meta inputs', () => {
     const { container } = render(
       <RatingCard item={sampleItem} onVerdict={onVerdict} onCorriger={async () => {}} />,
     );
-    const subInput = screen.getByRole('combobox', { name: 'Sous-tags' }) as HTMLInputElement;
+    const subInput = screen.getByRole('combobox', { name: 'Mots-clés' }) as HTMLInputElement;
     await act(async () => {
       fireEvent.change(subInput, { target: { value: 'félin' } });
       fireEvent.keyDown(subInput, { key: 'Enter' });

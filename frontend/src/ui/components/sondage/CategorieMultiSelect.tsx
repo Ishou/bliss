@@ -73,6 +73,8 @@ export interface CategorieMultiSelectProps {
   readonly minItems?: number;
   readonly maxItems?: number;
   readonly disabled?: boolean;
+  // Selecting this value clears all others, and selecting any other value clears it (e.g. "autre").
+  readonly exclusiveValue?: SurveyCategorie;
 }
 
 export function CategorieMultiSelect({
@@ -82,6 +84,7 @@ export function CategorieMultiSelect({
   minItems = 1,
   maxItems = 6,
   disabled = false,
+  exclusiveValue,
 }: CategorieMultiSelectProps) {
   const groupId = useId();
   const [announce, setAnnounce] = useState('');
@@ -96,8 +99,14 @@ export function CategorieMultiSelect({
       setAnnounce(`${categorieLabel(cat)} retirée`);
       return;
     }
-    if (value.length >= maxItems) return;
-    onChange([...value, cat]);
+    if (cat === exclusiveValue) {
+      onChange([cat]);
+      setAnnounce(`${categorieLabel(cat)} ajoutée`);
+      return;
+    }
+    const base = exclusiveValue === undefined ? value : value.filter((c) => c !== exclusiveValue);
+    if (base.length >= maxItems) return;
+    onChange([...base, cat]);
     setAnnounce(`${categorieLabel(cat)} ajoutée`);
   }
 
@@ -115,7 +124,7 @@ export function CategorieMultiSelect({
                 className={checkboxStyles}
                 name={`${groupId}-categorie`}
                 checked={checked}
-                disabled={disabled || (!checked && value.length >= maxItems)}
+                disabled={disabled || (!checked && cat !== exclusiveValue && value.length >= maxItems)}
                 onChange={() => toggle(cat)}
               />
               <span>{categorieLabel(cat)}</span>

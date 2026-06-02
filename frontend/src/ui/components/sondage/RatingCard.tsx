@@ -364,6 +364,7 @@ export function RatingCard({ item, onVerdict, onCorriger, disabled = false, surv
             legend="Catégories"
             minItems={1}
             maxItems={6}
+            exclusiveValue="autre"
           />
           <label className={multisenseRowStyles}>
             <input
@@ -373,7 +374,7 @@ export function RatingCard({ item, onVerdict, onCorriger, disabled = false, surv
               checked={isMultisense}
               onChange={(e) => setIsMultisense(e.target.checked)}
             />
-            <span>Calembour — plusieurs sens</span>
+            <span>Plusieurs sens</span>
           </label>
           <SenseInput
             value={targetSense}
@@ -388,8 +389,8 @@ export function RatingCard({ item, onVerdict, onCorriger, disabled = false, surv
             value={[...subTags]}
             onChange={(next) => setSubTags(next)}
             suggestions={priorSubTags}
-            label="Sous-tags"
-            ariaLabel="Sous-tags"
+            label="Mots-clés"
+            ariaLabel="Mots-clés"
             placeholder="ex. félin, mammifère, domestique…"
             maxItems={12}
             maxLength={40}
