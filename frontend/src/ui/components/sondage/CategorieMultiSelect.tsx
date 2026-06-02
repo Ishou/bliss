@@ -73,6 +73,7 @@ export interface CategorieMultiSelectProps {
   readonly minItems?: number;
   readonly maxItems?: number;
   readonly disabled?: boolean;
+  readonly exclusiveValue?: SurveyCategorie;
 }
 
 export function CategorieMultiSelect({
@@ -82,6 +83,7 @@ export function CategorieMultiSelect({
   minItems = 1,
   maxItems = 6,
   disabled = false,
+  exclusiveValue,
 }: CategorieMultiSelectProps) {
   const groupId = useId();
   const [announce, setAnnounce] = useState('');
@@ -96,9 +98,25 @@ export function CategorieMultiSelect({
       setAnnounce(`${categorieLabel(cat)} retirée`);
       return;
     }
-    if (value.length >= maxItems) return;
-    onChange([...value, cat]);
-    setAnnounce(`${categorieLabel(cat)} ajoutée`);
+    if (cat === exclusiveValue) {
+      const hadOthers = value.filter((c) => c !== exclusiveValue).length > 0;
+      onChange([cat]);
+      setAnnounce(
+        hadOthers
+          ? `${categorieLabel(cat)} sélectionnée, autres catégories retirées`
+          : `${categorieLabel(cat)} ajoutée`,
+      );
+      return;
+    }
+    const hadExclusive = exclusiveValue !== undefined && value.includes(exclusiveValue);
+    const base = hadExclusive ? value.filter((c) => c !== exclusiveValue) : value;
+    if (base.length >= maxItems) return;
+    onChange([...base, cat]);
+    setAnnounce(
+      hadExclusive
+        ? `${categorieLabel(cat)} ajoutée, ${categorieLabel(exclusiveValue!)} retirée`
+        : `${categorieLabel(cat)} ajoutée`,
+    );
   }
 
   return (
@@ -115,7 +133,7 @@ export function CategorieMultiSelect({
                 className={checkboxStyles}
                 name={`${groupId}-categorie`}
                 checked={checked}
-                disabled={disabled || (!checked && value.length >= maxItems)}
+                disabled={disabled || (!checked && cat !== exclusiveValue && value.length >= maxItems)}
                 onChange={() => toggle(cat)}
               />
               <span>{categorieLabel(cat)}</span>
