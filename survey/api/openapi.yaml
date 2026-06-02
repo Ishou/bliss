@@ -387,7 +387,6 @@ components:
         distinct from `autre` (POS unknown/not applicable).
       enum:
         - verbe_infinitif
-        - verbe_conjugue
         - participe_passe
         - participe_present
         - nom_commun
@@ -400,7 +399,7 @@ components:
         - polyvalent
         - autre
       x-enum-varnames:
-        [VERBE_INFINITIF, VERBE_CONJUGUE, PARTICIPE_PASSE, PARTICIPE_PRESENT,
+        [VERBE_INFINITIF, PARTICIPE_PASSE, PARTICIPE_PRESENT,
          NOM_COMMUN, NOM_PROPRE, ADJECTIF, ADVERBE, INTERJECTION, MOT_OUTIL,
          SIGLE_ABREVIATION, POLYVALENT, AUTRE]
 

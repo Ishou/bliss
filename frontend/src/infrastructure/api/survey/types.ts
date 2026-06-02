@@ -293,7 +293,7 @@ export interface components {
          *     distinct from `autre` (POS unknown/not applicable).
          * @enum {string}
          */
-        Pos: "verbe_infinitif" | "verbe_conjugue" | "participe_passe" | "participe_present" | "nom_commun" | "nom_propre" | "adjectif" | "adverbe" | "interjection" | "mot_outil" | "sigle_abreviation" | "polyvalent" | "autre";
+        Pos: "verbe_infinitif" | "participe_passe" | "participe_present" | "nom_commun" | "nom_propre" | "adjectif" | "adverbe" | "interjection" | "mot_outil" | "sigle_abreviation" | "polyvalent" | "autre";
         /**
          * @description High-level answer class. 18 broad classes + `autre`; one word each,
          *     scannable, spanning nouns, verbs (`action`) and adjectives

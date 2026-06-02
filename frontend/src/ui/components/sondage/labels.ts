@@ -2,7 +2,6 @@
 
 const POS_LABELS: Record<string, string> = {
   verbe_infinitif: 'Verbe (infinitif)',
-  verbe_conjugue: 'Verbe (conjugué)',
   participe_passe: 'Participe passé',
   participe_present: 'Participe présent',
   nom_commun: 'Nom commun',
