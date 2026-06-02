@@ -105,6 +105,24 @@ describe('RatingCard meta inputs', () => {
     expect(lastMeta(onVerdict).targetCategories).toEqual(['objet']);
   });
 
+  it('autre is still clickable when 6 categories are already selected', async () => {
+    const onVerdict = vi.fn().mockResolvedValue(undefined);
+    const { container } = render(
+      <RatingCard item={sampleItem} onVerdict={onVerdict} onCorriger={async () => {}} />,
+    );
+    const caps = ['objet', 'corps', 'culture', 'histoire', 'jeu', 'sport'];
+    for (const c of caps) {
+      await act(async () => {
+        fireEvent.click(container.querySelector<HTMLInputElement>(`[data-categorie="${c}"] input`)!);
+      });
+    }
+    const autreInput = container.querySelector<HTMLInputElement>('[data-categorie="autre"] input')!;
+    expect(autreInput.disabled).toBe(false);
+    await act(async () => { fireEvent.click(autreInput); });
+    await act(async () => { fireEvent.click(container.querySelector('[data-verdict="GOOD"]')!); });
+    expect(lastMeta(onVerdict).targetCategories).toEqual(['autre']);
+  });
+
   it('typing a single sense threads it into the verdict meta', async () => {
     const onVerdict = vi.fn().mockResolvedValue(undefined);
     const { container } = render(

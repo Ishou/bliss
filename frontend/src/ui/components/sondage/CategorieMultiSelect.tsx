@@ -73,7 +73,6 @@ export interface CategorieMultiSelectProps {
   readonly minItems?: number;
   readonly maxItems?: number;
   readonly disabled?: boolean;
-  // Selecting this value clears all others, and selecting any other value clears it (e.g. "autre").
   readonly exclusiveValue?: SurveyCategorie;
 }
 
